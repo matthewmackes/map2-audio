@@ -3360,7 +3360,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T085, T086, T087, T088, T089, T091
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T086, T087, T088, T089, T091
 ID: T083
 Status: [✓] Done
 Title: Create canonical backend dependency manifest and environment contract
@@ -3388,7 +3388,7 @@ Assigned to: Codex
 Last updated: 2026-03-10 10:07 - Codex
 
 ID: T085
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add subsystem maturity matrix and experimental labeling across UI/docs
 Description:
 - Goal / acceptance criteria: Define a canonical maturity state for major MAP2 subsystems (`production`, `qualified-with-waiver`, `beta`, `experimental`, `hardware-blocked`) and surface it in operator-facing docs and the web UI/navigation so users can tell which workflows are actually finished. Default navigation should stop presenting unfinished areas as if they are equally ready.
@@ -3398,7 +3398,7 @@ Description:
 - Required outputs: Canonical maturity matrix, doc updates, UI labeling/gating plan or implementation, and acceptance criteria for keeping labels current.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 19:59 - Codex
+Last updated: 2026-03-10 11:07 - Codex
 
 ID: T086
 Status: [ ] Todo

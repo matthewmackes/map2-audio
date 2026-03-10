@@ -1,0 +1,156 @@
+{
+  "generated_on": "2026-03-10",
+  "states": {
+    "production": {
+      "description": "Qualified, operator-safe by default, and appropriate for default navigation."
+    },
+    "qualified-with-waiver": {
+      "description": "Operationally credible, but still carrying documented caveats, qualification limits, or deployment waivers."
+    },
+    "beta": {
+      "description": "Functionally substantial, but still missing closure, consistency, or enough operational proof for default trust."
+    },
+    "experimental": {
+      "description": "Exploratory, incomplete, or weakly validated. Must never be presented as routine operator workflow."
+    },
+    "hardware-blocked": {
+      "description": "Depends on unavailable hardware, environment, or qualification evidence and should be hidden or explicitly blocked in normal operation."
+    }
+  },
+  "subsystems": [
+    {
+      "name": "Core audio engine and realtime runtime",
+      "state": "qualified-with-waiver",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/03-stability.md",
+        "docs/evaluation/06-performance-latency.md"
+      ],
+      "reason": "Real implementation depth and latency intent exist, but stability and measurement discipline still need hardening before default production trust."
+    },
+    {
+      "name": "Runtime profiles and RT hardening",
+      "state": "qualified-with-waiver",
+      "evidence": [
+        "docs/evaluation/03-stability.md",
+        "docs/evaluation/06-performance-latency.md"
+      ],
+      "reason": "The model is credible and operationally meaningful, but release confidence still depends on stronger evidence gates."
+    },
+    {
+      "name": "AVB/TSN transport and routing",
+      "state": "qualified-with-waiver",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/03-stability.md"
+      ],
+      "reason": "AVB has real implementation depth and qualification material, but still carries rollout and readiness caveats."
+    },
+    {
+      "name": "Tesira control and fleet workflows",
+      "state": "beta",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/09-api-critique.md"
+      ],
+      "reason": "The surface is broad and serious, but API consistency, error contracts, and operator closure are not finished."
+    },
+    {
+      "name": "MIDI Hub and MIDI v2 workflows",
+      "state": "beta",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/03-stability.md",
+        "docs/evaluation/07-ux-critique.md"
+      ],
+      "reason": "MIDI depth is substantial, but reliability hardening, information architecture, and contract discipline still lag the breadth of controls."
+    },
+    {
+      "name": "Cluster deployment and orchestration",
+      "state": "beta",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/03-stability.md",
+        "docs/evaluation/09-api-critique.md"
+      ],
+      "reason": "Cluster capabilities are meaningful, but they expose too much operational power without a mature auth or failure contract."
+    },
+    {
+      "name": "Snapshots, sessions, presets, and exchange flows",
+      "state": "beta",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/07-ux-critique.md"
+      ],
+      "reason": "Useful and implemented, but still part of a broader control plane that overstates maturity and lacks cohesive workflow framing."
+    },
+    {
+      "name": "MPX-1 integration",
+      "state": "beta",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/03-stability.md"
+      ],
+      "reason": "Feature depth is real, but qualification and operator-proof closure are still incomplete."
+    },
+    {
+      "name": "PipeWire diagnostics and audio path tooling",
+      "state": "beta",
+      "evidence": [
+        "docs/evaluation/03-stability.md",
+        "docs/evaluation/06-performance-latency.md"
+      ],
+      "reason": "The tooling is valuable, but the recovery path and measurement contract still need hardening."
+    },
+    {
+      "name": "NAM/IR/Soundfont acquisition and scraper-driven libraries",
+      "state": "experimental",
+      "evidence": [
+        "docs/evaluation/05-bloat-audit.md",
+        "docs/evaluation/09-api-critique.md"
+      ],
+      "reason": "These flows expand maintenance surface area and content breadth, but they are not central enough or governed enough to present as default operator workflows."
+    },
+    {
+      "name": "3D Grid and GridFlow-style exploratory surfaces",
+      "state": "experimental",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/07-ux-critique.md"
+      ],
+      "reason": "The completeness review identified 3D Grid as the clearest stub and the UI critique found exploratory surfaces too exposed."
+    },
+    {
+      "name": "LCD and dedicated hardware panels",
+      "state": "hardware-blocked",
+      "evidence": [
+        "docs/evaluation/02-completeness.md",
+        "docs/evaluation/07-ux-critique.md"
+      ],
+      "reason": "These flows are meaningful only when the corresponding hardware and qualification evidence are present."
+    }
+  ],
+  "default_navigation_policy": {
+    "show_by_default": [
+      "production",
+      "qualified-with-waiver"
+    ],
+    "advanced_menu_allowed": [
+      "beta",
+      "experimental",
+      "hardware-blocked"
+    ],
+    "rules": [
+      "Experimental items must carry an explicit label in navigation and page headers.",
+      "Hardware-blocked items must explain the missing dependency and should be hidden unless the required hardware or mode is detected.",
+      "Qualified-with-waiver items may appear in default navigation only if the linked waiver/evidence documentation is available.",
+      "Beta items may appear in advanced navigation, but not as equal-priority peers to operator-safe workflows."
+    ]
+  },
+  "maintenance_acceptance_criteria": [
+    "Every new major subsystem or page family must declare one canonical maturity state before entering default navigation.",
+    "Changing a subsystem maturity state requires updating both this matrix and the linked evidence/worklist item in the same change.",
+    "No experimental or hardware-blocked surface may appear in default navigation without an explicit exception note and linked evidence.",
+    "UI labels must use the exact state names from this matrix instead of ad-hoc synonyms."
+  ]
+}
