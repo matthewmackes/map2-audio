@@ -3126,7 +3126,7 @@ Last updated: 2026-03-10 08:37 - Codex
   - Validation: Internal dependency hotspot scan across `app/routes`, `app/services`, and `web/src/app`.
   - Suggested next tasks: T081-subE, T081-subI, T085
 ID: T081-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 5 — Bloat and unnecessary complexity audit
 Description:
 - Goal / acceptance criteria: Actively search for bloat. Identify redundant services, duplicated functionality, over-engineered components, needless UI layers, unnecessary dependencies, features that add little value but increase maintenance cost, overcomplicated setup/routing logic, and "clever" systems that reduce usability or reliability.
@@ -3144,7 +3144,13 @@ Description:
 - Required outputs: `docs/evaluation/05-bloat-audit.md` with specific removal/simplification candidates and estimated maintenance savings.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-10 08:40 - Codex
+- Completion notes:
+  - What was done: Produced a quantitative bloat audit covering checkout size hotspots, code-size hotspots, asset-scraper breadth, large route/service/page files, dependency overlap, and low-yield UI surfaces.
+  - Key findings: The biggest waste is still non-source checkout weight (`build*`, `node_modules`, evidence/archive bulk), but the more important long-term issue is core-product dilution from scraper families, giant route/page hubs, and layered visualization/UI stacks.
+  - Files/links produced: `docs/evaluation/05-bloat-audit.md`.
+  - Validation: Quantitative line-count and disk-usage scan across source and build/output directories.
+  - Suggested next tasks: T081-subF, T082-subD, T085
 ID: T081-subF
 Status: [ ] Todo
 Title: Phase 6 — Performance and latency analysis
