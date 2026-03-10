@@ -3288,7 +3288,7 @@ Last updated: 2026-03-10 10:33 - Codex
   - Suggested next tasks: T083, T085, T086
 
 ID: T082
-Status: [>] In Progress
+Status: [✓] Done
 Title: Automated nightly release pipeline with clean distribution tarball
 Description:
 - Goal / acceptance criteria: A GitHub Action runs nightly at 4 AM Eastern, builds a lean release tarball (~50-100 MB) containing only distributable components, and publishes it to the MAP2-RELEASES repo (https://github.com/matthewmackes/MAP2-RELEASES) as both a git-committed file and a GitHub Release with checksums.
@@ -3338,7 +3338,7 @@ Last updated: 2026-03-10 13:52 - Codex
   - Key findings: The canonical manual prerequisite was partially stale because the release repo had already been created; the missing blocker was only the secret.
   - Files/links produced: GitHub repo `matthewmackes/MAP2-RELEASES`, repo secret `MAP2_RELEASES_TOKEN`.
 ID: T082-subD
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Clean tracked bloat from source repo (node_modules, build-*, plugin builds)
 Description:
 - Goal / acceptance criteria: Remove ~6.5 GB of accidentally tracked build artifacts from git history: `node_modules/` (8401 files), `juce-engine/build-*` (1783 files), `juce-engine/IntelliFX8VoiceChorusPlugin/`, `juce-engine/TweedBassmanPlugin/`, `data/repair-backups/`. Update `.gitignore` to prevent re-addition. Optionally use `git filter-repo` or BFG to rewrite history and shrink the repo.
@@ -3348,9 +3348,11 @@ Description:
 - Required outputs: Updated `.gitignore`, `git rm --cached` or `git filter-repo` run, force-push to both remotes.
 Subtasks: None
 Assigned to: Matthew + Claude
-Last updated: 2026-03-09 00:00 - Claude
+Last updated: 2026-03-10 10:08 - Codex
+- Blocked notes:
+  - 2026-03-10 the nightly pipeline validated successfully without this step, but the cleanup remains intentionally blocked because it requires destructive history rewriting and coordinated force-pushes on both remotes.
 ID: T082-subE
-Status: [>] In Progress
+Status: [✓] Done
 Title: Validate first nightly release end-to-end
 Description:
 - Goal / acceptance criteria: Trigger manual dispatch of nightly-release workflow, verify: tarball appears in MAP2-RELEASES repo, GitHub Release is created, SHA256 matches, tarball extracts cleanly, `install_on_new_host.sh` runs without missing files, web/dist serves correctly.
@@ -3360,11 +3362,19 @@ Description:
 - Required outputs: Passing manual dispatch run, successful test install from tarball.
 Subtasks: None
 Assigned to: Matthew + Claude
-Last updated: 2026-03-10 13:52 - Codex
+Last updated: 2026-03-10 10:08 - Codex
+- Completion notes:
+  - What was done: Manually dispatched `Nightly Release` with `version_override=nightly-20260310-validation`, confirmed all four jobs passed, verified the GitHub Release and `nightly/LATEST.json`, downloaded the published tarball, matched SHA256, extracted it, ran `MAP2_INSTALL_TEST_MODE=1 bash install_on_new_host.sh --dry-run --skip-avb --mode management`, and served the packaged `web/dist` with HTTP `200` responses for the root document and bundled asset.
+  - Key findings: Checkout time on GitHub runners is still inflated by repository bloat, but release packaging, publication, and artifact integrity all passed.
+  - Files/links produced: `docs/fit-for-purpose-evidence/20260310/t082/nightly-release-validation.md`, `docs/fit-for-purpose-evidence/20260310/t082/nightly-release-validation.json`, release `nightly-20260310-validation`, workflow run `22906164239`.
 Assigned to: Claude + Matthew
-Last updated: 2026-03-09 00:00 - Claude
+Last updated: 2026-03-10 10:08 - Codex
+- Completion notes:
+  - What was done: Verified the release repo and secret prerequisite, manually dispatched the nightly workflow (`run_id=22906164239`), confirmed the release tarball and `nightly/LATEST.json` landed in `matthewmackes/MAP2-RELEASES`, downloaded the published asset, matched its SHA256, extracted it, passed installer dry-run validation from the extracted tarball, and served the packaged `web/dist` successfully.
+  - Key findings: The nightly pipeline itself is working end to end; the remaining repo-bloat cleanup is a separate destructive follow-up, not a blocker for nightly release publication.
+  - Files/links produced: `docs/fit-for-purpose-evidence/20260310/t082/nightly-release-validation.md`, `docs/fit-for-purpose-evidence/20260310/t082/nightly-release-validation.json`, workflow run `22906164239`, release tag `nightly-20260310-validation`.
 
-ALL UNBLOCKED ITEMS COMPLETE (except T082 in progress)
+ALL UNBLOCKED ITEMS COMPLETE (T082-subD remains blocked/manual)
 ID: T083
 Status: [✓] Done
 Title: Create canonical backend dependency manifest and environment contract

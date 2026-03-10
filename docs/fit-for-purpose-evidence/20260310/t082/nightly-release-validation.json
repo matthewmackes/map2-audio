@@ -1,0 +1,62 @@
+{
+  "task_id": "T082-subE",
+  "validated_at": "2026-03-10T10:08:00-04:00",
+  "workflow": {
+    "name": "Nightly Release",
+    "run_id": 22906164239,
+    "event": "workflow_dispatch",
+    "url": "https://github.com/matthewmackes/map2-audio/actions/runs/22906164239",
+    "conclusion": "success",
+    "jobs": [
+      "Check for new commits",
+      "Build web frontend",
+      "Create release tarball",
+      "Publish to MAP2-RELEASES"
+    ]
+  },
+  "release": {
+    "repository": "matthewmackes/MAP2-RELEASES",
+    "tag": "nightly-20260310-validation",
+    "url": "https://github.com/matthewmackes/MAP2-RELEASES/releases/tag/nightly-20260310-validation",
+    "asset_name": "map2-audio-nightly-20260310-validation-09432c87.tar.gz",
+    "asset_size_bytes": 11312034,
+    "sha256": "f9368f739fb3604a1f18a4e0088e05ed1d26b5049ebe325e008bc7e9282a2a46",
+    "latest_json": {
+      "version": "nightly-20260310-validation",
+      "commit": "09432c87",
+      "file": "map2-audio-nightly-20260310-validation-09432c87.tar.gz",
+      "sha256": "f9368f739fb3604a1f18a4e0088e05ed1d26b5049ebe325e008bc7e9282a2a46",
+      "published": "2026-03-10T14:04:28Z"
+    }
+  },
+  "source": {
+    "repository": "matthewmackes/map2-audio",
+    "commit": "09432c87bb0c391df6d9b4e04ce1378228e316df",
+    "version_tag": "nightly-20260310-validation"
+  },
+  "artifact_validation": {
+    "download_path": "/tmp/map2-nightly-validation.bAFvkb/map2-audio-nightly-20260310-validation-09432c87.tar.gz",
+    "extracted_root": "/tmp/map2-nightly-validation.bAFvkb/map2-audio-nightly-20260310-validation",
+    "checksum_match": true,
+    "required_files": [
+      "install_on_new_host.sh",
+      "app/main.py",
+      "web/dist/index.html",
+      "VERSION"
+    ],
+    "installer_dry_run": {
+      "command": "MAP2_INSTALL_TEST_MODE=1 bash install_on_new_host.sh --dry-run --skip-avb --mode management",
+      "exit_code": 0
+    },
+    "web_dist_serve": {
+      "root_status": 200,
+      "asset_path": "/assets/index-DotInjc3.js",
+      "asset_status": 200
+    }
+  },
+  "notes": [
+    "The release repo and GitHub Release were both updated by the workflow.",
+    "The shipped installer supports a safe automated validation path via --dry-run and MAP2_INSTALL_TEST_MODE=1.",
+    "Repository checkout remains slower than necessary on GitHub runners because the source repository still carries tracked bloat; that cleanup remains in T082-subD."
+  ]
+}
