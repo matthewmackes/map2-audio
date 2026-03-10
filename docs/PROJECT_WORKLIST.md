@@ -3017,7 +3017,7 @@ Last updated: 2026-03-09 18:37 - Codex
   - Suggested next tasks: T076 (pending HIL unblock), T004 (hardware qualification unblock).
 
 ID: T081
-Status: [>] In Progress
+Status: [✓] Done
 Title: Comprehensive platform fitness-for-purpose evaluation and improvement plan
 Description:
 - Goal / acceptance criteria: Perform a deep, critical, technically informed evaluation of the entire MAP2 Audio Platform across completeness, stability, architecture, bloat, performance, UX, theming, API quality, and market readiness. Produce a structured report with prioritized findings and a concrete improvement roadmap. The evaluation must be unafraid to call out bad ideas, weak abstractions, UI clutter, pseudo-features, overengineering, inconsistent theming, poor control models, avoidable latency, and architectural mistakes.
@@ -3254,7 +3254,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 10:21 - Codex
 ID: T081-subJ
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 10 — Final report synthesis and improvement roadmap
 Description:
 - Goal / acceptance criteria: Synthesize all phase findings into the final structured report. Produce the 10-section deliverable: executive assessment, strengths, weaknesses, bloat candidates, latency analysis, UX critique, theming critique, API critique, prioritized improvement plan (immediate / medium-term / strategic), and final verdict. Spawn new worklist items for all critical and major findings.
@@ -3280,9 +3280,12 @@ Description:
 - Required outputs: `docs/PLATFORM_EVALUATION_REPORT.md` (complete 10-section report), new worklist items for critical/major findings.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
-Assigned to: Codex
-Last updated: 2026-03-09 19:14 - Codex
+Last updated: 2026-03-10 10:33 - Codex
+- Completion notes:
+  - What was done: Synthesized phases 1-9 into the final 10-section platform evaluation report and translated critical/major findings into follow-on worklist items.
+  - Key findings: MAP2 is fit for expert-led deployments with waivers, but still blocked from broad production credibility by control-plane security, realtime hardening, API contract governance, boundary sprawl, and weak maturity signaling.
+  - Files/links produced: `docs/PLATFORM_EVALUATION_REPORT.md`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T083, T085, T086
 
 ID: T082
 Status: [>] In Progress
@@ -3357,7 +3360,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T081-subJ, T083, T085
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T083, T085, T086, T087, T088, T089, T091
 ID: T083
 Status: [ ] Todo
 Title: Create canonical backend dependency manifest and environment contract
@@ -3396,3 +3399,81 @@ Description:
 Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-09 19:59 - Codex
+
+ID: T086
+Status: [ ] Todo
+Title: Establish platform-wide API authentication and authorization model
+Description:
+- Goal / acceptance criteria: Replace the current ad-hoc control-plane security posture with a real API-wide authentication and authorization model. Remove default backdoor fallback behavior, define trust boundaries for local/operator/admin/cluster actions, and make the resulting contract testable and documented.
+- Why it matters: `T081-subI` found that MAP2 exposes a large mutable control plane without a credible platform-wide auth model, which is a critical production-readiness gap.
+- Dependencies: T081-subI
+- Estimated effort: High
+- Required outputs: Auth design + implementation, environment/secret documentation updates, migration plan for existing local workflows, and targeted automated tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 10:33 - Codex
+
+ID: T087
+Status: [ ] Todo
+Title: Standardize external API contract, errors, versioning, and event schema
+Description:
+- Goal / acceptance criteria: Define and enforce a stable external API contract with unique operation IDs, explicit versioning policy, structured error envelope, documented non-2xx responses, WebSocket/event schema docs, and request/response examples for the highest-value domains.
+- Why it matters: `T081-subI` found that MAP2 has enough API breadth to matter, but the contract remains too RPC-heavy and under-specified for serious integrators.
+- Dependencies: T084, T081-subI
+- Estimated effort: High
+- Required outputs: Contract guidelines, generated/linted artifacts, route/schema updates, example coverage, and automated checks preventing regression.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 10:33 - Codex
+
+ID: T088
+Status: [ ] Todo
+Title: Harden realtime recovery and broadcast backpressure paths
+Description:
+- Goal / acceptance criteria: Remove the most important reliability traps in the core runtime by making PipeWire recovery non-self-destabilizing, bounding MIDI broadcast fan-out, and isolating slow WebSocket clients so one weak consumer cannot poison global state propagation.
+- Why it matters: `T081-subC` identified these paths as first-order stability risks that undermine production confidence.
+- Dependencies: T081-subC
+- Estimated effort: High
+- Required outputs: Code changes in recovery/broadcast paths, targeted tests, and updated soak/evidence artifacts showing the hardening works.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 10:33 - Codex
+
+ID: T089
+Status: [ ] Todo
+Title: Decompose oversized route and service hubs around stable domain boundaries
+Description:
+- Goal / acceptance criteria: Reduce orchestration sprawl by narrowing route responsibilities, shrinking the import blast radius of `juce_engine_service`, and introducing clearer domain facades so control logic is easier to change, test, and reason about.
+- Why it matters: `T081-subD` found that architectural coupling is now a material drag on maintainability and correctness.
+- Dependencies: T081-subD
+- Estimated effort: High
+- Required outputs: Boundary plan, phased refactor implementation, and regression-focused validation for the extracted domains.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 10:33 - Codex
+
+ID: T090
+Status: [ ] Todo
+Title: Rebuild default navigation around operator tasks and maturity states
+Description:
+- Goal / acceptance criteria: Restructure the default information architecture so operator-safe workflows are primary, advanced/experimental surfaces are gated or deprioritized, and maturity labels drive navigation decisions instead of sitting as passive documentation.
+- Why it matters: `T081-subB`, `T081-subG`, and `T081-subH` all found that MAP2 currently overexposes unfinished complexity and does not communicate readiness clearly enough.
+- Dependencies: T085
+- Estimated effort: High
+- Required outputs: Navigation model, UI implementation plan or changes, updated docs, and acceptance criteria that keep navigation aligned with maturity labels over time.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 10:33 - Codex
+
+ID: T091
+Status: [ ] Todo
+Title: Establish latency budget, measurement discipline, and release evidence gates
+Description:
+- Goal / acceptance criteria: Define a living latency/jitter/xrun budget for MAP2, automate repeatable evidence capture where practical, and make release readiness depend on measured performance instead of qualitative confidence.
+- Why it matters: `T081-subF` found that MAP2's performance story is weakened more by measurement and governance gaps than by obvious raw DSP incapability.
+- Dependencies: T081-subF
+- Estimated effort: Medium
+- Required outputs: Budget document, benchmark/soak commands or scripts, evidence artifacts, and clear thresholds for release qualification.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 10:33 - Codex
