@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**725** Python | **966** TypeScript | **282** C++/H | **109** Docs | **444** total commits | **0** stars | **0** forks | **0** open issues
+**725** Python | **966** TypeScript | **282** C++/H | **109** Docs | **446** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1331fa46`](https://github.com/matthewmackes/map2-audio/commit/1331fa46416b4fb75156f202a15f1dcefe2a6989) | docs: complete T081 bloat audit | Map2 Audio | 2026-03-10 |
+| [`ac8a43de`](https://github.com/matthewmackes/map2-audio/commit/ac8a43dec024b7d39c9e85a7386585e7263d1a2d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`c7f53e2a`](https://github.com/matthewmackes/map2-audio/commit/c7f53e2adfada1997fceee8967de4644704c0979) | docs: complete T081 architecture evaluation | Map2 Audio | 2026-03-10 |
 | [`59c8faf4`](https://github.com/matthewmackes/map2-audio/commit/59c8faf41fafee8a062f85b7fdf1dbc77fa6ce2c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`a94e0b30`](https://github.com/matthewmackes/map2-audio/commit/a94e0b30290e91b6773f2fbeb72d17f1169d3fd5) | docs: complete T081 stability evaluation | Map2 Audio | 2026-03-10 |
 | [`0c0625e7`](https://github.com/matthewmackes/map2-audio/commit/0c0625e71cf3b768e73f9b6413b71e8f12b8ef4f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`f25170e3`](https://github.com/matthewmackes/map2-audio/commit/f25170e3d94c9c9d933d83c46442570f6f1b561b) | docs: complete T081 inventory and completeness evaluation | Map2 Audio | 2026-03-10 |
 | [`6dea1a2a`](https://github.com/matthewmackes/map2-audio/commit/6dea1a2a22228bbf9b23bce64cf1adf7230abb2d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
-| [`00b6f937`](https://github.com/matthewmackes/map2-audio/commit/00b6f9376700daf773748bedd821639f117ecb25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
-| [`9209e9f1`](https://github.com/matthewmackes/map2-audio/commit/9209e9f1fa2014b9d3f91f8b1064e7fa58f5b8ba) | feat: add nightly release pipeline (T082) + Tesira Forte ... | Map2 Audio | 2026-03-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
