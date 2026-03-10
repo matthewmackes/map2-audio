@@ -3152,7 +3152,7 @@ Last updated: 2026-03-10 08:40 - Codex
   - Validation: Quantitative line-count and disk-usage scan across source and build/output directories.
   - Suggested next tasks: T081-subF, T082-subD, T085
 ID: T081-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 6 — Performance and latency analysis
 Description:
 - Goal / acceptance criteria: Perform a serious evaluation of performance, especially where real-time or near-real-time audio behavior matters. Estimate latency contributors by subsystem, identify likely bottlenecks, distinguish between acceptable and platform-breaking latency, and recommend specific changes that reduce overhead.
@@ -3171,7 +3171,13 @@ Description:
 - Required outputs: `docs/evaluation/06-performance-latency.md` with per-subsystem latency budget table and specific reduction recommendations.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-10 08:42 - Codex
+- Completion notes:
+  - What was done: Produced a latency/performance analysis covering end-to-end buffer budget, callback timing evidence, waiver-gate behavior, loopback-measurement tooling, request-latency instrumentation, and the current latency-compensation API path.
+  - Key findings: The main limiter is timing discipline and measurement closure, not obvious DSP CPU exhaustion; MAP2 has real measurement tools, but several platform latency truths are still inferred, waived, or only partially wired through the runtime model.
+  - Files/links produced: `docs/evaluation/06-performance-latency.md`.
+  - Validation: Evidence-backed analysis from existing archived soak/waiver documents plus latency-tooling/code review.
+  - Suggested next tasks: T081-subG, T081-subI, T083
 ID: T081-subG
 Status: [ ] Todo
 Title: Phase 7 — Interface and user experience critique
