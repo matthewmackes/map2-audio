@@ -14,6 +14,7 @@ The strongest short summary is this:
 - UX: functional, but overexposes advanced surfaces and maturity ambiguity
 - theming: coherent identity, weak semantic communication
 - API: broad, but not yet professional for external integrators
+- gui professionalism: strong identity and serious intent, but still operator-hostile in hierarchy, density, and state communication
 - market readiness: suitable for expert-led deployments with waivers, not yet excellent or broadly production-grade
 
 ## 2. Top strengths
@@ -66,23 +67,23 @@ The audit found major bloat in tracked build artifacts, scraper families, oversi
 
 The platform likely can perform well enough for its intended role, but the evaluation found stronger implementation evidence than measurement discipline. Timing, jitter, xrun handling, and release-grade proof are not governed tightly enough.
 
-### Weakness 6. The API is not external-platform grade
+### Weakness 6. The GUI does not yet meet professional audio control product standards
+
+The interface has real identity and domain specificity, but falls short of the professionalism benchmark set by products in the same category. Blue is overloaded across too many semantic roles. Empty, offline, and fault states are visually indistinguishable at a glance. Navigation labels are sized for aesthetics rather than operator speed. Surface depth is too shallow for information-dense screens. Workflow screens lack clear primary action hierarchy. The net effect is an interface that requires more cognitive effort than it should.
+
+### Weakness 7. The API is not external-platform grade
 
 The API critique found a broad but weakly governed contract: mixed versioning, RPC-heavy naming, undocumented runtime error behavior, minimal example coverage, duplicate operation-ID warnings, and an event model that exists without a formal schema.
 
-### Weakness 7. Authentication and authorization are not adequate for the control plane
-
-The reviewed API surface does not show a credible platform-wide auth model. The visible auth flow exposes `/api/auth/special-backdoor` and falls back to a default `backdoor` password when the environment is unset.
-
-### Weakness 8. Visual hierarchy is too semantically flat
+### Weakness 7. Visual hierarchy is too semantically flat
 
 The theme is coherent, but too much of the product occupies the same cool-blue tonal range. The UI communicates atmosphere better than urgency, state, readiness, or workflow priority.
 
-### Weakness 9. Navigation and information architecture do not protect operators from unfinished complexity
+### Weakness 8. Navigation and information architecture do not protect operators from unfinished complexity
 
 Advanced pages are too discoverable relative to their maturity, while higher-value operator workflows are not surfaced with enough task-first structure.
 
-### Weakness 10. The platform still lacks a strong canonical environment/setup contract
+### Weakness 9. The platform still lacks a strong canonical environment/setup contract
 
 `T081-subA` found that backend runtime dependency and environment truth are split across config code, direct `os.getenv()` reads, systemd units, and setup scripts. That weakens reproducibility and onboarding.
 
@@ -121,11 +122,11 @@ The UI is capable, but it currently behaves more like an engineer's control ware
 
 The five most important UX improvements are:
 
-1. separate default operator flows from advanced or experimental control surfaces
-2. make subsystem maturity explicit everywhere users choose workflows
-3. compress navigation around high-value tasks instead of subsystem sprawl
-4. improve state semantics so warning, degraded, experimental, offline, and healthy states are visually unmistakable
-5. reduce page-level density where the interface currently asks users to understand too much product structure at once
+1. Separate default operator flows from advanced or experimental control surfaces
+2. Make subsystem maturity explicit everywhere users choose workflows
+3. Compress navigation around high-value tasks instead of subsystem sprawl
+4. Improve state semantics so warning, degraded, experimental, offline, and healthy states are visually unmistakable
+5. Reduce page-level density where the interface currently asks users to understand too much product structure at once
 
 ## 7. Theming critique summary
 
@@ -139,7 +140,111 @@ The most important theming directives are:
 - stop using the same color register for everything important
 - tie maturity labels to consistent visual tokens so readiness is legible without reading surrounding prose
 
-## 8. API critique summary
+## 8. GUI professionalism analysis
+
+This section synthesizes the UX and theming findings into a serious, specific assessment of what separates MAP2's current interface from a professional-grade audio control product, and what must change to close that gap.
+
+### What "professional GUI" means for this product category
+
+MAP2 occupies a space between a studio console, a broadcast control surface, and a live-event management platform. The reference class for "professional" in this space is not a generic SaaS dashboard. It is products like Biamp Tesira control panels, QSC Q-SYS Designer, Yamaha ProVisionaire, and to some extent Avid Pro Tools surfaces.
+
+Those products share a set of visual and interaction properties that MAP2 does not yet fully exhibit:
+
+- **State is unmistakable at a glance** — a professional audio control surface never requires you to read secondary text to know whether a signal path is active, degraded, or offline. Color, icon, and scale work together so that critical state jumps out without effort.
+- **Hierarchy is load-bearing** — the interface tells you what matters now. Primary actions are large and prominent. Secondary actions are accessible but not competing. Advanced configuration is in a second tier.
+- **Chrome is invisible when it is not needed** — professional audio UIs use their visual budget carefully. Navigation, borders, and background surfaces do not announce themselves; they recede and let content lead.
+- **Density is earnable** — complex screens are allowed to be dense, but only once the user has chosen to go deep. Default views are calm.
+- **Typography conveys trust** — labels are legible at speed, even under cognitive load. Navigation text that requires squinting to read destroys confidence in the product.
+
+### Where MAP2 falls short today
+
+#### 1. Blue overload destroys semantic range
+
+The current palette uses blue (`#2563eb`, `#1e40af`, `#60a5fa`) for primary actions, active nav, selected states, card borders, informational accents, and general chrome.
+
+This means the user's eye cannot use color to quickly read state. Active and inactive, important and decorative, primary and secondary all live in the same register.
+
+**Fix:** Reserve bright blue for one job only — interactive selection and the single most important action on a screen. Move everything else to neutral or semantic treatments.
+
+#### 2. Empty, offline, and idle states look identical
+
+Cards that are healthy but empty, offline/unreachable, or simply unconfigured currently sit in visually similar presentations. This is a serious professionalism problem for an audio control product.
+
+If a broadcast engineer looks at a PipeWire sink card during a show and cannot immediately tell whether the device is healthy, disconnected, or just empty, the interface is failing at its core job.
+
+**Fix:** Empty-state cards need a distinct visual grammar — flat, muted, no border emphasis, clear explanatory text. Offline/fault states need assertive treatment — warm amber or red fill, not just a badge. Healthy-but-idle is neutral and calm.
+
+#### 3. Navigation label scale is styled for appearance, not speed
+
+Top navigation labels at `10px` uppercase with high letter-spacing look like design portfolio work. They do not serve fast scan-reading under pressure.
+
+Professional control products use readable label sizes because their users are working, not admiring the interface.
+
+**Fix:** Increase nav label size to at least `12px`–`13px`. Reduce or eliminate the letter-spacing. Strengthen contrast against the dark background.
+
+#### 4. Surface depth is insufficient for information-heavy screens
+
+The three surface levels — `#111111`, `#1a1a1a`, `#222222` — are too close together. On a screen with many cards, the page reads as a uniform field of near-identical tiles.
+
+Professional dashboards use stronger card elevation, sharper edge contrast between background and surface, and deliberate use of slightly lighter or darker surface tones to create reading hierarchy within a panel.
+
+**Fix:** Widen the gap between page background and card surface. Add a visible but not harsh edge to elevated cards. Use a lighter surface tone for modals and drawers so layer depth is physically obvious.
+
+#### 5. Action hierarchy is not enforced
+
+On workflow-dense pages like Grid, the primary action competes with nearby toolbars, tab strips, category chips, modal triggers, and surrounding nav. The user's eye has too many candidates for "what to do next."
+
+Professional audio products designate a primary action region on each view. Everything else is subordinate or hidden until needed.
+
+**Fix:** On each major view, identify the one primary action and give it unambiguous visual priority — larger, higher contrast, distinct treatment. Demote surrounding tools to secondary and tertiary tiers with clearly reduced visual weight.
+
+#### 6. Maturity and capability signaling is absent
+
+MAP2 currently presents experimental subsystems and production-grade surfaces with identical visual prominence. A first-time operator has no way to know which areas are battle-hardened and which are still under development.
+
+Professional products either hide unfinished surfaces entirely, or use explicit labeling — "beta," "preview," "hardware required" — that is visually distinct and impossible to miss.
+
+**Fix:** Introduce a consistent maturity tag system: four levels (stable, preview, experimental, hardware-required) with a fixed color/badge treatment, applied to every menu entry and page header for non-stable surfaces.
+
+#### 7. Typography system is incomplete
+
+The current font combination (`Space Grotesk` for navigation, system UI for body) is a reasonable starting direction, but the implementation does not create a clear typographic scale.
+
+Dashboard numbers, card titles, section headers, labels, body copy, and fine print all need distinct size and weight slots. Without a scale, cards look compositionally arbitrary and reduce perceived professionalism.
+
+**Fix:** Define a 6-level type scale (display, heading, subheading, body, label, caption) and apply it consistently. Dashboard metric values should be larger and heavier than their label. Section headers should be visually stronger than card content.
+
+#### 8. Interaction states are not fully realized
+
+Focus rings, hover states, active press feedback, and loading indicators are inconsistently implemented across the product. Professional audio UIs have precise, consistent interaction feedback — it communicates that every element behaves intentionally.
+
+**Fix:** Audit every interactive element for focus, hover, and active states. Ensure consistency across all surface types. Loading states should use a purposeful indicator (not the browser default), and long operations should show progress, not just spinner.
+
+#### 9. The product does not have a strong "home screen moment"
+
+Opening MAP2 for the first time presents the user with the full breadth of everything the platform can do, with no guided entry point. Professional products have a "first screen" that establishes what the product is, what its primary workflow is, and what the user should do next.
+
+**Fix:** Create an intentional landing view that establishes the primary workflow, shows system health at a glance, and directs the operator toward the most valuable next action. Advanced surfaces should require deliberate navigation to reach.
+
+#### 10. The product visual identity is not yet fully resolved between "audio console" and "web dashboard"
+
+MAP2 exists in a tension between pro-audio console aesthetics (dark, dense, hardware-referencing) and modern web dashboard conventions (cards, modals, responsive layout). Currently both vocabularies are present without a clear editorial decision about which wins when they conflict.
+
+This creates micro-inconsistencies throughout the UI: sometimes controls look like hardware, sometimes like enterprise software, sometimes like developer tooling.
+
+**Fix:** Make an explicit design decision about the primary aesthetic register and enforce it. The dark control-room direction is the correct choice for this product category. That means: prefer data density over white space, prefer state color over decorative color, prefer precision typography over expressive typography, and design every screen as if it will be used under time pressure by someone who already knows the platform.
+
+### Summary: the five highest-ROI GUI improvements
+
+| Priority | Change | Expected impact |
+|----------|--------|-----------------|
+| 1 | Constrain blue to one semantic job; assign distinct colors to empty/offline/fault states | Immediate professionalism lift — state becomes readable at a glance |
+| 2 | Raise navigation label legibility (size, contrast, spacing) | Reduces cognitive cost; strongest impact for returning operators |
+| 3 | Widen surface depth contrast (background vs card vs elevated) | Makes dense screens readable without reducing information density |
+| 4 | Enforce primary action hierarchy on every workflow screen | Reduces decision cost and makes the product feel guided rather than exhausting |
+| 5 | Add maturity labeling system with consistent visual treatment | Stops the product from overstating readiness; builds operator trust |
+
+## 9. API critique summary
 
 The API is broad enough to matter and weak enough to limit adoption.
 
@@ -151,18 +256,18 @@ The five most important API gaps are:
 4. the event model lacks a first-class schema and examples
 5. route design is too RPC-heavy and too thin on bulk automation support for a `1227`-operation surface
 
-## 9. Prioritized improvement plan
+## 10. Prioritized improvement plan
 
 ### Immediate fixes
 
-- `T086`: establish platform-wide control-plane authentication/authorization and remove default backdoor behavior
 - `T088`: harden realtime reliability by fixing PipeWire recovery, bounded fan-out, and slow-client isolation
 - `T087`: standardize the external API contract, especially errors, versioning, event schema, examples, and duplicate operation IDs
 - `T083`: create the canonical backend dependency manifest and environment contract
-- `T085`: add subsystem maturity labeling so MAP2 stops overstating readiness
+- `T085`: add subsystem maturity labeling so MAP2 stops overstating readiness — visual badge system across all menu entries and page headers
 
 ### Medium-term improvements
 
+- `T092`: GUI professionalism overhaul — implement the five high-ROI changes identified in section 8: semantic color discipline (blue constrained to one job, distinct empty/offline/fault treatment), navigation legibility (label size and contrast), surface depth (card vs background separation), primary action hierarchy per workflow screen, and maturity labeling visual tokens
 - `T089`: decompose oversized route/service hubs and narrow boundary crossings
 - `T090`: rebuild navigation and workflow tiers around operator tasks and maturity states
 - `T091`: create an enforceable latency/performance evidence program with automated checks where practical
@@ -174,7 +279,7 @@ The five most important API gaps are:
 - separate public integration contracts from internal UI convenience routes
 - evolve toward subsystem-specific maturity gates, qualification checklists, and release criteria instead of feature presence alone
 
-## 10. Final verdict
+## 11. Final verdict
 
 MAP2 is not a fake platform. It is a real one with real engineering depth. That matters.
 
@@ -184,9 +289,9 @@ As of March 10, 2026, the platform is best described as fit for expert-led, care
 
 The changes that would most improve MAP2 are straightforward to name:
 
-- secure the control plane
 - harden the realtime failure paths
 - govern the API like an external contract
+- raise the GUI to professional audio control product standards
 - reduce coupling and surface sprawl
 - tell operators the truth about subsystem maturity
 

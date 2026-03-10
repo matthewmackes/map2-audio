@@ -3525,3 +3525,298 @@ Description:
 Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 11:16 - Codex
+
+ID: T092
+Status: [ ] Todo
+Title: GUI Professionalism Overhaul — IBM Carbon flat corporate redesign
+Description:
+- Goal / acceptance criteria: Transform MAP2's interface from "ambitious engineer dashboard" to "professional audio control platform" using IBM Carbon Design System (dark theme) as the reference. All surfaces flat (zero border-radius, zero box-shadow, zero gradient). Typography migrated to IBM Plex Sans/Mono with a strict 6-level type scale. Color system narrowed so interactive blue is used for one job only, with distinct visual treatments for empty/offline/fault/active states. Navigation labels raised to legible 12px. Cards, buttons, badges, dialogs, tables, inputs, and notifications all restyled to match. All 10 themes updated with new token structure. Component-level CSS audited for hardcoded values.
+- Why it matters: The platform evaluation (T081) found that MAP2's GUI is "ambitious but cognitively expensive" and does not meet the professionalism benchmark of reference products (QSC Q-SYS, Biamp Tesira, Yamaha ProVisionaire). The interface overstates readiness, uses blue decoratively instead of semantically, has insufficient surface depth, and lacks typographic hierarchy. These issues directly undermine operator confidence and market readiness.
+- Dependencies: None
+- Estimated effort: Very High
+- Required outputs: Updated index.css, themes.ts, types.ts, AppShell.tsx, mobile.css, all component CSS files; visual validation on key pages.
+Subtasks:
+ID: T092-sub00
+Status: [ ] Todo
+Title: Install IBM Plex fonts and define type scale + spacing scale CSS custom properties
+Description:
+- Goal / acceptance criteria: Add IBM Plex Sans (400–700) and IBM Plex Mono (400–600) via Google Fonts. Define 6-level type scale and 12-step spacing scale as CSS custom properties. Replace all font-family declarations.
+- Why it matters: Foundation for all subsequent phases.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated web/index.html, updated :root in web/src/index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub01
+Status: [ ] Todo
+Title: Apply type scale globally — replace all hardcoded font sizes with type tokens
+Description:
+- Goal / acceptance criteria: Every heading (h1–h3), body, nav label, stat label, stat value, pill, badge, and table text uses a var(--type-*) token. No hardcoded font-size outside of :root definitions and MPX1Panel.css.
+- Why it matters: Consistent typographic hierarchy is the single strongest professional signal.
+- Dependencies: T092-sub00
+- Estimated effort: Medium
+- Required outputs: Updated web/src/index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub02
+Status: [ ] Todo
+Title: Redefine CSS color token palette to IBM Carbon Dark standard
+Description:
+- Goal / acceptance criteria: Replace :root color block with IBM Carbon Gray 100 surfaces (#161616, #262626, #333333, #3d3d3d), interactive blue (#0f62fe), semantic support colors, state backgrounds (empty/offline/fault), and flat shadows (none). Add legacy aliases for backward compat. Update ThemeColors interface and default theme.
+- Why it matters: The current palette uses blue decoratively; Carbon tokens enforce semantic color discipline.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated :root in index.css, updated types.ts, updated default theme in themes.ts
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub03
+Status: [ ] Todo
+Title: Set all theme widget values to flat geometry (0px border-radius, no gradient, no glow)
+Description:
+- Goal / acceptance criteria: All 10 themes set border-radius-sm and border-radius-md to 0px, border-radius-lg to 4px, surface-gradient to none, glow-intensity to 0.
+- Why it matters: Flat geometry is the most visible single change for corporate professionalism.
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated themes.ts
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub04
+Status: [ ] Todo
+Title: Rewrite card system — flat, borderless by default, state-variant classes
+Description:
+- Goal / acceptance criteria: .card has no box-shadow, no blue border, border-radius 0. Blue border only on .card--selected. Add state classes: .card--empty (dashed border, muted), .card--offline (red left accent), .card--fault, .card--warning, .card--success. Update .stat-card and .loader-card similarly.
+- Why it matters: Cards are the most repeated UI element; their treatment defines the product's visual personality.
+- Dependencies: T092-sub02
+- Estimated effort: Medium
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub05
+Status: [ ] Todo
+Title: Remove all box-shadow from non-focus elements across all CSS files
+Description:
+- Goal / acceptance criteria: Zero box-shadow on cards, panels, dialogs, buttons, or any surface element. Only focus-visible rules may have box-shadow (and even those should prefer outline).
+- Why it matters: Shadows are the antithesis of flat design.
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated all .css files in web/src/
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub06
+Status: [ ] Todo
+Title: Restyle topbar navigation to IBM Carbon header pattern (48px, flat, bottom-border tabs)
+Description:
+- Goal / acceptance criteria: Topbar is 48px fixed height, flat background, 1px bottom border. Nav tabs are full-height with 3px bottom-border active indicator. Labels use var(--type-label), sentence case, no letter-spacing. Center title uses var(--type-subheading). No glow, shadow, or gradient.
+- Why it matters: The topbar is visible on every page and sets the product's professional tone.
+- Dependencies: T092-sub00, T092-sub02
+- Estimated effort: Medium
+- Required outputs: Updated index.css, possibly AppShell.tsx
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub07
+Status: [ ] Todo
+Title: Restyle mobile bottom tabbar
+Description:
+- Goal / acceptance criteria: 48px height, flat, 1px top border, tab labels use var(--type-caption), active state uses interactive blue text only.
+- Dependencies: T092-sub06
+- Estimated effort: Low
+- Required outputs: Updated index.css, mobile.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub08
+Status: [ ] Todo
+Title: Rewrite button system to IBM Carbon (primary filled, secondary outlined, ghost, danger)
+Description:
+- Goal / acceptance criteria: .btn is primary (filled interactive blue, 48px height, flat). .btn-secondary has border. .btn-ghost is transparent. .btn-danger is error red. All have 0 border-radius and consistent focus-visible. .btn-sm is 32px.
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub09
+Status: [ ] Todo
+Title: Replace pills and badges with flat rectangular tags
+Description:
+- Goal / acceptance criteria: .pill, .badge, .tag all have border-radius 0, 24px height, status variants. Maturity tags (production/waiver/beta/experimental/hardware) use consistent colored backgrounds with uppercase caption text.
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub10
+Status: [ ] Todo
+Title: Restyle dialogs and modals to flat panels
+Description:
+- Goal / acceptance criteria: Dialogs have 0 border-radius, no shadow, no blur overlay, structured header/body/footer sections with border separators. Notification panel same treatment.
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub11
+Status: [ ] Todo
+Title: Restyle form inputs to Carbon bottom-border-only pattern
+Description:
+- Goal / acceptance criteria: Inputs, selects, comboboxes have no full border — bottom-border only, with blue bottom-border on focus. 40px height. Textareas keep full border. No border-radius.
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub12
+Status: [ ] Todo
+Title: Standardize page content area (max-width 1584px, IBM spacing)
+Description:
+- Goal / acceptance criteria: .app-content max-width 1584px, padding uses spacing tokens, page-header pattern with bottom border and baseline-aligned title + actions.
+- Dependencies: T092-sub00
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub13
+Status: [ ] Todo
+Title: Restyle data tables to IBM Carbon data-table pattern
+Description:
+- Goal / acceptance criteria: Tables have uppercase label headers on surface-2 background, body rows with subtle bottom borders, hover highlight, proper font tokens.
+- Dependencies: T092-sub00, T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub14
+Status: [ ] Todo
+Title: Standardize global focus-visible treatment
+Description:
+- Goal / acceptance criteria: All interactive elements get 2px solid interactive blue outline on :focus-visible. Remove conflicting per-component focus styles.
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub15
+Status: [ ] Todo
+Title: Remove all glow, gradient, text-shadow, backdrop-filter, and decorative effects
+Description:
+- Goal / acceptance criteria: Zero text-shadow, zero linear-gradient on surfaces, zero drop-shadow on icons/buttons, zero backdrop-filter blur. Keep data visualization animations only.
+- Dependencies: T092-sub02
+- Estimated effort: Medium
+- Required outputs: Updated index.css and all component CSS files
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub16
+Status: [ ] Todo
+Title: Update React Flow CSS variables for flat theme
+Description:
+- Goal / acceptance criteria: React Flow uses var(--bg), var(--surface), var(--border-strong) for nodes/edges, interactive blue only for selected edges.
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub17
+Status: [ ] Todo
+Title: Add empty-state component styling
+Description:
+- Goal / acceptance criteria: .empty-state class with centered layout, 48px icon, heading + body text, and optional CTA button. Visually distinct from active content.
+- Dependencies: T092-sub04
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub18
+Status: [ ] Todo
+Title: Restyle advanced menu dropdown to flat panel
+Description:
+- Goal / acceptance criteria: Advanced menu panel is flat (0 radius, no shadow), group labels use uppercase caption, items show maturity tags aligned right.
+- Dependencies: T092-sub06, T092-sub09
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub19
+Status: [ ] Todo
+Title: Restyle notifications and toasts to flat inline banners
+Description:
+- Goal / acceptance criteria: Notifications use left-border color accent, flat backgrounds, font tokens. No rounded corners, no shadow.
+- Dependencies: T092-sub02, T092-sub09
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub20
+Status: [ ] Todo
+Title: Standardize loading/skeleton indicators
+Description:
+- Goal / acceptance criteria: .loading-bar with sliding blue indicator, .skeleton with pulse animation, all flat (no rounded corners).
+- Dependencies: T092-sub02
+- Estimated effort: Low
+- Required outputs: Updated index.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub21
+Status: [ ] Todo
+Title: Update mobile breakpoint styles for flat design
+Description:
+- Goal / acceptance criteria: Mobile nav uses type tokens, touch targets ≥48px, cards use spacing tokens, no border-radius overrides.
+- Dependencies: T092-sub06
+- Estimated effort: Low
+- Required outputs: Updated mobile.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub22
+Status: [ ] Todo
+Title: Update all 10 themes with new token structure and flat widget values
+Description:
+- Goal / acceptance criteria: Every theme in themes.ts includes all new ThemeColors keys (interactive, interactive-hover, interactive-active, interactive-disabled, surface-overlay, text-*, support-*, border-*, bg-empty, bg-offline, bg-fault). All widget border-radius set to 0px/4px, gradient none, glow 0.
+- Dependencies: T092-sub02
+- Estimated effort: Medium
+- Required outputs: Updated themes.ts
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub23
+Status: [ ] Todo
+Title: Audit all component-level CSS files for hardcoded values
+Description:
+- Goal / acceptance criteria: Every .css file in web/src/app/components/ and web/src/app/pages/ uses CSS variable tokens for colors, font sizes, spacing, and border-radius. MPX1Panel.css is exempt. No remaining hardcoded #hex colors, px font-sizes, or non-zero border-radius outside of :root and exempted files.
+- Dependencies: All T092-sub00 through T092-sub22
+- Estimated effort: High
+- Required outputs: Updated component CSS files
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+ID: T092-sub24
+Status: [ ] Todo
+Title: Visual regression validation on all key pages
+Description:
+- Goal / acceptance criteria: Manually verify flat/corporate aesthetic on /, /engine, /avb-routing, /host-machine, /welcome, /grid, /mpx1, /tesira. Confirm: zero rounded corners (except 4px modal), zero shadows, zero blue borders on non-selected, IBM Plex fonts loaded, legible nav labels, distinct state cards, rectangular buttons, consistent focus rings, no gradients, no blur.
+- Dependencies: T092-sub23
+- Estimated effort: Medium
+- Required outputs: Pass/fail checklist
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
+Assigned to: Codex
+Last updated: 2026-03-10 22:00 - Claude
