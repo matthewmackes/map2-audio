@@ -3100,7 +3100,7 @@ Last updated: 2026-03-10 08:35 - Codex
   - Validation: `pytest tests/test_juce_engine_audio_start_stability.py tests/test_avb_service_engine_contract.py -q` (`15 passed`).
   - Suggested next tasks: T081-subD, T081-subF, T084
 ID: T081-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 4 — Architecture and design concepts evaluation
 Description:
 - Goal / acceptance criteria: Judge whether the platform's architecture matches its purpose, whether abstractions are clean or confused, whether modules are overly coupled, and whether the design creates unnecessary complexity. Identify bad concepts, leaky abstractions, awkward workflows, brittle dependencies, and design decisions that should be reversed.
@@ -3118,7 +3118,13 @@ Description:
 - Required outputs: `docs/evaluation/04-architecture.md` with dependency diagrams and specific reversal/improvement recommendations.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-10 08:37 - Codex
+- Completion notes:
+  - What was done: Produced an architecture review covering route-to-service coupling, the JUCE bridge as a dependency hub, frontend shell responsibility overload, split sources of truth, and the current REST/WebSocket boundary.
+  - Key findings: MAP2's main architecture issue is over-centralized boundaries: routes orchestrate too much, `juce_engine_service` is imported too widely, and `AppShell` combines navigation policy, product taxonomy, and live-state concerns in one place.
+  - Files/links produced: `docs/evaluation/04-architecture.md`.
+  - Validation: Internal dependency hotspot scan across `app/routes`, `app/services`, and `web/src/app`.
+  - Suggested next tasks: T081-subE, T081-subI, T085
 ID: T081-subE
 Status: [ ] Todo
 Title: Phase 5 — Bloat and unnecessary complexity audit
