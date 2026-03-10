@@ -3232,7 +3232,7 @@ Last updated: 2026-03-10 08:49 - Codex
   - Validation: Palette/token review from `web/src/index.css` plus representative desktop/mobile screenshots.
   - Suggested next tasks: T081-subI, T084, T085
 ID: T081-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 9 — API quality and integration surface evaluation
 Description:
 - Goal / acceptance criteria: Evaluate the APIs as if they matter to serious integrators. Review coverage, consistency, naming, discoverability, missing capabilities, unclear contracts, schema design, error reporting, versioning, authentication, event model, realtime control, documentation, extensibility, and integration friendliness.
@@ -3252,7 +3252,7 @@ Description:
 - Required outputs: `docs/evaluation/09-api-critique.md` with endpoint inventory, gap analysis, and redesign recommendations.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-10 10:21 - Codex
 ID: T081-subJ
 Status: [ ] Todo
 Title: Phase 10 — Final report synthesis and improvement roadmap
@@ -3357,7 +3357,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T081-subI, T081-subJ, T083, T085
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T081-subJ, T083, T085
 ID: T083
 Status: [ ] Todo
 Title: Create canonical backend dependency manifest and environment contract
