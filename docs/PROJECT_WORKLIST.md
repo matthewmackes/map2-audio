@@ -3467,7 +3467,7 @@ Assigned to: Codex
 Last updated: 2026-03-10 12:12 - Codex
 
 ID: T090
-Status: [ ] Todo
+Status: [✓] Done
 Title: Rebuild default navigation around operator tasks and maturity states
 Description:
 - Goal / acceptance criteria: Restructure the default information architecture so operator-safe workflows are primary, advanced/experimental surfaces are gated or deprioritized, and maturity labels drive navigation decisions instead of sitting as passive documentation.
@@ -3477,7 +3477,11 @@ Description:
 - Required outputs: Navigation model, UI implementation plan or changes, updated docs, and acceptance criteria that keep navigation aligned with maturity labels over time.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-10 10:33 - Codex
+Last updated: 2026-03-10 10:26 - Codex
+- Completion notes:
+  - What was done: Replaced the old promoted-advanced-route model with a maturity-driven nav model, fixed the default shell tabs to operator-safe workflows, moved beta/experimental/hardware-blocked routes into an explicitly labeled advanced catalog, added maturity badges and blocked-card treatment in the shell, documented the policy, and added a regression test that locks the route-placement rules.
+  - Key findings: The critical IA bug was not just visual clutter; the shell had no canonical distinction between operator-safe workflows and everything else. Moving that policy into nav data makes future drift testable.
+  - Files/links produced: `web/src/app/data/advancedMenuItems.ts`, `web/src/app/layout/AppShell.tsx`, `web/src/index.css`, `web/src/styles/mobile.css`, `web/src/app/data/advancedMenuItems.test.ts`, `docs/OPERATOR_NAVIGATION_MODEL.md`.
 
 ID: T091
 Status: [✓] Done

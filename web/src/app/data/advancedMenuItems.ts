@@ -2,9 +2,16 @@ import type { ComponentType } from 'react'
 import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube, BookOpen, GridFour } from '@phosphor-icons/react'
 import { BiampIcon } from '../components/Tesira/BiampIcon'
 
-export interface AdvancedMenuItem {
+export type NavigationMaturityState = 'production' | 'qualified-with-waiver' | 'beta' | 'experimental' | 'hardware-blocked'
+export type NavigationTier = 'primary' | 'secondary' | 'advanced'
+
+export const DEFAULT_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['production', 'qualified-with-waiver']
+export const ADVANCED_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['beta', 'experimental', 'hardware-blocked']
+
+export interface ShellNavigationItem {
   to: string
   label: string
+  shortLabel?: string
   icon: ComponentType<any>
   description: string
   color: string
@@ -13,6 +20,13 @@ export interface AdvancedMenuItem {
   popupMenu?: 'hardware-interfaces'
   promotionKey: string
   promotable?: boolean
+  maturity: NavigationMaturityState
+  navigationTier: NavigationTier
+  gatedReason?: string
+}
+
+export interface AdvancedMenuItem extends ShellNavigationItem {
+  navigationTier: 'advanced'
 }
 
 export interface HardwareInterfaceMenuItem {
@@ -21,194 +35,284 @@ export interface HardwareInterfaceMenuItem {
   icon: ComponentType<any>
   description: string
   color: string
+  maturity: NavigationMaturityState
+  gatedReason?: string
 }
 
-// Shared advanced-navigation items used by the shell and About page menu.
+export const navigationMaturityMeta: Record<
+  NavigationMaturityState,
+  { label: NavigationMaturityState; description: string; accent: string; surface: string; border: string }
+> = {
+  production: {
+    label: 'production',
+    description: 'Qualified, operator-safe by default, and appropriate for default navigation.',
+    accent: '#22c55e',
+    surface: 'rgba(34, 197, 94, 0.12)',
+    border: 'rgba(34, 197, 94, 0.32)',
+  },
+  'qualified-with-waiver': {
+    label: 'qualified-with-waiver',
+    description: 'Operationally credible, but still carrying documented caveats, qualification limits, or deployment waivers.',
+    accent: '#38bdf8',
+    surface: 'rgba(56, 189, 248, 0.12)',
+    border: 'rgba(56, 189, 248, 0.32)',
+  },
+  beta: {
+    label: 'beta',
+    description: 'Functionally substantial, but still missing closure, consistency, or enough operational proof for default trust.',
+    accent: '#f59e0b',
+    surface: 'rgba(245, 158, 11, 0.12)',
+    border: 'rgba(245, 158, 11, 0.32)',
+  },
+  experimental: {
+    label: 'experimental',
+    description: 'Exploratory, incomplete, or weakly validated. Must never be presented as routine operator workflow.',
+    accent: '#c084fc',
+    surface: 'rgba(192, 132, 252, 0.12)',
+    border: 'rgba(192, 132, 252, 0.32)',
+  },
+  'hardware-blocked': {
+    label: 'hardware-blocked',
+    description: 'Depends on unavailable hardware, environment, or qualification evidence and should be hidden or explicitly blocked in normal operation.',
+    accent: '#f87171',
+    surface: 'rgba(248, 113, 113, 0.12)',
+    border: 'rgba(248, 113, 113, 0.32)',
+  },
+}
+
+// Shared navigation items used by the shell and operator-facing docs.
 // Route entries should stay in sync with App route registrations.
 // Popup entries use `popupMenu` and are handled by the renderers.
-export const defaultPromotedAdvancedRoutes = ['/welcome', '/grid', '/midi-hub']
+export const defaultPromotedAdvancedRoutes: string[] = []
 
-export const advancedMenuItems: AdvancedMenuItem[] = [
-  // ── System ──
+const shellNavigationItems: ShellNavigationItem[] = [
   {
     to: '/',
     label: 'Overview',
+    shortLabel: 'Status',
     icon: Sparkle,
-    description: 'System status & quick actions',
+    description: 'System status, quick actions, and overall readiness',
     color: '#f59e0b',
-    group: 'System',
     promotionKey: '/',
+    maturity: 'qualified-with-waiver',
+    navigationTier: 'primary',
+  },
+  {
+    to: '/engine',
+    label: 'Audio Engine',
+    shortLabel: 'Engine',
+    icon: Pulse,
+    description: 'Signal path, engine health, metering, and realtime controls',
+    color: '#3b82f6',
+    promotionKey: '/engine',
+    maturity: 'qualified-with-waiver',
+    navigationTier: 'primary',
+  },
+  {
+    to: '/avb-routing',
+    label: 'AVB Routing',
+    shortLabel: 'AVB',
+    icon: ShareNetwork,
+    description: 'AVB/TSN routing matrix and network diagnostics',
+    color: '#06b6d4',
+    promotionKey: '/avb-routing',
+    maturity: 'qualified-with-waiver',
+    navigationTier: 'primary',
+  },
+  {
+    to: '/host-machine',
+    label: 'Host Machine',
+    shortLabel: 'Host',
+    icon: HardDrives,
+    description: 'Real-time host health, hardware info, and machine state',
+    color: '#2563eb',
+    promotionKey: '/host-machine',
+    maturity: 'qualified-with-waiver',
+    navigationTier: 'primary',
   },
   {
     to: '/welcome',
     label: 'Guide',
+    shortLabel: 'Guide',
     icon: BookOpen,
-    description: 'Platform guide & concepts',
+    description: 'Platform guide, concepts, and operating model',
     color: '#60a5fa',
-    group: 'System',
     promotionKey: '/welcome',
-  },
-  {
-    to: '/grid',
-    label: 'Grid',
-    icon: GridFour,
-    description: 'Cortex-style grid editor',
-    color: '#2563eb',
-    group: 'System',
-    promotionKey: '/grid',
+    maturity: 'production',
+    navigationTier: 'secondary',
   },
   {
     to: '/presets',
     label: 'Presets',
     icon: SquaresFour,
-    description: 'Save & recall your sounds',
+    description: 'Save, recall, and organize sounds and sessions',
     color: '#22c55e',
-    group: 'System',
+    group: 'Beta workflows',
     promotionKey: '/presets',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
   },
-  {
-    to: '/grid-3d',
-    label: '3D Grid',
-    icon: Cube,
-    description: '3D signal flow visualization',
-    color: '#7c3aed',
-    group: 'System',
-    promotionKey: '/grid-3d',
-  },
-
-  // ── Content & Plugins ──
   {
     to: '/plugins',
     label: 'LV2 Plugins',
     icon: Package,
-    description: 'LV2 plugin manager',
+    description: 'Plugin manager and catalog maintenance',
     color: '#06b6d4',
-    dividerBefore: true,
-    group: 'Content & Plugins',
+    group: 'Beta workflows',
     promotionKey: '/plugins',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
   },
-  {
-    to: '/library',
-    label: 'IR & NAM Library',
-    icon: Waveform,
-    description: 'Impulse responses & NAM models',
-    color: '#06b6d4',
-    group: 'Content & Plugins',
-    promotionKey: '/library',
-  },
-
-  // ── Audio Processing ──
-  {
-    to: '/engine',
-    label: 'Audio Engine',
-    icon: Pulse,
-    description: 'Engine cluster, metering, signal path & diagnostics',
-    color: '#3b82f6',
-    dividerBefore: true,
-    group: 'Audio Processing',
-    promotionKey: '/engine',
-  },
-
-  // ── Control ──
   {
     to: '/midi',
     label: 'MIDI',
     icon: MusicNotes,
-    description: 'MIDI mapping & control',
+    description: 'MIDI mapping and control workflows',
     color: '#ec4899',
-    dividerBefore: true,
-    group: 'Control',
+    group: 'Beta workflows',
     promotionKey: '/midi',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
   },
   {
     to: '/midi-hub',
     label: 'MIDI Hub',
     icon: MusicNotes,
-    description: 'Advanced routing, scripts, clock, and diagnostics',
+    description: 'Routing, scripts, clock, and MIDI diagnostics',
     color: '#22c55e',
-    group: 'Control',
+    group: 'Beta workflows',
     promotionKey: '/midi-hub',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
   },
   {
     to: '/mpx1',
     label: 'MPX1 Rack',
     icon: Waveform,
-    description: 'Hardware rack editor + MIDI mapping',
+    description: 'Lexicon MPX-1 rack editor and hardware control',
     color: '#3b82f6',
-    group: 'Control',
+    group: 'Beta workflows',
     promotionKey: '/mpx1',
-  },
-
-  // ── Hardware & Interfaces ──
-  {
-    to: '/lcd',
-    label: 'LCD Console',
-    icon: Monitor,
-    description: 'Displays, events, nodes, alerts, hardware & settings',
-    color: '#22c55e',
-    dividerBefore: true,
-    group: 'Hardware & Interfaces',
-    promotionKey: '/lcd',
-  },
-  {
-    to: '#hardware-interfaces',
-    label: 'Audio Interfaces',
-    icon: Usb,
-    description: 'Edirol, HoTone, generic model, and expansion slots',
-    color: '#0ea5e9',
-    group: 'Hardware & Interfaces',
-    popupMenu: 'hardware-interfaces',
-    promotionKey: '/hardware-interfaces',
-  },
-  {
-    to: '/avb-routing',
-    label: 'AVB Routing',
-    icon: ShareNetwork,
-    description: 'AVB/TSN routing matrix & network diagnostics',
-    color: '#06b6d4',
-    group: 'Hardware & Interfaces',
-    promotionKey: '/avb-routing',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
   },
   {
     to: '/tesira',
     label: 'Tesira AVB',
     icon: BiampIcon as ComponentType<any>,
-    description: 'Biamp Tesira Forte AVB fleet control & metering',
+    description: 'Biamp Tesira Forte AVB fleet control and metering',
     color: '#E31837',
-    group: 'Hardware & Interfaces',
+    group: 'Beta workflows',
     promotionKey: '/tesira',
-  },
-
-  // ── Infrastructure ──
-  {
-    to: '/host-machine',
-    label: 'Host Machine',
-    icon: HardDrives,
-    description: 'Hardware info & real-time health',
-    color: '#2563eb',
-    dividerBefore: true,
-    group: 'Infrastructure',
-    promotionKey: '/host-machine',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
   },
   {
     to: '/cluster-dashboard',
     label: 'Cluster Dashboard',
     icon: HardDrives,
-    description: 'Multi-node cluster monitoring & simulation',
+    description: 'Multi-node monitoring, orchestration, and cluster simulation',
     color: '#2563eb',
-    group: 'Infrastructure',
+    group: 'Beta workflows',
     promotionKey: '/cluster-dashboard',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
   },
   {
     to: '/multi-system',
     label: 'Multi-System',
     icon: Monitor,
-    description: 'Side-by-side multi-host metrics & comparison',
+    description: 'Side-by-side multi-host metrics and comparison dashboards',
     color: '#38bdf8',
-    group: 'Infrastructure',
+    group: 'Beta workflows',
     promotionKey: '/multi-system',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
+  },
+  {
+    to: '/grid',
+    label: 'Grid',
+    icon: GridFour,
+    description: 'Exploratory Cortex-style grid editor surface',
+    color: '#2563eb',
+    group: 'Experimental',
+    promotionKey: '/grid',
+    promotable: false,
+    maturity: 'experimental',
+    navigationTier: 'advanced',
+  },
+  {
+    to: '/grid-3d',
+    label: '3D Grid',
+    icon: Cube,
+    description: '3D signal-flow visualization and exploratory graph tooling',
+    color: '#7c3aed',
+    group: 'Experimental',
+    promotionKey: '/grid-3d',
+    promotable: false,
+    maturity: 'experimental',
+    navigationTier: 'advanced',
+  },
+  {
+    to: '/library',
+    label: 'IR & NAM Library',
+    icon: Waveform,
+    description: 'Model and IR acquisition workflows and content browsing',
+    color: '#06b6d4',
+    group: 'Experimental',
+    promotionKey: '/library',
+    promotable: false,
+    maturity: 'experimental',
+    navigationTier: 'advanced',
+  },
+  {
+    to: '/lcd',
+    label: 'LCD Console',
+    icon: Monitor,
+    description: 'Dedicated display and hardware-panel console surface',
+    color: '#22c55e',
+    group: 'Hardware-blocked',
+    promotionKey: '/lcd',
+    promotable: false,
+    maturity: 'hardware-blocked',
+    navigationTier: 'advanced',
+    gatedReason: 'Requires the dedicated LCD hardware path and qualification evidence before routine use.',
+  },
+  {
+    to: '#hardware-interfaces',
+    label: 'Audio Interfaces',
+    icon: Usb,
+    description: 'Interface-specific control pages reserved for qualified hardware profiles',
+    color: '#0ea5e9',
+    group: 'Hardware-blocked',
+    popupMenu: 'hardware-interfaces',
+    promotionKey: '/hardware-interfaces',
+    promotable: false,
+    maturity: 'hardware-blocked',
+    navigationTier: 'advanced',
+    gatedReason: 'Reserved for qualified interface hardware and profile-specific validation.',
   },
 ]
+
+export const primaryOperatorMenuItems = shellNavigationItems.filter(
+  (item): item is ShellNavigationItem => item.navigationTier === 'primary'
+)
+
+export const secondaryInfoMenuItems = shellNavigationItems.filter(
+  (item): item is ShellNavigationItem => item.navigationTier === 'secondary'
+)
+
+export const advancedMenuItems = shellNavigationItems.filter(
+  (item): item is AdvancedMenuItem => item.navigationTier === 'advanced'
+)
 
 export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
   {
@@ -217,6 +321,8 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     icon: Usb,
     description: 'USB audio interface control',
     color: '#0066cc',
+    maturity: 'hardware-blocked',
+    gatedReason: 'Requires the Edirol UA-1000 hardware profile and live hardware access.',
   },
   {
     to: '/hotone-jogg',
@@ -224,6 +330,8 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     icon: Waveform,
     description: 'HoTone audio interface',
     color: '#e53935',
+    maturity: 'hardware-blocked',
+    gatedReason: 'Requires the HoTone interface hardware and live validation on the host.',
   },
   {
     to: '/hotone-jogg',
@@ -231,5 +339,7 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     icon: Waveform,
     description: 'Generic model based on the HoTone interface',
     color: '#94a3b8',
+    maturity: 'hardware-blocked',
+    gatedReason: 'Reserved for hardware-profile experimentation and not shown in operator navigation.',
   },
 ]

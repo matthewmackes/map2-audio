@@ -62,10 +62,22 @@
     width: 100%;
   }
 
+  .nav-active-copy {
+    align-items: center;
+    flex-direction: column;
+    gap: 2px;
+  }
+
   .nav-active-text {
     font-size: 16px !important;
     letter-spacing: 0.06em !important;
     text-align: center;
+  }
+
+  .nav-maturity-badge {
+    font-size: 10px !important;
+    min-height: 20px;
+    padding-inline: 8px;
   }
 
   .nav-tab-item,
@@ -100,7 +112,7 @@
     border-top: 1px solid var(--border);
     bottom: 0;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     height: 56px;
     left: 0;
     padding-bottom: env(safe-area-inset-bottom, 0px);

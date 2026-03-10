@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties, Dispatch, ReactNode, SetStateAction } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Sparkle, Info, List, X, Fire, CaretRight, PushPin, Pulse, MusicNotes, Waveform } from '@phosphor-icons/react'
+import { Sparkle, Info, List, X, Fire, CaretRight, PushPin } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
@@ -9,10 +9,16 @@ import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
+  ADVANCED_NAVIGATION_ALLOWED_STATES,
   advancedMenuItems,
   defaultPromotedAdvancedRoutes,
   hardwareInterfaceMenuItems,
+  navigationMaturityMeta,
+  primaryOperatorMenuItems,
+  secondaryInfoMenuItems,
   type AdvancedMenuItem,
+  type NavigationMaturityState,
+  type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 
@@ -36,9 +42,12 @@ const DragonIcon = ({ size = 16, color = '#dc2626' }: { size?: number; color?: s
 interface TopNavItem {
   to: string
   label: string
+  shortLabel?: string
   icon: ComponentType<Record<string, unknown>>
   description: string
   color: string
+  maturity: NavigationMaturityState
+  gatedReason?: string
   kind?: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
 }
 
@@ -47,17 +56,48 @@ interface AdvancedMenuSection {
   items: AdvancedMenuItem[]
 }
 
+function toTopNavItem(item: ShellNavigationItem): TopNavItem {
+  return {
+    to: item.to,
+    label: item.label,
+    shortLabel: item.shortLabel,
+    icon: item.icon,
+    description: item.description,
+    color: item.color,
+    maturity: item.maturity,
+    gatedReason: item.gatedReason,
+    kind:
+      item.popupMenu === 'hardware-interfaces'
+        ? 'hardware-submenu'
+        : item.to === '/mpx1'
+          ? 'mpx1-mega-menu'
+          : 'link',
+  }
+}
+
 const legacyNavItems: TopNavItem[] = enableLegacy
-  ? [{ to: '/legacy', label: 'Legacy', icon: Sparkle, description: 'Classic interface', color: '#60a5fa', kind: 'link' }]
+  ? [{
+      to: '/legacy',
+      label: 'Legacy',
+      shortLabel: 'Legacy',
+      icon: Sparkle,
+      description: 'Classic interface',
+      color: '#60a5fa',
+      maturity: 'experimental',
+      kind: 'link',
+    }]
   : []
 
 const navItemsRight: TopNavItem[] = [
+  ...secondaryInfoMenuItems.map(toTopNavItem),
   {
     to: '/about',
     label: 'About',
+    shortLabel: 'About',
     icon: Info,
     description: 'System info',
     color: '#9ca3af',
+    maturity: 'production',
     kind: 'link',
   },
 ]
@@ -79,6 +119,23 @@ function groupAdvancedMenuItems(items: AdvancedMenuItem[]): AdvancedMenuSection[
 }
 
 const advancedMenuSections = groupAdvancedMenuItems(advancedMenuItems)
+
+function maturityClassName(maturity: NavigationMaturityState): string {
+  return maturity.replace(/[^a-z0-9]+/gi, '-')
+}
+
+function renderMaturityBadge(maturity: NavigationMaturityState) {
+  const meta = navigationMaturityMeta[maturity]
+
+  return (
+    <span
+      className={`nav-maturity-badge nav-maturity-badge--${maturityClassName(maturity)}`}
+      title={meta.description}
+    >
+      {meta.label}
+    </span>
+  )
+}
 
 function isRouteMatch(pathname: string, to: string): boolean {
   return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
@@ -160,23 +217,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const promotedTopNavItems = useMemo<TopNavItem[]>(() => {
     return advancedMenuItems
-      .filter(item => item.promotable !== false && promotedRouteSet.has(item.promotionKey))
-      .map(item => ({
-        to: item.to,
-        label: item.label,
-        icon: item.icon,
-        description: item.description,
-        color: item.color,
-        kind:
-          item.popupMenu === 'hardware-interfaces'
-            ? 'hardware-submenu'
-            : item.to === '/mpx1'
-              ? 'mpx1-mega-menu'
-              : 'link',
-      }))
+      .filter(item =>
+        item.promotable !== false &&
+        promotedRouteSet.has(item.promotionKey) &&
+        !ADVANCED_NAVIGATION_ALLOWED_STATES.includes(item.maturity)
+      )
+      .map(toTopNavItem)
   }, [promotedRouteSet])
 
-  const leftNavItems = useMemo(() => [...promotedTopNavItems, ...legacyNavItems], [promotedTopNavItems])
+  const primaryTopNavItems = useMemo(() => primaryOperatorMenuItems.map(toTopNavItem), [])
+
+  const leftNavItems = useMemo(
+    () => [...primaryTopNavItems, ...promotedTopNavItems, ...legacyNavItems],
+    [primaryTopNavItems, promotedTopNavItems]
+  )
   const rightNavItems = navItemsRight
 
   const activeNav = useMemo(() => {
@@ -196,8 +250,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       return { type: 'main' as const, item: mainMatch }
     }
 
-    return { type: 'under-the-hood' as const, item: advancedMenuItems[0] }
-  }, [location.pathname, leftNavItems, rightNavItems])
+    return { type: 'main' as const, item: primaryTopNavItems[0] ?? rightNavItems[0] ?? legacyNavItems[0] }
+  }, [location.pathname, leftNavItems, primaryTopNavItems, rightNavItems])
 
   const showAdvancedMenu = specialSettings?.enabled && specialSettings?.menuLocation !== 'hidden'
   const showInTopNav = specialSettings?.menuLocation === 'top-nav'
@@ -330,6 +384,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const renderPromotionToggle = (item: AdvancedMenuItem) => {
     const promotable = item.promotable !== false
+    if (!promotable) {
+      return null
+    }
+
     const checked = promotable && promotedRouteSet.has(item.promotionKey)
     const disabled = specialSettingsLoading || !promotable
 
@@ -366,7 +424,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         key={item.to}
         to={item.to}
         className="nav-tab-item"
-        title={item.description}
+        title={`${item.description} • ${item.maturity}`}
         style={{ '--tab-color': item.color } as CSSProperties}
         onClick={() => {
           setMpx1MenuOpen(false)
@@ -390,7 +448,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <button
           type="button"
           className={`nav-tab-item nav-tab-item--menu${isRouteActive ? ' nav-tab-item--menu-active' : ''}${mpx1MenuOpen ? ' nav-tab-item--menu-open' : ''}`}
-          title={item.description}
+          title={`${item.description} • ${item.maturity}`}
           style={{ '--tab-color': item.color } as CSSProperties}
           onClick={() => {
             const nextOpen = !mpx1MenuOpen
@@ -449,7 +507,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <button
           type="button"
           className={`nav-tab-item nav-tab-item--menu${isHardwareRouteActive ? ' nav-tab-item--menu-active' : ''}${topHardwareSubmenuOpen ? ' nav-tab-item--menu-open' : ''}`}
-          title={item.description}
+          title={`${item.description} • ${item.maturity}`}
           style={{ '--tab-color': item.color } as CSSProperties}
           onClick={() => {
             const nextOpen = !topHardwareSubmenuOpen
@@ -509,52 +567,33 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="nav-mobile-group-grid">
             {section.items.map((item) => {
               const Icon = item.icon
-
-              if (item.popupMenu === 'hardware-interfaces') {
-                return (
-                  <div key={`${keyPrefix}-${section.group}-${item.to}`} className="nav-mobile-submenu-wrap">
-                    <div className="nav-mobile-item-wrap">
-                      <button
-                        type="button"
-                        className={`nav-mobile-item nav-mobile-item--submenu${hardwareOpen ? ' is-open' : ''}`}
-                        style={{ '--item-color': item.color } as CSSProperties}
-                        onClick={() => setHardwareOpen(open => !open)}
-                        aria-expanded={hardwareOpen}
-                      >
-                        <Icon size={18} weight="duotone" aria-hidden />
-                        <span>{item.label}</span>
-                        <CaretRight
-                          size={14}
-                          weight="bold"
-                          className={`nav-mobile-item-caret${hardwareOpen ? ' is-open' : ''}`}
-                        />
-                      </button>
-                      {renderPromotionToggle(item)}
+              const isBlocked = item.maturity === 'hardware-blocked'
+              const gatedReason = item.gatedReason
+              const itemBody = (
+                <>
+                  <Icon size={18} weight="duotone" aria-hidden />
+                  <div className="nav-mobile-item-text">
+                    <div className="nav-mobile-item-heading">
+                      <span className="nav-mobile-item-label">{item.label}</span>
+                      {renderMaturityBadge(item.maturity)}
                     </div>
+                    <span className="nav-mobile-item-desc">{item.description}</span>
+                    {gatedReason && <span className="nav-mobile-item-note">{gatedReason}</span>}
+                  </div>
+                </>
+              )
 
-                    {hardwareOpen && (
-                      <div className="nav-mobile-submenu-grid">
-                        {hardwareInterfaceMenuItems.map((hardwareItem) => (
-                          <NavLink
-                            key={`${keyPrefix}-${hardwareItem.label}-${hardwareItem.to}`}
-                            to={hardwareItem.to}
-                            className="nav-mobile-item nav-mobile-item--child"
-                            style={{ '--item-color': hardwareItem.color } as CSSProperties}
-                            onClick={() => {
-                              setHardwareOpen(false)
-                              onNavigate()
-                            }}
-                          >
-                            <hardwareItem.icon size={18} weight="duotone" aria-hidden />
-                            <span>{hardwareItem.label}</span>
-                          </NavLink>
-                        ))}
-
-                        <div className="nav-mobile-submenu-note">
-                          Reserved space for new hardware profiles.
-                        </div>
-                      </div>
-                    )}
+              if (item.popupMenu === 'hardware-interfaces' || isBlocked) {
+                return (
+                  <div key={`${keyPrefix}-${section.group}-${item.to}`} className="nav-mobile-item-wrap">
+                    <div
+                      className="nav-mobile-item nav-mobile-item--blocked"
+                      style={{ '--item-color': item.color } as CSSProperties}
+                      role="note"
+                      aria-disabled="true"
+                    >
+                      {itemBody}
+                    </div>
                   </div>
                 )
               }
@@ -563,18 +602,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div key={`${keyPrefix}-${section.group}-${item.to}`} className="nav-mobile-item-wrap">
                   <NavLink
                     to={item.to}
-                    className="nav-mobile-item"
+                    className={({ isActive }) => `nav-mobile-item${isActive ? ' active' : ''}`}
                     style={{ '--item-color': item.color } as CSSProperties}
+                    title={`${item.description} • ${item.maturity}`}
                     onClick={() => {
                       setHardwareOpen(false)
                       onNavigate()
                     }}
                   >
-                    <Icon size={18} weight="duotone" aria-hidden />
-                    <div className="nav-mobile-item-text">
-                      <span className="nav-mobile-item-label">{item.label}</span>
-                      <span className="nav-mobile-item-desc">{item.description}</span>
-                    </div>
+                    {itemBody}
                   </NavLink>
                   {renderPromotionToggle(item)}
                 </div>
@@ -620,7 +656,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           style={{ '--active-color': activeNav.item.color } as CSSProperties}
         >
           <activeNav.item.icon size={14} weight="duotone" className="nav-active-icon" aria-hidden />
-          <span className="nav-active-text">{activeNav.item.label}</span>
+          <div className="nav-active-copy">
+            <span className="nav-active-text">{activeNav.item.label}</span>
+            {renderMaturityBadge(activeNav.item.maturity)}
+          </div>
         </div>
 
         <div className="nav-tabs-right-container">
@@ -640,7 +679,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       setHardwareInterfacesOpen(false)
                     }
                   }}
-                  title="Advanced settings & configuration"
+                  title="Beta, experimental, and hardware-gated surfaces"
                   aria-haspopup="menu"
                   aria-expanded={advancedMenuOpen}
                   aria-controls="advanced-nav-menu"
@@ -654,11 +693,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <div id="advanced-nav-menu" className="advanced-menu-panel" role="menu">
                     <div className="advanced-menu-header">
                       <div className="advanced-menu-header-main">
-                        <p className="advanced-menu-kicker">Operator Controls</p>
-                        <p className="advanced-menu-title">Advanced Tools</p>
+                        <p className="advanced-menu-kicker">Deprioritized surfaces</p>
+                        <p className="advanced-menu-title">Beta, experimental, and hardware-gated</p>
                       </div>
                       <p className="advanced-menu-subtitle">
-                        System-level routing, interfaces &amp; infrastructure dashboards.
+                        Primary navigation is reserved for operator-safe workflows. Everything here is intentionally non-default.
                       </p>
                     </div>
 
@@ -732,36 +771,24 @@ export function AppShell({ children }: { children: ReactNode }) {
       />
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>{children}</main>
       <nav className="mobile-bottom-tabbar" aria-label="Mobile quick navigation">
-        <NavLink
-          to="/"
-          className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
-          onClick={closeMobileNavigation}
-        >
-          <span className="mobile-bottom-tab-icon">
-            <Pulse size={16} weight="duotone" aria-hidden />
-          </span>
-          <span>Status</span>
-        </NavLink>
-        <NavLink
-          to="/mpx1/perform"
-          className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
-          onClick={closeMobileNavigation}
-        >
-          <span className="mobile-bottom-tab-icon">
-            <MusicNotes size={16} weight="duotone" aria-hidden />
-          </span>
-          <span>Scenes</span>
-        </NavLink>
-        <NavLink
-          to="/metering"
-          className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
-          onClick={closeMobileNavigation}
-        >
-          <span className="mobile-bottom-tab-icon">
-            <Waveform size={16} weight="duotone" aria-hidden />
-          </span>
-          <span>Meters</span>
-        </NavLink>
+        {primaryTopNavItems.map((item) => {
+          const Icon = item.icon
+
+          return (
+            <NavLink
+              key={`mobile-primary-${item.to}`}
+              to={item.to}
+              className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
+              onClick={closeMobileNavigation}
+              title={`${item.description} • ${item.maturity}`}
+            >
+              <span className="mobile-bottom-tab-icon">
+                <Icon size={16} weight="duotone" aria-hidden />
+              </span>
+              <span>{item.shortLabel ?? item.label}</span>
+            </NavLink>
+          )
+        })}
         <button
           type="button"
           className={`mobile-bottom-tab${navOpen ? ' is-active' : ''}`}
