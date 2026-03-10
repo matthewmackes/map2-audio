@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**741** Python | **966** TypeScript | **282** C++/H | **117** Docs | **476** total commits | **0** stars | **0** forks | **0** open issues
+**741** Python | **967** TypeScript | **282** C++/H | **118** Docs | **478** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,12 +169,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [Operator Navigation Model](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATOR_NAVIGATION_MODEL.md) | 2026-03-10 |
 | [MAP2 Platform Evaluation Report](https://github.com/matthewmackes/map2-audio/blob/master/docs/PLATFORM_EVALUATION_REPORT.md) | 2026-03-10 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-10 |
 | [MAP2 API Authentication and Authorization Model](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-auth-model.md) | 2026-03-10 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-03-10 |
 | [MAP2 API Event Catalog](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-event-catalog.md) | 2026-03-10 |
-| [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-03-10 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3f342d10`](https://github.com/matthewmackes/map2-audio/commit/3f342d109ed7be73d312af8f5d264f991de8a98e) | feat: rebuild operator navigation model | Map2 Audio | 2026-03-10 |
+| [`e3e23a93`](https://github.com/matthewmackes/map2-audio/commit/e3e23a9374159176f89e463a92208202a833b453) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`c04cdc8c`](https://github.com/matthewmackes/map2-audio/commit/c04cdc8c5de25ae2c4ee626a3f7e585c4c45b16d) | docs: validate nightly release pipeline | Map2 Audio | 2026-03-10 |
 | [`ec21c3ce`](https://github.com/matthewmackes/map2-audio/commit/ec21c3cea14a77f3bf1f14a0bb7018f0bf920442) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`09432c87`](https://github.com/matthewmackes/map2-audio/commit/09432c87bb0c391df6d9b4e04ce1378228e316df) | docs: close nightly release secret setup | Map2 Audio | 2026-03-10 |
 | [`807fdaee`](https://github.com/matthewmackes/map2-audio/commit/807fdaee3f3d1f351fc469134df86304180f6f2f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`fb240a32`](https://github.com/matthewmackes/map2-audio/commit/fb240a326a9621b443a0a2fd898d32547c614b64) | refactor: complete T089 engine facade extraction | Map2 Audio | 2026-03-10 |
 | [`3dab24bf`](https://github.com/matthewmackes/map2-audio/commit/3dab24bf1ad18d05bb46fce6f253d23f28dceddc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
-| [`74ea8ed4`](https://github.com/matthewmackes/map2-audio/commit/74ea8ed41617e56b6dbf34ce77285b9fea6ea32b) | feat: complete T086 API auth model | Map2 Audio | 2026-03-10 |
-| [`9370a737`](https://github.com/matthewmackes/map2-audio/commit/9370a737033587d695b8683f8fe4b3603dc2db9f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
