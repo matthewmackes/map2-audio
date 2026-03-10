@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**741** Python | **967** TypeScript | **282** C++/H | **119** Docs | **480** total commits | **0** stars | **0** forks | **0** open issues
+**741** Python | **967** TypeScript | **282** C++/H | **119** Docs | **482** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`33e6a3d6`](https://github.com/matthewmackes/map2-audio/commit/33e6a3d609702c3d3c435e19fc82e9647da50ec1) | feat: T092 GUI professionalism overhaul plan — IBM Carbon... | Map2 Audio | 2026-03-10 |
+| [`c8312825`](https://github.com/matthewmackes/map2-audio/commit/c8312825a52f9d99a66f8192b4fa4748350aec40) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`31880210`](https://github.com/matthewmackes/map2-audio/commit/31880210c318344e4d178c6327d30bf92f8e954e) | docs: prepare repo bloat cleanup | Map2 Audio | 2026-03-10 |
 | [`a0214d26`](https://github.com/matthewmackes/map2-audio/commit/a0214d2623d11b2e87fe3d9cdf0766ee722f9d33) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`3f342d10`](https://github.com/matthewmackes/map2-audio/commit/3f342d109ed7be73d312af8f5d264f991de8a98e) | feat: rebuild operator navigation model | Map2 Audio | 2026-03-10 |
 | [`e3e23a93`](https://github.com/matthewmackes/map2-audio/commit/e3e23a9374159176f89e463a92208202a833b453) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`c04cdc8c`](https://github.com/matthewmackes/map2-audio/commit/c04cdc8c5de25ae2c4ee626a3f7e585c4c45b16d) | docs: validate nightly release pipeline | Map2 Audio | 2026-03-10 |
 | [`ec21c3ce`](https://github.com/matthewmackes/map2-audio/commit/ec21c3cea14a77f3bf1f14a0bb7018f0bf920442) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
-| [`09432c87`](https://github.com/matthewmackes/map2-audio/commit/09432c87bb0c391df6d9b4e04ce1378228e316df) | docs: close nightly release secret setup | Map2 Audio | 2026-03-10 |
-| [`807fdaee`](https://github.com/matthewmackes/map2-audio/commit/807fdaee3f3d1f351fc469134df86304180f6f2f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
