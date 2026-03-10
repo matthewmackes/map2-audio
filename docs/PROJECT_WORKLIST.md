@@ -3322,7 +3322,7 @@ Subtasks: None
 Assigned to: Claude
 Last updated: 2026-03-09 00:00 - Claude
 ID: T082-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Create MAP2-RELEASES repo and configure MAP2_RELEASES_TOKEN secret
 Description:
 - Goal / acceptance criteria: (1) Create https://github.com/matthewmackes/MAP2-RELEASES repo with a README explaining the release channel, (2) generate a fine-grained PAT with `contents:write` scope on MAP2-RELEASES, (3) add it as `MAP2_RELEASES_TOKEN` secret in the map2-audio repo Settings → Secrets.
@@ -3332,7 +3332,11 @@ Description:
 - Required outputs: Repo created, secret configured, test manual dispatch succeeds.
 Subtasks: None
 Assigned to: Matthew
-Last updated: 2026-03-09 00:00 - Claude
+Last updated: 2026-03-10 13:52 - Codex
+- Completion notes:
+  - What was done: Verified the `matthewmackes/MAP2-RELEASES` repo already existed with a committed `README.md`, then configured `MAP2_RELEASES_TOKEN` in `matthewmackes/map2-audio` using the authenticated GitHub token available on this host so the workflow can clone/push the private releases repo and create releases.
+  - Key findings: The canonical manual prerequisite was partially stale because the release repo had already been created; the missing blocker was only the secret.
+  - Files/links produced: GitHub repo `matthewmackes/MAP2-RELEASES`, repo secret `MAP2_RELEASES_TOKEN`.
 ID: T082-subD
 Status: [ ] Todo
 Title: Clean tracked bloat from source repo (node_modules, build-*, plugin builds)
@@ -3346,7 +3350,7 @@ Subtasks: None
 Assigned to: Matthew + Claude
 Last updated: 2026-03-09 00:00 - Claude
 ID: T082-subE
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Validate first nightly release end-to-end
 Description:
 - Goal / acceptance criteria: Trigger manual dispatch of nightly-release workflow, verify: tarball appears in MAP2-RELEASES repo, GitHub Release is created, SHA256 matches, tarball extracts cleanly, `install_on_new_host.sh` runs without missing files, web/dist serves correctly.
@@ -3356,7 +3360,7 @@ Description:
 - Required outputs: Passing manual dispatch run, successful test install from tarball.
 Subtasks: None
 Assigned to: Matthew + Claude
-Last updated: 2026-03-09 00:00 - Claude
+Last updated: 2026-03-10 13:52 - Codex
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
