@@ -191,7 +191,7 @@ export function MPX1Page() {
                 to={section.to}
                 title={section.label}
                 aria-label={section.label}
-                className={({ isActive }) => `mpx1-shell__sidebar-btn${isActive ? ' is-active' : ''}`}
+                className={({ isActive }) => `mpx1-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
                 style={{ '--section-accent': section.color } as React.CSSProperties}
               >
                 <SectionIcon size={18} weight="duotone" aria-hidden />

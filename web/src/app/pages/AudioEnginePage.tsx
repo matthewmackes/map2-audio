@@ -12,15 +12,16 @@
  *   — no skeuomorphic graphics, pure information density
  */
 
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Pulse, Broadcast, Cpu, Link, SpeakerHigh, Microphone, Warning,
-  CheckCircle, XCircle, SpeakerX, GearSix, Lightning,
-  ChartBar, Stack, GitBranch, CaretDown, CaretUp
+  CheckCircle, SpeakerX, GearSix, Lightning,
+  ChartBar, Stack, GitBranch, CaretDown, CaretUp, ArrowsClockwise
 } from '@phosphor-icons/react'
 import { usePipeWire } from '../hooks/usePipeWire'
-import { audioApi } from '../../map2/api'
+import { audioApi, getWsUrl, latencyV2Api } from '../../map2/api'
+import type { LatencyJitterStats } from '../../map2/api'
 import type { AudioSourceTruthPayload } from '../../map2/types'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
@@ -42,7 +43,7 @@ const T = {
   text:      '#e2e8f0',
   muted:     '#64748b',
   dim:       '#475569',
-  mono:      "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace",
+  mono:      "var(--font-mono)",
   accent:    '#3b82f6',    // blue
   green:     '#22c55e',
   amber:     '#f59e0b',
@@ -91,7 +92,7 @@ function Panel({ children, style, borderColor }: {
     <div style={{
       background: T.panel,
       border: `1px solid ${borderColor || T.border}`,
-      borderRadius: 8,
+      borderRadius: 0,
       padding: 16,
       ...style,
     }}>
@@ -125,7 +126,7 @@ const TABS: { id: Tab; label: string; icon: any; color: string }[] = [
 
 function SOTCell({ label, value, color = T.text }: { label: string; value: string; color?: string }) {
   return (
-    <div style={{ background: T.surface, borderRadius: 6, padding: '10px 12px', border: `1px solid ${T.border}` }}>
+    <div style={{ background: T.surface, borderRadius: 0, padding: '10px 12px', border: `1px solid ${T.border}` }}>
       <div style={{ fontSize: 10, color: T.dim, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 13, color, fontFamily: T.mono, fontWeight: 600, overflowWrap: 'anywhere' }}>{value}</div>
     </div>
@@ -292,7 +293,7 @@ function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
         </Panel>
 
         {/* JUCE Engine */}
-        <Panel borderColor={`${T.accent}30`}>
+        <Panel borderColor={T.border}>
           <SectionLabel color={T.accent}>
             <Lightning size={13} weight="duotone" /> JUCE Audio Engine
           </SectionLabel>
@@ -586,6 +587,279 @@ function RoutingLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
 // LAYER 4 — Diagnostics & Settings
 // ============================================================================
 
+interface TimingJitterPoint {
+  timestampMs: number
+  deltaMs: number
+  deviationMs: number
+  callbackCount: number
+  xrunCount: number
+  running: boolean
+}
+
+function deriveGate(stats: LatencyJitterStats) {
+  const rtlP95 = stats.rtl_p95_ms ?? 0
+  const hardFail = rtlP95 > 5.0 || stats.p95_ms > 1.0 || stats.xrun_count > 0
+  const warn = !hardFail && (rtlP95 > 3.5 || stats.p95_ms > 0.5)
+  return hardFail ? 'FAIL' : warn ? 'WARN' : 'PASS'
+}
+
+function LatencyMonitorPanel() {
+  const [points, setPoints] = useState<TimingJitterPoint[]>([])
+  const [isConnected, setIsConnected] = useState(false)
+  const [gateResult, setGateResult] = useState<{
+    gate: 'PASS' | 'WARN' | 'FAIL'
+    checkedAt: number
+    rtlP95: number
+    jitterP95: number
+    xruns: number
+  } | null>(null)
+  const [isResettingXruns, setIsResettingXruns] = useState(false)
+  const wsRef = useRef<WebSocket | null>(null)
+
+  const jitterStatsQuery = useQuery({
+    queryKey: ['latency-jitter-stats'],
+    queryFn: latencyV2Api.getJitterStats,
+    refetchInterval: 1000,
+    staleTime: 500,
+  })
+
+  useEffect(() => {
+    const ws = new WebSocket(getWsUrl())
+    wsRef.current = ws
+
+    ws.onopen = () => {
+      setIsConnected(true)
+      ws.send(JSON.stringify({ action: 'subscribe', topic: 'timing_jitter' }))
+    }
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data)
+        if (message?.type !== 'timing_jitter' && message?.type !== 'timing_jitter_update') {
+          return
+        }
+        const data = message?.data ?? {}
+        const ts = message?.timestamp ? Date.parse(message.timestamp) : Date.now()
+        const point: TimingJitterPoint = {
+          timestampMs: Number.isFinite(ts) ? ts : Date.now(),
+          deltaMs: Number(data.delta_ms ?? 0),
+          deviationMs: Number(data.deviation_ms ?? 0),
+          callbackCount: Number(data.callback_count ?? 0),
+          xrunCount: Number(data.xrun_count ?? 0),
+          running: Boolean(data.running ?? true),
+        }
+        setPoints((prev) => [...prev.slice(-599), point])
+      } catch (error) {
+        console.error('timing_jitter parse error:', error)
+      }
+    }
+
+    ws.onclose = () => setIsConnected(false)
+    ws.onerror = () => setIsConnected(false)
+
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'timing_jitter' }))
+      }
+      ws.close()
+      wsRef.current = null
+    }
+  }, [])
+
+  const latestPoint = points.length > 0 ? points[points.length - 1] : null
+  const sparklinePoints = useMemo(() => points.slice(-600), [points])
+  const maxDeviation = useMemo(() => {
+    const observedMax = Math.max(0, ...sparklinePoints.map((point) => point.deviationMs))
+    return Math.max(3, observedMax)
+  }, [sparklinePoints])
+  const sparklinePath = useMemo(() => {
+    if (sparklinePoints.length === 0) return ''
+    if (sparklinePoints.length === 1) {
+      const singleY = 120 - (sparklinePoints[0].deviationMs / maxDeviation) * 100
+      return `M 0 ${singleY.toFixed(2)} L 600 ${singleY.toFixed(2)}`
+    }
+    const step = 600 / (sparklinePoints.length - 1)
+    return sparklinePoints.map((point, index) => {
+      const x = (index * step).toFixed(2)
+      const y = (120 - (point.deviationMs / maxDeviation) * 100).toFixed(2)
+      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`
+    }).join(' ')
+  }, [sparklinePoints, maxDeviation])
+
+  const amberLineY = 120 - (0.5 / maxDeviation) * 100
+  const redLineY = 120 - (1.0 / maxDeviation) * 100
+  const jitterStats = jitterStatsQuery.data
+  const rtlP95 = jitterStats?.rtl_p95_ms ?? 0
+  const rtlHasValue = (jitterStats?.sample_count ?? 0) > 0
+  const rtlColor = rtlP95 > 5.0 ? T.red : rtlP95 >= 3.5 ? T.amber : T.green
+  const engineOffline = jitterStats?.running === false && sparklinePoints.length === 0
+
+  const lastXrunTimestamp = useMemo(() => {
+    for (let i = sparklinePoints.length - 1; i > 0; i -= 1) {
+      if (sparklinePoints[i].xrunCount > sparklinePoints[i - 1].xrunCount) {
+        return new Date(sparklinePoints[i].timestampMs).toLocaleTimeString()
+      }
+    }
+    return '—'
+  }, [sparklinePoints])
+
+  const runGateCheck = async () => {
+    const stats = await latencyV2Api.getJitterStats()
+    const gate = deriveGate(stats)
+    setGateResult({
+      gate,
+      checkedAt: Date.now(),
+      rtlP95: stats.rtl_p95_ms ?? 0,
+      jitterP95: stats.p95_ms,
+      xruns: stats.xrun_count,
+    })
+  }
+
+  const resetXruns = async () => {
+    try {
+      setIsResettingXruns(true)
+      await latencyV2Api.resetXruns()
+      await jitterStatsQuery.refetch()
+    } finally {
+      setIsResettingXruns(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {engineOffline && (
+        <div style={{
+          border: `1px solid ${T.amber}35`,
+          background: `${T.amber}10`,
+          color: T.amber,
+          borderRadius: 4,
+          padding: '8px 10px',
+          fontSize: 12,
+        }}>
+          Engine offline - no timing data
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 220px', gap: 12 }}>
+        <div style={{
+          border: `1px solid ${T.border}`,
+          borderRadius: 4,
+          background: T.surface,
+          padding: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+        }}>
+          <div style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: 1 }}>RTL P95</div>
+          <div style={{ fontFamily: T.mono, fontSize: 28, fontWeight: 700, color: rtlHasValue ? rtlColor : T.dim, lineHeight: 1 }}>
+            {rtlHasValue ? rtlP95.toFixed(2) : '—'}
+            <span style={{ fontSize: 12, marginLeft: 4, color: T.dim }}>ms</span>
+          </div>
+          <div style={{ fontSize: 11, color: T.dim }}>Round-trip latency @ 64 samples / 48 kHz</div>
+          <div style={{ fontSize: 11, color: isConnected ? T.green : T.amber }}>
+            {isConnected ? 'WS live' : 'WS reconnecting'}
+          </div>
+        </div>
+
+        <div style={{
+          border: `1px solid ${T.border}`,
+          borderRadius: 4,
+          background: T.surface,
+          padding: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Jitter Sparkline (60s)
+            </div>
+            <div style={{ fontSize: 11, color: T.dim, fontFamily: T.mono }}>
+              p95 {jitterStats?.p95_ms?.toFixed(3) ?? '—'} ms
+            </div>
+          </div>
+          <svg viewBox="0 0 600 140" style={{ width: '100%', height: 140, border: `1px solid ${T.border}`, borderRadius: 4, background: T.bg }}>
+            <line x1="0" y1={amberLineY} x2="600" y2={amberLineY} stroke={T.amber} strokeDasharray="6 5" strokeWidth="1" />
+            <line x1="0" y1={redLineY} x2="600" y2={redLineY} stroke={T.red} strokeDasharray="6 5" strokeWidth="1" />
+            {sparklinePath && <path d={sparklinePath} fill="none" stroke={T.cyan} strokeWidth="2" />}
+          </svg>
+          <div style={{ fontSize: 11, color: T.dim, fontFamily: T.mono }}>
+            latest Δ {latestPoint ? latestPoint.deviationMs.toFixed(3) : '—'} ms
+          </div>
+        </div>
+
+        <div style={{
+          border: `1px solid ${T.border}`,
+          borderRadius: 4,
+          background: T.surface,
+          padding: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}>
+          <div style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: 1 }}>Xruns</div>
+          <div style={{
+            fontFamily: T.mono,
+            fontSize: 28,
+            lineHeight: 1,
+            fontWeight: 700,
+            color: (jitterStats?.xrun_count ?? 0) > 0 ? T.red : T.green,
+          }}>
+            {jitterStats?.xrun_count ?? 0}
+          </div>
+          <div style={{ fontSize: 11, color: T.dim }}>Last xrun: {lastXrunTimestamp}</div>
+          <button
+            onClick={resetXruns}
+            disabled={isResettingXruns}
+            style={{
+              border: `1px solid ${T.border}`,
+              borderRadius: 4,
+              background: T.bg,
+              color: T.text,
+              cursor: isResettingXruns ? 'wait' : 'pointer',
+              padding: '6px 8px',
+              fontSize: 11,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            <ArrowsClockwise size={12} weight="duotone" />
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button
+          onClick={runGateCheck}
+          style={{
+            border: `1px solid ${T.border}`,
+            borderRadius: 4,
+            background: T.surface,
+            color: T.text,
+            padding: '6px 10px',
+            fontSize: 11,
+            cursor: 'pointer',
+          }}
+        >
+          Gate Check
+        </button>
+        {gateResult && (
+          <span style={{
+            fontFamily: T.mono,
+            fontSize: 11,
+            color: gateResult.gate === 'FAIL' ? T.red : gateResult.gate === 'WARN' ? T.amber : T.green,
+          }}>
+            {gateResult.gate} · RTL p95 {gateResult.rtlP95.toFixed(3)}ms · jitter p95 {gateResult.jitterP95.toFixed(3)}ms · xruns {gateResult.xruns} · {new Date(gateResult.checkedAt).toLocaleTimeString()}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function DiagnosticsLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
   const quantumValues = [32, 64, 128, 256, 512, 1024, 2048]
   const currentForced = pw.settings.clock_force_quantum
@@ -607,6 +881,11 @@ function DiagnosticsLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
           <LatencyDisplay showBreakdown compact={false} />
         </Panel>
       </div>
+
+      <Panel borderColor={`${T.cyan}25`}>
+        <SectionLabel color={T.cyan}><Pulse size={13} weight="duotone" /> Latency Monitor</SectionLabel>
+        <LatencyMonitorPanel />
+      </Panel>
 
       {/* Row 2: Quantum Control */}
       <Panel>
@@ -711,7 +990,7 @@ export function AudioEnginePage() {
   return (
     <div className="audio-engine-page" style={{
       padding: '24px 32px', maxWidth: 1400, margin: '0 auto', color: T.text,
-      background: `linear-gradient(180deg, ${T.bg} 0%, #0c1220 100%)`,
+      background: T.bg,
       minHeight: '100vh',
     }}>
       {/* ── Header ── */}
@@ -720,9 +999,9 @@ export function AudioEnginePage() {
         paddingBottom: 20, borderBottom: `1px solid ${T.border}`,
       }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `linear-gradient(135deg, ${T.accent}20, ${T.purple}20)`,
-          border: `1px solid ${T.accent}30`,
+          width: 40, height: 40, borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: T.surface,
+          border: `1px solid ${T.border}`,
         }}>
           <Pulse size={22} weight="duotone" color={T.accent} />
         </div>
@@ -739,7 +1018,7 @@ export function AudioEnginePage() {
             {pw.isConnected ? '● WS' : '○ Poll'}
           </span>
           <span style={{
-            padding: '4px 12px', borderRadius: 5, fontSize: 11, fontWeight: 700,
+            padding: '4px 12px', borderRadius: 0, fontSize: 11, fontWeight: 700,
             fontFamily: T.mono, color: overallColor,
             background: `${overallColor}12`, border: `1px solid ${overallColor}30`,
             letterSpacing: 0.5,
@@ -750,7 +1029,7 @@ export function AudioEnginePage() {
       </header>
 
       {/* ── Tab Bar ── */}
-      <nav className="audio-engine-tabbar" style={{
+      <nav className="audio-engine-tabbar" role="tablist" style={{
         display: 'flex', gap: 2, marginBottom: 24,
         borderBottom: `1px solid ${T.border}`,
       }}>
@@ -761,14 +1040,17 @@ export function AudioEnginePage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
+              role="tab"
+              aria-selected={active}
+              data-selected={active ? 'true' : 'false'}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '10px 20px', border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: active ? 700 : 500,
                 textTransform: 'uppercase', letterSpacing: 0.8,
-                color: active ? t.color : T.dim,
-                backgroundColor: active ? `${t.color}08` : 'transparent',
-                borderBottom: active ? `2px solid ${t.color}` : '2px solid transparent',
+                color: active ? 'var(--interactive)' : 'var(--text-secondary)',
+                backgroundColor: 'transparent',
+                borderBottom: active ? '2px solid var(--interactive)' : '2px solid transparent',
                 marginBottom: -1, transition: 'all 0.15s ease',
               }}
             >

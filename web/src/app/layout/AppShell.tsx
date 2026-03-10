@@ -21,6 +21,7 @@ import {
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
+import { isBlockedAdvancedMenuItem, isHardwareInterfacesPopup } from './advancedMenuState'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
 
@@ -567,7 +568,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="nav-mobile-group-grid">
             {section.items.map((item) => {
               const Icon = item.icon
-              const isBlocked = item.maturity === 'hardware-blocked'
+              const isHardwareSubmenu = isHardwareInterfacesPopup(item)
+              const isBlocked = isBlockedAdvancedMenuItem(item)
               const gatedReason = item.gatedReason
               const itemBody = (
                 <>
@@ -583,7 +585,62 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </>
               )
 
-              if (item.popupMenu === 'hardware-interfaces' || isBlocked) {
+              if (isHardwareSubmenu) {
+                const isHardwareRouteActive = hardwareInterfaceMenuItems.some((hardwareItem) =>
+                  isRouteMatch(location.pathname, hardwareItem.to)
+                )
+
+                return (
+                  <div key={`${keyPrefix}-${section.group}-${item.to}`} className="nav-mobile-submenu-wrap">
+                    <button
+                      type="button"
+                      className={`nav-mobile-item nav-mobile-item--submenu${hardwareOpen || isHardwareRouteActive ? ' active' : ''}`}
+                      style={{ '--item-color': item.color } as CSSProperties}
+                      title={`${item.description} • ${item.maturity}`}
+                      onClick={() => setHardwareOpen((current) => !current)}
+                      aria-expanded={hardwareOpen}
+                      aria-controls={`${keyPrefix}-hardware-submenu`}
+                    >
+                      {itemBody}
+                      <CaretRight size={14} weight="bold" className={`nav-mobile-item-caret${hardwareOpen ? ' is-open' : ''}`} />
+                    </button>
+
+                    {hardwareOpen && (
+                      <div id={`${keyPrefix}-hardware-submenu`} className="nav-mobile-submenu-grid">
+                        {hardwareInterfaceMenuItems.map((hardwareItem) => {
+                          const HardwareIcon = hardwareItem.icon
+
+                          return (
+                            <NavLink
+                              key={`${keyPrefix}-hardware-${hardwareItem.label}-${hardwareItem.to}`}
+                              to={hardwareItem.to}
+                              className={({ isActive }) => `nav-mobile-item nav-mobile-item--child${isActive ? ' active' : ''}`}
+                              style={{ '--item-color': hardwareItem.color } as CSSProperties}
+                              title={`${hardwareItem.description} • ${hardwareItem.maturity}`}
+                              onClick={() => {
+                                setHardwareOpen(false)
+                                onNavigate()
+                              }}
+                            >
+                              <HardwareIcon size={18} weight="duotone" aria-hidden />
+                              <div className="nav-mobile-item-text">
+                                <div className="nav-mobile-item-heading">
+                                  <span className="nav-mobile-item-label">{hardwareItem.label}</span>
+                                  {renderMaturityBadge(hardwareItem.maturity)}
+                                </div>
+                                <span className="nav-mobile-item-desc">{hardwareItem.description}</span>
+                                {hardwareItem.gatedReason && <span className="nav-mobile-item-note">{hardwareItem.gatedReason}</span>}
+                              </div>
+                            </NavLink>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
+              if (isBlocked) {
                 return (
                   <div key={`${keyPrefix}-${section.group}-${item.to}`} className="nav-mobile-item-wrap">
                     <div

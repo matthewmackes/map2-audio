@@ -1,41 +1,22 @@
-/**
- * EventideH9Card.css - Multi-Effect Professional Styling
- *
- * Hardware aesthetic:
- * - RED-on-BLACK 7-segment LED display (flagship feature)
- * - Black matte finish with metal accents
- * - White typography and control labels
- * - Professional studio-grade appearance
- * - Real-time metering and clipping indicator
- */
-
-/* ========================================
-   Color Variables (Multi-Effect Theme)
-   ======================================== */
-
 .h9-card-header,
 .h9-led-container,
 .h9-algorithm-section,
 .h9-info-section {
-  --h9-black: #0a0a0a;
-  --h9-dark-gray: #1a1a1a;
-  --h9-mid-gray: #2a2a2a;
-  --h9-light-gray: #4a4a4a;
-  --h9-white: #ffffff;
-  --h9-off-white: #e8e8e8;
-  --h9-led-red: #ff1111;
-  --h9-led-red-bright: #ff3333;
-  --h9-led-glow: rgba(255, 17, 17, 0.6);
-  --h9-led-bg: #0a0a0a;
-  --h9-accent-gold: #ccaa44;
-  --h9-accent-green: #00ff00;
-  --h9-text: #e0e0e0;
-  --h9-text-dim: #808080;
+  --h9-black: var(--bg);
+  --h9-dark-gray: var(--surface);
+  --h9-mid-gray: var(--surface-2);
+  --h9-light-gray: var(--surface-3);
+  --h9-white: var(--text-primary);
+  --h9-off-white: var(--text-primary);
+  --h9-led-red: var(--support-danger);
+  --h9-led-red-bright: var(--support-danger);
+  --h9-led-glow: color-mix(in srgb, var(--support-danger) 60%, transparent);
+  --h9-led-bg: var(--bg);
+  --h9-accent-gold: var(--support-warning);
+  --h9-accent-green: var(--support-success);
+  --h9-text: var(--text-primary);
+  --h9-text-dim: var(--text-secondary);
 }
-
-/* ========================================
-   Custom Card Header
-   ======================================== */
 
 .h9-card-header {
   display: flex;
@@ -46,17 +27,17 @@
 }
 
 .h9-card-title {
-  font-size: 22px;
+  font-size: var(--type-heading);
   font-weight: 900;
   letter-spacing: 3px;
   color: var(--h9-led-red);
-  text-shadow: 0 0 12px rgba(255, 17, 17, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8);
-  font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
+  text-shadow: none;
+  font-family: var(--font-sans);
   word-spacing: 0.1em;
 }
 
 .h9-card-subtitle {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 2px;
   color: var(--h9-white);
@@ -69,34 +50,26 @@
    ======================================== */
 
 .h9-led-container {
-  background: linear-gradient(180deg, #0a0a0a 0%, #000000 50%, #050505 100%);
-  border: 2px solid #1a1a1a;
-  border-radius: 10px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 22px;
-  box-shadow:
-    inset 0 3px 8px rgba(0, 0, 0, 0.9),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.5),
-    0 0 30px rgba(255, 17, 17, 0.3),
-    0 8px 20px rgba(0, 0, 0, 0.6);
+  box-shadow: none;
   position: relative;
   margin-bottom: 4px;
   transition: all 0.3s ease;
 }
 
 .h9-led-container:hover {
-  box-shadow:
-    inset 0 3px 8px rgba(0, 0, 0, 0.9),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.5),
-    0 0 40px rgba(255, 17, 17, 0.4),
-    0 10px 24px rgba(0, 0, 0, 0.7);
+  box-shadow: none;
 }
 
 .h9-led-screen {
-  background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
-  border: 1px solid #111111;
-  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 22px 28px;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-family: var(--font-sans);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -113,15 +86,11 @@
 }
 
 .h9-led-digit {
-  font-size: 90px;
+  font-size: var(--type-display);
   font-weight: 900;
   color: var(--h9-led-red);
-  text-shadow:
-    0 0 20px rgba(255, 17, 17, 1),
-    0 0 40px rgba(255, 17, 17, 0.6),
-    0 0 60px rgba(255, 17, 17, 0.3),
-    0 3px 6px rgba(0, 0, 0, 1);
-  font-family: 'Courier New', 'Courier', monospace;
+  text-shadow: none;
+  font-family: var(--font-sans);
   letter-spacing: 4px;
   line-height: 1;
   text-align: center;
@@ -131,30 +100,20 @@
 
 @keyframes led-pulse {
   0%, 100% {
-    text-shadow:
-      0 0 20px rgba(255, 17, 17, 1),
-      0 0 40px rgba(255, 17, 17, 0.6),
-      0 0 60px rgba(255, 17, 17, 0.3),
-      0 3px 6px rgba(0, 0, 0, 1);
+    text-shadow: none;
   }
   50% {
-    text-shadow:
-      0 0 25px rgba(255, 17, 17, 1),
-      0 0 50px rgba(255, 17, 17, 0.7),
-      0 0 75px rgba(255, 17, 17, 0.4),
-      0 3px 6px rgba(0, 0, 0, 1);
+    text-shadow: none;
   }
 }
 
 /* Algorithm Name Display */
 .h9-led-name {
   text-align: center;
-  font-size: 20px;
+  font-size: var(--type-heading);
   font-weight: bold;
   color: var(--h9-led-red);
-  text-shadow:
-    0 0 8px rgba(255, 17, 17, 0.8),
-    0 0 16px rgba(255, 17, 17, 0.3);
+  text-shadow: none;
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -166,7 +125,7 @@
   gap: 6px;
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #1a1a1a;
+  border-top: 1px solid var(--border);
 }
 
 .h9-led-meter-group {
@@ -176,7 +135,7 @@
 }
 
 .h9-led-meter-label {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: bold;
   color: var(--h9-white);
   text-transform: uppercase;
@@ -188,31 +147,31 @@
 .h9-led-meter-bar {
   flex: 1;
   height: 8px;
-  background: #111111;
-  border: 1px solid #2a2a2a;
-  border-radius: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow: none;
 }
 
 .h9-led-meter-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff1111 0%, #ff3333 100%);
-  box-shadow: 0 0 8px rgba(255, 17, 17, 0.6);
+  background: var(--surface);
+  box-shadow: none;
   transition: width 50ms linear;
 }
 
 .h9-led-meter-fill.clipping {
-  background: linear-gradient(90deg, #ff0000 0%, #ff5555 100%);
+  background: var(--surface);
   animation: clipping-pulse 100ms infinite alternate;
 }
 
 @keyframes clipping-pulse {
   from {
-    box-shadow: 0 0 8px rgba(255, 17, 17, 0.6);
+    box-shadow: none;
   }
   to {
-    box-shadow: 0 0 16px rgba(255, 17, 17, 1);
+    box-shadow: none;
   }
 }
 
@@ -224,11 +183,11 @@
   background: var(--h9-led-red);
   color: var(--h9-black);
   padding: 4px 8px;
-  border-radius: 3px;
-  font-size: 9px;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--type-caption);
   font-weight: bold;
   letter-spacing: 1px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: none;
   animation: clip-blink 200ms infinite;
 }
 
@@ -248,13 +207,13 @@
 .h9-algorithm-section {
   margin-top: 16px;
   padding: 14px;
-  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
 }
 
 .h9-section-label {
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--h9-white);
@@ -278,41 +237,39 @@
   justify-content: center;
   gap: 2px;
   padding: 8px 4px;
-  background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
-  border: 2px solid #3a3a3a;
-  border-radius: 4px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 200ms ease;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .h9-algorithm-btn:hover {
-  border-color: #555555;
-  background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+  border-color: var(--border);
+  background: var(--surface);
   transform: translateY(-1px);
 }
 
 .h9-algorithm-btn.active {
   border-color: var(--h9-led-red);
-  background: linear-gradient(180deg, rgba(255, 17, 17, 0.2), rgba(255, 17, 17, 0.1));
-  box-shadow:
-    0 0 10px rgba(255, 17, 17, 0.5),
-    inset 0 0 6px rgba(255, 17, 17, 0.2);
+  background: var(--surface);
+  box-shadow: none;
 }
 
 .h9-algo-number {
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: bold;
   color: var(--h9-white);
 }
 
 .h9-algorithm-btn.active .h9-algo-number {
   color: var(--h9-led-red);
-  text-shadow: 0 0 6px rgba(255, 17, 17, 0.8);
+  text-shadow: none;
 }
 
 .h9-algo-name {
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 600;
   color: var(--h9-text-dim);
   text-transform: uppercase;
@@ -325,12 +282,12 @@
 
 /* Algorithm Description */
 .h9-algorithm-description {
-  font-size: 11px;
+  font-size: var(--type-label);
   color: var(--h9-text-dim);
   font-style: italic;
   text-align: center;
   padding-top: 8px;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--border);
   opacity: 0.8;
 }
 
@@ -343,14 +300,14 @@
 }
 
 .h9-info-box {
-  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 12px;
 }
 
 .h9-info-box h4 {
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: 700;
   color: var(--h9-white);
   margin: 0 0 6px 0;
@@ -359,7 +316,7 @@
 }
 
 .h9-info-box p {
-  font-size: 11px;
+  font-size: var(--type-label);
   color: var(--h9-text-dim);
   margin: 0 0 8px 0;
   line-height: 1.4;
@@ -370,7 +327,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   padding-top: 8px;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--border);
 }
 
 .h9-stat {
@@ -381,7 +338,7 @@
 }
 
 .h9-stat-label {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 600;
   color: var(--h9-text-dim);
   text-transform: uppercase;
@@ -389,10 +346,10 @@
 }
 
 .h9-stat-value {
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: bold;
   color: var(--h9-led-red);
-  text-shadow: 0 0 4px rgba(255, 17, 17, 0.6);
+  text-shadow: none;
 }
 
 /* ========================================
@@ -401,7 +358,7 @@
 
 @media (max-width: 768px) {
   .h9-led-digit {
-    font-size: 48px;
+    font-size: var(--type-display);
   }
 
   .h9-algorithm-grid {
@@ -414,7 +371,7 @@
   }
 
   .h9-algo-name {
-    font-size: 7px;
+    font-size: var(--type-caption);
   }
 
   .h9-performance-stats {
@@ -432,9 +389,9 @@
   .h9-led-container,
   .h9-algorithm-section,
   .h9-info-section {
-    --h9-black: #050505;
-    --h9-dark-gray: #0f0f0f;
-    --h9-mid-gray: #1a1a1a;
+    --h9-black: var(--bg);
+    --h9-dark-gray: var(--surface);
+    --h9-mid-gray: var(--surface);
   }
 }
 

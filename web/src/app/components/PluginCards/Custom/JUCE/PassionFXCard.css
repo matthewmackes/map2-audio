@@ -28,10 +28,10 @@
 
 @keyframes passionfx-glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 4px var(--dot-color, #00c853);
+    box-shadow: none;
   }
   50% {
-    box-shadow: 0 0 10px var(--dot-color, #00c853), 0 0 20px rgba(0, 200, 83, 0.3);
+    box-shadow: none;
   }
 }
 
@@ -47,20 +47,20 @@
 }
 
 .passionfx-card-title {
-  font-size: 16px;
+  font-size: var(--type-subheading);
   font-weight: 700;
   letter-spacing: 3px;
-  background: linear-gradient(135deg, #004d25 0%, #00c853 45%, #69f0ae 100%);
+  background: var(--surface);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .passionfx-card-subtitle {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 500;
   letter-spacing: 1px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
@@ -71,9 +71,9 @@
 .passionfx-visualization {
   position: relative;
   padding: 14px 11px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 77, 37, 0.15) 100%);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 200, 83, 0.2);
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--support-success);
   overflow: hidden;
 }
 
@@ -84,14 +84,11 @@
 .passionfx-tiedye-bg {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
+  border-radius: var(--border-radius-sm);
   opacity: 0.12;
   pointer-events: none;
   z-index: 0;
-  background:
-    radial-gradient(ellipse 60% 60% at 30% 40%, #00c853 0%, transparent 70%),
-    radial-gradient(ellipse 50% 50% at 70% 70%, #004d25 0%, transparent 70%),
-    radial-gradient(ellipse 45% 55% at 50% 20%, #69f0ae 0%, transparent 65%);
+  background: var(--surface);
   background-size: 200% 200%, 200% 200%, 200% 200%;
   animation: passionfx-tiedye-swirl 12s ease-in-out infinite;
 }
@@ -109,7 +106,7 @@
   overflow-x: auto;
   padding: 4px 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 200, 83, 0.3) transparent;
+  scrollbar-color: var(--border) transparent;
 }
 
 .passionfx-signal-chain::-webkit-scrollbar {
@@ -121,17 +118,17 @@
 }
 
 .passionfx-signal-chain::-webkit-scrollbar-thumb {
-  background: rgba(0, 200, 83, 0.3);
-  border-radius: 2px;
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
+  border-radius: var(--border-radius-sm);
 }
 
 /* IN / OUT labels */
 .passionfx-chain-label {
   flex-shrink: 0;
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--text-tertiary, #666);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   padding: 0 4px;
 }
@@ -153,13 +150,13 @@
 .passionfx-chain-line {
   width: 11px;
   height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-3);
   flex-shrink: 0;
   transition: background 0.2s ease;
 }
 
 .passionfx-chain-line.active {
-  background: rgba(0, 200, 83, 0.5);
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
 }
 
 /* ------------------------------------------------------------------ */
@@ -170,9 +167,9 @@
   position: relative;
   width: 39px;
   height: 39px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.5);
+  border-radius: var(--border-radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -181,25 +178,25 @@
   transition: all 0.2s ease;
   padding: 0;
   outline: none;
-  color: var(--text-tertiary, #555);
+  color: var(--text-tertiary);
 }
 
 .passionfx-chain-dot:hover {
-  border-color: var(--dot-color, #00c853);
-  background: rgba(0, 0, 0, 0.7);
+  border-color: var(--dot-color);
+  background: var(--bg);
   transform: scale(1.1);
 }
 
 .passionfx-chain-dot.active {
-  border-color: var(--dot-color, #00c853);
-  background: rgba(0, 0, 0, 0.6);
-  color: var(--dot-color, #00c853);
-  box-shadow: 0 0 6px var(--dot-color, #00c853);
+  border-color: var(--dot-color);
+  background: var(--bg);
+  color: var(--dot-color);
+  box-shadow: none;
   animation: passionfx-glow-pulse 2.5s ease-in-out infinite;
 }
 
 .passionfx-chain-dot-label {
-  font-size: 5.5px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -219,12 +216,12 @@
 .passionfx-preset-select {
   width: 100%;
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: 500;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(0, 200, 83, 0.4);
-  border-radius: 6px;
-  color: var(--text-primary, #fff);
+  background: var(--bg);
+  border: 1px solid var(--support-success);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   appearance: none;
@@ -234,19 +231,19 @@
 }
 
 .passionfx-preset-select:hover {
-  border-color: rgba(0, 200, 83, 0.7);
-  background-color: rgba(0, 0, 0, 0.45);
+  border-color: var(--support-success);
+  background-color: var(--bg);
 }
 
 .passionfx-preset-select:focus {
   outline: none;
-  border-color: #00c853;
-  box-shadow: 0 0 0 2px rgba(0, 200, 83, 0.2);
+  border-color: var(--support-success);
+  box-shadow: none;
 }
 
 .passionfx-preset-select option {
-  background: #0a1f0f;
-  color: var(--text-primary, #fff);
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
+  color: var(--text-primary);
 }
 
 /* ------------------------------------------------------------------ */
@@ -254,11 +251,11 @@
 /* ------------------------------------------------------------------ */
 
 .passionfx-section-mfr {
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: var(--text-tertiary, #555);
+  color: var(--text-tertiary);
   margin-bottom: 6px;
   opacity: 0.7;
 }
@@ -273,33 +270,33 @@
   gap: 8px;
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--border-strong);
 }
 
 .passionfx-toggle-btn {
   padding: 4px 12px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 0.5px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: var(--text-secondary, #888);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .passionfx-toggle-btn:hover {
-  border-color: var(--toggle-color, #00c853);
-  color: var(--text-primary, #fff);
-  background: rgba(0, 200, 83, 0.1);
+  border-color: var(--toggle-color);
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
 }
 
 .passionfx-toggle-btn.active {
-  background: rgba(0, 200, 83, 0.2);
-  border-color: var(--toggle-color, #00c853);
-  color: #fff;
-  box-shadow: 0 0 8px rgba(0, 200, 83, 0.25);
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
+  border-color: var(--toggle-color);
+  color: var(--text-primary);
+  box-shadow: none;
 }
 
 /* ------------------------------------------------------------------ */
@@ -311,7 +308,7 @@
   justify-content: space-between;
   align-items: flex-end;
   padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-strong);
   margin-top: 12px;
   gap: 12px;
 }
@@ -335,10 +332,10 @@
 }
 
 .passionfx-meter-label {
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: var(--text-tertiary, #666);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   width: 22px;
   flex-shrink: 0;
@@ -348,24 +345,24 @@
 .passionfx-meter-bar-track {
   flex: 1;
   height: 3px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 2px;
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
   min-width: 0;
 }
 
 .passionfx-meter-bar-fill {
   height: 100%;
-  border-radius: 2px;
-  background: #00c853;
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
   transition: width 0.08s linear;
   min-width: 0;
 }
 
 .passionfx-meter-value {
-  font-size: 9px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  color: var(--text-tertiary, #666);
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-tertiary);
   width: 34px;
   flex-shrink: 0;
   text-align: right;
@@ -383,14 +380,14 @@
 }
 
 .passionfx-meter-badge {
-  font-size: 8px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
   font-weight: 500;
-  color: var(--text-tertiary, #666);
+  color: var(--text-tertiary);
   padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(0, 200, 83, 0.15);
-  border-radius: 3px;
+  background: var(--bg);
+  border: 1px solid var(--support-success);
+  border-radius: var(--border-radius-sm);
   white-space: nowrap;
 }
 
@@ -400,7 +397,7 @@
 
 @media (max-width: 400px) {
   .passionfx-card-title {
-    font-size: 14px;
+    font-size: var(--type-body);
     letter-spacing: 2px;
   }
 
@@ -410,7 +407,7 @@
   }
 
   .passionfx-chain-dot-label {
-    font-size: 5px;
+    font-size: var(--type-caption);
   }
 
   .passionfx-chain-line {

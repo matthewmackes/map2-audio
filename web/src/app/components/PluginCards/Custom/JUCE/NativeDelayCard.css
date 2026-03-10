@@ -13,47 +13,47 @@
 }
 
 .delay-card-title {
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 700;
   letter-spacing: 1px;
-  color: #999;
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
 /* Tap Tempo Button */
 .delay-tap-button {
-  background: linear-gradient(180deg, #333 0%, #222 100%);
+  background: var(--surface);
   border: 2px solid var(--accent);
   color: var(--accent);
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: 700;
   padding: 8px 20px;
-  border-radius: 6px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: none;
 }
 
 .delay-tap-button:hover {
-  background: linear-gradient(180deg, #444 0%, #333 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 20px color-mix(in srgb, var(--accent) 30%, transparent);
+  background: var(--surface);
+  box-shadow: none;
 }
 
 .delay-tap-button:active,
 .delay-tap-button.pulse {
   transform: scale(0.95);
   background: var(--accent);
-  color: #000;
-  box-shadow: 0 0 30px var(--accent), inset 0 0 10px rgba(255, 255, 255, 0.3);
+  color: var(--text-tertiary);
+  box-shadow: none;
 }
 
 /* Tempo Section */
 .delay-tempo-section {
   padding: 12px;
-  background: #1a1a1a;
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
   margin-bottom: 12px;
 }
 
@@ -65,21 +65,21 @@
 }
 
 .delay-tempo-label {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #666;
+  color: var(--text-tertiary);
   text-transform: uppercase;
 }
 
 .delay-tempo-input {
   width: 70px;
-  background: #0a0a0a;
-  border: 1px solid #333;
-  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   color: var(--accent);
-  font-size: 18px;
+  font-size: var(--type-subheading);
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-sans);
   padding: 6px 10px;
   text-align: center;
 }
@@ -87,12 +87,12 @@
 .delay-tempo-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: none;
 }
 
 .delay-tap-count {
-  font-size: 10px;
-  color: #666;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   margin-left: auto;
 }
 
@@ -111,7 +111,7 @@
 
 .delay-sync-label {
   width: 16px;
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 700;
   text-align: center;
 }
@@ -124,28 +124,28 @@
 }
 
 .delay-sync-chip {
-  background: #222;
-  border: 1px solid #333;
-  color: #888;
-  font-size: 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: var(--type-caption);
   font-weight: 600;
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
 }
 
 .delay-sync-chip:hover:not(:disabled) {
-  background: #333;
-  color: #aaa;
+  background: var(--surface);
+  color: var(--text-secondary);
 }
 
 .delay-sync-chip.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #000;
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text-tertiary);
+  box-shadow: none;
 }
 
 .delay-sync-chip:disabled {
@@ -155,9 +155,9 @@
 
 .delay-sync-time {
   min-width: 60px;
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  color: #666;
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-tertiary);
   text-align: right;
 }
 
@@ -166,25 +166,25 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #222;
-  border: 1px solid #333;
-  color: #666;
-  font-size: 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: var(--type-caption);
   font-weight: 600;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   margin-top: 8px;
   transition: all 0.15s ease;
 }
 
 .delay-link-btn:hover {
-  background: #333;
-  color: #888;
+  background: var(--surface);
+  color: var(--text-secondary);
 }
 
 .delay-link-btn.linked {
-  background: color-mix(in srgb, var(--accent) 15%, #1a1a1a);
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -198,17 +198,17 @@
 }
 
 .delay-stereo-mode label {
-  font-size: 9px;
-  color: #666;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   text-transform: uppercase;
 }
 
 .delay-stereo-mode select {
-  background: #222;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #ccc;
-  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--type-label);
   padding: 6px 10px;
   cursor: pointer;
 }
@@ -220,7 +220,7 @@
 
 /* Collapsible Sections */
 .delay-collapsible {
-  border-top: 1px solid #222;
+  border-top: 1px solid var(--border);
 }
 
 .delay-collapsible-header {
@@ -230,8 +230,8 @@
   width: 100%;
   background: transparent;
   border: none;
-  color: #666;
-  font-size: 10px;
+  color: var(--text-tertiary);
+  font-size: var(--type-caption);
   font-weight: 600;
   padding: 10px 4px;
   cursor: pointer;
@@ -241,24 +241,24 @@
 }
 
 .delay-collapsible-header:hover {
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .delay-collapsible-header svg {
-  color: #555;
+  color: var(--text-tertiary);
 }
 
 .delay-indicator {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: #333;
+  border-radius: var(--border-radius-sm);
+  background: var(--surface);
   margin-left: auto;
 }
 
 .delay-indicator.active {
   background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
+  box-shadow: none;
 }
 
 .delay-collapsible-content {
@@ -274,44 +274,44 @@
 }
 
 .delay-waveform-select label {
-  font-size: 9px;
-  color: #666;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   text-transform: uppercase;
 }
 
 .delay-waveform-select select {
-  background: #222;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #ccc;
-  font-size: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--type-caption);
   padding: 4px 8px;
   cursor: pointer;
 }
 
 /* Toggle Button */
 .delay-toggle-btn {
-  background: #222;
-  border: 1px solid #333;
-  color: #666;
-  font-size: 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: var(--type-caption);
   font-weight: 600;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
 }
 
 .delay-toggle-btn:hover {
-  background: #333;
-  color: #888;
+  background: var(--surface);
+  color: var(--text-secondary);
 }
 
 .delay-toggle-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #000;
+  color: var(--text-tertiary);
 }
 
 /* Ducking Meter */
@@ -321,20 +321,20 @@
   gap: 8px;
   margin-top: 12px;
   padding: 8px;
-  background: #111;
-  border-radius: 4px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 .delay-duck-meter span {
-  font-size: 9px;
-  color: #666;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
 }
 
 .delay-duck-bar {
   flex: 1;
   height: 6px;
-  background: #222;
-  border-radius: 3px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
 }
 
@@ -345,7 +345,7 @@
 
 .delay-duck-value {
   min-width: 50px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-sans);
   text-align: right;
 }
 
@@ -361,20 +361,20 @@
   align-items: center;
   gap: 12px;
   padding: 8px;
-  background: #111;
-  border-radius: 4px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 .delay-tap-label {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #888;
+  color: var(--text-secondary);
   min-width: 45px;
 }
 
 .delay-tap-info {
-  font-size: 9px;
-  color: #555;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   font-style: italic;
 }
 
@@ -385,15 +385,15 @@
   align-items: center;
   padding-top: 12px;
   margin-top: 12px;
-  border-top: 1px solid #222;
+  border-top: 1px solid var(--border);
 }
 
 .delay-metering-footer {
   display: flex;
   gap: 16px;
-  font-size: 9px;
-  font-family: 'JetBrains Mono', monospace;
-  color: #555;
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-tertiary);
 }
 
 /* Responsive */
@@ -403,12 +403,12 @@
   }
 
   .delay-sync-chip {
-    font-size: 8px;
+    font-size: var(--type-caption);
     padding: 3px 6px;
   }
 
   .delay-tempo-input {
     width: 60px;
-    font-size: 16px;
+    font-size: var(--type-subheading);
   }
 }

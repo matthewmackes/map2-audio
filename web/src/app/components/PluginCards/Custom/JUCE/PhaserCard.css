@@ -8,17 +8,17 @@
 }
 
 .phaser-card-title {
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 
 /* Visualization */
 .phaser-visualization {
   padding: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 .phaser-sweep {
@@ -29,8 +29,8 @@
 .phaser-meters {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 
@@ -44,20 +44,20 @@
 
 .phaser-presets button {
   padding: 4px 10px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: var(--text-secondary, #888);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .phaser-presets button:hover {
-  background: rgba(231, 76, 60, 0.2);
-  border-color: #e74c3c;
-  color: var(--text-primary, #fff);
+  background: color-mix(in srgb, var(--support-danger) 14%, var(--surface));
+  border-color: var(--support-danger);
+  color: var(--text-primary);
 }
 
 /* Footer */
@@ -65,9 +65,9 @@
   display: flex;
   justify-content: space-between;
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-strong);
   margin-top: 8px;
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
 }

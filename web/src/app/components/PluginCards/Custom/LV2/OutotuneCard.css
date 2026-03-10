@@ -8,8 +8,8 @@
   display: flex;
   justify-content: center;
   padding: 8px;
-  background: linear-gradient(180deg, #0d1117 0%, #0a0a0a 100%);
-  border-radius: 8px;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
 }
 
 /* Presets */
@@ -25,13 +25,13 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 5px 12px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #888;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
@@ -39,16 +39,16 @@
 }
 
 .outotune-preset-chip:hover {
-  background: #222;
-  border-color: #444;
-  color: #aaa;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text-secondary);
 }
 
 .outotune-preset-chip.active {
-  background: color-mix(in srgb, var(--accent) 20%, #1a1a1a);
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: none;
 }
 
 /* Key & Scale Selection */
@@ -66,19 +66,19 @@
 }
 
 .outotune-select-group label {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #666;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .outotune-select-group select {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 6px;
-  color: #ccc;
-  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--type-label);
   font-weight: 500;
   padding: 8px 12px;
   cursor: pointer;
@@ -86,20 +86,20 @@
 }
 
 .outotune-select-group select:hover {
-  border-color: #444;
+  border-color: var(--border);
 }
 
 .outotune-select-group select:focus {
   outline: none;
-  border-color: var(--accent, #00d4aa);
+  border-color: var(--accent);
 }
 
 /* Piano Roll */
 .outotune-piano-roll {
   display: flex;
   height: 48px;
-  background: #111;
-  border-radius: 6px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
   padding: 4px;
   gap: 2px;
@@ -112,20 +112,20 @@
   justify-content: center;
   padding-bottom: 4px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 600;
 }
 
 .outotune-piano-key.white {
-  background: #333;
-  color: #666;
+  background: var(--surface);
+  color: var(--text-tertiary);
 }
 
 .outotune-piano-key.black {
-  background: #1a1a1a;
+  background: var(--bg);
   color: transparent;
   flex: 0.7;
   height: 65%;
@@ -134,18 +134,18 @@
 }
 
 .outotune-piano-key:hover:not(.active) {
-  background: #444;
+  background: var(--surface);
 }
 
 .outotune-piano-key.active.white {
-  background: var(--accent, #00d4aa);
-  color: #000;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent, #00d4aa) 50%, transparent);
+  background: var(--accent);
+  color: var(--text-tertiary);
+  box-shadow: none;
 }
 
 .outotune-piano-key.active.black {
-  background: color-mix(in srgb, var(--accent, #00d4aa) 80%, #000);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent, #00d4aa) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 80%, var(--bg));
+  box-shadow: none;
 }
 
 /* Footer */
@@ -154,15 +154,15 @@
   justify-content: space-between;
   padding: 8px 4px 0;
   margin-top: 8px;
-  border-top: 1px solid #222;
+  border-top: 1px solid var(--border);
 }
 
 .outotune-footer-item {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 9px;
-  color: #555;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
 }
 
 .outotune-footer-item svg {
@@ -181,6 +181,6 @@
   }
 
   .outotune-piano-key {
-    font-size: 7px;
+    font-size: var(--type-caption);
   }
 }

@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube, BookOpen, GridFour } from '@phosphor-icons/react'
+import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube, BookOpen, GridFour, Guitar, SlidersHorizontal } from '@phosphor-icons/react'
 import { BiampIcon } from '../components/Tesira/BiampIcon'
 
 export type NavigationMaturityState = 'production' | 'qualified-with-waiver' | 'beta' | 'experimental' | 'hardware-blocked'
@@ -129,6 +129,30 @@ const shellNavigationItems: ShellNavigationItem[] = [
     promotionKey: '/host-machine',
     maturity: 'qualified-with-waiver',
     navigationTier: 'primary',
+  },
+  {
+    to: '/perform',
+    label: 'Stage Mode',
+    shortLabel: 'Stage',
+    icon: Guitar,
+    description: 'Full-window performance interface: preset grid, bypass strip, tap tempo, tuner',
+    color: '#f1c21b',
+    promotionKey: '/perform',
+    promotable: true,
+    maturity: 'beta',
+    navigationTier: 'primary',
+  },
+  {
+    to: '/expression',
+    label: 'Expression',
+    icon: SlidersHorizontal,
+    description: 'Map MIDI CC pedals to any engine parameter with real-time visual feedback',
+    color: '#009d9a',
+    group: 'Beta workflows',
+    promotionKey: '/expression',
+    promotable: false,
+    maturity: 'beta',
+    navigationTier: 'advanced',
   },
   {
     to: '/welcome',
@@ -290,15 +314,15 @@ const shellNavigationItems: ShellNavigationItem[] = [
     to: '#hardware-interfaces',
     label: 'Audio Interfaces',
     icon: Usb,
-    description: 'Interface-specific control pages reserved for qualified hardware profiles',
+    description: 'Interface-specific control pages for connected or configured audio hardware',
     color: '#0ea5e9',
-    group: 'Hardware-blocked',
+    group: 'Interfaces',
     popupMenu: 'hardware-interfaces',
     promotionKey: '/hardware-interfaces',
     promotable: false,
-    maturity: 'hardware-blocked',
+    maturity: 'beta',
     navigationTier: 'advanced',
-    gatedReason: 'Reserved for qualified interface hardware and profile-specific validation.',
+    gatedReason: 'Pages open directly and reflect current connection state instead of being hard-blocked.',
   },
 ]
 
@@ -321,8 +345,8 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     icon: Usb,
     description: 'USB audio interface control',
     color: '#0066cc',
-    maturity: 'hardware-blocked',
-    gatedReason: 'Requires the Edirol UA-1000 hardware profile and live hardware access.',
+    maturity: 'beta',
+    gatedReason: 'Opens even when the interface is offline; live controls reflect detected UA-1000 hardware.',
   },
   {
     to: '/hotone-jogg',
@@ -330,8 +354,8 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     icon: Waveform,
     description: 'HoTone audio interface',
     color: '#e53935',
-    maturity: 'hardware-blocked',
-    gatedReason: 'Requires the HoTone interface hardware and live validation on the host.',
+    maturity: 'beta',
+    gatedReason: 'Opens directly; live status reflects whether the HoTone JoGG is detected on this host.',
   },
   {
     to: '/hotone-jogg',
@@ -339,7 +363,7 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     icon: Waveform,
     description: 'Generic model based on the HoTone interface',
     color: '#94a3b8',
-    maturity: 'hardware-blocked',
-    gatedReason: 'Reserved for hardware-profile experimentation and not shown in operator navigation.',
+    maturity: 'experimental',
+    gatedReason: 'Opens directly for profile experimentation; live hardware state is still shown in-page.',
   },
 ]

@@ -1,19 +1,19 @@
 .mpx1-shell {
-  --mpx1-shell-blue: #3b82f6;
-  --mpx1-shell-amber: #f59e0b;
-  --mpx1-shell-border: rgba(71, 85, 105, 0.45);
-  --mpx1-shell-bg: #020617;
+  --mpx1-shell-blue: var(--interactive);
+  --mpx1-shell-amber: var(--support-warning);
+  --mpx1-shell-border: var(--border);
+  --mpx1-shell-bg: var(--bg);
 
   min-height: calc(100vh - 56px);
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr);
-  background: radial-gradient(circle at top right, rgba(30, 64, 175, 0.08), transparent 38%), var(--mpx1-shell-bg);
+  background: var(--surface);
 }
 
 .mpx1-shell__sidebar {
   width: 56px;
   border-right: 1px solid var(--mpx1-shell-border);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85), rgba(2, 6, 23, 0.92));
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -24,10 +24,10 @@
 .mpx1-shell__sidebar-btn {
   width: 42px;
   height: 42px;
-  border-radius: 10px;
-  border: 1px solid rgba(100, 116, 139, 0.38);
-  background: rgba(15, 23, 42, 0.66);
-  color: #94a3b8;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -36,16 +36,16 @@
 }
 
 .mpx1-shell__sidebar-btn:hover {
-  border-color: rgba(59, 130, 246, 0.48);
-  background: rgba(59, 130, 246, 0.18);
-  color: #dbeafe;
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+  color: var(--text-primary);
 }
 
 .mpx1-shell__sidebar-btn.is-active {
-  border-color: color-mix(in srgb, var(--section-accent, #3b82f6) 72%, white 28%);
-  background: color-mix(in srgb, var(--section-accent, #3b82f6) 24%, rgba(2, 6, 23, 0.9));
-  color: #eff6ff;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--section-accent, #3b82f6) 36%, transparent 64%);
+  border-color: var(--interactive);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  color: var(--text-primary);
+  box-shadow: none;
 }
 
 .mpx1-shell__main {
@@ -62,7 +62,7 @@
 .mpx1-statusbar {
   height: 36px;
   border-top: 1px solid var(--mpx1-shell-border);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.95));
+  background: var(--surface);
   display: grid;
   grid-template-columns: auto auto 1fr auto auto auto;
   align-items: center;
@@ -80,20 +80,20 @@
 .mpx1-statusbar__dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
-  background: #64748b;
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
 }
 
 .mpx1-statusbar__dot.is-online {
-  background: #22c55e;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
+  box-shadow: none;
 }
 
 .mpx1-statusbar__device {
-  font-size: 10px;
+  font-size: var(--type-caption);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #cbd5e1;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
@@ -107,10 +107,10 @@
 .mpx1-statusbar__prog-btn {
   width: 20px;
   height: 20px;
-  border-radius: 6px;
-  border: 1px solid rgba(148, 163, 184, 0.42);
-  background: rgba(15, 23, 42, 0.75);
-  color: #cbd5e1;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -118,20 +118,20 @@
 }
 
 .mpx1-statusbar__prog-btn:hover {
-  border-color: rgba(59, 130, 246, 0.6);
-  color: #dbeafe;
+  border-color: var(--interactive);
+  color: var(--interactive);
 }
 
 .mpx1-statusbar__prog-number {
-  font-size: 11px;
-  color: #dbeafe;
+  font-size: var(--type-label);
+  color: var(--interactive);
   font-weight: 700;
   min-width: 30px;
 }
 
 .mpx1-statusbar__prog-name {
-  font-size: 11px;
-  color: #94a3b8;
+  font-size: var(--type-label);
+  color: var(--interactive);
   max-width: 132px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -140,9 +140,9 @@
 
 .mpx1-statusbar__lcd {
   min-width: 0;
-  border: 1px solid rgba(245, 158, 11, 0.38);
-  border-radius: 6px;
-  background: linear-gradient(180deg, rgba(120, 53, 15, 0.32), rgba(69, 26, 3, 0.42));
+  border: 1px solid var(--support-warning);
+  border-radius: 0;
+  background: var(--surface);
   overflow: hidden;
   height: 22px;
   display: flex;
@@ -153,8 +153,8 @@
   display: inline-block;
   white-space: nowrap;
   padding-left: 100%;
-  color: #fcd34d;
-  font-size: 10px;
+  color: var(--support-warning);
+  font-size: var(--type-caption);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   animation: mpx1-lcd-scroll 14s linear infinite;
@@ -177,8 +177,8 @@
 }
 
 .mpx1-statusbar__mix-label {
-  color: #cbd5e1;
-  font-size: 10px;
+  color: var(--text-primary);
+  font-size: var(--type-caption);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -186,28 +186,28 @@
 
 .mpx1-statusbar__mix input[type='range'] {
   width: 92px;
-  accent-color: var(--mpx1-shell-blue);
+  accent-color: var(--interactive);
 }
 
 .mpx1-statusbar__tap {
   height: 24px;
-  border-radius: 7px;
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  background: rgba(245, 158, 11, 0.12);
-  color: #fde68a;
+  border-radius: 0;
+  border: 1px solid var(--support-warning);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  color: var(--support-warning);
   padding: 0 8px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
 }
 
 .mpx1-statusbar__tap:hover {
-  border-color: rgba(245, 158, 11, 0.7);
-  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--support-warning);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
 }
 
 .mpx1-statusbar__bypass {
@@ -219,21 +219,21 @@
 .mpx1-statusbar__pill {
   min-width: 32px;
   height: 22px;
-  border-radius: 999px;
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  background: rgba(34, 197, 94, 0.18);
-  color: #dcfce7;
+  border-radius: 0;
+  border: 1px solid var(--support-success);
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
+  color: var(--support-success);
   padding: 0 8px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
 }
 
 .mpx1-statusbar__pill.is-bypassed {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.18);
-  color: #fee2e2;
+  border-color: var(--support-danger);
+  background: color-mix(in srgb, var(--support-danger) 14%, var(--surface));
+  color: var(--text-primary);
 }
 
 @media (max-width: 1180px) {

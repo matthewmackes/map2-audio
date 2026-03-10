@@ -18,33 +18,17 @@ interface NetworkShareStatus {
   access_urls: { windows: string; linux: string; mac: string }
 }
 
-interface CpuBrandInfo {
-  vendor: string
-  model: string
-  brand: string
-  family: string
-  logo_url: string
-  brand_color: string
-  display_name: string
-}
-
 export function HomePage() {
   const [networkStatus, setNetworkStatus] = useState<NetworkShareStatus | null>(null)
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
-  const [cpuBrand, setCpuBrand] = useState<CpuBrandInfo | null>(null)
   const pw = usePipeWire({ useWebSocket: false, pollingInterval: 5000 })
   const avbStatusQuery = useAVBStatus()
 
   useEffect(() => {
-    fetch('/folders/network-shares')
+    fetch('/api/folders/network-shares')
       .then(res => res.ok ? res.json() : null)
       .then(data => setNetworkStatus(data))
       .catch(() => setNetworkStatus(null))
-
-    fetch('/api/system/cpu-brand')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setCpuBrand(data))
-      .catch(() => setCpuBrand(null))
   }, [])
 
   const copyToClipboard = (text: string, label: string) => {
@@ -75,16 +59,11 @@ export function HomePage() {
     )
 
   return (
-    <div className="stack">
+    <div className="stack home-page">
       <PageHeader
         title="Mackes Audio Platform 1-22-25"
         subtitle="Neural Amp Modeler | LV2 (LADSPA Version 2) | Convolution Reverb | Realtime Linux"
         icon={<House size={32} weight="duotone" style={{ color: '#2563eb' }} />}
-        logo={cpuBrand?.logo_url ? {
-          url: cpuBrand.logo_url,
-          alt: `${cpuBrand.display_name} Processor`,
-          title: cpuBrand.model
-        } : undefined}
       />
 
       {/* System Architecture & Health - Top Priority */}

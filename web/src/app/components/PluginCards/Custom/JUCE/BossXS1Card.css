@@ -12,14 +12,14 @@
 }
 
 .boss-card-title {
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 700;
-  color: #ff6600;
+  color: var(--support-warning);
   letter-spacing: 1px;
 }
 
 .boss-subtitle {
-  font-size: 10px;
+  font-size: var(--type-caption);
   color: var(--text-secondary);
   opacity: 0.8;
 }
@@ -30,9 +30,9 @@
   flex-direction: column;
   gap: 17px;
   padding: 17px;
-  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 102, 0, 0.2);
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--support-warning);
 }
 
 .boss-pitch-display {
@@ -52,8 +52,8 @@
 .boss-pitch-bar {
   width: 100%;
   height: 11px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
   position: relative;
   overflow: hidden;
 }
@@ -65,27 +65,27 @@
   left: 50%;
   width: calc(var(--shift, 0) * 50%);
   height: 100%;
-  background: linear-gradient(90deg, #ff6600, #ff9933);
-  border-radius: 4px;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
   transform: translateX(calc(var(--direction, 1) * -50%));
   transform-origin: left center;
 }
 
 .boss-pitch-value {
-  font-size: 34px;
+  font-size: var(--type-display);
   font-weight: 700;
-  color: #ff6600;
-  font-family: 'Courier New', monospace;
+  color: var(--support-warning);
+  font-family: var(--font-sans);
 }
 
 .boss-mode-badge {
   padding: 4px 8px;
-  background: rgba(255, 102, 0, 0.2);
-  border: 1px solid rgba(255, 102, 0, 0.4);
-  border-radius: 4px;
-  font-size: 10px;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border: 1px solid var(--support-warning);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #ff6600;
+  color: var(--support-warning);
   letter-spacing: 1px;
 }
 
@@ -103,7 +103,7 @@
 }
 
 .boss-meter span {
-  font-size: 9px;
+  font-size: var(--type-caption);
   color: var(--text-secondary);
   width: 24px;
 }
@@ -111,20 +111,20 @@
 .boss-meter-bar {
   flex: 1;
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
 }
 
 .boss-meter-fill {
   height: 100%;
-  background: linear-gradient(90deg, #22c55e, #84cc16);
-  border-radius: 2px;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
   transition: width 50ms ease-out;
 }
 
 .boss-meter-fill.boss-meter-output {
-  background: linear-gradient(90deg, #ff6600, #ff9933);
+  background: var(--surface);
 }
 
 /* Preset Section */
@@ -139,21 +139,21 @@
   gap: 8px;
   width: 100%;
   padding: 8px 12px;
-  background: rgba(255, 102, 0, 0.1);
-  border: 1px solid rgba(255, 102, 0, 0.3);
-  border-radius: 6px;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border: 1px solid var(--support-warning);
+  border-radius: var(--border-radius-sm);
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .boss-preset-button:hover {
-  background: rgba(255, 102, 0, 0.2);
-  border-color: rgba(255, 102, 0, 0.5);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--support-warning);
 }
 
 .boss-preset-button svg {
-  color: #ff6600;
+  color: var(--support-warning);
 }
 
 .boss-preset-button svg.rotated {
@@ -175,22 +175,22 @@
   max-height: 300px;
   overflow-y: auto;
   background: var(--bg-secondary);
-  border: 1px solid rgba(255, 102, 0, 0.3);
-  border-radius: 6px;
+  border: 1px solid var(--support-warning);
+  border-radius: var(--border-radius-sm);
   margin-top: 4px;
   z-index: 100;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: none;
 }
 
 .boss-category-header {
   padding: 8px 12px;
-  background: rgba(255, 102, 0, 0.1);
-  font-size: 10px;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #ff6600;
+  color: var(--support-warning);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-strong);
 }
 
 .boss-preset-item {
@@ -208,12 +208,12 @@
 }
 
 .boss-preset-item:hover {
-  background: rgba(255, 102, 0, 0.15);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
 }
 
 .boss-preset-item.active {
-  background: rgba(255, 102, 0, 0.25);
-  border-left: 3px solid #ff6600;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-left: 3px solid var(--support-warning);
 }
 
 .boss-preset-item-name {
@@ -221,7 +221,7 @@
 }
 
 .boss-preset-item-desc {
-  font-size: 11px;
+  font-size: var(--type-label);
   color: var(--text-secondary);
 }
 
@@ -231,8 +231,8 @@
   gap: 4px;
   margin-bottom: 12px;
   padding: 4px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 .boss-mode-btn {
@@ -244,7 +244,7 @@
   padding: 8px;
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -252,12 +252,12 @@
 
 .boss-mode-btn:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-3);
 }
 
 .boss-mode-btn.active {
-  background: rgba(255, 102, 0, 0.2);
-  color: #ff6600;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  color: var(--support-warning);
 }
 
 /* Quick Shifts */
@@ -270,20 +270,20 @@
 .boss-quick-shifts button {
   flex: 1;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
   color: var(--text-primary);
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.1s ease;
 }
 
 .boss-quick-shifts button:hover {
-  background: rgba(255, 102, 0, 0.2);
-  border-color: rgba(255, 102, 0, 0.4);
-  color: #ff6600;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--support-warning);
+  color: var(--support-warning);
 }
 
 /* Pedal Section */
@@ -299,22 +299,22 @@
   justify-content: center;
   gap: 8px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .boss-pedal-toggle:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-3);
 }
 
 .boss-pedal-toggle.active {
-  background: rgba(255, 102, 0, 0.2);
-  border-color: rgba(255, 102, 0, 0.4);
-  color: #ff6600;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--support-warning);
+  color: var(--support-warning);
 }
 
 .boss-pedal-controls {
@@ -330,7 +330,7 @@
 }
 
 .boss-pedal-range label {
-  font-size: 10px;
+  font-size: var(--type-caption);
   color: var(--text-secondary);
   text-transform: uppercase;
 }
@@ -344,22 +344,22 @@
 .boss-pedal-range-inputs input {
   width: 50px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: var(--type-label);
   text-align: center;
 }
 
 .boss-pedal-range-inputs input:focus {
   outline: none;
-  border-color: #ff6600;
+  border-color: var(--support-warning);
 }
 
 .boss-pedal-range-inputs span {
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: var(--type-label);
 }
 
 /* Footer */
@@ -368,20 +368,20 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-strong);
   margin-top: 12px;
 }
 
 .boss-metering {
   display: flex;
   gap: 12px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   color: var(--text-secondary);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-sans);
 }
 
 .boss-source-note {
-  font-size: 9px;
+  font-size: var(--type-caption);
   color: var(--text-secondary);
   opacity: 0.6;
 }

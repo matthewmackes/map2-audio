@@ -9,11 +9,11 @@
 }
 
 .lcd-screen {
-  background: #000000;
-  border: 1px solid #333;
-  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 8px 12px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-sans);
   position: relative;
 }
 
@@ -26,31 +26,31 @@
 }
 
 .lcd-label {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--lcd-color, #00cc00);
+  color: var(--lcd-color);
   opacity: 0.7;
   text-transform: uppercase;
 }
 
 .lcd-value {
-  font-size: 13px;
+  font-size: var(--type-body);
   font-weight: 700;
-  color: var(--lcd-color, #00cc00);
-  text-shadow: 0 0 4px var(--lcd-color, #00cc00);
+  color: var(--lcd-color);
+  text-shadow: none;
 }
 
 .lcd-row-small .lcd-value {
-  font-size: 10px;
+  font-size: var(--type-caption);
 }
 
 .lcd-row-large .lcd-value {
-  font-size: 16px;
+  font-size: var(--type-subheading);
 }
 
 .lcd-logo {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 2px;
   text-align: right;
@@ -59,13 +59,13 @@
 
 /* VFD-specific styles */
 .vfd-container {
-  --accent-color: #00aaff;
+  --accent-color: var(--interactive);
 }
 
 .vfd-screen {
-  background: linear-gradient(180deg, #0a0a0f 0%, #12121a 100%);
-  border: 1px solid #2a2a3a;
-  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
   padding: 10px 14px;
 }
 
@@ -77,7 +77,7 @@
 }
 
 .vfd-label {
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 1.5px;
   color: var(--accent-color);
@@ -85,10 +85,10 @@
 }
 
 .vfd-value {
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: 700;
   color: var(--accent-color);
-  text-shadow: 0 0 6px var(--accent-color);
+  text-shadow: none;
 }
 
 .vfd-pitch-row {
@@ -105,17 +105,17 @@
 }
 
 .vfd-channel {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 700;
   color: var(--accent-color);
   opacity: 0.5;
 }
 
 .vfd-pitch-value {
-  font-size: 18px;
+  font-size: var(--type-subheading);
   font-weight: 700;
   color: var(--accent-color);
-  text-shadow: 0 0 8px var(--accent-color);
+  text-shadow: none;
   min-width: 60px;
   text-align: center;
 }
@@ -130,27 +130,27 @@
 .vfd-meters {
   margin-top: 8px;
   height: 4px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 2px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
 }
 
 .vfd-meter-bar {
   height: 100%;
   background: var(--accent-color);
-  box-shadow: 0 0 4px var(--accent-color);
+  box-shadow: none;
   transition: width 0.05s linear;
 }
 
 /* LED 7-segment style */
 .led-container {
-  --led-color: #ff1111;
+  --led-color: var(--support-danger);
 }
 
 .led-screen {
-  background: #000000;
-  border: 2px solid #222;
-  border-radius: 6px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 12px 16px;
   text-align: center;
 }
@@ -160,42 +160,42 @@
 }
 
 .led-digit {
-  font-size: 32px;
+  font-size: var(--type-display);
   font-weight: 700;
-  font-family: 'DS-Digital', 'Courier New', monospace;
+  font-family: var(--font-sans);
   color: var(--led-color);
-  text-shadow: 0 0 10px var(--led-color), 0 0 20px var(--led-color);
+  text-shadow: none;
 }
 
 .led-name {
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--led-color);
-  text-shadow: 0 0 6px var(--led-color);
+  text-shadow: none;
   text-transform: uppercase;
 }
 
 .led-description {
   margin-top: 6px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   color: var(--led-color);
   opacity: 0.6;
 }
 
 /* Style variants */
 .lcd-display-lexicon-green {
-  --lcd-color: #00cc00;
+  --lcd-color: var(--support-success);
 }
 
 .lcd-display-eventide-blue {
-  --lcd-color: #00aaff;
+  --lcd-color: var(--interactive);
 }
 
 .lcd-display-h9-red {
-  --lcd-color: #ff1111;
+  --lcd-color: var(--support-danger);
 }
 
 .lcd-display-boss-orange {
-  --lcd-color: #ff6600;
+  --lcd-color: var(--support-warning);
 }

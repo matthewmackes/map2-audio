@@ -20,7 +20,7 @@ export interface SignalGridRowProps {
   selectedPluginUri: string | null
   onPluginSelect: (uri: string) => void
   onToggleBypass: (uri: string) => void
-  onDeletePlugin?: (uri: string) => void
+  onDeletePlugin?: (uri: string, position: number) => void
   onReorderPlugins: (pluginUris: string[]) => void
   onAddPlugin?: () => void
   onAddPluginDirect?: (uri: string) => void
@@ -124,7 +124,7 @@ return (
           const categoryColor = getCategoryColor(meta?.category || 'Utility')
 
           return (
-            <div key={plugin.uri} className="signal-grid-plugin-wrapper">
+            <div key={`${plugin.uri}::${plugin.position}::${index}`} className="signal-grid-plugin-wrapper">
               {/* Animated cable before plugin */}
               {index > 0 && (
                 <SignalCable
@@ -144,7 +144,7 @@ return (
                 isSelected={isSelected}
                 onSelect={() => onPluginSelect(plugin.uri)}
                 onToggleBypass={() => onToggleBypass(plugin.uri)}
-                onDelete={onDeletePlugin ? () => onDeletePlugin(plugin.uri) : undefined}
+                onDelete={onDeletePlugin ? () => onDeletePlugin(plugin.uri, plugin.position) : undefined}
                 onDragStart={handleDragStart(index)}
                 onDragOver={handleDragOver(index)}
                 onDrop={handleDrop(index)}

@@ -11,23 +11,23 @@
 }
 
 .evh-card-title {
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 
 .evh-subtitle {
-  font-size: 10px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
   letter-spacing: 0.5px;
 }
 
 /* Visualization */
 .evh-visualization {
   padding: 11px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 .evh-stereo-display {
@@ -46,21 +46,21 @@
 }
 
 .evh-channel-label {
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 600;
   opacity: 0.8;
 }
 
-.evh-left .evh-channel-label { color: #4ecdc4; }
-.evh-right .evh-channel-label { color: #f59e0b; }
+.evh-left .evh-channel-label { color: var(--interactive); }
+.evh-right .evh-channel-label { color: var(--support-warning); }
 
 .evh-pitch-indicator {
-  font-size: 22px;
+  font-size: var(--type-heading);
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-sans);
   padding: 6px 11px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
   min-width: 84px;
   text-align: center;
 }
@@ -68,26 +68,26 @@
 .evh-delay-bar {
   width: 100%;
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
 }
 
 .evh-delay-fill {
   height: 100%;
-  border-radius: 2px;
+  border-radius: var(--border-radius-sm);
   transition: width 0.1s ease;
 }
 
 .evh-delay-label {
-  font-size: 10px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
 }
 
 .evh-center-line {
   width: 1px;
   height: 70px;
-  background: linear-gradient(to bottom, transparent, var(--accent, #ff6b35), transparent);
+  background: var(--surface);
   opacity: 0.5;
 }
 
@@ -103,17 +103,17 @@
   gap: 8px;
   width: 100%;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: var(--text-primary, #fff);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .evh-preset-button:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--accent, #ff6b35);
+  background: var(--surface-3);
+  border-color: var(--accent);
 }
 
 .evh-preset-name {
@@ -123,8 +123,8 @@
 }
 
 .evh-preset-song {
-  font-size: 11px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-label);
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -136,8 +136,8 @@
   display: flex;
   gap: 16px;
   padding: 4px 12px;
-  font-size: 11px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-label);
+  color: var(--text-secondary);
 }
 
 .evh-preset-info span {
@@ -154,10 +154,10 @@
   right: 0;
   max-height: 400px;
   overflow-y: auto;
-  background: var(--bg-elevated, #1a1a1a);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  box-shadow: none;
   z-index: 100;
   margin-top: 4px;
 }
@@ -167,16 +167,16 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: rgba(255, 107, 53, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 11px;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-top: 1px solid var(--border-strong);
+  font-size: var(--type-label);
   font-weight: 600;
-  color: var(--accent, #ff6b35);
+  color: var(--accent);
 }
 
 .evh-era-gear {
-  font-size: 10px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
   font-weight: 400;
 }
 
@@ -188,20 +188,20 @@
   padding: 10px 12px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--text-primary, #fff);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-primary);
   cursor: pointer;
   text-align: left;
   transition: all 0.15s ease;
 }
 
 .evh-preset-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-3);
 }
 
 .evh-preset-item.active {
-  background: rgba(255, 107, 53, 0.15);
-  border-left: 3px solid var(--accent, #ff6b35);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-left: 3px solid var(--accent);
 }
 
 .evh-preset-item-main {
@@ -212,17 +212,17 @@
 
 .evh-preset-item-name {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--type-body);
 }
 
 .evh-preset-item-album {
-  font-size: 11px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-label);
+  color: var(--text-secondary);
 }
 
 .evh-preset-item-desc {
-  font-size: 11px;
-  color: var(--text-tertiary, #666);
+  font-size: var(--type-label);
+  color: var(--text-tertiary);
 }
 
 /* Pitch Controls */
@@ -239,22 +239,22 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  color: var(--text-secondary, #888);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .evh-link-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-3);
 }
 
 .evh-link-btn.linked {
-  background: rgba(255, 107, 53, 0.2);
-  border-color: var(--accent, #ff6b35);
-  color: var(--accent, #ff6b35);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Quick Pitch Buttons */
@@ -267,20 +267,20 @@
 
 .evh-quick-pitch button {
   padding: 4px 8px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: var(--text-secondary, #888);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .evh-quick-pitch button:hover {
-  background: rgba(255, 107, 53, 0.2);
-  border-color: var(--accent, #ff6b35);
-  color: var(--text-primary, #fff);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 /* Footer */
@@ -289,21 +289,21 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-strong);
   margin-top: 8px;
 }
 
 .evh-metering {
   display: flex;
   gap: 12px;
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
 }
 
 .evh-source-note {
-  font-size: 9px;
-  color: var(--text-tertiary, #555);
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   font-style: italic;
 }
 
@@ -317,10 +317,10 @@
 }
 
 .evh-preset-browser::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
 }
 
 .evh-preset-browser::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--surface-3);
 }

@@ -10,8 +10,8 @@
   align-items: center;
   gap: 11px;
   padding: 11px;
-  background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
-  border-radius: 8px;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
 }
 
 .reevr-decay-curve {
@@ -23,9 +23,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #666;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -40,13 +40,13 @@
 }
 
 .reevr-preset-chip {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 5px 12px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #888;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
@@ -54,21 +54,21 @@
 }
 
 .reevr-preset-chip:hover {
-  background: #222;
-  border-color: #444;
-  color: #aaa;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text-secondary);
 }
 
 .reevr-preset-chip.active {
-  background: color-mix(in srgb, var(--accent) 20%, #1a1a1a);
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: none;
 }
 
 /* Advanced Toggle */
 .reevr-advanced-toggle {
-  border-top: 1px solid #222;
+  border-top: 1px solid var(--border);
   margin-top: 8px;
   padding-top: 8px;
 }
@@ -80,8 +80,8 @@
   width: 100%;
   background: transparent;
   border: none;
-  color: #666;
-  font-size: 10px;
+  color: var(--text-tertiary);
+  font-size: var(--type-caption);
   font-weight: 600;
   padding: 6px 4px;
   cursor: pointer;
@@ -91,13 +91,13 @@
 }
 
 .reevr-advanced-toggle button:hover {
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .reevr-advanced-indicator {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--border-radius-sm);
   margin-left: auto;
   transition: background 0.15s ease;
 }
@@ -110,6 +110,6 @@
 
   .reevr-preset-chip {
     padding: 4px 8px;
-    font-size: 9px;
+    font-size: var(--type-caption);
   }
 }

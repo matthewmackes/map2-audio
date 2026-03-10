@@ -1,39 +1,22 @@
-/**
- * H3000Card.css - Ultra-Harmonizer Styling
- *
- * Late 80s rack unit aesthetic:
- * - Black rack mount with silver accents
- * - Blue VFD (Vacuum Fluorescent Display) style
- * - Professional studio-grade appearance
- */
-
-/* ========================================
-   Color Variables (Eventide Theme)
-   ======================================== */
-
 .h3000-card-header,
 .h3000-vfd-container,
 .h3000-algorithm-section,
 .h3000-footer {
-  --h3000-black: #0a0a0a;
-  --h3000-dark-gray: #1a1a1a;
-  --h3000-mid-gray: #2a2a2a;
-  --h3000-silver: #8899aa;
-  --h3000-silver-bright: #aabbcc;
-  --h3000-vfd-blue: #00ccff;
-  --h3000-vfd-blue-dim: #0088aa;
-  --h3000-vfd-blue-dark: #004466;
-  --h3000-vfd-bg: #0a1520;
-  --h3000-vfd-border: #003355;
-  --h3000-accent: #00aaff;
-  --h3000-orange: #ff6600;
-  --h3000-text: #cccccc;
-  --h3000-text-dim: #667788;
+  --h3000-black: var(--bg);
+  --h3000-dark-gray: var(--surface);
+  --h3000-mid-gray: var(--surface-2);
+  --h3000-silver: var(--text-secondary);
+  --h3000-silver-bright: var(--text-primary);
+  --h3000-vfd-blue: var(--interactive);
+  --h3000-vfd-blue-dim: var(--interactive-active);
+  --h3000-vfd-blue-dark: var(--interactive-active);
+  --h3000-vfd-bg: var(--surface);
+  --h3000-vfd-border: var(--interactive-active);
+  --h3000-accent: var(--interactive);
+  --h3000-orange: var(--support-warning);
+  --h3000-text: var(--text-primary);
+  --h3000-text-dim: var(--text-secondary);
 }
-
-/* ========================================
-   Custom Card Header
-   ======================================== */
 
 .h3000-card-header {
   display: flex;
@@ -43,16 +26,16 @@
 }
 
 .h3000-card-title {
-  font-size: 20px;
+  font-size: var(--type-heading);
   font-weight: 900;
   letter-spacing: 4px;
   color: var(--h3000-vfd-blue);
-  text-shadow: 0 0 10px rgba(0, 204, 255, 0.6);
-  font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
+  text-shadow: none;
+  font-family: var(--font-sans);
 }
 
 .h3000-card-subtitle {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 2px;
   color: var(--h3000-silver);
@@ -64,22 +47,20 @@
    ======================================== */
 
 .h3000-vfd-container {
-  background: linear-gradient(180deg, #0a1520 0%, #051015 100%);
-  border: 2px solid #003355;
-  border-radius: 6px;
+  background: var(--surface);
+  border: 2px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
   padding: 17px;
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.6),
-    0 0 15px rgba(0, 204, 255, 0.15);
+  box-shadow: none;
   position: relative;
 }
 
 .h3000-vfd-screen {
-  background: linear-gradient(180deg, #080f18 0%, #040810 100%);
-  border: 1px solid #002244;
-  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
   padding: 14px 20px;
-  font-family: 'Courier New', 'Consolas', monospace;
+  font-family: var(--font-sans);
   position: relative;
 }
 
@@ -95,17 +76,17 @@
 }
 
 .h3000-vfd-label {
-  font-size: 9px;
+  font-size: var(--type-caption);
   color: var(--h3000-vfd-blue-dim);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
 
 .h3000-vfd-value {
-  font-size: 20px;
+  font-size: var(--type-heading);
   font-weight: bold;
   color: var(--h3000-vfd-blue);
-  text-shadow: 0 0 8px rgba(0, 204, 255, 0.8);
+  text-shadow: none;
   letter-spacing: 1px;
 }
 
@@ -124,18 +105,18 @@
 }
 
 .h3000-vfd-channel {
-  font-size: 9px;
+  font-size: var(--type-caption);
   color: var(--h3000-orange);
   font-weight: bold;
-  text-shadow: 0 0 4px rgba(255, 102, 0, 0.6);
+  text-shadow: none;
 }
 
 .h3000-vfd-pitch-value {
-  font-size: 25px;
+  font-size: var(--type-heading);
   font-weight: bold;
   color: var(--h3000-vfd-blue);
-  text-shadow: 0 0 10px rgba(0, 204, 255, 0.8);
-  font-family: 'Courier New', monospace;
+  text-shadow: none;
+  font-family: var(--font-sans);
   letter-spacing: 2px;
   min-width: 112px;
   text-align: center;
@@ -144,50 +125,37 @@
 .h3000-vfd-divider {
   width: 1px;
   height: 56px;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    var(--h3000-vfd-blue-dim) 20%,
-    var(--h3000-vfd-blue-dim) 80%,
-    transparent 100%
-  );
+  background: var(--surface);
   opacity: 0.5;
 }
 
 /* Meter bar */
 .h3000-vfd-meters {
   height: 6px;
-  background: #040810;
-  border-radius: 3px;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
   margin-top: 10px;
-  border: 1px solid #002244;
+  border: 1px solid var(--interactive);
 }
 
 .h3000-vfd-meter-bar {
   height: 100%;
-  background: linear-gradient(90deg,
-    #00ccff 0%,
-    #00aaff 70%,
-    #ff6600 90%,
-    #ff0000 100%
-  );
-  border-radius: 2px;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
   transition: width 0.05s ease;
-  box-shadow: 0 0 8px rgba(0, 204, 255, 0.6);
+  box-shadow: none;
 }
 
 .h3000-vfd-logo {
   text-align: center;
   margin-top: 10px;
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 900;
   letter-spacing: 6px;
   color: var(--h3000-vfd-blue);
-  text-shadow:
-    0 0 10px rgba(0, 204, 255, 0.7),
-    0 0 25px rgba(0, 204, 255, 0.4);
-  font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
+  text-shadow: none;
+  font-family: var(--font-sans);
 }
 
 /* ========================================
@@ -199,7 +167,7 @@
 }
 
 .h3000-section-label {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--h3000-text-dim);
@@ -215,33 +183,31 @@
 
 .h3000-algorithm-btn {
   padding: 8px 2px;
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.3px;
-  background: linear-gradient(180deg, #252530 0%, #1a1a22 100%);
-  border: 1px solid #3a3a4a;
-  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
   color: var(--h3000-text-dim);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .h3000-algorithm-btn:hover {
-  background: linear-gradient(180deg, #303040 0%, #252530 100%);
+  background: var(--surface);
   border-color: var(--h3000-vfd-blue-dim);
   color: var(--h3000-text);
 }
 
 .h3000-algorithm-btn.active {
-  background: linear-gradient(180deg, #0a2030 0%, #051520 100%);
+  background: var(--surface);
   border-color: var(--h3000-vfd-blue);
   color: var(--h3000-vfd-blue);
-  box-shadow:
-    0 0 12px rgba(0, 204, 255, 0.35),
-    inset 0 1px 0 rgba(0, 204, 255, 0.2);
-  text-shadow: 0 0 4px rgba(0, 204, 255, 0.6);
+  box-shadow: none;
+  text-shadow: none;
 }
 
 .h3000-algorithm-btn:active {
@@ -257,11 +223,11 @@
   justify-content: space-around;
   align-items: center;
   padding: 10px 12px;
-  background: rgba(0, 15, 25, 0.4);
-  border-top: 1px solid rgba(0, 204, 255, 0.1);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-top: 1px solid var(--interactive);
   margin-top: 12px;
-  border-radius: 0 0 4px 4px;
-  font-family: 'Courier New', monospace;
+  border-radius: var(--border-radius-sm);
+  font-family: var(--font-sans);
 }
 
 .h3000-meter {
@@ -272,7 +238,7 @@
 }
 
 .h3000-meter-label {
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 1px;
   color: var(--h3000-vfd-blue-dim);
@@ -280,10 +246,10 @@
 }
 
 .h3000-meter-value {
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: bold;
   color: var(--h3000-vfd-blue);
-  text-shadow: 0 0 4px rgba(0, 204, 255, 0.5);
+  text-shadow: none;
 }
 
 /* ========================================
@@ -292,16 +258,16 @@
 
 @container (max-width: 400px) {
   .h3000-card-title {
-    font-size: 16px;
+    font-size: var(--type-subheading);
     letter-spacing: 3px;
   }
 
   .h3000-vfd-value {
-    font-size: 12px;
+    font-size: var(--type-label);
   }
 
   .h3000-vfd-pitch-value {
-    font-size: 14px;
+    font-size: var(--type-body);
     min-width: 60px;
   }
 
@@ -312,7 +278,7 @@
 
   .h3000-algorithm-btn {
     padding: 6px 1px;
-    font-size: 7px;
+    font-size: var(--type-caption);
   }
 
   .h3000-footer {
@@ -320,7 +286,7 @@
   }
 
   .h3000-meter-value {
-    font-size: 10px;
+    font-size: var(--type-caption);
   }
 }
 
@@ -331,20 +297,20 @@
 
   .h3000-algorithm-btn {
     padding: 10px 6px;
-    font-size: 10px;
+    font-size: var(--type-caption);
   }
 
   .h3000-vfd-value {
-    font-size: 16px;
+    font-size: var(--type-subheading);
   }
 
   .h3000-vfd-pitch-value {
-    font-size: 22px;
+    font-size: var(--type-heading);
     min-width: 100px;
   }
 
   .h3000-vfd-logo {
-    font-size: 16px;
+    font-size: var(--type-subheading);
     letter-spacing: 8px;
   }
 }
@@ -355,9 +321,7 @@
 
 @media (prefers-color-scheme: dark) {
   .h3000-vfd-container {
-    box-shadow:
-      inset 0 2px 4px rgba(0, 0, 0, 0.8),
-      0 0 20px rgba(0, 204, 255, 0.2);
+    box-shadow: none;
   }
 }
 
@@ -367,14 +331,10 @@
 
 @keyframes h3000-glow-pulse {
   0%, 100% {
-    text-shadow:
-      0 0 10px rgba(0, 204, 255, 0.7),
-      0 0 25px rgba(0, 204, 255, 0.4);
+    text-shadow: none;
   }
   50% {
-    text-shadow:
-      0 0 15px rgba(0, 204, 255, 0.9),
-      0 0 35px rgba(0, 204, 255, 0.5);
+    text-shadow: none;
   }
 }
 
@@ -390,22 +350,17 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background:
-    radial-gradient(
-      ellipse 1px 1px at 1px 1px,
-      rgba(0, 204, 255, 0.03) 50%,
-      transparent 50%
-    );
+  background: var(--surface);
   background-size: 3px 3px;
   pointer-events: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   opacity: 0.5;
 }
 
 /* Orange accent for pitch indicators */
 .h3000-vfd-pitch-value[data-positive="true"] {
   color: var(--h3000-orange);
-  text-shadow: 0 0 10px rgba(255, 102, 0, 0.8);
+  text-shadow: none;
 }
 
 /* Metallic frame effect around display */
@@ -416,13 +371,7 @@
   left: -1px;
   right: -1px;
   bottom: -1px;
-  background: linear-gradient(
-    180deg,
-    rgba(136, 153, 170, 0.2) 0%,
-    transparent 3%,
-    transparent 97%,
-    rgba(136, 153, 170, 0.1) 100%
-  );
-  border-radius: 7px;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
   pointer-events: none;
 }

@@ -50,6 +50,7 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 "cpu",              # CPU metrics (2fps)
                     "phase",            # Stereo phase correlation
                     "latency",          # Latency updates
+                    "timing_jitter",    # Callback jitter updates (10fps)
                     "pipewire"          # PipeWire audio server metrics (2fps)
                 ],
                 "supported_actions": ["subscribe", "unsubscribe", "ping", "get"]

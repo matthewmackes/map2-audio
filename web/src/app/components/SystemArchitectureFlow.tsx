@@ -141,7 +141,7 @@ export function SystemArchitectureFlow() {
         const [configRes, testRes, pluginsRes, perfRes, pluginPerfRes, alertsRes, namRes, pwRes] = await Promise.all([
           fetch('/api/system/core-config').catch(() => null),
           fetch('/api/system-tests/test/juce-engine/latest').catch(() => null),
-          fetch('/api/plugins/discovered').catch(() => null),
+          fetch('/api/plugins/discover').catch(() => null),
           fetch('/api/performance/current').catch(() => null),
           fetch('/api/performance/plugins').catch(() => null),
           fetch('/api/performance/alerts').catch(() => null),
@@ -454,7 +454,7 @@ export function SystemArchitectureFlow() {
   const pipeWireColor = getStatusColor(health.pipeWire.status)
 
   return (
-    <div className="card">
+    <div className="card system-architecture-flow">
       <div style={{ marginBottom: 16 }}>
         <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 8 }}>
           <FlowArrow size={22} weight="duotone" style={{ color: '#64b5f6' }} />

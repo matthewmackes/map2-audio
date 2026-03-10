@@ -16,17 +16,17 @@
 .lexi-lcd-container,
 .lexi-algorithm-section,
 .lexi-footer {
-  --lexi-black: #0a0a0a;
-  --lexi-dark-gray: #1a1a1a;
-  --lexi-mid-gray: #2a2a2a;
-  --lexi-lcd-green: #00ff00;
-  --lexi-lcd-green-dim: #00aa00;
-  --lexi-lcd-green-dark: #006600;
-  --lexi-lcd-bg: #0a1a0a;
-  --lexi-lcd-border: #003300;
-  --lexi-accent: #00cc00;
-  --lexi-text: #cccccc;
-  --lexi-text-dim: #666666;
+  --lexi-black: var(--border);
+  --lexi-dark-gray: var(--border);
+  --lexi-mid-gray: var(--border);
+  --lexi-lcd-green: var(--support-success);
+  --lexi-lcd-green-dim: var(--support-success);
+  --lexi-lcd-green-dark: var(--support-success);
+  --lexi-lcd-bg: var(--support-success);
+  --lexi-lcd-border: var(--support-success);
+  --lexi-accent: var(--support-success);
+  --lexi-text: var(--text-secondary);
+  --lexi-text-dim: var(--text-tertiary);
 }
 
 /* ========================================
@@ -41,16 +41,16 @@
 }
 
 .lexi-card-title {
-  font-size: 18px;
+  font-size: var(--type-subheading);
   font-weight: 800;
   letter-spacing: 3px;
   color: var(--lexi-lcd-green);
-  text-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
-  font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
+  text-shadow: none;
+  font-family: var(--font-sans);
 }
 
 .lexi-card-subtitle {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 1px;
   color: var(--lexi-text-dim);
@@ -62,22 +62,20 @@
    ======================================== */
 
 .lexi-lcd-container {
-  background: linear-gradient(180deg, #0a1a0a 0%, #051505 100%);
-  border: 2px solid #003300;
-  border-radius: 6px;
+  background: var(--surface);
+  border: 2px solid var(--support-success);
+  border-radius: var(--border-radius-sm);
   padding: 17px;
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.5),
-    0 0 15px rgba(0, 255, 0, 0.1);
+  box-shadow: none;
   position: relative;
 }
 
 .lexi-lcd-screen {
-  background: linear-gradient(180deg, #0a0f0a 0%, #050805 100%);
-  border: 1px solid #002200;
-  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--support-success);
+  border-radius: var(--border-radius-sm);
   padding: 14px 20px;
-  font-family: 'Courier New', 'Consolas', monospace;
+  font-family: var(--font-sans);
 }
 
 .lexi-lcd-row {
@@ -92,51 +90,46 @@
 }
 
 .lexi-lcd-label {
-  font-size: 10px;
+  font-size: var(--type-caption);
   color: var(--lexi-lcd-green-dim);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
 
 .lexi-lcd-value {
-  font-size: 21px;
+  font-size: var(--type-heading);
   font-weight: bold;
   color: var(--lexi-lcd-green);
-  text-shadow: 0 0 6px rgba(0, 255, 0, 0.8);
+  text-shadow: none;
   letter-spacing: 1px;
 }
 
 .lexi-lcd-decay-bar {
   height: 11px;
-  background: #051505;
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
   margin-top: 10px;
-  border: 1px solid #002200;
+  border: 1px solid var(--support-success);
 }
 
 .lexi-lcd-decay-fill {
   height: 100%;
-  background: linear-gradient(90deg,
-    var(--lexi-lcd-green) 0%,
-    var(--lexi-lcd-green-dim) 100%
-  );
-  border-radius: 3px;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
   transition: width 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+  box-shadow: none;
 }
 
 .lexi-lcd-logo {
   text-align: center;
   margin-top: 10px;
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: 800;
   letter-spacing: 5px;
   color: var(--lexi-lcd-green);
-  text-shadow:
-    0 0 10px rgba(0, 255, 0, 0.6),
-    0 0 20px rgba(0, 255, 0, 0.3);
-  font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
+  text-shadow: none;
+  font-family: var(--font-sans);
 }
 
 /* ========================================
@@ -148,7 +141,7 @@
 }
 
 .lexi-section-label {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--lexi-text-dim);
@@ -164,17 +157,17 @@
 
 .lexi-algorithm-btn {
   padding: 10px 4px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.5px;
   background: var(--lexi-dark-gray);
   border: 1px solid var(--lexi-mid-gray);
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   color: var(--lexi-text-dim);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
-  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .lexi-algorithm-btn:hover {
@@ -184,13 +177,11 @@
 }
 
 .lexi-algorithm-btn.active {
-  background: linear-gradient(180deg, #0a2a0a 0%, #051505 100%);
+  background: var(--surface);
   border-color: var(--lexi-lcd-green);
   color: var(--lexi-lcd-green);
-  box-shadow:
-    0 0 10px rgba(0, 255, 0, 0.3),
-    inset 0 1px 0 rgba(0, 255, 0, 0.2);
-  text-shadow: 0 0 4px rgba(0, 255, 0, 0.5);
+  box-shadow: none;
+  text-shadow: none;
 }
 
 .lexi-algorithm-btn:active {
@@ -206,11 +197,11 @@
   justify-content: space-around;
   align-items: center;
   padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.3);
-  border-top: 1px solid rgba(0, 255, 0, 0.1);
+  background: var(--bg);
+  border-top: 1px solid var(--support-success);
   margin-top: 12px;
-  border-radius: 0 0 4px 4px;
-  font-family: 'Courier New', monospace;
+  border-radius: var(--border-radius-sm);
+  font-family: var(--font-sans);
 }
 
 .lexi-meter {
@@ -221,7 +212,7 @@
 }
 
 .lexi-meter-label {
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 1px;
   color: var(--lexi-lcd-green-dim);
@@ -229,10 +220,10 @@
 }
 
 .lexi-meter-value {
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: bold;
   color: var(--lexi-lcd-green);
-  text-shadow: 0 0 4px rgba(0, 255, 0, 0.4);
+  text-shadow: none;
 }
 
 /* ========================================
@@ -241,17 +232,17 @@
 
 @container (max-width: 400px) {
   .lexi-card-title {
-    font-size: 14px;
+    font-size: var(--type-body);
     letter-spacing: 2px;
   }
 
   .lexi-lcd-value {
-    font-size: 13px;
+    font-size: var(--type-body);
   }
 
   .lexi-algorithm-btn {
     padding: 8px 2px;
-    font-size: 9px;
+    font-size: var(--type-caption);
   }
 
   .lexi-footer {
@@ -259,7 +250,7 @@
   }
 
   .lexi-meter-value {
-    font-size: 10px;
+    font-size: var(--type-caption);
   }
 }
 
@@ -270,15 +261,15 @@
 
   .lexi-algorithm-btn {
     padding: 12px 8px;
-    font-size: 11px;
+    font-size: var(--type-label);
   }
 
   .lexi-lcd-value {
-    font-size: 18px;
+    font-size: var(--type-subheading);
   }
 
   .lexi-lcd-logo {
-    font-size: 14px;
+    font-size: var(--type-body);
     letter-spacing: 6px;
   }
 }
@@ -289,9 +280,7 @@
 
 @media (prefers-color-scheme: dark) {
   .lexi-lcd-container {
-    box-shadow:
-      inset 0 2px 4px rgba(0, 0, 0, 0.8),
-      0 0 20px rgba(0, 255, 0, 0.15);
+    box-shadow: none;
   }
 }
 
@@ -301,14 +290,10 @@
 
 @keyframes lexi-glow-pulse {
   0%, 100% {
-    text-shadow:
-      0 0 10px rgba(0, 255, 0, 0.6),
-      0 0 20px rgba(0, 255, 0, 0.3);
+    text-shadow: none;
   }
   50% {
-    text-shadow:
-      0 0 15px rgba(0, 255, 0, 0.8),
-      0 0 30px rgba(0, 255, 0, 0.4);
+    text-shadow: none;
   }
 }
 
@@ -324,13 +309,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.05) 2px,
-    rgba(0, 0, 0, 0.05) 4px
-  );
+  background: var(--surface);
   pointer-events: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
 }

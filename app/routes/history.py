@@ -6,7 +6,7 @@ import logging
 from typing import Dict, Any, List
 from fastapi import APIRouter, HTTPException
 
-from app.services.command_history import command_history
+from app.services.command_history import command_history, backup_manager
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/history", tags=["history"])
@@ -20,20 +20,20 @@ async def undo() -> Dict[str, Any]:
     Returns:
         Operation result and status
     """
-    if not command_history.can_undo():
+    if not await command_history.can_undo():
         raise HTTPException(status_code=400, detail="Nothing to undo")
     
-    success = await command_history.undo()
+    undo_result = await command_history.undo()
     
-    if not success:
+    if not undo_result:
         raise HTTPException(status_code=500, detail="Undo operation failed")
     
     return {
         "status": "success",
         "message": "Undo successful",
-        "can_undo": command_history.can_undo(),
-        "can_redo": command_history.can_redo(),
-        "next_undo": command_history.get_undo_description()
+        "can_undo": await command_history.can_undo(),
+        "can_redo": await command_history.can_redo(),
+        "next_undo": await command_history.get_undo_description(),
     }
 
 
@@ -45,20 +45,20 @@ async def redo() -> Dict[str, Any]:
     Returns:
         Operation result and status
     """
-    if not command_history.can_redo():
+    if not await command_history.can_redo():
         raise HTTPException(status_code=400, detail="Nothing to redo")
     
-    success = await command_history.redo()
+    redo_result = await command_history.redo()
     
-    if not success:
+    if not redo_result:
         raise HTTPException(status_code=500, detail="Redo operation failed")
     
     return {
         "status": "success",
         "message": "Redo successful",
-        "can_undo": command_history.can_undo(),
-        "can_redo": command_history.can_redo(),
-        "next_redo": command_history.get_redo_description()
+        "can_undo": await command_history.can_undo(),
+        "can_redo": await command_history.can_redo(),
+        "next_redo": await command_history.get_redo_description(),
     }
 
 
@@ -70,12 +70,7 @@ async def get_status() -> Dict[str, Any]:
     Returns:
         Status information
     """
-    return {
-        "can_undo": command_history.can_undo(),
-        "can_redo": command_history.can_redo(),
-        "next_undo": command_history.get_undo_description(),
-        "next_redo": command_history.get_redo_description()
-    }
+    return await command_history.get_status()
 
 
 @router.get("/list")
@@ -86,7 +81,7 @@ async def get_history() -> Dict[str, Any]:
     Returns:
         List of commands in history
     """
-    history = command_history.get_history()
+    history = await command_history.get_history()
     
     return {
         "history": history,
@@ -102,11 +97,11 @@ async def clear_history() -> Dict[str, str]:
     Returns:
         Success message
     """
-    command_history.clear()
+    cleared = await command_history.clear()
     
     return {
         "status": "success",
-        "message": "Command history cleared"
+        "message": f"Command history cleared ({cleared} entries)"
     }
 
 
@@ -118,7 +113,7 @@ async def get_snapshots() -> Dict[str, Any]:
     Returns:
         List of available snapshots
     """
-    snapshots = command_history.get_snapshots()
+    snapshots = await backup_manager.list_backups(limit=50)
     
     return {
         "snapshots": snapshots,
@@ -137,7 +132,7 @@ async def restore_snapshot(index: int) -> Dict[str, Any]:
     Returns:
         Restored state data
     """
-    state = command_history.restore_snapshot(index)
+    state = await backup_manager.restore_backup(index)
     
     if state is None:
         raise HTTPException(status_code=404, detail=f"Snapshot not found: {index}")

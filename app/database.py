@@ -761,6 +761,32 @@ class ChainMIDIConfig(Base):
     chain = relationship("Chain", foreign_keys=[chain_id])
 
 
+class ExpressionAssignment(Base):
+    """Expression pedal and performance-mode mapping assignments."""
+    __tablename__ = "expression_assignments"
+
+    id = Column(String(64), primary_key=True)
+    cc = Column(Integer, nullable=False)
+    channel = Column(Integer, nullable=False, default=0)  # 0 = omni, 1..16 = specific
+    cc_min = Column(Integer, nullable=False, default=0)
+    cc_max = Column(Integer, nullable=False, default=127)
+    param_id = Column(String(255), nullable=False)
+    param_label = Column(String(255), nullable=False, default="")
+    out_min = Column(Float, nullable=False, default=0.0)
+    out_max = Column(Float, nullable=False, default=1.0)
+    curve = Column(String(32), nullable=False, default="linear")
+    custom_curve = Column(JSON, default=list)
+    active = Column(Boolean, nullable=False, default=True)
+    source = Column(String(64), nullable=False, default="user")  # user | performance_mode
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_expression_assignments_source_active", "source", "active"),
+        Index("idx_expression_assignments_cc_channel", "cc", "channel"),
+    )
+
+
 class SystemConfig(Base):
     """Key-value system configuration store."""
     __tablename__ = "system_config"

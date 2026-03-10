@@ -36,6 +36,7 @@ try:
     _CHAIN_LIST_CACHE_TTL_SECONDS = 30.0
     _CHAIN_DETAILS_CACHE_TTL_SECONDS = 30.0
     _CHAIN_TOGGLE_MIN_INTERVAL_SECONDS = 0.45
+    _CHAIN_HTTP_CACHE_CONTROL = "no-store"
     _chain_list_cache = None
     _chain_list_cache_etag = None
     _chain_list_cache_at = 0.0
@@ -176,6 +177,24 @@ try:
             _chain_list_cache_etag = _chain_list_etag(payload)
             _chain_list_cache_at = time.monotonic()
 
+    def _invalidate_chain_list_cache() -> None:
+        global _chain_list_cache, _chain_list_cache_etag, _chain_list_cache_at
+        with _chain_list_cache_lock:
+            _chain_list_cache = None
+            _chain_list_cache_etag = None
+            _chain_list_cache_at = 0.0
+
+    def _invalidate_chain_details_cache(chain_id: int | None = None) -> None:
+        with _chain_details_cache_lock:
+            if chain_id is None:
+                _chain_details_cache.clear()
+                return
+            _chain_details_cache.pop(chain_id, None)
+
+    def _invalidate_chain_cache(chain_id: int | None = None) -> None:
+        _invalidate_chain_list_cache()
+        _invalidate_chain_details_cache(chain_id)
+
     def _schedule_chain_event(channel: str, event_type: EventType, payload: dict) -> None:
         async def _publish() -> None:
             try:
@@ -203,13 +222,13 @@ try:
                 etag = None
 
         if payload is not None and etag is not None:
-            response.headers["Cache-Control"] = "public, max-age=60"
+            response.headers["Cache-Control"] = _CHAIN_HTTP_CACHE_CONTROL
             response.headers["ETag"] = etag
             if request.headers.get("if-none-match") == etag:
                 return Response(
                     status_code=304,
                     headers={
-                        "Cache-Control": "public, max-age=60",
+                        "Cache-Control": _CHAIN_HTTP_CACHE_CONTROL,
                         "ETag": etag,
                     },
                 )
@@ -221,7 +240,7 @@ try:
                 stale_payload = _chain_list_cache
                 stale_etag = _chain_list_cache_etag
             if stale_payload is not None and stale_etag is not None:
-                response.headers["Cache-Control"] = "public, max-age=60"
+                response.headers["Cache-Control"] = _CHAIN_HTTP_CACHE_CONTROL
                 response.headers["ETag"] = stale_etag
                 response.headers["X-Chain-Cache-Stale"] = "1"
                 return stale_payload
@@ -270,7 +289,7 @@ try:
                         stale_payload = _chain_list_cache
                         stale_etag = _chain_list_cache_etag
                     if stale_payload is not None and stale_etag is not None:
-                        response.headers["Cache-Control"] = "public, max-age=60"
+                        response.headers["Cache-Control"] = _CHAIN_HTTP_CACHE_CONTROL
                         response.headers["ETag"] = stale_etag
                         response.headers["X-Chain-Cache-Stale"] = "1"
                         return stale_payload
@@ -284,14 +303,14 @@ try:
                     _chain_list_cache_etag = etag
                     _chain_list_cache_at = time.monotonic()
 
-        response.headers["Cache-Control"] = "public, max-age=60"
+        response.headers["Cache-Control"] = _CHAIN_HTTP_CACHE_CONTROL
         response.headers["ETag"] = etag
 
         if request.headers.get("if-none-match") == etag:
             return Response(
                 status_code=304,
                 headers={
-                    "Cache-Control": "public, max-age=60",
+                    "Cache-Control": _CHAIN_HTTP_CACHE_CONTROL,
                     "ETag": etag,
                 },
             )
@@ -314,6 +333,8 @@ try:
             result = await service.create_chain(chain.name)
             if result is None:
                 raise HTTPException(status_code=400, detail="Failed to create chain")
+
+        _invalidate_chain_cache(result["id"])
 
         # Publish chain creation event AFTER session commits
         await event_publisher.publish(
@@ -349,6 +370,8 @@ try:
             chain_id = await service.load_preset(preset_id)
             if not chain_id:
                 raise HTTPException(status_code=404, detail="Preset not found or load failed")
+
+        _invalidate_chain_cache(chain_id)
 
         # Publish preset loaded event AFTER session commits
         await event_publisher.publish(
@@ -491,20 +514,35 @@ try:
                     raise HTTPException(status_code=404, detail=f"Chain {chain_id} not found or plugin add failed")
 
                 result = await service.get_chain(chain_id)
-                plugins_count = len(result["plugins"]) if result else 0
+                plugins = result.get("plugins", []) if result else []
+                plugins_count = len(plugins)
+                plugin_position = None
+                for plugin in plugins:
+                    if plugin.get("uri") != plugin_uri:
+                        continue
+                    position = plugin.get("position")
+                    if isinstance(position, int):
+                        plugin_position = position if plugin_position is None else max(plugin_position, position)
+
+            _invalidate_chain_cache(chain_id)
 
             # Publish plugin added event AFTER session commits
             await event_publisher.publish(
                 "plugin_params",
                 EventType.PLUGIN_ADDED,
-                {"chain_id": chain_id, "plugin_uri": plugin_uri}
+                {
+                    "chain_id": chain_id,
+                    "plugin_uri": plugin_uri,
+                    "plugin_position": plugin_position,
+                }
             )
 
             return {
                 "status": "plugin_added",
                 "chain_id": chain_id,
                 "plugin": plugin_uri,
-                "plugins_count": plugins_count
+                "plugins_count": plugins_count,
+                "plugin_position": plugin_position,
             }
         except HTTPException:
             raise
@@ -514,7 +552,11 @@ try:
             raise HTTPException(status_code=500, detail=str(e))
 
     @router.delete("/{chain_id}/plugins")
-    async def remove_plugin_from_chain(chain_id: int, plugin_uri: str = Query(..., description="Plugin URI to remove")):
+    async def remove_plugin_from_chain(
+        chain_id: int,
+        plugin_uri: str = Query(..., description="Plugin URI to remove"),
+        plugin_position: int | None = Query(None, ge=0, description="Specific plugin position to remove"),
+    ):
         """Remove plugin from signal chain.
 
         CRITICAL: This endpoint uses atomic, synchronous database operations
@@ -523,6 +565,7 @@ try:
         Args:
             chain_id: Signal chain ID
             plugin_uri: Plugin URI string (query parameter)
+            plugin_position: Optional plugin position for removing a single matching instance
         """
         if not plugin_uri or not isinstance(plugin_uri, str):
             raise HTTPException(status_code=400, detail="Plugin URI must be a non-empty string")
@@ -531,7 +574,12 @@ try:
         logger = logging.getLogger(__name__)
         
         logger.info(f"DELETE_ENDPOINT: === ATOMIC DELETION START ===")
-        logger.info(f"DELETE_ENDPOINT: chain_id={chain_id}, plugin_uri={plugin_uri}")
+        logger.info(
+            "DELETE_ENDPOINT: chain_id=%s, plugin_uri=%s, plugin_position=%s",
+            chain_id,
+            plugin_uri,
+            plugin_position,
+        )
 
         from app.database import get_session, ChainPlugin, checkpoint_database
         from sqlalchemy import select
@@ -545,7 +593,11 @@ try:
                 service = ChainService(session)
                 
                 logger.info(f"DELETE_ENDPOINT: Calling service.remove_plugin_from_chain()...")
-                deletion_succeeded = await service.remove_plugin_from_chain(chain_id, plugin_uri)
+                deletion_succeeded = await service.remove_plugin_from_chain(
+                    chain_id,
+                    plugin_uri,
+                    plugin_position=plugin_position,
+                )
                 
                 if not deletion_succeeded:
                     deletion_error = "Service failed to remove plugin"
@@ -582,20 +634,28 @@ try:
                 async with get_session() as verify_session:
                     # Use raw text query as backup to ORM
                     from sqlalchemy import text
+                    filters = [
+                        ChainPlugin.chain_id == chain_id,
+                        ChainPlugin.plugin_uri == plugin_uri,
+                    ]
+                    sql_params = {"cid": chain_id, "uri": plugin_uri}
+                    if plugin_position is not None:
+                        filters.append(ChainPlugin.position == plugin_position)
+                        sql_params["position"] = plugin_position
+                    sql_where = "chain_id = :cid AND plugin_uri = :uri"
+                    if plugin_position is not None:
+                        sql_where += " AND position = :position"
                     
                     # Method 1: ORM query
                     verify_result = await verify_session.execute(
-                        select(ChainPlugin).filter(
-                            (ChainPlugin.chain_id == chain_id) &
-                            (ChainPlugin.plugin_uri == plugin_uri)
-                        )
+                        select(ChainPlugin).filter(*filters)
                     )
                     orm_count = len(verify_result.scalars().all())
                     
                     # Method 2: Raw SQL query (more direct)
                     sql_result = await verify_session.execute(
-                        text("SELECT COUNT(*) FROM chain_plugins WHERE chain_id = :cid AND plugin_uri = :uri"),
-                        {"cid": chain_id, "uri": plugin_uri}
+                        text(f"SELECT COUNT(*) FROM chain_plugins WHERE {sql_where}"),
+                        sql_params,
                     )
                     sql_count = sql_result.scalar()
                     
@@ -624,15 +684,17 @@ try:
             raise HTTPException(status_code=500, detail="Deletion could not be verified")
 
         logger.info(f"DELETE_ENDPOINT: === ATOMIC DELETION SUCCESS ===")
+
+        _invalidate_chain_cache(chain_id)
         
         # Publish event
         await event_publisher.publish(
             "plugin_params",
             EventType.PLUGIN_REMOVED,
-            {"chain_id": chain_id, "plugin_uri": plugin_uri}
+            {"chain_id": chain_id, "plugin_uri": plugin_uri, "plugin_position": plugin_position}
         )
 
-        return {"status": "plugin_removed", "chain_id": chain_id}
+        return {"status": "plugin_removed", "chain_id": chain_id, "plugin_position": plugin_position}
 
     @router.post("/{chain_id}/activate")
     async def activate_chain(chain_id: int):
@@ -722,6 +784,8 @@ try:
             if not success:
                 raise HTTPException(status_code=404, detail="Chain not found")
 
+        _invalidate_chain_cache(chain_id)
+
         # Publish chain deletion event AFTER session commits
         # This prevents race conditions where WebSocket listeners refetch
         # before the transaction is committed
@@ -745,6 +809,8 @@ try:
             success = await service.rename_chain(chain_id, new_name)
             if not success:
                 raise HTTPException(status_code=404, detail="Chain not found")
+
+        _invalidate_chain_cache(chain_id)
 
         # Publish chain rename event AFTER session commits
         await event_publisher.publish(
@@ -773,32 +839,58 @@ try:
             success = await service.reorder_plugins(chain_id, plugin_uris)
             if not success:
                 raise HTTPException(status_code=400, detail="Failed to reorder plugins")
-            return {"status": "reordered", "chain_id": chain_id, "plugins": plugin_uris}
+
+        _invalidate_chain_cache(chain_id)
+        return {"status": "reordered", "chain_id": chain_id, "plugins": plugin_uris}
 
     @router.post("/{chain_id}/plugins/{plugin_uri}/bypass")
-    async def toggle_plugin_bypass(chain_id: int, plugin_uri: str, bypass: bool):
+    async def toggle_plugin_bypass(
+        chain_id: int,
+        plugin_uri: str,
+        bypass: bool,
+        plugin_position: int | None = Query(None, ge=0, description="Specific plugin position to bypass"),
+    ):
         """Toggle plugin bypass state.
 
         Args:
             chain_id: Signal chain ID
             plugin_uri: Plugin URI
             bypass: True to bypass, False to enable
+            plugin_position: Optional plugin position to disambiguate duplicate URIs
         """
         from app.database import get_session
         async with get_session() as session:
             service = ChainService(session)
-            success = await service.set_plugin_bypass(chain_id, plugin_uri, bypass)
+            success = await service.set_plugin_bypass(
+                chain_id,
+                plugin_uri,
+                bypass,
+                plugin_position=plugin_position,
+            )
             if not success:
                 raise HTTPException(status_code=404, detail="Chain or plugin not found")
+
+        _invalidate_chain_cache(chain_id)
 
         # Publish plugin bypass event AFTER session commits
         await event_publisher.publish(
             "plugin_params",
             EventType.PLUGIN_BYPASSED,
-            {"chain_id": chain_id, "plugin_uri": plugin_uri, "bypass": bypass}
+            {
+                "chain_id": chain_id,
+                "plugin_uri": plugin_uri,
+                "plugin_position": plugin_position,
+                "bypass": bypass,
+            },
         )
 
-        return {"status": "bypass_updated", "chain_id": chain_id, "plugin": plugin_uri, "bypass": bypass}
+        return {
+            "status": "bypass_updated",
+            "chain_id": chain_id,
+            "plugin": plugin_uri,
+            "plugin_position": plugin_position,
+            "bypass": bypass,
+        }
 
     @router.post("/{chain_id}/preset/save")
     async def save_chain_preset(chain_id: int, preset_name: str):

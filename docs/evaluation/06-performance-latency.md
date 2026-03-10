@@ -190,3 +190,48 @@ The platform can run real audio loads and keep CPU budget under control. That is
 So the correct performance verdict is:
 
 **MAP2 is functionally performant, but still only partially measured and partially qualified. The main next step is not more DSP heroics; it is tighter timing truth and lower transition-time disruption.**
+
+## Latency evidence schema
+
+T096-sub03 establishes a canonical JSON schema for latency evidence artifacts:
+
+- Schema: `docs/evaluation/latency-evidence-schema.json`
+- Validator: `scripts/validate_latency_evidence.py`
+- Example artifact: `docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.sample.json`
+
+Validation command:
+
+```bash
+python3 scripts/validate_latency_evidence.py \
+  --evidence docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.sample.json
+```
+
+## T096 baseline snapshot (2026-03-10)
+
+Latest archived artifact:
+
+- `docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.json`
+- Validation: `python3 scripts/validate_latency_evidence.py --evidence docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.json`
+
+Measured values in this pass:
+
+- Hardware: `Hotone JoGG`, `48kHz`, `64` samples, isolated cores reported as `[4, 5]`
+- RTL: `p95=2.9667ms`, `p99=2.9667ms`, `max=2.9667ms`
+- Jitter: `p95=0.0000ms`, `max=0.0000ms`
+- XRUNs during measurement window: `0`
+- Gate result: `PASS`
+
+Notes:
+
+- Measurement method in this artifact is `internal` (no physical loopback cable attached in this run), so this is a provisional baseline and not the final loopback-qualified publication target.
+- The host still carries unsettled CPU-isolation state from earlier operational notes (cores `2/3` active in some boots while `4/5` remain the intended isolated pair pending reboot/profile convergence).
+
+## Runtime jitter monitor integration
+
+T096 runtime plumbing now exposes:
+
+- WebSocket topic `timing_jitter` at 10Hz (`/ws`)
+- API route `GET /api/v2/latency/jitter-stats`
+- API route `POST /api/v2/latency/xruns/reset`
+- Retime check script: `scripts/retime_test.sh`
+- Evidence generator with hard/warn gates: `scripts/measure_latency.sh`

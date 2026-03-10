@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MAP2 Latency Evidence Artifact",
+  "description": "Canonical schema for MAP2 round-trip latency and jitter evidence files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "timestamp",
+    "git_commit",
+    "hardware",
+    "rtl",
+    "jitter",
+    "xruns",
+    "gate",
+    "notes"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "git_commit": {
+      "type": "string",
+      "minLength": 7
+    },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interface",
+        "buffer_size",
+        "sample_rate",
+        "cpu_cores"
+      ],
+      "properties": {
+        "interface": {
+          "type": "string",
+          "minLength": 1
+        },
+        "buffer_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sample_rate": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cpu_cores": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "rtl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_ms",
+        "mean_ms",
+        "p50_ms",
+        "p95_ms",
+        "p99_ms",
+        "max_ms"
+      ],
+      "properties": {
+        "min_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "mean_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p50_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p95_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p99_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_ms": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "jitter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "p95_ms",
+        "max_ms"
+      ],
+      "properties": {
+        "p95_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_ms": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "xruns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "WARN",
+        "FAIL"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

@@ -87,7 +87,7 @@ import { ConfirmationDialog } from '../components/GridFlow/ConfirmationDialog'
 import { ButtonGroup } from '../components/GridFlow/ButtonGroup'
 import { PresetImportDialog } from '../components/presets/PresetImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, HistoryStatus, FlowSnapshotData, ChainSnapshot } from '../../map2/types'
+import type { Chain, Plugin, HistoryStatus, FlowSnapshotData, ChainSnapshot, ChainsResponse } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
 const API_BASE = (() => {
@@ -886,6 +886,24 @@ export function GridFlowPage() {
   // Mutations
   // ============================================================================
 
+  const updateChainPluginsCache = useCallback(
+    (
+      chainId: number,
+      updater: (plugins: Chain['plugins']) => Chain['plugins']
+    ) => {
+      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          chains: current.chains.map((chain) => (
+            chain.id === chainId ? { ...chain, plugins: updater(chain.plugins) } : chain
+          )),
+        }
+      })
+    },
+    [queryClient]
+  )
+
   const reorderMutation = useMutation({
     mutationFn: ({ chainId, pluginUris }: { chainId: number; pluginUris: string[] }) =>
       chainsApi.reorderPlugins(chainId, pluginUris),
@@ -901,9 +919,17 @@ export function GridFlowPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: ({ chainId, pluginUri }: { chainId: number; pluginUri: string }) =>
-      chainsApi.removePlugin(chainId, pluginUri),
-    onSuccess: () => {
+    mutationFn: ({ chainId, pluginUri, pluginPosition }: { chainId: number; pluginUri: string; pluginPosition?: number }) =>
+      chainsApi.removePlugin(chainId, pluginUri, pluginPosition),
+    onSuccess: (_, variables) => {
+      updateChainPluginsCache(variables.chainId, (plugins) => {
+        if (typeof variables.pluginPosition !== 'number') {
+          return plugins.filter((plugin) => plugin.uri !== variables.pluginUri)
+        }
+        return plugins.filter(
+          (plugin) => !(plugin.uri === variables.pluginUri && plugin.position === variables.pluginPosition)
+        )
+      })
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       setSelectedPluginUri(null)
       pushToast('Plugin removed', 'success')
@@ -914,7 +940,32 @@ export function GridFlowPage() {
   const addPluginMutation = useMutation({
     mutationFn: ({ chainId, pluginUri }: { chainId: number; pluginUri: string }) =>
       chainsApi.addPlugin(chainId, pluginUri),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      if (typeof data.plugin_position === 'number') {
+        const meta = pluginMeta[variables.pluginUri]
+        updateChainPluginsCache(variables.chainId, (plugins) => {
+          const alreadyPresent = plugins.some(
+            (plugin) =>
+              plugin.uri === variables.pluginUri && plugin.position === data.plugin_position
+          )
+          if (alreadyPresent) {
+            return plugins
+          }
+
+          const nextPlugin: Chain['plugins'][number] = {
+            uri: variables.pluginUri,
+            name: meta?.name ?? variables.pluginUri,
+            position: data.plugin_position,
+            bypassed: false,
+            parameters: {},
+            in_ports: meta?.in_ports,
+            out_ports: meta?.out_ports,
+            format: meta?.format,
+          }
+
+          return [...plugins, nextPlugin].sort((a, b) => a.position - b.position)
+        })
+      }
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       setShowPluginBrowser(false)
       setPluginSearchQuery('')
@@ -1118,9 +1169,9 @@ export function GridFlowPage() {
     bypassMutation.mutate({ chainId: currentChain.id, pluginUri: uri, bypass: bypassed })
   }, [currentChain, bypassMutation])
 
-  const handleDeletePlugin = useCallback((uri: string) => {
+  const handleDeletePlugin = useCallback((uri: string, position?: number) => {
     if (!currentChain) return
-    deleteMutation.mutate({ chainId: currentChain.id, pluginUri: uri })
+    deleteMutation.mutate({ chainId: currentChain.id, pluginUri: uri, pluginPosition: position })
   }, [currentChain, deleteMutation])
 
   const handleReorderPlugins = useCallback((pluginUris: string[]) => {
@@ -1203,7 +1254,17 @@ export function GridFlowPage() {
     if (!currentChain) return
     const newName = `${currentChain.name} Copy`
     chainsApi.create(newName)
-      .then(() => {
+      .then((newChain) => {
+        queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
+          if (!current) return current
+          const alreadyPresent = current.chains.some((chain) => chain.id === newChain.id)
+          if (alreadyPresent) return current
+          return {
+            ...current,
+            chains: [...current.chains, newChain],
+            count: current.count + 1,
+          }
+        })
         queryClient.invalidateQueries({ queryKey: ['chains'] })
         pushToast(`Chain "${newName}" created`, 'success')
       })
@@ -1351,7 +1412,11 @@ export function GridFlowPage() {
       // Delete/Backspace = Remove selected plugin
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPlugin && currentChain) {
         e.preventDefault()
-        deleteMutation.mutate({ chainId: currentChain.id, pluginUri: selectedPlugin.uri })
+        deleteMutation.mutate({
+          chainId: currentChain.id,
+          pluginUri: selectedPlugin.uri,
+          pluginPosition: selectedPlugin.position,
+        })
         return
       }
 
@@ -2049,9 +2114,13 @@ export function GridFlowPage() {
                         if (!flowChain) return
                         bypassMutation.mutate({ chainId: flowChain.id, pluginUri: uri, bypass: bypassed })
                       }}
-                      onDeletePlugin={(uri) => {
+                      onDeletePlugin={(uri, position) => {
                         if (!flowChain) return
-                        deleteMutation.mutate({ chainId: flowChain.id, pluginUri: uri })
+                        deleteMutation.mutate({
+                          chainId: flowChain.id,
+                          pluginUri: uri,
+                          pluginPosition: position,
+                        })
                       }}
                       onReorderPlugins={(pluginUris) => {
                         if (!flowChain) return

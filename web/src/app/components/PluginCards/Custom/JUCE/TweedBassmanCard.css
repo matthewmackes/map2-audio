@@ -1,11 +1,3 @@
-/**
- * Tweed Bassman 5F6-A Card Styles
- * Warm tweed aesthetic with amber/gold accents
- * Inspired by the 1958 Fender Bassman circuit schematic
- * Colors: #1A1610 bg, #2A2418 panel, #D4A847 gold accent, #8B7355 tweed
- */
-
-/* Header */
 .bassman-card-header {
   display: flex;
   flex-direction: column;
@@ -14,28 +6,28 @@
 }
 
 .bassman-card-title {
-  font-size: 16px;
+  font-size: var(--type-subheading);
   font-weight: 900;
   letter-spacing: 3px;
-  color: #D4A847;
+  color: var(--support-warning);
   text-transform: uppercase;
-  text-shadow: 0 0 8px rgba(212, 168, 71, 0.3);
+  text-shadow: none;
 }
 
 .bassman-card-subtitle {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 2px;
-  color: #8B7355;
+  color: var(--support-warning);
   text-transform: uppercase;
 }
 
 /* Schematic Visualization - Amp circuit diagram */
 .bassman-schematic {
   padding: 8px 10px;
-  background: linear-gradient(180deg, #0D0B08 0%, #1A1610 50%, #0D0B08 100%);
-  border-radius: 6px;
-  border: 1px solid #3A3228;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--support-warning);
   position: relative;
   overflow: hidden;
 }
@@ -47,7 +39,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, #3A3228 50%, transparent 100%);
+  background: var(--surface);
 }
 
 .bassman-schematic-svg {
@@ -58,10 +50,10 @@
 .bassman-schematic-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 7px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 1px;
-  color: #8B7355;
+  color: var(--support-warning);
   margin-top: 4px;
   padding: 0 2px;
   text-transform: uppercase;
@@ -69,23 +61,23 @@
 
 /* Section Panels */
 .bassman-section {
-  background: #1A1610;
-  border-radius: 6px;
-  border: 1px solid #3A3228;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--support-warning);
   padding: 10px;
   margin-bottom: 8px;
 }
 
 .bassman-section-title {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 2px;
-  color: #D4A847;
+  color: var(--support-warning);
   text-transform: uppercase;
   text-align: center;
   margin-bottom: 8px;
   padding-bottom: 4px;
-  border-bottom: 1px solid #3A3228;
+  border-bottom: 1px solid var(--support-warning);
 }
 
 /* Preset Selector */
@@ -96,13 +88,13 @@
 .bassman-preset-select {
   width: 100%;
   padding: 7px 12px;
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 600;
   letter-spacing: 0.5px;
-  background: #0D0B08;
-  border: 1px solid #3A3228;
-  border-radius: 4px;
-  color: #E0D8C8;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border: 1px solid var(--support-warning);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   appearance: none;
@@ -112,38 +104,38 @@
 }
 
 .bassman-preset-select:hover {
-  border-color: #D4A847;
-  background-color: #1A1610;
+  border-color: var(--support-warning);
+  background-color: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
 }
 
 .bassman-preset-select:focus {
   outline: none;
-  border-color: #D4A847;
-  box-shadow: 0 0 0 2px rgba(212, 168, 71, 0.15);
+  border-color: var(--support-warning);
+  box-shadow: none;
 }
 
 .bassman-preset-select option {
-  background: #0D0B08;
-  color: #E0D8C8;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  color: var(--text-primary);
 }
 
 .bassman-preset-info {
   margin-top: 4px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-style: italic;
-  color: #8B7355;
+  color: var(--support-warning);
   text-align: center;
 }
 
 /* Combo Select (tube type, channel, etc.) */
 .bassman-combo {
   padding: 4px 8px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  background: #0D0B08;
-  border: 1px solid #3A3228;
-  border-radius: 3px;
-  color: #E0D8C8;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border: 1px solid var(--support-warning);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
   cursor: pointer;
   appearance: none;
   min-width: 80px;
@@ -152,39 +144,39 @@
 }
 
 .bassman-combo:hover {
-  border-color: #D4A847;
+  border-color: var(--support-warning);
 }
 
 .bassman-combo:focus {
   outline: none;
-  border-color: #D4A847;
+  border-color: var(--support-warning);
 }
 
 /* Toggle Switch */
 .bassman-toggle {
   padding: 5px 12px;
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
-  border: 1px solid #3A3228;
-  background: #1A1610;
-  color: #8B7355;
+  border: 1px solid var(--support-warning);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  color: var(--support-warning);
 }
 
 .bassman-toggle.active {
-  background: rgba(212, 168, 71, 0.2);
-  border-color: #D4A847;
-  color: #D4A847;
-  box-shadow: 0 0 10px rgba(212, 168, 71, 0.2);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--support-warning);
+  color: var(--support-warning);
+  box-shadow: none;
 }
 
 .bassman-toggle:hover {
-  border-color: #8B7355;
-  color: #E0D8C8;
+  border-color: var(--support-warning);
+  color: var(--text-primary);
 }
 
 /* Mod Panel */
@@ -193,9 +185,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   padding: 8px;
-  background: #0D0B08;
-  border: 1px solid #3A3228;
-  border-radius: 6px;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border: 1px solid var(--support-warning);
+  border-radius: var(--border-radius-sm);
   margin-bottom: 8px;
 }
 
@@ -207,10 +199,10 @@
 }
 
 .bassman-mod-label {
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 1px;
-  color: #8B7355;
+  color: var(--support-warning);
   text-transform: uppercase;
   text-align: center;
 }
@@ -223,34 +215,34 @@
   gap: 4px;
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px solid #2A2418;
+  border-top: 1px solid var(--support-warning);
 }
 
 .bassman-quick-presets button {
   padding: 3px 8px;
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 700;
   letter-spacing: 0.5px;
-  background: rgba(212, 168, 71, 0.06);
-  border: 1px solid #3A3228;
-  border-radius: 3px;
-  color: #8B7355;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border: 1px solid var(--support-warning);
+  border-radius: var(--border-radius-sm);
+  color: var(--support-warning);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
 }
 
 .bassman-quick-presets button:hover {
-  background: rgba(212, 168, 71, 0.15);
-  border-color: #8B7355;
-  color: #E0D8C8;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--support-warning);
+  color: var(--text-primary);
 }
 
 .bassman-quick-presets button.active {
-  background: rgba(212, 168, 71, 0.25);
-  border-color: #D4A847;
-  color: #D4A847;
-  box-shadow: 0 0 6px rgba(212, 168, 71, 0.3);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--support-warning);
+  color: var(--support-warning);
+  box-shadow: none;
 }
 
 /* Footer */
@@ -259,32 +251,32 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 8px;
-  border-top: 1px solid #2A2418;
+  border-top: 1px solid var(--support-warning);
   margin-top: 10px;
 }
 
 .bassman-meter {
-  font-size: 10px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  color: #8B7355;
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--support-warning);
 }
 
 .bassman-sag {
-  font-size: 9px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  color: #D4A847;
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--support-warning);
   padding: 2px 6px;
-  background: rgba(212, 168, 71, 0.08);
-  border-radius: 3px;
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-radius: var(--border-radius-sm);
 }
 
 .bassman-cpu {
-  font-size: 9px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  color: #8B7355;
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--support-warning);
   padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 3px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 /* Tube glow animation */
@@ -333,20 +325,20 @@
 .bassman-channel-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: #3A3228;
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
   transition: all 0.2s ease;
 }
 
 .bassman-channel-dot.active {
-  background: #D4A847;
-  box-shadow: 0 0 6px rgba(212, 168, 71, 0.5);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  box-shadow: none;
 }
 
 /* Responsive */
 @media (max-width: 400px) {
   .bassman-card-title {
-    font-size: 14px;
+    font-size: var(--type-body);
     letter-spacing: 2px;
   }
 
@@ -356,6 +348,6 @@
 
   .bassman-quick-presets button {
     padding: 2px 6px;
-    font-size: 7px;
+    font-size: var(--type-caption);
   }
 }

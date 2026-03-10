@@ -10,10 +10,8 @@
 }
 
 .midi-overview {
-  border-color: rgba(96, 165, 250, 0.45);
-  background:
-    radial-gradient(140% 100% at 100% 0%, rgba(37, 99, 235, 0.2), rgba(15, 23, 42, 0) 55%),
-    linear-gradient(165deg, rgba(17, 24, 39, 0.96), rgba(15, 23, 42, 0.86));
+  border-color: var(--interactive);
+  background: var(--surface);
 }
 
 .midi-overview__header {
@@ -28,8 +26,8 @@
   margin: 0 0 6px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 11px;
-  color: rgba(147, 197, 253, 0.95);
+  font-size: var(--type-label);
+  color: var(--interactive);
 }
 
 .midi-overview__status {
@@ -50,20 +48,20 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  border: 1px solid rgba(96, 165, 250, 0.2);
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.48);
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   padding: 10px;
 }
 
 .midi-overview__step-index {
   width: 24px;
   height: 24px;
-  border-radius: 999px;
-  background: rgba(37, 99, 235, 0.4);
-  border: 1px solid rgba(96, 165, 250, 0.45);
-  color: #dbeafe;
-  font-size: 12px;
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border: 1px solid var(--interactive);
+  color: var(--interactive);
+  font-size: var(--type-label);
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -73,15 +71,15 @@
 
 .midi-overview__path-step h4 {
   margin: 1px 0 4px;
-  font-size: 13px;
-  color: #eff6ff;
+  font-size: var(--type-body);
+  color: var(--text-primary);
 }
 
 .midi-overview__path-step p {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--type-label);
   line-height: 1.45;
-  color: #bfdbfe;
+  color: var(--interactive);
 }
 
 .midi-overview__actions {
@@ -100,9 +98,9 @@
 
 .midi-capability-card,
 .midi-playbook-card {
-  border-radius: 12px;
-  border: 1px solid rgba(71, 85, 105, 0.42);
-  background: linear-gradient(155deg, rgba(2, 6, 23, 0.6), rgba(15, 23, 42, 0.35));
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--interactive);
+  background: var(--surface);
   padding: 12px;
 }
 
@@ -113,15 +111,15 @@
 .midi-capability-card h4,
 .midi-playbook-card h4 {
   margin: 0 0 4px;
-  color: #f8fafc;
-  font-size: 14px;
+  color: var(--text-primary);
+  font-size: var(--type-body);
 }
 
 .midi-capability-card p,
 .midi-playbook-card p {
   margin: 0;
-  color: #94a3b8;
-  font-size: 12px;
+  color: var(--interactive);
+  font-size: var(--type-label);
   line-height: 1.45;
 }
 
@@ -134,8 +132,8 @@
 
 .midi-capability-card li,
 .midi-playbook-card li {
-  font-size: 12px;
-  color: #cbd5e1;
+  font-size: var(--type-label);
+  color: var(--text-primary);
   line-height: 1.45;
 }
 
@@ -163,12 +161,12 @@
 .midi-tab-count {
   min-width: 20px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--border-radius-sm);
   padding: 0 6px;
-  border: 1px solid rgba(96, 165, 250, 0.45);
-  background: rgba(30, 64, 175, 0.25);
-  color: #bfdbfe;
-  font-size: 11px;
+  border: 1px solid var(--interactive);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  color: var(--interactive);
+  font-size: var(--type-label);
   font-weight: 700;
   display: inline-flex;
   align-items: center;

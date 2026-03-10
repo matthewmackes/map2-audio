@@ -1,0 +1,1224 @@
+{
+  "generated_at": "2026-03-10T16:45:46.486Z",
+  "base_url": "http://127.0.0.1:3000",
+  "routes": [
+    "/",
+    "/engine",
+    "/avb-routing",
+    "/host-machine",
+    "/welcome",
+    "/grid",
+    "/mpx1",
+    "/tesira"
+  ],
+  "presets": [
+    {
+      "name": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      }
+    },
+    {
+      "name": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  ],
+  "results": [
+    {
+      "preset": "desktop",
+      "route": "/",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/desktop/home.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 83f42d42-ee09-4f41-bc13-67d69776e5e8, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 8daf0650-a395-4e1b-a253-8d76854ac62f, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "error: Failed to load resource: the server responded with a status of 405 (Method Not Allowed)",
+        "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "error: Failed to load resource: the server responded with a status of 405 (Method Not Allowed)",
+        "error: Failed to load resource: the server responded with a status of 405 (Method Not Allowed)",
+        "error: Failed to load resource: the server responded with a status of 405 (Method Not Allowed)"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Mackes Audio Platform 1-22-25",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [
+          {
+            "text": "Overview",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item.active",
+            "top": 0
+          },
+          {
+            "text": "Audio Engine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "AVB Routing",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Host Machine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Guide",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "About",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Advanced",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-advanced",
+            "top": 0
+          },
+          {
+            "text": "",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-special",
+            "top": 0
+          }
+        ],
+        "minNavLabelPx": 12,
+        "counts": {
+          "visibleElements": 1117,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item.active",
+        "text": "Overview",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(15, 98, 254)",
+        "boxShadow": "none",
+        "borderColor": "rgba(96, 165, 250, 0.5) rgba(96, 165, 250, 0.5) rgb(15, 98, 254)"
+      }
+    },
+    {
+      "preset": "desktop",
+      "route": "/engine",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/desktop/engine.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: b48ed24e-143d-440e-84b3-8e90e894583d, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: e4be0ed1-ab07-4e07-af21-0a38f4b2ea03, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Audio Engine",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [
+          {
+            "text": "Overview",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Audio Engine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item.active",
+            "top": 0
+          },
+          {
+            "text": "AVB Routing",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Host Machine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Guide",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "About",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Advanced",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-advanced",
+            "top": 0
+          },
+          {
+            "text": "",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-special",
+            "top": 0
+          }
+        ],
+        "minNavLabelPx": 12,
+        "counts": {
+          "visibleElements": 218,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(15, 98, 254)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "desktop",
+      "route": "/avb-routing",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/desktop/avb-routing.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 38cf36e2-6a68-4b86-bf6a-012311cf22e9, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: d5ca1039-fd78-450e-8eb7-0fb8b4822630, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": null,
+        "bodyFontFamily": "Roboto, Helvetica, Arial, sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [
+          {
+            "text": "Overview",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Audio Engine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "AVB Routing",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item.active",
+            "top": 0
+          },
+          {
+            "text": "Host Machine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Guide",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "About",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Advanced",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-advanced",
+            "top": 0
+          },
+          {
+            "text": "",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-special",
+            "top": 0
+          }
+        ],
+        "minNavLabelPx": 12,
+        "counts": {
+          "visibleElements": 319,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(15, 98, 254)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "desktop",
+      "route": "/host-machine",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/desktop/host-machine.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: b5fe538a-e994-40c2-b69b-1211c345a81e, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: a4b2edba-adbd-48d8-adc5-d20aa55c13df, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Host Machine",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [
+          {
+            "text": "Overview",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Audio Engine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "AVB Routing",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Host Machine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item.active",
+            "top": 0
+          },
+          {
+            "text": "Guide",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "About",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Advanced",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-advanced",
+            "top": 0
+          },
+          {
+            "text": "",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-special",
+            "top": 0
+          }
+        ],
+        "minNavLabelPx": 12,
+        "counts": {
+          "visibleElements": 233,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(15, 98, 254)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "desktop",
+      "route": "/welcome",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/desktop/welcome.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 3b9494b6-a5e4-4ab8-b087-52fff39c9a4f, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: a927ce8d-fc7d-440a-909e-6ffa123565f6, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Welcome to Mackes Audio Platform",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [
+          {
+            "text": "Overview",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Audio Engine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "AVB Routing",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Host Machine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Guide",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item.active",
+            "top": 0
+          },
+          {
+            "text": "About",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Advanced",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-advanced",
+            "top": 0
+          },
+          {
+            "text": "",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-special",
+            "top": 0
+          }
+        ],
+        "minNavLabelPx": 12,
+        "counts": {
+          "visibleElements": 812,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(15, 98, 254)",
+        "boxShadow": "none",
+        "borderColor": "rgba(194, 198, 203, 0.973) rgba(194, 198, 203, 0.973) rgba(147, 197, 253, 0.086)"
+      }
+    },
+    {
+      "preset": "desktop",
+      "route": "/grid",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/desktop/grid.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: c20f697d-78ad-4005-86a7-7c82e3eee128, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 229c69e0-6d44-464a-8ba8-b071f0bc5cd5, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Grid Editor",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [
+          {
+            "text": "Overview",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Audio Engine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "AVB Routing",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Host Machine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Guide",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "About",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Advanced",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-advanced",
+            "top": 0
+          },
+          {
+            "text": "",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-special",
+            "top": 0
+          }
+        ],
+        "minNavLabelPx": 12,
+        "counts": {
+          "visibleElements": 485,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(15, 98, 254)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "desktop",
+      "route": "/mpx1",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/desktop/mpx1.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 7c5abf32-a6ba-45d5-b1b3-e3c42f618477, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 4bab64a8-2cae-4073-b66c-e485534a40c2, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": null,
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [
+          {
+            "text": "Overview",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Audio Engine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "AVB Routing",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Host Machine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Guide",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "About",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Advanced",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-advanced",
+            "top": 0
+          },
+          {
+            "text": "",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-special",
+            "top": 0
+          }
+        ],
+        "minNavLabelPx": 12,
+        "counts": {
+          "visibleElements": 220,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(15, 98, 254)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "desktop",
+      "route": "/tesira",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/desktop/tesira.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: d7d318b8-139d-4e97-a57c-990f9eb1c4f3, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 99db4431-6b56-465a-b36a-25ad2f16af30, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": null,
+        "bodyFontFamily": "Roboto, Helvetica, Arial, sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [
+          {
+            "text": "Overview",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Audio Engine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "AVB Routing",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Host Machine",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Guide",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "About",
+            "fontSizePx": 12,
+            "selector": "a.nav-tab-item",
+            "top": 0
+          },
+          {
+            "text": "Advanced",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-advanced",
+            "top": 0
+          },
+          {
+            "text": "",
+            "fontSizePx": 12,
+            "selector": "button.nav-tab-item.nav-tab-special",
+            "top": 0
+          }
+        ],
+        "minNavLabelPx": 12,
+        "counts": {
+          "visibleElements": 173,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(15, 98, 254)",
+        "boxShadow": "none",
+        "borderColor": "rgba(193, 198, 203, 0.973) rgba(193, 198, 203, 0.973) rgba(147, 197, 253, 0.086)"
+      }
+    },
+    {
+      "preset": "mobile",
+      "route": "/",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/mobile/home.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 6f0d55c1-c80f-4f6f-add9-c0db2a3a970f, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 1463060b-139c-42a7-b9bf-5ab5992d7756, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "error: Failed to load resource: the server responded with a status of 405 (Method Not Allowed)",
+        "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "error: Failed to load resource: the server responded with a status of 405 (Method Not Allowed)",
+        "error: Failed to load resource: the server responded with a status of 405 (Method Not Allowed)"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Mackes Audio Platform 1-22-25",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [],
+        "minNavLabelPx": null,
+        "counts": {
+          "visibleElements": 439,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item.active",
+        "text": "Overview",
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "outlineColor": "rgb(244, 244, 244)",
+        "boxShadow": "none",
+        "borderColor": "rgba(96, 165, 250, 0.5) rgba(96, 165, 250, 0.5) rgb(15, 98, 254)"
+      }
+    },
+    {
+      "preset": "mobile",
+      "route": "/engine",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/mobile/engine.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 9400ca10-e910-4917-99b4-e624348e8627, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 9670b63d-1bf8-4768-af86-cee52330ea23, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Audio Engine",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [],
+        "minNavLabelPx": null,
+        "counts": {
+          "visibleElements": 199,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "outlineColor": "rgb(198, 198, 198)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "mobile",
+      "route": "/avb-routing",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/mobile/avb-routing.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 3d41ef01-b558-4a9c-b498-9ad37d902622, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 35fd6772-d7ac-426b-8350-1676fc2e812b, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": null,
+        "bodyFontFamily": "Roboto, Helvetica, Arial, sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [],
+        "minNavLabelPx": null,
+        "counts": {
+          "visibleElements": 294,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "outlineColor": "rgb(198, 198, 198)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "mobile",
+      "route": "/host-machine",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/mobile/host-machine.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 3105d916-821b-49e5-8e11-5e617d601929, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 333b4f6b-4de0-48eb-bfe1-687ba776c5f3, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Host Machine",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [],
+        "minNavLabelPx": null,
+        "counts": {
+          "visibleElements": 213,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "outlineColor": "rgb(198, 198, 198)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "mobile",
+      "route": "/welcome",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/mobile/welcome.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: b9e89072-7e09-40e4-87bd-ebe78b82c2c9, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 932f6d6f-f1f3-4a75-a396-51b03d640d12, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Welcome to Mackes Audio Platform",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [],
+        "minNavLabelPx": null,
+        "counts": {
+          "visibleElements": 791,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "outlineColor": "rgb(198, 198, 198)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "mobile",
+      "route": "/grid",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/mobile/grid.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: eb21bf2a-cf6b-48ff-9164-c7a43ac5fe01, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 00899d6a-77ee-43cd-adad-dd73d0a4874f, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": "Grid Editor",
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [],
+        "minNavLabelPx": null,
+        "counts": {
+          "visibleElements": 466,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "outlineColor": "rgb(198, 198, 198)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "mobile",
+      "route": "/mpx1",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/mobile/mpx1.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 24f5e115-51b6-4ff5-96f9-434b4e94c390, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 4d135180-5aea-494a-948d-473518d1628c, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": null,
+        "bodyFontFamily": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [],
+        "minNavLabelPx": null,
+        "counts": {
+          "visibleElements": 201,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "outlineColor": "rgb(198, 198, 198)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    },
+    {
+      "preset": "mobile",
+      "route": "/tesira",
+      "status": 200,
+      "loadError": null,
+      "screenshot": "screenshots/mobile/tesira.png",
+      "consoleMessages": [
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: bd3c6f6e-0fc8-4734-a6d0-5a21226b1e7c, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}",
+        "log: MAP2 WebSocket connected",
+        "log: Received welcome: {client_id: 9eec1861-f14a-46f5-848e-968189953205, version: 1.0, server: MAP2 Audio Platform, message: Connected to MAP2 Audio WebSocket, supported_topics: Array(13)}"
+      ],
+      "pageErrors": [],
+      "metrics": {
+        "title": "Mackes Audio Platform 2",
+        "firstHeading": null,
+        "bodyFontFamily": "Roboto, Helvetica, Arial, sans-serif",
+        "ibmPlexSansReady": true,
+        "ibmPlexMonoReady": true,
+        "navLabels": [],
+        "minNavLabelPx": null,
+        "counts": {
+          "visibleElements": 154,
+          "boxShadow": 0,
+          "borderRadiusOver4px": 0,
+          "gradients": 0,
+          "blur": 0,
+          "nonSelectedBlueBorders": 0,
+          "buttonRadiusOverZero": 0
+        },
+        "samples": {
+          "boxShadow": [],
+          "borderRadius": [],
+          "gradient": [],
+          "blur": [],
+          "blueBorder": [],
+          "buttonRadius": []
+        }
+      },
+      "focusMetrics": {
+        "selector": "a.nav-tab-item",
+        "text": "Overview",
+        "outlineStyle": "none",
+        "outlineWidth": "0px",
+        "outlineColor": "rgb(198, 198, 198)",
+        "boxShadow": "none",
+        "borderColor": "rgb(198, 198, 198) rgb(198, 198, 198) rgba(0, 0, 0, 0)"
+      }
+    }
+  ]
+}

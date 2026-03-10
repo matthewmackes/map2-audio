@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-03-10T16:58:00-04:00",
+  "git_commit": "33e6a3d6",
+  "hardware": {
+    "interface": "UA-1000",
+    "buffer_size": 64,
+    "sample_rate": 48000,
+    "cpu_cores": [
+      4,
+      5
+    ]
+  },
+  "rtl": {
+    "min_ms": 2.74,
+    "mean_ms": 2.91,
+    "p50_ms": 2.89,
+    "p95_ms": 3.12,
+    "p99_ms": 3.29,
+    "max_ms": 3.42
+  },
+  "jitter": {
+    "p95_ms": 0.27,
+    "max_ms": 0.41
+  },
+  "xruns": 0,
+  "gate": "PASS",
+  "notes": "Schema-validation sample artifact for T096-sub03; replace with loopback-measured baseline from production run."
+}

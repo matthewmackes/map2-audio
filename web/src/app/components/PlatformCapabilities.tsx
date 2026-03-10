@@ -109,7 +109,7 @@ export function PlatformCapabilities() {
 
     const fetchAssets = async () => {
       try {
-        const response = await fetch('/folders/counts')
+        const response = await fetch('/api/folders/counts')
         if (response.ok) {
           const data = await response.json()
           setAssetCounts(data)
@@ -284,7 +284,7 @@ export function PlatformCapabilities() {
   }
 
   return (
-    <div className="stack" style={{ gap: 20 }}>
+    <div className="stack platform-capabilities" style={{ gap: 20 }}>
       {/* Header */}
       <div>
         <h3 style={{ margin: '0 0 8px' }}>Platform Capabilities</h3>

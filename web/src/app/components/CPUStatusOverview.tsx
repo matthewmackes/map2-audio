@@ -367,7 +367,7 @@ export function CPUStatusOverview() {
   }
 
   return (
-    <div className="stack" style={{ gap: 16 }}>
+    <div className="stack cpu-status-overview" style={{ gap: 16 }}>
       {/* Header */}
       <div className="flex-between" style={{ gap: 12 }}>
         <div>

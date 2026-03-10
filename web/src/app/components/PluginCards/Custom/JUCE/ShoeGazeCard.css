@@ -12,16 +12,16 @@
 }
 
 .shoegaze-card-title {
-  font-size: 16px;
+  font-size: var(--type-subheading);
   font-weight: 700;
   letter-spacing: 2px;
-  background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 30%, #3498db 60%, #8e44ad 100%);
+  background: var(--surface);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: shimmer-gradient 4s ease infinite;
-  filter: drop-shadow(0 0 8px rgba(142, 68, 173, 0.4));
+  filter: none;
 }
 
 @keyframes shimmer-gradient {
@@ -30,26 +30,20 @@
 }
 
 .shoegaze-card-subtitle {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 500;
   letter-spacing: 1px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
 /* Visualization */
 .shoegaze-visualization {
   padding: 12px;
-  background: 
-    linear-gradient(135deg, rgba(142, 68, 173, 0.08) 0%, rgba(52, 152, 219, 0.05) 100%),
-    linear-gradient(180deg, #0a0a0a 0%, #0d0a10 50%, #0a0a0a 100%);
-  border-radius: 10px;
-  border: 1px solid rgba(142, 68, 173, 0.3);
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(142, 68, 173, 0.15),
-    0 4px 12px rgba(0, 0, 0, 0.4);
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--interactive);
+  box-shadow: none;
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -62,35 +56,27 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(142, 68, 173, 0.3) 30%,
-    rgba(52, 152, 219, 0.3) 70%,
-    transparent 100%);
+  background: var(--surface);
 }
 
 .shoegaze-visualization:hover {
-  border-color: rgba(142, 68, 173, 0.5);
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    0 0 30px rgba(142, 68, 173, 0.25),
-    0 6px 16px rgba(0, 0, 0, 0.5);
+  border-color: var(--interactive);
+  box-shadow: none;
 }
 
 .shoegaze-visual-svg {
   width: 100%;
   height: 112px;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
 }
 
 .shoegaze-visual-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 1px;
-  color: var(--text-tertiary, #666);
+  color: var(--text-tertiary);
   margin-top: 4px;
   padding: 0 4px;
   text-transform: uppercase;
@@ -104,12 +90,12 @@
 .shoegaze-preset-select {
   width: 100%;
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: 500;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(142, 68, 173, 0.4);
-  border-radius: 6px;
-  color: var(--text-primary, #fff);
+  background: var(--bg);
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   appearance: none;
@@ -119,26 +105,26 @@
 }
 
 .shoegaze-preset-select:hover {
-  border-color: rgba(142, 68, 173, 0.7);
-  background-color: rgba(0, 0, 0, 0.4);
+  border-color: var(--interactive);
+  background-color: var(--bg);
 }
 
 .shoegaze-preset-select:focus {
   outline: none;
-  border-color: #8e44ad;
-  box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.2);
+  border-color: var(--interactive);
+  box-shadow: none;
 }
 
 .shoegaze-preset-select option {
-  background: #1a1a2e;
-  color: var(--text-primary, #fff);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  color: var(--text-primary);
 }
 
 .shoegaze-preset-info {
   margin-top: 6px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-style: italic;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
   text-align: center;
 }
 
@@ -150,34 +136,34 @@
   gap: 6px;
   margin-top: 12px;
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-strong);
 }
 
 .shoegaze-quick-presets button {
   padding: 5px 12px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
   letter-spacing: 0.5px;
-  background: rgba(142, 68, 173, 0.1);
-  border: 1px solid rgba(142, 68, 173, 0.3);
-  border-radius: 4px;
-  color: var(--text-secondary, #999);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .shoegaze-quick-presets button:hover {
-  background: rgba(142, 68, 173, 0.25);
-  border-color: rgba(142, 68, 173, 0.6);
-  color: var(--text-primary, #fff);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
+  color: var(--text-primary);
   transform: translateY(-1px);
 }
 
 .shoegaze-quick-presets button.active {
-  background: rgba(142, 68, 173, 0.4);
-  border-color: #8e44ad;
-  color: #fff;
-  box-shadow: 0 0 8px rgba(142, 68, 173, 0.4);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
+  color: var(--text-primary);
+  box-shadow: none;
 }
 
 /* Footer */
@@ -186,23 +172,23 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-strong);
   margin-top: 12px;
 }
 
 .shoegaze-meter {
-  font-size: 10px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
 }
 
 .shoegaze-cpu {
-  font-size: 9px;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  color: var(--text-tertiary, #666);
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-tertiary);
   padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 3px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 /* Animation for dreamy effect */
@@ -233,10 +219,10 @@
 @media (max-width: 400px) {
   .shoegaze-quick-presets button {
     padding: 4px 8px;
-    font-size: 9px;
+    font-size: var(--type-caption);
   }
 
   .shoegaze-card-title {
-    font-size: 14px;
+    font-size: var(--type-body);
   }
 }

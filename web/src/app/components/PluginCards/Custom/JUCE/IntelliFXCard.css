@@ -10,7 +10,7 @@
 
 .intellifx-card-title {
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--type-body);
   letter-spacing: 1.2px;
   text-transform: uppercase;
   color: inherit;
@@ -21,18 +21,18 @@
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bg);
   border: 1px solid;
-  border-radius: 6px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 600;
   letter-spacing: 0.5px;
   transition: all 0.2s ease;
 }
 
 .intellifx-preset-selector:hover {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bg);
 }
 
 .intellifx-preset-name {
@@ -40,16 +40,16 @@
 }
 
 .intellifx-preset-arrow {
-  font-size: 10px;
+  font-size: var(--type-caption);
   opacity: 0.7;
 }
 
 /* Preset Browser */
 .intellifx-preset-browser {
   position: relative;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
   margin-bottom: 16px;
   overflow: hidden;
 }
@@ -59,12 +59,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .intellifx-preset-browser-header h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--type-body);
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -74,7 +74,7 @@
   background: none;
   border: none;
   color: inherit;
-  font-size: 18px;
+  font-size: var(--type-subheading);
   cursor: pointer;
   padding: 4px 8px;
   opacity: 0.7;
@@ -100,9 +100,9 @@
   background: none;
   border: none;
   border-left: 3px solid;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: 500;
   color: inherit;
   width: 100%;
@@ -111,7 +111,7 @@
 }
 
 .intellifx-preset-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-3);
 }
 
 .intellifx-preset-item.active {
@@ -124,9 +124,9 @@
   justify-content: center;
   min-width: 24px;
   height: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  font-size: 10px;
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--type-caption);
   font-weight: 700;
 }
 
@@ -140,8 +140,8 @@
   flex-direction: column;
   gap: 17px;
   padding: 17px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 .intellifx-voices-grid {
@@ -164,13 +164,13 @@
 .voice-dot {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 4px currentColor);
+  filter: none;
 }
 
 .intellifx-mixer-info {
   display: flex;
   justify-content: space-around;
-  font-size: 11px;
+  font-size: var(--type-label);
   opacity: 0.8;
   padding: 0 8px;
 }
@@ -184,10 +184,10 @@
 }
 
 .voice-section {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--bg);
 }
 
 .voice-header {
@@ -196,18 +196,18 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-3);
   border: none;
   border-left: 3px solid;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 600;
   color: inherit;
   transition: background 0.2s ease;
 }
 
 .voice-header:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
 }
 
 .voice-number {
@@ -221,14 +221,14 @@
 .voice-level {
   flex: 1;
   text-align: center;
-  font-size: 10px;
+  font-size: var(--type-caption);
   opacity: 0.7;
   margin: 0 8px;
   font-weight: 400;
 }
 
 .expand-icon {
-  font-size: 16px;
+  font-size: var(--type-subheading);
   font-weight: 300;
   opacity: 0.6;
 }
@@ -239,7 +239,7 @@
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--bg);
 }
 
 /* Responsive */
@@ -256,16 +256,16 @@
   .intellifx-mixer-info {
     flex-direction: column;
     gap: 4px;
-    font-size: 10px;
+    font-size: var(--type-caption);
   }
 
   .voice-section {
-    border-radius: 4px;
+    border-radius: var(--border-radius-sm);
   }
 
   .voice-header {
     padding: 7px 10px;
-    font-size: 10px;
+    font-size: var(--type-caption);
   }
 
   .voice-level {
@@ -288,7 +288,7 @@
 
   .intellifx-preset-item {
     padding: 8px 10px;
-    font-size: 11px;
+    font-size: var(--type-label);
   }
 }
 

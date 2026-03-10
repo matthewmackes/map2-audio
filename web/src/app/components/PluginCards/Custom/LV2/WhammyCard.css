@@ -9,8 +9,8 @@
   flex-direction: column;
   gap: 17px;
   padding: 17px;
-  background: linear-gradient(180deg, #1a0808 0%, #0a0a0a 100%);
-  border-radius: 8px;
+  background: var(--surface);
+  border-radius: var(--border-radius-sm);
 }
 
 /* Pedal Container */
@@ -23,9 +23,9 @@
 .whammy-pedal-label {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
-  color: #555;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -33,10 +33,10 @@
 .whammy-pedal-track {
   position: relative;
   height: 34px;
-  background: #111;
-  border-radius: 12px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
-  border: 2px solid #333;
+  border: 2px solid var(--border);
 }
 
 .whammy-pedal-slider {
@@ -55,16 +55,16 @@
   top: 0;
   left: 0;
   height: 100%;
-  border-radius: 10px;
+  border-radius: var(--border-radius-sm);
   transition: width 0.1s ease;
 }
 
 .whammy-pedal-value {
   text-align: center;
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  color: #666;
+  font-family: var(--font-sans);
+  color: var(--text-tertiary);
 }
 
 /* Pitch Display */
@@ -80,28 +80,28 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #111;
-  border-radius: 8px;
-  border: 1px solid #222;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border);
 }
 
 .whammy-shift-indicator.up {
-  color: #22c55e;
+  color: var(--support-success);
 }
 
 .whammy-shift-indicator.down {
-  color: #ef4444;
+  color: var(--support-danger);
 }
 
 .whammy-shift-value {
-  font-size: 24px;
+  font-size: var(--type-heading);
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-sans);
 }
 
 .whammy-shift-unit {
-  font-size: 10px;
-  color: #666;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   text-transform: uppercase;
 }
 
@@ -119,13 +119,13 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 600;
-  color: #666;
+  color: var(--text-tertiary);
   cursor: pointer;
   transition: all 0.15s ease;
   text-transform: uppercase;
@@ -133,13 +133,13 @@
 }
 
 .whammy-mode-btn:hover {
-  background: #222;
-  border-color: #444;
-  color: #888;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text-secondary);
 }
 
 .whammy-mode-btn.active {
-  background: color-mix(in srgb, var(--accent) 15%, #1a1a1a);
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -162,29 +162,29 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   padding: 8px 6px;
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: #888;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .whammy-mode-chip:hover {
-  background: #222;
-  border-color: #444;
-  color: #aaa;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text-secondary);
 }
 
 .whammy-mode-chip.active {
-  background: color-mix(in srgb, var(--accent) 20%, #1a1a1a);
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: none;
 }
 
 .whammy-mode-chip svg {
@@ -198,7 +198,7 @@
   align-items: center;
   padding: 8px 4px 0;
   margin-top: 8px;
-  border-top: 1px solid #222;
+  border-top: 1px solid var(--border);
 }
 
 .whammy-current-mode {
@@ -208,20 +208,20 @@
 }
 
 .whammy-mode-label {
-  font-size: 9px;
-  color: #555;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   text-transform: uppercase;
 }
 
 .whammy-mode-name {
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 700;
 }
 
 .whammy-range {
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  color: #555;
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-tertiary);
 }
 
 /* Responsive */
@@ -232,10 +232,10 @@
 
   .whammy-mode-chip {
     padding: 6px 4px;
-    font-size: 8px;
+    font-size: var(--type-caption);
   }
 
   .whammy-shift-value {
-    font-size: 20px;
+    font-size: var(--type-heading);
   }
 }

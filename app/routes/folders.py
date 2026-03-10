@@ -6,6 +6,7 @@ Scan and manage audio file folders.
 import asyncio
 import logging
 from typing import Dict
+from pathlib import Path
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 

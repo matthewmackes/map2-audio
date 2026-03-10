@@ -24,9 +24,9 @@ import {
 // SVG Diagram showing the Flow -> Chain -> Activation concept
 function PlatformDiagram() {
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%)',
-      borderRadius: 'var(--border-radius-lg)',
+    <div className="welcome-platform-diagram" style={{
+      background: 'var(--surface)',
+      borderRadius: 0,
       padding: 32,
       border: '1px solid var(--border)',
     }}>
@@ -36,7 +36,7 @@ function PlatformDiagram() {
         fontWeight: 600,
         marginBottom: 24,
         textAlign: 'center',
-        color: 'var(--primary)'
+        color: 'var(--text-primary)'
       }}>
         How Mackes Audio Platform Works
       </h3>
@@ -50,9 +50,9 @@ function PlatformDiagram() {
       }}>
         {/* Stage 1: Build */}
         <div style={{
-          background: 'rgba(37, 99, 235, 0.1)',
-          border: '2px solid rgba(37, 99, 235, 0.3)',
-          borderRadius: 12,
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderRadius: 0,
           padding: 20,
           textAlign: 'center',
           position: 'relative',
@@ -62,18 +62,19 @@ function PlatformDiagram() {
             top: -12,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: '#2563eb',
-            color: 'white',
+            background: 'var(--surface-3)',
+            color: 'var(--text-secondary)',
             fontSize: 10,
             fontWeight: 700,
             padding: '4px 12px',
-            borderRadius: 12,
+            borderRadius: 0,
+            border: '1px solid var(--border-strong)',
             letterSpacing: '0.05em',
           }}>
             STEP 1
           </div>
-          <GridFour size={40} weight="duotone" style={{ color: '#2563eb', margin: '12px auto 12px' }} />
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: '#2563eb' }}>
+          <GridFour size={40} weight="duotone" style={{ color: 'var(--text-primary)', margin: '12px auto 12px' }} />
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>
             Build a Flow
           </h4>
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
@@ -98,17 +99,17 @@ function PlatformDiagram() {
             <div style={{
               flex: 1,
               height: 2,
-              background: 'linear-gradient(90deg, rgba(37, 99, 235, 0.5) 0%, rgba(96, 165, 250, 0.5) 100%)',
+              background: 'var(--border-strong)',
             }} />
-            <ArrowRight size={24} weight="bold" style={{ color: '#60a5fa', margin: '0 -4px' }} />
+            <ArrowRight size={24} weight="bold" style={{ color: 'var(--text-secondary)', margin: '0 -4px' }} />
           </div>
         </div>
 
         {/* Stage 2: Save */}
         <div style={{
-          background: 'rgba(96, 165, 250, 0.1)',
-          border: '2px solid rgba(96, 165, 250, 0.3)',
-          borderRadius: 12,
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderRadius: 0,
           padding: 20,
           textAlign: 'center',
           position: 'relative',
@@ -118,18 +119,19 @@ function PlatformDiagram() {
             top: -12,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: '#60a5fa',
-            color: 'white',
+            background: 'var(--surface-3)',
+            color: 'var(--text-secondary)',
             fontSize: 10,
             fontWeight: 700,
             padding: '4px 12px',
-            borderRadius: 12,
+            borderRadius: 0,
+            border: '1px solid var(--border-strong)',
             letterSpacing: '0.05em',
           }}>
           STEP 2
         </div>
-        <FloppyDisk size={40} weight="duotone" style={{ color: '#60a5fa', margin: '12px auto 12px' }} />
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: '#60a5fa' }}>
+        <FloppyDisk size={40} weight="duotone" style={{ color: 'var(--text-primary)', margin: '12px auto 12px' }} />
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>
             Save as Chain
           </h4>
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
@@ -140,9 +142,9 @@ function PlatformDiagram() {
 
       {/* Stage 3: Activate - Full width */}
       <div style={{
-        background: 'rgba(37, 99, 235, 0.1)',
-        border: '2px solid rgba(37, 99, 235, 0.3)',
-        borderRadius: 12,
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
+        borderRadius: 0,
         padding: 24,
         textAlign: 'center',
         position: 'relative',
@@ -152,18 +154,19 @@ function PlatformDiagram() {
           top: -12,
           left: '50%',
           transform: 'translateX(-50%)',
-          background: 'var(--primary)',
-          color: '#000',
+          background: 'var(--surface-3)',
+          color: 'var(--text-secondary)',
           fontSize: 10,
           fontWeight: 700,
           padding: '4px 12px',
-          borderRadius: 12,
+          borderRadius: 0,
+          border: '1px solid var(--border-strong)',
           letterSpacing: '0.05em',
         }}>
           STEP 3
         </div>
-        <Lightning size={36} weight="duotone" style={{ color: 'var(--primary)', margin: '8px auto 12px' }} />
-        <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: 'var(--primary)' }}>
+        <Lightning size={36} weight="duotone" style={{ color: 'var(--text-primary)', margin: '8px auto 12px' }} />
+        <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
           Activate to Go Live
         </h4>
         <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 16px', lineHeight: 1.5 }}>
@@ -191,13 +194,13 @@ function PlatformDiagram() {
                 alignItems: 'center',
                 gap: 6,
                 padding: '8px 14px',
-                background: 'rgba(0, 0, 0, 0.3)',
-                borderRadius: 20,
-                border: `1px solid ${method.color}40`,
+                background: 'var(--surface)',
+                borderRadius: 0,
+                border: '1px solid var(--border)',
               }}
             >
-              <method.icon size={14} style={{ color: method.color }} />
-              <span style={{ fontSize: 12, fontWeight: 500, color: method.color }}>{method.label}</span>
+              <method.icon size={14} style={{ color: 'var(--text-secondary)' }} />
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>{method.label}</span>
             </div>
           ))}
         </div>
@@ -207,53 +210,57 @@ function PlatformDiagram() {
       <div style={{
         marginTop: 24,
         padding: 16,
-        background: 'rgba(0, 0, 0, 0.2)',
-        borderRadius: 8,
+        background: 'var(--surface-2)',
+        borderRadius: 0,
+        border: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
       }}>
-        <div style={{
+        <div data-state="active" style={{
           display: 'flex',
           alignItems: 'center',
           gap: 4,
           padding: '6px 12px',
-          background: 'rgba(37, 99, 235, 0.2)',
-          borderRadius: 6,
+          background: 'var(--surface-3)',
+          borderRadius: 0,
+          border: '1px solid var(--border)',
           fontSize: 11,
           fontWeight: 500,
-          color: '#2563eb',
+          color: 'var(--text-secondary)',
         }}>
           <GitBranch size={12} weight="duotone" />
           Flow (Editing)
         </div>
         <ArrowRight size={16} weight="bold" style={{ color: 'var(--muted)' }} />
-        <div style={{
+        <div data-state="active" style={{
           display: 'flex',
           alignItems: 'center',
           gap: 4,
           padding: '6px 12px',
-          background: 'rgba(96, 165, 250, 0.2)',
-          borderRadius: 6,
+          background: 'var(--surface-3)',
+          borderRadius: 0,
+          border: '1px solid var(--border)',
           fontSize: 11,
           fontWeight: 500,
-          color: '#60a5fa',
+          color: 'var(--text-secondary)',
         }}>
           <FloppyDisk size={12} weight="duotone" />
           Chain (Saved)
         </div>
         <ArrowRight size={16} weight="bold" style={{ color: 'var(--muted)' }} />
-        <div style={{
+        <div data-state="active" style={{
           display: 'flex',
           alignItems: 'center',
           gap: 4,
           padding: '6px 12px',
-          background: 'rgba(37, 99, 235, 0.2)',
-          borderRadius: 6,
+          background: 'rgba(15, 98, 254, 0.16)',
+          borderRadius: 0,
+          border: '1px solid var(--interactive)',
           fontSize: 11,
           fontWeight: 500,
-          color: 'var(--primary)',
+          color: 'var(--interactive)',
         }}>
           <Play size={12} weight="duotone" />
           Active (Live Audio)
@@ -279,15 +286,16 @@ function ConceptCard({
     <div style={{
       background: 'var(--surface)',
       border: '1px solid var(--border)',
-      borderRadius: 'var(--border-radius-md)',
+      borderRadius: 0,
       padding: 20,
       display: 'flex',
       gap: 14,
       alignItems: 'flex-start',
     }}>
       <div style={{
-        background: `${color}20`,
-        borderRadius: 8,
+        background: 'var(--surface-2)',
+        borderRadius: 0,
+        border: '1px solid var(--border)',
         padding: 10,
         flexShrink: 0,
       }}>
@@ -307,15 +315,12 @@ export function WelcomePage() {
       {/* Hero Section */}
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <Lightning size={32} weight="duotone" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #60a5fa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }} />
+          <Lightning size={32} weight="duotone" style={{ color: 'var(--interactive)' }} />
           <h1 style={{
             fontSize: 28,
             fontWeight: 700,
             margin: 0,
-            background: 'linear-gradient(135deg, var(--primary) 0%, #00ff88 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            color: 'var(--text-primary)',
           }}>
             Welcome to Mackes Audio Platform
           </h1>
@@ -378,24 +383,25 @@ export function WelcomePage() {
 
       {/* Important Note */}
       <div style={{
-        background: 'rgba(37, 99, 235, 0.1)',
-        border: '1px solid rgba(37, 99, 235, 0.3)',
-        borderRadius: 'var(--border-radius-md)',
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
+        borderRadius: 0,
         padding: 20,
         display: 'flex',
         gap: 14,
         alignItems: 'flex-start',
       }}>
         <div style={{
-          background: 'rgba(37, 99, 235, 0.2)',
-          borderRadius: '50%',
+          background: 'var(--surface-3)',
+          borderRadius: 0,
+          border: '1px solid var(--border)',
           padding: 8,
           flexShrink: 0,
         }}>
-          <Play size={18} weight="duotone" style={{ color: '#2563eb' }} />
+          <Play size={18} weight="duotone" style={{ color: 'var(--text-primary)' }} />
         </div>
         <div>
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: '#2563eb' }}>
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: 'var(--text-primary)' }}>
             Editing is Non-Destructive
           </h4>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>
@@ -423,19 +429,17 @@ export function WelcomePage() {
             padding: '12px 24px',
             background: 'var(--primary)',
             color: '#000',
-            borderRadius: 8,
+            borderRadius: 0,
             fontWeight: 600,
             fontSize: 14,
             textDecoration: 'none',
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            transition: 'background-color 0.15s ease',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.transform = 'translateY(-2px)'
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.4)'
+            e.currentTarget.style.background = 'var(--interactive-hover)'
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = 'none'
+            e.currentTarget.style.background = 'var(--primary)'
           }}
         >
           <GridFour size={18} weight="duotone" />
@@ -451,13 +455,13 @@ export function WelcomePage() {
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             color: 'inherit',
-            borderRadius: 8,
+            borderRadius: 0,
             fontWeight: 500,
             fontSize: 14,
             textDecoration: 'none',
             transition: 'border-color 0.15s ease',
           }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-strong)'}
           onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
         >
           View System Overview
@@ -521,16 +525,16 @@ function DocumentLibrary() {
 
   return (
     <div className="welcome-doc-library" style={{
-      background: 'linear-gradient(135deg, rgba(10, 15, 25, 0.5) 0%, rgba(20, 25, 40, 0.3) 100%)',
-      borderRadius: 'var(--border-radius-lg)',
-      border: '1px solid rgba(59, 130, 246, 0.2)',
+      background: 'var(--surface)',
+      borderRadius: 0,
+      border: '1px solid var(--border)',
       overflow: 'hidden'
     }}>
       {/* Header */}
       <div style={{
-        background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%)',
+        background: 'var(--surface-2)',
         padding: '24px 32px',
-        borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+        borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
         gap: 12
@@ -541,13 +545,13 @@ function DocumentLibrary() {
             fontSize: 24,
             fontWeight: 700,
             margin: '0 0 4px 0',
-            color: '#f2f6ff'
+            color: 'var(--text-primary)'
           }}>
             📚 Documentation Library
           </h2>
           <p style={{
             fontSize: 13,
-            color: 'rgba(242, 246, 255, 0.6)',
+            color: 'var(--text-secondary)',
             margin: 0
           }}>
             Explore comprehensive guides, API docs, and project documentation
@@ -564,8 +568,8 @@ function DocumentLibrary() {
       }}>
         {/* Sidebar - Document List */}
         <div style={{
-          background: 'rgba(0, 0, 0, 0.2)',
-          borderRight: selectedDoc ? '1px solid rgba(59, 130, 246, 0.2)' : 'none',
+          background: 'var(--surface)',
+          borderRight: selectedDoc ? '1px solid var(--border)' : 'none',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden'
@@ -573,16 +577,16 @@ function DocumentLibrary() {
           {/* Search & Sort Bar */}
           <div style={{
             padding: '16px',
-            borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+            borderBottom: '1px solid var(--border)',
             flexShrink: 0
           }}>
             {/* Search */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: 8,
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border-strong)',
+              borderRadius: 0,
               padding: '8px 12px',
               gap: 8,
               marginBottom: '8px'
@@ -610,12 +614,14 @@ function DocumentLibrary() {
             }}>
               <button
                 onClick={() => setSortBy('name')}
+                aria-pressed={sortBy === 'name'}
+                data-selected={sortBy === 'name' ? 'true' : 'false'}
                 style={{
                   flex: 1,
                   padding: '6px 10px',
-                  background: sortBy === 'name' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid ' + (sortBy === 'name' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)'),
-                  borderRadius: 6,
+                  background: sortBy === 'name' ? 'rgba(15, 98, 254, 0.18)' : 'var(--surface)',
+                  border: '1px solid ' + (sortBy === 'name' ? 'var(--interactive)' : 'var(--border)'),
+                  borderRadius: 0,
                   color: '#f2f6ff',
                   fontSize: 11,
                   cursor: 'pointer',
@@ -624,12 +630,14 @@ function DocumentLibrary() {
                 }}
                 onMouseEnter={(e) => {
                   if (sortBy !== 'name') {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'
+                    e.currentTarget.style.background = 'var(--surface-2)'
+                    e.currentTarget.style.borderColor = 'var(--border-strong)'
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (sortBy !== 'name') {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'
+                    e.currentTarget.style.background = 'var(--surface)'
+                    e.currentTarget.style.borderColor = 'var(--border)'
                   }
                 }}
               >
@@ -637,12 +645,14 @@ function DocumentLibrary() {
               </button>
               <button
                 onClick={() => setSortBy('date')}
+                aria-pressed={sortBy === 'date'}
+                data-selected={sortBy === 'date' ? 'true' : 'false'}
                 style={{
                   flex: 1,
                   padding: '6px 10px',
-                  background: sortBy === 'date' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid ' + (sortBy === 'date' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)'),
-                  borderRadius: 6,
+                  background: sortBy === 'date' ? 'rgba(15, 98, 254, 0.18)' : 'var(--surface)',
+                  border: '1px solid ' + (sortBy === 'date' ? 'var(--interactive)' : 'var(--border)'),
+                  borderRadius: 0,
                   color: '#f2f6ff',
                   fontSize: 11,
                   cursor: 'pointer',
@@ -651,12 +661,14 @@ function DocumentLibrary() {
                 }}
                 onMouseEnter={(e) => {
                   if (sortBy !== 'date') {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'
+                    e.currentTarget.style.background = 'var(--surface-2)'
+                    e.currentTarget.style.borderColor = 'var(--border-strong)'
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (sortBy !== 'date') {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'
+                    e.currentTarget.style.background = 'var(--surface)'
+                    e.currentTarget.style.borderColor = 'var(--border)'
                   }
                 }}
               >
@@ -698,17 +710,19 @@ function DocumentLibrary() {
                 <button
                   key={doc.name}
                   onClick={() => loadDocument(doc.name)}
+                  aria-pressed={selectedDoc?.name === doc.name}
+                  data-selected={selectedDoc?.name === doc.name ? 'true' : 'false'}
                   style={{
                     width: '100%',
                     padding: '12px 12px',
                     marginBottom: '4px',
                     background: selectedDoc?.name === doc.name 
-                      ? 'rgba(59, 130, 246, 0.3)' 
-                      : 'rgba(59, 130, 246, 0.05)',
+                      ? 'rgba(15, 98, 254, 0.18)' 
+                      : 'var(--surface)',
                     border: selectedDoc?.name === doc.name 
-                      ? '1px solid rgba(59, 130, 246, 0.5)' 
-                      : '1px solid rgba(59, 130, 246, 0.2)',
-                    borderRadius: 6,
+                      ? '1px solid var(--interactive)' 
+                      : '1px solid var(--border)',
+                    borderRadius: 0,
                     color: '#f2f6ff',
                     fontSize: 12,
                     cursor: 'pointer',
@@ -722,16 +736,16 @@ function DocumentLibrary() {
                     whiteSpace: 'nowrap'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'
-                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)'
+                    e.currentTarget.style.background = selectedDoc?.name === doc.name ? 'rgba(15, 98, 254, 0.18)' : 'var(--surface-2)'
+                    e.currentTarget.style.borderColor = selectedDoc?.name === doc.name ? 'var(--interactive)' : 'var(--border-strong)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = selectedDoc?.name === doc.name 
-                      ? 'rgba(59, 130, 246, 0.3)' 
-                      : 'rgba(59, 130, 246, 0.05)'
+                      ? 'rgba(15, 98, 254, 0.18)' 
+                      : 'var(--surface)'
                     e.currentTarget.style.borderColor = selectedDoc?.name === doc.name 
-                      ? 'rgba(59, 130, 246, 0.5)' 
-                      : 'rgba(59, 130, 246, 0.2)'
+                      ? 'var(--interactive)' 
+                      : 'var(--border)'
                   }}
                 >
                   <FileText size={14} weight="duotone" style={{ flexShrink: 0, color: '#2563eb' }} />
@@ -749,12 +763,12 @@ function DocumentLibrary() {
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            background: 'rgba(0, 0, 0, 0.1)'
+            background: 'var(--surface-2)'
           }}>
             {/* Document Header */}
             <div style={{
               padding: '16px 24px',
-              borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+              borderBottom: '1px solid var(--border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -783,7 +797,7 @@ function DocumentLibrary() {
                   padding: '8px',
                   background: 'rgba(239, 68, 68, 0.1)',
                   border: '1px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: 6,
+                  borderRadius: 0,
                   color: '#ef4444',
                   cursor: 'pointer',
                   display: 'flex',
@@ -809,7 +823,7 @@ function DocumentLibrary() {
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              background: 'rgba(5, 8, 15, 0.3)'
+              background: 'var(--surface)'
             }}>
               <iframe
                 key={selectedDoc.name}
@@ -820,10 +834,10 @@ function DocumentLibrary() {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
     line-height: 1.8;
-    color: #f2f6ff;
-    background: #050815;
+    color: #f4f4f4;
+    background: #161616;
     padding: 40px;
     margin: 0;
     max-width: 900px;
@@ -835,12 +849,12 @@ function DocumentLibrary() {
   }
   h1 {
     font-size: 32px;
-    border-bottom: 2px solid rgba(59, 130, 246, 0.4);
+    border-bottom: 1px solid #525252;
     padding-bottom: 16px;
   }
   h2 {
     font-size: 24px;
-    border-left: 4px solid rgba(59, 130, 246, 0.6);
+    border-left: 2px solid #525252;
     padding-left: 16px;
   }
   h3 {
@@ -871,31 +885,31 @@ function DocumentLibrary() {
     line-height: 1.8;
   }
   blockquote {
-    border-left: 4px solid rgba(99, 102, 241, 0.6);
+    border-left: 2px solid #525252;
     padding-left: 20px;
     margin-left: 0;
-    color: rgba(242, 246, 255, 0.75);
+    color: #c6c6c6;
     font-style: italic;
-    background: rgba(99, 102, 241, 0.05);
+    background: #262626;
     padding-top: 12px;
     padding-bottom: 12px;
     padding-right: 16px;
   }
   code {
-    background: rgba(0, 0, 0, 0.3);
+    background: #262626;
     padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    border-radius: 0;
+    font-family: 'IBM Plex Mono', monospace;
     color: #94e2d5;
     font-size: 14px;
   }
   pre {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 8px;
+    background: #262626;
+    border: 1px solid #525252;
+    border-radius: 0;
     padding: 16px;
     overflow-x: auto;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     color: #94e2d5;
     line-height: 1.5;
   }
@@ -911,17 +925,17 @@ function DocumentLibrary() {
   }
   th, td {
     padding: 12px 16px;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    border: 1px solid #525252;
     text-align: left;
   }
   th {
-    background: rgba(59, 130, 246, 0.1);
+    background: #262626;
     font-weight: 600;
   }
   hr {
     border: none;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+    background: #525252;
     margin: 2em 0;
   }
   img {

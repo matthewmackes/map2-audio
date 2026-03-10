@@ -116,6 +116,10 @@ Top bottlenecks or risks:
 
 The platform needs fewer assumptions and more repeatable performance evidence.
 
+### Latency Status (T096)
+
+MAP2 now has a live callback-timing monitor contract (`/api/v2/latency/jitter-stats`, `timing_jitter` WebSocket stream) plus a gated evidence script (`scripts/measure_latency.sh`) that emits schema-validated artifacts. The latest baseline evidence is archived at `docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.json` and currently shows a provisional `PASS` (`RTL p95=2.9667ms`, `jitter p95=0.0000ms`, `xruns=0`) from an `internal` method run; a physical loopback capture remains the required final publication-grade confirmation.
+
 ## 6. UX critique summary
 
 The UI is capable, but it currently behaves more like an engineer's control warehouse than a disciplined operator product.

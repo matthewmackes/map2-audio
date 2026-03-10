@@ -84,10 +84,10 @@ export function LandscapePrompt({
       <div
         style={{
           width: 'min(440px, 100%)',
-          borderRadius: '16px',
+          borderRadius: '0',
           border: '1px solid var(--border)',
           background: 'var(--surface)',
-          boxShadow: 'var(--shadow-strong)',
+          boxShadow: 'none',
           padding: '24px',
           display: 'grid',
           justifyItems: 'center',
@@ -136,11 +136,11 @@ export function LandscapePrompt({
           }}
           style={{
             minHeight: '44px',
-            border: '1px solid var(--primary)',
-            borderRadius: '10px',
+            border: '1px solid var(--border-strong)',
+            borderRadius: '0',
             padding: '0 16px',
             color: 'var(--text-primary)',
-            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(30, 64, 175, 0.45))',
+            background: 'var(--surface-2)',
             fontSize: '14px',
             fontWeight: 600,
             cursor: 'pointer',

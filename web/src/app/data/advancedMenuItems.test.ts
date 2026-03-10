@@ -2,6 +2,7 @@ import {
   ADVANCED_NAVIGATION_ALLOWED_STATES,
   DEFAULT_NAVIGATION_ALLOWED_STATES,
   advancedMenuItems,
+  hardwareInterfaceMenuItems,
   navigationMaturityMeta,
   primaryOperatorMenuItems,
   secondaryInfoMenuItems,
@@ -42,6 +43,15 @@ describe('operator navigation model', () => {
 
     for (const [state, meta] of Object.entries(navigationMaturityMeta)) {
       expect(meta.label).toBe(state)
+    }
+  })
+
+  it('keeps audio interface destinations openable from Advanced navigation', () => {
+    const audioInterfacesItem = advancedMenuItems.find((item) => item.popupMenu === 'hardware-interfaces')
+
+    expect(audioInterfacesItem?.maturity).not.toBe('hardware-blocked')
+    for (const item of hardwareInterfaceMenuItems) {
+      expect(item.maturity).not.toBe('hardware-blocked')
     }
   })
 })

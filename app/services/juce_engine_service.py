@@ -799,6 +799,38 @@ class JuceEngineService(Singleton):
             return 0
         return self._engine.get_xrun_count()
 
+    async def get_audio_io_stats(self) -> Dict[str, Any]:
+        """Get runtime audio I/O diagnostics (xrun/jitter/budget metrics)."""
+        if not self._engine or not hasattr(self._engine, "get_audio_io_stats"):
+            return {
+                "cpu_usage": 0.0,
+                "xrun_count": 0,
+                "xruns_since_reset": 0,
+                "latency_ms": 0.0,
+                "samples_processed": 0,
+                "callback_jitter_ms": 0.0,
+                "peak_callback_jitter_ms": 0.0,
+                "avg_callback_duration_ms": 0.0,
+                "peak_callback_duration_ms": 0.0,
+                "callback_budget_ms": 0.0,
+                "budget_utilization": 0.0,
+                "device_connected": False,
+                "recovery_count": 0,
+                "uptime_seconds": 0.0,
+                "last_xrun_timestamp": 0,
+                "measured_round_trip_ms": 0.0,
+                "measured_input_latency_ms": 0.0,
+                "measured_output_latency_ms": 0.0,
+            }
+        return await asyncio.to_thread(self._engine.get_audio_io_stats)
+
+    async def reset_xrun_counter(self) -> bool:
+        """Reset xrun counter if supported by the engine runtime."""
+        if not self._engine or not hasattr(self._engine, "reset_xrun_counter"):
+            return False
+        await asyncio.to_thread(self._engine.reset_xrun_counter)
+        return True
+
     # ========================================
     # Latency (NEW)
     # ========================================

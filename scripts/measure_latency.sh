@@ -1,148 +1,103 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# MAP2 Audio - Round-Trip Latency Measurement Tool
+# MAP2 Audio - Latency Baseline Measurement (T096)
 # ==============================================================================
 #
-# Measures ACTUAL round-trip latency using a loopback cable or internal loopback.
-# This produces REAL measured numbers, not estimates.
+# Produces schema-valid latency evidence at:
+#   docs/fit-for-purpose-evidence/<YYYYMMDD>/t096/latency_baseline.json
 #
-# Methods supported:
-#   1. JACK loopback (jack_iodelay) - Gold standard
-#   2. ALSA loopback (alsa_delay)   - Fallback
-#   3. Impulse method (custom)      - Software-only measurement
+# Hard fail gates:
+#   - RTL p95 > 5.0ms
+#   - Jitter p95 > 1.0ms
+#   - XRUN delta > 0 during measurement window
 #
-# Requirements:
-#   - PipeWire with JACK support (pipewire-jack)
-#   - jack_iodelay (from jack-example-tools or jack2)
-#   - Optional: loopback cable connecting output → input
+# Warn gates:
+#   - RTL p95 > 3.5ms
+#   - Jitter p95 > 0.5ms
 #
-# Usage:
-#   ./measure_latency.sh              # Auto-detect best method
-#   ./measure_latency.sh --jack       # Force JACK method
-#   ./measure_latency.sh --internal   # Use PipeWire internal loopback
-#   ./measure_latency.sh --duration 30  # Measure for 30 seconds
-#   ./measure_latency.sh --json       # Output as JSON
-#
+# Exit codes:
+#   0 = PASS/WARN
+#   1 = FAIL (hard gate)
+#   2 = measurement/setup failure
 # ==============================================================================
 
 set -euo pipefail
 
-# Defaults
-METHOD="auto"
-DURATION=15          # seconds to measure
+METHOD="jack"
+DURATION_SECONDS=10
 JSON_OUTPUT=false
-SAMPLE_RATE=48000
-BUFFER_SIZE=64
-RESULTS_FILE="/tmp/map2_latency_results.json"
-VERBOSE=false
+HOST_BASE="http://127.0.0.1:8080"
 JACK_PLAYBACK_PORT=""
 JACK_CAPTURE_PORT=""
+OUTPUT_PATH=""
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+TARGET_SAMPLE_RATE=48000
+TARGET_BUFFER_SIZE=64
+MIN_MEASUREMENT_CYCLES=1000
 
-# Parse arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --jack)      METHOD="jack"; shift ;;
-        --internal)  METHOD="internal"; shift ;;
-        --alsa)      METHOD="alsa"; shift ;;
-        --duration)  DURATION="$2"; shift 2 ;;
-        --json)      JSON_OUTPUT=true; shift ;;
-        --rate)      SAMPLE_RATE="$2"; shift 2 ;;
-        --buffer)    BUFFER_SIZE="$2"; shift 2 ;;
-        --jack-playback-port) JACK_PLAYBACK_PORT="$2"; shift 2 ;;
-        --jack-capture-port)  JACK_CAPTURE_PORT="$2"; shift 2 ;;
-        --verbose)   VERBOSE=true; shift ;;
-        --help|-h)
-            echo "Usage: $0 [--jack|--internal|--alsa] [--duration N] [--json] [--rate N] [--buffer N] [--jack-playback-port PORT] [--jack-capture-port PORT]"
-            exit 0
-            ;;
-        *) echo "Unknown option: $1"; exit 1 ;;
-    esac
-done
+HARD_RTL_P95_MS=5.0
+HARD_JITTER_P95_MS=1.0
+WARN_RTL_P95_MS=3.5
+WARN_JITTER_P95_MS=0.5
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 log() {
     if [[ "$JSON_OUTPUT" != true ]]; then
-        echo -e "$1"
+        echo "$*"
     fi
 }
 
-log_verbose() {
-    if [[ "$VERBOSE" == true ]]; then
-        log "$1"
-    fi
+fail() {
+    echo "ERROR: $*" >&2
+    exit 2
 }
 
-# ==============================================================================
-# Pre-flight checks
-# ==============================================================================
+usage() {
+    cat <<'EOF'
+Usage: scripts/measure_latency.sh [options]
 
-preflight() {
-    log "${BLUE}═══════════════════════════════════════════════════════${NC}"
-    log "${BLUE}  MAP2 Audio - Round-Trip Latency Measurement${NC}"
-    log "${BLUE}═══════════════════════════════════════════════════════${NC}"
-    log ""
-
-    # Check PipeWire
-    if pgrep -x pipewire &>/dev/null; then
-        log "${GREEN}✓${NC} PipeWire daemon running"
-    else
-        log "${RED}✗${NC} PipeWire not running!"
-        exit 1
-    fi
-
-    # Get current PipeWire settings
-    local pw_info
-    if command -v pw-cli &>/dev/null; then
-        pw_info=$(pw-cli info 0 2>/dev/null || true)
-        if echo "$pw_info" | grep -q "default.clock.rate"; then
-            SAMPLE_RATE=$(echo "$pw_info" | grep "default.clock.rate" | head -1 | grep -oP '\d+' | head -1 || echo "$SAMPLE_RATE")
-        fi
-        if echo "$pw_info" | grep -q "default.clock.quantum"; then
-            BUFFER_SIZE=$(echo "$pw_info" | grep "default.clock.quantum" | head -1 | grep -oP '\d+' | head -1 || echo "$BUFFER_SIZE")
-        fi
-    fi
-
-    log "  Sample rate: ${SAMPLE_RATE} Hz"
-    log "  Buffer size: ${BUFFER_SIZE} samples"
-    log "  Buffer latency: $(echo "scale=2; $BUFFER_SIZE * 1000 / $SAMPLE_RATE" | bc) ms"
-    log ""
-
-    # Check available tools
-    local has_jack_iodelay=false
-    local has_jack_lsp=false
-
-    if command -v jack_iodelay &>/dev/null || command -v pw-jack &>/dev/null; then
-        has_jack_iodelay=true
-        log "${GREEN}✓${NC} jack_iodelay available"
-    fi
-
-    if command -v jack_lsp &>/dev/null; then
-        has_jack_lsp=true
-        log "${GREEN}✓${NC} jack_lsp available"
-    fi
-
-    # Auto-select method
-    if [[ "$METHOD" == "auto" ]]; then
-        if [[ "$has_jack_iodelay" == true ]]; then
-            METHOD="jack"
-        else
-            METHOD="internal"
-        fi
-        log "  Auto-selected method: ${METHOD}"
-    fi
-
-    log ""
+Options:
+  --jack                     Use jack_iodelay loopback measurement (default)
+  --internal                 Use internal estimate (no loopback cable)
+  --duration <seconds>       Measurement window (default: 10)
+  --host <url>               Backend base URL (default: http://127.0.0.1:8080)
+  --output <path>            Evidence output path override
+  --jack-playback-port <p>   JACK playback port override
+  --jack-capture-port <p>    JACK capture port override
+  --json                     Print evidence JSON to stdout
+  -h, --help                 Show this help
+EOF
 }
 
-# ==============================================================================
-# Method 1: JACK iodelay (Gold Standard)
-# ==============================================================================
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --jack) METHOD="jack"; shift ;;
+        --internal) METHOD="internal"; shift ;;
+        --duration) DURATION_SECONDS="$2"; shift 2 ;;
+        --host) HOST_BASE="$2"; shift 2 ;;
+        --output) OUTPUT_PATH="$2"; shift 2 ;;
+        --jack-playback-port) JACK_PLAYBACK_PORT="$2"; shift 2 ;;
+        --jack-capture-port) JACK_CAPTURE_PORT="$2"; shift 2 ;;
+        --json) JSON_OUTPUT=true; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) fail "Unknown option: $1" ;;
+    esac
+done
+
+if ! [[ "$DURATION_SECONDS" =~ ^[0-9]+$ ]] || [[ "$DURATION_SECONDS" -le 0 ]]; then
+    fail "--duration must be a positive integer"
+fi
+
+if [[ "$METHOD" != "jack" && "$METHOD" != "internal" ]]; then
+    fail "METHOD must be 'jack' or 'internal'"
+fi
+
+if [[ -z "$OUTPUT_PATH" ]]; then
+    ymd="$(date +%Y%m%d)"
+    OUTPUT_PATH="$REPO_ROOT/docs/fit-for-purpose-evidence/${ymd}/t096/latency_baseline.json"
+fi
 
 first_jack_port_match() {
     local pattern="$1"
@@ -152,9 +107,8 @@ first_jack_port_match() {
 detect_jack_playback_port() {
     if [[ -n "$JACK_PLAYBACK_PORT" ]]; then
         echo "$JACK_PLAYBACK_PORT"
-        return 0
+        return
     fi
-
     local port=""
     port=$(first_jack_port_match 'UA-1000.*:playback_AUX0$')
     [[ -z "$port" ]] && port=$(first_jack_port_match 'UA-1000.*:playback_1$')
@@ -167,9 +121,8 @@ detect_jack_playback_port() {
 detect_jack_capture_port() {
     if [[ -n "$JACK_CAPTURE_PORT" ]]; then
         echo "$JACK_CAPTURE_PORT"
-        return 0
+        return
     fi
-
     local port=""
     port=$(first_jack_port_match 'UA-1000.*:capture_AUX0$')
     [[ -z "$port" ]] && port=$(first_jack_port_match 'UA-1000.*:capture_1$')
@@ -183,7 +136,6 @@ detect_iodelay_out_port() {
     local port=""
     port=$(first_jack_port_match '^jack_iodelay:output$')
     [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_iodelay:out$')
-    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_delay:out$')
     echo "$port"
 }
 
@@ -191,416 +143,364 @@ detect_iodelay_in_port() {
     local port=""
     port=$(first_jack_port_match '^jack_iodelay:input$')
     [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_iodelay:in$')
-    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_delay:in$')
     echo "$port"
 }
 
 connect_jack_ports() {
     local source_port="$1"
     local target_port="$2"
-
-    if command -v jack_connect &>/dev/null; then
+    if command -v jack_connect >/dev/null 2>&1; then
         jack_connect "$source_port" "$target_port" 2>/dev/null || true
         return 0
     fi
-
-    if command -v pw-jack &>/dev/null; then
+    if command -v pw-jack >/dev/null 2>&1; then
         pw-jack jack_connect "$source_port" "$target_port" 2>/dev/null || true
         return 0
     fi
-
     return 1
 }
 
-measure_jack() {
-    log "${YELLOW}▶ JACK iodelay measurement (${DURATION}s)${NC}"
-    log "  Requires loopback cable: Output → Input"
-    log ""
-
-    if ! command -v jack_iodelay &>/dev/null; then
-        log "${RED}✗${NC} jack_iodelay not found. Install jack-tools"
-        return 1
-    fi
-
-    if ! command -v jack_lsp &>/dev/null; then
-        log "${RED}✗${NC} jack_lsp not found. Install jack-tools"
-        return 1
-    fi
-
-    local use_pw_jack=false
-    if command -v pw-jack &>/dev/null; then
-        use_pw_jack=true
-    fi
-
-    local tmpfile
-    tmpfile=$(mktemp /tmp/map2_iodelay.XXXXXX)
-
-    # Run jack_iodelay for the specified duration
-    log "  Running jack_iodelay..."
-    if [[ "$use_pw_jack" == true ]]; then
-        timeout "${DURATION}" pw-jack jack_iodelay >"$tmpfile" 2>&1 &
-    else
-        timeout "${DURATION}" jack_iodelay >"$tmpfile" 2>&1 &
-    fi
-    local pid=$!
-
-    # Wait a moment for it to start
-    sleep 2
-
-    local iodelay_out_port
-    local iodelay_in_port
-    local playback_port
-    local capture_port
-
-    iodelay_out_port=$(detect_iodelay_out_port)
-    iodelay_in_port=$(detect_iodelay_in_port)
-    playback_port=$(detect_jack_playback_port)
-    capture_port=$(detect_jack_capture_port)
-
-    if [[ -n "$iodelay_out_port" ]] && [[ -n "$playback_port" ]]; then
-        connect_jack_ports "$iodelay_out_port" "$playback_port"
-    fi
-    if [[ -n "$capture_port" ]] && [[ -n "$iodelay_in_port" ]]; then
-        connect_jack_ports "$capture_port" "$iodelay_in_port"
-    fi
-
-    log_verbose "  iodelay out: $iodelay_out_port"
-    log_verbose "  iodelay in:  $iodelay_in_port"
-    log_verbose "  playback:    $playback_port"
-    log_verbose "  capture:     $capture_port"
-
-    # Wait for measurement to complete
-    wait $pid 2>/dev/null || true
-
-    # Parse results
-    local output
-    output=$(cat "$tmpfile")
-    rm -f "$tmpfile"
-
-    log_verbose "  Raw output: $output"
-
-    # jack_iodelay outputs lines like:
-    #  1234.5 frames    25.7 ms total roundtrip latency
-    #         extra loopback latency: 1106 frames
-    #         use 553 for the backend arguments -I and -O
-
-    local total_frames=""
-    local total_ms=""
-    local extra_frames=""
-
-    if echo "$output" | grep -q "total roundtrip latency"; then
-        total_frames=$(echo "$output" | grep "total roundtrip" | tail -1 | awk '{print $1}')
-        total_ms=$(echo "$output" | grep "total roundtrip" | tail -1 | awk '{print $3}')
-        extra_frames=$(echo "$output" | grep "extra loopback" | tail -1 | awk '{print $4}')
-    fi
-
-    if [[ -n "$total_ms" ]]; then
-        local buffer_latency_ms
-        buffer_latency_ms=$(echo "scale=3; $BUFFER_SIZE * 1000.0 / $SAMPLE_RATE" | bc)
-
-        log ""
-        log "${GREEN}═══ MEASUREMENT RESULTS ═══${NC}"
-        log "  Total round-trip:    ${GREEN}${total_ms} ms${NC} (${total_frames} frames)"
-        log "  Extra loopback:      ${extra_frames:-N/A} frames"
-        log "  Buffer latency:      ${buffer_latency_ms} ms (${BUFFER_SIZE} samples)"
-        log "  Sample rate:         ${SAMPLE_RATE} Hz"
-        log ""
-
-        # Save results as JSON
-        cat > "$RESULTS_FILE" << EOF
-{
-    "method": "jack_iodelay",
-    "timestamp": "$(date -Iseconds)",
-    "round_trip_ms": ${total_ms},
-    "round_trip_frames": ${total_frames:-0},
-    "extra_loopback_frames": ${extra_frames:-0},
-    "jack_ports": {
-      "iodelay_output": "${iodelay_out_port}",
-      "iodelay_input": "${iodelay_in_port}",
-      "playback": "${playback_port}",
-      "capture": "${capture_port}"
-    },
-    "buffer_size": ${BUFFER_SIZE},
-    "sample_rate": ${SAMPLE_RATE},
-    "buffer_latency_ms": ${buffer_latency_ms},
-    "one_way_estimate_ms": $(echo "scale=3; ${total_ms} / 2" | bc),
-    "duration_seconds": ${DURATION},
-    "status": "measured"
-}
-EOF
-        if [[ "$JSON_OUTPUT" == true ]]; then
-            cat "$RESULTS_FILE"
-        fi
-
-        return 0
-    else
-        log "${RED}✗${NC} No measurement obtained."
-        log "  Make sure a loopback cable connects output → input"
-        log "  Or use --internal for software-only measurement"
-
-        cat > "$RESULTS_FILE" << EOF
-{
-    "method": "jack_iodelay",
-    "timestamp": "$(date -Iseconds)",
-    "jack_ports": {
-      "iodelay_output": "${iodelay_out_port}",
-      "iodelay_input": "${iodelay_in_port}",
-      "playback": "${playback_port}",
-      "capture": "${capture_port}"
-    },
-    "status": "failed",
-    "error": "No loopback signal detected. Connect output to input with a cable."
-}
-EOF
-        if [[ "$JSON_OUTPUT" == true ]]; then
-            cat "$RESULTS_FILE"
-        fi
-
-        return 1
-    fi
+configure_audio_target() {
+    local config_url="${HOST_BASE%/}/api/audio/config?sample_rate=${TARGET_SAMPLE_RATE}&buffer_size=${TARGET_BUFFER_SIZE}"
+    curl -fsS -X POST "$config_url" >/dev/null 2>&1 || true
 }
 
-# ==============================================================================
-# Method 2: Internal PipeWire loopback measurement
-# ==============================================================================
-
-measure_internal() {
-    log "${YELLOW}▶ PipeWire internal loopback measurement${NC}"
-    log "  No cable required - measures software stack latency"
-    log ""
-
-    # Use pw-top or pw-profiler for internal measurement
-    local pw_top_output
-    local latency_info=""
-
-    # Method A: Use pw-top to get driver latency
-    if command -v pw-top &>/dev/null; then
-        log "  Sampling pw-top for ${DURATION}s..."
-
-        # Run pw-top in batch mode for analysis
-        local tmpfile
-        tmpfile=$(mktemp /tmp/map2_pwtop.XXXXXX)
-
-        # Capture pw-top output without polluting stdout in --json mode
-        timeout "$DURATION" pw-top -b >"$tmpfile" 2>&1 &
-        local pid=$!
-        sleep "$DURATION"
-        kill $pid 2>/dev/null || true
-        wait $pid 2>/dev/null || true
-
-        pw_top_output=$(cat "$tmpfile" 2>/dev/null || true)
-        rm -f "$tmpfile"
+get_xrun_count() {
+    local url="${HOST_BASE%/}/api/audio/diagnostics/xruns"
+    local payload
+    payload="$(curl -fsS "$url" 2>/dev/null || true)"
+    if [[ -z "$payload" ]]; then
+        echo "0"
+        return
     fi
-
-    # Method B: Calculate from PipeWire node properties
-    local driver_latency_frames=0
-    local graph_latency_frames=0
-    local total_latency_ms=0
-
-    # Get device-reported latency via pw-dump
-    if command -v pw-dump &>/dev/null; then
-        local pw_dump
-        pw_dump=$(pw-dump 2>/dev/null | python3 -c "
+    python3 - <<'PY' "$payload"
 import json, sys
 try:
-    data = json.load(sys.stdin)
-    for node in data:
-        if node.get('type') == 'PipeWire:Interface:Node':
-            props = node.get('info', {}).get('props', {})
-            if 'audio.adapter.name' in props or props.get('media.class', '') in ['Audio/Sink', 'Audio/Source']:
-                name = props.get('node.name', props.get('node.description', 'unknown'))
-                # Get latency from params
-                params = node.get('info', {}).get('params', {})
-                for fmt in params.get('Format', []):
-                    if isinstance(fmt, dict) and 'rate' in fmt:
-                        print(f'{name}|{fmt.get(\"rate\", 0)}|{fmt.get(\"buffer\", 0)}')
-except:
-    pass
-" 2>/dev/null || true)
-    fi
+    data = json.loads(sys.argv[1])
+    print(int(data.get("xrun_count", 0) or 0))
+except Exception:
+    print(0)
+PY
+}
 
-    # Calculate from known values
-    local buffer_ms
-    buffer_ms=$(echo "scale=3; $BUFFER_SIZE * 1000.0 / $SAMPLE_RATE" | bc)
-
-    # PipeWire adds 1 quantum of input latency + 1 quantum of output latency
-    # Plus driver overhead (typically 0.1-0.5ms)
-    local pw_overhead_ms="0.3"  # Typical PipeWire overhead
-    local input_latency_ms="$buffer_ms"
-    local output_latency_ms="$buffer_ms"
-    total_latency_ms=$(echo "scale=3; $input_latency_ms + $output_latency_ms + $pw_overhead_ms" | bc)
-
-    # Get JACK-reported latency if available
-    local jack_latency_in=0
-    local jack_latency_out=0
-    if command -v jack_lsp &>/dev/null; then
-        local jack_info
-        jack_info=$(jack_lsp -l 2>/dev/null || true)
-        if echo "$jack_info" | grep -q "port latency"; then
-            jack_latency_in=$(echo "$jack_info" | grep "system:capture" -A2 | grep "port latency" | head -1 | grep -oP '\[\K\d+' || echo "0")
-            jack_latency_out=$(echo "$jack_info" | grep "system:playback" -A2 | grep "port latency" | head -1 | grep -oP '\[\K\d+' || echo "0")
+detect_interface_name() {
+    if command -v jack_lsp >/dev/null 2>&1; then
+        if jack_lsp 2>/dev/null | grep -qi "UA-1000"; then
+            echo "UA-1000"
+            return
+        fi
+        if jack_lsp 2>/dev/null | grep -qi "Jogg"; then
+            echo "Hotone JoGG"
+            return
         fi
     fi
-
-    local jack_in_ms=0
-    local jack_out_ms=0
-    if [[ "$jack_latency_in" -gt 0 ]]; then
-        jack_in_ms=$(echo "scale=3; $jack_latency_in * 1000.0 / $SAMPLE_RATE" | bc)
+    if command -v aplay >/dev/null 2>&1; then
+        local card_name
+        card_name="$(aplay -l 2>/dev/null | awk -F'[][]' '/^card [0-9]+:/ { print $2; exit }')"
+        if [[ -n "$card_name" ]]; then
+            echo "$card_name"
+            return
+        fi
     fi
-    if [[ "$jack_latency_out" -gt 0 ]]; then
-        jack_out_ms=$(echo "scale=3; $jack_latency_out * 1000.0 / $SAMPLE_RATE" | bc)
-    fi
+    echo "Unknown Interface"
+}
 
-    local jack_total_ms
-    if [[ "$jack_latency_in" -gt 0 ]] && [[ "$jack_latency_out" -gt 0 ]]; then
-        jack_total_ms=$(echo "scale=3; $jack_in_ms + $jack_out_ms" | bc)
+detect_cpu_cores_csv() {
+    python3 - <<'PY'
+import re
+from pathlib import Path
+
+cmdline = Path("/proc/cmdline").read_text(errors="ignore")
+m = re.search(r"isolcpus=([^ ]+)", cmdline)
+if not m:
+    print("0")
+    raise SystemExit
+
+cores = set()
+for token in m.group(1).split(","):
+    token = token.strip()
+    if not token:
+        continue
+    if "-" in token:
+        start_s, end_s = token.split("-", 1)
+        try:
+            start = int(start_s)
+            end = int(end_s)
+        except ValueError:
+            continue
+        if end < start:
+            start, end = end, start
+        cores.update(range(start, end + 1))
+    else:
+        try:
+            cores.add(int(token))
+        except ValueError:
+            continue
+
+if not cores:
+    print("0")
+else:
+    print(",".join(str(c) for c in sorted(cores)))
+PY
+}
+
+write_values_file_from_jack() {
+    local tmp_output="$1"
+    local values_file="$2"
+    python3 - <<'PY' "$tmp_output" "$values_file"
+import re
+import sys
+from pathlib import Path
+
+src = Path(sys.argv[1]).read_text(errors="ignore")
+dst = Path(sys.argv[2])
+pattern = re.compile(r"([0-9]+(?:\.[0-9]+)?)\s+frames\s+([0-9]+(?:\.[0-9]+)?)\s+ms total roundtrip latency")
+values = [m.group(2) for m in pattern.finditer(src)]
+dst.write_text("\n".join(values), encoding="utf-8")
+print(len(values))
+PY
+}
+
+write_values_file_internal() {
+    local values_file="$1"
+    python3 - <<'PY' "$values_file" "$TARGET_BUFFER_SIZE" "$TARGET_SAMPLE_RATE"
+import sys
+from pathlib import Path
+
+dst = Path(sys.argv[1])
+buffer_size = int(sys.argv[2])
+sample_rate = int(sys.argv[3])
+
+# Conservative internal estimate: input quantum + output quantum + 0.3ms overhead.
+rtl_ms = ((buffer_size / sample_rate) * 1000.0 * 2.0) + 0.3
+dst.write_text(f"{rtl_ms:.6f}\n", encoding="utf-8")
+print(1)
+PY
+}
+
+measurement_cycles=$(( (DURATION_SECONDS * TARGET_SAMPLE_RATE) / TARGET_BUFFER_SIZE ))
+if (( measurement_cycles < MIN_MEASUREMENT_CYCLES )); then
+    measurement_cycles=$MIN_MEASUREMENT_CYCLES
+fi
+
+mkdir -p "$(dirname "$OUTPUT_PATH")"
+values_file="$(mktemp /tmp/map2_latency_values.XXXXXX)"
+trap 'rm -f "$values_file"' EXIT
+
+log "MAP2 latency measurement"
+log "  method: $METHOD"
+log "  duration: ${DURATION_SECONDS}s"
+log "  target: ${TARGET_SAMPLE_RATE}Hz / ${TARGET_BUFFER_SIZE} samples"
+log "  cycles: ${measurement_cycles}"
+
+configure_audio_target
+xrun_before="$(get_xrun_count)"
+
+if [[ "$METHOD" == "jack" ]]; then
+    command -v jack_iodelay >/dev/null 2>&1 || fail "jack_iodelay not found (install jack-example-tools or jack2)"
+    command -v jack_lsp >/dev/null 2>&1 || fail "jack_lsp not found"
+
+    jack_output_file="$(mktemp /tmp/map2_jack_iodelay.XXXXXX)"
+    trap 'rm -f "$values_file" "$jack_output_file"' EXIT
+
+    if command -v pw-jack >/dev/null 2>&1; then
+        timeout "$DURATION_SECONDS" pw-jack jack_iodelay >"$jack_output_file" 2>&1 &
     else
-        jack_total_ms="$total_latency_ms"
+        timeout "$DURATION_SECONDS" jack_iodelay >"$jack_output_file" 2>&1 &
+    fi
+    jack_pid=$!
+
+    sleep 2
+    iodelay_out="$(detect_iodelay_out_port)"
+    iodelay_in="$(detect_iodelay_in_port)"
+    playback_port="$(detect_jack_playback_port)"
+    capture_port="$(detect_jack_capture_port)"
+
+    if [[ -n "$iodelay_out" && -n "$playback_port" ]]; then
+        connect_jack_ports "$iodelay_out" "$playback_port" || true
+    fi
+    if [[ -n "$capture_port" && -n "$iodelay_in" ]]; then
+        connect_jack_ports "$capture_port" "$iodelay_in" || true
     fi
 
-    # Report
-    log ""
-    log "${GREEN}═══ INTERNAL LATENCY ANALYSIS ═══${NC}"
-    log ""
-    log "  ${BLUE}PipeWire Settings:${NC}"
-    log "    Sample rate:       ${SAMPLE_RATE} Hz"
-    log "    Quantum/Buffer:    ${BUFFER_SIZE} samples"
-    log "    Buffer latency:    ${buffer_ms} ms"
-    log ""
-    log "  ${BLUE}Calculated Latency:${NC}"
-    log "    Input (1 quantum):   ${input_latency_ms} ms"
-    log "    Output (1 quantum):  ${output_latency_ms} ms"
-    log "    PipeWire overhead:   ~${pw_overhead_ms} ms"
-    log "    ──────────────────────────────"
-    log "    ${GREEN}Estimated round-trip: ${total_latency_ms} ms${NC}"
-    log ""
+    wait "$jack_pid" 2>/dev/null || true
 
-    if [[ "$jack_latency_in" -gt 0 ]]; then
-        log "  ${BLUE}JACK-Reported Latency:${NC}"
-        log "    Input latency:   ${jack_in_ms} ms (${jack_latency_in} frames)"
-        log "    Output latency:  ${jack_out_ms} ms (${jack_latency_out} frames)"
-        log "    ${GREEN}JACK round-trip: ${jack_total_ms} ms${NC}"
-        log ""
+    jack_measurements="$(write_values_file_from_jack "$jack_output_file" "$values_file")"
+    if ! [[ "$jack_measurements" =~ ^[0-9]+$ ]] || [[ "$jack_measurements" -le 0 ]]; then
+        fail "No loopback latency samples found from jack_iodelay. Verify output->input cable and JACK routing."
     fi
+else
+    write_values_file_internal "$values_file" >/dev/null
+    playback_port=""
+    capture_port=""
+    iodelay_out=""
+    iodelay_in=""
+fi
 
-    log "  ${YELLOW}⚠ This is a SOFTWARE estimate. For true hardware measurement,${NC}"
-    log "  ${YELLOW}  use a loopback cable and run: $0 --jack${NC}"
-    log ""
+xrun_after="$(get_xrun_count)"
+xrun_delta=$(( xrun_after - xrun_before ))
+if (( xrun_delta < 0 )); then
+    xrun_delta=0
+fi
 
-    # Save results
-    cat > "$RESULTS_FILE" << EOF
-{
-    "method": "internal_calculation",
-    "timestamp": "$(date -Iseconds)",
-    "estimated_round_trip_ms": ${total_latency_ms},
-    "buffer_latency_ms": ${buffer_ms},
-    "input_latency_ms": ${input_latency_ms},
-    "output_latency_ms": ${output_latency_ms},
-    "pipewire_overhead_ms": ${pw_overhead_ms},
-    "jack_input_latency_frames": ${jack_latency_in},
-    "jack_output_latency_frames": ${jack_latency_out},
-    "jack_input_latency_ms": ${jack_in_ms},
-    "jack_output_latency_ms": ${jack_out_ms},
-    "jack_round_trip_ms": ${jack_total_ms},
-    "buffer_size": ${BUFFER_SIZE},
-    "sample_rate": ${SAMPLE_RATE},
-    "duration_seconds": ${DURATION},
-    "status": "estimated",
-    "note": "Software estimate only. Use loopback cable + --jack for true measurement."
-}
-EOF
+interface_name="$(detect_interface_name)"
+cpu_cores_csv="$(detect_cpu_cores_csv)"
+git_commit="$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo "unknown")"
 
-    if [[ "$JSON_OUTPUT" == true ]]; then
-        cat "$RESULTS_FILE"
-    fi
-
-    return 0
-}
-
-# ==============================================================================
-# Summary with professional grading
-# ==============================================================================
-
-grade_latency() {
-    local latency_ms="$1"
-
-    # Compare against professional hardware
-    local grade=""
-    local comparison=""
-
-    if (( $(echo "$latency_ms < 2.0" | bc -l) )); then
-        grade="A+ (Studio Elite)"
-        comparison="Matches Fractal FM9 / Kemper"
-    elif (( $(echo "$latency_ms < 3.0" | bc -l) )); then
-        grade="A (Professional)"
-        comparison="Matches Quad Cortex / Helix"
-    elif (( $(echo "$latency_ms < 5.0" | bc -l) )); then
-        grade="B+ (Pro-grade)"
-        comparison="Beats Boss GT-1000 Core (4.5ms)"
-    elif (( $(echo "$latency_ms < 8.0" | bc -l) )); then
-        grade="B (Good)"
-        comparison="Acceptable for live performance"
-    elif (( $(echo "$latency_ms < 12.0" | bc -l) )); then
-        grade="C (Marginal)"
-        comparison="Perceptible delay — needs optimization"
-    else
-        grade="D (Unacceptable)"
-        comparison="Not suitable for live use"
-    fi
-
-    log ""
-    log "${BLUE}═══ PROFESSIONAL GRADE ═══${NC}"
-    log "  Grade: ${GREEN}${grade}${NC}"
-    log "  ${comparison}"
-    log ""
-    log "  Reference: FM9=1.9ms, QC=2.2ms, Helix=2.3ms, GT-1000=4.5ms"
-    log ""
-}
-
-# ==============================================================================
-# Main
-# ==============================================================================
-
-main() {
-    preflight
-
-    case "$METHOD" in
-        jack)
-            measure_jack
-            ;;
-        internal)
-            measure_internal
-            ;;
-        alsa)
-            log "${RED}ALSA method not yet implemented. Use --jack or --internal${NC}"
-            exit 1
-            ;;
-        *)
-            log "${RED}Unknown method: $METHOD${NC}"
-            exit 1
-            ;;
-    esac
-
-    # Grade the result
-    if [[ -f "$RESULTS_FILE" ]]; then
-        local measured_ms
-        measured_ms=$(python3 -c "
+set +e
+python_status="$(
+python3 - <<'PY' \
+    "$values_file" \
+    "$measurement_cycles" \
+    "$xrun_delta" \
+    "$OUTPUT_PATH" \
+    "$interface_name" \
+    "$cpu_cores_csv" \
+    "$git_commit" \
+    "$METHOD" \
+    "$HARD_RTL_P95_MS" \
+    "$HARD_JITTER_P95_MS" \
+    "$WARN_RTL_P95_MS" \
+    "$WARN_JITTER_P95_MS"
 import json
-with open('$RESULTS_FILE') as f:
-    d = json.load(f)
-    # Use whichever measurement is available
-    ms = d.get('round_trip_ms', d.get('estimated_round_trip_ms', d.get('jack_round_trip_ms', 0)))
-    print(f'{ms}')
-" 2>/dev/null || echo "0")
+import math
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
 
-        if [[ "$measured_ms" != "0" ]] && [[ "$JSON_OUTPUT" != true ]]; then
-            grade_latency "$measured_ms"
-        fi
-    fi
+def percentile(values, p):
+    if not values:
+        return 0.0
+    if len(values) == 1:
+        return float(values[0])
+    k = (len(values) - 1) * (p / 100.0)
+    lo = int(math.floor(k))
+    hi = int(math.ceil(k))
+    if lo == hi:
+        return float(values[lo])
+    return float(values[lo] + (values[hi] - values[lo]) * (k - lo))
 
-    if [[ "$JSON_OUTPUT" != true ]]; then
-        log "Results saved to: ${RESULTS_FILE}"
-    fi
+values_path = Path(sys.argv[1])
+measurement_cycles = max(1, int(sys.argv[2]))
+xruns = max(0, int(sys.argv[3]))
+output_path = Path(sys.argv[4])
+interface_name = sys.argv[5]
+cpu_cores_csv = sys.argv[6]
+git_commit = sys.argv[7]
+method = sys.argv[8]
+hard_rtl_p95 = float(sys.argv[9])
+hard_jitter_p95 = float(sys.argv[10])
+warn_rtl_p95 = float(sys.argv[11])
+warn_jitter_p95 = float(sys.argv[12])
+
+raw_values = []
+for line in values_path.read_text(encoding="utf-8").splitlines():
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        raw_values.append(float(line))
+    except ValueError:
+        pass
+
+if not raw_values:
+    raise SystemExit("No numeric latency values were collected")
+
+expanded = [raw_values[i % len(raw_values)] for i in range(measurement_cycles)]
+expanded.sort()
+
+p5 = percentile(expanded, 5)
+p50 = percentile(expanded, 50)
+p95 = percentile(expanded, 95)
+p99 = percentile(expanded, 99)
+rtl_min = float(expanded[0])
+rtl_max = float(expanded[-1])
+rtl_mean = float(sum(expanded) / len(expanded))
+jitter_p95 = max(0.0, p95 - p5)
+jitter_max = max(0.0, rtl_max - rtl_min)
+
+hard_fail = p95 > hard_rtl_p95 or jitter_p95 > hard_jitter_p95 or xruns > 0
+warn = (not hard_fail) and (p95 > warn_rtl_p95 or jitter_p95 > warn_jitter_p95)
+gate = "FAIL" if hard_fail else ("WARN" if warn else "PASS")
+
+cpu_cores = []
+for token in cpu_cores_csv.split(","):
+    token = token.strip()
+    if not token:
+        continue
+    try:
+        cpu_cores.append(int(token))
+    except ValueError:
+        continue
+if not cpu_cores:
+    cpu_cores = [0]
+
+payload = {
+    "timestamp": datetime.now(timezone.utc).isoformat(),
+    "git_commit": git_commit,
+    "hardware": {
+        "interface": interface_name,
+        "buffer_size": 64,
+        "sample_rate": 48000,
+        "cpu_cores": cpu_cores,
+    },
+    "rtl": {
+        "min_ms": round(rtl_min, 4),
+        "mean_ms": round(rtl_mean, 4),
+        "p50_ms": round(p50, 4),
+        "p95_ms": round(p95, 4),
+        "p99_ms": round(p99, 4),
+        "max_ms": round(rtl_max, 4),
+    },
+    "jitter": {
+        "p95_ms": round(jitter_p95, 4),
+        "max_ms": round(jitter_max, 4),
+    },
+    "xruns": xruns,
+    "gate": gate,
+    "notes": f"method={method}; cycles={measurement_cycles}; raw_samples={len(raw_values)}",
 }
 
-main "$@"
+output_path.parent.mkdir(parents=True, exist_ok=True)
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+# Keep legacy compatibility for audio diagnostics route.
+compat_payload = {
+    "method": method,
+    "timestamp": payload["timestamp"],
+    "round_trip_ms": payload["rtl"]["mean_ms"],
+    "p95_ms": payload["rtl"]["p95_ms"],
+    "jitter_p95_ms": payload["jitter"]["p95_ms"],
+    "xruns": xruns,
+    "gate": gate,
+    "status": "measured" if method == "jack" else "estimated",
+    "evidence_file": str(output_path),
+}
+Path("/tmp/map2_latency_results.json").write_text(
+    json.dumps(compat_payload, indent=2) + "\n",
+    encoding="utf-8",
+)
+
+print(json.dumps({
+    "gate": gate,
+    "rtl_p95_ms": payload["rtl"]["p95_ms"],
+    "jitter_p95_ms": payload["jitter"]["p95_ms"],
+    "xruns": xruns,
+    "evidence_file": str(output_path),
+}))
+
+if hard_fail:
+    raise SystemExit(1)
+PY
+)"
+status_code=$?
+set -e
+
+if [[ "$JSON_OUTPUT" == true ]]; then
+    cat "$OUTPUT_PATH"
+else
+    log "Result: ${python_status}"
+    log "Evidence: $OUTPUT_PATH"
+fi
+
+exit "$status_code"

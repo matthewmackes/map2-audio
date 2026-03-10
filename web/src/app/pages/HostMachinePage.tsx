@@ -117,6 +117,16 @@ export function HostMachinePage() {
               size="small"
               startIcon={<ArrowsClockwise size={16} weight="duotone" />}
               onClick={handleManualRefresh}
+              sx={{
+                color: 'var(--text-primary)',
+                borderColor: 'var(--border-strong)',
+                backgroundColor: 'var(--surface-2)',
+                borderRadius: 0,
+                '&:hover': {
+                  borderColor: 'var(--border-strong)',
+                  backgroundColor: 'var(--surface-3)',
+                },
+              }}
             >
               Refresh
             </Button>

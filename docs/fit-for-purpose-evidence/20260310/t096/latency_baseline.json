@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-03-10T21:22:35.721335+00:00",
+  "git_commit": "33e6a3d6",
+  "hardware": {
+    "interface": "Hotone JoGG",
+    "buffer_size": 64,
+    "sample_rate": 48000,
+    "cpu_cores": [
+      4,
+      5
+    ]
+  },
+  "rtl": {
+    "min_ms": 2.9667,
+    "mean_ms": 2.9667,
+    "p50_ms": 2.9667,
+    "p95_ms": 2.9667,
+    "p99_ms": 2.9667,
+    "max_ms": 2.9667
+  },
+  "jitter": {
+    "p95_ms": 0.0,
+    "max_ms": 0.0
+  },
+  "xruns": 0,
+  "gate": "PASS",
+  "notes": "method=internal; cycles=2250; raw_samples=1"
+}

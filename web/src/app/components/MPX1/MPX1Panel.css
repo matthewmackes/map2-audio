@@ -664,3 +664,131 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* T092 Carbon flat override */
+.mpx1-panel-view,
+.mpx1-rack-shell,
+.mpx1-rack-ear,
+.mpx1-rack-ear__hole,
+.mpx1-hw-knob,
+.mpx1-hw-knob::after,
+.mpx1-hw-knob::before,
+.mpx1-display-bezel,
+.mpx1-block-btn,
+.mpx1-fn-btn,
+.mpx1-nav-btn,
+.mpx1-value-display,
+.mpx1-panel-popover,
+.mpx1-panel-popover__close,
+.mpx1-panel-overlay,
+.mpx1-panel-activity {
+  border-radius: 0;
+  box-shadow: none;
+  background-image: none;
+  text-shadow: none;
+}
+
+.mpx1-panel-view {
+  background: var(--bg);
+}
+
+.mpx1-rack-shell {
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+.mpx1-rack-ear,
+.mpx1-face,
+.mpx1-panel-activity {
+  background: var(--surface-2);
+}
+
+.mpx1-rack-ear__hole,
+.mpx1-value-display {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.mpx1-hw-knob,
+.mpx1-nav-btn,
+.mpx1-fn-btn,
+.mpx1-block-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.mpx1-hw-knob:hover,
+.mpx1-nav-btn:hover,
+.mpx1-fn-btn:hover,
+.mpx1-block-btn:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.mpx1-block-btn:active,
+.mpx1-block-btn--active,
+.mpx1-block-btn--selected,
+.mpx1-nav-btn:active,
+.mpx1-fn-btn:active {
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
+  color: var(--text-primary);
+  transform: none;
+}
+
+.mpx1-display-bezel,
+.mpx1-panel-popover {
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+.mpx1-display__number,
+.mpx1-display__name,
+.mpx1-panel-popover__title,
+.mpx1-value-display__text {
+  color: var(--text-primary);
+  text-shadow: none;
+}
+
+.mpx1-led,
+.mpx1-block-btn__led,
+.mpx1-power-led {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.mpx1-led {
+  background: var(--surface-3);
+}
+
+.mpx1-led--on,
+.mpx1-block-btn--selected .mpx1-block-btn__led,
+.mpx1-power-led--on {
+  background: var(--support-success);
+}
+
+.mpx1-led--amber.mpx1-led--on,
+.mpx1-block-btn--bypassed .mpx1-block-btn__bypass {
+  background: var(--support-warning);
+}
+
+.mpx1-led--red.mpx1-led--on {
+  background: var(--support-danger);
+}
+
+.mpx1-block-btn__bypass {
+  border-radius: 0;
+  background: var(--surface-3);
+}
+
+.mpx1-panel-popover__close {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.mpx1-panel-overlay--offline,
+.mpx1-panel-overlay--bypassed {
+  background: color-mix(in srgb, var(--support-danger) 12%, var(--surface));
+}

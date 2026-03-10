@@ -11,6 +11,7 @@ from typing import Optional
 
 from app.services.websocket_manager import ws_manager
 from app.services.juce_engine_service import get_audio_engine
+from app.services.timing_jitter_collector import get_timing_jitter_collector
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class MeteringBroadcastService:
             "meters": 1.0 / 30,    # 30 fps
             "latency": 1.0 / 1,    # 1 fps (latency doesn't change often)
             "dynamics": 1.0 / 30,  # 30 fps (gain reduction meters)
+            "timing_jitter": 1.0 / 10,  # 10 fps (callback timing diagnostics)
         }
 
     async def start(self):
@@ -60,6 +62,7 @@ class MeteringBroadcastService:
             asyncio.create_task(self._broadcast_loop("meters", self._get_meters)),
             asyncio.create_task(self._broadcast_loop("latency", self._get_latency)),
             asyncio.create_task(self._broadcast_loop("dynamics", self._get_dynamics)),
+            asyncio.create_task(self._broadcast_loop("timing_jitter", self._get_timing_jitter)),
         ]
 
         logger.info("Metering broadcast service started")
@@ -99,8 +102,9 @@ class MeteringBroadcastService:
 
                     if data:
                         # Broadcast to subscribers
+                        message_type = "timing_jitter" if topic == "timing_jitter" else f"{topic}_update"
                         message = {
-                            "type": f"{topic}_update",
+                            "type": message_type,
                             "data": data,
                             "timestamp": datetime.now().isoformat()
                         }
@@ -243,6 +247,60 @@ class MeteringBroadcastService:
         data = await service.get_dynamics_metering()
         data["running"] = True
         return data
+
+    async def _get_timing_jitter(self) -> Optional[dict]:
+        """Get callback timing jitter and publish to rolling collector."""
+        service = get_audio_engine()
+        audio_active = service.is_running and service.is_audio_running()
+        collector = get_timing_jitter_collector()
+
+        if not audio_active:
+            payload = {
+                "delta_ms": 0.0,
+                "deviation_ms": 0.0,
+                "callback_count": 0,
+                "xrun_count": 0,
+                "running": False,
+            }
+            collector.record(
+                delta_ms=0.0,
+                deviation_ms=0.0,
+                callback_count=0,
+                xrun_count=0,
+                rtl_ms=0.0,
+                running=False,
+            )
+            return payload
+
+        stats = await service.get_audio_io_stats()
+        callback_budget_ms = float(stats.get("callback_budget_ms", 0.0) or 0.0)
+        deviation_ms = max(0.0, float(stats.get("callback_jitter_ms", 0.0) or 0.0))
+        delta_ms = max(0.0, callback_budget_ms + deviation_ms)
+        xrun_count = int(stats.get("xrun_count", 0) or 0)
+
+        configured_buffer = int(getattr(service.config, "buffer_size", 64) or 64)
+        if configured_buffer <= 0:
+            configured_buffer = 64
+        samples_processed = int(stats.get("samples_processed", 0) or 0)
+        callback_count = max(0, int(samples_processed / configured_buffer))
+        rtl_ms = float(stats.get("measured_round_trip_ms", 0.0) or 0.0)
+
+        collector.record(
+            delta_ms=delta_ms,
+            deviation_ms=deviation_ms,
+            callback_count=callback_count,
+            xrun_count=xrun_count,
+            rtl_ms=rtl_ms,
+            running=True,
+        )
+
+        return {
+            "delta_ms": round(delta_ms, 4),
+            "deviation_ms": round(deviation_ms, 4),
+            "callback_count": callback_count,
+            "xrun_count": xrun_count,
+            "running": True,
+        }
 
     def set_interval(self, topic: str, fps: float):
         """

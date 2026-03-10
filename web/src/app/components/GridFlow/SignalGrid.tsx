@@ -16,7 +16,7 @@ export interface SignalGridProps {
   selectedPluginUri: string | null
   onPluginSelect: (uri: string) => void
   onToggleBypass: (uri: string, bypassed: boolean) => void
-  onDeletePlugin?: (uri: string) => void
+  onDeletePlugin?: (uri: string, position: number) => void
   onReorderPlugins: (pluginUris: string[]) => void
   onAddPlugin?: () => void
   onAddPluginDirect?: (uri: string) => void

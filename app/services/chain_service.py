@@ -687,7 +687,12 @@ class ChainService:
             logger.error(f"Error adding {ir_type} IR to chain {chain_id}: {e}")
             return False
 
-    async def remove_plugin_from_chain(self, chain_id: int, plugin_uri: str) -> bool:
+    async def remove_plugin_from_chain(
+        self,
+        chain_id: int,
+        plugin_uri: str,
+        plugin_position: Optional[int] = None,
+    ) -> bool:
         """Remove plugin from chain.
         
         Args:
@@ -705,16 +710,32 @@ class ChainService:
             from app.database import ChainPlugin
             from sqlalchemy import delete, text
             
-            logger.info(f"REMOVE_PLUGIN: === START deletion of {plugin_uri} from chain {chain_id} ===")
+            logger.info(
+                "REMOVE_PLUGIN: === START deletion of %s from chain %s (position=%s) ===",
+                plugin_uri,
+                chain_id,
+                plugin_position,
+            )
             logger.info(f"REMOVE_PLUGIN: Plugin URI type: {type(plugin_uri)}, length: {len(plugin_uri)}, repr: {repr(plugin_uri)}")
+
+            filters = [
+                ChainPlugin.chain_id == chain_id,
+                ChainPlugin.plugin_uri == plugin_uri,
+            ]
+            sql_params = {"chain_id": chain_id, "plugin_uri": plugin_uri}
+            if plugin_position is not None:
+                filters.append(ChainPlugin.position == plugin_position)
+                sql_params["plugin_position"] = plugin_position
+
+            if plugin_position is None:
+                sql_where_clause = "chain_id = :chain_id AND plugin_uri = :plugin_uri"
+            else:
+                sql_where_clause = "chain_id = :chain_id AND plugin_uri = :plugin_uri AND position = :plugin_position"
             
             # Step 1: Check plugin exists
             logger.info(f"REMOVE_PLUGIN: Step 1 - Checking if plugin exists...")
             count_result = await self.session.execute(
-                select(ChainPlugin).filter(
-                    (ChainPlugin.chain_id == chain_id) &
-                    (ChainPlugin.plugin_uri == plugin_uri)
-                )
+                select(ChainPlugin).filter(*filters)
             )
             matching_plugins = count_result.scalars().all()
             count_before = len(matching_plugins)
@@ -731,24 +752,15 @@ class ChainService:
             # Step 2: Try TWO methods to delete - ORM and raw SQL
             # Method 1: ORM delete
             logger.info(f"REMOVE_PLUGIN: Step 2a - Trying ORM DELETE...")
-            delete_stmt = delete(ChainPlugin).where(
-                (ChainPlugin.chain_id == chain_id) &
-                (ChainPlugin.plugin_uri == plugin_uri)
-            )
+            delete_stmt = delete(ChainPlugin).where(*filters)
             result = await self.session.execute(delete_stmt)
             deleted_count_orm = result.rowcount
             logger.info(f"REMOVE_PLUGIN: ORM DELETE returned rowcount={deleted_count_orm}")
             
             # Method 2: Raw SQL delete (as backup/verification)
             logger.info(f"REMOVE_PLUGIN: Step 2b - Trying raw SQL DELETE...")
-            sql_delete = text("""
-                DELETE FROM chain_plugins 
-                WHERE chain_id = :chain_id AND plugin_uri = :plugin_uri
-            """)
-            result_sql = await self.session.execute(
-                sql_delete,
-                {"chain_id": chain_id, "plugin_uri": plugin_uri}
-            )
+            sql_delete = text(f"DELETE FROM chain_plugins WHERE {sql_where_clause}")
+            result_sql = await self.session.execute(sql_delete, sql_params)
             deleted_count_sql = result_sql.rowcount
             logger.info(f"REMOVE_PLUGIN: Raw SQL DELETE returned rowcount={deleted_count_sql}")
             
@@ -773,23 +785,14 @@ class ChainService:
             
             # ORM verify
             verify_result = await self.session.execute(
-                select(ChainPlugin).filter(
-                    (ChainPlugin.chain_id == chain_id) &
-                    (ChainPlugin.plugin_uri == plugin_uri)
-                )
+                select(ChainPlugin).filter(*filters)
             )
             verify_orm_count = len(verify_result.scalars().all())
             logger.info(f"REMOVE_PLUGIN: ORM verify - {verify_orm_count} record(s) still exist")
             
             # Raw SQL verify
-            sql_verify = text("""
-                SELECT COUNT(*) as cnt FROM chain_plugins 
-                WHERE chain_id = :chain_id AND plugin_uri = :plugin_uri
-            """)
-            result_verify = await self.session.execute(
-                sql_verify,
-                {"chain_id": chain_id, "plugin_uri": plugin_uri}
-            )
+            sql_verify = text(f"SELECT COUNT(*) as cnt FROM chain_plugins WHERE {sql_where_clause}")
+            result_verify = await self.session.execute(sql_verify, sql_params)
             row = result_verify.one()
             verify_sql_count = row[0] if row else 0
             logger.info(f"REMOVE_PLUGIN: Raw SQL verify - {verify_sql_count} record(s) still exist")
@@ -1019,13 +1022,20 @@ class ChainService:
             logger.error(f"Error reordering plugins in chain {chain_id}: {e}")
             return False
 
-    async def set_plugin_bypass(self, chain_id: int, plugin_uri: str, bypass: bool) -> bool:
+    async def set_plugin_bypass(
+        self,
+        chain_id: int,
+        plugin_uri: str,
+        bypass: bool,
+        plugin_position: Optional[int] = None,
+    ) -> bool:
         """Set plugin bypass state in a chain.
         
         Args:
             chain_id: Chain ID
             plugin_uri: Plugin URI
             bypass: True to bypass, False to enable
+            plugin_position: Optional plugin position to disambiguate duplicate URIs
             
         Returns:
             True if updated, False otherwise
@@ -1036,13 +1046,16 @@ class ChainService:
             
             from app.database import ChainPlugin
             
-            result = await self.session.execute(
-                select(ChainPlugin).filter(
-                    ChainPlugin.chain_id == chain_id,
-                    ChainPlugin.plugin_uri == plugin_uri
-                )
+            query = select(ChainPlugin).filter(
+                ChainPlugin.chain_id == chain_id,
+                ChainPlugin.plugin_uri == plugin_uri,
             )
-            chain_plugin = result.scalar_one_or_none()
+            if plugin_position is not None:
+                query = query.filter(ChainPlugin.position == plugin_position)
+            query = query.order_by(ChainPlugin.position.asc())
+
+            result = await self.session.execute(query)
+            chain_plugin = result.scalars().first()
             
             if not chain_plugin:
                 return False
@@ -1050,7 +1063,13 @@ class ChainService:
             chain_plugin.bypass = bypass
             await self.session.flush()
             
-            logger.info(f"Set bypass={bypass} for plugin {plugin_uri} in chain {chain_id}")
+            logger.info(
+                "Set bypass=%s for plugin %s in chain %s (position=%s)",
+                bypass,
+                plugin_uri,
+                chain_id,
+                plugin_position,
+            )
             return True
         except Exception as e:
             logger.error(f"Error setting bypass for plugin {plugin_uri}: {e}")

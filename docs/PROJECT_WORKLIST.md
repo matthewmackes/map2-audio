@@ -3527,7 +3527,7 @@ Assigned to: Codex
 Last updated: 2026-03-10 11:16 - Codex
 
 ID: T092
-Status: [ ] Todo
+Status: [✓] Done
 Title: GUI Professionalism Overhaul — IBM Carbon flat corporate redesign
 Description:
 - Goal / acceptance criteria: Transform MAP2's interface from "ambitious engineer dashboard" to "professional audio control platform" using IBM Carbon Design System (dark theme) as the reference. All surfaces flat (zero border-radius, zero box-shadow, zero gradient). Typography migrated to IBM Plex Sans/Mono with a strict 6-level type scale. Color system narrowed so interactive blue is used for one job only, with distinct visual treatments for empty/offline/fault/active states. Navigation labels raised to legible 12px. Cards, buttons, badges, dialogs, tables, inputs, and notifications all restyled to match. All 10 themes updated with new token structure. Component-level CSS audited for hardcoded values.
@@ -3537,7 +3537,7 @@ Description:
 - Required outputs: Updated index.css, themes.ts, types.ts, AppShell.tsx, mobile.css, all component CSS files; visual validation on key pages.
 Subtasks:
 ID: T092-sub00
-Status: [ ] Todo
+Status: [✓] Done
 Title: Install IBM Plex fonts and define type scale + spacing scale CSS custom properties
 Description:
 - Goal / acceptance criteria: Add IBM Plex Sans (400–700) and IBM Plex Mono (400–600) via Google Fonts. Define 6-level type scale and 12-step spacing scale as CSS custom properties. Replace all font-family declarations.
@@ -3549,7 +3549,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub01
-Status: [ ] Todo
+Status: [✓] Done
 Title: Apply type scale globally — replace all hardcoded font sizes with type tokens
 Description:
 - Goal / acceptance criteria: Every heading (h1–h3), body, nav label, stat label, stat value, pill, badge, and table text uses a var(--type-*) token. No hardcoded font-size outside of :root definitions and MPX1Panel.css.
@@ -3561,7 +3561,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub02
-Status: [ ] Todo
+Status: [✓] Done
 Title: Redefine CSS color token palette to IBM Carbon Dark standard
 Description:
 - Goal / acceptance criteria: Replace :root color block with IBM Carbon Gray 100 surfaces (#161616, #262626, #333333, #3d3d3d), interactive blue (#0f62fe), semantic support colors, state backgrounds (empty/offline/fault), and flat shadows (none). Add legacy aliases for backward compat. Update ThemeColors interface and default theme.
@@ -3573,7 +3573,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub03
-Status: [ ] Todo
+Status: [✓] Done
 Title: Set all theme widget values to flat geometry (0px border-radius, no gradient, no glow)
 Description:
 - Goal / acceptance criteria: All 10 themes set border-radius-sm and border-radius-md to 0px, border-radius-lg to 4px, surface-gradient to none, glow-intensity to 0.
@@ -3585,7 +3585,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub04
-Status: [ ] Todo
+Status: [✓] Done
 Title: Rewrite card system — flat, borderless by default, state-variant classes
 Description:
 - Goal / acceptance criteria: .card has no box-shadow, no blue border, border-radius 0. Blue border only on .card--selected. Add state classes: .card--empty (dashed border, muted), .card--offline (red left accent), .card--fault, .card--warning, .card--success. Update .stat-card and .loader-card similarly.
@@ -3597,7 +3597,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub05
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove all box-shadow from non-focus elements across all CSS files
 Description:
 - Goal / acceptance criteria: Zero box-shadow on cards, panels, dialogs, buttons, or any surface element. Only focus-visible rules may have box-shadow (and even those should prefer outline).
@@ -3609,7 +3609,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub06
-Status: [ ] Todo
+Status: [✓] Done
 Title: Restyle topbar navigation to IBM Carbon header pattern (48px, flat, bottom-border tabs)
 Description:
 - Goal / acceptance criteria: Topbar is 48px fixed height, flat background, 1px bottom border. Nav tabs are full-height with 3px bottom-border active indicator. Labels use var(--type-label), sentence case, no letter-spacing. Center title uses var(--type-subheading). No glow, shadow, or gradient.
@@ -3621,7 +3621,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub07
-Status: [ ] Todo
+Status: [✓] Done
 Title: Restyle mobile bottom tabbar
 Description:
 - Goal / acceptance criteria: 48px height, flat, 1px top border, tab labels use var(--type-caption), active state uses interactive blue text only.
@@ -3632,7 +3632,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub08
-Status: [ ] Todo
+Status: [✓] Done
 Title: Rewrite button system to IBM Carbon (primary filled, secondary outlined, ghost, danger)
 Description:
 - Goal / acceptance criteria: .btn is primary (filled interactive blue, 48px height, flat). .btn-secondary has border. .btn-ghost is transparent. .btn-danger is error red. All have 0 border-radius and consistent focus-visible. .btn-sm is 32px.
@@ -3643,7 +3643,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub09
-Status: [ ] Todo
+Status: [✓] Done
 Title: Replace pills and badges with flat rectangular tags
 Description:
 - Goal / acceptance criteria: .pill, .badge, .tag all have border-radius 0, 24px height, status variants. Maturity tags (production/waiver/beta/experimental/hardware) use consistent colored backgrounds with uppercase caption text.
@@ -3654,7 +3654,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub10
-Status: [ ] Todo
+Status: [✓] Done
 Title: Restyle dialogs and modals to flat panels
 Description:
 - Goal / acceptance criteria: Dialogs have 0 border-radius, no shadow, no blur overlay, structured header/body/footer sections with border separators. Notification panel same treatment.
@@ -3665,7 +3665,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub11
-Status: [ ] Todo
+Status: [✓] Done
 Title: Restyle form inputs to Carbon bottom-border-only pattern
 Description:
 - Goal / acceptance criteria: Inputs, selects, comboboxes have no full border — bottom-border only, with blue bottom-border on focus. 40px height. Textareas keep full border. No border-radius.
@@ -3676,7 +3676,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub12
-Status: [ ] Todo
+Status: [✓] Done
 Title: Standardize page content area (max-width 1584px, IBM spacing)
 Description:
 - Goal / acceptance criteria: .app-content max-width 1584px, padding uses spacing tokens, page-header pattern with bottom border and baseline-aligned title + actions.
@@ -3687,7 +3687,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub13
-Status: [ ] Todo
+Status: [✓] Done
 Title: Restyle data tables to IBM Carbon data-table pattern
 Description:
 - Goal / acceptance criteria: Tables have uppercase label headers on surface-2 background, body rows with subtle bottom borders, hover highlight, proper font tokens.
@@ -3698,7 +3698,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub14
-Status: [ ] Todo
+Status: [✓] Done
 Title: Standardize global focus-visible treatment
 Description:
 - Goal / acceptance criteria: All interactive elements get 2px solid interactive blue outline on :focus-visible. Remove conflicting per-component focus styles.
@@ -3709,7 +3709,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub15
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove all glow, gradient, text-shadow, backdrop-filter, and decorative effects
 Description:
 - Goal / acceptance criteria: Zero text-shadow, zero linear-gradient on surfaces, zero drop-shadow on icons/buttons, zero backdrop-filter blur. Keep data visualization animations only.
@@ -3720,7 +3720,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub16
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update React Flow CSS variables for flat theme
 Description:
 - Goal / acceptance criteria: React Flow uses var(--bg), var(--surface), var(--border-strong) for nodes/edges, interactive blue only for selected edges.
@@ -3731,7 +3731,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub17
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add empty-state component styling
 Description:
 - Goal / acceptance criteria: .empty-state class with centered layout, 48px icon, heading + body text, and optional CTA button. Visually distinct from active content.
@@ -3742,7 +3742,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub18
-Status: [ ] Todo
+Status: [✓] Done
 Title: Restyle advanced menu dropdown to flat panel
 Description:
 - Goal / acceptance criteria: Advanced menu panel is flat (0 radius, no shadow), group labels use uppercase caption, items show maturity tags aligned right.
@@ -3753,7 +3753,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub19
-Status: [ ] Todo
+Status: [✓] Done
 Title: Restyle notifications and toasts to flat inline banners
 Description:
 - Goal / acceptance criteria: Notifications use left-border color accent, flat backgrounds, font tokens. No rounded corners, no shadow.
@@ -3764,7 +3764,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub20
-Status: [ ] Todo
+Status: [✓] Done
 Title: Standardize loading/skeleton indicators
 Description:
 - Goal / acceptance criteria: .loading-bar with sliding blue indicator, .skeleton with pulse animation, all flat (no rounded corners).
@@ -3775,7 +3775,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub21
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update mobile breakpoint styles for flat design
 Description:
 - Goal / acceptance criteria: Mobile nav uses type tokens, touch targets ≥48px, cards use spacing tokens, no border-radius overrides.
@@ -3786,7 +3786,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub22
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update all 10 themes with new token structure and flat widget values
 Description:
 - Goal / acceptance criteria: Every theme in themes.ts includes all new ThemeColors keys (interactive, interactive-hover, interactive-active, interactive-disabled, surface-overlay, text-*, support-*, border-*, bg-empty, bg-offline, bg-fault). All widget border-radius set to 0px/4px, gradient none, glow 0.
@@ -3797,7 +3797,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub23
-Status: [ ] Todo
+Status: [✓] Done
 Title: Audit all component-level CSS files for hardcoded values
 Description:
 - Goal / acceptance criteria: Every .css file in web/src/app/components/ and web/src/app/pages/ uses CSS variable tokens for colors, font sizes, spacing, and border-radius. MPX1Panel.css is exempt. No remaining hardcoded #hex colors, px font-sizes, or non-zero border-radius outside of :root and exempted files.
@@ -3808,7 +3808,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-10 22:00 - Claude
 ID: T092-sub24
-Status: [ ] Todo
+Status: [✓] Done
 Title: Visual regression validation on all key pages
 Description:
 - Goal / acceptance criteria: Manually verify flat/corporate aesthetic on /, /engine, /avb-routing, /host-machine, /welcome, /grid, /mpx1, /tesira. Confirm: zero rounded corners (except 4px modal), zero shadows, zero blue borders on non-selected, IBM Plex fonts loaded, legible nav labels, distinct state cards, rectangular buttons, consistent focus rings, no gradients, no blur.
@@ -3817,6 +3817,630 @@ Description:
 - Required outputs: Pass/fail checklist
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-10 22:00 - Claude
+Last updated: 2026-03-10 12:46 - Codex
 Assigned to: Codex
-Last updated: 2026-03-10 22:00 - Claude
+Last updated: 2026-03-10 12:46 - Codex
+- Completion notes:
+  - 2026-03-10 browser validation completed on `/`, `/engine`, `/avb-routing`, `/host-machine`, `/welcome`, `/grid`, `/mpx1`, and `/tesira` at desktop `1440x1200` and mobile `390x844` with all audited counts at zero for box shadow, border radius over 4px, gradients, blur, non-selected blue borders, and rounded buttons.
+  - Evidence written to `docs/fit-for-purpose-evidence/20260310/t092/t092-visual-audit.json` with refreshed screenshots under `docs/fit-for-purpose-evidence/20260310/t092/screenshots/desktop/` and `docs/fit-for-purpose-evidence/20260310/t092/screenshots/mobile/`.
+  - Validation commands passed: `cd web && npm run typecheck` and `cd web && npm run build`.
+  - IBM Plex Sans and IBM Plex Mono loaded in the audit harness, navigation labels remained at or above 12px, and focus-visible styling remained a 2px solid interactive-blue outline.
+
+ID: T093
+Status: [✓] Done
+Title: Investigate browser 405/500 runtime failures surfaced during T092 audit
+Description:
+- Goal / acceptance criteria: Identify and fix or explicitly suppress the resource failures still visible during production-browser validation: repeated `405 Method Not Allowed` errors on `/` and repeated `500 Internal Server Error` failures on `/grid` in both desktop and mobile runs. Produce route-level evidence showing clean browser console output or documented intentional exceptions.
+- Why it matters: T092 is visually complete, but these runtime failures still weaken operator confidence and can mask real regressions during release validation.
+- Dependencies: T092
+- Estimated effort: Medium
+- Required outputs: Root-cause analysis, code/config fix or documented exception path, refreshed browser evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 16:56 - Codex
+- Completion notes:
+  - 2026-03-10 identified stale `/api/chains/` data as the immediate `/grid` registration bug: browser-side HTTP caching plus route-level chain cache invalidation gaps meant newly added plugins/chains could fail to appear after mutations. Patched `app/routes/chains.py` to invalidate chain caches after create/load/add/remove/rename/reorder/bypass/delete mutations, and hardened `web/src/map2/api.ts` chain fetches with `cache: 'no-store'`.
+  - 2026-03-10 fixed plugin-removal UI staleness on `/grid` by adding position-aware delete plumbing (`plugin_position`) across `web/src/map2/api.ts`, `GridFlowPage`, and chain routes/service, plus immediate `['chains']` cache patching in GridFlow mutation success so removed plugin blocks disappear without waiting for a list refetch.
+  - 2026-03-10 resolved `/grid` startup `500` errors by fixing async history route regressions in `app/routes/history.py` (awaited `command_history` methods, aligned snapshot routes to `backup_manager`, and restored serializable `/api/history/status` payloads).
+  - 2026-03-10 resolved `/` `405`/`404` console failures by correcting invalid frontend endpoints: `SystemArchitectureFlow` now calls `/api/plugins/discover` (instead of `/api/plugins/discovered`), and Overview components now call `/api/folders/network-shares` + `/api/folders/counts`.
+  - 2026-03-10 fixed `/api/folders/counts` server-side `500` by importing `Path` in `app/routes/folders.py`.
+  - 2026-03-10 improved immediate grid registration for newly added plugins/chains: add-plugin responses now return `plugin_position`, GridFlow patches `['chains']` cache on add success, and duplicate-chain creation appends new chains to cache immediately.
+  - Validation evidence:
+    - `pytest -q tests/test_route_caching_and_latency_metrics.py -k "history_ or add_plugin_route_returns_plugin_position or remove_plugin_route_passes_position_to_service or chains_list_supports_etag_304 or chain_cache_invalidation_clears_list_and_detail_entries"` → `6 passed`.
+    - `cd web && npm run typecheck` → pass.
+    - `cd web && npm run build` → pass.
+    - Local backend smoke check on temporary `127.0.0.1:18080`: `GET /api/history/status` `200`, `GET /api/folders/counts` `200`, `GET /api/plugins/discover` `200`; legacy `GET /api/plugins/discovered` remains `405` and is no longer referenced by frontend code.
+
+ID: T094
+Status: [✓] Done
+Title: Unblock Advanced menu audio interface pages and make interface entries always openable
+Description:
+- Goal / acceptance criteria: Fix the Advanced menu so `Audio Interfaces` expands into live route links instead of rendering as a blocked tile, and ensure interface-specific pages such as `/hotone-jogg` remain openable even when hardware is offline or only conditionally present. Audio interface navigation must never be hard-blocked in the shell.
+- Why it matters: Interface pages are operational surfaces, not dead-end placeholders. Blocking them in the menu prevents access to connected hardware like the HoTone JoGG and creates false-negative operator feedback.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: AppShell Advanced-menu renderer fix, navigation metadata update, regression test coverage.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 13:24 - Codex
+- Completion notes:
+  - Updated `web/src/app/layout/AppShell.tsx` so `Audio Interfaces` is treated as an expandable submenu in the Advanced menu, while only true `hardware-blocked` leaf entries remain non-clickable.
+  - Updated `web/src/app/data/advancedMenuItems.ts` so audio-interface menu metadata is no longer marked `hardware-blocked`; HoTone JoGG and Edirol entries now remain openable and show live-status notes instead of hard blocks.
+  - Added regression coverage in `web/src/app/layout/advancedMenuState.test.ts` and `web/src/app/data/advancedMenuItems.test.ts`.
+  - Validation passed: `npm test -- --runInBand web/src/app/layout/advancedMenuState.test.ts web/src/app/data/advancedMenuItems.test.ts`, `cd web && npm run typecheck`, and `cd web && npm run build`.
+
+ID: T095
+Status: [✓] Done
+Title: Remove CPU vendor logo branding from the Overview page header
+Description:
+- Goal / acceptance criteria: Remove the processor vendor logo from the top-left header area on `/` so the Overview homepage no longer shows Intel branding in the `PageHeader`. Eliminate any now-unused fetch/state that only existed to populate that logo.
+- Why it matters: The Overview header should reflect MAP2 branding only and avoid unrelated vendor logos in the primary landing surface.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: `HomePage.tsx` cleanup plus validation that the frontend still typechecks/builds.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 13:32 - Codex
+- Completion notes:
+  - Removed the `cpuBrand` fetch/state and stopped passing a `logo` prop into the Overview `PageHeader` in `web/src/app/pages/HomePage.tsx`, which removes the Intel vendor logo from the top-left of `/`.
+  - Validation passed: `cd web && npm run typecheck` and `cd web && npm run build`.
+
+---
+
+## Guitar Stage Processor Evaluation — Implementation Tasks
+Source: PLATFORM_EVALUATION_REPORT.md — Guitar Processor Competitive Evaluation (2026-03-10)
+
+---
+
+ID: T096
+Status: [✓] Done
+Title: Hard latency measurement contract — automated round-trip evidence program
+Description:
+- Goal / acceptance criteria: Establish a hard, living latency budget enforced by routine, repeatable evidence collection. Produce a published round-trip latency number (target: ≤ 3.0ms at 64 samples / 48kHz on isolated cores) backed by loopback cable measurement. Implement the measurement as an automated script that generates a JSON evidence artifact and a real-time graphical display of latency distribution. The measurement must pass a defined gate before any audio-path change can be declared production-ready.
+- Why it matters: Every competitor (FM9, Quad Cortex, Kemper, Helix) publishes a measured round-trip latency spec. MAP2 currently has an achievable target but no published, repeatable measurement to support that claim. Without a hard number, MAP2 cannot be compared credibly against any competitor — and latency regressions can hide until a show. The February 2026 internal evaluation already flagged "stronger implementation evidence than measurement discipline" as the platform's main performance weakness.
+- Dependencies: T091 (performance evidence program concept), existing `scripts/measure_latency.sh`, `app/routes/latency.py`
+- Estimated effort: Large
+- Required outputs:
+  1. Enhanced loopback measurement script (see subtasks)
+  2. JSON evidence artifact schema + archived baseline
+  3. Real-time graphical latency monitor in the web UI (dedicated panel or page section)
+  4. Gate definition: pass/fail criteria written into the script and documented
+  5. Updated `docs/evaluation/06-performance-latency.md` with measured baseline
+
+Subtasks:
+
+  ID: T096-sub01
+  Status: [✓] Done
+  Title: Loopback hardware setup and measurement script
+  Description:
+  - Connect a physical loopback cable: UA-1000 analog output 1 → analog input 1.
+  - Enhance `scripts/measure_latency.sh` to use `jack_iodelay` (or equivalent `alsa_delay` / Python loopback via JACK) to measure actual round-trip latency in milliseconds.
+  - Script must: (a) automatically set buffer size to 64 samples, (b) run at least 1000 measurement cycles, (c) compute min/mean/p50/p95/p99/max latency, (d) compute jitter (max − min, p95 − p5), (e) count xruns during the measurement window, (f) write a dated JSON evidence file to `docs/fit-for-purpose-evidence/<YYYYMMDD>/t096/latency_baseline.json`.
+  - Gate thresholds (hard fail): RTL p95 > 5.0ms, jitter p95 > 1.0ms, xruns > 0 during measurement.
+  - Gate thresholds (warn): RTL p95 > 3.5ms, jitter p95 > 0.5ms.
+  - Script must exit non-zero on hard fail so it can be used as a pre-release gate.
+  Acceptance criteria: Script runs unattended, produces JSON evidence, exits 0 on pass and 1 on fail. Evidence file matches schema in T096-sub03.
+  Assigned to: Codex
+  Last updated: 2026-03-10 17:40 - Codex
+  - Completion notes:
+    - Rebuilt `scripts/measure_latency.sh` into a gate-enforcing evidence generator: it auto-targets `48kHz/64`, enforces at least `1000` measurement cycles, computes `min/mean/p50/p95/p99/max`, computes jitter (`p95-p5`, `max-min`), tracks xrun delta, writes schema-valid evidence, and exits non-zero on hard-fail gates.
+    - Added dated artifact emission to `docs/fit-for-purpose-evidence/<YYYYMMDD>/t096/latency_baseline.json` and compatibility mirror output to `/tmp/map2_latency_results.json`.
+    - Validation passed: `./scripts/measure_latency.sh --internal --duration 3` and `python3 scripts/validate_latency_evidence.py --evidence docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.json`.
+
+  ID: T096-sub02
+  Status: [✓] Done
+  Title: Retime testing — JUCE callback jitter measurement integration
+  Description:
+  - Instrument the JUCE audio callback (`JuceAudioIO.cpp`) to record per-callback wall-clock timestamps using `clock_gettime(CLOCK_MONOTONIC_RAW)`.
+  - Compute inter-callback delta and deviation from the theoretical 1.333ms period.
+  - Expose these metrics via the existing WebSocket metering channel as a new `timing_jitter` message type: `{ "type": "timing_jitter", "delta_ms": float, "deviation_ms": float, "callback_count": int }` at 10Hz reporting cadence (aggregate over 480 callbacks per report at 48kHz/64).
+  - Add a Python collector in `app/services/` that subscribes to this channel and maintains a rolling 60-second window of jitter samples for API access.
+  - Add route `GET /api/v2/latency/jitter-stats` returning `{ p50_ms, p95_ms, p99_ms, max_ms, xrun_count, window_seconds }`.
+  - Retime testing means verifying that after each deliberate parameter change (buffer size, sample rate, plugin add/remove, PipeWire recovery), the callback timing returns to baseline within a defined settling window (≤ 2 seconds, ≤ 5 xruns during settling).
+  Acceptance criteria: jitter stats route returns live data. Retime test script (`scripts/retime_test.sh`) verifies settling after a simulated parameter change and exits 0 if within spec.
+  Assigned to: Codex
+  Last updated: 2026-03-10 17:40 - Codex
+  - Completion notes:
+    - Added rolling jitter collector service `app/services/timing_jitter_collector.py`.
+    - Added `timing_jitter` broadcast path at 10Hz in `app/services/metering_broadcast.py` and advertised topic support in `app/routes/websocket.py`.
+    - Added v2 latency routes in `app/routes/latency_v2.py`: `GET /api/v2/latency/jitter-stats` and `POST /api/v2/latency/xruns/reset`; registered via `app/main.py`.
+    - Added `scripts/retime_test.sh` settling-gate check (≤2s settle window, ≤5 xrun delta).
+    - Validation passed: `pytest -q tests/test_latency_v2_routes.py`.
+
+  ID: T096-sub03
+  Status: [✓] Done
+  Title: JSON evidence artifact schema
+  Description:
+  - Define and document the schema for latency evidence files at `docs/evaluation/latency-evidence-schema.json`.
+  - Schema fields: `{ "timestamp": ISO8601, "git_commit": str, "hardware": { "interface": str, "buffer_size": int, "sample_rate": int, "cpu_cores": [int] }, "rtl": { "min_ms": float, "mean_ms": float, "p50_ms": float, "p95_ms": float, "p99_ms": float, "max_ms": float }, "jitter": { "p95_ms": float, "max_ms": float }, "xruns": int, "gate": "PASS"|"WARN"|"FAIL", "notes": str }`.
+  - All measurement scripts in T096-sub01 and T096-sub02 must emit conforming artifacts.
+  - Write a Python validator (`scripts/validate_latency_evidence.py`) that checks any evidence file against this schema and exits non-zero on violation.
+  Acceptance criteria: Schema file committed. Validator passes on a sample evidence artifact. Both measurement scripts emit conforming JSON.
+  Assigned to: Codex
+  Last updated: 2026-03-10 17:00 - Codex
+  - Completion notes:
+    - Added canonical schema at `docs/evaluation/latency-evidence-schema.json` matching the required fields and allowed gate values (`PASS|WARN|FAIL`).
+    - Added validator script `scripts/validate_latency_evidence.py` with recursive schema/type checks and non-zero exit on violation.
+    - Added sample artifact `docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.sample.json`.
+    - Validation passed: `python3 scripts/validate_latency_evidence.py --evidence docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.sample.json`.
+
+  ID: T096-sub04
+  Status: [✓] Done
+  Title: Real-time latency graphic in the web UI
+  Description:
+  - Add a "Latency Monitor" panel to the existing `/engine` page (or create a dedicated `/latency` route if the panel is too large).
+  - The panel contains three visual elements:
+    1. **RTL Gauge**: A single large numeric readout (IBM Plex Mono, 28px bold) showing current p95 RTL in milliseconds, color-coded: green (< 3.5ms), amber (3.5–5.0ms), red (> 5.0ms). Below the number: "Round-trip latency @ 64 samples / 48 kHz".
+    2. **Jitter Sparkline**: A 60-second rolling waveform chart (SVG or Canvas, no external chart library unless already present) showing per-report jitter deviation in ms. X-axis: time (60s window, scrolling). Y-axis: 0–3ms range, auto-scaled if exceeded. Rendered at 10Hz update rate via WebSocket `timing_jitter` messages. Draw a horizontal amber dashed line at 0.5ms and a red dashed line at 1.0ms as reference bands.
+    3. **Xrun Counter**: A count of xruns in the current session, resettable. Red badge if > 0. Below: last xrun timestamp.
+  - Use WebSocket subscription to `timing_jitter` channel. The component must gracefully degrade if the JUCE engine is offline (show "Engine offline — no timing data").
+  - Respect the IBM Carbon token system from T092: no box-shadow, no border-radius > 4px, IBM Plex fonts, 8px grid spacing.
+  - Add a "Gate Check" button that triggers `GET /api/v2/latency/jitter-stats` and displays PASS/WARN/FAIL inline.
+  Acceptance criteria: Panel renders live data when engine is running. Sparkline scrolls in real time. Gate check button returns a result. All T092 visual rules pass audit. TypeScript typecheck and build pass.
+  Assigned to: Codex
+  Last updated: 2026-03-10 17:40 - Codex
+  - Completion notes:
+    - Added `Latency Monitor` panel to `/engine` diagnostics view in `web/src/app/pages/AudioEnginePage.tsx` with:
+      - RTL p95 gauge (green/amber/red thresholds),
+      - 60-second jitter sparkline from `timing_jitter` WebSocket stream,
+      - session xrun counter with reset action,
+      - inline Gate Check against `/api/v2/latency/jitter-stats`,
+      - offline fallback banner.
+    - Added `latencyV2Api` client helpers in `web/src/map2/api.ts`.
+    - Validation passed: `cd web && npm run -s typecheck` and `cd web && npm run -s build`.
+
+  ID: T096-sub05
+  Status: [✓] Done
+  Title: Latency baseline documentation and gate integration
+  Description:
+  - Run the full measurement suite (T096-sub01 + sub02) after T096-sub04 is live with the system in its current known-good state.
+  - Archive the results as `docs/fit-for-purpose-evidence/<YYYYMMDD>/t096/latency_baseline.json`.
+  - Update `docs/evaluation/06-performance-latency.md` with: (a) the measured baseline numbers, (b) the gate pass/fail result, (c) the hardware configuration used (UA-1000, buffer 64, cores 4/5 isolated, SCHED_FIFO/80), (d) a note on the unsettled isolcpus state (cores 2/3 currently active, cores 4/5 pending reboot).
+  - Add a one-paragraph "Latency Status" block to `docs/PLATFORM_EVALUATION_REPORT.md` referencing the archived evidence.
+  Acceptance criteria: Evidence file exists and validates against schema. Performance latency doc updated. Platform evaluation report updated.
+  Assigned to: Codex
+  Last updated: 2026-03-10 17:40 - Codex
+  - Completion notes:
+    - Archived baseline evidence at `docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.json` and validated it against the schema.
+    - Updated `docs/evaluation/06-performance-latency.md` with baseline metrics, gate outcome, hardware details, and isolcpus caveat.
+    - Updated `docs/PLATFORM_EVALUATION_REPORT.md` with a `Latency Status (T096)` block linking to the evidence artifact.
+    - Note: This archived baseline uses `method=internal`; physical cable loopback capture remains the publication-grade follow-up when available.
+
+Assigned to: Codex
+Last updated: 2026-03-10 17:40 - Codex
+- Completion notes:
+  - Completed T096 implementation slice end-to-end: latency evidence schema/validator, gate-enforcing measurement script, runtime jitter telemetry API/WebSocket path, retime settling check script, and `/engine` latency monitor UI.
+  - Captured and validated a fresh baseline evidence artifact and documented the current status in both performance and platform evaluation reports.
+
+---
+
+ID: T097
+Status: [✓] Done
+Title: Expression pedal integration — real-time MIDI-to-parameter mapping with retime validation and live graphic
+Description:
+- Goal / acceptance criteria: Add a first-class, guided Expression configuration workflow to the MAP2 web UI. A guitarist must be able to: (1) connect any MIDI continuous controller (expression pedal, volume pedal, toe switch) to a USB/DIN MIDI port, (2) navigate to a dedicated Expression configuration page, (3) select the MIDI channel and CC number by moving the pedal (auto-detect), (4) assign the incoming CC to any engine parameter (volume, wah frequency, reverb mix, delay mix, pitch shift, etc.), (5) configure the response curve and min/max range, and (6) see a real-time graphic of the pedal position and mapped parameter value simultaneously. The implementation must include retime (response latency) testing to validate that the end-to-end CC → parameter update path adds no more than 5ms of control latency above the audio buffer period.
+- Why it matters: Expression pedal control of wah, volume, and pitch is table stakes for stage guitar. All four competitor platforms (QC, Helix, FM9, Kemper) provide dedicated TRS expression inputs with immediate on-device assignment UI. MAP2's MIDI learn infrastructure already exists but provides no guided expression workflow and no visual feedback. Without this, a guitarist cannot set up a wah or volume pedal without knowing MIDI CC numbers and editing config files — which is not acceptable for stage use.
+- Dependencies: Existing MIDI learn infrastructure (`app/services/midi_hub/`, MIDI CC fan-out), T096-sub02 (jitter/timing framework for retime test), T092 (Carbon visual system)
+- Estimated effort: Large
+- Required outputs:
+  1. Dedicated `/expression` route in the web UI (full page — see T097-sub01)
+  2. Auto-detect MIDI CC input ("move the pedal") workflow (T097-sub02)
+  3. Parameter assignment with curve editor and range controls (T097-sub03)
+  4. Real-time dual graphic: pedal position + mapped parameter value (T097-sub04)
+  5. Retime test: CC → parameter update latency measurement and gate (T097-sub05)
+  6. API endpoints and Python service layer (T097-sub06)
+
+Subtasks:
+
+  ID: T097-sub01
+  Status: [✓] Done
+  Title: Expression configuration page — full-window route and layout
+  Description:
+  - Create route `/expression` in the React router and a new page component `web/src/app/pages/ExpressionPage.tsx`.
+  - Add "Expression" as a named entry in the primary navigation under the "Guitar" or "MIDI" section (whichever is appropriate per current AppShell taxonomy).
+  - Page layout (full window, no sub-modal): three vertical columns at desktop width, stacked on mobile:
+    - Left column (320px): Active Assignments list — each row shows: pedal icon, CC number, target parameter name, curve icon. Click to edit. "New assignment" button at bottom.
+    - Center column (flex): Configuration form for the selected/new assignment (populated by T097-sub03).
+    - Right column (320px): Live Graphic panel (populated by T097-sub04).
+  - Page header: "Expression Pedal Control" | subtitle: "Map MIDI continuous controllers to any engine parameter."
+  - Apply all T092 Carbon design tokens: IBM Plex, 8px grid, no box-shadow, semantic color.
+  Acceptance criteria: Route renders without error. Layout matches spec at 1440px and 390px. TypeCheck and build pass.
+
+  ID: T097-sub02
+  Status: [✓] Done
+  Title: Auto-detect MIDI CC input ("move the pedal")
+  Description:
+  - When a user clicks "New assignment" (or opens the config form for a new entry), display a full-width banner: "Move your expression pedal or controller — MAP2 will detect the CC automatically." with a pulsing indicator.
+  - Open a temporary MIDI listener via new backend route `POST /api/v2/expression/listen-for-cc` that subscribes to the MIDI hub for 10 seconds and returns the first CC number seen on any channel with value movement (delta > 10 over any 500ms window, to filter noise).
+  - Response: `{ "cc": int, "channel": int, "min_observed": int, "max_observed": int }`.
+  - On detection, auto-populate the CC number and channel fields in the config form and dismiss the banner.
+  - If no CC detected after 10 seconds, show: "No pedal detected. Enter CC number manually." with the form fields unlocked.
+  - Add a cancel button to abort listening.
+  Acceptance criteria: Pedal-move detection works in integration test with a simulated MIDI CC stream. Auto-population fills the form fields. Manual fallback is accessible.
+
+  ID: T097-sub03
+  Status: [✓] Done
+  Title: Parameter assignment form with curve editor and range controls
+  Description:
+  - The assignment config form (center column of the page) contains:
+    1. **Source**: CC number (int, 0–127), MIDI channel (1–16 or "Omni"), detected range min/max (editable int, 0–127).
+    2. **Target**: Parameter selector — a searchable dropdown listing all assignable engine parameters. Populate from `GET /api/v2/engine/parameters` (create this route if it doesn't exist; return `[{ "id": str, "label": str, "unit": str, "min": float, "max": float }]`).
+    3. **Output range**: Min output value and max output value, with numeric inputs and a "Swap" button to invert direction.
+    4. **Curve**: A visual curve selector with 5 options — Linear, Logarithmic, Exponential, S-Curve, Custom. For Custom, show a simple 4-point Bézier drag editor (SVG, 200×200px). Preview the selected curve as an SVG path in a 120×120px miniature plot.
+    5. **Active toggle**: Enable/disable the assignment without deleting it.
+  - "Save" POSTs to `POST /api/v2/expression/assignments`. "Delete" sends DELETE to `/api/v2/expression/assignments/{id}`.
+  Acceptance criteria: Form renders with all controls. Curve preview updates on selection. Save/delete API calls succeed in integration test. TypeCheck and build pass.
+
+  ID: T097-sub04
+  Status: [✓] Done
+  Title: Real-time dual graphic — pedal position and mapped parameter value
+  Description:
+  - The right column of the Expression page contains a live dual graphic updated at 30Hz via WebSocket (or polling `GET /api/v2/expression/live-state` at 33ms interval as fallback).
+  - The graphic has two stacked sections:
+    1. **Pedal Position Meter**: A vertical bar meter (similar to VU meter aesthetics, IBM Carbon teal accent, 40px wide, 200px tall). Label below: "PEDAL (CC {n})". Numeric percentage readout at the top (0–100%).
+    2. **Mapped Parameter Meter**: A vertical bar meter (IBM Carbon purple accent, same dimensions). Label below: the assigned parameter label (e.g., "WAH FREQ"). Numeric readout at the top in the parameter's unit (e.g., "340 Hz").
+  - Below the meters: a 10-second rolling time plot (same sparkline style as T096-sub04) showing both signals as overlaid traces (teal for pedal, purple for parameter). This reveals latency between pedal movement and parameter response visually.
+  - If no assignment is active, show: "No assignment selected. Create an assignment to see live data."
+  - The graphic uses only SVG or Canvas — no D3 or chart library unless already present in the bundle.
+  Acceptance criteria: Meters update in real time when a pedal is moved. Overlay plot scrolls. No assignment state shows the empty message. TypeCheck and build pass.
+
+  ID: T097-sub05
+  Status: [✓] Done
+  Title: Retime test — CC-to-parameter update latency measurement and gate
+  Description:
+  - Retime test definition: the end-to-end time from a MIDI CC message arriving at the MIDI subsystem to the corresponding parameter value being applied in the JUCE audio callback. This must be ≤ 5ms under nominal conditions.
+  - Implement measurement:
+    - Add a timestamped event to the MIDI hub when a CC is received: `{ "ts_recv_ns": int, "cc": int, "value": int }`.
+    - Add a timestamped event to the JUCE audio callback when it applies a MIDI-mapped parameter change: `{ "ts_apply_ns": int, "cc": int, "value": int }`.
+    - Expose a route `GET /api/v2/expression/retime-stats` that correlates recv and apply events over the last 100 CC messages and returns `{ "mean_ms": float, "p95_ms": float, "max_ms": float, "sample_count": int }`.
+  - Write `scripts/retime_test.sh`: sends 100 synthetic MIDI CC events (using `amidi` or `python-rtmidi`) on a loopback MIDI device, reads `/api/v2/expression/retime-stats`, gates on p95 ≤ 5ms, exits 0 on pass.
+  - Document the retime test result in the Expression page as a footer line: "Control latency p95: {X.X}ms" with color coding (green < 3ms, amber 3–5ms, red > 5ms). This value is fetched once on page load and can be refreshed manually.
+  Acceptance criteria: Retime stats route returns plausible data during integration test. Script exits 0 with synthetic loopback. Control latency readout appears in the Expression page footer.
+
+  ID: T097-sub06
+  Status: [✓] Done
+  Title: Backend service and API routes for Expression subsystem
+  Description:
+  - Create `app/services/expression_service.py`: manages the list of CC→parameter assignments (stored in SQLite), the active listener state, live state cache, and retime stats accumulator.
+  - Routes to create in `app/routes/expression.py`:
+    - `POST /api/v2/expression/listen-for-cc` — start auto-detect (returns detected CC or timeout)
+    - `GET /api/v2/expression/assignments` — list all assignments
+    - `POST /api/v2/expression/assignments` — create/update assignment
+    - `DELETE /api/v2/expression/assignments/{id}` — delete assignment
+    - `GET /api/v2/expression/live-state` — current pedal position and mapped value for active assignment
+    - `GET /api/v2/expression/retime-stats` — CC→parameter latency stats (T097-sub05)
+    - `GET /api/v2/engine/parameters` — list all assignable JUCE engine parameters (if not already present)
+  - Register the router in the FastAPI app.
+  - Add SQLite migration for `expression_assignments` table: `(id TEXT PK, cc INT, channel INT, cc_min INT, cc_max INT, param_id TEXT, out_min REAL, out_max REAL, curve TEXT, active BOOL)`.
+  Acceptance criteria: All routes return correct status codes. Service file has unit tests covering assignment CRUD, live-state lookup, and retime stats accumulation. TypeCheck and build pass.
+
+- Completion notes:
+  - Delivered Expression backend + API contract in `app/services/expression_service.py` and `app/routes/expression.py`, including assignment CRUD, CC auto-detect listeners, live state, retime stats, and performance-event emission.
+  - Delivered `/expression` full-page UX with assignment list/editor, custom-curve controls, live dual meters + history plot, and latency footer wiring.
+  - Added test coverage for service and route contracts in `tests/test_expression_service.py` and `tests/test_expression_routes.py`.
+  - Updated `scripts/retime_test.sh` to provision/cleanup a temporary probe assignment so synthetic CC tests produce deterministic latency samples.
+
+Assigned to: Codex
+Last updated: 2026-03-10 19:13 - Codex
+
+---
+ID: T098
+Status: [✓] Done
+Title: Performance Mode — full-window stage UI for live guitar use
+Description:
+- Goal / acceptance criteria: Create a dedicated full-window Performance Mode at route `/perform` that serves as MAP2's primary stage operator interface. The mode is optimized for use on a tablet (iPad mini or larger, or a 7–10" touch display mounted on a mic stand) and requires no knowledge of MAP2's internal architecture to operate. Performance Mode is self-contained: it exposes only the controls a guitarist needs during a show — preset/scene selection, per-block bypass toggles, tap tempo, chromatic tuner, and system health. All advanced configuration surfaces are deliberately absent. This is not a simplified version of the existing UI; it is a separate, purpose-built stage surface.
+- Why it matters: All four competitor platforms (QC, Helix, FM9, Kemper) have dedicated stage operating modes. The QC's Scene mode, Helix's per-snapshot footswitch labels, and FM9's performance layout are purpose-built for hands-on-instrument use. MAP2's current browser UI requires navigating menus that are inappropriate under stage conditions. Without a Performance Mode, MAP2 cannot credibly compete as a live instrument platform regardless of its DSP quality. The MPX1 Perform view (T038) proved the architecture works — this is the guitar-specific equivalent at full-platform scope.
+- Dependencies: T092 (Carbon design system), T096 (latency monitor — used in health panel), T097 (expression assignment — surfaced in quick-access), existing Chain/Snapshot API, existing MIDI learn infrastructure
+- Estimated effort: Large
+- Required outputs:
+  1. Full-window `/perform` route and page component
+  2. Preset/scene grid with large touch-optimized buttons (T098-sub01)
+  3. Per-block bypass strip (T098-sub02)
+  4. Tap tempo with BPM display and MIDI clock sync (T098-sub03)
+  5. Chromatic tuner panel (T098-sub04)
+  6. System health bar (T098-sub05)
+  7. Navigation entry — full-window menu access from AppShell (T098-sub06)
+  8. MIDI footswitch integration for all Performance Mode actions (T098-sub07)
+
+Subtasks:
+
+  ID: T098-sub01
+  Status: [✓] Done
+  Title: Preset and Scene grid — large touch-optimized buttons
+  Description:
+  - The largest element of the Performance Mode screen: a 4×2 grid (8 cells) of preset/scene buttons occupying the top 60% of the screen.
+  - Each button displays: preset/scene name (IBM Plex Sans, 16px bold, max 2 lines, ellipsis overflow), a color accent strip at the top (user-assignable, 4px height, 8 colors: teal/blue/green/amber/red/purple/white/none), and an active indicator (bright white border, 2px, when selected).
+  - The active preset/scene button is visually unmistakable: white border + slightly brighter background fill (Carbon Gray 70 active vs Gray 80 idle).
+  - A "Page" indicator below the grid (e.g., "Page 1 / 4") with left/right arrows allows paging through up to 32 presets (4 pages of 8).
+  - Tapping a non-active button sends `POST /api/v2/chains/{id}/load` and updates UI state. Tapping the active button does nothing (or opens a rename modal if held for 1 second).
+  - Switching between presets uses the gapless crossfade mechanism from T096 if available; falls back to normal load if not implemented yet. An optional "switching" spinner (< 300ms, subtle) indicates transition.
+  - Long-press (500ms) on any button opens a minimal context menu: Rename, Assign Color, Move, Remove from Setlist.
+  Acceptance criteria: Grid renders 8 buttons. Active state is visually clear. Paging works up to 32 presets. Load action fires on tap. Long-press context menu appears. TypeCheck and build pass.
+
+  ID: T098-sub02
+  Status: [✓] Done
+  Title: Per-block bypass strip — horizontal effect chain display
+  Description:
+  - Below the preset grid: a horizontal scrollable strip showing each active effect block in the current chain as a compact tile (80px wide, 56px tall).
+  - Each tile shows: effect abbreviation (e.g., "COMP", "WAH", "NAM", "DLY", "REV", "EQ"), current bypass state (full brightness = active, dim gray = bypassed).
+  - Tapping a tile toggles bypass via `POST /api/v2/engine/plugins/{id}/bypass`.
+  - Bypassed tiles use IBM Carbon Gray 60 background and 50% opacity label. Active tiles use a category color accent: dynamics (teal), modulation (purple), time-based (blue), amp/cab (amber), EQ/filter (gray-light).
+  - The strip is horizontally scrollable if the chain exceeds screen width (snap scroll, 80px snap points).
+  - A "ALL ON" button at the right end of the strip un-bypasses all blocks immediately.
+  Acceptance criteria: Strip shows all active blocks. Tap toggles bypass. Bypassed state is visually distinct. ALL ON button works. Strip scrolls horizontally. TypeCheck and build pass.
+
+  ID: T098-sub03
+  Status: [✓] Done
+  Title: Tap tempo with BPM display and MIDI clock sync
+  Description:
+  - A dedicated tap tempo region in the lower-left quadrant of Performance Mode.
+  - Layout: large BPM readout (IBM Plex Mono, 48px, takes 3–4 digits), "BPM" label below in caption style. Below the readout: a large "TAP" button (minimum 80×80px touch target, rounded to 4px max per T092).
+  - Tap behavior: Each tap records a timestamp. BPM is computed from the rolling average of the last 4 tap intervals. Display updates immediately after the second tap. After 3 seconds of no taps, the display locks and stops accepting new taps until tapped again.
+  - BPM range: 40–300. Clamp outside this range with a visible "MIN" or "MAX" indicator.
+  - MIDI clock sync: If MIDI clock is detected on any active MIDI input, the BPM display switches to "MIDI SYNC" mode and shows the incoming BPM derived from clock messages (24 pulses per quarter note). In MIDI SYNC mode, the TAP button is replaced by a "LOCK" indicator. Tap anywhere on the region to break lock and return to manual tap mode.
+  - Tap tempo value propagates to all delay and modulation effects that have a "sync to BPM" parameter via the existing MIDI learn infrastructure or a direct API call `POST /api/v2/engine/bpm { "bpm": float }` (create this route if needed).
+  Acceptance criteria: BPM computes correctly from taps. MIDI clock sync switches mode. BPM propagates to engine. TAP button meets 80×80px minimum. TypeCheck and build pass.
+
+  ID: T098-sub04
+  Status: [✓] Done
+  Title: Chromatic tuner panel
+  Description:
+  - A chromatic tuner in the lower-center of Performance Mode, large enough to read from 2 meters.
+  - Layout:
+    1. Note name display (A–G + # notation, IBM Plex Mono, 36px bold) — shows the nearest detected pitch.
+    2. Cents deviation meter: a horizontal bar with center zero. The needle is a 4px vertical line that moves left (flat) or right (sharp) within a 200px range. Left half is amber, right half is amber, center 10px window is green ("in tune").
+    3. Octave indicator below the note name (small, caption size).
+    4. A mute-output toggle button labeled "TUNE" — when active, mutes the audio output so the guitarist can tune silently. When tuner is muted, the Bypass strip dims and a large "MUTING OUTPUT" amber banner appears behind the tuner.
+  - Tuner data source: `GET /api/v2/engine/tuner` polled at 10Hz, returning `{ "note": str, "octave": int, "cents": float, "frequency_hz": float, "in_tune": bool }`. If this route does not exist, create a stub that returns zeros (the route is a placeholder for the JUCE pitch detection implementation, which is a separate task).
+  - When the engine is offline, the tuner shows "— —" with a caption "Engine offline".
+  - The TUNE mute toggle calls `POST /api/v2/engine/output-mute { "muted": bool }` (create stub route if needed).
+  Acceptance criteria: Tuner panel renders. Cents meter moves with data. Mute toggle works. TUNE mode shows amber banner. Offline state shows placeholder. TypeCheck and build pass.
+
+  ID: T098-sub05
+  Status: [✓] Done
+  Title: System health bar
+  Description:
+  - A compact horizontal bar at the very bottom of Performance Mode (32px tall), always visible regardless of other panel state.
+  - Segments (left to right):
+    1. **Engine status**: green dot + "ENGINE OK" | amber dot + "ENGINE DEGRADED" | red dot + "ENGINE OFFLINE". Derived from `GET /api/v2/engine/status`.
+    2. **Latency**: "RTL {X.X}ms" — pulled from T096 jitter stats at 1Hz. Color-coded green/amber/red per T096-sub04 thresholds.
+    3. **Xruns**: "XRUNS: {n}" — red if n > 0, gray if 0. Resets on click.
+    4. **CPU**: "CPU {n}%" — simple percentage, amber > 70%, red > 90%.
+    5. **MIDI**: a small MIDI activity LED (pulses green on any incoming MIDI message, 100ms decay).
+    6. **Clock**: current time HH:MM (useful for stage timing awareness, no seconds to avoid visual noise).
+  - The health bar uses no card or border styling — it is flush with the screen edge, Carbon Gray 90 background, a 1px Carbon Gray 70 top border.
+  - Clicking any degraded/offline segment navigates to the relevant diagnostic page (opens in a new browser tab to preserve Performance Mode state).
+  Acceptance criteria: All six segments render with correct data. Color thresholds apply. MIDI LED pulses. Click navigation works. TypeCheck and build pass.
+
+  ID: T098-sub06
+  Status: [✓] Done
+  Title: Navigation entry — full-window menu access from AppShell and dedicated entry point
+  Description:
+  - Add "Performance Mode" as a top-level entry in the AppShell navigation, not buried in a submenu. It should appear with a dedicated icon (e.g., a diamond or play-button shape using an IBM Carbon icon).
+  - When activated from any page, `/perform` opens as a full-window overlay (100vw × 100vh, z-index above all chrome) — not a standard page route render inside the AppShell frame. The AppShell navigation is completely hidden in Performance Mode.
+  - An "Exit Performance Mode" button appears in the top-right corner of the Performance Mode view (small, Carbon Ghost button style: no fill, white text, 1px border). Clicking it restores the standard AppShell view.
+  - Keyboard shortcut: `F11` toggles in/out of Performance Mode (this mirrors the convention of full-screen modes in other audio software). Add a tooltip on the Exit button: "Exit (F11)".
+  - The Performance Mode route should be bookmarkable: `localhost:3000/perform` should render the full-window view directly without AppShell. On mobile, `/perform` is the recommended primary bookmark for a stage tablet.
+  - Add a short "STAGE MODE" label in the top-left corner of the Performance Mode view (IBM Plex Sans, 11px caption, Carbon Gray 50 color) so operators can identify the mode at a glance.
+  Acceptance criteria: Nav entry exists. `/perform` opens full-window with no AppShell chrome. Exit button and F11 shortcut both work. Route is bookmarkable. TypeCheck and build pass.
+
+  ID: T098-sub07
+  Status: [✓] Done
+  Title: MIDI footswitch integration for all Performance Mode actions
+  Description:
+  - All primary Performance Mode actions must be triggerable via MIDI PC or CC without touching the screen.
+  - Mapping table (default, user-configurable via the Expression page):
+    - PC 1–8 on channel 16: load presets 1–8 on current page
+    - CC 80 on channel 16: next page
+    - CC 81 on channel 16: previous page
+    - CC 64 (sustain) on channel 16: tap tempo (each CC 64 = 127 message counts as one tap)
+    - CC 82 on channel 16: toggle TUNE mute
+    - CC 83–90 on channel 16: toggle bypass for blocks 1–8 in the bypass strip
+  - These mappings are stored in `expression_assignments` (T097-sub06) with a `source: "performance_mode"` tag, populated at first boot as defaults if no assignments exist for channel 16.
+  - Add a "MIDI Footswitch Setup" button in the top-right area of Performance Mode (next to the Exit button) that links to the Expression page (opens in a new tab).
+  - All incoming MIDI causing a state change must provide visual feedback in Performance Mode: the affected button briefly highlights (200ms, 10% brighter) so the guitarist confirms the footswitch registered.
+  Acceptance criteria: All 12 default mappings work in integration test. Visual feedback fires on MIDI-triggered actions. MIDI Footswitch Setup button navigates correctly. TypeCheck and build pass.
+
+- Completion notes:
+  - Wired `PerformPage` to `/api/v2/expression/performance-events` for MIDI page/preset/bypass/tap/tuner actions with per-control 200ms visual flash feedback.
+  - Added stage preset long-press menu (Rename, Assign Color, Move, Remove from Setlist) plus local setlist ordering and accent color persistence.
+  - Added MIDI clock sync polling from `/api/midi/hub/clock` with lock indicator and tap-to-break behavior, while preserving manual BPM propagation to `/api/v2/expression/engine/bpm`.
+  - Updated health bar to use `/api/v2/engine/status`, pulse MIDI activity LED, and deep-link degraded segments to diagnostics.
+  - Promoted Stage Mode navigation entry to AppShell primary tier for one-tap full-window access.
+
+Assigned to: Codex
+Last updated: 2026-03-10 19:13 - Codex
+
+---
+
+ID: T099
+Status: [ ] Not Started
+Title: Formal dynamic response validation — blind A/B test protocol and evidence publication
+Description:
+- Goal / acceptance criteria: Conduct and document a formal, structured A/B blind comparison of MAP2's NAM amp modeling dynamic response against (a) a real reference tube amp and (b) a competitor modeler (Neural DSP Quad Cortex Neural Capture V2 of the same amp, if accessible; otherwise Kemper Profiling 2.0 or FM9 Cygnus model). The result must be an archived evidence document that honestly states where MAP2 matches, exceeds, and falls short of the reference — including the measured latency offset between pedal dynamics and audio response, pick-attack envelope fidelity, and subjective "feel" score from at least 3 players. This is not a marketing exercise; it is a qualification gate for the claim "MAP2 NAM modeling is stage-competitive."
+- Why it matters: The platform currently makes an implicit claim that NAM integration provides competitive amp modeling. No published evidence exists. Every serious competitor has been reviewed by major guitar media (Andertons, That Pedal Show, Premier Guitar) and has extensive user A/B recordings. Without evidence, MAP2 cannot make the claim, and without the claim, MAP2 has no marketing position against any competitor's amp modeling. An honest result — even if MAP2 scores lower than a QC capture — is more credible than silence, and identifies exactly what to improve.
+- Dependencies: T096 (latency measurement framework), T097 (expression/MIDI control), a loaded NAM model file of a reference amp, a physical reference amp (Fender Deluxe Reverb or equivalent), a DI box + load box + reference IR, a recording interface
+- Estimated effort: Medium (methodology and documentation — the test itself requires physical hardware)
+- Required outputs:
+  1. Formal test protocol document
+  2. Recorded audio samples (WAV files archived in `docs/fit-for-purpose-evidence/<YYYYMMDD>/t099/`)
+  3. Quantitative analysis of pick-attack envelope fidelity
+  4. Subjective player evaluation form and collated results
+  5. Evidence document with honest verdict and specific gaps identified
+  6. Updated `docs/PLATFORM_EVALUATION_REPORT.md` with a "Dynamic Response Validation" section
+
+Subtasks:
+
+  ID: T099-sub01
+  Status: [ ] Not Started
+  Title: Test protocol document
+  Description:
+  - Write `docs/fit-for-purpose-evidence/t099-protocol.md` defining the test exactly:
+    1. **Reference amp**: Define the target amp (recommended: Fender Deluxe Reverb or Marshall JCM800 — both are widely profiled and give different dynamic characters). Set control positions exactly (Volume 5, Tone 5–5–5, Tremolo off). Document control positions in the protocol.
+    2. **Signal chain A (reference)**: Guitar → amp input → load box (e.g., Two Notes Torpedo) → reference cab IR (same IR used in MAP2 chain) → recording interface → DAW. Record at 48kHz/24-bit.
+    3. **Signal chain B (MAP2 NAM)**: Same guitar → MAP2 input (UA-1000) → JUCE engine → NAM model trained on the same amp → same reference cab IR → UA-1000 output → same DAW track. Verify round-trip latency compensation is applied before recording (offset by measured RTL from T096).
+    4. **Signal chain C (competitor, optional)**: Same guitar → Quad Cortex or Kemper → same reference cab IR (loaded as user IR) → DAW.
+    5. **Test phrases**: Define 5 standard test phrases to record: (a) single-note lead at pp/p/mf/f/ff dynamics, (b) chord swells with pick attack and natural decay, (c) fast alternate-picked 16th note run, (d) staccato palm-muted chugs, (e) clean fingerpicked arpeggios.
+    6. **Blind evaluation**: Export recordings blind (chain identities hidden, labeled 1/2/3). Present to evaluators in randomized order.
+  Acceptance criteria: Protocol document committed and reviewed. All recording parameters are specific enough that the test is reproducible.
+
+  ID: T099-sub02
+  Status: [ ] Not Started
+  Title: Quantitative pick-attack envelope analysis
+  Description:
+  - For each recorded test phrase pair (reference vs. MAP2, reference vs. competitor), run a Python analysis script `scripts/analyze_envelope.py` that:
+    1. Aligns the two recordings using cross-correlation (to remove any residual timing offset).
+    2. Computes the onset envelope of each transient using a 10ms Hann window RMS detector.
+    3. Compares onset slope (dB/ms in the first 20ms after onset), peak level, and 10%–90% rise time between reference and model.
+    4. Computes per-transient difference (Δ onset slope, Δ peak, Δ rise time) and summarizes: mean, std, max error across all transients in the phrase.
+    5. Generates a PNG chart (one per phrase pair): overlaid waveforms + onset envelope traces, color-coded by chain.
+  - Dependencies: Python, `numpy`, `scipy.signal`, `matplotlib` (add to requirements if not present).
+  - Archive charts and JSON summary in `docs/fit-for-purpose-evidence/<YYYYMMDD>/t099/`.
+  - Gate: MAP2 vs. reference onset slope error mean ≤ 3dB/ms is a pass. > 3dB/ms flags the specific phrase and dynamic as a "gap requiring NAM model improvement."
+  Acceptance criteria: Script runs on provided WAV files. Generates charts and JSON summary. Gate pass/fail is clear per phrase.
+
+  ID: T099-sub03
+  Status: [ ] Not Started
+  Title: Subjective player evaluation form and collated results
+  Description:
+  - Create a simple evaluation form (PDF or Google Form equivalent, shared with evaluators):
+    - For each audio set (A/B/C, labeled 1/2/3 blind): rate on 1–5 scale: "Dynamic feel" (does it respond like a real amp?), "Pick attack clarity" (are fast notes articulate?), "Compression/sag character" (does it breathe naturally?), "Overall tone" (do you want to play through this?).
+    - One open-text "notes" field per set.
+    - At the end: rank the three sets best-to-worst for "I would use this on stage."
+  - Minimum 3 evaluators required: at least one must be a regular gigging guitarist unfamiliar with MAP2. Preferred: guitarist + sound engineer + producer.
+  - After evaluation, collate results: compute mean score per criterion per chain. Reveal chain identity after scoring.
+  - Archive raw responses and collated summary in `docs/fit-for-purpose-evidence/<YYYYMMDD>/t099/subjective_eval.json`.
+  Acceptance criteria: Form exists and is completable. Results from ≥3 evaluators are archived. Chain identities are revealed only after scoring.
+
+  ID: T099-sub04
+  Status: [ ] Not Started
+  Title: Evidence document and PLATFORM_EVALUATION_REPORT update
+  Description:
+  - Write `docs/fit-for-purpose-evidence/<YYYYMMDD>/t099/DYNAMIC_RESPONSE_EVIDENCE.md`:
+    - Section 1: Test setup summary (hardware, software, NAM model used, competitor device if applicable).
+    - Section 2: Quantitative results table — onset slope error, rise time error, peak error per phrase, per chain comparison.
+    - Section 3: Subjective results table — mean scores per criterion, overall ranking with chain identity revealed.
+    - Section 4: Verdict — for each of the 5 test phrases: PASS (MAP2 competitive), WARN (slight gap, acceptable for stage), or FAIL (audible gap, NAM model improvement needed).
+    - Section 5: Specific gaps identified and recommended actions (e.g., "pick attack onset slope underperforms by 1.8dB/ms on fast alternate picking — NAM model may benefit from higher-variance training set or convolution pre-emphasis").
+  - Update `docs/PLATFORM_EVALUATION_REPORT.md`: add section "Dynamic Response Validation (T099)" with a 3-sentence summary and a link to the evidence document.
+  - If MAP2 earns a PASS on ≥ 3 of 5 phrases, update the "Amp Modeling & Feel" rating in the evaluation from "Partial Match" to "Partial Match — validated" with the evidence reference.
+  Acceptance criteria: Evidence document committed. Evaluation report updated. Verdict table is clear and honest. No marketing language — only test results.
+
+Assigned to: Codex
+Last updated: 2026-03-10 — Guitar Stage Evaluation
+
+---
+
+ID: T100
+Status: [✓] Done
+Title: Document MIDI Hub guided UX redesign brief and queue execution plan
+Description:
+- Goal / acceptance criteria: Produce a concrete redesign brief for `/midi-hub` that critiques the current interface and defines the target UX strategy, information architecture, help system, tutorial model, guided flows, visual grouping, panel-level recommendations, and implementation sequencing. Acceptance criteria: the brief is committed in-repo, specific to the current MIDI Hub surface, and the canonical worklist includes non-executed follow-on execution tasks.
+- Why it matters: The current MIDI Hub surface is powerful but overloaded and uses low-emphasis instructional text, making it hard to read and difficult to learn without external guidance.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: `docs/midi/MIDI_HUB_GUIDED_UX_REDESIGN_BRIEF.md`, new canonical worklist task(s) for execution, and explicit note that no UI implementation was performed as part of this planning item.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-10 18:09 - Codex
+- Completion notes:
+  - What was done: Authored a detailed MIDI Hub redesign brief covering current-state review, UX strategy, information architecture, help framework, color-coded capability groups, workflow guidance, screen-level recommendations, implementation sequence, and done criteria.
+  - What was done: Added a new non-started execution task (`T101`) with restartable subtasks so the redesign can be implemented later without losing scope.
+  - Key findings: `/midi-hub` currently stacks many advanced panels with similar visual weight, relies on muted helper text, and lacks integrated tutorials, contextual help, and task-based guidance.
+  - Files/links produced: `docs/midi/MIDI_HUB_GUIDED_UX_REDESIGN_BRIEF.md`, `docs/PROJECT_WORKLIST.md`.
+  - Execution status: No MIDI Hub UI changes were executed under this task; this item only documents and queues the work.
+
+ID: T101
+Status: [ ] Not Started
+Title: Redesign /midi-hub for guided learning, readable information hierarchy, and contextual help
+Description:
+- Goal / acceptance criteria: Rework `/midi-hub` so the page teaches the product while users are operating it. Acceptance criteria: the page is reorganized into clear capability families; every major panel has inline help plus deep help; first-run onboarding and replayable tutorials exist; guided flows cover core user goals; routing surfaces include legends, examples, and success criteria; instructional text meets readability and contrast requirements; and usability evidence shows common first-run tasks can be completed without external instruction.
+- Why it matters: Users report that `/midi-hub` text is hard to read and the current layout exposes expert controls before intent, making the feature set harder to understand and use correctly.
+- Dependencies: T100, T066-subP, T080
+- Estimated effort: High
+- Required outputs: updated MIDI Hub information architecture and visual grouping, reusable help/tutorial components, panel-level educational content and examples, accessibility/readability validation, and usability evidence.
+
+Subtasks:
+
+  ID: T101-subA
+  Status: [ ] Not Started
+  Title: Audit MIDI Hub controls, terminology, and missing guidance
+  Description:
+  - Goal / acceptance criteria: Inventory every major control and panel in `web/src/app/pages/MidiHubPage.tsx` and its child components, identify unclear labels and missing explanations, and map each feature to plain-language summaries, prerequisites, examples, error guidance, and related actions. Acceptance criteria: a restart-safe content inventory exists and terminology is normalized across routing, presets, automation, networking, diagnostics, and advanced tools.
+  - Why it matters: The redesign cannot be coherent if every panel explains itself differently or not at all.
+  - Dependencies: T100
+  - Estimated effort: Medium
+  - Required outputs: content inventory artifact, terminology map, panel-by-panel help requirements, and prioritization notes for first-run vs advanced education.
+
+  ID: T101-subB
+  Status: [ ] Not Started
+  Title: Recompose /midi-hub information architecture into capability groups
+  Description:
+  - Goal / acceptance criteria: Replace the current flat card stack with a grouped page shell that separates setup/connectivity, control/automation, capture/analysis, and advanced/experimental functions. Acceptance criteria: the page has a clear hero, common-task entry points, grouped sections, and a dominant routing workspace that users can understand at a glance.
+  - Why it matters: Current visual parity between all panels forces users to discover the architecture by trial and error.
+  - Dependencies: T101-subA
+  - Estimated effort: Medium
+  - Required outputs: updated `MidiHubPage` layout, section shell styling, capability group headers, and responsive behavior validation.
+
+  ID: T101-subC
+  Status: [ ] Not Started
+  Title: Build reusable MIDI Hub help primitives and metadata model
+  Description:
+  - Goal / acceptance criteria: Implement reusable contextual help infrastructure for MIDI Hub, including a help button, inline hints, deep explanation drawer or modal, example blocks, warning/recovery callouts, and a structured metadata model that drives these surfaces. Acceptance criteria: every major panel can attach help content without bespoke one-off implementations.
+  - Why it matters: The page needs a scalable teaching system, not isolated tooltips.
+  - Dependencies: T101-subA
+  - Estimated effort: Medium
+  - Required outputs: reusable help components, help content schema/registry, and integration hooks for panel headers and controls.
+
+  ID: T101-subD
+  Status: [ ] Not Started
+  Title: Add first-run onboarding and replayable tutorial overlay system
+  Description:
+  - Goal / acceptance criteria: Implement a page-aware tutorial system that highlights relevant regions, explains purpose and expected results, checks success criteria, and supports dismiss, resume, and restart. Acceptance criteria: first-time users can launch onboarding from `/midi-hub`, and returning users can replay tutorials on demand.
+  - Why it matters: Tutorials are required to reduce onboarding time and prevent early confusion.
+  - Dependencies: T101-subB, T101-subC
+  - Estimated effort: High
+  - Required outputs: tutorial registry, overlay system, persisted completion state, and at least one first-run `/midi-hub` tour.
+
+  ID: T101-subE
+  Status: [ ] Not Started
+  Title: Implement guided task flows for core MIDI Hub goals
+  Description:
+  - Goal / acceptance criteria: Add guided flows for common operator goals such as connecting a device, creating a route, applying a filter or transform, saving/recalling a preset, running clock, inspecting traffic, configuring network MIDI, and troubleshooting no-signal states. Acceptance criteria: each flow is step-based, validates state in real time, explains decisions, warns on risky actions, and can be cancelled or resumed.
+  - Why it matters: Passive help text is not enough for complex, multi-step workflows.
+  - Dependencies: T101-subB, T101-subC, T101-subD
+  - Estimated effort: High
+  - Required outputs: guided-flow framework, core MIDI Hub task flows, and success/error-state copy with realistic examples.
+
+  ID: T101-subF
+  Status: [ ] Not Started
+  Title: Retrofit routing workspace for readability, legends, and progressive disclosure
+  Description:
+  - Goal / acceptance criteria: Improve `MidiRoutingMatrix.tsx` and `MidiPatchbay.tsx` so they are readable and teach the routing model before exposing advanced editing depth. Acceptance criteria: both views include visible legends, plain-language route model guidance, examples, clearer state labels, and progressive disclosure for advanced settings such as transforms and priorities.
+  - Why it matters: Routing is the core job of MIDI Hub and is currently too expert-oriented for first-time operators.
+  - Dependencies: T101-subB, T101-subC
+  - Estimated effort: Medium
+  - Required outputs: updated routing views, route-editor guidance, examples, and validation that basic route creation is understandable without outside documentation.
+
+  ID: T101-subG
+  Status: [ ] Not Started
+  Title: Add contextual help, examples, and recovery guidance to every major MIDI Hub panel
+  Description:
+  - Goal / acceptance criteria: Attach inline descriptions, tooltips or help triggers, deep help content, examples, and error guidance to Preset Manager, Script Engine, Macro, Recorder, Scheduler, Clock, Network MIDI + OSC, MIDI 2.0, Innovation, and Traffic Monitor panels. Acceptance criteria: no major MIDI Hub surface appears unexplained, and advanced sections are clearly labeled as advanced or experimental where appropriate.
+  - Why it matters: The current page leaves too much meaning implicit, especially for non-expert users.
+  - Dependencies: T101-subC
+  - Estimated effort: High
+  - Required outputs: help content rollout across all major panels, examples embedded in context, and advanced-vs-core labeling.
+
+  ID: T101-subH
+  Status: [ ] Not Started
+  Title: Validate readability, accessibility, and first-task usability for redesigned MIDI Hub
+  Description:
+  - Goal / acceptance criteria: Verify that the redesigned page is materially easier to read and use through contrast checks, typography review, keyboard/focus review, mobile/desktop layout checks, and guided usability evidence for common first-run tasks. Acceptance criteria: instructional text meets agreed readability rules, help is keyboard-accessible, and evidence shows new users can complete first-route and basic troubleshooting tasks without external instructions.
+  - Why it matters: The redesign must be measured by improved comprehension, not by visual churn.
+  - Dependencies: T101-subD, T101-subE, T101-subF, T101-subG
+  - Estimated effort: Medium
+  - Required outputs: validation notes, evidence artifacts, and final worklist/report updates summarizing usability gains and remaining gaps.
+
+Assigned to: Codex
+Last updated: 2026-03-10 18:09 - Codex

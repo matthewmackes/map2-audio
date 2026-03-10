@@ -52,6 +52,8 @@ const MPX1LibraryView       = lazy(() => import('./pages/MPX1LibraryView').then(
 const MPX1DiagView          = lazy(() => import('./pages/MPX1DiagView').then(m => ({ default: m.MPX1DiagView })))
 const MPX1PerformView       = lazy(() => import('./pages/MPX1PerformView').then(m => ({ default: m.MPX1PerformView })))
 const MPX1FlowView          = lazy(() => import('./pages/MPX1FlowView').then(m => ({ default: m.MPX1FlowView })))
+const PerformPage           = lazy(() => import('./pages/PerformPage').then(m => ({ default: m.PerformPage })))
+const ExpressionPage        = lazy(() => import('./pages/ExpressionPage').then(m => ({ default: m.ExpressionPage })))
 
 /** Lightweight loading fallback — pure CSS, no MUI dependency */
 function PageLoader() {
@@ -134,6 +136,15 @@ export function App() {
           <ToastProvider>
             <BackendConnectionMonitor />
             <ErrorBoundary title="MAP2 UI crashed" actionLabel="Try again">
+              <Routes>
+                {/* Full-window routes — no AppShell chrome */}
+                <Route path="/perform" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <PerformPage />
+                  </Suspense>
+                } />
+                {/* All standard routes wrapped in AppShell */}
+                <Route path="/*" element={
               <AppShell>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
@@ -170,6 +181,7 @@ export function App() {
                     <Route path="/drums" element={<DrumsPage />} />
                     <Route path="/multi-system" element={<MultiSystemDashboard />} />
                     <Route path="/avb-routing" element={<AvbRoutingPage />} />
+                    <Route path="/expression" element={<ExpressionPage />} />
                     <Route path="/tesira/*" element={<TesiraPage />} />
                     <Route path="/mpx1/*" element={<MPX1Page />}>
                       <Route index element={<Navigate to="panel" replace />} />
@@ -193,6 +205,8 @@ export function App() {
                   </Routes>
                 </Suspense>
               </AppShell>
+                } />
+              </Routes>
             </ErrorBoundary>
           </ToastProvider>
         </MidiLearnProvider>

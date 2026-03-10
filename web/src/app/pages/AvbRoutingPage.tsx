@@ -71,6 +71,7 @@ export function AvbRoutingPage() {
     <ThemeProvider theme={avbRoutingTheme}>
       <CssBaseline enableColorScheme />
       <Box
+        className="avb-routing-page"
         sx={{
           height: '100%',
           display: 'flex',
@@ -86,7 +87,7 @@ export function AvbRoutingPage() {
             py: { xs: 1, sm: 1.25 },
             borderBottom: '1px solid',
             borderColor: 'divider',
-            background: 'linear-gradient(90deg, rgba(14,165,233,0.22) 0%, rgba(2,6,23,0.92) 100%)',
+            backgroundColor: '#262626',
           }}
         >
           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>

@@ -9,7 +9,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-family: var(--font-sans);
   font-weight: 600;
   text-transform: uppercase;
   user-select: none;
@@ -19,17 +19,17 @@
 
 /* Size variants */
 .midi-cc-badge.small {
-  font-size: 8px;
+  font-size: var(--type-caption);
   padding: 2px 4px;
-  border-radius: 3px;
+  border-radius: var(--border-radius-sm);
   min-width: 24px;
   height: 14px;
 }
 
 .midi-cc-badge.medium {
-  font-size: 10px;
+  font-size: var(--type-caption);
   padding: 3px 6px;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   min-width: 32px;
   height: 18px;
 }
@@ -66,10 +66,10 @@
 
 /* Mapped state (only state now - badge only shows when mapped) */
 .midi-cc-badge.mapped {
-  background: linear-gradient(135deg, #7c3aed 0%, #9c27b0 100%);
-  border: 1px solid rgba(156, 39, 176, 0.6);
-  color: #fff;
-  box-shadow: 0 1px 4px rgba(156, 39, 176, 0.3);
+  background: var(--surface);
+  border: 1px solid var(--interactive);
+  color: var(--text-primary);
+  box-shadow: none;
 }
 
 /* Badge text */

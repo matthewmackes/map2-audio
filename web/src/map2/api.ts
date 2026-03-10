@@ -700,9 +700,9 @@ export const usbApi = {
 // ==================== Chains API ====================
 
 export const chainsApi = {
-  list: () => fetchJson<ChainsResponse>(`${API_BASE}/chains/`),
+  list: () => fetchJson<ChainsResponse>(`${API_BASE}/chains/`, { cache: 'no-store' }),
 
-  get: (chainId: number) => fetchJson<Chain>(`${API_BASE}/chains/${chainId}`),
+  get: (chainId: number) => fetchJson<Chain>(`${API_BASE}/chains/${chainId}`, { cache: 'no-store' }),
 
   create: (name: string) =>
     fetchJson<Chain>(`${API_BASE}/chains/`, {
@@ -732,16 +732,21 @@ export const chainsApi = {
     }),
 
   addPlugin: (chainId: number, pluginUri: string) =>
-    fetchJson<{ status: string; chain_id: number; plugin: string; plugins_count: number }>(
+    fetchJson<{ status: string; chain_id: number; plugin: string; plugins_count: number; plugin_position?: number }>(
       `${API_BASE}/chains/${chainId}/plugins?plugin_uri=${encodeURIComponent(pluginUri)}`,
       { method: 'POST' }
     ),
 
-  removePlugin: (chainId: number, pluginUri: string) =>
-    fetchJson<{ status: string; chain_id: number }>(
-      `${API_BASE}/chains/${chainId}/plugins?plugin_uri=${encodeURIComponent(pluginUri)}`,
+  removePlugin: (chainId: number, pluginUri: string, pluginPosition?: number) => {
+    const params = new URLSearchParams({ plugin_uri: pluginUri })
+    if (typeof pluginPosition === 'number' && Number.isFinite(pluginPosition)) {
+      params.set('plugin_position', String(pluginPosition))
+    }
+    return fetchJson<{ status: string; chain_id: number }>(
+      `${API_BASE}/chains/${chainId}/plugins?${params.toString()}`,
       { method: 'DELETE' }
-    ),
+    )
+  },
 
   reorderPlugins: (chainId: number, pluginUris: string[]) =>
     fetchJson<{ status: string; chain_id: number; plugins: string[] }>(
@@ -752,11 +757,16 @@ export const chainsApi = {
       }
     ),
 
-  togglePluginBypass: (chainId: number, pluginUri: string, bypass: boolean) =>
-    fetchJson<{ status: string; chain_id: number; plugin: string; bypass: boolean }>(
-      `${API_BASE}/chains/${chainId}/plugins/${encodeURIComponent(pluginUri)}/bypass?bypass=${bypass}`,
+  togglePluginBypass: (chainId: number, pluginUri: string, bypass: boolean, pluginPosition?: number) => {
+    const params = new URLSearchParams({ bypass: String(bypass) })
+    if (typeof pluginPosition === 'number' && Number.isFinite(pluginPosition)) {
+      params.set('plugin_position', String(pluginPosition))
+    }
+    return fetchJson<{ status: string; chain_id: number; plugin: string; bypass: boolean }>(
+      `${API_BASE}/chains/${chainId}/plugins/${encodeURIComponent(pluginUri)}/bypass?${params.toString()}`,
       { method: 'POST' }
-    ),
+    )
+  },
 
   savePreset: (chainId: number, presetName: string) =>
     fetchJson<{ status: string; preset_id: number; name: string }>(
@@ -2117,6 +2127,23 @@ export const irApi = {
     return response.json() as Promise<{ status: string; filename: string; type: string }>;
   },
 };
+
+export interface LatencyJitterStats {
+  p50_ms: number
+  p95_ms: number
+  p99_ms: number
+  max_ms: number
+  rtl_p95_ms?: number
+  xrun_count: number
+  window_seconds: number
+  sample_count: number
+  running?: boolean
+}
+
+export const latencyV2Api = {
+  getJitterStats: () => fetchJson<LatencyJitterStats>(`${API_BASE}/v2/latency/jitter-stats`),
+  resetXruns: () => fetchJson<{ status: string; message: string }>(`${API_BASE}/v2/latency/xruns/reset`, { method: 'POST' }),
+}
 
 // ==================== IR Library Download API ====================
 

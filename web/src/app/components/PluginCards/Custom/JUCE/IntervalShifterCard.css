@@ -11,23 +11,23 @@
 }
 
 .interval-card-title {
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 700;
   letter-spacing: 1px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 
 .interval-subtitle {
-  font-size: 10px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
 /* Visualization */
 .interval-visualization {
   padding: 17px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
 }
 
 .interval-display {
@@ -45,9 +45,9 @@
 }
 
 .interval-label {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
 }
 
 .interval-value {
@@ -55,21 +55,21 @@
   flex-direction: column;
   align-items: center;
   padding: 11px 17px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  border: 1px solid var(--accent, #8b5cf6);
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--accent);
 }
 
 .interval-semitones {
-  font-size: 34px;
+  font-size: var(--type-display);
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--accent, #8b5cf6);
+  font-family: var(--font-sans);
+  color: var(--accent);
 }
 
 .interval-name {
-  font-size: 10px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
@@ -81,7 +81,7 @@
 }
 
 .interval-arrow {
-  color: var(--color, #10b981);
+  color: var(--color);
   opacity: 0.8;
   transform: translateY(calc(var(--shift) * -10px));
   transition: transform 0.2s ease;
@@ -98,18 +98,18 @@
 .piano-key {
   width: 14px;
   height: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-strong);
   margin-right: 1px;
-  border-radius: 0 0 2px 2px;
+  border-radius: var(--border-radius-sm);
   transition: all 0.15s ease;
 }
 
 .piano-key.white {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--surface-3);
 }
 
 .piano-key.black {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--bg);
   width: 10px;
   height: 60%;
   margin-left: -4px;
@@ -118,24 +118,24 @@
 }
 
 .piano-key.root {
-  background: rgba(139, 92, 246, 0.4);
-  border-color: #8b5cf6;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
 }
 
 .piano-key.shifted-l {
-  background: rgba(78, 205, 196, 0.6);
-  border-color: #4ecdc4;
-  box-shadow: 0 0 8px rgba(78, 205, 196, 0.5);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
+  box-shadow: none;
 }
 
 .piano-key.shifted-r {
-  background: rgba(245, 158, 11, 0.6);
-  border-color: #f59e0b;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-color: var(--support-warning);
+  box-shadow: none;
 }
 
 .piano-key.shifted-l.shifted-r {
-  background: linear-gradient(180deg, rgba(78, 205, 196, 0.6), rgba(245, 158, 11, 0.6));
+  background: var(--surface);
 }
 
 /* Presets Section */
@@ -149,18 +149,18 @@
   gap: 6px;
   width: 100%;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: var(--text-primary, #fff);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.15s ease;
-  font-size: 12px;
+  font-size: var(--type-label);
 }
 
 .interval-presets-toggle:hover {
-  background: rgba(var(--accent-rgb, 139, 92, 246), 0.1);
-  border-color: var(--accent, #8b5cf6);
+  background: var(--surface-3);
+  border-color: var(--accent);
 }
 
 .interval-presets-toggle svg.rotated {
@@ -174,11 +174,11 @@
   margin-top: 4px;
   max-height: 280px;
   overflow-y: auto;
-  background: var(--bg-secondary, #1a1a1a);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
   z-index: 100;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: none;
 }
 
 .interval-preset-btn {
@@ -188,15 +188,15 @@
   padding: 10px 12px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--text-primary, #fff);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-primary);
   text-align: left;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .interval-preset-btn:hover {
-  background: rgba(var(--accent-rgb, 139, 92, 246), 0.15);
+  background: var(--surface-3);
 }
 
 .interval-preset-btn:last-child {
@@ -205,12 +205,12 @@
 
 .interval-preset-btn .preset-name {
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--type-label);
 }
 
 .interval-preset-btn .preset-desc {
-  font-size: 10px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
@@ -232,9 +232,9 @@
 }
 
 .stepper-label {
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
@@ -242,26 +242,26 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  background: var(--bg);
+  border-radius: var(--border-radius-sm);
   padding: 2px;
 }
 
 .stepper-buttons button {
   padding: 6px 8px;
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: var(--text-primary, #fff);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .stepper-buttons button:hover:not(:disabled) {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: #8b5cf6;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
 }
 
 .stepper-buttons button:disabled {
@@ -271,27 +271,27 @@
 
 /* Full step buttons (±2 semitones) - slightly different color */
 .stepper-buttons button.step-btn {
-  background: rgba(139, 92, 246, 0.15);
-  border-color: rgba(139, 92, 246, 0.3);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
 }
 
 .stepper-buttons button.step-btn:hover:not(:disabled) {
-  background: rgba(139, 92, 246, 0.3);
-  border-color: #8b5cf6;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
 }
 
 .stepper-value {
   min-width: 40px;
   text-align: center;
-  font-size: 16px;
+  font-size: var(--type-subheading);
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--text-primary, #fff);
+  font-family: var(--font-sans);
+  color: var(--text-primary);
 }
 
 .stepper-interval {
-  font-size: 10px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
 }
 
 /* Link button */
@@ -301,22 +301,22 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  color: var(--text-secondary, #888);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .interval-link-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-3);
 }
 
 .interval-link-btn.linked {
-  background: rgba(var(--accent-rgb, 139, 92, 246), 0.2);
-  border-color: var(--accent, #8b5cf6);
-  color: var(--accent, #8b5cf6);
+  background: var(--surface-3);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Quick interval buttons */
@@ -330,26 +330,26 @@
 
 .interval-quick-buttons button {
   padding: 6px 10px;
-  font-size: 10px;
+  font-size: var(--type-caption);
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  color: var(--text-secondary, #888);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .interval-quick-buttons button:hover {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: #8b5cf6;
-  color: var(--text-primary, #fff);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
+  color: var(--text-primary);
 }
 
 .interval-quick-buttons button.active {
-  background: rgba(139, 92, 246, 0.3);
-  border-color: #8b5cf6;
-  color: #fff;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-color: var(--interactive);
+  color: var(--text-primary);
 }
 
 /* Mix section */
@@ -358,8 +358,8 @@
   justify-content: space-between;
   padding: 0 30%;
   margin-top: 4px;
-  font-size: 9px;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
 }
 
 /* Footer */
@@ -367,14 +367,14 @@
   display: flex;
   justify-content: space-between;
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-strong);
   margin-top: 8px;
 }
 
 .interval-metering {
   display: flex;
   gap: 16px;
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--text-secondary, #888);
+  font-size: var(--type-caption);
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
 }

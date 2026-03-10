@@ -23,13 +23,13 @@ interface BrandingPanelProps {
 export default function BrandingPanel({ branding }: BrandingPanelProps) {
   return (
     <Paper
-      elevation={3}
+      elevation={0}
       sx={{
         p: 4,
         mb: 3,
-        background: `linear-gradient(135deg, ${branding.brand_color}44 0%, ${branding.brand_color}22 50%, rgba(30,30,30,0.95) 100%)`,
-        borderLeft: `4px solid ${branding.brand_color}`,
-        border: `1px solid ${branding.brand_color}55`,
+        backgroundColor: '#262626',
+        borderLeft: '1px solid var(--border-strong)',
+        border: '1px solid var(--border)',
       }}
     >
       <Grid container spacing={4} alignItems="center">

@@ -12,17 +12,17 @@
 }
 
 .celestial-card-title {
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 900;
   letter-spacing: 4px;
-  background: linear-gradient(135deg, #d4a574 0%, #e8c49a 25%, #f0d5a8 50%, #e8c49a 75%, #d4a574 100%);
+  background: var(--surface);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   text-transform: uppercase;
   animation: amber-shimmer 3s ease infinite;
-  filter: drop-shadow(0 0 10px rgba(212, 165, 116, 0.4));
+  filter: none;
 }
 
 @keyframes amber-shimmer {
@@ -31,8 +31,8 @@
 }
 
 .celestial-card-subtitle {
-  font-size: 9px;
-  color: #666;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -44,34 +44,24 @@
   justify-content: center;
   align-items: center;
   padding: 16px 8px;
-  border-radius: 10px;
-  background: 
-    radial-gradient(ellipse at 50% 30%, rgba(212, 165, 116, 0.08) 0%, transparent 60%),
-    linear-gradient(180deg, #0a0a0a 0%, #0f0d0a 30%, #1a1510 50%, #0f0d0a 70%, #0a0a0a 100%);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface);
   overflow: hidden;
-  border: 1px solid rgba(212, 165, 116, 0.15);
-  box-shadow: 
-    inset 0 2px 0 rgba(255, 255, 255, 0.03),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.5),
-    0 0 24px rgba(212, 165, 116, 0.12),
-    0 6px 16px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--support-warning);
+  box-shadow: none;
   transition: all 0.3s ease;
 }
 
 .celestial-visualization:hover {
-  box-shadow: 
-    inset 0 2px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.5),
-    0 0 32px rgba(212, 165, 116, 0.18),
-    0 8px 20px rgba(0, 0, 0, 0.6);
+  box-shadow: none;
 }
 
 .celestial-visualization::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 10px;
-  background: radial-gradient(ellipse at 50% 30%, rgba(212, 165, 116, 0.1) 0%, transparent 70%);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface);
   pointer-events: none;
   animation: warm-pulse 3s ease-in-out infinite;
 }
@@ -85,7 +75,7 @@
   width: 100%;
   max-width: 400px;
   height: auto;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+  filter: none;
   transition: opacity 0.3s ease;
 }
 
@@ -97,7 +87,7 @@
   transform: translate(-50%, -50%);
   width: 336px;
   height: 168px;
-  border-radius: 50%;
+  border-radius: var(--border-radius-sm);
   opacity: 0.2;
   filter: blur(50px);
   pointer-events: none;
@@ -122,67 +112,67 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: rgba(212, 165, 116, 0.06);
-  border-radius: 6px;
-  border: 1px solid rgba(212, 165, 116, 0.1);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--support-warning);
   margin: 8px 0;
   min-height: 52px;
 }
 
 .celestial-preset-info-empty {
-  color: #555;
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--type-label);
   font-style: italic;
   text-align: center;
   width: 100%;
 }
 
 .celestial-preset-artist {
-  font-size: 14px;
+  font-size: var(--type-body);
   font-weight: 700;
-  color: #e8c49a;
+  color: var(--support-warning);
   white-space: nowrap;
 }
 
 .celestial-preset-year {
-  font-size: 10px;
-  color: #888;
-  font-family: monospace;
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
+  background: var(--surface-3);
+  border-radius: var(--border-radius-sm);
 }
 
 .celestial-preset-topology {
-  font-size: 9px;
+  font-size: var(--type-caption);
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
   padding: 2px 8px;
-  border-radius: 3px;
+  border-radius: var(--border-radius-sm);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .celestial-preset-confidence {
-  font-size: 9px;
-  color: #888;
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
   padding: 2px 6px;
-  border: 1px solid #333;
-  border-radius: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   font-weight: 600;
 }
 
 .celestial-preset-description {
-  font-size: 10px;
-  color: #777;
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
   line-height: 1.4;
   flex: 1;
   min-width: 0;
 }
 
 .celestial-preset-albums {
-  font-size: 9px;
-  color: #555;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   font-style: italic;
   margin-top: 2px;
 }
@@ -192,7 +182,7 @@
   display: flex;
   gap: 2px;
   margin-bottom: 6px;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 0;
 }
 
@@ -202,8 +192,8 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #666;
-  font-size: 10px;
+  color: var(--text-tertiary);
+  font-size: var(--type-caption);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -216,26 +206,26 @@
 }
 
 .celestial-era-tab:hover {
-  color: #aaa;
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  background: var(--surface-3);
 }
 
 .celestial-era-tab.active {
-  color: #d4a574;
-  border-bottom-color: #d4a574;
+  color: var(--support-warning);
+  border-bottom-color: var(--support-warning);
 }
 
 .celestial-era-count {
-  font-size: 8px;
-  color: #555;
-  background: rgba(255, 255, 255, 0.05);
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
+  background: var(--surface-3);
   padding: 1px 4px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-sm);
 }
 
 .celestial-era-tab.active .celestial-era-count {
-  color: #d4a574;
-  background: rgba(212, 165, 116, 0.15);
+  color: var(--support-warning);
+  background: color-mix(in srgb, var(--support-warning) 14%, var(--surface));
 }
 
 /* ---- Artist Buttons ---- */
@@ -247,7 +237,7 @@
   overflow-y: auto;
   padding: 4px 0;
   scrollbar-width: thin;
-  scrollbar-color: #333 transparent;
+  scrollbar-color: var(--border) transparent;
 }
 
 .celestial-artist-btn {
@@ -255,23 +245,23 @@
   flex-direction: column;
   gap: 4px;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-3);
   border: 1px solid var(--artist-border, transparent);
-  border-radius: 6px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 0.2s;
   text-align: left;
 }
 
 .celestial-artist-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--surface-3);
+  border-color: var(--border-strong);
 }
 
 .celestial-artist-btn.active {
-  background: rgba(var(--artist-topo-color-rgb, 212, 165, 116), 0.08);
-  border-color: var(--artist-topo-color, #d4a574);
-  box-shadow: 0 0 12px rgba(212, 165, 116, 0.1);
+  background: var(--surface-3);
+  border-color: var(--artist-topo-color);
+  box-shadow: none;
 }
 
 .celestial-artist-btn-top {
@@ -282,22 +272,22 @@
 }
 
 .celestial-artist-name {
-  font-size: 11px;
+  font-size: var(--type-label);
   font-weight: 600;
-  color: #ccc;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .celestial-artist-btn.active .celestial-artist-name {
-  color: #e8c49a;
+  color: var(--support-warning);
 }
 
 .celestial-artist-year {
-  font-size: 9px;
-  color: #666;
-  font-family: monospace;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
+  font-family: var(--font-sans);
   flex-shrink: 0;
 }
 
@@ -308,18 +298,18 @@
 }
 
 .celestial-topology-pill {
-  font-size: 8px;
+  font-size: var(--type-caption);
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--border-radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .celestial-confidence-badge {
-  font-size: 8px;
-  color: #666;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   font-weight: 600;
 }
 
@@ -335,8 +325,8 @@
 }
 
 .celestial-gear-name {
-  font-size: 10px;
-  color: #666;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -347,11 +337,11 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-top: 1px solid #222;
+  border-top: 1px solid var(--border);
   margin-top: 8px;
-  font-size: 10px;
-  color: #555;
-  font-family: monospace;
+  font-size: var(--type-caption);
+  color: var(--text-tertiary);
+  font-family: var(--font-sans);
 }
 
 .celestial-footer span {
@@ -359,14 +349,14 @@
 }
 
 .celestial-footer .celestial-meter-gr {
-  color: #d4a574;
+  color: var(--support-warning);
   font-weight: 600;
 }
 
 /* ---- Responsive via container queries ---- */
 @container plugin-card (max-width: 400px) {
   .celestial-card-title {
-    font-size: 11px;
+    font-size: var(--type-label);
     letter-spacing: 2px;
   }
 
@@ -387,7 +377,7 @@
 
 @container plugin-card (min-width: 600px) {
   .celestial-card-title {
-    font-size: 16px;
+    font-size: var(--type-subheading);
   }
 
   .celestial-artist-buttons {
@@ -396,7 +386,7 @@
   }
 
   .celestial-preset-artist {
-    font-size: 16px;
+    font-size: var(--type-subheading);
   }
 }
 
@@ -406,7 +396,7 @@
   }
 
   .celestial-card-title {
-    font-size: 18px;
+    font-size: var(--type-subheading);
     letter-spacing: 6px;
   }
 }

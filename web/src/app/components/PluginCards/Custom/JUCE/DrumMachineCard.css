@@ -15,9 +15,9 @@
   flex: 1;
   padding: 8px 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--border-radius-sm);
   font-weight: 600;
-  font-size: 11px;
+  font-size: var(--type-label);
   cursor: pointer;
   transition: all 0.2s ease;
   text-transform: capitalize;
@@ -28,22 +28,22 @@
 }
 
 .drum-machine-mode-button.active {
-  color: #000;
+  color: var(--text-tertiary);
 }
 
 .drum-machine-transport {
   padding: 16px;
-  background: #0a0a14;
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-radius: var(--border-radius-sm);
   margin-bottom: 12px;
 }
 
 .drum-machine-bpm-display {
   text-align: center;
   margin-bottom: 16px;
-  font-size: 28px;
+  font-size: var(--type-display);
   font-weight: 700;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-sans);
 }
 
 .drum-machine-controls {
@@ -56,13 +56,13 @@
 .drum-machine-control-button {
   padding: 10px 16px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--type-label);
   transition: all 0.2s ease;
 }
 
@@ -71,19 +71,19 @@
 }
 
 .drum-machine-control-button.playing {
-  color: #000;
+  color: var(--text-tertiary);
 }
 
 .drum-machine-control-button.stopped {
-  background: #333;
-  color: #ccc;
-  border: 1px solid #555;
+  background: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
 }
 
 .drum-machine-mode-indicator {
   text-align: center;
-  font-size: 11px;
-  color: #888;
+  font-size: var(--type-label);
+  color: var(--text-secondary);
   text-transform: capitalize;
 }
 
@@ -97,8 +97,8 @@
 .drum-machine-pack-button {
   padding: 8px;
   border: none;
-  border-radius: 4px;
-  font-size: 10px;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--type-caption);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -113,12 +113,12 @@
 }
 
 .drum-machine-pack-button.active {
-  color: #000;
+  color: var(--text-tertiary);
 }
 
 .drum-machine-status {
-  font-size: 11px;
-  color: #666;
+  font-size: var(--type-label);
+  color: var(--text-tertiary);
   padding: 8px;
   text-align: center;
 }
