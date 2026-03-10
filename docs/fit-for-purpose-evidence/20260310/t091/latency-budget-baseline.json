@@ -1,0 +1,14 @@
+{
+  "scope": "config-baseline",
+  "source": "systemd/map2-backend.service",
+  "captured_on": "2026-03-10",
+  "notes": [
+    "This artifact captures the shipped backend service operating point, not a live audio soak.",
+    "Release-smoke and soak-30m evidence should be added as separate artifacts when new measurements are captured."
+  ],
+  "metrics": {
+    "sample_rate_hz": 48000,
+    "buffer_size_samples": 64,
+    "nominal_buffer_ms": 1.3333333333
+  }
+}

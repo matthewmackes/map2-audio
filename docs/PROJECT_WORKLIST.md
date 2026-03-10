@@ -3360,7 +3360,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T086, T087, T088, T089, T091
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T086, T087, T088, T089
 ID: T083
 Status: [✓] Done
 Title: Create canonical backend dependency manifest and environment contract
@@ -3466,7 +3466,7 @@ Assigned to: Codex
 Last updated: 2026-03-10 10:33 - Codex
 
 ID: T091
-Status: [ ] Todo
+Status: [✓] Done
 Title: Establish latency budget, measurement discipline, and release evidence gates
 Description:
 - Goal / acceptance criteria: Define a living latency/jitter/xrun budget for MAP2, automate repeatable evidence capture where practical, and make release readiness depend on measured performance instead of qualitative confidence.
@@ -3476,4 +3476,4 @@ Description:
 - Required outputs: Budget document, benchmark/soak commands or scripts, evidence artifacts, and clear thresholds for release qualification.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-10 10:33 - Codex
+Last updated: 2026-03-10 11:16 - Codex

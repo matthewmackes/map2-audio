@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "metric": "sample_rate_hz",
+      "operator": "eq",
+      "passed": true,
+      "reason": "Shipped backend service targets 48 kHz as the canonical Tier-A operating point.",
+      "threshold": 48000,
+      "value": 48000
+    },
+    {
+      "metric": "buffer_size_samples",
+      "operator": "le",
+      "passed": true,
+      "reason": "The default release path must not regress above 64 samples.",
+      "threshold": 64,
+      "value": 64
+    },
+    {
+      "metric": "nominal_buffer_ms",
+      "operator": "le",
+      "passed": true,
+      "reason": "64 samples at 48 kHz is approximately 1.33 ms nominal callback cadence.",
+      "threshold": 1.34,
+      "value": 1.3333333333
+    }
+  ],
+  "scope": "config-baseline",
+  "source": "systemd/map2-backend.service"
+}
