@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**731** Python | **966** TypeScript | **282** C++/H | **113** Docs | **464** total commits | **0** stars | **0** forks | **0** open issues
+**732** Python | **966** TypeScript | **282** C++/H | **113** Docs | **466** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -187,7 +187,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`85666e51`](https://github.com/matthewmackes/map2-audio/commit/85666e51c5e82a8cf51e305a7095d43e440c7199) | feat: complete T088 recovery backpressure hardening | Map2 Audio | 2026-03-10 |
+| [`f4d12613`](https://github.com/matthewmackes/map2-audio/commit/f4d12613cc006a1a908df867c8faba7dfa8a0147) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`13c66e46`](https://github.com/matthewmackes/map2-audio/commit/13c66e46fb90ff17813fb6275846ba805d2bf0d9) | feat: complete T091 latency budget gates | Map2 Audio | 2026-03-10 |
 | [`3980639a`](https://github.com/matthewmackes/map2-audio/commit/3980639ad0e61efb149e5981a4c708abebc08572) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`7d5d4f42`](https://github.com/matthewmackes/map2-audio/commit/7d5d4f42f008fe68561c5aeabf331902f1a190fb) | docs: complete T085 maturity matrix | Map2 Audio | 2026-03-10 |
 | [`d4e0afe0`](https://github.com/matthewmackes/map2-audio/commit/d4e0afe0c04cf17ee04896f418ebdf361a16b1fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`f78c2e62`](https://github.com/matthewmackes/map2-audio/commit/f78c2e622575bce13a463902329f107878567d56) | feat: complete T083 backend runtime contract | Map2 Audio | 2026-03-10 |
 | [`03057924`](https://github.com/matthewmackes/map2-audio/commit/03057924081af51db5853be8255e46469ec7f31b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
-| [`65d0b595`](https://github.com/matthewmackes/map2-audio/commit/65d0b595a7f0ab70f36401a4e9b999486afc98a6) | docs: complete T081 platform evaluation | Map2 Audio | 2026-03-10 |
-| [`d7862847`](https://github.com/matthewmackes/map2-audio/commit/d786284747e95994a14de29c1fd74dd06fe4eb04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
