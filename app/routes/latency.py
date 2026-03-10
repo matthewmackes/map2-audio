@@ -98,10 +98,10 @@ async def measure_plugin_latency(request: LatencyMeasureRequest) -> Dict:
 
         if request.method == "impulse":
             # Try to get plugin process function from JUCE engine
-            from app.services.juce_engine_service import get_audio_engine
+            from app.services.engine_runtime_facade import get_engine_service
 
             latency_samples = 0
-            engine = get_audio_engine()
+            engine = get_engine_service()
 
             # Try JUCE audio engine
             if engine.is_available and engine.is_running:
@@ -131,8 +131,8 @@ async def measure_plugin_latency(request: LatencyMeasureRequest) -> Dict:
                     analyzer.measured_latencies[request.plugin_uri] = latency_samples
                 elif plugin and plugin.has_latency_port:
                     # Try to read from running instance
-                    from app.services.juce_engine_service import get_audio_engine
-                    engine = get_audio_engine()
+                    from app.services.engine_runtime_facade import get_engine_service
+                    engine = get_engine_service()
                     if engine.is_available and engine.is_running:
                         # JUCE engine doesn't expose direct instances, use reported value
                         if plugin.reported_latency_samples:

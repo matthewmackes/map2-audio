@@ -11,7 +11,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
-from app.services.juce_engine_service import get_audio_engine
+from app.services.engine_runtime_facade import get_engine_service
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class SnapshotRequest(BaseModel):
 async def get_status():
     """Get comprehensive audio engine status"""
     try:
-        service = get_audio_engine()
+        service = get_engine_service()
         return service.get_system_info()
     except Exception as e:
         return {
@@ -75,7 +75,7 @@ async def get_status():
 @router.get("/version")
 async def get_version():
     """Get audio engine version"""
-    service = get_audio_engine()
+    service = get_engine_service()
     return {"version": service.get_version()}
 
 
@@ -91,36 +91,36 @@ async def get_diagnostics():
     - Device recovery statistics
     """
     try:
-        service = get_audio_engine()
-        if not service._engine:
+        service = get_engine_service()
+        if not service.engine:
             raise HTTPException(status_code=503, detail="Engine not initialized")
         
         result = {}
         
         # Audio I/O stats (xrun, jitter, latency)
         try:
-            result["io_stats"] = service._engine.get_audio_io_stats()
+            result["io_stats"] = service.engine.get_audio_io_stats()
         except Exception as e:
             logger.warning(f"get_audio_io_stats failed: {e}")
             result["io_stats"] = {}
         
         # Connection health (PipeWire/JACK state, recovery count)
         try:
-            result["connection_health"] = service._engine.get_connection_health()
+            result["connection_health"] = service.engine.get_connection_health()
         except Exception as e:
             logger.warning(f"get_connection_health failed: {e}")
             result["connection_health"] = {}
         
         # Xrun history (last 64 xrun timestamps)
         try:
-            result["xrun_history"] = service._engine.get_xrun_history()
+            result["xrun_history"] = service.engine.get_xrun_history()
         except Exception as e:
             logger.warning(f"get_xrun_history failed: {e}")
             result["xrun_history"] = []
         
         # Basic engine info for context
-        result["sample_rate"] = service._engine.get_sample_rate()
-        result["buffer_size"] = service._engine.get_buffer_size()
+        result["sample_rate"] = service.engine.get_sample_rate()
+        result["buffer_size"] = service.engine.get_buffer_size()
         
         return result
     except HTTPException:
@@ -134,10 +134,10 @@ async def get_diagnostics():
 async def reset_xrun_counter():
     """Reset the xrun counter without resetting other statistics."""
     try:
-        service = get_audio_engine()
-        if not service._engine:
+        service = get_engine_service()
+        if not service.engine:
             raise HTTPException(status_code=503, detail="Engine not initialized")
-        service._engine.reset_xrun_counter()
+        service.engine.reset_xrun_counter()
         return {"status": "ok", "message": "Xrun counter reset"}
     except HTTPException:
         raise
@@ -152,7 +152,7 @@ async def reset_xrun_counter():
 @router.post("/initialize")
 async def initialize(request: InitializeRequest):
     """Initialize audio engine with configuration"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     # Update configuration
     from app.services.juce_engine_service import AudioEngineConfig
@@ -178,7 +178,7 @@ async def initialize(request: InitializeRequest):
 @router.post("/shutdown")
 async def shutdown():
     """Shutdown audio engine"""
-    service = get_audio_engine()
+    service = get_engine_service()
     await service.shutdown()
     return {"status": "shutdown"}
 
@@ -186,7 +186,7 @@ async def shutdown():
 @router.post("/audio/start")
 async def start_audio():
     """Start audio processing"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     if not service.is_running:
         success = await service.initialize()
@@ -203,7 +203,7 @@ async def start_audio():
 @router.post("/audio/stop")
 async def stop_audio():
     """Stop audio processing"""
-    service = get_audio_engine()
+    service = get_engine_service()
     await service.stop_audio()
     return {"status": "audio_stopped"}
 
@@ -211,7 +211,7 @@ async def stop_audio():
 @router.get("/audio/status")
 async def get_audio_status():
     """Get audio processing status"""
-    service = get_audio_engine()
+    service = get_engine_service()
     return {
         "running": service.is_audio_running(),
         "engine_running": service.is_running,
@@ -226,7 +226,7 @@ async def get_audio_status():
 @router.get("/plugins")
 async def list_plugins():
     """List all available plugins (JUCE native + LV2)"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     if not service.is_available:
         raise HTTPException(status_code=503, detail="Audio engine not available")
@@ -256,7 +256,7 @@ async def list_plugins():
 @router.get("/plugins/{uri:path}")
 async def get_plugin_info(uri: str):
     """Get detailed plugin information"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     if not service.is_running:
         await service.initialize()
@@ -273,7 +273,7 @@ async def get_plugin_info(uri: str):
 @router.post("/plugins/load")
 async def load_plugin(request: PluginRequest):
     """Load a plugin into the chain"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     if not service.is_running:
         await service.initialize()
@@ -293,7 +293,7 @@ async def load_plugin(request: PluginRequest):
 @router.post("/plugins/unload/{instance_id}")
 async def unload_plugin(instance_id: int):
     """Unload a plugin from the chain"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     success = await service.unload_plugin(instance_id)
     
@@ -310,7 +310,7 @@ async def unload_plugin(instance_id: int):
 @router.get("/chain")
 async def get_chain():
     """Get current plugin chain"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     return {
         "chain": await service.get_chain_order(),
@@ -321,7 +321,7 @@ async def get_chain():
 @router.post("/chain/reorder")
 async def reorder_chain(request: ReorderRequest):
     """Reorder plugins in the chain"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     success = await service.reorder_chain(request.order)
     
@@ -338,7 +338,7 @@ async def reorder_chain(request: ReorderRequest):
 @router.post("/parameter")
 async def set_parameter(request: ParameterRequest):
     """Set a plugin parameter"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     success = await service.set_parameter_direct(
         request.instance_id,
@@ -360,11 +360,11 @@ async def set_parameter(request: ParameterRequest):
 @router.get("/parameter/{instance_id}/{param_name}")
 async def get_parameter(instance_id: int, param_name: str):
     """Get a plugin parameter value"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     # FIX #10: Actually read the parameter value from the engine
     # (was returning hardcoded 0.0 before)
-    if not service or not service._engine:
+    if not service or not service.engine:
         return {
             "instance_id": instance_id,
             "param_name": param_name,
@@ -374,7 +374,7 @@ async def get_parameter(instance_id: int, param_name: str):
     
     try:
         value = await asyncio.to_thread(
-            service._engine.get_parameter_by_name,
+            service.engine.get_parameter_by_name,
             instance_id,
             param_name
         )
@@ -396,7 +396,7 @@ async def get_parameter(instance_id: int, param_name: str):
 @router.post("/bypass")
 async def set_bypass(request: BypassRequest):
     """Set plugin bypass state"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     success = await service.set_bypass(request.instance_id, request.bypass)
     
@@ -417,7 +417,7 @@ async def set_bypass(request: BypassRequest):
 @router.get("/snapshots")
 async def list_snapshots():
     """List all snapshots"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     return {
         "snapshots": await service.list_snapshots(),
@@ -428,7 +428,7 @@ async def list_snapshots():
 @router.post("/snapshots/load")
 async def load_snapshot(request: SnapshotRequest):
     """Load a snapshot"""
-    service = get_audio_engine()
+    service = get_engine_service()
     
     success = await service.load_snapshot(request.snapshot_id)
     
@@ -441,7 +441,7 @@ async def load_snapshot(request: SnapshotRequest):
 @router.get("/snapshot/current")
 async def get_current_snapshot():
     """Get current snapshot ID"""
-    service = get_audio_engine()
+    service = get_engine_service()
     return {"snapshot_id": await service.get_current_snapshot()}
 
 
@@ -464,27 +464,27 @@ class MIDILearnRequest(BaseModel):
 @router.get("/midi/status")
 async def get_midi_status():
     """Get comprehensive MIDI status from JUCE engine"""
-    service = get_audio_engine()
+    service = get_engine_service()
     return await service.get_midi_status()
 
 
 @router.get("/midi/devices")
 async def get_midi_devices():
     """List available MIDI devices"""
-    service = get_audio_engine()
+    service = get_engine_service()
 
     return {
         "devices": await service.get_midi_devices(),
         "inputs": await service.get_midi_input_devices(),
         "outputs": await service.get_midi_output_devices(),
-        "enabled": service._engine.is_midi_enabled() if service._engine else False
+        "enabled": service.engine.is_midi_enabled() if service.engine else False
     }
 
 
 @router.post("/midi/enable")
 async def enable_midi(enable: bool = True):
     """Enable or disable MIDI"""
-    service = get_audio_engine()
+    service = get_engine_service()
 
     success = await service.enable_midi(enable)
 
@@ -494,7 +494,7 @@ async def enable_midi(enable: bool = True):
 @router.post("/midi/input/open/{device_index}")
 async def open_midi_input(device_index: int):
     """Open a MIDI input device"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.open_midi_input(device_index)
     if not success:
         raise HTTPException(status_code=400, detail=f"Failed to open MIDI input device {device_index}")
@@ -504,7 +504,7 @@ async def open_midi_input(device_index: int):
 @router.post("/midi/input/close")
 async def close_midi_input():
     """Close the current MIDI input device"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.close_midi_input()
     return {"status": "closed", "success": success}
 
@@ -512,7 +512,7 @@ async def close_midi_input():
 @router.post("/midi/output/open/{device_index}")
 async def open_midi_output(device_index: int):
     """Open a MIDI output device"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.open_midi_output(device_index)
     if not success:
         raise HTTPException(status_code=400, detail=f"Failed to open MIDI output device {device_index}")
@@ -522,7 +522,7 @@ async def open_midi_output(device_index: int):
 @router.post("/midi/output/close")
 async def close_midi_output():
     """Close the current MIDI output device"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.close_midi_output()
     return {"status": "closed", "success": success}
 
@@ -532,7 +532,7 @@ async def close_midi_output():
 @router.get("/midi/mappings")
 async def get_midi_mappings():
     """Get all MIDI CC mappings from JUCE engine"""
-    service = get_audio_engine()
+    service = get_engine_service()
     mappings = await service.get_midi_cc_mappings()
     return {"mappings": mappings, "count": len(mappings)}
 
@@ -540,7 +540,7 @@ async def get_midi_mappings():
 @router.post("/midi/mappings")
 async def add_midi_mapping(request: MIDICCMappingRequest):
     """Add MIDI CC to parameter mapping via JUCE"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.add_midi_cc_mapping(
         request.channel,
         request.cc_number,
@@ -561,7 +561,7 @@ async def add_midi_mapping(request: MIDICCMappingRequest):
 @router.delete("/midi/mappings/{channel}/{cc_number}")
 async def remove_midi_mapping(channel: int, cc_number: int):
     """Remove MIDI CC mapping via JUCE"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.remove_midi_cc_mapping(channel, cc_number)
     if not success:
         raise HTTPException(status_code=404, detail="Mapping not found")
@@ -571,7 +571,7 @@ async def remove_midi_mapping(channel: int, cc_number: int):
 @router.post("/midi/mappings/clear")
 async def clear_midi_mappings():
     """Clear all MIDI CC mappings via JUCE"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.clear_midi_cc_mappings()
     return {"status": "cleared", "success": success}
 
@@ -581,7 +581,7 @@ async def clear_midi_mappings():
 @router.post("/midi/learn/start")
 async def start_midi_learn(request: MIDILearnRequest):
     """Start MIDI learn mode for a parameter via JUCE"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.start_midi_learn(request.plugin_uri, request.param_index)
     if not success:
         raise HTTPException(status_code=400, detail="Failed to start MIDI learn")
@@ -595,7 +595,7 @@ async def start_midi_learn(request: MIDILearnRequest):
 @router.post("/midi/learn/stop")
 async def stop_midi_learn():
     """Stop MIDI learn mode via JUCE"""
-    service = get_audio_engine()
+    service = get_engine_service()
     success = await service.stop_midi_learn()
     return {"status": "stopped", "success": success}
 
@@ -603,7 +603,7 @@ async def stop_midi_learn():
 @router.get("/midi/learn/status")
 async def get_midi_learn_status():
     """Get MIDI learn status from JUCE"""
-    service = get_audio_engine()
+    service = get_engine_service()
     return await service.get_midi_learn_status()
 
 
@@ -614,14 +614,14 @@ async def get_midi_learn_status():
 @router.get("/vu")
 async def get_vu_levels():
     """Get master VU levels"""
-    service = get_audio_engine()
+    service = get_engine_service()
     return await service.get_vu_levels()
 
 
 @router.get("/vu/plugins")
 async def get_plugin_vu_levels():
     """Get per-plugin VU levels"""
-    service = get_audio_engine()
+    service = get_engine_service()
     return await service.get_plugin_vu_levels()
 
 

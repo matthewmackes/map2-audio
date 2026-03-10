@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 try:
     from fastapi import APIRouter, HTTPException, Query
     from typing import Dict, Any, Optional, List
-    from app.services.juce_engine_service import get_audio_engine
+    from app.services.engine_runtime_facade import get_engine_service
 
     logger = logging.getLogger(__name__)
 
@@ -185,7 +185,7 @@ try:
     async def get_audio_status_route():
         """Get audio engine status from JUCE."""
         global _audio_status_cache, _audio_status_cache_at
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {
@@ -247,7 +247,7 @@ try:
         from app.config import config_get
         from app.services.avb import get_avb_readiness
 
-        service = get_audio_engine()
+        service = get_engine_service()
         info = service.get_system_info() if service.is_available else {}
 
         selected_profile = str(
@@ -318,7 +318,7 @@ try:
         except Exception as exc:
             pipewire_runtime["error"] = str(exc)
 
-        avb_readiness = get_avb_readiness(engine=getattr(service, "_engine", None))
+        avb_readiness = get_avb_readiness(engine=service.engine)
         avb_runtime: Dict[str, Any] = {
             "enabled": bool(config_get("avb.enabled", False)),
             "interface": str(config_get("avb.interface", "") or "").strip(),
@@ -539,7 +539,7 @@ try:
     @router.post("/start")
     async def start_audio_route():
         """Start JUCE audio processing."""
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             raise HTTPException(status_code=503, detail="JUCE audio engine not available")
@@ -560,7 +560,7 @@ try:
     @router.post("/stop")
     async def stop_audio_route():
         """Stop JUCE audio processing."""
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             raise HTTPException(status_code=503, detail="JUCE audio engine not available")
@@ -576,7 +576,7 @@ try:
     async def get_latency():
         """Get audio latency in milliseconds."""
         global _audio_latency_cache, _audio_latency_cache_at
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {"latency_ms": 0.0}
@@ -615,7 +615,7 @@ try:
     @router.get("/pipedal")
     async def get_pipedal_metrics():
         """Get PiPedal-style audio metrics (CPU load, xruns, etc.)."""
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {
@@ -652,7 +652,7 @@ try:
     async def get_levels():
         """Get current audio levels from JUCE VU meters."""
         global _audio_levels_cache, _audio_levels_cache_at
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {
@@ -738,7 +738,7 @@ try:
     async def get_plugin_levels():
         """Get per-plugin VU levels from JUCE."""
         global _audio_plugin_levels_cache, _audio_plugin_levels_cache_at
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {"plugins": []}
@@ -817,7 +817,7 @@ try:
     @router.get("/juce")
     async def get_juce_metrics():
         """Get JUCE audio engine-specific metrics."""
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {
@@ -858,7 +858,7 @@ try:
         Returns:
             Configuration update status and new settings
         """
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             raise HTTPException(status_code=503, detail="JUCE audio engine not available")
@@ -932,7 +932,7 @@ try:
         Returns:
             Restart status and new engine state
         """
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             raise HTTPException(status_code=503, detail="JUCE audio engine not available")
@@ -974,7 +974,7 @@ try:
         Returns:
             Test results with latency, sample rate, buffer size, and quality score
         """
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             raise HTTPException(status_code=503, detail="JUCE audio engine not available")
@@ -1385,7 +1385,7 @@ try:
                             })
                     i += 1
 
-            service = get_audio_engine()
+            service = get_engine_service()
             if service.is_available and service.is_audio_running():
                 state = "running"
                 info = service.get_system_info()
@@ -1427,7 +1427,7 @@ try:
         recommendations = []
         overall_status = "pass"
         start_time = datetime.now()
-        service = get_audio_engine()
+        service = get_engine_service()
 
         # Test 1: Engine availability
         t1 = datetime.now()
@@ -1529,7 +1529,7 @@ try:
     @router.post("/health/xruns/clear")
     async def clear_xruns() -> Dict[str, Any]:
         """Clear the XRun counter."""
-        service = get_audio_engine()
+        service = get_engine_service()
         if not service.is_available:
             return {"success": False, "error": "Audio engine not available"}
         try:
@@ -1550,7 +1550,7 @@ try:
     async def test_sample_rate(rate: int = Query(..., description="Sample rate to test")) -> Dict[str, Any]:
         """Test a specific sample rate."""
         from datetime import datetime
-        service = get_audio_engine()
+        service = get_engine_service()
         test_start = datetime.now()
 
         if not service.is_available:
@@ -1583,7 +1583,7 @@ try:
         duration: int = Query(5, description="Test duration in seconds")
     ) -> Dict[str, Any]:
         """Test buffer stability at a specific buffer size."""
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {"success": False, "buffer_size": buffer_size, "duration_seconds": duration, "xruns": 0, "avg_cpu_load": 0, "peak_cpu_load": 0, "stability_score": 0, "recommendation": "Audio engine not available"}
@@ -1923,7 +1923,7 @@ try:
         input_avb_endpoints: Optional[List[str]] = None,
         output_avb_endpoints: Optional[List[str]] = None,
     ) -> None:
-        engine = getattr(service, "_engine", None)
+        engine = service.engine
         if engine is None:
             return
 
@@ -1983,7 +1983,7 @@ try:
         Returns:
             List of input/output local ports + AVB endpoint capabilities.
         """
-        service = get_audio_engine()
+        service = get_engine_service()
         from app.services.avb.avb_service import get_avb_service
 
         if not service.is_available:
@@ -2020,7 +2020,7 @@ try:
         """
         Get current global audio port routing configuration.
         """
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {
@@ -2052,7 +2052,7 @@ try:
         Set global audio routing configuration across local and AVB sources/sinks.
         """
         global _port_routing_config
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             raise HTTPException(status_code=503, detail="Audio engine not available")
@@ -2114,7 +2114,7 @@ try:
         """
         Get routing for a specific chain, falling back to global routing.
         """
-        service = get_audio_engine()
+        service = get_engine_service()
         capabilities = _get_current_capabilities(service) if service.is_available else _get_minimal_capabilities()
         chain_exists, persisted_override = await _fetch_chain_routing_override(chain_id)
 
@@ -2144,7 +2144,7 @@ try:
         """
         Set routing override for a specific chain/flow and persist it in Chain.config.
         """
-        service = get_audio_engine()
+        service = get_engine_service()
         if not service.is_available:
             raise HTTPException(status_code=503, detail="Audio engine not available")
 
@@ -2241,7 +2241,7 @@ try:
         if chain_id in _chain_port_routing:
             del _chain_port_routing[chain_id]
 
-        service = get_audio_engine()
+        service = get_engine_service()
         capabilities = _get_current_capabilities(service) if service.is_available else _get_minimal_capabilities()
         payload = _build_routing_response(
             chain_id=chain_id,
@@ -2261,7 +2261,7 @@ try:
         Returns:
             List of preset routing configurations
         """
-        service = get_audio_engine()
+        service = get_engine_service()
 
         if not service.is_available:
             return {"presets": []}

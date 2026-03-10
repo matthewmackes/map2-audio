@@ -3360,7 +3360,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T089
+ALL UNBLOCKED ITEMS COMPLETE (except T082 in progress)
 ID: T083
 Status: [✓] Done
 Title: Create canonical backend dependency manifest and environment contract
@@ -3440,7 +3440,7 @@ Assigned to: Codex
 Last updated: 2026-03-10 11:27 - Codex
 
 ID: T089
-Status: [ ] Todo
+Status: [✓] Done
 Title: Decompose oversized route and service hubs around stable domain boundaries
 Description:
 - Goal / acceptance criteria: Reduce orchestration sprawl by narrowing route responsibilities, shrinking the import blast radius of `juce_engine_service`, and introducing clearer domain facades so control logic is easier to change, test, and reason about.
@@ -3450,7 +3450,7 @@ Description:
 - Required outputs: Boundary plan, phased refactor implementation, and regression-focused validation for the extracted domains.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-10 10:33 - Codex
+Last updated: 2026-03-10 12:12 - Codex
 
 ID: T090
 Status: [ ] Todo
