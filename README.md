@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**727** Python | **966** TypeScript | **282** C++/H | **109** Docs | **456** total commits | **0** stars | **0** forks | **0** open issues
+**727** Python | **966** TypeScript | **282** C++/H | **110** Docs | **458** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,12 +169,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Platform Evaluation Report](https://github.com/matthewmackes/map2-audio/blob/master/docs/PLATFORM_EVALUATION_REPORT.md) | 2026-03-10 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-10 |
 | [MAP2 Mobile Responsive Audit & Implementation](https://github.com/matthewmackes/map2-audio/blob/master/docs/MOBILE_RESPONSIVE_PROMPT.md) | 2026-03-09 |
 | [MAP2 Audio Platform — Operations Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATIONS_GUIDE.md) | 2026-03-08 |
 | [Runtime Profile Release Controls (Features 1/3/5/7)](https://github.com/matthewmackes/map2-audio/blob/master/docs/RUNTIME_PROFILE_RELEASE_CONTROLS.md) | 2026-03-08 |
 | [AVB Canonical Worklist (Single Source of Truth)](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MASTER_WORK_PLAN.md) | 2026-02-27 |
-| [AVB Qualification Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_QUALIFICATION_MATRIX.md) | 2026-02-27 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`65d0b595`](https://github.com/matthewmackes/map2-audio/commit/65d0b595a7f0ab70f36401a4e9b999486afc98a6) | docs: complete T081 platform evaluation | Map2 Audio | 2026-03-10 |
+| [`d7862847`](https://github.com/matthewmackes/map2-audio/commit/d786284747e95994a14de29c1fd74dd06fe4eb04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`03613d6f`](https://github.com/matthewmackes/map2-audio/commit/03613d6fd6b40c08a10484cd3dfe118699405580) | docs: complete T081-subI API critique | Map2 Audio | 2026-03-10 |
 | [`058d4879`](https://github.com/matthewmackes/map2-audio/commit/058d4879608e6aeb64f02e51b813125aad8c5313) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`bd5b951c`](https://github.com/matthewmackes/map2-audio/commit/bd5b951c68cd03ce9fab44b3b6c9f4b30fed6954) | feat: complete T084 API inventory | Map2 Audio | 2026-03-10 |
 | [`763349fd`](https://github.com/matthewmackes/map2-audio/commit/763349fda857f5392a62a624e4ab22bf0473b0fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`74958824`](https://github.com/matthewmackes/map2-audio/commit/7495882494f1f5ce1fd55a381fb547331957a9a3) | docs: complete T081 theming critique | Map2 Audio | 2026-03-10 |
 | [`7cf4eb8e`](https://github.com/matthewmackes/map2-audio/commit/7cf4eb8e4fddc71654a2bb7933e0e401c6f2ad51) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
-| [`8caef958`](https://github.com/matthewmackes/map2-audio/commit/8caef9584c92d6c932429542ca1ec2a97977aa3f) | docs: complete T081 UX critique | Map2 Audio | 2026-03-10 |
-| [`58d46269`](https://github.com/matthewmackes/map2-audio/commit/58d4626978c3a019777d2fd5a03c35867784ce68) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
