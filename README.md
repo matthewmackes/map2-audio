@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**749** Python | **971** TypeScript | **282** C++/H | **119** Docs | **484** total commits | **0** stars | **0** forks | **0** open issues
+**749** Python | **971** TypeScript | **282** C++/H | **119** Docs | **485** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,6 +200,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3dcfe8c7`](https://github.com/matthewmackes/map2-audio/commit/3dcfe8c7ecf0da8c19e6af224e556054b8d65cf0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`51d42052`](https://github.com/matthewmackes/map2-audio/commit/51d420520fc50c3a5ce782545a578e057fc4cc6f) | chore: checkpoint all current changes | Map2 Audio | 2026-03-10 |
 | [`ec48f88f`](https://github.com/matthewmackes/map2-audio/commit/ec48f88feab9e74b6957e3f054ebcbbcacb96efa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`33e6a3d6`](https://github.com/matthewmackes/map2-audio/commit/33e6a3d609702c3d3c435e19fc82e9647da50ec1) | feat: T092 GUI professionalism overhaul plan — IBM Carbon... | Map2 Audio | 2026-03-10 |
@@ -207,7 +208,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`31880210`](https://github.com/matthewmackes/map2-audio/commit/31880210c318344e4d178c6327d30bf92f8e954e) | docs: prepare repo bloat cleanup | Map2 Audio | 2026-03-10 |
 | [`a0214d26`](https://github.com/matthewmackes/map2-audio/commit/a0214d2623d11b2e87fe3d9cdf0766ee722f9d33) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`3f342d10`](https://github.com/matthewmackes/map2-audio/commit/3f342d109ed7be73d312af8f5d264f991de8a98e) | feat: rebuild operator navigation model | Map2 Audio | 2026-03-10 |
-| [`e3e23a93`](https://github.com/matthewmackes/map2-audio/commit/e3e23a9374159176f89e463a92208202a833b453) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
