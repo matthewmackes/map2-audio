@@ -16,6 +16,8 @@ interface LatencyDisplayProps {
   compact?: boolean;
   /** Custom class name */
   className?: string;
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null;
 }
 
 const LatencyBar: React.FC<{
@@ -58,14 +60,15 @@ const LatencyBar: React.FC<{
 export const LatencyDisplay: React.FC<LatencyDisplayProps> = ({
   showBreakdown = true,
   compact = false,
-  className = ''
+  className = '',
+  nodeId,
 }) => {
   const {
     latency,
     isLoading,
     formatLatency,
     getPluginLatency
-  } = useLatency();
+  } = useLatency({ nodeId });
 
   if (isLoading) {
     return (

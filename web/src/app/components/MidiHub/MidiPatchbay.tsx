@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch } from '@mui/material'
+import { Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch } from '@mui/material'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useToasts } from '../Toasts'
 
@@ -31,6 +31,7 @@ export function MidiPatchbay() {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null)
   const [showHeatmap, setShowHeatmap] = useState(true)
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false)
 
   const statusQuery = useQuery({
     queryKey: ['midi-hub', 'status'],
@@ -182,24 +183,41 @@ export function MidiPatchbay() {
 
   return (
     <div className="stack" style={{ gap: 12 }}>
+      <Alert severity="info">
+        Patchbay creation flow: select source node, then destination node, then confirm a new link appears. Right-click any node for metadata.
+      </Alert>
+
+      <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <Chip size="small" label="Green line = note traffic" color="success" />
+        <Chip size="small" label="Blue line = CC traffic" color="info" />
+        <Chip size="small" label="Dashed line = disabled route" variant="outlined" />
+        <Chip size="small" label="Heatmap colors show traffic intensity" color={showHeatmap ? 'warning' : 'default'} />
+      </div>
+
       <div className="flex" style={{ gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="flex" style={{ gap: 8 }}>
           <Chip size="small" label={`Nodes: ${nodes.length}`} />
           <Chip size="small" label={`Links: ${links.length}`} />
-          <Chip size="small" color={showHeatmap ? 'warning' : 'default'} label={`Heatmap ${showHeatmap ? 'On' : 'Off'}`} />
           {pendingSource ? <Chip size="small" color="warning" label={`Source selected: ${pendingSource}`} /> : null}
         </div>
-        <div className="flex" style={{ gap: 8 }}>
+        <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
           <Button size="small" variant="outlined" onClick={() => setShowHeatmap((value) => !value)}>
-            Heatmap
+            Heatmap {showHeatmap ? 'On' : 'Off'}
           </Button>
-          <Button size="small" variant="outlined" onClick={() => setScale((value) => Math.max(0.6, value - 0.1))}>
-            -
+          <Button size="small" variant="outlined" onClick={() => setShowAdvancedTools((value) => !value)}>
+            {showAdvancedTools ? 'Hide Advanced Tools' : 'Show Advanced Tools'}
           </Button>
-          <Chip size="small" label={`Zoom ${(scale * 100).toFixed(0)}%`} />
-          <Button size="small" variant="outlined" onClick={() => setScale((value) => Math.min(2.0, value + 0.1))}>
-            +
-          </Button>
+          {showAdvancedTools ? (
+            <>
+              <Button size="small" variant="outlined" onClick={() => setScale((value) => Math.max(0.6, value - 0.1))}>
+                -
+              </Button>
+              <Chip size="small" label={`Zoom ${(scale * 100).toFixed(0)}%`} />
+              <Button size="small" variant="outlined" onClick={() => setScale((value) => Math.min(2.0, value + 0.1))}>
+                +
+              </Button>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -293,6 +311,10 @@ export function MidiPatchbay() {
           </g>
         </svg>
       </div>
+
+      <Alert severity="warning">
+        Example: select keyboard input node, select synth output node, verify the link, then open Route Control and keep route enabled.
+      </Alert>
 
       <Dialog open={Boolean(selectedRoute)} onClose={() => setSelectedRoute(null)} fullWidth maxWidth="sm">
         <DialogTitle>Route Control</DialogTitle>

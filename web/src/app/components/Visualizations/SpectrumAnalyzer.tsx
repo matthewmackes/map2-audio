@@ -25,6 +25,8 @@ interface SpectrumAnalyzerProps {
   colors?: [string, string, string];
   /** Custom class name */
   className?: string;
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null;
 }
 
 // Frequency labels to display
@@ -38,7 +40,8 @@ export const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
   showLabels = true,
   showPeaks = true,
   colors = ['#22c55e', '#eab308', '#ef4444'],
-  className = ''
+  className = '',
+  nodeId,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const peaksRef = useRef<number[]>(new Array(barCount).fill(0));
@@ -46,7 +49,7 @@ export const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
   const animationRef = useRef<number | undefined>(undefined);
   const [dimensions, setDimensions] = useState({ width: 0, height });
 
-  const { spectrum, isConnected } = useSpectrum({});
+  const { spectrum, isConnected } = useSpectrum({ nodeId });
 
   // Handle resize
   useEffect(() => {

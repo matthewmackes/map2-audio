@@ -9,6 +9,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from typing import Dict, Any
 
 from app.services.websocket_manager import ws_manager
+from app.services.ws_federation import get_ws_federator
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -42,6 +43,10 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 "automation",       # Parameter automation updates
                 "chain_updates",    # Plugin chain changes
                 "plugin_params",    # Plugin parameter changes
+                "midi_cluster",     # Cluster-wide MIDI events
+                "midi_cluster_nodes",
+                "midi_cluster_connections",
+                "midi_cluster_clock",
                 "avb:router:connection_state", # AVB per-route connection state updates
                 "avb:router:endpoints", # AVB endpoint discovery snapshots
                 "avb:router:connections", # AVB routing connection snapshots
@@ -51,7 +56,9 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                     "phase",            # Stereo phase correlation
                     "latency",          # Latency updates
                     "timing_jitter",    # Callback jitter updates (10fps)
-                    "pipewire"          # PipeWire audio server metrics (2fps)
+                    "pipewire",         # PipeWire audio server metrics (2fps)
+                    "node:{node_id}/<topic>",  # Federated node-prefixed topics
+                    "all/<topic>"       # Broadcast subscription to all nodes
                 ],
                 "supported_actions": ["subscribe", "unsubscribe", "ping", "get"]
             }
@@ -71,6 +78,19 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 if action == "subscribe":
                     topic = message.get("topic")
                     if topic:
+                        # Federated topics: node:{id}/topic or all/topic
+                        try:
+                            federator = get_ws_federator()
+                            if topic.startswith("node:") and "/" in topic:
+                                node_id, rest = topic.split("/", 1)
+                                node_id = node_id.replace("node:", "", 1)
+                                await federator.subscribe_remote(node_id, rest)
+                            elif topic.startswith("all/"):
+                                rest = topic.split("/", 1)[1]
+                                await federator.subscribe_all(rest)
+                        except Exception as exc:
+                            logger.warning(f"Federation subscribe failed for {topic}: {exc}")
+
                         await ws_manager.subscribe(client_id, topic)
                         await ws_manager.send_personal_message(
                             json.dumps({
@@ -84,6 +104,18 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 elif action == "unsubscribe":
                     topic = message.get("topic")
                     if topic:
+                        try:
+                            federator = get_ws_federator()
+                            if topic.startswith("node:") and "/" in topic:
+                                node_id, rest = topic.split("/", 1)
+                                node_id = node_id.replace("node:", "", 1)
+                                await federator.unsubscribe_remote(node_id, rest)
+                            elif topic.startswith("all/"):
+                                rest = topic.split("/", 1)[1]
+                                # nothing to do for all at unsubscribe aside from local removal
+                        except Exception as exc:
+                            logger.warning(f"Federation unsubscribe failed for {topic}: {exc}")
+
                         await ws_manager.unsubscribe(client_id, topic)
                         await ws_manager.send_personal_message(
                             json.dumps({

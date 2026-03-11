@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWsUrl } from '../../map2/api'
+import { clusterScopeKey, withNodeQuery, withNodeTopic } from '../utils/clusterTransport'
 
 // ========================================
 // Types
@@ -124,6 +125,8 @@ interface UseDynamicsOptions {
   useWebSocket?: boolean
   /** Polling interval in ms when not using WebSocket */
   pollingInterval?: number
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null
 }
 
 // ========================================
@@ -178,7 +181,8 @@ function parseGateParams(data: Record<string, unknown>): GateParams {
 export function useDynamics(options: UseDynamicsOptions = {}) {
   const {
     useWebSocket = true,
-    pollingInterval = 100  // 10fps for metering
+    pollingInterval = 100,  // 10fps for metering
+    nodeId,
   } = options
 
   const queryClient = useQueryClient()
@@ -190,6 +194,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
   })
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const scopeKey = clusterScopeKey(nodeId)
 
   // ========================================
   // WebSocket for real-time metering
@@ -199,11 +204,12 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
     if (!useWebSocket) return
 
     const ws = new WebSocket(getWsUrl())
+    const topic = withNodeTopic('dynamics', nodeId)
     wsRef.current = ws
 
     ws.onopen = () => {
       setIsConnected(true)
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'dynamics' }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic }))
     }
 
     ws.onmessage = (event) => {
@@ -233,21 +239,21 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'dynamics' }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
       }
       ws.close()
       wsRef.current = null
     }
-  }, [useWebSocket])
+  }, [nodeId, useWebSocket])
 
   // ========================================
   // Queries for parameters
   // ========================================
 
   const compressorQuery = useQuery({
-    queryKey: ['dynamics', 'compressor'],
+    queryKey: ['dynamics', scopeKey, 'compressor'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/dynamics/compressor/parameters')
+      const res = await fetch(withNodeQuery('/api/engine/dynamics/compressor/parameters', nodeId))
       if (!res.ok) throw new Error('Failed to fetch compressor parameters')
       return parseCompressorParams(await res.json())
     },
@@ -255,9 +261,9 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
   })
 
   const limiterQuery = useQuery({
-    queryKey: ['dynamics', 'limiter'],
+    queryKey: ['dynamics', scopeKey, 'limiter'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/dynamics/limiter/parameters')
+      const res = await fetch(withNodeQuery('/api/engine/dynamics/limiter/parameters', nodeId))
       if (!res.ok) throw new Error('Failed to fetch limiter parameters')
       return parseLimiterParams(await res.json())
     },
@@ -265,9 +271,9 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
   })
 
   const gateQuery = useQuery({
-    queryKey: ['dynamics', 'gate'],
+    queryKey: ['dynamics', scopeKey, 'gate'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/dynamics/gate/parameters')
+      const res = await fetch(withNodeQuery('/api/engine/dynamics/gate/parameters', nodeId))
       if (!res.ok) throw new Error('Failed to fetch gate parameters')
       return parseGateParams(await res.json())
     },
@@ -290,7 +296,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       if (params.autoMakeup !== undefined) body.auto_makeup = params.autoMakeup
       if (params.bypass !== undefined) body.bypass = params.bypass
 
-      const res = await fetch('/api/engine/dynamics/compressor', {
+      const res = await fetch(withNodeQuery('/api/engine/dynamics/compressor', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -299,7 +305,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dynamics', 'compressor'] })
+      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'compressor'] })
     }
   })
 
@@ -310,7 +316,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       if (params.release !== undefined) body.release = params.release
       if (params.bypass !== undefined) body.bypass = params.bypass
 
-      const res = await fetch('/api/engine/dynamics/limiter', {
+      const res = await fetch(withNodeQuery('/api/engine/dynamics/limiter', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -319,7 +325,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dynamics', 'limiter'] })
+      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'limiter'] })
     }
   })
 
@@ -332,7 +338,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       if (params.release !== undefined) body.release = params.release
       if (params.bypass !== undefined) body.bypass = params.bypass
 
-      const res = await fetch('/api/engine/dynamics/gate', {
+      const res = await fetch(withNodeQuery('/api/engine/dynamics/gate', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -341,7 +347,7 @@ export function useDynamics(options: UseDynamicsOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dynamics', 'gate'] })
+      queryClient.invalidateQueries({ queryKey: ['dynamics', scopeKey, 'gate'] })
     }
   })
 

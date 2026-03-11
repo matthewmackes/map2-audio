@@ -80,6 +80,9 @@ class ClusterRegistry:
                     cpu_cores INTEGER DEFAULT 0,
                     total_memory_gb INTEGER DEFAULT 0,
                     audio_devices TEXT,
+                    midi_input_count INTEGER DEFAULT 0,
+                    midi_output_count INTEGER DEFAULT 0,
+                    midi_devices TEXT DEFAULT '[]',
                     storage_gb INTEGER DEFAULT 0,
                     status TEXT DEFAULT 'offline',
                     health_score REAL DEFAULT 50.0,
@@ -120,12 +123,26 @@ class ClusterRegistry:
                 "CREATE INDEX IF NOT EXISTS idx_metrics_time ON node_metrics_history(timestamp);"
             )
 
+            self._ensure_cluster_nodes_columns(cursor)
             conn.commit()
             self.logger.info("Cluster registry database initialized")
 
         except Exception as e:
             self.logger.error(f"Failed to initialize registry database: {e}")
             raise
+
+    def _ensure_cluster_nodes_columns(self, cursor: sqlite3.Cursor) -> None:
+        cursor.execute("PRAGMA table_info(cluster_nodes)")
+        columns = {row[1] for row in cursor.fetchall()}
+        required_columns = {
+            "midi_input_count": "INTEGER DEFAULT 0",
+            "midi_output_count": "INTEGER DEFAULT 0",
+            "midi_devices": "TEXT DEFAULT '[]'",
+        }
+        for column_name, ddl in required_columns.items():
+            if column_name in columns:
+                continue
+            cursor.execute(f"ALTER TABLE cluster_nodes ADD COLUMN {column_name} {ddl}")
 
     def add_or_update_node(
         self,
@@ -138,6 +155,9 @@ class ClusterRegistry:
         cpu_cores: int = 0,
         total_memory_gb: int = 0,
         audio_devices: Optional[List[str]] = None,
+        midi_input_count: int = 0,
+        midi_output_count: int = 0,
+        midi_devices: Optional[List[str]] = None,
         storage_gb: int = 0,
         status: str = "online",
         health_score: float = 50.0,
@@ -171,6 +191,7 @@ class ClusterRegistry:
             cursor = conn.cursor()
 
             audio_devices_json = json.dumps(audio_devices or [])
+            midi_devices_json = json.dumps(midi_devices or [])
             metadata_json = json.dumps(metadata or {})
 
             # Check if node exists
@@ -185,7 +206,7 @@ class ClusterRegistry:
                         hostname = ?, ip_address = ?, mac_address = ?,
                         role = ?, deployment_mode = ?,
                         cpu_cores = ?, total_memory_gb = ?,
-                        audio_devices = ?, storage_gb = ?,
+                        audio_devices = ?, midi_input_count = ?, midi_output_count = ?, midi_devices = ?, storage_gb = ?,
                         status = ?, health_score = ?,
                         last_seen = CURRENT_TIMESTAMP,
                         last_updated = CURRENT_TIMESTAMP,
@@ -201,6 +222,9 @@ class ClusterRegistry:
                         cpu_cores,
                         total_memory_gb,
                         audio_devices_json,
+                        int(midi_input_count),
+                        int(midi_output_count),
+                        midi_devices_json,
                         storage_gb,
                         status,
                         health_score,
@@ -218,10 +242,10 @@ class ClusterRegistry:
                         id, hostname, ip_address, mac_address,
                         role, deployment_mode,
                         cpu_cores, total_memory_gb,
-                        audio_devices, storage_gb,
+                        audio_devices, midi_input_count, midi_output_count, midi_devices, storage_gb,
                         status, health_score,
                         version, metadata
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         node_id,
@@ -233,6 +257,9 @@ class ClusterRegistry:
                         cpu_cores,
                         total_memory_gb,
                         audio_devices_json,
+                        int(midi_input_count),
+                        int(midi_output_count),
+                        midi_devices_json,
                         storage_gb,
                         status,
                         health_score,
@@ -392,6 +419,7 @@ class ClusterRegistry:
                 "offline_nodes": len(self.get_nodes_by_status("offline")),
                 "management_nodes": len(self.get_nodes_by_role("MANAGEMENT-NODE")),
                 "audio_nodes": len(self.get_nodes_by_role("AUDIO-NODE")),
+                "midi_capable_nodes": len([n for n in nodes if (n.get("midi_input_count", 0) or n.get("midi_output_count", 0))]),
                 "avg_health": (
                     sum(n["health_score"] for n in online_nodes) / len(online_nodes)
                     if online_nodes

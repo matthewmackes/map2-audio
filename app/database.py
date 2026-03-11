@@ -158,8 +158,8 @@ async def _set_async_pragmas(conn) -> None:
             logger.warning(f"Failed to set async PRAGMA {pragma}={value}: {e}")
 
 
-def _special_settings_default_promoted_routes_json() -> str:
-    return '["/welcome","/grid"]'
+def _special_settings_default_pinned_routes_json() -> str:
+    return "[]"
 
 
 def _ensure_special_settings_schema_sync() -> None:
@@ -171,17 +171,27 @@ def _ensure_special_settings_schema_sync() -> None:
         result = conn.execute(text("PRAGMA table_info(special_settings)"))
         columns = {str(row[1]) for row in result.fetchall()}
 
-        if columns and "promoted_advanced_routes" not in columns:
-            conn.execute(text("ALTER TABLE special_settings ADD COLUMN promoted_advanced_routes JSON"))
-            conn.execute(
-                text(
-                    "UPDATE special_settings "
-                    "SET promoted_advanced_routes = :routes "
-                    "WHERE promoted_advanced_routes IS NULL"
-                ),
-                {"routes": _special_settings_default_promoted_routes_json()},
-            )
-            logger.info("Added special_settings.promoted_advanced_routes schema upgrade")
+        if columns and "pinned_routes" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN pinned_routes JSON"))
+            if "promoted_advanced_routes" in columns:
+                conn.execute(
+                    text(
+                        "UPDATE special_settings "
+                        "SET pinned_routes = COALESCE(promoted_advanced_routes, :routes) "
+                        "WHERE pinned_routes IS NULL"
+                    ),
+                    {"routes": _special_settings_default_pinned_routes_json()},
+                )
+            else:
+                conn.execute(
+                    text(
+                        "UPDATE special_settings "
+                        "SET pinned_routes = :routes "
+                        "WHERE pinned_routes IS NULL"
+                    ),
+                    {"routes": _special_settings_default_pinned_routes_json()},
+                )
+            logger.info("Added special_settings.pinned_routes schema upgrade")
 
 
 async def _ensure_special_settings_schema_async(conn) -> None:
@@ -192,17 +202,27 @@ async def _ensure_special_settings_schema_async(conn) -> None:
     result = await conn.execute(text("PRAGMA table_info(special_settings)"))
     columns = {str(row[1]) for row in result.fetchall()}
 
-    if columns and "promoted_advanced_routes" not in columns:
-        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN promoted_advanced_routes JSON"))
-        await conn.execute(
-            text(
-                "UPDATE special_settings "
-                "SET promoted_advanced_routes = :routes "
-                "WHERE promoted_advanced_routes IS NULL"
-            ),
-            {"routes": _special_settings_default_promoted_routes_json()},
-        )
-        logger.info("Added async special_settings.promoted_advanced_routes schema upgrade")
+    if columns and "pinned_routes" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN pinned_routes JSON"))
+        if "promoted_advanced_routes" in columns:
+            await conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET pinned_routes = COALESCE(promoted_advanced_routes, :routes) "
+                    "WHERE pinned_routes IS NULL"
+                ),
+                {"routes": _special_settings_default_pinned_routes_json()},
+            )
+        else:
+            await conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET pinned_routes = :routes "
+                    "WHERE pinned_routes IS NULL"
+                ),
+                {"routes": _special_settings_default_pinned_routes_json()},
+            )
+        logger.info("Added async special_settings.pinned_routes schema upgrade")
 
 
 async def _ensure_tables_created() -> None:
@@ -1336,6 +1356,7 @@ class SpecialSettings(Base):
     - Special mode enabled/disabled state
     - List of hidden native plugins (JSON array of URIs)
     - Advanced menu location preference
+    - Top navigation pinned routes
     - Cluster replication metadata (version, timestamp, node_id)
     
     In cluster mode, changes replicate via Raft consensus.
@@ -1346,7 +1367,7 @@ class SpecialSettings(Base):
     enabled = Column(Boolean, nullable=False, default=False)
     hidden_plugins = Column(JSON, default=list)  # List of plugin URIs to hide
     menu_location = Column(String(20), default="top-nav")  # "top-nav" | "mobile-only" | "hidden"
-    promoted_advanced_routes = Column(JSON, default=lambda: ["/welcome", "/grid"])
+    pinned_routes = Column(JSON, default=list)
     
     # Cluster replication metadata
     version = Column(Integer, default=1)  # Incremented on each update

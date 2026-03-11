@@ -8,6 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, LinkBreak, Plus, ArrowRight, WarningCircle, ArrowsClockwise } from '@phosphor-icons/react';
+import { clusterScopeKey, withNodeQuery } from '../../utils/clusterTransport';
 
 // Sidechain connection type
 interface SidechainConnection {
@@ -34,13 +35,23 @@ interface SidechainPanelProps {
   className?: string;
   /** Compact mode */
   compact?: boolean;
+  /** Target cluster node */
+  nodeId?: string | null;
+  /** Optional remote badge label */
+  remoteLabel?: string | null;
+  /** Peer latency in milliseconds */
+  latencyMs?: number | null;
 }
 
 export const SidechainPanel: React.FC<SidechainPanelProps> = ({
   className = '',
   compact = false,
+  nodeId,
+  remoteLabel,
+  latencyMs,
 }) => {
   const queryClient = useQueryClient();
+  const scopeKey = clusterScopeKey(nodeId);
   const [isCreating, setIsCreating] = useState(false);
   const [newConnection, setNewConnection] = useState<{
     sourceId: number | null;
@@ -54,9 +65,9 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
 
   // Fetch current sidechain connections
   const connectionsQuery = useQuery<SidechainConnection[]>({
-    queryKey: ['sidechain', 'connections'],
+    queryKey: ['sidechain', scopeKey, 'connections'],
     queryFn: async () => {
-      const res = await fetch('/api/routing/sidechain');
+      const res = await fetch(withNodeQuery('/api/routing/sidechain', nodeId));
       if (!res.ok) throw new Error('Failed to fetch sidechain connections');
       return res.json();
     },
@@ -65,9 +76,9 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
 
   // Fetch plugins capable of sidechain
   const pluginsQuery = useQuery<SidechainCapablePlugin[]>({
-    queryKey: ['sidechain', 'plugins'],
+    queryKey: ['sidechain', scopeKey, 'plugins'],
     queryFn: async () => {
-      const res = await fetch('/api/routing/sidechain-plugins');
+      const res = await fetch(withNodeQuery('/api/routing/sidechain-plugins', nodeId));
       if (!res.ok) throw new Error('Failed to fetch sidechain-capable plugins');
       return res.json();
     },
@@ -76,7 +87,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
   // Create sidechain connection
   const createMutation = useMutation({
     mutationFn: async (params: { sourceId: number; destId: number; destBus: number }) => {
-      const res = await fetch('/api/routing/sidechain', {
+      const res = await fetch(withNodeQuery('/api/routing/sidechain', nodeId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params),
@@ -85,7 +96,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sidechain'] });
+      queryClient.invalidateQueries({ queryKey: ['sidechain', scopeKey] });
       setIsCreating(false);
       setNewConnection({ sourceId: null, destId: null, destBus: 1 });
     },
@@ -94,21 +105,21 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
   // Delete sidechain connection
   const deleteMutation = useMutation({
     mutationFn: async (connectionId: string) => {
-      const res = await fetch(`/api/routing/sidechain/${connectionId}`, {
+      const res = await fetch(withNodeQuery(`/api/routing/sidechain/${connectionId}`, nodeId), {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete sidechain connection');
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sidechain'] });
+      queryClient.invalidateQueries({ queryKey: ['sidechain', scopeKey] });
     },
   });
 
   // Toggle connection active state
   const toggleMutation = useMutation({
     mutationFn: async (params: { connectionId: string; active: boolean }) => {
-      const res = await fetch(`/api/routing/sidechain/${params.connectionId}/toggle`, {
+      const res = await fetch(withNodeQuery(`/api/routing/sidechain/${params.connectionId}/toggle`, nodeId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: params.active }),
@@ -117,7 +128,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sidechain'] });
+      queryClient.invalidateQueries({ queryKey: ['sidechain', scopeKey] });
     },
   });
 
@@ -172,6 +183,30 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           }}>
             {connections.length} active
           </span>
+          {remoteLabel && (
+            <span style={{
+              fontSize: 10,
+              padding: '2px 6px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: 10,
+              color: '#34d399',
+            }}>
+              Remote Control · {remoteLabel}
+            </span>
+          )}
+          {remoteLabel && typeof latencyMs === 'number' && latencyMs > 10 && (
+            <span style={{
+              fontSize: 10,
+              padding: '2px 6px',
+              background: 'rgba(245, 158, 11, 0.15)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: 10,
+              color: '#fbbf24',
+            }}>
+              {latencyMs.toFixed(1)} ms
+            </span>
+          )}
         </div>
 
         <button

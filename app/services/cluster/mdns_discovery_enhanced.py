@@ -36,6 +36,8 @@ class MDNSCapabilities:
     storage_gb: int = 0
     kernel_version: str = ""
     has_gpu: bool = False
+    midi_inputs: int = 0
+    midi_outputs: int = 0
 
     def to_txt_records(self) -> Dict[str, str]:
         """Convert to mDNS TXT record dictionary (keep values short for TXT record limits)"""
@@ -48,6 +50,8 @@ class MDNSCapabilities:
             "storage_gb": str(self.storage_gb),
             "kernel": self.kernel_version[:20],
             "gpu": "yes" if self.has_gpu else "no",
+            "midi_in": str(self.midi_inputs),
+            "midi_out": str(self.midi_outputs),
         }
 
 
@@ -186,6 +190,15 @@ class EnhancedMDNSDiscovery:
 
     def _parse_capabilities(self, txt_records: Dict[str, str]) -> Optional[MDNSCapabilities]:
         """Parse TXT records to extract hardware capabilities"""
+        def _parse_port_count(value: str) -> int:
+            text = str(value or "").strip()
+            if not text:
+                return 0
+            try:
+                return int(text)
+            except ValueError:
+                return len([item for item in text.split(",") if item.strip()])
+
         try:
             return MDNSCapabilities(
                 cpu_cores=int(txt_records.get("cpu_cores", "1")),
@@ -197,6 +210,8 @@ class EnhancedMDNSDiscovery:
                 storage_gb=int(txt_records.get("storage_gb", "0")),
                 kernel_version=txt_records.get("kernel", ""),
                 has_gpu=txt_records.get("gpu", "no").lower() == "yes",
+                midi_inputs=_parse_port_count(txt_records.get("midi_in", "0")),
+                midi_outputs=_parse_port_count(txt_records.get("midi_out", "0")),
             )
         except Exception as e:
             self.logger.warning(f"Failed to parse capabilities: {e}")

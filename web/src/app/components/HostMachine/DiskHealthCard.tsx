@@ -8,6 +8,7 @@ import type { DiskHealthData } from '@/map2/types'
 
 interface DiskHealthCardProps {
   diskHealth: DiskHealthData
+  nodeId?: string | null
 }
 
 const getHealthColor = (status: string) => {

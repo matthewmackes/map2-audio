@@ -25,7 +25,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import { useRoutingState } from '../../context/RoutingContext';
-import { useAvbDevices, useAvbStreams } from '../../hooks/useAvbApi';
+import { useAvbDevices, useAvbStreams, useAvdeccEntities } from '../../hooks/useAvbApi';
 import type { AvbDiscoveredDevice, AvbStreamPayload } from '../../types';
 import { getRouteStreams } from '../../utils/avbRouteStreams';
 import { resolveAvbHostLabel } from '../../utils/avbHost';
@@ -43,6 +43,7 @@ export function InspectorPanel() {
   const state = useRoutingState();
   const { data: avbDevicesData } = useAvbDevices();
   const { data: avbStreamsData } = useAvbStreams();
+  const { data: avdeccEntitiesData } = useAvdeccEntities();
   const { view_mode, current_node_id, selected_node_ids } = state.network.nodeSelection;
 
   const selectedEndpointIds = state.selection.selectedEndpoints;
@@ -220,6 +221,10 @@ export function InspectorPanel() {
   ).length;
 
   const activeContextNodeIdSet = new Set(activeContextNodeIds);
+  const resolveNodeLabel = (nodeId: string | null | undefined): string => {
+    if (!nodeId) return 'Unknown node';
+    return state.network.nodes[nodeId]?.name || nodeId;
+  };
   const streamOwnershipNodeIds = (stream: AvbStreamPayload): string[] => {
     const ownership = stream.ownership;
     if (!ownership) {
@@ -249,6 +254,15 @@ export function InspectorPanel() {
   const contextDiagnosticsReadyStreams = contextStreams.filter((stream) => Boolean(stream.diagnostics)).length;
   const contextPtpLockedStreams = contextStreams.filter((stream) => stream.diagnostics?.ptp_lock.locked).length;
   const contextSrpBoundStreams = contextStreams.filter((stream) => stream.diagnostics?.srp.bound).length;
+  const contextAvdeccEntities = (avdeccEntitiesData?.entities || []).filter((entity) => {
+    if (!isNodeScopedContext) {
+      return true;
+    }
+    if (!entity.source_node_id) {
+      return true;
+    }
+    return activeContextNodeIdSet.has(entity.source_node_id);
+  });
   const contextLabel = view_mode === 'single_node' && current_node_id
     ? `Node ${current_node_id}`
     : view_mode === 'multi_select' && selected_node_ids.length > 0
@@ -435,7 +449,74 @@ export function InspectorPanel() {
               secondary={`${contextSrpBoundStreams}/${contextDiagnosticsReadyStreams} diagnostics`}
             />
           </ListItem>
+          <ListItem sx={{ px: 0 }} data-testid="inspector-health-avdecc">
+            <ListItemText
+              primary="AVDECC Entities"
+              secondary={`${contextAvdeccEntities.length} discovered`}
+            />
+          </ListItem>
         </List>
+
+        <Divider sx={{ my: 1.5 }} />
+        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          AVDECC Discovery
+        </Typography>
+        {contextAvdeccEntities.length === 0 ? (
+          <Typography variant="body2" color="text.disabled" sx={{ py: 1 }}>
+            No AVDECC entities discovered in the active node scope.
+          </Typography>
+        ) : (
+          <List dense sx={{ py: 0 }}>
+            {contextAvdeccEntities.slice(0, 6).map((entity) => (
+              <ListItem
+                key={`${entity.source_node_id ?? 'unknown'}:${entity.entity_id}`}
+                sx={{ px: 0, alignItems: 'flex-start', flexDirection: 'column' }}
+              >
+                <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'flex-start' }}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                      {entity.entity_name || entity.entity_id}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {entity.entity_id} · GM {entity.ptp.grandmaster_id || '—'} · domain {entity.ptp.domain}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    size="small"
+                    color="info"
+                    label={`Seen by ${resolveNodeLabel(entity.source_node_id)}`}
+                    sx={{ maxWidth: 140 }}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mt: 0.75 }}>
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={`${entity.capabilities.talker_streams} talkers`}
+                  />
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={`${entity.capabilities.listener_streams} listeners`}
+                  />
+                  <Chip
+                    size="small"
+                    color={entity.available ? 'success' : 'warning'}
+                    label={entity.available ? 'Available' : 'Stale'}
+                  />
+                </Box>
+              </ListItem>
+            ))}
+            {contextAvdeccEntities.length > 6 && (
+              <ListItem sx={{ px: 0 }}>
+                <ListItemText
+                  primary="Additional AVDECC entities not shown"
+                  secondary={`${contextAvdeccEntities.length - 6} more entities in scope`}
+                />
+              </ListItem>
+            )}
+          </List>
+        )}
 
         <Divider sx={{ my: 1.5 }} />
         <Typography

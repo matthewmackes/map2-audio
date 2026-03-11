@@ -34,6 +34,7 @@ class MidiClockEngine:
         self._config = MidiClockConfig()
         self._detected_bpm: Optional[float] = None
         self._last_tick_time: Optional[float] = None
+        self._last_tick_timestamp_ns: Optional[int] = None
         self._tick_intervals: List[float] = []
         self._tap_times: List[float] = []
         self._task: Optional[asyncio.Task] = None
@@ -100,6 +101,16 @@ class MidiClockEngine:
         self._record_tap()
         return self.status()
 
+    def set_external_sync(self, bpm: float, offset_ms: float = 0.0) -> Dict[str, Any]:
+        self._config.source_mode = "external"
+        self._detected_bpm = max(1.0, min(500.0, float(bpm)))
+        self._config.offset_ms = max(-500.0, min(500.0, float(offset_ms)))
+        self._last_tick_timestamp_ns = time.time_ns()
+        return self.status()
+
+    def get_tick_timestamp_ns(self) -> int:
+        return int(self._last_tick_timestamp_ns or 0)
+
     def _record_tap(self) -> None:
         now = time.monotonic()
         self._tap_times.append(now)
@@ -112,7 +123,7 @@ class MidiClockEngine:
                 if avg > 0:
                     self._config.bpm = max(20.0, min(300.0, 60.0 / avg))
 
-    def observe_external_tick(self) -> None:
+    def observe_external_tick(self, timestamp_ns: Optional[int] = None) -> None:
         now = time.monotonic()
         if self._last_tick_time is not None:
             interval = now - self._last_tick_time
@@ -124,6 +135,7 @@ class MidiClockEngine:
                 if avg > 0:
                     self._detected_bpm = max(1.0, min(500.0, 60.0 / (avg * PPQN)))
         self._last_tick_time = now
+        self._last_tick_timestamp_ns = int(timestamp_ns if timestamp_ns is not None else time.time_ns())
 
     def _effective_bpm(self) -> float:
         bpm = self._detected_bpm if self._config.source_mode == "external" and self._detected_bpm else self._config.bpm
@@ -149,6 +161,7 @@ class MidiClockEngine:
             tick_interval = 60.0 / (self._effective_bpm() * PPQN)
             if self._config.offset_ms > 0:
                 await asyncio.sleep(self._config.offset_ms / 1000.0)
+            self._last_tick_timestamp_ns = time.time_ns()
             self._send_realtime(0xF8)  # Clock tick
             self._song_position += 1
             await asyncio.sleep(max(0.0005, tick_interval))
@@ -163,7 +176,7 @@ class MidiClockEngine:
             return
         status = int(message.data[0]) & 0xFF
         if status == 0xF8:
-            self.observe_external_tick()
+            self.observe_external_tick(message.timestamp_ns)
             return
 
         if (status & 0xF0) == 0x90 and len(message.data) >= 3:

@@ -19,6 +19,8 @@ interface LoudnessMeterProps {
   compact?: boolean;
   /** Custom class name */
   className?: string;
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null;
 }
 
 // LUFS scale range
@@ -139,7 +141,8 @@ export const LoudnessMeter: React.FC<LoudnessMeterProps> = ({
   targetLufs = -14,
   truePeakLimit = -1,
   compact = false,
-  className = ''
+  className = '',
+  nodeId,
 }) => {
   const {
     lufs,
@@ -149,7 +152,7 @@ export const LoudnessMeter: React.FC<LoudnessMeterProps> = ({
     isWithinSpec,
     getLoudnessCategory,
     getPhaseStatus
-  } = useLoudness({ targetLufs, truePeakLimit });
+  } = useLoudness({ targetLufs, truePeakLimit, nodeId });
 
   const spec = isWithinSpec();
   const category = getLoudnessCategory();

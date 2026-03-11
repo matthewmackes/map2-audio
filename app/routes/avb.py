@@ -21,6 +21,7 @@ from urllib.parse import urlparse
 
 from app.config import config_get
 from app.services.avb import is_avb_available, get_avb_readiness
+from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
 from app.services.avb.ptp_monitor import get_ptp_monitor
 from app.services.avb.tsn_qdisc import get_tsn_qdisc_manager
 
@@ -78,6 +79,17 @@ def _extract_host_from_node_address(node_address: Optional[str]) -> str:
         pass
 
     return node_address.strip().split("/", 1)[0].split("@")[-1].split(":")[0].strip()
+
+
+def _local_source_node_id() -> str:
+    """Return the canonical local cluster node identifier for AVB payload tagging."""
+    try:
+        node_id = str(get_enhanced_node_identity().get_node_id() or "").strip()
+        if node_id:
+            return node_id
+    except Exception:
+        pass
+    return "local"
 
 
 def _coerce_non_negative_int(raw: Any, default: int) -> int:
@@ -329,7 +341,7 @@ def _normalize_engine_stream_format_result(
     }
 
 
-def _format_avdecc_entity_payload(entity: Any) -> Dict[str, Any]:
+def _format_avdecc_entity_payload(entity: Any, *, source_node_id: Optional[str] = None) -> Dict[str, Any]:
     entity_id_raw = _read_avdecc_field(entity, "entity_id", "entityId", default=None)
     entity_id = _normalize_avdecc_entity_id(entity_id_raw) or "0000000000000000"
     entity_model_id = _normalize_avdecc_entity_id(
@@ -422,10 +434,16 @@ def _format_avdecc_entity_payload(entity: Any) -> Dict[str, Any]:
         },
         "available": bool(_read_avdecc_field(entity, "available", default=True)),
         "last_seen": last_seen,
+        "source_node_id": source_node_id or _local_source_node_id(),
     }
 
 
-def _serialize_router_endpoint(endpoint: Any, *, direction_fallback: Optional[str] = None) -> Dict[str, Any]:
+def _serialize_router_endpoint(
+    endpoint: Any,
+    *,
+    direction_fallback: Optional[str] = None,
+    source_node_id: Optional[str] = None,
+) -> Dict[str, Any]:
     """Serialize route endpoint payload into canonical schema with safe fallback values."""
     endpoint_id_value = getattr(endpoint, "endpoint_id", None)
     endpoint_id = str(endpoint_id_value() if callable(endpoint_id_value) else endpoint_id_value or "").strip()
@@ -444,7 +462,7 @@ def _serialize_router_endpoint(endpoint: Any, *, direction_fallback: Optional[st
     host = str(host_raw).strip() if host_raw not in (None, "") else _extract_host_from_node_address(node_address)
     host = host or ""
 
-    node_id = str(getattr(endpoint, "node_id", None) or "").strip() or host or "local"
+    node_id = str(getattr(endpoint, "node_id", None) or "").strip() or source_node_id or host or "local"
 
     last_seen = getattr(endpoint, "last_seen", None)
     if hasattr(last_seen, "isoformat"):
@@ -1240,7 +1258,7 @@ async def get_avb_status() -> Dict[str, Any]:
             "config": {
                 "ptp_domain": config_get("avb.ptp_domain", 0),
                 "ptp_priority1": config_get("avb.ptp_priority1", 128),
-                "auto_connect": config_get("avb.auto_connect", False),
+                "auto_connect": config_get("avb.auto_connect", True),
                 "max_streams": config_get("avb.max_streams", 8),
                 "clock_sync_profile": config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k")),
                 "clock_master": config_get("clock_sync.clock_master", config_get("audio.clock_master", "internal")),
@@ -2089,7 +2107,19 @@ async def get_avb_devices() -> Dict[str, Any]:
         avb_service = get_avb_service()
         readiness = avb_service.get_readiness()
         device_names = avb_service.get_device_names()
-        discovered_devices = avb_service.get_discovered_devices()
+        source_node_id = _local_source_node_id()
+        discovered_devices = []
+        for raw_device in avb_service.get_discovered_devices():
+            if isinstance(raw_device, dict):
+                device = dict(raw_device)
+            else:
+                try:
+                    device = dict(raw_device)
+                except Exception:
+                    continue
+            device.setdefault("source_node_id", source_node_id)
+            device.setdefault("node_id", device.get("source_node_id") or source_node_id)
+            discovered_devices.append(device)
 
         return {
             "available": bool(readiness.get("available", False)),
@@ -2098,6 +2128,7 @@ async def get_avb_devices() -> Dict[str, Any]:
             "device_names": device_names,
             "discovered_count": len(discovered_devices),
             "discovered_devices": discovered_devices,
+            "source_node_id": source_node_id,
         }
     except Exception as e:
         logger.error(f"Error getting AVB device inventory: {e}", exc_info=True)
@@ -2262,11 +2293,13 @@ async def get_avdecc_entities() -> Dict[str, Any]:
         List of discovered AVDECC entities with capabilities.
     """
     try:
+        source_node_id = _local_source_node_id()
         if not _is_avdecc_enabled():
             return {
                 "enabled": False,
                 "entities": [],
-                "error": "AVDECC not enabled in configuration"
+                "error": "AVDECC not enabled in configuration",
+                "source_node_id": source_node_id,
             }
 
         from app.services.avb.avb_router import get_avb_router
@@ -2277,7 +2310,8 @@ async def get_avdecc_entities() -> Dict[str, Any]:
             return {
                 "enabled": True,
                 "entities": [],
-                "error": "AVDECC entity not initialized"
+                "error": "AVDECC entity not initialized",
+                "source_node_id": source_node_id,
             }
 
         discover_fn = _resolve_avdecc_callable(
@@ -2294,16 +2328,18 @@ async def get_avdecc_entities() -> Dict[str, Any]:
                 "enabled": False,
                 "entities": [],
                 "error": "AVDECC discovery API unavailable",
+                "source_node_id": source_node_id,
             }
 
         entities = discover_fn()
         if inspect.isawaitable(entities):
             entities = await entities
-        entities_list = [_format_avdecc_entity_payload(entity) for entity in (entities or [])]
+        entities_list = [_format_avdecc_entity_payload(entity, source_node_id=source_node_id) for entity in (entities or [])]
 
         return {
             "enabled": True,
-            "entities": entities_list
+            "entities": entities_list,
+            "source_node_id": source_node_id,
         }
 
     except Exception as e:
@@ -2373,7 +2409,7 @@ async def get_avdecc_entity(entity_id: str) -> Dict[str, Any]:
         if not entity:
             raise HTTPException(status_code=404, detail="Entity not found")
 
-        return _format_avdecc_entity_payload(entity)
+        return _format_avdecc_entity_payload(entity, source_node_id=_local_source_node_id())
 
     except HTTPException:
         raise
@@ -2480,12 +2516,14 @@ async def get_router_endpoints(direction: Optional[str] = None) -> Dict[str, Any
 
         endpoints = router.get_endpoints(dir_filter)
 
-        endpoints_list = [_serialize_router_endpoint(ep) for ep in endpoints]
+        source_node_id = _local_source_node_id()
+        endpoints_list = [_serialize_router_endpoint(ep, source_node_id=source_node_id) for ep in endpoints]
         endpoints_list.sort(key=lambda item: str(item.get("endpoint_id", "")))
 
         return {
             "endpoints": endpoints_list,
-            "count": len(endpoints_list)
+            "count": len(endpoints_list),
+            "source_node_id": source_node_id,
         }
 
     except Exception as e:
@@ -2517,13 +2555,14 @@ async def get_router_connections() -> Dict[str, Any]:
 
         connections = router.get_connections()
 
+        source_node_id = _local_source_node_id()
         connections_list = []
         for conn in connections:
             connections_list.append(
                 {
                     "connection_id": conn.connection_id(),
-                    "talker": _serialize_router_endpoint(conn.talker, direction_fallback="talker"),
-                    "listener": _serialize_router_endpoint(conn.listener, direction_fallback="listener"),
+                    "talker": _serialize_router_endpoint(conn.talker, direction_fallback="talker", source_node_id=source_node_id),
+                    "listener": _serialize_router_endpoint(conn.listener, direction_fallback="listener", source_node_id=source_node_id),
                     "state": conn.state.value,
                     "established_time": conn.established_time.isoformat() if conn.established_time else None,
                     "error_message": conn.error_message,
@@ -2536,7 +2575,8 @@ async def get_router_connections() -> Dict[str, Any]:
 
         return {
             "connections": connections_list,
-            "count": len(connections_list)
+            "count": len(connections_list),
+            "source_node_id": source_node_id,
         }
 
     except Exception as e:

@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getWsUrl, API_BASE } from '../../map2/api'
+import { clusterScopeKey, withNodeQuery, withNodeTopic } from '../utils/clusterTransport'
 
 export interface CPUMetrics {
   totalCpuPercent: number
@@ -44,6 +45,8 @@ interface UseCPUMetricsOptions {
   warningThreshold?: number
   /** Critical threshold for CPU usage (percentage) */
   criticalThreshold?: number
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null
 }
 
 export function useCPUMetrics(options: UseCPUMetricsOptions = {}) {
@@ -51,24 +54,27 @@ export function useCPUMetrics(options: UseCPUMetricsOptions = {}) {
     useWebSocket = true,
     pollingInterval = 500, // 2fps
     warningThreshold = 70,
-    criticalThreshold = 90
+    criticalThreshold = 90,
+    nodeId,
   } = options
 
   const [metrics, setMetrics] = useState<CPUMetrics>(DEFAULT_CPU_METRICS)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const scopeKey = clusterScopeKey(nodeId)
 
   // WebSocket-based real-time updates
   useEffect(() => {
     if (!useWebSocket) return
 
     const ws = new WebSocket(getWsUrl())
+    const topic = withNodeTopic('cpu', nodeId)
     wsRef.current = ws
 
     ws.onopen = () => {
       setIsConnected(true)
       // Subscribe to CPU topic
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'cpu' }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic }))
     }
 
     ws.onmessage = (event) => {
@@ -105,18 +111,18 @@ export function useCPUMetrics(options: UseCPUMetricsOptions = {}) {
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'cpu' }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
       }
       ws.close()
       wsRef.current = null
     }
-  }, [useWebSocket])
+  }, [nodeId, useWebSocket])
 
   // Polling — always enabled for initial load + fallback
   const pollingQuery = useQuery<CPUMetrics>({
-    queryKey: ['cpu-metrics'],
+    queryKey: ['cpu-metrics', scopeKey],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/engine/cpu`)
+      const res = await fetch(withNodeQuery(`${API_BASE}/engine/cpu`, nodeId))
       if (!res.ok) throw new Error('Failed to fetch CPU metrics')
       const data = await res.json()
       return {

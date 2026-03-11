@@ -33,6 +33,14 @@ except Exception:  # pragma: no cover - optional integration
     VirtualMidiPort = None  # type: ignore[assignment]
     MIDI_HUB_AVAILABLE = False
 
+try:
+    from app.services.cluster.distributed_event_bus import EventType, get_event_bus as get_distributed_event_bus
+    MIDI_CLUSTER_EVENTS_AVAILABLE = True
+except Exception:  # pragma: no cover - optional integration
+    EventType = None  # type: ignore[assignment]
+    get_distributed_event_bus = None  # type: ignore[assignment]
+    MIDI_CLUSTER_EVENTS_AVAILABLE = False
+
 
 class MidiBroadcastService:
     """
@@ -54,11 +62,16 @@ class MidiBroadcastService:
         self._hub = None
         self._hub_subscriber_id = f"midi_broadcast:{id(self)}"
         self._hub_port_id = "consumer:midi_broadcast"
+        self._cluster_event_bridge_registered = False
 
         # Topic names
         self.TOPIC_MIDI = "midi"
         self.TOPIC_MIDI_ACTIVITY = "midi_activity"
         self.TOPIC_MIDI_LEARN = "midi_learn"
+        self.TOPIC_MIDI_CLUSTER = "midi_cluster"
+        self.TOPIC_MIDI_CLUSTER_NODES = "midi_cluster_nodes"
+        self.TOPIC_MIDI_CLUSTER_CONNECTIONS = "midi_cluster_connections"
+        self.TOPIC_MIDI_CLUSTER_CLOCK = "midi_cluster_clock"
 
     async def start(self):
         """Start the MIDI broadcast service"""
@@ -68,6 +81,7 @@ class MidiBroadcastService:
 
         self._running = True
         self._register_hub_bridge()
+        self._register_cluster_event_bridge()
         self._register_callbacks()
 
         # Start the event processing task
@@ -181,12 +195,13 @@ class MidiBroadcastService:
         except Exception as e:
             logger.error(f"Failed to register MIDI callbacks: {e}")
 
-    def _queue_event(self, event_type: str, data: Dict[str, Any]):
+    def _queue_event(self, event_type: str, data: Dict[str, Any], *, topics: Optional[list[str]] = None):
         """Queue an event for async processing"""
         event = {
             "type": event_type,
             "data": data,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "topics": list(topics or []),
         }
         try:
             self._event_queue.put_nowait(event)
@@ -206,6 +221,92 @@ class MidiBroadcastService:
                 self._dropped_events,
                 self._queue_maxsize,
             )
+
+    def _register_cluster_event_bridge(self) -> None:
+        if self._cluster_event_bridge_registered or not MIDI_CLUSTER_EVENTS_AVAILABLE:
+            return
+        try:
+            event_bus = get_distributed_event_bus()
+            for event_type in EventType:
+                if event_type.name.startswith("MIDI_"):
+                    event_bus.subscribe(event_type, self._on_cluster_event)
+            self._cluster_event_bridge_registered = True
+        except Exception as exc:
+            logger.debug("MidiBroadcastService cluster event bridge unavailable: %s", exc)
+
+    def _on_cluster_event(self, event: Any) -> None:
+        if not self._running:
+            return
+
+        topic_payload = self._cluster_topic_payload(event)
+        if topic_payload is None:
+            return
+
+        self._queue_event(
+            topic_payload["type"],
+            topic_payload["data"],
+            topics=topic_payload["topics"],
+        )
+
+    def _cluster_topic_payload(self, event: Any) -> Optional[Dict[str, Any]]:
+        event_type = getattr(getattr(event, "event_type", None), "value", None)
+        if not event_type:
+            return None
+
+        topics = [self.TOPIC_MIDI_CLUSTER]
+        ws_type = "midi_cluster_event"
+
+        if event_type in {
+            "midi.node.discovered",
+            "midi.node.lost",
+            "midi.port.discovered",
+            "midi.port.lost",
+        }:
+            topics.append(self.TOPIC_MIDI_CLUSTER_NODES)
+        elif event_type in {
+            "midi.connection.requested",
+            "midi.connection.established",
+            "midi.connection.failed",
+            "midi.connection.lost",
+        }:
+            topics.append(self.TOPIC_MIDI_CLUSTER_CONNECTIONS)
+        elif event_type in {
+            "midi.clock.master_elected",
+            "midi.clock.drift_detected",
+        }:
+            topics.append(self.TOPIC_MIDI_CLUSTER_CLOCK)
+
+        type_map = {
+            "midi.node.discovered": "midi_cluster_node_online",
+            "midi.node.lost": "midi_cluster_node_offline",
+            "midi.port.discovered": "midi_cluster_port_discovered",
+            "midi.port.lost": "midi_cluster_port_lost",
+            "midi.connection.requested": "midi_cluster_connection_requested",
+            "midi.connection.established": "midi_cluster_connection_established",
+            "midi.connection.failed": "midi_cluster_connection_failed",
+            "midi.connection.lost": "midi_cluster_connection_lost",
+            "midi.clock.master_elected": "midi_cluster_clock_sync",
+            "midi.clock.drift_detected": "midi_cluster_clock_drift",
+            "midi.failover.triggered": "midi_cluster_failover",
+            "midi.failover.completed": "midi_cluster_failover",
+            "midi.profile.shared": "midi_cluster_profile_shared",
+        }
+        ws_type = type_map.get(event_type, ws_type)
+
+        payload = {
+            "event_type": event_type,
+            "severity": getattr(getattr(event, "severity", None), "value", "info"),
+            "source_node_id": getattr(event, "source_node_id", ""),
+            "affected_nodes": list(getattr(event, "affected_nodes", []) or []),
+            "message": getattr(event, "message", ""),
+            "details": dict(getattr(event, "details", {}) or {}),
+            "correlation_id": getattr(event, "correlation_id", ""),
+        }
+        return {
+            "type": ws_type,
+            "topics": topics,
+            "data": payload,
+        }
 
     def _on_midi_message(self, msg: Dict[str, Any]):
         """Callback for all MIDI messages (monitoring)"""
@@ -266,29 +367,28 @@ class MidiBroadcastService:
         event_type = event.get("type", "")
         data = event.get("data", {})
         timestamp = event.get("timestamp", datetime.now().isoformat())
+        topics = [topic for topic in event.get("topics", []) if str(topic).strip()]
 
         # Determine topic based on event type
-        if event_type in ("midi_learn_started", "midi_learn_completed"):
-            topic = self.TOPIC_MIDI_LEARN
-        elif event_type == "midi_message":
-            topic = self.TOPIC_MIDI_ACTIVITY
-        else:
-            topic = self.TOPIC_MIDI
+        if not topics:
+            if event_type in ("midi_learn_started", "midi_learn_completed"):
+                topics = [self.TOPIC_MIDI_LEARN]
+            elif event_type == "midi_message":
+                topics = [self.TOPIC_MIDI_ACTIVITY]
+            else:
+                topics = [self.TOPIC_MIDI]
 
-        # Check for subscribers
-        subscribers = ws_manager.get_subscribers(topic)
-        if not subscribers:
-            return
-
-        # Build message
-        message = {
-            "type": event_type,
-            "data": data,
-            "timestamp": timestamp
-        }
-
-        # Broadcast
-        await ws_manager.broadcast_json(message, topic)
+        for topic in topics:
+            subscribers = ws_manager.get_subscribers(topic)
+            if not subscribers:
+                continue
+            message = {
+                "type": event_type,
+                "data": data,
+                "timestamp": timestamp,
+                "topic": topic,
+            }
+            await ws_manager.broadcast_json(message, topic)
 
     async def broadcast_learn_started(self, target: Dict[str, Any]):
         """Broadcast that MIDI learn mode has started"""

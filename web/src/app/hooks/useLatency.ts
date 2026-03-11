@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getWsUrl, API_BASE } from '../../map2/api'
 import { sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+import { clusterScopeKey, withNodeQuery, withNodeTopic } from '../utils/clusterTransport'
 
 export interface PluginLatency {
   pluginId: string | number
@@ -38,30 +39,35 @@ interface UseLatencyOptions {
   pollingInterval?: number
   /** Warning threshold for latency in ms */
   warningThresholdMs?: number
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null
 }
 
 export function useLatency(options: UseLatencyOptions = {}) {
   const {
     useWebSocket = true,
     pollingInterval = 1000, // 1fps - latency doesn't change often
-    warningThresholdMs = 10
+    warningThresholdMs = 10,
+    nodeId,
   } = options
 
   const [latency, setLatency] = useState<LatencyInfo>(DEFAULT_LATENCY)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const scopeKey = clusterScopeKey(nodeId)
 
   // WebSocket-based real-time updates
   useEffect(() => {
     if (!useWebSocket) return
 
     const ws = new WebSocket(getWsUrl())
+    const topic = withNodeTopic('latency', nodeId)
     wsRef.current = ws
 
     ws.onopen = () => {
       setIsConnected(true)
       // Subscribe to latency topic
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'latency' }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic }))
     }
 
     ws.onmessage = (event) => {
@@ -97,20 +103,20 @@ export function useLatency(options: UseLatencyOptions = {}) {
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'latency' }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
       }
       ws.close()
       wsRef.current = null
     }
-  }, [useWebSocket])
+  }, [nodeId, useWebSocket])
 
   // Polling is only needed before WebSocket connects or when WS is disabled.
   const shouldPoll = !useWebSocket || !isConnected
 
   const pollingQuery = useQuery<LatencyInfo>({
-    queryKey: ['latency'],
+    queryKey: ['latency', scopeKey],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/engine/loudness/latency`)
+      const res = await fetch(withNodeQuery(`${API_BASE}/engine/loudness/latency`, nodeId))
       if (!res.ok) throw new Error('Failed to fetch latency')
       const data = await res.json()
       return {

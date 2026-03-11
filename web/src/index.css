@@ -137,6 +137,21 @@ img {
   justify-self: start;
 }
 
+.nav-tabs-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  justify-self: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-tabs-center::-webkit-scrollbar {
+  display: none;
+}
+
 .nav-tabs-right {
   display: flex;
   align-items: center;
@@ -165,6 +180,7 @@ img {
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-tab-item:hover {
@@ -173,8 +189,16 @@ img {
   color: var(--tab-text-strong);
 }
 
+.nav-tab-item--icon-only {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
 .nav-tab-item--menu-active,
-.nav-tab-item--menu-open {
+.nav-tab-item--menu-open,
+.nav-tab-item--active {
   color: var(--tab-text-strong);
   border-color: rgba(147, 197, 253, 0.72);
   background: var(--surface);
@@ -213,7 +237,8 @@ img {
 }
 
 .nav-tab-item:hover .nav-tab-icon,
-.nav-tab-item[aria-current='page'] .nav-tab-icon {
+.nav-tab-item[aria-current='page'] .nav-tab-icon,
+.nav-tab-item--active .nav-tab-icon {
   color: var(--tab-color);
   background: rgba(30, 64, 175, 0.32);
 }

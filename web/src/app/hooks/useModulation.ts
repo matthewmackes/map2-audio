@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../map2/api'
+import { clusterScopeKey, withNodeQuery } from '../utils/clusterTransport'
 
 // ========================================
 // Types
@@ -101,17 +102,23 @@ export const VAN_HALEN_PRESETS: VanHalenPreset[] = [
   { index: 14, name: 'Humans Being', song: 'Humans Being', album: 'Twister', year: '1996', description: 'Thick dramatic detune', settings: { pitch_l: 12, pitch_r: -12, delay_l: 0, delay_r: 30, feedback: 15, mix: 55 } },
 ]
 
+interface UseProcessorOptions {
+  nodeId?: string | null
+}
+
 // ========================================
 // useChorus Hook
 // ========================================
 
-export function useChorus() {
+export function useChorus(options: UseProcessorOptions = {}) {
+  const { nodeId } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
 
   const { data: chorusData } = useQuery({
-    queryKey: ['chorus'],
+    queryKey: ['chorus', scopeKey],
     queryFn: async () => {
-      const response = await fetch('/api/engine/modulation/chorus')
+      const response = await fetch(withNodeQuery('/api/engine/modulation/chorus', nodeId))
       if (!response.ok) throw new Error('Failed to fetch chorus data')
       return response.json()
     },
@@ -130,7 +137,7 @@ export function useChorus() {
       if (params.spread !== undefined) apiParams.spread = params.spread * 100
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch('/api/engine/modulation/chorus/parameters', {
+      const response = await fetch(withNodeQuery('/api/engine/modulation/chorus/parameters', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -138,7 +145,7 @@ export function useChorus() {
       if (!response.ok) throw new Error('Failed to update chorus')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chorus'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chorus', scopeKey] }),
   })
 
   const parameters: ChorusParameters = {
@@ -175,13 +182,15 @@ export function useChorus() {
 // usePhaser Hook
 // ========================================
 
-export function usePhaser() {
+export function usePhaser(options: UseProcessorOptions = {}) {
+  const { nodeId } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
 
   const { data: phaserData } = useQuery({
-    queryKey: ['phaser'],
+    queryKey: ['phaser', scopeKey],
     queryFn: async () => {
-      const response = await fetch('/api/engine/modulation/phaser')
+      const response = await fetch(withNodeQuery('/api/engine/modulation/phaser', nodeId))
       if (!response.ok) throw new Error('Failed to fetch phaser data')
       return response.json()
     },
@@ -198,7 +207,7 @@ export function usePhaser() {
       if (params.mix !== undefined) apiParams.mix = params.mix * 100
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch('/api/engine/modulation/phaser/parameters', {
+      const response = await fetch(withNodeQuery('/api/engine/modulation/phaser/parameters', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -206,7 +215,7 @@ export function usePhaser() {
       if (!response.ok) throw new Error('Failed to update phaser')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['phaser'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['phaser', scopeKey] }),
   })
 
   const parameters: PhaserParameters = {
@@ -311,13 +320,15 @@ export interface IntervalShifterParameters {
 // useIntervalShifter Hook
 // ========================================
 
-export function useIntervalShifter() {
+export function useIntervalShifter(options: UseProcessorOptions = {}) {
+  const { nodeId } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
 
   const { data: pitchData } = useQuery({
-    queryKey: ['pitchShifter'],
+    queryKey: ['pitchShifter', scopeKey],
     queryFn: async () => {
-      const response = await fetch('/api/engine/modulation/pitch-shifter')
+      const response = await fetch(withNodeQuery('/api/engine/modulation/pitch-shifter', nodeId))
       if (!response.ok) throw new Error('Failed to fetch pitch shifter data')
       return response.json()
     },
@@ -337,7 +348,7 @@ export function useIntervalShifter() {
       apiParams.delay_r = 0
       apiParams.feedback = 0
 
-      const response = await fetch('/api/engine/modulation/pitch-shifter/parameters', {
+      const response = await fetch(withNodeQuery('/api/engine/modulation/pitch-shifter/parameters', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -345,7 +356,7 @@ export function useIntervalShifter() {
       if (!response.ok) throw new Error('Failed to update interval shifter')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey] }),
   })
 
   // Convert cents from API to semitones
@@ -402,13 +413,15 @@ export function useIntervalShifter() {
 // usePitchShifter Hook (EVH Style)
 // ========================================
 
-export function usePitchShifter() {
+export function usePitchShifter(options: UseProcessorOptions = {}) {
+  const { nodeId } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
 
   const { data: pitchData } = useQuery({
-    queryKey: ['pitchShifter'],
+    queryKey: ['pitchShifter', scopeKey],
     queryFn: async () => {
-      const response = await fetch('/api/engine/modulation/pitch-shifter')
+      const response = await fetch(withNodeQuery('/api/engine/modulation/pitch-shifter', nodeId))
       if (!response.ok) throw new Error('Failed to fetch pitch shifter data')
       return response.json()
     },
@@ -428,7 +441,7 @@ export function usePitchShifter() {
       if (params.preset !== undefined) apiParams.preset = params.preset
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch('/api/engine/modulation/pitch-shifter/parameters', {
+      const response = await fetch(withNodeQuery('/api/engine/modulation/pitch-shifter/parameters', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -436,18 +449,18 @@ export function usePitchShifter() {
       if (!response.ok) throw new Error('Failed to update pitch shifter')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey] }),
   })
 
   const setPreset = useMutation({
     mutationFn: async (presetIndex: number) => {
-      const response = await fetch(`/api/engine/modulation/pitch-shifter/preset/${presetIndex}`, {
+      const response = await fetch(withNodeQuery(`/api/engine/modulation/pitch-shifter/preset/${presetIndex}`, nodeId), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set preset')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pitchShifter', scopeKey] }),
   })
 
   const parameters: PitchShifterParameters = {
@@ -555,13 +568,15 @@ export const BOSS_XS1_PRESETS: BossXS1Preset[] = [
 // useBossXS1 Hook
 // ========================================
 
-export function useBossXS1() {
+export function useBossXS1(options: UseProcessorOptions = {}) {
+  const { nodeId } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
 
   const { data: bossData } = useQuery({
-    queryKey: ['bossXS1'],
+    queryKey: ['bossXS1', scopeKey],
     queryFn: async () => {
-      const response = await fetch('/api/engine/pitch/boss-xs1')
+      const response = await fetch(withNodeQuery('/api/engine/pitch/boss-xs1', nodeId))
       if (!response.ok) throw new Error('Failed to fetch poly shifter data')
       return response.json()
     },
@@ -583,7 +598,7 @@ export function useBossXS1() {
       if (params.pedalMax !== undefined) apiParams.pedal_max = params.pedalMax
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
-      const response = await fetch('/api/engine/pitch/boss-xs1/parameters', {
+      const response = await fetch(withNodeQuery('/api/engine/pitch/boss-xs1/parameters', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
@@ -591,18 +606,18 @@ export function useBossXS1() {
       if (!response.ok) throw new Error('Failed to update poly shifter')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1', scopeKey] }),
   })
 
   const setPreset = useMutation({
     mutationFn: async (presetIndex: number) => {
-      const response = await fetch(`/api/engine/pitch/boss-xs1/preset/${presetIndex}`, {
+      const response = await fetch(withNodeQuery(`/api/engine/pitch/boss-xs1/preset/${presetIndex}`, nodeId), {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to set preset')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1', scopeKey] }),
   })
 
   const parameters: BossXS1Parameters = {

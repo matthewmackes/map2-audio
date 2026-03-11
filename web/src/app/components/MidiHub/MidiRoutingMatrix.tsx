@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Alert,
   Button,
   Chip,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   Switch,
   TextField,
-  FormControlLabel,
 } from '@mui/material'
 import { midiHubApi, type MidiHubRoute, type MidiHubRouteRequest } from '../../../map2/api'
 import { useToasts } from '../Toasts'
@@ -47,6 +49,16 @@ function buildRouteMap(routes: MidiHubRoute[]): Map<string, MidiHubRoute> {
   return map
 }
 
+function hasAdvancedRouteState(route: MidiHubRoute | undefined): boolean {
+  if (!route) return false
+  if (route.priority !== 100) return true
+  if (route.route_type !== 'pass_through') return true
+  if ((route.filter?.message_types?.length ?? 0) > 0) return true
+  if ((route.filter?.channels?.length ?? 0) > 0) return true
+  if ((route.transform_chain?.length ?? 0) > 0) return true
+  return false
+}
+
 export function MidiRoutingMatrix() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
@@ -57,6 +69,7 @@ export function MidiRoutingMatrix() {
   const [messageTypesCsv, setMessageTypesCsv] = useState('')
   const [channelsCsv, setChannelsCsv] = useState('')
   const [transformJson, setTransformJson] = useState('[]')
+  const [showAdvancedEditor, setShowAdvancedEditor] = useState(false)
 
   const statusQuery = useQuery({
     queryKey: ['midi-hub', 'status'],
@@ -91,6 +104,18 @@ export function MidiRoutingMatrix() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!selection) return
+
+      let parsedTransform: Array<Record<string, unknown>> = []
+      try {
+        const raw = JSON.parse(transformJson || '[]')
+        if (!Array.isArray(raw)) {
+          throw new Error('Transform JSON must be an array.')
+        }
+        parsedTransform = raw as Array<Record<string, unknown>>
+      } catch (error) {
+        throw new Error(`Transform JSON is invalid: ${error instanceof Error ? error.message : 'Unknown parse error'}`)
+      }
+
       const payload: MidiHubRouteRequest = {
         source_port: selection.sourcePort,
         destination_ports: [selection.destinationPort],
@@ -101,8 +126,9 @@ export function MidiRoutingMatrix() {
           message_types: parseCsvList(messageTypesCsv),
           channels: parseCsvNumbers(channelsCsv),
         },
-        transform_chain: JSON.parse(transformJson || '[]'),
+        transform_chain: parsedTransform,
       }
+
       if (selection.route?.route_id) {
         return midiHubApi.updateRoute(selection.route.route_id, payload)
       }
@@ -111,10 +137,12 @@ export function MidiRoutingMatrix() {
     onSuccess: () => {
       pushToast('Route saved', 'success')
       setSelection(null)
+      setShowAdvancedEditor(false)
       void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
     },
-    onError: () => {
-      pushToast('Failed to save route', 'error')
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Failed to save route'
+      pushToast(message, 'error')
     },
   })
 
@@ -123,6 +151,7 @@ export function MidiRoutingMatrix() {
     onSuccess: () => {
       pushToast('Route deleted', 'info')
       setSelection(null)
+      setShowAdvancedEditor(false)
       void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
     },
     onError: () => pushToast('Failed to delete route', 'error'),
@@ -137,13 +166,25 @@ export function MidiRoutingMatrix() {
     setMessageTypesCsv((route?.filter?.message_types ?? []).join(','))
     setChannelsCsv((route?.filter?.channels ?? []).join(','))
     setTransformJson(JSON.stringify(route?.transform_chain ?? [], null, 2))
+    setShowAdvancedEditor(hasAdvancedRouteState(route))
   }
 
   return (
     <div className="stack" style={{ gap: 12 }}>
       <style>
-        {`@keyframes midiRoutePulse { 0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }`}
+        {`@keyframes midiRoutePulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }`}
       </style>
+
+      <Alert severity="info">
+        Start by creating a pass-through route. Confirm signal in Traffic Monitor first, then add filters/transforms only if needed.
+      </Alert>
+
+      <div className="flex" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Chip size="small" label="Green cell = active route" color="success" />
+        <Chip size="small" label="Gray cell = disabled route" />
+        <Chip size="small" label="Dashed cell = no route yet" variant="outlined" />
+      </div>
+
       <div className="flex" style={{ gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
           <Chip size="small" label={`Sources: ${sources.length}`} />
@@ -165,7 +206,7 @@ export function MidiRoutingMatrix() {
         <table className="table" style={{ minWidth: 760 }}>
           <thead>
             <tr>
-              <th>Source \\ Destination</th>
+              <th>Source \ Destination</th>
               {destinations.map((destination) => (
                 <th key={destination.port_id}>
                   <div className="stack" style={{ gap: 2 }}>
@@ -213,7 +254,7 @@ export function MidiRoutingMatrix() {
                           animation: route?.enabled ? 'midiRoutePulse 1.6s ease-in-out infinite' : 'none',
                         }}
                       >
-                        {route ? (route.enabled ? 'Active' : 'Disabled') : '—'}
+                        {route ? (route.enabled ? 'Active' : 'Disabled') : 'Create'}
                       </button>
                     </td>
                   )
@@ -224,8 +265,12 @@ export function MidiRoutingMatrix() {
         </table>
       </div>
 
+      <Alert severity="warning">
+        Example rollout: create route, validate traffic, save preset, and only then add route filters/transforms.
+      </Alert>
+
       <Dialog open={Boolean(selection)} onClose={() => setSelection(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Route Editor</DialogTitle>
+        <DialogTitle>{selection?.route ? 'Edit Route' : 'Create Route'}</DialogTitle>
         <DialogContent>
           <div className="stack" style={{ gap: 12, marginTop: 4 }}>
             <TextField
@@ -242,14 +287,7 @@ export function MidiRoutingMatrix() {
             />
             <FormControlLabel
               control={<Switch checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />}
-              label="Enabled"
-            />
-            <TextField
-              type="number"
-              label="Priority"
-              size="small"
-              value={priority}
-              onChange={(event) => setPriority(Number(event.target.value || 0))}
+              label="Route Enabled"
             />
             <FormControl size="small">
               <InputLabel id="route-type-label">Route Type</InputLabel>
@@ -264,25 +302,51 @@ export function MidiRoutingMatrix() {
                 <MenuItem value="transform">Transform</MenuItem>
               </Select>
             </FormControl>
-            <TextField
-              label="Message Types (comma separated)"
+
+            <Button
               size="small"
-              value={messageTypesCsv}
-              onChange={(event) => setMessageTypesCsv(event.target.value)}
-            />
-            <TextField
-              label="Channels (comma separated)"
-              size="small"
-              value={channelsCsv}
-              onChange={(event) => setChannelsCsv(event.target.value)}
-            />
-            <TextField
-              label="Transform Chain (JSON)"
-              multiline
-              minRows={4}
-              value={transformJson}
-              onChange={(event) => setTransformJson(event.target.value)}
-            />
+              variant="outlined"
+              onClick={() => setShowAdvancedEditor((value) => !value)}
+            >
+              {showAdvancedEditor ? 'Hide Advanced Fields' : 'Show Advanced Filters/Transforms'}
+            </Button>
+
+            <Collapse in={showAdvancedEditor}>
+              <div className="stack" style={{ gap: 10 }}>
+                <Alert severity="info">
+                  Advanced settings are optional. Keep defaults unless you need explicit message filtering or transformation.
+                </Alert>
+                <TextField
+                  type="number"
+                  label="Priority"
+                  size="small"
+                  value={priority}
+                  onChange={(event) => setPriority(Number(event.target.value || 0))}
+                />
+                <TextField
+                  label="Message Types (comma separated)"
+                  size="small"
+                  value={messageTypesCsv}
+                  onChange={(event) => setMessageTypesCsv(event.target.value)}
+                  helperText="Example: note_on,note_off,control_change"
+                />
+                <TextField
+                  label="Channels (comma separated)"
+                  size="small"
+                  value={channelsCsv}
+                  onChange={(event) => setChannelsCsv(event.target.value)}
+                  helperText="Example: 1,2,10"
+                />
+                <TextField
+                  label="Transform Chain (JSON array)"
+                  multiline
+                  minRows={4}
+                  value={transformJson}
+                  onChange={(event) => setTransformJson(event.target.value)}
+                  helperText={'Example: [{"type":"scale_cc","cc":1,"factor":0.5}]'}
+                />
+              </div>
+            </Collapse>
           </div>
         </DialogContent>
         <DialogActions>

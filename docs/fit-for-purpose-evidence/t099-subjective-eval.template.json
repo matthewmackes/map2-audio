@@ -1,0 +1,31 @@
+{
+  "evaluators": [],
+  "chain_identity_map": {
+    "set_1": "REVEAL_AFTER_SCORING",
+    "set_2": "REVEAL_AFTER_SCORING",
+    "set_3": "REVEAL_AFTER_SCORING"
+  },
+  "aggregate": {
+    "set_1": {
+      "dynamic_feel_mean": 0,
+      "pick_attack_clarity_mean": 0,
+      "compression_sag_mean": 0,
+      "overall_tone_mean": 0,
+      "stage_rank_mean": 0
+    },
+    "set_2": {
+      "dynamic_feel_mean": 0,
+      "pick_attack_clarity_mean": 0,
+      "compression_sag_mean": 0,
+      "overall_tone_mean": 0,
+      "stage_rank_mean": 0
+    },
+    "set_3": {
+      "dynamic_feel_mean": 0,
+      "pick_attack_clarity_mean": 0,
+      "compression_sag_mean": 0,
+      "overall_tone_mean": 0,
+      "stage_rank_mean": 0
+    }
+  }
+}

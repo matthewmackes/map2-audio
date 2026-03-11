@@ -12,11 +12,13 @@ import { GainReductionMeter } from './GainReductionMeter'
 interface CompressorCardProps {
   accentColor?: string
   showTitle?: boolean
+  nodeId?: string | null
 }
 
 export function CompressorCard({
   accentColor = '#ff6644',
-  showTitle = true
+  showTitle = true,
+  nodeId,
 }: CompressorCardProps) {
   const {
     compressor,
@@ -29,7 +31,7 @@ export function CompressorCard({
     setCompressorAutoMakeup,
     setCompressorBypass,
     isConnected
-  } = useDynamics()
+  } = useDynamics({ nodeId })
 
   const { parameters, metering, isLoading } = compressor
 

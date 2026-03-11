@@ -61,10 +61,13 @@ import {
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
-import { audioApi, diagnosticsApi, pipewireApi } from '../../map2/api'
+import { audioApi, diagnosticsApi, getWsUrl } from '../../map2/api'
+import { useCluster } from '../contexts/ClusterContext'
+import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import { usePipeWire } from '../hooks/usePipeWire'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
+import { withNodeTopic } from '../utils/clusterTransport'
 import type { AudioStatus } from '../../map2/types'
 import type { AudioHealth, XrunStats, BufferPreset, JuceMetrics, DiagnosticResult, FullDiagnosticResult } from '../../map2/api'
 
@@ -73,7 +76,7 @@ const UA1000_FRONT_IMAGE = 'https://static.roland.com/assets/images/products/gal
 const UA1000_BACK_IMAGE = 'https://static.roland.com/assets/images/products/gallery/ua_1000_back_gal.jpg'
 
 // WebSocket URL for real-time metering
-const WS_URL = `ws://${window.location.host}/ws`
+const WS_URL = getWsUrl()
 
 // Types for real-time metering data
 interface MeterData {
@@ -92,10 +95,21 @@ export function EdirolUA1000Page() {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
   const isMobile = useIsMobile()
+  const { activeNodeId, localNodeId, nodes, setActiveNode } = useCluster()
+  const { location, isLoading: locationLoading } = useDeviceLocation('edirol-ua1000')
   const [selectedTab, setSelectedTab] = useState('engine')
   const [configDialogOpen, setConfigDialogOpen] = useState(false)
   const [shoppingDialogOpen, setShoppingDialogOpen] = useState(false)
-  const pw = usePipeWire({ useWebSocket: false, pollingInterval: 5000 })
+  const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
+  const selectedNode = nodes.find((node) => node.nodeId === selectedNodeId)
+  const locationNode = location ? nodes.find((node) => node.nodeId === location.nodeId) : null
+  const remoteSelected = selectedNodeId !== localNodeId
+  const apiNodeId = remoteSelected ? selectedNodeId : null
+  const scopeKey = apiNodeId ?? 'local'
+  const needsSwitch = Boolean(location && selectedNodeId !== location.nodeId)
+  const locationLabel = location?.hostname ?? location?.nodeId ?? 'the correct node'
+  const locationOffline = Boolean(locationNode && locationNode.nodeId !== localNodeId && !locationNode.isOnline)
+  const pw = usePipeWire({ useWebSocket: false, pollingInterval: 5000, nodeId: apiNodeId })
 
   // Real-time WebSocket data
   const [meterData, setMeterData] = useState<MeterData>({ input_left: 0, input_right: 0, output_left: 0, output_right: 0 })
@@ -114,7 +128,10 @@ export function EdirolUA1000Page() {
         ws.onopen = () => {
           setWsConnected(true)
           // Subscribe to metering topics
-          ws?.send(JSON.stringify({ type: 'subscribe', topics: ['meters', 'cpu'] }))
+          ws?.send(JSON.stringify({
+            type: 'subscribe',
+            topics: [withNodeTopic('meters', apiNodeId), withNodeTopic('cpu', apiNodeId)],
+          }))
         }
 
         ws.onmessage = (event) => {
@@ -157,52 +174,52 @@ export function EdirolUA1000Page() {
       clearTimeout(reconnectTimeout)
       ws?.close()
     }
-  }, [])
+  }, [apiNodeId])
 
   // API Queries
   const statusQuery = useQuery({
-    queryKey: ['audio', 'status'],
-    queryFn: audioApi.getStatus,
+    queryKey: ['audio', 'status', scopeKey],
+    queryFn: () => audioApi.getStatus(apiNodeId),
     refetchInterval: 7000,  // 7s polling - non-disruptive
     staleTime: 5000,
   })
 
   const healthQuery = useQuery({
-    queryKey: ['audio', 'health'],
-    queryFn: audioApi.getHealth,
+    queryKey: ['audio', 'health', scopeKey],
+    queryFn: () => audioApi.getHealth(apiNodeId),
     refetchInterval: 7000,  // 7s polling - non-disruptive
     staleTime: 5000,
   })
 
   const xrunsQuery = useQuery({
-    queryKey: ['audio', 'xruns'],
-    queryFn: audioApi.getXruns,
+    queryKey: ['audio', 'xruns', scopeKey],
+    queryFn: () => audioApi.getXruns(apiNodeId),
     refetchInterval: 7000,  // 7s polling - non-disruptive
     staleTime: 5000,
   })
 
   const bufferPresetsQuery = useQuery({
-    queryKey: ['audio', 'buffer-presets'],
-    queryFn: audioApi.getBufferPresets,
+    queryKey: ['audio', 'buffer-presets', scopeKey],
+    queryFn: () => audioApi.getBufferPresets(apiNodeId),
   })
 
   const juceQuery = useQuery({
-    queryKey: ['audio', 'juce'],
-    queryFn: audioApi.getJuceMetrics,
+    queryKey: ['audio', 'juce', scopeKey],
+    queryFn: () => audioApi.getJuceMetrics(apiNodeId),
     refetchInterval: 7000,  // 7s polling - non-disruptive
     staleTime: 5000,
   })
 
   const latencyQuery = useQuery({
-    queryKey: ['audio', 'latency'],
-    queryFn: audioApi.getLatency,
+    queryKey: ['audio', 'latency', scopeKey],
+    queryFn: () => audioApi.getLatency(apiNodeId),
     refetchInterval: 7000,  // 7s polling - non-disruptive
     staleTime: 5000,
   })
 
   // Mutations
   const startAudio = useMutation({
-    mutationFn: audioApi.start,
+    mutationFn: () => audioApi.start(apiNodeId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['audio'] })
       pushToast(data.message || 'Audio started', 'success')
@@ -211,7 +228,7 @@ export function EdirolUA1000Page() {
   })
 
   const stopAudio = useMutation({
-    mutationFn: audioApi.stop,
+    mutationFn: () => audioApi.stop(apiNodeId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['audio'] })
       pushToast(data.message || 'Audio stopped', 'info')
@@ -220,7 +237,7 @@ export function EdirolUA1000Page() {
   })
 
   const restartAudio = useMutation({
-    mutationFn: audioApi.restart,
+    mutationFn: () => audioApi.restart(apiNodeId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['audio'] })
       pushToast(data.message || 'Audio restarted', 'success')
@@ -248,7 +265,11 @@ export function EdirolUA1000Page() {
     <div className="stack edirol-ua1000-page">
       <PageHeader
         title="Edirol UA-1000"
-        subtitle="Hi-Speed USB 2.0 Audio Interface - Routed via PipeWire to JUCE Audio Engine"
+        subtitle={
+          remoteSelected
+            ? `Hi-Speed USB 2.0 Audio Interface · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
+            : 'Hi-Speed USB 2.0 Audio Interface - Routed via PipeWire to JUCE Audio Engine'
+        }
         icon={<Usb size={32} style={{ color: '#3b82f6' }} weight="duotone" />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
@@ -287,6 +308,44 @@ export function EdirolUA1000Page() {
           </div>
         }
       />
+
+      {locationLoading ? (
+        <Alert icon={<CircularProgress size={16} />} severity="info">
+          Checking cluster hardware inventory for the Edirol UA-1000 interface.
+        </Alert>
+      ) : null}
+
+      {!locationLoading && !location ? (
+        <Alert severity="warning">
+          No Edirol UA-1000 interface is currently detected on any cluster node.
+        </Alert>
+      ) : null}
+
+      {!locationLoading && needsSwitch ? (
+        <Alert
+          severity="info"
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => setActiveNode(location?.nodeId === localNodeId ? null : location?.nodeId ?? null)}
+            >
+              Switch to {locationLabel}
+            </Button>
+          }
+        >
+          Edirol UA-1000 is connected to {locationLabel}. Select that node to use this control page.
+        </Alert>
+      ) : null}
+
+      {!locationLoading && locationOffline ? (
+        <Alert severity="warning">
+          Edirol UA-1000 is assigned to {locationLabel}, but that peer is currently offline.
+        </Alert>
+      ) : null}
+
+      {!locationLoading && (!location || needsSwitch || locationOffline) ? null : (
+        <>
 
       {/* Health Alert */}
       {health?.status === 'critical' && (
@@ -569,11 +628,11 @@ export function EdirolUA1000Page() {
           </TabPanel>
 
           <TabPanel id="health" className="tab-panel">
-            <HealthTab health={health} xruns={xruns} />
+            <HealthTab health={health} xruns={xruns} nodeId={apiNodeId} />
           </TabPanel>
 
           <TabPanel id="diagnostics" className="tab-panel">
-            <DiagnosticsTab />
+            <DiagnosticsTab nodeId={apiNodeId} />
           </TabPanel>
         </TabProvider>
       </div>
@@ -612,6 +671,7 @@ export function EdirolUA1000Page() {
         status={status}
         bufferPresets={bufferPresetsQuery.data}
         isMobile={isMobile}
+        nodeId={apiNodeId}
         onConfigured={() => queryClient.invalidateQueries({ queryKey: ['audio'] })}
       />
 
@@ -620,6 +680,8 @@ export function EdirolUA1000Page() {
         open={shoppingDialogOpen}
         onClose={() => setShoppingDialogOpen(false)}
       />
+        </>
+      )}
     </div>
   )
 }
@@ -1385,11 +1447,11 @@ function MIDITab() {
 
 // ========== Health Tab ==========
 
-function HealthTab({ health, xruns }: { health?: AudioHealth; xruns?: XrunStats }) {
+function HealthTab({ health, xruns, nodeId }: { health?: AudioHealth; xruns?: XrunStats; nodeId?: string | null }) {
   const { pushToast } = useToasts()
 
   const unmuteMutation = useMutation({
-    mutationFn: audioApi.unmute,
+    mutationFn: () => audioApi.unmute(nodeId),
     onSuccess: () => pushToast('Audio unmuted', 'success'),
     onError: () => pushToast('Failed to unmute', 'error'),
   })
@@ -1490,7 +1552,7 @@ function HealthTab({ health, xruns }: { health?: AudioHealth; xruns?: XrunStats 
 
 // ========== Diagnostics Tab ==========
 
-function DiagnosticsTab() {
+function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
   const [testResults, setTestResults] = useState<DiagnosticResult[]>([])
@@ -1498,7 +1560,7 @@ function DiagnosticsTab() {
 
   // Run loopback test
   const loopbackTest = useMutation({
-    mutationFn: diagnosticsApi.runLoopbackTest,
+    mutationFn: () => diagnosticsApi.runLoopbackTest(nodeId),
     onSuccess: (data) => {
       setTestResults(prev => [data, ...prev])
       pushToast(data.success ? 'Loopback test passed' : 'Loopback test failed', data.success ? 'success' : 'error')
@@ -1508,9 +1570,9 @@ function DiagnosticsTab() {
 
   // Clear XRuns
   const clearXruns = useMutation({
-    mutationFn: diagnosticsApi.clearXruns,
+    mutationFn: () => diagnosticsApi.clearXruns(nodeId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audio', 'xruns'] })
+      queryClient.invalidateQueries({ queryKey: ['audio', 'xruns', nodeId ?? 'local'] })
       pushToast('XRun counter cleared', 'success')
     },
     onError: () => pushToast('Failed to clear XRuns', 'error'),
@@ -1518,7 +1580,7 @@ function DiagnosticsTab() {
 
   // Reset ALSA state
   const resetAlsa = useMutation({
-    mutationFn: diagnosticsApi.resetAlsaState,
+    mutationFn: () => diagnosticsApi.resetAlsaState(nodeId),
     onSuccess: (data) => {
       pushToast(data.message || 'ALSA state reset', 'success')
     },
@@ -1527,7 +1589,7 @@ function DiagnosticsTab() {
 
   // Run full diagnostic
   const fullDiagnostic = useMutation({
-    mutationFn: diagnosticsApi.runFullDiagnostic,
+    mutationFn: () => diagnosticsApi.runFullDiagnostic(nodeId),
     onMutate: () => setIsRunningFullTest(true),
     onSuccess: (data) => {
       setTestResults(data.tests)
@@ -1546,7 +1608,7 @@ function DiagnosticsTab() {
   // Test buffer stability
   const bufferTest = useMutation({
     mutationFn: ({ size, duration }: { size: number; duration: number }) =>
-      diagnosticsApi.testBufferStability(size, duration),
+      diagnosticsApi.testBufferStability(size, duration, nodeId),
     onSuccess: (data) => {
       const result: DiagnosticResult = {
         success: data.stability_score > 0.9,
@@ -1798,6 +1860,7 @@ function ConfigDialog({
   status,
   bufferPresets,
   isMobile,
+  nodeId,
   onConfigured,
 }: {
   open: boolean
@@ -1805,6 +1868,7 @@ function ConfigDialog({
   status?: AudioStatus
   bufferPresets?: BufferPreset[]
   isMobile: boolean
+  nodeId?: string | null
   onConfigured: () => void
 }) {
   const { pushToast } = useToasts()
@@ -1819,7 +1883,7 @@ function ConfigDialog({
   }, [status])
 
   const configureMutation = useMutation({
-    mutationFn: () => audioApi.configure({ sampleRate, bufferSize }),
+    mutationFn: () => audioApi.configure({ sampleRate, bufferSize }, nodeId),
     onSuccess: (data) => {
       onConfigured()
       onClose()

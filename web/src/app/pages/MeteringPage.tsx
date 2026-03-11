@@ -20,10 +20,14 @@ import { LatencyDisplay } from '../components/Visualizations/LatencyDisplay'
 import { PhaseCorrelationMeter } from '../components/Visualizations/PhaseCorrelationMeter'
 import { VuMeterDisplay } from '../components/Visualizations/VuMeterDisplay'
 import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMeteringPanel'
+import { ClusterMeteringStrip } from '../components/Visualizations/ClusterMeteringStrip'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
+import { useCluster } from '../contexts/ClusterContext'
+import { withNodeTopic } from '../utils/clusterTransport'
 
 export function MeteringPage() {
+  const { activeNodeId, nodes, localNodeId } = useCluster()
   const [showApiReference, setShowApiReference] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [topicActivity, setTopicActivity] = useState({
@@ -33,6 +37,13 @@ export function MeteringPage() {
   })
   const isMobile = useIsMobile()
   const pageRef = useRef<HTMLDivElement | null>(null)
+  const allNodesSelected = activeNodeId === 'all'
+  const detailNodeId = allNodesSelected ? null : activeNodeId
+  const selectedNode = nodes.find((node) => node.nodeId === activeNodeId)
+  const remoteSelected = Boolean(activeNodeId && activeNodeId !== 'all' && activeNodeId !== localNodeId)
+  const metersTopic = withNodeTopic('meters', detailNodeId) as Parameters<typeof useWebSocketTopic>[0]
+  const cpuTopic = withNodeTopic('cpu', detailNodeId) as Parameters<typeof useWebSocketTopic>[0]
+  const latencyTopic = withNodeTopic('latency', detailNodeId) as Parameters<typeof useWebSocketTopic>[0]
 
   const markTopicActive = (topic: 'meters' | 'cpu' | 'latency') => {
     setTopicActivity((previous) => {
@@ -46,15 +57,19 @@ export function MeteringPage() {
     })
   }
 
-  useWebSocketTopic('meters', () => {
+  useEffect(() => {
+    setTopicActivity({ meters: false, cpu: false, latency: false })
+  }, [allNodesSelected, detailNodeId])
+
+  useWebSocketTopic(metersTopic, () => {
     markTopicActive('meters')
   })
 
-  useWebSocketTopic('cpu', () => {
+  useWebSocketTopic(cpuTopic, () => {
     markTopicActive('cpu')
   })
 
-  useWebSocketTopic('latency', () => {
+  useWebSocketTopic(latencyTopic, () => {
     markTopicActive('latency')
   })
 
@@ -130,7 +145,11 @@ export function MeteringPage() {
               margin: 0,
               letterSpacing: '-0.5px'
             }}>
-              JUCE Core Engine
+              {allNodesSelected
+                ? 'JUCE Core Engine'
+                : remoteSelected
+                  ? `JUCE Core Engine · ${selectedNode?.hostname ?? activeNodeId}`
+                  : 'JUCE Core Engine'}
             </h1>
             <span style={{
               fontSize: 24,
@@ -138,7 +157,7 @@ export function MeteringPage() {
               color: '#2563eb',
               margin: 0
             }}>
-              : Meters
+              {allNodesSelected ? ': Cluster Meters' : ': Meters'}
             </span>
           </div>
           {isMobile && (
@@ -159,25 +178,80 @@ export function MeteringPage() {
           margin: '12px 0 0',
           fontWeight: 500
         }}>
-          Real-time audio analysis and system performance monitoring
+          {allNodesSelected
+            ? 'Cluster-wide live metering across all audio nodes'
+            : 'Real-time audio analysis and system performance monitoring'}
         </p>
-        <div style={{
-          marginTop: 8,
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 10,
-          fontSize: 12,
-          color: '#94a3b8',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em'
-        }}>
-          <span>meters: {topicActivity.meters ? 'live' : 'waiting'}</span>
-          <span>cpu: {topicActivity.cpu ? 'live' : 'waiting'}</span>
-          <span>latency: {topicActivity.latency ? 'live' : 'waiting'}</span>
-        </div>
+        {!allNodesSelected && (
+          <div style={{
+            marginTop: 8,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 10,
+            fontSize: 12,
+            color: '#94a3b8',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em'
+          }}>
+            <span>meters: {topicActivity.meters ? 'live' : 'waiting'}</span>
+            <span>cpu: {topicActivity.cpu ? 'live' : 'waiting'}</span>
+            <span>latency: {topicActivity.latency ? 'live' : 'waiting'}</span>
+          </div>
+        )}
       </header>
 
-      {/* Main Dashboard Grid */}
+      {(allNodesSelected || remoteSelected) && (
+        <div style={{
+          marginBottom: 20,
+          padding: '12px 14px',
+          borderRadius: 12,
+          border: '1px solid rgba(96, 165, 250, 0.2)',
+          background: 'rgba(15, 23, 42, 0.7)',
+          color: '#dbeafe',
+          fontSize: 13,
+        }}>
+          {allNodesSelected
+            ? 'Viewing cluster mode. Click a node column below to switch into full single-node metering.'
+            : `Viewing remote node ${selectedNode?.hostname ?? activeNodeId}${selectedNode?.latencyMs == null ? '' : ` · peer latency ${selectedNode.latencyMs.toFixed(1)} ms`}.`}
+        </div>
+      )}
+
+      {allNodesSelected ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{
+            background: 'rgba(15, 20, 35, 0.6)',
+            border: '1px solid rgba(59, 130, 246, 0.2)',
+            borderRadius: 12,
+            padding: 20,
+            backdropFilter: 'blur(8px)'
+          }}>
+            <div style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#2563eb',
+              marginBottom: 16,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Cluster Metering Strip
+            </div>
+            <ClusterMeteringStrip />
+          </div>
+
+          <div style={{
+            background: 'rgba(15, 20, 35, 0.55)',
+            border: '1px solid rgba(100, 116, 139, 0.2)',
+            borderRadius: 12,
+            padding: 20,
+            backdropFilter: 'blur(8px)',
+            color: '#94a3b8',
+            fontSize: 13,
+            lineHeight: 1.6,
+          }}>
+            Detailed spectrum, loudness, phase, latency, and dynamics panels remain single-node views because they rely on node-specific real-time streams. Select a node from the strip to open the full dashboard for that target.
+          </div>
+        </div>
+      ) : (
       <div
         className="metering-grid"
         style={{
@@ -213,6 +287,7 @@ export function MeteringPage() {
               showLabels
               showPeaks
               colors={['#22c55e', '#eab308', '#ef4444']}
+              nodeId={detailNodeId}
             />
           </div>
         </div>
@@ -237,7 +312,7 @@ export function MeteringPage() {
             }}>
               📊 Signal Levels
             </div>
-            <VuMeterDisplay showInput showOutput />
+            <VuMeterDisplay showInput showOutput nodeId={detailNodeId} />
           </div>
         </div>
 
@@ -264,6 +339,7 @@ export function MeteringPage() {
               targetLufs={-14}
               truePeakLimit={-1}
               compact={false}
+              nodeId={detailNodeId}
             />
           </div>
         </div>
@@ -290,6 +366,7 @@ export function MeteringPage() {
             <PhaseCorrelationMeter
               showStereoInfo
               orientation="horizontal"
+              nodeId={detailNodeId}
             />
           </div>
         </div>
@@ -317,6 +394,7 @@ export function MeteringPage() {
               showCompressor
               showLimiter
               showGate
+              nodeId={detailNodeId}
             />
           </div>
         </div>
@@ -343,6 +421,7 @@ export function MeteringPage() {
             <CPUMeterPanel
               showBreakdown
               compact={false}
+              nodeId={detailNodeId}
             />
           </div>
         </div>
@@ -369,10 +448,12 @@ export function MeteringPage() {
             <LatencyDisplay
               showBreakdown
               compact={false}
+              nodeId={detailNodeId}
             />
           </div>
         </div>
       </div>
+      )}
 
       {/* Status Footer */}
       <div style={{
@@ -401,7 +482,11 @@ export function MeteringPage() {
           <div style={{ textAlign: 'right' }}>
             <span style={{ color: '#60a5fa', fontWeight: 600 }}>Status</span>
             <br />
-            Real-time updates via WebSocket | <span style={{ color: '#22c55e' }}>● Active</span>
+            {allNodesSelected
+              ? 'Cluster strip via per-node meter streams'
+              : remoteSelected
+                ? `Remote node ${selectedNode?.hostname ?? activeNodeId}`
+                : 'Real-time updates via WebSocket'} | <span style={{ color: '#22c55e' }}>● Active</span>
           </div>
         </div>
       </div>

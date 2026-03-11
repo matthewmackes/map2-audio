@@ -7,6 +7,7 @@
 
 import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { clusterScopeKey, withNodeQuery } from '../utils/clusterTransport'
 
 // ========================================
 // Types
@@ -58,17 +59,23 @@ function parseParallelGroup(data: Record<string, unknown>): ParallelGroup {
 // Hook
 // ========================================
 
-export function useParallel() {
+interface UseParallelOptions {
+  nodeId?: string | null
+}
+
+export function useParallel(options: UseParallelOptions = {}) {
+  const { nodeId } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
 
   // ========================================
   // Query for all parallel groups
   // ========================================
 
   const groupsQuery = useQuery({
-    queryKey: ['parallel', 'groups'],
+    queryKey: ['parallel', scopeKey, 'groups'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/parallel')
+      const res = await fetch(withNodeQuery('/api/engine/parallel', nodeId))
       if (!res.ok) throw new Error('Failed to fetch parallel groups')
       const data = await res.json()
       return (data as Record<string, unknown>[]).map(parseParallelGroup)
@@ -82,7 +89,7 @@ export function useParallel() {
 
   const createGroup = useMutation({
     mutationFn: async (params: CreateParallelGroupParams) => {
-      const res = await fetch('/api/engine/parallel', {
+      const res = await fetch(withNodeQuery('/api/engine/parallel', nodeId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,26 +101,26 @@ export function useParallel() {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parallel', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['parallel', scopeKey, 'groups'] })
     }
   })
 
   const removeGroup = useMutation({
     mutationFn: async (groupId: number) => {
-      const res = await fetch(`/api/engine/parallel/${groupId}`, {
+      const res = await fetch(withNodeQuery(`/api/engine/parallel/${groupId}`, nodeId), {
         method: 'DELETE'
       })
       if (!res.ok) throw new Error('Failed to remove parallel group')
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parallel', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['parallel', scopeKey, 'groups'] })
     }
   })
 
   const addToBranch = useMutation({
     mutationFn: async (params: AddToBranchParams) => {
-      const res = await fetch(`/api/engine/parallel/${params.groupId}/branches`, {
+      const res = await fetch(withNodeQuery(`/api/engine/parallel/${params.groupId}/branches`, nodeId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -126,27 +133,27 @@ export function useParallel() {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parallel', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['parallel', scopeKey, 'groups'] })
     }
   })
 
   const removeFromBranch = useMutation({
     mutationFn: async (params: RemoveFromBranchParams) => {
       const res = await fetch(
-        `/api/engine/parallel/${params.groupId}/branches/${params.branchIndex}/plugins/${params.pluginId}`,
+        withNodeQuery(`/api/engine/parallel/${params.groupId}/branches/${params.branchIndex}/plugins/${params.pluginId}`, nodeId),
         { method: 'DELETE' }
       )
       if (!res.ok) throw new Error('Failed to remove from branch')
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parallel', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['parallel', scopeKey, 'groups'] })
     }
   })
 
   const setABBlend = useMutation({
     mutationFn: async ({ groupId, blend }: { groupId: number; blend: number }) => {
-      const res = await fetch(`/api/engine/parallel/${groupId}/blend`, {
+      const res = await fetch(withNodeQuery(`/api/engine/parallel/${groupId}/blend`, nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ blend })
@@ -155,7 +162,7 @@ export function useParallel() {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parallel', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['parallel', scopeKey, 'groups'] })
     }
   })
 
@@ -170,7 +177,7 @@ export function useParallel() {
       level: number
     }) => {
       const res = await fetch(
-        `/api/engine/parallel/${groupId}/branches/${branchIndex}/level`,
+        withNodeQuery(`/api/engine/parallel/${groupId}/branches/${branchIndex}/level`, nodeId),
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -181,13 +188,13 @@ export function useParallel() {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parallel', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['parallel', scopeKey, 'groups'] })
     }
   })
 
   const setBypass = useMutation({
     mutationFn: async ({ groupId, bypass }: { groupId: number; bypass: boolean }) => {
-      const res = await fetch(`/api/engine/parallel/${groupId}/bypass`, {
+      const res = await fetch(withNodeQuery(`/api/engine/parallel/${groupId}/bypass`, nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bypass })
@@ -196,7 +203,7 @@ export function useParallel() {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parallel', 'groups'] })
+      queryClient.invalidateQueries({ queryKey: ['parallel', scopeKey, 'groups'] })
     }
   })
 

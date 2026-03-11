@@ -1,6 +1,11 @@
 import asyncio
 from dataclasses import dataclass
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+import app.middleware.cluster_proxy as cluster_proxy_module
+from app.middleware.cluster_proxy import ClusterProxyMiddleware
 from app.routes import audio as audio_routes
 
 
@@ -10,7 +15,7 @@ class _AudioServiceStub:
         self._sample_rate = sample_rate
         self._buffer_size = buffer_size
         self._running = running
-        self._engine = object()
+        self.engine = object()
 
     def get_system_info(self):
         return {
@@ -59,6 +64,21 @@ class _PTPMonitorStub:
         return _PTPStatusStub(self._payload)
 
 
+class _IdentityStub:
+    def get_node_id(self):
+        return "local-node"
+
+
+class _DiscoveryStub:
+    cache_timeout = 30.0
+
+    def get_discovered_nodes(self, online_only: bool = True):
+        return []
+
+    def get_discovered_node(self, node_id: str):
+        return None
+
+
 def _config_get_factory(values):
     def _config_get(key, default=None):
         return values.get(key, default)
@@ -93,7 +113,7 @@ def test_source_of_truth_reports_aligned_configuration(monkeypatch):
         "avb.max_streams": 8,
     }
 
-    monkeypatch.setattr(audio_routes, "get_audio_engine", lambda: _AudioServiceStub(
+    monkeypatch.setattr(audio_routes, "get_engine_service", lambda: _AudioServiceStub(
         available=True,
         sample_rate=48000,
         buffer_size=64,
@@ -157,7 +177,7 @@ def test_source_of_truth_reports_drift_and_lock_issues(monkeypatch):
         "avb.auto_connect": True,
     }
 
-    monkeypatch.setattr(audio_routes, "get_audio_engine", lambda: _AudioServiceStub(
+    monkeypatch.setattr(audio_routes, "get_engine_service", lambda: _AudioServiceStub(
         available=True,
         sample_rate=44100,
         buffer_size=128,
@@ -202,3 +222,70 @@ def test_source_of_truth_reports_drift_and_lock_issues(monkeypatch):
     assert "avb_rate_map_mismatch" in issue_ids
     assert "avb_not_operational" in issue_ids
     assert "ptp_not_locked" in issue_ids
+
+
+def test_source_of_truth_accepts_local_node_id_query_param(monkeypatch):
+    config_values = {
+        "clock_sync.selected_profile": "dual_locked_48k",
+        "clock_sync.profile_version": "1.0.0",
+        "clock_sync.clock_master": "hybrid",
+        "clock_sync.engine_rate_hz": 48000,
+        "clock_sync.avb_stream_rate_hz": 48000,
+        "clock_sync.spdif_rate_hz": 48000,
+        "clock_sync.bits_per_sample": 24,
+        "clock_sync.buffer_size_samples": 64,
+        "clock_sync.allowed_rates_hz": [48000],
+        "clock_sync.require_hard_lock": True,
+        "clock_sync.allow_resampler": False,
+        "spdif.enabled": False,
+        "avb.enabled": False,
+    }
+
+    monkeypatch.setattr(audio_routes, "get_engine_service", lambda: _AudioServiceStub(
+        available=True,
+        sample_rate=48000,
+        buffer_size=64,
+        running=True,
+    ))
+    monkeypatch.setattr("app.config.config_get", _config_get_factory(config_values))
+    monkeypatch.setattr(
+        "app.services.pipewire_service.get_pipewire_service",
+        lambda: _PipeWireServiceStub(
+            _PipeWireSettingsStub(
+                clock_rate=48000,
+                clock_force_rate=48000,
+                clock_quantum=64,
+                clock_force_quantum=64,
+                clock_min_quantum=32,
+                clock_max_quantum=2048,
+                clock_allowed_rates=[48000],
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "app.services.avb.get_avb_readiness",
+        lambda engine=None: {
+            "available": False,
+            "state": "disabled",
+            "reason": None,
+        },
+    )
+    monkeypatch.setattr(
+        "app.services.avb.ptp_monitor.get_ptp_monitor",
+        lambda: _PTPMonitorStub({"available": False, "state": "DISABLED", "offset_ns": None}),
+    )
+    monkeypatch.setattr(cluster_proxy_module, "get_enhanced_node_identity", lambda: _IdentityStub())
+    monkeypatch.setattr(cluster_proxy_module, "get_enhanced_mdns_discovery", lambda: _DiscoveryStub())
+    monkeypatch.setattr(cluster_proxy_module, "config_get", lambda key, default=None: default)
+
+    app = FastAPI()
+    app.add_middleware(ClusterProxyMiddleware)
+    app.include_router(audio_routes.router)
+
+    with TestClient(app) as client:
+        response = client.get("/api/audio/source-of-truth?node_id=local-node")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["profile"]["selected_profile"] == "dual_locked_48k"
+    assert payload["runtime"]["pipewire"]["effective_rate_hz"] == 48000

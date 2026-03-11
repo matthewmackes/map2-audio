@@ -8,7 +8,7 @@ import os
 import threading
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from app.services.midi_hub.ports import (
     MidiMessage,
@@ -19,8 +19,20 @@ from app.services.midi_hub.ports import (
 )
 from app.services.midi_hub.ring_buffer import MidiRingBuffer
 
+if TYPE_CHECKING:
+    from app.services.midi_hub.cluster_router import MidiClusterRouter
+
 
 Subscriber = Callable[[MidiMessage], Any]
+
+
+def _resolve_local_node_id() -> str:
+    try:
+        from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+
+        return get_enhanced_node_identity().get_node_id()
+    except Exception:
+        return "local"
 
 
 @dataclass
@@ -65,10 +77,14 @@ class MidiHub:
         self._lock = threading.RLock()
         self._thread: Optional[threading.Thread] = None
         self._hotplug_thread: Optional[threading.Thread] = None
+        self._cluster_broadcast_thread: Optional[threading.Thread] = None
         self._stop_evt = threading.Event()
+        self._cluster_broadcast_stop_evt = threading.Event()
 
         self._known_alsa_inputs: set[str] = set()
         self._known_alsa_outputs: set[str] = set()
+        self.cluster_router: Optional["MidiClusterRouter"] = None
+        self._local_node_id: Optional[str] = None
 
     @property
     def running(self) -> bool:
@@ -94,22 +110,31 @@ class MidiHub:
             self._hotplug_thread.start()
 
             self._running = True
+            self._attach_cluster_router_if_enabled()
+            self._start_cluster_broadcast_if_enabled()
 
     def stop(self, *, join_timeout_s: float = 2.5) -> None:
         with self._lock:
             if not self._running:
                 return
             self._stop_evt.set()
+            self._cluster_broadcast_stop_evt.set()
 
         if self._thread is not None:
             self._thread.join(timeout=join_timeout_s)
         if self._hotplug_thread is not None:
             self._hotplug_thread.join(timeout=join_timeout_s)
+        if self._cluster_broadcast_thread is not None:
+            self._cluster_broadcast_thread.join(timeout=join_timeout_s)
+
+        self._shutdown_cluster_broadcast()
 
         with self._lock:
             for port in self._ports.values():
                 port.close()
             self._running = False
+            self._cluster_broadcast_thread = None
+            self.cluster_router = None
 
     def register_port(self, port: MidiPort, *, open_now: bool = True) -> None:
         with self._lock:
@@ -147,12 +172,29 @@ class MidiHub:
             return self._subscribers.pop(subscriber_id, None) is not None
 
     def send(self, *, source_port: str, destination_port: str, data: bytes, metadata: Optional[Dict[str, Any]] = None) -> bool:
+        message_metadata = dict(metadata or {})
+        message_metadata.setdefault("origin_node_id", self._local_node())
+        message_metadata.setdefault("origin_port", str(source_port))
+
+        remote_destination = self._split_remote_destination(destination_port)
+        if remote_destination is not None and self.cluster_router is not None:
+            destination_node_id, destination_port_name = remote_destination
+            return bool(
+                self.cluster_router.forward(
+                    source_port=source_port,
+                    destination_node_id=destination_node_id,
+                    destination_port_name=destination_port_name,
+                    data=bytes(data),
+                    metadata=message_metadata,
+                )
+            )
+
         msg = MidiMessage(
             data=bytes(data),
             timestamp_ns=time.time_ns(),
             source_port=source_port,
             destination_port=destination_port,
-            metadata=dict(metadata or {}),
+            metadata=message_metadata,
         )
         ok = self._outbound.push(msg)
         if not ok:
@@ -164,6 +206,30 @@ class MidiHub:
         if not ok:
             self._dropped_inbound += 1
         return ok
+
+    def inject_remote(
+        self,
+        node_id: str,
+        port_name: str,
+        data: bytes,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        message_metadata = dict(metadata or {})
+        destination_port = message_metadata.pop("destination_port", None)
+        normalized_node_id = str(node_id or "").strip() or "remote"
+        normalized_port_name = str(port_name or "").strip() or "remote"
+        message_metadata.setdefault("origin_node_id", normalized_node_id)
+        message_metadata.setdefault("origin_port", normalized_port_name)
+        message_metadata["cluster_remote_injected"] = True
+        return self.inject(
+            MidiMessage(
+                data=bytes(data),
+                timestamp_ns=time.time_ns(),
+                source_port=f"{normalized_node_id}:{normalized_port_name}",
+                destination_port=destination_port,
+                metadata=message_metadata,
+            )
+        )
 
     def snapshot_alsa_ports(self) -> Dict[str, List[str]]:
         return discover_alsa_ports()
@@ -300,6 +366,101 @@ class MidiHub:
                     callback(msg)
                 except Exception:
                     continue
+
+    def _start_cluster_broadcast_if_enabled(self) -> None:
+        try:
+            from app.config import config_get
+        except Exception:
+            return
+
+        if not bool(config_get("midi.cluster.enabled", True)):
+            return
+
+        self._cluster_broadcast_stop_evt.clear()
+        self._broadcast_cluster_capabilities()
+        if self._cluster_broadcast_thread is None or not self._cluster_broadcast_thread.is_alive():
+            self._cluster_broadcast_thread = threading.Thread(
+                target=self._run_cluster_broadcast_loop,
+                name="midi_hub_cluster_mdns",
+                daemon=True,
+            )
+            self._cluster_broadcast_thread.start()
+
+    def _run_cluster_broadcast_loop(self) -> None:
+        while not self._cluster_broadcast_stop_evt.is_set():
+            self._broadcast_cluster_capabilities()
+            try:
+                from app.config import config_get
+
+                interval_s = max(10.0, float(config_get("midi.cluster.discovery_interval_s", 60)))
+            except Exception:
+                interval_s = 60.0
+            self._cluster_broadcast_stop_evt.wait(timeout=interval_s)
+
+    def _broadcast_cluster_capabilities(self) -> None:
+        try:
+            from app.config import config_get
+            from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+            from app.services.midi_hub.midi_discovery import get_midi_discovery_service
+        except Exception:
+            return
+
+        if not bool(config_get("midi.cluster.enabled", True)):
+            return
+
+        try:
+            identity = get_enhanced_node_identity()
+            hostname = getattr(identity.config, "hostname", None) or os.uname().nodename
+            get_midi_discovery_service().broadcast_local_node(
+                identity.get_node_id(),
+                hostname,
+                int(config_get("backend.port", 8080)),
+            )
+        except Exception:
+            return
+
+    def _shutdown_cluster_broadcast(self) -> None:
+        try:
+            from app.services.midi_hub.midi_discovery import get_midi_discovery_service
+
+            get_midi_discovery_service().shutdown()
+        except Exception:
+            return
+
+    def _attach_cluster_router_if_enabled(self) -> None:
+        if self.cluster_router is not None:
+            return
+        try:
+            from app.config import config_get
+            if not bool(config_get("midi.cluster.enabled", False)):
+                return
+            from app.services.midi_hub.cluster_router import get_midi_cluster_router
+
+            self.cluster_router = get_midi_cluster_router()
+        except Exception:
+            return
+
+    def _local_node(self) -> str:
+        if self._local_node_id is None:
+            self._local_node_id = _resolve_local_node_id()
+        return self._local_node_id
+
+    def _split_remote_destination(self, destination_port: str) -> Optional[Tuple[str, str]]:
+        target = str(destination_port or "").strip()
+        if not target or ":" not in target:
+            return None
+
+        with self._lock:
+            for port in self._ports.values():
+                if target in {port.port_id, port.name}:
+                    return None
+
+        node_id, remote_port_name = target.split(":", 1)
+        node_id = node_id.strip()
+        remote_port_name = remote_port_name.strip()
+        if not node_id or not remote_port_name or node_id == self._local_node():
+            return None
+        return node_id, remote_port_name
 
 
 _midi_hub_singleton: Optional[MidiHub] = None

@@ -119,3 +119,60 @@ def test_health_check_ignores_optional_services_in_degraded_status(monkeypatch):
     assert payload["services_required_running"] == 2
     assert payload["services_optional_total"] == 1
     assert payload["services_optional_running"] == 0
+
+
+def test_health_check_includes_midi_cluster_section(monkeypatch):
+    _patch_psutil(monkeypatch)
+    fake_orchestrator = _FakeOrchestrator()
+
+    monkeypatch.setattr(
+        "app.services.service_orchestrator.get_orchestrator",
+        lambda: fake_orchestrator,
+    )
+    monkeypatch.setattr(
+        "app.services.performance_metrics.get_metrics_collector",
+        _fake_get_metrics_collector,
+    )
+    monkeypatch.setattr(
+        "app.config.config_get",
+        lambda key, default=None: {"midi.cluster.enabled": True}.get(key, default),
+    )
+
+    class _FakeDiscovery:
+        def get_discovery_summary(self):
+            return {"total_nodes": 2}
+
+    class _FakeClock:
+        def get_state(self):
+            return SimpleNamespace(
+                master_node_id="node-a",
+                strategy=SimpleNamespace(value="leader-node"),
+                is_master=True,
+                drift_ms=0.25,
+                sync_offset_ms=0.0,
+            )
+
+    class _FakeRouter:
+        def get_connections(self):
+            return [object(), object()]
+
+    monkeypatch.setattr(
+        "app.services.midi_hub.midi_discovery.get_midi_discovery_service",
+        lambda: _FakeDiscovery(),
+    )
+    monkeypatch.setattr(
+        "app.services.midi_hub.cluster_clock.get_midi_cluster_clock",
+        lambda: _FakeClock(),
+    )
+    monkeypatch.setattr(
+        "app.services.midi_hub.cluster_router.get_midi_cluster_router",
+        lambda: _FakeRouter(),
+    )
+
+    payload = asyncio.run(health_routes.health_check())
+
+    assert payload["midi_cluster"]["enabled"] is True
+    assert payload["midi_cluster"]["node_count"] == 2
+    assert payload["midi_cluster"]["connection_count"] == 2
+    assert payload["midi_cluster"]["clock_status"] == "master"
+    assert payload["midi_cluster"]["master_node_id"] == "node-a"

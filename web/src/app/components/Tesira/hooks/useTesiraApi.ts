@@ -3,7 +3,7 @@
  * All hooks use the tesiraApi object from map2/api.ts.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { tesiraApi } from '../../../../map2/api'
 import type {
   TesiraCapabilityEnvelope,
@@ -43,6 +43,15 @@ import type {
   TesiraMutationResponse,
   TesiraSceneListResponse,
 } from '../types'
+
+type FanoutNodeResponse<T> = {
+  status_code?: number
+  body?: T
+}
+
+type FanoutPayload<T> = {
+  nodes?: Record<string, FanoutNodeResponse<T>>
+}
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 export const TESIRA_KEYS = {
@@ -93,23 +102,84 @@ function usePageVisible(): boolean {
   return visible
 }
 
+async function fetchTesiraFanout<T>(path: string): Promise<Record<string, FanoutNodeResponse<T>>> {
+  const separator = path.includes('?') ? '&' : '?'
+  const response = await fetch(`${path}${separator}node_id=all`)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Tesira cluster data: ${response.status}`)
+  }
+  const payload = await response.json() as FanoutPayload<T>
+  return payload.nodes ?? {}
+}
+
+async function fetchTesiraJson<T>(path: string, nodeId?: string | null): Promise<T> {
+  const separator = path.includes('?') ? '&' : '?'
+  const response = await fetch(nodeId ? `${path}${separator}node_id=${encodeURIComponent(nodeId)}` : path)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Tesira data: ${response.status}`)
+  }
+  return response.json() as Promise<T>
+}
+
+function mergeTesiraDevices(nodes: Record<string, FanoutNodeResponse<TesiraDeviceSummary[]>>): TesiraDeviceSummary[] {
+  const merged = new Map<string, TesiraDeviceSummary>()
+
+  for (const [nodeId, nodeResponse] of Object.entries(nodes)) {
+    for (const device of nodeResponse.body ?? []) {
+      const existing = merged.get(device.device_id)
+      const hosts = Array.from(new Set([...(existing?.discovered_by_hosts ?? []), device.host]))
+      const nodeIds = Array.from(new Set([...(existing?.discovered_by_node_ids ?? []), nodeId]))
+      merged.set(device.device_id, {
+        ...(existing ?? device),
+        ...device,
+        source_node_id: existing?.source_node_id ?? nodeId,
+        source_hostname: existing?.source_hostname ?? device.host,
+        discovered_by_node_ids: nodeIds,
+        discovered_by_hosts: hosts,
+      })
+    }
+  }
+
+  return Array.from(merged.values()).sort((left, right) => left.name.localeCompare(right.name))
+}
+
+function useTesiraDeviceNodeId(deviceId: string): string | null {
+  const { data: devices = [] } = useTesiraDevices()
+  return useMemo(
+    () => devices.find((device) => device.device_id === deviceId)?.source_node_id ?? null,
+    [deviceId, devices],
+  )
+}
+
 // ── Device listing ────────────────────────────────────────────────────────────
 
 export function useTesiraDevices() {
   const visible = usePageVisible()
   return useQuery<TesiraDeviceSummary[]>({
     queryKey: TESIRA_KEYS.devices,
-    queryFn:  () => tesiraApi.listDevices(),
+    queryFn: async () => mergeTesiraDevices(await fetchTesiraFanout<TesiraDeviceSummary[]>('/api/tesira/devices')),
     refetchInterval: visible ? 10_000 : false,
   })
 }
 
 export function useTesiraDevice(deviceId: string) {
   const visible = usePageVisible()
+  const { data: devices = [] } = useTesiraDevices()
+  const nodeId = useTesiraDeviceNodeId(deviceId)
+  const deviceSummary = devices.find((device) => device.device_id === deviceId)
   return useQuery<TesiraDeviceDetail>({
-    queryKey: TESIRA_KEYS.device(deviceId),
-    queryFn:  () => tesiraApi.getDevice(deviceId),
-    enabled:  !!deviceId,
+    queryKey: [...TESIRA_KEYS.device(deviceId), nodeId ?? 'local'],
+    queryFn: async () => {
+      const detail = await fetchTesiraJson<TesiraDeviceDetail>(`/api/tesira/devices/${encodeURIComponent(deviceId)}`, nodeId)
+      return {
+        ...detail,
+        source_node_id: deviceSummary?.source_node_id ?? nodeId,
+        source_hostname: deviceSummary?.source_hostname ?? deviceSummary?.source_node_id ?? nodeId,
+        discovered_by_node_ids: deviceSummary?.discovered_by_node_ids ?? (nodeId ? [nodeId] : []),
+        discovered_by_hosts: deviceSummary?.discovered_by_hosts ?? [],
+      }
+    },
+    enabled:  !!deviceId && !!nodeId,
     refetchInterval: visible ? 5_000 : false,
   })
 }
@@ -365,19 +435,50 @@ export function useReconnectDevice() {
 // ── Fleet + topology ─────────────────────────────────────────────────────────
 
 export function useTesiraFleetHealth() {
-  const visible = usePageVisible()
-  return useQuery<TesiraFleetHealth>({
-    queryKey: TESIRA_KEYS.fleetHealth,
-    queryFn: () => tesiraApi.getFleetHealth(),
-    refetchInterval: visible ? 5000 : false,
-  })
+  const devicesQuery = useTesiraDevices()
+  const health = useMemo<TesiraFleetHealth | undefined>(() => {
+    if (!devicesQuery.data) {
+      return undefined
+    }
+    const total = devicesQuery.data.length
+    const connected = devicesQuery.data.filter((device) => device.connected).length
+    const offline = total - connected
+    return {
+      status: connected > 0 ? 'healthy' : 'degraded',
+      total_devices: total,
+      connected_devices: connected,
+      offline_devices: offline,
+      connected_ratio: total > 0 ? connected / total : 0,
+    }
+  }, [devicesQuery.data])
+
+  return {
+    data: health,
+    error: devicesQuery.error,
+    isError: devicesQuery.isError,
+    isLoading: devicesQuery.isLoading,
+    refetch: devicesQuery.refetch,
+  }
 }
 
 export function useTesiraPtpTopology() {
   const visible = usePageVisible()
   return useQuery<TesiraPtpTopologyResponse>({
     queryKey: TESIRA_KEYS.ptpTopology,
-    queryFn: () => tesiraApi.getPtpTopology(),
+    queryFn: async () => {
+      const nodes = await fetchTesiraFanout<TesiraPtpTopologyResponse>('/api/tesira/fleet/ptp-topology')
+      const mergedNodes = Object.entries(nodes).flatMap(([nodeId, response]) =>
+        (response.body?.nodes ?? []).map((row) => ({
+          ...row,
+          source_node_id: nodeId,
+        }))
+      )
+      return {
+        nodes: mergedNodes,
+        grandmaster_ids: Array.from(new Set(mergedNodes.map((row) => row.grandmaster_id).filter(Boolean))) as string[],
+        node_count: mergedNodes.length,
+      }
+    },
     refetchInterval: visible ? 2000 : false,
   })
 }

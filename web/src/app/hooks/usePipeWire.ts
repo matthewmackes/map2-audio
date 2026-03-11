@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pipewireApi, getWsUrl } from '../../map2/api'
+import { clusterScopeKey, withNodeTopic } from '../utils/clusterTransport'
 import type {
   PipeWireMetrics,
   PipeWireAlert,
@@ -48,6 +49,8 @@ interface UsePipeWireOptions {
   pollingInterval?: number
   /** Latency warning threshold in ms (default: 20) */
   latencyWarningMs?: number
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null
 }
 
 // ============================================================================
@@ -59,12 +62,15 @@ export function usePipeWire(options: UsePipeWireOptions = {}) {
     useWebSocket: useWs = true,
     pollingInterval = 2000,
     latencyWarningMs = 20,
+    nodeId,
   } = options
+  const targetNodeId = nodeId
 
   const [metrics, setMetrics] = useState<PipeWireMetrics>(DEFAULT_METRICS)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
 
   // ---------------------------------------------------------------
   // WebSocket real-time path with reconnection
@@ -80,12 +86,13 @@ export function usePipeWire(options: UsePipeWireOptions = {}) {
       if (!mounted) return
 
       const ws = new WebSocket(getWsUrl())
+      const topic = withNodeTopic('pipewire', nodeId)
       wsRef.current = ws
 
       ws.onopen = () => {
         setIsConnected(true)
         reconnectAttempts = 0  // Reset on successful connection
-        ws.send(JSON.stringify({ action: 'subscribe', topic: 'pipewire' }))
+        ws.send(JSON.stringify({ action: 'subscribe', topic }))
       }
 
       ws.onmessage = (event) => {
@@ -127,7 +134,7 @@ export function usePipeWire(options: UsePipeWireOptions = {}) {
         wsRef.current = null
       }
     }
-  }, [useWs])
+  }, [nodeId, useWs])
 
   // ---------------------------------------------------------------
   // REST polling — always enabled for initial load + fallback
@@ -135,9 +142,9 @@ export function usePipeWire(options: UsePipeWireOptions = {}) {
   // When WebSocket is disabled, polls at the configured interval.
   // ---------------------------------------------------------------
   const pollingQuery = useQuery<PipeWireMetrics>({
-    queryKey: ['pipewire-status'],
+    queryKey: ['pipewire-status', scopeKey],
     queryFn: async () => {
-      const data = await pipewireApi.getStatus()
+      const data = await pipewireApi.getStatus(nodeId)
       return data
     },
     refetchInterval: useWs ? 5000 : pollingInterval,
@@ -153,44 +160,44 @@ export function usePipeWire(options: UsePipeWireOptions = {}) {
   // Mutations (quantum, rate, volume, mute)
   // ---------------------------------------------------------------
   const setQuantumMutation = useMutation({
-    mutationFn: (quantum: number) => pipewireApi.setQuantum(quantum),
+    mutationFn: (quantum: number) => pipewireApi.setQuantum(quantum, nodeId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['pipewire-status'] })
+      await queryClient.invalidateQueries({ queryKey: ['pipewire-status', scopeKey] })
       // In WebSocket mode, force a refresh by briefly fetching
       if (useWs) {
-        queryClient.refetchQueries({ queryKey: ['pipewire-status'] })
+        queryClient.refetchQueries({ queryKey: ['pipewire-status', scopeKey] })
       }
     },
   })
 
   const setRateMutation = useMutation({
-    mutationFn: (rate: number) => pipewireApi.setRate(rate),
+    mutationFn: (rate: number) => pipewireApi.setRate(rate, nodeId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['pipewire-status'] })
+      await queryClient.invalidateQueries({ queryKey: ['pipewire-status', scopeKey] })
       if (useWs) {
-        queryClient.refetchQueries({ queryKey: ['pipewire-status'] })
+        queryClient.refetchQueries({ queryKey: ['pipewire-status', scopeKey] })
       }
     },
   })
 
   const setVolumeMutation = useMutation({
-    mutationFn: ({ nodeId, volume }: { nodeId: number; volume: number }) =>
-      pipewireApi.setVolume(nodeId, volume),
+    mutationFn: ({ nodeId: pipewireNodeId, volume }: { nodeId: number; volume: number }) =>
+      pipewireApi.setVolume(pipewireNodeId, volume, targetNodeId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['pipewire-status'] })
+      await queryClient.invalidateQueries({ queryKey: ['pipewire-status', scopeKey] })
       if (useWs) {
-        queryClient.refetchQueries({ queryKey: ['pipewire-status'] })
+        queryClient.refetchQueries({ queryKey: ['pipewire-status', scopeKey] })
       }
     },
   })
 
   const setMuteMutation = useMutation({
-    mutationFn: ({ nodeId, mute }: { nodeId: number; mute: boolean }) =>
-      pipewireApi.setMute(nodeId, mute),
+    mutationFn: ({ nodeId: pipewireNodeId, mute }: { nodeId: number; mute: boolean }) =>
+      pipewireApi.setMute(pipewireNodeId, mute, targetNodeId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['pipewire-status'] })
+      await queryClient.invalidateQueries({ queryKey: ['pipewire-status', scopeKey] })
       if (useWs) {
-        queryClient.refetchQueries({ queryKey: ['pipewire-status'] })
+        queryClient.refetchQueries({ queryKey: ['pipewire-status', scopeKey] })
       }
     },
   })

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -83,6 +84,8 @@ class MidiDeviceState:
     product_id: Optional[str] = None
     manual_assignment: Optional[str] = None
     source: str = "midi_hub"
+    node_id: str = "local"
+    remote: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -100,6 +103,8 @@ class MidiDeviceState:
             "product_id": self.product_id,
             "manual_assignment": self.manual_assignment,
             "source": self.source,
+            "node_id": self.node_id,
+            "remote": self.remote,
         }
 
 
@@ -145,8 +150,11 @@ class MidiDeviceRegistry:
         self._custom_profiles: Dict[str, MidiDeviceProfile] = {}
         self._manual_assignments: Dict[str, str] = {}
         self._devices: Dict[str, MidiDeviceState] = {}
+        self._remote_devices: Dict[str, MidiDeviceState] = {}
         self._shadow_state: Dict[str, Dict[str, Any]] = {}
         self._drift_log: List[Dict[str, Any]] = []
+        self._local_node_id: Optional[str] = None
+        self._subscribe_cluster_profile_events()
 
     def _all_profiles(self) -> List[MidiDeviceProfile]:
         return list(self._builtins.values()) + list(self._custom_profiles.values())
@@ -170,6 +178,7 @@ class MidiDeviceRegistry:
         if not replace and profile.profile_id in self._custom_profiles:
             raise ValueError(f"profile already exists: {profile.profile_id}")
         self._custom_profiles[profile.profile_id] = profile
+        self._share_custom_profile(profile)
 
     def upsert_custom_profile(
         self,
@@ -192,6 +201,7 @@ class MidiDeviceRegistry:
             metadata=dict(metadata or {}),
         )
         self._custom_profiles[profile.profile_id] = profile
+        self._share_custom_profile(profile)
         return profile
 
     def remove_custom_profile(self, profile_id: str) -> bool:
@@ -244,6 +254,244 @@ class MidiDeviceRegistry:
                     return profile
 
         return self._builtins["generic_controller"]
+
+    def _local_node(self) -> str:
+        if self._local_node_id:
+            return self._local_node_id
+        try:
+            from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+
+            self._local_node_id = get_enhanced_node_identity().get_node_id()
+        except Exception:
+            self._local_node_id = "local"
+        return self._local_node_id
+
+    @staticmethod
+    def _remote_key(node_id: str, device_id: str) -> str:
+        return f"{node_id}::{device_id}"
+
+    def _state_payload(self, state: MidiDeviceState) -> Dict[str, Any]:
+        payload = state.to_dict()
+        payload["shadow_state"] = dict(self._shadow_state.get(state.device_id) or {})
+        return payload
+
+    def _iter_all_states(self) -> List[MidiDeviceState]:
+        return list(self._devices.values()) + list(self._remote_devices.values())
+
+    def _schedule_coroutine(self, coro: Any) -> None:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(coro)
+        else:
+            loop.create_task(coro)
+
+    def _publish_cluster_event(self, event_name: str, state: MidiDeviceState) -> None:
+        try:
+            from app.services.cluster.distributed_event_bus import (
+                ClusterEvent,
+                EventSeverity,
+                EventType,
+                get_event_bus as get_distributed_event_bus,
+            )
+        except Exception:
+            return
+
+        event_type = getattr(EventType, event_name, None)
+        if event_type is None:
+            return
+
+        details = {
+            "node_id": state.node_id,
+            "port_name": state.port_names[0] if state.port_names else state.profile_name,
+            "remote_node_id": state.node_id if state.remote else None,
+            "transport": None,
+            "latency_ms": state.latency_ms,
+            "device_id": state.device_id,
+            "profile_id": state.profile_id,
+        }
+        event = ClusterEvent(
+            event_type=event_type,
+            severity=EventSeverity.INFO,
+            source_node_id=self._local_node(),
+            affected_nodes=[state.node_id],
+            message=f"MIDI device {state.device_id} on {state.node_id}",
+            details=details,
+        )
+        self._schedule_coroutine(get_distributed_event_bus().publish_event(event))
+
+    def _subscribe_cluster_profile_events(self) -> None:
+        try:
+            from app.services.cluster.distributed_event_bus import EventType, get_event_bus as get_distributed_event_bus
+        except Exception:
+            return
+
+        try:
+            get_distributed_event_bus().subscribe(EventType.MIDI_PROFILE_SHARED, self._handle_shared_profile_event)
+        except Exception:
+            return
+
+    def _handle_shared_profile_event(self, event: Any) -> None:
+        try:
+            if getattr(event, "source_node_id", "") == self._local_node():
+                return
+            payload = dict(getattr(event, "details", {}).get("profile") or {})
+            profile_id = str(payload.get("profile_id") or "").strip()
+            if not profile_id:
+                return
+            self._custom_profiles[profile_id] = MidiDeviceProfile(
+                profile_id=profile_id,
+                name=str(payload.get("name") or profile_id),
+                match_patterns=[str(item) for item in payload.get("match_patterns", []) if str(item).strip()],
+                default_channel=int(payload.get("default_channel", 0)),
+                supports_sysex=bool(payload.get("supports_sysex", False)),
+                usb_vid_pid=[str(item).strip().lower() for item in payload.get("usb_vid_pid", []) if str(item).strip()],
+                metadata=dict(payload.get("metadata") or {}),
+            )
+        except Exception:
+            return
+
+    def _share_custom_profile(self, profile: MidiDeviceProfile) -> None:
+        try:
+            from app.services.cluster.distributed_event_bus import (
+                ClusterEvent,
+                EventSeverity,
+                EventType,
+                get_event_bus as get_distributed_event_bus,
+            )
+        except Exception:
+            return
+
+        event = ClusterEvent(
+            event_type=EventType.MIDI_PROFILE_SHARED,
+            severity=EventSeverity.INFO,
+            source_node_id=self._local_node(),
+            affected_nodes=[],
+            message=f"Shared MIDI profile {profile.profile_id}",
+            details={
+                "profile": {
+                    "profile_id": profile.profile_id,
+                    "name": profile.name,
+                    "match_patterns": list(profile.match_patterns),
+                    "default_channel": profile.default_channel,
+                    "supports_sysex": profile.supports_sysex,
+                    "usb_vid_pid": list(profile.usb_vid_pid),
+                    "metadata": dict(profile.metadata),
+                }
+            },
+        )
+        self._schedule_coroutine(get_distributed_event_bus().publish_event(event))
+
+    def merge_remote_devices(self, node_id: str, devices: List[Dict[str, Any]]) -> None:
+        node_key = str(node_id)
+        existing_keys = {key for key, state in self._remote_devices.items() if state.node_id == node_key}
+        incoming_keys: set[str] = set()
+
+        for raw_device in devices:
+            device_id = str(raw_device.get("device_id") or "").strip()
+            if not device_id:
+                continue
+            storage_key = self._remote_key(node_key, device_id)
+            incoming_keys.add(storage_key)
+            previous_state = self._remote_devices.get(storage_key)
+            state = MidiDeviceState(
+                device_id=device_id,
+                profile_id=str(raw_device.get("profile_id") or "generic_controller"),
+                profile_name=str(raw_device.get("profile_name") or raw_device.get("device_id") or "Remote MIDI Device"),
+                port_ids=[str(item) for item in raw_device.get("port_ids", []) if str(item).strip()],
+                port_names=[str(item) for item in raw_device.get("port_names", []) if str(item).strip()],
+                connected=bool(raw_device.get("connected", True)),
+                responding=bool(raw_device.get("responding", raw_device.get("connected", True))),
+                health=str(raw_device.get("health") or ("online" if raw_device.get("connected", True) else "offline")),
+                latency_ms=float(raw_device["latency_ms"]) if raw_device.get("latency_ms") is not None else None,
+                last_seen=str(raw_device.get("last_seen") or _now_iso()),
+                vendor_id=raw_device.get("vendor_id"),
+                product_id=raw_device.get("product_id"),
+                manual_assignment=raw_device.get("manual_assignment"),
+                source=str(raw_device.get("source") or "cluster"),
+                node_id=node_key,
+                remote=True,
+            )
+            self._remote_devices[storage_key] = state
+            if previous_state is None or not previous_state.connected:
+                self._publish_cluster_event("MIDI_PORT_DISCOVERED", state)
+
+        missing_keys = existing_keys - incoming_keys
+        for storage_key in sorted(missing_keys):
+            state = self._remote_devices.get(storage_key)
+            if state is None or not state.connected:
+                continue
+            state.connected = False
+            state.responding = False
+            state.health = "offline"
+            state.last_seen = _now_iso()
+            self._publish_cluster_event("MIDI_PORT_LOST", state)
+
+    def remove_node_devices(self, node_id: str) -> int:
+        removed = 0
+        for storage_key, state in list(self._remote_devices.items()):
+            if state.node_id != str(node_id):
+                continue
+            if state.connected:
+                removed += 1
+                state.connected = False
+                state.responding = False
+                state.health = "offline"
+                state.last_seen = _now_iso()
+                self._publish_cluster_event("MIDI_PORT_LOST", state)
+        return removed
+
+    def get_node_devices(self, node_id: str) -> List[Dict[str, Any]]:
+        target = str(node_id)
+        return [
+            self._state_payload(state)
+            for state in sorted(
+                self._iter_all_states(),
+                key=lambda row: (row.node_id, row.remote, row.device_id),
+            )
+            if state.node_id == target
+        ]
+
+    def get_global_snapshot(self) -> Dict[str, Any]:
+        grouped: Dict[str, List[Dict[str, Any]]] = {}
+        for state in sorted(self._iter_all_states(), key=lambda row: (row.node_id, row.remote, row.device_id)):
+            grouped.setdefault(state.node_id, []).append(self._state_payload(state))
+        nodes = [
+            {
+                "node_id": node_id,
+                "remote": node_id != self._local_node(),
+                "device_count": len(devices),
+                "devices": devices,
+            }
+            for node_id, devices in grouped.items()
+        ]
+        return {
+            "count": sum(len(devices) for devices in grouped.values()),
+            "node_count": len(grouped),
+            "nodes": nodes,
+            "by_node": grouped,
+            "profiles": self.list_profiles(),
+        }
+
+    def find_equivalent_port(self, port_name: str, exclude_node_id: str) -> Optional[Dict[str, Any]]:
+        target = str(port_name or "").strip()
+        if not target:
+            return None
+        target_profile_id = self._match_profile(target, None).profile_id
+        candidates = [
+            state
+            for state in self._iter_all_states()
+            if state.node_id != str(exclude_node_id) and state.connected
+        ]
+        for state in sorted(candidates, key=lambda row: (row.node_id, row.remote, row.device_id)):
+            if (
+                state.profile_id == target_profile_id
+                or target == state.profile_name
+                or target in state.port_names
+                or target == state.device_id
+            ):
+                return self._state_payload(state)
+        return None
 
     async def refresh(self) -> Dict[str, Any]:
         await self._load_manual_assignments()
@@ -318,6 +566,8 @@ class MidiDeviceRegistry:
                 vendor_id=payload["vendor_id"],
                 product_id=payload["product_id"],
                 manual_assignment=payload["manual_assignment"],
+                node_id=self._local_node(),
+                remote=False,
             )
             next_devices[device_id] = state
 
@@ -329,6 +579,7 @@ class MidiDeviceRegistry:
         self._devices = next_devices
         await self._persist_device_configs()
         await self._evaluate_shadow_drift()
+        self._broadcast_local_inventory()
 
         for device_id in online:
             await self._emit_event(
@@ -359,6 +610,9 @@ class MidiDeviceRegistry:
         return {
             "count": len(self._devices),
             "devices": [d.to_dict() for d in self._devices.values()],
+            "remote_device_count": len(self._remote_devices),
+            "remote_devices": [self._state_payload(device) for device in self._remote_devices.values()],
+            "global_device_count": len(self._devices) + len(self._remote_devices),
             "profiles": self.list_profiles(),
             "assignments": dict(self._manual_assignments),
             "shadow_state": dict(self._shadow_state),
@@ -465,6 +719,29 @@ class MidiDeviceRegistry:
             )
         except Exception:
             # Registry remains functional without websocket transport.
+            return
+
+    def _broadcast_local_inventory(self) -> None:
+        if not self._hub.running:
+            return
+        try:
+            import socket
+
+            from app.config import config_get
+            from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+            from app.services.midi_hub.midi_discovery import get_midi_discovery_service
+        except Exception:
+            return
+
+        try:
+            identity = get_enhanced_node_identity()
+            hostname = getattr(identity.config, "hostname", None) or socket.gethostname()
+            get_midi_discovery_service().broadcast_local_node(
+                self._local_node(),
+                hostname,
+                int(config_get("backend.port", 8080)),
+            )
+        except Exception:
             return
 
     async def _evaluate_shadow_drift(self) -> None:

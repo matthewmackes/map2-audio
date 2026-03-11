@@ -58,7 +58,11 @@ interface StatusItem {
   status: 'success' | 'warning' | 'error';
 }
 
-export const AudioInterfaceControl: React.FC = () => {
+interface AudioInterfaceControlProps {
+  nodeId?: string | null
+}
+
+export const AudioInterfaceControl: React.FC<AudioInterfaceControlProps> = ({ nodeId }) => {
   const [audioStatus, setAudioStatus] = useState<AudioStatus | null>(null);
   const [usbDevices, setUsbDevices] = useState<USBDevice | null>(null);
   const [audioHealth, setAudioHealth] = useState<AudioHealth | null>(null);
@@ -69,8 +73,13 @@ export const AudioInterfaceControl: React.FC = () => {
   const [isApplyingConfig, setIsApplyingConfig] = useState(false);
   const [configDirty, setConfigDirty] = useState(false);
 
-  // Use relative URLs - Vite proxy will route to backend
-  const API_BASE = '';
+  const withNodeQuery = useCallback((path: string) => {
+    if (!nodeId || nodeId === 'all') {
+      return path
+    }
+    const separator = path.includes('?') ? '&' : '?'
+    return `${path}${separator}node_id=${encodeURIComponent(nodeId)}`
+  }, [nodeId])
 
   // Use bundled assets so the image always loads offline and in production.
   const getDeviceArtwork = (model: string): string => {
@@ -87,7 +96,7 @@ export const AudioInterfaceControl: React.FC = () => {
   // Fetch audio status
   const updateAudioStatus = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/audio/status`);
+      const response = await fetch(withNodeQuery('/api/audio/status'));
       const data = await response.json();
       setAudioStatus(data);
       if (!configDirty) {
@@ -105,23 +114,23 @@ export const AudioInterfaceControl: React.FC = () => {
         error: 'Failed to connect to audio engine'
       });
     }
-  }, [configDirty]);
+  }, [configDirty, withNodeQuery]);
 
   // Fetch USB devices
   const updateUSBDevices = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/usb/devices`);
+      const response = await fetch(withNodeQuery('/api/usb/devices'));
       const data = await response.json();
       setUsbDevices(data);
     } catch (error) {
       console.error('Failed to fetch USB devices:', error);
     }
-  }, []);
+  }, [withNodeQuery]);
 
   // Fetch audio health
   const updateAudioHealth = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/audio/health`);
+      const response = await fetch(withNodeQuery('/api/audio/health'));
       if (response.ok) {
         const data = await response.json();
         setAudioHealth(data);
@@ -129,7 +138,7 @@ export const AudioInterfaceControl: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch audio health:', error);
     }
-  }, []);
+  }, [withNodeQuery]);
 
   // Initial load and auto-refresh
   useEffect(() => {
@@ -163,7 +172,7 @@ export const AudioInterfaceControl: React.FC = () => {
         sample_rate: String(sampleRate),
         buffer_size: String(bufferSize),
       });
-      const response = await fetch(`${API_BASE}/api/audio/config?${params.toString()}`, {
+      const response = await fetch(withNodeQuery(`/api/audio/config?${params.toString()}`), {
         method: 'POST',
       });
       const data = await response.json().catch(() => ({}));
@@ -189,7 +198,7 @@ export const AudioInterfaceControl: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/api/audio/restart`, { method: 'POST' });
+      const response = await fetch(withNodeQuery('/api/audio/restart'), { method: 'POST' });
       const data = await response.json();
       if (data.success) {
         alert('Audio engine restarting...');
@@ -203,7 +212,7 @@ export const AudioInterfaceControl: React.FC = () => {
   // Handle diagnostics test
   const handleTest = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/audio/test`, { method: 'POST' });
+      const response = await fetch(withNodeQuery('/api/audio/test'), { method: 'POST' });
       const data = await response.json();
       alert(
         `Audio Test Results:\n\n` +

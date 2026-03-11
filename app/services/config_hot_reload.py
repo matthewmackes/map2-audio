@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass
 from pathlib import Path
 from datetime import datetime
+import time
 import json
 import yaml
 import hashlib
@@ -129,12 +130,142 @@ class ConfigurationHotReloader:
         self.change_history: List[ConfigChange] = []
         self.watch_enabled = False
         self.observer: Optional[Observer] = None
+        self._async_loop: Optional[asyncio.AbstractEventLoop] = None
+        self._ignore_file_events_until = 0.0
+        self._suspend_cluster_broadcast = True
+        self.local_node_id = ""
+        self.local_node_role = ""
+        self._event_bus = None
         
         # Setup default validation rules
         self._setup_default_validators()
+        self._init_cluster_sync()
         
         # Load initial config
         self.reload_config()
+        self._suspend_cluster_broadcast = False
+
+    def bind_event_loop(self, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
+        """Bind an asyncio loop so callbacks from watcher threads can publish events."""
+        if loop is not None:
+            self._async_loop = loop
+            return
+        try:
+            self._async_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+
+    def _init_cluster_sync(self) -> None:
+        """Attach to the distributed event bus for cluster config propagation."""
+        try:
+            from app.services.cluster.distributed_event_bus import EventType, get_event_bus
+            from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+
+            identity = get_enhanced_node_identity()
+            self.local_node_id = identity.get_node_id()
+            self.local_node_role = identity.get_role()
+            self._event_bus = get_event_bus()
+            self._event_bus.subscribe(EventType.CONFIG_CHANGED, self._on_cluster_config_changed)
+        except Exception as exc:
+            logger.debug(f"Cluster config sync unavailable: {exc}")
+
+    def _schedule_async(self, coro: Any) -> None:
+        """Schedule a coroutine from either the main loop or a watcher thread."""
+        if self._async_loop is not None and self._async_loop.is_running():
+            asyncio.run_coroutine_threadsafe(coro, self._async_loop)
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        loop.create_task(coro)
+
+    @staticmethod
+    def _default_value_for_key(key_path: str) -> Any:
+        """Return schema default for a config key if available."""
+        try:
+            from app.config import CONFIG_SCHEMA
+
+            option = CONFIG_SCHEMA.get(key_path)
+            return option.default if option else None
+        except Exception:
+            return None
+
+    def _event_value_for_change(self, key_path: str, change: Dict[str, Any]) -> Any:
+        action = str(change.get("action", "modified"))
+        if action == "removed":
+            return self._default_value_for_key(key_path)
+        if "new_value" in change:
+            return change.get("new_value")
+        return self.get(key_path)
+
+    def _scope_applies_to_local(self, scope: str) -> bool:
+        normalized = str(scope or "cluster").strip()
+        if normalized == "cluster":
+            return True
+        if normalized == "node":
+            return False
+        if normalized.startswith("role:"):
+            return normalized.split(":", 1)[1].strip() == self.local_node_role
+        return False
+
+    async def _publish_config_changed(self, key_path: str, value: Any, scope: str, action: str = "modified") -> None:
+        if self._event_bus is None:
+            return
+
+        from app.services.cluster.distributed_event_bus import ClusterEvent, EventSeverity, EventType
+
+        await self._event_bus.publish_event(
+            ClusterEvent(
+                event_type=EventType.CONFIG_CHANGED,
+                severity=EventSeverity.INFO,
+                source_node_id=self.local_node_id,
+                message=f"Configuration changed: {key_path}",
+                details={
+                    "key": key_path,
+                    "value": value,
+                    "scope": scope,
+                    "action": action,
+                    "source_node_id": self.local_node_id,
+                },
+            )
+        )
+
+    def _broadcast_changes(self, changes: Dict[str, Any], scope: str = "cluster") -> None:
+        if self._suspend_cluster_broadcast or scope == "node":
+            return
+
+        for key_path, change in changes.items():
+            if not isinstance(change, dict):
+                continue
+            action = str(change.get("action", "modified"))
+            if action not in {"added", "modified", "removed", "set"}:
+                continue
+            value = self._event_value_for_change(key_path, change)
+            self._schedule_async(self._publish_config_changed(key_path, value, scope, action))
+
+    async def _on_cluster_config_changed(self, event: Any) -> None:
+        details = dict(getattr(event, "details", {}) or {})
+        source_node_id = str(getattr(event, "source_node_id", "") or details.get("source_node_id", "")).strip()
+        if not details or not source_node_id or source_node_id == self.local_node_id:
+            return
+
+        scope = str(details.get("scope", "cluster") or "cluster").strip()
+        if not self._scope_applies_to_local(scope):
+            return
+
+        key_path = str(details.get("key", "") or "").strip()
+        if not key_path:
+            return
+
+        value = details.get("value")
+        await self.apply_runtime_change(
+            key_path,
+            value,
+            scope="node",
+            broadcast=False,
+            action=str(details.get("action", "modified") or "modified"),
+        )
     
     def _setup_default_validators(self) -> None:
         """Set up default validation rules."""
@@ -276,6 +407,15 @@ class ConfigurationHotReloader:
             
             self.current_config = new_config
             self.config_hash = new_hash
+
+            try:
+                from app.config import get_config as get_runtime_config_manager
+
+                runtime_manager = get_runtime_config_manager()
+                if self.config_file.resolve() == runtime_manager.config_path.resolve():
+                    runtime_manager.reload()
+            except Exception as exc:
+                logger.debug(f"Runtime config reload skipped: {exc}")
             
             # Record change
             change_record = ConfigChange(
@@ -295,6 +435,7 @@ class ConfigurationHotReloader:
             
             # Notify callbacks
             self._notify_callbacks(changes)
+            self._broadcast_changes(changes, scope="cluster")
             
             logger.info(f"Configuration reloaded successfully ({len(changes)} changes applied)")
             return True
@@ -414,6 +555,67 @@ class ConfigurationHotReloader:
         self._notify_callbacks(changes)
         
         return True
+
+    async def apply_runtime_change(
+        self,
+        key_path: str,
+        value: Any,
+        scope: str = "node",
+        broadcast: bool = True,
+        action: str = "set",
+    ) -> bool:
+        """
+        Apply a runtime config change via the shared ConfigManager and optionally broadcast it.
+        """
+        from app.config import get_config as get_runtime_config_manager
+
+        self.bind_event_loop()
+        runtime_manager = get_runtime_config_manager()
+        old_value = runtime_manager.get(key_path)
+
+        try:
+            self._ignore_file_events_until = time.monotonic() + 1.0
+            success = runtime_manager.set(key_path, value, save=True)
+        except ValueError:
+            raise
+
+        if not success:
+            return False
+
+        self.previous_config = deepcopy(self.current_config)
+        self.current_config = runtime_manager.get_all()
+        previous_hash = self.config_hash
+        self.config_hash = self._compute_hash(self.current_config)
+
+        changes = {
+            key_path: {
+                "action": action,
+                "old_value": old_value,
+                "new_value": value,
+            }
+        }
+        self.change_history.append(
+            ConfigChange(
+                timestamp=datetime.now().isoformat(),
+                config_file=str(self.config_file),
+                changes=changes,
+                previous_hash=previous_hash,
+                new_hash=self.config_hash,
+                validated=True,
+                applied=True,
+            )
+        )
+        if len(self.change_history) > 100:
+            self.change_history = self.change_history[-100:]
+
+        self._notify_callbacks(changes)
+        if broadcast and scope != "node":
+            await self._publish_config_changed(key_path, value, scope, action)
+        return True
+
+    async def reload_config_async(self, dry_run: bool = False) -> bool:
+        """Async wrapper for watcher-triggered reloads."""
+        return await asyncio.to_thread(self.reload_config, dry_run)
     
     def _write_config_file(self) -> None:
         """Write current config to file."""
@@ -440,9 +642,16 @@ class ConfigurationHotReloader:
             
             def on_modified(self, event):
                 if event.src_path == str(self.reloader.config_file):
+                    if time.monotonic() < self.reloader._ignore_file_events_until:
+                        return
                     logger.info(f"Config file modified: {event.src_path}")
-                    # Reload config
-                    asyncio.create_task(asyncio.to_thread(self.reloader.reload_config))
+                    if self.reloader._async_loop and self.reloader._async_loop.is_running():
+                        asyncio.run_coroutine_threadsafe(
+                            self.reloader.reload_config_async(),
+                            self.reloader._async_loop,
+                        )
+                    else:
+                        self.reloader.reload_config()
         
         self.observer = Observer()
         handler = ConfigFileHandler(self)
@@ -489,6 +698,7 @@ def init_config_reloader(config_file: str, watch: bool = True) -> ConfigurationH
     global config_reloader
     
     config_reloader = ConfigurationHotReloader(config_file)
+    config_reloader.bind_event_loop()
     
     if watch:
         config_reloader.start_watching()
@@ -502,6 +712,24 @@ def get_config(key_path: str, default: Any = None) -> Any:
     if config_reloader is None:
         raise RuntimeError("Config reloader not initialized")
     return config_reloader.get(key_path, default)
+
+
+def get_or_init_config_reloader(watch: bool = True) -> ConfigurationHotReloader:
+    """Get the global config reloader, initializing it against the shared runtime config if needed."""
+    global config_reloader
+    if config_reloader is None:
+        from app.config import get_config as get_runtime_config_manager
+
+        runtime_manager = get_runtime_config_manager()
+        config_reloader = ConfigurationHotReloader(str(runtime_manager.config_path))
+        config_reloader.bind_event_loop()
+        if watch:
+            config_reloader.start_watching()
+    else:
+        config_reloader.bind_event_loop()
+        if watch and not config_reloader.watch_enabled:
+            config_reloader.start_watching()
+    return config_reloader
 
 
 # =========================================================================

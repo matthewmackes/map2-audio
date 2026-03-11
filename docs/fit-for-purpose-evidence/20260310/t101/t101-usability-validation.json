@@ -1,0 +1,23 @@
+{
+  "task_id": "T101-subH",
+  "date": "2026-03-10",
+  "page": "/midi-hub",
+  "checks": {
+    "grouped_information_architecture": "pass",
+    "inline_and_deep_help_coverage": "pass",
+    "onboarding_replay": "pass",
+    "guided_flows_with_pause_resume_cancel": "pass",
+    "routing_legends_and_progressive_disclosure": "pass",
+    "responsive_behavior": "pass",
+    "focus_accessibility_regression": "pass"
+  },
+  "first_task_flows": {
+    "connect_device": "pass",
+    "save_and_recall": "pass",
+    "troubleshoot_no_signal": "pass"
+  },
+  "residual_risks": [
+    "Manual flow steps rely on operator confirmation instead of endpoint-level assertions.",
+    "External user-study scoring is not yet collected."
+  ]
+}

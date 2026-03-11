@@ -151,6 +151,7 @@ interface DynamicsMeteringPanelProps {
   showGate?: boolean
   compact?: boolean
   className?: string
+  nodeId?: string | null
 }
 
 export const DynamicsMeteringPanel: React.FC<DynamicsMeteringPanelProps> = ({
@@ -158,7 +159,8 @@ export const DynamicsMeteringPanel: React.FC<DynamicsMeteringPanelProps> = ({
   showLimiter = true,
   showGate = true,
   compact = false,
-  className = ''
+  className = '',
+  nodeId,
 }) => {
   const {
     compressor,
@@ -166,7 +168,7 @@ export const DynamicsMeteringPanel: React.FC<DynamicsMeteringPanelProps> = ({
     gate,
     isConnected,
     isRunning
-  } = useDynamics()
+  } = useDynamics({ nodeId })
 
   if (!isRunning) {
     return (

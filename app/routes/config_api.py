@@ -8,11 +8,11 @@ Handles configuration management endpoints:
 - Rollback configuration
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import shutil
 import tempfile
-from fastapi import APIRouter, HTTPException, UploadFile, File, Request
+from fastapi import APIRouter, HTTPException, UploadFile, File, Request, Query
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import io
@@ -20,9 +20,14 @@ import tarfile
 import json
 import yaml
 
+from app.config import get_config as get_runtime_config_manager
 from app.services.cluster.config_distributor import get_config_distributor
 
 router = APIRouter(prefix="/api/cluster/config", tags=["config"])
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class ConfigRequest(BaseModel):
@@ -41,6 +46,49 @@ class SyncRequest(BaseModel):
     force: bool = False
 
 
+class RuntimeConfigUpdateRequest(BaseModel):
+    """Runtime config update request with cluster scope."""
+    key: str
+    value: Any
+    scope: str = "cluster"
+
+
+def _normalize_scope(scope: str) -> str:
+    normalized = str(scope or "cluster").strip()
+    if normalized in {"cluster", "node"}:
+        return normalized
+    if normalized.startswith("role:") and normalized.split(":", 1)[1].strip():
+        return normalized
+    raise HTTPException(status_code=400, detail="scope must be 'cluster', 'node', or 'role:<ROLE>'")
+
+
+def _get_runtime_reloader():
+    from app.services.config_hot_reload import get_or_init_config_reloader
+
+    return get_or_init_config_reloader(watch=True)
+
+
+async def _publish_config_sync_event(event_type: str, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    try:
+        from app.services.cluster.distributed_event_bus import ClusterEvent, EventSeverity, EventType, get_event_bus
+        from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+
+        mapped = getattr(EventType, event_type)
+        event_bus = get_event_bus()
+        identity = get_enhanced_node_identity()
+        await event_bus.publish_event(
+            ClusterEvent(
+                event_type=mapped,
+                severity=EventSeverity.INFO,
+                source_node_id=identity.get_node_id(),
+                message=message,
+                details=details or {},
+            )
+        )
+    except Exception:
+        return
+
+
 @router.get("/")
 async def get_config(key: Optional[str] = None):
     """
@@ -55,7 +103,7 @@ async def get_config(key: Optional[str] = None):
         
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": _utcnow().isoformat(),
             "key": key,
             "config": config,
             "commit": distributor.current_commit,
@@ -63,6 +111,46 @@ async def get_config(key: Optional[str] = None):
     
     except Exception as e:
         raise HTTPException(500, f"Failed to get config: {e}")
+
+
+@router.get("/runtime")
+async def get_runtime_config(key: Optional[str] = Query(None)) -> Dict[str, Any]:
+    """Get current runtime configuration from the shared ConfigManager."""
+    manager = get_runtime_config_manager()
+    return {
+        "status": "ok",
+        "timestamp": _utcnow().isoformat(),
+        "key": key,
+        "config": manager.get(key) if key else manager.get_all(),
+    }
+
+
+@router.put("/runtime")
+async def update_runtime_config(request: RuntimeConfigUpdateRequest) -> Dict[str, Any]:
+    """Apply a runtime configuration change with cluster-aware scope."""
+    scope = _normalize_scope(request.scope)
+    reloader = _get_runtime_reloader()
+
+    try:
+        success = await reloader.apply_runtime_change(
+            request.key,
+            request.value,
+            scope=scope,
+            broadcast=(scope != "node"),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    if not success:
+        raise HTTPException(status_code=400, detail=f"Failed to update configuration key '{request.key}'")
+
+    return {
+        "status": "ok",
+        "message": "Runtime configuration updated",
+        "key": request.key,
+        "value": request.value,
+        "scope": scope,
+    }
 
 
 def _validate_config_tree(config_path: Path) -> bool:
@@ -130,7 +218,7 @@ async def push_config(request: Request, file: Optional[UploadFile] = File(None))
                 raise HTTPException(400, "Configuration validation failed")
 
             # Stage new config in same parent for atomic rename
-            staging_path = local_path.parent / f".config_staging_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
+            staging_path = local_path.parent / f".config_staging_{_utcnow().strftime('%Y%m%d%H%M%S%f')}"
             shutil.copytree(extract_root, staging_path, dirs_exist_ok=True)
 
             # Validate staged config once more before swap
@@ -138,7 +226,7 @@ async def push_config(request: Request, file: Optional[UploadFile] = File(None))
                 shutil.rmtree(staging_path, ignore_errors=True)
                 raise HTTPException(400, "Staged configuration validation failed")
 
-            backup_path = local_path.parent / f".config_backup_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
+            backup_path = local_path.parent / f".config_backup_{_utcnow().strftime('%Y%m%d%H%M%S%f')}"
             did_backup = False
             try:
                 if local_path.exists():
@@ -162,7 +250,7 @@ async def push_config(request: Request, file: Optional[UploadFile] = File(None))
         except Exception:
             # Keep previous commit if this is not a git checkout
             pass
-        distributor.last_sync = datetime.utcnow().isoformat()
+        distributor.last_sync = _utcnow().isoformat()
         
         return {
             "status": "ok",
@@ -184,6 +272,11 @@ async def trigger_sync(request: SyncRequest):
     """
     try:
         distributor = get_config_distributor()
+        await _publish_config_sync_event(
+            "CONFIG_SYNC_REQUESTED",
+            "Configuration sync requested",
+            {"force": bool(request.force)},
+        )
         
         # Trigger git pull
         await distributor._git_pull()
@@ -202,7 +295,12 @@ async def trigger_sync(request: SyncRequest):
                 raise HTTPException(500, "Configuration distribution failed")
             
             distributor.current_commit = new_commit
-            distributor.last_sync = datetime.utcnow().isoformat()
+            distributor.last_sync = _utcnow().isoformat()
+            await _publish_config_sync_event(
+                "CONFIG_SYNC_COMPLETED",
+                "Configuration sync completed",
+                {"commit": distributor.current_commit, "force": bool(request.force)},
+            )
         
         return {
             "status": "ok",
@@ -252,7 +350,7 @@ async def rollback_config(commit: Optional[str] = None):
             raise HTTPException(500, "Rollback distribution failed")
         
         distributor.current_commit = commit
-        distributor.last_sync = datetime.utcnow().isoformat()
+        distributor.last_sync = _utcnow().isoformat()
         
         return {
             "status": "ok",
@@ -274,7 +372,7 @@ async def get_config_status():
         
         return {
             "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": _utcnow().isoformat(),
             "current_commit": distributor.current_commit,
             "git_repo": distributor.git_repo,
             "is_syncing": distributor.is_running,

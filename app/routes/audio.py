@@ -186,6 +186,7 @@ try:
         """Get audio engine status from JUCE."""
         global _audio_status_cache, _audio_status_cache_at
         service = get_engine_service()
+        from app.services.audio_health_monitor import get_audio_health_monitor
 
         if not service.is_available:
             return {
@@ -219,6 +220,8 @@ try:
                 return stale
             info = {}
 
+        health_summary = get_audio_health_monitor().get_summary()
+
         payload = {
             "running": service.is_audio_running(),
             "sample_rate": info.get("sample_rate", 48000),
@@ -228,12 +231,39 @@ try:
             "version": info.get("version", "unknown"),
             "plugin_count": info.get("plugin_count", 0),
             "active_pedalboard": info.get("active_pedalboard", None),
-            "available": True
+            "available": True,
+            "total_xruns": health_summary.get("total_xruns"),
+            "xrun_rate_per_minute": health_summary.get("xrun_rate_per_minute"),
+            "thread_state": health_summary.get("thread_state"),
+            "signal_state": health_summary.get("signal_state"),
+            "buffer_health_pct": health_summary.get("buffer_health_pct"),
+            "latency_ms": health_summary.get("latency_ms"),
         }
         with _audio_status_cache_lock:
             _audio_status_cache = dict(payload)
             _audio_status_cache_at = time.monotonic()
         return payload
+
+    @router.get("/node-summary")
+    async def get_audio_node_summary():
+        """Lightweight status for cluster scraping."""
+        service = get_engine_service()
+        from app.services.audio_health_monitor import get_audio_health_monitor
+
+        health = get_audio_health_monitor().get_summary()
+        status = {
+            "running": service.is_audio_running(),
+            "sample_rate": health.get("sample_rate"),
+            "buffer_size": health.get("block_size") or 0,
+            "cpu_load": None,
+            "total_xruns": health.get("total_xruns"),
+            "xrun_rate_per_minute": health.get("xrun_rate_per_minute"),
+            "thread_state": health.get("thread_state"),
+            "signal_state": health.get("signal_state"),
+            "buffer_health_pct": health.get("buffer_health_pct"),
+            "latency_ms": health.get("latency_ms"),
+        }
+        return status
 
     @router.get("/source-of-truth")
     async def get_audio_source_of_truth() -> Dict[str, Any]:
@@ -322,7 +352,7 @@ try:
         avb_runtime: Dict[str, Any] = {
             "enabled": bool(config_get("avb.enabled", False)),
             "interface": str(config_get("avb.interface", "") or "").strip(),
-            "auto_connect": bool(config_get("avb.auto_connect", False)),
+            "auto_connect": bool(config_get("avb.auto_connect", True)),
             "available": bool(avb_readiness.get("available", False)),
             "state": str(avb_readiness.get("state", "disabled") or "disabled"),
             "reason": avb_readiness.get("reason"),
@@ -512,7 +542,7 @@ try:
                 "avb": {
                     "enabled": avb_enabled,
                     "interface": str(config_get("avb.interface", "") or "").strip(),
-                    "auto_connect": bool(config_get("avb.auto_connect", False)),
+                    "auto_connect": bool(config_get("avb.auto_connect", True)),
                     "ptp_domain": _coerce_int(config_get("avb.ptp_domain", 0), 0),
                     "max_streams": _coerce_int(config_get("avb.max_streams", 8), 8),
                 },

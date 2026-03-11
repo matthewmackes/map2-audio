@@ -115,6 +115,8 @@ export function useKeyboardNavigation(options: UseKeyboardNavigationOptions = {}
     const focused = focusedCellRef.current;
     if (!focused) return;
 
+    const talkerNodeId = state.endpoints[focused.talker_id]?.node_id || null;
+    const listenerNodeId = state.endpoints[focused.listener_id]?.node_id || null;
     const route =
       state.liveRoutes[`${focused.talker_id}→${focused.listener_id}`] ||
       state.pendingRoutes[`${focused.talker_id}→${focused.listener_id}`];
@@ -135,6 +137,7 @@ export function useKeyboardNavigation(options: UseKeyboardNavigationOptions = {}
         unpatchMutation.mutate({
           talker_id: focused.talker_id,
           listener_id: focused.listener_id,
+          node_id: route.talker_node_id || talkerNodeId || listenerNodeId,
         });
       }
       return;
@@ -150,6 +153,7 @@ export function useKeyboardNavigation(options: UseKeyboardNavigationOptions = {}
       patchMutation.mutate({
         talker_id: focused.talker_id,
         listener_id: focused.listener_id,
+        node_id: talkerNodeId || listenerNodeId,
       });
     }
   }, [state, dispatch, patchMutation, unpatchMutation]);

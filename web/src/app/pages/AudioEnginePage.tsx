@@ -23,6 +23,9 @@ import { usePipeWire } from '../hooks/usePipeWire'
 import { audioApi, getWsUrl, latencyV2Api } from '../../map2/api'
 import type { LatencyJitterStats } from '../../map2/api'
 import type { AudioSourceTruthPayload } from '../../map2/types'
+import { useCluster } from '../contexts/ClusterContext'
+import { withNodeTopic } from '../utils/clusterTransport'
+import { ClusterEngineGrid } from '../components/AudioEngine/ClusterEngineGrid'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
 import { CPUMeterPanel } from '../components/Visualizations/CPUMeterPanel'
@@ -133,10 +136,10 @@ function SOTCell({ label, value, color = T.text }: { label: string; value: strin
   )
 }
 
-function SourceOfTruthPanel() {
+function SourceOfTruthPanel({ nodeId }: { nodeId?: string | null }) {
   const sot = useQuery<AudioSourceTruthPayload>({
-    queryKey: ['audio-source-of-truth'],
-    queryFn: audioApi.getSourceOfTruth,
+    queryKey: ['audio-source-of-truth', nodeId ?? 'local'],
+    queryFn: () => audioApi.getSourceOfTruth(nodeId),
     refetchInterval: 5000,
     staleTime: 2000,
   })
@@ -386,18 +389,18 @@ function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
 // LAYER 2 — Metering
 // ============================================================================
 
-function MeteringLayer() {
+function MeteringLayer({ nodeId }: { nodeId?: string | null }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Row 1: Spectrum + VU */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
         <Panel borderColor={`${T.accent}25`}>
           <SectionLabel color={T.accent}><Lightning size={13} weight="duotone" /> Frequency Spectrum</SectionLabel>
-          <SpectrumAnalyzer mode="bars" height={200} barCount={64} showLabels showPeaks colors={[T.green, T.amber, T.red]} />
+          <SpectrumAnalyzer nodeId={nodeId} mode="bars" height={200} barCount={64} showLabels showPeaks colors={[T.green, T.amber, T.red]} />
         </Panel>
         <Panel borderColor={`${T.green}25`}>
           <SectionLabel color={T.green}><ChartBar size={13} weight="duotone" /> Signal Levels</SectionLabel>
-          <VuMeterDisplay showInput showOutput />
+          <VuMeterDisplay nodeId={nodeId} showInput showOutput />
         </Panel>
       </div>
 
@@ -405,15 +408,15 @@ function MeteringLayer() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
         <Panel borderColor={`${T.accent}25`}>
           <SectionLabel color={T.accent}><Pulse size={13} weight="duotone" /> Loudness (LUFS)</SectionLabel>
-          <LoudnessMeter targetLufs={-14} truePeakLimit={-1} compact={false} />
+          <LoudnessMeter nodeId={nodeId} targetLufs={-14} truePeakLimit={-1} compact={false} />
         </Panel>
         <Panel borderColor={`${T.pink}25`}>
           <SectionLabel color={T.pink}><Pulse size={13} weight="duotone" /> Stereo Phase</SectionLabel>
-          <PhaseCorrelationMeter showStereoInfo orientation="horizontal" />
+          <PhaseCorrelationMeter nodeId={nodeId} showStereoInfo orientation="horizontal" />
         </Panel>
         <Panel borderColor={`${T.amber}25`}>
           <SectionLabel color={T.amber}><Pulse size={13} weight="duotone" /> Dynamics</SectionLabel>
-          <DynamicsMeteringPanel showCompressor showLimiter showGate />
+          <DynamicsMeteringPanel nodeId={nodeId} showCompressor showLimiter showGate />
         </Panel>
       </div>
     </div>
@@ -603,7 +606,7 @@ function deriveGate(stats: LatencyJitterStats) {
   return hardFail ? 'FAIL' : warn ? 'WARN' : 'PASS'
 }
 
-function LatencyMonitorPanel() {
+function LatencyMonitorPanel({ nodeId }: { nodeId?: string | null }) {
   const [points, setPoints] = useState<TimingJitterPoint[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [gateResult, setGateResult] = useState<{
@@ -617,19 +620,20 @@ function LatencyMonitorPanel() {
   const wsRef = useRef<WebSocket | null>(null)
 
   const jitterStatsQuery = useQuery({
-    queryKey: ['latency-jitter-stats'],
-    queryFn: latencyV2Api.getJitterStats,
+    queryKey: ['latency-jitter-stats', nodeId ?? 'local'],
+    queryFn: () => latencyV2Api.getJitterStats(nodeId),
     refetchInterval: 1000,
     staleTime: 500,
   })
 
   useEffect(() => {
     const ws = new WebSocket(getWsUrl())
+    const topic = withNodeTopic('timing_jitter', nodeId)
     wsRef.current = ws
 
     ws.onopen = () => {
       setIsConnected(true)
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'timing_jitter' }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic }))
     }
 
     ws.onmessage = (event) => {
@@ -659,12 +663,12 @@ function LatencyMonitorPanel() {
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'timing_jitter' }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
       }
       ws.close()
       wsRef.current = null
     }
-  }, [])
+  }, [nodeId])
 
   const latestPoint = points.length > 0 ? points[points.length - 1] : null
   const sparklinePoints = useMemo(() => points.slice(-600), [points])
@@ -704,7 +708,7 @@ function LatencyMonitorPanel() {
   }, [sparklinePoints])
 
   const runGateCheck = async () => {
-    const stats = await latencyV2Api.getJitterStats()
+    const stats = await latencyV2Api.getJitterStats(nodeId)
     const gate = deriveGate(stats)
     setGateResult({
       gate,
@@ -718,7 +722,7 @@ function LatencyMonitorPanel() {
   const resetXruns = async () => {
     try {
       setIsResettingXruns(true)
-      await latencyV2Api.resetXruns()
+      await latencyV2Api.resetXruns(nodeId)
       await jitterStatsQuery.refetch()
     } finally {
       setIsResettingXruns(false)
@@ -860,7 +864,7 @@ function LatencyMonitorPanel() {
   )
 }
 
-function DiagnosticsLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
+function DiagnosticsLayer({ pw, nodeId }: { pw: ReturnType<typeof usePipeWire>; nodeId?: string | null }) {
   const quantumValues = [32, 64, 128, 256, 512, 1024, 2048]
   const currentForced = pw.settings.clock_force_quantum
 
@@ -874,17 +878,17 @@ function DiagnosticsLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Panel borderColor={`${T.green}25`}>
           <SectionLabel color={T.green}><Cpu size={13} weight="duotone" /> CPU & DSP Load</SectionLabel>
-          <CPUMeterPanel showBreakdown compact={false} />
+          <CPUMeterPanel nodeId={nodeId} showBreakdown compact={false} />
         </Panel>
         <Panel borderColor={`${T.amber}25`}>
           <SectionLabel color={T.amber}><Pulse size={13} weight="duotone" /> Latency Analysis</SectionLabel>
-          <LatencyDisplay showBreakdown compact={false} />
+          <LatencyDisplay nodeId={nodeId} showBreakdown compact={false} />
         </Panel>
       </div>
 
       <Panel borderColor={`${T.cyan}25`}>
         <SectionLabel color={T.cyan}><Pulse size={13} weight="duotone" /> Latency Monitor</SectionLabel>
-        <LatencyMonitorPanel />
+        <LatencyMonitorPanel nodeId={nodeId} />
       </Panel>
 
       {/* Row 2: Quantum Control */}
@@ -980,10 +984,15 @@ function DiagnosticsLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
 // ============================================================================
 
 export function AudioEnginePage() {
-  const pw = usePipeWire()
+  const { activeNodeId, nodes, localNodeId } = useCluster()
+  const allNodesSelected = activeNodeId === 'all'
+  const detailNodeId = allNodesSelected ? null : activeNodeId
+  const selectedNode = nodes.find((node) => node.nodeId === activeNodeId)
+  const remoteSelected = Boolean(activeNodeId && activeNodeId !== 'all' && activeNodeId !== localNodeId)
+  const pw = usePipeWire({ nodeId: detailNodeId })
   const [tab, setTab] = useState<Tab>('overview')
 
-  const overallColor = pw.overallStatus === 'ok' ? T.green
+  const overallColor = allNodesSelected ? T.accent : pw.overallStatus === 'ok' ? T.green
     : pw.overallStatus === 'warning' ? T.amber
     : pw.overallStatus === 'error' ? T.red : T.dim
 
@@ -1007,15 +1016,21 @@ export function AudioEnginePage() {
         </div>
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.3px' }}>
-            Audio Engine
+            {allNodesSelected
+              ? 'Audio Engine · All Nodes'
+              : remoteSelected
+                ? `Audio Engine · ${selectedNode?.hostname ?? activeNodeId}`
+                : 'Audio Engine'}
           </h1>
           <p style={{ margin: '2px 0 0', color: T.muted, fontSize: 12 }}>
-            Real-time engine monitoring, metering & signal path control
+            {allNodesSelected
+              ? 'Cluster-wide engine comparison across all nodes'
+              : 'Real-time engine monitoring, metering & signal path control'}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 11, color: T.dim }}>
-            {pw.isConnected ? '● WS' : '○ Poll'}
+            {allNodesSelected ? '● Cluster' : pw.isConnected ? '● WS' : '○ Poll'}
           </span>
           <span style={{
             padding: '4px 12px', borderRadius: 0, fontSize: 11, fontWeight: 700,
@@ -1027,6 +1042,33 @@ export function AudioEnginePage() {
           </span>
         </div>
       </header>
+
+      {(allNodesSelected || remoteSelected) && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginBottom: 18,
+          padding: '10px 14px',
+          border: `1px solid ${T.borderHi}`,
+          background: T.surface,
+          color: T.text,
+          fontSize: 12,
+          flexWrap: 'wrap',
+        }}>
+          <span>
+            {allNodesSelected
+              ? 'Viewing: All Nodes'
+              : `Viewing: ${selectedNode?.hostname ?? activeNodeId} (${activeNodeId})`}
+          </span>
+          {!allNodesSelected && (
+            <span style={{ color: T.muted }}>
+              {selectedNode?.latencyMs == null ? 'Peer latency unavailable' : `Peer latency ${selectedNode.latencyMs.toFixed(1)} ms`}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── Tab Bar ── */}
       <nav className="audio-engine-tabbar" role="tablist" style={{
@@ -1061,14 +1103,29 @@ export function AudioEnginePage() {
       </nav>
 
       {/* ── Single Source of Truth ── */}
-      <SourceOfTruthPanel />
+      {!allNodesSelected && <SourceOfTruthPanel nodeId={detailNodeId} />}
 
       {/* ── Layer Content ── */}
       <div>
-        {tab === 'overview' && <OverviewLayer pw={pw} />}
-        {tab === 'metering' && <MeteringLayer />}
-        {tab === 'routing' && <RoutingLayer pw={pw} />}
-        {tab === 'diagnostics' && <DiagnosticsLayer pw={pw} />}
+        {allNodesSelected ? (
+          tab === 'overview' ? (
+            <ClusterEngineGrid />
+          ) : (
+            <Panel borderColor={`${T.accent}25`}>
+              <SectionLabel color={T.accent}><Stack size={13} weight="duotone" /> Detail View Disabled</SectionLabel>
+              <div style={{ fontSize: 13, color: T.muted }}>
+                Select a specific node from the cluster selector to access metering, routing, and diagnostics panels.
+              </div>
+            </Panel>
+          )
+        ) : (
+          <>
+            {tab === 'overview' && <OverviewLayer pw={pw} />}
+            {tab === 'metering' && <MeteringLayer nodeId={detailNodeId} />}
+            {tab === 'routing' && <RoutingLayer pw={pw} />}
+            {tab === 'diagnostics' && <DiagnosticsLayer pw={pw} nodeId={detailNodeId} />}
+          </>
+        )}
       </div>
 
       {/* ── Footer ── */}
@@ -1077,10 +1134,12 @@ export function AudioEnginePage() {
         display: 'flex', justifyContent: 'space-between', fontSize: 11, color: T.dim,
       }}>
         <span>
-          PipeWire {pw.daemonVersion || '—'} · {pw.effectiveRate / 1000}kHz / {pw.effectiveQuantum}smp · {pw.totalLatencyMs.toFixed(1)}ms
+          {allNodesSelected
+            ? 'Cluster summary active · select a node for detailed engine telemetry'
+            : `PipeWire ${pw.daemonVersion || '—'} · ${pw.effectiveRate / 1000}kHz / ${pw.effectiveQuantum}smp · ${pw.totalLatencyMs.toFixed(1)}ms`}
         </span>
         <span>
-          {pw.metrics.timestamp ? new Date(pw.metrics.timestamp).toLocaleTimeString() : '—'}
+          {allNodesSelected ? 'All nodes' : pw.metrics.timestamp ? new Date(pw.metrics.timestamp).toLocaleTimeString() : '—'}
         </span>
       </footer>
     </div>

@@ -22,6 +22,7 @@ import { DesktopTower, Warning, Check, ArrowsClockwise } from '@phosphor-icons/r
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
+import { useCluster } from '../contexts/ClusterContext'
 
 // Host Machine hooks
 import {
@@ -40,8 +41,12 @@ import PerformanceMetrics from '../components/HostMachine/PerformanceMetrics'
 
 export function HostMachinePage() {
   const { pushToast } = useToasts()
+  const { activeNodeId, nodes, localNodeId } = useCluster()
   const [tabIndex, setTabIndex] = useState(0)
   const [autoRefresh, setAutoRefresh] = useState(true)
+  const allNodesSelected = activeNodeId === 'all'
+  const selectedNode = nodes.find((node) => node.nodeId === activeNodeId)
+  const remoteSelected = Boolean(activeNodeId && activeNodeId !== 'all' && activeNodeId !== localNodeId)
 
   // Use combined hook for all Host Machine data
   const {
@@ -49,13 +54,14 @@ export function HostMachinePage() {
     diskHealth,
     healthOverview,
     branding,
+    clusterComparison,
     isLoading,
     isError,
     error,
-  } = useHostMachinePageData(autoRefresh)
+  } = useHostMachinePageData(activeNodeId, autoRefresh)
 
   // Get manual refresh function
-  const refresh = useRefreshHostMachineData()
+  const refresh = useRefreshHostMachineData(activeNodeId)
 
   // Handle refresh with toast notification
   const handleManualRefresh = async () => {
@@ -71,17 +77,103 @@ export function HostMachinePage() {
     )
   }
 
-  if (isError || !hostInfo.data || !branding.data) {
+  if (isError || (!allNodesSelected && (!hostInfo.data || !branding.data))) {
     return (
       <Box sx={{ p: 3 }}>
         <PageHeader
-          title="Host Machine"
+          title={allNodesSelected ? 'Host Machine · All Nodes' : 'Host Machine'}
           subtitle="Hardware Information & Monitoring"
           icon={<DesktopTower size={32} weight="duotone" style={{ color: '#ef4444' }} />}
         />
         <Alert severity="error" sx={{ mt: 3 }}>
           {error instanceof Error ? error.message : 'Failed to load host machine information. Please try again later.'}
         </Alert>
+      </Box>
+    )
+  }
+
+  if (allNodesSelected) {
+    const comparisonRows = clusterComparison.data ?? []
+
+    return (
+      <Box className="host-machine-page" sx={{ pb: 4 }}>
+        <Container maxWidth="lg">
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+            <PageHeader
+              title="Host Machine · All Nodes"
+              subtitle="Cluster-wide hardware comparison"
+              icon={<DesktopTower size={32} weight="duotone" style={{ color: '#3b82f6' }} />}
+            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ArrowsClockwise size={16} weight="duotone" />}
+                onClick={handleManualRefresh}
+              >
+                Refresh
+              </Button>
+            </Box>
+          </Box>
+
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Comparing hardware, disk, and health data across the cluster. Select a node for full detailed diagnostics.
+          </Alert>
+
+          <Paper sx={{ p: 0, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.9fr 0.8fr 1fr 1.1fr 0.8fr', bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
+              {['Node', 'CPU', 'Memory', 'Disk', 'System', 'Audio Interfaces', 'Health'].map((heading) => (
+                <Box key={heading} sx={{ p: 1.5, fontSize: 11, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>
+                  {heading}
+                </Box>
+              ))}
+            </Box>
+
+            {comparisonRows.map((row, index) => {
+              const disk = row.diskHealth?.disks?.[0]
+              const interfaces = row.hardware?.audio_interfaces ?? []
+              const rowNode = nodes.find((node) => node.nodeId === row.nodeId)
+              return (
+                <Box
+                  key={row.nodeId}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: '1.2fr 1fr 0.9fr 0.8fr 1fr 1.1fr 0.8fr',
+                    borderBottom: index === comparisonRows.length - 1 ? 'none' : '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: rowNode?.isOnline === false ? 'action.hover' : 'transparent',
+                  }}
+                >
+                  <Box sx={{ p: 1.5 }}>
+                    <div style={{ fontWeight: 700 }}>{row.hostInfo?.hostname ?? rowNode?.hostname ?? row.nodeId}</div>
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>{row.nodeId}</div>
+                  </Box>
+                  <Box sx={{ p: 1.5, fontSize: 13 }}>
+                    {row.hostInfo ? `${row.hostInfo.cpu_cores}c / ${row.hostInfo.cpu_threads}t` : '—'}
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>{row.hostInfo?.cpu_model ?? 'Unknown CPU'}</div>
+                  </Box>
+                  <Box sx={{ p: 1.5, fontSize: 13 }}>
+                    {row.hostInfo ? `${(row.hostInfo.total_memory_mb / 1024).toFixed(1)} GB` : '—'}
+                  </Box>
+                  <Box sx={{ p: 1.5, fontSize: 13 }}>
+                    {disk ? `${disk.size_gb} GB` : '—'}
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>{disk?.health_status ?? row.diskHealth?.overall_health ?? 'Unknown'}</div>
+                  </Box>
+                  <Box sx={{ p: 1.5, fontSize: 13 }}>
+                    <div>{row.hostInfo?.manufacturer ?? 'Unknown'}</div>
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>{row.hostInfo?.kernel_version ?? 'Kernel unavailable'}</div>
+                  </Box>
+                  <Box sx={{ p: 1.5, fontSize: 13 }}>
+                    {interfaces.length > 0 ? interfaces.join(', ') : 'None reported'}
+                  </Box>
+                  <Box sx={{ p: 1.5, fontSize: 13, fontWeight: 700, color: row.healthOverview?.overall_health === 'critical' ? '#ef4444' : row.healthOverview?.overall_health === 'warning' ? '#f59e0b' : '#10b981' }}>
+                    {(row.healthOverview?.overall_health ?? 'unknown').toUpperCase()}
+                  </Box>
+                </Box>
+              )
+            })}
+          </Paper>
+        </Container>
       </Box>
     )
   }
@@ -107,7 +199,7 @@ export function HostMachinePage() {
         {/* Page Header with Refresh Controls */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <PageHeader
-            title="Host Machine"
+            title={remoteSelected ? `Host Machine · ${selectedNode?.hostname ?? activeNodeId}` : 'Host Machine'}
             subtitle="Complete Hardware Information & Real-Time Health Monitoring"
             icon={<DesktopTower size={32} weight="duotone" style={{ color: brandingData.brand_color }} />}
           />
@@ -139,6 +231,13 @@ export function HostMachinePage() {
             </Button>
           </Box>
         </Box>
+
+        {remoteSelected && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Viewing remote node {selectedNode?.hostname ?? activeNodeId} ({activeNodeId})
+            {selectedNode?.latencyMs == null ? '' : ` · peer latency ${selectedNode.latencyMs.toFixed(1)} ms`}
+          </Alert>
+        )}
 
         {/* Branding Panel */}
         {brandingData && <BrandingPanel branding={brandingData} />}
@@ -203,14 +302,14 @@ export function HostMachinePage() {
           {/* Tab 1: Specifications */}
           {tabIndex === 0 && (
             <Box sx={{ p: 3 }}>
-              <MachineSpecsCard machineInfo={machineInfo} />
+              <MachineSpecsCard machineInfo={machineInfo} nodeId={activeNodeId} />
             </Box>
           )}
 
           {/* Tab 2: Disk Health */}
           {tabIndex === 1 && diskHealthData && (
             <Box sx={{ p: 3 }}>
-              <DiskHealthCard diskHealth={diskHealthData} />
+              <DiskHealthCard diskHealth={diskHealthData} nodeId={activeNodeId} />
             </Box>
           )}
 
@@ -231,6 +330,7 @@ export function HostMachinePage() {
               <PerformanceMetrics
                 autoRefresh={autoRefresh}
                 onAutoRefreshChange={setAutoRefresh}
+                nodeId={activeNodeId}
               />
             </Box>
           )}

@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWsUrl, API_BASE } from '../../map2/api'
+import { clusterScopeKey, withNodeQuery, withNodeTopic } from '../utils/clusterTransport'
 
 export interface LufsLevels {
   momentary: number      // 400ms window (LUFS)
@@ -54,6 +55,8 @@ interface UseLoudnessOptions {
   targetLufs?: number
   /** True peak limit (e.g., -1 dBTP) */
   truePeakLimit?: number
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null
 }
 
 export function useLoudness(options: UseLoudnessOptions = {}) {
@@ -61,7 +64,8 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
     useWebSocket = true,
     pollingInterval = 100, // 10fps
     targetLufs = -14,
-    truePeakLimit = -1
+    truePeakLimit = -1,
+    nodeId,
   } = options
 
   const queryClient = useQueryClient()
@@ -69,19 +73,22 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
   const [stereo, setStereo] = useState<StereoInfo>(DEFAULT_STEREO)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const scopeKey = clusterScopeKey(nodeId)
 
   // WebSocket-based real-time updates
   useEffect(() => {
     if (!useWebSocket) return
 
     const ws = new WebSocket(getWsUrl())
+    const lufsTopic = withNodeTopic('lufs', nodeId)
+    const phaseTopic = withNodeTopic('phase', nodeId)
     wsRef.current = ws
 
     ws.onopen = () => {
       setIsConnected(true)
       // Subscribe to both LUFS and phase topics
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'lufs' }))
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'phase' }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic: lufsTopic }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic: phaseTopic }))
     }
 
     ws.onmessage = (event) => {
@@ -127,19 +134,19 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'lufs' }))
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'phase' }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic: lufsTopic }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic: phaseTopic }))
       }
       ws.close()
       wsRef.current = null
     }
-  }, [useWebSocket])
+  }, [nodeId, useWebSocket])
 
   // Polling — always enabled for initial load + fallback
   const lufsQuery = useQuery<LufsLevels>({
-    queryKey: ['loudness', 'lufs'],
+    queryKey: ['loudness', scopeKey, 'lufs'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/engine/loudness/lufs`)
+      const res = await fetch(withNodeQuery(`${API_BASE}/engine/loudness/lufs`, nodeId))
       if (!res.ok) throw new Error('Failed to fetch LUFS levels')
       const data = await res.json()
       return {
@@ -159,9 +166,9 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
 
   // Polling — always enabled for initial load + fallback
   const stereoQuery = useQuery<StereoInfo>({
-    queryKey: ['loudness', 'stereo'],
+    queryKey: ['loudness', scopeKey, 'stereo'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/engine/loudness/stereo`)
+      const res = await fetch(withNodeQuery(`${API_BASE}/engine/loudness/stereo`, nodeId))
       if (!res.ok) throw new Error('Failed to fetch stereo info')
       const data = await res.json()
       return {
@@ -178,12 +185,12 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
   // Reset integrated loudness mutation
   const resetMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`${API_BASE}/engine/loudness/reset`, { method: 'POST' })
+      const res = await fetch(withNodeQuery(`${API_BASE}/engine/loudness/reset`, nodeId), { method: 'POST' })
       if (!res.ok) throw new Error('Failed to reset integrated loudness')
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['loudness'] })
+      queryClient.invalidateQueries({ queryKey: ['loudness', scopeKey] })
     }
   })
 

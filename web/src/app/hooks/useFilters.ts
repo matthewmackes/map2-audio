@@ -6,6 +6,7 @@
 
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { clusterScopeKey, withNodeQuery } from '../utils/clusterTransport'
 
 // ========================================
 // Types
@@ -90,17 +91,23 @@ function parseEQParams(data: Record<string, unknown>): EQParams {
 // Hook
 // ========================================
 
-export function useFilters() {
+interface UseFiltersOptions {
+  nodeId?: string | null
+}
+
+export function useFilters(options: UseFiltersOptions = {}) {
+  const { nodeId } = options
   const queryClient = useQueryClient()
+  const scopeKey = clusterScopeKey(nodeId)
 
   // ========================================
   // Query for EQ parameters
   // ========================================
 
   const eqQuery = useQuery({
-    queryKey: ['eq', 'parameters'],
+    queryKey: ['eq', scopeKey, 'parameters'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/eq/parameters')
+      const res = await fetch(withNodeQuery('/api/engine/eq/parameters', nodeId))
       if (!res.ok) throw new Error('Failed to fetch EQ parameters')
       return parseEQParams(await res.json())
     },
@@ -120,7 +127,7 @@ export function useFilters() {
       if (params.q !== undefined) body.q = params.q
       if (params.enabled !== undefined) body.enabled = params.enabled
 
-      const res = await fetch(`/api/engine/eq/bands/${index}`, {
+      const res = await fetch(withNodeQuery(`/api/engine/eq/bands/${index}`, nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -129,7 +136,7 @@ export function useFilters() {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eq'] })
+      queryClient.invalidateQueries({ queryKey: ['eq', scopeKey] })
     }
   })
 
@@ -143,7 +150,7 @@ export function useFilters() {
       if (params.outputGain !== undefined) body.output_gain = params.outputGain
       if (params.bypass !== undefined) body.bypass = params.bypass
 
-      const res = await fetch('/api/engine/eq', {
+      const res = await fetch(withNodeQuery('/api/engine/eq', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -152,7 +159,7 @@ export function useFilters() {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eq'] })
+      queryClient.invalidateQueries({ queryKey: ['eq', scopeKey] })
     }
   })
 
@@ -161,9 +168,9 @@ export function useFilters() {
   // ========================================
 
   const frequencyResponseQuery = useQuery({
-    queryKey: ['eq', 'frequency-response'],
+    queryKey: ['eq', scopeKey, 'frequency-response'],
     queryFn: async (): Promise<FrequencyResponseData> => {
-      const res = await fetch('/api/engine/eq/frequency-response/default')
+      const res = await fetch(withNodeQuery('/api/engine/eq/frequency-response/default', nodeId))
       if (!res.ok) throw new Error('Failed to fetch frequency response')
       return res.json()
     },
@@ -241,7 +248,7 @@ export function useFilters() {
     updateEQ: updateEQ.mutate,
 
     // Invalidate to refresh
-    refresh: () => queryClient.invalidateQueries({ queryKey: ['eq'] })
+    refresh: () => queryClient.invalidateQueries({ queryKey: ['eq', scopeKey] })
   }
 }
 

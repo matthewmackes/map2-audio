@@ -35,6 +35,10 @@ export interface TesiraDeviceSummary {
   fault_count: number;
   avb_stream_count: number;
   ptp_state: string | null;
+  source_node_id?: string | null;
+  source_hostname?: string | null;
+  discovered_by_node_ids?: string[];
+  discovered_by_hosts?: string[];
 }
 
 export interface TesiraDeviceDetail extends TesiraDeviceSummary {
@@ -61,6 +65,7 @@ export interface TesiraPtpTopologyNode {
   ptp_state: string;
   offset_ns: number | null;
   grandmaster_id: string | null;
+  source_node_id?: string | null;
 }
 
 export interface TesiraPtpTopologyResponse {

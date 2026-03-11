@@ -104,6 +104,8 @@ export interface AvbDiscoveredDevice {
   device_type: DeviceType;
   node_address: string;
   host?: string;
+  node_id?: string | null;
+  source_node_id?: string | null;
   audio_format: string;
   channels: number;
   sample_rate: number;
@@ -163,6 +165,7 @@ export interface AvbAvdeccEntity {
   entity_name: string;
   firmware_version: string;
   mac_address: string;
+  source_node_id?: string | null;
   capabilities: {
     talker_streams: number;
     listener_streams: number;

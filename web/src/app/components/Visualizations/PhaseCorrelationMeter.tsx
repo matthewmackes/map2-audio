@@ -15,14 +15,17 @@ interface PhaseCorrelationMeterProps {
   orientation?: 'horizontal' | 'vertical';
   /** Custom class name */
   className?: string;
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null;
 }
 
 export const PhaseCorrelationMeter: React.FC<PhaseCorrelationMeterProps> = ({
   showStereoInfo = true,
   orientation = 'horizontal',
-  className = ''
+  className = '',
+  nodeId,
 }) => {
-  const { stereo, getPhaseStatus } = useLoudness();
+  const { stereo, getPhaseStatus } = useLoudness({ nodeId });
 
   const phaseStatus = getPhaseStatus();
   const correlation = stereo.phaseCorrelation;

@@ -12,11 +12,13 @@ import { GainReductionMeter } from './GainReductionMeter'
 interface GateCardProps {
   accentColor?: string
   showTitle?: boolean
+  nodeId?: string | null
 }
 
 export function GateCard({
   accentColor = '#44aaff',
-  showTitle = true
+  showTitle = true,
+  nodeId,
 }: GateCardProps) {
   const {
     gate,
@@ -26,7 +28,7 @@ export function GateCard({
     setGateRelease,
     setGateBypass,
     isConnected
-  } = useDynamics()
+  } = useDynamics({ nodeId })
 
   const { parameters, metering, isLoading } = gate
 

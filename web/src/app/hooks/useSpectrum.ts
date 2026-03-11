@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getWsUrl, API_BASE } from '../../map2/api'
+import { clusterScopeKey, withNodeQuery, withNodeTopic } from '../utils/clusterTransport'
 
 export interface SpectrumData {
   magnitudes: number[]
@@ -32,13 +33,16 @@ interface UseSpectrumOptions {
   pollingInterval?: number
   /** Callback for each spectrum update */
   onUpdate?: (data: SpectrumData) => void
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null
 }
 
 export function useSpectrum(options: UseSpectrumOptions = {}) {
   const {
     useWebSocket = true,
     pollingInterval = 33, // ~30fps
-    onUpdate
+    onUpdate,
+    nodeId,
   } = options
 
   const [spectrum, setSpectrum] = useState<SpectrumData>(DEFAULT_SPECTRUM)
@@ -46,18 +50,20 @@ export function useSpectrum(options: UseSpectrumOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null)
   const onUpdateRef = useRef(onUpdate)
   onUpdateRef.current = onUpdate
+  const scopeKey = clusterScopeKey(nodeId)
 
   // WebSocket-based real-time updates
   useEffect(() => {
     if (!useWebSocket) return
 
     const ws = new WebSocket(getWsUrl())
+    const topic = withNodeTopic('spectrum', nodeId)
     wsRef.current = ws
 
     ws.onopen = () => {
       setIsConnected(true)
       // Subscribe to spectrum topic
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'spectrum' }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic }))
     }
 
     ws.onmessage = (event) => {
@@ -90,18 +96,18 @@ export function useSpectrum(options: UseSpectrumOptions = {}) {
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'spectrum' }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
       }
       ws.close()
       wsRef.current = null
     }
-  }, [useWebSocket])
+  }, [nodeId, useWebSocket])
 
   // Polling — always enabled for initial load + fallback
   const pollingQuery = useQuery<SpectrumData>({
-    queryKey: ['spectrum'],
+    queryKey: ['spectrum', scopeKey],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/engine/spectrum`)
+      const res = await fetch(withNodeQuery(`${API_BASE}/engine/spectrum`, nodeId))
       if (!res.ok) throw new Error('Failed to fetch spectrum')
       const data = await res.json()
       return {

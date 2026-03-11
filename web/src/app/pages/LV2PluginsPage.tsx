@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
 import { Package, DownloadSimple, Trash, ArrowsClockwise, CheckCircle, XCircle, SpinnerGap, CaretDown, CaretUp, EyeSlash, Eye, Faders, Lightning, WaveSine, Gauge, Warning, Check, Plug } from '@phosphor-icons/react'
 import { pluginsApi } from '../../map2/api'
-import type { Plugin } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+import { useCluster } from '../contexts/ClusterContext'
+import { withNodeQuery } from '../utils/clusterTransport'
+import { usePluginBrowser, type PluginInfo } from '../hooks/usePluginBrowser'
 
 interface PluginPack {
   id: string
@@ -20,60 +22,75 @@ interface PluginPack {
   can_uninstall?: boolean  // Whether this pack can be uninstalled via package manager
 }
 
-interface PluginDiscoverResponse {
-  plugins: Plugin[]
-  cached?: boolean
+function formatNodeName(node: { hostname: string; role: string; isLocal: boolean }) {
+  if (node.isLocal) return `${node.hostname} (Local)`
+  return `${node.hostname} · ${node.role}`
 }
 
 export function LV2PluginsPage() {
+  const { activeNodeId, nodes, localNodeId, isClusterMode, setActiveNode } = useCluster()
   const queryClient = useQueryClient()
   const [pluginPacks, setPluginPacks] = useState<PluginPack[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshingPlugins, setRefreshingPlugins] = useState(false)
+  const [clusterView, setClusterView] = useState(activeNodeId === 'all')
 
   // Plugin management state (bulk select/delete)
   const [selectedUris, setSelectedUris] = useState<Set<string>>(new Set())
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [managementSearchTerm, setManagementSearchTerm] = useState('')
   const [managementSortBy, setManagementSortBy] = useState<'name' | 'author' | 'format'>('name')
+  const detailNodeId = activeNodeId === 'all' ? null : activeNodeId
+  const selectedNode = nodes.find((node) => node.nodeId === activeNodeId)
+  const remoteSelected = Boolean(activeNodeId && activeNodeId !== 'all' && activeNodeId !== localNodeId)
+  const clusterViewActive = activeNodeId === 'all' || clusterView
+  const pluginBrowser = usePluginBrowser({ nodeId: clusterViewActive ? 'all' : detailNodeId })
+  const availabilityNodes = useMemo(
+    () => (nodes.length ? nodes : [{ nodeId: localNodeId, hostname: 'local', role: 'LOCAL', isLocal: true, isOnline: true, latencyMs: 0, lastSeen: null }]),
+    [localNodeId, nodes]
+  )
 
-  // Plugin discovery query
-  const pluginsQuery = useQuery<PluginDiscoverResponse>({
-    queryKey: ['plugins', 'discover'],
-    queryFn: () => pluginsApi.discover(),
-    staleTime: 60000,
-  })
+  useEffect(() => {
+    if (activeNodeId === 'all') {
+      setClusterView(true)
+    }
+  }, [activeNodeId])
+
+  useEffect(() => {
+    setSelectedUris(new Set())
+    setShowDeleteConfirm(false)
+  }, [activeNodeId, clusterViewActive])
 
   // Refresh plugins with force refresh to pick up newly installed plugins
   const refreshPlugins = useCallback(async () => {
     setRefreshingPlugins(true)
     try {
-      // Call API with refresh=true to bypass backend cache
-      await pluginsApi.discover(true)
-      // Invalidate React Query cache to refetch
-      await queryClient.invalidateQueries({ queryKey: ['plugins', 'discover'] })
+      if (!clusterViewActive) {
+        await pluginsApi.discover(true, detailNodeId)
+      }
+      await queryClient.invalidateQueries({ queryKey: ['plugins'] })
     } catch (err) {
       console.error('Failed to refresh plugins:', err)
     } finally {
       setRefreshingPlugins(false)
     }
-  }, [queryClient])
+  }, [clusterViewActive, detailNodeId, queryClient])
 
   // Filtered plugins for management table
   const managementPlugins = useMemo(() => {
-    const list = pluginsQuery.data?.plugins || []
+    const list = pluginBrowser.allPlugins || []
     
     // Filter by search term
-    const filtered = list.filter((p: Plugin) =>
+    const filtered = list.filter((p: PluginInfo) =>
       getDisplayPluginName(p.name, p.uri).toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
       sanitizeRestrictedDisplayText(p.author || '').toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
       p.uri.toLowerCase().includes(managementSearchTerm.toLowerCase())
     )
 
     // Sort
-    filtered.sort((a: Plugin, b: Plugin) => {
+    filtered.sort((a: PluginInfo, b: PluginInfo) => {
       switch (managementSortBy) {
         case 'author':
           return sanitizeRestrictedDisplayText(a.author || '').localeCompare(sanitizeRestrictedDisplayText(b.author || ''))
@@ -88,7 +105,28 @@ export function LV2PluginsPage() {
     })
 
     return filtered
-  }, [pluginsQuery.data, managementSearchTerm, managementSortBy])
+  }, [pluginBrowser.allPlugins, managementSearchTerm, managementSortBy])
+
+  const clusterPlugins = useMemo(() => {
+    if (!clusterViewActive) return []
+    return managementPlugins
+  }, [clusterViewActive, managementPlugins])
+  const clusterNodeCount = availabilityNodes.length
+  const fullyReplicatedCount = useMemo(
+    () => clusterPlugins.filter((plugin) => (plugin.installedOn?.length ?? 0) >= clusterNodeCount).length,
+    [clusterNodeCount, clusterPlugins]
+  )
+  const partiallyReplicatedCount = useMemo(
+    () => clusterPlugins.filter((plugin) => {
+      const installedCount = plugin.installedOn?.length ?? 0
+      return installedCount > 0 && installedCount < clusterNodeCount
+    }).length,
+    [clusterNodeCount, clusterPlugins]
+  )
+  const missingInstallSlots = useMemo(
+    () => clusterPlugins.reduce((total, plugin) => total + Math.max(clusterNodeCount - (plugin.installedOn?.length ?? 0), 0), 0),
+    [clusterNodeCount, clusterPlugins]
+  )
 
   // Delete mutation for plugin management
   const deleteMutation = useMutation({
@@ -98,7 +136,7 @@ export function LV2PluginsPage() {
       
       for (const uri of uris) {
         try {
-          const result = await pluginsApi.delete(uri)
+          const result = await pluginsApi.delete(uri, detailNodeId)
           successes.push(result.uri)
           console.log(`Deleted: ${uri}`, result)
         } catch (error: any) {
@@ -126,7 +164,7 @@ export function LV2PluginsPage() {
     if (selectedUris.size === managementPlugins.length) {
       setSelectedUris(new Set())
     } else {
-      setSelectedUris(new Set(managementPlugins.map((p: Plugin) => p.uri)))
+      setSelectedUris(new Set(managementPlugins.map((p: PluginInfo) => p.uri)))
     }
   }, [managementPlugins, selectedUris.size])
 
@@ -145,11 +183,31 @@ export function LV2PluginsPage() {
     deleteMutation.mutate(Array.from(selectedUris))
   }, [selectedUris, deleteMutation])
 
+  const handleFocusMissingNode = useCallback((plugin: PluginInfo, nodeId: string) => {
+    const targetNode = availabilityNodes.find((node) => node.nodeId === nodeId)
+    if (!targetNode) return
+
+    const shouldSwitch = window.confirm(
+      `${getDisplayPluginName(plugin.name, plugin.uri)} is not installed on ${formatNodeName(targetNode)}.\n\nSwitch to that node and open package management so you can install the required plugin pack?`
+    )
+    if (!shouldSwitch) return
+
+    setClusterView(false)
+    setActiveNode(nodeId)
+  }, [availabilityNodes, setActiveNode])
+
   const loadPluginPacks = useCallback(async () => {
+    if (clusterViewActive) {
+      setPluginPacks([])
+      setLoading(false)
+      setError(null)
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/plugin-packages/list')
+      const response = await fetch(withNodeQuery('/api/plugin-packages/list', detailNodeId))
       if (!response.ok) {
         throw new Error(`API returned ${response.status}: ${response.statusText}`)
       }
@@ -165,7 +223,7 @@ export function LV2PluginsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [clusterViewActive, detailNodeId])
 
   useEffect(() => {
     loadPluginPacks()
@@ -173,7 +231,7 @@ export function LV2PluginsPage() {
 
   const handleInstall = async (packId: string) => {
     try {
-      await fetch(`/api/plugin-packages/${packId}/install`, { method: 'POST' })
+      await fetch(withNodeQuery(`/api/plugin-packages/${packId}/install`, detailNodeId), { method: 'POST' })
       setPluginPacks(prev => prev.map(p =>
         p.id === packId ? { ...p, status: 'installing' as const } : p
       ))
@@ -186,7 +244,7 @@ export function LV2PluginsPage() {
   const handleUninstall = async (packId: string) => {
     if (!confirm('Are you sure you want to uninstall this plugin pack?')) return
     try {
-      await fetch(`/api/plugin-packages/${packId}/uninstall`, { method: 'POST' })
+      await fetch(withNodeQuery(`/api/plugin-packages/${packId}/uninstall`, detailNodeId), { method: 'POST' })
       setPluginPacks(prev => prev.map(p =>
         p.id === packId ? { ...p, status: 'uninstalling' as const } : p
       ))
@@ -199,7 +257,7 @@ export function LV2PluginsPage() {
   const handleDisable = async (packId: string) => {
     if (!confirm('Are you sure you want to disable this plugin pack? The plugins will be moved to a disabled folder.')) return
     try {
-      await fetch(`/api/plugin-packages/${packId}/disable`, { method: 'POST' })
+      await fetch(withNodeQuery(`/api/plugin-packages/${packId}/disable`, detailNodeId), { method: 'POST' })
       setPluginPacks(prev => prev.map(p =>
         p.id === packId ? { ...p, status: 'disabling' as const } : p
       ))
@@ -211,7 +269,7 @@ export function LV2PluginsPage() {
 
   const handleEnable = async (packId: string) => {
     try {
-      await fetch(`/api/plugin-packages/${packId}/enable`, { method: 'POST' })
+      await fetch(withNodeQuery(`/api/plugin-packages/${packId}/enable`, detailNodeId), { method: 'POST' })
       setPluginPacks(prev => prev.map(p =>
         p.id === packId ? { ...p, status: 'enabling' as const } : p
       ))
@@ -224,7 +282,7 @@ export function LV2PluginsPage() {
   const pollPackStatus = (packId: string) => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/plugin-packages/${packId}/status`)
+        const response = await fetch(withNodeQuery(`/api/plugin-packages/${packId}/status`, detailNodeId))
         const data = await response.json()
         setPluginPacks(prev => prev.map(p =>
           p.id === packId ? { ...p, status: data.status, error_message: data.error_message } : p
@@ -251,19 +309,101 @@ export function LV2PluginsPage() {
     <div className="stack">
       <PageHeader
         title="LV2 Plugin Pack Manager"
-        subtitle="Install and manage curated LV2 plugin collections from system packages"
+        subtitle={
+          clusterViewActive
+            ? 'Unified plugin catalog with per-node availability across the cluster'
+            : remoteSelected
+              ? `Install and manage curated LV2 plugin collections on ${selectedNode?.hostname ?? detailNodeId}`
+              : 'Install and manage curated LV2 plugin collections from system packages'
+        }
         icon={<Plug size={32} style={{ color: '#3b82f6' }} />}
         actions={
-          <button
-            className="btn btn-ghost"
-            onClick={loadPluginPacks}
-            disabled={loading}
-          >
-            {loading ? <SpinnerGap weight="bold" size={16} className="animate-spin" /> : <ArrowsClockwise weight="duotone" size={16} />}
-            Refresh
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {isClusterMode && (
+              <button
+                className={clusterViewActive ? 'btn btn-primary' : 'btn btn-ghost'}
+                onClick={() => {
+                  if (activeNodeId === 'all') return
+                  setClusterView((prev) => !prev)
+                }}
+                disabled={activeNodeId === 'all'}
+                title={activeNodeId === 'all' ? 'All Nodes view already uses the unified cluster catalog' : 'Toggle unified cluster catalog'}
+              >
+                {clusterViewActive ? 'Cluster View On' : 'Cluster View'}
+              </button>
+            )}
+            <button
+              className="btn btn-ghost"
+              onClick={clusterViewActive ? refreshPlugins : loadPluginPacks}
+              disabled={clusterViewActive ? pluginBrowser.isLoading : loading}
+            >
+              {(clusterViewActive ? pluginBrowser.isLoading : loading) ? <SpinnerGap weight="bold" size={16} className="animate-spin" /> : <ArrowsClockwise weight="duotone" size={16} />}
+              Refresh
+            </button>
+          </div>
         }
       />
+
+      {isClusterMode && (
+        <div
+          className="card"
+          style={{
+            background: clusterViewActive
+              ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(30, 41, 59, 0.92))'
+              : remoteSelected
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(30, 41, 59, 0.92))'
+                : 'linear-gradient(135deg, rgba(71, 85, 105, 0.18), rgba(15, 23, 42, 0.92))',
+            borderColor: clusterViewActive
+              ? 'rgba(96, 165, 250, 0.35)'
+              : remoteSelected
+                ? 'rgba(52, 211, 153, 0.35)'
+                : 'rgba(148, 163, 184, 0.25)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.2, color: '#94a3b8', marginBottom: 8 }}>
+                Cluster Target
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#f8fafc' }}>
+                {activeNodeId === 'all'
+                  ? `All Nodes · ${clusterNodeCount} nodes`
+                  : clusterViewActive
+                    ? `Cluster catalog from ${selectedNode ? formatNodeName(selectedNode) : formatNodeName(availabilityNodes[0])}`
+                    : selectedNode
+                      ? formatNodeName(selectedNode)
+                      : formatNodeName(availabilityNodes[0])}
+              </div>
+              <p style={{ margin: '8px 0 0', color: '#cbd5e1', fontSize: 14, maxWidth: 760, lineHeight: 1.6 }}>
+                {clusterViewActive
+                  ? 'This view is read-only. Empty node dots mark missing plugin installs. Click one to switch into that node and open package management for remediation.'
+                  : remoteSelected
+                    ? 'Package installs, uninstall actions, and scans now run remotely through the cluster proxy for the selected node.'
+                    : 'Use Cluster View to compare plugin availability across every node before deploying content or presets.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignContent: 'flex-start' }}>
+              {availabilityNodes.map((node) => (
+                <button
+                  key={node.nodeId}
+                  type="button"
+                  className={activeNodeId === node.nodeId ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'}
+                  onClick={() => {
+                    setClusterView(false)
+                    setActiveNode(node.nodeId === localNodeId ? null : node.nodeId)
+                  }}
+                  style={{
+                    borderColor: node.isOnline ? undefined : 'rgba(239, 68, 68, 0.35)',
+                    opacity: node.isOnline ? 1 : 0.7,
+                  }}
+                >
+                  {node.hostname}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Native Plugins Warning */}
       <div className="card" style={{
@@ -400,26 +540,53 @@ export function LV2PluginsPage() {
         borderColor: 'rgba(37, 99, 235, 0.3)'
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 20 }}>
-          <div style={{ textAlign: 'center', padding: 16 }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#60a5fa' }}>{installedCount}</div>
-            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Installed</div>
-          </div>
-          <div style={{ textAlign: 'center', padding: 16 }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#6b7280' }}>{disabledCount}</div>
-            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Disabled</div>
-          </div>
-          <div style={{ textAlign: 'center', padding: 16 }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#a78bfa' }}>{pluginPacks.length}</div>
-            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Total</div>
-          </div>
-          <div style={{ textAlign: 'center', padding: 16 }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#4ade80' }}>{totalPlugins}</div>
-            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Plugins Active</div>
-          </div>
-          <div style={{ textAlign: 'center', padding: 16 }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#f59e0b' }}>{packCategories.length}</div>
-            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Categories</div>
-          </div>
+          {clusterViewActive ? (
+            <>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#60a5fa' }}>{clusterPlugins.length}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Catalog Entries</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#4ade80' }}>{fullyReplicatedCount}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>On Every Node</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#f59e0b' }}>{partiallyReplicatedCount}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Partial Coverage</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#a78bfa' }}>{clusterNodeCount}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#ef4444' }}>{missingInstallSlots}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Missing Installs</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#60a5fa' }}>{installedCount}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Installed</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#6b7280' }}>{disabledCount}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Disabled</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#a78bfa' }}>{pluginPacks.length}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Total</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#4ade80' }}>{totalPlugins}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Plugins Active</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#f59e0b' }}>{packCategories.length}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Categories</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -428,7 +595,11 @@ export function LV2PluginsPage() {
         <div className="section-heading">
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Plugin Management</h2>
-            <p className="subtitle">{managementPlugins.length} plugins installed</p>
+            <p className="subtitle">
+              {clusterViewActive
+                ? `${managementPlugins.length} plugins across ${clusterNodeCount} nodes`
+                : `${managementPlugins.length} plugins installed`}
+            </p>
           </div>
         </div>
 
@@ -467,23 +638,31 @@ export function LV2PluginsPage() {
             {/* Actions */}
             <div className="lv2-management-toolbar-row lv2-management-toolbar-row--actions" style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
               <div className="lv2-management-toolbar-actions-left" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button
-                  onClick={toggleSelectAll}
-                  className="btn btn-ghost btn-sm lv2-management-action-btn"
-                >
-                  {selectedUris.size === managementPlugins.length && managementPlugins.length > 0
-                    ? 'Deselect All'
-                    : 'Select All'}
-                </button>
-                <span style={{ color: '#94a3b8', fontSize: 13 }}>
-                  {selectedUris.size} of {managementPlugins.length} selected
-                </span>
+                {clusterViewActive ? (
+                  <span style={{ color: '#94a3b8', fontSize: 13 }}>
+                    Unified catalog is read-only. Select a specific node to scan, install packs, or delete plugins.
+                  </span>
+                ) : (
+                  <>
+                    <button
+                      onClick={toggleSelectAll}
+                      className="btn btn-ghost btn-sm lv2-management-action-btn"
+                    >
+                      {selectedUris.size === managementPlugins.length && managementPlugins.length > 0
+                        ? 'Deselect All'
+                        : 'Select All'}
+                    </button>
+                    <span style={{ color: '#94a3b8', fontSize: 13 }}>
+                      {selectedUris.size} of {managementPlugins.length} selected
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="lv2-management-toolbar-actions-right" style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={refreshPlugins}
-                  disabled={pluginsQuery.isLoading || refreshingPlugins}
+                  disabled={pluginBrowser.isLoading || refreshingPlugins}
                   className="btn btn-ghost btn-sm lv2-management-action-btn"
                   style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
@@ -501,11 +680,11 @@ export function LV2PluginsPage() {
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  disabled={selectedUris.size === 0 || deleteMutation.isPending}
+                  disabled={clusterViewActive || selectedUris.size === 0 || deleteMutation.isPending}
                   className="btn btn-sm lv2-management-action-btn"
                   style={{ 
-                    background: selectedUris.size > 0 ? 'rgba(220, 38, 38, 0.8)' : 'rgba(71, 85, 105, 0.5)',
-                    color: selectedUris.size > 0 ? '#fff' : '#64748b',
+                    background: !clusterViewActive && selectedUris.size > 0 ? 'rgba(220, 38, 38, 0.8)' : 'rgba(71, 85, 105, 0.5)',
+                    color: !clusterViewActive && selectedUris.size > 0 ? '#fff' : '#64748b',
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 6 
@@ -632,13 +811,13 @@ export function LV2PluginsPage() {
           border: '1px solid rgba(71, 85, 105, 0.3)',
           overflow: 'hidden'
         }}>
-          {pluginsQuery.isLoading ? (
+          {pluginBrowser.isLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
               <SpinnerGap weight="bold" className="animate-spin" size={32} style={{ color: '#3b82f6' }} />
             </div>
-          ) : pluginsQuery.error ? (
+          ) : pluginBrowser.isError ? (
             <div style={{ padding: 32, color: '#f87171', textAlign: 'center' }}>
-              Failed to load plugins
+              Failed to load plugins{pluginBrowser.error instanceof Error ? `: ${pluginBrowser.error.message}` : ''}
             </div>
           ) : managementPlugins.length === 0 ? (
             <div style={{ padding: 32, color: '#94a3b8', textAlign: 'center' }}>
@@ -649,23 +828,41 @@ export function LV2PluginsPage() {
               <table className="lv2-management-table" style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
                 <thead style={{ background: 'rgba(15, 23, 42, 0.8)', borderBottom: '1px solid rgba(71, 85, 105, 0.5)', position: 'sticky', top: 0 }}>
                   <tr>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', width: 32 }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedUris.size === managementPlugins.length && managementPlugins.length > 0}
-                        onChange={toggleSelectAll}
-                        style={{ width: 16, height: 16, borderRadius: 4, cursor: 'pointer' }}
-                      />
-                    </th>
+                    {!clusterViewActive && (
+                      <th style={{ padding: '12px 16px', textAlign: 'left', width: 32 }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedUris.size === managementPlugins.length && managementPlugins.length > 0}
+                          onChange={toggleSelectAll}
+                          style={{ width: 16, height: 16, borderRadius: 4, cursor: 'pointer' }}
+                        />
+                      </th>
+                    )}
                     <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Name</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Author</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Format</th>
                     <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Category</th>
+                    {clusterViewActive ? (
+                      <>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Version</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Installed On</th>
+                      </>
+                    ) : (
+                      <>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Author</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Format</th>
+                      </>
+                    )}
                     <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>URI</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {managementPlugins.map((plugin: Plugin, idx: number) => (
+                  {managementPlugins.map((plugin: PluginInfo, idx: number) => {
+                    const installedNodes = new Set(
+                      clusterViewActive
+                        ? (plugin.installedOn ?? [])
+                        : [detailNodeId ?? localNodeId]
+                    )
+
+                    return (
                     <tr
                       key={plugin.uri}
                       className="lv2-management-row"
@@ -689,33 +886,85 @@ export function LV2PluginsPage() {
                         }
                       }}
                     >
-                      <td data-label="Select" style={{ padding: '12px 16px' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedUris.has(plugin.uri)}
-                          onChange={() => toggleSelect(plugin.uri)}
-                          style={{ width: 16, height: 16, borderRadius: 4, cursor: 'pointer' }}
-                        />
-                      </td>
+                      {!clusterViewActive && (
+                        <td data-label="Select" style={{ padding: '12px 16px' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedUris.has(plugin.uri)}
+                            onChange={() => toggleSelect(plugin.uri)}
+                            style={{ width: 16, height: 16, borderRadius: 4, cursor: 'pointer' }}
+                          />
+                        </td>
+                      )}
                       <td data-label="Name" style={{ padding: '12px 16px', fontWeight: 500, color: '#fff' }}>{getDisplayPluginName(plugin.name, plugin.uri)}</td>
-                      <td data-label="Author" style={{ padding: '12px 16px', color: '#94a3b8' }}>{sanitizeRestrictedDisplayText(plugin.author || '') || '-'}</td>
-                      <td data-label="Format" style={{ padding: '12px 16px' }}>
-                        <span style={{
-                          padding: '2px 8px',
-                          background: 'rgba(30, 58, 138, 0.5)',
-                          color: '#93c5fd',
-                          borderRadius: 4,
-                          fontSize: 11
-                        }}>
-                          {plugin.format || 'LV2'}
-                        </span>
-                      </td>
                       <td data-label="Category" style={{ padding: '12px 16px', color: '#94a3b8' }}>{plugin.category || '-'}</td>
+                      {clusterViewActive ? (
+                        <>
+                          <td data-label="Version" style={{ padding: '12px 16px', color: '#cbd5e1' }}>{plugin.version || 'unknown'}</td>
+                          <td data-label="Installed On" style={{ padding: '12px 16px' }}>
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                              {availabilityNodes.map((node) => {
+                                const installed = installedNodes.has(node.nodeId)
+                                return (
+                                  <button
+                                    key={`${plugin.uri}-${node.nodeId}`}
+                                    type="button"
+                                    onClick={() => {
+                                      if (!installed) {
+                                        handleFocusMissingNode(plugin, node.nodeId)
+                                      }
+                                    }}
+                                    title={installed ? `${getDisplayPluginName(plugin.name, plugin.uri)} is installed on ${formatNodeName(node)}` : `Missing on ${formatNodeName(node)}. Click to switch there and install.`}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      background: 'transparent',
+                                      border: 'none',
+                                      padding: 0,
+                                      cursor: installed ? 'default' : 'pointer',
+                                      color: installed ? '#86efac' : '#fca5a5',
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        width: 12,
+                                        height: 12,
+                                        borderRadius: 9999,
+                                        border: `2px solid ${installed ? '#22c55e' : '#ef4444'}`,
+                                        background: installed ? '#22c55e' : 'transparent',
+                                        boxShadow: installed ? '0 0 0 4px rgba(34, 197, 94, 0.14)' : 'none',
+                                      }}
+                                    />
+                                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{node.hostname}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td data-label="Author" style={{ padding: '12px 16px', color: '#94a3b8' }}>{sanitizeRestrictedDisplayText(plugin.author || '') || '-'}</td>
+                          <td data-label="Format" style={{ padding: '12px 16px' }}>
+                            <span style={{
+                              padding: '2px 8px',
+                              background: 'rgba(30, 58, 138, 0.5)',
+                              color: '#93c5fd',
+                              borderRadius: 4,
+                              fontSize: 11
+                            }}>
+                              {plugin.format || 'LV2'}
+                            </span>
+                          </td>
+                        </>
+                      )}
                       <td data-label="URI" style={{ padding: '12px 16px', color: '#64748b', fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={plugin.uri}>
                         {plugin.uri}
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -724,6 +973,7 @@ export function LV2PluginsPage() {
       </div>
 
       {/* Quick Status Row */}
+      {!clusterViewActive && (
       <div className="card" style={{ padding: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <Package weight="duotone" size={16} style={{ color: '#60a5fa' }} />
@@ -782,9 +1032,10 @@ export function LV2PluginsPage() {
           </button>
         </div>
       </div>
+      )}
 
       {/* Plugin Packs Grid */}
-      {expanded && (
+      {!clusterViewActive && expanded && (
         <div className="card">
           <h3 style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Package weight="duotone" size={16} />
@@ -976,8 +1227,9 @@ export function LV2PluginsPage() {
         </h4>
         <p style={{ fontSize: 12, color: '#6b7280', margin: 0, lineHeight: 1.6 }}>
           LV2 (LADSPA Version 2) plugins are audio processing modules that can be loaded into the signal chain.
-          These curated packs are installed via apt package manager and provide high-quality effects, instruments,
-          and utilities. Installation requires sudo privileges and an internet connection.
+          {clusterViewActive
+            ? ' Cluster View merges inventory from every node so you can see where a processor is present before you deploy presets or content across the fleet.'
+            : ' These curated packs are installed via apt package manager and provide high-quality effects, instruments, and utilities. Installation requires sudo privileges and an internet connection.'}
         </p>
       </div>
     </div>

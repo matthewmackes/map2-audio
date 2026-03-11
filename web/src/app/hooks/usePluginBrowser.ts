@@ -8,6 +8,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames';
+import { withNodeQuery } from '../utils/clusterTransport';
 
 // Plugin format types
 export type PluginFormat = 'VST3' | 'AudioUnit' | 'LV2' | 'LADSPA' | 'All';
@@ -30,6 +31,7 @@ export interface PluginInfo {
   latencySamples: number;
   supportsDoublePrecision: boolean;
   numSidechainBuses: number;
+  installedOn?: string[];
 }
 
 // Plugin scan status
@@ -57,11 +59,14 @@ interface UsePluginBrowserOptions {
   refreshInterval?: number;
   /** Initial format filter */
   initialFormat?: PluginFormat;
+  /** Cluster node to target. Use `all` for unified cluster catalog. */
+  nodeId?: string | null;
 }
 
 export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
-  const { refreshInterval = 0, initialFormat = 'All' } = options;
+  const { refreshInterval = 0, initialFormat = 'All', nodeId } = options;
   const queryClient = useQueryClient();
+  const scopeKey = nodeId ?? 'local'
 
   // Filter state
   const [filter, setFilter] = useState<PluginFilter>({
@@ -76,14 +81,58 @@ export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
     brand: sanitizeRestrictedDisplayText(plugin.brand),
   }), []);
 
+  const mapClusterPlugin = useCallback((plugin: {
+    uri: string
+    name: string
+    category: string
+    version?: string
+    format?: string | null
+    installed_on?: string[]
+  }): PluginInfo => sanitizePluginInfo({
+    uri: plugin.uri,
+    name: plugin.name,
+    author: '',
+    brand: '',
+    category: plugin.category || 'Unknown',
+    version: plugin.version || 'unknown',
+    format: (plugin.format as PluginFormat | undefined) || 'LV2',
+    formatName: plugin.format || 'Cluster',
+    filePath: '',
+    audioInputs: 0,
+    audioOutputs: 0,
+    hasMidiInput: false,
+    hasMidiOutput: false,
+    latencySamples: 0,
+    supportsDoublePrecision: false,
+    numSidechainBuses: 0,
+    installedOn: plugin.installed_on ?? [],
+  }), [sanitizePluginInfo])
+
+  const fetchNodePlugins = useCallback(async (path: string) => {
+    const res = await fetch(withNodeQuery(path, nodeId))
+    if (!res.ok) throw new Error(`Failed to fetch plugins from ${path}`)
+    const data = await res.json()
+    return (data as PluginInfo[]).map(sanitizePluginInfo)
+  }, [nodeId, sanitizePluginInfo])
+
   // Fetch all plugins
   const pluginsQuery = useQuery<PluginInfo[]>({
-    queryKey: ['plugins', 'all'],
+    queryKey: ['plugins', 'all', scopeKey],
     queryFn: async () => {
-      const res = await fetch('/api/plugins/all');
-      if (!res.ok) throw new Error('Failed to fetch plugins');
-      const data = await res.json();
-      return (data as PluginInfo[]).map(sanitizePluginInfo);
+      if (nodeId === 'all') {
+        const res = await fetch('/api/cluster/health/extended/plugins')
+        if (!res.ok) throw new Error('Failed to fetch cluster plugin catalog')
+        const data = await res.json() as { plugins?: Array<{
+          uri: string
+          name: string
+          category: string
+          version?: string
+          format?: string | null
+          installed_on?: string[]
+        }> }
+        return (data.plugins ?? []).map(mapClusterPlugin)
+      }
+      return fetchNodePlugins('/api/plugins/all')
     },
     refetchInterval: refreshInterval || false,
     staleTime: 60000, // Cache for 1 minute
@@ -91,60 +140,49 @@ export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
 
   // Fetch VST3 plugins
   const vst3Query = useQuery<PluginInfo[]>({
-    queryKey: ['plugins', 'vst3'],
-    queryFn: async () => {
-      const res = await fetch('/api/plugins/vst3');
-      if (!res.ok) throw new Error('Failed to fetch VST3 plugins');
-      const data = await res.json();
-      return (data as PluginInfo[]).map(sanitizePluginInfo);
-    },
-    enabled: filter.format === 'VST3' || filter.format === 'All',
+    queryKey: ['plugins', 'vst3', scopeKey],
+    queryFn: async () => fetchNodePlugins('/api/plugins/vst3'),
+    enabled: nodeId !== 'all' && (filter.format === 'VST3' || filter.format === 'All'),
     staleTime: 60000,
   });
 
   // Fetch AudioUnit plugins
   const auQuery = useQuery<PluginInfo[]>({
-    queryKey: ['plugins', 'au'],
-    queryFn: async () => {
-      const res = await fetch('/api/plugins/au');
-      if (!res.ok) throw new Error('Failed to fetch AU plugins');
-      const data = await res.json();
-      return (data as PluginInfo[]).map(sanitizePluginInfo);
-    },
-    enabled: filter.format === 'AudioUnit' || filter.format === 'All',
+    queryKey: ['plugins', 'au', scopeKey],
+    queryFn: async () => fetchNodePlugins('/api/plugins/au'),
+    enabled: nodeId !== 'all' && (filter.format === 'AudioUnit' || filter.format === 'All'),
     staleTime: 60000,
   });
 
   // Fetch LV2 plugins
   const lv2Query = useQuery<PluginInfo[]>({
-    queryKey: ['plugins', 'lv2'],
-    queryFn: async () => {
-      const res = await fetch('/api/plugins/lv2');
-      if (!res.ok) throw new Error('Failed to fetch LV2 plugins');
-      const data = await res.json();
-      return (data as PluginInfo[]).map(sanitizePluginInfo);
-    },
-    enabled: filter.format === 'LV2' || filter.format === 'All',
+    queryKey: ['plugins', 'lv2', scopeKey],
+    queryFn: async () => fetchNodePlugins('/api/plugins/lv2'),
+    enabled: nodeId !== 'all' && (filter.format === 'LV2' || filter.format === 'All'),
     staleTime: 60000,
   });
 
   // Fetch scan status
   const scanStatusQuery = useQuery<ScanStatus>({
-    queryKey: ['plugins', 'scan-status'],
+    queryKey: ['plugins', 'scan-status', scopeKey],
     queryFn: async () => {
-      const res = await fetch('/api/plugins/scan-status');
+      const res = await fetch(withNodeQuery('/api/plugins/scan-status', nodeId));
       if (!res.ok) throw new Error('Failed to fetch scan status');
       return res.json();
     },
+    enabled: nodeId !== 'all',
     refetchInterval: 1000, // Poll during scan
   });
 
   // Trigger plugin scan
   const scanMutation = useMutation({
     mutationFn: async (format?: PluginFormat) => {
+      if (nodeId === 'all') {
+        throw new Error('Plugin scans require a specific node selection')
+      }
       const url = format && format !== 'All'
-        ? `/api/plugins/scan?format=${format}`
-        : '/api/plugins/scan';
+        ? withNodeQuery(`/api/plugins/scan?format=${format}`, nodeId)
+        : withNodeQuery('/api/plugins/scan', nodeId);
       const res = await fetch(url, { method: 'POST' });
       if (!res.ok) throw new Error('Failed to start plugin scan');
       return res.json();
@@ -158,7 +196,7 @@ export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
   // Load plugin into chain
   const loadPluginMutation = useMutation({
     mutationFn: async (params: { uri: string; chainId?: string }) => {
-      const res = await fetch('/api/plugins/load', {
+      const res = await fetch(withNodeQuery('/api/plugins/load', nodeId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params),
@@ -171,7 +209,7 @@ export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
   // Get plugin info by URI
   const getPluginInfoMutation = useMutation({
     mutationFn: async (uri: string) => {
-      const res = await fetch(`/api/plugins/info/${encodeURIComponent(uri)}`);
+      const res = await fetch(withNodeQuery(`/api/plugins/info/${encodeURIComponent(uri)}`, nodeId));
       if (!res.ok) throw new Error('Failed to get plugin info');
       return res.json();
     },

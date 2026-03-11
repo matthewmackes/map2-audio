@@ -7,10 +7,12 @@ import { useTesiraDevices } from '../hooks/useTesiraApi'
 import { useTesiraContext } from '../context/TesiraContext'
 import { TesiraDeviceCard } from './TesiraDeviceCard'
 import { ManualAddDialog } from './ManualAddDialog'
+import { useCluster } from '../../../contexts/ClusterContext'
 
 export function TesiraFleetPanel() {
   const { data: devices, isLoading, isError, refetch } = useTesiraDevices()
   const { selectedDeviceId, selectDevice } = useTesiraContext()
+  const { localNodeId, setActiveNode } = useCluster()
   const [manualAddOpen, setManualAddOpen] = useState(false)
   const navigate = useNavigate()
 
@@ -76,6 +78,8 @@ export function TesiraFleetPanel() {
               selected={selectedDeviceId === device.device_id}
               onSelect={() => {
                 const next = selectedDeviceId === device.device_id ? null : device.device_id
+                const targetNodeId = device.source_node_id ?? null
+                setActiveNode(next && targetNodeId && targetNodeId !== localNodeId ? targetNodeId : null)
                 selectDevice(next)
                 if (next) navigate(`/tesira/${next}/dashboard`)
                 else navigate('/tesira')

@@ -1,0 +1,191 @@
+:root {
+  --midi-hub-accent: #2dd4bf;
+  --midi-hub-accent-strong: #0ea5a4;
+  --midi-hub-amber: #f59e0b;
+}
+
+.midi-hub-page {
+  position: relative;
+}
+
+.midi-hub-hero {
+  border-color: color-mix(in srgb, var(--midi-hub-accent) 45%, var(--border));
+  background:
+    radial-gradient(circle at 8% 6%, color-mix(in srgb, var(--midi-hub-accent) 20%, transparent), transparent 40%),
+    linear-gradient(160deg, color-mix(in srgb, var(--midi-hub-accent) 8%, var(--surface-2)), var(--surface-2));
+}
+
+.midi-hub-hero__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.midi-hub-hero__quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.midi-hub-hero__chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.midi-hub-hero__alert {
+  margin-top: 12px;
+}
+
+.midi-hub-flow-card {
+  border-color: color-mix(in srgb, var(--midi-hub-amber) 45%, var(--border));
+}
+
+.midi-hub-flow-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.midi-hub-flow-step {
+  border: 1px solid color-mix(in srgb, var(--border-strong) 35%, transparent);
+  border-radius: 6px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--surface-3) 75%, transparent);
+}
+
+.midi-hub-flow-step.is-complete {
+  border-color: color-mix(in srgb, var(--support-success) 55%, transparent);
+  background: color-mix(in srgb, var(--support-success) 16%, var(--surface-2));
+}
+
+.midi-hub-flow-step__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.midi-hub-flow-step__header span {
+  color: var(--text-secondary);
+  font-size: var(--type-body);
+}
+
+.midi-hub-flow-step__header small {
+  color: var(--text-tertiary);
+  font-size: var(--type-label);
+}
+
+.midi-hub-family-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.midi-hub-family-section__header h3 {
+  font-size: var(--type-subheading);
+}
+
+.midi-hub-panel-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.midi-hub-panel-shell__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.midi-hub-panel-shell__meta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.midi-hub-inline-hints {
+  display: grid;
+  gap: 6px;
+}
+
+.midi-hub-inline-hints p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--type-label);
+  padding-left: 12px;
+  border-left: 2px solid color-mix(in srgb, var(--midi-hub-accent) 60%, transparent);
+}
+
+.midi-hub-panel-shell__content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.midi-hub-family-chip {
+  background: color-mix(in srgb, var(--midi-hub-accent) 18%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--midi-hub-accent-strong) 45%, transparent);
+  color: var(--text-primary);
+}
+
+.midi-hub-help-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.midi-hub-help-list li {
+  color: var(--text-secondary);
+  font-size: var(--type-body);
+}
+
+.midi-hub-routing-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.midi-hub-tour-overlay {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: min(420px, calc(100vw - 24px));
+  z-index: 70;
+  border: 1px solid color-mix(in srgb, var(--interactive) 70%, transparent);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--interactive) 14%, var(--surface-2)), var(--surface-2));
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  padding: 14px;
+}
+
+@media (max-width: 900px) {
+  .midi-hub-hero__header,
+  .midi-hub-flow-card__header,
+  .midi-hub-panel-shell__header,
+  .midi-hub-routing-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .midi-hub-hero__quick-actions {
+    justify-content: flex-start;
+  }
+
+  .midi-hub-tour-overlay {
+    right: 8px;
+    bottom: 8px;
+    width: min(430px, calc(100vw - 16px));
+  }
+}

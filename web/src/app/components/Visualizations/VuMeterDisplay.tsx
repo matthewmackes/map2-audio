@@ -143,15 +143,17 @@ interface VuMeterDisplayProps {
   showOutput?: boolean
   compact?: boolean
   className?: string
+  nodeId?: string | null
 }
 
 export const VuMeterDisplay: React.FC<VuMeterDisplayProps> = ({
   showInput = true,
   showOutput = true,
   compact = false,
-  className = ''
+  className = '',
+  nodeId,
 }) => {
-  const { levels, peakHold, isConnected, isRunning, resetPeaks } = useVuMeters()
+  const { levels, peakHold, isConnected, isRunning, resetPeaks } = useVuMeters({ nodeId })
 
   if (!isRunning) {
     return (

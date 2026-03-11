@@ -15,6 +15,8 @@ interface CPUMeterPanelProps {
   compact?: boolean;
   /** Custom class name */
   className?: string;
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null;
 }
 
 const CPUBar: React.FC<{
@@ -59,7 +61,8 @@ const CPUBar: React.FC<{
 export const CPUMeterPanel: React.FC<CPUMeterPanelProps> = ({
   showBreakdown = true,
   compact = false,
-  className = ''
+  className = '',
+  nodeId,
 }) => {
   const {
     metrics,
@@ -68,7 +71,7 @@ export const CPUMeterPanel: React.FC<CPUMeterPanelProps> = ({
     getTopConsumers,
     warningThreshold,
     criticalThreshold
-  } = useCPUMetrics();
+  } = useCPUMetrics({ nodeId });
 
   if (!metrics.running) {
     return (

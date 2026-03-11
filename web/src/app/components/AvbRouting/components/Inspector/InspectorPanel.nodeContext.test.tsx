@@ -7,6 +7,7 @@ import { initialRoutingState, type Endpoint, type Route } from '../../types'
 let mockState: any
 let mockAvbDevicesData: any
 let mockAvbStreamsData: any
+let mockAvdeccEntitiesData: any
 
 jest.mock('../../context/RoutingContext', () => ({
   useRoutingState: () => mockState,
@@ -18,6 +19,9 @@ jest.mock('../../hooks/useAvbApi', () => ({
   }),
   useAvbStreams: () => ({
     data: mockAvbStreamsData,
+  }),
+  useAvdeccEntities: () => ({
+    data: mockAvdeccEntitiesData,
   }),
 }))
 
@@ -137,6 +141,10 @@ describe('InspectorPanel node-context filtering', () => {
     mockAvbStreamsData = {
       available: true,
       streams: [],
+    }
+    mockAvdeccEntitiesData = {
+      enabled: true,
+      entities: [],
     }
   })
 

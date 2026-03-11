@@ -8,6 +8,7 @@ import type { HostMachineInfo } from '@/map2/types'
 
 interface MachineSpecsCardProps {
   machineInfo: HostMachineInfo
+  nodeId?: string | null
 }
 
 const SpecRow = ({ label, value }: { label: string; value?: string | number }) => (

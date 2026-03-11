@@ -9,6 +9,7 @@ from app.services.midi_broadcast import MidiBroadcastService
 from app.services.midi_engine import MIDIEngineService
 from app.services.midi_learn import MIDILearnManager
 from app.services.midi_service import TesiraMidiDispatcher
+from app.services.cluster.distributed_event_bus import ClusterEvent, EventSeverity, EventType
 
 
 @pytest.mark.asyncio
@@ -132,6 +133,62 @@ def test_midi_broadcast_queue_is_bounded_and_drops_oldest():
     assert stats["dropped_events"] == 1
     assert stats["queue_maxsize"] == 2
     assert stats["queued_events"] == 0
+
+
+@pytest.mark.asyncio
+async def test_midi_broadcast_bridges_cluster_event_topics(monkeypatch):
+    hub = MidiHub(auto_discover_alsa=False)
+    monkeypatch.setattr("app.services.midi_broadcast.get_midi_hub", lambda: hub)
+
+    class _FakeClusterEventBus:
+        def __init__(self):
+            self.subscribers = {}
+
+        def subscribe(self, event_type, callback):
+            self.subscribers.setdefault(event_type, []).append(callback)
+            return True
+
+    event_bus = _FakeClusterEventBus()
+    monkeypatch.setattr("app.services.midi_broadcast.get_distributed_event_bus", lambda: event_bus)
+
+    published: List[Dict[str, Any]] = []
+
+    async def fake_broadcast_json(message: Dict[str, Any], topic: str) -> None:
+        published.append({"topic": topic, "message": message})
+
+    monkeypatch.setattr("app.services.midi_broadcast.ws_manager.get_subscribers", lambda _topic: {"client-1"})
+    monkeypatch.setattr("app.services.midi_broadcast.ws_manager.broadcast_json", fake_broadcast_json)
+
+    service = MidiBroadcastService()
+    await service.start()
+
+    node_event = ClusterEvent(
+        event_type=EventType.MIDI_NODE_DISCOVERED,
+        severity=EventSeverity.INFO,
+        source_node_id="node-a",
+        affected_nodes=["node-b"],
+        message="Node discovered",
+        details={"node_id": "node-b"},
+    )
+    clock_event = ClusterEvent(
+        event_type=EventType.MIDI_CLOCK_DRIFT_DETECTED,
+        severity=EventSeverity.WARNING,
+        source_node_id="node-b",
+        affected_nodes=["node-b"],
+        message="Clock drift",
+        details={"drift_ms": 1.25},
+    )
+
+    event_bus.subscribers[EventType.MIDI_NODE_DISCOVERED][0](node_event)
+    event_bus.subscribers[EventType.MIDI_CLOCK_DRIFT_DETECTED][0](clock_event)
+
+    await asyncio.sleep(0.08)
+    await service.stop()
+
+    topics = {(row["topic"], row["message"]["type"]) for row in published}
+    assert ("midi_cluster_nodes", "midi_cluster_node_online") in topics
+    assert ("midi_cluster_clock", "midi_cluster_clock_drift") in topics
+    assert ("midi_cluster", "midi_cluster_clock_drift") in topics
 
 
 @pytest.mark.asyncio

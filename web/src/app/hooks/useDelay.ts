@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWsUrl } from '../../map2/api'
+import { clusterScopeKey, withNodeQuery, withNodeTopic } from '../utils/clusterTransport'
 
 // ========================================
 // Types
@@ -217,6 +218,7 @@ function parseParams(data: Record<string, unknown>): DelayParams {
 interface UseDelayOptions {
   useWebSocket?: boolean
   pollingInterval?: number
+  nodeId?: string | null
 }
 
 // ========================================
@@ -224,13 +226,14 @@ interface UseDelayOptions {
 // ========================================
 
 export function useDelay(options: UseDelayOptions = {}) {
-  const { useWebSocket = true, pollingInterval = 100 } = options
+  const { useWebSocket = true, pollingInterval = 100, nodeId } = options
 
   const queryClient = useQueryClient()
   const [metering, setMetering] = useState<DelayMetering>(DEFAULT_METERING)
   const [isConnected, setIsConnected] = useState(false)
   const [tapCount, setTapCount] = useState(0)
   const wsRef = useRef<WebSocket | null>(null)
+  const scopeKey = clusterScopeKey(nodeId)
 
   // ========================================
   // WebSocket for real-time metering
@@ -240,11 +243,12 @@ export function useDelay(options: UseDelayOptions = {}) {
     if (!useWebSocket) return
 
     const ws = new WebSocket(getWsUrl())
+    const topic = withNodeTopic('delay', nodeId)
     wsRef.current = ws
 
     ws.onopen = () => {
       setIsConnected(true)
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'delay' }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic }))
     }
 
     ws.onmessage = (event) => {
@@ -263,21 +267,21 @@ export function useDelay(options: UseDelayOptions = {}) {
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'delay' }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
       }
       ws.close()
       wsRef.current = null
     }
-  }, [useWebSocket])
+  }, [nodeId, useWebSocket])
 
   // ========================================
   // Query for parameters
   // ========================================
 
   const paramsQuery = useQuery({
-    queryKey: ['delay', 'parameters'],
+    queryKey: ['delay', scopeKey, 'parameters'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/delay/parameters')
+      const res = await fetch(withNodeQuery('/api/engine/delay/parameters', nodeId))
       if (!res.ok) throw new Error('Failed to fetch delay parameters')
       return parseParams(await res.json())
     },
@@ -290,7 +294,7 @@ export function useDelay(options: UseDelayOptions = {}) {
 
   const updateParams = useMutation({
     mutationFn: async (params: Partial<Record<string, unknown>>) => {
-      const res = await fetch('/api/engine/delay/parameters', {
+      const res = await fetch(withNodeQuery('/api/engine/delay/parameters', nodeId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params)
@@ -299,7 +303,7 @@ export function useDelay(options: UseDelayOptions = {}) {
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delay', 'parameters'] })
+      queryClient.invalidateQueries({ queryKey: ['delay', scopeKey, 'parameters'] })
     }
   })
 
@@ -309,7 +313,7 @@ export function useDelay(options: UseDelayOptions = {}) {
 
   const tapTempo = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/engine/delay/tap-tempo', {
+      const res = await fetch(withNodeQuery('/api/engine/delay/tap-tempo', nodeId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ timestamp: Date.now() })
@@ -320,14 +324,14 @@ export function useDelay(options: UseDelayOptions = {}) {
     onSuccess: (data) => {
       setTapCount(data.taps)
       if (data.tempo) {
-        queryClient.invalidateQueries({ queryKey: ['delay', 'parameters'] })
+        queryClient.invalidateQueries({ queryKey: ['delay', scopeKey, 'parameters'] })
       }
     }
   })
 
   const clearTaps = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/engine/delay/tap-tempo/clear', {
+      const res = await fetch(withNodeQuery('/api/engine/delay/tap-tempo/clear', nodeId), {
         method: 'POST'
       })
       if (!res.ok) throw new Error('Failed to clear taps')

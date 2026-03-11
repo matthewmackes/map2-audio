@@ -86,6 +86,15 @@ export function RoutingGrid() {
     [state.endpoints]
   );
 
+  const getRouteNodeId = useCallback(
+    (talkerId: string, listenerId: string): string | null => {
+      const routeId = `${talkerId}→${listenerId}`;
+      const route = state.liveRoutes[routeId] || state.pendingRoutes[routeId];
+      return route?.talker_node_id || state.endpoints[talkerId]?.node_id || state.endpoints[listenerId]?.node_id || null;
+    },
+    [state.endpoints, state.liveRoutes, state.pendingRoutes]
+  );
+
   // Handle cell click (patch/unpatch)
   const handleCellClick = useCallback(
     (talker_id: string, listener_id: string) => {
@@ -110,7 +119,7 @@ export function RoutingGrid() {
           notify.info(`Staged disconnect: ${talkerLabel} -> ${listenerLabel}`);
         } else {
           unpatchMutation.mutate(
-            { talker_id, listener_id },
+            { talker_id, listener_id, node_id: getRouteNodeId(talker_id, listener_id) },
             {
               onSuccess: () => {
                 notify.success(`Disconnected: ${talkerLabel} -> ${listenerLabel}`);
@@ -132,7 +141,7 @@ export function RoutingGrid() {
         notify.info(`Staged connect: ${talkerLabel} -> ${listenerLabel}`);
       } else {
         patchMutation.mutate(
-          { talker_id, listener_id },
+          { talker_id, listener_id, node_id: getRouteNodeId(talker_id, listener_id) },
           {
             onSuccess: () => {
               notify.success(`Connected: ${talkerLabel} -> ${listenerLabel}`);
@@ -146,7 +155,7 @@ export function RoutingGrid() {
         );
       }
     },
-    [state.liveRoutes, state.pendingRoutes, state.safePatchMode, dispatch, patchMutation, unpatchMutation, notify, getEndpointLabel]
+    [state.liveRoutes, state.pendingRoutes, state.safePatchMode, dispatch, patchMutation, unpatchMutation, notify, getEndpointLabel, getRouteNodeId]
   );
 
   // Handle cell hover
@@ -183,9 +192,10 @@ export function RoutingGrid() {
           return {
             talker_id: talker.endpoint_id,
             listener_id: listener.endpoint_id,
+            node_id: talker.node_id || listener.node_id || null,
           };
         })
-        .filter((conn): conn is { talker_id: string; listener_id: string } => conn !== null);
+        .filter((conn): conn is { talker_id: string; listener_id: string; node_id: string | null } => conn !== null);
 
       if (connections.length === 0) {
         notify.info('All selected cells are already connected');
@@ -247,9 +257,10 @@ export function RoutingGrid() {
           return {
             talker_id: talker.endpoint_id,
             listener_id: listener.endpoint_id,
+            node_id: existingRoute.talker_node_id || talker.node_id || listener.node_id || null,
           };
         })
-        .filter((conn): conn is { talker_id: string; listener_id: string } => conn !== null);
+        .filter((conn): conn is { talker_id: string; listener_id: string; node_id: string | null } => conn !== null);
 
       if (disconnections.length === 0) {
         notify.info('No connected routes to disconnect in selection');
@@ -261,9 +272,9 @@ export function RoutingGrid() {
       let successCount = 0;
       let failCount = 0;
 
-      for (const { talker_id, listener_id } of disconnections) {
+      for (const { talker_id, listener_id, node_id } of disconnections) {
         try {
-          await unpatchMutation.mutateAsync({ talker_id, listener_id });
+          await unpatchMutation.mutateAsync({ talker_id, listener_id, node_id });
           successCount++;
         } catch (error) {
           failCount++;

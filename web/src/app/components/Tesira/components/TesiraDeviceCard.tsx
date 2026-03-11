@@ -9,6 +9,7 @@ import SyncIcon from '@mui/icons-material/Sync'
 import type { TesiraDeviceSummary } from '../types'
 import { BiampIcon } from '../BiampIcon'
 import { useTesiraDeviceState } from '../hooks/useTesiraWebSocket'
+import { useCluster } from '../../../contexts/ClusterContext'
 
 const BIAMP_RED = '#E31837'
 
@@ -19,8 +20,12 @@ interface TesiraDeviceCardProps {
 }
 
 export function TesiraDeviceCard({ device, selected, onSelect }: TesiraDeviceCardProps) {
+  const { nodes } = useCluster()
   const [reconnecting, setReconnecting] = useState(false)
   const [nextRetryS, setNextRetryS] = useState<number | null>(null)
+  const discoveryLabel = (device.discovered_by_node_ids ?? [])
+    .map((nodeId) => nodes.find((node) => node.nodeId === nodeId)?.hostname ?? nodeId)
+    .join(', ')
 
   useTesiraDeviceState(
     useCallback((event) => {
@@ -118,6 +123,14 @@ export function TesiraDeviceCard({ device, selected, onSelect }: TesiraDeviceCar
                   fontSize: 10,
                   borderColor: device.ptp_state === 'MASTER' ? BIAMP_RED : undefined,
                 }}
+              />
+            )}
+            {discoveryLabel && (
+              <Chip
+                label={`Seen by ${discoveryLabel}`}
+                size="small"
+                variant="outlined"
+                sx={{ height: 18, fontSize: 10 }}
               />
             )}
             {device.firmware_version && (

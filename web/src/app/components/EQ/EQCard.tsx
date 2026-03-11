@@ -12,6 +12,7 @@ import { ParameterKnob } from '../Controls/ParameterKnob'
 interface EQCardProps {
   accentColor?: string
   showTitle?: boolean
+  nodeId?: string | null
 }
 
 const FILTER_TYPES: { value: FilterType; label: string }[] = [
@@ -39,7 +40,8 @@ function formatFrequency(hz: number): string {
 
 export function EQCard({
   accentColor = '#44aaff',
-  showTitle = true
+  showTitle = true,
+  nodeId,
 }: EQCardProps) {
   const {
     bands,
@@ -55,7 +57,7 @@ export function EQCard({
     setBandEnabled,
     setOutputGain,
     setBypass
-  } = useFilters()
+  } = useFilters({ nodeId })
 
   const [selectedBand, setSelectedBand] = useState<number | null>(null)
   const [expandedView, setExpandedView] = useState(false)

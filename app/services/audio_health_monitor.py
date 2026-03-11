@@ -347,6 +347,33 @@ class AudioHealthMonitor:
             "recent_alerts": self.get_recent_alerts(5),
         }
 
+    def get_summary(self) -> Dict[str, Any]:
+        """Lightweight snapshot for cluster polling."""
+        if not self._audio_manager:
+            return {
+                "thread_state": "offline",
+                "signal_state": "unknown",
+                "total_xruns": 0,
+                "xrun_rate_per_minute": 0.0,
+                "buffer_health_pct": 0.0,
+                "latency_ms": None,
+                "sample_rate": None,
+                "block_size": None,
+            }
+
+        health = self._audio_manager.get_health_metrics()
+        stats = self._audio_manager.get_stats()
+        return {
+            "thread_state": health.thread_state.value,
+            "signal_state": health.signal_state.value,
+            "total_xruns": health.total_xruns,
+            "xrun_rate_per_minute": health.xrun_rate_per_minute,
+            "buffer_health_pct": health.buffer_health_pct,
+            "latency_ms": stats.get("latency_ms"),
+            "sample_rate": stats.get("sample_rate"),
+            "block_size": stats.get("block_size"),
+        }
+
     async def start_monitoring(self, check_interval_sec: float = 1.0) -> None:
         """Start periodic health monitoring."""
         while True:

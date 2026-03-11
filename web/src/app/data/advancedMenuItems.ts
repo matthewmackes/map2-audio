@@ -1,12 +1,15 @@
 import type { ComponentType } from 'react'
-import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube, BookOpen, GridFour, Guitar, SlidersHorizontal } from '@phosphor-icons/react'
+import { House, Info, SquaresFour, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube, BookOpen, GridFour, Guitar, SlidersHorizontal, Gauge } from '@phosphor-icons/react'
 import { BiampIcon } from '../components/Tesira/BiampIcon'
 
 export type NavigationMaturityState = 'production' | 'qualified-with-waiver' | 'beta' | 'experimental' | 'hardware-blocked'
-export type NavigationTier = 'primary' | 'secondary' | 'advanced'
+export type NavigationRenderKind = 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
+export type NavigationHomeSection = 'System' | 'JUCE' | 'MIDI' | 'AVB' | 'Hardware'
 
 export const DEFAULT_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['production', 'qualified-with-waiver']
 export const ADVANCED_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['beta', 'experimental', 'hardware-blocked']
+export const MAX_PINNED_NAV_ITEMS = 4
+export const defaultPinnedRoutes: string[] = []
 
 export interface ShellNavigationItem {
   to: string
@@ -15,28 +18,39 @@ export interface ShellNavigationItem {
   icon: ComponentType<any>
   description: string
   color: string
-  dividerBefore?: boolean
-  group?: string
-  popupMenu?: 'hardware-interfaces'
-  promotionKey: string
-  promotable?: boolean
+  homeSection: NavigationHomeSection
+  includeInAdvancedMenu: boolean
+  pinnable: boolean
   maturity: NavigationMaturityState
-  navigationTier: NavigationTier
+  kind: NavigationRenderKind
   gatedReason?: string
+  showOnHome?: boolean
+  deviceType?: string
 }
 
 export interface AdvancedMenuItem extends ShellNavigationItem {
-  navigationTier: 'advanced'
+  includeInAdvancedMenu: true
 }
 
 export interface HardwareInterfaceMenuItem {
   to: string
   label: string
+  shortLabel?: string
   icon: ComponentType<any>
   description: string
   color: string
+  homeSection: 'Hardware'
+  pinnable: boolean
   maturity: NavigationMaturityState
+  kind: 'link'
   gatedReason?: string
+  showOnHome?: boolean
+  deviceType?: string
+}
+
+export interface NavigationSection {
+  title: NavigationHomeSection
+  items: Array<ShellNavigationItem | HardwareInterfaceMenuItem>
 }
 
 export const navigationMaturityMeta: Record<
@@ -80,290 +94,401 @@ export const navigationMaturityMeta: Record<
   },
 }
 
-// Shared navigation items used by the shell and operator-facing docs.
-// Route entries should stay in sync with App route registrations.
-// Popup entries use `popupMenu` and are handled by the renderers.
-export const defaultPromotedAdvancedRoutes: string[] = []
-
-const shellNavigationItems: ShellNavigationItem[] = [
+const baseNavigationCatalog: ShellNavigationItem[] = [
   {
     to: '/',
-    label: 'Overview',
-    shortLabel: 'Status',
-    icon: Sparkle,
-    description: 'System status, quick actions, and overall readiness',
+    label: 'Home',
+    shortLabel: 'Home',
+    icon: House,
+    description: 'Return to the navigation landing page where every MAP2 workflow is explained and available for pinning into the shell.',
     color: '#f59e0b',
-    promotionKey: '/',
+    homeSection: 'System',
+    includeInAdvancedMenu: false,
+    pinnable: false,
     maturity: 'qualified-with-waiver',
-    navigationTier: 'primary',
+    kind: 'link',
+    showOnHome: false,
+  },
+  {
+    to: '/overview',
+    label: 'System Overview',
+    shortLabel: 'Overview',
+    icon: Gauge,
+    description: 'Open the system overview dashboard for host readiness, network-share access, AVB status, and platform health snapshots.',
+    color: '#f59e0b',
+    homeSection: 'System',
+    includeInAdvancedMenu: false,
+    pinnable: true,
+    maturity: 'qualified-with-waiver',
+    kind: 'link',
   },
   {
     to: '/engine',
     label: 'Audio Engine',
     shortLabel: 'Engine',
     icon: Pulse,
-    description: 'Signal path, engine health, metering, and realtime controls',
+    description: 'Monitor the realtime audio engine, inspect metering and signal-path health, and adjust the runtime controls that drive the main processing path.',
     color: '#3b82f6',
-    promotionKey: '/engine',
+    homeSection: 'JUCE',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'qualified-with-waiver',
-    navigationTier: 'primary',
+    kind: 'link',
   },
   {
     to: '/avb-routing',
     label: 'AVB Routing',
     shortLabel: 'AVB',
     icon: ShareNetwork,
-    description: 'AVB/TSN routing matrix and network diagnostics',
+    description: 'Create, inspect, and troubleshoot AVB and TSN routes between endpoints, including stream state, topology, and transport-level failures.',
     color: '#06b6d4',
-    promotionKey: '/avb-routing',
+    homeSection: 'AVB',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'qualified-with-waiver',
-    navigationTier: 'primary',
+    kind: 'link',
+  },
+  {
+    to: '/midi-cluster',
+    label: 'MIDI Cluster',
+    shortLabel: 'Cluster',
+    icon: ShareNetwork,
+    description: 'Discover cluster MIDI nodes, connect remote ports, and monitor distributed clock health.',
+    color: '#8b5cf6',
+    homeSection: 'MIDI',
+    includeInAdvancedMenu: true,
+    pinnable: true,
+    maturity: 'beta',
+    kind: 'link',
+    showOnHome: true,
   },
   {
     to: '/host-machine',
     label: 'Host Machine',
     shortLabel: 'Host',
     icon: HardDrives,
-    description: 'Real-time host health, hardware info, and machine state',
+    description: 'Review CPU, memory, storage, and machine-readiness signals that affect low-latency performance and host stability.',
     color: '#2563eb',
-    promotionKey: '/host-machine',
+    homeSection: 'System',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'qualified-with-waiver',
-    navigationTier: 'primary',
+    kind: 'link',
   },
   {
     to: '/perform',
     label: 'Stage Mode',
     shortLabel: 'Stage',
     icon: Guitar,
-    description: 'Full-window performance interface: preset grid, bypass strip, tap tempo, tuner',
+    description: 'Open the full-screen live-performance surface for fast preset access, bypass control, tempo actions, and stage-focused guitar operation.',
     color: '#f1c21b',
-    promotionKey: '/perform',
-    promotable: true,
+    homeSection: 'JUCE',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'primary',
-  },
-  {
-    to: '/expression',
-    label: 'Expression',
-    icon: SlidersHorizontal,
-    description: 'Map MIDI CC pedals to any engine parameter with real-time visual feedback',
-    color: '#009d9a',
-    group: 'Beta workflows',
-    promotionKey: '/expression',
-    promotable: false,
-    maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/welcome',
     label: 'Guide',
     shortLabel: 'Guide',
     icon: BookOpen,
-    description: 'Platform guide, concepts, and operating model',
+    description: 'Read the platform guide for operating concepts, workflow orientation, and the mental model behind how MAP2 is organized.',
     color: '#60a5fa',
-    promotionKey: '/welcome',
+    homeSection: 'System',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'production',
-    navigationTier: 'secondary',
+    kind: 'link',
+  },
+  {
+    to: '/about',
+    label: 'About',
+    shortLabel: 'About',
+    icon: Info,
+    description: 'Review build details, runtime identity, and system information useful for verification, support, and release traceability.',
+    color: '#9ca3af',
+    homeSection: 'System',
+    includeInAdvancedMenu: false,
+    pinnable: true,
+    maturity: 'production',
+    kind: 'link',
+  },
+  {
+    to: '/expression',
+    label: 'Expression',
+    icon: SlidersHorizontal,
+    description: 'Configure expression-pedal and MIDI CC mappings that connect external controllers to engine parameters with live visual feedback.',
+    color: '#009d9a',
+    homeSection: 'MIDI',
+    includeInAdvancedMenu: false,
+    pinnable: true,
+    maturity: 'beta',
+    kind: 'link',
   },
   {
     to: '/presets',
     label: 'Presets',
     icon: SquaresFour,
-    description: 'Save, recall, and organize sounds and sessions',
+    description: 'Save, organize, recall, import, and export tone or session states so rigs can be restored quickly and consistently.',
     color: '#22c55e',
-    group: 'Beta workflows',
-    promotionKey: '/presets',
-    promotable: false,
+    homeSection: 'JUCE',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/plugins',
     label: 'LV2 Plugins',
     icon: Package,
-    description: 'Plugin manager and catalog maintenance',
+    description: 'Browse the LV2 plugin inventory, inspect what is installed, and manage the effect catalog used across MAP2 workflows.',
     color: '#06b6d4',
-    group: 'Beta workflows',
-    promotionKey: '/plugins',
-    promotable: false,
+    homeSection: 'JUCE',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/midi',
     label: 'MIDI',
     icon: MusicNotes,
-    description: 'MIDI mapping and control workflows',
+    description: 'Operate the core MIDI control surface for mappings, commands, devices, activity monitoring, and the broader MAP2 MIDI workflow.',
     color: '#ec4899',
-    group: 'Beta workflows',
-    promotionKey: '/midi',
-    promotable: false,
+    homeSection: 'MIDI',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/midi-hub',
     label: 'MIDI Hub',
     icon: MusicNotes,
-    description: 'Routing, scripts, clock, and MIDI diagnostics',
+    description: 'Run the native MIDI routing and automation hub for ports, scripts, presets, clock, diagnostics, and advanced controller workflows.',
     color: '#22c55e',
-    group: 'Beta workflows',
-    promotionKey: '/midi-hub',
-    promotable: false,
+    homeSection: 'MIDI',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/mpx1',
     label: 'MPX1 Rack',
     icon: Waveform,
-    description: 'Lexicon MPX-1 rack editor and hardware control',
+    description: 'Control the Lexicon MPX-1 from MAP2, including editor access, live program changes, diagnostics, library tasks, and MIDI mapping tools.',
     color: '#3b82f6',
-    group: 'Beta workflows',
-    promotionKey: '/mpx1',
-    promotable: false,
+    homeSection: 'MIDI',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'mpx1-mega-menu',
+    deviceType: 'lexicon-mpx1',
   },
   {
     to: '/tesira',
     label: 'Tesira AVB',
     icon: BiampIcon as ComponentType<any>,
-    description: 'Biamp Tesira Forte AVB fleet control and metering',
+    description: 'Work with Biamp Tesira AVB devices for fleet views, device pages, DSP surfaces, AVB context, and multi-device operational control.',
     color: '#E31837',
-    group: 'Beta workflows',
-    promotionKey: '/tesira',
-    promotable: false,
+    homeSection: 'AVB',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'link',
+    deviceType: 'tesira-fleet',
   },
   {
     to: '/cluster-dashboard',
     label: 'Cluster Dashboard',
     icon: HardDrives,
-    description: 'Multi-node monitoring, orchestration, and cluster simulation',
+    description: 'Observe and operate multi-node MAP2 clusters, including orchestration state, node health, and advanced cluster administration tasks.',
     color: '#2563eb',
-    group: 'Beta workflows',
-    promotionKey: '/cluster-dashboard',
-    promotable: false,
+    homeSection: 'System',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/multi-system',
     label: 'Multi-System',
     icon: Monitor,
-    description: 'Side-by-side multi-host metrics and comparison dashboards',
+    description: 'Compare multiple systems side by side so state differences, host metrics, and distributed rig behavior are visible in one place.',
     color: '#38bdf8',
-    group: 'Beta workflows',
-    promotionKey: '/multi-system',
-    promotable: false,
+    homeSection: 'System',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/grid',
     label: 'Grid',
     icon: GridFour,
-    description: 'Exploratory Cortex-style grid editor surface',
+    description: 'Explore the experimental Cortex-style grid editor for non-default signal-flow design and routing concepts under active development.',
     color: '#2563eb',
-    group: 'Experimental',
-    promotionKey: '/grid',
-    promotable: false,
+    homeSection: 'JUCE',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'experimental',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/grid-3d',
     label: '3D Grid',
     icon: Cube,
-    description: '3D signal-flow visualization and exploratory graph tooling',
+    description: 'Inspect an experimental 3D graph of signal flow and relationships when spatial exploration is more useful than the standard 2D tools.',
     color: '#7c3aed',
-    group: 'Experimental',
-    promotionKey: '/grid-3d',
-    promotable: false,
+    homeSection: 'JUCE',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'experimental',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/library',
     label: 'IR & NAM Library',
     icon: Waveform,
-    description: 'Model and IR acquisition workflows and content browsing',
+    description: 'Browse impulse-response and model-management workflows for acquiring, curating, and testing NAM and IR content in MAP2.',
     color: '#06b6d4',
-    group: 'Experimental',
-    promotionKey: '/library',
-    promotable: false,
+    homeSection: 'JUCE',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'experimental',
-    navigationTier: 'advanced',
+    kind: 'link',
   },
   {
     to: '/lcd',
     label: 'LCD Console',
     icon: Monitor,
-    description: 'Dedicated display and hardware-panel console surface',
+    description: 'Access the dedicated LCD console surface for external display and hardware-panel workflows that still depend on qualification evidence.',
     color: '#22c55e',
-    group: 'Hardware-blocked',
-    promotionKey: '/lcd',
-    promotable: false,
+    homeSection: 'Hardware',
+    includeInAdvancedMenu: false,
+    pinnable: false,
     maturity: 'hardware-blocked',
-    navigationTier: 'advanced',
+    kind: 'link',
     gatedReason: 'Requires the dedicated LCD hardware path and qualification evidence before routine use.',
   },
   {
-    to: '#hardware-interfaces',
+    to: '/hardware-interfaces',
     label: 'Audio Interfaces',
     icon: Usb,
-    description: 'Interface-specific control pages for connected or configured audio hardware',
+    description: 'Open the audio-interface submenu for interface-specific control pages and connection-state views for supported hardware profiles.',
     color: '#0ea5e9',
-    group: 'Interfaces',
-    popupMenu: 'hardware-interfaces',
-    promotionKey: '/hardware-interfaces',
-    promotable: false,
+    homeSection: 'Hardware',
+    includeInAdvancedMenu: false,
+    pinnable: true,
     maturity: 'beta',
-    navigationTier: 'advanced',
+    kind: 'hardware-submenu',
     gatedReason: 'Pages open directly and reflect current connection state instead of being hard-blocked.',
+    showOnHome: false,
   },
 ]
 
-export const primaryOperatorMenuItems = shellNavigationItems.filter(
-  (item): item is ShellNavigationItem => item.navigationTier === 'primary'
-)
+export const navigationCatalogItems = baseNavigationCatalog
 
-export const secondaryInfoMenuItems = shellNavigationItems.filter(
-  (item): item is ShellNavigationItem => item.navigationTier === 'secondary'
-)
-
-export const advancedMenuItems = shellNavigationItems.filter(
-  (item): item is AdvancedMenuItem => item.navigationTier === 'advanced'
+export const advancedMenuItems = navigationCatalogItems.filter(
+  (item): item is AdvancedMenuItem => item.includeInAdvancedMenu,
 )
 
 export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
   {
     to: '/edirol-ua1000',
     label: 'Edirol UA-1000',
+    shortLabel: 'UA-1000',
     icon: Usb,
-    description: 'USB audio interface control',
+    description: 'Open the Edirol UA-1000 control page to inspect device status and interface-specific audio controls for that hardware path.',
     color: '#0066cc',
+    homeSection: 'Hardware',
+    pinnable: true,
     maturity: 'beta',
+    kind: 'link',
     gatedReason: 'Opens even when the interface is offline; live controls reflect detected UA-1000 hardware.',
+    deviceType: 'edirol-ua1000',
   },
   {
     to: '/hotone-jogg',
     label: 'HoTone JoGG',
+    shortLabel: 'JoGG',
     icon: Waveform,
-    description: 'HoTone audio interface',
+    description: 'Open the HoTone JoGG interface page for connection-state visibility and device-specific controls when that interface profile is active.',
     color: '#e53935',
+    homeSection: 'Hardware',
+    pinnable: true,
     maturity: 'beta',
+    kind: 'link',
     gatedReason: 'Opens directly; live status reflects whether the HoTone JoGG is detected on this host.',
+    deviceType: 'hotone-jogg',
   },
   {
     to: '/hotone-jogg',
-    label: 'Generic',
+    label: 'Generic Interface',
+    shortLabel: 'Generic',
     icon: Waveform,
-    description: 'Generic model based on the HoTone interface',
+    description: 'Open the generic interface profile built on the HoTone workflow for fallback, experimental, or profile-based hardware testing.',
     color: '#94a3b8',
+    homeSection: 'Hardware',
+    pinnable: false,
     maturity: 'experimental',
-    gatedReason: 'Opens directly for profile experimentation; live hardware state is still shown in-page.',
+    kind: 'link',
+    gatedReason: 'Uses the shared HoTone page route for profile experimentation; live hardware state is still shown in-page.',
+    deviceType: 'generic-interface',
   },
 ]
+
+export const homeNavigationItem = navigationCatalogItems.find((item) => item.to === '/') as ShellNavigationItem
+
+const HOME_SECTION_ORDER: NavigationHomeSection[] = ['System', 'JUCE', 'MIDI', 'AVB', 'Hardware']
+
+export const homeNavigationSections: NavigationSection[] = HOME_SECTION_ORDER.map((title) => {
+  const catalogItems = navigationCatalogItems.filter(
+    (item) => item.homeSection === title && item.showOnHome !== false,
+  )
+
+  if (title === 'Hardware') {
+    const hardwareItems = hardwareInterfaceMenuItems.filter((item) => item.showOnHome !== false)
+    return {
+      title,
+      items: [...catalogItems, ...hardwareItems],
+    }
+  }
+
+  return {
+    title,
+    items: catalogItems,
+  }
+}).filter((section) => section.items.length > 0)
+
+export const allRouteNavigationItems: Array<ShellNavigationItem | HardwareInterfaceMenuItem> = [
+  ...navigationCatalogItems.filter((item) => item.to.startsWith('/')),
+  ...hardwareInterfaceMenuItems,
+]
+
+export const pinnableNavigationItems: Array<ShellNavigationItem | HardwareInterfaceMenuItem> = [
+  ...navigationCatalogItems.filter((item) => item.pinnable),
+  ...hardwareInterfaceMenuItems.filter((item) => item.pinnable),
+]
+
+export function normalizePinnedRoutes(routes: string[] | null | undefined): string[] {
+  if (!routes || routes.length === 0) {
+    return []
+  }
+
+  const normalized: string[] = []
+  const seen = new Set<string>()
+
+  for (const rawRoute of routes) {
+    const route = typeof rawRoute === 'string' ? rawRoute.trim() : ''
+    if (!route || !route.startsWith('/') || seen.has(route)) {
+      continue
+    }
+    seen.add(route)
+    normalized.push(route)
+  }
+
+  return normalized
+}

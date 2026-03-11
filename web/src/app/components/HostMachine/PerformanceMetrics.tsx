@@ -11,6 +11,7 @@ import { useDiskHealth, useHealthOverview } from '@/app/hooks/useHostMachine'
 interface PerformanceMetricsProps {
   autoRefresh: boolean
   onAutoRefreshChange: (value: boolean) => void
+  nodeId?: string | null
 }
 
 interface MetricPoint {
@@ -24,11 +25,12 @@ interface MetricPoint {
 export default function PerformanceMetrics({
   autoRefresh,
   onAutoRefreshChange,
+  nodeId,
 }: PerformanceMetricsProps) {
   const [metrics, setMetrics] = useState<MetricPoint[]>([])
 
-  const healthOverviewQuery = useHealthOverview(autoRefresh ? 2000 : undefined)
-  const diskHealthQuery = useDiskHealth(autoRefresh ? 5000 : undefined)
+  const healthOverviewQuery = useHealthOverview(autoRefresh ? 2000 : undefined, nodeId)
+  const diskHealthQuery = useDiskHealth(autoRefresh ? 5000 : undefined, nodeId)
 
   useEffect(() => {
     if (!healthOverviewQuery.data) return

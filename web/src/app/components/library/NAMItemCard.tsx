@@ -10,6 +10,7 @@ interface NAMItemCardProps {
     size?: number
   }
   isActive: boolean
+  availabilityLabel?: string
 }
 
 function formatSize(bytes?: number): string {
@@ -26,7 +27,7 @@ const MODEL_TYPE_COLORS: Record<string, string> = {
   unknown: 'var(--muted)',
 }
 
-export function NAMItemCard({ model, isActive }: NAMItemCardProps) {
+export function NAMItemCard({ model, isActive, availabilityLabel }: NAMItemCardProps) {
   const queryClient = useQueryClient()
 
   const loadMutation = useMutation({
@@ -55,6 +56,9 @@ export function NAMItemCard({ model, isActive }: NAMItemCardProps) {
           </span>
           {model.size && formatSize(model.size)}
         </div>
+        {availabilityLabel && (
+          <div className="model-item-meta">{availabilityLabel}</div>
+        )}
       </div>
       <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
         {isActive ? (

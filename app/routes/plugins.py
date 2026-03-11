@@ -1404,6 +1404,27 @@ try:
             logger.error(f"Error getting all plugins: {e}")
             return []
 
+    @router.get("/summary")
+    async def get_plugin_summary():
+        """Lightweight plugin summary for cluster aggregation."""
+        try:
+            from app.services.juce_engine_service import get_audio_engine
+            engine = get_audio_engine()
+            plugins = await engine.list_all_plugins()
+            summary = []
+            for p in plugins:
+                summary.append({
+                    "uri": p.get("uri"),
+                    "name": p.get("name", p.get("uri", "")),
+                    "category": p.get("category", "Unknown"),
+                    "version": p.get("version", "unknown"),
+                    "format": p.get("format", "Unknown"),
+                })
+            return summary
+        except Exception as e:
+            logger.error(f"Error getting plugin summary: {e}")
+            return []
+
     @router.get("/au")
     async def get_au_plugins():
         """Get all AudioUnit plugins"""

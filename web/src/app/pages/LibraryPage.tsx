@@ -7,6 +7,7 @@ import { InstalledBrowser } from '../components/library/InstalledBrowser'
 import { useDownloadProgress } from '../hooks/useDownloadProgress'
 import { UploadButton } from '../components/upload'
 import { foldersApi } from '../../map2/api'
+import { useCluster } from '../contexts/ClusterContext'
 
 interface PathInfo {
   label: string
@@ -17,13 +18,19 @@ interface PathInfo {
 }
 
 export function LibraryPage() {
+  const { activeNodeId, nodes, localNodeId, isClusterMode } = useCluster()
   const [pathsExpanded, setPathsExpanded] = useState(false)
   const [copiedPath, setCopiedPath] = useState<string | null>(null)
   const { status, isDownloading } = useDownloadProgress()
+  const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
+  const selectedNode = nodes.find((node) => node.nodeId === selectedNodeId)
+  const remoteSelected = Boolean(selectedNodeId && selectedNodeId !== localNodeId)
+  const displayNodeName = selectedNode?.isLocal ? `${selectedNode.hostname} (Local)` : selectedNode?.hostname ?? 'Local'
+  const pathNodeId = activeNodeId && activeNodeId !== 'all' && activeNodeId !== localNodeId ? activeNodeId : null
 
   const pathsQuery = useQuery({
-    queryKey: ['folders', 'display-paths'],
-    queryFn: foldersApi.getDisplayPaths,
+    queryKey: ['folders', 'display-paths', selectedNodeId],
+    queryFn: () => foldersApi.getDisplayPaths(pathNodeId),
     staleTime: 60000,
   })
 
@@ -81,12 +88,51 @@ export function LibraryPage() {
           <div>
             <h1 style={{ margin: 0, fontSize: 24 }}>Library</h1>
             <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-              Download and manage IRs, NAM models, and SoundFonts
+              {remoteSelected
+                ? `Download and manage IRs, NAM models, and SoundFonts on ${displayNodeName}`
+                : 'Download and manage IRs, NAM models, and SoundFonts'}
             </p>
           </div>
         </div>
         <UploadButton label="Upload Assets" />
       </div>
+
+      {isClusterMode && (
+        <div
+          className="card"
+          style={{
+            background: remoteSelected
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.94))'
+              : 'linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(15, 23, 42, 0.94))',
+            borderColor: remoteSelected ? 'rgba(52, 211, 153, 0.28)' : 'rgba(96, 165, 250, 0.28)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.1, color: '#94a3b8', marginBottom: 8 }}>
+                Cluster Library Scope
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>
+                {activeNodeId === 'all' ? 'All Nodes comparison scope' : displayNodeName}
+              </div>
+              <p style={{ margin: '8px 0 0', color: '#cbd5e1', fontSize: 14, lineHeight: 1.6, maxWidth: 760 }}>
+                {activeNodeId === 'all'
+                  ? 'Library browsing stays anchored to the local node when All Nodes is selected. Availability badges and deploy actions still compare the full cluster.'
+                  : remoteSelected
+                    ? 'You are browsing a remote node through the cluster proxy. Availability badges show where each IR or NAM model already exists, and Deploy can fill the missing nodes.'
+                    : 'Availability badges show cluster coverage for IRs and NAM models. Expand an item to deploy it to the missing nodes.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignContent: 'flex-start' }}>
+              {nodes.map((node) => (
+                <span key={node.nodeId} className={selectedNodeId === node.nodeId ? 'pill success' : 'pill'} style={{ padding: '6px 10px' }}>
+                  {node.hostname}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sound Asset Library Overview & Paths */}
       <div className="card" style={{
@@ -304,7 +350,7 @@ export function LibraryPage() {
       </div>
 
       {/* Installed Browser */}
-      <InstalledBrowser />
+      <InstalledBrowser nodeId={activeNodeId} />
 
       {/* Download Manager - hidden by default, shown when downloading or recently downloaded */}
       {(isDownloading || status?.stats) && (

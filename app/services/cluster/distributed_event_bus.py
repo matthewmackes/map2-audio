@@ -12,17 +12,22 @@ Built on existing LCD event bus, extended for cluster distribution.
 """
 
 import asyncio
+import inspect
 import logging
 import json
 import sqlite3
 from typing import Dict, List, Optional, Callable
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
 import queue
 
 logger = logging.getLogger(__name__)
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class EventType(Enum):
@@ -42,6 +47,9 @@ class EventType(Enum):
     UPDATE_ROLLED_BACK = "update.rolled_back"
 
     # Config events
+    CONFIG_CHANGED = "config.changed"
+    CONFIG_SYNC_REQUESTED = "config.sync_requested"
+    CONFIG_SYNC_COMPLETED = "config.sync_completed"
     CONFIG_PUSHED = "config.pushed"
     CONFIG_ROLLED_BACK = "config.rolled_back"
     CONFIG_SYNCED = "config.synced"
@@ -59,6 +67,21 @@ class EventType(Enum):
     # Metrics events
     METRICS_COLLECTED = "metrics.collected"
     PERFORMANCE_ALERT = "performance.alert"
+
+    # MIDI cluster events
+    MIDI_PORT_DISCOVERED = "midi.port.discovered"
+    MIDI_PORT_LOST = "midi.port.lost"
+    MIDI_NODE_DISCOVERED = "midi.node.discovered"
+    MIDI_NODE_LOST = "midi.node.lost"
+    MIDI_CONNECTION_REQUESTED = "midi.connection.requested"
+    MIDI_CONNECTION_ESTABLISHED = "midi.connection.established"
+    MIDI_CONNECTION_FAILED = "midi.connection.failed"
+    MIDI_CONNECTION_LOST = "midi.connection.lost"
+    MIDI_FAILOVER_TRIGGERED = "midi.failover.triggered"
+    MIDI_FAILOVER_COMPLETED = "midi.failover.completed"
+    MIDI_CLOCK_MASTER_ELECTED = "midi.clock.master_elected"
+    MIDI_CLOCK_DRIFT_DETECTED = "midi.clock.drift_detected"
+    MIDI_PROFILE_SHARED = "midi.profile.shared"
 
     # System events
     SYSTEM_ALERT = "system.alert"
@@ -80,7 +103,7 @@ class ClusterEvent:
     """Represents a single cluster event"""
 
     event_type: EventType
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=_utcnow)
     severity: EventSeverity = EventSeverity.INFO
     source_node_id: str = ""
     affected_nodes: List[str] = field(default_factory=list)
@@ -242,7 +265,7 @@ class DistributedEventBus:
 
             for callback in subscribers:
                 try:
-                    if asyncio.iscoroutinefunction(callback):
+                    if inspect.iscoroutinefunction(callback):
                         await callback(event)
                     else:
                         callback(event)
@@ -303,7 +326,7 @@ class DistributedEventBus:
             # Build query
             query = "SELECT * FROM cluster_events WHERE timestamp > ?"
             params = [
-                (datetime.utcnow() - timedelta(hours=hours)).isoformat()
+                (_utcnow() - timedelta(hours=hours)).isoformat()
             ]
 
             if event_type:
@@ -390,7 +413,7 @@ class DistributedEventBus:
                 (
                     node_id,
                     f"%{node_id}%",
-                    (datetime.utcnow() - timedelta(hours=hours)).isoformat(),
+                    (_utcnow() - timedelta(hours=hours)).isoformat(),
                     limit,
                 ),
             )
@@ -464,7 +487,7 @@ class DistributedEventBus:
             Number of events deleted
         """
         try:
-            cutoff = datetime.utcnow() - timedelta(days=days)
+            cutoff = _utcnow() - timedelta(days=days)
 
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -499,7 +522,7 @@ class DistributedEventBus:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            cutoff = (datetime.utcnow() - timedelta(hours=hours)).isoformat()
+            cutoff = (_utcnow() - timedelta(hours=hours)).isoformat()
 
             # Total events
             cursor.execute(

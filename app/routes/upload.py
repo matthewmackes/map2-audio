@@ -13,7 +13,7 @@ Endpoints:
 import logging
 from typing import List, Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, Header, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from app.services.upload_service import (
@@ -75,8 +75,9 @@ async def upload_asset(
     file: UploadFile = File(...),
     asset_type: Optional[str] = Form(
         None,
-        description="Asset type override: nam, cabinet_ir, reverb_ir, vst3. Required for audio files."
-    )
+        description="Asset type override: preset, nam, cabinet_ir, reverb_ir, vst3. Required for audio files."
+    ),
+    x_map2_proxy_origin: Optional[str] = Header(None, alias="X-MAP2-Proxy-Origin"),
 ):
     """Upload a single audio asset.
 
@@ -97,6 +98,29 @@ async def upload_asset(
     # Read file content
     content = await file.read()
     file_size = len(content)
+
+    if x_map2_proxy_origin:
+        logger.info("Accepted cluster peer upload from %s for %s", x_map2_proxy_origin, file.filename)
+
+    if asset_type == "preset":
+        from app.routes.preset_exchange import import_preset_bytes
+
+        payload = await import_preset_bytes(
+            filename=file.filename or "preset.map2preset",
+            content=content,
+            plugin_uri=None,
+            save_to_library=True,
+        )
+        return UploadResponse(
+            success=bool(payload["success"]),
+            asset_type="preset",
+            filename=file.filename or "preset.map2preset",
+            file_path=f"plugin-preset:{payload.get('preset_id')}",
+            file_size=file_size,
+            file_hash=payload["checksum"],
+            message=payload["message"],
+            already_exists=False,
+        )
 
     # Validate file
     validation = service.validate_file(
@@ -146,7 +170,8 @@ async def upload_assets_batch(
     asset_type: Optional[str] = Form(
         None,
         description="Asset type for all audio files in batch"
-    )
+    ),
+    x_map2_proxy_origin: Optional[str] = Header(None, alias="X-MAP2-Proxy-Origin"),
 ):
     """Upload multiple audio assets at once.
 
@@ -165,8 +190,45 @@ async def upload_assets_batch(
     successful = 0
     failed = 0
 
+    if x_map2_proxy_origin:
+        logger.info("Accepted cluster peer batch upload from %s (%d files)", x_map2_proxy_origin, len(files))
+
     for file in files:
         content = await file.read()
+
+        if asset_type == "preset":
+            from app.routes.preset_exchange import import_preset_bytes
+
+            try:
+                payload = await import_preset_bytes(
+                    filename=file.filename or "preset.map2preset",
+                    content=content,
+                    plugin_uri=None,
+                    save_to_library=True,
+                )
+                results.append(UploadResponse(
+                    success=True,
+                    asset_type="preset",
+                    filename=file.filename or "preset.map2preset",
+                    file_path=f"plugin-preset:{payload.get('preset_id')}",
+                    file_size=len(content),
+                    file_hash=payload["checksum"],
+                    message=payload["message"],
+                ))
+                successful += 1
+            except HTTPException as exc:
+                results.append(UploadResponse(
+                    success=False,
+                    asset_type="preset",
+                    filename=file.filename or "preset.map2preset",
+                    file_path="",
+                    file_size=len(content),
+                    file_hash="",
+                    message=str(exc.detail),
+                    error=str(exc.detail),
+                ))
+                failed += 1
+            continue
 
         # Validate
         validation = service.validate_file(

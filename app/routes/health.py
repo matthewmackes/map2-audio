@@ -109,6 +109,48 @@ try:
         except Exception as e:
             dependency_errors.append(f"ir_processor: {e}")
 
+        midi_cluster = {
+            "enabled": False,
+            "node_count": 0,
+            "connection_count": 0,
+            "clock_status": "disabled",
+            "master_node_id": None,
+            "strategy": None,
+            "is_master": False,
+            "drift_ms": 0.0,
+            "sync_offset_ms": 0.0,
+        }
+        try:
+            from app.config import config_get
+
+            midi_cluster["enabled"] = bool(config_get("midi.cluster.enabled", False))
+            if midi_cluster["enabled"]:
+                from app.services.midi_hub.cluster_clock import get_midi_cluster_clock
+                from app.services.midi_hub.cluster_router import get_midi_cluster_router
+                from app.services.midi_hub.midi_discovery import get_midi_discovery_service
+
+                discovery_summary = get_midi_discovery_service().get_discovery_summary()
+                clock_state = get_midi_cluster_clock().get_state()
+                connections = get_midi_cluster_router().get_connections()
+                midi_cluster.update(
+                    {
+                        "node_count": int(discovery_summary.get("total_nodes", 0)),
+                        "connection_count": len(connections),
+                        "clock_status": (
+                            "master"
+                            if clock_state.is_master
+                            else "external" if clock_state.master_node_id is None else "synced"
+                        ),
+                        "master_node_id": clock_state.master_node_id,
+                        "strategy": clock_state.strategy.value,
+                        "is_master": clock_state.is_master,
+                        "drift_ms": float(clock_state.drift_ms),
+                        "sync_offset_ms": float(clock_state.sync_offset_ms),
+                    }
+                )
+        except Exception as e:
+            dependency_errors.append(f"midi_cluster: {e}")
+
         issues = []
         status = "healthy"
 
@@ -160,6 +202,7 @@ try:
             "gpu_device": gpu_device,
             "ir_rt_safe": ir_available,
             "chain_morphing": True,
+            "midi_cluster": midi_cluster,
             "issues": issues,
             "dependency_errors": dependency_errors,
         }

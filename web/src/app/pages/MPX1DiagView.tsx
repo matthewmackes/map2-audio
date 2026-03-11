@@ -13,7 +13,7 @@ function percentile(values: number[], p: number): number {
 }
 
 export function MPX1DiagView() {
-  const { mpx1, setLcdText } = useMPX1PageContext()
+  const { mpx1, nodeId, setLcdText } = useMPX1PageContext()
 
   const [diagnostics, setDiagnostics] = useState<MPX1Diagnostics | null>(null)
   const [ports, setPorts] = useState<MPX1MidiPorts | null>(null)
@@ -27,8 +27,8 @@ export function MPX1DiagView() {
     setIsRefreshing(true)
     try {
       const [diag, portData] = await Promise.all([
-        mpx1Api.getDiagnostics(100),
-        mpx1Api.getMidiPorts(),
+        mpx1Api.getDiagnostics(100, nodeId),
+        mpx1Api.getMidiPorts(nodeId),
       ])
       setDiagnostics(diag)
       setPorts(portData)
@@ -38,7 +38,7 @@ export function MPX1DiagView() {
     } finally {
       setIsRefreshing(false)
     }
-  }, [])
+  }, [nodeId])
 
   useEffect(() => {
     void refreshDiagnostics()
@@ -84,20 +84,20 @@ export function MPX1DiagView() {
   const trafficRows = diagnostics?.traffic ?? []
 
   const handlePing = async () => {
-    const response = await mpx1Api.pingDiagnostics()
+    const response = await mpx1Api.pingDiagnostics(nodeId)
     setLatencySamples((prev) => [...prev, response.latency_ms].slice(-100))
     setLcdText(`PING ${response.latency_ms.toFixed(2)}ms`)
   }
 
   const handleReconnect = async () => {
-    await mpx1Api.disconnectMidi()
-    await mpx1Api.connectMidi({})
+    await mpx1Api.disconnectMidi(nodeId)
+    await mpx1Api.connectMidi({}, nodeId)
     await refreshDiagnostics()
     setLcdText('MIDI RECONNECTED')
   }
 
   const handleForceResync = async () => {
-    const response = await mpx1Api.dumpAll()
+    const response = await mpx1Api.dumpAll(nodeId)
     setDumpJobId(response.job_id)
     setDumpProgress(0)
     setLcdText('RESYNC STARTED')

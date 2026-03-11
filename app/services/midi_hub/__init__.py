@@ -38,10 +38,14 @@ from app.services.midi_hub.traffic_monitor import (
 )
 from app.services.midi_hub.script_engine import MidiScript, MidiScriptEngine, get_midi_script_engine
 from app.services.midi_hub.clock_engine import MidiClockConfig, MidiClockEngine, get_midi_clock_engine
+from app.services.midi_hub.cluster_clock import ClockMasterStrategy, ClusterClockState, MidiClusterClock, get_midi_cluster_clock
+from app.services.midi_hub.cluster_router import MidiClusterConnection, MidiClusterRouter, MidiEndpoint, get_midi_cluster_router
+from app.services.midi_hub.midi_discovery import MidiCapabilities, MidiDiscoveryService, MidiNode, get_midi_discovery_service
 from app.services.midi_hub.network import MidiNetworkBridge, NetworkSession, OscMapping, get_midi_network_bridge
 from app.services.midi_hub.midi2 import Midi2DeviceState, Midi2Manager, get_midi2_manager
 from app.services.midi_hub.macros import MacroAction, MidiMacro, MidiMacroService, get_midi_macro_service
 from app.services.midi_hub.recorder import MidiRecorder, MidiRecordingEvent, MidiRecordingSession, get_midi_recorder
+from app.services.midi_hub.rtp_transport import MidiRtpTransport, RtpMidiSession, get_rtp_transport
 from app.services.midi_hub.scheduler import MidiMessageScheduler, ScheduledMidiMessage, get_midi_scheduler
 
 __all__ = [
@@ -82,10 +86,25 @@ __all__ = [
     "MidiClockConfig",
     "MidiClockEngine",
     "get_midi_clock_engine",
+    "ClockMasterStrategy",
+    "ClusterClockState",
+    "MidiClusterClock",
+    "get_midi_cluster_clock",
+    "MidiClusterConnection",
+    "MidiClusterRouter",
+    "MidiEndpoint",
+    "get_midi_cluster_router",
+    "MidiCapabilities",
+    "MidiDiscoveryService",
+    "MidiNode",
+    "get_midi_discovery_service",
     "MidiNetworkBridge",
     "NetworkSession",
     "OscMapping",
     "get_midi_network_bridge",
+    "MidiRtpTransport",
+    "RtpMidiSession",
+    "get_rtp_transport",
     "Midi2DeviceState",
     "Midi2Manager",
     "get_midi2_manager",

@@ -17,7 +17,8 @@ import { TesiraPresetsTab } from './components/TesiraPresetsTab'
 import { TesiraAvbTab } from './components/TesiraAvbTab'
 import { TesiraFaultsTab } from './components/TesiraFaultsTab'
 import { TesiraLoopBuilderTab } from './components/TesiraLoopBuilderTab'
-import { useTesiraDevice } from './hooks/useTesiraApi'
+import { useTesiraDevice, useTesiraDevices } from './hooks/useTesiraApi'
+import { useCluster } from '../../contexts/ClusterContext'
 
 /**
  * TesiraApp — main container for Biamp Tesira Forte AVB fleet management.
@@ -121,11 +122,17 @@ function FleetLanding() {
 function DeviceRouteView({ render }: { render: (deviceId: string) => React.ReactNode }) {
   const { deviceId } = useParams<{ deviceId: string }>()
   const { data: device, isLoading, isError } = useTesiraDevice(deviceId ?? '')
+  const { data: devices = [] } = useTesiraDevices()
   const { selectDevice } = useTesiraContext()
+  const { localNodeId, setActiveNode } = useCluster()
+  const sourceNodeId = devices.find((entry) => entry.device_id === (deviceId ?? ''))?.source_node_id ?? null
 
   useEffect(() => {
     if (deviceId) selectDevice(deviceId)
-  }, [deviceId, selectDevice])
+    if (deviceId) {
+      setActiveNode(sourceNodeId && sourceNodeId !== localNodeId ? sourceNodeId : null)
+    }
+  }, [deviceId, localNodeId, selectDevice, setActiveNode, sourceNodeId])
 
   if (!deviceId) return <FleetLanding />
   if (isLoading) {

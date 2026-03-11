@@ -103,7 +103,7 @@ function clampInt(value: number, min: number, max: number): number {
 }
 
 export function MPX1Librarian() {
-  const { mpx1, setLcdText } = useMPX1PageContext()
+  const { mpx1, nodeId, setLcdText } = useMPX1PageContext()
 
   const [state, dispatch] = useReducer(librarianReducer, { entries: [], undo: [] })
   const [programs, setPrograms] = useState<MPX1Program[]>([])
@@ -125,8 +125,8 @@ export function MPX1Librarian() {
     setIsLoading(true)
     try {
       const [programPayload, libraryPayload] = await Promise.all([
-        mpx1Api.getPrograms(),
-        mpx1Api.getLibrary(),
+        mpx1Api.getPrograms(nodeId),
+        mpx1Api.getLibrary(nodeId),
       ])
       setPrograms(programPayload.programs)
       const merged = normalizeEntries(programPayload.programs, libraryPayload.entries)
@@ -137,7 +137,7 @@ export function MPX1Librarian() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [nodeId])
 
   useEffect(() => {
     void refreshLibrary()
@@ -252,7 +252,7 @@ export function MPX1Librarian() {
   }
 
   const handleStartDump = async () => {
-    const response = await mpx1Api.dumpAll()
+    const response = await mpx1Api.dumpAll(nodeId)
     setDumpJobId(response.job_id)
     setDumpProgress(0)
     setLcdText('DUMP STARTED')
@@ -281,7 +281,7 @@ export function MPX1Librarian() {
       throw new Error('Invalid library JSON format')
     }
 
-    const response = await mpx1Api.importLibrary(entries)
+    const response = await mpx1Api.importLibrary(entries, nodeId)
     dispatch({ type: 'commit', entries: normalizeEntries(programs, response.entries) })
     await refreshLibrary()
     setLcdText(`IMPORTED ${response.count} PROGRAMS`)

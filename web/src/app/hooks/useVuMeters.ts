@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getWsUrl, API_BASE } from '../../map2/api'
+import { clusterScopeKey, withNodeQuery, withNodeTopic } from '../utils/clusterTransport'
 
 export interface VuLevels {
   inputLeft: number
@@ -29,17 +30,21 @@ interface UseVuMetersOptions {
   useWebSocket?: boolean
   /** Polling interval in ms when not using WebSocket */
   pollingInterval?: number
+  /** Cluster node to target. Omit for local node. */
+  nodeId?: string | null
 }
 
 export function useVuMeters(options: UseVuMetersOptions = {}) {
   const {
     useWebSocket = true,
-    pollingInterval = 33 // ~30fps
+    pollingInterval = 33, // ~30fps
+    nodeId,
   } = options
 
   const [levels, setLevels] = useState<VuLevels>(DEFAULT_LEVELS)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
+  const scopeKey = clusterScopeKey(nodeId)
 
   // Peak hold state
   const [peakHold, setPeakHold] = useState({
@@ -97,11 +102,12 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
     if (!useWebSocket) return
 
     const ws = new WebSocket(getWsUrl())
+    const topic = withNodeTopic('meters', nodeId)
     wsRef.current = ws
 
     ws.onopen = () => {
       setIsConnected(true)
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'meters' }))
+      ws.send(JSON.stringify({ action: 'subscribe', topic }))
     }
 
     ws.onmessage = (event) => {
@@ -126,20 +132,20 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
 
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'meters' }))
+        ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
       }
       ws.close()
       wsRef.current = null
     }
-  }, [useWebSocket])
+  }, [nodeId, useWebSocket])
 
   // Polling is only needed before WebSocket connects or when WS is disabled.
   const shouldPoll = !useWebSocket || !isConnected
 
   const pollingQuery = useQuery<VuLevels>({
-    queryKey: ['vu-meters'],
+    queryKey: ['vu-meters', scopeKey],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/engine/meters`)
+      const res = await fetch(withNodeQuery(`${API_BASE}/engine/meters`, nodeId))
       if (!res.ok) throw new Error('Failed to fetch VU meters')
       const data = await res.json()
       return {

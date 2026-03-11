@@ -120,6 +120,10 @@ The platform needs fewer assumptions and more repeatable performance evidence.
 
 MAP2 now has a live callback-timing monitor contract (`/api/v2/latency/jitter-stats`, `timing_jitter` WebSocket stream) plus a gated evidence script (`scripts/measure_latency.sh`) that emits schema-validated artifacts. The latest baseline evidence is archived at `docs/fit-for-purpose-evidence/20260310/t096/latency_baseline.json` and currently shows a provisional `PASS` (`RTL p95=2.9667ms`, `jitter p95=0.0000ms`, `xruns=0`) from an `internal` method run; a physical loopback capture remains the required final publication-grade confirmation.
 
+### Dynamic Response Validation Status (T099)
+
+MAP2 now has a formal dynamic-response qualification protocol (`docs/fit-for-purpose-evidence/t099-protocol.md`), a quantitative envelope-analysis tool (`scripts/analyze_envelope.py`), and subjective-evaluation templates (`docs/fit-for-purpose-evidence/t099-subjective-eval-form.md`, `docs/fit-for-purpose-evidence/t099-subjective-eval.template.json`). Execution of the blind A/B capture itself remains pending physical amp/modeler hardware availability plus at least three human evaluators. Until those artifacts are collected under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t099/`, the amp-modeling claim remains **not yet validated**.
+
 ## 6. UX critique summary
 
 The UI is capable, but it currently behaves more like an engineer's control warehouse than a disciplined operator product.

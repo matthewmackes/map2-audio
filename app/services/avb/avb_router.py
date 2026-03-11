@@ -256,7 +256,7 @@ class AvbRouter:
 
     def _is_auto_connect_enabled(self) -> bool:
         """Return whether startup auto-connect orchestration is enabled."""
-        return self._coerce_bool(config_get("avb.auto_connect", False), False)
+        return self._coerce_bool(config_get("avb.auto_connect", True), True)
 
     # ========================================================================
     # Discovery

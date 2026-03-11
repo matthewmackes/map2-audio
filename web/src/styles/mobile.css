@@ -48,6 +48,7 @@
   }
 
   .nav-tabs-left,
+  .nav-tabs-center,
   .nav-tabs-right,
   .nav-hamburger-btn {
     display: none !important;
@@ -111,14 +112,20 @@
     background: var(--surface);
     border-top: 1px solid var(--border);
     bottom: 0;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    display: flex;
+    gap: 2px;
     height: 56px;
     left: 0;
+    overflow-x: auto;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     position: fixed;
     right: 0;
+    scrollbar-width: none;
     z-index: 36;
+  }
+
+  .mobile-bottom-tabbar::-webkit-scrollbar {
+    display: none;
   }
 
   .mobile-bottom-tab {
@@ -134,10 +141,12 @@
     gap: 4px;
     justify-content: center;
     letter-spacing: 0.06em;
+    min-width: 76px;
     min-height: 56px;
     padding: 0 4px;
     text-decoration: none;
     text-transform: uppercase;
+    flex: 0 0 auto;
   }
 
   .mobile-bottom-tab.is-active {

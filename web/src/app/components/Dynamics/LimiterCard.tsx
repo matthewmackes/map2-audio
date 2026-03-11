@@ -12,11 +12,13 @@ import { GainReductionMeter } from './GainReductionMeter'
 interface LimiterCardProps {
   accentColor?: string
   showTitle?: boolean
+  nodeId?: string | null
 }
 
 export function LimiterCard({
   accentColor = '#ff4488',
-  showTitle = true
+  showTitle = true,
+  nodeId,
 }: LimiterCardProps) {
   const {
     limiter,
@@ -24,7 +26,7 @@ export function LimiterCard({
     setLimiterRelease,
     setLimiterBypass,
     isConnected
-  } = useDynamics()
+  } = useDynamics({ nodeId })
 
   const { parameters, metering, isLoading } = limiter
 

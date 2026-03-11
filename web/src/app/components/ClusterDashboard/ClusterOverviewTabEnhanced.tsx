@@ -9,6 +9,44 @@ interface ClusterOverviewTabProps {
   simulationMode: boolean
 }
 
+interface ClusterHardwareNode {
+  node_id: string
+  hostname: string
+  usb_audio_devices: Array<Record<string, unknown>>
+  midi_devices: Array<Record<string, unknown>>
+  audio_interfaces: string[]
+  pipewire_devices: Array<Record<string, unknown>>
+  status: string
+}
+
+interface ClusterHardwareInventoryResponse {
+  nodes?: Record<string, ClusterHardwareNode>
+  summary?: {
+    node_count: number
+    usb_audio_device_count: number
+    midi_device_count: number
+    pipewire_device_count: number
+  }
+}
+
+function formatHardwareDevice(device: Record<string, unknown>): string {
+  const label =
+    (typeof device.name === 'string' && device.name) ||
+    (typeof device.product === 'string' && device.product) ||
+    (typeof device.description === 'string' && device.description) ||
+    'Unknown device'
+  const direction = typeof device.direction === 'string' ? device.direction : ''
+  const vidPid =
+    (typeof device.vid_pid === 'string' && device.vid_pid) ||
+    (typeof device.vendor_id === 'string' && typeof device.product_id === 'string'
+      ? `${device.vendor_id}:${device.product_id}`
+      : '')
+
+  return [label, direction ? `(${direction})` : '', vidPid ? `[${vidPid}]` : '']
+    .filter(Boolean)
+    .join(' ')
+}
+
 export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTabProps) {
   const [simulationScenario, setSimulationScenario] = useState<string | null>(null)
 
@@ -47,6 +85,17 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
     enabled: !simulationMode,
   })
 
+  const { data: hardwareInventory } = useQuery<ClusterHardwareInventoryResponse>({
+    queryKey: ['cluster', 'hardware'],
+    queryFn: async () => {
+      const res = await fetch('/api/cluster/health/extended/devices')
+      if (!res.ok) throw new Error('Failed to fetch cluster hardware inventory')
+      return res.json()
+    },
+    refetchInterval: 15000,
+    enabled: !simulationMode,
+  })
+
   // Simulation mode - realistic 5-node cluster
   const simulation = useClusterSimulation(simulationMode)
 
@@ -56,6 +105,22 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
     () => summarizeClusterMetrics(clusterMetrics, metricSamples),
     [clusterMetrics, metricSamples]
   )
+  const hardwareNodes = useMemo(
+    () => Object.values(hardwareInventory?.nodes ?? {}),
+    [hardwareInventory]
+  )
+  const hardwareSummary = useMemo(() => {
+    if (hardwareInventory?.summary) {
+      return hardwareInventory.summary
+    }
+
+    return {
+      node_count: hardwareNodes.length,
+      usb_audio_device_count: hardwareNodes.reduce((sum, node) => sum + node.usb_audio_devices.length, 0),
+      midi_device_count: hardwareNodes.reduce((sum, node) => sum + node.midi_devices.length, 0),
+      pipewire_device_count: hardwareNodes.reduce((sum, node) => sum + node.pipewire_devices.length, 0),
+    }
+  }, [hardwareInventory, hardwareNodes])
 
   const topologyNodes = useMemo(() => {
     if (simulationMode) {
@@ -205,6 +270,120 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
         </div>
         <TopologyGraph nodes={topologyNodes || []} edges={[]} simulationMode={simulationMode} />
       </div>
+
+      {!simulationMode && (
+        <div
+          style={{
+            background: '#111827',
+            border: '1px solid rgba(96, 165, 250, 0.2)',
+            borderRadius: 12,
+            padding: 20,
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#dbeafe', marginBottom: 16 }}>
+            Attached Hardware Inventory
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
+            <div className="stat-card" style={{ margin: 0 }}>
+              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#60a5fa', marginTop: 8 }}>{hardwareSummary.node_count}</div>
+            </div>
+            <div className="stat-card" style={{ margin: 0 }}>
+              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>USB Audio</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#34d399', marginTop: 8 }}>{hardwareSummary.usb_audio_device_count}</div>
+            </div>
+            <div className="stat-card" style={{ margin: 0 }}>
+              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>MIDI</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24', marginTop: 8 }}>{hardwareSummary.midi_device_count}</div>
+            </div>
+            <div className="stat-card" style={{ margin: 0 }}>
+              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>PipeWire</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#f472b6', marginTop: 8 }}>{hardwareSummary.pipewire_device_count}</div>
+            </div>
+          </div>
+
+          {hardwareNodes.length === 0 ? (
+            <div style={{ color: '#94a3b8', fontSize: 13 }}>
+              No cluster hardware inventory available yet.
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: 12,
+              }}
+            >
+              {hardwareNodes.map((node) => (
+                <div
+                  key={node.node_id}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.7)',
+                    border: '1px solid rgba(148, 163, 184, 0.15)',
+                    borderRadius: 10,
+                    padding: 16,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc' }}>{node.hostname}</div>
+                      <div style={{ fontSize: 11, color: '#64748b' }}>{node.node_id}</div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        color: node.status === 'online' ? '#34d399' : '#f87171',
+                        border: `1px solid ${node.status === 'online' ? 'rgba(52, 211, 153, 0.35)' : 'rgba(248, 113, 113, 0.35)'}`,
+                        borderRadius: 999,
+                        padding: '4px 8px',
+                      }}
+                    >
+                      {node.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>USB Audio</div>
+                    <div style={{ color: '#e2e8f0', fontSize: 13 }}>
+                      {node.usb_audio_devices.length
+                        ? node.usb_audio_devices.map(formatHardwareDevice).join(', ')
+                        : 'None detected'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>MIDI</div>
+                    <div style={{ color: '#e2e8f0', fontSize: 13 }}>
+                      {node.midi_devices.length
+                        ? node.midi_devices.map(formatHardwareDevice).join(', ')
+                        : 'None detected'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>Audio Interfaces</div>
+                    <div style={{ color: '#e2e8f0', fontSize: 13 }}>
+                      {node.audio_interfaces.length ? node.audio_interfaces.join(', ') : 'No interfaces reported'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Simulation Controls */}
       {simulationMode && (

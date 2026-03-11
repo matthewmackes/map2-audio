@@ -11,10 +11,11 @@ Extensions to the basic NodeIdentity service:
 import json
 import logging
 import os
+import re
 import subprocess
 from pathlib import Path
-from typing import Optional, List, Dict
-from dataclasses import dataclass, asdict
+from typing import Optional, List, Dict, Tuple
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 import uuid
 import socket
@@ -34,6 +35,10 @@ class NodeCapabilities:
     storage_gb: int
     kernel_version: str
     os_release: str
+    midi_input_ports: List[str] = field(default_factory=list)
+    midi_output_ports: List[str] = field(default_factory=list)
+    has_midi: bool = False
+    usb_audio_devices: List[str] = field(default_factory=list)
     
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -64,12 +69,21 @@ class NodeConfig:
     def from_dict(cls, d: Dict) -> 'NodeConfig':
         """Create from dict"""
         caps_dict = d.pop('capabilities')
+        caps_dict.setdefault('midi_input_ports', [])
+        caps_dict.setdefault('midi_output_ports', [])
+        caps_dict.setdefault('has_midi', bool(caps_dict.get('midi_input_ports') or caps_dict.get('midi_output_ports')))
+        caps_dict.setdefault('usb_audio_devices', [])
         capabilities = NodeCapabilities(**caps_dict)
         return cls(capabilities=capabilities, **d)
 
 
 class NodeHardwareDetector:
     """Detect hardware capabilities of current node"""
+
+    KNOWN_USB_AUDIO_IDS = {
+        ("0582", "0074"): "Edirol UA-1000",
+        ("84ef", "0014"): "Hotone Jogg USB Audio",
+    }
     
     @staticmethod
     def get_cpu_info() -> tuple[int, str]:
@@ -237,6 +251,122 @@ class NodeHardwareDetector:
         except Exception as e:
             logger.debug(f"Error getting MAC addresses: {e}")
         return macs
+
+    @staticmethod
+    def _dedupe_port_names(names: List[str]) -> List[str]:
+        seen: set[str] = set()
+        ordered: List[str] = []
+        for name in names:
+            normalized = " ".join(str(name).strip().split())
+            if not normalized:
+                continue
+            lowered = normalized.lower()
+            if "through" in lowered or normalized in seen:
+                continue
+            seen.add(normalized)
+            ordered.append(normalized)
+        return ordered
+
+    @staticmethod
+    def _parse_aconnect_ports(output: str) -> List[str]:
+        client_name = ""
+        ports: List[str] = []
+        for raw_line in str(output).splitlines():
+            client_match = re.match(r"^client\s+\d+:\s+'([^']+)'", raw_line.strip())
+            if client_match:
+                client_name = client_match.group(1).strip()
+                continue
+
+            port_match = re.match(r"^\s+\d+\s+'([^']+)'", raw_line)
+            if port_match:
+                port_name = port_match.group(1).strip()
+                if client_name and port_name and port_name.lower() != client_name.lower():
+                    ports.append(f"{client_name}:{port_name}")
+                else:
+                    ports.append(port_name or client_name)
+        return NodeHardwareDetector._dedupe_port_names(ports)
+
+    @staticmethod
+    def _fallback_proc_asound_midi() -> Tuple[List[str], List[str]]:
+        proc_asound = Path("/proc/asound")
+        if not proc_asound.exists():
+            return [], []
+
+        names: List[str] = []
+        devices_file = proc_asound / "devices"
+        if devices_file.exists():
+            try:
+                for line in devices_file.read_text().splitlines():
+                    lowered = line.lower()
+                    if "raw midi" not in lowered:
+                        continue
+                    names.append(line.split(":", 1)[-1].strip())
+            except Exception:
+                pass
+
+        if not names:
+            for candidate in list(proc_asound.glob("midi*")) + list(proc_asound.glob("card*/midi*")):
+                names.append(candidate.name)
+
+        deduped = NodeHardwareDetector._dedupe_port_names(names)
+        return deduped, list(deduped)
+
+    @staticmethod
+    def detect_midi_ports() -> Tuple[List[str], List[str]]:
+        """Return detected MIDI input and output port names."""
+        try:
+            input_result = subprocess.run(
+                ["aconnect", "-i"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            output_result = subprocess.run(
+                ["aconnect", "-o"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            input_ports = NodeHardwareDetector._parse_aconnect_ports(input_result.stdout if input_result.returncode == 0 else "")
+            output_ports = NodeHardwareDetector._parse_aconnect_ports(output_result.stdout if output_result.returncode == 0 else "")
+            if input_ports or output_ports:
+                return input_ports, output_ports
+        except Exception as e:
+            logger.debug(f"Error detecting MIDI ports with aconnect: {e}")
+
+        return NodeHardwareDetector._fallback_proc_asound_midi()
+
+    @classmethod
+    def detect_usb_audio_devices(cls) -> List[str]:
+        """Return detected USB audio interface names from lsusb."""
+        devices: List[str] = []
+        try:
+            result = subprocess.run(
+                ["lsusb"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.returncode != 0:
+                return []
+
+            for line in result.stdout.splitlines():
+                match = re.search(r"ID\s+([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\s*(.*)", line)
+                if not match:
+                    continue
+                vendor_id = match.group(1).lower()
+                product_id = match.group(2).lower()
+                product_name = match.group(3).strip()
+                known_name = cls.KNOWN_USB_AUDIO_IDS.get((vendor_id, product_id))
+                if known_name:
+                    devices.append(known_name)
+                    continue
+                if "audio" in product_name.lower():
+                    devices.append(product_name)
+        except Exception as e:
+            logger.debug(f"Error detecting USB audio devices: {e}")
+
+        return cls._dedupe_port_names(devices)
     
     @classmethod
     def detect_all(cls) -> NodeCapabilities:
@@ -248,17 +378,24 @@ class NodeHardwareDetector:
         storage = cls.get_storage_gb()
         kernel = cls.get_kernel_version()
         os_rel = cls.get_os_release()
+        midi_inputs, midi_outputs = cls.detect_midi_ports()
+        usb_audio_devices = cls.detect_usb_audio_devices()
+        combined_audio_ifaces = cls._dedupe_port_names([*audio_ifaces, *usb_audio_devices])
         
         return NodeCapabilities(
             cpu_cores=cpu_cores,
             cpu_model=cpu_model,
             total_memory_gb=total_mem,
-            has_audio_interface=has_audio,
-            audio_interfaces=audio_ifaces,
+            has_audio_interface=has_audio or bool(usb_audio_devices),
+            audio_interfaces=combined_audio_ifaces,
             has_gpuapu=has_gpu,
             storage_gb=storage,
             kernel_version=kernel,
-            os_release=os_rel
+            os_release=os_rel,
+            midi_input_ports=midi_inputs,
+            midi_output_ports=midi_outputs,
+            has_midi=bool(midi_inputs or midi_outputs),
+            usb_audio_devices=usb_audio_devices,
         )
 
 

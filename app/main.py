@@ -44,11 +44,93 @@ async def safe_stop_service(logger, name, stop_coro):
 import logging
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
+from typing import Any, Dict, Optional
 
 from app.services.db_pool_manager import get_pool_manager, ConnectionPoolConfig
 from app.utils.health_metrics import init_health_metrics
 
 logger = logging.getLogger(__name__)
+
+
+def _midi_cluster_enabled() -> bool:
+    try:
+        from app.config import config_get
+
+        return bool(config_get("midi.cluster.enabled", False))
+    except Exception:
+        return False
+
+
+async def start_cluster_midi_services(
+    logger: logging.Logger,
+    *,
+    node_id: str,
+    hostname: str,
+    api_port: int,
+) -> Optional[Dict[str, Any]]:
+    if not _midi_cluster_enabled():
+        logger.info("Cluster MIDI services disabled (midi.cluster.enabled=false)")
+        return None
+
+    from app.services.midi_hub.cluster_clock import get_midi_cluster_clock
+    from app.services.midi_hub.cluster_router import get_midi_cluster_router
+    from app.services.midi_hub.hub import get_midi_hub
+    from app.services.midi_hub.midi_discovery import get_midi_discovery_service
+    from app.services.midi_hub.rtp_transport import get_rtp_transport
+
+    midi_hub = get_midi_hub()
+    midi_discovery = get_midi_discovery_service()
+    midi_discovery.broadcast_local_node(node_id, hostname, api_port)
+
+    rtp_transport = get_rtp_transport()
+    await safe_start_service(logger, "MIDI RTP transport", rtp_transport.start)
+
+    cluster_router = get_midi_cluster_router()
+    cluster_router.set_discovery(midi_discovery)
+    cluster_router.set_transport(rtp_transport)
+    cluster_router.set_hub(midi_hub)
+    midi_hub.cluster_router = cluster_router
+    await safe_start_service(logger, "MIDI cluster router", cluster_router.start)
+
+    cluster_clock = get_midi_cluster_clock()
+    await safe_start_service(logger, "MIDI cluster clock", cluster_clock.start)
+
+    return {
+        "midi_hub": midi_hub,
+        "midi_discovery": midi_discovery,
+        "rtp_transport": rtp_transport,
+        "cluster_router": cluster_router,
+        "cluster_clock": cluster_clock,
+    }
+
+
+async def stop_cluster_midi_services(logger: logging.Logger, services: Optional[Dict[str, Any]]) -> None:
+    if not services:
+        return
+
+    cluster_clock = services.get("cluster_clock")
+    if cluster_clock is not None:
+        await safe_stop_service(logger, "MIDI cluster clock", cluster_clock.stop)
+
+    cluster_router = services.get("cluster_router")
+    if cluster_router is not None:
+        await safe_stop_service(logger, "MIDI cluster router", cluster_router.stop)
+
+    rtp_transport = services.get("rtp_transport")
+    if rtp_transport is not None:
+        await safe_stop_service(logger, "MIDI RTP transport", rtp_transport.stop)
+
+    midi_hub = services.get("midi_hub")
+    if midi_hub is not None:
+        midi_hub.cluster_router = None
+
+    midi_discovery = services.get("midi_discovery")
+    if midi_discovery is not None:
+        try:
+            midi_discovery.stop()
+            logger.info("MIDI discovery stopped successfully")
+        except Exception as e:
+            logger.warning(f"Failed to stop MIDI discovery: {e}")
 
 
 @asynccontextmanager
@@ -121,6 +203,8 @@ async def lifespan(app):
         from app.database_session import get_session
         from app.routes.lcd_events import init_lcd_routes
         avb_router = None
+        cluster_midi_services = None
+        config_reloader = None
 
         # Initialize deployment configuration
         logger.info("Initializing deployment configuration...")
@@ -134,6 +218,16 @@ async def lifespan(app):
         initialize_deployment_config()
         deployment_config = get_deployment_config()
         logger.info(f"Deployment mode: {deployment_config.mode.value}")
+
+        # Initialize runtime config watching so local file edits can fan out
+        # through the distributed event bus without requiring an API call first.
+        try:
+            from app.services.config_hot_reload import get_or_init_config_reloader
+
+            config_reloader = get_or_init_config_reloader(watch=True)
+            logger.info("Configuration hot-reloader initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize configuration hot-reloader: {e}")
 
         # Initialize frontend-only graceful degradation integration.
         try:
@@ -287,6 +381,13 @@ async def lifespan(app):
         else:
             logger.info("Cluster services disabled (single-node ALL-IN-ONE mode)")
 
+        cluster_midi_services = await start_cluster_midi_services(
+            logger,
+            node_id=node_id,
+            hostname=os.uname().nodename,
+            api_port=api_port,
+        )
+
         # Bind AVB router discovery lifecycle to backend startup/shutdown.
         try:
             from app.services.avb.avb_router import get_avb_router
@@ -336,8 +437,17 @@ async def lifespan(app):
         if tesira_fleet is not None:
             await safe_stop_service(logger, "Tesira Fleet", tesira_fleet.stop)
 
+        if config_reloader is not None and config_reloader.watch_enabled:
+            try:
+                config_reloader.stop_watching()
+                logger.info("Configuration hot-reloader stopped")
+            except Exception as e:
+                logger.warning(f"Failed to stop configuration hot-reloader: {e}")
+
         if avb_router is not None:
             await safe_stop_service(logger, "AVB router discovery", avb_router.stop)
+
+        await stop_cluster_midi_services(logger, cluster_midi_services)
         
         # Stop configuration distributor
         if cluster_enabled:
@@ -438,9 +548,13 @@ def create_app():
         from app.middleware.request_logging import RequestLoggingMiddleware
         app.add_middleware(RequestLoggingMiddleware, enabled=False)
 
+        # Cluster API proxy middleware (transparent node targeting)
+        from app.middleware.cluster_proxy import ClusterProxyMiddleware
+        app.add_middleware(ClusterProxyMiddleware)
+
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'midi_hub', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression']
         route_load_failures = []
 
         for route_name in route_modules:

@@ -9,6 +9,7 @@ import type { SystemHealthOverview } from '@/map2/types'
 
 interface HealthMonitorProps {
   healthOverview?: SystemHealthOverview
+  nodeId?: string | null
 }
 
 export default function HealthMonitor({ healthOverview }: HealthMonitorProps) {

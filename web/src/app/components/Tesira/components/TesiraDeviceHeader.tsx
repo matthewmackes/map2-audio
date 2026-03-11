@@ -5,6 +5,7 @@ import LinkOffIcon from '@mui/icons-material/LinkOff'
 import type { TesiraDeviceDetail } from '../types'
 import { BiampIcon } from '../BiampIcon'
 import { useConnectDevice, useDisconnectDevice } from '../hooks/useTesiraApi'
+import { useCluster } from '../../../contexts/ClusterContext'
 
 const BIAMP_RED = '#E31837'
 
@@ -13,8 +14,12 @@ interface TesiraDeviceHeaderProps {
 }
 
 export function TesiraDeviceHeader({ device }: TesiraDeviceHeaderProps) {
+  const { nodes } = useCluster()
   const connect = useConnectDevice()
   const disconnect = useDisconnectDevice()
+  const discoveryLabel = (device.discovered_by_node_ids ?? [])
+    .map((nodeId) => nodes.find((node) => node.nodeId === nodeId)?.hostname ?? nodeId)
+    .join(', ')
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderBottom: 1, borderColor: 'divider' }}>
@@ -54,6 +59,15 @@ export function TesiraDeviceHeader({ device }: TesiraDeviceHeaderProps) {
             label={`${device.fault_count} fault${device.fault_count > 1 ? 's' : ''}`}
             size="small"
             color="warning"
+            sx={{ height: 20, fontSize: 10 }}
+          />
+        )}
+
+        {discoveryLabel && (
+          <Chip
+            label={`Discovered by ${discoveryLabel}`}
+            size="small"
+            variant="outlined"
             sx={{ height: 20, fontSize: 10 }}
           />
         )}

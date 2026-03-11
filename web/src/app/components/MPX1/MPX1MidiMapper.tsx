@@ -69,7 +69,7 @@ function clampFloat(value: number, min: number, max: number): number {
 }
 
 export function MPX1MidiMapper() {
-  const { mpx1, setLcdText } = useMPX1PageContext()
+  const { mpx1, nodeId, setLcdText } = useMPX1PageContext()
 
   const [maps, setMaps] = useState<MPX1MidiMap[]>([])
   const [activeMapId, setActiveMapId] = useState<string | null>(null)
@@ -101,7 +101,7 @@ export function MPX1MidiMapper() {
   const refreshMidiMaps = useCallback(async () => {
     setIsLoading(true)
     try {
-      const payload = await mpx1Api.getMidiMaps()
+      const payload = await mpx1Api.getMidiMaps(nodeId)
       setMaps(payload.maps)
       setActiveMapId(payload.active_map_id)
       setLearnTargetParamId(payload.learn_target_param_id)
@@ -111,7 +111,7 @@ export function MPX1MidiMapper() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [nodeId])
 
   useEffect(() => {
     void refreshMidiMaps()
@@ -185,11 +185,11 @@ export function MPX1MidiMapper() {
   }, [activeMap?.mappings, observedCc])
 
   const persistMap = useCallback(async (nextMap: MPX1MidiMap, makeActive = true) => {
-    const payload = await mpx1Api.saveMidiMap(nextMap, makeActive)
+    const payload = await mpx1Api.saveMidiMap(nextMap, makeActive, nodeId)
     setLcdText(`MIDI MAP SAVED • ${payload.map.name}`)
     await refreshMidiMaps()
     setActiveMapId(payload.active_map_id)
-  }, [refreshMidiMaps, setLcdText])
+  }, [nodeId, refreshMidiMaps, setLcdText])
 
   const ensureMap = useCallback(async (): Promise<MPX1MidiMap> => {
     if (activeMap) {
@@ -210,17 +210,17 @@ export function MPX1MidiMapper() {
 
   const handleDeleteActiveMap = useCallback(async () => {
     if (!activeMap) return
-    await mpx1Api.deleteMidiMap(activeMap.id)
+    await mpx1Api.deleteMidiMap(activeMap.id, nodeId)
     setSelectedMappingId(null)
     await refreshMidiMaps()
     setLcdText(`MIDI MAP DELETED • ${activeMap.name}`)
-  }, [activeMap, refreshMidiMaps, setLcdText])
+  }, [activeMap, nodeId, refreshMidiMaps, setLcdText])
 
   const handleActivateMap = useCallback(async (mapId: string) => {
-    await mpx1Api.activateMidiMap(mapId)
+    await mpx1Api.activateMidiMap(mapId, nodeId)
     setActiveMapId(mapId)
     await refreshMidiMaps()
-  }, [refreshMidiMaps])
+  }, [nodeId, refreshMidiMaps])
 
   const handleCreateMapping = useCallback(async () => {
     if (!selectedTargetParamId) {
@@ -280,11 +280,11 @@ export function MPX1MidiMapper() {
       return
     }
     await ensureMap()
-    await mpx1Api.setMidiLearnTarget(selectedTargetParamId)
+    await mpx1Api.setMidiLearnTarget(selectedTargetParamId, nodeId)
     setLearnTargetParamId(selectedTargetParamId)
     setLcdText('LEARNING MIDI CC... move a controller now')
     setError(null)
-  }, [ensureMap, selectedTargetParamId, setLcdText])
+  }, [ensureMap, nodeId, selectedTargetParamId, setLcdText])
 
   const lines = useMemo(() => {
     if (!activeMap) return []

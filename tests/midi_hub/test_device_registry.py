@@ -124,3 +124,105 @@ def test_registry_vid_pid_profile_match(tmp_path):
         assert refreshed["devices"][0]["profile_id"] == "vid_pid_profile"
 
     asyncio.run(_run())
+
+
+def test_registry_merge_remote_devices_and_global_snapshot(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        hub = MidiHub(auto_discover_alsa=False)
+        registry = MidiDeviceRegistry(hub)
+
+        hub.register_port(VirtualMidiPort(port_id="p1", name="Lexicon MPX1"))
+        await registry.refresh()
+
+        registry.merge_remote_devices(
+            "NODE-B",
+            [
+                {
+                    "device_id": "lexicon_mpx1:remote",
+                    "profile_id": "lexicon_mpx1",
+                    "profile_name": "Lexicon MPX1",
+                    "port_ids": ["remote-1"],
+                    "port_names": ["Lexicon MPX1 Port"],
+                    "connected": True,
+                    "responding": True,
+                    "health": "online",
+                }
+            ],
+        )
+
+        snapshot = registry.get_global_snapshot()
+        assert snapshot["count"] == 2
+        assert snapshot["node_count"] == 2
+        assert any(node["node_id"] == "NODE-B" for node in snapshot["nodes"])
+        remote_devices = registry.get_node_devices("NODE-B")
+        assert len(remote_devices) == 1
+        assert remote_devices[0]["remote"] is True
+        assert remote_devices[0]["node_id"] == "NODE-B"
+
+    asyncio.run(_run())
+
+
+def test_registry_remove_node_devices_marks_remote_entries_offline(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        registry = MidiDeviceRegistry(MidiHub(auto_discover_alsa=False))
+        registry.merge_remote_devices(
+            "NODE-B",
+            [
+                {
+                    "device_id": "usb_din_adapter:remote",
+                    "profile_id": "usb_din_adapter",
+                    "profile_name": "Generic USB-to-DIN Adapter",
+                    "port_ids": ["remote-1"],
+                    "port_names": ["DIN A"],
+                    "connected": True,
+                    "responding": True,
+                    "health": "online",
+                }
+            ],
+        )
+
+        removed = registry.remove_node_devices("NODE-B")
+        remote_devices = registry.get_node_devices("NODE-B")
+
+        assert removed == 1
+        assert remote_devices[0]["connected"] is False
+        assert remote_devices[0]["health"] == "offline"
+
+    asyncio.run(_run())
+
+
+def test_registry_find_equivalent_port_uses_profile_match(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        hub = MidiHub(auto_discover_alsa=False)
+        registry = MidiDeviceRegistry(hub)
+        hub.register_port(VirtualMidiPort(port_id="p1", name="Lexicon MPX1"))
+        await registry.refresh()
+
+        registry.merge_remote_devices(
+            "NODE-B",
+            [
+                {
+                    "device_id": "lexicon_mpx1:remote",
+                    "profile_id": "lexicon_mpx1",
+                    "profile_name": "Lexicon MPX1",
+                    "port_ids": ["remote-1"],
+                    "port_names": ["Rack Port"],
+                    "connected": True,
+                    "responding": True,
+                    "health": "online",
+                }
+            ],
+        )
+
+        match = registry.find_equivalent_port("Lexicon MPX1", exclude_node_id=registry._local_node())
+        assert match is not None
+        assert match["node_id"] == "NODE-B"
+        assert match["profile_id"] == "lexicon_mpx1"
+
+    asyncio.run(_run())

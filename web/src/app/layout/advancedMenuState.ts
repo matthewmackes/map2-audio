@@ -1,7 +1,7 @@
 import type { AdvancedMenuItem } from '../data/advancedMenuItems'
 
 export function isHardwareInterfacesPopup(item: AdvancedMenuItem): boolean {
-  return item.popupMenu === 'hardware-interfaces'
+  return item.kind === 'hardware-submenu'
 }
 
 export function isBlockedAdvancedMenuItem(item: AdvancedMenuItem): boolean {

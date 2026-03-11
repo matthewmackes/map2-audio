@@ -15,6 +15,7 @@ export function TesiraPtpTopology() {
           <TableHead>
             <TableRow>
               <TableCell>Device</TableCell>
+              <TableCell>Node</TableCell>
               <TableCell>State</TableCell>
               <TableCell>Offset (ns)</TableCell>
             </TableRow>
@@ -26,6 +27,9 @@ export function TesiraPtpTopology() {
                   <Typography variant="caption">{node.name || node.host}</Typography>
                 </TableCell>
                 <TableCell>
+                  <Typography variant="caption">{node.source_node_id ?? 'local'}</Typography>
+                </TableCell>
+                <TableCell>
                   <Typography variant="caption">{node.ptp_state}</Typography>
                 </TableCell>
                 <TableCell>
@@ -35,7 +39,7 @@ export function TesiraPtpTopology() {
             ))}
             {(!data?.nodes || data.nodes.length === 0) && (
               <TableRow>
-                <TableCell colSpan={3}>
+                <TableCell colSpan={4}>
                   <Typography variant="caption" color="text.secondary">No topology data.</Typography>
                 </TableCell>
               </TableRow>

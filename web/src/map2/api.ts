@@ -297,16 +297,24 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   return sanitizeDisplayPayload(data) as T;
 }
 
+function appendNodeQuery(url: string, nodeId?: string | null): string {
+  if (!nodeId || nodeId === 'all') return url
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}node_id=${encodeURIComponent(nodeId)}`
+}
+
 // ==================== Audio API ====================
 
 export const audioApi = {
-  getStatus: () => fetchJson<AudioStatus>(`${API_BASE}/audio/status`),
+  getStatus: (nodeId?: string | null) => fetchJson<AudioStatus>(appendNodeQuery(`${API_BASE}/audio/status`, nodeId)),
 
-  start: () => fetchJson<{ success: boolean; message: string }>(`${API_BASE}/audio/start`, { method: 'POST' }),
+  start: (nodeId?: string | null) =>
+    fetchJson<{ success: boolean; message: string }>(appendNodeQuery(`${API_BASE}/audio/start`, nodeId), { method: 'POST' }),
 
-  stop: () => fetchJson<{ success: boolean; message: string }>(`${API_BASE}/audio/stop`, { method: 'POST' }),
+  stop: (nodeId?: string | null) =>
+    fetchJson<{ success: boolean; message: string }>(appendNodeQuery(`${API_BASE}/audio/stop`, nodeId), { method: 'POST' }),
 
-  getLatency: () => fetchJson<{ latency_ms: number }>(`${API_BASE}/audio/latency`),
+  getLatency: (nodeId?: string | null) => fetchJson<{ latency_ms: number }>(appendNodeQuery(`${API_BASE}/audio/latency`, nodeId)),
 
   getLevels: () => fetchJson<AudioLevels>(`${API_BASE}/audio/levels`),
 
@@ -314,9 +322,10 @@ export const audioApi = {
 
   getPipedalMetrics: () => fetchJson<Record<string, unknown>>(`${API_BASE}/audio/pipedal`),
 
-  getSourceOfTruth: () => fetchJson<AudioSourceTruthPayload>(`${API_BASE}/audio/source-of-truth`),
+  getSourceOfTruth: (nodeId?: string | null) =>
+    fetchJson<AudioSourceTruthPayload>(appendNodeQuery(`${API_BASE}/audio/source-of-truth`, nodeId)),
 
-  configure: (config: { sampleRate?: number; bufferSize?: number }) => {
+  configure: (config: { sampleRate?: number; bufferSize?: number }, nodeId?: string | null) => {
     const params = new URLSearchParams();
     if (config.sampleRate) params.append('sample_rate', config.sampleRate.toString());
     if (config.bufferSize) params.append('buffer_size', config.bufferSize.toString());
@@ -325,22 +334,24 @@ export const audioApi = {
       message: string;
       updated_settings: Record<string, number>;
       current_config: { sample_rate: number; buffer_size: number; cpu_load: number };
-    }>(`${API_BASE}/audio/config?${params.toString()}`, { method: 'POST' });
+    }>(appendNodeQuery(`${API_BASE}/audio/config?${params.toString()}`, nodeId), { method: 'POST' });
   },
 
-  restart: () => fetchJson<{ success: boolean; message: string }>(`${API_BASE}/audio/restart`, { method: 'POST' }),
+  restart: (nodeId?: string | null) =>
+    fetchJson<{ success: boolean; message: string }>(appendNodeQuery(`${API_BASE}/audio/restart`, nodeId), { method: 'POST' }),
 
-  getHealth: () => fetchJson<AudioHealth>(`${API_BASE}/audio/health`),
+  getHealth: (nodeId?: string | null) => fetchJson<AudioHealth>(appendNodeQuery(`${API_BASE}/audio/health`, nodeId)),
 
-  getXruns: () => fetchJson<XrunStats>(`${API_BASE}/audio/health/xruns`),
+  getXruns: (nodeId?: string | null) => fetchJson<XrunStats>(appendNodeQuery(`${API_BASE}/audio/health/xruns`, nodeId)),
 
   getSignalStatus: () => fetchJson<SignalStatus>(`${API_BASE}/audio/health/signal`),
 
-  getBufferPresets: () => fetchJson<BufferPreset[]>(`${API_BASE}/audio/buffer-presets`),
+  getBufferPresets: (nodeId?: string | null) => fetchJson<BufferPreset[]>(appendNodeQuery(`${API_BASE}/audio/buffer-presets`, nodeId)),
 
-  getJuceMetrics: () => fetchJson<JuceMetrics>(`${API_BASE}/audio/juce`),
+  getJuceMetrics: (nodeId?: string | null) => fetchJson<JuceMetrics>(appendNodeQuery(`${API_BASE}/audio/juce`, nodeId)),
 
-  unmute: () => fetchJson<{ success: boolean }>(`${API_BASE}/audio/health/unmute`, { method: 'POST' }),
+  unmute: (nodeId?: string | null) =>
+    fetchJson<{ success: boolean }>(appendNodeQuery(`${API_BASE}/audio/health/unmute`, nodeId), { method: 'POST' }),
 
   // Port routing
   getPorts: () => fetchJson<AudioPortsResponse>(`${API_BASE}/audio/ports`),
@@ -583,39 +594,39 @@ export interface AudioPortPresetsResponse {
 // Diagnostics API
 export const diagnosticsApi = {
   // Run audio loopback test
-  runLoopbackTest: () =>
-    fetchJson<DiagnosticResult>(`${API_BASE}/audio/test`, { method: 'POST' }),
+  runLoopbackTest: (nodeId?: string | null) =>
+    fetchJson<DiagnosticResult>(appendNodeQuery(`${API_BASE}/audio/test`, nodeId), { method: 'POST' }),
 
   // Get ALSA device info
-  getAlsaInfo: () => fetchJson<AlsaDeviceInfo>(`${API_BASE}/audio/alsa/info`),
+  getAlsaInfo: (nodeId?: string | null) => fetchJson<AlsaDeviceInfo>(appendNodeQuery(`${API_BASE}/audio/alsa/info`, nodeId)),
 
   // Reset ALSA state
-  resetAlsaState: () =>
-    fetchJson<{ success: boolean; message: string }>(`${API_BASE}/audio/alsa/reset`, { method: 'POST' }),
+  resetAlsaState: (nodeId?: string | null) =>
+    fetchJson<{ success: boolean; message: string }>(appendNodeQuery(`${API_BASE}/audio/alsa/reset`, nodeId), { method: 'POST' }),
 
   // Enumerate USB devices
-  getUsbDevices: () => fetchJson<UsbDevice[]>(`${API_BASE}/usb/devices/list`),
+  getUsbDevices: (nodeId?: string | null) => fetchJson<UsbDevice[]>(appendNodeQuery(`${API_BASE}/usb/devices/list`, nodeId)),
 
   // Reset USB device
-  resetUsbDevice: (deviceId: string) =>
-    fetchJson<{ success: boolean; message: string }>(`${API_BASE}/usb/reset/${deviceId}`, { method: 'POST' }),
+  resetUsbDevice: (deviceId: string, nodeId?: string | null) =>
+    fetchJson<{ success: boolean; message: string }>(appendNodeQuery(`${API_BASE}/usb/reset/${deviceId}`, nodeId), { method: 'POST' }),
 
   // Run full diagnostic suite
-  runFullDiagnostic: () =>
-    fetchJson<FullDiagnosticResult>(`${API_BASE}/audio/diagnostics/full`, { method: 'POST' }),
+  runFullDiagnostic: (nodeId?: string | null) =>
+    fetchJson<FullDiagnosticResult>(appendNodeQuery(`${API_BASE}/audio/diagnostics/full`, nodeId), { method: 'POST' }),
 
   // Clear XRun counter
-  clearXruns: () =>
-    fetchJson<{ success: boolean }>(`${API_BASE}/audio/health/xruns/clear`, { method: 'POST' }),
+  clearXruns: (nodeId?: string | null) =>
+    fetchJson<{ success: boolean }>(appendNodeQuery(`${API_BASE}/audio/health/xruns/clear`, nodeId), { method: 'POST' }),
 
   // Test specific sample rate
-  testSampleRate: (rate: number) =>
-    fetchJson<DiagnosticResult>(`${API_BASE}/audio/test/sample-rate?rate=${rate}`, { method: 'POST' }),
+  testSampleRate: (rate: number, nodeId?: string | null) =>
+    fetchJson<DiagnosticResult>(appendNodeQuery(`${API_BASE}/audio/test/sample-rate?rate=${rate}`, nodeId), { method: 'POST' }),
 
   // Test buffer stability
-  testBufferStability: (bufferSize: number, duration: number) =>
+  testBufferStability: (bufferSize: number, duration: number, nodeId?: string | null) =>
     fetchJson<BufferStabilityResult>(
-      `${API_BASE}/audio/test/buffer-stability?buffer_size=${bufferSize}&duration=${duration}`,
+      appendNodeQuery(`${API_BASE}/audio/test/buffer-stability?buffer_size=${bufferSize}&duration=${duration}`, nodeId),
       { method: 'POST' }
     ),
 };
@@ -700,97 +711,97 @@ export const usbApi = {
 // ==================== Chains API ====================
 
 export const chainsApi = {
-  list: () => fetchJson<ChainsResponse>(`${API_BASE}/chains/`, { cache: 'no-store' }),
+  list: (nodeId?: string | null) => fetchJson<ChainsResponse>(appendNodeQuery(`${API_BASE}/chains/`, nodeId), { cache: 'no-store' }),
 
-  get: (chainId: number) => fetchJson<Chain>(`${API_BASE}/chains/${chainId}`, { cache: 'no-store' }),
+  get: (chainId: number, nodeId?: string | null) => fetchJson<Chain>(appendNodeQuery(`${API_BASE}/chains/${chainId}`, nodeId), { cache: 'no-store' }),
 
-  create: (name: string) =>
-    fetchJson<Chain>(`${API_BASE}/chains/`, {
+  create: (name: string, nodeId?: string | null) =>
+    fetchJson<Chain>(appendNodeQuery(`${API_BASE}/chains/`, nodeId), {
       method: 'POST',
       body: JSON.stringify({ name }),
     }),
 
-  delete: (chainId: number) =>
-    fetchJson<{ status: string; chain_id: number }>(`${API_BASE}/chains/${chainId}`, {
+  delete: (chainId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; chain_id: number }>(appendNodeQuery(`${API_BASE}/chains/${chainId}`, nodeId), {
       method: 'DELETE',
     }),
 
-  rename: (chainId: number, newName: string) =>
+  rename: (chainId: number, newName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; chain_id: number; name: string }>(
-      `${API_BASE}/chains/${chainId}/rename?new_name=${encodeURIComponent(newName)}`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/rename?new_name=${encodeURIComponent(newName)}`, nodeId),
       { method: 'PUT' }
     ),
 
-  activate: (chainId: number) =>
-    fetchJson<{ status: string; chain_id: number }>(`${API_BASE}/chains/${chainId}/activate`, {
+  activate: (chainId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; chain_id: number }>(appendNodeQuery(`${API_BASE}/chains/${chainId}/activate`, nodeId), {
       method: 'POST',
     }),
 
-  deactivate: (chainId: number) =>
-    fetchJson<{ status: string; chain_id: number }>(`${API_BASE}/chains/${chainId}/deactivate`, {
+  deactivate: (chainId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; chain_id: number }>(appendNodeQuery(`${API_BASE}/chains/${chainId}/deactivate`, nodeId), {
       method: 'POST',
     }),
 
-  addPlugin: (chainId: number, pluginUri: string) =>
+  addPlugin: (chainId: number, pluginUri: string, nodeId?: string | null) =>
     fetchJson<{ status: string; chain_id: number; plugin: string; plugins_count: number; plugin_position?: number }>(
-      `${API_BASE}/chains/${chainId}/plugins?plugin_uri=${encodeURIComponent(pluginUri)}`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/plugins?plugin_uri=${encodeURIComponent(pluginUri)}`, nodeId),
       { method: 'POST' }
     ),
 
-  removePlugin: (chainId: number, pluginUri: string, pluginPosition?: number) => {
+  removePlugin: (chainId: number, pluginUri: string, pluginPosition?: number, nodeId?: string | null) => {
     const params = new URLSearchParams({ plugin_uri: pluginUri })
     if (typeof pluginPosition === 'number' && Number.isFinite(pluginPosition)) {
       params.set('plugin_position', String(pluginPosition))
     }
     return fetchJson<{ status: string; chain_id: number }>(
-      `${API_BASE}/chains/${chainId}/plugins?${params.toString()}`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/plugins?${params.toString()}`, nodeId),
       { method: 'DELETE' }
     )
   },
 
-  reorderPlugins: (chainId: number, pluginUris: string[]) =>
+  reorderPlugins: (chainId: number, pluginUris: string[], nodeId?: string | null) =>
     fetchJson<{ status: string; chain_id: number; plugins: string[] }>(
-      `${API_BASE}/chains/${chainId}/reorder`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/reorder`, nodeId),
       {
         method: 'POST',
         body: JSON.stringify(pluginUris),
       }
     ),
 
-  togglePluginBypass: (chainId: number, pluginUri: string, bypass: boolean, pluginPosition?: number) => {
+  togglePluginBypass: (chainId: number, pluginUri: string, bypass: boolean, pluginPosition?: number, nodeId?: string | null) => {
     const params = new URLSearchParams({ bypass: String(bypass) })
     if (typeof pluginPosition === 'number' && Number.isFinite(pluginPosition)) {
       params.set('plugin_position', String(pluginPosition))
     }
     return fetchJson<{ status: string; chain_id: number; plugin: string; bypass: boolean }>(
-      `${API_BASE}/chains/${chainId}/plugins/${encodeURIComponent(pluginUri)}/bypass?${params.toString()}`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/plugins/${encodeURIComponent(pluginUri)}/bypass?${params.toString()}`, nodeId),
       { method: 'POST' }
     )
   },
 
-  savePreset: (chainId: number, presetName: string) =>
+  savePreset: (chainId: number, presetName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; preset_id: number; name: string }>(
-      `${API_BASE}/chains/${chainId}/preset/save?preset_name=${encodeURIComponent(presetName)}`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/preset/save?preset_name=${encodeURIComponent(presetName)}`, nodeId),
       { method: 'POST' }
     ),
 
-  listPresets: () => fetchJson<{ presets: Preset[]; count: number }>(`${API_BASE}/chains/presets`),
+  listPresets: (nodeId?: string | null) => fetchJson<{ presets: Preset[]; count: number }>(appendNodeQuery(`${API_BASE}/chains/presets`, nodeId)),
 
-  loadPreset: (presetId: number) =>
-    fetchJson<{ status: string; chain_id: number }>(`${API_BASE}/chains/preset/${presetId}/load`, {
+  loadPreset: (presetId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; chain_id: number }>(appendNodeQuery(`${API_BASE}/chains/preset/${presetId}/load`, nodeId), {
       method: 'POST',
     }),
 
-  deletePreset: (presetId: number) =>
-    fetchJson<{ status: string; preset_id: number }>(`${API_BASE}/chains/preset/${presetId}`, {
+  deletePreset: (presetId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; preset_id: number }>(appendNodeQuery(`${API_BASE}/chains/preset/${presetId}`, nodeId), {
       method: 'DELETE',
     }),
 
-  listTemplates: () => fetchJson<{ templates: ChainTemplate[]; count: number }>(`${API_BASE}/chains/templates/list`),
+  listTemplates: (nodeId?: string | null) => fetchJson<{ templates: ChainTemplate[]; count: number }>(appendNodeQuery(`${API_BASE}/chains/templates/list`, nodeId)),
 
-  loadTemplate: (templateName: string) =>
+  loadTemplate: (templateName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; chain: Chain }>(
-      `${API_BASE}/chains/templates/load?template_name=${encodeURIComponent(templateName)}`,
+      appendNodeQuery(`${API_BASE}/chains/templates/load?template_name=${encodeURIComponent(templateName)}`, nodeId),
       { method: 'POST' }
     ),
 };
@@ -846,95 +857,95 @@ export interface LoopMetrics {
 }
 
 export const effectsLoopsApi = {
-  list: () =>
-    fetchJson<{ loops: EffectsLoop[]; count: number }>(`${API_BASE}/effects-loops`),
+  list: (nodeId?: string | null) =>
+    fetchJson<{ loops: EffectsLoop[]; count: number }>(appendNodeQuery(`${API_BASE}/effects-loops`, nodeId)),
 
-  create: (payload: Partial<EffectsLoop> & { name: string; channels: number; topology: string }) =>
-    fetchJson<EffectsLoop>(`${API_BASE}/effects-loops`, {
+  create: (payload: Partial<EffectsLoop> & { name: string; channels: number; topology: string }, nodeId?: string | null) =>
+    fetchJson<EffectsLoop>(appendNodeQuery(`${API_BASE}/effects-loops`, nodeId), {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 
-  get: (loopId: string) =>
-    fetchJson<EffectsLoop>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`),
+  get: (loopId: string, nodeId?: string | null) =>
+    fetchJson<EffectsLoop>(appendNodeQuery(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`, nodeId)),
 
-  patch: (loopId: string, payload: Partial<EffectsLoop>) =>
-    fetchJson<EffectsLoop>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`, {
+  patch: (loopId: string, payload: Partial<EffectsLoop>, nodeId?: string | null) =>
+    fetchJson<EffectsLoop>(appendNodeQuery(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`, nodeId), {
       method: 'PATCH',
       body: JSON.stringify(payload),
     }),
 
-  delete: (loopId: string) =>
-    fetchJson<{ status: string; loop_id: string }>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`, {
+  delete: (loopId: string, nodeId?: string | null) =>
+    fetchJson<{ status: string; loop_id: string }>(appendNodeQuery(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`, nodeId), {
       method: 'DELETE',
     }),
 
-  activate: (loopId: string, payload: { audition_mode?: boolean } = {}) =>
-    fetchJson<Record<string, unknown>>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/activate`, {
+  activate: (loopId: string, payload: { audition_mode?: boolean } = {}, nodeId?: string | null) =>
+    fetchJson<Record<string, unknown>>(appendNodeQuery(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/activate`, nodeId), {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 
-  bypass: (loopId: string, bypass: boolean) =>
-    fetchJson<Record<string, unknown>>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/bypass`, {
+  bypass: (loopId: string, bypass: boolean, nodeId?: string | null) =>
+    fetchJson<Record<string, unknown>>(appendNodeQuery(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/bypass`, nodeId), {
       method: 'POST',
       body: JSON.stringify({ bypass }),
     }),
 
-  calibrate: (loopId: string, options: Record<string, unknown> = {}) =>
-    fetchJson<Record<string, unknown>>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/calibrate`, {
+  calibrate: (loopId: string, options: Record<string, unknown> = {}, nodeId?: string | null) =>
+    fetchJson<Record<string, unknown>>(appendNodeQuery(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/calibrate`, nodeId), {
       method: 'POST',
       body: JSON.stringify({ options }),
     }),
 
-  getMetrics: (loopId: string) =>
-    fetchJson<LoopMetrics>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/metrics`),
+  getMetrics: (loopId: string, nodeId?: string | null) =>
+    fetchJson<LoopMetrics>(appendNodeQuery(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/metrics`, nodeId)),
 
-  listTemplates: () =>
-    fetchJson<{ templates: TesiraLoopTemplate[]; count: number }>(`${API_BASE}/tesira/loop-templates`),
+  listTemplates: (nodeId?: string | null) =>
+    fetchJson<{ templates: TesiraLoopTemplate[]; count: number }>(appendNodeQuery(`${API_BASE}/tesira/loop-templates`, nodeId)),
 
-  upsertTemplate: (templateId: string, payload: Omit<TesiraLoopTemplate, 'template_id' | 'validation_status' | 'validation_error' | 'created_at' | 'updated_at'>) =>
-    fetchJson<TesiraLoopTemplate>(`${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}`, {
+  upsertTemplate: (templateId: string, payload: Omit<TesiraLoopTemplate, 'template_id' | 'validation_status' | 'validation_error' | 'created_at' | 'updated_at'>, nodeId?: string | null) =>
+    fetchJson<TesiraLoopTemplate>(appendNodeQuery(`${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}`, nodeId), {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
 
-  validateTemplate: (templateId: string) =>
-    fetchJson<Record<string, unknown>>(`${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}/validate`, {
+  validateTemplate: (templateId: string, nodeId?: string | null) =>
+    fetchJson<Record<string, unknown>>(appendNodeQuery(`${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}/validate`, nodeId), {
       method: 'POST',
     }),
 
-  getTemplateRuntimeStatus: (templateId: string) =>
+  getTemplateRuntimeStatus: (templateId: string, nodeId?: string | null) =>
     fetchJson<{ template_id: string; tesira_device_id: string; runtime_status: TesiraTemplateRuntimeStatus }>(
-      `${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}/runtime-status`
+      appendNodeQuery(`${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}/runtime-status`, nodeId)
     ),
 
-  listChainInsertions: (chainId: number) =>
+  listChainInsertions: (chainId: number, nodeId?: string | null) =>
     fetchJson<{ chain_id: number; loop_insertions: LoopInsertion[]; effects_loops: EffectsLoop[]; count: number }>(
-      `${API_BASE}/chains/${chainId}/loops`
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/loops`, nodeId)
     ),
 
-  insertChainLoop: (chainId: number, payload: Partial<LoopInsertion> & { loop_id: string; slot_index: number }) =>
+  insertChainLoop: (chainId: number, payload: Partial<LoopInsertion> & { loop_id: string; slot_index: number }, nodeId?: string | null) =>
     fetchJson<{ chain_id: number; insertion: LoopInsertion; effects_loop: EffectsLoop }>(
-      `${API_BASE}/chains/${chainId}/loops/insert`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/loops/insert`, nodeId),
       {
         method: 'POST',
         body: JSON.stringify(payload),
       }
     ),
 
-  patchChainLoop: (chainId: number, insertionId: string, payload: Partial<LoopInsertion>) =>
+  patchChainLoop: (chainId: number, insertionId: string, payload: Partial<LoopInsertion>, nodeId?: string | null) =>
     fetchJson<{ chain_id: number; insertion: LoopInsertion }>(
-      `${API_BASE}/chains/${chainId}/loops/${encodeURIComponent(insertionId)}`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/loops/${encodeURIComponent(insertionId)}`, nodeId),
       {
         method: 'PATCH',
         body: JSON.stringify(payload),
       }
     ),
 
-  deleteChainLoop: (chainId: number, insertionId: string) =>
+  deleteChainLoop: (chainId: number, insertionId: string, nodeId?: string | null) =>
     fetchJson<{ status: string; chain_id: number; insertion_id: string }>(
-      `${API_BASE}/chains/${chainId}/loops/${encodeURIComponent(insertionId)}`,
+      appendNodeQuery(`${API_BASE}/chains/${chainId}/loops/${encodeURIComponent(insertionId)}`, nodeId),
       { method: 'DELETE' }
     ),
 };
@@ -948,8 +959,10 @@ export interface PluginDiscoverResponse extends PluginsResponse {
 }
 
 export const pluginsApi = {
-  discover: (refresh = false) =>
-    fetchJson<PluginDiscoverResponse>(`${API_BASE}/plugins/discover${refresh ? '?refresh=true' : ''}`),
+  discover: (refresh = false, nodeId?: string | null) =>
+    fetchJson<PluginDiscoverResponse>(
+      appendNodeQuery(`${API_BASE}/plugins/discover${refresh ? '?refresh=true' : ''}`, nodeId)
+    ),
 
   refresh: () =>
     fetchJson<PluginDiscoverResponse>(`${API_BASE}/plugins/refresh`, { method: 'POST' }),
@@ -969,9 +982,9 @@ export const pluginsApi = {
       method: 'POST',
     }),
 
-  delete: (uri: string) =>
+  delete: (uri: string, nodeId?: string | null) =>
     fetchJson<{ status: string; uri: string; path: string; removed: number }>(
-      `${API_BASE}/plugins/${encodeURIComponent(uri)}`,
+      appendNodeQuery(`${API_BASE}/plugins/${encodeURIComponent(uri)}`, nodeId),
       { method: 'DELETE' }
     ),
 
@@ -1418,6 +1431,9 @@ export interface MidiHubTrafficRow {
   direction: string;
   raw_hex: string;
   route_id?: string | null;
+   origin_node_id?: string;
+   source_node_id?: string;
+   destination_node_id?: string;
   decoded?: {
     message_type?: string;
     channel?: number | null;
@@ -1570,6 +1586,153 @@ export interface MidiHubScheduledEntry {
   status: string;
   sent_at?: number | null;
   error?: string | null;
+}
+
+// =============================
+// Cluster MIDI (T103)
+// =============================
+export interface MidiClusterCapabilities {
+  input_ports: string[];
+  output_ports: string[];
+  virtual_ports: string[];
+  hub_running: boolean;
+  clock_source: string;
+  clock_bpm: number;
+  protocol_version: string;
+  supports_midi2: boolean;
+  sysex_enabled: boolean;
+}
+
+export interface MidiClusterEndpoint {
+  endpoint_id: string;
+  node_id: string;
+  port_name: string;
+  direction: 'input' | 'output' | string;
+  device_name: string;
+  node_address: string;
+  available: boolean;
+  last_seen?: string | null;
+  port_ref?: string;
+}
+
+export interface MidiClusterNode {
+  node_id: string;
+  hostname: string;
+  addresses: string[];
+  port: number;
+  online: boolean;
+  last_seen?: string | null;
+  capabilities?: MidiClusterCapabilities;
+  ports: MidiClusterEndpoint[];
+  devices: Array<Record<string, unknown>>;
+}
+
+export interface MidiClusterConnection {
+  connection_id: string;
+  state: string;
+  transport: string;
+  session_id?: string | null;
+  established_at?: string | null;
+  error_message?: string | null;
+  latency_ms?: number | null;
+  messages_forwarded: number;
+  source: MidiClusterEndpoint;
+  destination: MidiClusterEndpoint;
+}
+
+export interface MidiClusterClock {
+  master_node_id?: string | null;
+  master_bpm: number;
+  strategy: string;
+  is_master: boolean;
+  sync_offset_ms: number;
+  drift_ms: number;
+  last_sync?: string | null;
+  followers: string[];
+}
+
+export interface MidiClusterSummary {
+  enabled: boolean;
+  node_count: number;
+  endpoint_count: number;
+  connection_count: number;
+  device_count: number;
+  clock: MidiClusterClock;
+  auto_connect: {
+    reason: string;
+    last_run_at?: string | null;
+    pair_count: number;
+    created_count: number;
+    failed_count: number;
+    created_connections: string[];
+    failed_connections: Array<Record<string, unknown>>;
+    transport: string;
+  };
+}
+
+export interface MidiClusterHealth {
+  enabled: boolean;
+  status: string;
+  node_count: number;
+  connection_count: number;
+  healthy_connection_count: number;
+  degraded_connections: number;
+  clock_status: string;
+  clock_drift_ms: number;
+  per_node: Array<{
+    node_id: string;
+    hostname: string;
+    online: boolean;
+    latency_ms?: number | null;
+    input_port_count: number;
+    output_port_count: number;
+    device_count: number;
+  }>;
+  recent_events: Array<Record<string, unknown>>;
+}
+
+export const midiClusterApi = {
+  listNodes: () => fetchJson<MidiClusterNode[]>(`${API_BASE}/midi/cluster/nodes`),
+
+  getNode: (nodeId: string) =>
+    fetchJson<MidiClusterNode>(`${API_BASE}/midi/cluster/nodes/${encodeURIComponent(nodeId)}`),
+
+  listEndpoints: () => fetchJson<MidiClusterEndpoint[]>(`${API_BASE}/midi/cluster/endpoints`),
+
+  getSummary: () => fetchJson<MidiClusterSummary>(`${API_BASE}/midi/cluster/summary`),
+
+  listConnections: () =>
+    fetchJson<MidiClusterConnection[]>(`${API_BASE}/midi/cluster/connections`),
+
+  createConnection: (payload: { source_endpoint_id: string; destination_endpoint_id: string; transport?: string }) =>
+    fetchJson<MidiClusterConnection>(`${API_BASE}/midi/cluster/connections`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  deleteConnection: (connectionId: string) =>
+    fetchJson<{ ok: boolean; message: string }>(
+      `${API_BASE}/midi/cluster/connections/${encodeURIComponent(connectionId)}`,
+      { method: 'DELETE' }
+    ),
+
+  triggerAutoConnect: () =>
+    fetchJson(`${API_BASE}/midi/cluster/connections/auto-connect`, { method: 'POST' }),
+
+  getAutoConnectStatus: () =>
+    fetchJson(`${API_BASE}/midi/cluster/connections/auto-connect/status`),
+
+  getClock: () => fetchJson<MidiClusterClock>(`${API_BASE}/midi/cluster/clock`),
+
+  setClockStrategy: (strategy: string, manualNodeId?: string) =>
+    fetchJson<MidiClusterClock>(`${API_BASE}/midi/cluster/clock/strategy`, {
+      method: 'PUT',
+      body: JSON.stringify({ strategy, manual_node_id: manualNodeId ?? null }),
+    }),
+
+  forceClockSync: () => fetchJson(`${API_BASE}/midi/cluster/clock/sync`, { method: 'POST' }),
+
+  getHealth: () => fetchJson<MidiClusterHealth>(`${API_BASE}/midi/cluster/health`),
 }
 
 export const midiHubApi = {
@@ -2083,21 +2246,21 @@ export const midiHubApi = {
 // ==================== IR API ====================
 
 export const irApi = {
-  getStatus: () => fetchJson<IRStatus>(`${API_BASE}/ir/`),
+  getStatus: (nodeId?: string | null) => fetchJson<IRStatus>(appendNodeQuery(`${API_BASE}/ir/`, nodeId)),
 
-  listCabinets: () => fetchJson<IRsResponse>(`${API_BASE}/ir/cabinets`),
+  listCabinets: (nodeId?: string | null) => fetchJson<IRsResponse>(appendNodeQuery(`${API_BASE}/ir/cabinets`, nodeId)),
 
-  listReverbs: () => fetchJson<IRsResponse>(`${API_BASE}/ir/reverbs`),
+  listReverbs: (nodeId?: string | null) => fetchJson<IRsResponse>(appendNodeQuery(`${API_BASE}/ir/reverbs`, nodeId)),
 
-  loadCabinet: (irName: string) =>
+  loadCabinet: (irName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; ir: string; type: string }>(
-      `${API_BASE}/ir/cabinets/${encodeURIComponent(irName)}/load`,
+      appendNodeQuery(`${API_BASE}/ir/cabinets/${encodeURIComponent(irName)}/load`, nodeId),
       { method: 'POST' }
     ),
 
-  loadReverb: (irName: string) =>
+  loadReverb: (irName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; ir: string; type: string }>(
-      `${API_BASE}/ir/reverbs/${encodeURIComponent(irName)}/load`,
+      appendNodeQuery(`${API_BASE}/ir/reverbs/${encodeURIComponent(irName)}/load`, nodeId),
       { method: 'POST' }
     ),
 
@@ -2141,8 +2304,13 @@ export interface LatencyJitterStats {
 }
 
 export const latencyV2Api = {
-  getJitterStats: () => fetchJson<LatencyJitterStats>(`${API_BASE}/v2/latency/jitter-stats`),
-  resetXruns: () => fetchJson<{ status: string; message: string }>(`${API_BASE}/v2/latency/xruns/reset`, { method: 'POST' }),
+  getJitterStats: (nodeId?: string | null) =>
+    fetchJson<LatencyJitterStats>(appendNodeQuery(`${API_BASE}/v2/latency/jitter-stats`, nodeId)),
+  resetXruns: (nodeId?: string | null) =>
+    fetchJson<{ status: string; message: string }>(
+      appendNodeQuery(`${API_BASE}/v2/latency/xruns/reset`, nodeId),
+      { method: 'POST' }
+    ),
 }
 
 // ==================== IR Library Download API ====================
@@ -2292,11 +2460,11 @@ export interface NAMCategoriesResponse {
 }
 
 export const namApi = {
-  getStatus: () => fetchJson<NAMStatus>(`${API_BASE}/nam/status`),
+  getStatus: (nodeId?: string | null) => fetchJson<NAMStatus>(appendNodeQuery(`${API_BASE}/nam/status`, nodeId)),
 
   getCategories: () => fetchJson<NAMCategoriesResponse>(`${API_BASE}/nam/categories`),
 
-  listModels: (params?: NAMListParams) => {
+  listModels: (params?: NAMListParams, nodeId?: string | null) => {
     const searchParams = new URLSearchParams()
     if (params?.limit) searchParams.set('limit', String(params.limit))
     if (params?.offset) searchParams.set('offset', String(params.offset))
@@ -2304,7 +2472,7 @@ export const namApi = {
     if (params?.amp_type) searchParams.set('amp_type', params.amp_type)
     if (params?.favorites_only) searchParams.set('favorites_only', 'true')
     const query = searchParams.toString()
-    return fetchJson<NAMModelsResponse>(`${API_BASE}/nam/models${query ? `?${query}` : ''}`)
+    return fetchJson<NAMModelsResponse>(appendNodeQuery(`${API_BASE}/nam/models${query ? `?${query}` : ''}`, nodeId))
   },
 
   getModel: (modelId: number) =>
@@ -2316,14 +2484,14 @@ export const namApi = {
       body: JSON.stringify(request),
     }),
 
-  loadModel: (modelName: string) =>
-    fetchJson<{ status: string; model: string }>(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, {
+  loadModel: (modelName: string, nodeId?: string | null) =>
+    fetchJson<{ status: string; model: string }>(appendNodeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, nodeId), {
       method: 'POST',
     }),
 
-  activateModel: (modelName: string) =>
+  activateModel: (modelName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; model: string }>(
-      `${API_BASE}/nam/models/${encodeURIComponent(modelName)}/activate`,
+      appendNodeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/activate`, nodeId),
       { method: 'POST' }
     ),
 
@@ -2356,9 +2524,9 @@ export const namApi = {
   },
 
   /** Delete a NAM model by name */
-  deleteModel: (modelName: string) =>
+  deleteModel: (modelName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; message: string }>(
-      `${API_BASE}/nam/models/${encodeURIComponent(modelName)}`,
+      appendNodeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}`, nodeId),
       { method: 'DELETE' }
     ),
 };
@@ -2373,14 +2541,14 @@ import type {
 } from '../app/types/library'
 
 export const soundfontApi = {
-  listSoundfonts: (params?: { limit?: number; offset?: number; category?: string; format?: string }) => {
+  listSoundfonts: (params?: { limit?: number; offset?: number; category?: string; format?: string }, nodeId?: string | null) => {
     const query = new URLSearchParams()
     if (params?.limit) query.set('limit', params.limit.toString())
     if (params?.offset) query.set('offset', params.offset.toString())
     if (params?.category) query.set('category', params.category)
     if (params?.format) query.set('format', params.format)
     const queryString = query.toString()
-    return fetchJson<SoundFontListResponse>(`${API_BASE}/soundfonts/${queryString ? `?${queryString}` : ''}`)
+    return fetchJson<SoundFontListResponse>(appendNodeQuery(`${API_BASE}/soundfonts/${queryString ? `?${queryString}` : ''}`, nodeId))
   },
 
   getLibraries: () =>
@@ -2894,13 +3062,17 @@ export const systemApi = {
     ),
 
   // Host Machine Page APIs
-  getHostMachineInfo: () => fetchJson<HostMachineInfo>(`${API_BASE}/system/host-machine-info`),
+  getHostMachineInfo: (nodeId?: string | null) =>
+    fetchJson<HostMachineInfo>(appendNodeQuery(`${API_BASE}/system/host-machine-info`, nodeId)),
 
-  getDiskHealth: () => fetchJson<DiskHealthData>(`${API_BASE}/system/disk-health`),
+  getDiskHealth: (nodeId?: string | null) =>
+    fetchJson<DiskHealthData>(appendNodeQuery(`${API_BASE}/system/disk-health`, nodeId)),
 
-  getHealthOverview: () => fetchJson<SystemHealthOverview>(`${API_BASE}/system/health-overview`),
+  getHealthOverview: (nodeId?: string | null) =>
+    fetchJson<SystemHealthOverview>(appendNodeQuery(`${API_BASE}/system/health-overview`, nodeId)),
 
-  getBrandingAssets: () => fetchJson<BrandingAssets>(`${API_BASE}/system/branding-assets`),
+  getBrandingAssets: (nodeId?: string | null) =>
+    fetchJson<BrandingAssets>(appendNodeQuery(`${API_BASE}/system/branding-assets`, nodeId)),
 };
 
 // ==================== Health API ====================
@@ -3109,7 +3281,7 @@ export const pluginPresetsApi = {
     tags?: string;
     favorites_only?: boolean;
     search?: string;
-  }) => {
+  }, nodeId?: string | null) => {
     const params = new URLSearchParams();
     if (options?.plugin_uri) params.set('plugin_uri', options.plugin_uri);
     if (options?.category) params.set('category', options.category);
@@ -3134,7 +3306,7 @@ export const pluginPresetsApi = {
         updated_at: string;
       }>;
       count: number;
-    }>(`${API_BASE}/plugin-presets/${query ? `?${query}` : ''}`);
+    }>(appendNodeQuery(`${API_BASE}/plugin-presets/${query ? `?${query}` : ''}`, nodeId));
   },
 
   get: (presetId: number) =>
@@ -3270,7 +3442,7 @@ export interface StorageInfo {
 }
 
 export const foldersApi = {
-  getDisplayPaths: () => fetchJson<DisplayPaths>(`${API_BASE}/folders/display-paths`),
+  getDisplayPaths: (nodeId?: string | null) => fetchJson<DisplayPaths>(appendNodeQuery(`${API_BASE}/folders/display-paths`, nodeId)),
 
   getStorageInfo: () => fetchJson<StorageInfo>(`${API_BASE}/folders/storage-info`),
 
@@ -3295,8 +3467,8 @@ export const foldersApi = {
       body: JSON.stringify({ scan_nams: scanNams, scan_irs: scanIrs, scan_lv2: scanLv2 }),
     }),
 
-  scanAll: () =>
-    fetchJson<{ status: string; message: string; scan_types: string[] }>(`${API_BASE}/folders/scan/all`, {
+  scanAll: (nodeId?: string | null) =>
+    fetchJson<{ status: string; message: string; scan_types: string[] }>(appendNodeQuery(`${API_BASE}/folders/scan/all`, nodeId), {
       method: 'POST',
     }),
 
@@ -3454,12 +3626,12 @@ export const flowSnapshotsApi = {
   /**
    * List all flow snapshots (metadata only)
    */
-  list: () =>
+  list: (nodeId?: string | null) =>
     fetchJson<{
       snapshots: FlowSnapshot[];
       count: number;
       active_id: number | null;
-    }>(`${API_BASE}/flow-snapshots`),
+    }>(appendNodeQuery(`${API_BASE}/flow-snapshots`, nodeId)),
 
   /**
    * Get snapshot with full data
@@ -3493,32 +3665,33 @@ export const flowSnapshotsApi = {
       tags?: string[];
       display_order?: number;
       is_favorite?: boolean;
-    }
+    },
+    nodeId?: string | null
   ) =>
     fetchJson<{ status: string; message: string }>(
-      `${API_BASE}/flow-snapshots/${snapshotId}`,
+      appendNodeQuery(`${API_BASE}/flow-snapshots/${snapshotId}`, nodeId),
       { method: 'PATCH', body: JSON.stringify(updates) }
     ),
 
   /**
    * Delete a flow snapshot
    */
-  delete: (snapshotId: number) =>
+  delete: (snapshotId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; message: string }>(
-      `${API_BASE}/flow-snapshots/${snapshotId}`,
+      appendNodeQuery(`${API_BASE}/flow-snapshots/${snapshotId}`, nodeId),
       { method: 'DELETE' }
     ),
 
   /**
    * Load/activate a snapshot
    */
-  load: (snapshotId: number) =>
+  load: (snapshotId: number, nodeId?: string | null) =>
     fetchJson<{
       status: string;
       snapshot_id: number;
       name: string;
       snapshot_data: FlowSnapshotData;
-    }>(`${API_BASE}/flow-snapshots/${snapshotId}/load`, { method: 'POST' }),
+    }>(appendNodeQuery(`${API_BASE}/flow-snapshots/${snapshotId}/load`, nodeId), { method: 'POST' }),
 
   /**
    * Set or clear MIDI program number
@@ -3564,67 +3737,75 @@ export const flowSnapshotsApi = {
 
 export const pipewireApi = {
   /** Full PipeWire graph snapshot — daemon, devices, nodes, streams, links, latency, alerts */
-  getStatus: () =>
-    fetchJson<import('./types').PipeWireMetrics>(`${API_BASE}/pipewire/status`),
+  getStatus: (nodeId?: string | null) =>
+    fetchJson<import('./types').PipeWireMetrics>(appendNodeQuery(`${API_BASE}/pipewire/status`, nodeId)),
 
   /** PipeWire daemon info */
-  getDaemon: () =>
-    fetchJson<import('./types').PipeWireDaemonInfo>(`${API_BASE}/pipewire/daemon`),
+  getDaemon: (nodeId?: string | null) =>
+    fetchJson<import('./types').PipeWireDaemonInfo>(appendNodeQuery(`${API_BASE}/pipewire/daemon`, nodeId)),
 
   /** List audio devices */
-  getDevices: () =>
-    fetchJson<{ devices: import('./types').PipeWireDeviceInfo[] }>(`${API_BASE}/pipewire/devices`),
+  getDevices: (nodeId?: string | null) =>
+    fetchJson<{ devices: import('./types').PipeWireDeviceInfo[] }>(appendNodeQuery(`${API_BASE}/pipewire/devices`, nodeId)),
 
   /** List sink/source nodes */
-  getNodes: () =>
-    fetchJson<{ nodes: import('./types').PipeWireNodeInfo[] }>(`${API_BASE}/pipewire/nodes`),
+  getNodes: (nodeId?: string | null) =>
+    fetchJson<{ nodes: import('./types').PipeWireNodeInfo[] }>(appendNodeQuery(`${API_BASE}/pipewire/nodes`, nodeId)),
 
   /** List active streams */
-  getStreams: () =>
-    fetchJson<{ streams: import('./types').PipeWireStreamInfo[] }>(`${API_BASE}/pipewire/streams`),
+  getStreams: (nodeId?: string | null) =>
+    fetchJson<{ streams: import('./types').PipeWireStreamInfo[] }>(appendNodeQuery(`${API_BASE}/pipewire/streams`, nodeId)),
 
   /** List graph links */
-  getLinks: () =>
-    fetchJson<{ links: import('./types').PipeWireLinkInfo[] }>(`${API_BASE}/pipewire/links`),
+  getLinks: (nodeId?: string | null) =>
+    fetchJson<{ links: import('./types').PipeWireLinkInfo[] }>(appendNodeQuery(`${API_BASE}/pipewire/links`, nodeId)),
 
   /** List connected clients */
-  getClients: () =>
-    fetchJson<{ clients: { id: number; name: string; info: string }[] }>(`${API_BASE}/pipewire/clients`),
+  getClients: (nodeId?: string | null) =>
+    fetchJson<{ clients: { id: number; name: string; info: string }[] }>(appendNodeQuery(`${API_BASE}/pipewire/clients`, nodeId)),
 
   /** Get clock settings */
-  getSettings: () =>
-    fetchJson<import('./types').PipeWireSettings>(`${API_BASE}/pipewire/settings`),
+  getSettings: (nodeId?: string | null) =>
+    fetchJson<import('./types').PipeWireSettings>(appendNodeQuery(`${API_BASE}/pipewire/settings`, nodeId)),
 
   /** Get latency breakdown */
-  getLatency: () =>
-    fetchJson<{ graph_latency_ms: number; driver_latency_ms: number; total_latency_ms: number; settings: import('./types').PipeWireSettings }>(`${API_BASE}/pipewire/latency`),
+  getLatency: (nodeId?: string | null) =>
+    fetchJson<{ graph_latency_ms: number; driver_latency_ms: number; total_latency_ms: number; settings: import('./types').PipeWireSettings }>(
+      appendNodeQuery(`${API_BASE}/pipewire/latency`, nodeId)
+    ),
 
   /** Set DSP quantum (buffer period). 0 = automatic. */
-  setQuantum: (quantum: number) =>
+  setQuantum: (quantum: number, nodeId?: string | null) =>
     fetchJson<{ success: boolean; quantum: number; settings: import('./types').PipeWireSettings }>(
-      `${API_BASE}/pipewire/quantum`, { method: 'POST', body: JSON.stringify({ quantum }) }
+      appendNodeQuery(`${API_BASE}/pipewire/quantum`, nodeId),
+      { method: 'POST', body: JSON.stringify({ quantum }) }
     ),
 
   /** Set forced sample rate. 0 = automatic. */
-  setRate: (rate: number) =>
+  setRate: (rate: number, nodeId?: string | null) =>
     fetchJson<{ success: boolean; rate: number; settings: import('./types').PipeWireSettings }>(
-      `${API_BASE}/pipewire/rate`, { method: 'POST', body: JSON.stringify({ rate }) }
+      appendNodeQuery(`${API_BASE}/pipewire/rate`, nodeId),
+      { method: 'POST', body: JSON.stringify({ rate }) }
     ),
 
   /** Get volume/mute for a node */
-  getVolume: (nodeId: number) =>
-    fetchJson<{ node_id: number; volume: number; muted: boolean }>(`${API_BASE}/pipewire/volume/${nodeId}`),
+  getVolume: (pipewireNodeId: number, nodeId?: string | null) =>
+    fetchJson<{ node_id: number; volume: number; muted: boolean }>(
+      appendNodeQuery(`${API_BASE}/pipewire/volume/${pipewireNodeId}`, nodeId)
+    ),
 
   /** Set volume for a node */
-  setVolume: (nodeId: number, volume: number) =>
+  setVolume: (pipewireNodeId: number, volume: number, nodeId?: string | null) =>
     fetchJson<{ success: boolean; node_id: number; volume: number }>(
-      `${API_BASE}/pipewire/volume`, { method: 'POST', body: JSON.stringify({ node_id: nodeId, volume }) }
+      appendNodeQuery(`${API_BASE}/pipewire/volume`, nodeId),
+      { method: 'POST', body: JSON.stringify({ node_id: pipewireNodeId, volume }) }
     ),
 
   /** Set mute state for a node */
-  setMute: (nodeId: number, mute: boolean) =>
+  setMute: (pipewireNodeId: number, mute: boolean, nodeId?: string | null) =>
     fetchJson<{ success: boolean; node_id: number; mute: boolean }>(
-      `${API_BASE}/pipewire/mute`, { method: 'POST', body: JSON.stringify({ node_id: nodeId, mute }) }
+      appendNodeQuery(`${API_BASE}/pipewire/mute`, nodeId),
+      { method: 'POST', body: JSON.stringify({ node_id: pipewireNodeId, mute }) }
     ),
 };
 
@@ -4319,6 +4500,26 @@ async function _json<T>(res: Response): Promise<T> {
   }
   return res.json()
 }
+
+function readActiveClusterNodeId(): string | null {
+  try {
+    const stored = window.localStorage.getItem('map2_active_node')
+    if (!stored || stored === 'null' || stored === 'all') {
+      return null
+    }
+    return stored
+  } catch {
+    return null
+  }
+}
+
+function tesiraFetch(input: string, init?: RequestInit): Promise<Response> {
+  return globalThis.fetch(appendNodeQuery(input, readActiveClusterNodeId()), init)
+}
+
+// The Tesira surface follows the shell node selector, so default every request
+// in this section through the cluster proxy when a peer is active.
+const fetch = tesiraFetch
 
 export const tesiraApi = {
   // Device management

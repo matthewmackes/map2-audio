@@ -371,8 +371,16 @@ function getErrorMessage(error: unknown): string {
   return String(error)
 }
 
-async function fetchMpx1Json<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${MPX1_API_BASE}${path}`, {
+function appendNodeQuery(path: string, nodeId?: string | null): string {
+  if (!nodeId || nodeId === 'all') {
+    return path
+  }
+  const separator = path.includes('?') ? '&' : '?'
+  return `${path}${separator}node_id=${encodeURIComponent(nodeId)}`
+}
+
+async function fetchMpx1Json<T>(path: string, options?: RequestInit, nodeId?: string | null): Promise<T> {
+  const response = await fetch(appendNodeQuery(`${MPX1_API_BASE}${path}`, nodeId), {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -410,184 +418,195 @@ function buildDefaultShadow(registry: MPX1Registry | null): MPX1Shadow {
   return shadow
 }
 
-function buildWsUrl(): string {
-  return `${getWsBaseUrl()}/api/mpx1/ws`
+function buildWsUrl(nodeId?: string | null): string {
+  const base = `${getWsBaseUrl()}/api/mpx1/ws`
+  if (!nodeId || nodeId === 'all') {
+    return base
+  }
+  return `${base}?node_id=${encodeURIComponent(nodeId)}`
 }
 
 export const mpx1Api = {
   wsUrl: buildWsUrl,
 
-  getState: () => fetchMpx1Json<MPX1State>('/state'),
+  getState: (nodeId?: string | null) => fetchMpx1Json<MPX1State>('/state', undefined, nodeId),
 
-  getRegistry: () => fetchMpx1Json<MPX1Registry>('/registry'),
+  getRegistry: (nodeId?: string | null) => fetchMpx1Json<MPX1Registry>('/registry', undefined, nodeId),
 
-  setParam: (paramId: string, value: number) =>
+  setParam: (paramId: string, value: number, nodeId?: string | null) =>
     fetchMpx1Json<MPX1ParamUpdateResponse>(`/param/${encodeURIComponent(paramId)}`, {
       method: 'POST',
       body: JSON.stringify({ value }),
-    }),
+    }, nodeId),
 
-  setParams: (updates: MPX1ParamUpdateRequest[]) =>
+  setParams: (updates: MPX1ParamUpdateRequest[], nodeId?: string | null) =>
     fetchMpx1Json<MPX1BulkParamUpdateResponse>('/params', {
       method: 'POST',
       body: JSON.stringify({ updates }),
-    }),
+    }, nodeId),
 
-  setProgram: (program: number) =>
+  setProgram: (program: number, nodeId?: string | null) =>
     fetchMpx1Json<MPX1ProgramResponse>(`/program/${Math.max(0, Math.floor(program))}`, {
       method: 'POST',
-    }),
+    }, nodeId),
 
-  getPrograms: () => fetchMpx1Json<MPX1ProgramsResponse>('/programs'),
+  getPrograms: (nodeId?: string | null) => fetchMpx1Json<MPX1ProgramsResponse>('/programs', undefined, nodeId),
 
-  dumpAll: () =>
+  dumpAll: (nodeId?: string | null) =>
     fetchMpx1Json<MPX1DumpResponse>('/dump/all', {
       method: 'POST',
-    }),
+    }, nodeId),
 
-  getLibrary: () => fetchMpx1Json<MPX1LibraryResponse>('/library'),
+  getLibrary: (nodeId?: string | null) => fetchMpx1Json<MPX1LibraryResponse>('/library', undefined, nodeId),
 
-  tagLibrary: (program: number, tag: string, action: MPX1TagAction = 'add') =>
+  tagLibrary: (program: number, tag: string, action: MPX1TagAction = 'add', nodeId?: string | null) =>
     fetchMpx1Json<MPX1LibraryTagResponse>('/library/tag', {
       method: 'POST',
       body: JSON.stringify({ program, tag, action }),
-    }),
+    }, nodeId),
 
-  importLibrary: (entries: MPX1LibraryEntry[]) =>
+  importLibrary: (entries: MPX1LibraryEntry[], nodeId?: string | null) =>
     fetchMpx1Json<{ status: string; entries: MPX1LibraryEntry[]; count: number }>('/library/import', {
       method: 'POST',
       body: JSON.stringify({ entries }),
-    }),
+    }, nodeId),
 
-  getMidiPorts: () => fetchMpx1Json<MPX1MidiPorts>('/midi/ports'),
+  getMidiPorts: (nodeId?: string | null) => fetchMpx1Json<MPX1MidiPorts>('/midi/ports', undefined, nodeId),
 
-  connectMidi: (request: MPX1MidiConnectRequest = {}) =>
+  connectMidi: (request: MPX1MidiConnectRequest = {}, nodeId?: string | null) =>
     fetchMpx1Json<MPX1MidiConnectResponse>('/midi/connect', {
       method: 'POST',
       body: JSON.stringify(request),
-    }),
+    }, nodeId),
 
-  disconnectMidi: () =>
+  disconnectMidi: (nodeId?: string | null) =>
     fetchMpx1Json<{ status: string; connected: boolean }>('/midi/disconnect', {
       method: 'POST',
-    }),
+    }, nodeId),
 
-  getMidiMaps: () => fetchMpx1Json<MPX1MidiMapsResponse>('/midi-maps'),
+  getMidiMaps: (nodeId?: string | null) => fetchMpx1Json<MPX1MidiMapsResponse>('/midi-maps', undefined, nodeId),
 
-  saveMidiMap: (midiMap: MPX1MidiMap, makeActive = false) =>
+  saveMidiMap: (midiMap: MPX1MidiMap, makeActive = false, nodeId?: string | null) =>
     fetchMpx1Json<MPX1MidiMapSaveResponse>('/midi-maps', {
       method: 'POST',
       body: JSON.stringify({ midi_map: midiMap, make_active: makeActive }),
-    }),
+    }, nodeId),
 
-  deleteMidiMap: (mapId: string) =>
+  deleteMidiMap: (mapId: string, nodeId?: string | null) =>
     fetchMpx1Json<MPX1MidiMapDeleteResponse>(`/midi-maps/${encodeURIComponent(mapId)}`, {
       method: 'DELETE',
-    }),
+    }, nodeId),
 
-  activateMidiMap: (mapId: string) =>
+  activateMidiMap: (mapId: string, nodeId?: string | null) =>
     fetchMpx1Json<MPX1MidiMapActivateResponse>(`/midi-maps/${encodeURIComponent(mapId)}/activate`, {
       method: 'POST',
-    }),
+    }, nodeId),
 
-  setMidiLearnTarget: (targetParamId: string | null) =>
+  setMidiLearnTarget: (targetParamId: string | null, nodeId?: string | null) =>
     fetchMpx1Json<MPX1MidiLearnTargetResponse>('/midi-maps/learn-target', {
       method: 'POST',
       body: JSON.stringify({ target_param_id: targetParamId }),
-    }),
+    }, nodeId),
 
-  getDiagnostics: (limit = 100) =>
-    fetchMpx1Json<MPX1Diagnostics>(`/diagnostics?limit=${Math.max(1, Math.min(500, Math.floor(limit)))}`),
+  getDiagnostics: (limit = 100, nodeId?: string | null) =>
+    fetchMpx1Json<MPX1Diagnostics>(`/diagnostics?limit=${Math.max(1, Math.min(500, Math.floor(limit)))}`, undefined, nodeId),
 
-  pingDiagnostics: () =>
+  pingDiagnostics: (nodeId?: string | null) =>
     fetchMpx1Json<MPX1PingResponse>('/diagnostics/ping', {
       method: 'POST',
-    }),
+    }, nodeId),
 
-  getHealth: () => fetchMpx1Json<MPX1Health>('/health'),
+  getHealth: (nodeId?: string | null) => fetchMpx1Json<MPX1Health>('/health', undefined, nodeId),
 
   // T038: Scenes
-  captureScene: (name: string, tags: string[] = []) =>
+  captureScene: (name: string, tags: string[] = [], nodeId?: string | null) =>
     fetchMpx1Json<MPX1Scene>('/scenes/capture', {
       method: 'POST',
       body: JSON.stringify({ name, tags }),
-    }),
+    }, nodeId),
 
-  listScenes: () =>
-    fetchMpx1Json<{ scenes: MPX1Scene[]; count: number }>('/scenes'),
+  listScenes: (nodeId?: string | null) =>
+    fetchMpx1Json<{ scenes: MPX1Scene[]; count: number }>('/scenes', undefined, nodeId),
 
-  updateScene: (id: string, updates: { name?: string; tags?: string[] }) =>
+  updateScene: (id: string, updates: { name?: string; tags?: string[] }, nodeId?: string | null) =>
     fetchMpx1Json<MPX1Scene>(`/scenes/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
-    }),
+    }, nodeId),
 
-  deleteScene: (id: string) =>
+  deleteScene: (id: string, nodeId?: string | null) =>
     fetchMpx1Json<{ deleted: string }>(`/scenes/${encodeURIComponent(id)}`, {
       method: 'DELETE',
-    }),
+    }, nodeId),
 
-  recallScene: (id: string) =>
+  recallScene: (id: string, nodeId?: string | null) =>
     fetchMpx1Json<{ status: string; recalled: string; program: number }>(
       `/scenes/${encodeURIComponent(id)}/recall`,
-      { method: 'POST' }
+      { method: 'POST' },
+      nodeId
     ),
 
-  diffScenes: (idA: string, idB: string) =>
+  diffScenes: (idA: string, idB: string, nodeId?: string | null) =>
     fetchMpx1Json<{ diffs: MPX1SceneDiff[]; count: number }>(
-      `/scenes/${encodeURIComponent(idA)}/diff/${encodeURIComponent(idB)}`
+      `/scenes/${encodeURIComponent(idA)}/diff/${encodeURIComponent(idB)}`,
+      undefined,
+      nodeId
     ),
 
   // T038: Morphing
-  startMorph: (req: MPX1MorphRequest) =>
+  startMorph: (req: MPX1MorphRequest, nodeId?: string | null) =>
     fetchMpx1Json<{ status: string; job_id: string }>('/scenes/morph', {
       method: 'POST',
       body: JSON.stringify(req),
-    }),
+    }, nodeId),
 
-  cancelMorph: (jobId: string) =>
+  cancelMorph: (jobId: string, nodeId?: string | null) =>
     fetchMpx1Json<{ cancelled: boolean; job_id: string }>(
       `/scenes/morph/${encodeURIComponent(jobId)}/cancel`,
-      { method: 'POST' }
+      { method: 'POST' },
+      nodeId
     ),
 
-  momentaryPress: (sceneId: string) =>
+  momentaryPress: (sceneId: string, nodeId?: string | null) =>
     fetchMpx1Json<{ pressed: string }>(`/scenes/${encodeURIComponent(sceneId)}/momentary/press`, {
       method: 'POST',
-    }),
+    }, nodeId),
 
-  momentaryRelease: (sceneId: string) =>
+  momentaryRelease: (sceneId: string, nodeId?: string | null) =>
     fetchMpx1Json<{ released: string; restored: boolean }>(
       `/scenes/${encodeURIComponent(sceneId)}/momentary/release`,
-      { method: 'POST' }
+      { method: 'POST' },
+      nodeId
     ),
 
   // T038: Setlists
-  createSetlist: (name: string) =>
+  createSetlist: (name: string, nodeId?: string | null) =>
     fetchMpx1Json<MPX1Setlist>('/setlists', {
       method: 'POST',
       body: JSON.stringify({ name }),
-    }),
+    }, nodeId),
 
-  listSetlists: () =>
-    fetchMpx1Json<{ setlists: MPX1Setlist[]; count: number }>('/setlists'),
+  listSetlists: (nodeId?: string | null) =>
+    fetchMpx1Json<{ setlists: MPX1Setlist[]; count: number }>('/setlists', undefined, nodeId),
 
-  updateSetlist: (id: string, updates: { name?: string; songs?: MPX1Song[] }) =>
+  updateSetlist: (id: string, updates: { name?: string; songs?: MPX1Song[] }, nodeId?: string | null) =>
     fetchMpx1Json<MPX1Setlist>(`/setlists/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
-    }),
+    }, nodeId),
 
-  deleteSetlist: (id: string) =>
+  deleteSetlist: (id: string, nodeId?: string | null) =>
     fetchMpx1Json<{ deleted: string }>(`/setlists/${encodeURIComponent(id)}`, {
       method: 'DELETE',
-    }),
+    }, nodeId),
 }
 
 export interface UseMPX1StateOptions {
   autoConnectWs?: boolean
   reconnectDelayMs?: number
   maxReconnectAttempts?: number
+  nodeId?: string | null
+  pollIntervalMs?: number
 }
 
 export interface UseMPX1StateResult {
@@ -612,6 +631,8 @@ export function useMPX1State({
   autoConnectWs = true,
   reconnectDelayMs = 1500,
   maxReconnectAttempts = 20,
+  nodeId,
+  pollIntervalMs = 0,
 }: UseMPX1StateOptions = {}): UseMPX1StateResult {
   const [state, setState] = useState<MPX1State | null>(null)
   const [shadow, setShadow] = useState<MPX1Shadow>({})
@@ -650,20 +671,20 @@ export function useMPX1State({
 
   const refreshPrograms = useCallback(async () => {
     try {
-      const payload = await mpx1Api.getPrograms()
+      const payload = await mpx1Api.getPrograms(nodeId)
       setPrograms(payload.programs)
       setError(null)
     } catch (err) {
       setError(getErrorMessage(err))
       throw err
     }
-  }, [])
+  }, [nodeId])
 
   const refresh = useCallback(async () => {
     try {
       const [nextState, nextPrograms] = await Promise.all([
-        mpx1Api.getState(),
-        mpx1Api.getPrograms(),
+        mpx1Api.getState(nodeId),
+        mpx1Api.getPrograms(nodeId),
       ])
       updateState(() => nextState)
       setPrograms(nextPrograms.programs)
@@ -672,7 +693,7 @@ export function useMPX1State({
       setError(getErrorMessage(err))
       throw err
     }
-  }, [updateState])
+  }, [nodeId, updateState])
 
   const applyWsEvent = useCallback((event: MPX1WsMessage) => {
     setLastEvent(event)
@@ -740,9 +761,9 @@ export function useMPX1State({
     const bootstrap = async () => {
       try {
         const [nextState, nextRegistry, nextPrograms] = await Promise.all([
-          mpx1Api.getState(),
-          mpx1Api.getRegistry(),
-          mpx1Api.getPrograms(),
+          mpx1Api.getState(nodeId),
+          mpx1Api.getRegistry(nodeId),
+          mpx1Api.getPrograms(nodeId),
         ])
         if (cancelled) {
           return
@@ -763,10 +784,23 @@ export function useMPX1State({
     return () => {
       cancelled = true
     }
-  }, [updateShadow, updateState])
+  }, [nodeId, updateShadow, updateState])
 
   useEffect(() => {
-    if (!autoConnectWs) {
+    if (!pollIntervalMs || pollIntervalMs <= 0) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      void refresh().catch(() => undefined)
+    }, pollIntervalMs)
+
+    return () => window.clearInterval(timer)
+  }, [pollIntervalMs, refresh])
+
+  useEffect(() => {
+    const allowWebSocket = autoConnectWs && !nodeId
+    if (!allowWebSocket) {
       return
     }
 
@@ -781,7 +815,7 @@ export function useMPX1State({
       }
 
       setWsState(reconnectAttemptsRef.current > 0 ? 'reconnecting' : 'connecting')
-      const ws = new WebSocket(mpx1Api.wsUrl())
+      const ws = new WebSocket(mpx1Api.wsUrl(nodeId))
       wsRef.current = ws
 
       ws.onopen = () => {
@@ -836,7 +870,7 @@ export function useMPX1State({
       wsRef.current = null
       setWsState('disconnected')
     }
-  }, [applyWsEvent, autoConnectWs, maxReconnectAttempts, reconnectDelayMs])
+  }, [applyWsEvent, autoConnectWs, maxReconnectAttempts, nodeId, reconnectDelayMs])
 
   const setParam = useCallback(async (paramId: string, value: number) => {
     const previousValue = shadowRef.current[paramId]
@@ -844,7 +878,7 @@ export function useMPX1State({
     setPendingParamIds((prev) => (prev.includes(paramId) ? prev : [...prev, paramId]))
 
     try {
-      const result = await mpx1Api.setParam(paramId, value)
+      const result = await mpx1Api.setParam(paramId, value, nodeId)
       updateShadow((prev) => ({ ...prev, [paramId]: result.value }))
       setError(null)
     } catch (err) {
@@ -857,7 +891,7 @@ export function useMPX1State({
     } finally {
       removePendingParam(paramId)
     }
-  }, [removePendingParam, updateShadow])
+  }, [nodeId, removePendingParam, updateShadow])
 
   const setParams = useCallback(async (updates: MPX1ParamUpdateRequest[]) => {
     const rollbackValues: Record<string, number> = {}
@@ -882,7 +916,7 @@ export function useMPX1State({
     })
 
     try {
-      const response = await mpx1Api.setParams(updates)
+      const response = await mpx1Api.setParams(updates, nodeId)
       updateShadow((prev) => {
         const next = { ...prev }
         for (const item of response.results) {
@@ -908,7 +942,7 @@ export function useMPX1State({
     } finally {
       setPendingParamIds((prev) => prev.filter((id) => !updates.some((update) => update.param_id === id)))
     }
-  }, [updateShadow])
+  }, [nodeId, updateShadow])
 
   const setProgram = useCallback(async (program: number) => {
     const previousProgram = stateRef.current?.current_program ?? 0
@@ -928,7 +962,7 @@ export function useMPX1State({
     })
 
     try {
-      const response = await mpx1Api.setProgram(program)
+      const response = await mpx1Api.setProgram(program, nodeId)
       updateState((prev) => {
         if (!prev) {
           return {
@@ -956,7 +990,7 @@ export function useMPX1State({
       setError(message)
       throw err
     }
-  }, [updateState])
+  }, [nodeId, updateState])
 
   const clearError = useCallback(() => {
     setError(null)

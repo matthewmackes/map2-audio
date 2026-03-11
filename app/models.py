@@ -3,7 +3,7 @@ Pydantic Response Models
 Schemas for API responses.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing import List, Dict, Any, Optional
 
 
@@ -53,21 +53,41 @@ class SystemHealthResponse(BaseModel):
 
 class SpecialSettingsResponse(BaseModel):
     """Special mode settings response."""
+    model_config = ConfigDict(populate_by_name=True)
+
     enabled: bool = False
     hidden_plugins: List[str] = []
     menu_location: str = "top-nav"
-    promoted_advanced_routes: List[str] = ["/welcome", "/grid"]
+    pinned_routes: List[str] = Field(default_factory=list)
     version: int = 1
     last_updated: Optional[str] = None  # ISO timestamp
     updated_by_node: Optional[str] = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_legacy_routes(cls, data):
+        if isinstance(data, dict) and "pinned_routes" not in data and "promoted_advanced_routes" in data:
+            data = dict(data)
+            data["pinned_routes"] = data.get("promoted_advanced_routes") or []
+        return data
+
 
 class SpecialSettingsUpdateRequest(BaseModel):
     """Request to update special settings."""
+    model_config = ConfigDict(populate_by_name=True)
+
     enabled: bool
     hidden_plugins: List[str]
     menu_location: str  # "top-nav" | "mobile-only" | "hidden"
-    promoted_advanced_routes: List[str] = ["/welcome", "/grid"]
+    pinned_routes: List[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_legacy_routes(cls, data):
+        if isinstance(data, dict) and "pinned_routes" not in data and "promoted_advanced_routes" in data:
+            data = dict(data)
+            data["pinned_routes"] = data.get("promoted_advanced_routes") or []
+        return data
 
 
 class PasswordAuthRequest(BaseModel):

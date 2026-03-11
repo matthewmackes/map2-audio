@@ -39,7 +39,7 @@ function formatTimestampNs(timestampNs: number): string {
   return `${date.toLocaleTimeString()}.${String(Math.floor(timestampNs % 1_000_000)).padStart(6, '0')}`
 }
 
-type SortKey = 'timestamp' | 'type' | 'source' | 'destination'
+type SortKey = 'timestamp' | 'type' | 'source' | 'destination' | 'node'
 
 export function MidiTrafficMonitor({
   limit = 2000,
@@ -56,6 +56,7 @@ export function MidiTrafficMonitor({
   const [sortAsc, setSortAsc] = useState(false)
   const [selected, setSelected] = useState<MidiHubTrafficRow | null>(null)
   const [lastExportPath, setLastExportPath] = useState<string | null>(null)
+  const [nodeFilter, setNodeFilter] = useState<string>('all')
 
   const trafficQuery = useQuery({
     queryKey: ['midi-hub', 'traffic', limit],
@@ -71,6 +72,9 @@ export function MidiTrafficMonitor({
 
   const filteredRows = useMemo(() => {
     const rows = [...(trafficQuery.data?.records ?? [])]
+    if (nodeFilter !== 'all') {
+      rows.splice(0, rows.length, ...rows.filter(row => row.origin_node_id === nodeFilter))
+    }
     if (search.trim()) {
       const term = search.trim()
       const predicate = (row: MidiHubTrafficRow) => {
@@ -92,10 +96,19 @@ export function MidiTrafficMonitor({
       if (sortKey === 'timestamp') return (a.timestamp_ns - b.timestamp_ns) * direction
       if (sortKey === 'type') return messageTypeOf(a).localeCompare(messageTypeOf(b)) * direction
       if (sortKey === 'source') return a.source_port.localeCompare(b.source_port) * direction
+      if (sortKey === 'node') return (a.origin_node_id || '').localeCompare(b.origin_node_id || '') * direction
       return a.destination_port.localeCompare(b.destination_port) * direction
     })
     return rows
-  }, [trafficQuery.data?.records, search, regexMode, sortKey, sortAsc])
+  }, [trafficQuery.data?.records, search, regexMode, sortKey, sortAsc, nodeFilter])
+
+  const nodeOptions = useMemo(() => {
+    const ids = new Set<string>()
+    for (const row of trafficQuery.data?.records ?? []) {
+      if (row.origin_node_id) ids.add(row.origin_node_id)
+    }
+    return Array.from(ids)
+  }, [trafficQuery.data?.records])
 
   const Row = ({ index, style }: ListChildComponentProps) => {
     const row = filteredRows[index]
@@ -106,7 +119,7 @@ export function MidiTrafficMonitor({
         style={{
           ...style,
           display: 'grid',
-          gridTemplateColumns: '192px 124px 1fr 1fr 220px',
+          gridTemplateColumns: '160px 120px 1fr 1fr 120px 220px',
           alignItems: 'center',
           gap: 8,
           padding: '0 10px',
@@ -130,6 +143,7 @@ export function MidiTrafficMonitor({
         />
         <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#94a3b8' }}>{row.source_port}</span>
         <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#94a3b8' }}>{row.destination_port}</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#c084fc' }}>{row.origin_node_id ?? 'local'}</span>
         <span style={{ fontFamily: 'monospace', fontSize: 12, color }}>{row.raw_hex}</span>
       </div>
     )
@@ -174,6 +188,20 @@ export function MidiTrafficMonitor({
           onChange={(event) => setSearch(event.target.value)}
           sx={{ minWidth: 220 }}
         />
+        <TextField
+          select
+          size="small"
+          label="Node"
+          value={nodeFilter}
+          onChange={(event) => setNodeFilter(event.target.value)}
+          SelectProps={{ native: true }}
+          sx={{ minWidth: 160 }}
+        >
+          <option value="all">All nodes</option>
+          {nodeOptions.map((id) => (
+            <option key={id} value={id}>{id}</option>
+          ))}
+        </TextField>
         <FormControlLabel
           control={<Switch checked={regexMode} onChange={(event) => setRegexMode(event.target.checked)} size="small" />}
           label="Regex"
@@ -191,6 +219,7 @@ export function MidiTrafficMonitor({
           <option value="type">Type</option>
           <option value="source">Source</option>
           <option value="destination">Destination</option>
+          <option value="node">Node</option>
         </TextField>
         <FormControlLabel
           control={<Switch checked={sortAsc} onChange={(event) => setSortAsc(event.target.checked)} size="small" />}

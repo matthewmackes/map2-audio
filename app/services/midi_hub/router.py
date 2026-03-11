@@ -24,11 +24,22 @@ def _default_routes_path() -> Path:
     return Path("~/.map2/midi_routes.json").expanduser()
 
 
+def _resolve_local_node_id() -> str:
+    try:
+        from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+
+        return get_enhanced_node_identity().get_node_id()
+    except Exception:
+        return "local"
+
+
 @dataclass(frozen=True)
 class MidiRoute:
     route_id: str
     source_port: str
     destination_ports: Tuple[str, ...]
+    source_node_id: Optional[str] = None
+    destination_node_id: Optional[str] = None
     enabled: bool = True
     priority: int = 100
     route_type: str = "pass_through"
@@ -46,6 +57,8 @@ class MidiRoute:
             "route_id": self.route_id,
             "source_port": self.source_port,
             "destination_ports": list(self.destination_ports),
+            "source_node_id": self.source_node_id,
+            "destination_node_id": self.destination_node_id,
             "enabled": self.enabled,
             "priority": self.priority,
             "route_type": self.route_type,
@@ -75,10 +88,14 @@ class MidiRoute:
                     destination_latency_ms[str(key)] = float(value)
                 except Exception:
                     continue
+        source_node_id_raw = str(payload.get("source_node_id") or "").strip()
+        destination_node_id_raw = str(payload.get("destination_node_id") or "").strip()
         return MidiRoute(
             route_id=str(payload.get("route_id") or uuid4().hex),
             source_port=str(payload.get("source_port") or ""),
             destination_ports=tuple(str(p) for p in (payload.get("destination_ports") or [])),
+            source_node_id=source_node_id_raw or None,
+            destination_node_id=destination_node_id_raw or None,
             enabled=bool(payload.get("enabled", True)),
             priority=int(payload.get("priority", 100)),
             route_type=str(payload.get("route_type") or "pass_through"),
@@ -119,6 +136,7 @@ class MidiRouter:
         self._running = False
         self._lock = threading.RLock()
         self._subscriber_id = "midi_hub_router"
+        self._local_node_id = _resolve_local_node_id()
         self._load_routes()
 
     @property
@@ -261,6 +279,9 @@ class MidiRouter:
                 )
         return {"node_count": len(nodes), "nodes": sorted(nodes), "link_count": len(links), "links": links}
 
+    def get_cluster_routes(self) -> List[Dict[str, Any]]:
+        return [route.to_dict() for route in self._route_snapshot if self._route_has_remote_endpoint(route)]
+
     def _rebuild_snapshot_locked(self) -> None:
         ordered = sorted(
             self._routes_by_id.values(),
@@ -305,12 +326,20 @@ class MidiRouter:
             return
 
         parsed = self._parse_message(message.data)
+        source_node_id = self._message_source_node_id(message)
+        matched_any = False
         for route in self._route_snapshot:
             if not route.enabled:
                 continue
             if route.source_port != message.source_port:
                 continue
+            if route.source_node_id and route.source_node_id != source_node_id:
+                continue
             if not self._matches_filter(route, parsed):
+                continue
+
+            destinations = [destination for destination in route.destination_ports if self._destination_matches_route(route, destination)]
+            if not destinations:
                 continue
 
             try:
@@ -332,16 +361,21 @@ class MidiRouter:
             if route.latency_compensation_enabled and route.destination_latency_ms:
                 max_route_latency_ms = max(float(v) for v in route.destination_latency_ms.values())
 
-            for destination in route.destination_ports:
+            for destination in destinations:
                 destination_latency_ms = 0.0
                 if route.latency_compensation_enabled:
                     destination_latency_ms = float(route.destination_latency_ms.get(destination, 0.0))
                 compensation_delay_ms = max(0.0, max_route_latency_ms - destination_latency_ms)
 
                 for event in transformed_events:
+                    matched_any = True
                     delay_ms = max(0, int(event.delay_ms + round(compensation_delay_ms)))
                     metadata = dict(event.metadata)
                     metadata["latency_compensation_ms"] = compensation_delay_ms
+                    if "origin_node_id" not in metadata:
+                        metadata["origin_node_id"] = source_node_id
+                    if "origin_port" not in metadata:
+                        metadata["origin_port"] = (message.metadata or {}).get("origin_port", message.source_port)
                     self._dispatch_event(
                         source_port=message.source_port,
                         destination_port=destination,
@@ -353,6 +387,20 @@ class MidiRouter:
 
             if self._match_mode == "first_match":
                 break
+
+        if (
+            not matched_any
+            and bool((message.metadata or {}).get("cluster_remote_injected"))
+            and bool(message.destination_port)
+        ):
+            self._dispatch_event(
+                source_port=message.source_port,
+                destination_port=str(message.destination_port),
+                event_data=bytes(message.data),
+                route_id="cluster_remote_direct",
+                delay_ms=0,
+                metadata=dict(message.metadata or {}),
+            )
 
     def _dispatch_event(
         self,
@@ -400,7 +448,24 @@ class MidiRouter:
         delay_ms: int,
         metadata: Dict[str, Any],
     ) -> None:
+        preserved_metadata = {
+            key: metadata[key]
+            for key in (
+                "origin_node_id",
+                "origin_port",
+                "cluster_remote_injected",
+                "cluster_transport",
+                "cluster_transport_received",
+                "cluster_remote_node_id",
+                "cluster_session_id",
+                "mesh_forwarded",
+                "mesh_origin",
+                "udp_raw_forwarded",
+            )
+            if key in metadata
+        }
         event_metadata = {
+            **preserved_metadata,
             "route_id": route_id,
             "delay_ms": int(delay_ms),
             "transform_metadata": dict(metadata),
@@ -453,6 +518,46 @@ class MidiRouter:
             if data2 is None or data2 < low or data2 > high:
                 return False
         return True
+
+    def _destination_matches_route(self, route: MidiRoute, destination: str) -> bool:
+        if not route.destination_node_id:
+            return True
+        return self._endpoint_node_id(destination) == route.destination_node_id
+
+    def _message_source_node_id(self, message: MidiMessage) -> str:
+        metadata = dict(message.metadata or {})
+        origin_node_id = str(metadata.get("origin_node_id") or "").strip()
+        if origin_node_id:
+            return origin_node_id
+        endpoint_node_id = self._endpoint_node_id(message.source_port)
+        return endpoint_node_id or self._local_node_id
+
+    def _endpoint_node_id(self, identifier: str) -> str:
+        target = str(identifier or "").strip()
+        if not target:
+            return self._local_node_id
+        if self._is_local_endpoint(target):
+            return self._local_node_id
+        if ":" not in target:
+            return self._local_node_id
+        node_id, _port_name = target.split(":", 1)
+        return node_id.strip() or self._local_node_id
+
+    def _is_local_endpoint(self, identifier: str) -> bool:
+        target = str(identifier or "").strip()
+        if not target:
+            return False
+        for port in self._hub.list_ports():
+            if target in {port.port_id, port.name}:
+                return True
+        return False
+
+    def _route_has_remote_endpoint(self, route: MidiRoute) -> bool:
+        if route.source_node_id or route.destination_node_id:
+            return True
+        if self._endpoint_node_id(route.source_port) != self._local_node_id:
+            return True
+        return any(self._endpoint_node_id(destination) != self._local_node_id for destination in route.destination_ports)
 
     @staticmethod
     def _parse_message(data: bytes) -> Dict[str, Any]:

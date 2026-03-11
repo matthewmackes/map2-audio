@@ -13,6 +13,7 @@ interface IRItemCardProps {
   }
   type: 'cabinet' | 'reverb'
   isActive: boolean
+  availabilityLabel?: string
 }
 
 function formatSize(bytes?: number): string {
@@ -33,7 +34,7 @@ function formatSampleRate(rate?: number): string {
   return `${(rate / 1000).toFixed(1)}kHz`
 }
 
-export function IRItemCard({ ir, type, isActive }: IRItemCardProps) {
+export function IRItemCard({ ir, type, isActive, availabilityLabel }: IRItemCardProps) {
   const queryClient = useQueryClient()
 
   const loadMutation = useMutation({
@@ -58,6 +59,9 @@ export function IRItemCard({ ir, type, isActive }: IRItemCardProps) {
         <div className="model-item-name">{ir.name}</div>
         {metadata && (
           <div className="model-item-meta">{metadata}</div>
+        )}
+        {availabilityLabel && (
+          <div className="model-item-meta">{availabilityLabel}</div>
         )}
       </div>
       <div className="flex" style={{ gap: 8, alignItems: 'center' }}>

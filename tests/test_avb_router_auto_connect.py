@@ -116,3 +116,34 @@ def test_start_skips_auto_connect_when_disabled(monkeypatch):
 
     assert router._auto_connect_task is None
     assert router._auto_connect_runs == 0
+
+
+def test_auto_connect_builds_pairs_only_across_distinct_nodes():
+    router = AvbRouter()
+
+    talker = _endpoint(
+        entity_id="0011223344556677",
+        unique_id=0,
+        direction=StreamDirection.TALKER,
+        node_id="node-a",
+    )
+    same_node_listener = _endpoint(
+        entity_id="0011223344556678",
+        unique_id=1,
+        direction=StreamDirection.LISTENER,
+        node_id="node-a",
+    )
+    remote_listener = _endpoint(
+        entity_id="8899aabbccddeeff",
+        unique_id=2,
+        direction=StreamDirection.LISTENER,
+        node_id="node-b",
+    )
+
+    router.endpoints[talker.endpoint_id()] = talker
+    router.endpoints[same_node_listener.endpoint_id()] = same_node_listener
+    router.endpoints[remote_listener.endpoint_id()] = remote_listener
+
+    pairs = router._build_auto_connect_pairs()
+
+    assert pairs == [(talker.endpoint_id(), remote_listener.endpoint_id())]

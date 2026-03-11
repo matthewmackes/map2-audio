@@ -1,6 +1,6 @@
 /**
  * useSpecialSettings - State management hook for special mode
- * 
+ *
  * Provides:
  * - Current special settings from API
  * - Update function that saves to backend
@@ -10,13 +10,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { apiUrl, wsUrl } from '../utils/apiTarget'
-import { defaultPromotedAdvancedRoutes } from '../data/advancedMenuItems'
+import { defaultPinnedRoutes } from '../data/advancedMenuItems'
 
 export interface SpecialSettings {
   enabled: boolean
   hiddenPlugins: string[]
   menuLocation: 'top-nav' | 'mobile-only' | 'hidden'
-  promotedAdvancedRoutes: string[]
+  pinnedRoutes: string[]
   version?: number
   lastUpdated?: string
   updatedByNode?: string
@@ -30,6 +30,20 @@ interface UseSpecialSettingsReturn {
   reload: () => Promise<void>
 }
 
+function resolvePinnedRoutes(data: Record<string, unknown>): string[] {
+  const pinnedRoutes = data.pinned_routes
+  if (Array.isArray(pinnedRoutes)) {
+    return pinnedRoutes.filter((route): route is string => typeof route === 'string')
+  }
+
+  const legacyRoutes = data.promoted_advanced_routes
+  if (Array.isArray(legacyRoutes)) {
+    return legacyRoutes.filter((route): route is string => typeof route === 'string')
+  }
+
+  return defaultPinnedRoutes
+}
+
 export function useSpecialSettings(): UseSpecialSettingsReturn {
   const [settings, setSettings] = useState<SpecialSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -38,21 +52,21 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
   const loadSettings = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const response = await fetch(apiUrl('/api/settings/special'))
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
-      
+
       const data = await response.json()
-      
+
       setSettings({
         enabled: data.enabled || false,
         hiddenPlugins: data.hidden_plugins || [],
         menuLocation: data.menu_location || 'top-nav',
-        promotedAdvancedRoutes: data.promoted_advanced_routes || defaultPromotedAdvancedRoutes,
+        pinnedRoutes: resolvePinnedRoutes(data),
         version: data.version,
         lastUpdated: data.last_updated,
         updatedByNode: data.updated_by_node,
@@ -68,15 +82,15 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
 
   const updateSettings = useCallback(async (newSettings: Partial<SpecialSettings>) => {
     setError(null)
-    
+
     try {
       const payload = {
         enabled: newSettings.enabled ?? settings?.enabled ?? false,
         hidden_plugins: newSettings.hiddenPlugins ?? settings?.hiddenPlugins ?? [],
         menu_location: newSettings.menuLocation ?? settings?.menuLocation ?? 'top-nav',
-        promoted_advanced_routes: newSettings.promotedAdvancedRoutes ?? settings?.promotedAdvancedRoutes ?? defaultPromotedAdvancedRoutes,
+        pinned_routes: newSettings.pinnedRoutes ?? settings?.pinnedRoutes ?? defaultPinnedRoutes,
       }
-      
+
       let response = await fetch(apiUrl('/api/settings/special'), {
         method: 'POST',
         headers: {
@@ -90,8 +104,7 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         const location = response.headers.get('Location')
         if (location) {
           console.log('Cluster mode: redirecting settings update to leader:', location)
-          
-          // Retry on leader
+
           response = await fetch(location, {
             method: 'POST',
             headers: {
@@ -112,12 +125,12 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
       }
 
       const data = await response.json()
-      
+
       setSettings({
         enabled: data.enabled,
         hiddenPlugins: data.hidden_plugins || [],
         menuLocation: data.menu_location,
-        promotedAdvancedRoutes: data.promoted_advanced_routes || defaultPromotedAdvancedRoutes,
+        pinnedRoutes: resolvePinnedRoutes(data),
         version: data.version,
         lastUpdated: data.last_updated,
         updatedByNode: data.updated_by_node,
@@ -128,16 +141,12 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
       console.error('Failed to update special settings:', err)
       throw err
     }
-  }, [settings, loadSettings])
+  }, [settings])
 
-  // Load initial settings on mount
   useEffect(() => {
     loadSettings()
   }, [loadSettings])
 
-  // WebSocket listener for cluster sync
-  // When a node in the cluster updates special settings, all connected clients
-  // are notified and reload settings automatically
   useEffect(() => {
     const eventsWsUrl = wsUrl('/ws/events')
     let ws: WebSocket | null = null
@@ -151,7 +160,6 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
           try {
             const data = JSON.parse(event.data)
             if (data.type === 'special_settings_update') {
-              // Another node updated settings — reload from backend
               loadSettings()
             }
           } catch {
@@ -160,7 +168,6 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         }
 
         ws.onclose = () => {
-          // Reconnect after a delay (cluster sync is non-critical)
           reconnectTimer = setTimeout(connect, 10000)
         }
 

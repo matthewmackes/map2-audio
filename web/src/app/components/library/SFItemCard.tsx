@@ -3,6 +3,7 @@ import type { SoundFont } from '../../types/library'
 
 interface SFItemCardProps {
   soundfont: SoundFont
+  availabilityLabel?: string
 }
 
 function formatSize(bytes?: number): string {
@@ -17,7 +18,7 @@ const FORMAT_COLORS: Record<string, string> = {
   sfz: 'var(--accent)',
 }
 
-export function SFItemCard({ soundfont }: SFItemCardProps) {
+export function SFItemCard({ soundfont, availabilityLabel }: SFItemCardProps) {
   const formatColor = FORMAT_COLORS[soundfont.format] ?? 'var(--muted)'
 
   return (
@@ -47,6 +48,9 @@ export function SFItemCard({ soundfont }: SFItemCardProps) {
           )}
           {soundfont.size > 0 && formatSize(soundfont.size)}
         </div>
+        {availabilityLabel && (
+          <div className="model-item-meta">{availabilityLabel}</div>
+        )}
       </div>
     </div>
   )

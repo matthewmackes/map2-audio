@@ -18,9 +18,10 @@ import hashlib
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,183 @@ class RatingResponse(BaseModel):
     rating_count: int
 
 
+class ClusterPresetBundle(BaseModel):
+    """Portable plugin preset payload for cluster distribution."""
+    preset_id: Optional[int] = None
+    name: str
+    plugin_uri: str
+    plugin_name: str
+    parameters: Dict[str, Any]
+    tags: List[str] = []
+    category: str = "User"
+    description: str = ""
+    is_favorite: bool = False
+    is_default: bool = False
+    checksum: str
+    source_node_id: Optional[str] = None
+    exported_at: Optional[str] = None
+
+
+class DeployPresetRequest(BaseModel):
+    """Request to deploy cluster content to one or more nodes."""
+    content_type: Literal["preset", "ir", "nam"] = "preset"
+    preset_id: Optional[int] = Field(None, ge=1)
+    path_token: Optional[str] = Field(None, min_length=3)
+    source_node_id: Optional[str] = None
+    target_node_id: Optional[str] = None
+    target_node_ids: List[str] = []
+
+
+def _preset_checksum(plugin_uri: str, parameters: Dict[str, Any]) -> str:
+    payload = json.dumps(parameters, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(f"{plugin_uri}:{payload}".encode()).hexdigest()
+
+
+async def import_preset_bytes(
+    filename: str,
+    content: bytes,
+    plugin_uri: Optional[str] = None,
+    save_to_library: bool = True,
+) -> Dict[str, Any]:
+    """Import preset bytes using the same flow as the upload endpoint."""
+    from app.services.preset_converter_service import get_preset_converter
+
+    converter = get_preset_converter()
+    suffix = Path(filename or "preset.map2preset").suffix or ".preset"
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        result = converter.import_preset(tmp_path, plugin_uri)
+
+        if not result.success:
+            raise HTTPException(
+                status_code=400,
+                detail=result.errors[0] if result.errors else "Import failed",
+            )
+
+        preset_id = None
+        if save_to_library:
+            from app.database import PluginPreset, PresetImportHistory, get_session
+
+            async with get_session() as session:
+                file_hash = converter.compute_file_hash(tmp_path)
+
+                import_history = PresetImportHistory(
+                    source_file_hash=file_hash,
+                    original_filename=filename or "unknown",
+                    original_format=result.original_format.value,
+                    file_size_bytes=len(content),
+                    target_plugin_uri=plugin_uri or result.plugin_identifier,
+                    parameters_imported=len(result.parameters),
+                    conversion_success=True,
+                )
+                session.add(import_history)
+
+                preset = PluginPreset(
+                    name=result.name,
+                    plugin_uri=plugin_uri or result.plugin_identifier,
+                    plugin_name=result.metadata.get("plugin_name", result.name),
+                    parameters=json.dumps(result.parameters),
+                    tags=[result.original_format.value, "imported"],
+                    category="Imported",
+                    description=f"Imported from {result.original_format.value} format",
+                )
+                session.add(preset)
+                await session.flush()
+
+                preset_id = preset.id
+                import_history.converted_preset_id = preset_id
+
+        return {
+            "success": True,
+            "preset_id": preset_id,
+            "name": result.name,
+            "plugin_identifier": result.plugin_identifier,
+            "original_format": result.original_format.value,
+            "parameters_imported": len(result.parameters),
+            "message": f"Successfully imported '{result.name}' with {len(result.parameters)} parameters",
+            "warnings": result.warnings,
+            "checksum": hashlib.sha256(content).hexdigest(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Import error: {e}")
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
+def _cluster_content_roots(content_type: str) -> Dict[str, Path]:
+    from app.paths import StoragePaths
+
+    if content_type == "ir":
+        roots = StoragePaths.get_all_ir_paths(include_nonexistent=True)
+    elif content_type == "nam":
+        roots = StoragePaths.get_all_nam_paths(include_nonexistent=True)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported content_type: {content_type}")
+
+    return {f"{content_type}_{index}": root for index, root in enumerate(roots)}
+
+
+def _list_cluster_files(content_type: str) -> List[Dict[str, Any]]:
+    if content_type == "ir":
+        allowed_exts = {".wav", ".aif", ".aiff", ".flac"}
+    elif content_type == "nam":
+        allowed_exts = {".nam", ".json"}
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported content_type: {content_type}")
+
+    items: List[Dict[str, Any]] = []
+    for root_name, root_path in _cluster_content_roots(content_type).items():
+        if not root_path.exists():
+            continue
+
+        for file_path in sorted(root_path.rglob("*")):
+            if not file_path.is_file() or file_path.suffix.lower() not in allowed_exts:
+                continue
+            relative_path = file_path.relative_to(root_path).as_posix()
+            checksum = hashlib.sha256(file_path.read_bytes()).hexdigest()
+            asset_type = "nam"
+            if content_type == "ir":
+                asset_type = "reverb_ir" if "reverb" in file_path.as_posix().lower() else "cabinet_ir"
+
+            items.append(
+                {
+                    "path_token": f"{root_name}:{relative_path}",
+                    "relative_path": relative_path,
+                    "filename": file_path.name,
+                    "size_bytes": file_path.stat().st_size,
+                    "checksum": checksum,
+                    "asset_type": asset_type,
+                }
+            )
+
+    return items
+
+
+def _resolve_cluster_file(content_type: str, path_token: str) -> Path:
+    if ":" not in path_token:
+        raise HTTPException(status_code=400, detail="path_token must be in '<root>:<relative_path>' format")
+
+    root_name, relative_path = path_token.split(":", 1)
+    roots = _cluster_content_roots(content_type)
+    root_path = roots.get(root_name)
+    if root_path is None:
+        raise HTTPException(status_code=404, detail="Unknown content root")
+
+    candidate = (root_path / relative_path).resolve()
+    if not str(candidate).startswith(str(root_path.resolve())):
+        raise HTTPException(status_code=400, detail="Illegal content path")
+    if not candidate.is_file():
+        raise HTTPException(status_code=404, detail="Content file not found")
+    return candidate
+
+
 # =============================================================================
 # IMPORT ENDPOINTS
 # =============================================================================
@@ -127,84 +305,14 @@ async def import_preset(
     **Returns:**
     - Import result with preset ID and parameter count
     """
-    from app.services.preset_converter_service import get_preset_converter
-
-    converter = get_preset_converter()
-
-    # Save uploaded file temporarily
-    suffix = Path(file.filename).suffix if file.filename else ".preset"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        content = await file.read()
-        tmp.write(content)
-        tmp_path = Path(tmp.name)
-
-    try:
-        # Import preset
-        result = converter.import_preset(tmp_path, plugin_uri)
-
-        if not result.success:
-            raise HTTPException(
-                status_code=400,
-                detail=result.errors[0] if result.errors else "Import failed"
-            )
-
-        preset_id = None
-
-        # Optionally save to local library
-        if save_to_library:
-            from app.database import get_session, PluginPreset, PresetImportHistory
-
-            async with get_session() as session:
-                # Check for duplicate import
-                file_hash = converter.compute_file_hash(tmp_path)
-
-                # Create import history record
-                import_history = PresetImportHistory(
-                    source_file_hash=file_hash,
-                    original_filename=file.filename or "unknown",
-                    original_format=result.original_format.value,
-                    file_size_bytes=len(content),
-                    target_plugin_uri=plugin_uri or result.plugin_identifier,
-                    parameters_imported=len(result.parameters),
-                    conversion_success=True,
-                )
-                session.add(import_history)
-
-                # Create preset
-                preset = PluginPreset(
-                    name=result.name,
-                    plugin_uri=plugin_uri or result.plugin_identifier,
-                    plugin_name=result.metadata.get("plugin_name", result.name),
-                    parameters=json.dumps(result.parameters),
-                    tags=[result.original_format.value, "imported"],
-                    category="Imported",
-                    description=f"Imported from {result.original_format.value} format",
-                )
-                session.add(preset)
-                await session.flush()
-
-                preset_id = preset.id
-                import_history.converted_preset_id = preset_id
-
-        return ImportPresetResponse(
-            success=True,
-            preset_id=preset_id,
-            name=result.name,
-            plugin_identifier=result.plugin_identifier,
-            original_format=result.original_format.value,
-            parameters_imported=len(result.parameters),
-            message=f"Successfully imported '{result.name}' with {len(result.parameters)} parameters",
-            warnings=result.warnings,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception(f"Import error: {e}")
-        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
-    finally:
-        # Cleanup temp file
-        tmp_path.unlink(missing_ok=True)
+    content = await file.read()
+    payload = await import_preset_bytes(
+        filename=file.filename or "preset.map2preset",
+        content=content,
+        plugin_uri=plugin_uri,
+        save_to_library=save_to_library,
+    )
+    return ImportPresetResponse(**payload)
 
 
 @router.get("/formats")
@@ -222,6 +330,209 @@ async def get_supported_formats() -> Dict[str, Any]:
         "formats": converter.supported_formats,
         "primary_format": "map2upf",
         "recommended_extension": ".map2preset",
+    }
+
+
+@router.get("/cluster/presets/{preset_id}", response_model=ClusterPresetBundle)
+async def get_cluster_preset_export(preset_id: int) -> ClusterPresetBundle:
+    """Export a plugin preset as a portable cluster payload."""
+    from app.database import PluginPreset, get_session
+    from sqlalchemy import select
+    from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+
+    async with get_session() as session:
+        result = await session.execute(select(PluginPreset).filter(PluginPreset.id == preset_id))
+        preset = result.scalar_one_or_none()
+        if not preset:
+            raise HTTPException(status_code=404, detail="Preset not found")
+
+        parameters = json.loads(preset.parameters) if isinstance(preset.parameters, str) else preset.parameters
+        return ClusterPresetBundle(
+            preset_id=preset.id,
+            name=preset.name,
+            plugin_uri=preset.plugin_uri,
+            plugin_name=preset.plugin_name,
+            parameters=parameters,
+            tags=preset.tags or [],
+            category=preset.category or "User",
+            description=preset.description or "",
+            is_favorite=bool(preset.is_favorite),
+            is_default=bool(preset.is_default),
+            checksum=_preset_checksum(preset.plugin_uri, parameters),
+            source_node_id=get_enhanced_node_identity().get_node_id(),
+            exported_at=datetime.utcnow().isoformat(),
+        )
+
+
+@router.post("/import-cluster")
+async def import_cluster_preset(bundle: ClusterPresetBundle) -> Dict[str, Any]:
+    """Create or update a plugin preset received from another node."""
+    from app.database import PluginPreset, get_session
+    from sqlalchemy import select
+
+    expected_checksum = _preset_checksum(bundle.plugin_uri, bundle.parameters)
+    if bundle.checksum != expected_checksum:
+        raise HTTPException(status_code=400, detail="Preset checksum mismatch")
+
+    async with get_session() as session:
+        existing_result = await session.execute(
+            select(PluginPreset).filter(
+                (PluginPreset.plugin_uri == bundle.plugin_uri) &
+                (PluginPreset.name == bundle.name)
+            )
+        )
+        preset = existing_result.scalar_one_or_none()
+        already_exists = False
+
+        if bundle.is_default:
+            defaults = (
+                await session.execute(
+                    select(PluginPreset).filter(
+                        (PluginPreset.plugin_uri == bundle.plugin_uri) &
+                        (PluginPreset.is_default == True)
+                    )
+                )
+            ).scalars().all()
+            for default in defaults:
+                if preset is None or default.id != preset.id:
+                    default.is_default = False
+
+        if preset is None:
+            preset = PluginPreset(
+                name=bundle.name,
+                plugin_uri=bundle.plugin_uri,
+                plugin_name=bundle.plugin_name,
+                parameters=json.dumps(bundle.parameters),
+                tags=bundle.tags,
+                category=bundle.category,
+                description=bundle.description,
+                is_favorite=bundle.is_favorite,
+                is_default=bundle.is_default,
+            )
+            session.add(preset)
+            action = "created"
+        else:
+            current_parameters = json.loads(preset.parameters) if isinstance(preset.parameters, str) else preset.parameters
+            already_exists = _preset_checksum(preset.plugin_uri, current_parameters) == bundle.checksum
+            preset.plugin_name = bundle.plugin_name
+            preset.parameters = json.dumps(bundle.parameters)
+            preset.tags = bundle.tags
+            preset.category = bundle.category
+            preset.description = bundle.description
+            preset.is_favorite = bundle.is_favorite
+            preset.is_default = bundle.is_default
+            action = "updated"
+
+        await session.flush()
+        await session.refresh(preset)
+
+        return {
+            "success": True,
+            "preset_id": preset.id,
+            "status": action,
+            "already_exists": already_exists,
+            "checksum": bundle.checksum,
+            "source_node_id": bundle.source_node_id,
+        }
+
+
+@router.get("/cluster/library")
+async def get_cluster_library_index(content_type: str = Query(..., pattern="^(preset|ir|nam)$")) -> Dict[str, Any]:
+    """List content available for cross-node sharing."""
+    if content_type == "preset":
+        from app.database import PluginPreset, get_session
+        from sqlalchemy import select
+
+        async with get_session() as session:
+            presets = (
+                await session.execute(select(PluginPreset).order_by(PluginPreset.plugin_uri, PluginPreset.name))
+            ).scalars().all()
+            items = []
+            for preset in presets:
+                parameters = json.loads(preset.parameters) if isinstance(preset.parameters, str) else preset.parameters
+                items.append(
+                    {
+                        "preset_id": preset.id,
+                        "name": preset.name,
+                        "plugin_uri": preset.plugin_uri,
+                        "plugin_name": preset.plugin_name,
+                        "checksum": _preset_checksum(preset.plugin_uri, parameters),
+                        "updated_at": preset.updated_at.isoformat() if preset.updated_at else None,
+                    }
+                )
+            return {"content_type": content_type, "items": items, "count": len(items)}
+
+    items = _list_cluster_files(content_type)
+    return {"content_type": content_type, "items": items, "count": len(items)}
+
+
+@router.get("/cluster/files/{content_type}")
+async def get_cluster_content_file(
+    content_type: str,
+    path_token: str = Query(..., min_length=3),
+) -> FileResponse:
+    """Download a cluster-sharable IR or NAM file by safe token."""
+    if content_type not in {"ir", "nam"}:
+        raise HTTPException(status_code=400, detail="content_type must be 'ir' or 'nam'")
+    file_path = _resolve_cluster_file(content_type, path_token)
+    return FileResponse(path=file_path, filename=file_path.name, media_type="application/octet-stream")
+
+
+@router.get("/availability")
+async def get_preset_availability(
+    preset_id: int = Query(..., ge=1),
+    target_node_ids: Optional[str] = Query(None, description="Comma-separated node IDs to filter"),
+    source_node_id: Optional[str] = Query(None, description="Source node containing the preset"),
+) -> Dict[str, Any]:
+    """Report which nodes already have a preset with the same payload."""
+    from app.services.cluster.content_distributor import get_content_distributor
+
+    distributor = get_content_distributor()
+    targets = [node_id.strip() for node_id in (target_node_ids or "").split(",") if node_id.strip()]
+    return await distributor.get_preset_availability(preset_id, targets or None, source_node_id=source_node_id)
+
+
+@router.post("/deploy")
+async def deploy_preset_to_nodes(request: DeployPresetRequest) -> Dict[str, Any]:
+    """Deploy a plugin preset or library asset to one or more cluster nodes."""
+    from app.services.cluster.content_distributor import get_content_distributor
+
+    distributor = get_content_distributor()
+    target_node_ids = request.target_node_ids or ([request.target_node_id] if request.target_node_id else [])
+    if not target_node_ids:
+        raise HTTPException(status_code=400, detail="At least one target node ID is required")
+
+    if request.content_type == "preset":
+        if request.preset_id is None:
+            raise HTTPException(status_code=400, detail="preset_id is required for preset deployment")
+        result = await distributor.deploy_preset(request.preset_id, target_node_ids, source_node_id=request.source_node_id)
+        return {
+            "content_type": request.content_type,
+            "preset_id": request.preset_id,
+            "source_node_id": request.source_node_id,
+            "targets": target_node_ids,
+            "results": result,
+            "successful": [node_id for node_id, ok in result.items() if ok],
+            "failed": [node_id for node_id, ok in result.items() if not ok],
+        }
+
+    if request.path_token is None:
+        raise HTTPException(status_code=400, detail="path_token is required for IR/NAM deployment")
+
+    result = await distributor.deploy_library_item(
+        request.content_type,
+        request.path_token,
+        target_node_ids,
+        source_node_id=request.source_node_id,
+    )
+    return {
+        "content_type": request.content_type,
+        "path_token": request.path_token,
+        "source_node_id": request.source_node_id,
+        "targets": target_node_ids,
+        "results": result,
+        "successful": [node_id for node_id, ok in result.items() if ok],
+        "failed": [node_id for node_id, ok in result.items() if not ok],
     }
 
 

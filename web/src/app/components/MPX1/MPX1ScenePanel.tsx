@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mpx1Api, type MPX1Scene, type MPX1MorphRequest } from '../../../map2/mpx1Api'
+import { useMPX1PageContext } from '../../pages/MPX1Page'
 import { formatMpx1ProgramLabel } from './programNumber'
 import './MPX1ScenePanel.css'
 
@@ -216,6 +217,7 @@ function MorphStrip({ scenes, activeJobId, onMorphStart, onMorphCancel }: MorphS
 // ---------------------------------------------------------------------------
 
 export function MPX1ScenePanel() {
+  const { nodeId } = useMPX1PageContext()
   const [scenes, setScenes] = useState<MPX1Scene[]>([])
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null)
   const [morphJobId, setMorphJobId] = useState<string | null>(null)
@@ -224,13 +226,13 @@ export function MPX1ScenePanel() {
 
   const loadScenes = useCallback(async () => {
     try {
-      const res = await mpx1Api.listScenes()
+      const res = await mpx1Api.listScenes(nodeId)
       setScenes(res.scenes)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [])
+  }, [nodeId])
 
   useEffect(() => {
     void loadScenes()
@@ -239,73 +241,73 @@ export function MPX1ScenePanel() {
   const handleCapture = useCallback(async () => {
     const name = captureName.trim() || `Scene ${scenes.length + 1}`
     try {
-      const scene = await mpx1Api.captureScene(name)
+      const scene = await mpx1Api.captureScene(name, [], nodeId)
       setScenes((prev) => [...prev, scene])
       setCaptureName('')
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [captureName, scenes.length])
+  }, [captureName, nodeId, scenes.length])
 
   const handleRecall = useCallback(async (id: string) => {
     try {
-      await mpx1Api.recallScene(id)
+      await mpx1Api.recallScene(id, nodeId)
       setActiveSceneId(id)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [])
+  }, [nodeId])
 
   const handlePress = useCallback(async (id: string) => {
     try {
-      await mpx1Api.momentaryPress(id)
+      await mpx1Api.momentaryPress(id, nodeId)
       setActiveSceneId(id)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [])
+  }, [nodeId])
 
   const handleRelease = useCallback(async (id: string) => {
     try {
-      await mpx1Api.momentaryRelease(id)
+      await mpx1Api.momentaryRelease(id, nodeId)
       setActiveSceneId(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [])
+  }, [nodeId])
 
   const handleDelete = useCallback(async (id: string) => {
     try {
-      await mpx1Api.deleteScene(id)
+      await mpx1Api.deleteScene(id, nodeId)
       setScenes((prev) => prev.filter((s) => s.id !== id))
       if (activeSceneId === id) setActiveSceneId(null)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [activeSceneId])
+  }, [activeSceneId, nodeId])
 
   const handleMorphStart = useCallback(async (req: MPX1MorphRequest) => {
     try {
-      const res = await mpx1Api.startMorph(req)
+      const res = await mpx1Api.startMorph(req, nodeId)
       setMorphJobId(res.job_id)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [])
+  }, [nodeId])
 
   const handleMorphCancel = useCallback(async () => {
     if (!morphJobId) return
     try {
-      await mpx1Api.cancelMorph(morphJobId)
+      await mpx1Api.cancelMorph(morphJobId, nodeId)
       setMorphJobId(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     }
-  }, [morphJobId])
+  }, [morphJobId, nodeId])
 
   const activeSceneName = activeSceneId
     ? (scenes.find((scene) => scene.id === activeSceneId)?.name ?? 'Unknown Scene')

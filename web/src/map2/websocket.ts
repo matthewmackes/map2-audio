@@ -30,6 +30,10 @@ export type WebSocketTopic =
   | 'latency'
   // MIDI monitor topics
   | 'midi_activity'
+  | 'midi_cluster'
+  | 'midi_cluster_nodes'
+  | 'midi_cluster_connections'
+  | 'midi_cluster_clock'
   // PipeWire audio server
   | 'pipewire'
   // Biamp Tesira Forte AVB fleet
@@ -330,7 +334,25 @@ export class Map2WebSocket {
         return;
       }
 
-      // Dispatch to topic subscribers
+      // Dispatch to topic subscribers. Prefer explicit topic routing when the
+      // backend includes it in the payload, otherwise fall back to legacy
+      // broadcast-to-all behavior.
+      if (message.topic) {
+        const typedTopic = message.topic as WebSocketTopic;
+        const topicHandlers = this.subscriptions.get(typedTopic);
+        if (topicHandlers) {
+          topicHandlers.forEach(handler => {
+            try {
+              handler(message);
+            } catch (error) {
+              console.error(`Error in handler for topic ${typedTopic}:`, error);
+            }
+          });
+        }
+        return;
+      }
+
+      // Legacy dispatch path for messages that do not identify a topic.
       for (const [topic, handlers] of this.subscriptions.entries()) {
         handlers.forEach(handler => {
           try {
