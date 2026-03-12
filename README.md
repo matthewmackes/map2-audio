@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**778** Python | **1001** TypeScript | **282** C++/H | **119** Docs | **487** total commits | **0** stars | **0** forks | **0** open issues
+**778** Python | **1001** TypeScript | **282** C++/H | **119** Docs | **488** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,6 +200,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8bc80f18`](https://github.com/matthewmackes/map2-audio/commit/8bc80f188e0321d6c017e8a8ca1fc593bfc73f8f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-11 |
 | [`26f474e0`](https://github.com/matthewmackes/map2-audio/commit/26f474e09ec3e29284118ae6fa594c3a89e7b48a) | Complete cluster burndown implementation and test coverage | Map2 Audio | 2026-03-11 |
 | [`a3ddd00f`](https://github.com/matthewmackes/map2-audio/commit/a3ddd00f602dc8696c8a89d60526cdb5daceba8e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-11 |
 | [`3dcfe8c7`](https://github.com/matthewmackes/map2-audio/commit/3dcfe8c7ecf0da8c19e6af224e556054b8d65cf0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
@@ -207,7 +208,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`ec48f88f`](https://github.com/matthewmackes/map2-audio/commit/ec48f88feab9e74b6957e3f054ebcbbcacb96efa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`33e6a3d6`](https://github.com/matthewmackes/map2-audio/commit/33e6a3d609702c3d3c435e19fc82e9647da50ec1) | feat: T092 GUI professionalism overhaul plan — IBM Carbon... | Map2 Audio | 2026-03-10 |
 | [`c8312825`](https://github.com/matthewmackes/map2-audio/commit/c8312825a52f9d99a66f8192b4fa4748350aec40) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
-| [`31880210`](https://github.com/matthewmackes/map2-audio/commit/31880210c318344e4d178c6327d30bf92f8e954e) | docs: prepare repo bloat cleanup | Map2 Audio | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
