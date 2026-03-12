@@ -14,7 +14,7 @@ export function ReverbIRLoaderCard({ onLoadReverbIR }: ReverbIRLoaderCardProps) 
 
   const statusQuery = useQuery<IRStatus>({
     queryKey: ['ir', 'status'],
-    queryFn: irApi.getStatus,
+    queryFn: () => irApi.getStatus(),
   })
 
   const status = statusQuery.data

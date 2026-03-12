@@ -1,9 +1,38 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Broadcast, SpeakerHigh, SpeakerX, Warning, CheckCircle, XCircle, Pulse, Cpu, Link, Microphone, GearSix, type Icon } from '@phosphor-icons/react'
+import {
+  Button,
+  InlineLoading,
+  InlineNotification,
+  Layer,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+} from '@carbon/react'
+import {
+  Activity,
+  CheckmarkFilled,
+  Chip,
+  ErrorFilled,
+  Link,
+  Microphone,
+  Network_3 as NetworkThree,
+  Settings,
+  VolumeMute,
+  VolumeUp,
+  WarningAlt,
+  WarningFilled,
+  type CarbonIconType,
+} from '@carbon/icons-react'
 import { usePipeWire } from '../hooks/usePipeWire'
 import { useCluster } from '../contexts/ClusterContext'
 import type { PipeWireMetrics } from '../../map2/types'
+import './PipeWirePage.css'
 
 type PipeWireHealthStatus = 'ok' | 'warning' | 'error' | 'offline'
 
@@ -52,214 +81,259 @@ function formatMutationError(error: unknown): string | null {
   return 'Failed to update PipeWire runtime settings.'
 }
 
-// ============================================================================
-// Helper Components
-// ============================================================================
+function statusTagType(status: PipeWireHealthStatus): 'green' | 'warm-gray' | 'red' | 'gray' {
+  switch (status) {
+    case 'ok':
+      return 'green'
+    case 'error':
+      return 'red'
+    case 'warning':
+      return 'warm-gray'
+    default:
+      return 'gray'
+  }
+}
+
+function daemonStateTagType(running: boolean, isOnline: boolean): 'green' | 'warm-gray' | 'red' {
+  if (!isOnline) {
+    return 'red'
+  }
+  return running ? 'green' : 'warm-gray'
+}
+
+function linkStateTagType(state: string): 'green' | 'warm-gray' | 'red' | 'gray' {
+  if (state === 'active' || state === 'running') return 'green'
+  if (state === 'error') return 'red'
+  if (state === 'paused') return 'warm-gray'
+  return 'gray'
+}
 
 function StatusBadge({ status }: { status: PipeWireHealthStatus }) {
-  const config = {
-    ok:      { icon: CheckCircle,    color: '#22c55e', bg: '#052e16', label: 'Healthy' },
-    warning: { icon: Warning,        color: '#f59e0b', bg: '#451a03', label: 'Warning' },
-    error:   { icon: XCircle,        color: '#ef4444', bg: '#450a0a', label: 'Error' },
-    offline: { icon: XCircle,        color: '#6b7280', bg: '#1f2937', label: 'Offline' },
-  }
-  const { icon: Icon, color, bg, label } = config[status]
+  const statusText = status === 'ok' ? 'Healthy' : status === 'warning' ? 'Warning' : status === 'error' ? 'Error' : 'Offline'
+  const StatusIcon = status === 'ok' ? CheckmarkFilled : status === 'warning' ? WarningFilled : ErrorFilled
+
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 9999, backgroundColor: bg, color, fontSize: 13, fontWeight: 600 }}>
-      <Icon size={14} /> {label}
-    </span>
+    <Tag type={statusTagType(status)}>
+      <span className="pipewire-page__tag-with-icon">
+        <StatusIcon size={14} aria-hidden="true" />
+        {statusText}
+      </span>
+    </Tag>
   )
 }
 
-function MetricCard({ label, value, unit, icon: Icon, color = '#94a3b8' }: {
-  label: string; value: string | number; unit?: string; icon: Icon; color?: string
+function MetricCard({
+  label,
+  value,
+  unit,
+  icon: Icon,
+  tone = 'gray',
+}: {
+  label: string
+  value: string | number
+  unit?: string
+  icon: CarbonIconType
+  tone?: 'gray' | 'green' | 'red' | 'warm-gray'
 }) {
   return (
-    <div style={{ background: '#1e293b', borderRadius: 12, padding: '20px 24px', minWidth: 160 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: '#64748b', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
-        <Icon size={14} weight="duotone" /> {label}
+    <Layer className="pipewire-page__metric-card">
+      <div className="pipewire-page__metric-head">
+        <span className="pipewire-page__metric-label">{label}</span>
+        <Icon size={16} aria-hidden="true" className="pipewire-page__metric-icon" />
       </div>
-      <div style={{ fontSize: 28, fontWeight: 700, color, fontFamily: 'JetBrains Mono, monospace' }}>
-        {value}{unit && <span style={{ fontSize: 14, color: '#64748b', marginLeft: 4 }}>{unit}</span>}
+      <div className="pipewire-page__metric-value">
+        {value}
+        {unit ? <span className="pipewire-page__metric-unit">{unit}</span> : null}
       </div>
-    </div>
+      <Tag type={tone}>Live</Tag>
+    </Layer>
   )
 }
 
-// ============================================================================
-// Sub-sections
-// ============================================================================
+function TableEmptyState({ text }: { text: string }) {
+  return <p className="pipewire-page__empty">{text}</p>
+}
 
 function DaemonSection({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-      <MetricCard icon={Broadcast}    label="Version"     value={pw.daemonVersion || '—'} color="#60a5fa" />
-      <MetricCard icon={Pulse} label="Latency"     value={pw.totalLatencyMs.toFixed(1)} unit="ms" color={pw.isHighLatency ? '#f59e0b' : '#22c55e'} />
-      <MetricCard icon={Cpu}      label="Quantum"     value={pw.effectiveQuantum} unit="smp" color="#60a5fa" />
-      <MetricCard icon={Pulse} label="Sample Rate" value={(pw.effectiveRate / 1000).toFixed(1)} unit="kHz" color="#60a5fa" />
-      <MetricCard icon={SpeakerHigh}  label="Devices"     value={pw.devices.length} color="#60a5fa" />
-      <MetricCard icon={Link}    label="Links"       value={pw.links.length} color="#60a5fa" />
-      <MetricCard icon={Pulse} label="Streams"     value={pw.streams.length} color="#60a5fa" />
-      <MetricCard icon={Warning} label="XRuns"  value={pw.xruns} color={pw.hasXruns ? '#ef4444' : '#22c55e'} />
+    <div className="pipewire-page__metrics-grid">
+      <MetricCard icon={NetworkThree} label="Version" value={pw.daemonVersion || '--'} tone="green" />
+      <MetricCard icon={Activity} label="Latency" value={pw.totalLatencyMs.toFixed(1)} unit="ms" tone={pw.isHighLatency ? 'warm-gray' : 'green'} />
+      <MetricCard icon={Chip} label="Quantum" value={pw.effectiveQuantum} unit="smp" />
+      <MetricCard icon={Activity} label="Sample rate" value={(pw.effectiveRate / 1000).toFixed(1)} unit="kHz" />
+      <MetricCard icon={VolumeUp} label="Devices" value={pw.devices.length} />
+      <MetricCard icon={Link} label="Links" value={pw.links.length} />
+      <MetricCard icon={Microphone} label="Streams" value={pw.streams.length} />
+      <MetricCard icon={WarningAlt} label="XRuns" value={pw.xruns} tone={pw.hasXruns ? 'red' : 'green'} />
     </div>
   )
 }
 
 function DevicesTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
-  if (!pw.devices.length) return <p style={{ color: '#64748b' }}>No audio devices detected</p>
+  if (!pw.devices.length) return <TableEmptyState text="No audio devices detected" />
+
   return (
-    <div className="pipewire-table-wrap">
-      <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-            <th style={{ padding: '8px 12px' }}>ID</th>
-            <th style={{ padding: '8px 12px' }}>Device</th>
-            <th style={{ padding: '8px 12px' }}>Driver</th>
-            <th style={{ padding: '8px 12px' }}>Default</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pw.devices.map(d => (
-            <tr key={d.id} style={{ borderBottom: '1px solid #1e293b' }}>
-              <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{d.id}</td>
-              <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{d.name}</td>
-              <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{d.driver}</td>
-              <td style={{ padding: '8px 12px' }}>{d.is_default ? '★' : ''}</td>
-            </tr>
+    <TableContainer className="pipewire-page__table-wrap">
+      <Table size="sm" className="pipewire-page__table">
+        <TableHead>
+          <TableRow>
+            <TableHeader>ID</TableHeader>
+            <TableHeader>Device</TableHeader>
+            <TableHeader>Driver</TableHeader>
+            <TableHeader>Default</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {pw.devices.map((device) => (
+            <TableRow key={device.id}>
+              <TableCell className="pipewire-page__mono">{device.id}</TableCell>
+              <TableCell>{device.name}</TableCell>
+              <TableCell>{device.driver}</TableCell>
+              <TableCell>{device.is_default ? 'Primary' : '--'}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 }
 
 function NodesTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
-  if (!pw.nodes.length) return <p style={{ color: '#64748b' }}>No sink/source nodes</p>
+  if (!pw.nodes.length) return <TableEmptyState text="No sink/source nodes" />
+
   return (
-    <div className="pipewire-table-wrap">
-      <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-            <th style={{ padding: '8px 12px' }}>ID</th>
-            <th style={{ padding: '8px 12px' }}>Name</th>
-            <th style={{ padding: '8px 12px' }}>Type</th>
-            <th style={{ padding: '8px 12px' }}>Volume</th>
-            <th style={{ padding: '8px 12px' }}>Mute</th>
-            <th style={{ padding: '8px 12px' }}>Default</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pw.nodes.map(n => (
-            <tr key={n.id} style={{ borderBottom: '1px solid #1e293b' }}>
-              <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{n.id}</td>
-              <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{n.name}</td>
-              <td style={{ padding: '8px 12px' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: n.media_class.includes('Sink') ? '#60a5fa' : '#a78bfa' }}>
-                  {n.media_class.includes('Sink') ? <SpeakerHigh size={14} weight="duotone"/> : <Microphone size={14} weight="duotone"/>}
-                  {n.media_class.includes('Sink') ? 'Sink' : 'Source'}
-                </span>
-              </td>
-              <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>
-                <span style={{ color: n.volume > 1.0 ? '#f59e0b' : '#e2e8f0' }}>
-                  {(n.volume * 100).toFixed(0)}%
-                </span>
-              </td>
-              <td style={{ padding: '8px 12px' }}>
-                {n.muted
-                  ? <SpeakerX size={16} weight="duotone" color="#ef4444" />
-                  : <SpeakerHigh size={16} weight="duotone" color="#22c55e" />}
-              </td>
-              <td style={{ padding: '8px 12px' }}>{n.is_default ? '★' : ''}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <TableContainer className="pipewire-page__table-wrap">
+      <Table size="sm" className="pipewire-page__table">
+        <TableHead>
+          <TableRow>
+            <TableHeader>ID</TableHeader>
+            <TableHeader>Name</TableHeader>
+            <TableHeader>Type</TableHeader>
+            <TableHeader>Volume</TableHeader>
+            <TableHeader>Mute</TableHeader>
+            <TableHeader>Default</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {pw.nodes.map((node) => {
+            const isSink = node.media_class.includes('Sink')
+            return (
+              <TableRow key={node.id}>
+                <TableCell className="pipewire-page__mono">{node.id}</TableCell>
+                <TableCell>{node.name}</TableCell>
+                <TableCell>
+                  <span className="pipewire-page__cell-with-icon">
+                    {isSink ? <VolumeUp size={14} aria-hidden="true" /> : <Microphone size={14} aria-hidden="true" />}
+                    {isSink ? 'Sink' : 'Source'}
+                  </span>
+                </TableCell>
+                <TableCell className="pipewire-page__mono">{(node.volume * 100).toFixed(0)}%</TableCell>
+                <TableCell>
+                  {node.muted ? (
+                    <span className="pipewire-page__cell-with-icon pipewire-page__cell-muted">
+                      <VolumeMute size={14} aria-hidden="true" />
+                      Muted
+                    </span>
+                  ) : (
+                    <span className="pipewire-page__cell-with-icon pipewire-page__cell-live">
+                      <VolumeUp size={14} aria-hidden="true" />
+                      Live
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>{node.is_default ? 'Primary' : '--'}</TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 }
 
 function StreamsTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
-  if (!pw.streams.length) return <p style={{ color: '#64748b' }}>No active audio streams</p>
+  if (!pw.streams.length) return <TableEmptyState text="No active audio streams" />
+
   return (
-    <div className="pipewire-table-wrap">
-      <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-            <th style={{ padding: '8px 12px' }}>ID</th>
-            <th style={{ padding: '8px 12px' }}>Client</th>
-            <th style={{ padding: '8px 12px' }}>Media</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pw.streams.map(s => (
-            <tr key={s.id} style={{ borderBottom: '1px solid #1e293b' }}>
-              <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{s.id}</td>
-              <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{s.client_name}</td>
-              <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{s.media_name}</td>
-            </tr>
+    <TableContainer className="pipewire-page__table-wrap">
+      <Table size="sm" className="pipewire-page__table">
+        <TableHead>
+          <TableRow>
+            <TableHeader>ID</TableHeader>
+            <TableHeader>Client</TableHeader>
+            <TableHeader>Media</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {pw.streams.map((stream) => (
+            <TableRow key={stream.id}>
+              <TableCell className="pipewire-page__mono">{stream.id}</TableCell>
+              <TableCell>{stream.client_name}</TableCell>
+              <TableCell>{stream.media_name}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 }
 
 function LinksTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
-  if (!pw.links.length) return <p style={{ color: '#64748b' }}>No port connections</p>
+  if (!pw.links.length) return <TableEmptyState text="No port connections" />
+
   return (
-    <div className="pipewire-table-wrap">
-      <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-            <th style={{ padding: '8px 12px' }}>ID</th>
-            <th style={{ padding: '8px 12px' }}>Output</th>
-            <th style={{ padding: '8px 12px' }}></th>
-            <th style={{ padding: '8px 12px' }}>Input</th>
-            <th style={{ padding: '8px 12px' }}>State</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pw.links.map(l => (
-            <tr key={l.id} style={{ borderBottom: '1px solid #1e293b' }}>
-              <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{l.id}</td>
-              <td style={{ padding: '8px 12px', color: '#e2e8f0', fontFamily: 'monospace' }}>{l.output_node}:{l.output_port}</td>
-              <td style={{ padding: '8px 12px', color: '#60a5fa' }}>→</td>
-              <td style={{ padding: '8px 12px', color: '#e2e8f0', fontFamily: 'monospace' }}>{l.input_node}:{l.input_port}</td>
-              <td style={{ padding: '8px 12px' }}>
-                <span style={{
-                  color: l.state === 'active' || l.state === 'running' ? '#22c55e'
-                    : l.state === 'error' ? '#ef4444'
-                      : l.state === 'paused' ? '#f59e0b'
-                        : '#94a3b8',
-                  fontWeight: 600,
-                  fontSize: 12
-                }}>
-                  {l.state || 'unknown'}
-                </span>
-              </td>
-            </tr>
+    <TableContainer className="pipewire-page__table-wrap">
+      <Table size="sm" className="pipewire-page__table">
+        <TableHead>
+          <TableRow>
+            <TableHeader>ID</TableHeader>
+            <TableHeader>Output</TableHeader>
+            <TableHeader>Input</TableHeader>
+            <TableHeader>State</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {pw.links.map((link) => (
+            <TableRow key={link.id}>
+              <TableCell className="pipewire-page__mono">{link.id}</TableCell>
+              <TableCell className="pipewire-page__mono">{link.output_node}:{link.output_port}</TableCell>
+              <TableCell className="pipewire-page__mono">{link.input_node}:{link.input_port}</TableCell>
+              <TableCell>
+                <Tag type={linkStateTagType(link.state || 'unknown')}>{link.state || 'unknown'}</Tag>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </TableContainer>
   )
 }
 
 function AlertsList({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
-  if (!pw.alerts.length) return <p style={{ color: '#22c55e', fontSize: 14 }}>✓ No active alerts</p>
+  if (!pw.alerts.length) {
+    return (
+      <InlineNotification
+        kind="success"
+        lowContrast
+        hideCloseButton
+        title="No active alerts"
+        subtitle="PipeWire reports healthy operation at this time."
+      />
+    )
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {pw.alerts.map((a, i) => {
-        const color = a.severity === 'error' ? '#ef4444' : a.severity === 'warning' ? '#f59e0b' : '#60a5fa'
-        const bg = a.severity === 'error' ? '#450a0a' : a.severity === 'warning' ? '#451a03' : '#172554'
-        return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, backgroundColor: bg, color, fontSize: 13 }}>
-            <Warning size={16} weight="duotone" />
-            <span>{a.message}</span>
-            <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.7, textTransform: 'uppercase' }}>{a.severity}</span>
-          </div>
-        )
-      })}
+    <div className="pipewire-page__alerts-list">
+      {pw.alerts.map((alert, index) => (
+        <InlineNotification
+          key={`${alert.type}-${index}`}
+          kind={alert.severity === 'error' ? 'error' : alert.severity === 'warning' ? 'warning' : 'info'}
+          lowContrast
+          hideCloseButton
+          title={alert.severity.toUpperCase()}
+          subtitle={alert.message}
+        />
+      ))}
     </div>
   )
 }
@@ -282,75 +356,42 @@ function TopologyGraph({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
   }, [pw.links, pw.nodes])
 
   if (!pw.nodes.length && !pw.links.length) {
-    return <p style={{ color: '#64748b', fontSize: 14 }}>No PipeWire topology data available for this node.</p>
+    return <TableEmptyState text="No PipeWire topology data available for this node." />
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+    <div className="pipewire-page__topology">
+      <div className="pipewire-page__topology-nodes">
         {pw.nodes.map((node) => (
-          <div
-            key={node.id}
-            style={{
-              minWidth: 180,
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: '1px solid #334155',
-              background: '#1e293b',
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{node.name}</div>
-            <div style={{ fontSize: 11, color: '#64748b', fontFamily: 'JetBrains Mono, monospace' }}>
-              {node.media_class || 'node'} · {node.id}
-            </div>
-          </div>
+          <Layer key={node.id} className="pipewire-page__node-card">
+            <div className="pipewire-page__node-name">{node.name}</div>
+            <div className="pipewire-page__node-meta">{node.media_class || 'node'} · {node.id}</div>
+          </Layer>
         ))}
       </div>
 
       {topology.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="pipewire-page__topology-links">
           {topology.map((link) => {
             const isHealthy = link.state === 'active' || link.state === 'running'
             return (
-              <div
-                key={link.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr) auto',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '12px 14px',
-                  borderRadius: 10,
-                  border: '1px solid #334155',
-                  background: '#0f172a',
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ color: '#f8fafc', fontSize: 13, fontWeight: 600 }}>{link.outputName}</div>
-                  <div style={{ color: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}>{link.outputPort}</div>
+              <Layer key={link.id} className="pipewire-page__topology-link-row">
+                <div className="pipewire-page__topology-endpoint">
+                  <div className="pipewire-page__topology-name">{link.outputName}</div>
+                  <div className="pipewire-page__topology-port">{link.outputPort}</div>
                 </div>
-                <div style={{ color: '#60a5fa', fontSize: 18, fontWeight: 700 }}>→</div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ color: '#f8fafc', fontSize: 13, fontWeight: 600 }}>{link.inputName}</div>
-                  <div style={{ color: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}>{link.inputPort}</div>
+                <div className="pipewire-page__topology-arrow">→</div>
+                <div className="pipewire-page__topology-endpoint">
+                  <div className="pipewire-page__topology-name">{link.inputName}</div>
+                  <div className="pipewire-page__topology-port">{link.inputPort}</div>
                 </div>
-                <div
-                  style={{
-                    color: isHealthy ? '#22c55e' : link.state === 'error' ? '#ef4444' : '#f59e0b',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.6,
-                  }}
-                >
-                  {link.state}
-                </div>
-              </div>
+                <Tag type={isHealthy ? 'green' : link.state === 'error' ? 'red' : 'warm-gray'}>{link.state}</Tag>
+              </Layer>
             )
           })}
         </div>
       ) : (
-        <p style={{ color: '#64748b', fontSize: 14 }}>PipeWire nodes are present but there are no active port links right now.</p>
+        <TableEmptyState text="PipeWire nodes are present but there are no active port links right now." />
       )}
     </div>
   )
@@ -368,82 +409,76 @@ function ClusterSummaryTable({
   onSelectNode: (nodeId: string) => void
 }) {
   if (isLoading && rows.length === 0) {
-    return <p style={{ color: '#94a3b8', fontSize: 14 }}>Loading cluster PipeWire summary…</p>
+    return <InlineLoading description="Loading cluster PipeWire summary..." />
   }
 
   if (error && rows.length === 0) {
     return (
-      <div style={{ padding: 16, borderRadius: 10, border: '1px solid #7f1d1d', background: '#450a0a', color: '#fecaca', fontSize: 14 }}>
-        {error instanceof Error ? error.message : 'Cluster PipeWire summary is unavailable.'}
-      </div>
+      <InlineNotification
+        kind="error"
+        lowContrast
+        hideCloseButton
+        title="Cluster PipeWire summary is unavailable"
+        subtitle={error instanceof Error ? error.message : 'Cluster PipeWire summary is unavailable.'}
+      />
     )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div
-        style={{
-          padding: '14px 16px',
-          borderRadius: 10,
-          border: '1px solid #334155',
-          background: '#0f172a',
-          color: '#94a3b8',
-          fontSize: 13,
-        }}
-      >
+    <div className="pipewire-page__cluster-summary">
+      <Layer className="pipewire-page__cluster-summary-copy">
         Comparing PipeWire daemon health, clock settings, device inventory, and XRun counts across the cluster. Select a node row for the full topology view.
-      </div>
+      </Layer>
 
-      <div className="pipewire-table-wrap">
-        <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-              <th style={{ padding: '8px 12px' }}>Node</th>
-              <th style={{ padding: '8px 12px' }}>Daemon</th>
-              <th style={{ padding: '8px 12px' }}>Quantum</th>
-              <th style={{ padding: '8px 12px' }}>Rate</th>
-              <th style={{ padding: '8px 12px' }}>Devices</th>
-              <th style={{ padding: '8px 12px' }}>XRuns</th>
-              <th style={{ padding: '8px 12px' }}>Peer Latency</th>
-            </tr>
-          </thead>
-          <tbody>
+      <TableContainer className="pipewire-page__table-wrap">
+        <Table size="sm" className="pipewire-page__table">
+          <TableHead>
+            <TableRow>
+              <TableHeader>Node</TableHeader>
+              <TableHeader>Daemon</TableHeader>
+              <TableHeader>Quantum</TableHeader>
+              <TableHeader>Rate</TableHeader>
+              <TableHeader>Devices</TableHeader>
+              <TableHeader>XRuns</TableHeader>
+              <TableHeader>Peer latency</TableHeader>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {rows.map((row) => {
               const metrics = row.metrics
               const quantum = metrics ? metrics.settings.clock_force_quantum || metrics.settings.clock_quantum : null
               const rate = metrics ? metrics.settings.clock_force_rate || metrics.settings.clock_rate : null
               const daemonLabel = metrics?.daemon.running ? 'Running' : row.isOnline ? 'Stopped' : 'Offline'
-              const statusColor = row.status === 'ok' ? '#22c55e' : row.status === 'warning' ? '#f59e0b' : row.status === 'error' ? '#ef4444' : '#94a3b8'
 
               return (
-                <tr
+                <TableRow
                   key={row.nodeId}
+                  className="pipewire-page__cluster-row"
                   onClick={() => onSelectNode(row.nodeId)}
-                  style={{ borderBottom: '1px solid #1e293b', cursor: 'pointer' }}
                   title={`Open ${row.hostname} PipeWire details`}
                 >
-                  <td style={{ padding: '10px 12px' }}>
-                    <div style={{ color: '#e2e8f0', fontWeight: 700 }}>{row.hostname}</div>
-                    <div style={{ color: '#64748b', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }}>
-                      {row.nodeId} · {row.role}
-                    </div>
-                  </td>
-                  <td style={{ padding: '10px 12px', color: statusColor, fontWeight: 700 }}>{daemonLabel}</td>
-                  <td style={{ padding: '10px 12px', color: '#e2e8f0', fontFamily: 'JetBrains Mono, monospace' }}>{quantum ?? '—'}</td>
-                  <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{rate == null ? '—' : formatRateKhz(rate)}</td>
-                  <td style={{ padding: '10px 12px', color: '#e2e8f0', fontFamily: 'JetBrains Mono, monospace' }}>{metrics?.devices.length ?? '—'}</td>
-                  <td style={{ padding: '10px 12px', color: metrics && metrics.xruns > 0 ? '#ef4444' : '#e2e8f0', fontFamily: 'JetBrains Mono, monospace' }}>
-                    {metrics?.xruns ?? '—'}
-                  </td>
-                  <td style={{ padding: '10px 12px', color: '#94a3b8' }}>
-                    {row.latencyMs == null ? '—' : `${row.latencyMs.toFixed(1)} ms`}
-                  </td>
-                </tr>
+                  <TableCell>
+                    <div className="pipewire-page__row-primary">{row.hostname}</div>
+                    <div className="pipewire-page__row-secondary">{row.nodeId} · {row.role}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Tag type={daemonStateTagType(Boolean(metrics?.daemon.running), row.isOnline)}>{daemonLabel}</Tag>
+                  </TableCell>
+                  <TableCell className="pipewire-page__mono">{quantum ?? '--'}</TableCell>
+                  <TableCell>{rate == null ? '--' : formatRateKhz(rate)}</TableCell>
+                  <TableCell className="pipewire-page__mono">{metrics?.devices.length ?? '--'}</TableCell>
+                  <TableCell>
+                    <span className={metrics && metrics.xruns > 0 ? 'pipewire-page__xrun-bad' : 'pipewire-page__xrun-good'}>
+                      {metrics?.xruns ?? '--'}
+                    </span>
+                  </TableCell>
+                  <TableCell>{row.latencyMs == null ? '--' : `${row.latencyMs.toFixed(1)} ms`}</TableCell>
+                </TableRow>
               )
             })}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </TableContainer>
     </div>
   )
 }
@@ -483,132 +518,94 @@ function QuantumControl({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {disableReason && (
-        <div style={{ padding: '12px 14px', borderRadius: 8, backgroundColor: '#451a03', color: '#fcd34d', fontSize: 13, border: '1px solid #92400e' }}>
-          {disableReason}
-        </div>
-      )}
+    <div className="pipewire-page__settings-stack">
+      {disableReason ? (
+        <InlineNotification kind="warning" lowContrast hideCloseButton title="Controls limited" subtitle={disableReason} />
+      ) : null}
 
-      {mutationError && (
-        <div style={{ padding: '12px 14px', borderRadius: 8, backgroundColor: '#172554', color: '#bfdbfe', fontSize: 13, border: '1px solid #1d4ed8' }}>
-          {mutationError}
-        </div>
-      )}
+      {mutationError ? (
+        <InlineNotification kind="error" lowContrast hideCloseButton title="Clock update failed" subtitle={mutationError} />
+      ) : null}
 
-      <div style={{ 
-        padding: '16px 20px', 
-        borderRadius: 8, 
-        backgroundColor: '#1e293b',
-        border: '2px solid #475569' 
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 14, color: '#94a3b8', fontWeight: 600 }}>Clock Override Controls</span>
-          <span style={{ fontSize: 12, color: '#64748b', fontFamily: 'JetBrains Mono, monospace' }}>
+      <Layer className="pipewire-page__clock-panel">
+        <div className="pipewire-page__clock-panel-head">
+          <span className="pipewire-page__clock-heading">Clock override controls</span>
+          <span className="pipewire-page__clock-effective">
             Effective: {pw.effectiveQuantum} smp @ {formatRateKhz(pw.effectiveRate)}
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+        <div className="pipewire-page__clock-values">
           <div>
-            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Current Quantum</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#60a5fa', fontFamily: 'monospace' }}>
-              {currentQuantum} samples
-            </div>
+            <div className="pipewire-page__clock-label">Current quantum</div>
+            <div className="pipewire-page__clock-value">{currentQuantum} samples</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Forced Quantum</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: currentForced === 64 ? '#22c55e' : '#f59e0b', fontFamily: 'monospace' }}>
-              {currentForced || 'auto'}
-            </div>
+            <div className="pipewire-page__clock-label">Forced quantum</div>
+            <div className="pipewire-page__clock-value">{currentForced || 'auto'}</div>
           </div>
         </div>
-        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        <div className="pipewire-page__clock-groups">
           <div>
-            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>Quantum override</div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="pipewire-page__clock-label">Quantum override</div>
+            <div className="pipewire-page__clock-buttons">
               {quantumValues.map((quantum) => {
                 const active = currentForced === quantum
                 const label = quantum === 0 ? 'Auto' : `${quantum}`
                 return (
-                  <button
+                  <Button
                     key={quantum}
-                    onClick={() => handleQuantum(quantum)}
+                    kind={active ? 'primary' : 'ghost'}
+                    size="sm"
                     disabled={controlsDisabled || pw.isSettingQuantum}
-                    style={{
-                      padding: '7px 12px',
-                      borderRadius: 8,
-                      border: `1px solid ${active ? '#60a5fa' : '#334155'}`,
-                      backgroundColor: active ? '#172554' : '#0f172a',
-                      color: active ? '#bfdbfe' : '#e2e8f0',
-                      cursor: controlsDisabled || pw.isSettingQuantum ? 'not-allowed' : 'pointer',
-                      opacity: controlsDisabled ? 0.55 : 1,
-                      fontSize: 12,
-                      fontWeight: 700,
+                    onClick={() => {
+                      void handleQuantum(quantum)
                     }}
                   >
                     {label}
-                  </button>
+                  </Button>
                 )
               })}
             </div>
           </div>
 
           <div>
-            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>Sample rate override</div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="pipewire-page__clock-label">Sample rate override</div>
+            <div className="pipewire-page__clock-buttons">
               {rateValues.map((rate) => {
                 const active = currentForcedRate === rate
                 const label = rate === 0 ? 'Auto' : formatRateKhz(rate)
                 return (
-                  <button
+                  <Button
                     key={rate}
-                    onClick={() => handleRate(rate)}
+                    kind={active ? 'primary' : 'ghost'}
+                    size="sm"
                     disabled={controlsDisabled || pw.isSettingRate}
-                    style={{
-                      padding: '7px 12px',
-                      borderRadius: 8,
-                      border: `1px solid ${active ? '#60a5fa' : '#334155'}`,
-                      backgroundColor: active ? '#172554' : '#0f172a',
-                      color: active ? '#bfdbfe' : '#e2e8f0',
-                      cursor: controlsDisabled || pw.isSettingRate ? 'not-allowed' : 'pointer',
-                      opacity: controlsDisabled ? 0.55 : 1,
-                      fontSize: 12,
-                      fontWeight: 700,
+                    onClick={() => {
+                      void handleRate(rate)
                     }}
                   >
                     {label}
-                  </button>
+                  </Button>
                 )
               })}
             </div>
           </div>
         </div>
-        <div style={{ 
-          marginTop: 16, 
-          padding: 12, 
-          backgroundColor: '#0f172a', 
-          borderRadius: 6,
-          fontSize: 12,
-          color: '#94a3b8',
-          lineHeight: 1.6
-        }}>
-          <strong style={{ color: '#e2e8f0' }}>Tier A note:</strong> runtime overrides are exposed per node, but the backend may reject them when the host is enforcing the locked performance profile.<br/>
-          • Remote controls are disabled when peer latency exceeds 50ms<br/>
-          • To make persistent changes: edit systemd service (<code style={{ color: '#60a5fa' }}>map2-backend.service</code>) and restart<br/>
-          <br/>
-          Graph latency: 64→{((64 / pw.effectiveRate) * 1000).toFixed(1)}ms, 
-          128→{((128 / pw.effectiveRate) * 1000).toFixed(1)}ms, 
-          256→{((256 / pw.effectiveRate) * 1000).toFixed(1)}ms
-          <span style={{ marginLeft: 8, opacity: 0.7 }}>(×2 for round-trip)</span>
+
+        <div className="pipewire-page__tier-note">
+          <strong>Tier A note:</strong> runtime overrides are exposed per node, but the backend may reject them when the host is enforcing the locked performance profile.
+          <br />• Remote controls are disabled when peer latency exceeds 50ms
+          <br />• To make persistent changes: edit systemd service (`map2-backend.service`) and restart
+          <br />
+          <br />Graph latency: 64→{((64 / pw.effectiveRate) * 1000).toFixed(1)}ms, 128→{((128 / pw.effectiveRate) * 1000).toFixed(1)}ms,
+          256→{((256 / pw.effectiveRate) * 1000).toFixed(1)}ms <span className="pipewire-page__tier-note-secondary">(×2 for round-trip)</span>
         </div>
-      </div>
+      </Layer>
     </div>
   )
 }
-
-// ============================================================================
-// Main Page
-// ============================================================================
 
 type Tab = 'overview' | 'devices' | 'nodes' | 'streams' | 'links' | 'settings'
 
@@ -668,7 +665,7 @@ export function PipeWirePage() {
   const headerStatus = allNodesSelected ? aggregatePipeWireStatus(clusterRows) : pw.overallStatus
   const lastUpdateLabel = useMemo(() => {
     if (!allNodesSelected) {
-      return pw.metrics.timestamp ? new Date(pw.metrics.timestamp).toLocaleTimeString() : '—'
+      return pw.metrics.timestamp ? new Date(pw.metrics.timestamp).toLocaleTimeString() : '--'
     }
 
     const timestamps = clusterRows
@@ -680,116 +677,87 @@ export function PipeWirePage() {
     if (timestamps.length > 0) {
       return new Date(Math.max(...timestamps)).toLocaleTimeString()
     }
-    return clusterPipeWireQuery.dataUpdatedAt ? new Date(clusterPipeWireQuery.dataUpdatedAt).toLocaleTimeString() : '—'
+    return clusterPipeWireQuery.dataUpdatedAt ? new Date(clusterPipeWireQuery.dataUpdatedAt).toLocaleTimeString() : '--'
   }, [allNodesSelected, clusterPipeWireQuery.dataUpdatedAt, clusterRows, pw.metrics.timestamp])
 
-  const tabs: { id: Tab; label: string; icon: Icon }[] = [
-    { id: 'overview', label: 'Overview',  icon: Pulse },
-    { id: 'devices',  label: 'Devices',   icon: SpeakerHigh },
-    { id: 'nodes',    label: 'Nodes',     icon: SpeakerHigh },
-    { id: 'streams',  label: 'Streams',   icon: Microphone },
-    { id: 'links',    label: 'Links',     icon: Link },
-    { id: 'settings', label: 'Settings',  icon: GearSix },
+  const tabs: { id: Tab; label: string; icon: CarbonIconType }[] = [
+    { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'devices', label: 'Devices', icon: VolumeUp },
+    { id: 'nodes', label: 'Nodes', icon: NetworkThree },
+    { id: 'streams', label: 'Streams', icon: Microphone },
+    { id: 'links', label: 'Links', icon: Link },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ]
 
   return (
-    <div className="pipewire-page" style={{ padding: 32, maxWidth: 1200, margin: '0 auto', color: '#e2e8f0' }}>
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-        <Broadcast size={36} weight="duotone" color="#60a5fa" />
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#f8fafc' }}>
-            {allNodesSelected
-              ? 'PipeWire Audio Server · All Nodes'
-              : remoteSelected
-                ? `PipeWire Audio Server · ${selectedNode?.hostname ?? activeNodeId}`
-                : 'PipeWire Audio Server'}
-          </h1>
-          <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: 14 }}>
-            {allNodesSelected
-              ? 'Cluster-wide daemon, device, and clock summary'
-              : 'Audio graph topology, latency control, and real-time monitoring'}
-          </p>
+    <div className="pipewire-page">
+      <header className="pipewire-page__header">
+        <div className="pipewire-page__header-main">
+          <NetworkThree size={32} aria-hidden="true" className="pipewire-page__header-icon" />
+          <div>
+            <h1 className="pipewire-page__title">
+              {allNodesSelected
+                ? 'PipeWire Audio Server · All Nodes'
+                : remoteSelected
+                  ? `PipeWire Audio Server · ${selectedNode?.hostname ?? activeNodeId}`
+                  : 'PipeWire Audio Server'}
+            </h1>
+            <p className="pipewire-page__subtitle">
+              {allNodesSelected
+                ? 'Cluster-wide daemon, device, and clock summary'
+                : 'Audio graph topology, latency control, and real-time monitoring'}
+            </p>
+          </div>
         </div>
-        <div style={{ marginLeft: 'auto' }}>
-          <StatusBadge status={headerStatus} />
-        </div>
+        <StatusBadge status={headerStatus} />
       </header>
 
-      {(allNodesSelected || remoteSelected) && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            marginBottom: 18,
-            padding: '12px 14px',
-            borderRadius: 10,
-            border: '1px solid #334155',
-            background: '#0f172a',
-            color: '#e2e8f0',
-            fontSize: 13,
-            flexWrap: 'wrap',
-          }}
-        >
+      {allNodesSelected || remoteSelected ? (
+        <Layer className="pipewire-page__scope-bar">
           <span>
             {allNodesSelected
               ? 'Viewing: Cluster summary for all nodes'
               : `Viewing: ${selectedNode?.hostname ?? activeNodeId} (${activeNodeId})`}
           </span>
-          {!allNodesSelected && (
-            <span style={{ color: '#94a3b8' }}>
+          {!allNodesSelected ? (
+            <span className="pipewire-page__scope-secondary">
               {selectedNode?.latencyMs == null ? 'Peer latency unavailable' : `Peer latency ${selectedNode.latencyMs.toFixed(1)} ms`}
             </span>
-          )}
-        </div>
-      )}
+          ) : null}
+        </Layer>
+      ) : null}
 
-      {remoteHighLatency && (
-        <div
-          style={{
-            marginBottom: 18,
-            padding: '12px 14px',
-            borderRadius: 10,
-            border: '1px solid #92400e',
-            background: '#451a03',
-            color: '#fcd34d',
-            fontSize: 13,
-          }}
-        >
-          Runtime clock controls are disabled for this remote node because cluster latency is above 50ms. Select the node locally to apply clock changes safely.
-        </div>
-      )}
+      {remoteHighLatency ? (
+        <InlineNotification
+          kind="warning"
+          lowContrast
+          hideCloseButton
+          title="Remote safety limit"
+          subtitle="Runtime clock controls are disabled for this remote node because cluster latency is above 50ms. Select the node locally to apply clock changes safely."
+        />
+      ) : null}
 
-      {!allNodesSelected && (
-        <nav className="pipewire-tabbar" style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid #334155', paddingBottom: 0 }}>
-          {tabs.map(t => {
-            const Icon = t.icon
-            const active = tab === t.id
+      {!allNodesSelected ? (
+        <nav className="pipewire-page__tabbar" aria-label="PipeWire sections">
+          {tabs.map((tabItem) => {
+            const Icon = tabItem.icon
+            const active = tab === tabItem.id
             return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '10px 18px', border: 'none', cursor: 'pointer',
-                  fontSize: 14, fontWeight: active ? 600 : 400,
-                  color: active ? '#60a5fa' : '#94a3b8',
-                  backgroundColor: 'transparent',
-                  borderBottom: active ? '2px solid #60a5fa' : '2px solid transparent',
-                  marginBottom: -1,
-                }}
+              <Button
+                key={tabItem.id}
+                kind={active ? 'primary' : 'ghost'}
+                size="sm"
+                renderIcon={Icon}
+                onClick={() => setTab(tabItem.id)}
               >
-                <Icon size={16} /> {t.label}
-              </button>
+                {tabItem.label}
+              </Button>
             )
           })}
         </nav>
-      )}
+      ) : null}
 
-      {/* Content */}
-      <div>
+      <div className="pipewire-page__content">
         {allNodesSelected ? (
           <ClusterSummaryTable
             rows={clusterRows}
@@ -797,71 +765,75 @@ export function PipeWirePage() {
             error={clusterPipeWireQuery.error}
             onSelectNode={setActiveNode}
           />
-        ) : tab === 'overview' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        ) : tab === 'overview' ? (
+          <div className="pipewire-page__stack-lg">
             <DaemonSection pw={pw} />
-            <Section title="Alerts" icon={Warning}>
+            <Section title="Alerts" icon={WarningAlt}>
               <AlertsList pw={pw} />
             </Section>
-            <Section title="Default Sink" icon={SpeakerHigh}>
-              {pw.defaultSink
-                ? <p style={{ color: '#e2e8f0', fontSize: 14 }}>
-                    <strong>{pw.defaultSink.name}</strong> — Vol: {(pw.defaultSink.volume * 100).toFixed(0)}%
-                    {pw.defaultSink.muted && <span style={{ color: '#ef4444', marginLeft: 8 }}>(MUTED)</span>}
-                  </p>
-                : <p style={{ color: '#64748b' }}>No default sink</p>}
+            <Section title="Default sink" icon={VolumeUp}>
+              {pw.defaultSink ? (
+                <p className="pipewire-page__copy">
+                  <strong>{pw.defaultSink.name}</strong> — Vol: {(pw.defaultSink.volume * 100).toFixed(0)}%
+                  {pw.defaultSink.muted ? <span className="pipewire-page__muted-mark">(MUTED)</span> : null}
+                </p>
+              ) : (
+                <TableEmptyState text="No default sink" />
+              )}
             </Section>
-            <Section title="Default Source" icon={Microphone}>
-              {pw.defaultSource
-                ? <p style={{ color: '#e2e8f0', fontSize: 14 }}>
-                    <strong>{pw.defaultSource.name}</strong> — Vol: {(pw.defaultSource.volume * 100).toFixed(0)}%
-                    {pw.defaultSource.muted && <span style={{ color: '#ef4444', marginLeft: 8 }}>(MUTED)</span>}
-                  </p>
-                : <p style={{ color: '#64748b' }}>No default source</p>}
+            <Section title="Default source" icon={Microphone}>
+              {pw.defaultSource ? (
+                <p className="pipewire-page__copy">
+                  <strong>{pw.defaultSource.name}</strong> — Vol: {(pw.defaultSource.volume * 100).toFixed(0)}%
+                  {pw.defaultSource.muted ? <span className="pipewire-page__muted-mark">(MUTED)</span> : null}
+                </p>
+              ) : (
+                <TableEmptyState text="No default source" />
+              )}
             </Section>
           </div>
-        )}
+        ) : null}
 
-        {!allNodesSelected && tab === 'devices' && (
-          <Section title="Audio Devices" icon={SpeakerHigh}>
+        {!allNodesSelected && tab === 'devices' ? (
+          <Section title="Audio devices" icon={VolumeUp}>
             <DevicesTable pw={pw} />
           </Section>
-        )}
+        ) : null}
 
-        {!allNodesSelected && tab === 'nodes' && (
-          <Section title="Sink & Source Nodes" icon={SpeakerHigh}>
+        {!allNodesSelected && tab === 'nodes' ? (
+          <Section title="Sink & source nodes" icon={NetworkThree}>
             <NodesTable pw={pw} />
           </Section>
-        )}
+        ) : null}
 
-        {!allNodesSelected && tab === 'streams' && (
-          <Section title="Active Streams" icon={Microphone}>
+        {!allNodesSelected && tab === 'streams' ? (
+          <Section title="Active streams" icon={Microphone}>
             <StreamsTable pw={pw} />
           </Section>
-        )}
+        ) : null}
 
-        {!allNodesSelected && tab === 'links' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <Section title="Topology Graph" icon={Link}>
+        {!allNodesSelected && tab === 'links' ? (
+          <div className="pipewire-page__stack-md">
+            <Section title="Topology graph" icon={Link}>
               <TopologyGraph pw={pw} />
             </Section>
-            <Section title="Port Connections" icon={Link}>
+            <Section title="Port connections" icon={Link}>
               <LinksTable pw={pw} />
             </Section>
           </div>
-        )}
+        ) : null}
 
-        {!allNodesSelected && tab === 'settings' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <Section title="Buffer Size (Quantum)" icon={GearSix}>
+        {!allNodesSelected && tab === 'settings' ? (
+          <div className="pipewire-page__stack-md">
+            <Section title="Buffer size (quantum)" icon={Settings}>
               <QuantumControl
                 pw={pw}
                 controlsDisabled={remoteHighLatency}
                 disableReason={remoteHighLatency ? 'Clock overrides are disabled for high-latency remote nodes (>50ms peer latency).' : undefined}
               />
             </Section>
-            <Section title="Clock Settings" icon={Pulse}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+            <Section title="Clock settings" icon={Activity}>
+              <div className="pipewire-page__settings-grid">
                 <SettingItem label="clock.rate" value={`${pw.settings.clock_rate} Hz`} />
                 <SettingItem label="clock.force-rate" value={pw.settings.clock_force_rate ? `${pw.settings.clock_force_rate} Hz` : 'auto'} />
                 <SettingItem label="clock.quantum" value={`${pw.settings.clock_quantum}`} />
@@ -871,46 +843,41 @@ export function PipeWirePage() {
                 <SettingItem label="clock.allowed-rates" value={pw.settings.clock_allowed_rates.join(', ')} />
               </div>
             </Section>
-            <Section title="Latency Breakdown" icon={Pulse}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                <MetricCard icon={Pulse} label="Graph" value={pw.graphLatencyMs.toFixed(1)} unit="ms" color="#60a5fa" />
-                <MetricCard icon={Pulse} label="Driver" value={pw.driverLatencyMs.toFixed(1)} unit="ms" color="#60a5fa" />
-                <MetricCard icon={Pulse} label="Total" value={pw.totalLatencyMs.toFixed(1)} unit="ms" color={pw.isHighLatency ? '#f59e0b' : '#22c55e'} />
+            <Section title="Latency breakdown" icon={Activity}>
+              <div className="pipewire-page__latency-grid">
+                <MetricCard icon={Activity} label="Graph" value={pw.graphLatencyMs.toFixed(1)} unit="ms" />
+                <MetricCard icon={Activity} label="Driver" value={pw.driverLatencyMs.toFixed(1)} unit="ms" />
+                <MetricCard icon={Activity} label="Total" value={pw.totalLatencyMs.toFixed(1)} unit="ms" tone={pw.isHighLatency ? 'warm-gray' : 'green'} />
               </div>
             </Section>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Footer: connection status */}
-      <div style={{ marginTop: 40, padding: '12px 0', borderTop: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b' }}>
+      <footer className="pipewire-page__footer">
         <span>{allNodesSelected ? '● Cluster aggregate' : pw.isConnected ? '● Connected via WebSocket' : '○ Polling mode'}</span>
         <span>Last update: {lastUpdateLabel}</span>
-      </div>
+      </footer>
     </div>
   )
 }
 
-// ============================================================================
-// Utility components
-// ============================================================================
-
-function Section({ title, icon: Icon, children }: { title: string; icon: Icon; children: React.ReactNode }) {
+function Section({ title, icon: Icon, children }: { title: string; icon: CarbonIconType; children: ReactNode }) {
   return (
-    <div style={{ background: '#0f172a', borderRadius: 12, padding: 24, border: '1px solid #1e293b' }}>
-      <h3 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 600, color: '#f8fafc' }}>
-        <Icon size={18} color="#60a5fa" /> {title}
+    <Layer className="pipewire-page__section">
+      <h3 className="pipewire-page__section-title">
+        <Icon size={18} aria-hidden="true" className="pipewire-page__section-icon" /> {title}
       </h3>
       {children}
-    </div>
+    </Layer>
   )
 }
 
 function SettingItem({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: '#1e293b', borderRadius: 8, padding: '12px 16px' }}>
-      <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', fontFamily: 'JetBrains Mono, monospace' }}>{value}</div>
-    </div>
+    <Layer className="pipewire-page__setting-item">
+      <div className="pipewire-page__setting-label">{label}</div>
+      <div className="pipewire-page__setting-value">{value}</div>
+    </Layer>
   )
 }

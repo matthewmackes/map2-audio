@@ -1,0 +1,287 @@
+.intelfx-shell {
+  --intelfx-shell-accent: var(--interactive);
+  --intelfx-shell-border: var(--border);
+  --intelfx-shell-bg: var(--bg);
+
+  min-height: calc(100vh - 56px);
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  background: var(--surface);
+}
+
+.intelfx-shell__sidebar {
+  width: 56px;
+  border-right: 1px solid var(--intelfx-shell-border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 6px;
+}
+
+.intelfx-shell__sidebar-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.intelfx-shell__sidebar-btn:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.intelfx-shell__sidebar-btn.is-active {
+  border-color: var(--interactive);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.intelfx-shell__main {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 36px;
+}
+
+.intelfx-shell__content {
+  min-height: 0;
+  padding: 14px;
+}
+
+.intelfx-statusbar {
+  height: 36px;
+  border-top: 1px solid var(--intelfx-shell-border);
+  background: var(--surface);
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  overflow: hidden;
+}
+
+.intelfx-statusbar__left {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.intelfx-statusbar__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+}
+
+.intelfx-statusbar__dot.is-online {
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
+  box-shadow: none;
+}
+
+.intelfx-statusbar__device {
+  font-size: var(--type-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.intelfx-statusbar__program {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 210px;
+}
+
+.intelfx-statusbar__prog-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.intelfx-statusbar__prog-btn:hover {
+  border-color: var(--interactive);
+  color: var(--interactive);
+}
+
+.intelfx-statusbar__prog-number {
+  font-size: var(--type-label);
+  color: var(--interactive);
+  font-weight: 700;
+  min-width: 40px;
+}
+
+.intelfx-statusbar__prog-name {
+  font-size: var(--type-label);
+  color: var(--interactive);
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intelfx-statusbar__lcd {
+  min-width: 0;
+  border: 1px solid #e53935;
+  border-radius: 0;
+  background: var(--surface);
+  overflow: hidden;
+  height: 22px;
+  display: flex;
+  align-items: center;
+}
+
+.intelfx-statusbar__lcd-track {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  color: #e53935;
+  font-size: var(--type-caption);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: intelfx-lcd-scroll 14s linear infinite;
+}
+
+@keyframes intelfx-lcd-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.intelfx-statusbar__mix {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 132px;
+}
+
+.intelfx-statusbar__mix-label {
+  color: var(--text-primary);
+  font-size: var(--type-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.intelfx-statusbar__mix input[type='range'] {
+  width: 92px;
+  accent-color: var(--interactive);
+}
+
+.intelfx-statusbar__tap {
+  height: 24px;
+  border-radius: 0;
+  border: 1px solid #e53935;
+  background: color-mix(in srgb, #e53935 14%, var(--surface));
+  color: #e53935;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.intelfx-statusbar__tap:hover {
+  border-color: #e53935;
+  background: color-mix(in srgb, #e53935 22%, var(--surface));
+}
+
+.intelfx-statusbar__bypass {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.intelfx-statusbar__pill {
+  min-width: 32px;
+  height: 22px;
+  border-radius: 0;
+  border: 1px solid var(--support-success);
+  background: color-mix(in srgb, var(--support-success) 12%, var(--surface));
+  color: var(--support-success);
+  padding: 0 8px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.intelfx-statusbar__pill.is-bypassed {
+  border-color: var(--support-danger);
+  background: color-mix(in srgb, var(--support-danger) 14%, var(--surface));
+  color: var(--text-primary);
+}
+
+@media (max-width: 1180px) {
+  .intelfx-statusbar {
+    grid-template-columns: auto auto 1fr;
+    grid-auto-flow: row;
+    grid-auto-rows: minmax(24px, auto);
+    height: auto;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .intelfx-shell__main {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .intelfx-statusbar__mix,
+  .intelfx-statusbar__tap,
+  .intelfx-statusbar__bypass {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .intelfx-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .intelfx-shell__sidebar {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--intelfx-shell-border);
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .intelfx-shell__sidebar-btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+    min-width: 44px;
+    scroll-snap-align: start;
+  }
+
+  .intelfx-shell__content {
+    padding: 10px;
+  }
+}

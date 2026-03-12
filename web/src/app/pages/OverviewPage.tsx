@@ -1,13 +1,25 @@
-import { useState, useEffect } from 'react'
-import { House, Gauge, SquaresFour, Plug, FlowArrow, ShareNetwork, CheckCircle, XCircle, Copy, Broadcast } from '@phosphor-icons/react'
-import { PageHeader } from '../components/PageHeader'
-import { StatCard } from '../components/StatCard'
+import { useState, useEffect, type ReactNode } from 'react'
+import { Button, Layer, Tag } from '@carbon/react'
+import {
+  Apps,
+  ChartColumn,
+  CheckmarkFilled,
+  Copy,
+  ErrorFilled,
+  Flow,
+  Home,
+  Network_3 as NetworkThree,
+  Plug,
+  Share,
+  type CarbonIconType,
+} from '@carbon/icons-react'
 import { CPUStatusOverview } from '../components/CPUStatusOverview'
 import { PlatformCapabilities } from '../components/PlatformCapabilities'
 import { SystemArchitectureFlow } from '../components/SystemArchitectureFlow'
 import { usePipeWire } from '../hooks/usePipeWire'
 import { useAVBStatus } from '../hooks/useAvbStatus'
 import responsive from '../../styles/responsive.module.css'
+import './OverviewPage.css'
 
 interface NetworkShareStatus {
   smb_enabled: boolean
@@ -16,6 +28,27 @@ interface NetworkShareStatus {
   local_ip: string
   shares: Array<{ name: string; path: string; description: string; accessible: boolean; writable: boolean }>
   access_urls: { windows: string; linux: string; mac: string }
+}
+
+interface OverviewMetricCardProps {
+  label: string
+  value: ReactNode
+  helper: string
+  icon: CarbonIconType
+  tone?: 'gray' | 'green' | 'red' | 'warm-gray'
+}
+
+function OverviewMetricCard({ label, value, helper, icon: Icon, tone = 'gray' }: OverviewMetricCardProps) {
+  return (
+    <Layer className="overview-page__metric-card">
+      <div className="overview-page__metric-head">
+        <span className="overview-page__metric-label">{label}</span>
+        <Icon size={18} aria-hidden="true" className="overview-page__metric-icon" />
+      </div>
+      <div className="overview-page__metric-value">{value}</div>
+      <Tag type={tone}>{helper}</Tag>
+    </Layer>
+  )
 }
 
 export function OverviewPage() {
@@ -31,23 +64,27 @@ export function OverviewPage() {
       .catch(() => setNetworkStatus(null))
   }, [])
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text).then(() => {
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
       setCopiedUrl(label)
       setTimeout(() => setCopiedUrl(null), 2000)
-    })
+    } catch {
+      setCopiedUrl(null)
+    }
   }
 
   const avbState = avbStatusQuery.data?.state || (avbStatusQuery.data?.available ? 'operational' : 'disabled')
-  const avbStateColor = (
+  const avbTagType: 'green' | 'red' | 'gray' | 'warm-gray' = (
     avbState === 'operational'
-      ? '#22c55e'
+      ? 'green'
       : avbState === 'degraded'
-        ? '#f59e0b'
+        ? 'warm-gray'
         : avbState === 'disabled'
-          ? '#9ca3af'
-          : '#ef4444'
+          ? 'gray'
+          : 'red'
   )
+
   const avbSummary = avbStatusQuery.isLoading
     ? 'Checking'
     : (avbStatusQuery.data?.available ? avbState : 'Unavailable')
@@ -55,16 +92,22 @@ export function OverviewPage() {
     ? 'Polling AVB status'
     : (
       avbStatusQuery.data?.reason ||
-      `${avbStatusQuery.data?.interface || 'interface n/a'} • PTP ${avbStatusQuery.data?.ptp?.state || 'unknown'}`
+      `${avbStatusQuery.data?.interface || 'interface n/a'} - PTP ${avbStatusQuery.data?.ptp?.state || 'unknown'}`
     )
 
   return (
-    <div className="stack home-page">
-      <PageHeader
-        title="Mackes Audio Platform 1-22-25"
-        subtitle="Neural Amp Modeler | LV2 (LADSPA Version 2) | Convolution Reverb | Realtime Linux"
-        icon={<House size={32} weight="duotone" style={{ color: '#2563eb' }} />}
-      />
+    <div className="overview-page">
+      <Layer className="overview-page__hero">
+        <div className="overview-page__hero-head">
+          <Home size={32} aria-hidden="true" className="overview-page__hero-icon" />
+          <div>
+            <h1 className="overview-page__title">MAP2 audio platform overview</h1>
+            <p className="overview-page__subtitle">
+              Neural amp modeler, LV2, convolution reverb, and realtime Linux
+            </p>
+          </div>
+        </div>
+      </Layer>
 
       <div className={responsive.desktopOnly}>
         <SystemArchitectureFlow />
@@ -74,95 +117,114 @@ export function OverviewPage() {
         <PlatformCapabilities />
       </div>
 
-      <div className="card">
+      <Layer className="overview-page__panel">
         <CPUStatusOverview />
-      </div>
+      </Layer>
 
-      {networkStatus?.smb_enabled && (
-        <div className="card">
-          <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 10 }}>
-            <ShareNetwork size={16} weight="duotone" />
-            <strong style={{ fontSize: 13 }}>Network Access</strong>
-            <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 'auto' }}>IP: {networkStatus.local_ip}</span>
+      {networkStatus?.smb_enabled ? (
+        <Layer className="overview-page__panel">
+          <div className="overview-page__panel-head">
+            <div>
+              <h2 className="overview-page__panel-title">Network access</h2>
+              <p className="overview-page__panel-subtitle">SMB shares for transfer and collaboration</p>
+            </div>
+            <Tag type="cool-gray">IP {networkStatus.local_ip}</Tag>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
-            {networkStatus.shares.map((share) => (
-              <div
-                key={share.name}
-                className="flex"
-                style={{
-                  gap: 8,
-                  alignItems: 'center',
-                  padding: '8px 12px',
-                  background: '#111111',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  border: copiedUrl === share.name ? '1px solid #22c55e' : '1px solid transparent',
-                }}
-                onClick={() => copyToClipboard(`\\\\${networkStatus.local_ip}\\${share.name}`, share.name)}
-                title={`Click to copy: \\\\${networkStatus.local_ip}\\${share.name}`}
-              >
-                {share.accessible ? (
-                  <CheckCircle size={14} weight="duotone" style={{ color: '#22c55e', flexShrink: 0 }} />
-                ) : (
-                  <XCircle size={14} weight="duotone" style={{ color: '#ef4444', flexShrink: 0 }} />
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{share.name}</div>
-                  <div style={{ fontSize: 10, color: '#6b7280' }}>{share.description}</div>
-                </div>
-                <Copy size={12} weight="bold" style={{ color: copiedUrl === share.name ? '#22c55e' : '#6b7280', flexShrink: 0 }} />
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 8, fontSize: 11, color: '#6b7280' }}>
-            Click a share to copy Windows path. Linux/Mac: smb://{networkStatus.local_ip}/share-name
-          </div>
-        </div>
-      )}
 
-      <div className="stat-grid">
-        <StatCard
+          <div className="overview-page__shares-grid">
+            {networkStatus.shares.map((share) => {
+              const path = `\\\\${networkStatus.local_ip}\\${share.name}`
+              return (
+                <button
+                  key={share.name}
+                  type="button"
+                  className={`overview-page__share-card ${copiedUrl === share.name ? 'is-copied' : ''}`}
+                  onClick={() => {
+                    void copyToClipboard(path, share.name)
+                  }}
+                  title={`Copy ${path}`}
+                >
+                  <span
+                    className={`overview-page__share-status ${share.accessible ? 'is-accessible' : 'is-unavailable'}`}
+                    aria-hidden="true"
+                  >
+                    {share.accessible ? <CheckmarkFilled size={16} /> : <ErrorFilled size={16} />}
+                  </span>
+                  <span className="overview-page__share-text">
+                    <span className="overview-page__share-name">{share.name}</span>
+                    <span className="overview-page__share-description">{share.description}</span>
+                  </span>
+                  <Copy size={14} aria-hidden="true" className="overview-page__share-copy" />
+                </button>
+              )
+            })}
+          </div>
+
+          <p className="overview-page__shares-note">
+            Click a share to copy its Windows path. Linux and macOS can use `smb://{networkStatus.local_ip}/share-name`.
+          </p>
+        </Layer>
+      ) : null}
+
+      <div className="overview-page__metrics-grid">
+        <OverviewMetricCard
           label="PipeWire"
-          value={
-            <div className="flex" style={{ gap: 8 }}>
-              <Broadcast size={18} weight="duotone" style={{ color: pw.isDaemonRunning ? '#60a5fa' : '#ef4444' }} />
-              <span>{pw.isDaemonRunning ? `${pw.totalLatencyMs.toFixed(1)}ms` : 'Offline'}</span>
-            </div>
-          }
-          helper={pw.isDaemonRunning ? `v${pw.daemonVersion} • ${pw.effectiveQuantum}smp @ ${(pw.effectiveRate / 1000).toFixed(0)}kHz` : 'Daemon not running'}
+          value={pw.isDaemonRunning ? `${pw.totalLatencyMs.toFixed(1)} ms` : 'Offline'}
+          helper={pw.isDaemonRunning
+            ? `v${pw.daemonVersion} - ${pw.effectiveQuantum} smp @ ${(pw.effectiveRate / 1000).toFixed(0)} kHz`
+            : 'Daemon not running'}
+          icon={NetworkThree}
+          tone={pw.isDaemonRunning ? 'green' : 'red'}
         />
-        <StatCard
+        <OverviewMetricCard
           label="Chains"
-          value={<div className="flex" style={{ gap: 8 }}><FlowArrow size={18} weight="duotone" /><span>Ready</span></div>}
+          value="Ready"
           helper="Routing"
+          icon={Flow}
+          tone="green"
         />
-        <StatCard
+        <OverviewMetricCard
           label="Presets"
-          value={<div className="flex" style={{ gap: 8 }}><SquaresFour size={18} weight="duotone" /><span>Editable</span></div>}
+          value="Editable"
           helper="Catalog"
+          icon={Apps}
         />
-        <StatCard
+        <OverviewMetricCard
           label="Plugins"
-          value={<div className="flex" style={{ gap: 8 }}><Plug size={18} weight="duotone" /><span>Discover</span></div>}
+          value="Discover"
           helper="Inventory"
+          icon={Plug}
         />
-        <StatCard
+        <OverviewMetricCard
           label="Metrics"
-          value={<div className="flex" style={{ gap: 8 }}><Gauge size={18} weight="duotone" /><span>Live</span></div>}
+          value="Live"
           helper="Health"
+          icon={ChartColumn}
+          tone="green"
         />
-        <StatCard
-          label="AVB Stack"
-          value={(
-            <div className="flex" style={{ gap: 8 }}>
-              <ShareNetwork size={18} weight="duotone" style={{ color: avbStateColor }} />
-              <span>{avbSummary}</span>
-            </div>
-          )}
+        <OverviewMetricCard
+          label="AVB stack"
+          value={avbSummary}
           helper={avbHelper}
+          icon={Share}
+          tone={avbTagType}
         />
       </div>
+
+      {networkStatus?.smb_enabled ? (
+        <div className="overview-page__smb-actions">
+          <Button
+            kind="ghost"
+            size="sm"
+            renderIcon={Copy}
+            onClick={() => {
+              void copyToClipboard(`smb://${networkStatus.local_ip}/`, 'smb-root')
+            }}
+          >
+            Copy SMB root URL
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }

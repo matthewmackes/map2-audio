@@ -1,11 +1,36 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, SpinnerGap, ArrowsClockwise, Lightning, X, UploadSimple, Star } from '@phosphor-icons/react'
+import {
+  Button,
+  InlineLoading,
+  InlineNotification,
+  Modal,
+  Search,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+} from '@carbon/react'
+import { MachineLearningModel, Renew, StarFilled, Upload } from '@carbon/icons-react'
 import { namApi } from '../../../map2/api'
 import type { NAMModelsResponse, NAMStatus } from '../../../map2/types'
 import { useToasts } from '../Toasts'
-import { useIsMobile } from '../../hooks/useIsMobile'
+import './ModelManagerDialogs.css'
+
+interface FeaturedModel {
+  id: string | number
+  name: string
+  amp_name?: string
+  amp_type?: string
+}
+
+interface FeaturedModelsResponse {
+  models?: FeaturedModel[]
+}
 
 interface Props {
   open: boolean
@@ -15,7 +40,6 @@ interface Props {
 
 export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
   const { pushToast } = useToasts()
-  const isMobile = useIsMobile()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
@@ -27,23 +51,24 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
     enabled: open,
   })
 
-  const featuredQuery = useQuery({
+  const featuredQuery = useQuery<FeaturedModelsResponse>({
     queryKey: ['nam', 'featured'],
-    queryFn: () =>
-      fetch('/api/nam/featured').then((r) => {
-        if (!r.ok) throw new Error('Failed to fetch featured models')
-        return r.json()
-      }),
+    queryFn: async () => {
+      const response = await fetch('/api/nam/featured')
+      if (!response.ok) {
+        throw new Error('Failed to fetch featured models')
+      }
+      return response.json() as Promise<FeaturedModelsResponse>
+    },
     enabled: open,
   })
 
   const statusQuery = useQuery<NAMStatus>({
     queryKey: ['nam', 'status'],
-    queryFn: namApi.getStatus,
+    queryFn: () => namApi.getStatus(),
     enabled: open,
   })
 
-  // Simplified: loadModel now also activates on the backend
   const loadMutation = useMutation({
     mutationFn: (name: string) => namApi.loadModel(name),
     onSuccess: (_, name) => {
@@ -59,9 +84,9 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
       setUploading(true)
       return namApi.upload(file)
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { model?: { name?: string } }) => {
       queryClient.invalidateQueries({ queryKey: ['nam'] })
-      pushToast(`Uploaded: ${data.model.name}`, 'success')
+      pushToast(`Uploaded: ${data.model?.name || 'NAM model'}`, 'success')
     },
     onError: () => pushToast('Failed to upload NAM model', 'error'),
     onSettled: () => setUploading(false),
@@ -71,6 +96,8 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
   const featured = featuredQuery.data?.models ?? []
   const activeModel = statusQuery.data?.activeModel
 
+  const normalizedSearch = search.trim().toLowerCase()
+
   const modelsByType = useMemo(() => {
     const groups: Record<string, typeof models> = {
       amp: [],
@@ -78,117 +105,91 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
       preamp: [],
       unknown: [],
     }
-    const filtered = models.filter((m) =>
-      m.name.toLowerCase().includes(search.toLowerCase())
-    )
-    filtered.forEach((model) => {
+
+    const filtered = models.filter((model) => model.name.toLowerCase().includes(normalizedSearch))
+    for (const model of filtered) {
       const type = model.type || 'unknown'
       if (groups[type]) {
         groups[type].push(model)
       } else {
         groups.unknown.push(model)
       }
-    })
+    }
+
     return groups
-  }, [models, search])
+  }, [models, normalizedSearch])
 
   const handleRefresh = () => {
-    modelsQuery.refetch()
-    statusQuery.refetch()
+    void modelsQuery.refetch()
+    void statusQuery.refetch()
+    void featuredQuery.refetch()
   }
 
   const handleUpload = () => {
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (file) {
       uploadMutation.mutate(file)
     }
-    e.target.value = ''
+    event.target.value = ''
   }
 
   const typeLabels: Record<string, string> = {
     amp: 'Amplifiers',
-    pedal: 'Pedals & Drives',
+    pedal: 'Pedals and drives',
     preamp: 'Preamps',
-    unknown: 'Other Models',
+    unknown: 'Other models',
   }
 
-  useEffect(() => {
-    if (!open) return
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [open, onClose])
-
-  if (!open) return null
-
-  return createPortal(
-    <div
-      className="dialog-backdrop"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        alignItems: isMobile ? 'stretch' : 'center',
-        justifyContent: isMobile ? 'stretch' : 'center',
-        zIndex: 1000,
-      }}
+  return (
+    <Modal
+      open={open}
+      size="lg"
+      modalHeading="Neural amp modeler"
+      modalLabel="Model library"
+      primaryButtonText="Close"
+      secondaryButtonText="Refresh"
+      onRequestClose={onClose}
+      onRequestSubmit={onClose}
+      onSecondarySubmit={handleRefresh}
+      selectorPrimaryFocus="#nam-manager-search"
     >
-      <div
-        className="dialog"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: isMobile ? '100vw' : 'min(700px, 90vw)',
-          maxHeight: isMobile ? '100vh' : undefined,
-          minHeight: isMobile ? '100vh' : undefined,
-          borderRadius: isMobile ? 0 : undefined,
-        }}
-      >
-        <div className="flex-between" style={{ marginBottom: 8 }}>
-          <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-            <Lightning size={20} weight="duotone" style={{ color: '#f6c452' }} />
-            <h3 style={{ margin: 0 }}>Neural Amp Modeler</h3>
+      <div className="model-manager-dialog">
+        <div className="model-manager-dialog__header">
+          <div className="model-manager-dialog__title-row">
+            <MachineLearningModel size={20} aria-hidden="true" />
+            <p>Load machine-learning amp and pedal models for authentic tone.</p>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} weight="bold" />
-          </button>
-        </div>
-
-        <p style={{ margin: '8px 0 16px' }}>
-          Load machine-learning amp and pedal models for authentic tone.
-        </p>
-
-        <div className="flex-between" style={{ marginBottom: 12 }}>
-          <input
-            type="text"
-            className="input"
-            placeholder="Search models..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <div className="flex" style={{ gap: 8 }}>
-            <button
-              className="btn btn-ghost btn-sm"
+          <div className="model-manager-dialog__toolbar">
+            <Search
+              id="nam-manager-search"
+              labelText="Search"
+              placeholder="Search models"
+              value={search}
+              onChange={(event) => setSearch(event.currentTarget.value)}
+              size="md"
+            />
+            <Button
+              kind="ghost"
+              size="md"
+              renderIcon={Upload}
               onClick={handleUpload}
               disabled={uploading}
             >
-              <UploadSimple size={16} weight="duotone" />
-              {uploading ? 'Uploading...' : 'Upload'}
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
+              {uploading ? 'Uploading...' : 'Upload .nam'}
+            </Button>
+            <Button
+              kind="ghost"
+              size="md"
+              hasIconOnly
+              iconDescription="Refresh model list"
+              renderIcon={Renew}
               onClick={handleRefresh}
               disabled={modelsQuery.isFetching}
-            >
-              <ArrowsClockwise size={16} weight="duotone" className={modelsQuery.isFetching ? 'spin' : ''} />
-            </button>
+            />
           </div>
         </div>
 
@@ -197,208 +198,128 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
           type="file"
           accept=".nam"
           onChange={handleFileChange}
-          style={{ display: 'none' }}
+          className="model-manager-dialog__hidden-file-input"
         />
 
         {activeModel && (
-          <div className="flex" style={{ marginBottom: 12 }}>
-            <span className="pill success">
-              <Check size={14} weight="bold" />
-              Active: {activeModel}
-            </span>
-          </div>
+          <Tag type="green" title="Active NAM model" size="md">
+            Active: {activeModel}
+          </Tag>
         )}
 
-        {/* Featured Models Section */}
-        {featured && featured.length > 0 && !search && (
-          <div style={{ marginBottom: 16 }}>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: '#f6c452',
-                marginBottom: 8,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <Star size={14} weight="duotone" fill="#f6c452" />
-              FEATURED TOP AMPS
-            </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
+        {!normalizedSearch && featured.length > 0 && (
+          <section className="model-manager-dialog__featured">
+            <h4>
+              <StarFilled size={16} aria-hidden="true" />
+              Featured models
+            </h4>
+            <div className="model-manager-dialog__featured-grid">
               {featured.slice(0, 12).map((model) => {
                 const isActive = model.name === activeModel
-                const isLoading =
-                  loadMutation.isPending && loadMutation.variables === model.name
+                const isLoading = loadMutation.isPending && loadMutation.variables === model.name
+
                 return (
-                  <div
-                    key={model.id}
-                    style={{
-                      padding: 8,
-                      border: isActive
-                        ? '2px solid #4ade80'
-                        : '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 4,
-                      cursor: 'pointer',
-                      backgroundColor: isActive
-                        ? 'rgba(74, 222, 128, 0.1)'
-                        : 'rgba(255,255,255,0.02)',
-                    }}
-                    onClick={() => loadMutation.mutate(model.name)}
-                  >
-                    <div
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 500,
-                        marginBottom: 4,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {model.amp_name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 9,
-                        color: '#6b7280',
-                        marginBottom: 6,
-                      }}
-                    >
-                      {model.amp_type}
-                    </div>
+                  <article key={model.id} className="model-manager-dialog__featured-item">
+                    <p className="model-manager-dialog__featured-title">{model.amp_name || model.name}</p>
+                    <p className="model-manager-dialog__featured-subtitle">{model.amp_type || 'NAM profile'}</p>
                     {isActive ? (
-                      <div
-                        style={{
-                          fontSize: 10,
-                          padding: '2px 4px',
-                          backgroundColor: '#4ade80',
-                          color: '#000',
-                          borderRadius: 2,
-                          textAlign: 'center',
-                        }}
-                      >
+                      <Tag type="green" size="sm">
                         Active
-                      </div>
+                      </Tag>
                     ) : (
-                      <button
-                        style={{
-                          width: '100%',
-                          padding: '2px 4px',
-                          fontSize: 10,
-                          backgroundColor: isLoading ? '#888' : '#3b82f6',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 2,
-                          cursor: 'pointer',
-                        }}
-                        disabled={isLoading}
+                      <Button
+                        kind="tertiary"
+                        size="sm"
+                        onClick={() => loadMutation.mutate(model.name)}
+                        disabled={isLoading || loadMutation.isPending}
                       >
-                        {isLoading ? '...' : 'Load'}
-                      </button>
+                        {isLoading ? 'Loading...' : 'Load'}
+                      </Button>
                     )}
-                  </div>
+                  </article>
                 )
               })}
             </div>
-            <div
-              style={{
-                height: 1,
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                marginBottom: 12,
-              }}
-            />
-          </div>
+          </section>
         )}
 
         {modelsQuery.isLoading ? (
-          <div className="flex" style={{ padding: 16, justifyContent: 'center' }}>
-            <SpinnerGap className="spin" size={20} weight="duotone" />
-            <span className="muted">Loading models...</span>
-          </div>
-        ) : modelsQuery.error ? (
-          <div className="pill warn">Failed to load models</div>
+          <InlineLoading description="Loading models" status="active" />
+        ) : modelsQuery.isError ? (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Unable to load NAM models"
+            subtitle="The NAM model query failed. Refresh and try again."
+          />
         ) : models.length === 0 ? (
-          <div className="list-item muted">
-            No NAM models found. Upload .nam files or download from the Library.
-          </div>
+          <p className="model-manager-dialog__empty">No NAM models found. Upload .nam files to get started.</p>
         ) : (
-          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-            {Object.entries(modelsByType).map(([type, typeModels]) =>
-              typeModels.length > 0 ? (
-                <div key={type} className="model-type-section">
-                  <div className="model-type-header">
-                    {typeLabels[type]} ({typeModels.length})
-                  </div>
-                  <div className="model-list">
-                    {typeModels.map((model) => {
-                      const isActive = model.name === activeModel
-                      const isLoading =
-                        loadMutation.isPending &&
-                        loadMutation.variables === model.name
-                      return (
-                        <div
-                          key={model.name}
-                          className={`model-item ${isActive ? 'active' : ''}`}
-                        >
-                          <div className="model-item-info">
-                            <div className="model-item-name">{model.name}</div>
-                            {(model.size_mb || model.size) && (
-                              <div className="model-item-meta">
-                                {model.size_mb
-                                  ? model.size_mb.toFixed(1)
-                                  : (model.size! / 1024 / 1024).toFixed(1)} MB
-                              </div>
-                            )}
-                          </div>
-                          {isActive ? (
-                            <span className="pill success" style={{ padding: '4px 8px' }}>
-                              <Check size={12} weight="bold" />
-                              Active
-                            </span>
-                          ) : (
-                            <button
-                              className="btn btn-sm btn-primary"
-                              onClick={() => loadMutation.mutate(model.name)}
-                              disabled={loadMutation.isPending}
-                            >
-                              {isLoading ? (
-                                <SpinnerGap className="spin" size={14} weight="duotone" />
-                              ) : (
-                                'Load'
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : null
-            )}
+          <div className="model-manager-dialog__type-sections">
+            {Object.entries(modelsByType).map(([type, typeModels]) => {
+              if (typeModels.length === 0) {
+                return null
+              }
+
+              return (
+                <section key={type} className="model-manager-dialog__type-section">
+                  <h5>{typeLabels[type]} ({typeModels.length})</h5>
+                  <TableContainer className="model-manager-dialog__table-wrap">
+                    <Table size="sm" useZebraStyles={false}>
+                      <TableHead>
+                        <TableRow>
+                          <TableHeader>Name</TableHeader>
+                          <TableHeader>Size</TableHeader>
+                          <TableHeader>Status</TableHeader>
+                          <TableHeader>Action</TableHeader>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {typeModels.map((model) => {
+                          const isActive = model.name === activeModel
+                          const isLoading = loadMutation.isPending && loadMutation.variables === model.name
+                          const sizeMb = model.size_mb ?? (model.size ? model.size / (1024 * 1024) : null)
+
+                          return (
+                            <TableRow key={model.name}>
+                              <TableCell>{model.name}</TableCell>
+                              <TableCell>{sizeMb ? `${sizeMb.toFixed(1)} MB` : '-'}</TableCell>
+                              <TableCell>
+                                {isActive ? (
+                                  <Tag type="green" size="sm">
+                                    Active
+                                  </Tag>
+                                ) : (
+                                  <Tag type="cool-gray" size="sm">
+                                    Available
+                                  </Tag>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  kind="tertiary"
+                                  size="sm"
+                                  onClick={() => loadMutation.mutate(model.name)}
+                                  disabled={isActive || loadMutation.isPending}
+                                >
+                                  {isLoading ? 'Loading...' : 'Load'}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </section>
+              )
+            })}
           </div>
         )}
 
-        <div className="divider" />
-
-        <div className="flex-between">
-          <span className="muted" style={{ fontSize: 12 }}>
-            Supported: NAM model files (.nam)
-          </span>
-          <button className="btn btn-ghost" onClick={onClose}>
-            Close
-          </button>
-        </div>
+        <p className="model-manager-dialog__support-note">Supported format: NAM model files (.nam).</p>
       </div>
-    </div>,
-    document.body
+    </Modal>
   )
 }

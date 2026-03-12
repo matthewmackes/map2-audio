@@ -193,6 +193,10 @@ def _ensure_special_settings_schema_sync() -> None:
                 )
             logger.info("Added special_settings.pinned_routes schema upgrade")
 
+        if columns and "last_active_node" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN last_active_node VARCHAR(128)"))
+            logger.info("Added special_settings.last_active_node schema upgrade")
+
 
 async def _ensure_special_settings_schema_async(conn) -> None:
     """Apply additive schema upgrades for special_settings in async SQLite sessions."""
@@ -223,6 +227,10 @@ async def _ensure_special_settings_schema_async(conn) -> None:
                 {"routes": _special_settings_default_pinned_routes_json()},
             )
         logger.info("Added async special_settings.pinned_routes schema upgrade")
+
+    if columns and "last_active_node" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN last_active_node VARCHAR(128)"))
+        logger.info("Added async special_settings.last_active_node schema upgrade")
 
 
 async def _ensure_tables_created() -> None:
@@ -1368,6 +1376,7 @@ class SpecialSettings(Base):
     hidden_plugins = Column(JSON, default=list)  # List of plugin URIs to hide
     menu_location = Column(String(20), default="top-nav")  # "top-nav" | "mobile-only" | "hidden"
     pinned_routes = Column(JSON, default=list)
+    last_active_node = Column(String(128), nullable=True)
     
     # Cluster replication metadata
     version = Column(Integer, default=1)  # Incremented on each update

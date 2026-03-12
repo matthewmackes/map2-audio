@@ -26,6 +26,20 @@ function LocationProbe() {
   return <div data-testid="location-probe">{location.pathname}</div>
 }
 
+function renderHome(ui: React.ReactNode) {
+  return render(
+    <MemoryRouter
+      initialEntries={['/']}
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      {ui}
+    </MemoryRouter>,
+  )
+}
+
 describe('HomePage navigation landing', () => {
   beforeEach(() => {
     mockUpdateSettings.mockReset()
@@ -33,40 +47,36 @@ describe('HomePage navigation landing', () => {
   })
 
   it('renders sectioned navigation cards with detailed feature descriptions', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-        </Routes>
-      </MemoryRouter>,
+    renderHome(
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>,
     )
 
-    expect(screen.getByText('Core')).toBeTruthy()
-    expect(screen.getByText('Beta workflows')).toBeTruthy()
-    expect(screen.getByText('Overview')).toBeTruthy()
-    expect(screen.getByText('Audio Engine')).toBeTruthy()
-    expect(screen.getByText(/Monitor the realtime audio engine/i)).toBeTruthy()
-    expect(screen.getByText('Guide')).toBeTruthy()
-    expect(screen.getByText('MIDI Hub')).toBeTruthy()
+    expect(screen.getByText('MAP2')).toBeTruthy()
+    expect(screen.getByText(/MAP2 Node Status/i)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'System' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'JUCE' })).toBeTruthy()
+    expect(screen.getAllByText('System Overview').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Host Machine').length).toBeGreaterThan(0)
   })
 
   it('pins a card without navigating away from Home', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route
-            path="/"
-            element={(
-              <>
-                <HomePage />
-                <LocationProbe />
-              </>
-            )}
-          />
-        </Routes>
-      </MemoryRouter>,
+    renderHome(
+      <Routes>
+        <Route
+          path="/"
+          element={(
+            <>
+              <HomePage />
+              <LocationProbe />
+            </>
+          )}
+        />
+      </Routes>,
     )
 
+    fireEvent.click(screen.getByRole('button', { name: 'JUCE' }))
     fireEvent.click(screen.getByLabelText('Pin Audio Engine'))
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ pinnedRoutes: ['/engine'] })

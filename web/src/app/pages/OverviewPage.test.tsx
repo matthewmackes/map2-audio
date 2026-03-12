@@ -2,14 +2,6 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { OverviewPage } from './OverviewPage'
 
-jest.mock('../components/PageHeader', () => ({
-  PageHeader: ({ title }: { title: string }) => <div>{title}</div>,
-}))
-
-jest.mock('../components/StatCard', () => ({
-  StatCard: ({ label }: { label: string }) => <div>{label}</div>,
-}))
-
 jest.mock('../components/CPUStatusOverview', () => ({
   CPUStatusOverview: () => <div>CPU overview</div>,
 }))
@@ -49,12 +41,12 @@ describe('OverviewPage', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false }) as jest.Mock
   })
 
-  it('renders the restored legacy overview dashboard content', async () => {
+  it('renders the Carbon overview dashboard content', async () => {
     render(<OverviewPage />)
 
-    expect(screen.getByText('Mackes Audio Platform 1-22-25')).toBeTruthy()
+    expect(screen.getByText('MAP2 audio platform overview')).toBeTruthy()
     expect(screen.getByText('PipeWire')).toBeTruthy()
-    expect(screen.getByText('AVB Stack')).toBeTruthy()
+    expect(screen.getByText('AVB stack')).toBeTruthy()
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/api/folders/network-shares')

@@ -69,6 +69,23 @@ async def _invoke_middleware(middleware: ClusterProxyMiddleware, scope: dict) ->
     return start["status"], body
 
 
+async def _app_204(scope, receive, send):
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 204,
+            "headers": [],
+        }
+    )
+    await send(
+        {
+            "type": "http.response.body",
+            "body": b"",
+            "more_body": False,
+        }
+    )
+
+
 def test_fanout_includes_local_node(monkeypatch):
     middleware = ClusterProxyMiddleware(lambda scope, receive, send: None)
     middleware.discovery = _FakeDiscovery()
@@ -250,3 +267,66 @@ def test_call_returns_504_when_remote_proxy_times_out(monkeypatch):
 
     assert status == 504
     assert "Timeout contacting node remote-node" in body.decode("utf-8")
+
+
+def test_call_passthrough_without_node_id_uses_local_app():
+    middleware = ClusterProxyMiddleware(_app_204)
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/api/audio/status",
+        "headers": [],
+        "query_string": b"",
+        "server": ("testserver", 8080),
+        "client": ("127.0.0.1", 1234),
+        "scheme": "http",
+        "http_version": "1.1",
+    }
+
+    status, body = asyncio.run(_invoke_middleware(middleware, scope))
+
+    assert status == 204
+    assert body == b""
+
+
+def test_call_skips_excluded_cluster_prefix_even_with_node_id():
+    middleware = ClusterProxyMiddleware(_app_204)
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/api/cluster/health",
+        "headers": [],
+        "query_string": b"node_id=remote-node",
+        "server": ("testserver", 8080),
+        "client": ("127.0.0.1", 1234),
+        "scheme": "http",
+        "http_version": "1.1",
+    }
+
+    status, body = asyncio.run(_invoke_middleware(middleware, scope))
+
+    assert status == 204
+    assert body == b""
+
+
+def test_call_rejects_websocket_upgrade_requests():
+    middleware = ClusterProxyMiddleware(_app_204)
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/api/audio/status",
+        "headers": [(b"upgrade", b"websocket")],
+        "query_string": b"node_id=remote-node",
+        "server": ("testserver", 8080),
+        "client": ("127.0.0.1", 1234),
+        "scheme": "http",
+        "http_version": "1.1",
+    }
+
+    status, body = asyncio.run(_invoke_middleware(middleware, scope))
+
+    assert status == 400
+    assert body.decode("utf-8") == "WebSocket proxying not supported here"

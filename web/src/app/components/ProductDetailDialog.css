@@ -1,0 +1,156 @@
+.product-detail-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05);
+}
+
+.product-detail-dialog__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05);
+  padding-top: var(--cds-spacing-04);
+}
+
+.product-detail-dialog__image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cds-spacing-02);
+  min-height: 14rem;
+  border: 1px dashed var(--cds-border-subtle);
+  background: color-mix(in srgb, var(--cds-layer-accent) 65%, transparent);
+  color: var(--cds-text-secondary);
+  padding: var(--cds-spacing-06);
+  text-align: center;
+}
+
+.product-detail-dialog__image-placeholder p {
+  margin: 0;
+}
+
+.product-detail-dialog__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cds-spacing-05);
+}
+
+.product-detail-dialog__stat-card,
+.product-detail-dialog__notes-card,
+.product-detail-dialog__note-banner {
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer-accent);
+  padding: var(--cds-spacing-05);
+}
+
+.product-detail-dialog__stat-card h4,
+.product-detail-dialog__notes-card h4 {
+  margin: 0 0 var(--cds-spacing-03) 0;
+  font-size: var(--cds-heading-01-font-size, 0.875rem);
+  line-height: var(--cds-heading-01-line-height, 1.29);
+  color: var(--cds-text-secondary);
+}
+
+.product-detail-dialog__notes-card p {
+  margin: 0;
+  color: var(--cds-text-primary);
+}
+
+.product-detail-dialog__linux-rating {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  align-items: center;
+}
+
+.product-detail-dialog__linux-rating span:first-child,
+.product-detail-dialog__metric,
+.product-detail-dialog__price-card p {
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.product-detail-dialog__metric {
+  margin: 0;
+}
+
+.product-detail-dialog__price-card {
+  border-color: color-mix(in srgb, var(--cds-support-success) 50%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--cds-support-success) 12%, transparent);
+}
+
+.product-detail-dialog__note-banner {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--cds-spacing-04);
+}
+
+.product-detail-dialog__note-banner svg {
+  flex-shrink: 0;
+  color: var(--cds-icon-secondary);
+  margin-top: 2px;
+}
+
+.product-detail-dialog__note-banner p {
+  margin: 0;
+}
+
+.product-detail-dialog__note-title {
+  font-weight: 600;
+  margin-bottom: var(--cds-spacing-02);
+  color: var(--cds-text-primary);
+}
+
+.product-detail-dialog__note-banner ul {
+  margin: 0;
+  padding-left: var(--cds-spacing-05);
+  color: var(--cds-text-primary);
+}
+
+.product-detail-dialog__note-banner--success {
+  border-color: color-mix(in srgb, var(--cds-support-success) 55%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--cds-support-success) 10%, transparent);
+}
+
+.product-detail-dialog__note-banner--warning {
+  border-color: color-mix(in srgb, var(--cds-support-warning) 55%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--cds-support-warning) 10%, transparent);
+}
+
+.product-detail-dialog__code {
+  display: block;
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle);
+  color: var(--cds-text-primary);
+  padding: var(--cds-spacing-04);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.product-detail-dialog__gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cds-spacing-04);
+}
+
+.product-detail-dialog__gallery-item {
+  min-height: 6.75rem;
+  border: 1px dashed var(--cds-border-subtle);
+  background: color-mix(in srgb, var(--cds-layer-accent) 60%, transparent);
+  color: var(--cds-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-detail-dialog__gallery-caption {
+  margin: 0;
+  color: var(--cds-text-secondary);
+}
+
+@media (max-width: 800px) {
+  .product-detail-dialog__stats-grid,
+  .product-detail-dialog__gallery-grid {
+    grid-template-columns: 1fr;
+  }
+}

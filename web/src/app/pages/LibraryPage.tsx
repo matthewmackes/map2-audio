@@ -1,27 +1,102 @@
 import { useState } from 'react'
+import {
+  Accordion,
+  AccordionItem,
+  Button,
+  InlineLoading,
+  InlineNotification,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+  Tile,
+} from '@carbon/react'
+import {
+  CheckmarkFilled,
+  Copy,
+  MachineLearningModel,
+  Music,
+  Renew,
+  VolumeUp,
+  Waveform,
+} from '@carbon/icons-react'
+import type { CarbonIconType } from '@carbon/icons-react'
 import { useQuery } from '@tanstack/react-query'
-import { Books, Microphone, Lightning, WaveSine, MusicNote, HardDrive, CaretDown, CaretUp, Copy, Check, ArrowsClockwise, SpeakerHigh } from '@phosphor-icons/react'
-import { LibrarySources } from '../components/library/LibrarySources'
+import { foldersApi } from '../../map2/api'
 import { DownloadManager } from '../components/library/DownloadManager'
 import { InstalledBrowser } from '../components/library/InstalledBrowser'
-import { useDownloadProgress } from '../hooks/useDownloadProgress'
+import { LibrarySources } from '../components/library/LibrarySources'
 import { UploadButton } from '../components/upload'
-import { foldersApi } from '../../map2/api'
 import { useCluster } from '../contexts/ClusterContext'
+import { useDownloadProgress } from '../hooks/useDownloadProgress'
+import './LibraryPage.css'
 
 interface PathInfo {
   label: string
   path: string
   displayPath: string
-  icon: typeof Books
   description: string
 }
+
+interface AssetOverviewRow {
+  key: string
+  assetType: string
+  description: string
+  formats: string
+  usedBy: string
+  usageNote: string
+  icon: CarbonIconType
+}
+
+const ASSET_OVERVIEW_ROWS: AssetOverviewRow[] = [
+  {
+    key: 'cabinet-irs',
+    assetType: 'Cabinet IRs',
+    description: 'Guitar and bass cabinet impulse responses',
+    formats: '.wav, .flac (44.1-96 kHz)',
+    usedBy: 'ConvolutionProcessor',
+    usageNote: 'Zero-latency IR',
+    icon: VolumeUp,
+  },
+  {
+    key: 'nam-models',
+    assetType: 'NAM models',
+    description: 'Neural Amp Modeler captures',
+    formats: '.nam (JSON model files)',
+    usedBy: 'NAMProcessor',
+    usageNote: 'ML inference',
+    icon: MachineLearningModel,
+  },
+  {
+    key: 'reverb-irs',
+    assetType: 'Reverb IRs',
+    description: 'Room, hall, plate, and space impulses',
+    formats: '.wav, .flac (stereo or mono)',
+    usedBy: 'ConvolutionProcessor',
+    usageNote: 'Space simulation',
+    icon: Waveform,
+  },
+  {
+    key: 'soundfonts',
+    assetType: 'SoundFonts',
+    description: 'Sampled instrument libraries',
+    formats: '.sf2, .sfz (GM/GS compatible)',
+    usedBy: 'Sfizz / FluidSynth',
+    usageNote: 'MIDI instruments',
+    icon: Music,
+  },
+]
 
 export function LibraryPage() {
   const { activeNodeId, nodes, localNodeId, isClusterMode } = useCluster()
   const [pathsExpanded, setPathsExpanded] = useState(false)
   const [copiedPath, setCopiedPath] = useState<string | null>(null)
   const { status, isDownloading } = useDownloadProgress()
+
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
   const selectedNode = nodes.find((node) => node.nodeId === selectedNodeId)
   const remoteSelected = Boolean(selectedNodeId && selectedNodeId !== localNodeId)
@@ -44,320 +119,188 @@ export function LibraryPage() {
     }
   }
 
-  const handleRefreshPaths = () => {
-    pathsQuery.refetch()
-  }
-
-  const paths: PathInfo[] = pathsQuery.data ? [
-    {
-      label: 'NAM Models',
-      path: pathsQuery.data.nam_models,
-      displayPath: pathsQuery.data.nam_models_display,
-      icon: MusicNote,
-      description: 'Neural amp model captures for NAM processing',
-    },
-    {
-      label: 'Cabinet IRs',
-      path: pathsQuery.data.ir_cabinets,
-      displayPath: pathsQuery.data.ir_cabinets_display,
-      icon: SpeakerHigh,
-      description: 'Guitar/Bass cabinet impulse responses',
-    },
-    {
-      label: 'Reverb IRs',
-      path: pathsQuery.data.ir_reverbs,
-      displayPath: pathsQuery.data.ir_reverbs_display,
-      icon: WaveSine,
-      description: 'Reverb impulse responses (.wav, .flac)',
-    },
-    {
-      label: 'User Uploads',
-      path: pathsQuery.data.ir_user_uploads,
-      displayPath: pathsQuery.data.ir_user_uploads?.replace(/^\/home\/[^/]+/, '~') || '',
-      icon: MusicNote,
-      description: 'Your custom imported IRs',
-    },
-  ] : []
+  const paths: PathInfo[] = pathsQuery.data
+    ? [
+        {
+          label: 'NAM models',
+          path: pathsQuery.data.nam_models,
+          displayPath: pathsQuery.data.nam_models_display,
+          description: 'Neural amp model captures for NAM processing',
+        },
+        {
+          label: 'Cabinet IRs',
+          path: pathsQuery.data.ir_cabinets,
+          displayPath: pathsQuery.data.ir_cabinets_display,
+          description: 'Guitar and bass cabinet impulse responses',
+        },
+        {
+          label: 'Reverb IRs',
+          path: pathsQuery.data.ir_reverbs,
+          displayPath: pathsQuery.data.ir_reverbs_display,
+          description: 'Reverb impulse responses (.wav, .flac)',
+        },
+        {
+          label: 'User uploads',
+          path: pathsQuery.data.ir_user_uploads,
+          displayPath: pathsQuery.data.ir_user_uploads?.replace(/^\/home\/[^/]+/, '~') || '',
+          description: 'Custom imported impulse responses',
+        },
+      ]
+    : []
 
   return (
-    <div className="stack" style={{ gap: 24, padding: '24px 0' }}>
-      {/* Header */}
-      <div className="flex-between">
-        <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-          <Books size={28} weight="duotone" style={{ color: 'var(--primary)' }} />
-          <div>
-            <h1 style={{ margin: 0, fontSize: 24 }}>Library</h1>
-            <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-              {remoteSelected
-                ? `Download and manage IRs, NAM models, and SoundFonts on ${displayNodeName}`
-                : 'Download and manage IRs, NAM models, and SoundFonts'}
-            </p>
-          </div>
+    <div className="library-page">
+      <div className="library-page__header">
+        <div>
+          <h1 className="library-page__title">Library</h1>
+          <p className="library-page__subtitle">
+            {remoteSelected
+              ? `Download and manage IRs, NAM models, and SoundFonts on ${displayNodeName}`
+              : 'Download and manage IRs, NAM models, and SoundFonts'}
+          </p>
         </div>
-        <UploadButton label="Upload Assets" />
+        <UploadButton label="Upload assets" />
       </div>
 
-      {isClusterMode && (
-        <div
-          className="card"
-          style={{
-            background: remoteSelected
-              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.94))'
-              : 'linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(15, 23, 42, 0.94))',
-            borderColor: remoteSelected ? 'rgba(52, 211, 153, 0.28)' : 'rgba(96, 165, 250, 0.28)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.1, color: '#94a3b8', marginBottom: 8 }}>
-                Cluster Library Scope
-              </div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>
-                {activeNodeId === 'all' ? 'All Nodes comparison scope' : displayNodeName}
-              </div>
-              <p style={{ margin: '8px 0 0', color: '#cbd5e1', fontSize: 14, lineHeight: 1.6, maxWidth: 760 }}>
-                {activeNodeId === 'all'
-                  ? 'Library browsing stays anchored to the local node when All Nodes is selected. Availability badges and deploy actions still compare the full cluster.'
-                  : remoteSelected
-                    ? 'You are browsing a remote node through the cluster proxy. Availability badges show where each IR or NAM model already exists, and Deploy can fill the missing nodes.'
-                    : 'Availability badges show cluster coverage for IRs and NAM models. Expand an item to deploy it to the missing nodes.'}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignContent: 'flex-start' }}>
-              {nodes.map((node) => (
-                <span key={node.nodeId} className={selectedNodeId === node.nodeId ? 'pill success' : 'pill'} style={{ padding: '6px 10px' }}>
-                  {node.hostname}
-                </span>
-              ))}
-            </div>
+      {isClusterMode ? (
+        <Tile className="library-page__cluster-scope">
+          <div className="library-page__cluster-scope-header">
+            <span className="library-page__cluster-scope-label">Cluster library scope</span>
+            <strong className="library-page__cluster-scope-node">
+              {activeNodeId === 'all' ? 'All nodes comparison scope' : displayNodeName}
+            </strong>
           </div>
-        </div>
-      )}
+          <p className="library-page__cluster-scope-description">
+            {activeNodeId === 'all'
+              ? 'Library browsing stays anchored to the local node when all nodes is selected. Availability badges and deploy actions still compare the full cluster.'
+              : remoteSelected
+                ? 'You are browsing a remote node through the cluster proxy. Availability badges show where each IR or NAM model already exists, and deploy can fill missing nodes.'
+                : 'Availability badges show cluster coverage for IRs and NAM models. Expand an item to deploy it to missing nodes.'}
+          </p>
+          <div className="library-page__cluster-tags">
+            {nodes.map((node) => (
+              <Tag key={node.nodeId} type={selectedNodeId === node.nodeId ? 'green' : 'gray'}>
+                {node.hostname}
+              </Tag>
+            ))}
+          </div>
+        </Tile>
+      ) : null}
 
-      {/* Sound Asset Library Overview & Paths */}
-      <div className="card" style={{
-        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(59, 130, 246, 0.05))',
-        borderColor: 'rgba(37, 99, 235, 0.4)',
-        borderLeft: '6px solid #2563eb',
-        padding: 32
-      }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
-          <Books size={36} weight="duotone" style={{ color: '#60a5fa', flexShrink: 0, marginTop: 4 }} />
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: 22, fontWeight: 700, color: '#60a5fa', marginBottom: 12 }}>
-              Sound Asset Library
-            </h3>
-            <p style={{ fontSize: 16, color: '#d1d5db', lineHeight: 1.7, marginBottom: 24 }}>
-              High-quality impulse responses, neural amp models, and instrument samples for use with the
-              <strong style={{ color: '#60a5fa' }}> ConvolutionProcessor</strong> and
-              <strong style={{ color: '#60a5fa' }}> NAMProcessor</strong> native DSP modules:
-            </p>
+      <Tile className="library-page__overview">
+        <h2 className="library-page__overview-title">Sound asset library</h2>
+        <p className="library-page__overview-copy">
+          High-quality impulse responses, neural amp models, and instrument samples are available for native DSP
+          modules including ConvolutionProcessor and NAMProcessor.
+        </p>
 
-            {/* Asset Types Chart */}
-            <div style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              borderRadius: 12,
-              overflow: 'hidden',
-              marginBottom: 24
-            }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
-                <thead>
-                  <tr style={{ background: 'rgba(37, 99, 235, 0.15)' }}>
-                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#60a5fa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(37, 99, 235, 0.2)' }}>Asset Type</th>
-                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#60a5fa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(37, 99, 235, 0.2)' }}>Description</th>
-                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#60a5fa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(37, 99, 235, 0.2)' }}>Formats</th>
-                    <th style={{ padding: '16px 20px', textAlign: 'right', color: '#60a5fa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(37, 99, 235, 0.2)' }}>Used By</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '16px 20px', color: '#60a5fa' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Microphone size={20} weight="duotone" /> Cabinet IRs
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>Guitar & bass cabinet impulse responses</td>
-                    <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>.wav, .flac (44.1-96kHz)</td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: 12, color: '#60a5fa', fontWeight: 600 }}>ConvolutionProcessor</div>
-                      <div style={{ fontSize: 11, color: '#6b7280' }}>Zero-latency IR</div>
-                    </td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '16px 20px', color: '#60a5fa' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Lightning size={20} weight="duotone" /> NAM Models
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>Neural Amp Modeler captures</td>
-                    <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>.nam (JSON model files)</td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: 12, color: '#60a5fa', fontWeight: 600 }}>NAMProcessor</div>
-                      <div style={{ fontSize: 11, color: '#6b7280' }}>ML inference</div>
-                    </td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '16px 20px', color: '#60a5fa' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <WaveSine size={20} weight="duotone" /> Reverb IRs
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>Room, hall, plate, and space impulses</td>
-                    <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>.wav, .flac (stereo/mono)</td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: 12, color: '#60a5fa', fontWeight: 600 }}>ConvolutionProcessor</div>
-                      <div style={{ fontSize: 11, color: '#6b7280' }}>Space simulation</div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '16px 20px', color: '#22c55e' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <MusicNote size={20} weight="duotone" /> SoundFonts
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>Sampled instrument libraries</td>
-                    <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>.sf2, .sfz (GM/GS compatible)</td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>Sfizz / FluidSynth</div>
-                      <div style={{ fontSize: 11, color: '#6b7280' }}>MIDI instruments</div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <TableContainer className="library-page__table-container">
+          <Table size="sm" className="library-page__asset-table">
+            <TableHead>
+              <TableRow>
+                <TableHeader>Asset type</TableHeader>
+                <TableHeader>Description</TableHeader>
+                <TableHeader>Formats</TableHeader>
+                <TableHeader className="library-page__table-cell--right">Used by</TableHeader>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {ASSET_OVERVIEW_ROWS.map((row) => {
+                const Icon = row.icon
 
-            {/* Library Paths Section */}
-            <div style={{
-              borderTop: '1px solid rgba(255,255,255,0.1)',
-              paddingTop: 24,
-              marginTop: 12
-            }}>
-              <button
-                onClick={() => setPathsExpanded(!pathsExpanded)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  cursor: 'pointer',
-                  color: 'inherit',
-                  marginBottom: pathsExpanded ? 12 : 0
+                return (
+                  <TableRow key={row.key}>
+                    <TableCell>
+                      <span className="library-page__asset-type">
+                        <Icon size={16} aria-hidden="true" />
+                        {row.assetType}
+                      </span>
+                    </TableCell>
+                    <TableCell>{row.description}</TableCell>
+                    <TableCell>{row.formats}</TableCell>
+                    <TableCell className="library-page__table-cell--right">
+                      <span className="library-page__used-by-primary">{row.usedBy}</span>
+                      <span className="library-page__used-by-secondary">{row.usageNote}</span>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <Accordion align="start" className="library-page__paths-accordion">
+          <AccordionItem
+            title="File locations"
+            open={pathsExpanded}
+            onHeadingClick={({ isOpen }) => setPathsExpanded(!isOpen)}
+          >
+            <div className="library-page__paths-header">
+              <p className="library-page__paths-copy">
+                Place files in these directories to use them in MAP2. Directories are detected automatically.
+              </p>
+              <Button
+                kind="ghost"
+                size="sm"
+                renderIcon={Renew}
+                onClick={() => {
+                  void pathsQuery.refetch()
                 }}
               >
-                <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-                  <HardDrive size={18} weight="duotone" style={{ color: 'var(--secondary)' }} />
-                  <span style={{ fontWeight: 600, fontSize: 15 }}>File Locations</span>
-                </div>
-                <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleRefreshPaths()
-                    }}
-                    title="Refresh paths"
-                  >
-                    <ArrowsClockwise size={14} weight="duotone" className={pathsQuery.isFetching ? 'spin' : ''} />
-                  </button>
-                  {pathsExpanded ? <CaretUp size={18} weight="bold" /> : <CaretDown size={18} weight="bold" />}
-                </div>
-              </button>
-
-              {pathsExpanded && (
-                <div>
-                  <p className="muted" style={{ fontSize: 13, marginBottom: 16 }}>
-                    Place your files in these directories to use them in MAP2. Files are automatically detected.
-                  </p>
-
-                  {pathsQuery.isLoading ? (
-                    <div className="flex" style={{ justifyContent: 'center', padding: 16 }}>
-                      <span className="muted">Loading paths...</span>
-                    </div>
-                  ) : pathsQuery.error ? (
-                    <div className="flex" style={{ justifyContent: 'center', padding: 16 }}>
-                      <span style={{ color: 'var(--danger)' }}>Error loading paths</span>
-                    </div>
-                  ) : (
-                    <div className="stack" style={{ gap: 8 }}>
-                      {paths.map(({ label, path, displayPath, description }) => (
-                        <div
-                          key={label}
-                          style={{
-                            padding: '12px 16px',
-                            background: 'rgba(0, 0, 0, 0.2)',
-                            borderRadius: 8,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: 16,
-                          }}
-                        >
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div className="flex" style={{ gap: 8, alignItems: 'baseline' }}>
-                              <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
-                              <span className="muted" style={{ fontSize: 11 }}>{description}</span>
-                            </div>
-                            <code
-                              style={{
-                                display: 'block',
-                                fontSize: 11,
-                                color: 'var(--text-secondary)',
-                                background: 'rgba(0, 0, 0, 0.3)',
-                                padding: '4px 8px',
-                                borderRadius: 4,
-                                marginTop: 4,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                              title={path}
-                            >
-                              {displayPath || path}
-                            </code>
-                          </div>
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => handleCopyPath(path)}
-                            title="Copy full path"
-                            style={{ flexShrink: 0 }}
-                          >
-                            {copiedPath === path ? (
-                              <>
-                                <Check size={14} weight="bold" style={{ color: 'var(--success)' }} />
-                              </>
-                            ) : (
-                              <>
-                                <Copy size={14} weight="duotone" />
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="muted" style={{ fontSize: 11, marginTop: 12, opacity: 0.7 }}>
-                    Tip: You can also access these directories via SMB network share (see Settings).
-                  </p>
-                </div>
-              )}
+                Refresh file locations
+              </Button>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Installed Browser */}
+            {pathsQuery.isLoading ? <InlineLoading description="Loading file locations..." /> : null}
+
+            {pathsQuery.error ? (
+              <InlineNotification
+                kind="error"
+                lowContrast
+                hideCloseButton
+                title="Error loading file locations"
+                subtitle="The backend did not return the current directory paths."
+              />
+            ) : null}
+
+            {pathsQuery.isSuccess ? (
+              <div className="library-page__path-list">
+                {paths.map((pathInfo) => (
+                  <div key={pathInfo.label} className="library-page__path-item">
+                    <div className="library-page__path-details">
+                      <div className="library-page__path-label-row">
+                        <span className="library-page__path-label">{pathInfo.label}</span>
+                        <span className="library-page__path-description">{pathInfo.description}</span>
+                      </div>
+                      <code className="library-page__path-code" title={pathInfo.path}>
+                        {pathInfo.displayPath || pathInfo.path}
+                      </code>
+                    </div>
+                    <Button
+                      kind="ghost"
+                      size="sm"
+                      renderIcon={copiedPath === pathInfo.path ? CheckmarkFilled : Copy}
+                      iconDescription={`Copy path for ${pathInfo.label}`}
+                      onClick={() => {
+                        void handleCopyPath(pathInfo.path)
+                      }}
+                    >
+                      {copiedPath === pathInfo.path ? 'Copied' : `Copy path for ${pathInfo.label}`}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <p className="library-page__paths-tip">Tip: These directories are also accessible through SMB share settings.</p>
+          </AccordionItem>
+        </Accordion>
+      </Tile>
+
       <InstalledBrowser nodeId={activeNodeId} />
 
-      {/* Download Manager - hidden by default, shown when downloading or recently downloaded */}
-      {(isDownloading || status?.stats) && (
-        <DownloadManager />
-      )}
+      {isDownloading || status?.stats ? <DownloadManager /> : null}
 
-      {/* Library Sources - Downloads & Source Management (hidden by default) */}
       <LibrarySources />
     </div>
   )

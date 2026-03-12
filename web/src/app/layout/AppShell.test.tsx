@@ -96,12 +96,27 @@ describe('AppShell navigation', () => {
     )
 
     expect(screen.getByLabelText('Home')).toBeTruthy()
+    expect(screen.getByLabelText('Open advanced menu')).toBeTruthy()
     expect(screen.getByLabelText('Open special settings')).toBeTruthy()
     expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
     expect(screen.queryByText('Guide')).toBeNull()
     expect(screen.queryByText('About')).toBeNull()
     expect(container.querySelector('.nav-active-title')).toBeNull()
     expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
+  })
+
+  it('shows the API Observatory entry inside the advanced menu dropdown', () => {
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+    )
+
+    fireEvent.click(screen.getByLabelText('Open advanced menu'))
+
+    expect(screen.getByRole('menu', { name: 'Advanced menu' })).toBeTruthy()
+    expect(screen.getByText('API Observatory')).toBeTruthy()
+    expect(screen.getByText('MIDI Cluster')).toBeTruthy()
   })
 
   it('orders pinned routes by catalog order and caps desktop pins at four items', () => {

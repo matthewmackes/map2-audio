@@ -2,7 +2,7 @@
 
 Canonical file: `docs/AVB_MASTER_WORK_PLAN.md`  
 Rule status: Active (disable only with `DISABLE WORKLIST RULE`)  
-Last updated: 2026-02-26 18:30 - Codex
+Last updated: 2026-03-12 13:12 - Codex
 
 ## Status Legend
 
@@ -26,6 +26,140 @@ Last updated: 2026-02-26 18:30 - Codex
 - Apply these rules every time this task list is reviewed, updated, or executed.
 
 ## Top Tasks (Priority Order)
+
+ID: T050  
+Status: [ ] Todo  
+Title: Implement unified MAP2 Textual console per IBM Carbon directive  
+Description:  
+- Goal / acceptance criteria: Deliver one unified `MAP2AudioTUI` host app and shell entry experience aligned to all approved decisions in `docs/design/TUI_UNIFIED_CONSOLE_DIRECTIVE.md` (Q1-Q35), replacing fragmented TUI/shell interaction paths with Carbon-tokenized Textual-native architecture.  
+- Why it matters: Current multi-entrypoint, multi-theme, multi-timer architecture increases maintenance cost and runtime inconsistency across UX, polling, and system workflows.  
+- Dependencies: T049  
+- Estimated effort: High (~5-8 days)  
+- Required outputs: Unified Textual app architecture, phased migration PRs, command/theme/polling refactor, shell-to-Python wizard replacements, and validation evidence updates in this worklist.  
+Subtasks:  
+- ID: T050-subA  
+  Status: [ ] Todo  
+  Title: Phase 0 foundation and Textual-native theme/command baseline  
+  Description:  
+  - Goal / acceptance criteria: Create feature branch `tui-carbon-unification`; add `version.json`; replace custom `tui/theme_engine.py` and `tui/command_palette.py` with Textual `Theme()` registration and `App.COMMANDS` provider wiring.  
+  - Why it matters: Establishes the new architecture backbone before screen-level migration.  
+  - Dependencies: None  
+  - Estimated effort: Medium (~4-6 hours)  
+  - Required outputs: `tui/theme/carbon.py`, `tui/commands/` provider scaffold, app wiring updates, and removal/deprecation plan for custom command/theme engines.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subB  
+  Status: [ ] Todo  
+  Title: Phase 1 split monolithic API client into domain modules  
+  Description:  
+  - Goal / acceptance criteria: Refactor `tui/api_client.py` into `tui/api/{base,audio,chains,midi,cluster,plugins,system}.py` with stable facade imports and targeted unit tests.  
+  - Why it matters: Domain boundaries are required for maintainability and safe parallel screen refactors.  
+  - Dependencies: T050-subA  
+  - Estimated effort: Medium (~4-8 hours)  
+  - Required outputs: New `tui/api/` package, migrated call sites, and passing module tests.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subC  
+  Status: [ ] Todo  
+  Title: Phase 2 implement centralized poll manager and subscriptions  
+  Description:  
+  - Goal / acceptance criteria: Add `tui/poll_manager.py` with single 1s timer; enforce `get_subscriptions() -> list[str]`; remove per-screen `set_interval` polling.  
+  - Why it matters: Eliminates hidden background polling load and normalizes lifecycle behavior.  
+  - Dependencies: T050-subA, T050-subB  
+  - Estimated effort: Medium (~4-6 hours)  
+  - Required outputs: Poll manager implementation, screen subscription integration, and visibility-gated polling tests.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subD  
+  Status: [ ] Todo  
+  Title: Phase 3 deduplicate and merge overlapping screen variants  
+  Description:  
+  - Goal / acceptance criteria: Merge `_enhanced`/`_v2`/`_refactored` variants into canonical screens and retire duplicate files, including extraction/deletion path for `chains_refactored.py`.  
+  - Why it matters: Duplicate screens are a direct source of feature drift and regressions.  
+  - Dependencies: T050-subB, T050-subC  
+  - Estimated effort: High (~1-2 days)  
+  - Required outputs: Consolidated `tui/screens/` set with deterministic ownership and regression-safe behavior.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subE  
+  Status: [ ] Todo  
+  Title: Phase 4 implement grouped navigation and global-only key model  
+  Description:  
+  - Goal / acceptance criteria: Replace flat tab nav with Dashboard/Audio/Platform/Settings groups; remove per-screen `BINDINGS`; set `Ctrl+K` palette, `Ctrl+Z` suspend, `Ctrl+U` undo, and cache size 8.  
+  - Why it matters: Delivers the core interaction model defined by the directive and removes keybinding conflicts.  
+  - Dependencies: T050-subD  
+  - Estimated effort: High (~1 day)  
+  - Required outputs: Navigation shell refactor, global keybinding policy, command mapping for former screen-local actions.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subF  
+  Status: [ ] Todo  
+  Title: Phase 5 migrate async/system operations to `@work` and normalize notifications  
+  Description:  
+  - Goal / acceptance criteria: Apply `@work` to API/system operations; enforce info/success/warning/error timeout policy; add 30s error dedup window with count suffix.  
+  - Why it matters: Prevents event-loop stalls and suppresses noisy alert storms from repeated failures.  
+  - Dependencies: T050-subC, T050-subE  
+  - Estimated effort: Medium (~4-8 hours)  
+  - Required outputs: Updated operation handlers, notification policy utilities, and notify audit evidence.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subG  
+  Status: [ ] Todo  
+  Title: Phase 6 complete Carbon token and stylesheet migration  
+  Description:  
+  - Goal / acceptance criteria: Create single shared `tui/styles/carbon.tcss`; remove hardcoded hex colors and legacy per-app theme TCSS files; ensure semantic token usage.  
+  - Why it matters: Tokenized styling is required for consistent Carbon-compliant UX and maintainable theming.  
+  - Dependencies: T050-subA, T050-subE, T050-subF  
+  - Estimated effort: Medium (~4-6 hours)  
+  - Required outputs: Carbon stylesheet, migrated widget styles, and visual smoke pass for all four nav group landing screens.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subH  
+  Status: [ ] Todo  
+  Title: Phase 7 replace interactive shell setup flows with native Python/Textual wizards  
+  Description:  
+  - Goal / acceptance criteria: Replace interactive flows from `scripts/setup_realtime.sh`, `scripts/setup_avb.sh`, `scripts/map2-mode.sh`, and `scripts/install-node.sh` with Python-native screens/bootstrap commands; keep shell fallbacks marked deprecated.  
+  - Why it matters: Unified UX and validation flow require eliminating split interaction models.  
+  - Dependencies: T050-subE  
+  - Estimated effort: High (~1-2 days)  
+  - Required outputs: Wizard screens, minimal bootstrap command path, and deprecation headers in legacy shell scripts.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subI  
+  Status: [ ] Todo  
+  Title: Phase 8 consolidate shell welcome system into one Carbon-aligned source  
+  Description:  
+  - Goal / acceptance criteria: Consolidate welcome logic into one `/etc/profile.d/map2-welcome.sh` source with compact status grid, command hints, Carbon-aligned ANSI colors, and fallback prompt behavior.  
+  - Why it matters: Removes duplicate shell startup behavior and keeps console entry consistent.  
+  - Dependencies: T050-subH  
+  - Estimated effort: Medium (~3-5 hours)  
+  - Required outputs: Consolidated profile script, duplicate removal from shell startup files, and updated alias/version sourcing behavior.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subJ  
+  Status: [ ] Todo  
+  Title: Phase 9 absorb NodeConsole and ClusterManagement apps into unified app  
+  Description:  
+  - Goal / acceptance criteria: Migrate `tui/node_console/` and `tui/apps/cluster_management_app.py` functionality into unified screens; redirect old entrypoints to `tui.app`.  
+  - Why it matters: Multiple full-screen apps duplicate routing/health workflows and fragment operator experience.  
+  - Dependencies: T050-subD, T050-subE, T050-subG  
+  - Estimated effort: High (~1 day)  
+  - Required outputs: Unified screen coverage, entrypoint redirect updates, and retired legacy app modules.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+- ID: T050-subK  
+  Status: [ ] Todo  
+  Title: Phase 10 execute full validation matrix and cutover readiness evidence  
+  Description:  
+  - Goal / acceptance criteria: Add unit/integration/smoke coverage for API modules, theme tokens, nav lifecycle, command palette, poll subscriptions, and first-run onboarding; verify existing TUI tests remain green before cutover.  
+  - Why it matters: Big-bang migration requires hard evidence to prevent regressions at swap time.  
+  - Dependencies: T050-subB, T050-subC, T050-subD, T050-subE, T050-subF, T050-subG, T050-subH, T050-subI, T050-subJ  
+  - Estimated effort: High (~1 day)  
+  - Required outputs: Expanded automated test suite, migration validation report, and explicit go/no-go checklist in docs/worklist notes.  
+  Assigned to: MAP2 TUI + Platform UX  
+  Last updated: 2026-03-12 13:12 - Codex  
+Assigned to: MAP2 TUI + Platform UX  
+Last updated: 2026-03-12 13:12 - Codex
 
 ID: T001  
 Status: [✓] Done  

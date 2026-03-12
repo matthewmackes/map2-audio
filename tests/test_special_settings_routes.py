@@ -15,6 +15,14 @@ def test_normalize_pinned_routes_deduplicates_and_filters_invalid_values():
     assert normalized == ["/grid", "/welcome"]
 
 
+def test_normalize_last_active_node_coerces_local_and_blank_values():
+    assert special_settings._normalize_last_active_node(" node-b ") == "node-b"
+    assert special_settings._normalize_last_active_node("all") == "all"
+    assert special_settings._normalize_last_active_node("local") is None
+    assert special_settings._normalize_last_active_node(" null ") is None
+    assert special_settings._normalize_last_active_node("") is None
+
+
 def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch):
     @asynccontextmanager
     async def _fake_session_ctx():
@@ -26,6 +34,7 @@ def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch
         menu_location="top-nav",
         pinned_routes=None,
         promoted_advanced_routes=["/welcome", "/grid"],
+        last_active_node="node-b",
         version=3,
         last_updated=datetime.now(timezone.utc),
         updated_by_node="node-a",
@@ -40,6 +49,7 @@ def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch
     response = asyncio.run(special_settings.get_special_settings())
 
     assert response.pinned_routes == ["/welcome", "/grid"]
+    assert response.last_active_node == "node-b"
     assert response.version == 3
 
 
@@ -59,6 +69,7 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
         hidden_plugins=[],
         menu_location="top-nav",
         pinned_routes=[],
+        last_active_node=None,
         version=1,
         last_updated=datetime.now(timezone.utc),
         updated_by_node=None,
@@ -78,12 +89,15 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
                 hidden_plugins=["map2://plugin/a"],
                 menu_location="top-nav",
                 pinned_routes=["/grid", "invalid", "/grid", "/mpx1"],
+                last_active_node=" node-b ",
             )
         )
     )
 
     assert settings.pinned_routes == ["/grid", "/mpx1"]
+    assert settings.last_active_node == "node-b"
     assert response.pinned_routes == ["/grid", "/mpx1"]
+    assert response.last_active_node == "node-b"
     assert response.enabled is True
 
 

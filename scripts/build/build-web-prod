@@ -44,9 +44,10 @@ if [ ! -d "node_modules" ]; then
     }
 fi
 
-# Clean previous build
-print_status "Cleaning previous build..."
-rm -rf dist build .next out 2>/dev/null || true
+# Do not delete dist/ in place; keeping prior hashed assets prevents
+# transient 404/module-load failures for active browser sessions.
+print_status "Preserving existing dist/ assets for zero-downtime hash compatibility..."
+rm -rf build .next out 2>/dev/null || true
 
 # Build for production
 print_status "Building optimized production bundle..."

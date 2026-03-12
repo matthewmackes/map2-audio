@@ -15,6 +15,8 @@ import {
 } from '@mui/material'
 import { Pulse, Info, TrendUp } from '@phosphor-icons/react'
 import { audioApi } from '../../map2/api'
+import type { AudioHealth, JuceMetrics } from '../../map2/api'
+import type { AudioStatus } from '../../map2/types'
 import { useVuMeters } from '../hooks/useVuMeters'
 
 type LatencyMode = 'motu-only' | 'adat-expanded' | 'outboard-inserts'
@@ -48,21 +50,21 @@ export default function MOTURMEPage() {
     pollingInterval: 250,
   })
 
-  const { data: audioStatus } = useQuery({
+  const { data: audioStatus } = useQuery<AudioStatus>({
     queryKey: ['audio', 'status', 'motu-rme'],
-    queryFn: audioApi.getStatus,
+    queryFn: () => audioApi.getStatus(),
     refetchInterval: 2000,
   })
 
-  const { data: audioHealth } = useQuery({
+  const { data: audioHealth } = useQuery<AudioHealth>({
     queryKey: ['audio', 'health', 'motu-rme'],
-    queryFn: audioApi.getHealth,
+    queryFn: () => audioApi.getHealth(),
     refetchInterval: 2000,
   })
 
-  const { data: juceMetrics } = useQuery({
+  const { data: juceMetrics } = useQuery<JuceMetrics>({
     queryKey: ['audio', 'juce', 'motu-rme'],
-    queryFn: audioApi.getJuceMetrics,
+    queryFn: () => audioApi.getJuceMetrics(),
     refetchInterval: 5000,
   })
 

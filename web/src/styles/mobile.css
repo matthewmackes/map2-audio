@@ -81,6 +81,12 @@
     padding-inline: 8px;
   }
 
+  .nav-mobile-item-maturity.cds--tag {
+    font-size: var(--type-caption) !important;
+    min-height: 20px;
+    padding-inline: 8px;
+  }
+
   .nav-tab-item,
   .nav-tab-label,
   .nav-tab-advanced-label,

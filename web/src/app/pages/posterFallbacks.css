@@ -1,0 +1,30 @@
+.poster-fallback {
+  background-size: cover;
+  background-position: center;
+}
+
+.poster-fallback--system-overview { background-image: linear-gradient(135deg, #6f4a08, #1d1b2a 55%, #05070e); }
+.poster-fallback--audio-engine { background-image: linear-gradient(135deg, #1b4db8, #12263f 50%, #05070e); }
+.poster-fallback--avb-routing { background-image: linear-gradient(135deg, #0c6f8a, #13253a 55%, #05070e); }
+.poster-fallback--host-machine { background-image: linear-gradient(135deg, #1f4ca7, #1a2737 55%, #05070e); }
+.poster-fallback--stage-mode { background-image: linear-gradient(135deg, #8f6e10, #2a2125 55%, #05070e); }
+.poster-fallback--guide { background-image: linear-gradient(135deg, #2b5c9a, #152334 58%, #05070e); }
+.poster-fallback--about { background-image: linear-gradient(135deg, #4f5764, #1c2330 58%, #05070e); }
+.poster-fallback--expression { background-image: linear-gradient(135deg, #0b6f6d, #183239 58%, #05070e); }
+.poster-fallback--presets { background-image: linear-gradient(135deg, #1e8f45, #173331 58%, #05070e); }
+.poster-fallback--lv2-plugins { background-image: linear-gradient(135deg, #087a83, #1a2838 58%, #05070e); }
+.poster-fallback--midi { background-image: linear-gradient(135deg, #a02d6a, #2a2034 58%, #05070e); }
+.poster-fallback--midi-hub { background-image: linear-gradient(135deg, #23893f, #1a3133 58%, #05070e); }
+.poster-fallback--mpx1-rack { background-image: linear-gradient(135deg, #2e67c5, #18273b 58%, #05070e); }
+.poster-fallback--tesira-avb { background-image: linear-gradient(135deg, #9a1428, #1a3044 58%, #05070e); }
+.poster-fallback--cluster-dashboard { background-image: linear-gradient(135deg, #1f5bc4, #173149 58%, #05070e); }
+.poster-fallback--multi-system { background-image: linear-gradient(135deg, #2d86c6, #172c3d 58%, #05070e); }
+.poster-fallback--grid { background-image: linear-gradient(135deg, #2158ad, #1c2335 58%, #05070e); }
+.poster-fallback--grid-3d { background-image: linear-gradient(135deg, #5d35ab, #1d2239 58%, #05070e); }
+.poster-fallback--ir-nam-library { background-image: linear-gradient(135deg, #0a7b8c, #1b2b3f 58%, #05070e); }
+.poster-fallback--lcd-console { background-image: linear-gradient(135deg, #2a8f4b, #173235 58%, #05070e); }
+.poster-fallback--edirol-ua1000 { background-image: linear-gradient(135deg, #1c5ca0, #14283e 58%, #05070e); }
+.poster-fallback--hotone-jogg { background-image: linear-gradient(135deg, #9d2d2a, #2f1f23 58%, #05070e); }
+.poster-fallback--generic-interface { background-image: linear-gradient(135deg, #5f6b7d, #212737 58%, #05070e); }
+.poster-fallback--midi-cluster { background-image: linear-gradient(135deg, #5d3ca3, #1e2338 58%, #05070e); }
+.poster-fallback--api-observatory { background-image: linear-gradient(135deg, #6a41b6, #1d223a 58%, #05070e); }

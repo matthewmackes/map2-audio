@@ -54,9 +54,13 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Fetch snapshots
-  const { data: snapshotsData, isLoading } = useQuery({
+  const { data: snapshotsData, isLoading } = useQuery<{
+    snapshots: FlowSnapshot[]
+    count: number
+    active_id: number | null
+  }>({
     queryKey: ['flow-snapshots'],
-    queryFn: flowSnapshotsApi.list,
+    queryFn: () => flowSnapshotsApi.list(),
     refetchInterval: 5000,
   })
 
@@ -82,7 +86,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
   })
 
   const loadMutation = useMutation({
-    mutationFn: flowSnapshotsApi.load,
+    mutationFn: (snapshotId: number) => flowSnapshotsApi.load(snapshotId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
       onSnapshotLoaded(data.snapshot_data)
@@ -90,7 +94,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
   })
 
   const deleteMutation = useMutation({
-    mutationFn: flowSnapshotsApi.delete,
+    mutationFn: (snapshotId: number) => flowSnapshotsApi.delete(snapshotId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
     },

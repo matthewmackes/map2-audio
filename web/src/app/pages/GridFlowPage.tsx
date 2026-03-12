@@ -444,7 +444,7 @@ export function GridFlowPage() {
   // Fetch chains
   const chainsQuery = useQuery({
     queryKey: ['chains'],
-    queryFn: chainsApi.list,
+    queryFn: () => chainsApi.list(),
     refetchInterval: 5000,
   })
 
@@ -464,13 +464,13 @@ export function GridFlowPage() {
   // Fetch presets
   const presetsQuery = useQuery({
     queryKey: ['chains', 'presets'],
-    queryFn: chainsApi.listPresets,
+    queryFn: () => chainsApi.listPresets(),
   })
 
   // Fetch audio status
   const audioQuery = useQuery({
     queryKey: ['audio', 'status'],
-    queryFn: audioApi.getStatus,
+    queryFn: () => audioApi.getStatus(),
     refetchInterval: 5000,
   })
 

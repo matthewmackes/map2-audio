@@ -45,6 +45,19 @@ def _resolve_pinned_routes(raw_settings) -> list[str]:
     return _normalize_pinned_routes(raw_routes)
 
 
+def _normalize_last_active_node(node_id: Optional[str]) -> Optional[str]:
+    if node_id is None:
+        return None
+    if not isinstance(node_id, str):
+        return None
+
+    normalized = node_id.strip()
+    if not normalized or normalized.lower() in {"null", "local"}:
+        return None
+
+    return normalized
+
+
 class SpecialSettingsStateManager:
     """
     Manages special settings state machine for Raft consensus.
@@ -85,6 +98,7 @@ class SpecialSettingsStateManager:
                         hidden_plugins=[],
                         menu_location="top-nav",
                         pinned_routes=DEFAULT_PINNED_ROUTES.copy(),
+                        last_active_node=None,
                         version=1
                     )
                     session.add(settings)
@@ -102,6 +116,9 @@ class SpecialSettingsStateManager:
                         ),
                     )
                 )
+                settings.last_active_node = _normalize_last_active_node(
+                    entry_data.get("last_active_node")
+                )
                 settings.version = entry_data.get("version", settings.version)
                 settings.updated_by_node = entry_data.get("updated_by_node")
                 settings.last_updated = datetime.utcnow()
@@ -113,6 +130,7 @@ class SpecialSettingsStateManager:
                     f"hidden={len(settings.hidden_plugins)}, "
                     f"location={settings.menu_location}, "
                     f"pinned={len(settings.pinned_routes or [])}, "
+                    f"last_active_node={settings.last_active_node}, "
                     f"version={settings.version}"
                 )
                 return True
@@ -138,6 +156,7 @@ class SpecialSettingsStateManager:
                     "hidden_plugins": settings.hidden_plugins or [],
                     "menu_location": settings.menu_location,
                     "pinned_routes": _resolve_pinned_routes(settings),
+                    "last_active_node": _normalize_last_active_node(getattr(settings, "last_active_node", None)),
                     "version": settings.version,
                     "updated_by_node": settings.updated_by_node,
                     "timestamp": settings.last_updated.isoformat() if settings.last_updated else None,
@@ -154,6 +173,7 @@ async def replicate_special_settings_to_raft(
     hidden_plugins: list,
     menu_location: str,
     pinned_routes: list,
+    last_active_node: Optional[str],
     node_id: str
 ) -> int:
     """
@@ -181,6 +201,7 @@ async def replicate_special_settings_to_raft(
             "hidden_plugins": hidden_plugins,
             "menu_location": menu_location,
             "pinned_routes": _normalize_pinned_routes(pinned_routes),
+            "last_active_node": _normalize_last_active_node(last_active_node),
             "updated_by_node": node_id,
             "timestamp": datetime.utcnow().isoformat(),
             "version": version,
@@ -196,7 +217,8 @@ async def replicate_special_settings_to_raft(
         logger.info(
             f"Special settings replicated to Raft log at index {log_index}: "
             f"enabled={enabled}, hidden={len(hidden_plugins)}, "
-            f"location={menu_location}, pinned={len(entry_data['pinned_routes'])}, version={version}"
+            f"location={menu_location}, pinned={len(entry_data['pinned_routes'])}, "
+            f"last_active_node={entry_data['last_active_node']}, version={version}"
         )
         
         # Wait for majority to acknowledge (with timeout)

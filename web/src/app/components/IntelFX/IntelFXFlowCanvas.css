@@ -1,0 +1,603 @@
+/* ===============================================================================
+   IntelFXFlowCanvas.css — Signal Flow Canvas styles for Digitech IntelFX
+   =============================================================================== */
+
+/* -- Root ------------------------------------------------------------------- */
+
+.intelfx-flow {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+/* -- Toolbar ---------------------------------------------------------------- */
+
+.intelfx-flow-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-bottom: 1px solid var(--border-strong);
+  flex-shrink: 0;
+  min-height: 42px;
+  flex-wrap: wrap;
+  user-select: none;
+}
+
+.intelfx-flow-toolbar__program {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.intelfx-flow-toolbar__prog-num {
+  font-size: var(--type-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--interactive);
+  min-width: 36px;
+  text-align: center;
+}
+
+.intelfx-flow-toolbar__prog-name {
+  font-size: var(--type-label);
+  color: var(--interactive);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.intelfx-flow-toolbar__sep {
+  width: 1px;
+  height: 18px;
+  background: var(--surface-3);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.intelfx-flow-toolbar__spacer {
+  flex: 1;
+  min-width: 8px;
+}
+
+.intelfx-flow-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.intelfx-flow-toolbar__zoom {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.intelfx-flow-toolbar__zoom-level {
+  font-size: var(--type-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--interactive);
+  min-width: 38px;
+  text-align: center;
+}
+
+.intelfx-flow-toolbar__btn.cds--btn {
+  min-block-size: 2rem;
+}
+
+.intelfx-flow-toolbar__btn.cds--btn.cds--btn--icon-only {
+  min-inline-size: 2rem;
+  padding-inline: 0;
+}
+
+.intelfx-flow-toolbar__btn.cds--btn:disabled {
+  opacity: 0.5;
+}
+
+/* -- Workspace (canvas + docked editor) ------------------------------------- */
+
+.intelfx-flow__workspace {
+  display: grid;
+  grid-template-rows: minmax(240px, 1fr) auto;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  gap: 10px;
+  padding: 10px 12px 12px;
+}
+
+/* -- Canvas area ------------------------------------------------------------ */
+
+.intelfx-flow__canvas-area {
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.intelfx-flow__canvas-area:active {
+  cursor: grabbing;
+}
+
+.intelfx-flow__canvas-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 34px 40px 44px;
+  min-width: 960px;
+  gap: 22px;
+  transform-origin: top left;
+  will-change: transform;
+}
+
+.intelfx-flow__editor-dock {
+  min-height: 0;
+}
+
+/* -- Path rows -------------------------------------------------------------- */
+
+.intelfx-flow__path-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  padding-top: 20px;
+}
+
+.intelfx-flow__path-row--top {
+  /* Top row: INPUT + first 6 blocks */
+}
+
+.intelfx-flow__path-row--bottom {
+  /* Bottom row: remaining 5 blocks + OUTPUT */
+  padding-left: 0;
+}
+
+.intelfx-flow__lane-label {
+  position: absolute;
+  left: 0;
+  top: -18px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+  color: var(--interactive);
+}
+
+/* -- IO nodes (Input / Output terminals) ------------------------------------ */
+
+.intelfx-flow__io-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 68px;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-3);
+  flex-shrink: 0;
+}
+
+.intelfx-flow__io-label {
+  font-size: var(--type-caption);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--interactive);
+  text-transform: uppercase;
+}
+
+/* -- Effect Block Cards ----------------------------------------------------- */
+
+.intelfx-flow-card {
+  display: flex;
+  flex-direction: column;
+  width: 114px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1.5px solid color-mix(in srgb, var(--block-accent) 30%, transparent 70%);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, opacity 0.2s, filter 0.2s;
+  outline: none;
+  animation: intelfx-flow-glow 2.8s ease-in-out infinite;
+}
+
+.intelfx-flow-card:hover {
+  border-color: color-mix(in srgb, var(--block-accent) 55%, transparent 45%);
+}
+
+.intelfx-flow-card:focus-visible {
+  outline: 2px solid var(--block-accent);
+  outline-offset: 2px;
+}
+
+.intelfx-flow-card.is-selected {
+  border-color: var(--block-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--block-accent) 25%, transparent 75%);
+  animation-play-state: paused;
+}
+
+.intelfx-flow-card.is-bypassed {
+  opacity: 0.35;
+  animation: none;
+  filter: grayscale(60%);
+}
+
+@keyframes intelfx-flow-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 8px color-mix(in srgb, var(--block-accent) 12%, transparent 88%);
+  }
+}
+
+.intelfx-flow-card__header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 8px 3px;
+}
+
+.intelfx-flow-card__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--border-radius-sm);
+  background: var(--block-accent);
+  flex-shrink: 0;
+}
+
+.intelfx-flow-card__name {
+  flex: 1;
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--block-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.intelfx-flow-card__bypass-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--block-accent);
+  font-size: var(--type-caption);
+  opacity: 0.5;
+  transition: opacity 0.12s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.intelfx-flow-card__bypass-btn:hover {
+  opacity: 1;
+}
+
+.intelfx-flow-card__bypass-btn.is-bypassed {
+  color: var(--support-danger);
+  opacity: 1;
+}
+
+.intelfx-flow-card__key-param {
+  padding: 0 8px 4px;
+  font-size: var(--type-caption);
+  color: var(--interactive);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.intelfx-flow-card__category {
+  padding: 0 8px 6px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--block-accent) 50%, var(--interactive) 50%);
+}
+
+.intelfx-flow-card__meter {
+  height: 3px;
+  background: var(--surface-3);
+  margin: 0 8px 7px;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.intelfx-flow-card__meter-fill {
+  height: 100%;
+  background: var(--block-accent);
+  border-radius: var(--border-radius-sm);
+  transition: width 0.04s linear;
+  min-width: 0;
+}
+
+/* -- SVG patch cord overlay ------------------------------------------------- */
+
+.intelfx-flow__patch-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+@keyframes intelfx-cord-flow {
+  from { stroke-dashoffset: 22; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* -- Docked parameter panel (sidebar) --------------------------------------- */
+
+.intelfx-flow-sidebar {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.intelfx-flow-sidebar--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--interactive);
+  font-size: var(--type-label);
+  min-height: 108px;
+  padding: 16px;
+  text-align: center;
+}
+
+.intelfx-flow-sidebar__header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-strong);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.intelfx-flow-sidebar__block-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--border-radius-sm);
+  background: var(--block-accent);
+  flex-shrink: 0;
+}
+
+.intelfx-flow-sidebar__title {
+  flex: 1;
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--block-accent);
+}
+
+.intelfx-flow-sidebar__category {
+  font-size: var(--type-caption);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--interactive);
+}
+
+.intelfx-flow-sidebar__close.cds--btn {
+  min-block-size: 1.75rem;
+  min-inline-size: 1.75rem;
+  padding-inline: 0;
+  flex-shrink: 0;
+}
+
+.intelfx-flow-sidebar__params {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  overflow: hidden;
+}
+
+.intelfx-flow-sidebar__page-group {
+  margin: 0;
+  border: 1px solid var(--interactive);
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  padding: 7px 8px;
+}
+
+.intelfx-flow-sidebar__page-title {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--interactive);
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.intelfx-flow-sidebar__param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 5px;
+}
+
+.intelfx-flow-sidebar__empty-msg {
+  font-size: var(--type-label);
+  color: var(--interactive);
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* Param control widgets inside the sidebar */
+
+.intelfx-flow-sidebar__control {
+  min-height: 58px;
+}
+
+.intelfx-flow-sidebar__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 58px;
+  padding: 6px 7px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--interactive);
+  cursor: pointer;
+  transition: background 0.12s;
+  text-align: left;
+}
+
+.intelfx-flow-sidebar__toggle.is-active {
+  background: color-mix(in srgb, var(--block-accent) 12%, transparent 88%);
+  border-color: color-mix(in srgb, var(--block-accent) 30%, transparent 70%);
+  color: var(--block-accent);
+}
+
+.intelfx-flow-sidebar__toggle:hover {
+  background: var(--surface-3);
+}
+
+.intelfx-flow-sidebar__toggle-name {
+  font-size: var(--type-caption);
+}
+
+.intelfx-flow-sidebar__toggle-value {
+  font-size: var(--type-caption);
+  opacity: 0.65;
+}
+
+.intelfx-flow-sidebar__select-wrap {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+}
+
+.intelfx-flow-sidebar__slider-wrap {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+}
+
+.intelfx-flow-sidebar__label {
+  font-size: var(--type-caption);
+  color: var(--interactive);
+  line-height: 1.2;
+}
+
+.intelfx-flow-sidebar__value {
+  font-size: var(--type-caption);
+  color: var(--interactive);
+  text-align: right;
+  line-height: 1;
+}
+
+.intelfx-flow-sidebar__slider-wrap input[type='range'] {
+  width: 100%;
+  height: 3px;
+  accent-color: var(--interactive);
+  margin: 0;
+}
+
+.intelfx-flow-sidebar__select-wrap select {
+  width: 100%;
+  min-width: 0;
+  padding: 3px 5px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  font-size: var(--type-caption);
+}
+
+/* -- Chain notation bar ----------------------------------------------------- */
+
+.intelfx-flow__chain-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 14px;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-bottom: 1px solid var(--border-strong);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.intelfx-flow__chain-label {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--interactive);
+}
+
+.intelfx-flow__chain-notation {
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--support-success);
+  letter-spacing: 0.06em;
+  cursor: default;
+}
+
+/* -- Responsive ------------------------------------------------------------- */
+
+@media (max-width: 1200px) {
+  .intelfx-flow-sidebar__param-grid {
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .intelfx-flow__workspace {
+    grid-template-rows: minmax(200px, 1fr) auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .intelfx-flow__canvas-inner {
+    min-width: 780px;
+    padding: 26px 28px 30px;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .intelfx-flow-sidebar__param-grid {
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+  }
+
+  .intelfx-flow-card {
+    width: 96px;
+  }
+}

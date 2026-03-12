@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { FolderOpen, CaretDown, CaretUp, Copy, Check, HardDrive, MusicNote, SpeakerHigh, WaveSine, ArrowsClockwise } from '@phosphor-icons/react'
 import { foldersApi } from '../../../map2/api'
+import type { DisplayPaths } from '../../../map2/api'
 
 interface PathInfo {
   label: string
@@ -15,9 +16,9 @@ export function LibraryPaths() {
   const [expanded, setExpanded] = useState(false)
   const [copiedPath, setCopiedPath] = useState<string | null>(null)
 
-  const pathsQuery = useQuery({
+  const pathsQuery = useQuery<DisplayPaths>({
     queryKey: ['folders', 'display-paths'],
-    queryFn: foldersApi.getDisplayPaths,
+    queryFn: () => foldersApi.getDisplayPaths(),
     staleTime: 60000,
   })
 

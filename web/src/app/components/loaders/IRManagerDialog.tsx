@@ -1,11 +1,25 @@
-import { useRef, useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, SpinnerGap, ArrowsClockwise, SpeakerHigh, UploadSimple, WaveSine, X } from '@phosphor-icons/react'
+import {
+  Button,
+  InlineLoading,
+  InlineNotification,
+  Modal,
+  Search,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+} from '@carbon/react'
+import { Renew, Upload, VolumeUp, Waveform } from '@carbon/icons-react'
 import { irApi } from '../../../map2/api'
 import type { IRsResponse, IRStatus } from '../../../map2/types'
 import { useToasts } from '../Toasts'
-import { useIsMobile } from '../../hooks/useIsMobile'
+import './ModelManagerDialogs.css'
 
 export type IRType = 'cabinet' | 'reverb'
 
@@ -16,25 +30,23 @@ interface IRTypeConfig {
   emptyMessage: string
   loadingMessage: string
   defaultLabel: string
-  icon: typeof SpeakerHigh
-  iconColor: string
+  icon: typeof VolumeUp
   listQueryFn: () => Promise<IRsResponse>
-  loadFn: (name: string) => Promise<any>
-  uploadFn: (file: File) => Promise<any>
+  loadFn: (name: string) => Promise<unknown>
+  uploadFn: (file: File) => Promise<unknown>
   queryKey: string
   loadedKey: keyof IRStatus
 }
 
 const IR_CONFIGS: Record<IRType, IRTypeConfig> = {
   cabinet: {
-    title: 'Cabinet Impulse Responses',
+    title: 'Cabinet impulse responses',
     description: 'Load speaker cabinet IRs for authentic amp-in-the-room tone.',
-    searchPlaceholder: 'Search cabinets...',
+    searchPlaceholder: 'Search cabinets',
     emptyMessage: 'No cabinet IRs found. Upload WAV files to get started.',
-    loadingMessage: 'Loading cabinet IRs...',
+    loadingMessage: 'Loading cabinet IRs',
     defaultLabel: 'Cabinet IR',
-    icon: SpeakerHigh,
-    iconColor: '#2563eb',
+    icon: VolumeUp,
     listQueryFn: irApi.listCabinets,
     loadFn: irApi.loadCabinet,
     uploadFn: irApi.uploadCabinet,
@@ -42,14 +54,13 @@ const IR_CONFIGS: Record<IRType, IRTypeConfig> = {
     loadedKey: 'loaded_cabinet',
   },
   reverb: {
-    title: 'Reverb Impulse Responses',
+    title: 'Reverb impulse responses',
     description: 'Load reverb IRs for realistic room and space simulation.',
-    searchPlaceholder: 'Search reverbs...',
+    searchPlaceholder: 'Search reverbs',
     emptyMessage: 'No reverb IRs found. Upload WAV files to get started.',
-    loadingMessage: 'Loading reverb IRs...',
+    loadingMessage: 'Loading reverb IRs',
     defaultLabel: 'Reverb IR',
-    icon: WaveSine,
-    iconColor: '#2196f3',
+    icon: Waveform,
     listQueryFn: irApi.listReverbs,
     loadFn: irApi.loadReverb,
     uploadFn: irApi.uploadReverb,
@@ -65,10 +76,19 @@ interface Props {
   onLoad?: (irName: string) => void
 }
 
+function formatMeta(duration?: number, size?: number, sampleRate?: number, fallback?: string): string {
+  const base = duration
+    ? `${(duration * 1000).toFixed(0)} ms`
+    : size
+      ? `${(size / 1024).toFixed(0)} KB`
+      : fallback || '-'
+
+  return sampleRate ? `${base} @ ${(sampleRate / 1000).toFixed(1)} kHz` : base
+}
+
 export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
   const config = IR_CONFIGS[type]
   const Icon = config.icon
-  const isMobile = useIsMobile()
 
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
@@ -84,7 +104,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
 
   const statusQuery = useQuery<IRStatus>({
     queryKey: ['ir', 'status'],
-    queryFn: irApi.getStatus,
+    queryFn: () => irApi.getStatus(),
     enabled: open,
   })
 
@@ -103,9 +123,9 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
       setUploading(true)
       return config.uploadFn(file)
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { filename?: string }) => {
       queryClient.invalidateQueries({ queryKey: ['ir'] })
-      pushToast(`Uploaded: ${data.filename}`, 'success')
+      pushToast(`Uploaded: ${data.filename || 'IR file'}`, 'success')
     },
     onError: () => pushToast(`Failed to upload ${type} IR`, 'error'),
     onSettled: () => setUploading(false),
@@ -113,99 +133,72 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
 
   const irs = irsQuery.data?.irs ?? []
   const loadedIR = statusQuery.data?.[config.loadedKey] as string | undefined
-
-  const filteredIRs = irs.filter((ir) =>
-    ir.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const normalizedSearch = search.trim().toLowerCase()
+  const filteredIRs = irs.filter((ir) => ir.name.toLowerCase().includes(normalizedSearch))
 
   const handleRefresh = () => {
-    irsQuery.refetch()
-    statusQuery.refetch()
+    void irsQuery.refetch()
+    void statusQuery.refetch()
   }
 
   const handleUpload = () => {
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (file) {
       uploadMutation.mutate(file)
     }
-    e.target.value = ''
+    event.target.value = ''
   }
 
-  useEffect(() => {
-    if (!open) return
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [open, onClose])
-
-  if (!open) return null
-
-  return createPortal(
-    <div
-      className="dialog-backdrop"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        alignItems: isMobile ? 'stretch' : 'center',
-        justifyContent: isMobile ? 'stretch' : 'center',
-        zIndex: 1000,
-      }}
+  return (
+    <Modal
+      open={open}
+      size="lg"
+      modalHeading={config.title}
+      modalLabel="Asset library"
+      primaryButtonText="Close"
+      secondaryButtonText="Refresh"
+      onRequestClose={onClose}
+      onRequestSubmit={onClose}
+      onSecondarySubmit={handleRefresh}
+      selectorPrimaryFocus="#ir-manager-search"
     >
-      <div
-        className="dialog"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: isMobile ? '100vw' : 'min(600px, 90vw)',
-          maxHeight: isMobile ? '100vh' : undefined,
-          minHeight: isMobile ? '100vh' : undefined,
-          borderRadius: isMobile ? 0 : undefined,
-        }}
-      >
-        <div className="flex-between" style={{ marginBottom: 8 }}>
-          <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-            <Icon size={20} style={{ color: config.iconColor }} />
-            <h3 style={{ margin: 0 }}>{config.title}</h3>
+      <div className="model-manager-dialog">
+        <div className="model-manager-dialog__header">
+          <div className="model-manager-dialog__title-row">
+            <Icon size={20} aria-hidden="true" />
+            <p>{config.description}</p>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} weight="bold" />
-          </button>
-        </div>
-
-        <p style={{ margin: '8px 0 16px' }}>{config.description}</p>
-
-        <div className="flex-between" style={{ marginBottom: 12 }}>
-          <input
-            type="text"
-            className="input"
-            placeholder={config.searchPlaceholder}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <div className="flex" style={{ gap: 8 }}>
-            <button
-              className="btn btn-ghost btn-sm"
+          <div className="model-manager-dialog__toolbar">
+            <Search
+              id="ir-manager-search"
+              labelText="Search"
+              placeholder={config.searchPlaceholder}
+              value={search}
+              onChange={(event) => setSearch(event.currentTarget.value)}
+              size="md"
+            />
+            <Button
+              kind="ghost"
+              size="md"
+              renderIcon={Upload}
               onClick={handleUpload}
               disabled={uploading}
             >
-              <UploadSimple size={16} weight="duotone" />
-              {uploading ? 'Uploading...' : 'Upload'}
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
+              {uploading ? 'Uploading...' : 'Upload WAV'}
+            </Button>
+            <Button
+              kind="ghost"
+              size="md"
+              hasIconOnly
+              iconDescription="Refresh IR list"
+              renderIcon={Renew}
               onClick={handleRefresh}
               disabled={irsQuery.isFetching}
-            >
-              <ArrowsClockwise size={16} weight="duotone" className={irsQuery.isFetching ? 'spin' : ''} />
-            </button>
+            />
           </div>
         </div>
 
@@ -214,90 +207,82 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
           type="file"
           accept=".wav"
           onChange={handleFileChange}
-          style={{ display: 'none' }}
+          className="model-manager-dialog__hidden-file-input"
         />
 
         {loadedIR && (
-          <div className="flex" style={{ marginBottom: 12 }}>
-            <span className="pill success">
-              <Check size={14} weight="bold" />
-              Active: {loadedIR}
-            </span>
-          </div>
+          <Tag type="green" title="Active IR" size="md">
+            Active: {loadedIR}
+          </Tag>
         )}
 
         {irsQuery.isLoading ? (
-          <div className="flex" style={{ padding: 16, justifyContent: 'center' }}>
-            <SpinnerGap className="spin" size={20} weight="duotone" />
-            <span className="muted">{config.loadingMessage}</span>
-          </div>
-        ) : irsQuery.error ? (
-          <div className="pill warn">Failed to load {type} IRs</div>
+          <InlineLoading description={config.loadingMessage} status="active" />
+        ) : irsQuery.isError ? (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Unable to load IR list"
+            subtitle={`The ${type} IR query failed. Refresh and try again.`}
+          />
         ) : filteredIRs.length === 0 ? (
-          <div className="list-item muted">{config.emptyMessage}</div>
+          <p className="model-manager-dialog__empty">{config.emptyMessage}</p>
         ) : (
-          <div className="model-list" style={{ maxHeight: 350 }}>
-            {filteredIRs.map((ir) => {
-              const isActive = ir.name === loadedIR
-              const isLoading =
-                loadMutation.isPending && loadMutation.variables === ir.name
-              return (
-                <div
-                  key={ir.name}
-                  className={`model-item ${isActive ? 'active' : ''}`}
-                >
-                  <div className="model-item-info">
-                    <div className="model-item-name">{ir.name}</div>
-                    <div className="model-item-meta">
-                      {ir.duration
-                        ? `${(ir.duration * 1000).toFixed(0)}ms`
-                        : ir.size
-                          ? `${(ir.size / 1024).toFixed(0)} KB`
-                          : config.defaultLabel}
-                      {ir.sample_rate && ` @ ${ir.sample_rate / 1000}kHz`}
-                    </div>
-                  </div>
-                  {isActive ? (
-                    <span className="pill success" style={{ padding: '4px 8px' }}>
-                      <Check size={12} weight="bold" />
-                      Active
-                    </span>
-                  ) : (
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => loadMutation.mutate(ir.name)}
-                      disabled={loadMutation.isPending}
-                    >
-                      {isLoading ? (
-                        <SpinnerGap className="spin" size={14} weight="duotone" />
-                      ) : (
-                        'Load'
-                      )}
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          <TableContainer className="model-manager-dialog__table-wrap">
+            <Table size="sm" useZebraStyles={false}>
+              <TableHead>
+                <TableRow>
+                  <TableHeader>Name</TableHeader>
+                  <TableHeader>Details</TableHeader>
+                  <TableHeader>Status</TableHeader>
+                  <TableHeader>Action</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredIRs.map((ir) => {
+                  const isActive = ir.name === loadedIR
+                  const isLoading = loadMutation.isPending && loadMutation.variables === ir.name
+
+                  return (
+                    <TableRow key={ir.name}>
+                      <TableCell>{ir.name}</TableCell>
+                      <TableCell>{formatMeta(ir.duration, ir.size, ir.sample_rate, config.defaultLabel)}</TableCell>
+                      <TableCell>
+                        {isActive ? (
+                          <Tag type="green" size="sm">
+                            Active
+                          </Tag>
+                        ) : (
+                          <Tag type="cool-gray" size="sm">
+                            Available
+                          </Tag>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          kind="tertiary"
+                          size="sm"
+                          disabled={isActive || loadMutation.isPending}
+                          onClick={() => loadMutation.mutate(ir.name)}
+                        >
+                          {isLoading ? 'Loading...' : 'Load'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
 
-        <div className="divider" />
-
-        <div className="flex-between">
-          <span className="muted" style={{ fontSize: 12 }}>
-            Supported: WAV files (44.1/48kHz)
-          </span>
-          <button className="btn btn-ghost" onClick={onClose}>
-            Close
-          </button>
-        </div>
+        <p className="model-manager-dialog__support-note">Supported format: WAV files (44.1 kHz or 48 kHz).</p>
       </div>
-    </div>,
-    document.body
+    </Modal>
   )
 }
 
-// Convenience wrapper components for backwards compatibility
 export function CabinetIRManagerDialog({
   open,
   onClose,
@@ -307,14 +292,7 @@ export function CabinetIRManagerDialog({
   onClose: () => void
   onLoadCabinetIR?: (irName: string) => void
 }) {
-  return (
-    <IRManagerDialog
-      type="cabinet"
-      open={open}
-      onClose={onClose}
-      onLoad={onLoadCabinetIR}
-    />
-  )
+  return <IRManagerDialog type="cabinet" open={open} onClose={onClose} onLoad={onLoadCabinetIR} />
 }
 
 export function ReverbIRManagerDialog({
@@ -326,12 +304,5 @@ export function ReverbIRManagerDialog({
   onClose: () => void
   onLoadReverbIR?: (irName: string) => void
 }) {
-  return (
-    <IRManagerDialog
-      type="reverb"
-      open={open}
-      onClose={onClose}
-      onLoad={onLoadReverbIR}
-    />
-  )
+  return <IRManagerDialog type="reverb" open={open} onClose={onClose} onLoad={onLoadReverbIR} />
 }

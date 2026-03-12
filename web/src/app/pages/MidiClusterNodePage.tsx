@@ -41,7 +41,6 @@ export function MidiClusterNodePage() {
       }
     }
 
-    // @ts-expect-error override
     window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
       if (typeof input === 'string') {
         return originalFetch(rewrite(input), init)

@@ -15,14 +15,29 @@
  * **WHEN**: 24/7 monitoring, performance optimization, troubleshooting, capacity planning
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type CSSProperties } from 'react'
 import {
-  GearSix, Lightning, ChartBar, Eye, Pulse, GitBranch, FileText,
-  ArrowsClockwise, ShieldCheck, Broadcast, DesktopTower, Network,
-  Warning, CheckCircle, XCircle, Clock
-} from '@phosphor-icons/react'
+  Activity,
+  Branch,
+  ChartColumn,
+  CheckmarkFilled,
+  DataBase,
+  Document,
+  ErrorFilled,
+  Flow,
+  Idea,
+  Network_3 as NetworkThree,
+  Renew,
+  Settings,
+  Time,
+  UpdateNow,
+  View,
+  WarningAlt,
+  WarningAltFilled,
+  type CarbonIconType,
+} from '@carbon/icons-react'
 import { useQuery } from '@tanstack/react-query'
-import { PageHeader } from '../components/PageHeader'
+import { Button, Checkbox, InlineNotification, Layer, Tag } from '@carbon/react'
 import { ClusterOverviewTabEnhanced } from '../components/ClusterDashboard/ClusterOverviewTabEnhanced'
 import { ClusterEducationTab } from '../components/ClusterDashboard/ClusterEducationTab'
 import { ServicesHealthTab } from '../components/ClusterDashboard/ServicesHealthTab'
@@ -36,11 +51,12 @@ import { UpdateProgressViewer } from '../components/UpdateProgressViewer'
 import { MultiNodeMonitoringTab } from '../components/ClusterDashboard/MultiNodeMonitoringTab'
 import { AVBNetworkTab } from '../components/ClusterDashboard/AVBNetworkTab'
 import { ClusterAdvancedOperationsTab } from '../components/ClusterDashboard/ClusterAdvancedOperationsTab'
+import './ClusterDashboardPage.css'
 
 interface DashboardTab {
   id: string
   label: string
-  icon: React.ReactNode
+  icon: CarbonIconType
   description: string
   category: 'primary' | 'network' | 'operations' | 'advanced'
 }
@@ -50,21 +66,21 @@ const DASHBOARD_TABS: DashboardTab[] = [
   {
     id: 'overview',
     label: 'Overview',
-    icon: <Eye size={18} weight="duotone" />,
+    icon: View,
     description: 'Real-time cluster health, topology, and status at a glance',
     category: 'primary'
   },
   {
     id: 'multi-node',
     label: 'Multi-Node',
-    icon: <DesktopTower size={18} weight="duotone" />,
+    icon: DataBase,
     description: 'Comprehensive per-node monitoring: JUCE engine, cluster services, AVB status',
     category: 'primary'
   },
   {
     id: 'services',
     label: 'Services',
-    icon: <Pulse size={18} weight="duotone" />,
+    icon: Activity,
     description: 'Detailed health matrix for all cluster services (mDNS, RAFT, Health Monitor, etc.)',
     category: 'primary'
   },
@@ -73,14 +89,14 @@ const DASHBOARD_TABS: DashboardTab[] = [
   {
     id: 'avb-network',
     label: 'AVB Network',
-    icon: <Broadcast size={18} weight="duotone" />,
+    icon: NetworkThree,
     description: 'IEEE 1722/802.1 AVB/TSN network audio: streams, gPTP sync, AVDECC entities',
     category: 'network'
   },
   {
     id: 'flows',
     label: 'Audio Flows',
-    icon: <Network size={18} weight="duotone" />,
+    icon: Flow,
     description: 'Audio signal routing and flow distribution across cluster nodes',
     category: 'network'
   },
@@ -89,28 +105,28 @@ const DASHBOARD_TABS: DashboardTab[] = [
   {
     id: 'metrics',
     label: 'Metrics',
-    icon: <ChartBar size={18} weight="duotone" />,
+    icon: ChartColumn,
     description: 'Prometheus metrics dashboard: CPU, memory, latency, throughput',
     category: 'operations'
   },
   {
     id: 'events',
     label: 'Events',
-    icon: <GitBranch size={18} weight="duotone" />,
+    icon: Branch,
     description: 'Live event stream: state changes, errors, deployments, discoveries',
     category: 'operations'
   },
   {
     id: 'reports',
     label: 'Reports',
-    icon: <FileText size={18} weight="duotone" />,
+    icon: Document,
     description: 'Export analysis reports and performance summaries',
     category: 'operations'
   },
   {
     id: 'updates',
     label: 'Updates',
-    icon: <ShieldCheck size={18} weight="duotone" />,
+    icon: UpdateNow,
     description: 'System and cluster-wide software updates and version management',
     category: 'operations'
   },
@@ -119,25 +135,24 @@ const DASHBOARD_TABS: DashboardTab[] = [
   {
     id: 'education',
     label: 'Learn',
-    icon: <Lightning size={18} weight="duotone" />,
+    icon: Idea,
     description: 'Educational content: how clusters work, AVB/TSN fundamentals, RAFT consensus',
     category: 'advanced'
   },
   {
     id: 'advanced-ops',
     label: 'Advanced Ops',
-    icon: <GearSix size={18} weight="duotone" />,
+    icon: Settings,
     description: 'Reset cloned node identity to default and rejoin cluster safely',
     category: 'advanced'
   },
 ]
 
-// State comparison types
-interface StateComparison {
-  current: string | number
-  desired: string | number
-  status: 'match' | 'diverged' | 'unknown'
-  details?: string
+const DASHBOARD_CATEGORY_LABELS: Record<DashboardTab['category'], string> = {
+  primary: 'Primary monitoring',
+  network: 'Network audio',
+  operations: 'Operations and analytics',
+  advanced: 'Advanced',
 }
 
 interface ClusterHealth {
@@ -157,7 +172,6 @@ export function ClusterDashboardPage() {
   const [simulationMode, setSimulationMode] = useState(false)
   const [showWizard, setShowWizard] = useState(false)
   const [showProgress, setShowProgress] = useState(false)
-  const [showStateComparison, setShowStateComparison] = useState(true)
 
   // Fetch deployment mode
   const { data: deploymentMode } = useQuery({
@@ -253,444 +267,236 @@ export function ClusterDashboardPage() {
       if (!acc[tab.category]) acc[tab.category] = []
       acc[tab.category].push(tab)
       return acc
-    }, {} as Record<string, DashboardTab[]>)
+    }, {} as Record<DashboardTab['category'], DashboardTab[]>)
   }, [])
 
   const getHealthStatusIcon = (status: ClusterHealth['overall']) => {
     switch (status) {
       case 'healthy':
-        return <CheckCircle size={20} weight="fill" color="#10b981" />
+        return <CheckmarkFilled size={20} className="cluster-dashboard-health-icon is-healthy" />
       case 'degraded':
-        return <Warning size={20} weight="fill" color="#f59e0b" />
+        return <WarningAltFilled size={20} className="cluster-dashboard-health-icon is-degraded" />
       case 'critical':
-        return <XCircle size={20} weight="fill" color="#ef4444" />
+        return <ErrorFilled size={20} className="cluster-dashboard-health-icon is-critical" />
       default:
-        return <Clock size={20} weight="fill" color="#6b7280" />
+        return <Time size={20} className="cluster-dashboard-health-icon is-unknown" />
     }
   }
 
   const getHealthStatusColor = (status: ClusterHealth['overall']) => {
     switch (status) {
-      case 'healthy': return '#10b981'
-      case 'degraded': return '#f59e0b'
-      case 'critical': return '#ef4444'
-      default: return '#6b7280'
+      case 'healthy': return 'var(--cds-support-success)'
+      case 'degraded': return 'var(--cds-support-warning)'
+      case 'critical': return 'var(--cds-support-error)'
+      default: return 'var(--cds-text-secondary)'
+    }
+  }
+
+  const healthStatusTagType = (status: ClusterHealth['overall']): 'green' | 'warm-gray' | 'red' => {
+    switch (status) {
+      case 'healthy':
+        return 'green'
+      case 'critical':
+        return 'red'
+      default:
+        return 'warm-gray'
     }
   }
 
   return (
-    <div className="cluster-dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Professional Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-        borderRadius: 16,
-        padding: '32px',
-        border: '1px solid rgba(148, 163, 184, 0.1)',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-          <div>
-            <h1 style={{
-              fontSize: 36,
-              fontWeight: 700,
-              color: '#fff',
-              marginBottom: 8,
-              letterSpacing: '-0.5px'
-            }}>
-              MAP2 Audio Platform
-            </h1>
-            <p style={{
-              fontSize: 16,
-              color: '#94a3b8',
-              fontWeight: 500
-            }}>
-              Unified Cluster Management & Network Audio Monitoring
-            </p>
+    <div className="cluster-dashboard-page">
+      <Layer className="cluster-dashboard-hero">
+        <div className="cluster-dashboard-hero-top">
+          <div className="cluster-dashboard-hero-copy">
+            <h1 className="cluster-dashboard-title">MAP2 audio platform</h1>
+            <p className="cluster-dashboard-subtitle">Unified cluster management and network audio monitoring</p>
           </div>
 
-          {/* Quick Actions */}
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <button
+          <div className="cluster-dashboard-actions">
+            <Button
+              kind="ghost"
+              size="sm"
+              renderIcon={Renew}
+              className="cluster-dashboard-action-btn"
               onClick={() => {
                 const event = new CustomEvent('refreshClusterData')
                 window.dispatchEvent(event)
               }}
-              className="btn btn-sm"
-              style={{
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '1px solid #3b82f6',
-                color: '#60a5fa',
-                padding: '8px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8
-              }}
-              title="Refresh all cluster data"
             >
-              <ArrowsClockwise size={16} weight="bold" />
               Refresh
-            </button>
-            <button
-              onClick={() => setShowWizard(true)}
-              className="btn btn-sm"
-              style={{
-                background: 'rgba(139, 92, 246, 0.1)',
-                border: '1px solid #8b5cf6',
-                color: '#a78bfa',
-                padding: '8px 16px'
-              }}
-              title="Run cluster onboarding wizard"
-            >
-              🧙 Wizard
-            </button>
-            <button
+            </Button>
+            <Button kind="ghost" size="sm" renderIcon={Idea} className="cluster-dashboard-action-btn" onClick={() => setShowWizard(true)}>
+              Wizard
+            </Button>
+            <Button
+              kind="ghost"
+              size="sm"
+              renderIcon={ChartColumn}
+              className="cluster-dashboard-action-btn"
               onClick={() => setShowProgress(true)}
-              className="btn btn-sm"
-              style={{
-                background: 'rgba(16, 185, 129, 0.1)',
-                border: '1px solid #10b981',
-                color: '#34d399',
-                padding: '8px 16px'
-              }}
-              title="View update progress across cluster"
             >
-              📊 Progress
-            </button>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 14px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(148, 163, 184, 0.2)',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 13,
-                color: '#94a3b8'
-              }}
-            >
-              <input
-                type="checkbox"
+              Progress
+            </Button>
+            <div className="cluster-dashboard-sim-mode">
+              <Checkbox
+                id="cluster-simulation-mode"
+                labelText="Simulation mode"
                 checked={simulationMode}
-                onChange={e => setSimulationMode(e.target.checked)}
-                style={{ cursor: 'pointer' }}
+                onChange={(event) => setSimulationMode(event.currentTarget.checked)}
               />
-              Simulation Mode
-            </label>
+            </div>
           </div>
         </div>
 
-        {/* Cluster Health Banner */}
         {clusterStatus && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 16,
-            marginTop: 24
-          }}>
-            {/* Cluster Name & Health */}
-            <div style={{
-              background: 'rgba(15, 23, 42, 0.6)',
-              borderRadius: 12,
-              padding: 20,
-              border: `2px solid ${getHealthStatusColor(clusterHealth.overall)}`,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16
-            }}>
+          <div className="cluster-dashboard-health-grid">
+            <Layer
+              className={`cluster-dashboard-health-card cluster-dashboard-health-card--primary cluster-dashboard-health-card--${clusterHealth.overall}`}
+              style={{ '--health-color': getHealthStatusColor(clusterHealth.overall) } as CSSProperties}
+            >
               {getHealthStatusIcon(clusterHealth.overall)}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>
-                  {clusterStatus.cluster_name || 'Unnamed Cluster'}
-                </div>
-                <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                  Status: <span style={{
-                    color: getHealthStatusColor(clusterHealth.overall),
-                    fontWeight: 600,
-                    textTransform: 'uppercase'
-                  }}>
+              <div className="cluster-dashboard-health-primary-copy">
+                <div className="cluster-dashboard-health-title">{clusterStatus.cluster_name || 'Unnamed cluster'}</div>
+                <div className="cluster-dashboard-health-status">
+                  <span>Status</span>
+                  <Tag type={healthStatusTagType(clusterHealth.overall)} size="sm">
                     {clusterHealth.overall}
-                  </span>
+                  </Tag>
                 </div>
               </div>
-            </div>
+            </Layer>
 
-            {/* Nodes Status */}
-            <div style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              borderRadius: 12,
-              padding: 20,
-              border: '1px solid rgba(59, 130, 246, 0.3)'
-            }}>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>Cluster Nodes</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ fontSize: 32, fontWeight: 700, color: '#60a5fa' }}>
-                  {clusterStatus.online_count}
-                </span>
-                <span style={{ fontSize: 16, color: '#94a3b8' }}>
-                  / {clusterStatus.total_count} online
-                </span>
+            <Layer className="cluster-dashboard-health-card cluster-dashboard-health-card--metric">
+              <p className="cluster-dashboard-metric-label">Cluster nodes</p>
+              <div className="cluster-dashboard-metric-value">
+                <span className="cluster-dashboard-metric-primary">{clusterStatus.online_count}</span>
+                <span className="cluster-dashboard-metric-secondary">/ {clusterStatus.total_count} online</span>
               </div>
-            </div>
+            </Layer>
 
-            {/* Health Score */}
-            <div style={{
-              background: 'rgba(16, 185, 129, 0.1)',
-              borderRadius: 12,
-              padding: 20,
-              border: '1px solid rgba(16, 185, 129, 0.3)'
-            }}>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>Health Score</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ fontSize: 32, fontWeight: 700, color: '#34d399' }}>
+            <Layer className="cluster-dashboard-health-card cluster-dashboard-health-card--metric">
+              <p className="cluster-dashboard-metric-label">Health score</p>
+              <div className="cluster-dashboard-metric-value">
+                <span className="cluster-dashboard-metric-primary">
                   {clusterStatus.aggregate_health_score?.toFixed(0) || 0}
                 </span>
-                <span style={{ fontSize: 16, color: '#94a3b8' }}>%</span>
+                <span className="cluster-dashboard-metric-secondary">%</span>
               </div>
-            </div>
+            </Layer>
 
-            {/* Active Issues */}
-            <div style={{
-              background: clusterHealth.issues.length > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-              borderRadius: 12,
-              padding: 20,
-              border: `1px solid ${clusterHealth.issues.length > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
-            }}>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>Active Issues</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{
-                  fontSize: 32,
-                  fontWeight: 700,
-                  color: clusterHealth.issues.length > 0 ? '#f87171' : '#34d399'
-                }}>
-                  {clusterHealth.issues.length}
-                </span>
-                <span style={{ fontSize: 16, color: '#94a3b8' }}>
-                  {clusterHealth.issues.filter(i => i.severity === 'critical').length} critical
+            <Layer className="cluster-dashboard-health-card cluster-dashboard-health-card--metric">
+              <p className="cluster-dashboard-metric-label">Active issues</p>
+              <div className="cluster-dashboard-metric-value">
+                <span className="cluster-dashboard-metric-primary">{clusterHealth.issues.length}</span>
+                <span className="cluster-dashboard-metric-secondary">
+                  {clusterHealth.issues.filter((issue) => issue.severity === 'critical').length} critical
                 </span>
               </div>
-            </div>
+            </Layer>
           </div>
         )}
 
-        {/* Issues & Recommendations Panel */}
         {clusterHealth.issues.length > 0 && (
-          <div style={{
-            marginTop: 16,
-            background: 'rgba(239, 68, 68, 0.05)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: 12,
-            padding: 20
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <Warning size={20} weight="fill" color="#ef4444" />
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#fff', margin: 0 }}>
-                Active Issues Requiring Attention
-              </h3>
+          <Layer className="cluster-dashboard-issues-panel">
+            <div className="cluster-dashboard-issues-header">
+              <WarningAlt size={20} aria-hidden />
+              <h3>Active issues requiring attention</h3>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="cluster-dashboard-issues-list">
               {clusterHealth.issues.slice(0, 5).map((issue, idx) => (
-                <div key={idx} style={{
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  borderRadius: 8,
-                  padding: 12,
-                  borderLeft: `4px solid ${issue.severity === 'critical' ? '#ef4444' : '#f59e0b'}`,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <span style={{
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      fontWeight: 600,
-                      color: issue.severity === 'critical' ? '#ef4444' : '#f59e0b',
-                      marginRight: 12
-                    }}>
+                <div key={idx} className={`cluster-dashboard-issue-row cluster-dashboard-issue-row--${issue.severity}`}>
+                  <div className="cluster-dashboard-issue-main">
+                    <Tag type={issue.severity === 'critical' ? 'red' : 'warm-gray'} size="sm">
                       {issue.severity}
-                    </span>
-                    <span style={{
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      fontWeight: 600,
-                      color: '#6b7280',
-                      marginRight: 12
-                    }}>
+                    </Tag>
+                    <Tag type="cool-gray" size="sm">
                       {issue.category}
-                    </span>
-                    <span style={{ fontSize: 14, color: '#fff' }}>
-                      {issue.message}
-                    </span>
+                    </Tag>
+                    <span className="cluster-dashboard-issue-message">{issue.message}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#6b7280' }}>
-                    {issue.timestamp.toLocaleTimeString()}
-                  </div>
+                  <span className="cluster-dashboard-issue-time">{issue.timestamp.toLocaleTimeString()}</span>
                 </div>
               ))}
             </div>
 
-            {/* Recommendations */}
             {clusterHealth.recommendations.length > 0 && (
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', marginBottom: 8 }}>
-                  📋 Recommendations:
-                </div>
-                <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#cbd5e1' }}>
-                  {clusterHealth.recommendations.map((rec, idx) => (
-                    <li key={idx} style={{ marginBottom: 4 }}>{rec}</li>
+              <div className="cluster-dashboard-recommendations">
+                <p className="cluster-dashboard-recommendations-title">Recommendations</p>
+                <ul className="cluster-dashboard-recommendations-list">
+                  {clusterHealth.recommendations.map((recommendation, idx) => (
+                    <li key={idx}>{recommendation}</li>
                   ))}
                 </ul>
               </div>
             )}
-          </div>
+          </Layer>
         )}
-      </div>
+      </Layer>
 
-      {/* Tab Navigation - Categorized */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {Object.entries(tabsByCategory).map(([category, tabs]) => (
-          <div key={category}>
-            <div style={{
-              fontSize: 11,
-              textTransform: 'uppercase',
-              fontWeight: 600,
-              color: '#6b7280',
-              marginBottom: 8,
-              letterSpacing: '0.5px'
-            }}>
-              {category === 'primary' && '📊 Primary Monitoring'}
-              {category === 'network' && '🌐 Network Audio'}
-              {category === 'operations' && '⚙️ Operations & Analytics'}
-              {category === 'advanced' && '🎓 Advanced'}
+      <div className="cluster-dashboard-tab-sections">
+        {(Object.entries(tabsByCategory) as Array<[DashboardTab['category'], DashboardTab[]]>).map(([category, tabs]) => (
+          <section key={category} className="cluster-dashboard-tab-section">
+            <p className="cluster-dashboard-tab-category">{DASHBOARD_CATEGORY_LABELS[category]}</p>
+            <div className="cluster-dashboard-tab-list">
+              {tabs.map((tab) => {
+                const TabIcon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`cluster-dashboard-tab${activeTab === tab.id ? ' is-active' : ''}`}
+                    onClick={() => setActiveTab(tab.id)}
+                    title={tab.description}
+                  >
+                    <TabIcon size={16} aria-hidden />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
             </div>
-            <div style={{
-              display: 'flex',
-              gap: 12,
-              flexWrap: 'wrap'
-            }}>
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`dashboard-tab ${activeTab === tab.id ? 'active' : ''}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '12px 20px',
-                    background: activeTab === tab.id
-                      ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)'
-                      : 'rgba(30, 41, 59, 0.4)',
-                    border: `2px solid ${activeTab === tab.id ? '#3b82f6' : 'rgba(148, 163, 184, 0.1)'}`,
-                    borderRadius: 10,
-                    color: activeTab === tab.id ? '#60a5fa' : '#94a3b8',
-                    fontSize: 14,
-                    fontWeight: activeTab === tab.id ? 600 : 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap',
-                    boxShadow: activeTab === tab.id ? '0 4px 6px -1px rgba(59, 130, 246, 0.2)' : 'none'
-                  }}
-                  title={tab.description}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          </section>
         ))}
       </div>
 
-      {/* Active Tab Description */}
       {activeTabInfo && (
-        <div style={{
-          background: 'rgba(30, 41, 59, 0.4)',
-          border: '1px solid rgba(148, 163, 184, 0.1)',
-          borderRadius: 8,
-          padding: '12px 16px',
-          fontSize: 13,
-          color: '#cbd5e1',
-          fontStyle: 'italic'
-        }}>
-          💡 {activeTabInfo.description}
-        </div>
+        <Layer className="cluster-dashboard-tab-description">
+          <span>{activeTabInfo.description}</span>
+        </Layer>
       )}
 
-      {/* Modals */}
       {showWizard && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20,
-          overflowY: 'auto',
-          backdropFilter: 'blur(8px)'
-        }}>
+        <div className="cluster-dashboard-modal-backdrop">
           <OnboardingWizard onComplete={() => setShowWizard(false)} />
         </div>
       )}
 
       {showProgress && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20,
-          overflowY: 'auto',
-          backdropFilter: 'blur(8px)'
-        }}>
-          <div style={{ width: '100%', maxWidth: 1200, position: 'relative' }}>
-            <button
+        <div className="cluster-dashboard-modal-backdrop">
+          <div className="cluster-dashboard-progress-modal">
+            <Button
+              kind="danger--ghost"
+              size="sm"
+              renderIcon={WarningAlt}
+              className="cluster-dashboard-close-progress"
               onClick={() => setShowProgress(false)}
-              className="btn btn-sm"
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                background: 'rgba(239, 68, 68, 0.2)',
-                border: '1px solid #ef4444',
-                color: '#fff'
-              }}
             >
-              ✕ Close
-            </button>
+              Close
+            </Button>
             <UpdateProgressViewer />
           </div>
         </div>
       )}
 
-      {/* Content Area */}
-      <div className="dashboard-content" style={{ flex: 1 }}>
+      <div className="dashboard-content cluster-dashboard-content">
         {isAllInOne && activeTab !== 'overview' && activeTab !== 'education' && (
-          <div style={{
-            background: 'rgba(251, 191, 36, 0.1)',
-            border: '2px solid #fbbf24',
-            borderRadius: 12,
-            padding: '16px 20px',
-            marginBottom: 20,
-            fontSize: 14,
-            color: '#fbbf24',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12
-          }}>
-            <Warning size={20} weight="fill" />
-            <div>
-              <strong>ℹ️ Running in ALL-IN-ONE mode:</strong> Cluster features are limited when all services run on a single
-              node. Deploy multiple nodes to see full distributed cluster capabilities including network audio routing,
-              RAFT consensus, and distributed load balancing.
-            </div>
-          </div>
+          <InlineNotification
+            lowContrast
+            kind="warning"
+            hideCloseButton
+            className="cluster-dashboard-inline-warning"
+            title="Running in all-in-one mode."
+            subtitle="Cluster features are limited when all services run on one node. Deploy multiple nodes to unlock distributed routing, RAFT consensus, and load balancing views."
+          />
         )}
 
         {activeTab === 'overview' && <ClusterOverviewTabEnhanced simulationMode={simulationMode} />}

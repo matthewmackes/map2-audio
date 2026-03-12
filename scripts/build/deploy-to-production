@@ -95,33 +95,23 @@ main() {
     
     print_success "All prerequisites met"
     
-    # Step 2: Check if production service is running
+    # Step 2: Check if production service is running (do not stop yet)
     print_status "Checking production service status on port 3000..."
-    
+    local service_was_running=false
     if lsof -i :3000 >/dev/null 2>&1; then
+        service_was_running=true
         print_warning "Port 3000 is in use (production service running)"
-        echo -e "${YELLOW}Stopping production service...${NC}"
-        
-        if sudo systemctl is-active --quiet map2-web-prod 2>/dev/null; then
-            print_status "Stopping map2-web-prod service..."
-            sudo systemctl stop map2-web-prod || print_warning "Could not stop systemd service"
-            sleep 2
-        else
-            print_warning "systemd service not found, attempting to kill process on port 3000"
-            sudo lsof -i :3000 -t | xargs -r sudo kill -9 2>/dev/null || true
-            sleep 2
-        fi
     else
         print_success "Port 3000 is available"
     fi
-    
-    # Step 3: Clean previous build
-    print_status "Cleaning previous build artifacts..."
+
+    # Step 3: Prepare build cache (preserve dist/ for hash compatibility)
+    print_status "Preparing build cache..."
     cd "$WEB_DIR"
-    rm -rf dist build .next out 2>/dev/null || true
+    rm -rf build .next out 2>/dev/null || true
     rm -rf node_modules/.cache 2>/dev/null || true
-    print_success "Previous builds cleaned"
-    
+    print_success "Build cache prepared (dist/ preserved)"
+
     # Step 4: Install dependencies
     if [ ! -d "node_modules" ]; then
         print_status "Installing npm dependencies..."
@@ -160,7 +150,19 @@ main() {
     print_status "Build artifacts:"
     ls -lh "$WEB_DIR/dist" | head -10
     
-    # Step 8: Start production service
+    # Step 8: Stop old production service after build is ready
+    if [ "$service_was_running" = true ]; then
+        print_status "Stopping current production service..."
+        if sudo systemctl is-active --quiet map2-web-prod 2>/dev/null; then
+            sudo systemctl stop map2-web-prod || print_warning "Could not stop systemd service"
+            sleep 1
+        else
+            sudo lsof -i :3000 -t | xargs -r sudo kill -9 2>/dev/null || true
+            sleep 1
+        fi
+    fi
+
+    # Step 9: Start production service
     print_status "Starting production service on port 3000..."
     
     if sudo systemctl is-enabled map2-web-prod 2>/dev/null; then
@@ -184,7 +186,7 @@ main() {
         fi
     fi
     
-    # Step 9: Verify deployment
+    # Step 10: Verify deployment
     print_status "Verifying deployment (waiting for port 3000)..."
     
     local retry=0
@@ -203,7 +205,7 @@ main() {
         print_warning "Port 3000 did not respond within timeout"
     fi
     
-    # Step 10: Test deployment
+    # Step 11: Test deployment
     print_status "Testing production endpoint..."
     
     if curl -s http://localhost:3000 >/dev/null 2>&1; then
@@ -212,7 +214,7 @@ main() {
         print_warning "Could not reach production service, it may still be starting"
     fi
     
-    # Step 11: Show summary
+    # Step 12: Show summary
     print_header "DEPLOYMENT COMPLETE"
     
     echo -e "${GREEN}✓ SUCCESS - Web interface deployed to production${NC}\n"

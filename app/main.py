@@ -205,6 +205,7 @@ async def lifespan(app):
         avb_router = None
         cluster_midi_services = None
         config_reloader = None
+        openapi_schema_sync = None
 
         # Initialize deployment configuration
         logger.info("Initializing deployment configuration...")
@@ -235,6 +236,18 @@ async def lifespan(app):
             initialize_frontend_degradation(os.getenv("MAP2_REMOTE_BACKEND_URL"))
         except Exception as e:
             logger.warning(f"Failed to initialize frontend degradation: {e}")
+
+        try:
+            from app.services.openapi_schema_sync import get_openapi_schema_sync_service
+
+            openapi_schema_sync = get_openapi_schema_sync_service()
+            await safe_start_service(
+                logger,
+                "OpenAPI schema sync",
+                lambda: openapi_schema_sync.start(app),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to initialize OpenAPI schema sync: {e}")
         
         # Initialize LCD Event System
         logger.info("Initializing LCD Event System...")
@@ -436,6 +449,8 @@ async def lifespan(app):
             await safe_stop_service(logger, "Tesira PTP Coordinator", tesira_ptp.stop)
         if tesira_fleet is not None:
             await safe_stop_service(logger, "Tesira Fleet", tesira_fleet.stop)
+        if openapi_schema_sync is not None:
+            await safe_stop_service(logger, "OpenAPI schema sync", openapi_schema_sync.stop)
 
         if config_reloader is not None and config_reloader.watch_enabled:
             try:
@@ -548,13 +563,20 @@ def create_app():
         from app.middleware.request_logging import RequestLoggingMiddleware
         app.add_middleware(RequestLoggingMiddleware, enabled=False)
 
+        # API Observatory traffic capture (bounded ring buffer + WS events).
+        from app.middleware.traffic_capture import TrafficCaptureMiddleware
+        app.add_middleware(
+            TrafficCaptureMiddleware,
+            enabled=os.getenv("MAP2_TRAFFIC_CAPTURE", "true").lower() in {"1", "true", "yes", "on"},
+        )
+
         # Cluster API proxy middleware (transparent node targeting)
         from app.middleware.cluster_proxy import ClusterProxyMiddleware
         app.add_middleware(ClusterProxyMiddleware)
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'midi_hub', 'midi_cluster', 'midi_cluster_proxy', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx']
         route_load_failures = []
 
         for route_name in route_modules:

@@ -1,10 +1,25 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, Lightning, Package, ShareNetwork, SpinnerGap, Warning, WaveSine, X, XCircle } from '@phosphor-icons/react'
+import {
+  Checkbox,
+  InlineLoading,
+  InlineNotification,
+  Modal,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+} from '@carbon/react'
+import { Information, MachineLearningModel, VolumeUp, WarningAlt } from '@carbon/icons-react'
 import { irApi, namApi } from '../../../map2/api'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import { useCluster } from '../../contexts/ClusterContext'
 import { useToasts } from '../Toasts'
+import './PresetDeployModal.css'
 
 type PluginPresetSummary = {
   id: number
@@ -80,7 +95,7 @@ function findLibraryDependency(
   payload: ClusterLibraryFanoutResponse | undefined,
   sourceNodeId: string,
   requestedName: string,
-  expectedAssetType?: string
+  expectedAssetType?: string,
 ): { item: ClusterLibraryItem | null; availableOn: string[] } {
   const nodes = payload?.nodes ?? {}
   const sourceItems = nodes[sourceNodeId]?.body?.items ?? []
@@ -88,7 +103,9 @@ function findLibraryDependency(
 
   const item =
     sourceItems.find((candidate) => {
-      if (expectedAssetType && candidate.asset_type !== expectedAssetType) return false
+      if (expectedAssetType && candidate.asset_type !== expectedAssetType) {
+        return false
+      }
       const filename = normalizeCandidate(candidate.filename)
       const relativeName = normalizeCandidate(candidate.relative_path?.split('/').pop())
       return filename === requested || relativeName === requested
@@ -99,29 +116,17 @@ function findLibraryDependency(
   }
 
   const availableOn = Object.entries(nodes)
-    .filter(([, nodePayload]) =>
-      (nodePayload.body?.items ?? []).some((candidate) => candidate.checksum === item.checksum)
-    )
+    .filter(([, nodePayload]) => (nodePayload.body?.items ?? []).some((candidate) => candidate.checksum === item.checksum))
     .map(([nodeId]) => nodeId)
 
   return { item, availableOn }
 }
 
-function statusPill(label: string, color: string, background: string) {
+function statusTag(type: 'green' | 'red' | 'blue' | 'purple' | 'warm-gray' | 'cool-gray', label: string) {
   return (
-    <span
-      className="pill"
-      style={{
-        color,
-        background,
-        padding: '4px 8px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-      }}
-    >
+    <Tag type={type} size="sm">
       {label}
-    </span>
+    </Tag>
   )
 }
 
@@ -138,18 +143,17 @@ export function PresetDeployModal({
   const [selectedTargetIds, setSelectedTargetIds] = useState<Set<string>>(new Set())
 
   const sourceApiNodeId = sourceNodeId !== localNodeId ? sourceNodeId : null
-  const targetNodes = useMemo(
-    () => nodes.filter((node) => node.nodeId !== sourceNodeId),
-    [nodes, sourceNodeId]
-  )
+  const targetNodes = useMemo(() => nodes.filter((node) => node.nodeId !== sourceNodeId), [nodes, sourceNodeId])
   const nodeLabelById = useMemo(
     () => new Map(nodes.map((node) => [node.nodeId, node.isLocal ? `${node.hostname} (Local)` : node.hostname])),
-    [nodes]
+    [nodes],
   )
   const sourceNodeLabel = nodeLabelById.get(sourceNodeId) ?? sourceNodeId
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      return
+    }
     setSelectedTargetIds(new Set(availability?.missing_on ?? []))
   }, [availability?.missing_on, open])
 
@@ -176,9 +180,7 @@ export function PresetDeployModal({
   const irStatusQuery = useQuery<IRStatus>({
     queryKey: ['ir', 'status', sourceNodeId, 'preset-deploy'],
     queryFn: () => irApi.getStatus(sourceApiNodeId),
-    enabled:
-      open &&
-      (preset?.plugin_uri === 'map2://juce/ir/cabinet' || preset?.plugin_uri === 'map2://juce/ir/reverb'),
+    enabled: open && (preset?.plugin_uri === 'map2://juce/ir/cabinet' || preset?.plugin_uri === 'map2://juce/ir/reverb'),
     staleTime: 5000,
   })
 
@@ -204,21 +206,17 @@ export function PresetDeployModal({
       }
       return response.json() as Promise<ClusterLibraryFanoutResponse>
     },
-    enabled:
-      open &&
-      (preset?.plugin_uri === 'map2://juce/ir/cabinet' || preset?.plugin_uri === 'map2://juce/ir/reverb'),
+    enabled: open && (preset?.plugin_uri === 'map2://juce/ir/cabinet' || preset?.plugin_uri === 'map2://juce/ir/reverb'),
     staleTime: 10000,
   })
 
   const pluginDependency = useMemo<DependencyDescriptor | null>(() => {
-    if (!preset) return null
+    if (!preset) {
+      return null
+    }
 
     const plugin = pluginCatalogQuery.data?.plugins?.find((candidate) => candidate.uri === preset.plugin_uri)
-    const installedOn = plugin?.installed_on ?? (
-      preset.plugin_uri.startsWith('map2://juce/')
-        ? nodes.map((node) => node.nodeId)
-        : []
-    )
+    const installedOn = plugin?.installed_on ?? (preset.plugin_uri.startsWith('map2://juce/') ? nodes.map((node) => node.nodeId) : [])
 
     return {
       kind: 'plugin',
@@ -229,11 +227,15 @@ export function PresetDeployModal({
   }, [nodes, pluginCatalogQuery.data?.plugins, preset])
 
   const assetDependency = useMemo<DependencyDescriptor | null>(() => {
-    if (!preset) return null
+    if (!preset) {
+      return null
+    }
 
     if (preset.plugin_uri === 'map2://juce/amp/nam') {
       const activeModel = namStatusQuery.data?.activeModel
-      if (!activeModel) return null
+      if (!activeModel) {
+        return null
+      }
       const { item, availableOn } = findLibraryDependency(namLibraryQuery.data, sourceNodeId, activeModel, 'nam')
       return {
         kind: 'nam',
@@ -246,7 +248,9 @@ export function PresetDeployModal({
 
     if (preset.plugin_uri === 'map2://juce/ir/cabinet') {
       const loadedCabinet = irStatusQuery.data?.loaded_cabinet
-      if (!loadedCabinet) return null
+      if (!loadedCabinet) {
+        return null
+      }
       const { item, availableOn } = findLibraryDependency(irLibraryQuery.data, sourceNodeId, loadedCabinet, 'cabinet_ir')
       return {
         kind: 'cabinet_ir',
@@ -259,7 +263,9 @@ export function PresetDeployModal({
 
     if (preset.plugin_uri === 'map2://juce/ir/reverb') {
       const loadedReverb = irStatusQuery.data?.loaded_reverb
-      if (!loadedReverb) return null
+      if (!loadedReverb) {
+        return null
+      }
       const { item, availableOn } = findLibraryDependency(irLibraryQuery.data, sourceNodeId, loadedReverb, 'reverb_ir')
       return {
         kind: 'reverb_ir',
@@ -290,11 +296,11 @@ export function PresetDeployModal({
         throw new Error('No preset selected')
       }
 
-      const pluginMissingTargets = targetNodeIds.filter(
-        (nodeId) => pluginDependency && !pluginDependency.availableOn.includes(nodeId)
-      )
+      const pluginMissingTargets = targetNodeIds.filter((nodeId) => pluginDependency && !pluginDependency.availableOn.includes(nodeId))
       if (pluginMissingTargets.length > 0) {
-        throw new Error(`Missing plugin on: ${pluginMissingTargets.map((nodeId) => nodeLabelById.get(nodeId) ?? nodeId).join(', ')}`)
+        throw new Error(
+          `Missing plugin on: ${pluginMissingTargets.map((nodeId) => nodeLabelById.get(nodeId) ?? nodeId).join(', ')}`,
+        )
       }
 
       if (assetDependency && unresolvedAssetDependency) {
@@ -316,7 +322,7 @@ export function PresetDeployModal({
           })
           if (!assetResponse.ok) {
             const body = await assetResponse.json().catch(() => ({}))
-            throw new Error(body.detail || 'Failed to deploy preset dependencies')
+            throw new Error((body as { detail?: string }).detail || 'Failed to deploy preset dependencies')
           }
         }
       }
@@ -333,7 +339,7 @@ export function PresetDeployModal({
       })
       if (!presetResponse.ok) {
         const body = await presetResponse.json().catch(() => ({}))
-        throw new Error(body.detail || 'Failed to deploy preset')
+        throw new Error((body as { detail?: string }).detail || 'Failed to deploy preset')
       }
       return presetResponse.json() as Promise<{ successful?: string[]; failed?: string[] }>
     },
@@ -344,10 +350,7 @@ export function PresetDeployModal({
         queryClient.invalidateQueries({ queryKey: ['plugin-presets', 'cluster-catalog'] }),
         queryClient.invalidateQueries({ queryKey: ['cluster', 'library'] }),
       ])
-      pushToast(
-        `Deployed preset to ${payload.successful?.length ?? targetNodeIds.length} node${targetNodeIds.length === 1 ? '' : 's'}`,
-        'success'
-      )
+      pushToast(`Deployed preset to ${payload.successful?.length ?? targetNodeIds.length} node${targetNodeIds.length === 1 ? '' : 's'}`, 'success')
       onClose()
     },
     onError: (error) => {
@@ -359,17 +362,9 @@ export function PresetDeployModal({
     return targetNodes.map((node) => {
       const pluginReady = pluginDependency ? pluginDependency.availableOn.includes(node.nodeId) : true
       const assetReady = assetDependency ? assetDependency.availableOn.includes(node.nodeId) : true
-      const assetWillDeploy = Boolean(
-        assetDependency &&
-        !assetReady &&
-        assetDependency.canDeploy &&
-        selectedTargetIds.has(node.nodeId)
-      )
+      const assetWillDeploy = Boolean(assetDependency && !assetReady && assetDependency.canDeploy && selectedTargetIds.has(node.nodeId))
       const presetReady = availability?.available_on.includes(node.nodeId) ?? false
-      const canTargetDeploy =
-        node.isOnline &&
-        pluginReady &&
-        (!assetDependency || assetReady || assetDependency.canDeploy)
+      const canTargetDeploy = node.isOnline && pluginReady && (!assetDependency || assetReady || assetDependency.canDeploy)
 
       return {
         node,
@@ -382,173 +377,145 @@ export function PresetDeployModal({
     })
   }, [assetDependency, availability?.available_on, pluginDependency, selectedTargetIds, targetNodes])
 
-  if (!open || !preset) return null
+  const dependencyLoading =
+    pluginCatalogQuery.isLoading || namStatusQuery.isLoading || irStatusQuery.isLoading || namLibraryQuery.isLoading || irLibraryQuery.isLoading
+  const dependencyError =
+    pluginCatalogQuery.isError || namStatusQuery.isError || irStatusQuery.isError || namLibraryQuery.isError || irLibraryQuery.isError
+
+  const canSubmit =
+    selectedTargetIds.size > 0 && !dependencyLoading && !dependencyError && !deployMutation.isPending
+
+  if (!open || !preset) {
+    return null
+  }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0, 0, 0, 0.58)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
+    <Modal
+      open={open}
+      size="lg"
+      modalHeading={`Deploy preset: ${preset.name}`}
+      modalLabel={`Source node: ${sourceNodeLabel}`}
+      primaryButtonText={deployMutation.isPending ? 'Deploying...' : 'Deploy preset'}
+      secondaryButtonText="Cancel"
+      primaryButtonDisabled={!canSubmit}
+      onRequestClose={() => {
+        if (!deployMutation.isPending) {
+          onClose()
+        }
       }}
-      onClick={() => {
-        if (!deployMutation.isPending) onClose()
+      onSecondarySubmit={() => {
+        if (!deployMutation.isPending) {
+          onClose()
+        }
+      }}
+      onRequestSubmit={() => {
+        if (canSubmit) {
+          deployMutation.mutate(Array.from(selectedTargetIds))
+        }
       }}
     >
-      <div
-        className="card"
-        style={{ width: 'min(980px, 94vw)', maxHeight: '90vh', overflow: 'auto', padding: 24 }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 20 }}>
-          <div>
-            <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.1, color: '#94a3b8', marginBottom: 8 }}>
-              Deploy Preset
-            </div>
-            <h3 style={{ margin: 0, fontSize: 24 }}>{preset.name}</h3>
-            <p style={{ margin: '8px 0 0', color: '#94a3b8', lineHeight: 1.6 }}>
-              Source node: <strong style={{ color: '#e2e8f0' }}>{sourceNodeLabel}</strong>. The matrix below blocks nodes missing the plugin,
-              and marks IR/NAM content that will be copied before the preset itself is deployed.
-            </p>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose} disabled={deployMutation.isPending}>
-            <X size={16} weight="bold" />
-          </button>
-        </div>
+      <div className="preset-deploy-modal">
+        <p className="preset-deploy-modal__description">
+          Dependency checks verify plugin availability and optional NAM/IR content before deploying to selected nodes.
+        </p>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 12,
-            marginBottom: 20,
-          }}
-        >
-          <div style={{ padding: 14, borderRadius: 10, background: 'rgba(37, 99, 235, 0.10)', border: '1px solid rgba(96, 165, 250, 0.18)' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-              <Package size={16} weight="duotone" style={{ color: '#60a5fa' }} />
-              <strong>Preset</strong>
-            </div>
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>{preset.name}</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
-              {availability?.available_on.length ?? 0}/{nodes.length} nodes already have this checksum
-            </div>
-          </div>
+        <div className="preset-deploy-modal__summary-grid">
+          <article className="preset-deploy-modal__summary-card">
+            <h4>
+              <Information size={16} aria-hidden="true" />
+              Preset
+            </h4>
+            <p>{preset.name}</p>
+            <span>{availability?.available_on.length ?? 0}/{nodes.length} nodes already have this checksum.</span>
+          </article>
 
-          <div style={{ padding: 14, borderRadius: 10, background: 'rgba(249, 115, 22, 0.10)', border: '1px solid rgba(249, 115, 22, 0.18)' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-              <Lightning size={16} weight="duotone" style={{ color: '#f97316' }} />
-              <strong>Plugin Dependency</strong>
-            </div>
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>
-              {pluginDependency?.label ?? sanitizeRestrictedDisplayText(preset.plugin_name) || preset.plugin_uri}
-            </div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
-              Available on {pluginDependency?.availableOn.length ?? 0}/{nodes.length} nodes
-            </div>
-          </div>
+          <article className="preset-deploy-modal__summary-card">
+            <h4>
+              <MachineLearningModel size={16} aria-hidden="true" />
+              Plugin dependency
+            </h4>
+            <p>{pluginDependency?.label ?? (sanitizeRestrictedDisplayText(preset.plugin_name) || preset.plugin_uri)}</p>
+            <span>Available on {pluginDependency?.availableOn.length ?? 0}/{nodes.length} nodes.</span>
+          </article>
 
-          <div style={{ padding: 14, borderRadius: 10, background: 'rgba(168, 85, 247, 0.10)', border: '1px solid rgba(168, 85, 247, 0.18)' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+          <article className="preset-deploy-modal__summary-card">
+            <h4>
               {assetDependency?.kind === 'nam' ? (
-                <Lightning size={16} weight="duotone" style={{ color: '#f43f5e' }} />
+                <MachineLearningModel size={16} aria-hidden="true" />
               ) : (
-                <WaveSine size={16} weight="duotone" style={{ color: '#a855f7' }} />
+                <VolumeUp size={16} aria-hidden="true" />
               )}
-              <strong>Content Dependency</strong>
-            </div>
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>
-              {assetDependency ? assetDependency.label : 'No IR/NAM content inferred for this preset'}
-            </div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
+              Content dependency
+            </h4>
+            <p>{assetDependency ? assetDependency.label : 'No IR or NAM dependency inferred for this preset.'}</p>
+            <span>
               {assetDependency
                 ? assetDependency.canDeploy
-                  ? `Available on ${assetDependency.availableOn.length}/${nodes.length} nodes`
-                  : 'Detected on source node, but not indexed for cluster deployment'
-                : 'Generic parameter preset'}
-            </div>
-          </div>
+                  ? `Available on ${assetDependency.availableOn.length}/${nodes.length} nodes.`
+                  : 'Detected on source node, but not indexed for cluster deployment.'
+                : 'Generic parameter preset.'}
+            </span>
+          </article>
         </div>
 
         {unresolvedAssetDependency && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 12,
-              borderRadius: 10,
-              background: 'rgba(245, 158, 11, 0.12)',
-              border: '1px solid rgba(245, 158, 11, 0.22)',
-              color: '#fde68a',
-              display: 'flex',
-              gap: 10,
-              alignItems: 'flex-start',
-            }}
-          >
-            <Warning size={18} weight="duotone" />
-            <div>
-              <strong>Content dependency unresolved.</strong>
-              <div style={{ fontSize: 13, marginTop: 4 }}>
-                The source node reports <code>{assetDependency?.label}</code>, but it was not found in the cluster library index.
-                Asset deployment is blocked until that content is indexed in the Library page.
-              </div>
-            </div>
-          </div>
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Content dependency unresolved"
+            subtitle={`The source node reports ${assetDependency?.label}, but it is not indexed in the cluster library.`}
+          />
         )}
 
-        <div style={{ overflowX: 'auto', marginBottom: 20 }}>
-          <table className="table" style={{ minWidth: 760 }}>
-            <thead>
-              <tr>
-                <th>Target</th>
-                <th>Plugin</th>
-                <th>Content</th>
-                <th>Preset</th>
-                <th>Select</th>
-              </tr>
-            </thead>
-            <tbody>
+        <TableContainer className="preset-deploy-modal__table-wrap">
+          <Table size="sm" useZebraStyles={false}>
+            <TableHead>
+              <TableRow>
+                <TableHeader>Target node</TableHeader>
+                <TableHeader>Plugin</TableHeader>
+                <TableHeader>Content</TableHeader>
+                <TableHeader>Preset</TableHeader>
+                <TableHeader>Select</TableHeader>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {rows.map(({ node, pluginReady, assetReady, assetWillDeploy, presetReady, canTargetDeploy }) => {
                 const checked = selectedTargetIds.has(node.nodeId)
+                const nodeLabel = nodeLabelById.get(node.nodeId) ?? node.nodeId
+
                 return (
-                  <tr key={node.nodeId}>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{nodeLabelById.get(node.nodeId) ?? node.nodeId}</div>
-                      <div className="muted" style={{ fontSize: 12 }}>
+                  <TableRow key={node.nodeId}>
+                    <TableCell>
+                      <p className="preset-deploy-modal__node-label">{nodeLabel}</p>
+                      <span className="preset-deploy-modal__node-meta">
                         {node.isOnline ? `Latency ${node.latencyMs ?? 'n/a'} ms` : 'Offline'}
-                      </div>
-                    </td>
-                    <td>
-                      {pluginReady
-                        ? statusPill('Available', '#86efac', 'rgba(34, 197, 94, 0.14)')
-                        : statusPill('Missing Plugin', '#fca5a5', 'rgba(239, 68, 68, 0.14)')}
-                    </td>
-                    <td>
-                      {!assetDependency ? (
-                        <span className="muted">None</span>
-                      ) : assetReady ? (
-                        statusPill('Ready', '#c4b5fd', 'rgba(168, 85, 247, 0.14)')
-                      ) : assetWillDeploy ? (
-                        statusPill('Will Deploy', '#93c5fd', 'rgba(59, 130, 246, 0.14)')
-                      ) : assetDependency.canDeploy ? (
-                        statusPill('Missing Asset', '#fbbf24', 'rgba(245, 158, 11, 0.14)')
-                      ) : (
-                        statusPill('Blocked', '#fca5a5', 'rgba(239, 68, 68, 0.14)')
-                      )}
-                    </td>
-                    <td>
+                      </span>
+                    </TableCell>
+                    <TableCell>{pluginReady ? statusTag('green', 'Available') : statusTag('red', 'Missing plugin')}</TableCell>
+                    <TableCell>
+                      {!assetDependency
+                        ? statusTag('cool-gray', 'None')
+                        : assetReady
+                          ? statusTag('purple', 'Ready')
+                          : assetWillDeploy
+                            ? statusTag('blue', 'Will deploy')
+                            : assetDependency.canDeploy
+                              ? statusTag('warm-gray', 'Missing asset')
+                              : statusTag('red', 'Blocked')}
+                    </TableCell>
+                    <TableCell>
                       {presetReady
-                        ? statusPill('Installed', '#86efac', 'rgba(34, 197, 94, 0.14)')
+                        ? statusTag('green', 'Installed')
                         : checked
-                          ? statusPill('Will Deploy', '#93c5fd', 'rgba(59, 130, 246, 0.14)')
-                          : <span className="muted">Not selected</span>}
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
+                          ? statusTag('blue', 'Will deploy')
+                          : statusTag('cool-gray', 'Not selected')}
+                    </TableCell>
+                    <TableCell>
+                      <Checkbox
+                        id={`preset-deploy-select-${node.nodeId}`}
+                        labelText={`Select ${nodeLabel}`}
+                        hideLabel
                         checked={checked}
                         disabled={!canTargetDeploy || deployMutation.isPending}
                         onChange={() => {
@@ -563,74 +530,47 @@ export function PresetDeployModal({
                           })
                         }}
                       />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-        {(pluginCatalogQuery.isLoading || namStatusQuery.isLoading || irStatusQuery.isLoading || namLibraryQuery.isLoading || irLibraryQuery.isLoading) && (
-          <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 16 }}>
-            <SpinnerGap size={16} weight="duotone" className="spin" />
-            <span className="muted">Checking cluster dependencies…</span>
-          </div>
+        {dependencyLoading && <InlineLoading description="Checking cluster dependencies" status="active" />}
+
+        {dependencyError && (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Dependency checks failed"
+            subtitle="One or more dependency checks failed. Resolve that first, then deploy."
+          />
         )}
 
-        {(pluginCatalogQuery.isError || namStatusQuery.isError || irStatusQuery.isError || namLibraryQuery.isError || irLibraryQuery.isError) && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 12,
-              borderRadius: 10,
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.22)',
-              color: '#fecaca',
-              display: 'flex',
-              gap: 10,
-              alignItems: 'center',
-            }}
-          >
-            <XCircle size={18} weight="duotone" />
-            <span>One or more dependency checks failed. Resolve that first, then deploy.</span>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-          <div className="muted" style={{ fontSize: 13 }}>
-            {selectedTargetIds.size} target node{selectedTargetIds.size === 1 ? '' : 's'} selected
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost" onClick={onClose} disabled={deployMutation.isPending}>
-              Cancel
-            </button>
-            <button
-              className="btn btn-primary"
-              disabled={
-                selectedTargetIds.size === 0 ||
-                deployMutation.isPending ||
-                pluginCatalogQuery.isLoading ||
-                Boolean(pluginCatalogQuery.isError || namStatusQuery.isError || irStatusQuery.isError || namLibraryQuery.isError || irLibraryQuery.isError)
-              }
-              onClick={() => deployMutation.mutate(Array.from(selectedTargetIds))}
-            >
-              {deployMutation.isPending ? (
-                <>
-                  <SpinnerGap size={14} weight="duotone" className="spin" />
-                  Deploying…
-                </>
-              ) : (
-                <>
-                  <ShareNetwork size={14} weight="duotone" />
-                  Deploy Preset
-                </>
-              )}
-            </button>
-          </div>
+        <div className="preset-deploy-modal__selection-status">
+          {statusTag('blue', `${selectedTargetIds.size} target node${selectedTargetIds.size === 1 ? '' : 's'} selected`)}
+          {assetDependency && !assetDependency.canDeploy && (
+            <span className="preset-deploy-modal__blocked-hint">
+              <WarningAlt size={16} aria-hidden="true" />
+              Asset dependency cannot be deployed until indexed in library.
+            </span>
+          )}
         </div>
+
+        {!targetNodes.length && (
+          <InlineNotification
+            kind="info"
+            lowContrast
+            hideCloseButton
+            title="No target nodes available"
+            subtitle="All known nodes match the source node, so there are no deployment targets."
+          />
+        )}
       </div>
-    </div>
+    </Modal>
   )
 }
 

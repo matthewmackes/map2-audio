@@ -1,18 +1,14 @@
-/**
- * SpecialSettingsDialog - Configuration dialog for special mode
- * 
- * Allows user to:
- * 1. Toggle visibility of individual native plugins
- * 2. Configure Advanced Menu location (top nav, mobile only, hidden)
- * 
- * Plugin list is dynamically fetched from API (never hardcoded).
- */
-
 import { useState, useEffect } from 'react'
-import { X, GearSix, Eye, EyeSlash, List, Monitor, DeviceMobile } from '@phosphor-icons/react'
+import {
+  Checkbox,
+  InlineLoading,
+  InlineNotification,
+  Modal,
+  RadioButton,
+  RadioButtonGroup,
+} from '@carbon/react'
 import { apiUrl } from '../utils/apiTarget'
 import { getDisplayPluginName } from '../../map2/displayNames'
-import { useIsMobile } from '../hooks/useIsMobile'
 
 interface Plugin {
   uri: string
@@ -38,11 +34,12 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
   const [menuLocation, setMenuLocation] = useState<'top-nav' | 'mobile-only' | 'hidden'>('top-nav')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState('')
-  const isMobile = useIsMobile()
+  const [loadError, setLoadError] = useState('')
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (isOpen) {
+      setSaveError('')
       loadCurrentSettings()
       fetchNativePlugins()
     }
@@ -61,7 +58,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
 
   const fetchNativePlugins = async () => {
     setIsLoading(true)
-    setError('')
+    setLoadError('')
     
     try {
       const response = await fetch(apiUrl('/api/plugins/discover'))
@@ -76,16 +73,16 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
       
       setNativePlugins(native)
     } catch (err) {
-      setError('Failed to load plugin list')
+      setLoadError('Failed to load plugin list.')
       console.error('Failed to fetch plugins:', err)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const togglePluginVisibility = (uri: string) => {
+  const togglePluginVisibility = (uri: string, isVisible: boolean) => {
     const newHidden = new Set(hiddenPlugins)
-    if (newHidden.has(uri)) {
+    if (isVisible) {
       newHidden.delete(uri)
     } else {
       newHidden.add(uri)
@@ -95,7 +92,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
 
   const handleSave = async () => {
     setIsSaving(true)
-    setError('')
+    setSaveError('')
     
     try {
       const settings: SpecialSettings = {
@@ -107,7 +104,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
       await onSave(settings)
       onClose()
     } catch (err) {
-      setError('Failed to save settings')
+      setSaveError('Failed to save settings.')
       console.error('Save error:', err)
     } finally {
       setIsSaving(false)
@@ -115,340 +112,114 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
   }
 
   const handleClose = () => {
-    setError('')
+    if (isSaving) {
+      return
+    }
+    setLoadError('')
+    setSaveError('')
     onClose()
   }
 
   if (!isOpen) return null
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={handleClose}
-      style={isMobile ? { alignItems: 'stretch', justifyContent: 'stretch' } : undefined}
+    <Modal
+      open={isOpen}
+      size="lg"
+      modalHeading="Special settings"
+      primaryButtonText={isSaving ? 'Saving...' : 'Save settings'}
+      secondaryButtonText="Cancel"
+      primaryButtonDisabled={isSaving || isLoading}
+      onRequestClose={handleClose}
+      onRequestSubmit={() => {
+        void handleSave()
+      }}
     >
-      <div 
-        className="modal-dialog" 
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: isMobile ? '100vw' : '600px',
-          width: isMobile ? '100vw' : undefined,
-          maxHeight: isMobile ? '100vh' : '80vh',
-          minHeight: isMobile ? '100vh' : undefined,
-          background: 'linear-gradient(135deg, rgba(15, 20, 35, 0.95) 0%, rgba(25, 30, 45, 0.95) 100%)',
-          borderRadius: isMobile ? 0 : '12px',
-          border: '1px solid rgba(37, 99, 235, 0.3)',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '20px 24px',
-          borderBottom: '1px solid rgba(37, 99, 235, 0.2)',
-          flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <GearSix size={24} weight="duotone" style={{ color: '#60a5fa' }} />
-            <h2 style={{
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#f3f4f6',
-              margin: 0,
-            }}>
-              Special Settings
-            </h2>
-          </div>
-          <button
-            onClick={handleClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#9ca3af',
-              cursor: 'pointer',
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <X size={20} weight="bold" />
-          </button>
+      {saveError ? (
+        <div className="special-settings-banner">
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Save failed"
+            subtitle={saveError}
+          />
         </div>
+      ) : null}
 
-        {/* Content */}
-        <div style={{
-          padding: isMobile ? '16px' : '24px',
-          overflowY: 'auto',
-          flexGrow: 1,
-        }}>
-          {/* Native Plugin Visibility Section */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3 style={{
-              fontSize: '15px',
-              fontWeight: 600,
-              color: '#f3f4f6',
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
-              <Eye size={18} weight="duotone" style={{ color: '#60a5fa' }} />
-              Native Plugin Visibility
-            </h3>
-            <p style={{
-              fontSize: '12px',
-              color: '#9ca3af',
-              marginBottom: '16px',
-              lineHeight: '1.5',
-            }}>
-              Select which native plugins to show in the plugin chooser.
-              Unchecked plugins will be hidden.
-            </p>
+      <section className="special-settings-section">
+        <h3 className="special-settings-section-title">Native plugin visibility</h3>
+        <p className="special-settings-copy">
+          Select which native plugins to show in the plugin chooser. Cleared plugins are hidden.
+        </p>
 
-            {isLoading ? (
-              <div style={{
-                padding: '40px',
-                textAlign: 'center',
-                color: '#9ca3af',
-                fontSize: '13px',
-              }}>
-                Loading plugins...
-              </div>
-            ) : error ? (
-              <div style={{
-                padding: '20px',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '8px',
-                color: '#fca5a5',
-                fontSize: '13px',
-              }}>
-                {error}
-              </div>
-            ) : nativePlugins.length === 0 ? (
-              <div style={{
-                padding: '20px',
-                background: 'rgba(37, 99, 235, 0.1)',
-                border: '1px solid rgba(37, 99, 235, 0.3)',
-                borderRadius: '8px',
-                color: '#60a5fa',
-                fontSize: '13px',
-              }}>
-                No native plugins found
-              </div>
-            ) : (
-              <div style={{
-                border: '1px solid rgba(37, 99, 235, 0.2)',
-                borderRadius: '8px',
-                background: 'rgba(10, 15, 25, 0.5)',
-                maxHeight: '300px',
-                overflowY: 'auto',
-              }}>
-                {nativePlugins.map((plugin) => {
-                  const isVisible = !hiddenPlugins.has(plugin.uri)
-                  const displayName = getDisplayPluginName(plugin.name, plugin.uri)
-                  return (
-                    <label
-                      key={plugin.uri}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '12px 16px',
-                        borderBottom: '1px solid rgba(37, 99, 235, 0.1)',
-                        cursor: 'pointer',
-                        transition: 'background 150ms',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(37, 99, 235, 0.05)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isVisible}
-                        onChange={() => togglePluginVisibility(plugin.uri)}
-                        style={{
-                          marginRight: '12px',
-                          width: '16px',
-                          height: '16px',
-                          cursor: 'pointer',
-                        }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: isVisible ? '#f3f4f6' : '#6b7280',
-                        }}>
-                          {displayName}
-                        </div>
-                        <div style={{
-                          fontSize: '11px',
-                          color: '#6b7280',
-                          marginTop: '2px',
-                        }}>
-                          {plugin.category}
-                        </div>
-                      </div>
-                      {isVisible ? (
-                        <Eye size={16} weight="duotone" style={{ color: '#22c55e' }} />
-                      ) : (
-                        <EyeSlash size={16} weight="duotone" style={{ color: '#6b7280' }} />
-                      )}
-                    </label>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+        {isLoading ? (
+          <InlineLoading description="Loading plugins..." status="active" />
+        ) : null}
 
-          {/* Advanced Menu Location Section */}
-          <div>
-            <h3 style={{
-              fontSize: '15px',
-              fontWeight: 600,
-              color: '#f3f4f6',
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
-              <List size={18} weight="duotone" style={{ color: '#60a5fa' }} />
-              Advanced Menu Location
-            </h3>
-            <p style={{
-              fontSize: '12px',
-              color: '#9ca3af',
-              marginBottom: '16px',
-              lineHeight: '1.5',
-            }}>
-              Choose where the Advanced Menu should appear
-            </p>
+        {!isLoading && loadError ? (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Unable to load plugins"
+            subtitle={loadError}
+          />
+        ) : null}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                { value: 'top-nav', label: 'Show in Top Navigation', icon: Monitor, description: 'Always visible in the top navigation bar' },
-                { value: 'mobile-only', label: 'Mobile Menu Only', icon: DeviceMobile, description: 'Only visible in mobile hamburger menu' },
-                { value: 'hidden', label: 'Hide Completely', icon: EyeSlash, description: 'Advanced menu will not be shown' },
-              ].map((option) => {
-                const Icon = option.icon
-                const isSelected = menuLocation === option.value
-                
-                return (
-                  <label
-                    key={option.value}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '16px',
-                      borderRadius: '8px',
-                      border: isSelected 
-                        ? '2px solid rgba(37, 99, 235, 0.6)' 
-                        : '1px solid rgba(37, 99, 235, 0.2)',
-                      background: isSelected 
-                        ? 'rgba(37, 99, 235, 0.1)' 
-                        : 'rgba(10, 15, 25, 0.5)',
-                      cursor: 'pointer',
-                      transition: 'all 150ms',
+        {!isLoading && !loadError && nativePlugins.length === 0 ? (
+          <InlineNotification
+            kind="info"
+            lowContrast
+            hideCloseButton
+            title="No native plugins found"
+            subtitle="No plugins matched the map2:// native namespace."
+          />
+        ) : null}
+
+        {!isLoading && !loadError && nativePlugins.length > 0 ? (
+          <div className="special-settings-plugin-list">
+            {nativePlugins.map((plugin) => {
+              const isVisible = !hiddenPlugins.has(plugin.uri)
+              const displayName = getDisplayPluginName(plugin.name, plugin.uri)
+              const pluginId = `plugin-visibility-${plugin.uri.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+              return (
+                <div key={plugin.uri} className="special-settings-plugin-row">
+                  <Checkbox
+                    id={pluginId}
+                    labelText={displayName}
+                    checked={isVisible}
+                    onChange={(event) => {
+                      togglePluginVisibility(plugin.uri, event.currentTarget.checked)
                     }}
-                  >
-                    <input
-                      type="radio"
-                      name="menuLocation"
-                      value={option.value}
-                      checked={isSelected}
-                      onChange={() => setMenuLocation(option.value as typeof menuLocation)}
-                      style={{
-                        marginRight: '12px',
-                        width: '16px',
-                        height: '16px',
-                        cursor: 'pointer',
-                      }}
-                    />
-                    <Icon size={20} style={{ 
-                      color: isSelected ? '#60a5fa' : '#6b7280',
-                      marginRight: '12px',
-                    }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        color: isSelected ? '#f3f4f6' : '#d1d5db',
-                      }}>
-                        {option.label}
-                      </div>
-                      <div style={{
-                        fontSize: '11px',
-                        color: '#6b7280',
-                        marginTop: '4px',
-                      }}>
-                        {option.description}
-                      </div>
-                    </div>
-                  </label>
-                )
-              })}
-            </div>
+                  />
+                  <p className="special-settings-plugin-meta">{plugin.category}</p>
+                </div>
+              )
+            })}
           </div>
-        </div>
+        ) : null}
+      </section>
 
-        {/* Footer */}
-        <div style={{
-          padding: isMobile ? '12px 16px' : '16px 24px',
-          borderTop: '1px solid rgba(37, 99, 235, 0.2)',
-          display: 'flex',
-          gap: '12px',
-          justifyContent: 'flex-end',
-          flexShrink: 0,
-          position: isMobile ? 'sticky' : 'static',
-          bottom: 0,
-          background: isMobile ? 'var(--surface)' : 'transparent',
-        }}>
-          <button
-            onClick={handleClose}
-            disabled={isSaving}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 500,
-              border: '1px solid rgba(37, 99, 235, 0.3)',
-              background: 'rgba(37, 99, 235, 0.05)',
-              color: '#60a5fa',
-              cursor: isSaving ? 'not-allowed' : 'pointer',
-              opacity: isSaving ? 0.5 : 1,
-              transition: 'all 150ms',
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 500,
-              border: 'none',
-              background: isSaving 
-                ? 'rgba(37, 99, 235, 0.3)' 
-                : 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
-              color: '#f3f4f6',
-              cursor: isSaving ? 'not-allowed' : 'pointer',
-              transition: 'all 150ms',
-            }}
-          >
-            {isSaving ? 'Saving...' : 'Save Settings'}
-          </button>
-        </div>
-      </div>
-    </div>
+      <section className="special-settings-section">
+        <h3 className="special-settings-section-title">Advanced menu location</h3>
+        <p className="special-settings-copy">Choose where the advanced menu is visible.</p>
+
+        <RadioButtonGroup
+          name="menuLocation"
+          legendText="Menu location"
+          valueSelected={menuLocation}
+          onChange={(value) => setMenuLocation(value as typeof menuLocation)}
+        >
+          <RadioButton id="menu-location-top-nav" value="top-nav" labelText="Show in top navigation" />
+          <RadioButton id="menu-location-mobile-only" value="mobile-only" labelText="Mobile menu only" />
+          <RadioButton id="menu-location-hidden" value="hidden" labelText="Hide completely" />
+        </RadioButtonGroup>
+        <p className="special-settings-radio-help">
+          Show in top navigation keeps advanced routes available from the desktop shell. Mobile menu only limits access
+          to the compact navigation. Hide completely removes advanced navigation entry points.
+        </p>
+      </section>
+    </Modal>
   )
 }

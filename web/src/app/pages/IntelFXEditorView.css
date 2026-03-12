@@ -1,0 +1,108 @@
+.intelfx-editor-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+.intelfx-editor-page--loading {
+  justify-content: center;
+}
+
+.intelfx-editor-page__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+}
+
+.intelfx-editor-page__hero-copy {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.intelfx-editor-page__title {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font: var(--cds-heading-03-font);
+}
+
+.intelfx-editor-page__subtitle {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font: var(--cds-body-compact-01-font);
+  max-width: 64ch;
+}
+
+.intelfx-editor-page__hero-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.intelfx-editor-page__accordion {
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+}
+
+.intelfx-editor-page__item-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.intelfx-editor-page__item-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.intelfx-editor-page__item-label {
+  color: var(--cds-text-primary);
+  font: var(--cds-heading-compact-01-font);
+  letter-spacing: 0.08em;
+}
+
+.intelfx-editor-page__item-panel {
+  --intelfx-editor-accent: var(--cds-border-interactive);
+  border-top: 1px solid color-mix(in srgb, var(--intelfx-editor-accent) 50%, var(--cds-border-subtle-01));
+  padding: 0.875rem;
+  background: color-mix(in srgb, var(--intelfx-editor-accent) 6%, var(--cds-layer-01));
+}
+
+.intelfx-editor-page__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.intelfx-editor-page__bool-control,
+.intelfx-editor-page__select-control {
+  min-width: 10rem;
+}
+
+.intelfx-editor-page__select-control .cds--list-box__menu-item {
+  white-space: nowrap;
+}
+
+.intelfx-editor-page__empty {
+  border: 1px solid var(--cds-border-subtle-01);
+  padding: 1rem;
+  color: var(--cds-text-secondary);
+  font: var(--cds-body-compact-01-font);
+}
+
+@media (max-width: 1024px) {
+  .intelfx-editor-page {
+    padding: 0.5rem;
+  }
+}

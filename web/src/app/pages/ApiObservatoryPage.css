@@ -1,0 +1,1062 @@
+.api-observatory-page {
+  --obs-bg: #020617;
+  --obs-surface: rgba(15, 23, 42, 0.88);
+  --obs-surface-strong: rgba(15, 23, 42, 0.96);
+  --obs-border: rgba(109, 40, 217, 0.35);
+  --obs-accent: #8b5cf6;
+  --obs-accent-soft: rgba(139, 92, 246, 0.22);
+  --obs-success: #22c55e;
+  --obs-error: #ef4444;
+  --obs-warn: #f59e0b;
+  min-height: 100%;
+  padding: 26px;
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.25), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.12), transparent 36%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.98), rgba(3, 7, 18, 1));
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.api-observatory-page__header {
+  border: 1px solid var(--obs-border);
+  border-radius: 20px;
+  background: linear-gradient(140deg, rgba(49, 17, 95, 0.3), rgba(15, 23, 42, 0.9));
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 16px;
+}
+
+.api-observatory-page__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(167, 139, 250, 0.5);
+  color: #d8b4fe;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 4px 10px;
+}
+
+.api-observatory-page__heading h1 {
+  margin: 10px 0 8px;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  letter-spacing: -0.03em;
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+}
+
+.api-observatory-page__heading p {
+  margin: 0;
+  color: #cbd5f5;
+  max-width: 78ch;
+  line-height: 1.6;
+}
+
+.api-observatory-page__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.api-observatory-page__metrics > div {
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  border-radius: 14px;
+  padding: 12px 12px;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.api-observatory-page__metrics span {
+  display: block;
+  color: #a5b4fc;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.api-observatory-page__metrics strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.35rem;
+}
+
+.api-observatory-page__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.api-observatory-page__tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.api-observatory-page__tab {
+  border: 1px solid rgba(109, 40, 217, 0.45);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  color: #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.api-observatory-page__tab.is-active {
+  background: rgba(109, 40, 217, 0.28);
+  color: #f5f3ff;
+  border-color: rgba(196, 181, 253, 0.6);
+}
+
+.api-observatory-page__toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.api-observatory-page__toolbar-actions select,
+.api-observatory-page__toolbar-actions button,
+.api-observatory-builder select,
+.api-observatory-builder input,
+.api-observatory-builder textarea,
+.api-observatory-builder button,
+.api-observatory-websocket input,
+.api-observatory-websocket select,
+.api-observatory-websocket button,
+.api-observatory-traffic input,
+.api-observatory-traffic select,
+.api-observatory-traffic button,
+.api-observatory-collections input,
+.api-observatory-collections select,
+.api-observatory-collections textarea,
+.api-observatory-collections button {
+  border-radius: 10px;
+  border: 1px solid rgba(71, 85, 105, 0.6);
+  background: rgba(15, 23, 42, 0.88);
+  color: #e2e8f0;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
+.api-observatory-page__tab-description {
+  margin: 0;
+  color: #a5b4fc;
+  font-size: 13px;
+}
+
+.api-observatory-page__diff-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.55);
+  background: rgba(76, 29, 149, 0.25);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.api-observatory-page__diff-banner button,
+.api-observatory-primary {
+  border-radius: 10px;
+  border: 1px solid rgba(167, 139, 250, 0.66);
+  background: rgba(109, 40, 217, 0.32);
+  color: #f5f3ff;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+.api-observatory-page__content {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.api-observatory-page__main {
+  min-width: 0;
+}
+
+.api-observatory-panel {
+  border: 1px solid var(--obs-border);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.98));
+  padding: 14px;
+  min-height: 480px;
+}
+
+.api-observatory-page__loading {
+  color: #a5b4fc;
+  font-size: 13px;
+}
+
+.api-observatory-error {
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  background: rgba(127, 29, 29, 0.25);
+  color: #fecaca;
+  padding: 10px 12px;
+}
+
+.api-observatory-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.76);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  padding: 18px;
+}
+
+.api-observatory-modal {
+  width: min(760px, 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(139, 92, 246, 0.6);
+  background: rgba(15, 23, 42, 0.98);
+  padding: 16px;
+}
+
+.api-observatory-modal header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.api-observatory-modal ul {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.api-observatory-modal li {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  font-size: 13px;
+  align-items: center;
+}
+
+.api-observatory-modal code {
+  border-radius: 8px;
+  border: 1px solid rgba(109, 40, 217, 0.45);
+  background: rgba(30, 41, 59, 0.75);
+  padding: 4px 8px;
+  color: #ddd6fe;
+}
+
+/* Topology */
+
+.api-observatory-topology {
+  border: 1px solid var(--obs-border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.api-observatory-topology.is-collapsed {
+  padding: 8px;
+}
+
+.api-observatory-topology__toggle {
+  width: 100%;
+}
+
+.api-observatory-topology__header h3 {
+  margin: 0;
+}
+
+.api-observatory-topology__header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.api-observatory-topology__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.api-observatory-topology__nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 540px;
+  overflow: auto;
+}
+
+.api-observatory-topology__node {
+  text-align: left;
+  padding: 9px;
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.86);
+}
+
+.api-observatory-topology__node.is-selected {
+  border-color: rgba(59, 130, 246, 0.75);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+.api-observatory-topology__node-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.api-observatory-topology__status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.api-observatory-topology__node-meta {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.api-observatory-topology__state,
+.api-observatory-topology__error {
+  font-size: 12px;
+  margin: 0;
+}
+
+.api-observatory-topology__error {
+  color: #fca5a5;
+}
+
+/* Catalog */
+
+.api-observatory-catalog {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.api-observatory-catalog__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.api-observatory-catalog__header {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.76);
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.api-observatory-catalog__method-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.api-observatory-catalog__method-row code {
+  font-size: 13px;
+  color: #f8fafc;
+}
+
+.api-observatory-catalog__header h2 {
+  margin: 10px 0 8px;
+  font-size: 1.4rem;
+}
+
+.api-observatory-catalog__header p {
+  margin: 0;
+  color: #cbd5f5;
+  line-height: 1.6;
+}
+
+.api-observatory-catalog__header-actions button {
+  white-space: nowrap;
+}
+
+.api-observatory-catalog__diff {
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+}
+
+.api-observatory-catalog__diff--added {
+  background: rgba(22, 163, 74, 0.25);
+  color: #86efac;
+}
+
+.api-observatory-catalog__diff--modified {
+  background: rgba(249, 115, 22, 0.25);
+  color: #fdba74;
+}
+
+.api-observatory-catalog__meta,
+.api-observatory-catalog__schemas,
+.api-observatory-catalog__examples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.api-observatory-catalog__meta > div,
+.api-observatory-catalog__schemas > div,
+.api-observatory-catalog__examples > div {
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 10px;
+  min-width: 0;
+}
+
+.api-observatory-catalog h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #bfdbfe;
+}
+
+.api-observatory-catalog table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.api-observatory-catalog th,
+.api-observatory-catalog td {
+  border-top: 1px solid rgba(30, 41, 59, 0.75);
+  padding: 6px;
+  text-align: left;
+}
+
+.api-observatory-catalog pre {
+  margin: 0;
+  overflow: auto;
+  background: rgba(2, 6, 23, 0.9);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12px;
+}
+
+.api-observatory-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.api-observatory-chip-list span {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.api-observatory-catalog__warning,
+.api-observatory-catalog__performance,
+.api-observatory-catalog__mermaid-block {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.74);
+  padding: 10px;
+}
+
+.api-observatory-catalog__warning {
+  border-color: rgba(248, 113, 113, 0.55);
+  background: rgba(127, 29, 29, 0.22);
+}
+
+/* Request Builder */
+
+.api-observatory-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.api-observatory-builder__top-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.api-observatory-builder__tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.api-observatory-builder__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(71, 85, 105, 0.65);
+  background: rgba(15, 23, 42, 0.82);
+  padding: 8px 10px;
+}
+
+.api-observatory-builder__tab.is-active {
+  border-color: rgba(139, 92, 246, 0.7);
+  background: rgba(91, 33, 182, 0.24);
+}
+
+.api-observatory-builder__tab-close {
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.api-observatory-builder__tab-add {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px dashed rgba(139, 92, 246, 0.6);
+}
+
+.api-observatory-builder__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.api-observatory-builder__request-row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+
+.api-observatory-builder__request-row input {
+  min-width: 0;
+}
+
+.api-observatory-builder__editor-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  gap: 12px;
+}
+
+.api-observatory-builder__editor-grid section {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.74);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.api-observatory-builder__editor-grid h3 {
+  margin: 0;
+  font-size: 13px;
+  color: #bfdbfe;
+}
+
+.api-observatory-builder__editor-grid textarea,
+.api-observatory-collections textarea,
+.api-observatory-collections input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.api-observatory-builder__auth-row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.api-observatory-builder__body-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.api-observatory-builder__body-controls button.is-active {
+  border-color: rgba(139, 92, 246, 0.7);
+  background: rgba(91, 33, 182, 0.24);
+}
+
+.api-observatory-builder__none-body {
+  border: 1px dashed rgba(71, 85, 105, 0.7);
+  border-radius: 10px;
+  padding: 12px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.api-observatory-builder__templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.api-observatory-builder__response {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.74);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.api-observatory-builder__response > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.api-observatory-builder__response-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.api-observatory-builder__response-grid > div {
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 10px;
+  padding: 10px;
+  min-width: 0;
+}
+
+.api-observatory-builder__response-grid pre {
+  margin: 0;
+  overflow: auto;
+  background: rgba(2, 6, 23, 0.92);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.api-observatory-builder__response-grid li.is-pass {
+  color: #86efac;
+}
+
+.api-observatory-builder__response-grid li.is-fail {
+  color: #fca5a5;
+}
+
+.api-observatory-builder__history {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 10px;
+}
+
+.api-observatory-builder__history > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.api-observatory-builder__history-list {
+  max-height: 260px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.api-observatory-builder__history-list > button {
+  text-align: left;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.92);
+  padding: 6px 8px;
+}
+
+.api-observatory-builder__diff {
+  margin-top: 10px;
+}
+
+/* Websocket */
+
+.api-observatory-websocket__layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.api-observatory-websocket__connections,
+.api-observatory-websocket__messages {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.74);
+  padding: 10px;
+  min-width: 0;
+}
+
+.api-observatory-websocket h3,
+.api-observatory-traffic h3,
+.api-observatory-collections h3 {
+  margin: 0 0 8px;
+  color: #bfdbfe;
+  font-size: 14px;
+}
+
+.api-observatory-websocket__new-connection,
+.api-observatory-websocket__templates,
+.api-observatory-websocket__recording,
+.api-observatory-websocket__filters,
+.api-observatory-collections__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.api-observatory-websocket__connection-list,
+.api-observatory-websocket__message-list {
+  max-height: 280px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.api-observatory-websocket__connection {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.9);
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.api-observatory-websocket__connection p {
+  margin: 2px 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.api-observatory-websocket__connection--open {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.api-observatory-websocket__connection--error,
+.api-observatory-websocket__connection--closed {
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
+.api-observatory-websocket__message {
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.9);
+  padding: 8px;
+}
+
+.api-observatory-websocket__message header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.api-observatory-websocket__message header span {
+  color: #94a3b8;
+}
+
+.api-observatory-websocket__message--sent {
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
+.api-observatory-websocket__message--received {
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.api-observatory-websocket__message--system {
+  border-color: rgba(139, 92, 246, 0.45);
+}
+
+/* Traffic */
+
+.api-observatory-traffic {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.api-observatory-traffic__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.api-observatory-traffic__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.api-observatory-traffic__stats-grid > div {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.74);
+}
+
+.api-observatory-traffic__stats-grid span {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.api-observatory-traffic__stats-grid strong {
+  display: block;
+  margin-top: 5px;
+}
+
+.api-observatory-traffic__waterfall {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 10px;
+}
+
+.api-observatory-traffic__waterfall-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.api-observatory-traffic__bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  background: rgba(30, 41, 59, 0.84);
+  color: #e2e8f0;
+  padding: 4px 8px;
+  min-width: 180px;
+}
+
+.api-observatory-traffic__bar--get { border-color: rgba(34, 197, 94, 0.55); }
+.api-observatory-traffic__bar--post { border-color: rgba(59, 130, 246, 0.55); }
+.api-observatory-traffic__bar--put,
+.api-observatory-traffic__bar--patch { border-color: rgba(249, 115, 22, 0.55); }
+.api-observatory-traffic__bar--delete { border-color: rgba(248, 113, 113, 0.55); }
+
+.api-observatory-traffic__layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.9fr;
+  gap: 10px;
+}
+
+.api-observatory-traffic__table,
+.api-observatory-traffic__detail,
+.api-observatory-traffic__sessions,
+.api-observatory-traffic__analytics,
+.api-observatory-collections aside,
+.api-observatory-collections main {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.74);
+  padding: 10px;
+  min-width: 0;
+}
+
+.api-observatory-traffic__table-rows,
+.api-observatory-traffic__session-list,
+.api-observatory-collections__list,
+.api-observatory-collections__requests,
+.api-observatory-collections__results {
+  max-height: 280px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.api-observatory-traffic__row {
+  text-align: left;
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.92);
+  padding: 6px;
+  display: grid;
+  grid-template-columns: 90px auto auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.api-observatory-traffic__row.is-selected {
+  border-color: rgba(139, 92, 246, 0.75);
+}
+
+.api-observatory-traffic__import {
+  display: block;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.api-observatory-traffic__import input {
+  margin-top: 6px;
+  width: 100%;
+}
+
+.api-observatory-traffic__analytics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.api-observatory-traffic__analytics h4 {
+  margin: 0 0 8px;
+}
+
+/* Collections */
+
+.api-observatory-collections {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.api-observatory-collections__header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.api-observatory-collections__content {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.api-observatory-collections__list button,
+.api-observatory-collections__session-list button,
+.api-observatory-collections__requests article {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.92);
+  padding: 8px;
+  text-align: left;
+}
+
+.api-observatory-collections__list button.is-selected {
+  border-color: rgba(139, 92, 246, 0.75);
+}
+
+.api-observatory-collections__requests article header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.api-observatory-collections__runner {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.9);
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.api-observatory-collections__runner h4,
+.api-observatory-collections__runner h5 {
+  margin: 0 0 8px;
+}
+
+.api-observatory-collections__results li.is-pass {
+  color: #86efac;
+}
+
+.api-observatory-collections__results li.is-fail {
+  color: #fecaca;
+}
+
+/* Responsive */
+
+@media (max-width: 1200px) {
+  .api-observatory-page__content {
+    grid-template-columns: 1fr;
+  }
+
+  .api-observatory-topology {
+    order: 2;
+  }
+
+  .api-observatory-page__main {
+    order: 1;
+  }
+
+  .api-observatory-catalog {
+    grid-template-columns: 1fr;
+  }
+
+  .api-observatory-builder__editor-grid,
+  .api-observatory-websocket__layout,
+  .api-observatory-traffic__layout,
+  .api-observatory-collections__header,
+  .api-observatory-collections__content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .api-observatory-page {
+    padding: 14px;
+  }
+
+  .api-observatory-page__header {
+    grid-template-columns: 1fr;
+  }
+
+  .api-observatory-page__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .api-observatory-page__toolbar-actions,
+  .api-observatory-traffic__controls,
+  .api-observatory-builder__toolbar,
+  .api-observatory-builder__request-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .api-observatory-traffic__waterfall-bars {
+    display: none;
+  }
+
+  .api-observatory-websocket__message-list,
+  .api-observatory-traffic__table-rows,
+  .api-observatory-collections__requests,
+  .api-observatory-collections__results {
+    max-height: none;
+  }
+}

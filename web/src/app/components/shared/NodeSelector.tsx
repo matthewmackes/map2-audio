@@ -1,4 +1,4 @@
-import { CaretDown, CheckCircle } from '@phosphor-icons/react'
+import { Select, SelectItem } from '@carbon/react'
 import { memo, useMemo } from 'react'
 
 import { useCluster } from '../../contexts/ClusterContext'
@@ -21,41 +21,28 @@ export const NodeSelector = memo(function NodeSelector() {
   }
 
   return (
-    <div className="node-selector" style={{ marginRight: 8 }}>
-      <div className="node-selector-label" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#e5e7eb' }}>
-        <CheckCircle size={14} weight="duotone" color="#22c55e" />
-        <span style={{ fontSize: 12 }}>Node</span>
-      </div>
-      <div className="node-selector-control" style={{ position: 'relative' }}>
-        <select
-          value={activeNodeId ?? localNodeId}
-          onChange={(e) => {
-            const value = e.target.value
-            setActiveNode(value === localNodeId ? null : value)
-          }}
-          style={{
-            background: '#0f172a',
-            border: '1px solid #1f2937',
-            color: '#e5e7eb',
-            padding: '6px 28px 6px 10px',
-            borderRadius: 6,
-            fontSize: 12,
-            minWidth: 150,
-            appearance: 'none',
-          }}
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.online ? '●' : '○'} {o.label} {o.latency !== null ? `· ${o.latency.toFixed(1)}ms` : ''}
-            </option>
-          ))}
-          <option value="all">● All nodes</option>
-        </select>
-        <CaretDown
-          size={12}
-          style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#94a3b8' }}
-        />
-      </div>
+    <div className="node-selector">
+      <Select
+        id="cluster-node-selector"
+        aria-label="Select cluster node"
+        labelText="Cluster node"
+        hideLabel
+        size="sm"
+        value={activeNodeId ?? localNodeId}
+        onChange={(event) => {
+          const value = event.currentTarget.value
+          setActiveNode(value === localNodeId ? null : value)
+        }}
+      >
+        {options.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            text={`${option.online ? 'Online' : 'Offline'} · ${option.label}${option.latency !== null ? ` · ${option.latency.toFixed(1)}ms` : ''}`}
+          />
+        ))}
+        <SelectItem value="all" text="Online · All nodes" />
+      </Select>
     </div>
   )
 })

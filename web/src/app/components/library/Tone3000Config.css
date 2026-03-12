@@ -1,0 +1,136 @@
+.tone3000-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05, 1rem);
+  padding: var(--cds-spacing-05, 1rem);
+  border-left: 3px solid var(--cds-support-info);
+  background: var(--cds-layer-01);
+}
+
+.tone3000-config__header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cds-spacing-05, 1rem);
+  flex-wrap: wrap;
+}
+
+.tone3000-config__header-main {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.tone3000-config__title {
+  font-size: var(--cds-heading-compact-01-font-size, 1rem);
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  text-transform: none;
+}
+
+.tone3000-config__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.tone3000-config__description {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: 1.5;
+}
+
+.tone3000-config__progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: var(--cds-spacing-04, 0.75rem);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+}
+
+.tone3000-config__progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.tone3000-config__progress-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-05, 1rem);
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.tone3000-config__progress-stats span:last-child {
+  color: var(--cds-support-error);
+}
+
+.tone3000-config__current-file {
+  margin: 0;
+  color: var(--cds-text-helper);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.tone3000-config__setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04, 0.75rem);
+}
+
+.tone3000-config__setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.tone3000-config__setup-steps {
+  margin: 0;
+  padding-left: var(--cds-spacing-05, 1rem);
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: 1.5;
+}
+
+.tone3000-config__credentials {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.tone3000-config__text-input .cds--text-input-wrapper {
+  margin-bottom: 0;
+}
+
+.tone3000-config__credentials-actions {
+  display: flex;
+  gap: var(--cds-spacing-03, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.tone3000-config__sample-models {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02, 0.25rem);
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.tone3000-config__sample-title {
+  color: var(--cds-text-primary);
+  font-weight: 600;
+}
+
+.tone3000-config__sample-models ul {
+  margin: 0;
+  padding-left: var(--cds-spacing-05, 1rem);
+}
+
+.tone3000-config__expiry {
+  margin: 0;
+  color: var(--cds-text-helper);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}

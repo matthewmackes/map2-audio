@@ -59,6 +59,7 @@ class SpecialSettingsResponse(BaseModel):
     hidden_plugins: List[str] = []
     menu_location: str = "top-nav"
     pinned_routes: List[str] = Field(default_factory=list)
+    last_active_node: Optional[str] = None
     version: int = 1
     last_updated: Optional[str] = None  # ISO timestamp
     updated_by_node: Optional[str] = None
@@ -80,6 +81,7 @@ class SpecialSettingsUpdateRequest(BaseModel):
     hidden_plugins: List[str]
     menu_location: str  # "top-nav" | "mobile-only" | "hidden"
     pinned_routes: List[str] = Field(default_factory=list)
+    last_active_node: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod

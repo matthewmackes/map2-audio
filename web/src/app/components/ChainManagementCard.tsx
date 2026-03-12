@@ -58,7 +58,7 @@ export function ChainManagementCard({
   // Fetch chains
   const chainsQuery = useQuery<ChainsResponse>({
     queryKey: ['chains'],
-    queryFn: chainsApi.list,
+    queryFn: () => chainsApi.list(),
     refetchInterval: 5000,
   })
 

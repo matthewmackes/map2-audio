@@ -47,9 +47,9 @@ describe('NodeSelector', () => {
 
     const options = screen.getAllByRole('option').map((option) => option.textContent)
     expect(options).toEqual([
-      '● local-rack (local) · 0.0ms',
-      '○ rack-b · 12.5ms',
-      '● All nodes',
+      'Online · local-rack (local) · 0.0ms',
+      'Offline · rack-b · 12.5ms',
+      'Online · All nodes',
     ])
   })
 

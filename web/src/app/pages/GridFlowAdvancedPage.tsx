@@ -25,7 +25,7 @@ import { chainsApi } from '../../map2/api'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { useToasts } from '../components/Toasts'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, ChainPlugin } from '../../map2/types'
+import type { Chain, ChainPlugin, ChainsResponse } from '../../map2/types'
 
 const LazyScene3D = lazy(() =>
   import('../components/GridFlowAdvanced/3d/Scene3D').then((module) => ({ default: module.Scene3D })),
@@ -542,9 +542,9 @@ export function GridFlowAdvancedPage() {
     isFetching,
     error,
     refetch,
-  } = useQuery({
+  } = useQuery<ChainsResponse>({
     queryKey: ['chains'],
-    queryFn: chainsApi.list,
+    queryFn: () => chainsApi.list(),
     retry: 1,
     refetchOnWindowFocus: false,
   })

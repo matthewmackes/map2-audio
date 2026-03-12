@@ -57,16 +57,17 @@ export function MidiClusterPage() {
         title="MIDI Cluster"
         icon={<ShareNetwork size={28} />}
         subtitle="Discover nodes, connect endpoints, and monitor distributed MIDI clock in real time."
-      >
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" onClick={() => forceSync.mutate()} disabled={forceSync.isPending}>
-            Force re-sync
-          </Button>
-          <Button variant="contained" onClick={() => autoConnect.mutate()} disabled={autoConnect.isPending}>
-            Auto-connect
-          </Button>
-        </Stack>
-      </PageHeader>
+        actions={
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" onClick={() => forceSync.mutate()} disabled={forceSync.isPending}>
+              Force re-sync
+            </Button>
+            <Button variant="contained" onClick={() => autoConnect.mutate()} disabled={autoConnect.isPending}>
+              Auto-connect
+            </Button>
+          </Stack>
+        }
+      />
 
       {summaryQuery.data?.enabled === false && (
         <Alert severity="warning" icon={<WarningOctagon size={18} />} sx={{ mb: 2 }}>

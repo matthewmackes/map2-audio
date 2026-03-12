@@ -1,17 +1,13 @@
-/**
- * PresetImportDialog - Universal preset import with drag-and-drop
- *
- * Supports:
- * - MAP2UPF (.map2preset) - Primary format
- * - FXP/FXB (.fxp, .fxb) - VST2 legacy
- * - VST3 (.vstpreset) - Modern VST3
- * - LV2 (.lv2preset, .ttl) - Linux native
- * - JUCE (.jucepreset) - JUCE state files
- */
-
-import { useState, useCallback, DragEvent, ChangeEvent } from 'react'
-import { UploadSimple, FileArrowUp, CheckCircle, WarningCircle, X, SpinnerGap } from '@phosphor-icons/react'
-import { useIsMobile } from '../../hooks/useIsMobile'
+import { useState, useCallback } from 'react'
+import {
+  FileUploaderDropContainer,
+  FileUploaderItem,
+  InlineLoading,
+  InlineNotification,
+  Modal,
+  Tag,
+} from '@carbon/react'
+import './PresetImportDialog.css'
 
 interface PresetImportDialogProps {
   isOpen: boolean
@@ -41,7 +37,7 @@ const SUPPORTED_FORMATS = [
   { ext: '.jucepreset', name: 'JUCE State' },
 ]
 
-const ACCEPTED_EXTENSIONS = SUPPORTED_FORMATS.map(f => f.ext).join(',')
+const ACCEPTED_EXTENSIONS = SUPPORTED_FORMATS.map((format) => format.ext)
 
 export function PresetImportDialog({
   isOpen,
@@ -49,49 +45,34 @@ export function PresetImportDialog({
   onImportSuccess,
   targetPluginUri,
 }: PresetImportDialogProps) {
-  const isMobile = useIsMobile()
   const [file, setFile] = useState<File | null>(null)
-  const [dragOver, setDragOver] = useState(false)
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const handleDragOver = useCallback((e: DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragOver(true)
+  const resetState = useCallback(() => {
+    setFile(null)
+    setResult(null)
+    setError(null)
+    setImporting(false)
   }, [])
 
-  const handleDragLeave = useCallback((e: DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragOver(false)
-  }, [])
-
-  const handleDrop = useCallback((e: DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragOver(false)
-
-    const droppedFile = e.dataTransfer.files[0]
-    if (droppedFile) {
-      setFile(droppedFile)
-      setResult(null)
-      setError(null)
-    }
-  }, [])
-
-  const handleFileSelect = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile) {
-      setFile(selectedFile)
-      setResult(null)
-      setError(null)
-    }
-  }, [])
+  const handleAddFiles = useCallback(
+    (_event: React.SyntheticEvent<HTMLElement>, content: { addedFiles: Array<File & { invalidFileType?: boolean }> }) => {
+      const selectedFile = content.addedFiles[0]
+      if (selectedFile) {
+        setFile(selectedFile)
+        setResult(null)
+        setError(null)
+      }
+    },
+    [],
+  )
 
   const handleImport = useCallback(async () => {
-    if (!file) return
+    if (!file) {
+      return
+    }
 
     setImporting(true)
     setError(null)
@@ -112,252 +93,126 @@ export function PresetImportDialog({
         body: formData,
       })
 
-      const data = await response.json()
+      const data = (await response.json()) as ImportResult | { detail?: string }
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Import failed')
+        throw new Error((data as { detail?: string }).detail || 'Import failed')
       }
 
-      setResult(data)
+      const importResult = data as ImportResult
+      setResult(importResult)
 
-      if (data.success && onImportSuccess && data.preset_id) {
-        onImportSuccess(data.preset_id, data.name)
+      if (importResult.success && onImportSuccess && importResult.preset_id) {
+        onImportSuccess(importResult.preset_id, importResult.name)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import failed')
     } finally {
       setImporting(false)
     }
-  }, [file, targetPluginUri, onImportSuccess])
+  }, [file, onImportSuccess, targetPluginUri])
 
   const handleClose = useCallback(() => {
-    setFile(null)
-    setResult(null)
-    setError(null)
+    resetState()
     onClose()
-  }, [onClose])
-
-  if (!isOpen) return null
+  }, [onClose, resetState])
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        alignItems: isMobile ? 'stretch' : 'center',
-        justifyContent: isMobile ? 'stretch' : 'center',
-        zIndex: 1000,
+    <Modal
+      open={isOpen}
+      size="md"
+      modalHeading="Import preset"
+      modalLabel="Preset exchange"
+      primaryButtonText={result?.success ? 'Done' : 'Import'}
+      secondaryButtonText="Cancel"
+      primaryButtonDisabled={!result?.success && (!file || importing)}
+      onRequestClose={handleClose}
+      onSecondarySubmit={handleClose}
+      onRequestSubmit={() => {
+        if (result?.success) {
+          handleClose()
+          return
+        }
+        void handleImport()
       }}
-      onClick={handleClose}
+      selectorPrimaryFocus="#preset-import-dropzone"
     >
-      <div
-        style={{
-          background: 'var(--bg-secondary, #1e1e2e)',
-          borderRadius: isMobile ? 0 : '12px',
-          padding: isMobile ? '16px' : '24px',
-          maxWidth: isMobile ? '100vw' : '500px',
-          width: isMobile ? '100vw' : '90%',
-          maxHeight: isMobile ? '100vh' : '80vh',
-          minHeight: isMobile ? '100vh' : undefined,
-          overflow: 'auto',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600 }}>Import Preset</h2>
-          <button
-            onClick={handleClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px',
-              display: 'flex',
-              color: 'var(--text-secondary, #888)',
-            }}
-          >
-            <X size={20} weight="bold" />
-          </button>
-        </div>
-
-        {/* Supported Formats */}
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #888)', marginBottom: '8px' }}>
-            Supported formats:
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {SUPPORTED_FORMATS.map((fmt) => (
-              <span
-                key={fmt.ext}
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem',
-                  background: fmt.primary ? 'var(--accent, #7c3aed)' : 'var(--bg-tertiary, #2a2a3e)',
-                  color: fmt.primary ? 'white' : 'var(--text-secondary, #888)',
-                }}
-              >
-                {fmt.ext}
-              </span>
+      <div className="preset-import-dialog">
+        <section className="preset-import-dialog__formats">
+          <p>Supported formats</p>
+          <div className="preset-import-dialog__format-tags">
+            {SUPPORTED_FORMATS.map((format) => (
+              <Tag key={format.ext} type={format.primary ? 'blue' : 'cool-gray'} size="sm">
+                {format.ext}
+              </Tag>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Drop Zone */}
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById('preset-file-input')?.click()}
-          style={{
-            border: `2px dashed ${dragOver ? 'var(--accent, #7c3aed)' : 'var(--border, #444)'}`,
-            borderRadius: '8px',
-            padding: '32px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            background: dragOver ? 'var(--bg-hover, rgba(124, 58, 237, 0.1))' : 'transparent',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          {file ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <FileArrowUp size={40} weight="duotone" style={{ color: 'var(--accent, #7c3aed)' }} />
-              <span style={{ fontWeight: 500 }}>{file.name}</span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #888)' }}>
-                {(file.size / 1024).toFixed(1)} KB
-              </span>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <UploadSimple size={40} weight="duotone" style={{ color: 'var(--text-secondary, #888)' }} />
-              <span>Drop preset file here or click to browse</span>
-            </div>
-          )}
-          <input
-            id="preset-file-input"
-            type="file"
-            accept={ACCEPTED_EXTENSIONS}
-            onChange={handleFileSelect}
-            style={{ display: 'none' }}
+        <FileUploaderDropContainer
+          id="preset-import-dropzone"
+          labelText="Drop preset file here or click to browse"
+          accept={ACCEPTED_EXTENSIONS}
+          multiple={false}
+          onAddFiles={handleAddFiles}
+          className="preset-import-dialog__dropzone"
+        />
+
+        {file && (
+          <FileUploaderItem
+            uuid={`preset-import-${file.name}`}
+            name={file.name}
+            status="edit"
+            size="md"
+            className="preset-import-dialog__file"
           />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '12px',
-              borderRadius: '8px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <WarningCircle size={18} weight="duotone" style={{ color: '#ef4444' }} />
-            <span style={{ color: '#ef4444' }}>{error}</span>
-          </div>
         )}
 
-        {/* Success */}
+        {importing && <InlineLoading description="Importing preset" status="active" />}
+
+        {error && (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Import failed"
+            subtitle={error}
+          />
+        )}
+
         {result?.success && (
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '12px',
-              borderRadius: '8px',
-              background: 'rgba(34, 197, 94, 0.1)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <CheckCircle size={18} weight="duotone" style={{ color: '#22c55e' }} />
-              <span style={{ color: '#22c55e', fontWeight: 500 }}>Imported successfully!</span>
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #888)' }}>
-              <div><strong>Name:</strong> {result.name}</div>
-              <div><strong>Format:</strong> {result.original_format}</div>
-              <div><strong>Parameters:</strong> {result.parameters_imported}</div>
+          <section className="preset-import-dialog__result">
+            <InlineNotification
+              kind="success"
+              lowContrast
+              hideCloseButton
+              title="Imported successfully"
+              subtitle={result.message || `${result.parameters_imported} parameters imported from ${result.original_format}`}
+            />
+            <div className="preset-import-dialog__result-details">
+              <p>
+                <strong>Name:</strong> {result.name}
+              </p>
+              <p>
+                <strong>Format:</strong> {result.original_format}
+              </p>
+              <p>
+                <strong>Parameters:</strong> {result.parameters_imported}
+              </p>
             </div>
             {result.warnings.length > 0 && (
-              <div style={{ marginTop: '8px', fontSize: '0.8rem', color: '#f59e0b' }}>
-                {result.warnings.map((w, i) => (
-                  <div key={i}>⚠️ {w}</div>
+              <div className="preset-import-dialog__warnings">
+                {result.warnings.map((warning) => (
+                  <Tag key={warning} type="warm-gray" size="sm">
+                    {warning}
+                  </Tag>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         )}
-
-        {/* Actions */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '12px',
-            marginTop: '20px',
-            position: isMobile ? 'sticky' : 'static',
-            bottom: 0,
-            background: isMobile ? 'var(--surface)' : 'transparent',
-            paddingTop: isMobile ? 12 : 0,
-          }}
-        >
-          <button
-            onClick={handleClose}
-            style={{
-              flex: 1,
-              padding: '10px 16px',
-              borderRadius: '6px',
-              border: '1px solid var(--border, #444)',
-              background: 'transparent',
-              cursor: 'pointer',
-              color: 'var(--text-primary, #fff)',
-            }}
-          >
-            {result?.success ? 'Done' : 'Cancel'}
-          </button>
-          {!result?.success && (
-            <button
-              onClick={handleImport}
-              disabled={!file || importing}
-              style={{
-                flex: 1,
-                padding: '10px 16px',
-                borderRadius: '6px',
-                border: 'none',
-                background: file && !importing ? 'var(--accent, #7c3aed)' : 'var(--bg-tertiary, #2a2a3e)',
-                cursor: file && !importing ? 'pointer' : 'not-allowed',
-                color: 'white',
-                fontWeight: 500,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
-            >
-              {importing ? (
-                <>
-                  <SpinnerGap size={18} weight="duotone" className="animate-spin" />
-                  Importing...
-                </>
-              ) : (
-                <>
-                  <UploadSimple size={18} weight="duotone" />
-                  Import
-                </>
-              )}
-            </button>
-          )}
-        </div>
       </div>
-    </div>
+    </Modal>
   )
 }
 

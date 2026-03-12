@@ -10,6 +10,16 @@
 
 import { useMemo } from 'react'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+} from '@carbon/react'
+import {
   Box,
   Paper,
   Typography,
@@ -18,16 +28,11 @@ import {
   CardContent,
   Chip,
   LinearProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Tooltip,
   Divider,
 } from '@mui/material'
 import { useMultiSystemMonitoring } from '@/app/hooks/useMultiSystemMonitoring'
+import './MultiNodeMonitoringTab.css'
 
 export function MultiNodeMonitoringTab() {
   const { systems, getComparisons, getStats, getSystemsRankedBy } = useMultiSystemMonitoring()
@@ -531,55 +536,65 @@ export function MultiNodeMonitoringTab() {
             {comparisons.map((comparison) => (
               <Grid item xs={12} md={6} key={comparison.metric}>
                 <Box className="cluster-grid-scroll-wrap">
-                  <TableContainer component={Paper}>
-                    <Table size="small" className="cluster-grid-table">
-                    <TableHead sx={{ backgroundColor: '#f3f4f6' }}>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>System</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600 }}>
-                          {comparison.metric} ({comparison.unit})
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {Object.entries(comparison.values)
-                        .sort(([, a], [, b]) => b - a)
-                        .map(([systemId, value], index) => {
-                          const system = systems.find((s) => s.systemId === systemId)
-                          const isHighest = systemId === comparison.highest.systemId
-                          const isLowest = systemId === comparison.lowest.systemId
+                  <Paper>
+                    <TableContainer>
+                      <Table size="sm" className="cluster-grid-table multi-node-monitoring-tab__comparison-table">
+                        <TableHead>
+                          <TableRow>
+                            <TableHeader className="multi-node-monitoring-tab__table-header">System</TableHeader>
+                            <TableHeader className="multi-node-monitoring-tab__table-header multi-node-monitoring-tab__cell--right">
+                              {comparison.metric} ({comparison.unit})
+                            </TableHeader>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {Object.entries(comparison.values)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([systemId, value], index) => {
+                              const system = systems.find((s) => s.systemId === systemId)
+                              const isHighest = systemId === comparison.highest.systemId
+                              const isLowest = systemId === comparison.lowest.systemId
 
-                          return (
-                            <TableRow
-                              key={systemId}
-                              sx={{
-                                backgroundColor: isHighest
-                                  ? 'rgba(239, 68, 68, 0.1)'
-                                  : isLowest
-                                    ? 'rgba(16, 185, 129, 0.1)'
-                                    : 'transparent',
-                              }}
-                            >
-                              <TableCell sx={{ fontWeight: 500 }}>
-                                {index + 1}. {system?.systemName || systemId}
-                              </TableCell>
-                              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                                {value.toFixed(1)}
-                                {isHighest && <span style={{ color: '#ef4444' }}> 🔴</span>}
-                                {isLowest && <span style={{ color: '#10b981' }}> 🟢</span>}
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      <TableRow sx={{ backgroundColor: '#f9fafb', fontWeight: 600 }}>
-                        <TableCell>Average</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600, color: '#3b82f6' }}>
-                          {comparison.average.toFixed(1)}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                    </Table>
-                  </TableContainer>
+                              return (
+                                <TableRow
+                                  key={systemId}
+                                  className={
+                                    isHighest
+                                      ? 'multi-node-monitoring-tab__comparison-row is-highest'
+                                      : isLowest
+                                        ? 'multi-node-monitoring-tab__comparison-row is-lowest'
+                                        : 'multi-node-monitoring-tab__comparison-row'
+                                  }
+                                >
+                                  <TableCell className="multi-node-monitoring-tab__system-cell">
+                                    {index + 1}. {system?.systemName || systemId}
+                                  </TableCell>
+                                  <TableCell className="multi-node-monitoring-tab__cell--right multi-node-monitoring-tab__value-cell">
+                                    <span>{value.toFixed(1)}</span>
+                                    {isHighest && (
+                                      <Tag size="sm" type="red">
+                                        High
+                                      </Tag>
+                                    )}
+                                    {isLowest && (
+                                      <Tag size="sm" type="green">
+                                        Low
+                                      </Tag>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          <TableRow className="multi-node-monitoring-tab__comparison-row is-average">
+                            <TableCell className="multi-node-monitoring-tab__system-cell">Average</TableCell>
+                            <TableCell className="multi-node-monitoring-tab__cell--right multi-node-monitoring-tab__average-cell">
+                              {comparison.average.toFixed(1)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Paper>
                   <Box className="cluster-grid-scroll-hint" aria-hidden="true" />
                 </Box>
               </Grid>

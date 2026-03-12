@@ -1,15 +1,19 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Box,
-  Typography,
-  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
+  TableHeader,
   TableRow,
+  Tag,
+} from '@carbon/react'
+import {
+  Box,
+  Typography,
+  Paper,
   Chip,
   LinearProgress,
   Stack,
@@ -27,6 +31,7 @@ import {
 } from './clusterData'
 import { useAVBStatus, useAVBStreams, useAVBDiscovery, usePTPStatus, useTsnStatus } from '../../hooks/useAvbStatus'
 import { useAvbDevices, useAvdeccEntities, useAvdeccStats } from '../AvbRouting/hooks/useAvbApi'
+import './AVBNetworkTab.css'
 
 type UnknownRecord = Record<string, unknown>
 
@@ -80,6 +85,26 @@ function stateColor(status: string) {
     return 'error'
   }
   return 'warning'
+}
+
+function streamStateTagType(status: string): 'green' | 'red' | 'warm-gray' {
+  if (status === 'running' || status === 'synced' || status === 'master' || status === 'slave') {
+    return 'green'
+  }
+  if (status === 'error' || status === 'warning') {
+    return 'red'
+  }
+  return 'warm-gray'
+}
+
+function nodeStatusTagType(status: string): 'green' | 'red' | 'warm-gray' {
+  if (status === 'ONLINE') {
+    return 'green'
+  }
+  if (status === 'OFFLINE') {
+    return 'red'
+  }
+  return 'warm-gray'
 }
 
 export function AVBNetworkTab() {
@@ -389,17 +414,17 @@ export function AVBNetworkTab() {
             No active AVB streams detected for this node.
           </Typography>
         ) : (
-          <TableContainer>
-            <Table size="small">
+          <TableContainer className="avb-network-tab__table-container">
+            <Table size="sm" className="avb-network-tab__table">
               <TableHead>
                 <TableRow>
-                  <TableCell>Stream</TableCell>
-                  <TableCell align="center">Direction</TableCell>
-                  <TableCell align="center">State</TableCell>
-                  <TableCell align="right">Cfg</TableCell>
-                  <TableCell align="right">Frames Sent</TableCell>
-                  <TableCell align="right">Errors</TableCell>
-                  <TableCell align="left">Readiness</TableCell>
+                  <TableHeader>Stream</TableHeader>
+                  <TableHeader className="avb-network-tab__cell--center">Direction</TableHeader>
+                  <TableHeader className="avb-network-tab__cell--center">State</TableHeader>
+                  <TableHeader className="avb-network-tab__cell--right">Cfg</TableHeader>
+                  <TableHeader className="avb-network-tab__cell--right">Frames sent</TableHeader>
+                  <TableHeader className="avb-network-tab__cell--right">Errors</TableHeader>
+                  <TableHeader>Readiness</TableHeader>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -416,54 +441,39 @@ export function AVBNetworkTab() {
                   return (
                     <TableRow key={stream.stream_id}>
                       <TableCell>
-                        <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{stream.stream_id}</Typography>
-                        <Typography sx={{ fontSize: 11, color: '#6b7280' }}>
+                        <div className="avb-network-tab__cell-primary">{stream.stream_id}</div>
+                        <div className="avb-network-tab__cell-secondary">
                           {toStringValue(cfg.interface || stream.interface, 'unknown interface')}
-                        </Typography>
+                        </div>
                       </TableCell>
-                      <TableCell align="center">{stream.direction}</TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          size="small"
-                          color={stateColor(stream.state) as 'success' | 'warning' | 'error'}
-                          label={stream.state}
-                          variant="outlined"
-                        />
+                      <TableCell className="avb-network-tab__cell--center">{stream.direction}</TableCell>
+                      <TableCell className="avb-network-tab__cell--center">
+                        <Tag type={streamStateTagType(stream.state)}>{stream.state}</Tag>
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell className="avb-network-tab__cell--right">
                         {formatInteger(cfg.channels || stream.channels)}ch @{' '}
                         {formatInteger(cfg.sample_rate || stream.sample_rate, 48000)} Hz
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell className="avb-network-tab__cell--right">
                         {formatInteger(stats.frames_sent)} / {formatInteger(stats.frames_received)}
                       </TableCell>
-                      <TableCell align="right">
-                        <Typography sx={{ color: frameErrors > 0 ? '#dc2626' : '#16a34a' }}>
-                          {frameErrors}
-                        </Typography>
+                      <TableCell className={`avb-network-tab__cell--right ${frameErrors > 0 ? 'is-error' : 'is-ok'}`}>
+                        {frameErrors}
                       </TableCell>
-                      <TableCell align="left">
-                        <Stack direction="row" spacing={1} useFlexGap>
-                          <Chip
-                            size="small"
-                            label={formatBoolStatus(health.ready)}
-                            color={health.ready ? 'success' : 'default'}
-                          />
+                      <TableCell>
+                        <div className="avb-network-tab__tag-list">
+                          <Tag type={health.ready ? 'green' : 'warm-gray'}>{formatBoolStatus(health.ready)}</Tag>
                           {(healthIssues > 0 || ptpHealth.locked !== undefined || typeof ptpHealth.state === 'string') && (
-                            <Chip
-                              size="small"
-                              color={streamPtpLocked ? 'success' : 'warning'}
-                              label={`PTP ${formatBoolStatus(streamPtpLocked, { trueLabel: 'Locked', falseLabel: 'Unlocked' })}`}
-                            />
+                            <Tag type={streamPtpLocked ? 'green' : 'warm-gray'}>
+                              {`PTP ${formatBoolStatus(streamPtpLocked, { trueLabel: 'Locked', falseLabel: 'Unlocked' })}`}
+                            </Tag>
                           )}
                           {(healthIssues > 0 || tsnHealth.available !== undefined || tsnHealth.interface !== undefined) && (
-                            <Chip
-                              size="small"
-                              color={stateColor((tsnHealth.available ? 'running' : 'warning')) as 'success' | 'warning' | 'error'}
-                              label={`TSN ${formatBoolStatus(tsnHealth.available)}`}
-                            />
+                            <Tag type={tsnHealth.available ? 'green' : 'warm-gray'}>
+                              {`TSN ${formatBoolStatus(tsnHealth.available)}`}
+                            </Tag>
                           )}
-                        </Stack>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
@@ -488,16 +498,16 @@ export function AVBNetworkTab() {
         )}
 
         <Divider sx={{ my: 2 }} />
-        <TableContainer>
-          <Table size="small">
+        <TableContainer className="avb-network-tab__table-container">
+          <Table size="sm" className="avb-network-tab__table">
             <TableHead>
               <TableRow>
-                <TableCell>Node</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Health</TableCell>
-                <TableCell align="right">Latency</TableCell>
-                <TableCell align="right">CPU</TableCell>
+                <TableHeader>Node</TableHeader>
+                <TableHeader>Role</TableHeader>
+                <TableHeader>Status</TableHeader>
+                <TableHeader className="avb-network-tab__cell--right">Health</TableHeader>
+                <TableHeader className="avb-network-tab__cell--right">Latency</TableHeader>
+                <TableHeader className="avb-network-tab__cell--right">CPU</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -506,27 +516,16 @@ export function AVBNetworkTab() {
                 return (
                   <TableRow key={node.nodeId}>
                     <TableCell>
-                      <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{node.hostname}</Typography>
-                      <Typography sx={{ fontSize: 11, color: '#6b7280' }}>{node.nodeId}</Typography>
+                      <div className="avb-network-tab__cell-primary">{node.hostname}</div>
+                      <div className="avb-network-tab__cell-secondary">{node.nodeId}</div>
                     </TableCell>
                     <TableCell>{node.role}</TableCell>
                     <TableCell>
-                      <Chip
-                        size="small"
-                        label={node.status}
-                        color={
-                          node.status === 'ONLINE'
-                            ? 'success'
-                            : node.status === 'DEGRADED'
-                              ? 'warning'
-                              : 'default'
-                        }
-                        variant={node.status === 'OFFLINE' ? 'outlined' : 'filled'}
-                      />
+                      <Tag type={nodeStatusTagType(node.status)}>{node.status}</Tag>
                     </TableCell>
-                    <TableCell align="right">{node.healthScore.toFixed(1)}%</TableCell>
-                    <TableCell align="right">{formatLatency(latest?.latencyMs ?? 0)}</TableCell>
-                    <TableCell align="right">
+                    <TableCell className="avb-network-tab__cell--right">{node.healthScore.toFixed(1)}%</TableCell>
+                    <TableCell className="avb-network-tab__cell--right">{formatLatency(latest?.latencyMs ?? 0)}</TableCell>
+                    <TableCell className="avb-network-tab__cell--right">
                       {latest ? `${latest.cpuPercent.toFixed(1)}%` : 'N/A'}
                     </TableCell>
                   </TableRow>

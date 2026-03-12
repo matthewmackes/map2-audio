@@ -1,7 +1,8 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { List, X, CaretRight, PushPin } from '@phosphor-icons/react'
+import { ChevronRight, Close, Menu, Pin, PinFilled, Settings } from '@carbon/icons-react'
+import { Accordion, AccordionItem, Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
 import { PasswordDialog } from '../components/PasswordDialog'
@@ -11,6 +12,7 @@ import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import { NodeSelector } from '../components/shared/NodeSelector'
 import {
+  advancedMenuItems,
   defaultPinnedRoutes,
   allRouteNavigationItems,
   hardwareInterfaceMenuItems,
@@ -26,21 +28,6 @@ import {
 } from '../data/advancedMenuItems'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { isBlockedAdvancedMenuItem } from './advancedMenuState'
-
-const DragonIcon = ({ size = 16, color = '#dc2626' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M12 2C10.5 2 9 3 8.5 4.5C8 6 8.5 7.5 9.5 8.5L7 11C6 10.5 4.5 10.5 3.5 11.5C2.5 12.5 2.5 14 3 15L2 16L3 17L4 16C5 16.5 6.5 16.5 7.5 15.5L10 18C9 19 9 20.5 9.5 21.5C10 22.5 11.5 23 13 22.5C14.5 22 15.5 20.5 15.5 19L18.5 16C19.5 17 21 17 22 16C22 14.5 21.5 13 20 12.5L21 10L19.5 9.5L18.5 11C17.5 10.5 16 11 15 12L12.5 9.5C13.5 8.5 14 7 13.5 5.5C13 4 11.5 3 10 3"
-      stroke={color}
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill={color}
-      fillOpacity="0.2"
-    />
-    <circle cx="10" cy="5" r="1" fill={color} />
-  </svg>
-)
 
 interface TopNavItem {
   to: string
@@ -89,11 +76,34 @@ function normalizeMidiValue(value: number, max = 127): number {
   return clamp01(value / max)
 }
 
+function maturityTagType(maturity: NavigationMaturityState): 'green' | 'cyan' | 'purple' | 'warm-gray' | 'red' {
+  switch (maturity) {
+    case 'production':
+      return 'green'
+    case 'qualified-with-waiver':
+      return 'cyan'
+    case 'beta':
+      return 'warm-gray'
+    case 'experimental':
+      return 'purple'
+    case 'hardware-blocked':
+      return 'red'
+    default:
+      return 'warm-gray'
+  }
+}
+
+function maturityTagLabel(maturity: NavigationMaturityState): string {
+  return maturity.replace(/-/g, ' ')
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
+  const [advancedMenuOpen, setAdvancedMenuOpen] = useState(false)
   const navMenuRef = useRef<HTMLDivElement>(null)
+  const advancedMenuRef = useRef<HTMLDivElement>(null)
   const [mpx1MenuOpen, setMpx1MenuOpen] = useState(false)
   const [topHardwareSubmenuOpen, setTopHardwareSubmenuOpen] = useState(false)
   const mpx1MenuRef = useRef<HTMLDivElement>(null)
@@ -168,6 +178,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       if (navMenuRef.current && !navMenuRef.current.contains(event.target as Node)) {
         setNavOpen(false)
       }
+      if (advancedMenuRef.current && !advancedMenuRef.current.contains(event.target as Node)) {
+        setAdvancedMenuOpen(false)
+      }
       if (mpx1MenuRef.current && !mpx1MenuRef.current.contains(event.target as Node)) {
         setMpx1MenuOpen(false)
       }
@@ -176,13 +189,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       }
     }
 
-    if (navOpen || mpx1MenuOpen || topHardwareSubmenuOpen) {
+    if (navOpen || advancedMenuOpen || mpx1MenuOpen || topHardwareSubmenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [navOpen, mpx1MenuOpen, topHardwareSubmenuOpen])
+  }, [advancedMenuOpen, navOpen, mpx1MenuOpen, topHardwareSubmenuOpen])
 
   useEffect(() => {
+    setAdvancedMenuOpen(false)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
   }, [location.pathname])
@@ -199,17 +213,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const handleMenuToggle = () => {
     const nextOpen = !navOpen
     setNavOpen(nextOpen)
+    setAdvancedMenuOpen(false)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
   }
 
   const closeMobileNavigation = () => {
     setNavOpen(false)
+    setAdvancedMenuOpen(false)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
   }
 
-  const handleDragonIconClick = () => {
+  const handleSpecialSettingsIconClick = () => {
     if (specialSettingsLoading) return
     setShowPasswordDialog(true)
   }
@@ -322,7 +338,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label={checked ? `Unpin ${item.label}` : `Pin ${item.label}`}
         aria-pressed={checked}
       >
-        <PushPin size={11} weight={checked ? 'fill' : 'regular'} aria-hidden />
+        {checked ? <PinFilled size={12} aria-hidden /> : <Pin size={12} aria-hidden />}
       </button>
     )
   }
@@ -338,12 +354,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         title={`${item.description} • ${item.maturity}`}
         style={{ '--tab-color': item.color } as CSSProperties}
         onClick={() => {
+          setAdvancedMenuOpen(false)
           setMpx1MenuOpen(false)
           setTopHardwareSubmenuOpen(false)
         }}
       >
         <span className="nav-tab-icon">
-          <Icon size={16} weight="duotone" aria-hidden />
+          <Icon size={16} aria-hidden />
         </span>
         {!item.iconOnly && <span className="nav-tab-label">{item.label}</span>}
       </NavLink>
@@ -373,10 +390,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-controls="mpx1-mega-menu"
         >
           <span className="nav-tab-icon">
-            <Icon size={16} weight="duotone" aria-hidden />
+            <Icon size={16} aria-hidden />
           </span>
           <span className="nav-tab-label">{item.label}</span>
-          <CaretRight size={12} weight="bold" className={`nav-tab-advanced-caret${mpx1MenuOpen ? ' is-open' : ''}`} />
+          <ChevronRight size={12} className={`nav-tab-advanced-caret${mpx1MenuOpen ? ' is-open' : ''}`} />
         </button>
 
         {mpx1MenuOpen && (
@@ -430,14 +447,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-controls="top-hardware-menu"
         >
           <span className="nav-tab-icon">
-            <Icon size={16} weight="duotone" aria-hidden />
+            <Icon size={16} aria-hidden />
           </span>
           <span className="nav-tab-label">{item.label}</span>
-          <CaretRight size={12} weight="bold" className={`nav-tab-advanced-caret${topHardwareSubmenuOpen ? ' is-open' : ''}`} />
+          <ChevronRight size={12} className={`nav-tab-advanced-caret${topHardwareSubmenuOpen ? ' is-open' : ''}`} />
         </button>
 
         {topHardwareSubmenuOpen && (
-          <div id="top-hardware-menu" className="top-hardware-menu-panel" role="menu" aria-label="Audio interfaces">
+          <Layer id="top-hardware-menu" className="top-hardware-menu-panel" role="menu" aria-label="Audio interfaces">
             {hardwareInterfaceMenuItems.map((hardwareItem) => (
               <NavLink
                 key={`top-hardware-${hardwareItem.label}-${hardwareItem.to}`}
@@ -446,18 +463,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 style={{ '--item-color': hardwareItem.color } as CSSProperties}
                 onClick={() => setTopHardwareSubmenuOpen(false)}
               >
-                <hardwareItem.icon size={16} weight="duotone" aria-hidden />
-                <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <hardwareItem.icon size={16} aria-hidden />
+                <span className="top-hardware-menu-meta">
                   <span>{hardwareItem.label}</span>
                   {hardwareLocationNotes[hardwareItem.to] ? (
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    <Tag type="cool-gray" size="sm" className="top-hardware-menu-location">
                       On {hardwareLocationNotes[hardwareItem.to]?.hostname}
-                    </span>
+                    </Tag>
                   ) : null}
                 </span>
               </NavLink>
             ))}
-          </div>
+          </Layer>
         )}
       </div>
     )
@@ -469,10 +486,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     const hardwareLocation = hardwareLocationNotes[item.to]
     const itemBody = (
       <>
-        <Icon size={18} weight="duotone" aria-hidden />
+        <Icon size={18} aria-hidden />
         <div className="nav-mobile-item-text">
           <div className="nav-mobile-item-heading">
             <span className="nav-mobile-item-label">{item.label}</span>
+            <Tag type={maturityTagType(item.maturity)} size="sm" className="nav-mobile-item-maturity">
+              {maturityTagLabel(item.maturity)}
+            </Tag>
           </div>
           <span className="nav-mobile-item-desc">{item.description}</span>
           {hardwareLocation && <span className="nav-mobile-item-note">On {hardwareLocation.hostname}</span>}
@@ -512,6 +532,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     )
   }
 
+  const advancedSections = useMemo(() => {
+    const grouped = new Map<string, AdvancedMenuItem[]>()
+    for (const item of advancedMenuItems) {
+      const existing = grouped.get(item.homeSection) ?? []
+      existing.push(item)
+      grouped.set(item.homeSection, existing)
+    }
+    return Array.from(grouped.entries())
+  }, [])
+
   return (
     <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}`}>
       {showMobileConnectionBanner && (
@@ -520,12 +550,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span>Connection lost - reconnecting...</span>
         </div>
       )}
-      <header className="topbar-pro">
-        <nav className="nav-tabs-left" aria-label="Primary navigation">
+      <Header className="topbar-pro" aria-label="MAP2 primary navigation shell">
+        <HeaderNavigation className="nav-tabs-left" aria-label="Primary navigation">
           {renderNavItem(homeTopNavItem)}
-        </nav>
+        </HeaderNavigation>
 
-        <nav className="nav-tabs-center" aria-label="Pinned navigation">
+        <HeaderNavigation className="nav-tabs-center" aria-label="Pinned navigation">
           {pinnedTopNavItems.map((item) => {
             if (item.kind === 'mpx1-mega-menu') {
               return renderMpx1MegaMenuTrigger(item)
@@ -535,20 +565,73 @@ export function AppShell({ children }: { children: ReactNode }) {
             }
             return renderNavItem(item)
           })}
-        </nav>
+        </HeaderNavigation>
 
-        <div className="nav-tabs-right-container">
-          <nav className="nav-tabs-right" aria-label="Settings navigation">
+        <HeaderGlobalBar className="nav-tabs-right-container">
+          <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
             <NodeSelector />
+            <div className="advanced-menu-root" ref={advancedMenuRef}>
+              <button
+                type="button"
+                className={`nav-tab-item nav-tab-advanced${advancedMenuOpen ? ' nav-tab-advanced--open' : ''}`}
+                aria-label="Open advanced menu"
+                aria-haspopup="menu"
+                aria-expanded={advancedMenuOpen}
+                aria-controls="advanced-menu-panel"
+                onClick={() => {
+                  const nextOpen = !advancedMenuOpen
+                  setAdvancedMenuOpen(nextOpen)
+                  if (nextOpen) {
+                    setNavOpen(false)
+                    setMpx1MenuOpen(false)
+                    setTopHardwareSubmenuOpen(false)
+                  }
+                }}
+                title="Open advanced routes and developer workflows"
+              >
+                <span className="nav-tab-advanced-label">Advanced</span>
+                <ChevronRight size={12} className={`nav-tab-advanced-caret${advancedMenuOpen ? ' is-open' : ''}`} />
+              </button>
+
+              {advancedMenuOpen && (
+                <div id="advanced-menu-panel" className="advanced-menu-panel" role="menu" aria-label="Advanced menu">
+                  <div className="advanced-menu-header">
+                    <div className="advanced-menu-header-main">
+                      <p className="advanced-menu-kicker">Advanced</p>
+                      <h2 className="advanced-menu-title">Developer, cluster, and non-default workflows</h2>
+                    </div>
+                    <p className="advanced-menu-subtitle">
+                      Routes stay visible here even when they are not pinned into the primary shell navigation.
+                    </p>
+                  </div>
+                  <div className="nav-mobile-menu-content nav-mobile-menu-content--desktop">
+                    <Accordion align="start" className="advanced-menu-accordion">
+                      {advancedSections.map(([sectionTitle, items]) => (
+                        <AccordionItem
+                          key={`advanced-${sectionTitle}`}
+                          className="advanced-menu-accordion-item"
+                          title={sectionTitle}
+                          open
+                        >
+                          <div className="nav-mobile-group-grid">
+                            {items.map((item) => renderMobileMenuItem(item, `advanced-${sectionTitle}`))}
+                          </div>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               type="button"
               className="nav-tab-item nav-tab-special"
               disabled={specialSettingsLoading}
               aria-label="Open special settings"
-              onClick={handleDragonIconClick}
+              onClick={handleSpecialSettingsIconClick}
               onMouseEnter={(e) => {
                 if (!specialSettingsLoading) {
-                  e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.45)'
+                  e.currentTarget.style.borderColor = 'var(--cds-support-error)'
                 }
               }}
               onMouseLeave={(e) => {
@@ -558,19 +641,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               }}
               title="Open Special settings (password required)"
             >
-              <DragonIcon size={14} color={specialSettings?.enabled ? '#dc2626' : '#6b7280'} />
+              <Settings
+                size={14}
+                aria-hidden
+                style={{ color: specialSettings?.enabled ? 'var(--cds-support-error)' : 'var(--cds-text-secondary)' }}
+              />
             </button>
-          </nav>
+          </HeaderNavigation>
 
-          <button
+          <HeaderMenuButton
             className="nav-hamburger-btn"
             onClick={handleMenuToggle}
+            isCollapsible
+            isActive={navOpen}
             aria-label="Toggle navigation menu"
-            title="Toggle menu"
-          >
-            {navOpen ? <X size={20} weight="bold" /> : <List size={20} weight="bold" />}
-          </button>
-        </div>
+          />
+        </HeaderGlobalBar>
 
         {navOpen && (
           <div className="nav-mobile-menu" ref={navMenuRef}>
@@ -586,7 +672,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         )}
-      </header>
+      </Header>
       <PasswordDialog
         isOpen={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}
@@ -607,7 +693,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           title={`${homeTopNavItem.description} • ${homeTopNavItem.maturity}`}
         >
           <span className="mobile-bottom-tab-icon">
-            <HomeIcon size={16} weight="duotone" aria-hidden />
+            <HomeIcon size={16} aria-hidden />
           </span>
           <span>Home</span>
         </NavLink>
@@ -623,7 +709,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               title={`${item.description} • ${item.maturity}`}
             >
               <span className="mobile-bottom-tab-icon">
-                <Icon size={16} weight="duotone" aria-hidden />
+                <Icon size={16} aria-hidden />
               </span>
               <span>{item.shortLabel ?? item.label}</span>
             </NavLink>
@@ -636,7 +722,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-label="Toggle mobile menu"
         >
           <span className="mobile-bottom-tab-icon">
-            {navOpen ? <X size={16} weight="duotone" aria-hidden /> : <List size={16} weight="duotone" aria-hidden />}
+            {navOpen ? <Close size={16} aria-hidden /> : <Menu size={16} aria-hidden />}
           </span>
           <span>Menu</span>
         </button>

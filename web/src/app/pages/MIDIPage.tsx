@@ -222,7 +222,7 @@ export function MIDIPage() {
 
   const chainsQuery = useQuery({
     queryKey: chainsKey,
-    queryFn: chainsApi.list,
+    queryFn: () => chainsApi.list(),
   })
 
   // Derived data

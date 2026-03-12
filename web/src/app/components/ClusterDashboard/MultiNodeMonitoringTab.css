@@ -1,0 +1,42 @@
+.multi-node-monitoring-tab__comparison-table {
+  border: 1px solid var(--cds-border-subtle, #393939);
+}
+
+.multi-node-monitoring-tab__table-header {
+  color: var(--cds-text-primary, #161616);
+  font-weight: 600;
+}
+
+.multi-node-monitoring-tab__cell--right {
+  text-align: right;
+}
+
+.multi-node-monitoring-tab__comparison-row.is-highest {
+  background: rgba(218, 30, 40, 0.08);
+}
+
+.multi-node-monitoring-tab__comparison-row.is-lowest {
+  background: rgba(36, 161, 72, 0.1);
+}
+
+.multi-node-monitoring-tab__comparison-row.is-average {
+  background: var(--cds-layer-hover, #f4f4f4);
+}
+
+.multi-node-monitoring-tab__system-cell {
+  color: var(--cds-text-primary, #161616);
+  font-weight: 500;
+}
+
+.multi-node-monitoring-tab__value-cell {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.375rem;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.multi-node-monitoring-tab__average-cell {
+  color: var(--cds-link-primary, #0f62fe);
+  font-weight: 600;
+}

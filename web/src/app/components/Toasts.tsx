@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, ReactNode } from 'react'
+import { ActionableNotification, Button, ToastNotification } from '@carbon/react'
 
 export type NotificationTone = 'info' | 'success' | 'warn' | 'error'
 
@@ -100,13 +101,9 @@ function NotificationPanel() {
     <div className="notification-panel" role="region" aria-live="polite" aria-label="Notifications">
       <div className="notification-panel-header">
         <h3>Notifications ({notifications.length})</h3>
-        <button 
-          onClick={clearNotifications} 
-          className="btn btn-sm"
-          aria-label="Clear all notifications"
-        >
+        <Button onClick={clearNotifications} kind="ghost" size="sm" aria-label="Clear all notifications">
           Clear
-        </button>
+        </Button>
       </div>
       <div className="notification-panel-content">
         {notifications.map((notification) => (
@@ -121,38 +118,54 @@ function NotificationItem({ notification }: { notification: Notification }) {
   const ctx = useContext(NotificationContext)
   if (!ctx) return null
 
-  const icons: Record<NotificationTone, string> = {
-    success: '✓',
-    error: '⚠',
-    warn: '!',
-    info: 'ℹ'
+  const titleByTone: Record<NotificationTone, string> = {
+    success: 'Success',
+    error: 'Error',
+    warn: 'Warning',
+    info: 'Info',
+  }
+
+  const kindByTone: Record<NotificationTone, 'error' | 'info' | 'success' | 'warning'> = {
+    success: 'success',
+    error: 'error',
+    warn: 'warning',
+    info: 'info',
+  }
+
+  const caption = new Date(notification.timestamp).toLocaleTimeString()
+  const kind = kindByTone[notification.tone]
+
+  if (notification.action) {
+    return (
+      <div className="notification-item">
+        <ActionableNotification
+          kind={kind}
+          lowContrast
+          role={notification.tone === 'error' ? 'alert' : 'status'}
+          title={titleByTone[notification.tone]}
+          subtitle={notification.message}
+          actionButtonLabel={notification.action.label}
+          onActionButtonClick={notification.action.onClick}
+          onCloseButtonClick={() => ctx.dismissNotification(notification.id)}
+        >
+          {caption}
+        </ActionableNotification>
+      </div>
+    )
   }
 
   return (
-    <div className={`notification-item notification-${notification.tone}`}>
-      <span className="notification-icon">{icons[notification.tone]}</span>
-      <div className="notification-content">
-        <p>{notification.message}</p>
-        {notification.action && (
-          <button
-            type="button"
-            className="notification-action"
-            onClick={notification.action.onClick}
-          >
-            {notification.action.label}
-          </button>
-        )}
-        <span className="notification-time">
-          {new Date(notification.timestamp).toLocaleTimeString()}
-        </span>
-      </div>
-      <button
-        onClick={() => ctx.dismissNotification(notification.id)}
-        className="notification-dismiss"
-        aria-label="Dismiss"
-      >
-        ✕
-      </button>
+    <div className="notification-item">
+      <ToastNotification
+        kind={kind}
+        lowContrast
+        role={notification.tone === 'error' ? 'alert' : 'status'}
+        title={titleByTone[notification.tone]}
+        subtitle={notification.message}
+        caption={caption}
+        timeout={0}
+        onCloseButtonClick={() => ctx.dismissNotification(notification.id)}
+      />
     </div>
   )
 }

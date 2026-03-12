@@ -1,77 +1,83 @@
 import { useState } from 'react'
+import {
+  Accordion,
+  AccordionItem,
+  Button,
+  InlineLoading,
+  InlineNotification,
+  Tag,
+  Tile,
+} from '@carbon/react'
+import {
+  CaretDown,
+  CaretUp,
+  MachineLearningModel,
+  Music,
+  VolumeUp,
+  Waveform,
+} from '@carbon/icons-react'
 import { useQuery } from '@tanstack/react-query'
-import { DownloadSimple, CaretDown, CaretUp, WaveSine, SpeakerHigh, SpinnerGap, GithubLogo, Buildings, Broadcast, WarningCircle, Mountains, MusicNote, Lightning, FileDashed } from '@phosphor-icons/react'
 import { irLibraryApi, soundfontApi } from '../../../map2/api'
-import { LIBRARY_SOURCES, SOUNDFONT_SOURCES } from '../../types/library'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
 import { useSoundFontDownloadProgress } from '../../hooks/useSoundFontDownloadProgress'
+import { LIBRARY_SOURCES, SOUNDFONT_SOURCES } from '../../types/library'
 import { Tone3000Config } from './Tone3000Config'
+import './LibrarySources.css'
 
-const SOURCE_ICONS: Record<string, typeof WaveSine> = {
+const SOURCE_ICONS: Record<string, typeof Waveform> = {
   // Reverb IRs
-  conners: WaveSine,
-  voxengo: Buildings,
-  samplicity: WaveSine,
-  signaltonoize: Broadcast,
-  echothief: Mountains,
-  lexicon: MusicNote,
+  conners: Waveform,
+  voxengo: Waveform,
+  samplicity: Waveform,
+  signaltonoize: Waveform,
+  echothief: Waveform,
+  lexicon: Waveform,
   // Cabinet IRs
-  djammincabs: Broadcast,
-  overdriven: SpeakerHigh,
+  djammincabs: VolumeUp,
+  overdriven: VolumeUp,
   // NAM Models
-  nam_github: GithubLogo,
-  tone3000: Lightning,
+  nam_github: MachineLearningModel,
+  tone3000: MachineLearningModel,
   // SoundFonts
-  sfzinstruments: GithubLogo,
-  musical_artifacts: Buildings,
-  freepats: FileDashed,
+  sfzinstruments: Music,
+  musical_artifacts: Music,
+  freepats: Music,
+}
+
+function renderAvailabilityLabel(count: number, isLoading: boolean, unitLabel: string) {
+  if (count > 0) {
+    return `${count} ${unitLabel}`
+  }
+
+  return isLoading ? 'Checking...' : `0 ${unitLabel}`
 }
 
 export function LibrarySources() {
-  const [irExpanded, setIRExpanded] = useState(false)
-  const [sfExpanded, setSFExpanded] = useState(false)
+  const [irExpanded, setIrExpanded] = useState(false)
+  const [sfExpanded, setSfExpanded] = useState(false)
   const [downloadingSourceId, setDownloadingSourceId] = useState<string | null>(null)
   const { startDownload, isDownloading, isStarting, startError } = useDownloadProgress()
-  const { startDownload: startSFDownload, isDownloading: isSFDownloading, startError: sfStartError } = useSoundFontDownloadProgress()
+  const {
+    startDownload: startSoundFontDownload,
+    isDownloading: isSoundFontDownloading,
+    startError: soundFontStartError,
+  } = useSoundFontDownloadProgress()
 
   const allExpanded = irExpanded && sfExpanded
-  const toggleAllSources = () => {
-    const newState = !allExpanded
-    setIRExpanded(newState)
-    setSFExpanded(newState)
-  }
 
   const librariesQuery = useQuery({
     queryKey: ['ir', 'libraries'],
     queryFn: irLibraryApi.getLibraries,
   })
 
-  const sfLibrariesQuery = useQuery({
+  const soundFontLibrariesQuery = useQuery({
     queryKey: ['soundfonts', 'libraries'],
     queryFn: soundfontApi.getLibraries,
   })
 
-  const handleDownloadAll = () => {
-    startDownload({ parallel: 4, skip_existing: true })
-  }
+  const sourceGroups = LIBRARY_SOURCES.map((source) => {
+    const apiData = librariesQuery.data?.libraries?.find((library) => library.name === source.name)
 
-  const handleDownloadSource = (sourceName: string) => {
-    startDownload({ sources: [sourceName], parallel: 4, skip_existing: true })
-  }
-
-  const handleSFDownloadAll = () => {
-    setDownloadingSourceId('all')
-    startSFDownload({ parallel: 4, skip_existing: true })
-  }
-
-  const handleSFDownloadSource = (sourceName: string) => {
-    setDownloadingSourceId(sourceName)
-    startSFDownload({ sources: [sourceName], parallel: 4, skip_existing: true })
-  }
-
-  // Merge static source info with API counts for IRs
-  const sourcesWithCounts = LIBRARY_SOURCES.map(source => {
-    const apiData = librariesQuery.data?.libraries?.find(l => l.name === source.name)
     return {
       ...source,
       count: apiData?.count ?? 0,
@@ -79,9 +85,9 @@ export function LibrarySources() {
     }
   })
 
-  // Merge static source info with API counts for SoundFonts
-  const sfSourcesWithCounts = SOUNDFONT_SOURCES.map(source => {
-    const apiData = sfLibrariesQuery.data?.libraries?.find(l => l.name === source.name)
+  const soundFontSourceGroups = SOUNDFONT_SOURCES.map((source) => {
+    const apiData = soundFontLibrariesQuery.data?.libraries?.find((library) => library.name === source.name)
+
     return {
       ...source,
       count: apiData?.count ?? 0,
@@ -89,259 +95,177 @@ export function LibrarySources() {
     }
   })
 
-  const isSFDownloadingAll = isSFDownloading && downloadingSourceId === 'all'
+  const isSoundFontDownloadingAll = isSoundFontDownloading && downloadingSourceId === 'all'
+  const isIrLibraryLoading = librariesQuery.isLoading || librariesQuery.isFetching
+  const isSoundFontLibraryLoading = soundFontLibrariesQuery.isLoading || soundFontLibrariesQuery.isFetching
+
+  const toggleAllSources = () => {
+    const nextExpanded = !allExpanded
+    setIrExpanded(nextExpanded)
+    setSfExpanded(nextExpanded)
+  }
 
   return (
-    <div className="stack" style={{ gap: 16 }}>
-      {/* Toggle All Sources Button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-        <button
-          className="btn btn-ghost btn-sm"
+    <section className="library-sources">
+      <div className="library-sources__toggle-all">
+        <Button
+          kind="ghost"
+          size="sm"
+          renderIcon={allExpanded ? CaretUp : CaretDown}
+          iconDescription={allExpanded ? 'Collapse all source groups' : 'Expand all source groups'}
           onClick={toggleAllSources}
-          style={{ gap: 8 }}
         >
-          {allExpanded ? (
-            <>
-              <CaretUp size={16} weight="bold" />
-              Hide All Sources
-            </>
-          ) : (
-            <>
-              <CaretDown size={16} weight="bold" />
-              Show All Sources
-            </>
-          )}
-        </button>
+          {allExpanded ? 'Hide all source groups' : 'Show all source groups'}
+        </Button>
       </div>
 
-      {/* IR & NAM Library Sources */}
-      <div className="card">
-        <button
-          className="disclosure-trigger"
-          onClick={() => setIRExpanded(!irExpanded)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'none',
-            border: 'none',
-            padding: '16px',
-            cursor: 'pointer',
-            color: 'inherit',
-          }}
+      <Accordion align="start" className="library-sources__accordion">
+        <AccordionItem
+          className="library-sources__group"
+          title="IR and NAM library sources"
+          open={irExpanded}
+          onHeadingClick={({ isOpen }) => setIrExpanded(!isOpen)}
         >
-          <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-            <DownloadSimple size={20} weight="duotone" style={{ color: 'var(--primary)' }} />
-            <span style={{ fontWeight: 600, fontSize: 16 }}>IR & NAM Library Sources</span>
-            <span className="badge" style={{ marginLeft: 8 }}>
-              {sourcesWithCounts.length} sources
-            </span>
-          </div>
-          <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-            {!isDownloading && (
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDownloadAll()
-                }}
+          <div className="library-sources__group-content">
+            <div className="library-sources__group-toolbar">
+              <Tag type="gray">{sourceGroups.length} sources</Tag>
+              <Button
+                kind="primary"
+                size="sm"
                 disabled={isStarting || isDownloading}
+                onClick={() => {
+                  startDownload({ parallel: 4, skip_existing: true })
+                }}
               >
-                {isStarting ? (
-                  <>
-                    <SpinnerGap size={14} weight="duotone" className="spin" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <DownloadSimple size={14} weight="duotone" />
-                    Download All
-                  </>
-                )}
-              </button>
-            )}
-            {irExpanded ? <CaretUp size={20} weight="bold" /> : <CaretDown size={20} weight="bold" />}
-          </div>
-        </button>
+                Download all IR and NAM
+              </Button>
+              {isStarting ? <InlineLoading description="Starting download..." /> : null}
+            </div>
 
-        {irExpanded && (
-          <div style={{ padding: '0 16px 16px' }}>
-            {startError && (
-              <div className="card" style={{ padding: 12, marginBottom: 12, background: 'var(--danger-bg)', borderLeft: '3px solid var(--danger)' }}>
-                <div className="flex" style={{ gap: 8, alignItems: 'center', color: 'var(--danger)' }}>
-                  <WarningCircle size={16} weight="duotone" />
-                  <span style={{ fontSize: 13 }}>
-                    Download failed: {startError instanceof Error ? startError.message : 'Unknown error'}
-                  </span>
-                </div>
-              </div>
-            )}
+            {startError ? (
+              <InlineNotification
+                kind="error"
+                lowContrast
+                hideCloseButton
+                title="Download failed"
+                subtitle={startError instanceof Error ? startError.message : 'Unknown error'}
+              />
+            ) : null}
 
-            {/* TONE3000 Configuration - requires API key */}
-            <div style={{ marginBottom: 16 }}>
+            <div className="library-sources__tone3000">
               <Tone3000Config />
             </div>
 
-            <div className="grid" style={{ gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-              {sourcesWithCounts.map(source => {
-                const Icon = SOURCE_ICONS[source.name] ?? WaveSine
+            <div className="library-sources__source-grid">
+              {sourceGroups.map((source) => {
+                const Icon = SOURCE_ICONS[source.name] ?? Waveform
+
                 return (
-                  <div
-                    key={source.name}
-                    className="card"
-                    style={{
-                      padding: 16,
-                      background: 'var(--bg-secondary)',
-                      borderLeft: `3px solid ${source.iconColor}`,
-                    }}
-                  >
-                    <div className="flex-between" style={{ marginBottom: 8 }}>
-                      <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-                        <Icon size={20} style={{ color: source.iconColor }} />
-                        <span style={{ fontWeight: 600 }}>{source.displayName}</span>
+                  <Tile key={source.name} className="library-sources__source-tile">
+                    <div className="library-sources__source-header">
+                      <div className="library-sources__source-title">
+                        <Icon className="library-sources__source-icon" size={20} aria-hidden="true" />
+                        <span>{source.displayName}</span>
                       </div>
-                      <span className="pill" style={{ fontSize: 11 }}>{source.license}</span>
+                      <Tag type="blue">{source.license}</Tag>
                     </div>
-                    <p className="muted" style={{ fontSize: 13, margin: '8px 0 12px' }}>
-                      {source.description}
-                    </p>
-                    <div className="flex-between">
-                      <span className="muted" style={{ fontSize: 12 }}>
-                        {source.count > 0 ? `${source.count} files available` : 'Checking...'}
+
+                    <p className="library-sources__source-description">{source.description}</p>
+
+                    <div className="library-sources__source-footer">
+                      <span className="library-sources__source-count">
+                        {renderAvailabilityLabel(source.count, isIrLibraryLoading, 'files available')}
                       </span>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => handleDownloadSource(source.name)}
+                      <Button
+                        kind="ghost"
+                        size="sm"
                         disabled={isDownloading || isStarting}
+                        onClick={() => {
+                          startDownload({ sources: [source.name], parallel: 4, skip_existing: true })
+                        }}
                       >
-                        <DownloadSimple size={14} weight="duotone" />
-                        Download
-                      </button>
+                        Download {source.displayName}
+                      </Button>
                     </div>
-                  </div>
+                  </Tile>
                 )
               })}
             </div>
           </div>
-        )}
-      </div>
+        </AccordionItem>
 
-      {/* SoundFont Library Sources */}
-      <div className="card">
-        <button
-          className="disclosure-trigger"
-          onClick={() => setSFExpanded(!sfExpanded)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'none',
-            border: 'none',
-            padding: '16px',
-            cursor: 'pointer',
-            color: 'inherit',
-          }}
+        <AccordionItem
+          className="library-sources__group"
+          title="SoundFont sources"
+          open={sfExpanded}
+          onHeadingClick={({ isOpen }) => setSfExpanded(!isOpen)}
         >
-          <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-            <FileDashed size={20} weight="duotone" style={{ color: 'var(--accent)' }} />
-            <span style={{ fontWeight: 600, fontSize: 16 }}>SoundFont Sources</span>
-            <span className="badge" style={{ marginLeft: 8 }}>
-              {sfSourcesWithCounts.length} sources
-            </span>
-          </div>
-          <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleSFDownloadAll()
-              }}
-              disabled={isSFDownloading}
-            >
-              {isSFDownloadingAll ? (
-                <>
-                  <SpinnerGap size={14} weight="duotone" className="spin" />
-                  Starting...
-                </>
-              ) : (
-                <>
-                  <DownloadSimple size={14} weight="duotone" />
-                  Download All
-                </>
-              )}
-            </button>
-            {sfExpanded ? <CaretUp size={20} weight="bold" /> : <CaretDown size={20} weight="bold" />}
-          </div>
-        </button>
+          <div className="library-sources__group-content">
+            <div className="library-sources__group-toolbar">
+              <Tag type="gray">{soundFontSourceGroups.length} sources</Tag>
+              <Button
+                kind="primary"
+                size="sm"
+                disabled={isSoundFontDownloading}
+                onClick={() => {
+                  setDownloadingSourceId('all')
+                  startSoundFontDownload({ parallel: 4, skip_existing: true })
+                }}
+              >
+                Download all SoundFonts
+              </Button>
+              {isSoundFontDownloadingAll ? <InlineLoading description="Starting SoundFont download..." /> : null}
+            </div>
 
-        {sfExpanded && (
-          <div style={{ padding: '0 16px 16px' }}>
-            {sfStartError && (
-              <div className="card" style={{ padding: 12, marginBottom: 12, background: 'var(--danger-bg)', borderLeft: '3px solid var(--danger)' }}>
-                <div className="flex" style={{ gap: 8, alignItems: 'center', color: 'var(--danger)' }}>
-                  <WarningCircle size={16} weight="duotone" />
-                  <span style={{ fontSize: 13 }}>
-                    Download failed: {sfStartError instanceof Error ? sfStartError.message : 'Unknown error'}
-                  </span>
-                </div>
-              </div>
-            )}
+            {soundFontStartError ? (
+              <InlineNotification
+                kind="error"
+                lowContrast
+                hideCloseButton
+                title="SoundFont download failed"
+                subtitle={soundFontStartError instanceof Error ? soundFontStartError.message : 'Unknown error'}
+              />
+            ) : null}
 
-            <div className="grid" style={{ gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-              {sfSourcesWithCounts.map(source => {
-                const Icon = SOURCE_ICONS[source.name] ?? FileDashed
-                const isDownloadingThisSource = isSFDownloading && downloadingSourceId === source.name
+            <div className="library-sources__source-grid">
+              {soundFontSourceGroups.map((source) => {
+                const Icon = SOURCE_ICONS[source.name] ?? Music
+                const isDownloadingThisSource = isSoundFontDownloading && downloadingSourceId === source.name
+
                 return (
-                  <div
-                    key={source.name}
-                    className="card"
-                    style={{
-                      padding: 16,
-                      background: 'var(--bg-secondary)',
-                      borderLeft: `3px solid ${source.iconColor}`,
-                    }}
-                  >
-                    <div className="flex-between" style={{ marginBottom: 8 }}>
-                      <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-                        <Icon size={20} style={{ color: source.iconColor }} />
-                        <span style={{ fontWeight: 600 }}>{source.displayName}</span>
+                  <Tile key={source.name} className="library-sources__source-tile">
+                    <div className="library-sources__source-header">
+                      <div className="library-sources__source-title">
+                        <Icon className="library-sources__source-icon" size={20} aria-hidden="true" />
+                        <span>{source.displayName}</span>
                       </div>
-                      <span className="pill" style={{ fontSize: 11 }}>{source.license}</span>
+                      <Tag type="blue">{source.license}</Tag>
                     </div>
-                    <p className="muted" style={{ fontSize: 13, margin: '8px 0 12px' }}>
-                      {source.description}
-                    </p>
-                    <div className="flex-between">
-                      <span className="muted" style={{ fontSize: 12 }}>
-                        {source.count > 0 ? `${source.count} SoundFonts` : 'Checking...'}
+
+                    <p className="library-sources__source-description">{source.description}</p>
+
+                    <div className="library-sources__source-footer">
+                      <span className="library-sources__source-count">
+                        {renderAvailabilityLabel(source.count, isSoundFontLibraryLoading, 'SoundFonts')}
                       </span>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => handleSFDownloadSource(source.name)}
-                        disabled={false}
+                      <Button
+                        kind="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setDownloadingSourceId(source.name)
+                          startSoundFontDownload({ sources: [source.name], parallel: 4, skip_existing: true })
+                        }}
                       >
-                        {isDownloadingThisSource ? (
-                          <>
-                            <SpinnerGap size={14} weight="duotone" className="spin" />
-                            Downloading...
-                          </>
-                        ) : (
-                          <>
-                            <DownloadSimple size={14} weight="duotone" />
-                            Download
-                          </>
-                        )}
-                      </button>
+                        {isDownloadingThisSource ? 'Downloading...' : `Download ${source.displayName}`}
+                      </Button>
                     </div>
-                  </div>
+                  </Tile>
                 )
               })}
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        </AccordionItem>
+      </Accordion>
+    </section>
   )
 }

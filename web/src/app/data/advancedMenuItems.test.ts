@@ -100,6 +100,25 @@ describe('navigation catalog', () => {
 
   it('keeps the advanced menu limited to explicitly designated routes', () => {
     const advancedItems = navigationCatalogItems.filter((item) => item.includeInAdvancedMenu)
-    expect(advancedItems.map((item) => item.to)).toEqual(['/midi-cluster'])
+    expect(advancedItems.map((item) => item.to)).toEqual([
+      '/avb-routing',
+      '/midi-cluster',
+      '/api-observatory',
+      '/midi-hub',
+      '/midi-hub-2',
+      '/cluster-dashboard',
+    ])
+  })
+
+  it('keeps API Observatory in advanced navigation only', () => {
+    const observatory = navigationCatalogItems.find((item) => item.to === '/api-observatory')
+    expect(observatory).toBeDefined()
+    expect(observatory?.includeInAdvancedMenu).toBe(true)
+    expect(observatory?.showOnHome).toBe(false)
+
+    const appearsOnHome = homeNavigationSections.some((section) =>
+      section.items.some((item) => item.to === '/api-observatory'),
+    )
+    expect(appearsOnHome).toBe(false)
   })
 })

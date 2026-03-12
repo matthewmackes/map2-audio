@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: February 24, 2026 (Audio callback crash hardening + SynthForge validation)
+> **Last Updated**: March 11, 2026 (Carbon conformance standard + UI review gate)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -124,7 +124,9 @@ When adding significant updates, append to this log:
 - **Vite**: 6.4.1 (build tool & preview server)
 
 **UI Libraries:**
-- **MUI (Material-UI)**: 6.5.0 (@mui/material, @mui/icons-material)
+- **Carbon Design System (target standard)**: `@carbon/react` (required for new/updated UI under T114)
+- **Carbon packages currently present**: `@carbon/colors`, `@carbon/icons-react`
+- **MUI (Material-UI, legacy surface)**: 6.5.0 (@mui/material, @mui/icons-material)
 - **Phosphor Icons**: 2.1.10 (@phosphor-icons/react)
 - **Ariakit**: 0.4.21 (accessible UI primitives)
 - **Framer Motion**: 12.34.0 (animations)
@@ -437,6 +439,14 @@ grep -rn 'YourComponent' web/src/app/ --include='*.tsx' --include='*.ts'
 
 ## Web Development Guidelines
 
+### Carbon Conformance Gate (Mandatory)
+
+- UI source of truth is `docs/design/CARBON_CONFORMANCE_STANDARD.md`.
+- UI contribution/review checklist is `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`.
+- For any conflict between legacy styling guidance and Carbon guidance, Carbon guidance wins.
+- New and refactored UI must prefer `@carbon/react` components and Carbon tokens/themes.
+- Any non-conforming exception must be documented in worklist completion notes with follow-up task IDs.
+
 ### Component File Location Rules
 
 **GridFlowPage (`/grid` route):**
@@ -739,20 +749,11 @@ async def get_resource(id: int, session: Session = Depends(get_session)):
 }
 ```
 
-**3. Tron-Inspired Color Palette**
+**3. Legacy Palette Note (Deprecated for New UI Work)**
 ```css
-/* Use these exact colors for consistency */
-:root {
-  --cyan-primary: #00d9ff;
-  --magenta-primary: #ff006e;
-  --green-primary: #00ff9f;
-  --amber-primary: #ffbe0b;
-  --purple-primary: #a239ca;
-  
-  --bg-dark: #0a1628;
-  --bg-darker: #050d18;
-  --bg-darkest: #030a14;
-}
+/* New/refactored surfaces should use Carbon tokens (example names). */
+/* Use the Carbon theme and layer tokens rather than hard-coded palette values. */
+/* Example: --cds-layer, --cds-layer-hover, --cds-text-primary, --cds-border-subtle */
 ```
 
 ### TypeScript Type Safety
@@ -1203,6 +1204,13 @@ Target: < 5 ms total
 
 ## Update Log
 
+### [2026-03-11] - Carbon UI Conformance Standard Activated
+- **Section**: Tech Stack & Versions, Web Development Guidelines, CSS/Styling Rules
+- **Change**: Added Carbon as required UI standard for new/refactored surfaces, added mandatory UI conformance gate, and marked legacy hard-coded palette guidance as deprecated.
+- **Reason**: T114-subA sets Carbon + IBM design language as the overriding UI standard for all new feature/design work.
+- **Impact**: UI contributions now have deterministic design-review gates and a single authoritative design system baseline.
+- **Files**: `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `.github/copilot-instructions.md`
+
 ### [2026-02-24] - Callback-Path Crash Triage + Hardening (COMPLETE)
 - **Section**: Gotchas & Learned Fixes (#16), JUCE/Audio
 - **Change**: Added documented root cause and fix for post-`start_audio()` callback crash in H3000 glide path; added regression coverage command.
@@ -1378,5 +1386,5 @@ systemctl --user status pipewire
 ---
 
 **For Questions**: Consult the documentation files listed in Additional Resources  
-**Last Updated**: February 12, 2026  
+**Last Updated**: March 11, 2026
 **Maintained by**: GitHub Copilot AI Assistants

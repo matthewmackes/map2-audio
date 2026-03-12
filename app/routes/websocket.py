@@ -43,6 +43,8 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 "automation",       # Parameter automation updates
                 "chain_updates",    # Plugin chain changes
                 "plugin_params",    # Plugin parameter changes
+                "schema_changed",   # OpenAPI schema diff notifications
+                "traffic_event",    # API observatory traffic capture events
                 "midi_cluster",     # Cluster-wide MIDI events
                 "midi_cluster_nodes",
                 "midi_cluster_connections",

@@ -1,31 +1,45 @@
-import { Fragment, useState, useMemo, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Fragment, useCallback, useMemo, useState } from 'react'
 import {
-  MagnifyingGlass,
-  SpeakerHigh,
-  WaveSine,
-  Lightning,
-  MusicNote,
-  SpinnerGap,
-  ArrowsClockwise,
-  Trash,
-  CaretUp,
+  Button,
+  Checkbox,
+  InlineLoading,
+  InlineNotification,
+  Modal,
+  Search,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+} from '@carbon/react'
+import {
   CaretDown,
   CaretLeft,
   CaretRight,
-  Check,
-  Warning,
+  CaretUp,
   FolderOpen,
-  GearSix,
-  ShareNetwork,
-} from '@phosphor-icons/react'
-import { irApi, namApi, soundfontApi, foldersApi, pluginsApi } from '../../../map2/api'
-import type { NAMModel, IRFile } from '../../../map2/types'
-import type { SoundFont } from '../../types/library'
+  MachineLearningModel,
+  Music,
+  Plug,
+  Renew,
+  Settings,
+  Share,
+  TrashCan,
+  VolumeUp,
+  WarningAlt,
+  Waveform,
+} from '@carbon/icons-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { foldersApi, irApi, namApi, pluginsApi, soundfontApi } from '../../../map2/api'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
+import type { IRFile, NAMModel } from '../../../map2/types'
 import { useCluster } from '../../contexts/ClusterContext'
+import type { SoundFont } from '../../types/library'
+import './InstalledAssetsTable.css'
 
-// Unified asset type for the table
 type AssetType = 'nam' | 'cabinet' | 'reverb' | 'sfz' | 'native'
 
 interface UnifiedAsset {
@@ -62,7 +76,6 @@ interface ClusterLibraryItem {
   filename: string
   size_bytes?: number
   checksum?: string
-  asset_type: string
 }
 
 interface ClusterLibraryFanoutResponse {
@@ -72,7 +85,6 @@ interface ClusterLibraryFanoutResponse {
 type SortField = 'name' | 'type' | 'source' | 'size' | 'category' | 'format' | 'sampleRate' | 'duration' | 'folder'
 type SortDirection = 'asc' | 'desc'
 
-// Column visibility state
 interface ColumnVisibility {
   type: boolean
   name: boolean
@@ -99,12 +111,20 @@ const DEFAULT_COLUMNS: ColumnVisibility = {
   status: true,
 }
 
-const TYPE_CONFIG: Record<AssetType, { label: string; icon: typeof Lightning; color: string }> = {
-  nam: { label: 'NAM', icon: Lightning, color: '#ff6b6b' },
-  cabinet: { label: 'Cabinet IR', icon: SpeakerHigh, color: '#f97316' },
-  reverb: { label: 'Reverb IR', icon: WaveSine, color: '#a855f7' },
-  sfz: { label: 'SoundFont', icon: MusicNote, color: '#22c55e' },
-  native: { label: 'Native Plugin', icon: Lightning, color: '#06b6d4' },
+type IconComponent = React.ComponentType<{ className?: string; size?: number; 'aria-hidden'?: boolean }>
+
+const TYPE_CONFIG: Record<AssetType, { label: string; icon: IconComponent; tagType: 'red' | 'magenta' | 'purple' | 'green' | 'cyan' }> = {
+  nam: { label: 'NAM', icon: MachineLearningModel, tagType: 'red' },
+  cabinet: { label: 'Cabinet IR', icon: VolumeUp, tagType: 'magenta' },
+  reverb: { label: 'Reverb IR', icon: Waveform, tagType: 'purple' },
+  sfz: { label: 'SoundFont', icon: Music, tagType: 'green' },
+  native: { label: 'Native plugin', icon: Plug, tagType: 'cyan' },
+}
+
+const PAGE_SIZE = 100
+
+interface InstalledAssetsTableProps {
+  nodeId?: string | null
 }
 
 function formatSize(bytes?: number): string {
@@ -168,10 +188,12 @@ function getAssetAvailabilityKeys(asset: UnifiedAsset): string[] {
   return Array.from(keys)
 }
 
-const PAGE_SIZE = 100
+function columnLabel(column: keyof ColumnVisibility): string {
+  return column.charAt(0).toUpperCase() + column.slice(1).replace(/([A-Z])/g, ' $1')
+}
 
-interface InstalledAssetsTableProps {
-  nodeId?: string | null
+function sortText(sortField: SortField, sortDirection: SortDirection) {
+  return `${sortField} (${sortDirection})`
 }
 
 export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProps = {}) {
@@ -192,19 +214,31 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
 
   const effectiveNodeId = nodeId ?? activeNodeId
   const availabilityNodes = useMemo(
-    () => (nodes.length ? nodes : [{ nodeId: localNodeId, hostname: 'local', role: 'LOCAL', isLocal: true, isOnline: true, latencyMs: 0, lastSeen: null }]),
-    [localNodeId, nodes]
+    () =>
+      nodes.length
+        ? nodes
+        : [
+            {
+              nodeId: localNodeId,
+              hostname: 'local',
+              role: 'LOCAL',
+              isLocal: true,
+              isOnline: true,
+              latencyMs: 0,
+              lastSeen: null,
+            },
+          ],
+    [localNodeId, nodes],
   )
   const apiNodeId = effectiveNodeId && effectiveNodeId !== 'all' && effectiveNodeId !== localNodeId ? effectiveNodeId : null
   const sourceNodeId = effectiveNodeId && effectiveNodeId !== 'all' ? effectiveNodeId : localNodeId
   const sourceNode = availabilityNodes.find((node) => node.nodeId === sourceNodeId) ?? availabilityNodes[0]
   const nodeLabelById = useMemo(
     () => new Map(availabilityNodes.map((node) => [node.nodeId, node.isLocal ? `${node.hostname} (Local)` : node.hostname])),
-    [availabilityNodes]
+    [availabilityNodes],
   )
   const sourceNodeLabel = sourceNode ? (sourceNode.isLocal ? `${sourceNode.hostname} (Local)` : sourceNode.hostname) : 'Local'
 
-  // Fetch all asset types
   const cabinetsQuery = useQuery({
     queryKey: ['ir', 'cabinets', sourceNodeId],
     queryFn: () => irApi.listCabinets(apiNodeId),
@@ -261,7 +295,6 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
     staleTime: 30000,
   })
 
-  // Scan mutation
   const scanMutation = useMutation({
     mutationFn: () => foldersApi.scanAll(apiNodeId),
     onSuccess: () => {
@@ -273,10 +306,7 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
   })
 
   const availabilityLookup = useMemo(() => {
-    const buildLookup = (
-      response: ClusterLibraryFanoutResponse | undefined,
-      contentType: 'ir' | 'nam'
-    ) => {
+    const buildLookup = (response: ClusterLibraryFanoutResponse | undefined, contentType: 'ir' | 'nam') => {
       const nodesPayload = response?.nodes ?? {}
       const sourceItems = nodesPayload[sourceNodeId]?.body?.items ?? []
       const allNodeIds = availabilityNodes.map((node) => node.nodeId)
@@ -284,9 +314,7 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
 
       sourceItems.forEach((item) => {
         const availableOn = Object.entries(nodesPayload)
-          .filter(([, payload]) =>
-            (payload.body?.items ?? []).some((candidate) => candidate.checksum && candidate.checksum === item.checksum)
-          )
+          .filter(([, payload]) => (payload.body?.items ?? []).some((candidate) => candidate.checksum && candidate.checksum === item.checksum))
           .map(([nodeId]) => nodeId)
         const missingOn = allNodeIds.filter((candidateNodeId) => !availableOn.includes(candidateNodeId))
         const availability: AssetAvailability = {
@@ -310,17 +338,20 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
     }
   }, [availabilityNodes, clusterLibraryQuery.data?.ir, clusterLibraryQuery.data?.nam, sourceNodeId])
 
-  const getAvailabilityForAsset = useCallback((asset: UnifiedAsset): AssetAvailability | undefined => {
-    const contentType = asset.type === 'nam' ? 'nam' : asset.type === 'cabinet' || asset.type === 'reverb' ? 'ir' : null
-    if (!contentType) return undefined
+  const getAvailabilityForAsset = useCallback(
+    (asset: UnifiedAsset): AssetAvailability | undefined => {
+      const contentType = asset.type === 'nam' ? 'nam' : asset.type === 'cabinet' || asset.type === 'reverb' ? 'ir' : null
+      if (!contentType) return undefined
 
-    const lookup = availabilityLookup[contentType]
-    for (const key of getAssetAvailabilityKeys(asset)) {
-      const match = lookup.get(key)
-      if (match) return match
-    }
-    return undefined
-  }, [availabilityLookup])
+      const lookup = availabilityLookup[contentType]
+      for (const key of getAssetAvailabilityKeys(asset)) {
+        const match = lookup.get(key)
+        if (match) return match
+      }
+      return undefined
+    },
+    [availabilityLookup],
+  )
 
   const deployMutation = useMutation({
     mutationFn: async (params: { asset: UnifiedAsset; targetNodeIds: string[] }) => {
@@ -345,10 +376,7 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
         throw new Error(body || `Deploy failed with ${response.status}`)
       }
 
-      return response.json() as Promise<{
-        successful: string[]
-        failed: string[]
-      }>
+      return response.json() as Promise<{ successful: string[]; failed: string[] }>
     },
     onSuccess: async () => {
       await Promise.all([
@@ -362,11 +390,9 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
     },
   })
 
-  // Convert all assets to unified format
   const unifiedAssets = useMemo((): UnifiedAsset[] => {
     const assets: UnifiedAsset[] = []
 
-    // Add cabinet IRs
     const cabinets = cabinetsQuery.data?.irs ?? []
     cabinets.forEach((ir: IRFile) => {
       const asset: UnifiedAsset = {
@@ -385,7 +411,6 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
       assets.push({ ...asset, availability, pathToken: availability?.pathToken, sourceNodeId: availability?.sourceNodeId })
     })
 
-    // Add reverb IRs
     const reverbs = reverbsQuery.data?.irs ?? []
     reverbs.forEach((ir: IRFile) => {
       const asset: UnifiedAsset = {
@@ -404,7 +429,6 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
       assets.push({ ...asset, availability, pathToken: availability?.pathToken, sourceNodeId: availability?.sourceNodeId })
     })
 
-    // Add NAM models
     const nams = namQuery.data?.models ?? []
     nams.forEach((model: NAMModel) => {
       const asset: UnifiedAsset = {
@@ -422,26 +446,23 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
       assets.push({ ...asset, availability, pathToken: availability?.pathToken, sourceNodeId: availability?.sourceNodeId })
     })
 
-    // Add SoundFonts
     const soundfonts = soundfontsQuery.data?.soundfonts ?? []
-    soundfonts.forEach((sf: SoundFont) => {
+    soundfonts.forEach((soundFont: SoundFont) => {
       assets.push({
-        id: `sfz:${sf.path}`,
-        name: sf.name,
+        id: `sfz:${soundFont.path}`,
+        name: soundFont.name,
         type: 'sfz',
-        path: sf.path,
-        size: sf.size,
-        source: sf.library || 'Local',
-        format: sf.format?.toUpperCase(),
-        category: sf.category,
-        folder: extractFolder(sf.path),
+        path: soundFont.path,
+        size: soundFont.size,
+        source: soundFont.library || 'Local',
+        format: soundFont.format?.toUpperCase(),
+        category: soundFont.category,
+        folder: extractFolder(soundFont.path),
       })
     })
 
-    // Add Native Plugins (JUCE processors and LV2 plugins)
     const plugins = nativePluginsQuery.data?.plugins ?? []
     plugins.forEach((plugin: any) => {
-      // Only include native JUCE processors for now
       if (plugin.is_native || plugin.format === 'JUCE') {
         assets.push({
           id: `native:${plugin.uri}`,
@@ -467,29 +488,25 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
     getAvailabilityForAsset,
   ])
 
-  // Filter and sort assets
   const filteredAssets = useMemo(() => {
     let result = unifiedAssets
 
-    // Apply type filter
     if (typeFilter !== 'all') {
-      result = result.filter((a) => a.type === typeFilter)
+      result = result.filter((asset) => asset.type === typeFilter)
     }
 
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       result = result.filter(
-        (a) =>
-          a.name.toLowerCase().includes(query) ||
-          a.source?.toLowerCase().includes(query) ||
-          a.category?.toLowerCase().includes(query) ||
-          a.folder?.toLowerCase().includes(query) ||
-          a.format?.toLowerCase().includes(query)
+        (asset) =>
+          asset.name.toLowerCase().includes(query) ||
+          asset.source?.toLowerCase().includes(query) ||
+          asset.category?.toLowerCase().includes(query) ||
+          asset.folder?.toLowerCase().includes(query) ||
+          asset.format?.toLowerCase().includes(query),
       )
     }
 
-    // Apply sorting
     result = [...result].sort((a, b) => {
       let comparison = 0
       switch (sortField) {
@@ -527,14 +544,17 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
     return result
   }, [unifiedAssets, typeFilter, searchQuery, sortField, sortDirection])
 
-  // Paginate the filtered assets
   const totalPages = Math.ceil(filteredAssets.length / PAGE_SIZE)
   const paginatedAssets = useMemo(() => {
     const start = currentPage * PAGE_SIZE
     return filteredAssets.slice(start, start + PAGE_SIZE)
   }, [filteredAssets, currentPage])
 
-  // Reset page when filters change
+  const visibleColumnCount = useMemo(
+    () => Object.values(columns).filter(Boolean).length + 2,
+    [columns],
+  )
+
   const resetPage = useCallback(() => setCurrentPage(0), [])
 
   const isLoading =
@@ -556,10 +576,10 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
   }, [cabinetsQuery, reverbsQuery, namQuery, soundfontsQuery, nativePluginsQuery, irStatusQuery, namStatusQuery, clusterLibraryQuery])
 
   const handleSort = useCallback((field: SortField) => {
-    setSortField((prev) => {
-      if (prev === field) {
-        setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
-        return prev
+    setSortField((previous) => {
+      if (previous === field) {
+        setSortDirection((currentDirection) => (currentDirection === 'asc' ? 'desc' : 'asc'))
+        return previous
       }
       setSortDirection('asc')
       return field
@@ -567,8 +587,8 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
   }, [])
 
   const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
+    setSelectedIds((previous) => {
+      const next = new Set(previous)
       if (next.has(id)) {
         next.delete(id)
       } else {
@@ -594,25 +614,23 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
     if (selectedIds.size === paginatedAssets.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(paginatedAssets.map((a) => a.id)))
+      setSelectedIds(new Set(paginatedAssets.map((asset) => asset.id)))
     }
   }, [selectedIds.size, paginatedAssets])
 
   const handleDeleteSelected = useCallback(async () => {
-    const assetsToDelete = paginatedAssets.filter((a) => selectedIds.has(a.id))
+    const assetsToDelete = paginatedAssets.filter((asset) => selectedIds.has(asset.id))
     const errors: string[] = []
 
     for (const asset of assetsToDelete) {
       try {
         if (asset.type === 'nam') {
-          // NAM models have a backend delete endpoint
           await namApi.deleteModel(asset.name, apiNodeId)
         } else {
-          // Other asset types don't have delete endpoints yet
-          errors.push(`${asset.name}: Delete not yet supported for ${asset.type} assets`)
+          errors.push(`${asset.name}: Delete is not yet supported for ${asset.type} assets`)
         }
-      } catch (err) {
-        errors.push(`${asset.name}: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      } catch (error) {
+        errors.push(`${asset.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
 
@@ -622,19 +640,29 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
 
     setShowDeleteConfirm(false)
     setSelectedIds(new Set())
-    // After delete, refresh the lists
     handleRefresh()
   }, [apiNodeId, handleRefresh, paginatedAssets, selectedIds])
 
-  const toggleColumn = useCallback((col: keyof ColumnVisibility) => {
-    setColumns((prev) => ({ ...prev, [col]: !prev[col] }))
+  const toggleColumn = useCallback((column: keyof ColumnVisibility) => {
+    setColumns((previous) => ({ ...previous, [column]: !previous[column] }))
   }, [])
 
-  const openDeployDialog = useCallback((asset: UnifiedAsset) => {
-    if (!asset.availability) return
-    setDeployAsset(asset)
-    setDeployTargetIds(new Set(asset.availability.missingOn))
-  }, [])
+  const openDeployDialog = useCallback(
+    (asset: UnifiedAsset) => {
+      if (!asset.availability) return
+      deployMutation.reset()
+      setDeployAsset(asset)
+      setDeployTargetIds(new Set(asset.availability.missingOn))
+    },
+    [deployMutation],
+  )
+
+  const closeDeployDialog = useCallback(() => {
+    if (deployMutation.isPending) return
+    deployMutation.reset()
+    setDeployAsset(null)
+    setDeployTargetIds(new Set())
+  }, [deployMutation])
 
   const toggleDeployTarget = useCallback((nodeIdToToggle: string) => {
     setDeployTargetIds((previous) => {
@@ -648,757 +676,493 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
     })
   }, [])
 
-  const getCounts = useCallback(() => {
-    const nativeCount = (nativePluginsQuery.data?.plugins ?? []).filter(
-      (p: any) => p.is_native || p.format === 'JUCE'
-    ).length
+  const counts = useMemo(() => {
+    const nativeCount = (nativePluginsQuery.data?.plugins ?? []).filter((plugin: any) => plugin.is_native || plugin.format === 'JUCE').length
+    const namCount = namQuery.data?.total ?? 0
+    const cabinetCount = cabinetsQuery.data?.count ?? 0
+    const reverbCount = reverbsQuery.data?.count ?? 0
+    const sfzCount = soundfontsQuery.data?.total ?? 0
     return {
-      nam: namQuery.data?.total ?? 0,
-      cabinet: cabinetsQuery.data?.count ?? 0,
-      reverb: reverbsQuery.data?.count ?? 0,
-      sfz: soundfontsQuery.data?.total ?? 0,
+      nam: namCount,
+      cabinet: cabinetCount,
+      reverb: reverbCount,
+      sfz: sfzCount,
       native: nativeCount,
-      total:
-        (namQuery.data?.total ?? 0) +
-        (cabinetsQuery.data?.count ?? 0) +
-        (reverbsQuery.data?.count ?? 0) +
-        (soundfontsQuery.data?.total ?? 0) +
-        nativeCount,
+      total: namCount + cabinetCount + reverbCount + sfzCount + nativeCount,
     }
   }, [namQuery.data, cabinetsQuery.data, reverbsQuery.data, soundfontsQuery.data, nativePluginsQuery.data])
 
-  const counts = getCounts()
   const remoteSelected = Boolean(apiNodeId)
   const allNodesScopeSelected = effectiveNodeId === 'all'
 
-  const SortIcon = ({ field }: { field: SortField }) => {
+  const renderSortIndicator = (field: SortField) => {
     if (sortField !== field) return null
-    return sortDirection === 'asc' ? (
-      <CaretUp size={14} weight="bold" style={{ marginLeft: 4 }} />
-    ) : (
-      <CaretDown size={14} weight="bold" style={{ marginLeft: 4 }} />
-    )
+    return sortDirection === 'asc' ? <CaretUp size={16} aria-hidden /> : <CaretDown size={16} aria-hidden />
   }
 
-  const thStyle = (clickable = true): React.CSSProperties => ({
-    padding: '12px 16px',
-    textAlign: 'left',
-    cursor: clickable ? 'pointer' : 'default',
-    userSelect: 'none',
-    whiteSpace: 'nowrap',
-  })
+  const renderSortHeader = (label: string, field: SortField, align: 'left' | 'right' = 'left') => (
+    <button
+      type="button"
+      className={`installed-assets-table__sort-button${align === 'right' ? ' is-right' : ''}`}
+      onClick={() => handleSort(field)}
+      aria-label={`Sort by ${label.toLowerCase()}`}
+    >
+      <span>{label}</span>
+      {renderSortIndicator(field)}
+    </button>
+  )
+
+  const summaryStart = paginatedAssets.length > 0 ? currentPage * PAGE_SIZE + 1 : 0
+  const summaryEnd = Math.min((currentPage + 1) * PAGE_SIZE, filteredAssets.length)
+  const deploySourceLabel =
+    deployAsset ? nodeLabelById.get(deployAsset.availability?.sourceNodeId ?? sourceNodeId) ?? sourceNodeId : sourceNodeLabel
 
   return (
-    <div className="card">
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid var(--border)', padding: '12px 16px' }}>
-        <div className="flex-between" style={{ marginBottom: 12 }}>
-          <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: 16 }}>Installed Assets</h3>
-            <span className="badge">{counts.total}</span>
+    <section className="installed-assets-table-card">
+      <header className="installed-assets-table-toolbar">
+        <div className="installed-assets-table-toolbar__top">
+          <div className="installed-assets-table-toolbar__title">
+            <h3>Installed assets</h3>
+            <Tag type="cool-gray">{counts.total}</Tag>
           </div>
-          <div className="flex" style={{ gap: 8 }}>
+          <div className="installed-assets-table-toolbar__actions">
             {selectedIds.size > 0 && (
-              <button
-                className="btn btn-sm"
-                style={{ background: 'var(--error)', color: '#fff' }}
+              <Button
+                kind="danger--tertiary"
+                size="sm"
+                renderIcon={TrashCan}
                 onClick={() => setShowDeleteConfirm(true)}
               >
-                <Trash size={14} weight="duotone" />
                 Delete ({selectedIds.size})
-              </button>
+              </Button>
             )}
-            <button
-              className="btn btn-sm btn-ghost"
-              onClick={() => setShowColumnSettings(!showColumnSettings)}
-              title="Column settings"
-            >
-              <GearSix size={14} weight="duotone" />
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
-              onClick={() => scanMutation.mutate()}
+            <Button
+              kind={showColumnSettings ? 'secondary' : 'ghost'}
+              size="sm"
+              hasIconOnly
+              iconDescription={showColumnSettings ? 'Hide column settings' : 'Show column settings'}
+              renderIcon={Settings}
+              onClick={() => setShowColumnSettings((previous) => !previous)}
+            />
+            <Button
+              kind="primary"
+              size="sm"
+              renderIcon={Renew}
               disabled={scanMutation.isPending}
+              onClick={() => scanMutation.mutate()}
             >
-              {scanMutation.isPending ? (
-                <SpinnerGap size={14} weight="duotone" className="spin" />
-              ) : (
-                <ArrowsClockwise size={14} weight="duotone" />
-              )}
-              Update
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={handleRefresh}
+              {scanMutation.isPending ? 'Updating' : 'Update'}
+            </Button>
+            <Button
+              kind="ghost"
+              size="sm"
+              hasIconOnly
+              iconDescription="Refresh asset data"
+              renderIcon={Renew}
               disabled={isLoading}
-            >
-              <ArrowsClockwise size={14} weight="duotone" className={isLoading ? 'spin' : ''} />
-            </button>
+              onClick={handleRefresh}
+            />
           </div>
         </div>
 
         {isClusterMode && (
-          <div
-            style={{
-              marginBottom: 12,
-              padding: '12px 14px',
-              borderRadius: 10,
-              border: '1px solid rgba(59, 130, 246, 0.22)',
-              background: remoteSelected
-                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(15, 23, 42, 0.92))'
-                : 'linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(15, 23, 42, 0.92))',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.1, color: '#94a3b8', marginBottom: 6 }}>
-                  Content Source
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700 }}>
-                  {sourceNodeLabel}
-                </div>
-                <p style={{ margin: '6px 0 0', fontSize: 13, color: '#cbd5e1', lineHeight: 1.5 }}>
-                  {allNodesScopeSelected
-                    ? 'All Nodes is a comparison scope. File operations are anchored to the local node while availability still spans the entire cluster.'
-                    : remoteSelected
-                      ? 'Browsing a remote node through the cluster proxy. Deploy actions will copy the selected asset from that node to the checked targets.'
-                      : 'Availability badges show which nodes already have the asset. Use Deploy to copy IR and NAM files to missing nodes.'}
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignContent: 'flex-start' }}>
-                {availabilityNodes.map((node) => (
-                  <button
-                    key={node.nodeId}
-                    type="button"
-                    className={sourceNodeId === node.nodeId ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'}
-                    onClick={() => setActiveNode(node.nodeId === localNodeId ? null : node.nodeId)}
-                  >
-                    {node.hostname}
-                  </button>
-                ))}
-              </div>
+          <div className="installed-assets-table__cluster-banner">
+            <div className="installed-assets-table__cluster-copy">
+              <p className="installed-assets-table__cluster-label">Content source</p>
+              <p className="installed-assets-table__cluster-node">{sourceNodeLabel}</p>
+              <p className="installed-assets-table__cluster-description">
+                {allNodesScopeSelected
+                  ? 'All nodes is a comparison scope. File operations stay on the local node while availability still spans the full cluster.'
+                  : remoteSelected
+                    ? 'Browsing a remote node through the cluster proxy. Deploy copies the selected asset from this node to checked targets.'
+                    : 'Availability tags show node coverage. Use deploy to copy IR and NAM assets to missing nodes.'}
+              </p>
+            </div>
+            <div className="installed-assets-table__cluster-switcher">
+              {availabilityNodes.map((node) => (
+                <Button
+                  key={node.nodeId}
+                  kind={sourceNodeId === node.nodeId ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveNode(node.nodeId === localNodeId ? null : node.nodeId)}
+                >
+                  {node.hostname}
+                </Button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Column Settings Dropdown */}
         {showColumnSettings && (
-          <div
-            style={{
-              background: 'var(--bg-secondary)',
-              borderRadius: 8,
-              padding: 12,
-              marginBottom: 12,
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-            }}
-          >
-            <span style={{ fontSize: 12, color: 'var(--muted)', width: '100%', marginBottom: 4 }}>
-              Show columns:
-            </span>
-            {(Object.keys(columns) as Array<keyof ColumnVisibility>).map((col) => (
-              <label
-                key={col}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  background: columns[col] ? 'var(--primary-dim)' : 'transparent',
-                  borderRadius: 4,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={columns[col]}
-                  onChange={() => toggleColumn(col)}
-                  style={{ cursor: 'pointer' }}
+          <div className="installed-assets-table__column-settings">
+            <p>Show columns</p>
+            <div className="installed-assets-table__column-grid">
+              {(Object.keys(columns) as Array<keyof ColumnVisibility>).map((column) => (
+                <Checkbox
+                  key={column}
+                  id={`installed-assets-column-${column}`}
+                  labelText={columnLabel(column)}
+                  checked={columns[column]}
+                  onChange={() => toggleColumn(column)}
                 />
-                {col.charAt(0).toUpperCase() + col.slice(1).replace(/([A-Z])/g, ' $1')}
-              </label>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Filter chips */}
-        <div className="flex" style={{ gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
-          <button
-            className={`btn btn-sm ${typeFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => { setTypeFilter('all'); resetPage() }}
+        <div className="installed-assets-table__filter-row">
+          <Button
+            size="sm"
+            kind={typeFilter === 'all' ? 'primary' : 'ghost'}
+            onClick={() => {
+              setTypeFilter('all')
+              resetPage()
+            }}
           >
             All ({counts.total})
-          </button>
+          </Button>
           {(Object.keys(TYPE_CONFIG) as AssetType[]).map((type) => {
             const config = TYPE_CONFIG[type]
-            const Icon = config.icon
             const count = counts[type]
             return (
-              <button
+              <Button
                 key={type}
-                className={`btn btn-sm ${typeFilter === type ? '' : 'btn-ghost'}`}
-                style={{
-                  background: typeFilter === type ? `${config.color}20` : undefined,
-                  color: typeFilter === type ? config.color : undefined,
-                  borderColor: typeFilter === type ? config.color : undefined,
+                size="sm"
+                kind={typeFilter === type ? 'primary' : 'ghost'}
+                renderIcon={config.icon}
+                onClick={() => {
+                  setTypeFilter(type)
+                  resetPage()
                 }}
-                onClick={() => { setTypeFilter(type); resetPage() }}
               >
-                <Icon size={14} />
                 {config.label} ({count})
-              </button>
+              </Button>
             )
           })}
         </div>
 
-        {/* Search bar */}
-        <div
-          className="flex"
-          style={{
-            gap: 8,
-            alignItems: 'center',
-            background: 'var(--bg-secondary)',
-            borderRadius: 6,
-            padding: '8px 12px',
+        <Search
+          id="installed-assets-search"
+          size="lg"
+          labelText="Search assets"
+          closeButtonLabelText="Clear search"
+          placeholder="Search by name, source, category, or folder"
+          value={searchQuery}
+          onChange={(event) => {
+            setSearchQuery(event.target.value)
+            resetPage()
           }}
-        >
-          <MagnifyingGlass size={16} weight="duotone" className="muted" />
-          <input
-            type="text"
-            placeholder="Search by name, source, category, folder..."
-            value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); resetPage() }}
-            style={{
-              flex: 1,
-              background: 'none',
-              border: 'none',
-              outline: 'none',
-              color: 'inherit',
-              fontSize: 14,
-            }}
-          />
-          {searchQuery && (
-            <button
-              className="btn btn-ghost"
-              onClick={() => setSearchQuery('')}
-              style={{ padding: 4 }}
-            >
-              &times;
-            </button>
-          )}
-        </div>
-      </div>
+        />
+      </header>
 
-      {/* Table */}
-      <div className="installed-assets-table-wrap" style={{ overflowX: 'auto' }}>
+      <div className="installed-assets-table-wrap">
         {isLoading ? (
-          <div className="flex" style={{ justifyContent: 'center', padding: 40 }}>
-            <SpinnerGap size={24} weight="duotone" className="spin" style={{ color: 'var(--primary)' }} />
+          <div className="installed-assets-table__state">
+            <InlineLoading description="Loading assets" status="active" />
           </div>
         ) : filteredAssets.length === 0 ? (
-          <div className="muted" style={{ textAlign: 'center', padding: 40 }}>
-            No assets found
+          <div className="installed-assets-table__state">
+            <InlineNotification
+              kind="info"
+              lowContrast
+              hideCloseButton
+              title="No assets found"
+              subtitle="Adjust your filters or refresh the library scan."
+            />
           </div>
         ) : (
-          <table className="installed-assets-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th className="assets-col-select" style={{ padding: '12px 16px', textAlign: 'left', width: 40 }}>
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedIds.size === paginatedAssets.length && paginatedAssets.length > 0
-                    }
-                    onChange={toggleSelectAll}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </th>
-                {columns.type && (
-                  <th className="assets-col-type" style={{ ...thStyle(), width: 110 }} onClick={() => handleSort('type')}>
-                    <div className="flex" style={{ alignItems: 'center' }}>
-                      Type
-                      <SortIcon field="type" />
-                    </div>
-                  </th>
-                )}
-                {columns.name && (
-                  <th className="assets-col-name" style={thStyle()} onClick={() => handleSort('name')}>
-                    <div className="flex" style={{ alignItems: 'center' }}>
-                      Name
-                      <SortIcon field="name" />
-                    </div>
-                  </th>
-                )}
-                {columns.category && (
-                  <th className="assets-col-category" style={{ ...thStyle(), width: 120 }} onClick={() => handleSort('category')}>
-                    <div className="flex" style={{ alignItems: 'center' }}>
-                      Category
-                      <SortIcon field="category" />
-                    </div>
-                  </th>
-                )}
-                {columns.source && (
-                  <th className="assets-col-source" style={{ ...thStyle(), width: 120 }} onClick={() => handleSort('source')}>
-                    <div className="flex" style={{ alignItems: 'center' }}>
-                      Source
-                      <SortIcon field="source" />
-                    </div>
-                  </th>
-                )}
-                {columns.format && (
-                  <th className="assets-col-format" style={{ ...thStyle(), width: 80 }} onClick={() => handleSort('format')}>
-                    <div className="flex" style={{ alignItems: 'center' }}>
-                      Format
-                      <SortIcon field="format" />
-                    </div>
-                  </th>
-                )}
-                {columns.sampleRate && (
-                  <th
-                    className="assets-col-sample-rate"
-                    style={{ ...thStyle(), width: 100, textAlign: 'right' }}
-                    onClick={() => handleSort('sampleRate')}
-                  >
-                    <div className="flex" style={{ alignItems: 'center', justifyContent: 'flex-end' }}>
-                      Sample Rate
-                      <SortIcon field="sampleRate" />
-                    </div>
-                  </th>
-                )}
-                {columns.duration && (
-                  <th
-                    className="assets-col-duration"
-                    style={{ ...thStyle(), width: 90, textAlign: 'right' }}
-                    onClick={() => handleSort('duration')}
-                  >
-                    <div className="flex" style={{ alignItems: 'center', justifyContent: 'flex-end' }}>
-                      Duration
-                      <SortIcon field="duration" />
-                    </div>
-                  </th>
-                )}
-                {columns.size && (
-                  <th
-                    className="assets-col-size"
-                    style={{ ...thStyle(), width: 90, textAlign: 'right' }}
-                    onClick={() => handleSort('size')}
-                  >
-                    <div className="flex" style={{ alignItems: 'center', justifyContent: 'flex-end' }}>
-                      Size
-                      <SortIcon field="size" />
-                    </div>
-                  </th>
-                )}
-                {columns.folder && (
-                  <th className="assets-col-folder" style={{ ...thStyle(), width: 140 }} onClick={() => handleSort('folder')}>
-                    <div className="flex" style={{ alignItems: 'center' }}>
-                      <FolderOpen size={14} weight="duotone" style={{ marginRight: 4 }} />
-                      Folder
-                      <SortIcon field="folder" />
-                    </div>
-                  </th>
-                )}
-                {columns.status && (
-                  <th className="assets-col-status" style={{ ...thStyle(false), width: 80, textAlign: 'center' }}>Status</th>
-                )}
-                <th className="assets-col-actions" style={{ padding: '12px 16px', textAlign: 'center', width: 120 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedAssets.map((asset) => {
-                const config = TYPE_CONFIG[asset.type]
-                const Icon = config.icon
-                const isSelected = selectedIds.has(asset.id)
-                const isExpanded = expandedAssetRows.has(asset.id)
-                const availability = asset.availability
-                const canDeploy = Boolean(availability && availability.missingOn.length > 0)
-                const availabilitySummary = availability
-                  ? `${availability.availableOn.length}/${availability.totalNodes} nodes`
-                  : asset.type === 'sfz'
-                    ? 'Local only'
-                    : null
+          <TableContainer>
+            <Table size="sm" className="installed-assets-table">
+              <TableHead>
+                <TableRow>
+                  <TableHeader className="assets-col-select">
+                    <Checkbox
+                      id="installed-assets-select-all"
+                      hideLabel
+                      labelText="Select all rows"
+                      checked={selectedIds.size === paginatedAssets.length && paginatedAssets.length > 0}
+                      onChange={toggleSelectAll}
+                    />
+                  </TableHeader>
+                  {columns.type && <TableHeader className="assets-col-type">{renderSortHeader('Type', 'type')}</TableHeader>}
+                  {columns.name && <TableHeader className="assets-col-name">{renderSortHeader('Name', 'name')}</TableHeader>}
+                  {columns.category && <TableHeader className="assets-col-category">{renderSortHeader('Category', 'category')}</TableHeader>}
+                  {columns.source && <TableHeader className="assets-col-source">{renderSortHeader('Source', 'source')}</TableHeader>}
+                  {columns.format && <TableHeader className="assets-col-format">{renderSortHeader('Format', 'format')}</TableHeader>}
+                  {columns.sampleRate && (
+                    <TableHeader className="assets-col-sample-rate">{renderSortHeader('Sample rate', 'sampleRate', 'right')}</TableHeader>
+                  )}
+                  {columns.duration && (
+                    <TableHeader className="assets-col-duration">{renderSortHeader('Duration', 'duration', 'right')}</TableHeader>
+                  )}
+                  {columns.size && <TableHeader className="assets-col-size">{renderSortHeader('Size', 'size', 'right')}</TableHeader>}
+                  {columns.folder && (
+                    <TableHeader className="assets-col-folder">
+                      <span className="installed-assets-table__header-with-icon">
+                        <FolderOpen size={16} aria-hidden />
+                        {renderSortHeader('Folder', 'folder')}
+                      </span>
+                    </TableHeader>
+                  )}
+                  {columns.status && <TableHeader className="assets-col-status">Status</TableHeader>}
+                  <TableHeader className="assets-col-actions">Actions</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedAssets.map((asset) => {
+                  const config = TYPE_CONFIG[asset.type]
+                  const TypeIcon = config.icon
+                  const isSelected = selectedIds.has(asset.id)
+                  const isExpanded = expandedAssetRows.has(asset.id)
+                  const availability = asset.availability
+                  const canDeploy = Boolean(availability && availability.missingOn.length > 0)
+                  const availabilitySummary = availability
+                    ? `${availability.availableOn.length}/${availability.totalNodes} nodes`
+                    : asset.type === 'sfz'
+                      ? 'Local only'
+                      : null
 
-                return (
-                  <Fragment key={asset.id}>
-                  <tr
-                    className={`installed-assets-row${isExpanded ? ' is-expanded' : ''}`}
-                    style={{
-                      borderBottom: '1px solid var(--border)',
-                      background: isSelected ? 'rgba(var(--primary-rgb), 0.05)' : undefined,
-                    }}
-                  >
-                    <td className="assets-col-select" data-label="Select" style={{ padding: '10px 16px' }}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelect(asset.id)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </td>
-                    {columns.type && (
-                      <td className="assets-col-type" data-label="Type" style={{ padding: '10px 16px' }}>
-                        <div className="flex" style={{ alignItems: 'center', gap: 6 }}>
-                          <Icon size={14} style={{ color: config.color }} />
-                          <span
-                            className="badge"
-                            style={{
-                              background: `${config.color}20`,
-                              color: config.color,
-                              fontSize: 11,
-                            }}
-                          >
-                            {config.label}
-                          </span>
-                        </div>
-                      </td>
-                    )}
-                    {columns.name && (
-                      <td className="assets-col-name" data-label="Name" style={{ padding: '10px 16px' }}>
-                        <div style={{ fontWeight: 500 }}>{asset.name}</div>
-                      </td>
-                    )}
-                    {columns.category && (
-                      <td className="assets-col-category" data-label="Category" style={{ padding: '10px 16px', color: 'var(--muted)', fontSize: 13 }}>
-                        {asset.category || '-'}
-                      </td>
-                    )}
-                    {columns.source && (
-                      <td className="assets-col-source" data-label="Source" style={{ padding: '10px 16px', color: 'var(--muted)', fontSize: 13 }}>
-                        {asset.source || '-'}
-                      </td>
-                    )}
-                    {columns.format && (
-                      <td className="assets-col-format" data-label="Format" style={{ padding: '10px 16px' }}>
-                        {asset.format ? (
-                          <span
-                            className="badge"
-                            style={{
-                              background: 'var(--bg-secondary)',
-                              fontSize: 10,
-                              textTransform: 'uppercase',
-                            }}
-                          >
-                            {asset.format}
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--muted)' }}>-</span>
-                        )}
-                      </td>
-                    )}
-                    {columns.sampleRate && (
-                      <td
-                        className="assets-col-sample-rate"
-                        data-label="Sample Rate"
-                        style={{
-                          padding: '10px 16px',
-                          textAlign: 'right',
-                          color: 'var(--muted)',
-                          fontSize: 13,
-                        }}
+                  return (
+                    <Fragment key={asset.id}>
+                      <TableRow
+                        className={`installed-assets-row${isExpanded ? ' is-expanded' : ''}`}
+                        data-selected={isSelected ? 'true' : 'false'}
                       >
-                        {formatSampleRate(asset.sampleRate)}
-                      </td>
-                    )}
-                    {columns.duration && (
-                      <td
-                        className="assets-col-duration"
-                        data-label="Duration"
-                        style={{
-                          padding: '10px 16px',
-                          textAlign: 'right',
-                          color: 'var(--muted)',
-                          fontSize: 13,
-                        }}
-                      >
-                        {formatDuration(asset.duration)}
-                      </td>
-                    )}
-                    {columns.size && (
-                      <td
-                        className="assets-col-size"
-                        data-label="Size"
-                        style={{
-                          padding: '10px 16px',
-                          textAlign: 'right',
-                          color: 'var(--muted)',
-                          fontSize: 13,
-                        }}
-                      >
-                        {formatSize(asset.size)}
-                      </td>
-                    )}
-                    {columns.folder && (
-                      <td
-                        className="assets-col-folder"
-                        data-label="Folder"
-                        style={{
-                          padding: '10px 16px',
-                          color: 'var(--muted)',
-                          fontSize: 12,
-                          maxWidth: 140,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                        title={asset.path}
-                      >
-                        {asset.folder || '-'}
-                      </td>
-                    )}
-                    {columns.status && (
-                      <td className="assets-col-status" data-label="Status" style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
-                          {asset.isActive && (
-                            <span
-                              className="pill"
-                              style={{
-                                background: 'var(--success)',
-                                color: '#fff',
-                                padding: '2px 8px',
-                                fontSize: 11,
-                              }}
-                            >
-                              <Check size={10} weight="bold" /> Active
-                            </span>
-                          )}
-                          {isClusterMode && availabilitySummary && (
-                            <span
-                              className="pill"
-                              style={{
-                                background: availability?.missingOn.length ? 'rgba(245, 158, 11, 0.16)' : 'rgba(34, 197, 94, 0.16)',
-                                color: availability?.missingOn.length ? '#fbbf24' : '#86efac',
-                                padding: '2px 8px',
-                                fontSize: 11,
-                              }}
-                            >
-                              {availabilitySummary}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                    <td className="assets-col-actions" style={{ padding: '10px 16px', textAlign: 'center' }}>
-                      <div className="installed-assets-actions">
-                        <button
-                          className="btn btn-ghost btn-sm installed-assets-expand-toggle"
-                          style={{ padding: '4px 8px' }}
-                          onClick={() => toggleAssetRowExpanded(asset.id)}
-                          title={isExpanded ? 'Collapse details' : 'Expand details'}
-                        >
-                          {isExpanded ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />}
-                        </button>
-                        {canDeploy && (
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            style={{ padding: 4, color: 'var(--primary)' }}
-                            onClick={() => openDeployDialog(asset)}
-                            title="Deploy to nodes"
-                          >
-                            <ShareNetwork size={14} weight="duotone" />
-                          </button>
-                        )}
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          style={{ padding: 4, color: 'var(--error)' }}
-                          onClick={() => {
-                            setSelectedIds(new Set([asset.id]))
-                            setShowDeleteConfirm(true)
-                          }}
-                          title="Delete"
-                        >
-                          <Trash size={14} weight="duotone" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  {isExpanded && (
-                    <tr className="installed-assets-mobile-details-row">
-                      <td colSpan={12} style={{ padding: '0 16px 12px', borderBottom: '1px solid var(--border)' }}>
-                        <div className="installed-assets-mobile-details-grid" style={{ marginBottom: isClusterMode ? 12 : 0 }}>
-                          <div><strong>Source:</strong> {asset.source || '-'}</div>
-                          <div><strong>Format:</strong> {asset.format || '-'}</div>
-                          <div><strong>Sample Rate:</strong> {formatSampleRate(asset.sampleRate)}</div>
-                          <div><strong>Duration:</strong> {formatDuration(asset.duration)}</div>
-                          <div><strong>Size:</strong> {formatSize(asset.size)}</div>
-                          <div><strong>Path:</strong> {asset.path || '-'}</div>
-                        </div>
-                        {isClusterMode && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 8,
-                              padding: '12px 14px',
-                              background: 'rgba(15, 23, 42, 0.6)',
-                              borderRadius: 8,
-                            }}
-                          >
-                            <div style={{ fontSize: 13, color: '#cbd5e1' }}>
-                              <strong>Available on:</strong>{' '}
-                              {availability?.availableOn.length
-                                ? availability.availableOn.map((nodeId) => nodeLabelById.get(nodeId) ?? nodeId).join(', ')
-                                : asset.type === 'sfz'
-                                  ? 'Local library only'
-                                  : 'Unknown'}
+                        <TableCell className="assets-col-select" data-label="Select">
+                          <Checkbox
+                            id={`installed-assets-select-${asset.id}`}
+                            hideLabel
+                            labelText={`Select ${asset.name}`}
+                            checked={isSelected}
+                            onChange={() => toggleSelect(asset.id)}
+                          />
+                        </TableCell>
+                        {columns.type && (
+                          <TableCell className="assets-col-type" data-label="Type">
+                            <div className="installed-assets-table__type-cell">
+                              <TypeIcon size={16} aria-hidden />
+                              <Tag type={config.tagType}>{config.label}</Tag>
                             </div>
-                            <div style={{ fontSize: 13, color: '#cbd5e1' }}>
-                              <strong>Missing on:</strong>{' '}
-                              {availability?.missingOn.length
-                                ? availability.missingOn.map((nodeId) => nodeLabelById.get(nodeId) ?? nodeId).join(', ')
-                                : 'No missing nodes'}
+                          </TableCell>
+                        )}
+                        {columns.name && (
+                          <TableCell className="assets-col-name" data-label="Name">
+                            <span className="installed-assets-table__name-cell">{asset.name}</span>
+                          </TableCell>
+                        )}
+                        {columns.category && (
+                          <TableCell className="assets-col-category" data-label="Category">
+                            {asset.category || '-'}
+                          </TableCell>
+                        )}
+                        {columns.source && (
+                          <TableCell className="assets-col-source" data-label="Source">
+                            {asset.source || '-'}
+                          </TableCell>
+                        )}
+                        {columns.format && (
+                          <TableCell className="assets-col-format" data-label="Format">
+                            {asset.format ? <Tag type="cool-gray">{asset.format}</Tag> : '-'}
+                          </TableCell>
+                        )}
+                        {columns.sampleRate && (
+                          <TableCell className="assets-col-sample-rate" data-label="Sample rate">
+                            {formatSampleRate(asset.sampleRate)}
+                          </TableCell>
+                        )}
+                        {columns.duration && (
+                          <TableCell className="assets-col-duration" data-label="Duration">
+                            {formatDuration(asset.duration)}
+                          </TableCell>
+                        )}
+                        {columns.size && (
+                          <TableCell className="assets-col-size" data-label="Size">
+                            {formatSize(asset.size)}
+                          </TableCell>
+                        )}
+                        {columns.folder && (
+                          <TableCell className="assets-col-folder" data-label="Folder" title={asset.path}>
+                            {asset.folder || '-'}
+                          </TableCell>
+                        )}
+                        {columns.status && (
+                          <TableCell className="assets-col-status" data-label="Status">
+                            <div className="installed-assets-table__status-cell">
+                              {asset.isActive && <Tag type="green">Active</Tag>}
+                              {isClusterMode && availabilitySummary && (
+                                <Tag type={availability?.missingOn.length ? 'warm-gray' : 'teal'}>{availabilitySummary}</Tag>
+                              )}
                             </div>
+                          </TableCell>
+                        )}
+                        <TableCell className="assets-col-actions">
+                          <div className="installed-assets-actions">
+                            <Button
+                              kind="ghost"
+                              size="sm"
+                              hasIconOnly
+                              iconDescription={isExpanded ? 'Collapse details' : 'Expand details'}
+                              renderIcon={isExpanded ? CaretUp : CaretDown}
+                              onClick={() => toggleAssetRowExpanded(asset.id)}
+                            />
                             {canDeploy && (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: 12, color: '#94a3b8' }}>
-                                  Deploy from {nodeLabelById.get(availability?.sourceNodeId ?? sourceNodeId) ?? sourceNodeId} to fill missing nodes.
-                                </span>
-                                <button className="btn btn-sm btn-primary" onClick={() => openDeployDialog(asset)}>
-                                  <ShareNetwork size={14} weight="duotone" />
-                                  Deploy to Nodes
-                                </button>
+                              <Button
+                                kind="ghost"
+                                size="sm"
+                                hasIconOnly
+                                iconDescription="Deploy to nodes"
+                                renderIcon={Share}
+                                onClick={() => openDeployDialog(asset)}
+                              />
+                            )}
+                            <Button
+                              kind="ghost"
+                              size="sm"
+                              hasIconOnly
+                              iconDescription={`Delete ${asset.name}`}
+                              renderIcon={TrashCan}
+                              onClick={() => {
+                                setSelectedIds(new Set([asset.id]))
+                                setShowDeleteConfirm(true)
+                              }}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && (
+                        <TableRow className="installed-assets-mobile-details-row">
+                          <TableCell colSpan={visibleColumnCount}>
+                            <div className="installed-assets-mobile-details-grid">
+                              <div>
+                                <strong>Source:</strong> {asset.source || '-'}
+                              </div>
+                              <div>
+                                <strong>Format:</strong> {asset.format || '-'}
+                              </div>
+                              <div>
+                                <strong>Sample rate:</strong> {formatSampleRate(asset.sampleRate)}
+                              </div>
+                              <div>
+                                <strong>Duration:</strong> {formatDuration(asset.duration)}
+                              </div>
+                              <div>
+                                <strong>Size:</strong> {formatSize(asset.size)}
+                              </div>
+                              <div>
+                                <strong>Path:</strong> {asset.path || '-'}
+                              </div>
+                            </div>
+                            {isClusterMode && (
+                              <div className="installed-assets-table__availability-card">
+                                <p>
+                                  <strong>Available on:</strong>{' '}
+                                  {availability?.availableOn.length
+                                    ? availability.availableOn.map((node) => nodeLabelById.get(node) ?? node).join(', ')
+                                    : asset.type === 'sfz'
+                                      ? 'Local library only'
+                                      : 'Unknown'}
+                                </p>
+                                <p>
+                                  <strong>Missing on:</strong>{' '}
+                                  {availability?.missingOn.length
+                                    ? availability.missingOn.map((node) => nodeLabelById.get(node) ?? node).join(', ')
+                                    : 'No missing nodes'}
+                                </p>
+                                {canDeploy && (
+                                  <Button kind="primary" size="sm" renderIcon={Share} onClick={() => openDeployDialog(asset)}>
+                                    Deploy to nodes
+                                  </Button>
+                                )}
                               </div>
                             )}
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                  </Fragment>
-                )
-              })}
-            </tbody>
-          </table>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </div>
 
-      {/* Footer with count and pagination */}
-      <div
-        style={{
-          padding: '8px 16px',
-          borderTop: '1px solid var(--border)',
-          fontSize: 12,
-          color: 'var(--muted)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <span>
-          Showing {paginatedAssets.length > 0 ? currentPage * PAGE_SIZE + 1 : 0}-
-          {Math.min((currentPage + 1) * PAGE_SIZE, filteredAssets.length)} of {filteredAssets.length}
-          {filteredAssets.length !== unifiedAssets.length && ` (${unifiedAssets.length} total)`}
-          {selectedIds.size > 0 && ` · ${selectedIds.size} selected`}
+      <footer className="installed-assets-table-footer">
+        <span className="installed-assets-table-footer__summary">
+          Showing {summaryStart}-{summaryEnd} of {filteredAssets.length}
+          {filteredAssets.length !== unifiedAssets.length ? ` (${unifiedAssets.length} total)` : ''}
+          {selectedIds.size > 0 ? ` · ${selectedIds.size} selected` : ''}
         </span>
         {totalPages > 1 && (
-          <div className="flex" style={{ gap: 4, alignItems: 'center' }}>
-            <button
-              className="btn btn-ghost btn-sm"
-              style={{ padding: '2px 6px' }}
-              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+          <div className="installed-assets-table-footer__pagination">
+            <Button
+              kind="ghost"
+              size="sm"
+              hasIconOnly
+              iconDescription="Previous page"
+              renderIcon={CaretLeft}
               disabled={currentPage === 0}
-            >
-              <CaretLeft size={14} weight="bold" />
-            </button>
-            <span style={{ minWidth: 80, textAlign: 'center' }}>
+              onClick={() => setCurrentPage((previous) => Math.max(0, previous - 1))}
+            />
+            <span>
               Page {currentPage + 1} of {totalPages}
             </span>
-            <button
-              className="btn btn-ghost btn-sm"
-              style={{ padding: '2px 6px' }}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+            <Button
+              kind="ghost"
+              size="sm"
+              hasIconOnly
+              iconDescription="Next page"
+              renderIcon={CaretRight}
               disabled={currentPage >= totalPages - 1}
-            >
-              <CaretRight size={14} weight="bold" />
-            </button>
+              onClick={() => setCurrentPage((previous) => Math.min(totalPages - 1, previous + 1))}
+            />
           </div>
         )}
-        <span>
-          Sorted by {sortField} ({sortDirection === 'asc' ? 'asc' : 'desc'})
-        </span>
-      </div>
+        <span className="installed-assets-table-footer__sort">{`Sorted by ${sortText(sortField, sortDirection)}`}</span>
+      </footer>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => setShowDeleteConfirm(false)}
-        >
-          <div
-            className="card"
-            style={{ padding: 24, maxWidth: 400, width: '90%' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex" style={{ gap: 12, marginBottom: 16 }}>
-              <Warning size={24} weight="duotone" style={{ color: 'var(--warning)' }} />
-              <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Confirm Delete</h3>
-                <p style={{ margin: '8px 0 0', color: 'var(--muted)' }}>
-                  Are you sure you want to delete {selectedIds.size} asset
-                  {selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.
-                </p>
-              </div>
-            </div>
-            <div className="flex" style={{ gap: 8, justifyContent: 'flex-end' }}>
-              <button className="btn btn-ghost" onClick={() => setShowDeleteConfirm(false)}>
-                Cancel
-              </button>
-              <button
-                className="btn"
-                style={{ background: 'var(--error)', color: '#fff' }}
-                onClick={handleDeleteSelected}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={showDeleteConfirm}
+        danger
+        modalLabel="Asset library"
+        modalHeading="Delete selected assets"
+        primaryButtonText="Delete"
+        secondaryButtonText="Cancel"
+        onRequestClose={() => setShowDeleteConfirm(false)}
+        onSecondarySubmit={() => setShowDeleteConfirm(false)}
+        onRequestSubmit={() => {
+          void handleDeleteSelected()
+        }}
+      >
+        <div className="installed-assets-table__modal-body">
+          <WarningAlt size={24} aria-hidden />
+          <p>
+            Delete {selectedIds.size} asset{selectedIds.size === 1 ? '' : 's'}? This action cannot be undone.
+          </p>
         </div>
-      )}
+      </Modal>
 
-      {deployAsset && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.55)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => {
-            if (!deployMutation.isPending) {
-              setDeployAsset(null)
-              setDeployTargetIds(new Set())
-            }
-          }}
-        >
-          <div
-            className="card"
-            style={{ padding: 24, maxWidth: 520, width: '92%' }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex" style={{ gap: 12, marginBottom: 16 }}>
-              <ShareNetwork size={24} weight="duotone" style={{ color: 'var(--primary)' }} />
-              <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>Deploy Asset to Nodes</h3>
-                <p style={{ margin: '8px 0 0', color: 'var(--muted)' }}>
-                  Copy <strong>{deployAsset.name}</strong> from {nodeLabelById.get(deployAsset.availability?.sourceNodeId ?? sourceNodeId) ?? sourceNodeId}
-                  {' '}to the selected target nodes.
-                </p>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
+      <Modal
+        open={Boolean(deployAsset)}
+        size="md"
+        modalLabel="Cluster deployment"
+        modalHeading="Deploy asset to nodes"
+        primaryButtonText={deployMutation.isPending ? 'Deploying...' : 'Deploy'}
+        secondaryButtonText="Cancel"
+        primaryButtonDisabled={!deployAsset || deployTargetIds.size === 0 || deployMutation.isPending}
+        onRequestClose={closeDeployDialog}
+        onSecondarySubmit={closeDeployDialog}
+        onRequestSubmit={() => {
+          if (!deployAsset || deployMutation.isPending) return
+          deployMutation.mutate({ asset: deployAsset, targetNodeIds: Array.from(deployTargetIds) })
+        }}
+      >
+        {deployAsset && (
+          <div className="installed-assets-table__deploy-dialog">
+            <p className="installed-assets-table__deploy-copy">
+              Copy <strong>{deployAsset.name}</strong> from <strong>{deploySourceLabel}</strong> to selected target nodes.
+            </p>
+            <div className="installed-assets-table__deploy-targets">
               {availabilityNodes
                 .filter((node) => node.nodeId !== (deployAsset.availability?.sourceNodeId ?? sourceNodeId))
                 .map((node) => {
@@ -1407,101 +1171,36 @@ export function InstalledAssetsTable({ nodeId = null }: InstalledAssetsTableProp
                   return (
                     <label
                       key={node.nodeId}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        padding: '10px 12px',
-                        borderRadius: 8,
-                        background: checked ? 'rgba(var(--primary-rgb), 0.08)' : 'var(--bg-secondary)',
-                        border: checked ? '1px solid rgba(var(--primary-rgb), 0.35)' : '1px solid var(--border)',
-                        opacity: node.isOnline ? 1 : 0.65,
-                        cursor: node.isOnline ? 'pointer' : 'not-allowed',
-                      }}
+                      className={`installed-assets-table__deploy-target${checked ? ' is-selected' : ''}${node.isOnline ? '' : ' is-offline'}`}
                     >
                       <div>
-                        <div style={{ fontWeight: 600 }}>{nodeLabelById.get(node.nodeId) ?? node.nodeId}</div>
-                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                          {alreadyAvailable ? 'Already available' : 'Missing on target'}
-                        </div>
+                        <p>{nodeLabelById.get(node.nodeId) ?? node.nodeId}</p>
+                        <span>{alreadyAvailable ? 'Already available' : 'Missing on target'}</span>
                       </div>
-                      <input
-                        type="checkbox"
+                      <Checkbox
+                        id={`deploy-node-${node.nodeId}`}
+                        hideLabel
+                        labelText={`Deploy to ${node.hostname}`}
                         checked={checked}
-                        disabled={!node.isOnline}
+                        disabled={!node.isOnline || deployMutation.isPending}
                         onChange={() => toggleDeployTarget(node.nodeId)}
                       />
                     </label>
                   )
                 })}
             </div>
-
             {deployMutation.isError && (
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                  color: '#fecaca',
-                  fontSize: 13,
-                }}
-              >
-                {deployMutation.error instanceof Error ? deployMutation.error.message : 'Deploy failed'}
-              </div>
+              <InlineNotification
+                kind="error"
+                lowContrast
+                hideCloseButton
+                title="Deploy failed"
+                subtitle={deployMutation.error instanceof Error ? deployMutation.error.message : 'Deploy failed'}
+              />
             )}
-
-            {deployMutation.isSuccess && (
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  background: 'rgba(34, 197, 94, 0.12)',
-                  border: '1px solid rgba(34, 197, 94, 0.25)',
-                  color: '#bbf7d0',
-                  fontSize: 13,
-                }}
-              >
-                Deployment started for {deployMutation.data?.successful.length ?? 0} node(s).
-                {deployMutation.data?.failed.length ? ` Failed: ${deployMutation.data.failed.join(', ')}` : ''}
-              </div>
-            )}
-
-            <div className="flex" style={{ gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                className="btn btn-ghost"
-                disabled={deployMutation.isPending}
-                onClick={() => {
-                  setDeployAsset(null)
-                  setDeployTargetIds(new Set())
-                }}
-              >
-                Close
-              </button>
-              <button
-                className="btn btn-primary"
-                disabled={deployTargetIds.size === 0 || deployMutation.isPending}
-                onClick={() => deployMutation.mutate({ asset: deployAsset, targetNodeIds: Array.from(deployTargetIds) })}
-              >
-                {deployMutation.isPending ? (
-                  <>
-                    <SpinnerGap size={14} weight="duotone" className="spin" />
-                    Deploying...
-                  </>
-                ) : (
-                  <>
-                    <ShareNetwork size={14} weight="duotone" />
-                    Deploy
-                  </>
-                )}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </Modal>
+    </section>
   )
 }

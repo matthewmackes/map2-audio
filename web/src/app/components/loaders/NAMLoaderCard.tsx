@@ -14,7 +14,7 @@ export function NAMLoaderCard({ onLoadNAM }: NAMLoaderCardProps) {
 
   const statusQuery = useQuery<NAMStatus>({
     queryKey: ['nam', 'status'],
-    queryFn: namApi.getStatus,
+    queryFn: () => namApi.getStatus(),
   })
 
   const status = statusQuery.data

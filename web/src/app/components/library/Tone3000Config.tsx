@@ -1,18 +1,95 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Key, ArrowSquareOut, Check, WarningCircle, SpinnerGap, ArrowsClockwise, DownloadSimple, X } from '@phosphor-icons/react'
+import { useMemo, useState } from 'react'
+import {
+  Button,
+  InlineLoading,
+  InlineNotification,
+  ProgressBar,
+  Tag,
+  TextInput,
+} from '@carbon/react'
+import {
+  CheckmarkFilled,
+  Close,
+  Download,
+  Launch,
+  Renew,
+} from '@carbon/icons-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { irLibraryApi } from '../../../map2/api'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
+import './Tone3000Config.css'
+
+const DEFAULT_AUTH_URL = 'https://www.tone3000.com/api/v1/auth'
+
+function mapProgressStateToTag(progressState?: string): 'purple' | 'green' | 'red' | 'gray' {
+  switch (progressState) {
+    case 'discovering':
+    case 'downloading':
+      return 'purple'
+    case 'completed':
+      return 'green'
+    case 'failed':
+      return 'red'
+    default:
+      return 'gray'
+  }
+}
+
+function mapProgressStateToLabel(progressState?: string): string {
+  switch (progressState) {
+    case 'discovering':
+      return 'Discovering models'
+    case 'downloading':
+      return 'Downloading models'
+    case 'completed':
+      return 'Download complete'
+    case 'failed':
+      return 'Download failed'
+    default:
+      return 'Idle'
+  }
+}
+
+function mapProgressStateToBarStatus(progressState?: string): 'active' | 'finished' | 'error' {
+  if (progressState === 'completed') {
+    return 'finished'
+  }
+
+  if (progressState === 'failed') {
+    return 'error'
+  }
+
+  return 'active'
+}
 
 export function Tone3000Config() {
   const [apiKey, setApiKey] = useState('')
   const [showInput, setShowInput] = useState(false)
   const queryClient = useQueryClient()
-  const { startDownload, isDownloading, isStarting, status: downloadStatus, cancelDownload, isCancelling } = useDownloadProgress()
+  const {
+    startDownload,
+    isDownloading,
+    isStarting,
+    status: downloadStatus,
+    cancelDownload,
+    isCancelling,
+  } = useDownloadProgress()
 
-  // Find tone3000 source progress
-  const tone3000Progress = downloadStatus?.sources?.find(s => s.name === 'tone3000')
-  const isTone3000Active = tone3000Progress && ['discovering', 'downloading'].includes(tone3000Progress.state)
+  const tone3000Progress = downloadStatus?.sources?.find((source) => source.name === 'tone3000')
+  const isTone3000Active = Boolean(
+    tone3000Progress && ['discovering', 'downloading'].includes(tone3000Progress.state),
+  )
+
+  const tone3000Percent = useMemo(() => {
+    if (!tone3000Progress || tone3000Progress.total_files <= 0) {
+      return 0
+    }
+
+    return Math.min(
+      100,
+      Math.round(((tone3000Progress.downloaded + tone3000Progress.skipped) / tone3000Progress.total_files) * 100),
+    )
+  }, [tone3000Progress])
 
   const statusQuery = useQuery({
     queryKey: ['tone3000', 'status'],
@@ -30,7 +107,7 @@ export function Tone3000Config() {
 
   const testAuthMutation = useMutation({
     mutationFn: irLibraryApi.testTone3000Auth,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tone3000'] })
     },
   })
@@ -40,281 +117,270 @@ export function Tone3000Config() {
   const isAuthenticated = status?.authenticated ?? false
 
   const handleSaveApiKey = () => {
-    if (apiKey.trim()) {
-      setApiKeyMutation.mutate(apiKey.trim())
+    const trimmedKey = apiKey.trim()
+    if (trimmedKey) {
+      setApiKeyMutation.mutate(trimmedKey)
     }
   }
 
-  const handleDownloadCabinetIRs = () => {
+  const handleDownloadCabinetIrs = () => {
     startDownload({ sources: ['djammincabs', 'overdriven'], parallel: 4, skip_existing: true })
   }
 
+  const renderProgress =
+    tone3000Progress &&
+    (isTone3000Active || tone3000Progress.state === 'completed' || tone3000Progress.state === 'failed')
+
   return (
-    <div className="card" style={{ padding: 16, borderLeft: '3px solid #8b5cf6' }}>
-      <div className="flex-between" style={{ marginBottom: 12 }}>
-        <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-          <Key size={20} weight="duotone" style={{ color: '#8b5cf6' }} />
-          <span style={{ fontWeight: 600 }}>TONE3000 Configuration</span>
-          {isConfigured && (
-            <span
-              className="badge"
-              style={{
-                background: isAuthenticated ? 'var(--success-bg)' : 'var(--warning-bg)',
-                color: isAuthenticated ? 'var(--success)' : 'var(--warning)'
+    <section className="tone3000-config">
+      <div className="tone3000-config__header">
+        <div className="tone3000-config__header-main">
+          <span className="tone3000-config__title">Tone3000 configuration</span>
+          {isConfigured ? (
+            <Tag type={isAuthenticated ? 'green' : 'cyan'}>{isAuthenticated ? 'Connected' : 'Configured'}</Tag>
+          ) : null}
+        </div>
+
+        {isConfigured ? (
+          <div className="tone3000-config__actions">
+            <Button
+              kind="primary"
+              size="sm"
+              renderIcon={Download}
+              disabled={isDownloading || isStarting}
+              onClick={() => {
+                startDownload({ sources: ['tone3000'], parallel: 4, skip_existing: true })
               }}
             >
-              {isAuthenticated ? 'Connected' : 'Configured'}
-            </span>
-          )}
-        </div>
-        {isConfigured && (
-          <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => startDownload({ sources: ['tone3000'], parallel: 4, skip_existing: true })}
+              Download top 10 NAM models
+            </Button>
+            <Button
+              kind="primary"
+              size="sm"
+              renderIcon={Download}
               disabled={isDownloading || isStarting}
+              onClick={() => {
+                startDownload({ sources: ['tone3000'], parallel: 4, skip_existing: true })
+              }}
             >
-              {isStarting ? (
-                <SpinnerGap size={14} weight="duotone" className="spin" />
-              ) : (
-                <DownloadSimple size={14} weight="duotone" />
-              )}
-              Download Top 10 NAM
-            </button>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => startDownload({ sources: ['tone3000'], parallel: 4, skip_existing: true })}
+              Download top 25 trending amp heads
+            </Button>
+            <Button
+              kind="secondary"
+              size="sm"
+              renderIcon={Download}
               disabled={isDownloading || isStarting}
+              onClick={handleDownloadCabinetIrs}
             >
-              {isStarting ? (
-                <SpinnerGap size={14} weight="duotone" className="spin" />
-              ) : (
-                <DownloadSimple size={14} weight="duotone" />
-              )}
-              Download Top 25 Trending Amp Heads
-            </button>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleDownloadCabinetIRs}
-              disabled={isDownloading || isStarting}
-            >
-              {isStarting ? (
-                <SpinnerGap size={14} weight="duotone" className="spin" />
-              ) : (
-                <DownloadSimple size={14} weight="duotone" />
-              )}
-              Download Cabinet IRs
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => testAuthMutation.mutate()}
+              Download cabinet IRs
+            </Button>
+            <Button
+              kind="ghost"
+              size="sm"
+              renderIcon={Renew}
               disabled={testAuthMutation.isPending}
+              onClick={() => {
+                testAuthMutation.mutate()
+              }}
             >
-              {testAuthMutation.isPending ? (
-                <SpinnerGap size={14} weight="duotone" className="spin" />
-              ) : (
-                <ArrowsClockwise size={14} weight="duotone" />
-              )}
-              Test
-            </button>
+              Test authentication
+            </Button>
           </div>
-        )}
+        ) : null}
       </div>
 
-      <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
-        TONE3000 is the largest NAM model community. Connect your account to download trending amp models.
+      <p className="tone3000-config__description">
+        Tone3000 is the largest NAM model community. Connect your account to download trending amp models.
       </p>
 
-      {/* Download Progress */}
-      {(isTone3000Active || (tone3000Progress && tone3000Progress.state === 'completed')) && (
-        <div className="card" style={{ padding: 12, marginBottom: 12, background: 'var(--bg-secondary)' }}>
-          <div className="flex-between" style={{ marginBottom: 8 }}>
-            <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-              {tone3000Progress?.state === 'discovering' && (
-                <>
-                  <SpinnerGap size={14} weight="duotone" className="spin" style={{ color: '#8b5cf6' }} />
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>Discovering NAM models...</span>
-                </>
-              )}
-              {tone3000Progress?.state === 'downloading' && (
-                <>
-                  <SpinnerGap size={14} weight="duotone" className="spin" style={{ color: '#8b5cf6' }} />
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>Downloading NAM models...</span>
-                </>
-              )}
-              {tone3000Progress?.state === 'completed' && (
-                <>
-                  <Check size={14} weight="bold" style={{ color: 'var(--success)' }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--success)' }}>Download complete!</span>
-                </>
-              )}
-              {tone3000Progress?.state === 'failed' && (
-                <>
-                  <WarningCircle size={14} weight="duotone" style={{ color: 'var(--danger)' }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--danger)' }}>Download failed</span>
-                </>
-              )}
-            </div>
-            {isTone3000Active && (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => cancelDownload()}
+      {isStarting ? <InlineLoading description="Starting download..." /> : null}
+
+      {renderProgress ? (
+        <div className="tone3000-config__progress">
+          <div className="tone3000-config__progress-header">
+            <Tag type={mapProgressStateToTag(tone3000Progress.state)}>
+              {mapProgressStateToLabel(tone3000Progress.state)}
+            </Tag>
+
+            {isTone3000Active ? (
+              <Button
+                kind="ghost"
+                size="sm"
+                renderIcon={Close}
+                iconDescription="Cancel download"
                 disabled={isCancelling}
-                style={{ padding: '4px 8px' }}
+                onClick={() => {
+                  cancelDownload()
+                }}
               >
-                {isCancelling ? <SpinnerGap size={12} weight="duotone" className="spin" /> : <X size={12} weight="bold" />}
-              </button>
-            )}
+                Cancel download
+              </Button>
+            ) : null}
           </div>
 
-          {/* Progress bar */}
-          {tone3000Progress && tone3000Progress.total_files > 0 && (
-            <div style={{ marginBottom: 8 }}>
-              <div style={{
-                height: 6,
-                background: 'var(--border)',
-                borderRadius: 3,
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  height: '100%',
-                  width: `${Math.round(((tone3000Progress.downloaded + tone3000Progress.skipped) / tone3000Progress.total_files) * 100)}%`,
-                  background: tone3000Progress.state === 'completed' ? 'var(--success)' : '#8b5cf6',
-                  borderRadius: 3,
-                  transition: 'width 0.3s ease'
-                }} />
-              </div>
-            </div>
-          )}
+          {isTone3000Active ? (
+            <InlineLoading
+              description={
+                tone3000Progress.state === 'discovering'
+                  ? 'Discovering Tone3000 models...'
+                  : 'Downloading Tone3000 models...'
+              }
+            />
+          ) : null}
 
-          {/* Stats */}
-          <div className="flex" style={{ gap: 16, fontSize: 12, color: 'var(--text-secondary)' }}>
-            {tone3000Progress?.discovered > 0 && (
-              <span>Found: {tone3000Progress.discovered}</span>
-            )}
-            {tone3000Progress && tone3000Progress.total_files > 0 && (
+          {tone3000Progress.total_files > 0 ? (
+            <ProgressBar
+              label="Tone3000 download progress"
+              hideLabel
+              size="small"
+              value={tone3000Percent}
+              max={100}
+              status={mapProgressStateToBarStatus(tone3000Progress.state)}
+              helperText={`${tone3000Percent}% complete`}
+            />
+          ) : null}
+
+          <div className="tone3000-config__progress-stats">
+            {tone3000Progress.discovered > 0 ? <span>Found: {tone3000Progress.discovered}</span> : null}
+            {tone3000Progress.total_files > 0 ? (
               <>
-                <span>Downloaded: {tone3000Progress.downloaded}/{tone3000Progress.total_files}</span>
-                {tone3000Progress.skipped > 0 && <span>Skipped: {tone3000Progress.skipped}</span>}
-                {tone3000Progress.failed > 0 && <span style={{ color: 'var(--danger)' }}>Failed: {tone3000Progress.failed}</span>}
+                <span>
+                  Downloaded: {tone3000Progress.downloaded}/{tone3000Progress.total_files}
+                </span>
+                {tone3000Progress.skipped > 0 ? <span>Skipped: {tone3000Progress.skipped}</span> : null}
+                {tone3000Progress.failed > 0 ? <span>Failed: {tone3000Progress.failed}</span> : null}
               </>
-            )}
+            ) : null}
           </div>
 
-          {/* Current file */}
-          {tone3000Progress?.current_file && (
-            <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
-              Downloading: {tone3000Progress.current_file}
-            </div>
-          )}
+          {tone3000Progress.current_file ? (
+            <p className="tone3000-config__current-file">Downloading: {tone3000Progress.current_file}</p>
+          ) : null}
         </div>
-      )}
+      ) : null}
 
-      {!isConfigured && !showInput && (
-        <div className="stack" style={{ gap: 12 }}>
-          <div className="flex" style={{ gap: 8 }}>
-            <a
-              href={status?.auth_url || 'https://www.tone3000.com/api/v1/auth'}
+      {!isConfigured && !showInput ? (
+        <div className="tone3000-config__setup">
+          <div className="tone3000-config__setup-actions">
+            <Button
+              kind="primary"
+              size="sm"
+              renderIcon={Launch}
+              href={status?.auth_url || DEFAULT_AUTH_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-primary btn-sm"
             >
-              <ArrowSquareOut size={14} weight="duotone" />
-              Get API Key
-            </a>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setShowInput(true)}
-            >
-              <Key size={14} weight="duotone" />
-              Enter Key
-            </button>
-          </div>
-          <p className="muted" style={{ fontSize: 11 }}>
-            1. Click "Get API Key" to authenticate with TONE3000<br />
-            2. Copy the API key from the redirect URL<br />
-            3. Paste it here
-          </p>
-        </div>
-      )}
-
-      {(showInput || isConfigured) && (
-        <div className="stack" style={{ gap: 8 }}>
-          <div className="flex" style={{ gap: 8 }}>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={isConfigured ? '••••••••••••••••' : 'Paste API key here'}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: 6,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-secondary)',
-                fontSize: 13,
+              Get API key
+            </Button>
+            <Button
+              kind="ghost"
+              size="sm"
+              onClick={() => {
+                setShowInput(true)
               }}
-            />
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleSaveApiKey}
-              disabled={!apiKey.trim() || setApiKeyMutation.isPending}
             >
-              {setApiKeyMutation.isPending ? (
-                <SpinnerGap size={14} weight="duotone" className="spin" />
-              ) : (
-                <Check size={14} weight="bold" />
-              )}
-              Save
-            </button>
+              Enter key
+            </Button>
           </div>
 
-          {setApiKeyMutation.isError && (
-            <div className="flex" style={{ gap: 6, color: 'var(--danger)', fontSize: 12, flexWrap: 'wrap' }}>
-              <WarningCircle size={12} weight="duotone" />
-              <span>Failed to save API key: {setApiKeyMutation.error instanceof Error ? setApiKeyMutation.error.message : String(setApiKeyMutation.error)}</span>
-            </div>
-          )}
+          <ol className="tone3000-config__setup-steps">
+            <li>Open the Tone3000 authentication link and sign in.</li>
+            <li>Copy the API key from the redirect URL.</li>
+            <li>Paste the key below and save it.</li>
+          </ol>
         </div>
-      )}
+      ) : null}
 
-      {testAuthMutation.data && (
-        <div style={{ marginTop: 12 }}>
-          {testAuthMutation.data.authenticated ? (
-            <div className="card" style={{ padding: 12, background: 'var(--success-bg)' }}>
-              <div className="flex" style={{ gap: 6, color: 'var(--success)', marginBottom: 8 }}>
-                <Check size={14} weight="bold" />
-                <span style={{ fontWeight: 500, fontSize: 13 }}>Authentication successful!</span>
-              </div>
-              {testAuthMutation.data.sample_models && testAuthMutation.data.sample_models.length > 0 && (
-                <div style={{ fontSize: 12 }}>
-                  <span className="muted">Sample models found:</span>
-                  <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-                    {testAuthMutation.data.sample_models.slice(0, 3).map((model, i) => (
-                      <li key={i} style={{ color: 'var(--text-secondary)' }}>
-                        {model.name} by {model.author}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="card" style={{ padding: 12, background: 'var(--danger-bg)' }}>
-              <div className="flex" style={{ gap: 6, color: 'var(--danger)' }}>
-                <WarningCircle size={14} weight="duotone" />
-                <span style={{ fontSize: 13 }}>{testAuthMutation.data.message || 'Authentication failed'}</span>
-              </div>
-            </div>
-          )}
+      {showInput || isConfigured ? (
+        <div className="tone3000-config__credentials">
+          <TextInput
+            id="tone3000-api-key"
+            className="tone3000-config__text-input"
+            type="password"
+            labelText="Tone3000 API key"
+            value={apiKey}
+            placeholder={isConfigured ? '••••••••••••••••' : 'Paste API key here'}
+            onChange={(event) => setApiKey(event.currentTarget.value)}
+          />
+
+          <div className="tone3000-config__credentials-actions">
+            <Button
+              kind="primary"
+              size="sm"
+              renderIcon={CheckmarkFilled}
+              disabled={!apiKey.trim() || setApiKeyMutation.isPending}
+              onClick={handleSaveApiKey}
+            >
+              Save API key
+            </Button>
+            {showInput && !isConfigured ? (
+              <Button
+                kind="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowInput(false)
+                  setApiKey('')
+                }}
+              >
+                Cancel
+              </Button>
+            ) : null}
+          </div>
+
+          {setApiKeyMutation.isPending ? <InlineLoading description="Saving API key..." /> : null}
+
+          {setApiKeyMutation.isError ? (
+            <InlineNotification
+              kind="error"
+              lowContrast
+              hideCloseButton
+              title="Failed to save API key"
+              subtitle={
+                setApiKeyMutation.error instanceof Error
+                  ? setApiKeyMutation.error.message
+                  : String(setApiKeyMutation.error)
+              }
+            />
+          ) : null}
         </div>
-      )}
+      ) : null}
 
-      {status?.token_expires && (
-        <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>
-          Token expires: {new Date(status.token_expires).toLocaleString()}
-        </p>
-      )}
-    </div>
+      {testAuthMutation.data ? (
+        testAuthMutation.data.authenticated ? (
+          <InlineNotification
+            kind="success"
+            lowContrast
+            hideCloseButton
+            title="Authentication successful"
+            subtitle="Tone3000 credentials are valid and model access is available."
+          />
+        ) : (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Authentication failed"
+            subtitle={testAuthMutation.data.message || 'Authentication failed'}
+          />
+        )
+      ) : null}
+
+      {testAuthMutation.data?.authenticated && testAuthMutation.data.sample_models?.length ? (
+        <div className="tone3000-config__sample-models">
+          <span className="tone3000-config__sample-title">Sample models</span>
+          <ul>
+            {testAuthMutation.data.sample_models.slice(0, 3).map((model) => (
+              <li key={`${model.name}-${model.author}`}>
+                {model.name} by {model.author}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {status?.token_expires ? (
+        <p className="tone3000-config__expiry">Token expires: {new Date(status.token_expires).toLocaleString()}</p>
+      ) : null}
+    </section>
   )
 }

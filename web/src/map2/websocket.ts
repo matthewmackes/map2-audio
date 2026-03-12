@@ -19,6 +19,7 @@ export type WebSocketTopic =
   | 'chain_updates'
   | 'plugin_params'
   | 'automation'
+  | 'schema_changed'
   | 'avb:router:endpoints'
   | 'avb:router:connections'
   | 'avb:router:connection_state'
@@ -34,6 +35,7 @@ export type WebSocketTopic =
   | 'midi_cluster_nodes'
   | 'midi_cluster_connections'
   | 'midi_cluster_clock'
+  | 'traffic_event'
   // PipeWire audio server
   | 'pipewire'
   // Biamp Tesira Forte AVB fleet

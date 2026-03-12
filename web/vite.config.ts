@@ -26,6 +26,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     outDir: 'dist',
     sourcemap: true,
+    // Keep prior hashed bundles during rebuilds so active clients don't 404
+    // when /index.html or in-memory tabs still reference previous asset names.
+    // This avoids transient "Loading failed for module index-*.js" outages on
+    // the long-running port-3000 preview server while new builds are written.
+    emptyOutDir: false,
     // NOTE: manualChunks was removed because splitting React-dependent
     // libraries (recharts, @emotion, @mui, reactflow) into separate
     // chunks from React itself causes circular initialization errors

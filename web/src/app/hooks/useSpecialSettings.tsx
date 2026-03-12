@@ -12,11 +12,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiUrl, wsUrl } from '../utils/apiTarget'
 import { defaultPinnedRoutes } from '../data/advancedMenuItems'
 
+const SPECIAL_SETTINGS_ENDPOINT = '/api/settings/special/'
+const SPECIAL_SETTINGS_SYNC_EVENT = 'map2:special-settings-sync'
+
 export interface SpecialSettings {
   enabled: boolean
   hiddenPlugins: string[]
   menuLocation: 'top-nav' | 'mobile-only' | 'hidden'
   pinnedRoutes: string[]
+  lastActiveNode?: string | null
   version?: number
   lastUpdated?: string
   updatedByNode?: string
@@ -44,6 +48,21 @@ function resolvePinnedRoutes(data: Record<string, unknown>): string[] {
   return defaultPinnedRoutes
 }
 
+function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
+  return {
+    enabled: Boolean(data.enabled),
+    hiddenPlugins: Array.isArray(data.hidden_plugins)
+      ? data.hidden_plugins.filter((item): item is string => typeof item === 'string')
+      : [],
+    menuLocation: data.menu_location === 'mobile-only' || data.menu_location === 'hidden' ? data.menu_location : 'top-nav',
+    pinnedRoutes: resolvePinnedRoutes(data),
+    lastActiveNode: typeof data.last_active_node === 'string' ? data.last_active_node : null,
+    version: typeof data.version === 'number' ? data.version : undefined,
+    lastUpdated: typeof data.last_updated === 'string' ? data.last_updated : undefined,
+    updatedByNode: typeof data.updated_by_node === 'string' ? data.updated_by_node : undefined,
+  }
+}
+
 export function useSpecialSettings(): UseSpecialSettingsReturn {
   const [settings, setSettings] = useState<SpecialSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -54,23 +73,14 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
     setError(null)
 
     try {
-      const response = await fetch(apiUrl('/api/settings/special'))
+      const response = await fetch(apiUrl(SPECIAL_SETTINGS_ENDPOINT))
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const data = await response.json()
-
-      setSettings({
-        enabled: data.enabled || false,
-        hiddenPlugins: data.hidden_plugins || [],
-        menuLocation: data.menu_location || 'top-nav',
-        pinnedRoutes: resolvePinnedRoutes(data),
-        version: data.version,
-        lastUpdated: data.last_updated,
-        updatedByNode: data.updated_by_node,
-      })
+      const data = await response.json() as Record<string, unknown>
+      setSettings(toSpecialSettings(data))
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load settings'
       setError(message)
@@ -89,9 +99,10 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         hidden_plugins: newSettings.hiddenPlugins ?? settings?.hiddenPlugins ?? [],
         menu_location: newSettings.menuLocation ?? settings?.menuLocation ?? 'top-nav',
         pinned_routes: newSettings.pinnedRoutes ?? settings?.pinnedRoutes ?? defaultPinnedRoutes,
+        last_active_node: newSettings.lastActiveNode ?? settings?.lastActiveNode ?? null,
       }
 
-      let response = await fetch(apiUrl('/api/settings/special'), {
+      let response = await fetch(apiUrl(SPECIAL_SETTINGS_ENDPOINT), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,17 +135,13 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const data = await response.json()
+      const data = await response.json() as Record<string, unknown>
+      const nextSettings = toSpecialSettings(data)
+      setSettings(nextSettings)
 
-      setSettings({
-        enabled: data.enabled,
-        hiddenPlugins: data.hidden_plugins || [],
-        menuLocation: data.menu_location,
-        pinnedRoutes: resolvePinnedRoutes(data),
-        version: data.version,
-        lastUpdated: data.last_updated,
-        updatedByNode: data.updated_by_node,
-      })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent<SpecialSettings>(SPECIAL_SETTINGS_SYNC_EVENT, { detail: nextSettings }))
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update settings'
       setError(message)
@@ -146,6 +153,26 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
   useEffect(() => {
     loadSettings()
   }, [loadSettings])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    const handleSpecialSettingsSync = (event: Event) => {
+      const customEvent = event as CustomEvent<SpecialSettings>
+      if (customEvent.detail) {
+        setSettings(customEvent.detail)
+        setError(null)
+        setIsLoading(false)
+      }
+    }
+
+    window.addEventListener(SPECIAL_SETTINGS_SYNC_EVENT, handleSpecialSettingsSync as EventListener)
+    return () => {
+      window.removeEventListener(SPECIAL_SETTINGS_SYNC_EVENT, handleSpecialSettingsSync as EventListener)
+    }
+  }, [])
 
   useEffect(() => {
     const eventsWsUrl = wsUrl('/ws/events')

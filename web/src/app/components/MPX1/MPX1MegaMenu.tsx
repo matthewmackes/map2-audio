@@ -1,18 +1,20 @@
 import { NavLink } from 'react-router-dom'
 import {
-  ArrowsClockwise,
-  Books,
-  CaretLeft,
-  CaretRight,
-  GitBranch,
-  Lightning,
-  MusicNotes,
+  Activity,
+  Apps,
+  Book,
+  Branch,
+  ChevronLeft,
+  ChevronRight,
+  Flash,
+  Music,
   Power,
-  Pulse,
-  Sliders,
-  SquaresFour,
+  Renew,
+  SettingsAdjust,
   Waveform,
-} from '@phosphor-icons/react'
+  type CarbonIconType,
+} from '@carbon/icons-react'
+import { Button, Layer, Tag } from '@carbon/react'
 
 import { formatMpx1ProgramNumber } from './programNumber'
 import { useIsMobile } from '../../hooks/useIsMobile'
@@ -25,7 +27,7 @@ interface Mpx1Tile {
   to: string
   label: string
   description: string
-  icon: React.ComponentType<any>
+  icon: CarbonIconType
 }
 
 const TILES: Mpx1Tile[] = [
@@ -34,21 +36,21 @@ const TILES: Mpx1Tile[] = [
     to: '/mpx1/panel',
     label: 'Panel',
     description: 'Front panel + live controls',
-    icon: SquaresFour,
+    icon: Apps,
   },
   {
     id: 'editor',
     to: '/mpx1/editor',
     label: 'Editor',
     description: 'Deep parameter editor',
-    icon: Sliders,
+    icon: SettingsAdjust,
   },
   {
     id: 'midi-map',
     to: '/mpx1/midi-map',
     label: 'MIDI Mapper',
     description: 'CC to SysEx routing',
-    icon: MusicNotes,
+    icon: Music,
   },
   {
     id: 'matrix',
@@ -62,21 +64,21 @@ const TILES: Mpx1Tile[] = [
     to: '/mpx1/library',
     label: 'Library',
     description: 'Programs, tags, compare',
-    icon: Books,
+    icon: Book,
   },
   {
     id: 'diag',
     to: '/mpx1/diag',
     label: 'Diagnostics',
     description: 'SysEx traffic + health',
-    icon: Pulse,
+    icon: Activity,
   },
   {
     id: 'flow',
     to: '/mpx1/flow',
     label: 'Signal Flow',
     description: 'WYSIWYG routing canvas',
-    icon: GitBranch,
+    icon: Branch,
   },
 ]
 
@@ -178,7 +180,7 @@ export function MPX1MegaMenu({
               onClick={() => void onProgramStep?.(-1)}
               aria-label="Previous MPX1 program"
             >
-              <CaretLeft size={16} weight="bold" aria-hidden />
+              <ChevronLeft size={16} aria-hidden />
               Prev Program
             </button>
             <button
@@ -187,7 +189,7 @@ export function MPX1MegaMenu({
               onClick={() => void onProgramStep?.(1)}
               aria-label="Next MPX1 program"
             >
-              <CaretRight size={16} weight="bold" aria-hidden />
+              <ChevronRight size={16} aria-hidden />
               Next Program
             </button>
           </div>
@@ -197,7 +199,7 @@ export function MPX1MegaMenu({
               const TileIcon = tile.icon
               return (
                 <NavLink key={tile.id} to={tile.to} className="mpx1-mega-menu-mobile-link" onClick={onClose}>
-                  <TileIcon size={16} weight="duotone" aria-hidden />
+                  <TileIcon size={16} aria-hidden />
                   <span>{tile.label}</span>
                 </NavLink>
               )
@@ -209,39 +211,46 @@ export function MPX1MegaMenu({
   }
 
   return (
-    <div id={menuId} className="mpx1-mega-menu" role="menu" aria-label="MPX1 menu">
+    <Layer id={menuId} className="mpx1-mega-menu" role="menu" aria-label="MPX1 menu">
       <section className="mpx1-mega-menu__header">
         <div className="mpx1-mega-menu__header-status">
           <span className={`mpx1-status-dot${connected ? ' is-online' : ''}`} aria-hidden />
           <span className="mpx1-status-label">{connected ? 'Device Online' : 'No Device Connected'}</span>
+          <Tag type={connected ? 'green' : 'warm-gray'} size="sm" className="mpx1-status-tag">
+            {connected ? 'Connected' : 'Offline'}
+          </Tag>
         </div>
 
         <div className="mpx1-mega-menu__header-program">
-          <button
+          <Button
             type="button"
+            kind="ghost"
+            size="sm"
+            hasIconOnly
             className="mpx1-program-step"
             onClick={() => void onProgramStep?.(-1)}
-            aria-label="Previous MPX1 program"
-          >
-            <CaretLeft size={14} weight="bold" aria-hidden />
-          </button>
+            renderIcon={ChevronLeft}
+            iconDescription="Previous MPX1 program"
+          />
           <div className="mpx1-program-meta">
             <div className="mpx1-program-number">P{formatMpx1ProgramNumber(currentProgram)}</div>
             <div className="mpx1-program-name" title={currentProgramName}>{currentProgramName}</div>
           </div>
-          <button
+          <Button
             type="button"
+            kind="ghost"
+            size="sm"
+            hasIconOnly
             className="mpx1-program-step"
             onClick={() => void onProgramStep?.(1)}
-            aria-label="Next MPX1 program"
-          >
-            <CaretRight size={14} weight="bold" aria-hidden />
-          </button>
+            renderIcon={ChevronRight}
+            iconDescription="Next MPX1 program"
+          />
         </div>
       </section>
 
       <section className="mpx1-mega-menu__body">
-        <aside className="mpx1-mega-menu__sidebar" aria-label="MPX1 device controls">
+        <Layer className="mpx1-mega-menu__sidebar" aria-label="MPX1 device controls">
           <div className="mpx1-mega-menu__sidebar-title">Device</div>
 
           <div className="mpx1-mini-meter">
@@ -261,18 +270,16 @@ export function MPX1MegaMenu({
           </div>
 
           <div className="mpx1-device-actions">
-            <button type="button" className="mpx1-device-btn" onClick={() => void onDisconnect?.()}>
-              <Power size={14} weight="bold" aria-hidden />
+            <Button type="button" kind="secondary" size="sm" className="mpx1-device-btn" onClick={() => void onDisconnect?.()} renderIcon={Power}>
               Disconnect
-            </button>
-            <button type="button" className="mpx1-device-btn" onClick={() => void onRescan?.()}>
-              <ArrowsClockwise size={14} weight="bold" aria-hidden />
+            </Button>
+            <Button type="button" kind="secondary" size="sm" className="mpx1-device-btn" onClick={() => void onRescan?.()} renderIcon={Renew}>
               Rescan
-            </button>
+            </Button>
           </div>
-        </aside>
+        </Layer>
 
-        <div className="mpx1-mega-menu__content">
+        <Layer className="mpx1-mega-menu__content">
           <div className="mpx1-mega-menu__tiles" role="list">
             {TILES.map((tile) => {
               const TileIcon = tile.icon
@@ -292,7 +299,7 @@ export function MPX1MegaMenu({
                   }
                   onClick={onClose}
                 >
-                  <TileIcon size={18} weight="duotone" aria-hidden />
+                  <TileIcon size={18} aria-hidden />
                   <div className="mpx1-mega-menu__tile-copy">
                     <div className="mpx1-mega-menu__tile-title">{tile.label}</div>
                     <div className="mpx1-mega-menu__tile-description">{tile.description}</div>
@@ -303,21 +310,18 @@ export function MPX1MegaMenu({
           </div>
 
           <div className="mpx1-mega-menu__quick-strip" aria-label="MPX1 quick actions">
-            <button type="button" className="mpx1-quick-btn" onClick={onClose}>
-              <SquaresFour size={14} weight="bold" aria-hidden />
+            <Button type="button" kind="ghost" size="sm" className="mpx1-quick-btn" onClick={onClose} renderIcon={Apps}>
               A/B Compare
-            </button>
-            <button type="button" className="mpx1-quick-btn" onClick={onClose}>
-              <Lightning size={14} weight="bold" aria-hidden />
+            </Button>
+            <Button type="button" kind="ghost" size="sm" className="mpx1-quick-btn" onClick={onClose} renderIcon={Flash}>
               Tap Tempo
-            </button>
-            <button type="button" className="mpx1-quick-btn" onClick={onClose}>
-              <Power size={14} weight="bold" aria-hidden />
+            </Button>
+            <Button type="button" kind="ghost" size="sm" className="mpx1-quick-btn" onClick={onClose} renderIcon={Power}>
               Bypass All
-            </button>
+            </Button>
           </div>
-        </div>
+        </Layer>
       </section>
-    </div>
+    </Layer>
   )
 }

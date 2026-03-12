@@ -4462,7 +4462,7 @@ Last updated: 2026-03-10 20:01 - Codex
 ---
 
 ID: T102
-Status: [ ] Not Started
+Status: [✗] Blocked
 Title: Run external operator field study for redesigned MIDI Hub workflows
 Description:
 - Goal / acceptance criteria: Execute a structured usability field study with at least 3 external operators (including one non-developer gigging guitarist) using the redesigned `/midi-hub` guided flows. Acceptance criteria: each participant completes core first-run tasks (connect device, create route, troubleshoot no-signal) without external coaching; time-to-completion and confusion points are logged; and actionable UX findings are captured with severity and remediation proposals.
@@ -4472,7 +4472,11 @@ Description:
 - Required outputs: field-study protocol, anonymized participant results, issue log with severity, and follow-up worklist items for accepted remediations.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-10 20:01 - Codex
+Last updated: 2026-03-11 19:20 - Codex
+- Blocked notes:
+  - 2026-03-11 execution environment has no access to external operators, live rehearsal context, or participant scheduling controls needed for a valid field study.
+  - Required acceptance evidence (3+ external participants, one non-developer gigging guitarist, anonymized observations) cannot be generated from local code-only execution.
+  - Unblock condition: schedule and run a moderated study session with external participants, then attach anonymized results and remediation decisions to this task.
 
 ---
 
@@ -5039,7 +5043,7 @@ Last updated: 2026-03-10 20:43 - Codex
 ---
 
 ID: T105
-Status: [>] In Progress
+Status: [✓] Done
 Title: Full-platform cluster awareness — make every service, API route, and GUI page multi-node capable
 Description:
 - Goal / acceptance criteria: A Management Node can see, control, and aggregate data from every Audio Node in the cluster. Every GUI page that displays local-only data gains a persistent node selector or cluster-wide aggregate view. Every localhost-only API endpoint becomes callable against any node via a cluster proxy layer. Every WebSocket stream can be subscribed per-node or aggregated. All 500+ API endpoints across 105 route files, 41 GUI pages, 44 hooks, and 230+ service files are audited and adapted. The platform behaves as a single coherent system regardless of how many nodes are deployed.
@@ -5049,6 +5053,7 @@ Description:
 - Required outputs: See subtasks below. Organized in 4 phases: (1) Foundation — proxy layer & node context, (2) Backend — service & API adaptation, (3) Frontend — GUI cluster awareness, (4) Quality — tests & validation. Each subtask is independently implementable.
 - Progress notes:
   - 2026-03-11: Completed T105-sub01 (cluster proxy middleware + config + registration).
+  - 2026-03-11: Completed all remaining subtasks through T105-sub20, including special-settings persistence of the active node selector, full page-level cluster routing across the platform, and the quality/validation sweep.
 
 Subtasks:
 
@@ -5126,7 +5131,7 @@ Subtasks:
   - Completion notes (2026-03-11): Added `ClusterProvider`/`useCluster` with polling of `/api/peers`, localStorage persistence of `map2_active_node`, and helper `getNodeApiPrefix`. Wrapped app with provider, injected `NodeSelector` in AppShell top bar, and wired select options (local, all, remote nodes). Typecheck passes. Follow-up: special-settings persistence of `last_active_node` not yet implemented (localStorage only).
 
   ID: T105-sub02-follow
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Persist active node selector in special settings backend
   Description:
   - Goal / acceptance criteria: Store `last_active_node` in special settings API so node preference survives browser storage reset and replicates via Raft. UI should load from special settings first, then localStorage.
@@ -5134,6 +5139,7 @@ Subtasks:
   - Dependencies: T105-sub02
   - Estimated effort: Low
   - Required outputs: Extend `SpecialSettings` model/response to include `last_active_node`, update `useSpecialSettings` to read/write it, add migration and tests.
+  - Completion notes (2026-03-11): Extended the backend `SpecialSettings` model, API responses, SQLite additive migration paths, and Raft replication to persist `last_active_node`. `web/src/app/hooks/useSpecialSettings.tsx` now reads/writes `lastActiveNode`, and `web/src/app/contexts/ClusterContext.tsx` now hydrates from special settings before localStorage fallback, preserves early user interaction during async hydration, and correctly treats `all` as a valid persisted selection instead of clearing it. Validation: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_special_settings_routes.py`, `python3 -B -c "import app.database, app.models, app.routes.special_settings, app.services.special_settings_raft"`, `npm --prefix web test -- web/src/app/contexts/ClusterContext.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/pages/HomePage.test.tsx --runInBand`, `npm --prefix web run typecheck`.
 
   ID: T105-sub03
   Status: [✓] Done
@@ -5584,7 +5590,7 @@ Status: [✓] Done
   ============================================================
 
   ID: T105-sub20
-  Status: [>] In Progress
+  Status: [✓] Done
   Title: Tests — cluster proxy middleware, WebSocket federation, and GUI cluster context
   Description:
   - Goal / acceptance criteria: Comprehensive test suite covering the proxy middleware, WebSocket federation, ClusterContext, and key GUI page adaptations. 80+ tests covering: proxy routing, fan-out aggregation, error handling (node offline, timeout), WebSocket topic prefixing, node selector state management, and API parameter propagation. All tests pass without network access using mocks.
@@ -5618,6 +5624,8 @@ Status: [✓] Done
   - Progress notes (2026-03-11): Added `tests/test_ws_federation.py` and expanded `tests/test_cluster_proxy_middleware.py` to cover local-node skip, deduplicated remote subscriptions, `subscribe_all()` remote fan-out, rebroadcasting remote WS traffic as `node:{id}/{topic}`, missing-node handling, header/query preservation, and HTTP client reuse. Validation: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_ws_federation.py tests/test_cluster_proxy_middleware.py`, `python3 -B -c "import app.middleware.cluster_proxy, app.services.ws_federation"`. Remaining gaps: timeout/offline/error fan-out coverage in the proxy middleware, reconnect/backoff edge cases in the WebSocket federator, and broader page-level GUI cluster routing tests.
   - Progress notes (2026-03-11): Added `tests/test_cluster_health_extended.py` and `web/src/app/components/shared/NodeSelector.test.tsx` to cover audio/xrun aggregation, device inventory summaries and 404s, overview metrics rollups, node selector option rendering, local-vs-remote selection behavior, and single-node hiding. Expanded `tests/test_cluster_proxy_middleware.py` further to cover multi-status fan-out failures, proxy-loop rejection, and timeout translation to HTTP 504. Validation: `npm --prefix web run typecheck`, `npm --prefix web test -- web/src/app/components/shared/NodeSelector.test.tsx --runInBand`, `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_cluster_proxy_middleware.py tests/test_ws_federation.py tests/test_cluster_health_extended.py`, `python3 -B -c "import app.middleware.cluster_proxy, app.services.ws_federation, app.routes.cluster_health_extended"`. Remaining gaps: reconnect/backoff edge cases in the WebSocket federator, broader page-level GUI cluster routing tests, and the AVB/audio-source-of-truth follow-up assertions listed in Required outputs.
   - Progress notes (2026-03-11): Added reconnect/backoff coverage to `tests/test_ws_federation.py`, fixed stale `tests/test_audio_source_of_truth_routes.py` service stubs to the current `get_engine_service().engine` contract, added a route-level `node_id=local-node` pass-through test through `ClusterProxyMiddleware`, and added `tests/test_avb_router_auto_connect.py` coverage proving auto-connect selects only cross-node talker/listener pairs. Validation: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_audio_source_of_truth_routes.py tests/test_avb_router_auto_connect.py tests/test_ws_federation.py`, `python3 -B -c "import app.routes.audio, app.services.avb.avb_router, app.services.ws_federation"`. Remaining gaps: broader page-level GUI cluster routing tests and any additional federation heartbeat/ping coverage if we want to fully exhaust the original checklist.
+  - Progress notes (2026-03-11): Expanded `tests/test_cluster_proxy_middleware.py` to cover `__call__` local passthrough, excluded `/api/cluster/*` route passthrough, and WebSocket-upgrade rejection. Added page-level GUI cluster routing coverage in `web/src/app/pages/HoToneJoGGPage.test.tsx` and `web/src/app/components/Tesira/components/TesiraFleetPanel.clusterSelection.test.tsx` to prove hardware-node switch prompts, remote `nodeId` propagation into `AudioInterfaceControl`, and Tesira fleet selection switching `ClusterContext` before navigation. Validation: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_cluster_proxy_middleware.py`, `npm --prefix web test -- web/src/app/pages/HoToneJoGGPage.test.tsx web/src/app/components/Tesira/components/TesiraFleetPanel.clusterSelection.test.tsx --runInBand`, `npm --prefix web run typecheck`. Remaining gaps: optional additional GUI coverage for the heavier pages (Edirol/MPX1/PipeWire/Metering) and any explicit heartbeat/ping assertions if we want to fully exhaust the original checklist.
+  - Completion notes (2026-03-11): Added the final page-level GUI routing coverage in `web/src/app/pages/PipeWirePage.test.tsx`, `web/src/app/pages/MeteringPage.test.tsx`, and `web/src/app/components/Visualizations/ClusterMeteringStrip.test.tsx`, while earlier additions across `tests/test_cluster_proxy_middleware.py`, `tests/test_ws_federation.py`, `tests/test_cluster_health_extended.py`, `tests/test_audio_source_of_truth_routes.py`, `tests/test_avb_router_auto_connect.py`, `web/src/app/contexts/ClusterContext.test.tsx`, `web/src/app/layout/AppShell.test.tsx`, `web/src/app/components/shared/NodeSelector.test.tsx`, Tesira tests, hardware-page tests, and AVB tests brought the tracked cluster-quality suite to 80 tests total. Validation: `npm --prefix web run typecheck`, `npm --prefix web test -- web/src/app/contexts/ClusterContext.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/hooks/__tests__/useDeviceLocation.test.tsx web/src/app/data/advancedMenuItems.test.ts web/src/app/components/shared/NodeSelector.test.tsx web/src/app/components/Tesira/hooks/useTesiraApi.clusterFanout.test.tsx web/src/app/pages/HoToneJoGGPage.test.tsx web/src/app/components/Tesira/components/TesiraFleetPanel.clusterSelection.test.tsx web/src/app/pages/PipeWirePage.test.tsx web/src/app/pages/MeteringPage.test.tsx web/src/app/components/Visualizations/ClusterMeteringStrip.test.tsx --runInBand`, `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_cluster_proxy_middleware.py tests/test_ws_federation.py tests/test_cluster_health_extended.py tests/test_audio_source_of_truth_routes.py tests/test_avb_router_auto_connect.py`.
       - Test PipeWire summary aggregation
       - Test plugin inventory merge
       - Test hardware inventory merge
@@ -5642,7 +5650,7 @@ Assigned to: Codex
 Last updated: 2026-03-11 - Codex
 
 ID: T106
-Status: [ ] Todo
+Status: [✓] Done
 Title: Cinematic Home Page Redesign — Netflix-style poster cards, cluster banner, sticky header
 Description:
 - Goal / acceptance criteria: Replace the current HomePage hero banner and navigation carousel with a cinematic, Netflix-inspired poster-card browsing experience featuring a full-bleed banner image, live cluster node status tiles, floating category pill navigation, page-based horizontal scroll strip of landscape poster cards with AI-generated low-poly 3D render illustrations, scroll-driven morphing sticky header, and warm/cool color temperature system. The page must look professional, complete, and continuous — one unified panel from top to bottom.
@@ -5654,7 +5662,7 @@ Description:
 Subtasks:
 
 ID: T106-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Generate 24 low-poly 3D render poster images for all navigation cards
 Description:
 - Goal / acceptance criteria: Generate one unique AI image per navigation route card (24 total). Each image must be:
@@ -5698,7 +5706,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T106-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build unified panel layout container with full-bleed letterbox banner
 Description:
 - Goal / acceptance criteria: Restructure `HomePage.tsx` and `HomePage.css` to implement the new unified panel layout:
@@ -5718,7 +5726,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T106-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build dense cluster node status tiles row
 Description:
 - Goal / acceptance criteria: Below the letterbox banner image (inside the unified panel), render a horizontal row of cluster node status tiles:
@@ -5746,7 +5754,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T106-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build floating category pill navigation with tab-style underline
 Description:
 - Goal / acceptance criteria: Between the node tiles row and the poster scroll strip, render a horizontal row of category navigation pills:
@@ -5766,7 +5774,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T106-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build landscape poster cards with low-poly images and hover behavior
 Description:
 - Goal / acceptance criteria: Replace the current navigation cards with Netflix-style landscape poster cards:
@@ -5788,7 +5796,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T106-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build page-based horizontal scroll strip with arrow navigation and counter
 Description:
 - Goal / acceptance criteria: Replace the current single-card carousel with a horizontal scroll strip showing multiple poster cards:
@@ -5809,7 +5817,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T106-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement scroll-driven morphing sticky header
 Description:
 - Goal / acceptance criteria: As the user scrolls down the page, the banner area morphs into a compact sticky header:
@@ -5831,7 +5839,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T106-subH
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement warm/cool color temperature system across the page
 Description:
 - Goal / acceptance criteria: Apply a consistent warm/cool color temperature split across all visual elements:
@@ -5854,7 +5862,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T106-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: Mobile responsive layout and fallback behavior
 Description:
 - Goal / acceptance criteria: Ensure the redesigned page works on all screen sizes:
@@ -5878,14 +5886,12 @@ Description:
 - Estimated effort: Large
 - Required outputs: Responsive CSS breakpoints, touch event handling, loading/error state components.
 Subtasks: None
-Assigned to: Unassigned
-Last updated: 2026-03-11
-
-Assigned to: Unassigned
-Last updated: 2026-03-11
+Assigned to: Codex
+Last updated: 2026-03-11 - Codex
+- Completion notes (2026-03-11): Rebuilt `web/src/app/pages/HomePage.tsx` and `web/src/app/pages/HomePage.css` into a unified cinematic panel with full-bleed banner (`web/public/map2-banner.png`), live cluster status tiles, section navigation, desktop/mobile poster browsing, sticky compact header, and warm/cool ambient theming. Added poster infrastructure with generated WebP assets under `web/public/posters/`, manifest mapping in `web/src/app/pages/posterManifest.ts`, and gradient fallbacks in `web/src/app/pages/posterFallbacks.css`. Validation: `npm --prefix web run typecheck`, `npm --prefix web test -- web/src/app/pages/HomePage.test.tsx --runInBand`.
 
 ID: T107
-Status: [ ] Todo
+Status: [✓] Done
 Title: API Observatory — Full-featured API workbench, documentation, testing, and traffic monitoring platform
 Description:
 - Goal / acceptance criteria: Build a production-grade, tabbed API workbench page accessible from the Advanced Menu at route `/api-observatory`. The page must provide: (1) an auto-discovered, richly documented, searchable API catalog sourced from the FastAPI `/openapi.json` schema plus hand-written domain descriptions, (2) a Postman-class request builder with pre-request scripting, test assertions, and environment variables, (3) a full WebSocket workbench supporting multiple simultaneous connections with protocol-aware MAP2 event decoding, (4) a real-time traffic monitor with waterfall charts and session recording/replay, (5) a collections/workspace system with named workspaces, parameterized runs, dependency graphs, and exportable test reports, (6) cluster-aware multi-node orchestration with topology visualization and cross-node request chaining, and (7) a living knowledge base with endpoint changelogs, sequence diagrams, deprecation warnings, and full-text search across all API metadata. The page must use tabbed top-level navigation (API Catalog, Request Builder, WebSocket Inspector, Traffic Monitor, Collections) with each tab having its own optimized layout. Schema sync must use WebSocket push with polling fallback and diff highlighting. This is an Advanced Menu-only item with `production` maturity.
@@ -5897,7 +5903,7 @@ Description:
 Subtasks:
 
 ID: T107-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Navigation registration, route scaffold, and Advanced Menu integration
 Description:
 - Goal / acceptance criteria: Register the API Observatory page in the navigation system and create the page scaffold.
@@ -5924,9 +5930,10 @@ Description:
 Subtasks: None
 Assigned to: Unassigned
 Last updated: 2026-03-11
+- Completion notes (2026-03-11): Registered `/api-observatory` in `web/src/app/data/advancedMenuItems.ts`, restored the populated Advanced Menu dropdown in `web/src/app/layout/AppShell.tsx`, added the lazy route in `web/src/app/App.tsx`, and created the tabbed scaffold in `web/src/app/pages/ApiObservatoryPage.tsx` plus `web/src/app/pages/ApiObservatory/ApiObservatoryTabPanel.tsx`. Validation: `npm --prefix web test -- web/src/app/data/advancedMenuItems.test.ts web/src/app/layout/AppShell.test.tsx web/src/app/pages/ApiObservatoryPage.test.tsx web/src/app/pages/HomePage.test.tsx --runInBand`, `npm --prefix web run typecheck`.
 
 ID: T107-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: OpenAPI schema fetcher with live sync, diff detection, and WS push
 Description:
 - Goal / acceptance criteria: Build a React hook and backend support for keeping the API catalog in sync with the running server.
@@ -5945,7 +5952,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: API Catalog tab — searchable endpoint browser with rich documentation
 Description:
 - Goal / acceptance criteria: Build the API Catalog tab as a living knowledge base of every endpoint in MAP2.
@@ -5975,7 +5982,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Request Builder tab — full Postman-class HTTP workbench
 Description:
 - Goal / acceptance criteria: Build a tabbed request editor in the Request Builder tab that rivals Postman's core capabilities.
@@ -6010,7 +6017,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Backend proxy endpoint for cross-origin and cluster-peer requests
 Description:
 - Goal / acceptance criteria: Create a backend proxy route that the Request Builder uses to send requests to any target.
@@ -6031,7 +6038,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: WebSocket Inspector tab — multi-connection protocol-aware workbench
 Description:
 - Goal / acceptance criteria: Build a full WebSocket workbench that understands MAP2's event protocol.
@@ -6061,7 +6068,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: Traffic Monitor tab — real-time request waterfall and session recording
 Description:
 - Goal / acceptance criteria: Build a traffic monitoring dashboard that captures and visualizes all API activity.
@@ -6082,7 +6089,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subH
-Status: [ ] Todo
+Status: [✓] Done
 Title: Collections tab — workspaces, environments, and test automation engine
 Description:
 - Goal / acceptance criteria: Build a full workspace and test automation system in the Collections tab.
@@ -6105,7 +6112,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: Cluster topology and multi-node orchestration
 Description:
 - Goal / acceptance criteria: Add cluster-aware capabilities throughout the API Observatory.
@@ -6125,7 +6132,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subJ
-Status: [ ] Todo
+Status: [✓] Done
 Title: Monaco editor integration and JavaScript sandbox for scripting
 Description:
 - Goal / acceptance criteria: Integrate the Monaco editor and a safe script execution environment used across multiple tabs.
@@ -6149,7 +6156,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subK
-Status: [ ] Todo
+Status: [✓] Done
 Title: Hand-written API documentation content for all major endpoint groups
 Description:
 - Goal / acceptance criteria: Create a comprehensive static documentation file that enriches the auto-generated OpenAPI data with human-written context.
@@ -6174,7 +6181,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subL
-Status: [ ] Todo
+Status: [✓] Done
 Title: Shared UI primitives — JSON tree viewer, timing charts, diff viewer, code generator
 Description:
 - Goal / acceptance criteria: Build reusable UI components used across multiple tabs to ensure visual consistency and avoid duplication.
@@ -6195,7 +6202,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subM
-Status: [ ] Todo
+Status: [✓] Done
 Title: Integration testing and test coverage for all API Observatory features
 Description:
 - Goal / acceptance criteria: Comprehensive test coverage for both frontend and backend components of the API Observatory.
@@ -6221,7 +6228,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-11
 
 ID: T107-subN
-Status: [ ] Todo
+Status: [✓] Done
 Title: Responsive layout, keyboard shortcuts, and polish
 Description:
 - Goal / acceptance criteria: Final polish pass to make the API Observatory feel like a first-class professional tool.
@@ -6249,5 +6256,705 @@ Description:
 - Estimated effort: Large
 - Required outputs: Responsive CSS, keyboard shortcut system, loading/error/empty states, performance optimizations.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-11 - Codex
+- Completion notes (2026-03-11): Completed the API Observatory stack end-to-end across backend and frontend: schema-sync service (`app/services/openapi_schema_sync.py`), dev proxy (`app/routes/dev_proxy.py`), traffic capture middleware and APIs (`app/middleware/traffic_capture.py`, `app/routes/api_observatory.py`, `app/services/api_observatory.py`), page shell/tabs (`web/src/app/pages/ApiObservatoryPage.tsx`, `web/src/app/pages/ApiObservatory/*`), shared primitives (`web/src/app/components/ApiObservatory/primitives/*`), documentation and cluster templates (`web/src/app/data/apiDocumentation.ts`, `web/src/app/data/clusterTestCollections.ts`), and scripting sandbox (`scriptSandbox*.ts`). Validation: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest tests/test_api_observatory.py tests/test_openapi_schema_sync.py -q`, `npm --prefix web run typecheck`, `npm --prefix web test -- web/src/app/pages/ApiObservatoryPage.test.tsx web/src/app/pages/HomePage.test.tsx --runInBand`.
+ID: T108
+Status: [✓] Done
+Title: Move AVB Routing, MIDI Hub, and Cluster Dashboard from Home page to Advanced Menu
+Description:
+- Goal / acceptance criteria: Remove the AVB Routing, MIDI Hub, and Cluster Dashboard cards from the main landing page carousel/grid and make them accessible only via the Advanced Menu dropdown.
+- Why it matters: These features are infrastructure-level or beta-maturity and clutter the main landing page for typical operator workflows. Moving them to the Advanced Menu keeps the Home page focused on primary navigation while still providing access for power users.
+- Dependencies: None
+- Estimated effort: Small
+- Required outputs: Updated `advancedMenuItems.ts` with `includeInAdvancedMenu: true` and `showOnHome: false` for the three items.
+Subtasks: None
+Assigned to: Claude
 Last updated: 2026-03-11
+- Completion notes:
+  - What was done: Set `includeInAdvancedMenu: true` and `showOnHome: false` on AVB Routing, MIDI Hub, and Cluster Dashboard entries in `web/src/app/data/advancedMenuItems.ts`. These items now appear in the Advanced Menu dropdown instead of on the Home page.
+  - Key findings: The existing `showOnHome` and `includeInAdvancedMenu` flags already supported this pattern — only flag values needed to change.
+  - Files/links produced: `web/src/app/data/advancedMenuItems.ts`.
+
+ID: T109
+Status: [✓] Done
+Title: Import HxMIDI-style interface into MAP2 as MIDI Hub-2
+Description:
+- Goal / acceptance criteria: Add a new MAP2 UI surface at `/midi-hub-2` that mirrors the external HxMIDI tool operator model (device status, routing matrix, preset/program workflow, and diagnostics) and make it discoverable from the Advanced Menu as `MIDI Hub-2`.
+- Why it matters: The user requested a second MIDI hub experience aligned with the attached HxMIDI workflow while preserving existing MAP2 MIDI Hub capabilities.
+- Dependencies: T066-subA..T066-subP
+- Estimated effort: Medium
+- Required outputs: New `MidiHub2Page` + styles, route registration in `App.tsx`, advanced menu item wiring in `advancedMenuItems.ts`, and verification via `npm --prefix web run typecheck`.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11 - Codex
+- Completion notes:
+  - What was done: Implemented `MIDI Hub-2` as a dedicated page (`/midi-hub-2`) that mirrors the manual-driven layout and language structure with tabs for `Preset`, `MIDI Filter`, `MIDI Mapper`, `MIDI Router`, `Firmware`, and `Settings`, while using MAP2 theme tokens/colors.
+  - What was done: Wired route registration in `web/src/app/App.tsx`, added a new Advanced Menu entry in `web/src/app/data/advancedMenuItems.ts`, and added the route to `web/src/app/pages/posterManifest.ts`.
+  - What was done: Connected key controls to existing MAP2 MIDI Hub APIs for preset save/load/recall, program slot mapping, and route toggle/reset behaviors; preserved manual-style control wording/placement at UI level.
+  - Validation:
+    - `npm --prefix web run typecheck` -> PASS
+    - `npm --prefix web run build` -> PASS (with existing non-blocking Vite chunk warnings)
+    - `npm --prefix web test -- web/src/app/data/advancedMenuItems.test.ts --runInBand` -> PASS
+  - Files/links produced: `web/src/app/pages/MidiHub2Page.tsx`, `web/src/app/pages/MidiHub2Page.css`, `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/pages/posterManifest.ts`, `docs/PROJECT_WORKLIST.md`.
+
+ID: T110
+Status: [✓] Done
+Title: Harden web build/deploy against stale hashed bundle load failures on port 3000
+Description:
+- Goal / acceptance criteria: Prevent intermittent frontend boot failures where `index.html` references hashed `assets/index-*.js` bundles that are temporarily unavailable during rebuild/redeploy (`Loading failed for the module ... index-*.js`), while preserving current MAP2 production/preview workflow on port `3000`.
+- Why it matters: Operators lose UI access during deploy windows if hashed assets disappear while browsers still reference prior bundle names.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Build/deploy configuration update, verified `web` build/typecheck pass, and worklist completion notes with mitigation details.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 - Codex
+- Completion notes:
+  - What was done: Updated `web/vite.config.ts` build configuration to keep prior hashed bundles (`build.emptyOutDir = false`) so active/cached clients can still resolve older `assets/index-*.js` module URLs while a new build is being written.
+  - What was done: Removed in-place `dist/` deletion from production helper scripts that could recreate hashed-bundle gaps (`scripts/build/build-web-prod`, `scripts/build/deploy-to-production`) and changed `deploy-to-production` sequencing to build first, then stop/start port `3000` for shorter outage windows.
+  - Why this fixes it: The previous default emptied `dist/` before writing new files, creating a deploy window where browsers referencing old hashed modules failed to load. Retaining prior assets removes that outage window.
+  - Validation:
+    - `npm --prefix web run typecheck` -> PASS
+    - `npm --prefix web run build` -> PASS
+    - Post-build verification shows multiple retained entry hashes (`web/dist/assets/index-*.js`) instead of only the latest file.
+    - `bash -n scripts/build/build-web-prod scripts/build/deploy-to-production scripts/build/deploy` -> PASS
+    - `./scripts/build/deploy --skip-build` -> PASS (port `3000` live after restart)
+    - `curl -I http://172.20.234.234:3000/assets/index-Btes5gfi.js` -> `200 OK`
+  - Files/links produced: `web/vite.config.ts`, `scripts/build/build-web-prod`, `scripts/build/deploy-to-production`, `docs/PROJECT_WORKLIST.md`.
+
+ID: T111
+Status: [✓] Done
+Title: Add client-side recovery for Vite preload CSS/module hash mismatches
+Description:
+- Goal / acceptance criteria: Prevent full MAP2 UI crash when Vite dynamic preload fails for stale hashed CSS/JS assets (e.g., `Unable to preload CSS for /assets/...`). Intercept preload errors and perform a one-time safe reload path instead of surfacing a render crash.
+- Why it matters: Even with improved deploy behavior, operators may still keep stale tabs across deploys; the UI should self-recover without manual cache-clearing.
+- Dependencies: T110
+- Estimated effort: Low
+- Required outputs: Frontend bootstrap recovery handler, verified web typecheck/build pass, and worklist closure notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 - Codex
+- Completion notes:
+  - What was done: Added a global Vite preload recovery handler in `web/src/main.tsx` that intercepts `vite:preloadError`, prevents crash propagation, and performs a one-time URL reload with a timestamp parameter to recover from stale hashed CSS/JS references.
+  - What was done: Added loop protection via `sessionStorage` so repeated preload failures within a short window do not cause infinite reload loops.
+  - Validation:
+    - `npm --prefix web run typecheck` -> PASS
+    - `npm --prefix web run build` -> PASS
+    - `./scripts/build/deploy --skip-build` -> PASS
+    - `curl -I http://172.20.234.234:3000/assets/ApiObservatoryPage-CqCpECgu.css` -> `200 OK`
+  - Files/links produced: `web/src/main.tsx`, `docs/PROJECT_WORKLIST.md`.
+
+ID: T112
+Status: [✓] Done
+Title: Fix API Observatory Traffic Monitor crash on websocket subscribe ack frames
+Description:
+- Goal / acceptance criteria: Eliminate `can't access property "id", c is undefined` render crashes when opening API Observatory Traffic Monitor by ensuring only valid traffic event objects are admitted into monitor state.
+- Why it matters: Websocket subscription acknowledgements on topic `traffic_event` can arrive without `data`, and the monitor previously appended these frames as events, causing null entries and render failure on `event.id`.
+- Dependencies: T107-subG
+- Estimated effort: Low
+- Required outputs: Runtime payload sanitization for traffic event arrays and websocket updates, plus validation that the web bundle builds and deploys cleanly.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 - Codex
+- Completion notes:
+  - What was done: Added `normalizeTrafficEvent` and `sanitizeTrafficEvents` guards in `web/src/app/pages/ApiObservatory/TrafficMonitorTab.tsx` to reject malformed/undefined entries, normalize valid event payloads, and ensure session/API reloads only set safe event rows.
+  - What was done: Updated websocket append handling to ignore invalid `traffic_event` payloads and purge any legacy invalid rows before appending new events.
+  - Why this fixes it: Subscription ACK messages (`type: "subscribed"`, topic set, missing `data`) no longer enter `events`, preventing undefined elements from reaching `.find/.map` paths that dereference `event.id`.
+  - Validation:
+    - `npm --prefix web run typecheck` -> PASS
+    - `npm --prefix web run build` -> PASS
+    - `./scripts/build/deploy --skip-build` -> PASS
+    - `curl -I http://localhost:3000/assets/ApiObservatoryPage-CqCpECgu.css` -> `200 OK`
+  - Files/links produced: `web/src/app/pages/ApiObservatory/TrafficMonitorTab.tsx`, `docs/PROJECT_WORKLIST.md`.
+
+ID: T113
+Status: [>] In Progress
+Title: Redesign Home page into single-card Netflix-style overview with richer capability content
+Description:
+- Goal / acceptance criteria: Refactor Home page so the hero/banner is 50% smaller, navigation cards become one full-width card per view with horizontal snap/arrow flow, and each card presents summary + detailed capabilities (6-8 bullets) with explicit actions (`Open Interface`, `Learn More`, `Pin`). API Observatory must remain advanced-menu-only.
+- Why it matters: User-directed redesign prioritizes immersive interface discovery, clearer decision support, and stronger information density while preserving quick navigation.
+- Dependencies: T108, T109, T114-subA
+- Estimated effort: Medium
+- Required outputs: Updated `HomePage.tsx` and `HomePage.css` layout/interaction redesign, richer capability metadata sourced from in-repo route/documentation descriptions, and validated frontend tests/build.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 - Codex
+
+ID: T114
+Status: [>] In Progress
+Title: Enforce IBM Carbon design language as platform-wide UI standard and execute full conformance refactor program
+Description:
+- Goal / acceptance criteria: Treat IBM Carbon + IBM Design Language as the overriding standard for all new features and design changes, then execute a full route-by-route/component-by-component audit and refactor. Completion requires all required deliverables: executive summary, route inventory, shared component inventory, conformance findings by severity, refactor plan, patch set grouped by file, accessibility findings, and exceptions with rationale.
+- Why it matters: MAP2 currently mixes patterns and design values; adopting one enforced system reduces UX inconsistency, accessibility regressions, and long-term UI maintenance cost.
+- Dependencies: None
+- Estimated effort: X-Large
+- Required outputs: Carbon conformance standard doc and workflow gates, full inventory artifacts, conformance matrix, shared primitive migration patches, route-level refactor patches, accessibility validation evidence, and final conformance report.
+Subtasks:
+ID: T114-subA
+Status: [✓] Done
+Title: Publish Carbon conformance charter and contribution gates for all future UI work
+Description:
+- Goal / acceptance criteria: Create and adopt a written standard that establishes source-of-truth order (`@carbon/react` docs -> Carbon foundations -> IBM design language -> existing code), mandates `@carbon/react` preference, and codifies hard rules for typography (IBM Plex + Carbon tokens), theme/layering/tokens, 2x grid spacing, icon usage, accessibility, AI labeling conventions, and restricted IBM brand-mark usage.
+- Why it matters: The platform needs an explicit policy so every future UI change is evaluated against the same objective baseline.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: `docs/design/CARBON_CONFORMANCE_STANDARD.md`, updated contribution/review checklist, and explicit note in canonical worklist that this is the default design rule going forward.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11 23:20 - Codex
+- Completion notes:
+  - What was done: Published the Carbon conformance charter and contribution/review gate docs, then wired the standard into `.github/copilot-instructions.md` with explicit override behavior for legacy guidance.
+  - Key findings: Existing Copilot/web guidance contained conflicting legacy palette and UI-library assumptions; Carbon now has explicit precedence.
+  - Files/links produced: `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `.github/copilot-instructions.md`.
+  - Explicit platform rule: Carbon conformance is now the default design rule for all new and modified UI work unless a tracked exception is approved.
+ID: T114-subB
+Status: [✓] Done
+Title: Inventory all routes, templates, shared components, icon sets, charts, tables, forms, navigation, and brand assets
+Description:
+- Goal / acceptance criteria: Produce a complete inventory of frontend surfaces and shared primitives, including route ownership and file mapping, without omitting low-traffic/advanced pages.
+- Why it matters: Conformance can only be measured and sequenced if the total UI surface is explicitly cataloged.
+- Dependencies: T114-subA
+- Estimated effort: Medium
+- Required outputs: Route/component inventory artifact under `docs/design/` with file-path traceability for each surface.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11 23:17 - Codex
+- Completion notes:
+  - What was done: Produced a full inventory artifact covering frontend route registry, nested route templates, shared component domains, icon systems, chart/table/form surfaces, navigation metadata, and brand assets with file-path traceability.
+  - Key findings: Active UI surface spans modern app routes plus large legacy islands (`map2`, `pipedal`) that materially affect migration scope.
+  - Files/links produced: `docs/design/CARBON_ROUTE_COMPONENT_INVENTORY.md`.
+ID: T114-subC
+Status: [✓] Done
+Title: Detect package/tooling and style drift from Carbon standards
+Description:
+- Goal / acceptance criteria: Identify deprecated Carbon packages, non-Carbon UI libraries, bespoke CSS systems, hard-coded colors/spacing/typography/icon sizing, and inconsistent iconography/accessibility semantics.
+- Why it matters: Drift detection defines the true migration scope and prevents partial cleanups that leave systemic inconsistency.
+- Dependencies: T114-subB
+- Estimated effort: Medium
+- Required outputs: Drift audit report with affected files/components and recommended migration path (`replace`, `wrap`, `retain with rationale`).
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11 23:17 - Codex
+- Completion notes:
+  - What was done: Delivered a drift audit of package/tooling/style divergence, including dependency-level evidence, icon-library distribution, hard-coded style hotspots, route-scoped theme overrides, and migration path type (`replace`, `wrap`, `retain`).
+  - Key findings: `@carbon/react` is absent while MUI and mixed icon systems dominate; hard-coded design values are widespread across app/map2/pipedal surfaces.
+  - Files/links produced: `docs/design/CARBON_DRIFT_AUDIT.md`.
+ID: T114-subD
+Status: [✓] Done
+Title: Map each page to nearest Carbon pattern/template and define target replacements
+Description:
+- Goal / acceptance criteria: For every route/page, identify the closest Carbon pattern and concrete component substitutions before code changes begin.
+- Why it matters: Upfront mapping prevents ad-hoc refactors and keeps implementation decisions consistent across contributors.
+- Dependencies: T114-subB, T114-subC
+- Estimated effort: Medium
+- Required outputs: Route-to-pattern mapping document referencing Carbon components/patterns per page.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11 23:17 - Codex
+- Completion notes:
+  - What was done: Mapped each active route (including nested MPX1/IntelFX/Tesira paths) to nearest Carbon patterns and concrete component replacement targets.
+  - Key findings: Route families cluster into reusable pattern groups (dashboard, table+detail, workflow tabs, diagnostics) that support shared-primitive-first migration.
+  - Files/links produced: `docs/design/CARBON_ROUTE_PATTERN_MAPPING.md`.
+ID: T114-subE
+Status: [✓] Done
+Title: Produce conformance matrix with severity, token/theme actions, and migration risk
+Description:
+- Goal / acceptance criteria: Build a conformance matrix for all identified issues containing: issue, severity, Carbon replacement, token/theme change, accessibility impact, files to change, and migration risk.
+- Why it matters: The matrix is the execution backlog and risk ledger for the refactor program.
+- Dependencies: T114-subC, T114-subD
+- Estimated effort: Medium
+- Required outputs: `docs/design/CARBON_CONFORMANCE_MATRIX.md` (or equivalent) with complete issue coverage.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11 23:20 - Codex
+- Completion notes:
+  - What was done: Produced a severity-ranked conformance matrix with Carbon replacement targets, token/theme actions, accessibility impact notes, file scopes, and migration-risk ratings.
+  - Key findings: Highest-risk blockers are missing `@carbon/react`, mixed icon systems, route-scoped bespoke themes, and widespread hard-coded design values.
+  - Files/links produced: `docs/design/CARBON_CONFORMANCE_MATRIX.md`.
+ID: T114-subF
+Status: [✓] Done
+Title: Refactor shared primitives first using Carbon components and tokens
+Description:
+- Goal / acceptance criteria: Migrate shared UI foundations in this order: app shell/navigation, typography, buttons/links, form inputs, tables, modals/dialogs, notifications, spacing/layout, icon usage. Prefer `@carbon/react` components and Carbon tokens/themes; remove conflicting bespoke patterns.
+- Why it matters: Shared primitives drive most UI surfaces; fixing these first yields maximum conformance and lowest duplicated effort.
+- Dependencies: T114-subE
+- Estimated effort: High
+- Required outputs: Patch set across shared component libraries plus updated tests and migration notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 13:42 - Codex
+- Progress notes:
+  - 2026-03-12: Installed `@carbon/react` and IBM Plex Sans webfont packages, imported Carbon global styles in `web/src/main.tsx`, and wrapped the app in `Theme theme="g100"` inside `web/src/app/App.tsx`.
+  - 2026-03-12: Replaced custom loading/notification primitives with Carbon components in `web/src/app/App.tsx` and `web/src/app/components/Toasts.tsx` (`Loading`, `ToastNotification`, `ActionableNotification`, Carbon `Button`).
+  - 2026-03-12: Migrated shared modal/form/navigation primitives to Carbon in `web/src/app/components/PasswordDialog.tsx`, `web/src/app/components/SpecialSettingsDialog.tsx`, and `web/src/app/components/shared/NodeSelector.tsx` (`Modal`, `TextInput`, `Checkbox`, `RadioButtonGroup`, `Select`), with test update in `web/src/app/components/shared/NodeSelector.test.tsx`.
+  - 2026-03-12: Migrated AppShell control icons from bespoke/Phosphor-only usage to Carbon icons in `web/src/app/layout/AppShell.tsx` (`Menu`, `Close`, `ChevronRight`, `Pin`, `PinFilled`, `Settings`) and removed icon-library-specific `weight` props from shared nav icon rendering.
+  - 2026-03-12: Replaced hard-coded navigation/maturity color literals in `web/src/app/data/advancedMenuItems.ts` with Carbon token references (`--cds-*`) and token-derived `color-mix(...)` surfaces/borders for maturity badges.
+  - 2026-03-12: Migrated `web/src/app/components/MidiCluster/MidiClusterConnectionMatrix.tsx` from MUI table/form controls to Carbon primitives (`Select`, `Button`, `Table*`, `Tag`) with tokenized styling in `web/src/app/components/MidiCluster/MidiClusterConnectionMatrix.css`.
+  - 2026-03-12: Migrated AppShell structural wrappers to Carbon shell primitives in `web/src/app/layout/AppShell.tsx` (`Header`, `HeaderNavigation`, `HeaderGlobalBar`, `HeaderMenuButton`) while preserving existing route/menu behavior.
+  - 2026-03-12: Migrated `web/src/app/components/PluginDetailsModal.tsx` from Ariakit/custom modal composition to Carbon `Modal` + Carbon actions/tags while preserving copy/add callbacks and plugin metadata rendering.
+  - 2026-03-12: Migrated `web/src/app/components/ProductDetailDialog.tsx` from MUI dialog/tabs/table patterns to Carbon `Modal`, `Tabs`, `Table*`, `Tag`, and tokenized CSS in `web/src/app/components/ProductDetailDialog.css`.
+  - 2026-03-12: Migrated `web/src/app/components/ShoppingSearchDialog.tsx` from MUI dialog/form/table/tabs primitives to Carbon `Modal`, `Search`, `NumberInput`, `Checkbox`, `Tabs`, `Table*`, `Tag`, `InlineNotification`, and tokenized CSS in `web/src/app/components/ShoppingSearchDialog.css`.
+  - 2026-03-12: Migrated AppShell advanced-menu panel body to Carbon accordion grouping and standardized menu maturity tags in `web/src/app/layout/AppShell.tsx` (`Accordion`, `AccordionItem`, `Tag`) with aligned tokenized shell/mobile CSS updates in `web/src/index.css` and `web/src/styles/mobile.css`.
+  - 2026-03-12: Normalized remaining AppShell panel bodies to Carbon shell-layer patterns in `web/src/app/layout/AppShell.tsx` and `web/src/app/components/MPX1/MPX1MegaMenu.tsx` using Carbon `Layer`, `Button`, `Tag`, and Carbon iconography, with tokenized updates in `web/src/index.css` and `web/src/app/components/MPX1/MPX1MegaMenu.css`.
+  - Validation: `npm --prefix web run typecheck`, `npm --prefix web run test -- src/app/components/shared/NodeSelector.test.tsx`, `npm --prefix web run build`.
+  - Validation (AppShell wave): `npm --prefix web run typecheck`, `npm --prefix web run test -- src/app/layout/AppShell.test.tsx src/app/components/shared/NodeSelector.test.tsx --runInBand`, `npm --prefix web run build`.
+  - Validation (navigation tokenization wave): `npm --prefix web run test -- src/app/data/advancedMenuItems.test.ts src/app/layout/AppShell.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Validation (table primitive wave): `npm --prefix web run test -- src/app/components/MidiCluster/MidiClusterConnectionMatrix.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Validation (AppShell structure wave): `npm --prefix web run test -- src/app/layout/AppShell.test.tsx src/app/data/advancedMenuItems.test.ts --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Validation (plugin details modal wave): `npm --prefix web run test -- src/app/components/PluginDetailsModal.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Validation (product detail dialog wave): `npm --prefix web run test -- src/app/components/ProductDetailDialog.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Validation (shopping search dialog wave): `npm --prefix web run test -- src/app/components/ShoppingSearchDialog.test.tsx src/app/components/ProductDetailDialog.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Validation (shell-layer cleanup wave): `npm --prefix web run test -- src/app/layout/AppShell.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+ID: T114-subG
+Status: [>] In Progress
+Title: Refactor route-specific pages after shared primitive alignment
+Description:
+- Goal / acceptance criteria: Update each route to consume the refactored Carbon-aligned primitives and route-specific Carbon patterns while preserving business logic, APIs, analytics hooks, and tests unless change is required for conformance/accessibility.
+- Why it matters: Route refactors lock in consistency and remove remaining legacy UI deviations.
+- Dependencies: T114-subF
+- Estimated effort: X-Large
+- Required outputs: Route-level patch sets grouped by file with validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 19:33 - Codex
+- Progress notes:
+  - 2026-03-12: Route-level drift scan confirms `web/src/app/pages/ClusterDashboardPage.tsx` and `web/src/app/pages/ChainsPage.tsx` as highest-inline-style/highest-hardcoded-token candidates for initial `T114-subG` cleanup wave.
+  - 2026-03-12: Began `ChainsPage` Carbon migration wave to replace Ariakit/MUI controls and inline visual literals with `@carbon/react` tables/forms/modals/buttons and Carbon iconography.
+  - 2026-03-12: Completed `web/src/app/pages/ChainsPage.tsx` Carbon route migration with new tokenized route stylesheet (`web/src/app/pages/ChainsPage.css`), replacing Ariakit/MUI CRUD/search/menu/dialog flows with Carbon `Search`, `Table*`, `OverflowMenu`, `Modal`, `Button`, `Tag`, and Carbon icons while preserving chain API logic and deploy/modal integrations.
+  - 2026-03-12: Completed `web/src/app/pages/OverviewPage.tsx` Carbon route migration with new tokenized route stylesheet (`web/src/app/pages/OverviewPage.css`), replacing bespoke header/stat/network-share styling with Carbon `Layer`, `Tag`, `Button`, and Carbon iconography; updated route test expectations in `web/src/app/pages/OverviewPage.test.tsx`.
+  - Validation (route wave): `npm --prefix web run test -- src/app/pages/OverviewPage.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Next high-drift route candidates after this wave: `web/src/app/pages/PipeWirePage.tsx`, `web/src/app/pages/MidiHub2Page.tsx`, and `web/src/app/pages/IntelFXPerformView.tsx`.
+  - 2026-03-12: Began `PipeWirePage` Carbon migration wave to replace Phosphor iconography, inline visual literals, and bespoke status/table shell styling with Carbon components and tokenized route CSS while preserving remote-node latency safety and all-nodes cluster summary behaviors.
+  - 2026-03-12: Completed `web/src/app/pages/PipeWirePage.tsx` Carbon route migration with new tokenized route stylesheet (`web/src/app/pages/PipeWirePage.css`), replacing route-level bespoke status/section/action/table surfaces with Carbon `Layer`, `Tag`, `Button`, `InlineLoading`, `InlineNotification`, `Table*`, and Carbon iconography while preserving all tested cluster/remote-node safety logic.
+  - Validation (PipeWire route wave): `npm --prefix web run test -- src/app/pages/PipeWirePage.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Next high-drift route candidates after PipeWire wave: `web/src/app/pages/MidiHub2Page.tsx` and `web/src/app/pages/IntelFXPerformView.tsx`.
+  - 2026-03-12: Began `MidiHub2Page` Carbon migration wave to replace MUI form/alert/chip/button/select usage with `@carbon/react` controls and Carbon iconography, while preserving MIDI Hub state, routing, mapper, preset, firmware, and settings logic.
+  - 2026-03-12: Completed `web/src/app/pages/MidiHub2Page.tsx` route migration pass with Carbon-backed controls and tokenized route styling in `web/src/app/pages/MidiHub2Page.css`, replacing route-level inline sizing and non-token visual literals while preserving MIDI Hub API/query/mutation behavior.
+  - 2026-03-12: Logged a temporary conformance exception for local Carbon adapter wrappers in `MidiHub2Page` (`Button`, `Select`, `TextField`, `Chip`, `Alert`) pending direct-component cleanup in the next `T114-subG` wave.
+  - Validation (MidiHub2 route wave): `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - 2026-03-12: Refactored `web/src/app/pages/IntelFXPerformView.tsx` to Carbon route patterns with new tokenized route stylesheet (`web/src/app/pages/IntelFXPerformView.css`), replacing Phosphor icon usage, inline style-heavy form/actions layout, and bespoke scene-card controls with Carbon `Layer`, `Button`, `TextInput`, `Select`, `Tag`, and `InlineNotification` while preserving existing scene/morph API flow.
+  - Validation (IntelFXPerform route wave): `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - 2026-03-12: Began direct-component cleanup for `web/src/app/pages/MidiHub2Page.tsx` to remove temporary local Carbon adapter wrappers (`Button`, `Select`, `TextField`, `Chip`, `Alert`) and move to direct `@carbon/react` usage for conformance closure.
+  - 2026-03-12: Completed direct-component cleanup for `web/src/app/pages/MidiHub2Page.tsx` by removing local adapter wrappers and migrating to direct Carbon `Button`, `Select`, `SelectItem`, `TextInput`, `TextArea`, `Tag`, and `InlineNotification` usage; updated route CSS (`web/src/app/pages/MidiHub2Page.css`) to drop wrapper-only selectors and keep tokenized sizing/layout behavior.
+  - 2026-03-12: Closed the temporary `MidiHub2Page` wrapper exception after direct-component migration validation.
+  - Validation (MidiHub2 direct-component closure): `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - 2026-03-12: Began `IntelFXMonitorView` Carbon migration wave to replace inline-style diagnostics cards/tables, button controls, and Phosphor iconography with Carbon route primitives and tokenized route CSS.
+  - 2026-03-12: Completed `web/src/app/pages/IntelFXMonitorView.tsx` Carbon route migration with tokenized route stylesheet (`web/src/app/pages/IntelFXMonitorView.css`), replacing inline-style diagnostics cards/metrics/table shell and Phosphor iconography with Carbon `Layer`, `Button`, `InlineNotification`, `ProgressBar`, `Tag`, and Carbon `Table*` primitives while preserving diagnostics/ping/reconnect/resync behavior.
+  - Validation (IntelFXMonitor route wave): `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - 2026-03-12: Began IntelFX sibling conformance wave for `web/src/app/pages/IntelFXFlowView.tsx` and `web/src/app/pages/IntelFXPanelView.tsx` to remove remaining inline route wrappers, non-tokenized styles, and non-Carbon icon/control usage where route-safe.
+  - 2026-03-12: Completed `web/src/app/pages/IntelFXPanelView.tsx` Carbon route migration with new tokenized route stylesheet (`web/src/app/pages/IntelFXPanelView.css`), replacing inline style-heavy block cards/headers/status/actions with Carbon `Layer`, `Button`, `Tag`, Carbon icons, and tokenized layout while preserving bypass/parameter control logic.
+  - 2026-03-12: Completed `web/src/app/pages/IntelFXFlowView.tsx` Carbon route migration with new tokenized route stylesheet (`web/src/app/pages/IntelFXFlowView.css`), replacing inline route wrapper composition with Carbon `Layer` and route metadata tags while preserving flow-canvas behavior.
+  - 2026-03-12: Updated `web/src/app/components/IntelFX/IntelFXFlowCanvas.tsx` and `web/src/app/components/IntelFX/IntelFXFlowCanvas.css` to remove Phosphor icon usage from flow toolbar/sidebar controls and standardize on Carbon icons/buttons for these controls while preserving canvas panning/zooming/patch-cord logic.
+  - Validation (IntelFX panel/flow route wave): `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - 2026-03-12: Completed `web/src/app/pages/IntelFXPage.tsx` host-shell migration to Carbon route primitives by removing route-level MUI alert/slider/button usage and Phosphor sidebar iconography, standardizing navigation/status/notice actions on Carbon icons, `InlineNotification`, `InlineLoading`, and Carbon `Button` patterns with route helper styles in `web/src/app/pages/IntelFXPage.css`.
+  - Validation (IntelFX host-shell wave): `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - 2026-03-12: Began IntelFX library/midi-map route conformance wave for `web/src/app/pages/IntelFXLibraryView.tsx` and `web/src/app/pages/IntelFXMidiMapView.tsx` to replace remaining Phosphor iconography, inline style-heavy list/table/form controls, and non-tokenized route shells with Carbon primitives and route CSS.
+  - 2026-03-12: Completed `web/src/app/pages/IntelFXLibraryView.tsx` Carbon route migration with tokenized route stylesheet (`web/src/app/pages/IntelFXLibraryView.css`), replacing Phosphor icons and inline style-heavy search/filter/card-grid surfaces with Carbon `Layer`, `Search`, `Button`, `Tag`, `InlineNotification`, and `InlineLoading` while preserving preset-library load/search/tag filter behavior.
+  - 2026-03-12: Completed `web/src/app/pages/IntelFXMidiMapView.tsx` Carbon route migration with tokenized route stylesheet (`web/src/app/pages/IntelFXMidiMapView.css`), replacing Phosphor icons and inline style-heavy map/create/status/table composition with Carbon `Layer`, `TextInput`, `Button`, `Table*`, `Tag`, `InlineNotification`, and `InlineLoading` while preserving MIDI-map CRUD/activation/learn behavior.
+  - Validation (IntelFX library/midi-map wave): `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - 2026-03-12: Began `web/src/app/pages/IntelFXEditorView.tsx` Carbon route migration wave to replace inline style-heavy accordion/toggle/select parameter editor surfaces with Carbon accordion/form controls and tokenized route CSS while preserving parameter mutation behavior.
+  - 2026-03-12: Completed `web/src/app/pages/IntelFXEditorView.tsx` Carbon route migration with tokenized route stylesheet (`web/src/app/pages/IntelFXEditorView.css`), replacing inline style-heavy accordion/toggle/select parameter editor surfaces with Carbon `Accordion`, `Checkbox`, `Select`, `Tag`, `InlineLoading`, and Carbon tokenized layout while preserving parameter mutation behavior.
+  - Validation (IntelFX editor wave): `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Remaining `T114-subG` execution steps:
+    1. Run route-wave accessibility validation (keyboard flow, semantics, focus order, visible labels) and feed findings to `T114-subH`.
+ID: T114-subH
+Status: [ ] Todo
+Title: Validate responsiveness, keyboard flow, semantics, and visual consistency after each refactor wave
+Description:
+- Goal / acceptance criteria: Run deterministic validation per refactor wave covering responsive behavior, keyboard navigation, semantic markup, focus behavior, contrast, naming/labels, and icon accessibility treatment.
+- Why it matters: Conformance without validation can ship regressions that violate Carbon and IBM accessibility requirements.
+- Dependencies: T114-subF, T114-subG
+- Estimated effort: High
+- Required outputs: Accessibility and UX validation notes with pass/fail results and remediation links.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 22:35 - Codex
+ID: T114-subI
+Status: [ ] Todo
+Title: Capture and justify exceptions that cannot be fully migrated
+Description:
+- Goal / acceptance criteria: Document all unresolved non-conforming surfaces with rationale, impact, risk, and proposed follow-up path; no silent exceptions.
+- Why it matters: Explicit exception tracking prevents hidden debt and enables auditable decisions.
+- Dependencies: T114-subH
+- Estimated effort: Low
+- Required outputs: Exception register appended to final report and linked task follow-ups for deferred items.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 22:35 - Codex
+ID: T114-subJ
+Status: [ ] Todo
+Title: Deliver final Carbon conformance report and patch ledger in required structure
+Description:
+- Goal / acceptance criteria: Publish final output package with the exact required sections: executive summary, route inventory, shared component inventory, conformance findings by severity, refactor plan, patch set grouped by file, accessibility findings, and exceptions/rationale.
+- Why it matters: The final report is the operational handoff artifact for engineering, design, and QA.
+- Dependencies: T114-subE, T114-subH, T114-subI
+- Estimated effort: Medium
+- Required outputs: `docs/design/CARBON_CONFORMANCE_REPORT.md` plus file-grouped patch summary linked to committed changes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 22:35 - Codex
+Assigned to: Codex
+Last updated: 2026-03-11 23:20 - Codex
+
+ID: T115
+Status: [ ] Todo
+Title: Complete Rocktron IntelFX Backend Implementation (Phase 1-2)
+Description:
+- Goal / acceptance criteria: Implement the full backend foundation for the Rocktron Intellifex rack processor integration, following the MPX1 architecture exactly. Phase 1 covers the parameter registry, core MIDI bridge service, REST/WebSocket routes, and route registration. Phase 2 covers the SysEx parser, scene service, and all backend tests.
+- Why it matters: The IntelFX integration plan (swift-honking-unicorn.md) is partially complete. The parameter registry (intelfx_params.json) exists. The remaining backend files must be created so the frontend can connect and control the hardware.
+- Dependencies: app/data/intelfx_params.json (Done)
+- Estimated effort: High
+- Required outputs: All files listed below created and passing pytest.
+Subtasks:
+ID: T115-subA
+Status: [ ] Todo
+Title: Create intelfx_service.py — Core MIDI bridge service
+Description:
+- Goal / acceptance criteria: Clone app/services/mpx1_service.py; adapt for IntelFX: SysEx prefix [0xF0, 0x00, 0x01, 0x56], 256 program slots (0-255), INTELFX_SIMULATOR=1 env var for headless mode, shadow file ~/.map2/intelfx_shadow.json, echo-loop prevention, coalescing writes, WebSocket pub/sub, MIDI maps. Must load intelfx_params.json as its registry.
+- Why it matters: Core data flow: hardware → MIDI → service shadow → WebSocket → frontend.
+- Dependencies: app/data/intelfx_params.json
+- Estimated effort: High
+- Required outputs: app/services/intelfx_service.py
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T115-subB
+Status: [ ] Todo
+Title: Create intelfx.py — REST + WebSocket routes
+Description:
+- Goal / acceptance criteria: Clone app/routes/mpx1.py; adapt for /api/intelfx prefix. ~40 routes covering state, programs, params, library, MIDI maps, WebSocket. Use IntelFXService singleton.
+- Why it matters: Frontend and API Observatory need HTTP+WS endpoints to drive the device.
+- Dependencies: T115-subA
+- Estimated effort: Medium
+- Required outputs: app/routes/intelfx.py
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T115-subC
+Status: [ ] Todo
+Title: Register intelfx route module in app/main.py
+Description:
+- Goal / acceptance criteria: Add 'intelfx' to the route_modules list in app/main.py so the router is mounted at startup. Verify with: INTELFX_SIMULATOR=1 uvicorn app.main:app → GET /api/intelfx/state returns 200 JSON.
+- Why it matters: Without registration the frontend gets 404 on all IntelFX API calls.
+- Dependencies: T115-subB
+- Estimated effort: Trivial
+- Required outputs: Modified app/main.py
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T115-subD
+Status: [ ] Todo
+Title: Create intelfx_syx_parser.py — .syx file parser
+Description:
+- Goal / acceptance criteria: Clone app/services/mpx1_syx_parser.py; adapt frame detection for Rocktron SysEx prefix [0xF0, 0x00, 0x01, 0x56]. Support audition mode, preset versioning. Routes: /library/import-syx, /library/export-bundle, /library/{program}/version|versions|revert|audition.
+- Why it matters: Operators need to import/export .syx preset banks from the hardware.
+- Dependencies: T115-subA
+- Estimated effort: Medium
+- Required outputs: app/services/intelfx_syx_parser.py
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T115-subE
+Status: [ ] Todo
+Title: Create intelfx_scene_service.py — Scenes + morph + setlists
+Description:
+- Goal / acceptance criteria: Clone app/services/mpx1_scene_service.py; adapt for IntelFX 256-slot preset range. Scene CRUD, morph engine (≤25Hz, 4 curves, beat-sync), momentary hold, setlists. Routes under /scenes/* and /setlists/*.
+- Why it matters: Perform view requires scene/morph/setlist infrastructure.
+- Dependencies: T115-subA
+- Estimated effort: Medium
+- Required outputs: app/services/intelfx_scene_service.py
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T115-subF
+Status: [ ] Todo
+Title: Create backend tests: test_intelfx.py, test_intelfx_syx_parser.py, test_intelfx_scene_service.py
+Description:
+- Goal / acceptance criteria: Clone test structures from test_mpx1.py (34 tests), test_mpx1_syx_parser.py (21 tests), test_mpx1_scene_service.py (32 tests). Adapt for IntelFX specifics. All 80+ tests must pass via: pytest tests/test_intelfx.py tests/test_intelfx_syx_parser.py tests/test_intelfx_scene_service.py -v
+- Why it matters: Test parity with MPX1 ensures reliability and regression protection.
+- Dependencies: T115-subA, T115-subD, T115-subE
+- Estimated effort: High
+- Required outputs: tests/test_intelfx.py, tests/test_intelfx_syx_parser.py, tests/test_intelfx_scene_service.py
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116
+Status: [ ] Todo
+Title: Complete Rocktron IntelFX Frontend Implementation (Phase 3-5)
+Description:
+- Goal / acceptance criteria: Implement the full React/TypeScript frontend for the IntelFX integration: API client hook, 7 page views, shared components, signal flow canvas, and navigation wiring. Follows the MPX1 architecture exactly. See plan swift-honking-unicorn.md for full file list.
+- Why it matters: Operators need a GUI to control the Rocktron Intellifex processor in real time.
+- Dependencies: T115 (backend must be running with simulator)
+- Estimated effort: X-Large
+- Required outputs: All files listed in subtasks, passing npm run typecheck and npm run build.
+Subtasks:
+ID: T116-subA
+Status: [ ] Todo
+Title: Create intelfxApi.ts — API client + useIntelFXState hook
+Description:
+- Goal / acceptance criteria: Clone web/src/map2/mpx1Api.ts; adapt for /api/intelfx endpoints. Exports useIntelFXState hook with same interface shape as useMPX1State (state, programs, registry, shadow, setProgram, setParam). WebSocket subscription to intelfx_state topic.
+- Why it matters: All IntelFX frontend components consume this hook as their data source.
+- Dependencies: T115-subC
+- Estimated effort: Medium
+- Required outputs: web/src/map2/intelfxApi.ts
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subB
+Status: [ ] Todo
+Title: Create programNumber.ts — Program number formatter
+Description:
+- Goal / acceptance criteria: Create web/src/app/components/IntelFX/programNumber.ts. Export formatIntelFXProgramNumber(n) → 'U001'–'U128' for slots 0-127, 'F001'–'F128' for slots 128-255. Export formatIntelFXProgramName(n, name?) → display string. Mirror web/src/app/components/MPX1/programNumber.ts pattern.
+- Why it matters: Program numbers must display correctly throughout UI (status bar, librarian, panel).
+- Dependencies: None
+- Estimated effort: Trivial
+- Required outputs: web/src/app/components/IntelFX/programNumber.ts
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subC
+Status: [ ] Todo
+Title: Create IntelFXPage.tsx — Main layout shell with sidebar, context, and status bar
+Description:
+- Goal / acceptance criteria: Clone web/src/app/pages/MPX1Page.tsx; adapt for IntelFX: 7 sidebar sections (panel, editor, midi-map, library, perform, diag, flow), IntelFXPageContext, useIntelFXState hook, same cluster node selection / location detection pattern, IntelFXStatusBar component. Import IntelFXPageShell.css (already exists at web/src/app/components/IntelFX/IntelFXPageShell.css). MIDI device type: 'rocktron-intelfx'.
+- Why it matters: All 7 IntelFX views render inside this shell as <Outlet />.
+- Dependencies: T116-subA, T116-subB
+- Estimated effort: Medium
+- Required outputs: web/src/app/pages/IntelFXPage.tsx
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subD
+Status: [ ] Todo
+Title: Create IntelFXStatusBar component
+Description:
+- Goal / acceptance criteria: Clone web/src/app/components/MPX1/MPX1StatusBar.tsx; adapt classes to intelfx-statusbar__*. Uses IntelFXPageShell.css (already exists). Red (#e53935) accent color for LCD/tap. Same props: connected, deviceName, programNumber, programName, lcdText, mixValue, tapTempoBpm, bypassState, onProgramStep, onMixChange, onTapTempo, onToggleBypass.
+- Why it matters: Status bar at bottom of IntelFXPage shell displays live device state.
+- Dependencies: T116-subC
+- Estimated effort: Small
+- Required outputs: web/src/app/components/IntelFX/IntelFXStatusBar.tsx
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subE
+Status: [ ] Todo
+Title: Create IntelFXPanelView.tsx + IntelFXPanel.tsx + IntelFXPanel.css
+Description:
+- Goal / acceptance criteria: Hardware panel simulation for 11 serial effect blocks (HUSH, Compressor, Wah, EQ, Pitch, Chorus, Flanger, Phaser, Tremolo, Delay, Reverb). Each block shows bypass LED, block name, and 3 primary parameter knobs using shared ParameterKnob component. LCD display at top. Bypass toggles via onToggleBypass context callback. IntelFXPanel.css uses intelfx-panel__* BEM classes.
+- Why it matters: Panel view is the primary operator interface for live effect control.
+- Dependencies: T116-subC
+- Estimated effort: Medium
+- Required outputs: web/src/app/pages/IntelFXPanelView.tsx, web/src/app/components/IntelFX/IntelFXPanel.tsx, web/src/app/components/IntelFX/IntelFXPanel.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subF
+Status: [ ] Todo
+Title: Create IntelFXEditorView.tsx — Parameter grid editor
+Description:
+- Goal / acceptance criteria: Clone MPX1 editor view pattern. Group all registry params by effect block (11 groups). Each group renders a card with ParameterKnob or NumberInput per param. Scrollable grid layout. Uses useIntelFXPageContext() for mpx1/intelfx state and setParam.
+- Why it matters: Detailed param editing view for fine-tuning all ~120 parameters.
+- Dependencies: T116-subC
+- Estimated effort: Medium
+- Required outputs: web/src/app/pages/IntelFXEditorView.tsx
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subG
+Status: [ ] Todo
+Title: Create IntelFXMidiMapView.tsx + IntelFXMidiMapper.tsx + IntelFXMidiMapper.css
+Description:
+- Goal / acceptance criteria: Clone MPX1 MIDI mapper view. Table of CC → param mappings with learn button (sends POST /api/intelfx/midi-map/learn). Add/remove/edit rows. MidiCcBadge per row. IntelFXMidiMapper.css uses intelfx-midi-mapper__* BEM classes.
+- Why it matters: MIDI CC mapping is required for expression pedal / controller automation.
+- Dependencies: T116-subC
+- Estimated effort: Medium
+- Required outputs: web/src/app/pages/IntelFXMidiMapView.tsx, web/src/app/components/IntelFX/IntelFXMidiMapper.tsx, web/src/app/components/IntelFX/IntelFXMidiMapper.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subH
+Status: [ ] Todo
+Title: Create IntelFXLibraryView.tsx + IntelFXLibrarian.tsx + IntelFXLibrarian.css
+Description:
+- Goal / acceptance criteria: Clone MPX1 librarian. 256-slot grid (U001-U128 user, F001-F128 factory). Search, tags, import .syx (POST /api/intelfx/library/import-syx), export bundle. Click slot → load program. Versioning: versions/revert/audition. IntelFXLibrarian.css uses intelfx-librarian__* BEM classes.
+- Why it matters: Preset management is a primary operator workflow.
+- Dependencies: T116-subC, T115-subD
+- Estimated effort: Medium
+- Required outputs: web/src/app/pages/IntelFXLibraryView.tsx, web/src/app/components/IntelFX/IntelFXLibrarian.tsx, web/src/app/components/IntelFX/IntelFXLibrarian.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subI
+Status: [ ] Todo
+Title: Create IntelFXPerformView.tsx + IntelFXScenePanel.tsx + IntelFXScenePanel.css
+Description:
+- Goal / acceptance criteria: Clone MPX1 perform view and ScenePanel. Scene CRUD cards, morph engine UI (curve selector, duration, beat-sync toggle), setlist reorder, momentary hold button. Calls /api/intelfx/scenes/* and /api/intelfx/setlists/*. IntelFXScenePanel.css uses intelfx-scene__* BEM classes.
+- Why it matters: Scene/morph/setlist workflow is required for live performance use.
+- Dependencies: T116-subC, T115-subE
+- Estimated effort: Medium
+- Required outputs: web/src/app/pages/IntelFXPerformView.tsx, web/src/app/components/IntelFX/IntelFXScenePanel.tsx, web/src/app/components/IntelFX/IntelFXScenePanel.css
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subJ
+Status: [ ] Todo
+Title: Create IntelFXMonitorView.tsx — Diagnostics / monitor view
+Description:
+- Goal / acceptance criteria: Clone MPX1 diagnostics view. Show: MIDI port status, last SysEx exchange (hex), param read/write latency, error log, shadow state JSON viewer, firmware version, simulator mode indicator. Poll GET /api/intelfx/state and /api/intelfx/diagnostics every 2s.
+- Why it matters: Field diagnostics view for MIDI troubleshooting and system health checks.
+- Dependencies: T116-subC
+- Estimated effort: Small
+- Required outputs: web/src/app/pages/IntelFXMonitorView.tsx
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subK
+Status: [ ] Todo
+Title: Create IntelFX Signal Flow Canvas (Phase 5 — full component set)
+Description:
+- Goal / acceptance criteria: Implement WYSIWYG serial signal flow canvas at /intelfx/flow. Single row of 11 block cards (simpler than MPX1's dual-lane). Files to create: intelfxFlowRouting.ts (pure geometry for serial layout), useFlowUndoRedo.ts (50-entry undo/redo), IntelFXFlowBlockCard.tsx (block card with bypass glow), IntelFXFlowPatchCords.tsx (animated SVG patch cords), IntelFXFlowSidebar.tsx (param editor sidebar), IntelFXFlowToolbar.tsx (program nav, undo/redo, zoom), IntelFXFlowCanvas.tsx + IntelFXFlowCanvas.css, IntelFXFlowView.tsx. CRITICAL: No no-dep useLayoutEffect → setState (causes infinite loop #185); use functional updater pattern setState(prev => sameRef ? prev : newVal).
+- Why it matters: Flow canvas gives operators a visual representation of the serial signal chain for drag-to-reorder and per-block param editing.
+- Dependencies: T116-subC
+- Estimated effort: High
+- Required outputs: web/src/app/components/IntelFX/intelfxFlowRouting.ts, web/src/app/components/IntelFX/useFlowUndoRedo.ts, web/src/app/components/IntelFX/IntelFXFlowBlockCard.tsx, web/src/app/components/IntelFX/IntelFXFlowPatchCords.tsx, web/src/app/components/IntelFX/IntelFXFlowSidebar.tsx, web/src/app/components/IntelFX/IntelFXFlowToolbar.tsx, web/src/app/components/IntelFX/IntelFXFlowCanvas.tsx, web/src/app/components/IntelFX/IntelFXFlowCanvas.css, web/src/app/pages/IntelFXFlowView.tsx
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T116-subL
+Status: [ ] Todo
+Title: Wire IntelFX into App.tsx routes and advancedMenuItems.ts navigation
+Description:
+- Goal / acceptance criteria: Add lazy imports for IntelFXPage and all 7 child views in web/src/app/App.tsx under /intelfx/* with nested routes: panel, editor, midi-map, library, perform, diag, flow. Add IntelFX entry to web/src/app/data/advancedMenuItems.ts with homeSection: 'MIDI', color: '#e53935', showOnHome: true, includeInAdvancedMenu: true. Run npm --prefix web run typecheck → PASS, npm --prefix web run build → PASS.
+- Why it matters: Without route and nav wiring the IntelFX UI is unreachable.
+- Dependencies: T116-subC through T116-subK
+- Estimated effort: Small
+- Required outputs: Modified web/src/app/App.tsx, web/src/app/data/advancedMenuItems.ts
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T117
+Status: [ ] Todo
+Title: Complete T113 — Home page Netflix-style redesign
+Description:
+- Goal / acceptance criteria: Complete the in-progress T113 task. Refactor HomePage.tsx so: (1) hero/banner is 50% smaller, (2) navigation cards become full-width horizontal-snap cards with arrow flow, (3) each card shows 6-8 capability bullets plus Open Interface / Learn More / Pin actions. API Observatory must remain advanced-menu-only (no card on Home). Source capability descriptions from route/doc metadata in the repo.
+- Why it matters: T113 is marked In Progress and must be completed before the Carbon conformance refactor (T114-subG) touches the Home page.
+- Dependencies: T108, T109, T114-subA (all Done)
+- Estimated effort: Medium
+- Required outputs: Updated web/src/app/pages/HomePage.tsx, web/src/app/pages/HomePage.css (or equivalent), passing npm run typecheck and npm run build, updated worklist status.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-11
+
+ID: T118
+Status: [✓] Done
+Title: Complete T114-subF — Refactor shared primitives using Carbon components and tokens
+Description:
+- Goal / acceptance criteria: Migrate shared UI foundations in this order: app shell/navigation, typography, buttons/links, form inputs, tables, modals/dialogs, notifications, spacing/layout, icon usage. Install @carbon/react if not present. Prefer @carbon/react components and Carbon design tokens; remove conflicting bespoke patterns. Each wave must pass npm run typecheck and npm run build.
+- Why it matters: T114-subF is marked In Progress. Shared primitives must be Carbon-aligned before route-level refactors (T114-subG) begin.
+- Dependencies: T114-subE (Done)
+- Estimated effort: High
+- Required outputs: Patch set across shared component libraries, updated tests, migration notes appended to docs/design/CARBON_CONFORMANCE_MATRIX.md.
+- Completion notes:
+  - What was done: Completed all tracked T118 subtasks (`T118-subA` through `T118-subD`), including Carbon migration of shared dialog/table/form families and final AppShell panel-body shell-layer normalization.
+  - Key findings: Remaining Carbon conformance scope is now primarily route-level (`T114-subG`) and accessibility/reporting waves (`T114-subH` to `T114-subJ`), not shared primitive foundations.
+  - Files/links produced: `web/src/app/layout/AppShell.tsx`, `web/src/app/components/MPX1/MPX1MegaMenu.tsx`, `web/src/app/components/MPX1/MPX1MegaMenu.css`, `web/src/index.css`, `docs/design/CARBON_CONFORMANCE_MATRIX.md`.
+Subtasks:
+ID: T118-subA
+Status: [✓] Done
+Title: Migrate product detail shared dialog workflow to Carbon modal/tabs/table primitives
+Description:
+- Goal / acceptance criteria: Replace MUI-based `ProductDetailDialog` with Carbon modal/tab/table primitives and tokenized styling while preserving existing product metadata behavior and close/search actions.
+- Why it matters: Product details is a shared high-traffic dialog in shopping workflows and was explicitly identified as remaining non-conforming modal/form surface.
+- Dependencies: T114-subE
+- Estimated effort: Medium
+- Required outputs: Updated `web/src/app/components/ProductDetailDialog.tsx`, tokenized CSS, and dedicated regression tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 09:31 - Codex
+ID: T118-subB
+Status: [✓] Done
+Title: Migrate shopping search dialog workflow to Carbon modal/form/table primitives
+Description:
+- Goal / acceptance criteria: Replace MUI-first `ShoppingSearchDialog` composition with Carbon modal, form controls, tabs, table, and tokenized layout while preserving filtering, sorting, recommendations, and product-details drill-in behavior.
+- Why it matters: This is the remaining highest-traffic shared dialog/form workflow in T114-subF scope.
+- Dependencies: T118-subA
+- Estimated effort: High
+- Required outputs: Updated `web/src/app/components/ShoppingSearchDialog.tsx`, supporting styles/tests, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 09:45 - Codex
+ID: T118-subC
+Status: [✓] Done
+Title: Carbonize remaining shared table/form/dialog families outside shopping flow
+Description:
+- Goal / acceptance criteria: Complete Carbon migration for remaining shared primitives noted in the conformance matrix (library/upload/preset tables and dialogs), including token cleanup and focused tests.
+- Why it matters: T114-subF cannot close until all shared primitive families are aligned before route-level work starts.
+- Dependencies: T118-subB
+- Estimated effort: High
+- Required outputs: Multi-file patch set plus updated matrix/worklist validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 13:27 - Codex
+- Progress notes:
+  - Shared-primitives wave completed for bootstrap theme/typography, notification surfaces, modal/form surfaces, and cluster node selector controls.
+  - AppShell icon controls now use Carbon icons and generic icon rendering, reducing bespoke icon drift in the shell layer.
+  - Navigation metadata color model now uses Carbon tokens (`web/src/app/data/advancedMenuItems.ts`) instead of hex/rgba literals.
+  - Shared table primitive migration started with Carbonized `web/src/app/components/MidiCluster/MidiClusterConnectionMatrix.tsx` plus dedicated tests.
+  - AppShell now uses Carbon shell wrappers (`Header`, `HeaderNavigation`, `HeaderGlobalBar`, `HeaderMenuButton`) while preserving existing nav behavior.
+  - Shared plugin-details dialog now uses Carbon modal/actions (`web/src/app/components/PluginDetailsModal.tsx`) with dedicated regression tests.
+  - Shared product-details dialog now uses Carbon modal/tabs/table primitives with dedicated tests (`web/src/app/components/ProductDetailDialog.tsx`).
+  - Shared shopping-search dialog now uses Carbon modal/form/table/tabs primitives with dedicated tests (`web/src/app/components/ShoppingSearchDialog.tsx`).
+  - Loader manager dialog family now uses Carbon modal/form/table primitives with tokenized styles in `web/src/app/components/loaders/IRManagerDialog.tsx` and `web/src/app/components/loaders/NAMManagerDialog.tsx`, plus dedicated tests.
+  - Preset deployment dialog now uses Carbon modal/table/checkbox/notification primitives in `web/src/app/components/presets/PresetDeployModal.tsx` with dedicated regression test coverage.
+  - Preset import dialog now uses Carbon modal/file-upload/notification primitives with tokenized styles in `web/src/app/components/presets/PresetImportDialog.tsx` and dedicated tests.
+  - Installed assets library surface now uses Carbon table/search/button/modal/tag/checkbox primitives with tokenized styles in `web/src/app/components/library/InstalledAssetsTable.tsx` plus focused regression tests.
+  - Cluster dashboard AVB network table surfaces now use Carbon table/tag primitives in `web/src/app/components/ClusterDashboard/AVBNetworkTab.tsx` with focused regression tests.
+  - Cluster dashboard multi-node metric comparison table now uses Carbon table/tag primitives in `web/src/app/components/ClusterDashboard/MultiNodeMonitoringTab.tsx` with focused regression tests.
+  - Library source-management controls now use Carbon primitives in `web/src/app/components/library/LibrarySources.tsx` (`Accordion`, `Button`, `Tile`, `Tag`, `InlineNotification`, `InlineLoading`) with tokenized CSS and dedicated tests.
+  - Tone3000 credential/download control surface now uses Carbon form/notification/progress primitives in `web/src/app/components/library/Tone3000Config.tsx` (`Button`, `TextInput`, `InlineNotification`, `InlineLoading`, `ProgressBar`, `Tag`) with tokenized CSS and dedicated tests.
+  - Library overview/path route surface now uses Carbon table/accordion/button/tag/loading/notification patterns in `web/src/app/pages/LibraryPage.tsx` with tokenized page styles in `web/src/app/pages/LibraryPage.css` and focused tests.
+  - AppShell advanced-menu body now uses Carbon accordion grouping and standardized maturity-tag treatment (`web/src/app/layout/AppShell.tsx`, `web/src/index.css`, `web/src/styles/mobile.css`).
+  - Validation refresh: `npm --prefix web run test -- src/app/layout/AppShell.test.tsx --runInBand`, `npm --prefix web run test -- src/app/pages/LibraryPage.test.tsx src/app/components/library/Tone3000Config.test.tsx src/app/components/library/LibrarySources.test.tsx src/app/components/library/InstalledAssetsTable.test.tsx src/app/components/ClusterDashboard/AVBNetworkTab.test.tsx src/app/components/ClusterDashboard/MultiNodeMonitoringTab.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
+  - Follow-up scope moved to T118-subD and T114-subG.
+ID: T118-subD
+Status: [✓] Done
+Title: Normalize remaining AppShell panel bodies to Carbon shell-layer patterns
+Description:
+- Goal / acceptance criteria: Replace remaining bespoke shell panel body compositions (top-hardware submenu and MPX1 mega-menu container shell treatment) with Carbon-aligned shell/layer patterns while preserving existing behavior, cluster context notes, and route actions.
+- Why it matters: T114-subF requires shell primitives to be Carbon-aligned before route-wide refactors complete.
+- Dependencies: T118-subC
+- Estimated effort: Medium
+- Required outputs: Updated `web/src/app/layout/AppShell.tsx`, `web/src/app/components/MPX1/MPX1MegaMenu.tsx`, supporting CSS updates, and focused shell regression evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-12 13:42 - Codex
+- Completion notes:
+  - What was done: Migrated top-hardware submenu and MPX1 mega-menu panel bodies to Carbon shell-layer composition using `Layer`, Carbon `Button`, Carbon `Tag`, and Carbon icon replacements while preserving routing and control actions.
+  - Key findings: Layer-based shell normalization can be applied without changing MPX1 business behavior or submenu navigation semantics.
+  - Files/links produced: `web/src/app/layout/AppShell.tsx`, `web/src/app/components/MPX1/MPX1MegaMenu.tsx`, `web/src/app/components/MPX1/MPX1MegaMenu.css`, `web/src/index.css`.
+  - Validation: `npm --prefix web run test -- src/app/layout/AppShell.test.tsx --runInBand`, `npm --prefix web run typecheck`, `npm --prefix web run build`.
