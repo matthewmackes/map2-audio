@@ -1,110 +1,136 @@
 import type { ReactNode } from 'react'
-import { Information } from '@carbon/icons-react'
-import { Button, Layer, Modal, Tag } from '@carbon/react'
-import {
-  MIDI_HUB_FAMILY_LABELS,
-  MIDI_HUB_PANEL_GUIDANCE,
-  type MidiHubPanelId,
-} from './midiHubGuidance'
+import { Layer, Tag } from '@carbon/react'
+
+export type MidiHubPanelId =
+  | 'routing'
+  | 'presets'
+  | 'network'
+  | 'filters'
+  | 'mapper'
+  | 'scripts'
+  | 'macros'
+  | 'scheduler'
+  | 'clock'
+  | 'recorder'
+  | 'traffic'
+  | 'midi2'
+  | 'innovation'
+
+type MidiHubPanelMeta = {
+  title: string
+  family: string
+  shortLabel: string
+  summary: string
+  advanced?: boolean
+}
+
+export const MIDI_HUB_PANEL_META: Record<MidiHubPanelId, MidiHubPanelMeta> = {
+  routing: {
+    title: 'Routing Workspace',
+    family: 'Route & Transform',
+    shortLabel: 'Route core',
+    summary: 'Establish the live path and inspect the active topology.',
+  },
+  presets: {
+    title: 'Preset Publishing',
+    family: 'Automation & Management',
+    shortLabel: 'Recall store',
+    summary: 'Capture, compare, and publish stable working states.',
+  },
+  network: {
+    title: 'Network MIDI & OSC',
+    family: 'Discover & Connect',
+    shortLabel: 'Network bridge',
+    summary: 'Manage RTP, UDP, and OSC session edges.',
+  },
+  filters: {
+    title: 'Filtering Strategy',
+    family: 'Route & Transform',
+    shortLabel: 'Message filter',
+    summary: 'Constrain traffic by channel, family, source, and port.',
+  },
+  mapper: {
+    title: 'Mapper & Transformation Blueprint',
+    family: 'Route & Transform',
+    shortLabel: 'Transform lane',
+    summary: 'Stage source-to-target message conversion contracts.',
+  },
+  scripts: {
+    title: 'Script Engine',
+    family: 'Automation & Management',
+    shortLabel: 'Script hooks',
+    summary: 'Run event-driven custom logic with explicit control.',
+    advanced: true,
+  },
+  macros: {
+    title: 'Macro Sequencing',
+    family: 'Automation & Management',
+    shortLabel: 'Macro scenes',
+    summary: 'Bundle repeatable cross-device actions into one trigger.',
+  },
+  scheduler: {
+    title: 'Scheduled Actions',
+    family: 'Automation & Management',
+    shortLabel: 'Scheduled events',
+    summary: 'Queue delayed or timed MIDI actions deterministically.',
+    advanced: true,
+  },
+  clock: {
+    title: 'Clock & Sync',
+    family: 'Sync & Diagnostics',
+    shortLabel: 'Clock master',
+    summary: 'Choose the timing owner and validate transport stability.',
+  },
+  recorder: {
+    title: 'Capture & Replay',
+    family: 'Sync & Diagnostics',
+    shortLabel: 'Capture replay',
+    summary: 'Record and replay traffic for evidence and regression checks.',
+  },
+  traffic: {
+    title: 'Traffic Monitor',
+    family: 'Sync & Diagnostics',
+    shortLabel: 'Message trace',
+    summary: 'Inspect live flow and isolate ingress, route, or destination faults.',
+  },
+  midi2: {
+    title: 'MIDI 2.0 Workspace',
+    family: 'MIDI 2.0 & Labs',
+    shortLabel: 'UMP status',
+    summary: 'Check UMP posture, translation, and capability readiness.',
+  },
+  innovation: {
+    title: 'Innovation Surface',
+    family: 'MIDI 2.0 & Labs',
+    shortLabel: 'Lab surfaces',
+    summary: 'Exercise future-facing control and translation experiments.',
+    advanced: true,
+  },
+}
 
 interface MidiHubPanelShellProps {
   panelId: MidiHubPanelId
   children: ReactNode
-  onOpenHelp: (panelId: MidiHubPanelId) => void
-  hideHints?: boolean
 }
 
-export function MidiHubPanelShell({ panelId, children, onOpenHelp, hideHints = false }: MidiHubPanelShellProps) {
-  const guidance = MIDI_HUB_PANEL_GUIDANCE[panelId]
+export function MidiHubPanelShell({ panelId, children }: MidiHubPanelShellProps) {
+  const panel = MIDI_HUB_PANEL_META[panelId]
 
   return (
     <Layer className="midi-hub-panel-shell" id={`midi-hub-panel-${panelId}`}>
       <header className="midi-hub-panel-shell__header">
         <div className="midi-hub-panel-shell__copy">
           <div className="midi-hub-panel-shell__meta-row">
-            <Tag type="cool-gray">{MIDI_HUB_FAMILY_LABELS[guidance.family]}</Tag>
-            {guidance.advanced ? <Tag type="warm-gray">Advanced</Tag> : null}
+            <Tag type="cool-gray">{panel.family}</Tag>
+            <Tag type="blue">{panel.shortLabel}</Tag>
+            {panel.advanced ? <Tag type="warm-gray">Advanced</Tag> : null}
           </div>
-          <h3>{guidance.title}</h3>
-          <p className="midi-hub-panel-shell__summary">{guidance.summary}</p>
-          {!hideHints ? (
-            <ul className="midi-hub-inline-hints">
-              {guidance.inlineHints.map((hint) => (
-                <li key={hint}>{hint}</li>
-              ))}
-            </ul>
-          ) : null}
+          <h3>{panel.title}</h3>
+          <p className="midi-hub-panel-shell__summary">{panel.summary}</p>
         </div>
-
-        <Button
-          kind="ghost"
-          size="sm"
-          renderIcon={Information}
-          onClick={() => onOpenHelp(panelId)}
-        >
-          Deep help
-        </Button>
       </header>
 
       <div className="midi-hub-panel-shell__content">{children}</div>
     </Layer>
-  )
-}
-
-interface MidiHubHelpDrawerProps {
-  panelId: MidiHubPanelId | null
-  open: boolean
-  onClose: () => void
-}
-
-export function MidiHubHelpDrawer({ panelId, open, onClose }: MidiHubHelpDrawerProps) {
-  const guidance = panelId ? MIDI_HUB_PANEL_GUIDANCE[panelId] : null
-
-  return (
-    <Modal
-      open={open}
-      passiveModal
-      size="lg"
-      modalLabel={guidance ? MIDI_HUB_FAMILY_LABELS[guidance.family] : 'MIDI Hub'}
-      modalHeading={guidance?.title ?? 'MIDI Hub help'}
-      onRequestClose={onClose}
-    >
-      {guidance ? (
-        <div className="midi-hub-help-modal">
-          <div className="midi-hub-help-modal__row">
-            <Tag type="cool-gray">{MIDI_HUB_FAMILY_LABELS[guidance.family]}</Tag>
-            {guidance.advanced ? <Tag type="warm-gray">Advanced surface</Tag> : null}
-          </div>
-
-          <section className="midi-hub-help-modal__section">
-            <h4>Why this surface matters</h4>
-            <p>{guidance.whyItMatters}</p>
-          </section>
-
-          <section className="midi-hub-help-modal__section">
-            <h4>Prerequisites</h4>
-            <ul className="midi-hub-help-list">
-              {guidance.prerequisites.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="midi-hub-help-modal__section">
-            <h4>Worked example</h4>
-            <p>{guidance.example}</p>
-          </section>
-
-          <section className="midi-hub-help-modal__section">
-            <h4>Recovery guidance</h4>
-            <ul className="midi-hub-help-list">
-              {guidance.recovery.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-        </div>
-      ) : null}
-    </Modal>
   )
 }

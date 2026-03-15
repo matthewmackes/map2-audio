@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch } from '@mui/material'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 type NodeInfo = {
@@ -24,6 +25,7 @@ function routeColor(route: MidiHubRoute): string {
 export function MidiPatchbay() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [pendingSource, setPendingSource] = useState<string | null>(null)
   const [selectedRoute, setSelectedRoute] = useState<MidiHubRoute | null>(null)
   const [selectedNode, setSelectedNode] = useState<NodeInfo | null>(null)
@@ -34,26 +36,26 @@ export function MidiPatchbay() {
   const [showAdvancedTools, setShowAdvancedTools] = useState(false)
 
   const statusQuery = useQuery({
-    queryKey: ['midi-hub', 'status'],
-    queryFn: midiHubApi.getStatus,
+    queryKey: ['midi-hub', scopeKey, 'status'],
+    queryFn: () => midiHubApi.getStatus(nodeId),
     refetchInterval: 2500,
   })
 
   const routesQuery = useQuery({
-    queryKey: ['midi-hub', 'routes'],
-    queryFn: midiHubApi.getRoutes,
+    queryKey: ['midi-hub', scopeKey, 'routes'],
+    queryFn: () => midiHubApi.getRoutes(nodeId),
     refetchInterval: 2500,
   })
 
   const topologyQuery = useQuery({
-    queryKey: ['midi-hub', 'topology'],
-    queryFn: midiHubApi.getTopology,
+    queryKey: ['midi-hub', scopeKey, 'topology'],
+    queryFn: () => midiHubApi.getTopology(nodeId),
     refetchInterval: 2500,
   })
 
   const trafficQuery = useQuery({
-    queryKey: ['midi-hub', 'traffic', 'patchbay-heatmap'],
-    queryFn: () => midiHubApi.getTrafficSnapshot({ limit: 1000 }),
+    queryKey: ['midi-hub', scopeKey, 'traffic', 'patchbay-heatmap'],
+    queryFn: () => midiHubApi.getTrafficSnapshot({ limit: 1000 }, nodeId),
     refetchInterval: 1000,
   })
 
@@ -109,29 +111,29 @@ export function MidiPatchbay() {
         route_type: 'pass_through',
         filter: { message_types: [], channels: [] },
         transform_chain: [],
-      }),
+      }, nodeId),
     onSuccess: () => {
       pushToast('Route created', 'success')
       setPendingSource(null)
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
     onError: () => pushToast('Failed to create route', 'error'),
   })
 
   const toggleRoute = useMutation({
     mutationFn: async (route: MidiHubRoute) =>
-      route.enabled ? midiHubApi.disableRoute(route.route_id) : midiHubApi.enableRoute(route.route_id),
+      route.enabled ? midiHubApi.disableRoute(route.route_id, nodeId) : midiHubApi.enableRoute(route.route_id, nodeId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
   })
 
   const deleteRoute = useMutation({
-    mutationFn: async (routeId: string) => midiHubApi.deleteRoute(routeId),
+    mutationFn: async (routeId: string) => midiHubApi.deleteRoute(routeId, nodeId),
     onSuccess: () => {
       pushToast('Route deleted', 'info')
       setSelectedRoute(null)
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
     onError: () => pushToast('Failed to delete route', 'error'),
   })

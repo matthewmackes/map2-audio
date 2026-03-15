@@ -1,3 +1,5 @@
+export type CarbonThemeId = 'white' | 'g10' | 'g90' | 'g100';
+
 export interface ThemeColors {
   bg: string;
   surface: string;
@@ -50,6 +52,7 @@ export interface Theme {
   id: string;
   name: string;
   description: string;
+  carbonTheme?: CarbonThemeId;
   colors: ThemeColors;
   widgets: ThemeWidgets;
 }

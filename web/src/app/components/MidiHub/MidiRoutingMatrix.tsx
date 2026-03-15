@@ -18,6 +18,7 @@ import {
   TextField,
 } from '@mui/material'
 import { midiHubApi, type MidiHubRoute, type MidiHubRouteRequest } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 type MatrixSelection = {
@@ -62,6 +63,7 @@ function hasAdvancedRouteState(route: MidiHubRoute | undefined): boolean {
 export function MidiRoutingMatrix() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [selection, setSelection] = useState<MatrixSelection | null>(null)
   const [enabled, setEnabled] = useState(true)
   const [priority, setPriority] = useState(100)
@@ -72,14 +74,14 @@ export function MidiRoutingMatrix() {
   const [showAdvancedEditor, setShowAdvancedEditor] = useState(false)
 
   const statusQuery = useQuery({
-    queryKey: ['midi-hub', 'status'],
-    queryFn: midiHubApi.getStatus,
+    queryKey: ['midi-hub', scopeKey, 'status'],
+    queryFn: () => midiHubApi.getStatus(nodeId),
     refetchInterval: 2500,
   })
 
   const routesQuery = useQuery({
-    queryKey: ['midi-hub', 'routes'],
-    queryFn: midiHubApi.getRoutes,
+    queryKey: ['midi-hub', scopeKey, 'routes'],
+    queryFn: () => midiHubApi.getRoutes(nodeId),
     refetchInterval: 2500,
   })
 
@@ -130,15 +132,15 @@ export function MidiRoutingMatrix() {
       }
 
       if (selection.route?.route_id) {
-        return midiHubApi.updateRoute(selection.route.route_id, payload)
+        return midiHubApi.updateRoute(selection.route.route_id, payload, nodeId)
       }
-      return midiHubApi.createRoute(payload)
+      return midiHubApi.createRoute(payload, nodeId)
     },
     onSuccess: () => {
       pushToast('Route saved', 'success')
       setSelection(null)
       setShowAdvancedEditor(false)
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
     onError: (error) => {
       const message = error instanceof Error ? error.message : 'Failed to save route'
@@ -147,12 +149,12 @@ export function MidiRoutingMatrix() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: async (routeId: string) => midiHubApi.deleteRoute(routeId),
+    mutationFn: async (routeId: string) => midiHubApi.deleteRoute(routeId, nodeId),
     onSuccess: () => {
       pushToast('Route deleted', 'info')
       setSelection(null)
       setShowAdvancedEditor(false)
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
     onError: () => pushToast('Failed to delete route', 'error'),
   })
@@ -195,7 +197,7 @@ export function MidiRoutingMatrix() {
           variant="outlined"
           size="small"
           onClick={() => {
-            void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+            void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
           }}
         >
           Refresh

@@ -26,6 +26,7 @@ from typing import Dict, List, Optional, Any
 
 from app.utils.singleton import Singleton
 from app.utils.logging_utils import get_logger
+from app.utils.platform_version import get_platform_version
 
 logger = get_logger(__name__)
 
@@ -2954,9 +2955,10 @@ sudo dnf install ffmpeg
 
     def _generate_changelog(self, manifest: Dict[str, Any]) -> str:
         """Generate changelog."""
+        map2_version = manifest.get("map2_version", get_platform_version())
         return f'''# MAP2 Audio Platform - Changelog
 
-## Version {manifest.get("map2_version", "1.0.0")}
+## Version {map2_version}
 
 ### Backup Created: {manifest.get("created_at", "Unknown")}
 
@@ -2966,7 +2968,7 @@ This backup was created from host: {manifest.get("hostname", "Unknown")}
 
 ## Version History
 
-### v1.0.0 (Current)
+### Version {map2_version} (Current)
 
 #### Features
 - Full backup and restore functionality
@@ -3203,7 +3205,7 @@ MAP2 Audio Platform - MIT License
             "description": description,
             "hostname": platform.node(),
             "platform": f"{platform.system()} {platform.release()}",
-            "map2_version": "1.0.0",
+            "map2_version": get_platform_version(),
             "backup_type": "full",
             "contents": {},
             "total_size_bytes": 0,
@@ -3658,7 +3660,7 @@ MAP2 Audio Platform - MIT License
                 timestamp=datetime.now().isoformat(),
                 backup_id=backup_id,
                 hostname=manifest.get("hostname", platform.node()),
-                map2_version=manifest.get("map2_version", "1.0.0"),
+                map2_version=manifest.get("map2_version", get_platform_version()),
             )
             reinstaller_path = staging_dir / "reinstall.sh"
             with open(reinstaller_path, 'w') as f:
@@ -3784,7 +3786,7 @@ MAP2 Audio Platform - MIT License
         """
         timestamp = datetime.now().isoformat()
         hostname = platform.node()
-        map2_version = "1.0.0"
+        map2_version = get_platform_version()
 
         # Generate the standalone rebuild script
         script_content = STANDALONE_REBUILD_SCRIPT.format(

@@ -10,18 +10,18 @@ export interface HomeCardProfile {
 }
 
 const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
-  '/overview': {
-    summary: 'Operational readiness center for validating MAP2 host, network, and AVB baseline before deeper workflow changes.',
+  '/platform': {
+    summary: 'Unified platform stack that collapses overview, node, AVB, MIDI cluster, API observability, and fleet posture into one route.',
     capabilities: [
-      'Host readiness and platform health snapshots',
-      'Network-share and infrastructure status visibility',
-      'AVB and transport health at a glance',
-      'Cross-domain status framing across core services',
-      'Fast preflight confirmation before sessions',
-      'Early warning context for unstable subsystems',
+      'Single-route access to six operational layers',
+      'Fast stack-to-workspace transitions with deep links',
+      'Shared notification grammar across cluster domains',
+      'Cluster, node, AVB, MIDI, and API summaries in one surface',
+      'Common table and tile layout for every layer',
+      'Reduced navigation overhead during troubleshooting',
     ],
-    learnMore: 'Use this page first when bringing a node online, validating deployment health, or triaging broad platform instability.',
-    bestFor: 'Preflight and first-response operations',
+    learnMore: 'Open Platform Stack when you need one operational workspace that can pivot quickly between topology, services, network audio, cluster MIDI, API behavior, and fleet status.',
+    bestFor: 'Cross-domain operations and first-response triage',
   },
   '/engine': {
     summary: 'Realtime engine command surface for core audio runtime state, metering, and processing-path confidence checks.',

@@ -3,11 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AILabel, AILabelContent } from '@carbon/react'
 import { Button, FormControlLabel, Switch, TextField } from '@mui/material'
 import { midiHubApi, type MidiHubLearnSuggestion } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 export function MidiInnovationPanel() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [parameterId, setParameterId] = useState('filter_cutoff')
   const [activePlugins, setActivePlugins] = useState('wah,delay')
   const [bypassedPlugins, setBypassedPlugins] = useState('chorus')
@@ -19,14 +21,14 @@ export function MidiInnovationPanel() {
   const [shadowHealth, setShadowHealth] = useState('online')
 
   const meshQuery = useQuery({
-    queryKey: ['midi-hub', 'mesh'],
-    queryFn: midiHubApi.getMeshStatus,
+    queryKey: ['midi-hub', scopeKey, 'mesh'],
+    queryFn: () => midiHubApi.getMeshStatus(nodeId),
     refetchInterval: 3000,
   })
 
   const shadowQuery = useQuery({
-    queryKey: ['midi-hub', 'shadow'],
-    queryFn: () => midiHubApi.getDeviceShadow(100),
+    queryKey: ['midi-hub', scopeKey, 'shadow'],
+    queryFn: () => midiHubApi.getDeviceShadow(100, nodeId),
     refetchInterval: 3000,
   })
 
@@ -45,7 +47,7 @@ export function MidiInnovationPanel() {
             .filter(Boolean),
           split_targets: ['A', 'B'],
         },
-      }),
+      }, nodeId),
     onSuccess: (payload) => {
       setLearnSuggestions(payload.suggestions)
       pushToast('Learn suggestions updated', 'success')
@@ -54,29 +56,29 @@ export function MidiInnovationPanel() {
   })
 
   const upsertMeshPeer = useMutation({
-    mutationFn: async () => midiHubApi.upsertMeshPeer({ peer_id: meshPeerId.trim(), base_url: meshBaseUrl.trim(), active: true }),
+    mutationFn: async () => midiHubApi.upsertMeshPeer({ peer_id: meshPeerId.trim(), base_url: meshBaseUrl.trim(), active: true }, nodeId),
     onSuccess: () => {
       pushToast('Mesh peer saved', 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'mesh'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'mesh'] })
     },
     onError: () => pushToast('Mesh peer save failed', 'error'),
   })
 
   const toggleMeshForwarding = useMutation({
-    mutationFn: async (enabled: boolean) => midiHubApi.setMeshForwarding(enabled),
+    mutationFn: async (enabled: boolean) => midiHubApi.setMeshForwarding(enabled, nodeId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'mesh'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'mesh'] })
     },
   })
 
   const publishRoutes = useMutation({
     mutationFn: async () => {
-      const routes = (await midiHubApi.getRoutes()).routes.map((route) => ({ ...route }))
-      return midiHubApi.publishMeshRoutes({ source_instance: 'local', routes, fanout: false })
+      const routes = (await midiHubApi.getRoutes(nodeId)).routes.map((route) => ({ ...route }))
+      return midiHubApi.publishMeshRoutes({ source_instance: 'local', routes, fanout: false }, nodeId)
     },
     onSuccess: () => {
       pushToast('Mesh route table published', 'info')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'mesh'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'mesh'] })
     },
   })
 
@@ -89,17 +91,17 @@ export function MidiInnovationPanel() {
           health: shadowHealth,
         },
         source: 'ui',
-      }),
+      }, nodeId),
     onSuccess: (payload) => {
       pushToast(payload.drift_detected ? 'Shadow drift detected' : 'Shadow state saved', payload.drift_detected ? 'warn' : 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'shadow'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'shadow'] })
     },
   })
 
   const clearShadow = useMutation({
-    mutationFn: midiHubApi.clearDeviceShadowEvents,
+    mutationFn: () => midiHubApi.clearDeviceShadowEvents(nodeId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'shadow'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'shadow'] })
     },
   })
 

@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, MenuItem, Select, TextField } from '@mui/material'
 import { midiHubApi } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 export function MidiClockPanel() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
 
   const clockQuery = useQuery({
-    queryKey: ['midi-hub', 'clock'],
-    queryFn: midiHubApi.getClockStatus,
+    queryKey: ['midi-hub', scopeKey, 'clock'],
+    queryFn: () => midiHubApi.getClockStatus(nodeId),
     refetchInterval: 1000,
   })
 
@@ -26,7 +28,7 @@ export function MidiClockPanel() {
     setOutputPorts((data.output_ports ?? []).join(', '))
   }, [clockQuery.data])
 
-  const invalidateClock = () => queryClient.invalidateQueries({ queryKey: ['midi-hub', 'clock'] })
+  const invalidateClock = () => queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'clock'] })
 
   const saveMutation = useMutation({
     mutationFn: async () =>
@@ -37,7 +39,7 @@ export function MidiClockPanel() {
           .split(',')
           .map((value) => value.trim())
           .filter(Boolean),
-      }),
+      }, nodeId),
     onSuccess: () => {
       pushToast('Clock settings updated', 'success')
       void invalidateClock()
@@ -46,7 +48,7 @@ export function MidiClockPanel() {
   })
 
   const tapMutation = useMutation({
-    mutationFn: async () => midiHubApi.tapClock(),
+    mutationFn: async () => midiHubApi.tapClock(nodeId),
     onSuccess: () => {
       pushToast('Tap captured', 'success')
       void invalidateClock()
@@ -54,7 +56,7 @@ export function MidiClockPanel() {
   })
 
   const startMutation = useMutation({
-    mutationFn: async () => midiHubApi.startClock(),
+    mutationFn: async () => midiHubApi.startClock(nodeId),
     onSuccess: () => {
       pushToast('Clock started', 'success')
       void invalidateClock()
@@ -62,7 +64,7 @@ export function MidiClockPanel() {
   })
 
   const continueMutation = useMutation({
-    mutationFn: async () => midiHubApi.continueClock(),
+    mutationFn: async () => midiHubApi.continueClock(nodeId),
     onSuccess: () => {
       pushToast('Clock continued', 'success')
       void invalidateClock()
@@ -70,7 +72,7 @@ export function MidiClockPanel() {
   })
 
   const stopMutation = useMutation({
-    mutationFn: async () => midiHubApi.stopClock(),
+    mutationFn: async () => midiHubApi.stopClock(nodeId),
     onSuccess: () => {
       pushToast('Clock stopped', 'info')
       void invalidateClock()

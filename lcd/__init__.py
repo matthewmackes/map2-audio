@@ -9,7 +9,10 @@ Professional multi-page LCD interface system with:
 - Integration with MAP2 backend for real-time data
 """
 
-__version__ = "1.24.25.1"
+from app.utils.platform_version import get_platform_version
+
+
+__version__ = get_platform_version()
 
 # Main components
 from lcd.manager import IntegratedLCDManager, LCDSystemConfig, create_lcd_system

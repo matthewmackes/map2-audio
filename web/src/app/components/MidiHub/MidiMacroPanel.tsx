@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, FormControlLabel, Switch, TextField } from '@mui/material'
 import { midiHubApi } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 export function MidiMacroPanel() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [macroId, setMacroId] = useState('macro_1')
   const [name, setName] = useState('Macro 1')
   const [triggerCc, setTriggerCc] = useState(1)
@@ -15,8 +17,8 @@ export function MidiMacroPanel() {
   const [enabled, setEnabled] = useState(true)
 
   const macrosQuery = useQuery({
-    queryKey: ['midi-hub', 'macros'],
-    queryFn: midiHubApi.listMacros,
+    queryKey: ['midi-hub', scopeKey, 'macros'],
+    queryFn: () => midiHubApi.listMacros(nodeId),
     refetchInterval: 3000,
   })
 
@@ -35,23 +37,23 @@ export function MidiMacroPanel() {
           },
         ],
         enabled,
-      }),
+      }, nodeId),
     onSuccess: () => {
       pushToast('Macro saved', 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'macros'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'macros'] })
     },
     onError: () => pushToast('Macro save failed', 'error'),
   })
 
   const deleteMacro = useMutation({
-    mutationFn: async (id: string) => midiHubApi.deleteMacro(id),
+    mutationFn: async (id: string) => midiHubApi.deleteMacro(id, nodeId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'macros'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'macros'] })
     },
   })
 
   const triggerMacro = useMutation({
-    mutationFn: async (id: string) => midiHubApi.triggerMacro(id, { source: 'ui' }),
+    mutationFn: async (id: string) => midiHubApi.triggerMacro(id, { source: 'ui' }, nodeId),
     onSuccess: () => pushToast('Macro triggered', 'info'),
     onError: () => pushToast('Macro trigger failed', 'error'),
   })

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, MenuItem, Select, TextField } from '@mui/material'
 import { midiHubApi } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 function sanitizeScriptId(raw: string): string {
@@ -12,6 +13,7 @@ function sanitizeScriptId(raw: string): string {
 export function MidiScriptEditor() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
 
   const [selectedScriptId, setSelectedScriptId] = useState('')
   const [scriptId, setScriptId] = useState('')
@@ -20,19 +22,19 @@ export function MidiScriptEditor() {
   const [eventJson, setEventJson] = useState('{"source": "manual"}')
 
   const scriptsQuery = useQuery({
-    queryKey: ['midi-hub', 'scripts'],
-    queryFn: midiHubApi.listScripts,
+    queryKey: ['midi-hub', scopeKey, 'scripts'],
+    queryFn: () => midiHubApi.listScripts(nodeId),
     refetchInterval: 3000,
   })
 
   const examplesQuery = useQuery({
-    queryKey: ['midi-hub', 'script-examples'],
-    queryFn: midiHubApi.getScriptExamples,
+    queryKey: ['midi-hub', scopeKey, 'script-examples'],
+    queryFn: () => midiHubApi.getScriptExamples(nodeId),
   })
 
   const consoleQuery = useQuery({
-    queryKey: ['midi-hub', 'script-console', selectedScriptId],
-    queryFn: () => midiHubApi.getScriptConsole(selectedScriptId, 200),
+    queryKey: ['midi-hub', scopeKey, 'script-console', selectedScriptId],
+    queryFn: () => midiHubApi.getScriptConsole(selectedScriptId, 200, nodeId),
     enabled: Boolean(selectedScriptId),
     refetchInterval: selectedScriptId ? 1500 : false,
   })
@@ -51,8 +53,8 @@ export function MidiScriptEditor() {
 
   const refreshAll = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['midi-hub', 'scripts'] }),
-      queryClient.invalidateQueries({ queryKey: ['midi-hub', 'script-console'] }),
+      queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'scripts'] }),
+      queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'script-console'] }),
     ])
   }
 
@@ -63,7 +65,7 @@ export function MidiScriptEditor() {
         name: scriptName || sanitizeScriptId(scriptId || 'midi-script'),
         code: scriptCode,
         enabled: true,
-      }),
+      }, nodeId),
     onSuccess: async (payload) => {
       pushToast('Script saved', 'success')
       setSelectedScriptId(payload.script.script_id)
@@ -75,7 +77,7 @@ export function MidiScriptEditor() {
   const runMutation = useMutation({
     mutationFn: async () => {
       const parsed = eventJson.trim() ? JSON.parse(eventJson) : {}
-      return midiHubApi.runScript(selectedScriptId, parsed)
+      return midiHubApi.runScript(selectedScriptId, parsed, nodeId)
     },
     onSuccess: (payload) => {
       if (payload.ok) pushToast('Script run completed', 'success')
@@ -88,7 +90,7 @@ export function MidiScriptEditor() {
   const triggerMutation = useMutation({
     mutationFn: async () => {
       const parsed = eventJson.trim() ? JSON.parse(eventJson) : {}
-      return midiHubApi.triggerScript(selectedScriptId, parsed)
+      return midiHubApi.triggerScript(selectedScriptId, parsed, nodeId)
     },
     onSuccess: () => {
       pushToast('Script triggered', 'success')
@@ -98,7 +100,7 @@ export function MidiScriptEditor() {
   })
 
   const stopMutation = useMutation({
-    mutationFn: async () => midiHubApi.stopScript(selectedScriptId),
+    mutationFn: async () => midiHubApi.stopScript(selectedScriptId, nodeId),
     onSuccess: () => {
       pushToast('Script timers stopped', 'info')
       void refreshAll()
@@ -109,8 +111,8 @@ export function MidiScriptEditor() {
     mutationFn: async () => {
       if (!selectedScript) return null
       return selectedScript.enabled
-        ? midiHubApi.disableScript(selectedScript.script_id)
-        : midiHubApi.enableScript(selectedScript.script_id)
+        ? midiHubApi.disableScript(selectedScript.script_id, nodeId)
+        : midiHubApi.enableScript(selectedScript.script_id, nodeId)
     },
     onSuccess: () => {
       pushToast('Script state updated', 'success')
@@ -119,7 +121,7 @@ export function MidiScriptEditor() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: async () => midiHubApi.deleteScript(selectedScriptId),
+    mutationFn: async () => midiHubApi.deleteScript(selectedScriptId, nodeId),
     onSuccess: async () => {
       pushToast('Script deleted', 'info')
       setSelectedScriptId('')

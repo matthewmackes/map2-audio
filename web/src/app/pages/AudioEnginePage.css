@@ -1,0 +1,285 @@
+/* AudioEnginePage — IBM Carbon flat operator surface */
+
+/* ── Root ──────────────────────────────────────────────────────────────── */
+
+.audio-engine-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  width: 100%;
+  background: var(--cds-background);
+}
+
+.audio-engine-page__surface {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  /* No max-width or horizontal padding — app-content handles containment.
+     Vertical padding only so sections touch the full shell width. */
+  padding-bottom: var(--cds-spacing-09);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Header band (node-awareness bar below PageHeader) ─────────────────── */
+
+.audio-engine-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-04);
+  flex-wrap: wrap;
+}
+
+.audio-engine-page__header-control {
+  min-width: 14rem;
+}
+
+.audio-engine-page__header-band {
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+  padding: var(--cds-spacing-04) var(--cds-spacing-05);
+  margin-top: var(--cds-spacing-05);
+  margin-bottom: var(--cds-spacing-05);
+}
+
+.audio-engine-page__header-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cds-spacing-04);
+  flex-wrap: wrap;
+}
+
+.audio-engine-page__tag-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-02);
+  flex-wrap: wrap;
+}
+
+/* ── Cluster accordion ─────────────────────────────────────────────────── */
+
+.audio-engine-page__cluster-accordion {
+  margin-bottom: var(--cds-spacing-05);
+}
+
+.audio-engine-page__accordion-body {
+  padding: var(--cds-spacing-04) 0;
+}
+
+/* ── Section wrapper ───────────────────────────────────────────────────── */
+
+.audio-engine-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05);
+  padding: var(--cds-spacing-06) 0 var(--cds-spacing-05);
+  border-top: 1px solid var(--cds-border-subtle-01);
+  width: 100%;
+}
+
+.audio-engine-page__section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cds-spacing-04);
+  flex-wrap: wrap;
+}
+
+.audio-engine-page__section-title {
+  margin: 0 0 var(--cds-spacing-02);
+  color: var(--cds-text-primary);
+  font-size: var(--cds-productive-heading-03-font-size, 1.25rem);
+  font-weight: var(--cds-productive-heading-03-font-weight, 400);
+  line-height: var(--cds-productive-heading-03-line-height, 1.4);
+}
+
+.audio-engine-page__muted {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: 1.5;
+}
+
+/* ── Source-of-truth tile ──────────────────────────────────────────────── */
+
+.audio-engine-page__section-tile {
+  padding: var(--cds-spacing-05);
+  margin-bottom: var(--cds-spacing-05);
+}
+
+.audio-engine-page__kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--cds-spacing-03);
+  margin-top: var(--cds-spacing-04);
+}
+
+.audio-engine-page__kv-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-01);
+  padding: var(--cds-spacing-03) var(--cds-spacing-04);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+}
+
+.audio-engine-page__kv-label {
+  color: var(--cds-text-helper);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.audio-engine-page__kv-value {
+  color: var(--cds-text-primary);
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  font-weight: 600;
+}
+
+.audio-engine-page__issues {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+  margin-top: var(--cds-spacing-04);
+}
+
+/* ── Health tiles ──────────────────────────────────────────────────────── */
+
+.audio-engine-page__health-tile {
+  padding: var(--cds-spacing-05);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Metering strip panels ─────────────────────────────────────────────── */
+
+.audio-engine-page__panel-tile {
+  padding: var(--cds-spacing-04);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.audio-engine-page__panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-02);
+  margin-bottom: var(--cds-spacing-03);
+  color: var(--cds-icon-secondary);
+}
+
+.audio-engine-page__panel-title {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: var(--cds-productive-heading-01-font-size, 0.875rem);
+  font-weight: var(--cds-productive-heading-01-font-weight, 600);
+  line-height: 1.3;
+}
+
+/* Stacked tiles in the Phase+Dynamics and Diagnostics columns */
+.audio-engine-page__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+  height: 100%;
+}
+
+/* ── Routing tables ────────────────────────────────────────────────────── */
+
+.audio-engine-page__table-tile {
+  padding: 0;
+  overflow: hidden;
+}
+
+.audio-engine-page__table-container {
+  overflow-x: auto;
+}
+
+.audio-engine-page__mobile-accordion {
+  width: 100%;
+}
+
+/* ── Latency monitor sub-panel ─────────────────────────────────────────── */
+
+.audio-engine-page__latency-monitor {
+  padding: var(--cds-spacing-05);
+}
+
+.audio-engine-page__latency-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: var(--cds-spacing-04);
+  margin-top: var(--cds-spacing-04);
+  align-items: start;
+}
+
+.audio-engine-page__sparkline-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+}
+
+.audio-engine-page__sparkline {
+  width: 100%;
+  height: 3rem;
+  display: block;
+  overflow: visible;
+}
+
+.audio-engine-page__sparkline-path {
+  fill: none;
+  stroke: var(--cds-support-info);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ── Shared utilities ──────────────────────────────────────────────────── */
+
+.audio-engine-page__mono {
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-size: var(--cds-code-01-font-size, 0.75rem);
+}
+
+/* ── Carbon Grid row gap override ──────────────────────────────────────── */
+
+/* Add vertical spacing between DataTable rows in each section */
+.audio-engine-page__section .cds--row {
+  row-gap: var(--cds-spacing-04);
+}
+
+/* ── Responsive: tablet (≤1056px) ──────────────────────────────────────── */
+
+@media (max-width: 66rem) {
+  .audio-engine-page__surface {
+    padding: var(--cds-spacing-05);
+  }
+
+  .audio-engine-page__latency-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Responsive: mobile (≤672px) ───────────────────────────────────────── */
+
+@media (max-width: 42rem) {
+  .audio-engine-page__surface {
+    padding: var(--cds-spacing-04);
+  }
+
+  .audio-engine-page__header-summary {
+    flex-direction: column;
+  }
+
+  .audio-engine-page__section {
+    padding: var(--cds-spacing-05) 0;
+  }
+
+  .audio-engine-page__kv-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .audio-engine-page__latency-grid {
+    grid-template-columns: 1fr;
+  }
+}

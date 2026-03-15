@@ -18,6 +18,7 @@ import json
 from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 from app.services.lcd_event_persistence import get_lcd_persistence
 from app.utils.health_metrics import get_health_metrics
+from app.utils.platform_version import get_platform_version
 from fastapi.responses import Response
 import os
 
@@ -312,7 +313,7 @@ async def system_status():
             "deployment_mode": os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE"),
             "node_id": lcd_manager.node_id,
             "node_label": lcd_manager.node_label,
-            "version": "2.0.0-FEB2025",
+            "version": get_platform_version(),
         },
         "uptime": {
             "seconds": int(health['uptime_seconds']),

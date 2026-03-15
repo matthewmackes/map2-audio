@@ -1,7 +1,7 @@
 /* ============================================================
    MAP2 Home Page — IBM Carbon Design Language
    Gray 100 dark shell · Blue-60 interactive · Expressive type
-   MAP2-BANNER.png full-bleed hero · scanline title effect
+   Neon-grid full-bleed hero · scanline title effect
    16-column grid · 4-up ClickableTile card grid
    ============================================================ */
 
@@ -52,7 +52,7 @@
 }
 
 /* ============================================================
-   HERO — full-bleed MAP2-BANNER.png background
+   HERO — full-bleed neon grid background
    ============================================================ */
 .hp-hero {
   position: relative;
@@ -65,17 +65,33 @@
   border-bottom: 1px solid var(--hp-border-subtle);
 }
 
-/* 1. The banner image layer */
+/* 1. The hero artwork layer */
 .hp-hero__img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transform: scale(1.02); /* slight over-crop so edges never show white */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 8vw, 6rem);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(69, 137, 255, 0.24) 0%, rgba(69, 137, 255, 0.08) 24%, rgba(22, 22, 22, 0) 58%),
+    linear-gradient(180deg, rgba(69, 137, 255, 0.1) 0%, rgba(22, 22, 22, 0) 48%, rgba(22, 22, 22, 0.56) 100%);
   user-select: none;
   pointer-events: none;
+}
+
+.hp-hero__brand-mark {
+  width: min(50vw, 28rem);
+  height: min(50vw, 28rem);
+  min-width: 15rem;
+  min-height: 15rem;
+  opacity: 0.95;
+  transform: translateY(-2%);
+  filter:
+    drop-shadow(0 0 24px rgba(69, 137, 255, 0.3))
+    drop-shadow(0 0 64px rgba(69, 137, 255, 0.18));
 }
 
 /* 2. Vignette overlay — darkens edges, keeps center image visible */
@@ -169,7 +185,7 @@
   color: #a6c8ff;
 }
 
-/* Retro-tech scanline title — echoes MAP2-BANNER.png lettering */
+/* Retro-tech scanline title — tuned to the neon grid artwork */
 .hp-hero__title {
   margin: 0;
   font-size: var(--hp-display-02);
@@ -867,11 +883,23 @@
    ============================================================ */
 @media (max-width: 1055px) {
   .hp-hero__inner { padding-top: clamp(5rem, 14vw, 8rem); }
+  .hp-hero__brand-mark {
+    width: min(62vw, 24rem);
+    height: min(62vw, 24rem);
+    min-width: 13rem;
+    min-height: 13rem;
+  }
 }
 
 @media (max-width: 671px) {
   .hp-hero__cluster { flex-direction: column; align-items: flex-start; }
   .hp-hero__version-badge { display: none; }
+  .hp-hero__brand-mark {
+    width: min(72vw, 20rem);
+    height: min(72vw, 20rem);
+    min-width: 11rem;
+    min-height: 11rem;
+  }
   .hp-card__footer { gap: var(--hp-s-03); }
   .hp-card__open-btn,
   .hp-card__details-btn { flex: 1; justify-content: center; }

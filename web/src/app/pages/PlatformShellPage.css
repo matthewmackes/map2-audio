@@ -1,0 +1,396 @@
+.platform-shell-page {
+  min-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-link-primary) 16%, transparent), transparent 38%),
+    radial-gradient(circle at 85% 10%, color-mix(in srgb, var(--cds-support-info) 14%, transparent), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-01) 88%, #050608 12%), var(--cds-background));
+}
+
+.platform-shell__global-header.cds--header {
+  position: sticky;
+  top: 0;
+  height: auto;
+  padding: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 78%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 94%, transparent);
+  backdrop-filter: blur(18px);
+  z-index: 5;
+}
+
+.platform-shell__global-bar {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem 1.2rem;
+}
+
+.platform-shell__global-copy p,
+.platform-shell__stack-copy p,
+.platform-shell__plane-copy p,
+.platform-shell__workspace-hero-copy p,
+.platform-shell__summary-tile-head p {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__global-copy h1,
+.platform-shell__stack-copy h2,
+.platform-shell__workspace-hero-copy h2 {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.45rem, 3vw, 2.35rem);
+  line-height: 1.05;
+  max-width: 52rem;
+}
+
+.platform-shell__global-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+
+.platform-shell__metric-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  background: color-mix(in srgb, var(--cds-layer-02) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 78%, transparent);
+}
+
+.platform-shell__metric-card strong {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.platform-shell__metric-card small {
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__metric-card.tone-warning {
+  border-color: color-mix(in srgb, var(--cds-support-warning) 45%, transparent);
+}
+
+.platform-shell__metric-card.tone-critical {
+  border-color: color-mix(in srgb, var(--cds-support-error) 48%, transparent);
+}
+
+.platform-shell__metric-card.tone-healthy {
+  border-color: color-mix(in srgb, var(--cds-support-success) 40%, transparent);
+}
+
+.platform-shell__global-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.platform-shell__global-action {
+  border: 1px solid color-mix(in srgb, var(--cds-border-strong-01) 78%, transparent);
+  background: transparent;
+  color: var(--cds-text-primary);
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.platform-shell__global-action:hover,
+.platform-shell__global-action:focus-visible,
+.platform-shell__global-action.is-active {
+  border-color: var(--cds-link-primary);
+  background: color-mix(in srgb, var(--cds-link-primary) 12%, transparent);
+  transform: translateY(-1px);
+}
+
+.platform-shell__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+}
+
+.platform-shell__stack {
+  display: grid;
+  gap: 1.5rem;
+  min-height: 0;
+}
+
+.platform-shell__stack-copy span {
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__stack-stage {
+  position: relative;
+  min-height: 42rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 82%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-layer-02) 94%, transparent), color-mix(in srgb, #0f62fe 6%, var(--cds-layer-01))),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0,
+      transparent 20px,
+      color-mix(in srgb, var(--cds-border-subtle-01) 18%, transparent) 20px,
+      color-mix(in srgb, var(--cds-border-subtle-01) 18%, transparent) 21px
+    );
+  overflow: hidden;
+}
+
+.platform-shell__plane-button {
+  position: absolute;
+  inset: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  left: 50%;
+  top: 3rem;
+  transform: translateX(-50%);
+  cursor: pointer;
+  width: min(28rem, calc(100% - 2rem));
+}
+
+.platform-shell__plane-button:focus-visible .platform-shell__plane-surface {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 4px;
+}
+
+.platform-shell__plane-surface {
+  position: relative;
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.2rem 1.25rem 1rem;
+  min-height: 15rem;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--platform-layer-accent) 12%, var(--cds-layer-03)), color-mix(in srgb, var(--cds-layer-02) 90%, #030507)),
+    linear-gradient(180deg, transparent, color-mix(in srgb, #000 10%, transparent));
+  border: 1px solid color-mix(in srgb, var(--platform-layer-accent) 42%, transparent);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.28),
+    inset 0 0 0 1px color-mix(in srgb, #fff 4%, transparent);
+  transform:
+    translate3d(var(--platform-layer-offset-x), var(--platform-layer-offset-y), 0)
+    rotateX(58deg)
+    rotateZ(var(--platform-layer-rotate-z));
+  transform-style: preserve-3d;
+}
+
+.platform-shell__plane-surface::after {
+  content: '';
+  position: absolute;
+  inset: auto 1rem -1.1rem 1rem;
+  height: 1rem;
+  background: color-mix(in srgb, var(--platform-layer-accent) 34%, transparent);
+  filter: blur(16px);
+  opacity: 0.6;
+}
+
+.platform-shell__plane-surface.health-critical,
+.platform-shell__workspace-hero.health-critical {
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.28),
+    0 0 0 1px color-mix(in srgb, var(--cds-support-error) 45%, transparent),
+    0 0 36px color-mix(in srgb, var(--cds-support-error) 18%, transparent);
+}
+
+.platform-shell__plane-surface.health-warning,
+.platform-shell__workspace-hero.health-warning {
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.28),
+    0 0 0 1px color-mix(in srgb, var(--cds-support-warning) 34%, transparent),
+    0 0 28px color-mix(in srgb, var(--cds-support-warning) 16%, transparent);
+}
+
+.platform-shell__plane-head,
+.platform-shell__workspace-hero-meta,
+.platform-shell__summary-tile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.platform-shell__plane-icon,
+.platform-shell__workspace-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--platform-layer-accent) 16%, transparent);
+}
+
+.platform-shell__plane-copy h2 {
+  margin: 0.1rem 0 0;
+  font-size: 1.5rem;
+}
+
+.platform-shell__plane-description {
+  margin: 0;
+  max-width: 24rem;
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__plane-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.platform-shell__plane-meter {
+  height: 0.35rem;
+  background: color-mix(in srgb, var(--cds-layer-01) 72%, transparent);
+}
+
+.platform-shell__plane-meter span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--platform-layer-accent), color-mix(in srgb, #fff 24%, var(--platform-layer-accent)));
+}
+
+.platform-shell__workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.platform-shell__workspace-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.platform-shell__workspace-hero {
+  flex: 1 1 36rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.25rem;
+  min-height: 10rem;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--platform-layer-accent) 13%, var(--cds-layer-03)), color-mix(in srgb, var(--cds-layer-02) 88%, #06080a));
+  border: 1px solid color-mix(in srgb, var(--platform-layer-accent) 44%, transparent);
+}
+
+.platform-shell__workspace-hero-copy span {
+  color: var(--cds-text-secondary);
+  display: block;
+  margin-top: 0.55rem;
+  max-width: 36rem;
+}
+
+.platform-shell__workspace-hero-meta {
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+
+.platform-shell__notification-strip {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.platform-shell__summary-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.9rem;
+}
+
+.platform-shell__summary-tile {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  min-height: 11rem;
+  background: color-mix(in srgb, var(--cds-layer-02) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 72%, transparent);
+}
+
+.platform-shell__summary-tile.is-active {
+  border-color: var(--cds-link-primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cds-link-primary) 35%, transparent);
+}
+
+.platform-shell__summary-tile strong {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.platform-shell__summary-tile span,
+.platform-shell__summary-tile small,
+.platform-shell__summary-tile em {
+  color: var(--cds-text-secondary);
+  font-style: normal;
+}
+
+.platform-shell__table-block {
+  display: grid;
+  gap: 1rem;
+}
+
+.platform-shell__table-toolbar {
+  gap: 0.6rem;
+}
+
+.platform-shell__table-container {
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, transparent);
+}
+
+.platform-shell__table-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, transparent);
+}
+
+.platform-shell__table-alert.is-clear {
+  color: var(--cds-support-success);
+}
+
+@media (max-width: 960px) {
+  .platform-shell__content {
+    padding: 1rem;
+  }
+
+  .platform-shell__stack-stage {
+    min-height: 32rem;
+  }
+
+  .platform-shell__plane-surface {
+    transform:
+      translate3d(0, var(--platform-layer-offset-y), 0)
+      rotateX(24deg)
+      rotateZ(0deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .platform-shell__global-bar,
+  .platform-shell__content {
+    padding-inline: 0.9rem;
+  }
+
+  .platform-shell__workspace-hero {
+    flex-direction: column;
+  }
+
+  .platform-shell__stack-stage {
+    min-height: 28rem;
+  }
+
+  .platform-shell__plane-surface {
+    min-height: 13.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-shell__plane-surface,
+  .platform-shell__global-action {
+    transition: none;
+  }
+}

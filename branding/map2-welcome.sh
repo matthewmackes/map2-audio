@@ -32,6 +32,17 @@ map2_repo_root() {
 }
 
 map2_product_name() {
+    local root product
+    root="$(map2_repo_root)"
+
+    if [[ -f "${root}/version.json" ]]; then
+        product="$(sed -n 's/.*"product"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${root}/version.json" | head -n 1)"
+        if [[ -n "${product}" ]]; then
+            printf '%s\n' "${product}"
+            return 0
+        fi
+    fi
+
     printf '%s\n' "MAP2 Audio Platform"
 }
 
@@ -39,10 +50,14 @@ map2_version() {
     local root version
     root="$(map2_repo_root)"
 
-    git -C "${root}" describe --tags --dirty --always 2>/dev/null && return 0
-
     if [[ -f "${root}/version.json" ]]; then
-        version="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${root}/version.json" | head -n 1)"
+        version="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${root}/version.json" | head -n 1 | tr -cd '0-9')"
+        if [[ -n "${version}" ]]; then
+            printf '%s\n' "${version}"
+            return 0
+        fi
+
+        version="$(sed -n 's/.*"fallback_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${root}/version.json" | head -n 1 | tr -cd '0-9')"
         if [[ -n "${version}" ]]; then
             printf '%s\n' "${version}"
             return 0
@@ -50,11 +65,14 @@ map2_version() {
     fi
 
     if [[ -f "${root}/VERSION" ]]; then
-        cat "${root}/VERSION"
-        return 0
+        version="$(tr -cd '0-9' < "${root}/VERSION")"
+        if [[ -n "${version}" ]]; then
+            printf '%s\n' "${version}"
+            return 0
+        fi
     fi
 
-    printf '%s\n' "0.0.0-dev"
+    printf '%s\n' "0000000000000001"
 }
 
 map2_python() {

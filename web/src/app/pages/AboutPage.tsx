@@ -27,14 +27,19 @@ import {
   Terminal,
   UserFavorite,
 } from '@carbon/icons-react'
-import { Layer } from '@carbon/react'
+import { Button, Layer, Tag } from '@carbon/react'
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
-import { themes, themeOrder, applyTheme, getSavedThemeId, saveCustomTheme, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
+import { applyTheme, getSavedThemeId, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 import type { Theme } from '../theme'
 import { ThemeCreatorDialog } from '../components/ThemeCreatorDialog'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
 import { MapAmplifierIcon, MapSignalFlowIcon } from '../components/icons/map'
+import {
+  MAP2_PLATFORM_BUILD_DATE,
+  MAP2_PLATFORM_BUILD_TIME,
+  MAP2_PLATFORM_VERSION,
+} from '../components/branding/map2Branding'
 import { PlatformInfoGuideSection } from './PlatformInfoGuideSection'
 import './AboutPage.css'
 
@@ -514,6 +519,20 @@ const SectionHeader = ({ title, icon, color }: { title: string; icon: React.Reac
   </div>
 )
 
+function carbonThemeLabel(carbonTheme: Theme['carbonTheme']): string {
+  switch (carbonTheme) {
+    case 'white':
+      return 'White'
+    case 'g10':
+      return 'Gray 10'
+    case 'g90':
+      return 'Gray 90'
+    case 'g100':
+    default:
+      return 'Gray 100'
+  }
+}
+
 export function AboutPage() {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
   const [welcomeBanner, setWelcomeBanner] = useState<WelcomeBannerStatus | null>(null)
@@ -534,7 +553,12 @@ export function AboutPage() {
     fetch('/api/version')
       .then(r => r.json())
       .then(setVersionInfo)
-      .catch(() => setVersionInfo({ version: '3.1.0', build_date: 'Feb 2025' }))
+      .catch(() =>
+        setVersionInfo({
+          version: MAP2_PLATFORM_VERSION,
+          build_date: `${MAP2_PLATFORM_BUILD_DATE}${MAP2_PLATFORM_BUILD_TIME ? ` ${MAP2_PLATFORM_BUILD_TIME}` : ''}`.trim(),
+        }),
+      )
 
     // Check welcome banner status
     fetch('/api/system/welcome-banner')
@@ -552,13 +576,6 @@ export function AboutPage() {
     refreshCustomThemes()
   }, [refreshCustomThemes])
 
-  const handleSaveTheme = (theme: Theme) => {
-    saveCustomTheme(theme)
-    applyTheme(theme.id)
-    setCurrentTheme(theme.id)
-    refreshCustomThemes()
-  }
-
   const handleDeleteCustomTheme = (themeId: string) => {
     if (currentTheme === themeId) {
       applyTheme('default')
@@ -572,6 +589,9 @@ export function AboutPage() {
     applyTheme(themeId)
     setCurrentTheme(themeId)
   }
+
+  const availableThemes = { ...getAllThemes(), ...customThemes }
+  const activeTheme = availableThemes[currentTheme] ?? availableThemes.default
 
   const toggleWelcomeBanner = async () => {
     if (!welcomeBanner || bannerLoading) return
@@ -984,48 +1004,42 @@ export function AboutPage() {
         </div>
       </div>
 
-      {/* Themes Button */}
-      <div style={{
-        marginBottom: 32,
-        display: 'flex',
-        justifyContent: 'center'
-      }}>
-        <button
-          onClick={() => setShowThemeCreator(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '12px 24px',
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-            border: '1px solid rgba(96, 165, 250, 0.3)',
-            background: 'rgba(96, 165, 250, 0.1)',
-            color: '#60a5fa',
-            transition: 'all 150ms'
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(96, 165, 250, 0.15)'
-            e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.5)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(96, 165, 250, 0.1)'
-            e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.3)'
-          }}
-        >
-          <PaintBrush size={16} />
-          Themes
-        </button>
-      </div>
+      <section className="about-theme-card">
+        <div className="about-theme-card__copy">
+          <div className="about-theme-card__header">
+            <div>
+              <h2 className="about-theme-card__title">Theme settings</h2>
+              <p className="about-theme-card__description">
+                Manage the active Carbon theme zone and any legacy browser-saved themes.
+              </p>
+            </div>
+            <div className="about-theme-card__tags">
+              <Tag type="blue" size="sm">
+                {activeTheme?.name ?? 'Carbon gray 100'}
+              </Tag>
+              <Tag type="cool-gray" size="sm">
+                {carbonThemeLabel(activeTheme?.carbonTheme)}
+              </Tag>
+              {customThemes[currentTheme] && (
+                <Tag type="warm-gray" size="sm">
+                  Legacy custom theme
+                </Tag>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="about-theme-card__actions">
+          <Button kind="tertiary" renderIcon={PaintBrush} onClick={() => setShowThemeCreator(true)}>
+            Manage theme
+          </Button>
+        </div>
+      </section>
 
 
       {/* Theme Creator Dialog */}
       <ThemeCreatorDialog
         isOpen={showThemeCreator}
         onClose={() => setShowThemeCreator(false)}
-        onSave={handleSaveTheme}
         currentTheme={currentTheme}
         onThemeChange={handleThemeChange}
         customThemes={customThemes}
@@ -1159,7 +1173,7 @@ export function AboutPage() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>
-              Version {versionInfo?.version || '3.1.0'} · {versionInfo?.build_date || 'Feb 2025'}
+              Version {versionInfo?.version || MAP2_PLATFORM_VERSION} · {versionInfo?.build_date || MAP2_PLATFORM_BUILD_DATE}
             </div>
             <div style={{ fontSize: 10, color: '#6b7280' }}>
               AGPLv3 for MAP2-owned code · Built for musicians

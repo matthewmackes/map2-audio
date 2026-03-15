@@ -7,6 +7,8 @@ import logging
 import asyncio
 from pathlib import Path
 
+from app.utils.platform_version import get_platform_version
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,7 +55,7 @@ class MigrationManager:
     """Database migrations."""
 
     def __init__(self):
-        self.version = "1.24.25.1"
+        self.version = get_platform_version()
 
     async def apply_pending(self) -> int:
         """Apply pending migrations."""

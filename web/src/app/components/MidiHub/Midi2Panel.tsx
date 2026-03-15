@@ -2,15 +2,17 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, MenuItem, Select, TextField } from '@mui/material'
 import { midiHubApi } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 export function Midi2Panel() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
 
   const statusQuery = useQuery({
-    queryKey: ['midi-hub', 'midi2-status'],
-    queryFn: midiHubApi.getMidi2Status,
+    queryKey: ['midi-hub', scopeKey, 'midi2-status'],
+    queryFn: () => midiHubApi.getMidi2Status(nodeId),
     refetchInterval: 3000,
   })
 
@@ -25,10 +27,10 @@ export function Midi2Panel() {
 
   const devices = statusQuery.data?.devices ?? []
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['midi-hub', 'midi2-status'] })
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'midi2-status'] })
 
   const configureMutation = useMutation({
-    mutationFn: async () => midiHubApi.updateMidi2Config({ enabled, default_protocol: protocol }),
+    mutationFn: async () => midiHubApi.updateMidi2Config({ enabled, default_protocol: protocol }, nodeId),
     onSuccess: () => {
       pushToast('MIDI 2.0 config updated', 'success')
       void refresh()
@@ -37,7 +39,7 @@ export function Midi2Panel() {
   })
 
   const discoverMutation = useMutation({
-    mutationFn: async () => midiHubApi.discoverMidi2Device(deviceId),
+    mutationFn: async () => midiHubApi.discoverMidi2Device(deviceId, nodeId),
     onSuccess: () => {
       pushToast('MIDI-CI discovery sent', 'success')
       void refresh()
@@ -45,7 +47,7 @@ export function Midi2Panel() {
   })
 
   const profileMutation = useMutation({
-    mutationFn: async () => midiHubApi.setMidi2Profile(deviceId, profileId, true),
+    mutationFn: async () => midiHubApi.setMidi2Profile(deviceId, profileId, true, nodeId),
     onSuccess: () => {
       pushToast('Profile enabled', 'success')
       void refresh()
@@ -53,7 +55,7 @@ export function Midi2Panel() {
   })
 
   const propertyMutation = useMutation({
-    mutationFn: async () => midiHubApi.setMidi2Property(deviceId, propertyKey, propertyValue),
+    mutationFn: async () => midiHubApi.setMidi2Property(deviceId, propertyKey, propertyValue, nodeId),
     onSuccess: () => {
       pushToast('Property updated', 'success')
       void refresh()
@@ -67,7 +69,7 @@ export function Midi2Panel() {
         .split(/\s+/)
         .filter(Boolean)
         .map((value) => Number.parseInt(value, 16))
-      return midiHubApi.translateMidi1ToUmp(message)
+      return midiHubApi.translateMidi1ToUmp(message, nodeId)
     },
     onSuccess: (payload) => setUmpWords(payload.words.join(', ')),
     onError: () => pushToast('MIDI1→UMP translation failed', 'error'),
@@ -80,7 +82,7 @@ export function Midi2Panel() {
         .map((value) => value.trim())
         .filter(Boolean)
         .map((value) => Number.parseInt(value, 10))
-      return midiHubApi.translateUmpToMidi1(words)
+      return midiHubApi.translateUmpToMidi1(words, nodeId)
     },
     onSuccess: (payload) => {
       const hex = payload.message.map((byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ')

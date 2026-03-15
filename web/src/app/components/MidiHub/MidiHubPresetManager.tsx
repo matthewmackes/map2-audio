@@ -12,6 +12,7 @@ import {
   TextField,
 } from '@mui/material'
 import { midiHubApi, type MidiHubPresetSummary } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 function slugFromName(name: string): string {
@@ -32,6 +33,7 @@ function parseProgramNumber(input: string): number {
 export function MidiHubPresetManager() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -46,20 +48,20 @@ export function MidiHubPresetManager() {
   const [chainCycles, setChainCycles] = useState('')
 
   const presetsQuery = useQuery({
-    queryKey: ['midi-hub', 'presets'],
-    queryFn: midiHubApi.listPresets,
+    queryKey: ['midi-hub', scopeKey, 'presets'],
+    queryFn: () => midiHubApi.listPresets(nodeId),
     refetchInterval: 3000,
   })
 
   const chainsQuery = useQuery({
-    queryKey: ['midi-hub', 'preset-chains'],
-    queryFn: midiHubApi.getPresetChains,
+    queryKey: ['midi-hub', scopeKey, 'preset-chains'],
+    queryFn: () => midiHubApi.getPresetChains(nodeId),
     refetchInterval: 5000,
   })
 
   const slotsQuery = useQuery({
-    queryKey: ['midi-hub', 'preset-slots'],
-    queryFn: midiHubApi.getProgramSlots,
+    queryKey: ['midi-hub', scopeKey, 'preset-slots'],
+    queryFn: () => midiHubApi.getProgramSlots(nodeId),
     refetchInterval: 5000,
   })
 
@@ -81,76 +83,76 @@ export function MidiHubPresetManager() {
         preset_id: `${slugFromName(name)}-${Date.now()}`,
         name,
         description,
-      }),
+      }, nodeId),
     onSuccess: () => {
       pushToast('Preset saved', 'success')
       setCreateOpen(false)
       setName('')
       setDescription('')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
     onError: () => pushToast('Failed to save preset', 'error'),
   })
 
   const recallMutation = useMutation({
-    mutationFn: async (presetId: string) => midiHubApi.recallPreset(presetId),
+    mutationFn: async (presetId: string) => midiHubApi.recallPreset(presetId, nodeId),
     onSuccess: () => {
       pushToast('Preset recalled', 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
   })
 
   const deleteMutation = useMutation({
-    mutationFn: async (presetId: string) => midiHubApi.deletePreset(presetId),
+    mutationFn: async (presetId: string) => midiHubApi.deletePreset(presetId, nodeId),
     onSuccess: () => {
       pushToast('Preset deleted', 'info')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
   })
 
   const defaultMutation = useMutation({
-    mutationFn: async (presetId: string | null) => midiHubApi.setDefaultPreset(presetId),
+    mutationFn: async (presetId: string | null) => midiHubApi.setDefaultPreset(presetId, nodeId),
     onSuccess: () => {
       pushToast('Default preset updated', 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
   })
 
   const compareMutation = useMutation({
-    mutationFn: async () => midiHubApi.comparePresets(leftPresetId, rightPresetId),
+    mutationFn: async () => midiHubApi.comparePresets(leftPresetId, rightPresetId, nodeId),
     onSuccess: (payload) => setCompareResult(payload.diff),
     onError: () => pushToast('Compare failed', 'error'),
   })
 
   const exportMutation = useMutation({
-    mutationFn: async (presetId: string) => midiHubApi.exportPreset(presetId),
+    mutationFn: async (presetId: string) => midiHubApi.exportPreset(presetId, undefined, nodeId),
     onSuccess: (payload) => pushToast(`Preset exported: ${payload.path}`, 'success'),
   })
 
   const importMutation = useMutation({
-    mutationFn: async () => midiHubApi.importPreset(importPath),
+    mutationFn: async () => midiHubApi.importPreset(importPath, nodeId),
     onSuccess: () => {
       pushToast('Preset imported', 'success')
       setImportPath('')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
     onError: () => pushToast('Preset import failed', 'error'),
   })
 
   const slotMutation = useMutation({
-    mutationFn: async () => midiHubApi.setProgramSlot(parseProgramNumber(slotProgram), slotTarget),
+    mutationFn: async () => midiHubApi.setProgramSlot(parseProgramNumber(slotProgram), slotTarget, nodeId),
     onSuccess: () => {
       pushToast('Program slot updated', 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
     onError: () => pushToast('Program slot update failed', 'error'),
   })
 
   const removeSlotMutation = useMutation({
-    mutationFn: async (programNumber: number) => midiHubApi.deleteProgramSlot(programNumber),
+    mutationFn: async (programNumber: number) => midiHubApi.deleteProgramSlot(programNumber, nodeId),
     onSuccess: () => {
       pushToast('Program slot removed', 'info')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
   })
 
@@ -159,13 +161,13 @@ export function MidiHubPresetManager() {
       midiHubApi.runPresetChain(chainId, {
         interval_ms: Math.max(25, Number.parseInt(chainInterval || '500', 10) || 500),
         cycles: chainCycles.trim() ? Math.max(1, Number.parseInt(chainCycles, 10) || 1) : null,
-      }),
+      }, nodeId),
     onSuccess: () => pushToast('Preset chain timer started', 'success'),
     onError: () => pushToast('Failed to run preset chain timer', 'error'),
   })
 
   const stopChainMutation = useMutation({
-    mutationFn: async () => midiHubApi.stopPresetChain(chainId),
+    mutationFn: async () => midiHubApi.stopPresetChain(chainId, nodeId),
     onSuccess: () => pushToast('Preset chain timer stopped', 'info'),
     onError: () => pushToast('Failed to stop preset chain timer', 'error'),
   })
@@ -186,7 +188,7 @@ export function MidiHubPresetManager() {
           <Chip size="small" label={`Slots: ${slotEntries.length}`} />
         </div>
         <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <Button size="small" variant="outlined" onClick={() => void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })}>
+          <Button size="small" variant="outlined" onClick={() => void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })}>
             Refresh
           </Button>
           <Button size="small" variant="contained" onClick={() => setCreateOpen(true)}>

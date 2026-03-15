@@ -1,0 +1,37 @@
+.node-context-picker {
+  display: flex;
+  align-items: center;
+  margin-top: 0.75rem;
+  width: min(24rem, 100%);
+}
+
+.node-context-picker .cds--list-box__field,
+.node-context-picker .cds--list-box {
+  width: 100%;
+}
+
+.node-context-picker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.node-context-picker__status {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--cds-icon-secondary);
+}
+
+.node-context-picker__status--ok {
+  background: var(--cds-support-success);
+}
+
+.node-context-picker__status--warn {
+  background: var(--cds-support-warning);
+}
+
+.node-context-picker__status--critical,
+.node-context-picker__status--offline {
+  background: var(--cds-support-error);
+}

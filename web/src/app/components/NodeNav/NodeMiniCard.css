@@ -1,0 +1,45 @@
+.node-mini-card {
+  display: grid;
+  gap: 0.875rem;
+  width: 15rem;
+  padding: 0.9rem 1rem;
+  border-inline-start: 3px solid var(--cds-border-strong-01);
+}
+
+.node-mini-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.node-mini-card__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.node-mini-card__subtitle {
+  margin: 0.2rem 0 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.75rem;
+}
+
+.node-mini-card__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--cds-border-subtle-01);
+  color: var(--cds-text-secondary);
+  font-size: 0.75rem;
+}
+
+.node-mini-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+

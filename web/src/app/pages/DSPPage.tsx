@@ -8,13 +8,19 @@
 
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { WaveSine, GridFour, CaretRight, ArrowsClockwise } from '@phosphor-icons/react'
+import { WaveSine, CaretRight, ArrowsClockwise } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { CompressorCard, LimiterCard, GateCard } from '../components/Dynamics'
 import { EQCard } from '../components/EQ'
+import { MapAudioGridIcon } from '../components/icons/map'
+import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
+import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useCluster } from '../contexts/ClusterContext'
+import { useNodePageContext } from '../hooks/useNodePageContext'
+import { useViewedNodeStore } from '../stores/viewedNodeStore'
+import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 
 type ActiveSection = 'dynamics' | 'eq' | 'catalog' | 'all'
 
@@ -60,11 +66,17 @@ const NATIVE_PLUGINS = [
 export function DSPPage() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('all')
   const navigate = useNavigate()
+  const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
+  const { localNode: pageLocalNode, topology: nodeTopology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.dsp)
   const { activeNodeId, nodes, localNodeId, setActiveNode } = useCluster()
   const allNodesSelected = activeNodeId === 'all'
-  const selectedNode = nodes.find((node) => node.nodeId === activeNodeId)
-  const remoteSelected = Boolean(activeNodeId && activeNodeId !== 'all' && activeNodeId !== localNodeId)
-  const detailNodeId = remoteSelected ? activeNodeId : null
+  const selectedNode = nodeTopology?.nodes.find((node) => node.node_id === viewedNodeId)
+    ?? nodes.find((node) => node.nodeId === viewedNodeId)
+    ?? nodes.find((node) => node.nodeId === activeNodeId)
+  const resolvedLocalNodeId = pageLocalNode?.node_id ?? localNodeId
+  const remoteSelected = !allNodesSelected && Boolean(viewedNodeId && viewedNodeId !== resolvedLocalNodeId)
+  const detailNodeId = remoteSelected ? viewedNodeId : null
+  const selectedLatencyMs = selectedNode && 'latencyMs' in selectedNode ? selectedNode.latencyMs ?? null : null
 
   const clusterDspQuery = useQuery<ClusterDSPResponse>({
     queryKey: ['cluster', 'dsp', 'status'],
@@ -106,6 +118,9 @@ export function DSPPage() {
   if (allNodesSelected) {
     return (
       <div className="dsp-page">
+        {pageLocalNode ? (
+          <NodeContextBanner pageKey={NODE_PAGE_KEYS.dsp} localNode={pageLocalNode} topology={nodeTopology} />
+        ) : null}
         <PageHeader
           title="DSP · All Nodes"
           subtitle="Cluster-wide DSP budget, load, and processor inventory comparison"
@@ -121,6 +136,8 @@ export function DSPPage() {
             </button>
           }
         />
+
+        <NodeContextPicker pageKey={NODE_PAGE_KEYS.dsp} topology={nodeTopology} />
 
         <div className="cluster-banner">
           All Nodes mode compares DSP headroom and active processors across the cluster. Select a single node to edit live compressor, gate, limiter, and EQ parameters.
@@ -178,7 +195,13 @@ export function DSPPage() {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => setActiveNode(node.nodeId)}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setActiveNode(null)
+                            setViewedNode(NODE_PAGE_KEYS.dsp, node.nodeId)
+                          }}
+                        >
                           Inspect
                         </button>
                       </td>
@@ -197,11 +220,14 @@ export function DSPPage() {
 
   return (
     <div className="dsp-page">
+      {pageLocalNode ? (
+        <NodeContextBanner pageKey={NODE_PAGE_KEYS.dsp} localNode={pageLocalNode} topology={nodeTopology} />
+      ) : null}
       <PageHeader
-        title={remoteSelected ? `DSP · ${selectedNode?.hostname ?? activeNodeId}` : 'Native DSP Processors'}
+        title={remoteSelected ? `DSP · ${selectedNode?.hostname ?? viewedNodeId}` : 'Native DSP Processors'}
         subtitle={
           remoteSelected
-            ? `Live JUCE DSP controls proxied to ${selectedNode?.hostname ?? activeNodeId}.`
+            ? `Live JUCE DSP controls proxied to ${selectedNode?.hostname ?? viewedNodeId}.`
             : `Built-in JUCE audio engine controls with ${NATIVE_PLUGINS.length} processors available.`
         }
         icon={<WaveSine size={32} weight="duotone" style={{ color: '#2563eb' }} />}
@@ -222,17 +248,19 @@ export function DSPPage() {
               fontSize: 13,
               fontWeight: 500,
             }}
-            title={remoteSelected ? 'JUCE-GRID is still local-only. Select the node locally to edit chains there.' : 'Open in JUCE-GRID'}
+            title={remoteSelected ? 'Audio Grid is still local-only. Select the node locally to edit chains there.' : 'Open in Audio Grid'}
           >
-            <GridFour size={14} weight="bold" /> Open in JUCE-GRID
+            <MapAudioGridIcon size={14} /> Open in Audio Grid
           </button>
         }
       />
 
+      <NodeContextPicker pageKey={NODE_PAGE_KEYS.dsp} topology={nodeTopology} />
+
       {remoteSelected && (
         <div className="cluster-banner">
-          Viewing remote node {selectedNode?.hostname ?? activeNodeId}
-          {selectedNode?.latencyMs == null ? '' : ` · peer latency ${selectedNode.latencyMs.toFixed(1)} ms`}. Parameter changes on this page target that node through the cluster proxy.
+          Viewing remote node {selectedNode?.hostname ?? viewedNodeId}
+          {selectedLatencyMs != null ? ` · peer latency ${selectedLatencyMs.toFixed(1)} ms` : ''}. Parameter changes on this page target that node through the cluster proxy.
         </div>
       )}
 
@@ -293,7 +321,7 @@ export function DSPPage() {
               </span>
             </div>
             <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>
-              All {NATIVE_PLUGINS.length} built-in JUCE processors. DSP controls above target {remoteSelected ? selectedNode?.hostname ?? activeNodeId : 'the local node'}.
+              All {NATIVE_PLUGINS.length} built-in JUCE processors. DSP controls above target {remoteSelected ? selectedNode?.hostname ?? viewedNodeId : 'the local node'}.
             </p>
             {Object.entries(pluginsByCategory).map(([category, plugins]) => (
               <div key={category} style={{ marginBottom: 20 }}>

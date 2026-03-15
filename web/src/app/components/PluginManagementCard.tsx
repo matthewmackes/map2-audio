@@ -1,336 +1,319 @@
-import { useState, useCallback, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash, ArrowsClockwise, SpinnerGap, Warning, Check } from '@phosphor-icons/react'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Button,
+  DataTable,
+  InlineLoading,
+  InlineNotification,
+  Layer,
+  Modal,
+  Select,
+  SelectItem,
+  Table,
+  TableBatchAction,
+  TableBatchActions,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableSelectAll,
+  TableSelectRow,
+  TableToolbar,
+  TableToolbarContent,
+  TableToolbarSearch,
+  Tag,
+  Tile,
+} from '@carbon/react'
+import { CheckmarkFilled, Renew, TrashCan, WarningAltFilled } from '@carbon/icons-react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+import './PluginManagementCard.css'
+
+type SortKey = 'name' | 'author' | 'format'
+
+const HEADERS = [
+  { key: 'name', header: 'Name' },
+  { key: 'author', header: 'Author' },
+  { key: 'format', header: 'Format' },
+  { key: 'category', header: 'Category' },
+  { key: 'status', header: 'Status' },
+  { key: 'uri', header: 'URI' },
+]
+
+function toRows(plugins: Plugin[]) {
+  return plugins.map((plugin) => ({
+    id: plugin.uri,
+    name: getDisplayPluginName(plugin.name, plugin.uri),
+    author: sanitizeRestrictedDisplayText(plugin.author) || 'Unknown',
+    format: plugin.format || 'LV2',
+    category: plugin.category || 'Uncategorized',
+    status: 'Active',
+    uri: plugin.uri,
+  }))
+}
 
 export function PluginManagementCard() {
   const queryClient = useQueryClient()
-  const [selectedUris, setSelectedUris] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState<'name' | 'author' | 'format'>('name')
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [sortBy, setSortBy] = useState<SortKey>('name')
+  const [deleteCandidateUris, setDeleteCandidateUris] = useState<string[]>([])
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Fetch all plugins
-  const { data: pluginsData, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['plugins', 'all'],
-    queryFn: async () => {
-      const response = await fetch('/api/plugins/discover')
-      if (!response.ok) throw new Error('Failed to fetch plugins')
-      return response.json()
-    },
+    queryFn: () => pluginsApi.discover(false),
   })
 
   const plugins = useMemo(() => {
-    const list = pluginsData?.plugins || []
-    
-    // Filter by search term
-    let filtered = list.filter((p: Plugin) =>
-      getDisplayPluginName(p.name, p.uri).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sanitizeRestrictedDisplayText(p.author).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.uri.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const list = data?.plugins ?? []
+    const loweredSearch = searchTerm.trim().toLowerCase()
 
-    // Sort
-    filtered.sort((a: Plugin, b: Plugin) => {
-      switch (sortBy) {
-        case 'author':
-          return sanitizeRestrictedDisplayText(a.author).localeCompare(sanitizeRestrictedDisplayText(b.author))
-            || getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
-        case 'format':
-          return (a.format || '').localeCompare(b.format || '')
-            || getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
-        case 'name':
-        default:
-          return getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
+    const filtered = loweredSearch
+      ? list.filter((plugin) =>
+          getDisplayPluginName(plugin.name, plugin.uri).toLowerCase().includes(loweredSearch)
+            || sanitizeRestrictedDisplayText(plugin.author).toLowerCase().includes(loweredSearch)
+            || plugin.uri.toLowerCase().includes(loweredSearch),
+        )
+      : list.slice()
+
+    filtered.sort((left, right) => {
+      if (sortBy === 'author') {
+        return sanitizeRestrictedDisplayText(left.author).localeCompare(sanitizeRestrictedDisplayText(right.author))
+          || getDisplayPluginName(left.name, left.uri).localeCompare(getDisplayPluginName(right.name, right.uri))
       }
+
+      if (sortBy === 'format') {
+        return (left.format || '').localeCompare(right.format || '')
+          || getDisplayPluginName(left.name, left.uri).localeCompare(getDisplayPluginName(right.name, right.uri))
+      }
+
+      return getDisplayPluginName(left.name, left.uri).localeCompare(getDisplayPluginName(right.name, right.uri))
     })
 
     return filtered
-  }, [pluginsData, searchTerm, sortBy])
+  }, [data?.plugins, searchTerm, sortBy])
 
-  // Delete mutation
+  const rows = useMemo(() => toRows(plugins), [plugins])
+
   const deleteMutation = useMutation({
     mutationFn: async (uris: string[]) => {
-      const errors: string[] = []
-      const successes: string[] = []
-      
+      const failures: string[] = []
+
       for (const uri of uris) {
         try {
-          const result = await pluginsApi.delete(uri)
-          successes.push(result.uri)
-          console.log(`Deleted: ${uri}`, result)
-        } catch (error: any) {
-          const message = error?.message || `Failed to delete ${uri}`
-          errors.push(message)
-          console.error(`Error deleting ${uri}:`, error)
+          await pluginsApi.delete(uri)
+        } catch (mutationError: any) {
+          failures.push(mutationError?.message || `Failed to delete ${uri}`)
         }
       }
-      
-      if (errors.length > 0) {
-        throw new Error(`${errors.length}/${uris.length} failed: ${errors.join(', ')}`)
+
+      if (failures.length > 0) {
+        throw new Error(failures.join(', '))
       }
-      
-      return { successes, errors }
+
+      return uris
     },
-    onSuccess: () => {
-      setSelectedUris(new Set())
-      setShowDeleteConfirm(false)
-      queryClient.invalidateQueries({ queryKey: ['plugins'] })
+    onSuccess: async () => {
+      setDeleteCandidateUris([])
+      await queryClient.invalidateQueries({ queryKey: ['plugins'] })
     },
   })
 
-  // Selection handlers
-  const toggleSelectAll = useCallback(() => {
-    if (selectedUris.size === plugins.length) {
-      setSelectedUris(new Set())
-    } else {
-      setSelectedUris(new Set(plugins.map((p: Plugin) => p.uri)))
-    }
-  }, [plugins, selectedUris.size])
-
-  const toggleSelect = useCallback((uri: string) => {
-    const newSelected = new Set(selectedUris)
-    if (newSelected.has(uri)) {
-      newSelected.delete(uri)
-    } else {
-      newSelected.add(uri)
-    }
-    setSelectedUris(newSelected)
-  }, [selectedUris])
-
-  const handleDelete = useCallback(() => {
-    if (selectedUris.size === 0) return
-    deleteMutation.mutate(Array.from(selectedUris))
-  }, [selectedUris, deleteMutation])
-
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
-      await queryClient.invalidateQueries({ queryKey: ['plugins', 'all'] })
-    } catch (error) {
-      console.error('Failed to refresh plugins:', error)
+      await pluginsApi.discover(true)
+      await queryClient.invalidateQueries({ queryKey: ['plugins'] })
     } finally {
       setIsRefreshing(false)
     }
-  }, [queryClient])
+  }
 
   return (
-    <div className="card">
-      <div className="section-heading">
-        <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Plugin Management</h2>
-          <p className="subtitle">{plugins.length} plugins installed</p>
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16, padding: 16, background: 'rgba(0,0,0,0.2)', borderRadius: 6 }}>
-        {/* Search and Sort */}
-        <div style={{ display: 'flex', gap: 12 }}>
-          <input
-            type="text"
-            placeholder="Search plugins..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input"
-            style={{ flex: 1 }}
-          />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'author' | 'format')}
-            className="input"
-            style={{ width: 150 }}
+    <Layer className="plugin-management-card__layer">
+      <Tile className="plugin-management-card">
+        <div className="plugin-management-card__header">
+          <div>
+            <h2 className="plugin-management-card__title">Plugin Management</h2>
+            <p className="plugin-management-card__subtitle">{rows.length} plugins available for chain use</p>
+          </div>
+          <Button
+            kind="tertiary"
+            size="sm"
+            renderIcon={Renew}
+            disabled={isLoading || isRefreshing}
+            onClick={() => void handleRefresh()}
           >
-            <option value="name">Sort by Name</option>
-            <option value="author">Sort by Author</option>
-            <option value="format">Sort by Format</option>
-          </select>
+            {isRefreshing ? 'Refreshing…' : 'Refresh catalog'}
+          </Button>
         </div>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              onClick={toggleSelectAll}
-              className="btn btn-sm btn-ghost"
-              style={{ padding: '6px 12px' }}
-            >
-              {selectedUris.size === plugins.length && plugins.length > 0
-                ? 'Deselect All'
-                : 'Select All'}
-            </button>
-            <span style={{ fontSize: 12, color: '#888' }}>
-              {selectedUris.size} of {plugins.length} selected
-            </span>
-          </div>
+        {deleteMutation.isError ? (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Delete failed"
+            subtitle={(deleteMutation.error as Error)?.message || 'One or more plugins could not be deleted.'}
+          />
+        ) : null}
 
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading || isRefreshing}
-              className={`btn btn-sm ${isRefreshing ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              {isRefreshing ? (
-                <>
-                  <SpinnerGap size={14} weight="duotone" className="animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <ArrowsClockwise size={14} weight="duotone" />
-                  Refresh
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={selectedUris.size === 0 || deleteMutation.isPending}
-              className="btn btn-sm btn-danger"
-              style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6, opacity: selectedUris.size === 0 ? 0.5 : 1 }}
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <SpinnerGap size={14} weight="duotone" className="animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash size={14} weight="duotone" />
-                  Delete Selected
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+        {deleteMutation.isSuccess ? (
+          <InlineNotification
+            kind="success"
+            lowContrast
+            hideCloseButton
+            title="Delete complete"
+            subtitle="Selected plugins were removed from the local plugin catalog."
+          />
+        ) : null}
 
-      {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div className="card" style={{ maxWidth: 400, padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, color: '#ff6b6b' }}>
-              <Warning size={24} weight="duotone" />
-              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'white' }}>Delete Plugins</h2>
-            </div>
-            <p style={{ color: '#888', marginBottom: 24 }}>
-              This will permanently delete {selectedUris.size} plugin{selectedUris.size === 1 ? '' : 's'} from your system.
+        {isLoading ? (
+          <div className="plugin-management-card__loading">
+            <InlineLoading description="Loading plugins" />
+          </div>
+        ) : isError ? (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Unable to load plugins"
+            subtitle={error instanceof Error ? error.message : 'Plugin discovery failed.'}
+          />
+        ) : (
+          <DataTable rows={rows} headers={HEADERS} isSortable useZebraStyles>
+            {({
+              rows: tableRows,
+              headers,
+              getBatchActionProps,
+              getHeaderProps,
+              getRowProps,
+              getSelectionProps,
+              getTableProps,
+              getTableContainerProps,
+              getToolbarProps,
+              selectedRows,
+            }) => (
+              <TableContainer
+                {...getTableContainerProps()}
+                title="Installed plugin inventory"
+                description="Search, sort, and batch-delete plugins that are no longer required."
+                className="plugin-management-card__table-container"
+              >
+                <TableToolbar {...getToolbarProps()}>
+                  <TableBatchActions {...getBatchActionProps()}>
+                    <TableBatchAction
+                      renderIcon={TrashCan}
+                      iconDescription="Delete selected plugins"
+                      onClick={() => setDeleteCandidateUris(selectedRows.map((row) => row.id))}
+                    >
+                      Delete
+                    </TableBatchAction>
+                  </TableBatchActions>
+                  <TableToolbarContent className="plugin-management-card__toolbar-content">
+                    <TableToolbarSearch
+                      persistent
+                      value={searchTerm}
+                      onChange={(_event, value) => setSearchTerm(value ?? '')}
+                    />
+                    <div className="plugin-management-card__sort">
+                      <Select
+                        id="plugin-management-sort"
+                        labelText="Sort plugins"
+                        value={sortBy}
+                        size="sm"
+                        onChange={(event) => setSortBy(event.target.value as SortKey)}
+                      >
+                        <SelectItem value="name" text="Sort by name" />
+                        <SelectItem value="author" text="Sort by author" />
+                        <SelectItem value="format" text="Sort by format" />
+                      </Select>
+                    </div>
+                  </TableToolbarContent>
+                </TableToolbar>
+                <Table {...getTableProps()} aria-label="Plugin management table">
+                  <TableHead>
+                    <TableRow>
+                      <TableSelectAll {...getSelectionProps()} />
+                      {headers.map((header) => {
+                        const { key: _headerKey, ...headerProps } = getHeaderProps({ header })
+                        return (
+                          <TableHeader key={header.key} {...headerProps}>
+                            {header.header}
+                          </TableHeader>
+                        )
+                      })}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {tableRows.map((row) => {
+                      const { key: _rowKey, ...rowProps } = getRowProps({ row })
+                      return (
+                        <TableRow key={row.id} {...rowProps}>
+                          <TableSelectRow {...getSelectionProps({ row })} />
+                          {row.cells.map((cell) => {
+                          if (cell.info.header === 'status') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type="green" renderIcon={CheckmarkFilled}>
+                                  Active
+                                </Tag>
+                              </TableCell>
+                            )
+                          }
+
+                          if (cell.info.header === 'format') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type="blue">{String(cell.value)}</Tag>
+                              </TableCell>
+                            )
+                          }
+
+                          if (cell.info.header === 'uri') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <span className="plugin-management-card__uri" title={String(cell.value)}>
+                                  {String(cell.value)}
+                                </span>
+                              </TableCell>
+                            )
+                          }
+
+                            return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                          })}
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </DataTable>
+        )}
+
+        <Modal
+          danger
+          open={deleteCandidateUris.length > 0}
+          modalHeading="Delete plugins"
+          primaryButtonText={deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+          secondaryButtonText="Cancel"
+          onRequestClose={() => setDeleteCandidateUris([])}
+          onRequestSubmit={() => deleteMutation.mutate(deleteCandidateUris)}
+          primaryButtonDisabled={deleteMutation.isPending}
+        >
+          <div className="plugin-management-card__modal-copy">
+            <WarningAltFilled size={20} />
+            <p>
+              Permanently remove {deleteCandidateUris.length} plugin{deleteCandidateUris.length === 1 ? '' : 's'} from this system.
               This action cannot be undone.
             </p>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="btn btn-ghost"
-                style={{ flex: 1 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-                className="btn btn-danger"
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-              >
-                {deleteMutation.isPending ? (
-                  <>
-                    <SpinnerGap size={14} weight="duotone" className="animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash size={14} weight="duotone" />
-                    Delete
-                  </>
-                )}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
-
-      {/* Status Messages */}
-      {deleteMutation.isError && (
-        <div className="pill warn" style={{ marginBottom: 16 }}>
-          <p style={{ fontWeight: 600 }}>Error deleting plugins</p>
-          <p style={{ fontSize: 12 }}>{(deleteMutation.error as any)?.message || 'Unknown error'}</p>
-        </div>
-      )}
-
-      {deleteMutation.isSuccess && (
-        <div className="pill" style={{ marginBottom: 16, background: 'rgba(34, 197, 94, 0.2)', borderLeft: '4px solid #22c55e', color: '#22c55e', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Check size={16} weight="bold" />
-          <p style={{ fontWeight: 600 }}>Plugins deleted successfully</p>
-        </div>
-      )}
-
-      {/* Plugin Table */}
-      {isLoading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
-          <SpinnerGap className="animate-spin" size={24} weight="duotone" />
-        </div>
-      ) : isError ? (
-        <div className="pill warn">Failed to load plugins</div>
-      ) : plugins.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 32, color: '#888' }}>
-          No plugins found
-        </div>
-      ) : (
-        <div style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
-          <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
-            <thead style={{ background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-              <tr>
-                <th style={{ padding: '12px', textAlign: 'left', width: 32 }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedUris.size === plugins.length && plugins.length > 0}
-                    onChange={toggleSelectAll}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#aaa' }}>Name</th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#aaa' }}>Author</th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#aaa' }}>Format</th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#aaa' }}>Category</th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#aaa' }}>URI</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plugins.map((plugin: Plugin, idx: number) => (
-                <tr
-                  key={plugin.uri}
-                  style={{
-                    borderBottom: '1px solid rgba(255,255,255,0.05)',
-                    background: selectedUris.has(plugin.uri) ? 'rgba(59, 130, 246, 0.2)' : idx % 2 === 0 ? 'rgba(0,0,0,0.2)' : 'transparent',
-                  }}
-                >
-                  <td style={{ padding: '12px' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedUris.has(plugin.uri)}
-                      onChange={() => toggleSelect(plugin.uri)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </td>
-                  <td style={{ padding: '12px', fontWeight: 500, color: 'white' }}>{getDisplayPluginName(plugin.name, plugin.uri)}</td>
-                  <td style={{ padding: '12px', color: '#aaa' }}>{sanitizeRestrictedDisplayText(plugin.author) || '-'}</td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{ padding: '4px 8px', background: 'rgba(59, 130, 246, 0.3)', color: '#60a5fa', borderRadius: 4, fontSize: 11 }}>
-                      {plugin.format || 'LV2'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px', color: '#aaa' }}>{plugin.category || '-'}</td>
-                  <td style={{ padding: '12px', color: '#666', fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={plugin.uri}>
-                    {plugin.uri}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+        </Modal>
+      </Tile>
+    </Layer>
   )
 }

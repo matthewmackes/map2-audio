@@ -1,15 +1,4 @@
-import type { Theme, ThemeColors } from './types';
-
-type ThemeTone = {
-  interactive: string;
-  hover: string;
-  active: string;
-  accent: string;
-  info?: string;
-  warning?: string;
-  success?: string;
-  danger?: string;
-};
+import type { CarbonThemeId, Theme, ThemeColors } from './types';
 
 const baseWidgets = {
   'border-radius-sm': '0px',
@@ -21,58 +10,55 @@ const baseWidgets = {
   'transition-speed': '0.12s',
 } as const;
 
-function createThemeColors(tone: ThemeTone): ThemeColors {
-  const interactive = tone.interactive;
-  const info = tone.info ?? tone.accent;
-  const warning = tone.warning ?? '#f1c21b';
-  const success = tone.success ?? '#24a148';
-  const danger = tone.danger ?? '#da1e28';
+function createThemeColors(carbonTheme: CarbonThemeId): ThemeColors {
+  const colorScheme = carbonTheme === 'white' || carbonTheme === 'g10' ? 'light' : 'dark';
 
   return {
-    bg: '#161616',
-    surface: '#262626',
-    'surface-2': '#333333',
-    'surface-3': '#3d3d3d',
-    'surface-overlay': '#262626',
-    interactive,
-    'interactive-hover': tone.hover,
-    'interactive-active': tone.active,
-    'interactive-disabled': '#525252',
-    primary: interactive,
-    'primary-strong': tone.active,
-    accent: tone.accent,
-    'text-primary': '#f4f4f4',
-    'text-secondary': '#c6c6c6',
-    'text-tertiary': '#8d8d8d',
-    'text-inverse': '#161616',
-    muted: '#c6c6c6',
-    'muted-2': '#8d8d8d',
-    border: '#525252',
-    'border-strong': '#8d8d8d',
-    'support-success': success,
-    'support-warning': warning,
-    'support-danger': danger,
-    'support-info': info,
-    success,
-    warning,
-    danger,
-    'bg-empty': '#262626',
-    'bg-offline': 'rgba(218, 30, 40, 0.12)',
-    'bg-fault': 'rgba(218, 30, 40, 0.2)',
-    'bg-warning': 'rgba(241, 194, 27, 0.16)',
-    'focus-ring': interactive,
+    bg: 'var(--cds-background)',
+    surface: 'var(--cds-layer-01)',
+    'surface-2': 'var(--cds-layer-02)',
+    'surface-3': 'var(--cds-layer-03)',
+    'surface-overlay': 'var(--cds-layer-02)',
+    interactive: 'var(--cds-button-primary)',
+    'interactive-hover': 'var(--cds-button-primary-hover)',
+    'interactive-active': 'var(--cds-button-primary-active)',
+    'interactive-disabled': 'var(--cds-button-disabled)',
+    primary: 'var(--cds-button-primary)',
+    'primary-strong': 'var(--cds-button-primary-active)',
+    accent: 'var(--cds-link-primary)',
+    'text-primary': 'var(--cds-text-primary)',
+    'text-secondary': 'var(--cds-text-secondary)',
+    'text-tertiary': 'var(--cds-text-helper)',
+    'text-inverse': 'var(--cds-text-inverse)',
+    muted: 'var(--cds-text-secondary)',
+    'muted-2': 'var(--cds-text-helper)',
+    border: 'var(--cds-border-subtle)',
+    'border-strong': 'var(--cds-border-strong)',
+    'support-success': 'var(--cds-support-success)',
+    'support-warning': 'var(--cds-support-warning)',
+    'support-danger': 'var(--cds-support-error)',
+    'support-info': 'var(--cds-support-info)',
+    success: 'var(--cds-support-success)',
+    warning: 'var(--cds-support-warning)',
+    danger: 'var(--cds-support-error)',
+    'bg-empty': 'var(--cds-layer-01)',
+    'bg-offline': 'color-mix(in srgb, var(--cds-support-error) 16%, var(--cds-background))',
+    'bg-fault': 'color-mix(in srgb, var(--cds-support-error) 24%, var(--cds-background))',
+    'bg-warning': 'color-mix(in srgb, var(--cds-support-warning) 20%, var(--cds-background))',
+    'focus-ring': 'var(--cds-focus)',
     'shadow-strong': 'none',
     'shadow-soft': 'none',
-    'color-scheme': 'dark',
+    'color-scheme': colorScheme,
   };
 }
 
-function createTheme(id: string, name: string, description: string, tone: ThemeTone): Theme {
+function createTheme(id: string, name: string, description: string, carbonTheme: CarbonThemeId): Theme {
   return {
     id,
     name,
     description,
-    colors: createThemeColors(tone),
+    carbonTheme,
+    colors: createThemeColors(carbonTheme),
     widgets: { ...baseWidgets },
   };
 }
@@ -80,135 +66,28 @@ function createTheme(id: string, name: string, description: string, tone: ThemeT
 export const themes: Record<string, Theme> = {
   default: createTheme(
     'default',
-    'Carbon Blue',
-    'IBM Carbon flat dark baseline with disciplined interactive blue',
-    {
-      interactive: '#0f62fe',
-      hover: '#0353e9',
-      active: '#002d9c',
-      accent: '#78a9ff',
-      info: '#4589ff',
-    },
+    'Carbon gray 100',
+    'Dark studio baseline with full Carbon gray 100 tokens across the app shell.',
+    'g100',
   ),
-  'midnight-studio': createTheme(
-    'midnight-studio',
-    'Midnight Studio',
-    'Flat dark studio theme with restrained indigo interaction',
-    {
-      interactive: '#5e5ce6',
-      hover: '#4b49d7',
-      active: '#3021a7',
-      accent: '#a6a0ff',
-      info: '#8a84ff',
-    },
+  'gray-90': createTheme(
+    'gray-90',
+    'Carbon gray 90',
+    'High-contrast dark theme with Carbon gray 90 surfaces and inverse focus treatment.',
+    'g90',
   ),
-  'sunset-warmth': createTheme(
-    'sunset-warmth',
-    'Sunset Warmth',
-    'Carbon flat shell with amber interaction for staging and utilities',
-    {
-      interactive: '#ff832b',
-      hover: '#eb6200',
-      active: '#8a3800',
-      accent: '#ffb784',
-      warning: '#f1c21b',
-    },
+  'gray-10': createTheme(
+    'gray-10',
+    'Carbon gray 10',
+    'Light-neutral operator theme with Carbon gray 10 layering for longer desktop sessions.',
+    'g10',
   ),
-  'forest-calm': createTheme(
-    'forest-calm',
-    'Forest Calm',
-    'Flat enterprise layout with green interaction for monitoring-heavy work',
-    {
-      interactive: '#24a148',
-      hover: '#198038',
-      active: '#0e6027',
-      accent: '#6fdc8c',
-      success: '#24a148',
-    },
-  ),
-  'eventide-eclipse': createTheme(
-    'eventide-eclipse',
-    'Eclipse Cyan',
-    'Dark carbon system with cyan interaction accents',
-    {
-      interactive: '#08bdba',
-      hover: '#009d9a',
-      active: '#005d5d',
-      accent: '#82f4f1',
-      info: '#08bdba',
-    },
-  ),
-  'material-dark': createTheme(
-    'material-dark',
-    'Slate Violet',
-    'Flat dark theme with controlled violet interaction',
-    {
-      interactive: '#8a3ffc',
-      hover: '#6929c4',
-      active: '#491d8b',
-      accent: '#be95ff',
-      info: '#a56eff',
-    },
-  ),
-  'material-blue': createTheme(
-    'material-blue',
-    'Signal Blue',
-    'Flat blue variant for routing and infrastructure workflows',
-    {
-      interactive: '#1192e8',
-      hover: '#0072c3',
-      active: '#00539a',
-      accent: '#82cfff',
-      info: '#1192e8',
-    },
-  ),
-  'material-teal': createTheme(
-    'material-teal',
-    'Teal Command',
-    'Flat teal command-center variant with subdued cyan highlights',
-    {
-      interactive: '#009d9a',
-      hover: '#007d79',
-      active: '#005d5d',
-      accent: '#6fdcda',
-      info: '#33b1ff',
-    },
-  ),
-  'material-pink': createTheme(
-    'material-pink',
-    'Rose Signal',
-    'Flat magenta variant for high-contrast creative views',
-    {
-      interactive: '#ee5396',
-      hover: '#d02670',
-      active: '#9f1853',
-      accent: '#ffafd2',
-      danger: '#fa4d56',
-    },
-  ),
-  'material-amber': createTheme(
-    'material-amber',
-    'Amber Control',
-    'Flat amber variant tuned for warning-rich hardware control views',
-    {
-      interactive: '#ffb000',
-      hover: '#d98e00',
-      active: '#8e5a00',
-      accent: '#ffd87c',
-      warning: '#ffb000',
-    },
+  white: createTheme(
+    'white',
+    'Carbon white',
+    'Bright Carbon white theme for documentation-heavy work and daylight environments.',
+    'white',
   ),
 };
 
-export const themeOrder = [
-  'default',
-  'midnight-studio',
-  'sunset-warmth',
-  'forest-calm',
-  'eventide-eclipse',
-  'material-dark',
-  'material-blue',
-  'material-teal',
-  'material-pink',
-  'material-amber',
-];
+export const themeOrder = ['default', 'gray-90', 'gray-10', 'white'];

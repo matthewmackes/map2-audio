@@ -8,6 +8,10 @@ import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
+import { NodeAlertBar } from '../components/NodeAlerts/NodeAlertBar'
+import { NodeAlertMonitor } from '../components/NodeAlerts/NodeAlertMonitor'
+import { NodeAlertToast } from '../components/NodeAlerts/NodeAlertToast'
+import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { MAP2_PLATFORM_META, MAP2_PRIMARY_LABEL, Map2BrandMark } from '../components/branding/map2Branding'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
@@ -171,7 +175,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const HomeIcon = homeTopNavItem.icon
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
-  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/avb-routing' || location.pathname.startsWith('/avb-routing/')
+  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/platform' || location.pathname.startsWith('/platform/')
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   useEffect(() => {
@@ -545,6 +549,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}`}>
+      <NodeAlertMonitor />
+      <NodeAlertToast />
       {showMobileConnectionBanner && (
         <div className="mobile-connection-banner" role="status" aria-live="polite">
           <span className="mobile-connection-banner-dot" aria-hidden />
@@ -579,6 +585,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <HeaderGlobalBar className="nav-tabs-right-container">
           <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
+            <NodeNavBar />
             <NodeSelector />
             <div className="advanced-menu-root" ref={advancedMenuRef}>
               <button
@@ -683,6 +690,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
       </Header>
+      <NodeAlertBar />
       <PasswordDialog
         isOpen={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}

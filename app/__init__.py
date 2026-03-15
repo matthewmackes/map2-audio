@@ -1,2 +1,6 @@
 """MAP2 Audio Platform - Core Application Package"""
-__version__ = "1.24.25.1"
+
+from app.utils.platform_version import get_platform_version
+
+
+__version__ = get_platform_version()

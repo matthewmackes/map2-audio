@@ -9,6 +9,8 @@ try:
     import psutil
     import os
 
+    from app.utils.platform_version import get_platform_version_payload
+
     router = APIRouter(prefix="/api", tags=["health"])
     start_time = time.time()
 
@@ -211,11 +213,7 @@ try:
     async def get_version(response: Response):
         """Get application version."""
         response.headers["Cache-Control"] = "public, max-age=60"
-        return {
-            "app": "Mackes Audio Platform V2",
-            "version": "1.24.25.1",
-            "api_version": "v1",
-        }
+        return get_platform_version_payload()
 
     @router.get("/config")
     async def get_config(response: Response):

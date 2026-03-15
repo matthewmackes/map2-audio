@@ -61,6 +61,22 @@ jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
   MPX1MegaMenu: () => <div data-testid="mpx1-mega-menu">MPX1 menu</div>,
 }))
 
+jest.mock('../components/NodeAlerts/NodeAlertBar', () => ({
+  NodeAlertBar: () => null,
+}))
+
+jest.mock('../components/NodeAlerts/NodeAlertMonitor', () => ({
+  NodeAlertMonitor: () => null,
+}))
+
+jest.mock('../components/NodeAlerts/NodeAlertToast', () => ({
+  NodeAlertToast: () => null,
+}))
+
+jest.mock('../components/NodeNav/NodeNavBar', () => ({
+  NodeNavBar: () => <div data-testid="node-nav-bar" />,
+}))
+
 jest.mock('../components/shared/NodeSelector', () => ({
   NodeSelector: () => <div data-testid="cluster-node-selector">Node selector</div>,
 }))
@@ -107,7 +123,7 @@ describe('AppShell navigation', () => {
     expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
   })
 
-  it('shows the API Observatory entry inside the advanced menu dropdown', () => {
+  it('shows only the remaining advanced workflows inside the advanced menu dropdown', () => {
     renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -117,12 +133,13 @@ describe('AppShell navigation', () => {
     fireEvent.click(screen.getByLabelText('Open advanced menu'))
 
     expect(screen.getByRole('menu', { name: 'Advanced menu' })).toBeTruthy()
-    expect(screen.getByText('API Observatory')).toBeTruthy()
-    expect(screen.getByText('MIDI Cluster')).toBeTruthy()
+    expect(screen.getByText('MIDI Hub')).toBeTruthy()
+    expect(screen.queryByText('API Observatory')).toBeNull()
+    expect(screen.queryByText('MIDI Cluster')).toBeNull()
   })
 
   it('orders pinned routes by catalog order and caps desktop pins at four items', () => {
-    mockSpecialSettings.pinnedRoutes = ['/about', '/mpx1', '/welcome', '/engine', '/host-machine', '/avb-routing']
+    mockSpecialSettings.pinnedRoutes = ['/about', '/mpx1', '/welcome', '/engine', '/host-machine', '/overview']
 
     const { container } = renderInRouter(
       <AppShell>
@@ -132,7 +149,7 @@ describe('AppShell navigation', () => {
     )
 
     const labels = Array.from(container.querySelectorAll('.nav-tabs-center .nav-tab-label')).map((node) => node.textContent)
-    expect(labels).toEqual(['Audio Engine', 'AVB Routing', 'Host Machine', 'Platform Guide'])
+    expect(labels).toEqual(['Platform Stack', 'Audio Engine', 'Host Machine', 'Platform Guide'])
   })
 
   it('renders MPX1 as a mega-menu trigger when it is pinned', () => {

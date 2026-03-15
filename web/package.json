@@ -7,6 +7,7 @@
   "scripts": {
     "_comment_ports": "IMPORTANT: Port 3000 = PRODUCTION (serves dist/), Port 3001 = DEVELOPMENT (vite dev server with HMR). Do NOT confuse these!",
     "dev": "vite --host 0.0.0.0 --port 3001",
+    "prebuild": "python3 ../scripts/generate_platform_version.py",
     "build": "tsc -b && vite build",
     "deploy": "../scripts/build/deploy",
     "deploy:restart": "../scripts/build/deploy --skip-build",
@@ -18,7 +19,8 @@
     "start:dev": "npm run dev",
     "start:all": "npm run build && concurrently \"npm run serve\" \"npm run dev\"",
     "typecheck": "tsc --noEmit",
-    "test": "node ../node_modules/jest/bin/jest.js --config ../package.json"
+    "test": "node ../node_modules/jest/bin/jest.js --config ../package.json",
+    "version:sync": "python3 ../scripts/generate_platform_version.py"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.21",
@@ -62,7 +64,8 @@
     "recharts": "^3.7.0",
     "rehype-external-links": "^3.0.0",
     "three": "^0.182.0",
-    "tss-react": "^4.9.15"
+    "tss-react": "^4.9.15",
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",

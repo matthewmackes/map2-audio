@@ -74,6 +74,7 @@ import { useFlowSnapshots } from '../hooks/useFlowSnapshots'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { NumberInput } from '../components/Controls/NumberInput'
+import { MapAudioGridIcon } from '../components/icons/map'
 import { PresetImportDialog } from '../components/presets/PresetImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import type { Chain, Plugin, HistoryStatus, FlowSnapshot, FlowSnapshotData, FlowSnapshotDetail, ChainSnapshot, ChainsResponse, Preset } from '../../map2/types'
@@ -145,43 +146,7 @@ function formatInspectorList(values: string[]): string {
 }
 
 function JuceGridHeroMark() {
-  return (
-    <svg
-      className="juce-grid-page__hero-mark-svg"
-      viewBox="0 0 192 192"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        <linearGradient id="juce-grid-hero-frame" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#a6c8ff" />
-          <stop offset="48%" stopColor="#4589ff" />
-          <stop offset="100%" stopColor="#0f62fe" />
-        </linearGradient>
-        <linearGradient id="juce-grid-hero-sheen" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.34" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-        </linearGradient>
-        <pattern id="juce-grid-hero-checkers" width="24" height="24" patternUnits="userSpaceOnUse">
-          <rect width="24" height="24" fill="#d9d9d9" />
-          <rect width="12" height="12" fill="#f4f4f4" />
-          <rect x="12" y="12" width="12" height="12" fill="#f4f4f4" />
-          <rect x="12" width="12" height="12" fill="#c6c6c6" />
-          <rect y="12" width="12" height="12" fill="#c6c6c6" />
-        </pattern>
-      </defs>
-      <rect x="10" y="10" width="172" height="172" rx="30" fill="url(#juce-grid-hero-frame)" />
-      <path
-        d="M26 26h140c12.15 0 22 9.85 22 22v18H4V48c0-12.15 9.85-22 22-22Z"
-        fill="url(#juce-grid-hero-sheen)"
-      />
-      <rect x="34" y="34" width="52" height="52" rx="6" fill="url(#juce-grid-hero-checkers)" stroke="#f4f4f4" strokeWidth="2" />
-      <rect x="106" y="34" width="52" height="52" rx="6" fill="url(#juce-grid-hero-checkers)" stroke="#f4f4f4" strokeWidth="2" />
-      <rect x="34" y="106" width="52" height="52" rx="6" fill="url(#juce-grid-hero-checkers)" stroke="#f4f4f4" strokeWidth="2" />
-      <rect x="106" y="106" width="52" height="52" rx="6" fill="url(#juce-grid-hero-checkers)" stroke="#f4f4f4" strokeWidth="2" />
-      <rect x="10" y="10" width="172" height="172" rx="30" fill="none" stroke="#d0e2ff" strokeOpacity="0.45" strokeWidth="2" />
-    </svg>
-  )
+  return <MapAudioGridIcon className="juce-grid-page__hero-mark-svg" size={192} />
 }
 
 function getAudioRouteLabels(
@@ -1075,7 +1040,7 @@ export function JuceGridPage() {
     }
     createFlowSnapshotMutation.mutate({
       name,
-      description: 'Saved from JUCE-GRID',
+      description: 'Saved from Audio Grid',
       snapshot_data: captureCurrentState(),
     })
     setShowSnapshotCreateModal(false)
@@ -1582,7 +1547,7 @@ export function JuceGridPage() {
       case 'output':
         return {
           heading: 'Output routing',
-          summary: 'Current destinations receiving the live JUCE-GRID signal path.',
+          summary: 'Current destinations receiving the live Audio Grid signal path.',
           tags: [audioOutputStatus.isRunning ? 'Running' : 'Stopped', activeRoutingMode.label],
           rows: [
             { label: 'Device', value: audioOutputStatus.deviceName || 'Audio interface' },
@@ -2828,7 +2793,7 @@ export function JuceGridPage() {
     return (
       <aside className={`juce-grid-page__snapshot-rail-shell ${snapshotsPanelExpanded ? 'is-expanded' : 'is-collapsed'}`}>
         <SideNav
-          aria-label="JUCE-GRID snapshots"
+          aria-label="Audio Grid snapshots"
           expanded={snapshotsPanelExpanded}
           isChildOfHeader={false}
           isFixedNav={false}
@@ -3829,16 +3794,16 @@ export function JuceGridPage() {
               </div>
               <div className="juce-grid-page__hero-copy">
                 <div className="juce-grid-page__hero-tags">
-                  <Tag type="blue">JUCE-GRID</Tag>
+                  <Tag type="blue">Audio Grid</Tag>
                   <Tag type={currentChain?.is_active ? 'green' : 'red'}>
                     {currentChain?.is_active ? 'Active chain' : 'Standby chain'}
                   </Tag>
                   <Tag type="gray">{flowSlots.length} flows</Tag>
                   {currentChain && <Tag type="cool-gray">{currentChain.name}</Tag>}
                 </div>
-                <h1 className="juce-grid-page__title">JUCE-GRID</h1>
+                <h1 className="juce-grid-page__title">Audio Grid</h1>
                 <p className="juce-grid-page__subtitle">
-                  MAP-integrated audio signal grid editor delivering full JUCE workflow coverage, enabling visual routing, real-time signal graph manipulation, and complete audio processing pipeline control.
+                  MAP-integrated audio grid editor delivering full JUCE workflow coverage, enabling visual routing, real-time signal graph manipulation, and complete audio processing pipeline control.
                 </p>
               </div>
             </div>
@@ -3903,7 +3868,7 @@ export function JuceGridPage() {
       {toolbarCollapsed && (
         <div className="juce-grid-page__collapsed">
           <Button size="sm" kind="ghost" onClick={() => setToolbarCollapsed(false)}>
-            Show JUCE-GRID controls
+            Show Audio Grid controls
           </Button>
         </div>
       )}
@@ -3936,7 +3901,7 @@ export function JuceGridPage() {
               setCompactTab(COMPACT_TAB_ORDER[selectedIndex]?.id ?? 'grid')
             }}
           >
-            <TabList aria-label="JUCE-GRID compact workflows" contained>
+            <TabList aria-label="Audio Grid compact workflows" contained>
               {COMPACT_TAB_ORDER.map((tab) => (
                 <Tab key={tab.id}>{tab.label}</Tab>
               ))}
@@ -4259,7 +4224,7 @@ export function JuceGridPage() {
           open
           size="sm"
           modalHeading="Clear flows"
-          modalLabel="JUCE-GRID workspace"
+          modalLabel="Audio Grid workspace"
           primaryButtonText="Clear flows"
           secondaryButtonText="Cancel"
           onRequestClose={() => setShowClearFlowsModal(false)}
@@ -4280,7 +4245,7 @@ export function JuceGridPage() {
           open
           size="sm"
           modalHeading="Save snapshot"
-          modalLabel="JUCE-GRID workspace"
+          modalLabel="Audio Grid workspace"
           primaryButtonText={createFlowSnapshotMutation.isPending ? 'Saving...' : 'Save snapshot'}
           secondaryButtonText="Cancel"
           primaryButtonDisabled={newSnapshotName.trim().length === 0 || createFlowSnapshotMutation.isPending}

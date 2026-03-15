@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, TextField } from '@mui/material'
 import { midiHubApi } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 function parseMessage(value: string): number[] {
@@ -23,14 +24,15 @@ function parseMessage(value: string): number[] {
 export function MidiSchedulerPanel() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [scheduleId, setScheduleId] = useState('evt1')
   const [destinationPort, setDestinationPort] = useState('dst')
   const [messageText, setMessageText] = useState('0xC0 0x0A')
   const [delayMs, setDelayMs] = useState(250)
 
   const entriesQuery = useQuery({
-    queryKey: ['midi-hub', 'scheduler'],
-    queryFn: () => midiHubApi.listSchedulerEntries(true),
+    queryKey: ['midi-hub', scopeKey, 'scheduler'],
+    queryFn: () => midiHubApi.listSchedulerEntries(true, nodeId),
     refetchInterval: 1500,
   })
 
@@ -41,26 +43,26 @@ export function MidiSchedulerPanel() {
         destination_port: destinationPort.trim() || 'dst',
         message: parseMessage(messageText),
         delay_ms: Math.max(0, delayMs),
-      }),
+      }, nodeId),
     onSuccess: () => {
       pushToast('Message scheduled', 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'scheduler'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'scheduler'] })
     },
     onError: () => pushToast('Schedule failed', 'error'),
   })
 
   const cancelMutation = useMutation({
-    mutationFn: async (id: string) => midiHubApi.cancelSchedulerEntry(id),
+    mutationFn: async (id: string) => midiHubApi.cancelSchedulerEntry(id, nodeId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'scheduler'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'scheduler'] })
     },
   })
 
   const clearFinished = useMutation({
-    mutationFn: midiHubApi.clearFinishedSchedulerEntries,
+    mutationFn: () => midiHubApi.clearFinishedSchedulerEntries(nodeId),
     onSuccess: (payload) => {
       pushToast(`Cleared ${payload.removed} entries`, 'info')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'scheduler'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'scheduler'] })
     },
   })
 

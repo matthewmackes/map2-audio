@@ -47,6 +47,7 @@ describe('AboutPage', () => {
 
     await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(3))
     expect(screen.getByRole('heading', { name: /map2 platform guide/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /manage theme/i })).toBeTruthy()
     expect(document.querySelector('.about-page')).toBeTruthy()
     expect(document.querySelector('.about-page__surface')).toBeTruthy()
   })

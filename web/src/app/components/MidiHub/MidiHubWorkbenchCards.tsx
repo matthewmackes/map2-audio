@@ -1,17 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CheckmarkFilled, Copy, Renew } from '@carbon/icons-react'
+import { useMemo, useState } from 'react'
+import { CheckmarkFilled, Renew } from '@carbon/icons-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
   Checkbox,
-  InlineNotification,
   Select,
   SelectItem,
-  Tag,
-  TextArea,
   TextInput,
 } from '@carbon/react'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 export type HubPort = {
@@ -43,27 +41,6 @@ type MapperState = {
   curve: string
   keepOriginal: boolean
 }
-
-type PresetMessageMode = 'note_on' | 'note_off' | 'ctrl_change' | 'prog_change'
-
-type ButtonBehaviorMode = 'change_preset' | 'all_notes_off'
-
-type OperatorSettingsDraft = {
-  settingsProduct: string
-  settingsMidiInput: string
-  settingsMidiOutput: string
-  presetChangeEnabled: boolean
-  presetChangeMessage: PresetMessageMode
-  presetChangeChannel: number
-  presetChangeBaseValue: number
-  forwardPresetMessage: boolean
-  buttonBehavior: ButtonBehaviorMode
-  buttonShortPushChangesPreset: boolean
-  manualFirmwareMode: boolean
-  firmwarePath: string
-}
-
-const PRODUCT_OPTIONS = ['MAP2 Hub', 'Studio Bridge', 'Legacy DIN Rack', 'Browser + Network Rig']
 
 const FILTER_MESSAGE_OPTIONS = [
   'Note On',
@@ -112,21 +89,6 @@ const defaultMapperState: MapperState = {
   keepOriginal: false,
 }
 
-const defaultSettingsDraft: OperatorSettingsDraft = {
-  settingsProduct: PRODUCT_OPTIONS[0],
-  settingsMidiInput: '',
-  settingsMidiOutput: '',
-  presetChangeEnabled: false,
-  presetChangeMessage: 'ctrl_change',
-  presetChangeChannel: 1,
-  presetChangeBaseValue: 0,
-  forwardPresetMessage: true,
-  buttonBehavior: 'change_preset',
-  buttonShortPushChangesPreset: true,
-  manualFirmwareMode: true,
-  firmwarePath: '',
-}
-
 function createInitialMappers(): MapperState[] {
   return Array.from({ length: 16 }).map(() => ({ ...defaultMapperState }))
 }
@@ -158,40 +120,23 @@ function routePayloadFromExisting(route: MidiHubRoute, destinationPorts: string[
   }
 }
 
-function readStoredSettings(storageKey: string, legacyStorageKey?: string): OperatorSettingsDraft {
-  const candidateKeys = legacyStorageKey ? [storageKey, legacyStorageKey] : [storageKey]
-  for (const key of candidateKeys) {
-    const raw = window.localStorage.getItem(key)
-    if (!raw) continue
-    try {
-      const parsed = JSON.parse(raw) as Partial<OperatorSettingsDraft>
-      return {
-        ...defaultSettingsDraft,
-        ...parsed,
-      }
-    } catch {
-      // Ignore malformed browser-local settings and fall through to defaults.
-    }
-  }
-  return defaultSettingsDraft
-}
-
 export function MidiHubQuickRouterCard() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [selectedRouterSource, setSelectedRouterSource] = useState('')
   const [routerPortWindowOpen, setRouterPortWindowOpen] = useState(false)
   const [routerReservedPorts, setRouterReservedPorts] = useState<string[]>([])
 
   const statusQuery = useQuery({
-    queryKey: ['midi-hub', 'status'],
-    queryFn: midiHubApi.getStatus,
+    queryKey: ['midi-hub', scopeKey, 'status'],
+    queryFn: () => midiHubApi.getStatus(nodeId),
     refetchInterval: 3000,
   })
 
   const routesQuery = useQuery({
-    queryKey: ['midi-hub', 'routes'],
-    queryFn: midiHubApi.getRoutes,
+    queryKey: ['midi-hub', scopeKey, 'routes'],
+    queryFn: () => midiHubApi.getRoutes(nodeId),
     refetchInterval: 3000,
   })
 
@@ -228,21 +173,21 @@ export function MidiHubQuickRouterCard() {
           route_type: 'pass_through',
           filter: { message_types: [], channels: [] },
           transform_chain: [],
-        })
+        }, nodeId)
         return
       }
 
       for (const route of matching) {
         const nextDestinations = route.destination_ports.filter((destination) => destination !== params.destination)
         if (nextDestinations.length === 0) {
-          await midiHubApi.deleteRoute(route.route_id)
+          await midiHubApi.deleteRoute(route.route_id, nodeId)
         } else {
-          await midiHubApi.updateRoute(route.route_id, routePayloadFromExisting(route, nextDestinations))
+          await midiHubApi.updateRoute(route.route_id, routePayloadFromExisting(route, nextDestinations), nodeId)
         }
       }
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'routes'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'routes'] })
     },
     onError: () => pushToast('Failed to update routing', 'error'),
   })
@@ -250,12 +195,12 @@ export function MidiHubQuickRouterCard() {
   const resetRouterMutation = useMutation({
     mutationFn: async () => {
       for (const route of routes) {
-        await midiHubApi.deleteRoute(route.route_id)
+        await midiHubApi.deleteRoute(route.route_id, nodeId)
       }
     },
     onSuccess: () => {
       pushToast('Router reset complete', 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'routes'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'routes'] })
     },
     onError: () => pushToast('Failed to reset router', 'error'),
   })
@@ -263,12 +208,12 @@ export function MidiHubQuickRouterCard() {
   const clearRouterMutation = useMutation({
     mutationFn: async () => {
       for (const route of routes.filter((route) => route.enabled)) {
-        await midiHubApi.disableRoute(route.route_id)
+        await midiHubApi.disableRoute(route.route_id, nodeId)
       }
     },
     onSuccess: () => {
       pushToast('Router cleared', 'info')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'routes'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'routes'] })
     },
     onError: () => pushToast('Failed to clear router', 'error'),
   })
@@ -387,9 +332,10 @@ export function MidiHubQuickRouterCard() {
 }
 
 export function MidiHubFilterPlannerCard() {
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const statusQuery = useQuery({
-    queryKey: ['midi-hub', 'status'],
-    queryFn: midiHubApi.getStatus,
+    queryKey: ['midi-hub', scopeKey, 'status'],
+    queryFn: () => midiHubApi.getStatus(nodeId),
     refetchInterval: 3000,
   })
 
@@ -484,14 +430,6 @@ export function MidiHubFilterPlannerCard() {
           </div>
         </div>
       </div>
-
-      <InlineNotification
-        kind="info"
-        lowContrast
-        hideCloseButton
-        title="Planning surface"
-        subtitle="This card captures your filter intent locally so you can encode only the approved rules into routes, scripts, or macros."
-      />
     </div>
   )
 }
@@ -738,280 +676,6 @@ export function MidiHubMapperPlannerCard() {
           </div>
         </div>
       </div>
-
-      <InlineNotification
-        kind="info"
-        lowContrast
-        hideCloseButton
-        title="Draft transform lane"
-        subtitle="Use these mapper lanes to design the transform contract you will implement in routes, scripts, macros, or device profiles."
-      />
-    </div>
-  )
-}
-
-export function MidiHubOperatorProfileCard({
-  storageKey,
-  legacyStorageKey,
-}: {
-  storageKey: string
-  legacyStorageKey?: string
-}) {
-  const statusQuery = useQuery({
-    queryKey: ['midi-hub', 'status'],
-    queryFn: midiHubApi.getStatus,
-    refetchInterval: 3000,
-  })
-
-  const ports = useMemo(
-    () => readPorts((statusQuery.data as Record<string, unknown> | undefined)?.ports),
-    [statusQuery.data]
-  )
-  const sourcePorts = useMemo(
-    () => ports.filter((port) => port.direction === 'input' || port.direction === 'duplex'),
-    [ports]
-  )
-  const destinationPorts = useMemo(
-    () => ports.filter((port) => port.direction === 'output' || port.direction === 'duplex'),
-    [ports]
-  )
-  const { pushToast } = useToasts()
-
-  const [settings, setSettings] = useState<OperatorSettingsDraft>(defaultSettingsDraft)
-  const [deviceDumpRunning, setDeviceDumpRunning] = useState(false)
-  const [deviceDumpText, setDeviceDumpText] = useState('')
-
-  useEffect(() => {
-    setSettings(readStoredSettings(storageKey, legacyStorageKey))
-  }, [legacyStorageKey, storageKey])
-
-  useEffect(() => {
-    setSettings((previous) => {
-      let changed = false
-      let next = previous
-      if (!previous.settingsMidiInput && sourcePorts[0]?.port_id) {
-        next = { ...next, settingsMidiInput: sourcePorts[0].port_id }
-        changed = true
-      }
-      if (!previous.settingsMidiOutput && destinationPorts[0]?.port_id) {
-        next = { ...next, settingsMidiOutput: destinationPorts[0].port_id }
-        changed = true
-      }
-      return changed ? next : previous
-    })
-  }, [destinationPorts, sourcePorts])
-
-  const updateSettings = (patch: Partial<OperatorSettingsDraft>) => {
-    setSettings((previous) => ({ ...previous, ...patch }))
-  }
-
-  const saveSettings = () => {
-    window.localStorage.setItem(storageKey, JSON.stringify(settings))
-    pushToast('Operator profile stored for this browser profile', 'success')
-  }
-
-  const runDeviceDump = () => {
-    setDeviceDumpRunning(true)
-    const inputLabel = sourcePorts.find((port) => port.port_id === settings.settingsMidiInput)?.name ?? 'Not selected'
-    const outputLabel = destinationPorts.find((port) => port.port_id === settings.settingsMidiOutput)?.name ?? 'Not selected'
-    const lines = [
-      '# MAP2 MIDI Hub device intake report',
-      `Profile: ${settings.settingsProduct}`,
-      `Preferred input: ${inputLabel}`,
-      `Preferred output: ${outputLabel}`,
-      `Detected ports: ${ports.length}`,
-      'Instructions: disconnect the problematic device, start the intake report, reconnect it directly, then copy this output into the support log.',
-    ]
-    setTimeout(() => {
-      setDeviceDumpText(lines.join('\n'))
-      setDeviceDumpRunning(false)
-      pushToast('Device intake report prepared', 'success')
-    }, 450)
-  }
-
-  const copyDeviceDump = async () => {
-    try {
-      await navigator.clipboard.writeText(deviceDumpText || '')
-      pushToast('Device intake report copied', 'success')
-    } catch {
-      pushToast('Clipboard copy failed', 'error')
-    }
-  }
-
-  return (
-    <div className="midi-hub-workbench-card">
-      <div className="midi-hub-workbench-card__header">
-        <div>
-          <h4>Operator profile and device intake</h4>
-          <p>Store browser-local preferences, stage firmware intent, and capture support evidence for unknown devices.</p>
-        </div>
-        <Button size="sm" kind="primary" onClick={saveSettings}>
-          Save profile
-        </Button>
-      </div>
-
-      <div className="midi-hub-form-grid">
-        <Select
-          id="midi-hub-settings-product"
-          size="sm"
-          labelText="Rig profile"
-          value={settings.settingsProduct}
-          onChange={(event) => updateSettings({ settingsProduct: event.currentTarget.value })}
-        >
-          {PRODUCT_OPTIONS.map((product) => (
-            <SelectItem key={product} value={product} text={product} />
-          ))}
-        </Select>
-        <Select
-          id="midi-hub-settings-input"
-          size="sm"
-          labelText="Preferred input"
-          value={settings.settingsMidiInput}
-          onChange={(event) => updateSettings({ settingsMidiInput: event.currentTarget.value })}
-        >
-          <SelectItem value="" text="Select input" />
-          {sourcePorts.map((port) => (
-            <SelectItem key={port.port_id} value={port.port_id} text={port.name} />
-          ))}
-        </Select>
-        <Select
-          id="midi-hub-settings-output"
-          size="sm"
-          labelText="Preferred output"
-          value={settings.settingsMidiOutput}
-          onChange={(event) => updateSettings({ settingsMidiOutput: event.currentTarget.value })}
-        >
-          <SelectItem value="" text="Select output" />
-          {destinationPorts.map((port) => (
-            <SelectItem key={port.port_id} value={port.port_id} text={port.name} />
-          ))}
-        </Select>
-      </div>
-
-      <div className="midi-hub-mini-surface">
-        <h5>Preset recall posture</h5>
-        <div className="midi-hub-checkbox-row">
-          <Checkbox
-            id="midi-hub-preset-change-enabled"
-            labelText="Enable preset changes from incoming MIDI"
-            checked={settings.presetChangeEnabled}
-            onChange={(_, data) => updateSettings({ presetChangeEnabled: data.checked })}
-          />
-          <Checkbox
-            id="midi-hub-preset-forward"
-            labelText="Forward the triggering message downstream"
-            checked={settings.forwardPresetMessage}
-            onChange={(_, data) => updateSettings({ forwardPresetMessage: data.checked })}
-          />
-          <Checkbox
-            id="midi-hub-preset-short-push"
-            labelText="Use short push to change current preset"
-            checked={settings.buttonShortPushChangesPreset}
-            onChange={(_, data) => updateSettings({ buttonShortPushChangesPreset: data.checked })}
-          />
-        </div>
-        <div className="midi-hub-form-grid">
-          <Select
-            id="midi-hub-preset-message"
-            size="sm"
-            labelText="Preset change message"
-            value={settings.presetChangeMessage}
-            onChange={(event) => updateSettings({ presetChangeMessage: event.currentTarget.value as PresetMessageMode })}
-          >
-            <SelectItem value="note_on" text="Note On" />
-            <SelectItem value="note_off" text="Note Off" />
-            <SelectItem value="ctrl_change" text="Ctrl Change" />
-            <SelectItem value="prog_change" text="Program Change" />
-          </Select>
-          <TextInput
-            id="midi-hub-preset-channel"
-            size="sm"
-            labelText="Channel"
-            type="number"
-            value={String(settings.presetChangeChannel)}
-            onChange={(event) => updateSettings({ presetChangeChannel: Number(event.currentTarget.value) })}
-          />
-          <TextInput
-            id="midi-hub-preset-base-value"
-            size="sm"
-            labelText="Base value"
-            type="number"
-            value={String(settings.presetChangeBaseValue)}
-            onChange={(event) => updateSettings({ presetChangeBaseValue: Number(event.currentTarget.value) })}
-          />
-          <Select
-            id="midi-hub-button-behavior"
-            size="sm"
-            labelText="Hardware button role"
-            value={settings.buttonBehavior}
-            onChange={(event) => updateSettings({ buttonBehavior: event.currentTarget.value as ButtonBehaviorMode })}
-          >
-            <SelectItem value="change_preset" text="Change current preset" />
-            <SelectItem value="all_notes_off" text="Send all notes off" />
-          </Select>
-        </div>
-      </div>
-
-      <div className="midi-hub-mini-surface">
-        <div className="midi-hub-workbench-card__header">
-          <div>
-            <h5>Firmware staging and support capture</h5>
-            <p>Document the update mode and intended file now. Only execute runtime firmware work when the backend service explicitly supports it.</p>
-          </div>
-          <Tag type={settings.manualFirmwareMode ? 'warm-gray' : 'cool-gray'}>
-            {settings.manualFirmwareMode ? 'Manual update' : 'Menu update'}
-          </Tag>
-        </div>
-        <div className="midi-hub-checkbox-row">
-          <Checkbox
-            id="midi-hub-firmware-manual"
-            labelText="Manual update"
-            checked={settings.manualFirmwareMode}
-            onChange={(_, data) => updateSettings({ manualFirmwareMode: data.checked })}
-          />
-          <Checkbox
-            id="midi-hub-firmware-menu"
-            labelText="Menu-driven update"
-            checked={!settings.manualFirmwareMode}
-            onChange={(_, data) => updateSettings({ manualFirmwareMode: !data.checked })}
-          />
-        </div>
-        <TextInput
-          id="midi-hub-firmware-path"
-          size="sm"
-          labelText="Firmware file"
-          placeholder="/path/to/firmware.bin"
-          value={settings.firmwarePath}
-          onChange={(event) => updateSettings({ firmwarePath: event.currentTarget.value })}
-        />
-        <div className="midi-hub-workbench-card__actions">
-          <Button size="sm" kind="tertiary" onClick={() => pushToast('Firmware staging note stored locally', 'info')}>
-            Stage file
-          </Button>
-          <Button size="sm" kind="tertiary" disabled={deviceDumpRunning} onClick={runDeviceDump}>
-            {deviceDumpRunning ? 'Preparing…' : 'Start intake report'}
-          </Button>
-          <Button size="sm" kind="ghost" renderIcon={Copy} onClick={copyDeviceDump}>
-            Copy report
-          </Button>
-        </div>
-        <TextArea
-          id="midi-hub-device-dump"
-          rows={6}
-          labelText="Device intake report"
-          value={deviceDumpText}
-          onChange={(event) => setDeviceDumpText(event.currentTarget.value)}
-          placeholder="USB descriptors and device intake notes"
-        />
-      </div>
-
-      <InlineNotification
-        kind="warning"
-        lowContrast
-        hideCloseButton
-        title="Browser-local planning surface"
-        subtitle="These settings help operators document intent and collect support evidence. Runtime routing, presets, scripts, and clock behavior are controlled by the live MIDI Hub panels."
-      />
     </div>
   )
 }

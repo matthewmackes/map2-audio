@@ -18,7 +18,7 @@ import {
   Search,
   Terminal,
 } from '@carbon/icons-react'
-import { MapSignalFlowIcon } from '../components/icons/map'
+import { MapAudioGridIcon } from '../components/icons/map'
 
 interface DocumentRecord {
   name: string
@@ -84,12 +84,12 @@ function PlatformDiagram() {
           >
             STEP 1
           </div>
-          <MapSignalFlowIcon size={40} style={{ color: 'var(--text-primary)', margin: '12px auto 12px' }} />
+          <MapAudioGridIcon size={40} style={{ margin: '12px auto 12px' }} />
           <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>
             Build a flow
           </h4>
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-            Arrange processors inside JUCE-GRID without disturbing the current live chain.
+            Arrange processors inside Audio Grid without disturbing the current live chain.
           </p>
         </div>
 
@@ -901,7 +901,7 @@ export function PlatformInfoGuideSection() {
           <ConceptCard
             icon={Branch}
             title="Flow"
-            description="A flow is the editable draft of your signal path inside JUCE-GRID. It stays offline until you choose to save and activate it."
+            description="A flow is the editable draft of your signal path inside Audio Grid. It stays offline until you choose to save and activate it."
             color="#2563eb"
           />
           <ConceptCard
@@ -917,9 +917,9 @@ export function PlatformInfoGuideSection() {
             color="#2563eb"
           />
           <ConceptCard
-            icon={MapSignalFlowIcon}
+            icon={MapAudioGridIcon}
             title="Parallel routing"
-            description="JUCE-GRID supports layered and split paths so wet/dry blends, sidechains, and multi-branch structures can be built without hidden topology."
+            description="Audio Grid supports layered and split paths so wet/dry blends, sidechains, and multi-branch structures can be built without hidden topology."
             color="#60a5fa"
           />
         </div>
@@ -979,11 +979,11 @@ export function PlatformInfoGuideSection() {
             textDecoration: 'none',
           }}
         >
-          <MapSignalFlowIcon size={18} />
-          Open JUCE-GRID
+          <MapAudioGridIcon size={18} />
+          Open Audio Grid
         </Link>
         <Link
-          to="/overview"
+          to="/platform?layer=overview"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -997,7 +997,7 @@ export function PlatformInfoGuideSection() {
             textDecoration: 'none',
           }}
         >
-          View system overview
+          Open platform stack
         </Link>
       </div>
 

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronUp, Pin, PinFilled, Renew } from '@carbon/icons-react'
 import {
+  Map2BrandMark,
   MAP2_PLATFORM_META,
+  MAP2_PLATFORM_VERSION,
   MAP2_PLATFORM_NAME,
   MAP2_PRIMARY_LABEL,
 } from '../components/branding/map2Branding'
@@ -19,7 +21,12 @@ import {
   type NavigationHomeSection,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
+import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
+import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
+import { useNodePageContext } from '../hooks/useNodePageContext'
+import { buildPlatformHref } from '../platform/model'
 import { isBlockedAdvancedMenuItem } from '../layout/advancedMenuState'
+import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './HomePage.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,7 +47,91 @@ interface ClusterTile {
   isLocal: boolean
 }
 
+interface HostMachineInfoResponse {
+  hostname?: string
+  cpu_cores?: number
+  total_memory_mb?: number
+}
+
+interface NetworkInterfaceStatus {
+  enabled?: boolean
+  connected?: boolean
+  ip_address?: string | null
+}
+
+interface NetworkStatusResponse {
+  hostname?: string
+  ethernet?: NetworkInterfaceStatus[]
+  wifi?: NetworkInterfaceStatus[]
+}
+
+interface ClusterHardwareNode {
+  node_id?: string
+  hostname?: string
+  audio_interfaces?: unknown[]
+  usb_audio_devices?: unknown[]
+  status?: string
+  last_updated?: string
+}
+
+interface ClusterDevicesResponse {
+  nodes?: Record<string, ClusterHardwareNode>
+}
+
+interface PeerInfoResponse {
+  node_id?: string
+  node_mode?: string
+  host?: string
+  last_seen?: string | null
+  latency_ms?: number | null
+}
+
+interface PeersResponse {
+  local_node_id?: string
+  peers?: PeerInfoResponse[]
+}
+
+interface DiscoveredNodeCapabilities {
+  cpu_cores?: number
+  memory_gb?: number
+  audio_interfaces?: string[]
+}
+
+interface DiscoveredNodeResponse {
+  node_id?: string
+  hostname?: string
+  addresses?: string[]
+  role?: string
+  health_score?: number
+  last_seen?: string | null
+  capabilities?: DiscoveredNodeCapabilities
+}
+
+interface ClusterDiscoveredResponse {
+  nodes?: DiscoveredNodeResponse[]
+}
+
+interface DeploymentModeResponse {
+  mode?: string
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+function scopedHomeApiPath(url: string, nodeId?: string | null): string {
+  if (!nodeId || nodeId === 'all') return url
+  const normalized = url.startsWith('/api/') ? url.slice(5) : url.replace(/^\//, '')
+  return `/api/node/${encodeURIComponent(nodeId)}/proxy/${normalized}`
+}
+
+async function fetchJsonOrNull<T>(url: string, nodeId?: string | null): Promise<T | null> {
+  try {
+    const response = await fetch(scopedHomeApiPath(url, nodeId))
+    if (!response.ok) return null
+    return (await response.json()) as T
+  } catch {
+    return null
+  }
+}
 
 function resolvePinnedRoutes(routes: string[] | null | undefined): string[] {
   const requested = normalizePinnedRoutes(routes)
@@ -63,6 +154,170 @@ function parseLastSeenSeconds(value: string | null | undefined): number {
   return Math.max(0, Math.floor((Date.now() - parsed) / 1000))
 }
 
+function resolveString(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+function uniqueStrings(values: Array<string | null | undefined>): string[] {
+  return [...new Set(values.map((value) => resolveString(value)).filter((value): value is string => Boolean(value)))]
+}
+
+function roundNumber(value: unknown): number | null {
+  const numeric = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numeric)) return null
+  return Math.round(numeric)
+}
+
+function roundMemoryGbFromMb(value: unknown): number | null {
+  const numeric = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numeric) || numeric <= 0) return null
+  return Math.max(1, Math.round(numeric / 1024))
+}
+
+function formatCpuRam(cpuCores: unknown, memoryGb: unknown): string {
+  const cpuCount = roundNumber(cpuCores)
+  const memory = roundNumber(memoryGb)
+  const cpuLabel = cpuCount != null && cpuCount > 0 ? `${cpuCount} cores` : 'CPU unknown'
+  const memoryLabel = memory != null && memory > 0 ? `${memory} GB` : 'RAM unknown'
+  return `${cpuLabel} · ${memoryLabel}`
+}
+
+function normalizeAudioDevices(
+  hardwareNode: ClusterHardwareNode | null | undefined,
+  fallbackInterfaces: unknown[] = [],
+): string[] {
+  const interfaceNames = Array.isArray(hardwareNode?.audio_interfaces)
+    ? hardwareNode.audio_interfaces.map((value) => resolveString(value)).filter((value): value is string => Boolean(value))
+    : []
+  const usbNames = Array.isArray(hardwareNode?.usb_audio_devices)
+    ? hardwareNode.usb_audio_devices
+        .map((device) => {
+          if (typeof device === 'string') return resolveString(device)
+          if (!device || typeof device !== 'object') return null
+          if ('name' in device) return resolveString((device as { name?: unknown }).name)
+          if ('product' in device) return resolveString((device as { product?: unknown }).product)
+          return null
+        })
+        .filter((value): value is string => Boolean(value))
+    : []
+  const discoveredNames = Array.isArray(fallbackInterfaces)
+    ? fallbackInterfaces.map((value) => resolveString(value)).filter((value): value is string => Boolean(value))
+    : []
+
+  const merged = uniqueStrings([...interfaceNames, ...usbNames, ...discoveredNames])
+  return merged.length > 0 ? merged : ['Audio device unavailable']
+}
+
+function resolveLocalNodeId(
+  peers: PeersResponse | null,
+  devices: ClusterDevicesResponse | null,
+  hostnames: string[],
+): string {
+  const peerNodeId = resolveString(peers?.local_node_id)
+  if (peerNodeId) return peerNodeId
+
+  const nodeEntries = Object.entries(devices?.nodes ?? {})
+  const hostnameSet = new Set(hostnames.map((value) => value.toLowerCase()))
+  const matchedByHostname = nodeEntries.find(([, node]) => {
+    const hostname = resolveString(node.hostname)
+    return hostname ? hostnameSet.has(hostname.toLowerCase()) : false
+  })
+  if (matchedByHostname) return matchedByHostname[0]
+
+  if (nodeEntries.length === 1) return nodeEntries[0][0]
+
+  return hostnames[0] ?? 'local-node'
+}
+
+function inferRoleFromNodeId(nodeId: string | null | undefined): string | null {
+  const normalized = resolveString(nodeId)?.toUpperCase() ?? null
+  if (!normalized) return null
+
+  for (const role of ['MANAGEMENT-NODE', 'AUDIO-NODE', 'STANDBY-NODE']) {
+    if (normalized.startsWith(role)) return role
+  }
+
+  return null
+}
+
+function resolveRole(
+  nodeId: string | null | undefined,
+  role: string | null | undefined,
+  deploymentMode: string | null | undefined,
+): string {
+  const explicitRole = resolveString(role)?.toUpperCase()
+  if (explicitRole) return explicitRole
+
+  const nodeRole = inferRoleFromNodeId(nodeId)
+  if (nodeRole) return nodeRole
+
+  switch (resolveString(deploymentMode)?.toUpperCase()) {
+    case 'AUDIO-NODE':
+      return 'AUDIO-NODE'
+    case 'ALL-IN-ONE':
+    case 'CONTROL-NODE':
+    case 'FRONTEND-ONLY':
+      return 'MANAGEMENT-NODE'
+    default:
+      return 'NODE'
+  }
+}
+
+function resolvePrimaryAddress(node: DiscoveredNodeResponse | null | undefined): string | null {
+  if (!Array.isArray(node?.addresses)) return null
+
+  const address = node.addresses.find((value) => {
+    const resolved = resolveString(value)
+    return resolved != null && resolved !== '::1' && !resolved.startsWith('127.')
+  })
+  return address ? resolveString(address) : null
+}
+
+function resolveLocalIp(
+  network: NetworkStatusResponse | null,
+  discoveredNode: DiscoveredNodeResponse | null | undefined,
+): string {
+  const interfaces = [...(network?.ethernet ?? []), ...(network?.wifi ?? [])]
+  const connectedInterface = interfaces.find((item) => item.connected && resolveString(item.ip_address))
+  if (connectedInterface?.ip_address) return connectedInterface.ip_address
+
+  const enabledInterface = interfaces.find((item) => item.enabled && resolveString(item.ip_address))
+  if (enabledInterface?.ip_address) return enabledInterface.ip_address
+
+  const discoveredAddress = resolvePrimaryAddress(discoveredNode)
+  if (discoveredAddress) return discoveredAddress
+
+  const browserHostname = resolveString(window.location.hostname)
+  if (browserHostname && browserHostname !== 'localhost' && browserHostname !== '127.0.0.1') {
+    return browserHostname
+  }
+
+  return 'IP unavailable'
+}
+
+function resolveLocalStatus(
+  hostInfo: HostMachineInfoResponse | null,
+  network: NetworkStatusResponse | null,
+  audioDevices: string[],
+): ClusterTile['status'] {
+  if (!hostInfo && !network && audioDevices[0] === 'Audio device unavailable') return 'offline'
+  if (audioDevices[0] === 'Audio device unavailable') return 'degraded'
+  return 'online'
+}
+
+function resolveLocalHealthScore(
+  status: ClusterTile['status'],
+  discoveredHealth: unknown,
+): number {
+  const discoveredScore = roundNumber(discoveredHealth)
+  if (discoveredScore != null) return Math.max(0, Math.min(100, discoveredScore))
+  if (status === 'online') return 96
+  if (status === 'degraded') return 72
+  return 25
+}
+
 function statusDotClass(status: ClusterTile['status']): string {
   return `hp-hero__node-dot hp-hero__node-dot--${status}`
 }
@@ -81,6 +336,7 @@ function clusterDotClass(status: ClusterTile['status']): string {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function HomePage() {
+  const { localNode, topology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.home)
   const navigate = useNavigate()
   const {
     settings: specialSettings,
@@ -103,6 +359,7 @@ export function HomePage() {
   const [tilesLoading, setTilesLoading] = useState(true)
   const [tilesError, setTilesError] = useState<string | null>(null)
   const [clusterName, setClusterName] = useState('Local Node')
+  const apiNodeId = viewedNodeId === localNode?.node_id ? null : viewedNodeId
 
   // ── Data loading ────────────────────────────────────────────────────────────
 
@@ -110,78 +367,146 @@ export function HomePage() {
     setTilesLoading(true)
     setTilesError(null)
     try {
-      const [summaryRes, peersRes, devicesRes] = await Promise.all([
-        fetch('/api/cluster/admin/summary'),
-        fetch('/api/peers'),
-        fetch('/api/cluster/health/extended/devices'),
+      const [hostInfo, networkStatus, devices, peers, discovered, deploymentMode] = await Promise.all([
+        fetchJsonOrNull<HostMachineInfoResponse>('/api/system/host-machine-info', apiNodeId),
+        fetchJsonOrNull<NetworkStatusResponse>('/api/network/status', apiNodeId),
+        fetchJsonOrNull<ClusterDevicesResponse>('/api/cluster/health/extended/devices', apiNodeId),
+        fetchJsonOrNull<PeersResponse>('/api/peers', apiNodeId),
+        fetchJsonOrNull<ClusterDiscoveredResponse>('/api/cluster/discovered', apiNodeId),
+        fetchJsonOrNull<DeploymentModeResponse>('/api/deployment/mode', apiNodeId),
       ])
-      const summary = summaryRes.ok ? await summaryRes.json() : null
-      const peers = peersRes.ok ? await peersRes.json() : null
-      const devices = devicesRes.ok ? await devicesRes.json() : null
 
-      if (summary?.cluster_name) setClusterName(String(summary.cluster_name))
+      const discoveredNodes = Array.isArray(discovered?.nodes) ? discovered.nodes : []
+      const hostnames = uniqueStrings([
+        hostInfo?.hostname,
+        networkStatus?.hostname,
+        window.location.hostname,
+      ])
+      const localNodeId = resolveLocalNodeId(peers, devices, hostnames)
+      const localDevices =
+        devices?.nodes?.[localNodeId] ??
+        Object.values(devices?.nodes ?? {}).find((node) => {
+          const hostname = resolveString(node.hostname)
+          return hostname ? hostnames.some((candidate) => candidate.toLowerCase() === hostname.toLowerCase()) : false
+        }) ??
+        null
+      const localDiscoveredNode =
+        discoveredNodes.find((node) => resolveString(node.node_id) === localNodeId) ??
+        discoveredNodes.find((node) => {
+          const discoveredHostname = resolveString(node.hostname)
+          return discoveredHostname
+            ? hostnames.some((candidate) => candidate.toLowerCase() === discoveredHostname.toLowerCase())
+            : false
+        }) ??
+        null
+      const localAudioDevices = normalizeAudioDevices(
+        localDevices,
+        localDiscoveredNode?.capabilities?.audio_interfaces,
+      )
+      const localStatus = resolveLocalStatus(hostInfo, networkStatus, localAudioDevices)
+      const localHostname =
+        resolveString(hostInfo?.hostname) ??
+        resolveString(networkStatus?.hostname) ??
+        resolveString(localDevices?.hostname) ??
+        resolveString(window.location.hostname) ??
+        'localhost'
+      const localCpuCores =
+        hostInfo?.cpu_cores ?? localDiscoveredNode?.capabilities?.cpu_cores ?? null
+      const localMemoryGb =
+        roundMemoryGbFromMb(hostInfo?.total_memory_mb) ??
+        roundNumber(localDiscoveredNode?.capabilities?.memory_gb) ??
+        null
 
-      const localNodeId =
-        typeof peers?.local_node_id === 'string' ? peers.local_node_id : 'local-node'
-      const localDevices = devices?.nodes?.[localNodeId] ?? null
-      const localAudioDevices: string[] = Array.isArray(localDevices?.usb_audio_devices)
-        ? localDevices.usb_audio_devices.map((d: unknown) => {
-            if (typeof d === 'string') return d
-            if (d && typeof d === 'object' && 'name' in d)
-              return String((d as { name: unknown }).name)
-            return 'Audio device'
-          })
-        : ['Audio device unavailable']
+      setClusterName(localHostname)
 
       const tileList: ClusterTile[] = [
         {
           id: localNodeId,
-          hostname: window.location.hostname || 'localhost',
-          ip: '127.0.0.1',
-          status: summary?.online_nodes ? 'online' : 'degraded',
-          role: 'LOCAL-NODE',
-          healthScore: Math.round(Number(summary?.overall_health ?? 82)),
-          cpuRam: `${navigator.hardwareConcurrency || 4} cores · ${Math.max(4, Math.round(Number(localDevices?.memory_gb) || 16))} GB`,
+          hostname: localHostname,
+          ip: resolveLocalIp(networkStatus, localDiscoveredNode),
+          status: localStatus,
+          role: resolveRole(localNodeId, localDiscoveredNode?.role, deploymentMode?.mode),
+          healthScore: resolveLocalHealthScore(localStatus, localDiscoveredNode?.health_score),
+          cpuRam: formatCpuRam(localCpuCores, localMemoryGb),
           audioDevices: localAudioDevices,
-          version: 'MAP2',
+          version: MAP2_PLATFORM_VERSION,
           lastSeenSeconds: 0,
           isLocal: true,
         },
       ]
 
-      if (Array.isArray(peers?.peers)) {
-        peers.peers.forEach((peer: Record<string, unknown>) => {
-          const nodeId = String(peer.node_id ?? `peer-${tileList.length + 1}`)
-          const peerDevices = devices?.nodes?.[nodeId] ?? null
-          const peerAudio: string[] = Array.isArray(peerDevices?.usb_audio_devices)
-            ? peerDevices.usb_audio_devices.map((d: unknown) => {
-                if (typeof d === 'string') return d
-                if (d && typeof d === 'object' && 'name' in d)
-                  return String((d as { name: unknown }).name)
-                return 'Audio device'
-              })
-            : ['No devices reported']
+      const discoveredByNodeId = new Map(
+        discoveredNodes
+          .map((node) => [resolveString(node.node_id), node] as const)
+          .filter((entry): entry is [string, DiscoveredNodeResponse] => Boolean(entry[0])),
+      )
+      const renderedPeerIds = new Set<string>()
+      const peerList = Array.isArray(peers?.peers) ? peers.peers : []
 
+      peerList.forEach((peer) => {
+          const nodeId = resolveString(peer.node_id) ?? `peer-${tileList.length + 1}`
+          if (nodeId === localNodeId || renderedPeerIds.has(nodeId)) return
+
+          const discoveredPeer = discoveredByNodeId.get(nodeId)
+          const peerDevices = devices?.nodes?.[nodeId] ?? null
+          const peerAudio = normalizeAudioDevices(
+            peerDevices,
+            discoveredPeer?.capabilities?.audio_interfaces,
+          )
           const latency = typeof peer.latency_ms === 'number' ? peer.latency_ms : null
           const status: ClusterTile['status'] =
-            latency == null ? 'offline' : latency > 180 ? 'degraded' : 'online'
+            latency == null ? (discoveredPeer ? 'online' : 'offline') : latency > 180 ? 'degraded' : 'online'
 
           tileList.push({
             id: nodeId,
-            hostname: String(peer.node_id ?? nodeId),
-            ip: String(peer.host ?? 'unknown'),
+            hostname:
+              resolveString(discoveredPeer?.hostname) ??
+              resolveString(peer.host) ??
+              nodeId,
+            ip:
+              resolveString(peer.host) ??
+              resolvePrimaryAddress(discoveredPeer) ??
+              'IP unavailable',
             status,
-            role: String(peer.node_mode ?? 'AUDIO-NODE').toUpperCase(),
-            healthScore: status === 'offline' ? 25 : status === 'degraded' ? 58 : 88,
-            cpuRam: `${navigator.hardwareConcurrency || 4} cores · ${Math.max(4, Math.round(Number(peerDevices?.memory_gb) || 16))} GB`,
+            role: resolveRole(nodeId, peer.node_mode ?? discoveredPeer?.role, null),
+            healthScore:
+              resolveLocalHealthScore(status, discoveredPeer?.health_score),
+            cpuRam: formatCpuRam(
+              discoveredPeer?.capabilities?.cpu_cores,
+              discoveredPeer?.capabilities?.memory_gb,
+            ),
             audioDevices: peerAudio,
-            version: 'MAP2',
+            version: 'Version unknown',
             lastSeenSeconds: parseLastSeenSeconds(
-              typeof peer.last_seen === 'string' ? peer.last_seen : null,
+              resolveString(peer.last_seen) ?? resolveString(discoveredPeer?.last_seen),
             ),
             isLocal: false,
           })
+          renderedPeerIds.add(nodeId)
+      })
+
+      discoveredNodes.forEach((node) => {
+        const nodeId = resolveString(node.node_id)
+        if (!nodeId || nodeId === localNodeId || renderedPeerIds.has(nodeId)) return
+
+        const peerDevices = devices?.nodes?.[nodeId] ?? null
+        tileList.push({
+          id: nodeId,
+          hostname: resolveString(node.hostname) ?? nodeId,
+          ip: resolvePrimaryAddress(node) ?? 'IP unavailable',
+          status: 'online',
+          role: resolveRole(nodeId, node.role, null),
+          healthScore: resolveLocalHealthScore('online', node.health_score),
+          cpuRam: formatCpuRam(node.capabilities?.cpu_cores, node.capabilities?.memory_gb),
+          audioDevices: normalizeAudioDevices(peerDevices, node.capabilities?.audio_interfaces),
+          version: 'Version unknown',
+          lastSeenSeconds: parseLastSeenSeconds(resolveString(node.last_seen)),
+          isLocal: false,
         })
+      })
+
+      if (!hostInfo && !networkStatus && tileList.length === 0) {
+        throw new Error('Cluster status unavailable')
       }
 
       setTiles(tileList)
@@ -190,7 +515,7 @@ export function HomePage() {
     } finally {
       setTilesLoading(false)
     }
-  }, [])
+  }, [apiNodeId])
 
   useEffect(() => {
     void loadTiles()
@@ -226,18 +551,17 @@ export function HomePage() {
 
   return (
     <div className="hp-root">
+      {localNode ? (
+        <NodeContextBanner pageKey={NODE_PAGE_KEYS.home} localNode={localNode} topology={topology} />
+      ) : null}
       {/* ══════════════════════════════════════════════════════════
-          HERO — MAP2-BANNER.png full-bleed + scanline effects
+          HERO — full-bleed neon grid artwork + scanline effects
           ══════════════════════════════════════════════════════════ */}
       <header className="hp-hero">
-        {/* Background banner image */}
-        <img
-          className="hp-hero__img"
-          src="/MAP2-BANNER.png"
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-        />
+        {/* Background hero artwork */}
+        <div className="hp-hero__img" aria-hidden="true">
+          <Map2BrandMark className="hp-hero__brand-mark" />
+        </div>
 
         {/* Vignette overlay */}
         <div className="hp-hero__vignette" aria-hidden="true" />
@@ -261,6 +585,7 @@ export function HomePage() {
             <p className="hp-hero__summary">
               Unified routing, control, and node orchestration across the full Mackes Audio Platform.
             </p>
+            <NodeContextPicker pageKey={NODE_PAGE_KEYS.home} topology={topology} />
           </div>
 
           {/* Live cluster node strip */}
@@ -283,7 +608,7 @@ export function HomePage() {
                     key={`hero-node-${tile.id}`}
                     type="button"
                     className="hp-hero__node"
-                    onClick={() => navigate('/cluster-dashboard')}
+                    onClick={() => navigate(buildPlatformHref('cluster-dashboard'))}
                     title={`${tile.hostname} · ${tile.status}`}
                   >
                     <span
@@ -533,7 +858,7 @@ export function HomePage() {
                   key={tile.id}
                   type="button"
                   className={`hp-cluster-tile${tile.isLocal ? ' is-local' : ''}`}
-                  onClick={() => navigate('/cluster-dashboard')}
+                  onClick={() => navigate(buildPlatformHref('cluster-dashboard'))}
                 >
                   <div className="hp-cluster-tile__head">
                     <span

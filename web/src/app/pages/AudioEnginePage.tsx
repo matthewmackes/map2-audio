@@ -1,31 +1,86 @@
 /**
- * AudioEnginePage — Unified Audio Engine & Infrastructure Dashboard
+ * AudioEnginePage redesign duplication map
  *
- * Professional appliance-grade view combining:
- *   Layer 1: Engine Cluster Overview (PipeWire daemon + JUCE engine status)
- *   Layer 2: Real-time Metering (Spectrum, VU, LUFS, Phase, Dynamics)
- *   Layer 3: Signal Path & Routing (Nodes, Links, Streams)
- *   Layer 4: Diagnostics & Settings (Latency, CPU, Quantum, Clock)
+ * Removed from the legacy implementation:
+ * - repeated inline token objects and presentation-only micro-components
+ * - tabbed navigation that hid live metering and routing state
+ * - duplicated empty/loading surfaces across overview, routing, and diagnostics
+ * - Phosphor icon usage inside page chrome
  *
- * Design language: SSL System T / Meyer Galileo / Lake LM44
- *   — dark, high-contrast, grid-based, monospace numerics
- *   — no skeuomorphic graphics, pure information density
+ * The Carbon rebuild keeps the live hooks and data queries, then re-composes
+ * them as a single sectioned operator page.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import './AudioEnginePage.css'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Pulse, Broadcast, Cpu, Link, SpeakerHigh, Microphone, Warning,
-  CheckCircle, SpeakerX, GearSix, Lightning,
-  ChartBar, Stack, GitBranch, CaretDown, CaretUp, ArrowsClockwise
-} from '@phosphor-icons/react'
+  Accordion,
+  AccordionItem,
+  Button,
+  Column,
+  DataTable,
+  Dropdown,
+  Grid,
+  InlineLoading,
+  InlineNotification,
+  Layer,
+  ProgressBar,
+  RadioButton,
+  RadioButtonGroup,
+  Row,
+  Select,
+  SelectItem,
+  StructuredListBody,
+  StructuredListCell,
+  StructuredListRow,
+  StructuredListWrapper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  Tag,
+  Tile,
+} from '@carbon/react'
+import {
+  Activity,
+  ChartLine,
+  Chip,
+  CheckmarkFilled,
+  DataTable as DataTableIcon,
+  Misuse,
+  Network_4,
+  Renew,
+  SettingsAdjust,
+  SettingsView,
+  Timer,
+  WarningAltFilled,
+  Wifi,
+} from '@carbon/icons-react'
 import { usePipeWire } from '../hooks/usePipeWire'
-import { audioApi, getWsUrl, latencyV2Api } from '../../map2/api'
+import { audioApi, latencyV2Api } from '../../map2/api'
 import type { LatencyJitterStats } from '../../map2/api'
-import type { AudioSourceTruthPayload } from '../../map2/types'
+import type {
+  AudioSourceTruthPayload,
+  PipeWireAlert,
+  PipeWireDeviceInfo,
+  PipeWireLinkInfo,
+  PipeWireNodeInfo,
+  PipeWireStreamInfo,
+} from '../../map2/types'
 import { useCluster } from '../contexts/ClusterContext'
-import { withNodeTopic } from '../utils/clusterTransport'
 import { ClusterEngineGrid } from '../components/AudioEngine/ClusterEngineGrid'
+import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
+import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
+import { PageHeader } from '../components/PageHeader'
+import { useNodePageContext } from '../hooks/useNodePageContext'
+import { useViewedNodeStore } from '../stores/viewedNodeStore'
+import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
 import { CPUMeterPanel } from '../components/Visualizations/CPUMeterPanel'
@@ -34,592 +89,220 @@ import { PhaseCorrelationMeter } from '../components/Visualizations/PhaseCorrela
 import { VuMeterDisplay } from '../components/Visualizations/VuMeterDisplay'
 import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMeteringPanel'
 
-// ============================================================================
-// Design tokens — appliance palette
-// ============================================================================
-const T = {
-  bg:        '#0a0e17',
-  surface:   '#0f1520',
-  panel:     '#141c2b',
-  border:    '#1e2a3d',
-  borderHi:  '#2a3a55',
-  text:      '#e2e8f0',
-  muted:     '#64748b',
-  dim:       '#475569',
-  mono:      "var(--font-mono)",
-  accent:    '#3b82f6',    // blue
-  green:     '#22c55e',
-  amber:     '#f59e0b',
-  red:       '#ef4444',
-  purple:    '#a78bfa',
-  cyan:      '#60a5fa',
-  pink:      '#60a5fa',
-  teal:      '#60a5fa',
+type TableCellValue = string | number | boolean | null | undefined
+type RoutingRow = {
+  id: string
+  [key: string]: TableCellValue
 }
 
-// ============================================================================
-// Shared micro-components
-// ============================================================================
-
-function StatusLed({ ok, label, size = 8 }: { ok: boolean; label?: string; size?: number }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: ok ? T.green : T.dim }}>
-      <span style={{
-        width: size, height: size, borderRadius: '50%',
-        background: ok ? T.green : '#374151',
-        boxShadow: ok ? `0 0 6px ${T.green}60` : 'none',
-      }} />
-      {label}
-    </span>
-  )
+type RoutingDefinition = {
+  id: string
+  title: string
+  description: string
+  headers: Array<{ key: string; header: string }>
+  rows: RoutingRow[]
 }
 
-function Stat({ label, value, unit, color = T.text, small }: {
-  label: string; value: string | number; unit?: string; color?: string; small?: boolean
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>{label}</span>
-      <span style={{ fontSize: small ? 18 : 24, fontWeight: 700, color, fontFamily: T.mono, lineHeight: 1 }}>
-        {value}
-        {unit && <span style={{ fontSize: small ? 10 : 12, color: T.dim, marginLeft: 3, fontWeight: 500 }}>{unit}</span>}
-      </span>
-    </div>
-  )
+type NodeOption = {
+  id: string
+  label: string
 }
 
-function Panel({ children, style, borderColor }: {
-  children: React.ReactNode; style?: React.CSSProperties; borderColor?: string
-}) {
-  return (
-    <div style={{
-      background: T.panel,
-      border: `1px solid ${borderColor || T.border}`,
-      borderRadius: 0,
-      padding: 16,
-      ...style,
-    }}>
-      {children}
-    </div>
-  )
+function useIsMobile(breakpoint = 672) {
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia(`(max-width: ${breakpoint - 1}px)`).matches)
+
+  useEffect(() => {
+    const query = window.matchMedia(`(max-width: ${breakpoint - 1}px)`)
+    const handleChange = (event: MediaQueryListEvent) => setIsMobile(event.matches)
+    setIsMobile(query.matches)
+
+    if (typeof query.addEventListener === 'function') {
+      query.addEventListener('change', handleChange)
+      return () => query.removeEventListener('change', handleChange)
+    }
+
+    query.addListener(handleChange)
+    return () => query.removeListener(handleChange)
+  }, [breakpoint])
+
+  return isMobile
 }
 
-function SectionLabel({ children, color = T.accent }: { children: React.ReactNode; color?: string }) {
-  return (
-    <div style={{
-      fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase',
-      letterSpacing: 1.2, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6,
-    }}>
-      {children}
-    </div>
-  )
+function clusterHealthType(nodes: Array<{ isOnline: boolean; latencyMs: number | null }>) {
+  if (nodes.some((node) => !node.isOnline)) {
+    return 'red' as const
+  }
+
+  if (nodes.some((node) => (node.latencyMs ?? 0) > 20)) {
+    return 'warm-gray' as const
+  }
+
+  return 'green' as const
 }
 
-// ============================================================================
-// Tab definition
-// ============================================================================
-type Tab = 'overview' | 'metering' | 'routing' | 'diagnostics'
-
-const TABS: { id: Tab; label: string; icon: any; color: string }[] = [
-  { id: 'overview',    label: 'Engine Cluster',  icon: Stack,      color: T.accent },
-  { id: 'metering',    label: 'Metering',        icon: ChartBar,   color: T.green },
-  { id: 'routing',     label: 'Signal Path',     icon: GitBranch,  color: T.purple },
-  { id: 'diagnostics', label: 'Diagnostics',     icon: GearSix,    color: T.amber },
-]
-
-function SOTCell({ label, value, color = T.text }: { label: string; value: string; color?: string }) {
-  return (
-    <div style={{ background: T.surface, borderRadius: 0, padding: '10px 12px', border: `1px solid ${T.border}` }}>
-      <div style={{ fontSize: 10, color: T.dim, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 13, color, fontFamily: T.mono, fontWeight: 600, overflowWrap: 'anywhere' }}>{value}</div>
-    </div>
-  )
+function engineStatusTag(status: 'ok' | 'warning' | 'error' | 'offline') {
+  switch (status) {
+    case 'ok':
+      return { type: 'green' as const, label: 'Running', icon: CheckmarkFilled }
+    case 'warning':
+      return { type: 'warm-gray' as const, label: 'Warning', icon: WarningAltFilled }
+    case 'error':
+      return { type: 'red' as const, label: 'Error', icon: Misuse }
+    default:
+      return { type: 'warm-gray' as const, label: 'Stopped', icon: Misuse }
+  }
 }
 
-function SourceOfTruthPanel({ nodeId }: { nodeId?: string | null }) {
-  const sot = useQuery<AudioSourceTruthPayload>({
+function nodeStateTag(state: string) {
+  const lowered = state.toLowerCase()
+  if (lowered.includes('run') || lowered.includes('active')) {
+    return 'green' as const
+  }
+  if (lowered.includes('pause') || lowered.includes('idle')) {
+    return 'warm-gray' as const
+  }
+  return 'red' as const
+}
+
+function renderValue(value: TableCellValue) {
+  if (value == null || value === '') {
+    return '—'
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No'
+  }
+
+  return String(value)
+}
+
+function SourceOfTruthSection({ nodeId }: { nodeId?: string | null }) {
+  const sourceOfTruthQuery = useQuery<AudioSourceTruthPayload>({
     queryKey: ['audio-source-of-truth', nodeId ?? 'local'],
     queryFn: () => audioApi.getSourceOfTruth(nodeId),
     refetchInterval: 5000,
     staleTime: 2000,
   })
 
-  if (sot.isLoading && !sot.data) {
+  if (sourceOfTruthQuery.isLoading && !sourceOfTruthQuery.data) {
     return (
-      <Panel borderColor={`${T.accent}35`} style={{ marginBottom: 22 }}>
-        <SectionLabel color={T.accent}><Pulse size={13} weight="duotone" /> Single Source Of Truth</SectionLabel>
-        <span style={{ fontSize: 12, color: T.muted }}>Loading bitrate and clock map…</span>
-      </Panel>
+      <Tile className="audio-engine-page__section-tile">
+        <div className="audio-engine-page__section-header">
+          <div>
+            <h2 className="audio-engine-page__section-title">Source of truth</h2>
+            <p className="audio-engine-page__muted">Loading rate, clock, and transport alignment.</p>
+          </div>
+        </div>
+        <InlineLoading description="Loading source-of-truth snapshot" />
+      </Tile>
     )
   }
 
-  if (!sot.data) {
+  if (!sourceOfTruthQuery.data) {
     return (
-      <Panel borderColor={`${T.red}35`} style={{ marginBottom: 22 }}>
-        <SectionLabel color={T.red}><Pulse size={13} weight="duotone" /> Single Source Of Truth</SectionLabel>
-        <span style={{ fontSize: 12, color: T.red }}>
-          Unavailable: {sot.error instanceof Error ? sot.error.message : 'API error'}
-        </span>
-      </Panel>
+      <InlineNotification
+        kind="error"
+        lowContrast
+        hideCloseButton
+        title="Source of truth unavailable"
+        subtitle={sourceOfTruthQuery.error instanceof Error ? sourceOfTruthQuery.error.message : 'Audio source-of-truth query failed.'}
+      />
     )
   }
 
-  const payload = sot.data
-  const statusColor = payload.status === 'aligned' ? T.green : payload.status === 'warning' ? T.amber : T.red
-  const issuePreview = payload.consistency.issues.slice(0, 3)
+  const payload = sourceOfTruthQuery.data
+  const tone = payload.status === 'aligned' ? 'green' : payload.status === 'warning' ? 'warm-gray' : 'red'
+
+  const cells = [
+    ['Profile', payload.profile.selected_profile],
+    ['Clock master', payload.profile.clock_master],
+    ['Target rate', `${payload.configured.engine_rate_hz} Hz`],
+    ['Buffer', `${payload.configured.buffer_size_samples} smp`],
+    ['Bit depth', `${payload.configured.bits_per_sample}-bit`],
+    ['Engine runtime', `${payload.runtime.engine.sample_rate_hz || 0} Hz / ${payload.runtime.engine.buffer_size_samples || 0} smp`],
+    ['PipeWire runtime', `${payload.runtime.pipewire.effective_rate_hz || 0} Hz / ${payload.runtime.pipewire.effective_quantum_samples || 0} smp`],
+    ['S/PDIF', `${payload.configured.spdif.enabled ? 'Enabled' : 'Disabled'} · ${payload.configured.spdif_rate_hz} Hz`],
+    ['AVB', `${payload.runtime.avb.enabled ? 'Enabled' : 'Disabled'} · ${payload.runtime.avb.state}`],
+    ['Allowed rates', payload.configured.allowed_rates_hz.join(', ')],
+  ]
 
   return (
-    <Panel borderColor={`${statusColor}35`} style={{ marginBottom: 22 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
-        <SectionLabel color={statusColor}>
-          <Pulse size={13} weight="duotone" /> Single Source Of Truth
-        </SectionLabel>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{
-            padding: '3px 10px',
-            borderRadius: 4,
-            fontSize: 11,
-            fontWeight: 700,
-            fontFamily: T.mono,
-            color: statusColor,
-            border: `1px solid ${statusColor}40`,
-            background: `${statusColor}14`,
-          }}>
-            {payload.status.toUpperCase()}
-          </span>
-          <span style={{ fontSize: 11, color: T.dim }}>
-            {new Date(payload.timestamp).toLocaleTimeString()}
-          </span>
+    <Tile className="audio-engine-page__section-tile">
+      <div className="audio-engine-page__section-header">
+        <div>
+          <h2 className="audio-engine-page__section-title">Source of truth</h2>
+          <p className="audio-engine-page__muted">Single-node alignment snapshot for engine, PipeWire, S/PDIF, and AVB state.</p>
+        </div>
+        <div className="audio-engine-page__tag-row">
+          <Tag type={tone}>{payload.status.toUpperCase()}</Tag>
+          <Tag type="cool-gray">{new Date(payload.timestamp).toLocaleTimeString()}</Tag>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-        <SOTCell label="Profile" value={payload.profile.selected_profile} />
-        <SOTCell label="Clock Master" value={payload.profile.clock_master} />
-        <SOTCell label="Target Rate" value={`${payload.configured.engine_rate_hz} Hz`} color={T.accent} />
-        <SOTCell label="Target Buffer" value={`${payload.configured.buffer_size_samples} smp`} />
-        <SOTCell label="Bit Depth" value={`${payload.configured.bits_per_sample}-bit`} />
-        <SOTCell
-          label="Engine Runtime"
-          value={`${payload.runtime.engine.sample_rate_hz || 0} Hz / ${payload.runtime.engine.buffer_size_samples || 0} smp`}
-          color={payload.runtime.engine.running ? T.green : T.amber}
-        />
-        <SOTCell
-          label="PipeWire Runtime"
-          value={`${payload.runtime.pipewire.effective_rate_hz || 0} Hz / ${payload.runtime.pipewire.effective_quantum_samples || 0} smp`}
-          color={payload.runtime.pipewire.available ? T.purple : T.red}
-        />
-        <SOTCell
-          label="S/PDIF Map"
-          value={`${payload.configured.spdif.enabled ? 'ON' : 'OFF'} · ${payload.configured.spdif_rate_hz} Hz`}
-          color={payload.configured.spdif.enabled ? T.cyan : T.dim}
-        />
-        <SOTCell
-          label="AVB State"
-          value={`${payload.runtime.avb.enabled ? 'ON' : 'OFF'} · ${payload.runtime.avb.state}`}
-          color={payload.runtime.avb.available ? T.green : T.amber}
-        />
-        <SOTCell label="Allowed Rates" value={payload.configured.allowed_rates_hz.join(', ')} />
+      <div className="audio-engine-page__kv-grid">
+        {cells.map(([label, value]) => (
+          <div key={label} className="audio-engine-page__kv-tile">
+            <span className="audio-engine-page__kv-label">{label}</span>
+            <span className="audio-engine-page__kv-value">{value}</span>
+          </div>
+        ))}
       </div>
 
-      {issuePreview.length > 0 && (
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {issuePreview.map((issue) => {
-            const c = issue.severity === 'error' ? T.red : issue.severity === 'warning' ? T.amber : T.accent
-            return (
-              <div key={issue.id} style={{
-                border: `1px solid ${c}35`,
-                background: `${c}12`,
-                color: c,
-                borderRadius: 6,
-                padding: '8px 10px',
-                fontSize: 12,
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: 10,
-                flexWrap: 'wrap',
-              }}>
-                <span>{issue.message}</span>
-                <span style={{ fontFamily: T.mono, opacity: 0.9 }}>{issue.id}</span>
-              </div>
-            )
-          })}
-          {payload.consistency.issue_count > issuePreview.length && (
-            <span style={{ fontSize: 11, color: T.dim }}>
-              +{payload.consistency.issue_count - issuePreview.length} more issue(s) in API payload
-            </span>
-          )}
+      {payload.consistency.issues.length > 0 ? (
+        <div className="audio-engine-page__issues">
+          {payload.consistency.issues.slice(0, 3).map((issue) => (
+            <InlineNotification
+              key={issue.id}
+              kind={issue.severity === 'error' ? 'error' : issue.severity === 'warning' ? 'warning' : 'info'}
+              lowContrast
+              hideCloseButton
+              title={issue.id}
+              subtitle={issue.message}
+            />
+          ))}
         </div>
-      )}
-    </Panel>
+      ) : null}
+    </Tile>
   )
 }
 
-// ============================================================================
-// LAYER 1 — Engine Cluster Overview
-// ============================================================================
-
-function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
-  const daemonOk = pw.isDaemonRunning
-  const overallColor = pw.overallStatus === 'ok' ? T.green
-    : pw.overallStatus === 'warning' ? T.amber
-    : pw.overallStatus === 'error' ? T.red : T.dim
-
+function HealthList({
+  title,
+  description,
+  rows,
+}: {
+  title: string
+  description: string
+  rows: Array<{ label: string; value: string; tag?: React.ReactNode }>
+}) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-      {/* ── System Status Strip ── */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16,
-      }}>
-        {/* PipeWire Engine */}
-        <Panel borderColor={daemonOk ? `${T.green}30` : `${T.red}30`}>
-          <SectionLabel color={T.purple}>
-            <Broadcast size={13} weight="duotone" /> PipeWire Audio Server
-          </SectionLabel>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-            <StatusLed ok={daemonOk} label={daemonOk ? 'Online' : 'Offline'} size={10} />
-            <span style={{
-              padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-              fontFamily: T.mono, color: overallColor,
-              background: `${overallColor}15`, border: `1px solid ${overallColor}30`,
-            }}>
-              {pw.overallStatus.toUpperCase()}
-            </span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            <Stat label="Version" value={pw.daemonVersion || '—'} color={T.accent} small />
-            <Stat label="Sample Rate" value={(pw.effectiveRate / 1000).toFixed(1)} unit="kHz" color={T.purple} small />
-            <Stat label="Quantum" value={pw.effectiveQuantum} unit="smp" color={T.purple} small />
-            <Stat label="Latency" value={pw.totalLatencyMs.toFixed(1)} unit="ms" color={pw.isHighLatency ? T.amber : T.green} small />
-          </div>
-        </Panel>
-
-        {/* JUCE Engine */}
-        <Panel borderColor={T.border}>
-          <SectionLabel color={T.accent}>
-            <Lightning size={13} weight="duotone" /> JUCE Audio Engine
-          </SectionLabel>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-            <StatusLed ok={true} label="Running" size={10} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            <Stat label="Devices" value={pw.devices.length} color={T.accent} small />
-            <Stat label="Nodes" value={pw.nodes.length} color={T.accent} small />
-            <Stat label="Links" value={pw.links.length} color={T.accent} small />
-            <Stat label="Streams" value={pw.streams.length} color={T.accent} small />
-          </div>
-        </Panel>
-      </div>
-
-      {/* ── Alerts ── */}
-      {pw.alerts.length > 0 && (
-        <Panel borderColor={`${T.red}30`}>
-          <SectionLabel color={T.red}><Warning size={13} weight="duotone" /> Alerts</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {pw.alerts.map((a, i) => {
-              const c = a.severity === 'error' ? T.red : a.severity === 'warning' ? T.amber : T.accent
-              return (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 12px', borderRadius: 6, background: `${c}10`,
-                  border: `1px solid ${c}25`, fontSize: 12, color: c,
-                }}>
-                  <Warning size={13} weight="duotone" />
-                  <span style={{ flex: 1 }}>{a.message}</span>
-                  <span style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase' }}>{a.severity}</span>
-                </div>
-              )
-            })}
-          </div>
-        </Panel>
-      )}
-      {pw.alerts.length === 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 6, background: `${T.green}08`, border: `1px solid ${T.green}20`, fontSize: 12, color: T.green }}>
-          <CheckCircle size={14} weight="duotone" /> No active alerts — system healthy
+    <Tile className="audio-engine-page__health-tile">
+      <div className="audio-engine-page__section-header">
+        <div>
+          <h3 className="audio-engine-page__section-title">{title}</h3>
+          <p className="audio-engine-page__muted">{description}</p>
         </div>
-      )}
-
-      {/* ── Default I/O ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Panel>
-          <SectionLabel color={T.green}><SpeakerHigh size={13} weight="duotone" /> Default Sink (Output)</SectionLabel>
-          {pw.defaultSink ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{pw.defaultSink.name}</span>
-              <span style={{ fontSize: 12, color: T.muted }}>{pw.defaultSink.channels}ch</span>
-              <span style={{ fontSize: 12, fontFamily: T.mono, color: T.green }}>
-                {(pw.defaultSink.volume * 100).toFixed(0)}%
-              </span>
-              {pw.defaultSink.muted && <span style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>MUTED</span>}
-              <StatusLed ok={pw.defaultSink.state === 'running'} label={pw.defaultSink.state} />
-            </div>
-          ) : <span style={{ fontSize: 13, color: T.dim }}>No default sink configured</span>}
-        </Panel>
-        <Panel>
-          <SectionLabel color={T.cyan}><Microphone size={13} weight="duotone" /> Default Source (Input)</SectionLabel>
-          {pw.defaultSource ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{pw.defaultSource.name}</span>
-              <span style={{ fontSize: 12, color: T.muted }}>{pw.defaultSource.channels}ch</span>
-              <span style={{ fontSize: 12, fontFamily: T.mono, color: T.green }}>
-                {(pw.defaultSource.volume * 100).toFixed(0)}%
-              </span>
-              {pw.defaultSource.muted && <span style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>MUTED</span>}
-              <StatusLed ok={pw.defaultSource.state === 'running'} label={pw.defaultSource.state} />
-            </div>
-          ) : <span style={{ fontSize: 13, color: T.dim }}>No default source configured</span>}
-        </Panel>
       </div>
-
-      {/* ── XRuns ── */}
-      <Panel borderColor={pw.hasXruns ? `${T.red}30` : T.border}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Stat label="XRuns" value={pw.xruns} color={pw.hasXruns ? T.red : T.green} small />
-          <span style={{ fontSize: 12, color: pw.hasXruns ? T.amber : T.dim }}>
-            {pw.hasXruns ? 'Buffer underruns detected — consider increasing quantum' : 'No dropouts — audio path is clean'}
-          </span>
-        </div>
-      </Panel>
-    </div>
+      <StructuredListWrapper aria-label={title}>
+        <StructuredListBody>
+          {rows.map((row) => (
+            <StructuredListRow key={row.label}>
+              <StructuredListCell>{row.label}</StructuredListCell>
+              <StructuredListCell className="audio-engine-page__mono">{row.value}</StructuredListCell>
+              <StructuredListCell>{row.tag ?? null}</StructuredListCell>
+            </StructuredListRow>
+          ))}
+        </StructuredListBody>
+      </StructuredListWrapper>
+    </Tile>
   )
-}
-
-// ============================================================================
-// LAYER 2 — Metering
-// ============================================================================
-
-function MeteringLayer({ nodeId }: { nodeId?: string | null }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Row 1: Spectrum + VU */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
-        <Panel borderColor={`${T.accent}25`}>
-          <SectionLabel color={T.accent}><Lightning size={13} weight="duotone" /> Frequency Spectrum</SectionLabel>
-          <SpectrumAnalyzer nodeId={nodeId} mode="bars" height={200} barCount={64} showLabels showPeaks colors={[T.green, T.amber, T.red]} />
-        </Panel>
-        <Panel borderColor={`${T.green}25`}>
-          <SectionLabel color={T.green}><ChartBar size={13} weight="duotone" /> Signal Levels</SectionLabel>
-          <VuMeterDisplay nodeId={nodeId} showInput showOutput />
-        </Panel>
-      </div>
-
-      {/* Row 2: LUFS + Phase + Dynamics */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-        <Panel borderColor={`${T.accent}25`}>
-          <SectionLabel color={T.accent}><Pulse size={13} weight="duotone" /> Loudness (LUFS)</SectionLabel>
-          <LoudnessMeter nodeId={nodeId} targetLufs={-14} truePeakLimit={-1} compact={false} />
-        </Panel>
-        <Panel borderColor={`${T.pink}25`}>
-          <SectionLabel color={T.pink}><Pulse size={13} weight="duotone" /> Stereo Phase</SectionLabel>
-          <PhaseCorrelationMeter nodeId={nodeId} showStereoInfo orientation="horizontal" />
-        </Panel>
-        <Panel borderColor={`${T.amber}25`}>
-          <SectionLabel color={T.amber}><Pulse size={13} weight="duotone" /> Dynamics</SectionLabel>
-          <DynamicsMeteringPanel nodeId={nodeId} showCompressor showLimiter showGate />
-        </Panel>
-      </div>
-    </div>
-  )
-}
-
-// ============================================================================
-// LAYER 3 — Signal Path / Routing
-// ============================================================================
-
-function RoutingLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
-  const [expandLinks, setExpandLinks] = useState(false)
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Devices */}
-      <Panel>
-        <SectionLabel color={T.purple}><SpeakerHigh size={13} weight="duotone" /> Audio Devices</SectionLabel>
-        {pw.devices.length === 0
-          ? <span style={{ fontSize: 13, color: T.dim }}>No devices detected</span>
-          : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${T.border}`, color: T.muted, textAlign: 'left' }}>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>ID</th>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Device</th>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Driver</th>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Default</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pw.devices.map(d => (
-                  <tr key={d.id} style={{ borderBottom: `1px solid ${T.bg}` }}>
-                    <td style={{ padding: '8px 10px', fontFamily: T.mono, color: T.muted, fontSize: 12 }}>{d.id}</td>
-                    <td style={{ padding: '8px 10px', color: T.text, fontWeight: 500 }}>{d.name}</td>
-                    <td style={{ padding: '8px 10px', color: T.muted }}>{d.driver}</td>
-                    <td style={{ padding: '8px 10px' }}>{d.is_default ? <span style={{ color: T.amber }}>★</span> : ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-      </Panel>
-
-      {/* Nodes */}
-      <Panel>
-        <SectionLabel color={T.green}><SpeakerHigh size={13} weight="duotone" /> Sink & Source Nodes</SectionLabel>
-        {pw.nodes.length === 0
-          ? <span style={{ fontSize: 13, color: T.dim }}>No sink/source nodes</span>
-          : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${T.border}`, color: T.muted, textAlign: 'left' }}>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>ID</th>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Name</th>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Type</th>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Ch</th>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Volume</th>
-                  <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>State</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pw.nodes.map(n => {
-                  const isSink = n.media_class.includes('Sink')
-                  return (
-                    <tr key={n.id} style={{ borderBottom: `1px solid ${T.bg}` }}>
-                      <td style={{ padding: '8px 10px', fontFamily: T.mono, color: T.muted, fontSize: 12 }}>{n.id}</td>
-                      <td style={{ padding: '8px 10px', color: T.text, fontWeight: 500 }}>{n.name}</td>
-                      <td style={{ padding: '8px 10px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: isSink ? T.accent : T.purple, fontSize: 12 }}>
-                          {isSink ? <SpeakerHigh size={12} weight="duotone" /> : <Microphone size={12} weight="duotone" />}
-                          {isSink ? 'Sink' : 'Source'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '8px 10px', fontFamily: T.mono, color: T.muted, fontSize: 12 }}>{n.channels ?? '—'}</td>
-                      <td style={{ padding: '8px 10px', fontFamily: T.mono, fontSize: 12 }}>
-                        <span style={{ color: n.volume > 1 ? T.amber : T.text }}>{(n.volume * 100).toFixed(0)}%</span>
-                        {n.muted && <SpeakerX size={12} weight="duotone" color={T.red} style={{ marginLeft: 6 }} />}
-                      </td>
-                      <td style={{ padding: '8px 10px' }}>
-                        <StatusLed ok={n.state === 'running'} label={n.state || '—'} />
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-      </Panel>
-
-      {/* Streams */}
-      {pw.streams.length > 0 && (
-        <Panel>
-          <SectionLabel color={T.cyan}><Pulse size={13} weight="duotone" /> Active Streams</SectionLabel>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${T.border}`, color: T.muted, textAlign: 'left' }}>
-                <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>ID</th>
-                <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Client</th>
-                <th style={{ padding: '6px 10px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Media</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pw.streams.map(s => (
-                <tr key={s.id} style={{ borderBottom: `1px solid ${T.bg}` }}>
-                  <td style={{ padding: '8px 10px', fontFamily: T.mono, color: T.muted, fontSize: 12 }}>{s.id}</td>
-                  <td style={{ padding: '8px 10px', color: T.text, fontWeight: 500 }}>{s.client_name}</td>
-                  <td style={{ padding: '8px 10px', color: T.muted }}>{s.media_name}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Panel>
-      )}
-
-      {/* Links (collapsible) */}
-      <Panel>
-        <button
-          onClick={() => setExpandLinks(!expandLinks)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-            background: 'none', border: 'none', cursor: 'pointer', color: T.accent, padding: 0,
-          }}
-        >
-          <SectionLabel color={T.accent}>
-            <Link size={13} weight="duotone" /> Port Connections
-            <span style={{ fontFamily: T.mono, fontSize: 11, color: T.muted, marginLeft: 6 }}>({pw.links.length})</span>
-          </SectionLabel>
-          <span style={{ marginLeft: 'auto' }}>
-            {expandLinks ? <CaretUp size={14} weight="bold" color={T.muted} /> : <CaretDown size={14} weight="bold" color={T.muted} />}
-          </span>
-        </button>
-        {expandLinks && pw.links.length > 0 && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginTop: 8 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${T.border}`, color: T.muted, textAlign: 'left' }}>
-                <th style={{ padding: '5px 8px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>ID</th>
-                <th style={{ padding: '5px 8px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Output</th>
-                <th style={{ padding: '5px 8px' }}></th>
-                <th style={{ padding: '5px 8px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Input</th>
-                <th style={{ padding: '5px 8px', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>State</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pw.links.map(l => {
-                const stateColor = l.state === 'active' || l.state === 'running' ? T.green
-                  : l.state === 'error' ? T.red
-                  : l.state === 'paused' ? T.amber : T.dim
-                return (
-                  <tr key={l.id} style={{ borderBottom: `1px solid ${T.bg}` }}>
-                    <td style={{ padding: '5px 8px', fontFamily: T.mono, color: T.dim, fontSize: 11 }}>{l.id}</td>
-                    <td style={{ padding: '5px 8px', fontFamily: T.mono, color: T.text, fontSize: 11 }}>{l.output_node}:{l.output_port}</td>
-                    <td style={{ padding: '5px 8px', color: T.accent, fontSize: 11 }}>→</td>
-                    <td style={{ padding: '5px 8px', fontFamily: T.mono, color: T.text, fontSize: 11 }}>{l.input_node}:{l.input_port}</td>
-                    <td style={{ padding: '5px 8px', color: stateColor, fontWeight: 600, fontSize: 11 }}>{l.state || '—'}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-        {expandLinks && pw.links.length === 0 && (
-          <span style={{ fontSize: 13, color: T.dim }}>No port connections</span>
-        )}
-      </Panel>
-    </div>
-  )
-}
-
-// ============================================================================
-// LAYER 4 — Diagnostics & Settings
-// ============================================================================
-
-interface TimingJitterPoint {
-  timestampMs: number
-  deltaMs: number
-  deviationMs: number
-  callbackCount: number
-  xrunCount: number
-  running: boolean
-}
-
-function deriveGate(stats: LatencyJitterStats) {
-  const rtlP95 = stats.rtl_p95_ms ?? 0
-  const hardFail = rtlP95 > 5.0 || stats.p95_ms > 1.0 || stats.xrun_count > 0
-  const warn = !hardFail && (rtlP95 > 3.5 || stats.p95_ms > 0.5)
-  return hardFail ? 'FAIL' : warn ? 'WARN' : 'PASS'
 }
 
 function LatencyMonitorPanel({ nodeId }: { nodeId?: string | null }) {
-  const [points, setPoints] = useState<TimingJitterPoint[]>([])
-  const [isConnected, setIsConnected] = useState(false)
-  const [gateResult, setGateResult] = useState<{
-    gate: 'PASS' | 'WARN' | 'FAIL'
-    checkedAt: number
-    rtlP95: number
-    jitterP95: number
-    xruns: number
-  } | null>(null)
-  const [isResettingXruns, setIsResettingXruns] = useState(false)
-  const wsRef = useRef<WebSocket | null>(null)
+  const [history, setHistory] = useState<number[]>([])
+  const [isResetting, setIsResetting] = useState(false)
 
-  const jitterStatsQuery = useQuery({
+  const jitterQuery = useQuery<LatencyJitterStats>({
     queryKey: ['latency-jitter-stats', nodeId ?? 'local'],
     queryFn: () => latencyV2Api.getJitterStats(nodeId),
     refetchInterval: 1000,
@@ -627,521 +310,719 @@ function LatencyMonitorPanel({ nodeId }: { nodeId?: string | null }) {
   })
 
   useEffect(() => {
-    const ws = new WebSocket(getWsUrl())
-    const topic = withNodeTopic('timing_jitter', nodeId)
-    wsRef.current = ws
-
-    ws.onopen = () => {
-      setIsConnected(true)
-      ws.send(JSON.stringify({ action: 'subscribe', topic }))
+    const nextPoint = jitterQuery.data?.p95_ms
+    if (typeof nextPoint !== 'number') {
+      return
     }
 
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data)
-        if (message?.type !== 'timing_jitter' && message?.type !== 'timing_jitter_update') {
-          return
-        }
-        const data = message?.data ?? {}
-        const ts = message?.timestamp ? Date.parse(message.timestamp) : Date.now()
-        const point: TimingJitterPoint = {
-          timestampMs: Number.isFinite(ts) ? ts : Date.now(),
-          deltaMs: Number(data.delta_ms ?? 0),
-          deviationMs: Number(data.deviation_ms ?? 0),
-          callbackCount: Number(data.callback_count ?? 0),
-          xrunCount: Number(data.xrun_count ?? 0),
-          running: Boolean(data.running ?? true),
-        }
-        setPoints((prev) => [...prev.slice(-599), point])
-      } catch (error) {
-        console.error('timing_jitter parse error:', error)
-      }
-    }
+    setHistory((previous) => [...previous.slice(-59), nextPoint])
+  }, [jitterQuery.data?.p95_ms])
 
-    ws.onclose = () => setIsConnected(false)
-    ws.onerror = () => setIsConnected(false)
-
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'unsubscribe', topic }))
-      }
-      ws.close()
-      wsRef.current = null
-    }
-  }, [nodeId])
-
-  const latestPoint = points.length > 0 ? points[points.length - 1] : null
-  const sparklinePoints = useMemo(() => points.slice(-600), [points])
-  const maxDeviation = useMemo(() => {
-    const observedMax = Math.max(0, ...sparklinePoints.map((point) => point.deviationMs))
-    return Math.max(3, observedMax)
-  }, [sparklinePoints])
-  const sparklinePath = useMemo(() => {
-    if (sparklinePoints.length === 0) return ''
-    if (sparklinePoints.length === 1) {
-      const singleY = 120 - (sparklinePoints[0].deviationMs / maxDeviation) * 100
-      return `M 0 ${singleY.toFixed(2)} L 600 ${singleY.toFixed(2)}`
-    }
-    const step = 600 / (sparklinePoints.length - 1)
-    return sparklinePoints.map((point, index) => {
-      const x = (index * step).toFixed(2)
-      const y = (120 - (point.deviationMs / maxDeviation) * 100).toFixed(2)
-      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`
-    }).join(' ')
-  }, [sparklinePoints, maxDeviation])
-
-  const amberLineY = 120 - (0.5 / maxDeviation) * 100
-  const redLineY = 120 - (1.0 / maxDeviation) * 100
-  const jitterStats = jitterStatsQuery.data
-  const rtlP95 = jitterStats?.rtl_p95_ms ?? 0
-  const rtlHasValue = (jitterStats?.sample_count ?? 0) > 0
-  const rtlColor = rtlP95 > 5.0 ? T.red : rtlP95 >= 3.5 ? T.amber : T.green
-  const engineOffline = jitterStats?.running === false && sparklinePoints.length === 0
-
-  const lastXrunTimestamp = useMemo(() => {
-    for (let i = sparklinePoints.length - 1; i > 0; i -= 1) {
-      if (sparklinePoints[i].xrunCount > sparklinePoints[i - 1].xrunCount) {
-        return new Date(sparklinePoints[i].timestampMs).toLocaleTimeString()
-      }
-    }
-    return '—'
-  }, [sparklinePoints])
-
-  const runGateCheck = async () => {
-    const stats = await latencyV2Api.getJitterStats(nodeId)
-    const gate = deriveGate(stats)
-    setGateResult({
-      gate,
-      checkedAt: Date.now(),
-      rtlP95: stats.rtl_p95_ms ?? 0,
-      jitterP95: stats.p95_ms,
-      xruns: stats.xrun_count,
-    })
-  }
+  const maxValue = Math.max(1, ...history)
+  const sparklinePath = history.map((value, index) => {
+    const x = history.length <= 1 ? 0 : (index / (history.length - 1)) * 100
+    const y = 100 - (value / maxValue) * 100
+    return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
+  }).join(' ')
 
   const resetXruns = async () => {
     try {
-      setIsResettingXruns(true)
+      setIsResetting(true)
       await latencyV2Api.resetXruns(nodeId)
-      await jitterStatsQuery.refetch()
+      await jitterQuery.refetch()
     } finally {
-      setIsResettingXruns(false)
+      setIsResetting(false)
     }
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {engineOffline && (
-        <div style={{
-          border: `1px solid ${T.amber}35`,
-          background: `${T.amber}10`,
-          color: T.amber,
-          borderRadius: 4,
-          padding: '8px 10px',
-          fontSize: 12,
-        }}>
-          Engine offline - no timing data
+    <Tile className="audio-engine-page__latency-monitor">
+      <div className="audio-engine-page__section-header">
+        <div>
+          <h3 className="audio-engine-page__section-title">Latency monitor</h3>
+          <p className="audio-engine-page__muted">Round-trip latency, callback jitter, and xrun recovery.</p>
         </div>
-      )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 220px', gap: 12 }}>
-        <div style={{
-          border: `1px solid ${T.border}`,
-          borderRadius: 4,
-          background: T.surface,
-          padding: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-        }}>
-          <div style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: 1 }}>RTL P95</div>
-          <div style={{ fontFamily: T.mono, fontSize: 28, fontWeight: 700, color: rtlHasValue ? rtlColor : T.dim, lineHeight: 1 }}>
-            {rtlHasValue ? rtlP95.toFixed(2) : '—'}
-            <span style={{ fontSize: 12, marginLeft: 4, color: T.dim }}>ms</span>
-          </div>
-          <div style={{ fontSize: 11, color: T.dim }}>Round-trip latency @ 64 samples / 48 kHz</div>
-          <div style={{ fontSize: 11, color: isConnected ? T.green : T.amber }}>
-            {isConnected ? 'WS live' : 'WS reconnecting'}
-          </div>
+        <Button kind="danger--tertiary" size="sm" renderIcon={Renew} onClick={() => void resetXruns()} disabled={isResetting}>
+          {isResetting ? 'Resetting…' : 'Reset xruns'}
+        </Button>
+      </div>
+      <div className="audio-engine-page__latency-grid">
+        <div className="audio-engine-page__kv-tile">
+          <span className="audio-engine-page__kv-label">RTL P95</span>
+          <span className="audio-engine-page__kv-value">{(jitterQuery.data?.rtl_p95_ms ?? 0).toFixed(2)} ms</span>
         </div>
-
-        <div style={{
-          border: `1px solid ${T.border}`,
-          borderRadius: 4,
-          background: T.surface,
-          padding: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: 1 }}>
-              Jitter Sparkline (60s)
-            </div>
-            <div style={{ fontSize: 11, color: T.dim, fontFamily: T.mono }}>
-              p95 {jitterStats?.p95_ms?.toFixed(3) ?? '—'} ms
-            </div>
-          </div>
-          <svg viewBox="0 0 600 140" style={{ width: '100%', height: 140, border: `1px solid ${T.border}`, borderRadius: 4, background: T.bg }}>
-            <line x1="0" y1={amberLineY} x2="600" y2={amberLineY} stroke={T.amber} strokeDasharray="6 5" strokeWidth="1" />
-            <line x1="0" y1={redLineY} x2="600" y2={redLineY} stroke={T.red} strokeDasharray="6 5" strokeWidth="1" />
-            {sparklinePath && <path d={sparklinePath} fill="none" stroke={T.cyan} strokeWidth="2" />}
+        <div className="audio-engine-page__sparkline-card">
+          <span className="audio-engine-page__kv-label">Jitter sparkline</span>
+          <svg viewBox="0 0 100 100" className="audio-engine-page__sparkline" role="img" aria-label="Jitter sparkline">
+            {sparklinePath ? <path d={sparklinePath} className="audio-engine-page__sparkline-path" /> : null}
           </svg>
-          <div style={{ fontSize: 11, color: T.dim, fontFamily: T.mono }}>
-            latest Δ {latestPoint ? latestPoint.deviationMs.toFixed(3) : '—'} ms
-          </div>
+          <span className="audio-engine-page__muted">p95 {(jitterQuery.data?.p95_ms ?? 0).toFixed(3)} ms</span>
         </div>
-
-        <div style={{
-          border: `1px solid ${T.border}`,
-          borderRadius: 4,
-          background: T.surface,
-          padding: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}>
-          <div style={{ fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: 1 }}>Xruns</div>
-          <div style={{
-            fontFamily: T.mono,
-            fontSize: 28,
-            lineHeight: 1,
-            fontWeight: 700,
-            color: (jitterStats?.xrun_count ?? 0) > 0 ? T.red : T.green,
-          }}>
-            {jitterStats?.xrun_count ?? 0}
-          </div>
-          <div style={{ fontSize: 11, color: T.dim }}>Last xrun: {lastXrunTimestamp}</div>
-          <button
-            onClick={resetXruns}
-            disabled={isResettingXruns}
-            style={{
-              border: `1px solid ${T.border}`,
-              borderRadius: 4,
-              background: T.bg,
-              color: T.text,
-              cursor: isResettingXruns ? 'wait' : 'pointer',
-              padding: '6px 8px',
-              fontSize: 11,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-            }}
-          >
-            <ArrowsClockwise size={12} weight="duotone" />
-            Reset
-          </button>
+        <div className="audio-engine-page__kv-tile">
+          <span className="audio-engine-page__kv-label">XRuns</span>
+          <span className="audio-engine-page__kv-value">{jitterQuery.data?.xrun_count ?? 0}</span>
         </div>
       </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button
-          onClick={runGateCheck}
-          style={{
-            border: `1px solid ${T.border}`,
-            borderRadius: 4,
-            background: T.surface,
-            color: T.text,
-            padding: '6px 10px',
-            fontSize: 11,
-            cursor: 'pointer',
-          }}
-        >
-          Gate Check
-        </button>
-        {gateResult && (
-          <span style={{
-            fontFamily: T.mono,
-            fontSize: 11,
-            color: gateResult.gate === 'FAIL' ? T.red : gateResult.gate === 'WARN' ? T.amber : T.green,
-          }}>
-            {gateResult.gate} · RTL p95 {gateResult.rtlP95.toFixed(3)}ms · jitter p95 {gateResult.jitterP95.toFixed(3)}ms · xruns {gateResult.xruns} · {new Date(gateResult.checkedAt).toLocaleTimeString()}
-          </span>
-        )}
-      </div>
-    </div>
+    </Tile>
   )
 }
 
-function DiagnosticsLayer({ pw, nodeId }: { pw: ReturnType<typeof usePipeWire>; nodeId?: string | null }) {
-  const quantumValues = [32, 64, 128, 256, 512, 1024, 2048]
-  const currentForced = pw.settings.clock_force_quantum
+function RoutingTable({
+  definition,
+  mobile,
+  renderCell,
+}: {
+  definition: RoutingDefinition
+  mobile: boolean
+  renderCell?: (rowId: string, headerKey: string, value: TableCellValue) => React.ReactNode
+}) {
+  const table = (
+    <DataTable rows={definition.rows} headers={definition.headers} useZebraStyles>
+      {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+        <TableContainer
+          {...getTableContainerProps()}
+          title={definition.title}
+          description={definition.description}
+          className="audio-engine-page__table-container"
+        >
+          <TableToolbar {...getToolbarProps()}>
+            <TableToolbarContent>
+              <Tag type="cool-gray">{definition.rows.length} rows</Tag>
+            </TableToolbarContent>
+          </TableToolbar>
+          <Table {...getTableProps()} aria-label={definition.title}>
+            <TableHead>
+              <TableRow>
+                {headers.map((header) => {
+                  const { key: _headerKey, ...headerProps } = getHeaderProps({ header })
+                  return (
+                    <TableHeader key={header.key} {...headerProps}>
+                      {header.header}
+                    </TableHeader>
+                  )
+                })}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.map((row) => {
+                const { key: _rowKey, ...rowProps } = getRowProps({ row })
+                return (
+                  <TableRow key={row.id} {...rowProps}>
+                    {row.cells.map((cell) => (
+                      <TableCell key={cell.id}>
+                        {renderCell ? renderCell(row.id, cell.info.header, cell.value) : renderValue(cell.value)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </DataTable>
+  )
 
-  const handleQuantum = async (q: number) => {
-    try { await pw.setQuantum(q) } catch (e) { console.error('Quantum change failed:', e) }
+  if (!mobile) {
+    return <Tile className="audio-engine-page__table-tile">{table}</Tile>
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Row 1: CPU + Latency */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Panel borderColor={`${T.green}25`}>
-          <SectionLabel color={T.green}><Cpu size={13} weight="duotone" /> CPU & DSP Load</SectionLabel>
-          <CPUMeterPanel nodeId={nodeId} showBreakdown compact={false} />
-        </Panel>
-        <Panel borderColor={`${T.amber}25`}>
-          <SectionLabel color={T.amber}><Pulse size={13} weight="duotone" /> Latency Analysis</SectionLabel>
-          <LatencyDisplay nodeId={nodeId} showBreakdown compact={false} />
-        </Panel>
-      </div>
-
-      <Panel borderColor={`${T.cyan}25`}>
-        <SectionLabel color={T.cyan}><Pulse size={13} weight="duotone" /> Latency Monitor</SectionLabel>
-        <LatencyMonitorPanel nodeId={nodeId} />
-      </Panel>
-
-      {/* Row 2: Quantum Control */}
-      <Panel>
-        <SectionLabel color={T.purple}><GearSix size={13} weight="duotone" /> Buffer Size (Quantum)</SectionLabel>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-          <button
-            onClick={() => handleQuantum(0)}
-            disabled={pw.isSettingQuantum}
-            style={{
-              padding: '6px 14px', borderRadius: 5, border: `1px solid ${currentForced === 0 ? T.accent : T.border}`,
-              cursor: 'pointer', fontSize: 12, fontWeight: 600,
-              background: currentForced === 0 ? `${T.accent}20` : T.surface,
-              color: currentForced === 0 ? T.accent : T.muted,
-            }}
-          >
-            Auto
-          </button>
-          {quantumValues.map(q => (
-            <button
-              key={q}
-              onClick={() => handleQuantum(q)}
-              disabled={pw.isSettingQuantum}
-              style={{
-                padding: '6px 14px', borderRadius: 5, fontFamily: T.mono,
-                border: `1px solid ${currentForced === q ? T.accent : T.border}`,
-                cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                background: currentForced === q ? `${T.accent}20` : T.surface,
-                color: currentForced === q ? T.accent : T.muted,
-              }}
-            >
-              {q}
-            </button>
-          ))}
-        </div>
-        <div style={{ fontSize: 11, color: T.dim, fontFamily: T.mono }}>
-          {quantumValues.map(q => `${q}→${((q / pw.effectiveRate) * 1000).toFixed(1)}ms`).join('  ·  ')}
-          <span style={{ marginLeft: 8, opacity: 0.6 }}>(×2 round-trip)</span>
-        </div>
-      </Panel>
-
-      {/* Row 3: Clock Settings + Latency Breakdown */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Panel>
-          <SectionLabel color={T.muted}><GearSix size={13} weight="duotone" /> Clock Configuration</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-            {[
-              ['clock.rate', `${pw.settings.clock_rate} Hz`],
-              ['clock.force-rate', pw.settings.clock_force_rate ? `${pw.settings.clock_force_rate} Hz` : 'auto'],
-              ['clock.quantum', `${pw.settings.clock_quantum}`],
-              ['clock.force-quantum', pw.settings.clock_force_quantum ? `${pw.settings.clock_force_quantum}` : 'auto'],
-              ['clock.min-quantum', `${pw.settings.clock_min_quantum}`],
-              ['clock.max-quantum', `${pw.settings.clock_max_quantum}`],
-              ['clock.allowed-rates', pw.settings.clock_allowed_rates.join(', ')],
-            ].map(([label, val]) => (
-              <div key={label as string} style={{ background: T.surface, borderRadius: 6, padding: '10px 12px' }}>
-                <div style={{ fontSize: 10, color: T.dim, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: T.text, fontFamily: T.mono }}>{val}</div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-        <Panel>
-          <SectionLabel color={T.teal}><Pulse size={13} weight="duotone" /> Latency Breakdown</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-            <div style={{ background: T.surface, borderRadius: 6, padding: '14px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: T.dim, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Graph</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: T.accent, fontFamily: T.mono }}>
-                {pw.graphLatencyMs.toFixed(1)}<span style={{ fontSize: 11, color: T.dim, marginLeft: 2 }}>ms</span>
-              </div>
-            </div>
-            <div style={{ background: T.surface, borderRadius: 6, padding: '14px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: T.dim, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Driver</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: T.purple, fontFamily: T.mono }}>
-                {pw.driverLatencyMs.toFixed(1)}<span style={{ fontSize: 11, color: T.dim, marginLeft: 2 }}>ms</span>
-              </div>
-            </div>
-            <div style={{ background: T.surface, borderRadius: 6, padding: '14px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: T.dim, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Total</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: pw.isHighLatency ? T.amber : T.green, fontFamily: T.mono }}>
-                {pw.totalLatencyMs.toFixed(1)}<span style={{ fontSize: 11, color: T.dim, marginLeft: 2 }}>ms</span>
-              </div>
-            </div>
-          </div>
-        </Panel>
-      </div>
-    </div>
+    <Accordion align="start" className="audio-engine-page__mobile-accordion">
+      <AccordionItem title={`${definition.title} (${definition.rows.length})`}>
+        <div className="audio-engine-page__accordion-body">{table}</div>
+      </AccordionItem>
+    </Accordion>
   )
 }
 
-// ============================================================================
-// Main Page
-// ============================================================================
-
 export function AudioEnginePage() {
-  const { activeNodeId, nodes, localNodeId } = useCluster()
-  const allNodesSelected = activeNodeId === 'all'
-  const detailNodeId = allNodesSelected ? null : activeNodeId
-  const selectedNode = nodes.find((node) => node.nodeId === activeNodeId)
-  const remoteSelected = Boolean(activeNodeId && activeNodeId !== 'all' && activeNodeId !== localNodeId)
-  const pw = usePipeWire({ nodeId: detailNodeId })
-  const [tab, setTab] = useState<Tab>('overview')
+  const { activeNodeId, nodes, localNodeId, isClusterMode, setActiveNode } = useCluster()
+  const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
+  const { localNode: pageLocalNode, topology: nodeTopology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.audioEngine)
+  const isMobile = useIsMobile()
+  const localNode = nodes.find((node) => node.nodeId === localNodeId) ?? {
+    nodeId: localNodeId,
+    hostname: window.location.hostname || 'local',
+    role: 'Standalone',
+    isLocal: true,
+    isOnline: true,
+    latencyMs: 0,
+    lastSeen: null,
+  }
 
-  const overallColor = allNodesSelected ? T.accent : pw.overallStatus === 'ok' ? T.green
-    : pw.overallStatus === 'warning' ? T.amber
-    : pw.overallStatus === 'error' ? T.red : T.dim
+  const clusterOptions = useMemo<NodeOption[]>(
+    () => [
+      { id: 'all', label: 'All nodes' },
+      ...nodes.map((node) => ({ id: node.nodeId, label: `${node.hostname}${node.isLocal ? ' (Local)' : ''}` })),
+    ],
+    [nodes],
+  )
+
+  const selectedOptionId = activeNodeId === 'all' ? 'all' : viewedNodeId
+  const selectedClusterOption = clusterOptions.find((option) => option.id === selectedOptionId) ?? clusterOptions[0]
+  const detailNode = activeNodeId === 'all'
+    ? localNode
+    : nodeTopology?.nodes.find((node) => node.node_id === viewedNodeId)
+      ?? nodes.find((node) => node.nodeId === viewedNodeId)
+      ?? localNode
+  const detailNodeMeta = 'node_id' in detailNode
+    ? {
+        nodeId: detailNode.node_id,
+        hostname: detailNode.hostname,
+        role: detailNode.role,
+        isLocal: detailNode.is_local,
+      }
+    : detailNode
+  const detailNodeId = detailNodeMeta.isLocal ? null : detailNodeMeta.nodeId
+  const pw = usePipeWire({ nodeId: detailNodeId })
+
+  const health = engineStatusTag(pw.overallStatus)
+  const clusterHealth = clusterHealthType(nodes)
+  const currentQuantum = pw.settings.clock_force_quantum || pw.settings.clock_quantum
+  const quantumOptions = [32, 64, 128, 256, 512, 1024, 2048]
+  const clockSourceValue = pw.settings.clock_force_rate > 0 ? 'forced' : 'pipewire'
+  const clockRoleValue = detailNodeMeta.isLocal ? 'master' : 'slave'
+  const sourceHost = window.location.hostname || detailNodeMeta.hostname
+
+  const pipewireRows = [
+    {
+      label: 'Daemon',
+      value: pw.daemonVersion || 'Unavailable',
+      tag: <Tag type={health.type} renderIcon={health.icon}>{health.label}</Tag>,
+    },
+    {
+      label: 'Sample rate',
+      value: `${pw.effectiveRate} Hz`,
+      tag: <Tag type="cool-gray">Current</Tag>,
+    },
+    {
+      label: 'Quantum',
+      value: `${pw.effectiveQuantum} smp`,
+      tag: <Tag type="cool-gray">Current</Tag>,
+    },
+    {
+      label: 'Latency',
+      value: `${pw.totalLatencyMs.toFixed(2)} ms`,
+      tag: <Tag type={pw.isHighLatency ? 'warm-gray' : 'green'}>{pw.isHighLatency ? 'Review' : 'Nominal'}</Tag>,
+    },
+    {
+      label: 'XRuns',
+      value: String(pw.xruns),
+      tag: <Tag type={pw.hasXruns ? 'red' : 'green'}>{pw.hasXruns ? 'Detected' : 'Clean'}</Tag>,
+    },
+  ]
+
+  const juceRows = [
+    {
+      label: 'Detail node',
+      value: detailNodeMeta.hostname,
+      tag: <Tag type={detailNodeMeta.isLocal ? 'green' : 'cool-gray'}>{detailNodeMeta.isLocal ? 'Local' : 'Remote'}</Tag>,
+    },
+    {
+      label: 'Devices',
+      value: String(pw.devices.length),
+      tag: <Tag type="cool-gray">Available</Tag>,
+    },
+    {
+      label: 'Nodes',
+      value: String(pw.nodes.length),
+      tag: <Tag type="cool-gray">Observed</Tag>,
+    },
+    {
+      label: 'Links',
+      value: String(pw.links.length),
+      tag: <Tag type="cool-gray">Observed</Tag>,
+    },
+    {
+      label: 'Streams',
+      value: String(pw.streams.length),
+      tag: <Tag type="cool-gray">Observed</Tag>,
+    },
+  ]
+
+  const devicesDefinition = useMemo<RoutingDefinition>(() => ({
+    id: 'devices',
+    title: 'Audio devices',
+    description: 'Physical and logical devices discovered from PipeWire.',
+    headers: [
+      { key: 'name', header: 'Name' },
+      { key: 'type', header: 'Type' },
+      { key: 'rate', header: 'Rate' },
+      { key: 'channels', header: 'Channels' },
+      { key: 'status', header: 'Status' },
+    ],
+    rows: pw.devices.map((device: PipeWireDeviceInfo) => ({
+      id: `device-${device.id}`,
+      name: device.nick || device.name,
+      type: device.bus || device.media_class,
+      rate: String(device.properties?.['audio.rate'] ?? pw.effectiveRate),
+      channels: String(device.properties?.['audio.channels'] ?? '—'),
+      status: device.is_default ? 'default' : 'available',
+    })),
+  }), [pw.devices, pw.effectiveRate])
+
+  const sinkNodes = useMemo(() => pw.nodes.filter((node) => node.media_class.includes('Sink')), [pw.nodes])
+  const sourceNodes = useMemo(() => pw.nodes.filter((node) => node.media_class.includes('Source')), [pw.nodes])
+
+  const sinksDefinition = useMemo<RoutingDefinition>(() => ({
+    id: 'sinks',
+    title: 'Sink nodes',
+    description: 'Output nodes and their current channel/link state.',
+    headers: [
+      { key: 'name', header: 'Name' },
+      { key: 'channels', header: 'Channels' },
+      { key: 'links', header: 'Links' },
+      { key: 'state', header: 'State' },
+    ],
+    rows: sinkNodes.map((node: PipeWireNodeInfo) => ({
+      id: `sink-${node.id}`,
+      name: node.nick || node.name,
+      channels: node.channels,
+      links: pw.links.filter((link) => link.output_node === node.id || link.input_node === node.id).length,
+      state: node.state,
+    })),
+  }), [pw.links, sinkNodes])
+
+  const sourcesDefinition = useMemo<RoutingDefinition>(() => ({
+    id: 'sources',
+    title: 'Source nodes',
+    description: 'Input nodes and their current channel/link state.',
+    headers: [
+      { key: 'name', header: 'Name' },
+      { key: 'channels', header: 'Channels' },
+      { key: 'links', header: 'Links' },
+      { key: 'state', header: 'State' },
+    ],
+    rows: sourceNodes.map((node: PipeWireNodeInfo) => ({
+      id: `source-${node.id}`,
+      name: node.nick || node.name,
+      channels: node.channels,
+      links: pw.links.filter((link) => link.output_node === node.id || link.input_node === node.id).length,
+      state: node.state,
+    })),
+  }), [pw.links, sourceNodes])
+
+  const streamsDefinition = useMemo<RoutingDefinition>(() => ({
+    id: 'streams',
+    title: 'Active streams',
+    description: 'Client-to-media stream activity observed on the detail node.',
+    headers: [
+      { key: 'path', header: 'Source → Sink' },
+      { key: 'format', header: 'Format' },
+      { key: 'latency', header: 'Latency' },
+      { key: 'state', header: 'State' },
+    ],
+    rows: pw.streams.map((stream: PipeWireStreamInfo) => ({
+      id: `stream-${stream.id}`,
+      path: `${stream.client_name} → ${stream.media_name}`,
+      format: `${stream.sample_rate ?? pw.effectiveRate} Hz / ${stream.channels} ch`,
+      latency: `${pw.totalLatencyMs.toFixed(2)} ms`,
+      state: stream.state || stream.direction,
+    })),
+  }), [pw.effectiveRate, pw.streams, pw.totalLatencyMs])
+
+  const portsDefinition = useMemo<RoutingDefinition>(() => ({
+    id: 'ports',
+    title: 'Port connections',
+    description: 'Expanded link map for all active PipeWire ports.',
+    headers: [
+      { key: 'source', header: 'Source port' },
+      { key: 'dest', header: 'Dest port' },
+      { key: 'type', header: 'Type' },
+      { key: 'state', header: 'State' },
+    ],
+    rows: pw.links.map((link: PipeWireLinkInfo) => ({
+      id: `link-${link.id}`,
+      source: `${link.output_node}:${link.output_port}`,
+      dest: `${link.input_node}:${link.input_port}`,
+      type: 'Audio',
+      state: link.state,
+    })),
+  }), [pw.links])
+
+  const alerts = pw.alerts
 
   return (
-    <div className="audio-engine-page" style={{
-      padding: '24px 32px', maxWidth: 1400, margin: '0 auto', color: T.text,
-      background: T.bg,
-      minHeight: '100vh',
-    }}>
-      {/* ── Header ── */}
-      <header style={{
-        display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24,
-        paddingBottom: 20, borderBottom: `1px solid ${T.border}`,
-      }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: T.surface,
-          border: `1px solid ${T.border}`,
-        }}>
-          <Pulse size={22} weight="duotone" color={T.accent} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.3px' }}>
-            {allNodesSelected
-              ? 'Audio Engine · All Nodes'
-              : remoteSelected
-                ? `Audio Engine · ${selectedNode?.hostname ?? activeNodeId}`
-                : 'Audio Engine'}
-          </h1>
-          <p style={{ margin: '2px 0 0', color: T.muted, fontSize: 12 }}>
-            {allNodesSelected
-              ? 'Cluster-wide engine comparison across all nodes'
-              : 'Real-time engine monitoring, metering & signal path control'}
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 11, color: T.dim }}>
-            {allNodesSelected ? '● Cluster' : pw.isConnected ? '● WS' : '○ Poll'}
-          </span>
-          <span style={{
-            padding: '4px 12px', borderRadius: 0, fontSize: 11, fontWeight: 700,
-            fontFamily: T.mono, color: overallColor,
-            background: `${overallColor}12`, border: `1px solid ${overallColor}30`,
-            letterSpacing: 0.5,
-          }}>
-            {pw.overallStatus.toUpperCase()}
-          </span>
-        </div>
-      </header>
+    <div className="audio-engine-page">
+      {pageLocalNode ? (
+        <NodeContextBanner pageKey={NODE_PAGE_KEYS.audioEngine} localNode={pageLocalNode} topology={nodeTopology} />
+      ) : null}
+      <Layer className="audio-engine-page__surface">
+        <PageHeader
+          title="Audio Engine"
+          subtitle="Carbon operator surface for engine status, live metering, routing, and diagnostics."
+          icon={<Activity size={32} />}
+          actions={(
+            <div className="audio-engine-page__header-actions">
+              {isClusterMode ? (
+                <div className="audio-engine-page__header-control">
+                  <Dropdown
+                    id="audio-engine-node-selector"
+                    titleText="Detail node"
+                    label="Select a node"
+                    items={clusterOptions}
+                    selectedItem={selectedClusterOption}
+                    itemToString={(item) => item?.label ?? ''}
+                    onChange={({ selectedItem }) => {
+                      if (!selectedItem) {
+                        return
+                      }
 
-      {(allNodesSelected || remoteSelected) && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          marginBottom: 18,
-          padding: '10px 14px',
-          border: `1px solid ${T.borderHi}`,
-          background: T.surface,
-          color: T.text,
-          fontSize: 12,
-          flexWrap: 'wrap',
-        }}>
-          <span>
-            {allNodesSelected
-              ? 'Viewing: All Nodes'
-              : `Viewing: ${selectedNode?.hostname ?? activeNodeId} (${activeNodeId})`}
-          </span>
-          {!allNodesSelected && (
-            <span style={{ color: T.muted }}>
-              {selectedNode?.latencyMs == null ? 'Peer latency unavailable' : `Peer latency ${selectedNode.latencyMs.toFixed(1)} ms`}
-            </span>
+                      if (selectedItem.id === 'all') {
+                        setActiveNode('all')
+                        return
+                      }
+
+                      setActiveNode(null)
+                      setViewedNode(NODE_PAGE_KEYS.audioEngine, selectedItem.id)
+                    }}
+                  />
+                </div>
+              ) : null}
+              <Tag type={health.type} renderIcon={health.icon}>
+                {health.label}
+              </Tag>
+            </div>
+          )}
+        />
+
+        <NodeContextPicker pageKey={NODE_PAGE_KEYS.audioEngine} topology={nodeTopology} />
+
+        <div className="audio-engine-page__header-band">
+          {isClusterMode ? (
+            <div className="audio-engine-page__header-summary">
+              <div>
+                <h2 className="audio-engine-page__section-title">Cluster mode</h2>
+                <p className="audio-engine-page__muted">
+                  Compare all nodes, then drive detailed panels from {detailNodeMeta.hostname}.
+                </p>
+              </div>
+              <div className="audio-engine-page__tag-row">
+                <Tag type={clusterHealth}>Cluster health</Tag>
+                <Tag type="cool-gray">{nodes.length} nodes</Tag>
+              </div>
+            </div>
+          ) : (
+            <div className="audio-engine-page__header-summary">
+              <div>
+                <h2 className="audio-engine-page__section-title">{detailNodeMeta.hostname}</h2>
+                <p className="audio-engine-page__muted">IP / host: {sourceHost}</p>
+              </div>
+              <div className="audio-engine-page__tag-row">
+                <Tag type="warm-gray">{detailNodeMeta.role || 'Standalone'}</Tag>
+                <Tag type="cool-gray">Single Node</Tag>
+              </div>
+            </div>
           )}
         </div>
-      )}
 
-      {/* ── Tab Bar ── */}
-      <nav className="audio-engine-tabbar" role="tablist" style={{
-        display: 'flex', gap: 2, marginBottom: 24,
-        borderBottom: `1px solid ${T.border}`,
-      }}>
-        {TABS.map(t => {
-          const Icon = t.icon
-          const active = tab === t.id
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              role="tab"
-              aria-selected={active}
-              data-selected={active ? 'true' : 'false'}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '10px 20px', border: 'none', cursor: 'pointer',
-                fontSize: 12, fontWeight: active ? 700 : 500,
-                textTransform: 'uppercase', letterSpacing: 0.8,
-                color: active ? 'var(--interactive)' : 'var(--text-secondary)',
-                backgroundColor: 'transparent',
-                borderBottom: active ? '2px solid var(--interactive)' : '2px solid transparent',
-                marginBottom: -1, transition: 'all 0.15s ease',
-              }}
-            >
-              <Icon size={14} /> {t.label}
-            </button>
-          )
-        })}
-      </nav>
-
-      {/* ── Single Source of Truth ── */}
-      {!allNodesSelected && <SourceOfTruthPanel nodeId={detailNodeId} />}
-
-      {/* ── Layer Content ── */}
-      <div>
-        {allNodesSelected ? (
-          tab === 'overview' ? (
-            <ClusterEngineGrid />
-          ) : (
-            <Panel borderColor={`${T.accent}25`}>
-              <SectionLabel color={T.accent}><Stack size={13} weight="duotone" /> Detail View Disabled</SectionLabel>
-              <div style={{ fontSize: 13, color: T.muted }}>
-                Select a specific node from the cluster selector to access metering, routing, and diagnostics panels.
+        {isClusterMode ? (
+          <Accordion align="start" className="audio-engine-page__cluster-accordion">
+            <AccordionItem title="Cluster engine overview">
+              <div className="audio-engine-page__accordion-body">
+                <ClusterEngineGrid />
               </div>
-            </Panel>
-          )
+            </AccordionItem>
+          </Accordion>
         ) : (
-          <>
-            {tab === 'overview' && <OverviewLayer pw={pw} />}
-            {tab === 'metering' && <MeteringLayer nodeId={detailNodeId} />}
-            {tab === 'routing' && <RoutingLayer pw={pw} />}
-            {tab === 'diagnostics' && <DiagnosticsLayer pw={pw} nodeId={detailNodeId} />}
-          </>
+          <SourceOfTruthSection nodeId={detailNodeId} />
         )}
-      </div>
 
-      {/* ── Footer ── */}
-      <footer style={{
-        marginTop: 32, padding: '12px 0', borderTop: `1px solid ${T.border}`,
-        display: 'flex', justifyContent: 'space-between', fontSize: 11, color: T.dim,
-      }}>
-        <span>
-          {allNodesSelected
-            ? 'Cluster summary active · select a node for detailed engine telemetry'
-            : `PipeWire ${pw.daemonVersion || '—'} · ${pw.effectiveRate / 1000}kHz / ${pw.effectiveQuantum}smp · ${pw.totalLatencyMs.toFixed(1)}ms`}
-        </span>
-        <span>
-          {allNodesSelected ? 'All nodes' : pw.metrics.timestamp ? new Date(pw.metrics.timestamp).toLocaleTimeString() : '—'}
-        </span>
-      </footer>
+        <section className="audio-engine-page__section" aria-labelledby="audio-engine-metering">
+          <div className="audio-engine-page__section-header">
+            <div>
+              <h2 id="audio-engine-metering" className="audio-engine-page__section-title">Live Metering</h2>
+              <p className="audio-engine-page__muted">Always-visible operator strip for spectrum, levels, loudness, and dynamics.</p>
+            </div>
+          </div>
+
+          <Grid condensed fullWidth>
+            <Row>
+              <Column sm={4} md={4} lg={4}>
+                <Tile className="audio-engine-page__panel-tile">
+                  <div className="audio-engine-page__panel-header">
+                    <ChartLine size={20} />
+                    <h3 className="audio-engine-page__panel-title">Frequency Spectrum</h3>
+                  </div>
+                  <SpectrumAnalyzer nodeId={detailNodeId} mode="bars" height={220} barCount={64} showLabels showPeaks />
+                </Tile>
+              </Column>
+              <Column sm={4} md={4} lg={4}>
+                <Tile className="audio-engine-page__panel-tile">
+                  <div className="audio-engine-page__panel-header">
+                    <Wifi size={20} />
+                    <h3 className="audio-engine-page__panel-title">Signal Levels</h3>
+                  </div>
+                  <VuMeterDisplay nodeId={detailNodeId} showInput showOutput />
+                </Tile>
+              </Column>
+              <Column sm={4} md={4} lg={4}>
+                <Tile className="audio-engine-page__panel-tile">
+                  <div className="audio-engine-page__panel-header">
+                    <Activity size={20} />
+                    <h3 className="audio-engine-page__panel-title">Loudness (LUFS)</h3>
+                  </div>
+                  <LoudnessMeter nodeId={detailNodeId} targetLufs={-14} truePeakLimit={-1} compact={false} />
+                </Tile>
+              </Column>
+              <Column sm={4} md={4} lg={4}>
+                <div className="audio-engine-page__stack">
+                  <Tile className="audio-engine-page__panel-tile">
+                    <div className="audio-engine-page__panel-header">
+                      <Activity size={20} />
+                      <h3 className="audio-engine-page__panel-title">Phase Correlation</h3>
+                    </div>
+                    <PhaseCorrelationMeter nodeId={detailNodeId} showStereoInfo orientation="horizontal" />
+                  </Tile>
+                  <Tile className="audio-engine-page__panel-tile">
+                    <div className="audio-engine-page__panel-header">
+                      <Chip size={20} />
+                      <h3 className="audio-engine-page__panel-title">Dynamics</h3>
+                    </div>
+                    <DynamicsMeteringPanel nodeId={detailNodeId} showCompressor showLimiter showGate />
+                  </Tile>
+                </div>
+              </Column>
+            </Row>
+          </Grid>
+        </section>
+
+        <section className="audio-engine-page__section" aria-labelledby="audio-engine-health">
+          <div className="audio-engine-page__section-header">
+            <div>
+              <h2 id="audio-engine-health" className="audio-engine-page__section-title">Engine Health</h2>
+              <p className="audio-engine-page__muted">PipeWire daemon status, JUCE engine state, and operational alerts.</p>
+            </div>
+          </div>
+
+          <Grid condensed fullWidth>
+            <Row>
+              <Column sm={4} md={4} lg={8}>
+                <HealthList
+                  title="PipeWire daemon"
+                  description="Clocking, latency, and transport state for the current detail node."
+                  rows={pipewireRows}
+                />
+              </Column>
+              <Column sm={4} md={4} lg={8}>
+                <HealthList
+                  title="JUCE engine"
+                  description="Operator-facing summary of audio graph scale and node placement."
+                  rows={juceRows}
+                />
+              </Column>
+            </Row>
+          </Grid>
+
+          {alerts.length > 0 ? (
+            <div className="audio-engine-page__issues">
+              {alerts.map((alert: PipeWireAlert, index) => (
+                <InlineNotification
+                  key={`${alert.severity}-${index}`}
+                  kind={alert.severity === 'error' ? 'error' : alert.severity === 'warning' ? 'warning' : 'info'}
+                  lowContrast
+                  hideCloseButton
+                  title={`Alert ${index + 1}`}
+                  subtitle={alert.message}
+                />
+              ))}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="audio-engine-page__section" aria-labelledby="audio-engine-routing">
+          <div className="audio-engine-page__section-header">
+            <div>
+              <h2 id="audio-engine-routing" className="audio-engine-page__section-title">Signal Path &amp; Routing</h2>
+              <p className="audio-engine-page__muted">Always-expanded topology tables on desktop and tablet, with mobile accordions below 672px.</p>
+            </div>
+          </div>
+
+          <Grid condensed fullWidth>
+            <Row>
+              <Column sm={4} md={4} lg={8}>
+                <RoutingTable
+                  definition={devicesDefinition}
+                  mobile={isMobile}
+                  renderCell={(_rowId, headerKey, value) => {
+                    if (headerKey === 'status') {
+                      return <Tag type={String(value) === 'default' ? 'green' : 'cool-gray'}>{renderValue(value)}</Tag>
+                    }
+
+                    return renderValue(value)
+                  }}
+                />
+              </Column>
+              <Column sm={4} md={4} lg={8}>
+                <RoutingTable
+                  definition={sinksDefinition}
+                  mobile={isMobile}
+                  renderCell={(_rowId, headerKey, value) => {
+                    if (headerKey === 'state') {
+                      return <Tag type={nodeStateTag(renderValue(value))}>{renderValue(value)}</Tag>
+                    }
+
+                    return renderValue(value)
+                  }}
+                />
+              </Column>
+              <Column sm={4} md={4} lg={8}>
+                <RoutingTable
+                  definition={sourcesDefinition}
+                  mobile={isMobile}
+                  renderCell={(_rowId, headerKey, value) => {
+                    if (headerKey === 'state') {
+                      return <Tag type={nodeStateTag(renderValue(value))}>{renderValue(value)}</Tag>
+                    }
+
+                    return renderValue(value)
+                  }}
+                />
+              </Column>
+              <Column sm={4} md={4} lg={8}>
+                <RoutingTable
+                  definition={streamsDefinition}
+                  mobile={isMobile}
+                  renderCell={(_rowId, headerKey, value) => {
+                    if (headerKey === 'state') {
+                      return <Tag type={nodeStateTag(renderValue(value))}>{renderValue(value)}</Tag>
+                    }
+
+                    return renderValue(value)
+                  }}
+                />
+              </Column>
+              <Column sm={4} md={8} lg={16}>
+                <RoutingTable
+                  definition={portsDefinition}
+                  mobile={isMobile}
+                  renderCell={(_rowId, headerKey, value) => {
+                    if (headerKey === 'state') {
+                      return <Tag type={nodeStateTag(renderValue(value))}>{renderValue(value)}</Tag>
+                    }
+
+                    return renderValue(value)
+                  }}
+                />
+              </Column>
+            </Row>
+          </Grid>
+        </section>
+
+        <section className="audio-engine-page__section" aria-labelledby="audio-engine-diagnostics">
+          <div className="audio-engine-page__section-header">
+            <div>
+              <h2 id="audio-engine-diagnostics" className="audio-engine-page__section-title">Diagnostics &amp; Controls</h2>
+              <p className="audio-engine-page__muted">Read-only metrics on the left, operator controls on the right.</p>
+            </div>
+          </div>
+
+          <Grid condensed fullWidth>
+            <Row>
+              <Column sm={4} md={4} lg={8}>
+                <div className="audio-engine-page__stack">
+                  <Tile className="audio-engine-page__panel-tile">
+                    <div className="audio-engine-page__panel-header">
+                      <Chip size={20} />
+                      <h3 className="audio-engine-page__panel-title">CPU &amp; DSP load</h3>
+                    </div>
+                    <CPUMeterPanel nodeId={detailNodeId} showBreakdown compact={false} />
+                  </Tile>
+                  <Tile className="audio-engine-page__panel-tile">
+                    <div className="audio-engine-page__panel-header">
+                      <Timer size={20} />
+                      <h3 className="audio-engine-page__panel-title">Latency analysis</h3>
+                    </div>
+                    <LatencyDisplay nodeId={detailNodeId} showBreakdown compact={false} />
+                  </Tile>
+                  <LatencyMonitorPanel nodeId={detailNodeId} />
+                </div>
+              </Column>
+              <Column sm={4} md={4} lg={8}>
+                <div className="audio-engine-page__stack">
+                  <Tile className="audio-engine-page__panel-tile">
+                    <div className="audio-engine-page__panel-header">
+                      <SettingsAdjust size={20} />
+                      <h3 className="audio-engine-page__panel-title">Buffer Size (samples)</h3>
+                    </div>
+                    <RadioButtonGroup
+                      legendText="Buffer Size (samples)"
+                      name="audio-engine-quantum"
+                      valueSelected={String(currentQuantum)}
+                      orientation="vertical"
+                      onChange={(value) => {
+                        void pw.setQuantum(Number(value))
+                      }}
+                    >
+                      {quantumOptions.map((value) => (
+                        <RadioButton
+                          key={value}
+                          id={`audio-engine-quantum-${value}`}
+                          labelText={`${value} samples`}
+                          value={String(value)}
+                        />
+                      ))}
+                    </RadioButtonGroup>
+                  </Tile>
+
+                  <Tile className="audio-engine-page__panel-tile">
+                    <div className="audio-engine-page__panel-header">
+                      <SettingsView size={20} />
+                      <h3 className="audio-engine-page__panel-title">Clock Configuration</h3>
+                    </div>
+                    <div className="audio-engine-page__stack">
+                      <Select id="audio-engine-clock-source" labelText="Clock source" value={clockSourceValue} disabled>
+                        <SelectItem value="pipewire" text="PipeWire clock" />
+                        <SelectItem value="forced" text="Forced rate" />
+                      </Select>
+                      <RadioButtonGroup
+                        legendText="Clock role"
+                        name="audio-engine-clock-role"
+                        valueSelected={clockRoleValue}
+                        orientation="vertical"
+                      >
+                        <RadioButton id="audio-engine-clock-master" labelText="Master" value="master" disabled />
+                        <RadioButton id="audio-engine-clock-slave" labelText="Slave" value="slave" disabled />
+                      </RadioButtonGroup>
+                    </div>
+                  </Tile>
+
+                  <Tile className="audio-engine-page__panel-tile">
+                    <div className="audio-engine-page__panel-header">
+                      <Timer size={20} />
+                      <h3 className="audio-engine-page__panel-title">Latency breakdown</h3>
+                    </div>
+                    <StructuredListWrapper aria-label="Latency breakdown">
+                      <StructuredListBody>
+                        <StructuredListRow>
+                          <StructuredListCell>Graph</StructuredListCell>
+                          <StructuredListCell className="audio-engine-page__mono">{pw.graphLatencyMs.toFixed(2)} ms</StructuredListCell>
+                        </StructuredListRow>
+                        <StructuredListRow>
+                          <StructuredListCell>Driver</StructuredListCell>
+                          <StructuredListCell className="audio-engine-page__mono">{pw.driverLatencyMs.toFixed(2)} ms</StructuredListCell>
+                        </StructuredListRow>
+                        <StructuredListRow>
+                          <StructuredListCell>Total</StructuredListCell>
+                          <StructuredListCell className="audio-engine-page__mono">{pw.totalLatencyMs.toFixed(2)} ms</StructuredListCell>
+                        </StructuredListRow>
+                      </StructuredListBody>
+                    </StructuredListWrapper>
+                    <ProgressBar
+                      label="Latency pressure"
+                      helperText={`${Math.min(100, Math.round((pw.totalLatencyMs / 20) * 100))}% of 20 ms threshold`}
+                      max={100}
+                      value={Math.min(100, Math.round((pw.totalLatencyMs / 20) * 100))}
+                      status={pw.isHighLatency ? 'error' : 'active'}
+                    />
+                  </Tile>
+                </div>
+              </Column>
+            </Row>
+          </Grid>
+        </section>
+      </Layer>
     </div>
   )
 }

@@ -2,36 +2,38 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, FormControlLabel, Switch, TextField } from '@mui/material'
 import { midiHubApi } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 export function MidiRecorderPanel() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [sessionId, setSessionId] = useState('take1')
   const [sessionName, setSessionName] = useState('Take 1')
   const [destinationOverride, setDestinationOverride] = useState('dst')
   const [loopPlayback, setLoopPlayback] = useState(false)
 
   const sessionsQuery = useQuery({
-    queryKey: ['midi-hub', 'recorder', 'sessions'],
-    queryFn: midiHubApi.listRecordingSessions,
+    queryKey: ['midi-hub', scopeKey, 'recorder', 'sessions'],
+    queryFn: () => midiHubApi.listRecordingSessions(nodeId),
     refetchInterval: 2000,
   })
 
   const startRecording = useMutation({
-    mutationFn: async () => midiHubApi.startRecording({ session_id: sessionId.trim(), name: sessionName.trim() }),
+    mutationFn: async () => midiHubApi.startRecording({ session_id: sessionId.trim(), name: sessionName.trim() }, nodeId),
     onSuccess: () => {
       pushToast('Recording started', 'success')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'recorder'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'recorder'] })
     },
     onError: () => pushToast('Recording start failed', 'error'),
   })
 
   const stopRecording = useMutation({
-    mutationFn: midiHubApi.stopRecording,
+    mutationFn: () => midiHubApi.stopRecording(nodeId),
     onSuccess: () => {
       pushToast('Recording stopped', 'info')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'recorder'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'recorder'] })
     },
   })
 
@@ -41,27 +43,27 @@ export function MidiRecorderPanel() {
         destination_override: destinationOverride.trim() || undefined,
         loop: loopPlayback,
         speed: 1,
-      }),
+      }, nodeId),
     onSuccess: () => pushToast('Playback started', 'info'),
     onError: () => pushToast('Playback failed', 'error'),
   })
 
   const stopPlayback = useMutation({
-    mutationFn: async (id: string) => midiHubApi.stopRecordingPlayback(id),
+    mutationFn: async (id: string) => midiHubApi.stopRecordingPlayback(id, nodeId),
     onSuccess: () => pushToast('Playback stopped', 'info'),
   })
 
   const exportRecording = useMutation({
-    mutationFn: async (id: string) => midiHubApi.exportRecording(id),
+    mutationFn: async (id: string) => midiHubApi.exportRecording(id, undefined, nodeId),
     onSuccess: (payload) => pushToast(`SMF exported: ${payload.path}`, 'success'),
     onError: () => pushToast('Export failed', 'error'),
   })
 
   const deleteRecording = useMutation({
-    mutationFn: async (id: string) => midiHubApi.deleteRecording(id),
+    mutationFn: async (id: string) => midiHubApi.deleteRecording(id, nodeId),
     onSuccess: () => {
       pushToast('Recording deleted', 'info')
-      void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'recorder'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'recorder'] })
     },
   })
 

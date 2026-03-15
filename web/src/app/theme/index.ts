@@ -1,4 +1,4 @@
-export type { Theme, ThemeColors, ThemeWidgets } from './types';
+export type { CarbonThemeId, Theme, ThemeColors, ThemeWidgets } from './types';
 export { themes, themeOrder } from './themes';
 export { 
   applyTheme, 

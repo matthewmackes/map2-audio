@@ -12,6 +12,7 @@ import {
   TextField,
 } from '@mui/material'
 import { midiHubApi, type MidiHubTrafficRow } from '../../../map2/api'
+import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 const TYPE_COLORS: Record<string, string> = {
@@ -49,6 +50,7 @@ export function MidiTrafficMonitor({
   height?: number
 }) {
   const { pushToast } = useToasts()
+  const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [paused, setPaused] = useState(false)
   const [search, setSearch] = useState('')
   const [regexMode, setRegexMode] = useState(false)
@@ -59,14 +61,14 @@ export function MidiTrafficMonitor({
   const [nodeFilter, setNodeFilter] = useState<string>('all')
 
   const trafficQuery = useQuery({
-    queryKey: ['midi-hub', 'traffic', limit],
-    queryFn: () => midiHubApi.getTrafficSnapshot({ limit }),
+    queryKey: ['midi-hub', scopeKey, 'traffic', limit],
+    queryFn: () => midiHubApi.getTrafficSnapshot({ limit }, nodeId),
     refetchInterval: paused ? false : 1000,
   })
 
   const statsQuery = useQuery({
-    queryKey: ['midi-hub', 'traffic-stats'],
-    queryFn: midiHubApi.getTrafficStats,
+    queryKey: ['midi-hub', scopeKey, 'traffic-stats'],
+    queryFn: () => midiHubApi.getTrafficStats(nodeId),
     refetchInterval: paused ? false : 2000,
   })
 
@@ -163,7 +165,7 @@ export function MidiTrafficMonitor({
           variant="outlined"
           size="small"
           onClick={async () => {
-            await midiHubApi.clearTraffic()
+            await midiHubApi.clearTraffic(nodeId)
             pushToast('Traffic buffer cleared', 'info')
             await trafficQuery.refetch()
           }}
@@ -174,7 +176,7 @@ export function MidiTrafficMonitor({
           variant="outlined"
           size="small"
           onClick={async () => {
-            const result = await midiHubApi.exportTraffic('csv', 10000)
+            const result = await midiHubApi.exportTraffic('csv', 10000, nodeId)
             setLastExportPath(result.path)
             pushToast(`Traffic exported (${result.count} rows)`, 'success')
           }}

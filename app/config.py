@@ -49,6 +49,7 @@ class ConfigOption:
 class ConfigSection(Enum):
     """Configuration sections."""
     APP = "app"
+    NODE = "node"
     AUDIO = "audio"
     MIDI = "midi"
     LCD = "lcd"
@@ -94,6 +95,12 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         value_type=str,
         env_var="MAP2_LOG_LEVEL",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    ),
+    "node.display_label": ConfigOption(
+        key="node.display_label",
+        default=None,
+        description="Optional operator-assigned display label for the local node",
+        value_type=str,
     ),
 
     # Audio settings

@@ -10,3 +10,7 @@ interface ImportMeta {
 }
 
 declare const __MAP2_PLATFORM_VERSION__: string
+declare const __MAP2_PLATFORM_BUILD_DATE__: string
+declare const __MAP2_PLATFORM_BUILD_TIME__: string
+declare const __MAP2_PLATFORM_BUILD_CHANNEL__: string
+declare const __MAP2_PLATFORM_BUILD_TIMESTAMP__: string

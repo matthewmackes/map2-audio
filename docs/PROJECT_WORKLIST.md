@@ -8624,3 +8624,1533 @@ Last updated: 2026-03-14 21:18 - Codex
   - Validation: Build still reports the pre-existing dynamic/static import warning around `web/src/map2/api.ts` and the existing large bundle/chunk warnings; no new warning class was introduced by `T140`.
   - Compliance: Touched frontend/docs/test/worklist artifacts are MAP2-owned and remain under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional licensing remediation task was required.
   - Suggested next tasks: No remaining non-blocked tasks in `docs/PROJECT_WORKLIST.md`; only previously blocked work such as `T004` remains open.
+
+---
+
+## Epic T141 — MIDI Hub Page: Remove Coaching/Wizard, IBM Carbon Clean Redesign
+
+AI instructions reference: [CLAUDE.md](../CLAUDE.md)
+Added: 2026-03-14
+
+**Goal**: Strip all wizards, tutorials, guided flows, coaching banners, and explanatory copy from the MIDI Hub page. Rebuild as a clean, world-class IBM Carbon operator surface that is pleasant to read and easy to engage with.
+
+**Design decisions** (from 15-question session, 2026-03-14):
+
+| Q | Answer | Decision |
+|---|--------|----------|
+| 1 | A | Slim Carbon `Layer` header — title + Music icon + live status Tags + quick-recall dropdown + Recall button. Keep existing gradient background CSS. |
+| 2 | D | No separate panel-index table — shortLabel Tags on each panel shell are sufficient |
+| 3 | D | Transport + capability content → single closed Accordion "About MIDI Hub" at page bottom |
+| 4 | A | Tabs unchanged: Setup & Routing / Filters & Automation / Clock & Diagnostics / MIDI 2.0 & Labs |
+| 5 | D | Panel shells: remove help drawer + Deep help button; add family Tag + shortLabel Tag |
+| 6 | D | Panel summary: replace multi-sentence paragraph with shortLabel one-liner |
+| 7 | B | InlineNotifications: keep only operational-risk warnings (e.g. no ports); remove all coaching banners |
+| 8 | C | Remove MidiHubOperatorProfileCard entirely (browser-local, no backend effect) |
+| 9 | A | localStorage: keep activeTab only; remove wizard/flow/settings keys |
+| 10 | A | Tests: rewrite — render, status Tags from API, tab switching x4, preset recall mutation |
+| 11 | D | Hero gradient CSS stays; remove only the wizard tile from the right rail |
+| 12 | D | Panel index: not needed — shortLabel Tags sufficient |
+| 13 | D | Reference accordion label: "About MIDI Hub" — single prose block |
+| 14 | A | CSS: remove all dead classes in the same PR |
+| 15 | C | Delete midiHubGuidance.ts; inline minimal data (shortLabel + family) into MidiHubHelpPrimitives.tsx |
+
+### Subtasks
+
+ID: T141-sub1
+Status: [✓] Done
+Title: Delete midiHubGuidance.ts; inline shortLabel + family data into MidiHubHelpPrimitives.tsx
+Description:
+- Goal: Remove the large guidance file; keep only the minimal label data needed for panel Tags
+- Files: `web/src/app/components/MidiHub/midiHubGuidance.ts` (delete), `web/src/app/components/MidiHub/MidiHubHelpPrimitives.tsx` (update)
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T141-sub2
+Status: [✓] Done
+Title: Rewrite MidiHubHelpPrimitives.tsx — strip help drawer, add shortLabel + family Tags
+Description:
+- Goal: MidiHubPanelShell shows title + family Tag + shortLabel Tag. No Deep help button. No Modal drawer.
+- Remove: MidiHubHelpDrawer component, onOpenHelp prop, Information button, inlineHints list, summary paragraph
+- Add: shortLabel Tag alongside existing family Tag
+- Files: `web/src/app/components/MidiHub/MidiHubHelpPrimitives.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T141-sub3
+Status: [✓] Done
+Title: Remove MidiHubOperatorProfileCard from page and workbench cards
+Description:
+- Goal: Delete the operator profile card entirely — it is browser-local only with no backend effect
+- Files: `web/src/app/components/MidiHub/MidiHubWorkbenchCards.tsx`, `web/src/app/pages/MidiHubPage.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T141-sub4
+Status: [✓] Done
+Title: Remove coaching InlineNotifications from workbench cards and MIDI 2.0 tab
+Description:
+- Goal: Keep only real operational-risk warnings (e.g. no ports detected); remove Filter/Mapper/MIDI2.0 "planning surface" banners
+- Files: `web/src/app/components/MidiHub/MidiHubWorkbenchCards.tsx`, `web/src/app/pages/MidiHubPage.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T141-sub5
+Status: [✓] Done
+Title: Rewrite MidiHubPage.tsx — full clean redesign
+Description:
+- Goal: World-class IBM Carbon operator surface. Remove wizard, flows, transport section, capability section, operator profile.
+- Header: slim Layer with gradient CSS — title + Music icon + live status Tags (Ports, Routes, Presets, Clock, Sessions, MIDI 2.0) + quick-recall Select + Recall Button
+- Remove: hero lede, wizard section, guided flows section, transport patterns section, capability coverage section
+- Remove: all wizard/flow localStorage keys (keep activeTab only)
+- Add: "About MIDI Hub" single closed Accordion at page bottom (prose summary of transports + capabilities)
+- Keep: 4 tabs unchanged, all panel components, quick-recall toolbar, MidiHubPanelShell wrappers
+- Remove: helpPanelId state, MidiHubHelpDrawer, onOpenHelp callbacks
+- Files: `web/src/app/pages/MidiHubPage.tsx`
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+ID: T141-sub6
+Status: [✓] Done
+Title: CSS cleanup — remove all dead classes from MidiHubPage.css
+Description:
+- Goal: Delete every CSS class that no longer has a DOM element
+- Dead classes: .midi-hub-wizard-grid, .midi-hub-wizard-panel, .midi-hub-wizard-panel__header, .midi-hub-wizard-current, .midi-hub-wizard-current__*, .midi-hub-wizard-columns, .midi-hub-flow-panel, .midi-hub-flow-panel__header, .midi-hub-flow-steps, .midi-hub-flow-step, .midi-hub-flow-step__*, .midi-hub-flow-tile, .midi-hub-flow-tile__header, .midi-hub-hero__rail, .midi-hub-hero__tile, .midi-hub-hero__tile-*, .midi-hub-hero__lede, .midi-hub-transport-card (standalone), .midi-hub-capability-card (standalone), .midi-hub-transport-grid, .midi-hub-capability-grid, .midi-hub-help-modal, .midi-hub-help-modal__*, .midi-hub-accordion-copy, .midi-hub-bullet-list, .midi-hub-inline-hints, .midi-hub-help-list
+- Files: `web/src/app/pages/MidiHubPage.css`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T141-sub7
+Status: [✓] Done
+Title: Rewrite MidiHubPage.test.tsx
+Description:
+- Goal: Full test coverage for the new page
+- Tests: (1) renders without crash, (2) status Tags reflect API data — ports/routes/clock/presets, (3) all 4 tabs switch and show correct panel mocks, (4) preset recall Select + Button fires recallPreset mutation
+- Files: `web/src/app/pages/MidiHubPage.test.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T141-sub8
+Status: [✓] Done
+Title: Validate — tsc --noEmit + jest MidiHubPage — all green
+Description:
+- Run: `cd web && npx tsc --noEmit`
+- Run: `cd web && npx jest --testPathPattern=MidiHubPage --no-coverage`
+- Fix any errors before marking done
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-14 22:21 - Codex
+
+- Completion notes:
+  - What was done: Removed wizard/guided-flow/help-drawer state from `/midi-hub`, deleted `midiHubGuidance.ts`, rewrote `MidiHubHelpPrimitives.tsx` around minimal panel metadata, removed the browser-local operator profile card, stripped coaching `InlineNotification` surfaces from the filter/mapper/future tabs, rebuilt `MidiHubPage.tsx` as a slimmer Carbon operator surface with header status tags plus header quick-recall, and replaced the test file to match the new page contract.
+  - Files/links produced: `web/src/app/pages/MidiHubPage.tsx`, `web/src/app/pages/MidiHubPage.css`, `web/src/app/pages/MidiHubPage.test.tsx`, `web/src/app/components/MidiHub/MidiHubHelpPrimitives.tsx`, `web/src/app/components/MidiHub/MidiHubWorkbenchCards.tsx`.
+  - Validation: `npm --prefix web run test -- src/app/pages/MidiHubPage.test.tsx --runInBand` -> PASS (`4 passed`), `npm --prefix web run typecheck` -> PASS, `npm --prefix web run build` -> PASS.
+  - Validation: Build still reports the pre-existing dynamic/static import warning around `web/src/map2/api.ts`; no new warning class was introduced by `T141`.
+  - Compliance: Touched MIDI Hub files are MAP2-owned and remain under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional licensing remediation task was required.
+  - Suggested next tasks: T142, T143
+
+---
+
+## Epic: Plugins Page — Full Carbon Design System Migration
+
+ID: T142
+Status: [✓] Done
+Title: Plugins Page — Carbon Migration (Epic)
+Description:
+- Goal: Bring all plugins-related UI surfaces to full Carbon Design System conformance per CARBON_CONFORMANCE_STANDARD.md
+- Scope: LV2PluginsPage, PluginManagementCard, PluginDetailsModal, PluginOutputPanel
+- Key decisions (from user 2026-03-14):
+  - Plugin list → Carbon DataTable with toolbar search, sort, and batch delete
+  - Pack actions → Inline Carbon Buttons (Install/Uninstall/Enable/Disable)
+  - Status → Carbon Tags (green=Installed/Enabled, gray=Idle, blue=Loading)
+  - PluginOutputPanel → Full Carbon Tile rebuild (header, expand/collapse, capability badges); keep SVG/canvas meter internals
+- Acceptance: tsc --noEmit clean, npm run build clean, no Phosphor Icons in scope files, no inline styles
+- Dependencies: None (Carbon already in web/package.json)
+- Estimated effort: Large
+Subtasks:
+
+ID: T142-sub1
+Status: [✓] Done
+Title: LV2PluginsPage — replace Phosphor icons with Carbon icons, remove inline styles
+Description:
+- Replace all @phosphor-icons/react imports with @carbon/icons-react equivalents
+- Convert inline style={{}} objects to Carbon design token CSS classes or cds-- tokens
+- Verify Layer + PageHeader usage is correct per Carbon conformance standard
+- Files: web/src/app/pages/LV2PluginsPage.tsx, web/src/app/pages/LV2PluginsPage.css
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T142-sub2
+Status: [✓] Done
+Title: LV2PluginsPage — convert plugin pack list to Carbon Accordion + inline action Buttons
+Description:
+- Wrap each plugin pack section in Carbon Accordion/AccordionItem
+- Replace custom expand/collapse toggle buttons with Carbon Accordion built-in toggle
+- Add inline Carbon Buttons (Install, Uninstall, Enable, Disable) per pack row
+- Show pack replication status with Carbon Tags (green=fully replicated, yellow=partial, red=missing)
+- Files: web/src/app/pages/LV2PluginsPage.tsx
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+ID: T142-sub3
+Status: [✓] Done
+Title: PluginManagementCard — full rebuild with Carbon DataTable
+Description:
+- Replace custom HTML table with Carbon DataTable (DataTable, TableToolbar, TableToolbarSearch, TableToolbarContent, TableBatchActions, TableBatchAction, Table, TableHead, TableRow, TableHeader, TableBody, TableCell, TableSelectAll, TableSelectRow)
+- Toolbar: search input (TableToolbarSearch), sort dropdown (Select), batch delete (TableBatchAction with TrashCan icon)
+- Status column: Carbon Tag (green=active, gray=inactive)
+- Replace window.confirm() delete confirmation with Carbon Modal (danger variant)
+- Remove all Phosphor icon imports; use @carbon/icons-react
+- Remove all inline style={{}} objects
+- Files: web/src/app/components/PluginManagementCard.tsx
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+ID: T142-sub4
+Status: [✓] Done
+Title: PluginDetailsModal — replace Phosphor icons and inline styles; clean up Carbon usage
+Description:
+- Replace remaining Phosphor icon imports with @carbon/icons-react equivalents
+- Remove inline style={{}} objects; use Carbon spacing/type tokens
+- Verify Modal, Tag, and disclosure structure conform to CARBON_CONFORMANCE_STANDARD.md
+- No coaching copy, no InlineNotification banners for explanatory text
+- Files: web/src/app/components/PluginDetailsModal.tsx
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T142-sub5
+Status: [✓] Done
+Title: PluginOutputPanel — full Carbon Tile rebuild (header, expand/collapse, badges)
+Description:
+- Wrap the entire panel in Carbon Layer + Tile
+- Rebuild the panel header using Carbon Tile header pattern: title + capability Carbon Tags (Meters, Tuner, Spectrum) + expand/collapse Carbon Button (ChevronDown/ChevronUp icon)
+- Replace inline style={{}} on header, body, and meter container with Carbon design tokens
+- Keep existing SVG/canvas meter rendering (AudioMeter, GainReductionMeter, envelope) unchanged
+- Replace Phosphor icons with @carbon/icons-react in panel header only
+- inline / panel / floating variants: map inline → compact Tile, panel → expanded Tile, floating → Carbon Modal or Popover
+- Files: web/src/app/components/PluginOutputPanel.tsx
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+ID: T142-sub6
+Status: [✓] Done
+Title: Validate — typecheck + build + jest for all T142 files
+Description:
+- Run: cd web && npx tsc --noEmit
+- Run: cd web && npm run build
+- Run: cd web && npx jest --testPathPattern="LV2Plugins|PluginManagement|PluginDetails|PluginOutput" --no-coverage
+- Fix all errors before marking done
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Completion notes:
+- Rebuilt `LV2PluginsPage`, `PluginManagementCard`, `PluginDetailsModal`, and `PluginOutputPanel` with Carbon primitives, Carbon icons, class-based styling, and new focused tests.
+- Validation passed on 2026-03-15: `npm --prefix web run typecheck`, `npm --prefix web run build`, and `npm --prefix web run test -- src/app/components/PluginManagementCard.test.tsx src/app/components/PluginDetailsModal.test.tsx src/app/components/PluginOutputPanel.test.tsx src/app/pages/LV2PluginsPage.test.tsx --runInBand`.
+- `rg -n "@phosphor-icons/react|style=\\{\\{" web/src/app/pages/LV2PluginsPage.tsx web/src/app/components/PluginManagementCard.tsx web/src/app/components/PluginDetailsModal.tsx web/src/app/components/PluginOutputPanel.tsx` returned no matches.
+
+Last updated: 2026-03-15 — Codex
+
+---
+
+## Epic: AudioEnginePage — Flat Carbon Redesign (T143)
+
+Redesign the `/engine` page from a tabbed layout to a single scrollable flat page using IBM Carbon Design System. Remove duplication, prioritize live metering above the fold, treat routing as always-expanded, use industry-standard control placement for quantum/clock, and make the page node-aware (single-node indicator vs. cluster mode).
+
+Scoped via 5-question interview — 2026-03-14
+
+---
+
+ID: T143
+Status: [✓] Done
+Title: AudioEnginePage — flat Carbon redesign (epic)
+Description:
+Parent epic. All sub-tasks below.
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub1
+Status: [✓] Done
+Title: Audit & map duplication in AudioEnginePage.tsx
+Description:
+- Read AudioEnginePage.tsx top-to-bottom and catalogue every duplicated pattern:
+  - Repeated inline style objects vs. Carbon tokens
+  - Repeated status badge/LED rendering (StatusLed, Stat, Panel micro-components)
+  - Phosphor icon imports (replace with @carbon/icons-react)
+  - Repeated "no data" / loading skeleton patterns
+  - Duplicate API calls / query keys used in multiple layers
+- Produce a written duplication map (comment block at top of redesign file or inline notes)
+- No code changes in this step — analysis only
+- Files: web/src/app/pages/AudioEnginePage.tsx
+- Estimated effort: Small
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub2
+Status: [✓] Done
+Title: Node-awareness header bar — single-node indicator vs. cluster banner
+Description:
+- Add a full-width Carbon Header / PageHeader band at the very top of the page
+- Use useCluster() hook to determine mode:
+  - Single node: show node name, IP, role tag (e.g. "Standalone"), and a subtle Carbon Tag (warm-gray) labeled "Single Node"
+  - Multi-node cluster: show active node selector (Carbon Dropdown) + cluster health summary Tag (green/amber/red)
+- For single-node mode, hide ClusterEngineGrid entirely; Source-of-Truth panel appears inline below the header
+- For cluster mode, show ClusterEngineGrid as a full-width collapsible Carbon Accordion section directly below the header
+- No tabs — this is a section, not a tab
+- Files: web/src/app/pages/AudioEnginePage.tsx
+- Estimated effort: Small
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub3
+Status: [✓] Done
+Title: Section 1 — Live Metering strip (above the fold, always visible)
+Description:
+- This is the first content section after the node header — the operator's primary view
+- Layout: horizontal strip using Carbon Grid (4 equal columns on ≥1056px, 2-col on tablet, 1-col on mobile)
+  - Column 1: SpectrumAnalyzer (full height of strip)
+  - Column 2: VuMeterDisplay (input + output)
+  - Column 3: LoudnessMeter (LUFS M/S/I + LRA + TP)
+  - Column 4: PhaseCorrelationMeter + DynamicsMeteringPanel stacked vertically
+- Wrap entire strip in a Carbon Layer + labeled section header ("Live Metering") using Carbon Heading
+- Each panel uses Carbon Tile (light variant against page bg)
+- No collapse — always visible
+- All existing visualization components are reused unchanged; only their container/wrapper changes
+- Files: web/src/app/pages/AudioEnginePage.tsx
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub4
+Status: [✓] Done
+Title: Section 2 — Engine Health (PipeWire + JUCE status, alerts)
+Description:
+- Second section, directly below metering strip
+- Replace custom Panel micro-component with Carbon Tile + Carbon StructuredList (or DataTable for tabular data)
+- Two columns side by side (Carbon Grid 8+8):
+  - Left: PipeWire daemon status — version, sample rate, quantum, latency, XRuns; each stat as a StructuredList row with Carbon Tag for status
+  - Right: JUCE Engine status — device name, nodes, links, active streams, buffer size; same StructuredList pattern
+- Alerts row below the two columns: Carbon InlineNotification (only for real operational warnings, not explanatory text) — only render if alerts array is non-empty
+- Replace StatusLed with Carbon Tag (green="Running", red="Stopped", warm-gray="Unknown")
+- Replace Stat component with Carbon StructuredList rows using monospace values
+- Remove all Phosphor icon imports; use @carbon/icons-react
+- Files: web/src/app/pages/AudioEnginePage.tsx
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub5
+Status: [✓] Done
+Title: Section 3 — Signal Path & Routing (always expanded, responsive)
+Description:
+- Third section; always fully expanded on desktop/tablet; stacks to single column on mobile (<672px)
+- Use Carbon DataTable for all four tables:
+  - Audio Devices table: Name, Type, Rate, Channels, Status tag
+  - Sink Nodes table: Name, Channels, Links, State tag
+  - Source Nodes table: Name, Channels, Links, State tag
+  - Active Streams table: Source → Sink, Format, Latency, State tag
+  - Port Connections table: Source Port, Dest Port, Type (always expanded, no collapse)
+- Each table has a Carbon TableToolbar with title and row count Tag
+- No collapse toggles on desktop; on mobile (<672px) wrap each table in a Carbon Accordion item (collapsed by default)
+- Remove custom collapsible CaretDown/CaretUp toggle; rely on Carbon Accordion for mobile only
+- Files: web/src/app/pages/AudioEnginePage.tsx
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub6
+Status: [✓] Done
+Title: Section 4 — Diagnostics & Controls (industry-standard layout)
+Description:
+- Fourth section; follows professional audio console convention: read-only metrics left, controls right
+- Layout: Carbon Grid 8+8 split
+  - Left column (read-only):
+    - CPUMeterPanel (reused unchanged)
+    - LatencyDisplay (reused unchanged)
+    - Latency Monitor sub-panel: RTL P95, Jitter Sparkline, Xrun count + Reset button (Carbon Button, danger ghost)
+  - Right column (controls — industry standard inline placement):
+    - Quantum / Buffer Size: Carbon RadioButtonGroup (32, 64, 128, 256, 512, 1024, 2048 samples) — current value pre-selected; label reads "Buffer Size (samples)"
+    - Clock Configuration: Carbon Select dropdown for clock source; Carbon RadioButtonGroup for master/slave
+    - Latency breakdown: Graph / Driver / Total as Carbon ProgressBar or read-only StructuredList rows
+- Section header: "Diagnostics & Controls" using Carbon Heading
+- Files: web/src/app/pages/AudioEnginePage.tsx
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub7
+Status: [✓] Done
+Title: Remove legacy micro-components and all Phosphor icon usage
+Description:
+- Delete inline micro-components: StatusLed, Stat, Panel (replaced by Carbon primitives in sub2–sub6)
+- Remove all @phosphor-icons/react imports from AudioEnginePage.tsx
+- Add equivalent @carbon/icons-react imports: Activity, Wifi, ChipReference (CPU), Timer, Warning, CheckmarkFilled, Misuse, SettingsView, ChartLine, WatsonHealth_MeshDisk
+- Remove the T (design token) object — replace all token references with Carbon CSS custom properties (--cds-* tokens) or Carbon component props
+- Remove inline style={{}} objects throughout; use Carbon className + cds-* spacing/type scale where needed
+- Files: web/src/app/pages/AudioEnginePage.tsx
+- Estimated effort: Small
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub8
+Status: [✓] Done
+Title: Responsive layout — mobile breakpoints
+Description:
+- Ensure metering strip (T143-sub3) collapses to 1-column on mobile (<672px) using Carbon Grid breakpoints
+- Ensure Routing tables (T143-sub5) wrap in Carbon Accordion on mobile
+- Ensure Diagnostics split (T143-sub6) stacks to single column on mobile
+- Test visually at 375px, 672px, 1056px, 1312px viewport widths (browser devtools)
+- No new CSS files — use Carbon Grid col-sm / col-md / col-lg props only
+- Files: web/src/app/pages/AudioEnginePage.tsx
+- Estimated effort: Small
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub9
+Status: [✓] Done
+Title: Update AudioEnginePage tests
+Description:
+- Update/rewrite web/src/app/pages/AudioEnginePage.test.tsx (if it exists) or create it
+- Required test cases:
+  1. Renders without crash in single-node mode (no cluster)
+  2. Single-node indicator Tag visible; ClusterEngineGrid not rendered
+  3. Cluster mode: ClusterEngineGrid rendered; node selector Dropdown present
+  4. Metering strip renders all 4 columns (Spectrum, VU, Loudness, Phase+Dynamics)
+  5. Routing tables present (Devices, Sinks, Sources, Streams, Ports)
+  6. Diagnostics: CPUMeterPanel and LatencyDisplay rendered
+  7. No Phosphor icon imports in component (static import check)
+- Run: cd web && npx jest --testPathPattern=AudioEnginePage --no-coverage
+- Files: web/src/app/pages/AudioEnginePage.test.tsx
+- Estimated effort: Small
+Assigned to: Claude Code
+
+---
+
+ID: T143-sub10
+Status: [✓] Done
+Title: Validate — typecheck + build + smoke test
+Description:
+- Run: cd web && npx tsc --noEmit — must pass with 0 errors
+- Run: cd web && npm run build — must pass, bundle must include AudioEnginePage
+- Run: cd web && npx jest --testPathPattern=AudioEnginePage --no-coverage — all tests green
+- Verify bundle: grep -c 'AudioEnginePage' web/dist/assets/*.js
+- Confirm no Phosphor icon strings remain: grep -r 'phosphor' web/src/app/pages/AudioEnginePage.tsx (must return nothing)
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Completion notes:
+- Rebuilt `AudioEnginePage` as a single Carbon scroll surface with node-aware header behavior, inline source-of-truth or cluster overview, always-visible metering, structured engine-health panels, responsive routing DataTables, and diagnostics/controls split layout.
+- Validation passed on 2026-03-15: `npm --prefix web run typecheck`, `npm --prefix web run build`, and `npm --prefix web run test -- src/app/pages/AudioEnginePage.test.tsx --runInBand`.
+- Build output includes `dist/assets/AudioEnginePage-pIYs8A3w.js`; `rg -n "@phosphor-icons/react|style=\\{\\{" web/src/app/pages/AudioEnginePage.tsx` returned no matches.
+
+Last updated: 2026-03-15 — Codex
+
+---
+
+ID: T144
+Status: [✓] Done
+Title: Unify auto-generated platform build version across React build and system surfaces
+Description:
+- Goal / acceptance criteria: Generate one canonical MAP2 platform version every time the React web build runs, using a digits-only `date + time + beta` format, and make the web UI, backend `/api/version`, TUI, and shell/version surfaces all read that same generated artifact.
+- Why it matters: The repo currently exposes conflicting platform versions from `package.json`, hard-coded backend constants, and `git describe`, which breaks operator trust and makes build identity ambiguous.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Shared version generator + reader, web build hook, backend/TUI/shell/web consumer updates, worklist/memory update, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 09:01 - Codex
+- Completion notes:
+  - What was done: Added `app/utils/platform_version.py` plus `scripts/generate_platform_version.py`, made `web/package.json` run the generator on every `npm run build`, switched Vite/branding/About/Home to the generated root `version.json`, changed backend `/api/version`, LCD status, backup manifests/rebuild scripts, TUI, and shell banners to read the same canonical version artifact, and wrote the remembered repo rule into `.gemini/instructions.md`.
+  - Validation: `python3 - <<'PY' ... compile(...) ... PY` -> PASS, `pytest -q tests/test_platform_version.py` -> PASS (`3 passed`), `npm --prefix web run test -- src/app/pages/AboutPage.test.tsx src/app/pages/HomePage.test.tsx --runInBand` -> PASS, `npm --prefix web run build` -> PASS.
+  - Current canonical platform version after validation build: `2026031509001601`.
+  - Compliance: Touched backend/frontend/script/TUI/worklist files remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional licensing remediation task was required.
+
+---
+
+ID: T145
+Status: [✓] Done
+Title: Replace JUCE-GRID GUI branding with Audio Grid name and shared icon
+Description:
+- Goal / acceptance criteria: Replace the JUCE-GRID product icon everywhere it is shown in the GUI with the provided four-panel grid mark, and rename visible JUCE-GRID GUI labels to `Audio Grid` without breaking existing `/juce-grid` route compatibility.
+- Why it matters: The platform needs one consistent operator-facing name and icon for this workflow so navigation, launch actions, and page branding do not conflict.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Shared Audio Grid icon component, React GUI label/icon updates, targeted validation evidence, and compliance/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 09:22 - Codex
+- Completion notes:
+  - What was done: Added a shared `MapAudioGridIcon` that matches the provided four-panel grid mark, switched the `/juce-grid` navigation item to use that icon and the `Audio Grid` label, and updated the Juce Grid page hero, DSP/Chains launch actions, and Platform Guide references/tooling copy to show `Audio Grid` throughout the GUI while preserving the existing route path.
+  - Validation: `npm --prefix web run test -- src/app/data/advancedMenuItems.test.ts src/app/pages/JuceGridPage.test.tsx --runInBand` -> PASS (`17 passed`), `npm --prefix web run test -- src/app/pages/AboutPage.test.tsx --runInBand` -> PASS, `npm --prefix web run typecheck` -> PASS, `npm --prefix web run build` -> PASS.
+  - Build side effect: Validation build regenerated the unified platform version artifacts to `2026031509213001` in `version.json` and `VERSION`, as designed by `T144`.
+  - Compliance: Touched frontend/icon/worklist files remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional licensing remediation task was required.
+
+---
+
+ID: T146
+Status: [✓] Done
+Title: Correct Home page node indicator to use real local node metadata
+Description:
+- Goal / acceptance criteria: Make the Home page cluster/node indicator render actual local hostname, primary IP, node role, CPU/RAM, and audio-device inventory from working backend APIs instead of `127.0.0.1`, `LOCAL-NODE`, browser hardware concurrency, or other placeholders; keep peer rendering resilient when peer discovery endpoints fail.
+- Why it matters: Operators use the Home page indicator as the first trust check for node identity and hardware state, so incorrect values undermine confidence and can hide real cluster issues.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Home page data-loading fix, targeted frontend regression coverage, updated worklist/compliance notes, and focused validation results.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 09:39 - Codex
+- Completion notes:
+  - What was done: Reworked `web/src/app/pages/HomePage.tsx` so the local node card now sources hostname/CPU/RAM from `/api/system/host-machine-info`, primary IP from `/api/network/status`, audio inventory from `/api/cluster/health/extended/devices`, and role from real node/discovery data instead of hardcoded `127.0.0.1`, `LOCAL-NODE`, browser core count, and empty USB-only fallbacks; also made peer/discovery rendering resilient when `/api/peers` fails.
+  - Validation: `npm --prefix web run test -- src/app/pages/HomePage.test.tsx --runInBand` -> PASS (`3 passed`), `npm --prefix web run typecheck` -> PASS, `npm --prefix web run build` -> PASS.
+  - Validation: Build still reports the pre-existing Vite dynamic/static import warning around `web/src/map2/api.ts`; no new warning class was introduced by `T146`.
+  - Build side effect: Validation build regenerated the unified platform version artifact in `version.json` to `2026031509380801`, as designed by `T144`.
+  - Compliance: Touched frontend/test/worklist changes remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional licensing remediation task was required.
+
+---
+
+## Epic: MAP2 Node Display Standard (T147–T157)
+
+**Overview**: Implement a uniform GUI system and display standard for presenting information about all MAP2 host machines — the local node, the currently-viewed remote node, and all peer nodes on the network. Follows IBM Carbon Design System standards throughout. Node types: Audio Node, Management Node, All-In-One Node.
+
+**Design decisions recorded (2026-03-15):**
+- Node identity: context banner (LOCAL / VIEWING) + card color accent (blue=LOCAL, green=VIEW, gray=PEER)
+- Default card density: minimal (hostname + health dot) — click to expand
+- Network topology view: Carbon-style network graph with two edge types (solid=audio stream, dashed=network link)
+- Graph click interaction: Carbon Tearsheet slides in from right; "Set as This Page's Node" action inside
+- Global node presence: top navigation bar as persistent status chips
+- Per-page node context: operator chooses per-page (pages can show different nodes simultaneously)
+- Node identity data: hostname (canonical) + optional operator-assigned display label
+- All-In-One mode: same UI, N=1, no special-casing — nodes auto-populate if more join
+- Alert model: severity tiers — INFO=card only, WARN=card+alert bar, CRITICAL=card+bar+toast
+- Data refresh: 5-second polling via TanStack Query refetchInterval
+- Node taxonomy: Audio Node, Management Node, All-In-One Node
+
+---
+
+ID: T147
+Status: [✓] Done
+Title: [NODE-STD] Backend — Node Discovery & Health API
+Description:
+- Goal / acceptance criteria: Provide a set of backend REST endpoints that return live per-node health data, node identity (hostname + user label), node role classification, and the list of all known network peers. These endpoints are the single data source for the entire Node Display Standard frontend.
+- Why it matters: The frontend node chips, graph, cards, and detail panels all poll these endpoints. Without clean, well-typed backend responses the frontend cannot be built reliably.
+- Dependencies: None (foundation task — all other T148–T157 depend on this)
+- Estimated effort: Medium
+- Required outputs: API routes, Pydantic response models, pytest coverage, OpenAPI schema registered.
+
+Subtasks:
+
+ID: T147-sub1
+Status: [✓] Done
+Title: Define Pydantic models for node data
+Description:
+- Create `app/models/node.py` with the following models:
+  - `NodeRole` — enum: `audio_node | management_node | all_in_one`
+  - `NodeIdentity` — `{ hostname: str, display_label: str | None, role: NodeRole, node_id: str }` where `node_id = hostname` (canonical)
+  - `NodeHealth` — `{ status: Literal["ok","warn","critical","offline"], cpu_percent: float, memory_percent: float, xrun_count: int, audio_latency_ms: float, services: NodeServices }`
+  - `NodeServices` — `{ backend: bool, juce_engine: bool, pipewire: bool }`
+  - `NodeSummary` — `NodeIdentity + NodeHealth + { last_seen: datetime, is_local: bool, is_viewed: bool }`
+  - `NodeAudioEdge` — `{ source_node_id: str, dest_node_id: str, stream_type: Literal["avb","jack"], active: bool }`
+  - `NodeNetworkEdge` — `{ source_node_id: str, dest_node_id: str, latency_ms: float | None }`
+  - `NodeTopology` — `{ nodes: list[NodeSummary], audio_edges: list[NodeAudioEdge], network_edges: list[NodeNetworkEdge] }`
+- All models use Pydantic v2 `model_config = ConfigDict(from_attributes=True)`
+- Files: `app/models/node.py`
+- Estimated effort: Small
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+
+ID: T147-sub2
+Status: [✓] Done
+Title: Implement NodeDiscoveryService
+Description:
+- Create `app/services/node_discovery_service.py`
+- Responsibilities:
+  1. Detect local node role: if `ALL_IN_ONE=1` env var → `all_in_one`; elif management-only processes running → `management_node`; else → `audio_node`
+  2. Populate local `NodeIdentity` from `socket.gethostname()` + stored `display_label` from config/DB
+  3. Discover peer nodes: call `/api/peers` (existing cluster peer list) and enrich with health data
+  4. Cache results for 4 seconds (slightly under the 5s poll interval) to avoid thundering herd
+  5. Classify peer roles by querying each peer's `/api/node/identity` endpoint (gracefully degrade on timeout)
+- Audio edges: query `/api/avb/streams` for active AVB streams; derive edges from source/dest entity IDs mapped to hostnames
+- Network edges: derive from peer list with latency from existing `/api/network/status` ping data
+- Methods: `async get_local_identity()`, `async get_topology()`, `async set_display_label(label: str)`
+- Files: `app/services/node_discovery_service.py`
+- Estimated effort: Medium
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+
+ID: T147-sub3
+Status: [✓] Done
+Title: Implement NodeHealthService
+Description:
+- Create `app/services/node_health_service.py`
+- Responsibilities:
+  1. Compute `NodeHealth` for local node:
+     - `cpu_percent`: from `psutil.cpu_percent(interval=None)`
+     - `memory_percent`: from `psutil.virtual_memory().percent`
+     - `xrun_count`: from existing xrun counter in JuceEngineService (expose via shared state)
+     - `audio_latency_ms`: `(buffer_size / sample_rate) * 1000` = `64/48000*1000` = 1.333ms (constant unless engine reports otherwise)
+     - `services.backend`: always True (we are the backend)
+     - `services.juce_engine`: ping JuceEngineService.is_running()
+     - `services.pipewire`: `subprocess.run(["pw-cli", "info", "0"], timeout=1)` exit code == 0
+  2. Derive status: `critical` if any service is False or node offline; `warn` if cpu > 85% or xrun_count > 0 in last 60s; else `ok`
+  3. For remote peers: HTTP GET `http://{peer_host}:8080/api/node/health` with 2s timeout; on failure → `{ status: "offline" }`
+- Files: `app/services/node_health_service.py`
+- Estimated effort: Medium
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+
+ID: T147-sub4
+Status: [✓] Done
+Title: Add API routes for node endpoints
+Description:
+- Create `app/routes/nodes.py` with `router = APIRouter(prefix="/api/node", tags=["Node"])`
+- Endpoints:
+  - `GET /api/node/identity` → `NodeIdentity` — returns local node identity; used by peers to classify this node
+  - `GET /api/node/health` → `NodeHealth` — returns local health snapshot; polled by peers and frontend
+  - `GET /api/node/topology` → `NodeTopology` — full topology: all known nodes + edges; only served by management node or AIO; audio nodes return single-node topology
+  - `PATCH /api/node/identity` body `{ display_label: str }` → `NodeIdentity` — operator sets display label; persisted to config
+- Register router in `app/main.py`
+- All endpoints must have unique `operation_id` per API contract standards
+- Files: `app/routes/nodes.py`, updated `app/main.py`
+- Estimated effort: Small
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+
+ID: T147-sub5
+Status: [✓] Done
+Title: Write pytest coverage for node API
+Description:
+- Create `tests/test_node_api.py`
+- Required test cases:
+  1. `GET /api/node/identity` returns valid `NodeIdentity` with hostname populated
+  2. `GET /api/node/health` returns `NodeHealth` with status in `{ok,warn,critical,offline}`
+  3. `GET /api/node/topology` returns `NodeTopology` with at least one node (local)
+  4. `PATCH /api/node/identity` with valid label persists and returns updated identity
+  5. `PATCH /api/node/identity` with label > 64 chars returns 422
+  6. Node health status derives `warn` when xrun_count > 0 (mock xrun counter)
+  7. Node health status derives `critical` when JUCE engine reports not running (mock)
+  8. Topology audio edges derive from mocked AVB stream data
+- Run: `pytest tests/test_node_api.py -q`
+- Files: `tests/test_node_api.py`
+- Estimated effort: Small
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+- Completion notes:
+  - What was done: Added typed node models in `app/models/node.py`, split the legacy `app/models.py` surface into a compatibility shim plus `app/models_compat.py`, implemented cached discovery/identity/topology and health services, registered `/api/node/identity`, `/api/node/health`, `/api/node/topology`, and `/api/node/identity` `PATCH`, and wired the new router into `app/main.py`.
+  - Validation: `pytest tests/test_node_api.py tests/test_node_proxy.py -q` -> PASS (`14 passed`), plus import smoke for `app.models`, `app.models.node`, `app.services.node_discovery_service`, `app.services.node_health_service`, and `app.routes.nodes`.
+  - Notes: Node IDs preserve existing cluster-compatible identifiers when peer data already provides them, while local identity still resolves from the host machine plus persisted `node.display_label`.
+
+---
+
+ID: T148
+Status: [✓] Done
+Title: [NODE-STD] Shared Frontend Types & API Client Layer
+Description:
+- Goal / acceptance criteria: Define TypeScript types mirroring the backend Pydantic models and add typed fetch functions to the existing API client. All frontend node components import from this layer — no ad-hoc fetch calls in components.
+- Why it matters: Type safety across 10 subtasks; single place to update if backend shape changes.
+- Dependencies: T147
+- Estimated effort: Small
+- Required outputs: Types file, API client additions, barrel export update.
+
+Subtasks:
+
+ID: T148-sub1
+Status: [✓] Done
+Title: Define TypeScript types for node data
+Description:
+- Create `web/src/app/types/node.ts`
+- Export:
+  ```ts
+  export type NodeRole = 'audio_node' | 'management_node' | 'all_in_one'
+  export type NodeStatus = 'ok' | 'warn' | 'critical' | 'offline'
+  export type NodeServices = { backend: boolean; juce_engine: boolean; pipewire: boolean }
+  export type NodeHealth = { status: NodeStatus; cpu_percent: number; memory_percent: number; xrun_count: number; audio_latency_ms: number; services: NodeServices }
+  export type NodeIdentity = { hostname: string; display_label: string | null; role: NodeRole; node_id: string }
+  export type NodeSummary = NodeIdentity & NodeHealth & { last_seen: string; is_local: boolean; is_viewed: boolean }
+  export type NodeAudioEdge = { source_node_id: string; dest_node_id: string; stream_type: 'avb' | 'jack'; active: boolean }
+  export type NodeNetworkEdge = { source_node_id: string; dest_node_id: string; latency_ms: number | null }
+  export type NodeTopology = { nodes: NodeSummary[]; audio_edges: NodeAudioEdge[]; network_edges: NodeNetworkEdge[] }
+  ```
+- Files: `web/src/app/types/node.ts`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T148-sub2
+Status: [✓] Done
+Title: Add node API fetch functions to API client
+Description:
+- Add to `web/src/map2/api.ts`:
+  ```ts
+  export const getNodeIdentity = (): Promise<NodeIdentity> => apiFetch('/api/node/identity')
+  export const getNodeHealth = (): Promise<NodeHealth> => apiFetch('/api/node/health')
+  export const getNodeTopology = (): Promise<NodeTopology> => apiFetch('/api/node/topology')
+  export const patchNodeLabel = (label: string): Promise<NodeIdentity> =>
+    apiFetch('/api/node/identity', { method: 'PATCH', body: JSON.stringify({ display_label: label }) })
+  ```
+- Import `NodeIdentity`, `NodeHealth`, `NodeTopology` from `../app/types/node`
+- Files: `web/src/map2/api.ts`, `web/src/app/types/node.ts`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T148-sub3
+Status: [✓] Done
+Title: Create useNodeTopology TanStack Query hook
+Description:
+- Create `web/src/app/hooks/useNodeTopology.ts`
+- Export:
+  ```ts
+  export function useNodeTopology() {
+    return useQuery({ queryKey: ['nodeTopology'], queryFn: getNodeTopology, refetchInterval: 5000, staleTime: 0 })
+  }
+  export function useNodeHealth() {
+    return useQuery({ queryKey: ['nodeHealth'], queryFn: getNodeHealth, refetchInterval: 5000, staleTime: 0 })
+  }
+  export function useNodeIdentity() {
+    return useQuery({ queryKey: ['nodeIdentity'], queryFn: getNodeIdentity, staleTime: 30_000 })
+  }
+  ```
+- Files: `web/src/app/hooks/useNodeTopology.ts`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T148-sub4
+Status: [✓] Done
+Title: Create useViewedNode Zustand store
+Description:
+- Create `web/src/app/stores/viewedNodeStore.ts`
+- Purpose: global store tracking which node_id each page is currently "viewing". Pages are independent.
+- Shape:
+  ```ts
+  type ViewedNodeState = {
+    pageNodeMap: Record<string, string>  // pageKey → node_id
+    setViewedNode: (pageKey: string, node_id: string) => void
+    getViewedNode: (pageKey: string, fallbackLocalId: string) => string
+  }
+  ```
+- Persist to localStorage key `map2_viewed_nodes` (survives reload)
+- Files: `web/src/app/stores/viewedNodeStore.ts`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Added the shared node TypeScript contracts in `web/src/app/types/node.ts`, wired typed node identity/health/topology and label-edit helpers into `web/src/map2/api.ts`, added polling TanStack Query hooks in `web/src/app/hooks/useNodeTopology.ts`, and created the persisted per-page viewed-node store in `web/src/app/stores/viewedNodeStore.ts`.
+  - Validation: `npm --prefix web run typecheck` -> PASS, and the node-standard UI regression bundle `npm --prefix web run test -- --testPathPatterns="NodeNav|NodeAlert|NodeContextBanner|NodeContextPicker|NodesPage|HomePage|MidiHubPage" --runInBand` -> PASS.
+
+---
+
+ID: T149
+Status: [✓] Done
+Title: [NODE-STD] Node Context Banner Component
+Description:
+- Goal / acceptance criteria: A persistent sub-header banner that displays LOCAL node identity and (if different) the currently VIEWED node for the active page. Follows Carbon `SubNav` / `Layer` pattern. Renders on every page that has a node context.
+- Why it matters: Operators must always know which machine they are looking at. The banner is the primary spatial anchor for this.
+- Dependencies: T148
+- Estimated effort: Small
+- Required outputs: `NodeContextBanner` component, CSS, Storybook-compatible props.
+
+Subtasks:
+
+ID: T149-sub1
+Status: [✓] Done
+Title: Implement NodeContextBanner component
+Description:
+- Create `web/src/app/components/NodeContextBanner/NodeContextBanner.tsx`
+- Props:
+  ```ts
+  interface NodeContextBannerProps {
+    pageKey: string           // identifies which page's viewed node to read from store
+    localNode: NodeIdentity   // always the local machine
+  }
+  ```
+- Layout: single horizontal bar, Carbon `g-10` background, full width, 40px height
+- Left section: `LOCAL:` label (Carbon `label-01`) + hostname chip (Carbon Tag, blue/cyan-60)
+  - If `display_label` is set, show: `map2-studio-1 (Stage Left)` format
+- Center separator: `│` in `text-placeholder`
+- Right section (conditional — only if viewed node ≠ local node):
+  - `VIEWING:` label + hostname chip (Carbon Tag, green/teal-40) + `[LIVE]` pulse dot
+- If viewed node === local node: right section reads `(This machine)`
+- Carbon `InlineLoading` shown while identity data is loading
+- No coaching text, no paragraph copy — title + tags only
+- Files: `web/src/app/components/NodeContextBanner/NodeContextBanner.tsx`, `NodeContextBanner.css`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T149-sub2
+Status: [✓] Done
+Title: Write NodeContextBanner tests
+Description:
+- Create `web/src/app/components/NodeContextBanner/NodeContextBanner.test.tsx`
+- Required test cases:
+  1. Renders without crash with local-only context
+  2. LOCAL chip shows hostname
+  3. LOCAL chip shows `hostname (label)` when display_label set
+  4. VIEWING section hidden when viewed === local
+  5. VIEWING chip shown with remote hostname when viewed ≠ local
+  6. InlineLoading shown while data loading
+- Run: `cd web && npx jest --testPathPattern=NodeContextBanner --no-coverage`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Implemented `NodeContextBanner` with Carbon `Layer`/`Tag`/`InlineLoading`, local-versus-viewing identity chips, and `viewedNodeStore` integration so every scoped page can show LOCAL plus the currently viewed remote node when applicable.
+  - Validation: Covered by `NodeContextBanner` regression tests inside `npm --prefix web run test -- --testPathPatterns="NodeNav|NodeAlert|NodeContextBanner|NodeContextPicker|NodesPage|HomePage|MidiHubPage" --runInBand` -> PASS.
+
+---
+
+ID: T150
+Status: [✓] Done
+Title: [NODE-STD] Node Status Chip — Top Navigation Integration
+Description:
+- Goal / acceptance criteria: All discovered network nodes appear as persistent status chips in the Carbon top navigation bar. Each chip shows: hostname (abbreviated if needed), role badge (LOCAL/VIEW/PEER), and a health dot. Clicking a chip opens a Carbon Popover with the minimal node card. Platform topology with N=1 (AIO mode) works identically — one chip.
+- Why it matters: This is the primary global node presence surface — operators must be able to see all nodes and their health at a glance from any page.
+- Dependencies: T148, T149
+- Estimated effort: Medium
+- Required outputs: `NodeNavChip`, `NodeMiniCard`, nav bar integration, tests.
+
+Subtasks:
+
+ID: T150-sub1
+Status: [✓] Done
+Title: Implement NodeNavChip component
+Description:
+- Create `web/src/app/components/NodeNav/NodeNavChip.tsx`
+- Props: `{ node: NodeSummary; onClick: () => void }`
+- Visual structure:
+  - Role accent dot: filled circle, 8px — blue (#0f62fe Carbon blue-60) for LOCAL, green (#198038 Carbon green-60) for VIEW, gray (#8d8d8d Carbon gray-50) for PEER
+  - Health indicator overlay: if status=warn amber ring; if status=critical red pulse animation; if status=offline strike-through
+  - Hostname text: abbreviated to max 14 chars with ellipsis; full name in tooltip (Carbon `Tooltip`)
+  - Role label: tiny Carbon `Tag` — "LOCAL" | "VIEW" | "PEER"
+- States: normal, hover (Carbon focus ring), active (pressed)
+- Accessibility: `aria-label="Node {hostname} — status {status}"`
+- Do NOT use Phosphor icons — use Carbon icons only (`CircleFill` from `@carbon/icons-react` or CSS)
+- Files: `web/src/app/components/NodeNav/NodeNavChip.tsx`, `NodeNavChip.css`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T150-sub2
+Status: [✓] Done
+Title: Implement NodeMiniCard popover content
+Description:
+- Create `web/src/app/components/NodeNav/NodeMiniCard.tsx`
+- This is the content rendered inside a Carbon `Popover` when a nav chip is clicked
+- Layout (minimal, ~240px wide):
+  ```
+  ┌──────────────────────────────────────────┐
+  │ map2-stage-2 (Stage Left)  [● AUDIO NODE]│
+  │ Status: OK                               │
+  │ ─────────────────────────────────────    │
+  │ [Set as page node]  [View details →]     │
+  └──────────────────────────────────────────┘
+  ```
+- Role color accent: left border 3px, color matches chip dot
+- Status row: Carbon `Tag` with appropriate tone (green=ok, yellow=warn, red=critical, gray=offline)
+- "Set as page node" button: Carbon `Button` size=sm kind=ghost — calls `setViewedNode(currentPageKey, node.node_id)`
+- "View details →" link: Carbon `Link` — navigates to `/nodes` topology page with this node pre-selected
+- No coaching text — clean operator card
+- Files: `web/src/app/components/NodeNav/NodeMiniCard.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T150-sub3
+Status: [✓] Done
+Title: Integrate node chips into Carbon top navigation
+Description:
+- Locate the existing Carbon `Header` / `HeaderGlobalBar` in `web/src/app/App.tsx` (or equivalent shell component)
+- Add a `NodeNavBar` section between the main nav links and the right-side settings/profile icons
+- `NodeNavBar` renders: `useNodeTopology()` data → map `nodes` → `<NodeNavChip>` per node
+- Chips are separated by a 1px `text-placeholder` vertical divider from the rest of the nav
+- Carbon `Popover` wraps each chip — opens on click, closes on click-outside
+- Loading state: single gray skeleton chip while topology loads
+- Error state: single chip labeled "Node discovery unavailable" in gray
+- On N=1 (AIO): one chip labeled with local hostname — no "PEER" chips
+- Files: `web/src/app/App.tsx` (or shell component), `web/src/app/components/NodeNav/NodeNavBar.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T150-sub4
+Status: [✓] Done
+Title: Write NodeNavChip and NodeNavBar tests
+Description:
+- Create `web/src/app/components/NodeNav/NodeNavChip.test.tsx`
+- Required test cases:
+  1. Renders chip with hostname
+  2. LOCAL role renders blue accent
+  3. PEER role renders gray accent
+  4. Warn status renders amber indicator
+  5. Critical status renders red indicator with animation class
+  6. Offline status renders strike-through class
+  7. Click opens popover (NodeMiniCard rendered)
+  8. NodeMiniCard "Set as page node" calls setViewedNode
+  9. N=1 AIO: single chip rendered for local node
+  10. Loading: skeleton chip rendered
+- Run: `cd web && npx jest --testPathPattern=NodeNavChip --no-coverage`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Added `NodeNavChip`, `NodeMiniCard`, and `NodeNavBar`, then integrated the discovery chips into the Carbon top bar via `AppShell` so LOCAL/VIEW/PEER state, health indicators, popover summaries, and page-node selection are always available globally.
+  - Validation: `NodeNavChip`/`NodeNavBar` behavior is covered by the node-standard regression bundle and the current `AppShell` integration tests, all passing.
+
+---
+
+ID: T151
+Status: [✓] Done
+Title: [NODE-STD] Node Topology Graph Page (/nodes)
+Description:
+- Goal / acceptance criteria: A new top-level page at `/nodes` renders all platform nodes as an IBM Carbon-style network graph. Audio stream connections (solid lines with direction arrows) and network/data links (dashed lines with latency labels) are displayed as distinct edge types. Clicking a node opens a Carbon Tearsheet from the right with full node detail and the "Set as This Page's Node" action.
+- Why it matters: Operators need a topology view to understand signal routing, identify problem nodes at a glance, and navigate to any node's detail surface.
+- Dependencies: T148, T149, T150
+- Estimated effort: Large
+- Required outputs: `/nodes` route, `NodesPage`, `NodeGraph`, `NodeTearsheet`, navigation entry, tests.
+
+Subtasks:
+
+ID: T151-sub1
+Status: [✓] Done
+Title: Add /nodes route and navigation entry
+Description:
+- Add route `{ path: '/nodes', element: <NodesPage /> }` to the React Router config in `web/src/app/App.tsx`
+- Add `Nodes` navigation item to the Carbon `SideNav` / left nav (after existing items, before Settings)
+- Icon: use `Network_3` or `IbmCloudDirectLink1` from `@carbon/icons-react` — no Phosphor
+- Nav label: "Nodes"
+- Files: `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts` if relevant
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T151-sub2
+Status: [✓] Done
+Title: Implement NodeGraph canvas component
+Description:
+- Create `web/src/app/components/NodeGraph/NodeGraph.tsx`
+- Use ReactFlow (already installed, v11.11.4) as the graph rendering engine — consistent with existing `MPX1FlowCanvas`
+- Node renderer: `NodeGraphCard` (see T151-sub3) as a custom ReactFlow node type
+- Edge types:
+  - Audio stream edge: solid line, `strokeWidth: 2`, color `#0f62fe` (Carbon blue-60), animated `markerEnd` arrow — label shows stream type ("AVB" or "JACK")
+  - Network edge: dashed line `strokeDasharray: "6 3"`, color `#8d8d8d` (Carbon gray-50), label shows latency (e.g. "2.1ms") if available
+- Data mapping from `NodeTopology`:
+  - Each `NodeSummary` → ReactFlow node `{ id: node.node_id, type: 'nodeCard', data: node, position: auto-layout }`
+  - Each `NodeAudioEdge` → ReactFlow edge `{ type: 'audioStream', ... }`
+  - Each `NodeNetworkEdge` → ReactFlow edge `{ type: 'networkLink', ... }`
+- Auto-layout: use simple force-directed or grid layout on first render; `useLayoutEffect` to position nodes (do NOT use no-dep useLayoutEffect calling setState — use functional updater pattern per CLAUDE.md gotcha)
+- Controls: Carbon-styled zoom in/out buttons (use ReactFlow `Controls`), fit-to-view button
+- Background: ReactFlow `Background` with `BackgroundVariant.Dots`, Carbon `background` color
+- N=1 mode: single centered node card, no edges — graph still renders (same UI, just N=1)
+- Files: `web/src/app/components/NodeGraph/NodeGraph.tsx`, `NodeGraph.css`
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+ID: T151-sub3
+Status: [✓] Done
+Title: Implement NodeGraphCard custom ReactFlow node
+Description:
+- Create `web/src/app/components/NodeGraph/NodeGraphCard.tsx`
+- This is the custom ReactFlow node renderer — must be minimal (card density: minimal per spec)
+- Layout:
+  ```
+  ┌──────────────────────────────────┐  ← left border 3px role color
+  │ [role dot] map2-stage-2 [● OK]  │
+  │            (Stage Left)         │
+  └──────────────────────────────────┘
+  ```
+- Role color border: blue=LOCAL, green=VIEW, gray=PEER (same as chips)
+- Health dot: Carbon `Tag` with status tone (green/yellow/red/gray)
+- Display label shown below hostname in `label-01` weight if set
+- Click handler: calls `onNodeClick(node_id)` prop — parent opens Tearsheet
+- Hover: Carbon focus ring, slight elevation shadow
+- No coaching text, no metric numbers on the card — minimal per spec
+- ReactFlow handles: standard source/target handles, hidden visually (edges connect node centers)
+- Files: `web/src/app/components/NodeGraph/NodeGraphCard.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T151-sub4
+Status: [✓] Done
+Title: Implement NodeDetailTearsheet component
+Description:
+- Create `web/src/app/components/NodeGraph/NodeDetailTearsheet.tsx`
+- Use Carbon `TearsheetNarrow` (from `@carbon/ibm-products`) or Carbon `SidePanel` — standard right-side slide-in panel
+- Opens when a node is clicked in the graph; closes via X button or clicking outside
+- Content sections (in order):
+  1. **Header**: hostname + display label + role badge Tag + last_seen timestamp
+  2. **Status row**: Carbon `Tag` for overall status (ok/warn/critical/offline) + CPU% + memory% as inline values
+  3. **Services**: three service indicators in a row — Backend / JUCE Engine / PipeWire — each a `Tag` with green(up) or red(down) tone
+  4. **Audio**: latency_ms value + xrun_count (last 60s) — highlight xrun row in amber if xrun_count > 0
+  5. **Actions**: two Carbon `Button` elements:
+     - "Set as This Page's Node" (kind=primary) → calls `setViewedNode(currentPageKey, node_id)` + closes tearsheet
+     - "View on Graph" (kind=ghost) → closes tearsheet (node already highlighted in graph behind panel)
+  6. **Edit label**: Carbon `TextInput` inline — operator can set/clear display_label; on blur calls `patchNodeLabel()`
+- No coaching text, no multi-sentence paragraphs — clean operator surface
+- Files: `web/src/app/components/NodeGraph/NodeDetailTearsheet.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T151-sub5
+Status: [✓] Done
+Title: Implement NodesPage
+Description:
+- Create `web/src/app/pages/NodesPage.tsx`
+- Structure:
+  1. `NodeContextBanner` at top (pageKey="nodes")
+  2. Page title: Carbon `Heading` — "Platform Nodes"
+  3. Node count summary: e.g. "3 nodes · 1 warn" as Carbon `Tag` chips inline
+  4. `NodeGraph` taking remaining viewport height (CSS `flex: 1`, `min-height: 0`)
+  5. `NodeDetailTearsheet` rendered (conditionally open based on `selectedNodeId` state)
+- State: `selectedNodeId: string | null` — set on graph node click, cleared on tearsheet close
+- Data: `useNodeTopology()` — pass topology to both `NodeGraph` and `NodeDetailTearsheet`
+- Loading state: Carbon `InlineLoading` centered in graph area
+- Error state: Carbon `InlineNotification` kind=error "Node discovery unavailable — check backend connectivity"
+- Files: `web/src/app/pages/NodesPage.tsx`, `web/src/app/pages/NodesPage.css`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T151-sub6
+Status: [✓] Done
+Title: Write NodesPage tests
+Description:
+- Create `web/src/app/pages/NodesPage.test.tsx`
+- Mock `useNodeTopology` — mock ReactFlow (standard pattern from MPX1FlowCanvas tests)
+- Required test cases:
+  1. Renders without crash
+  2. Loading state: InlineLoading rendered
+  3. Error state: error InlineNotification rendered
+  4. Node cards rendered for each node in topology (check count)
+  5. NodeContextBanner rendered
+  6. Clicking a node (via mock) opens NodeDetailTearsheet
+  7. NodeDetailTearsheet "Set as This Page's Node" fires setViewedNode
+  8. Tearsheet close via X hides tearsheet
+  9. N=1 AIO: single node card in graph, no edges
+- Run: `cd web && npx jest --testPathPattern=NodesPage --no-coverage`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Added the `/nodes` route and navigation entry, implemented `NodesPage`, the ReactFlow-backed `NodeGraph` and `NodeGraphCard`, plus the right-side `NodeDetailTearsheet` with page-node selection and inline label editing.
+  - Validation: `NodesPage` and node-graph interactions pass in `npm --prefix web run test -- --testPathPatterns="NodeNav|NodeAlert|NodeContextBanner|NodeContextPicker|NodesPage|HomePage|MidiHubPage" --runInBand`, and production preview smoke previously confirmed `/nodes` renders with the new topology surface.
+
+---
+
+ID: T152
+Status: [✓] Done
+Title: [NODE-STD] Per-Page Node Context Switcher
+Description:
+- Goal / acceptance criteria: Each major page (AudioEnginePage, LV2PluginsPage, DSPPage, ChainsPage, MidiHubPage, HomePage) gains a lightweight node context picker that lets operators switch which node's data that page displays. Pages are independent — AudioEnginePage can show node A while LV2PluginsPage shows node B simultaneously.
+- Why it matters: Operators may need to compare or monitor different nodes on different pages during a live performance or troubleshooting session.
+- Dependencies: T148, T149, T150
+- Estimated effort: Medium
+- Required outputs: `NodeContextPicker` component, integration into each major page, tests.
+
+Subtasks:
+
+ID: T152-sub1
+Status: [✓] Done
+Title: Implement NodeContextPicker component
+Description:
+- Create `web/src/app/components/NodeContextPicker/NodeContextPicker.tsx`
+- Props: `{ pageKey: string; topology: NodeTopology | undefined }`
+- UI: Carbon `Dropdown` (inline variant) — compact, sits below page title
+  - Label: "Viewing node:"
+  - Items: one per `NodeSummary` in topology
+  - Each item: `{ id: node.node_id, label: displayName(node), icon: statusDot }`
+  - `displayName(node)`: `node.display_label ? "${node.hostname} (${node.display_label})" : node.hostname`
+  - Currently selected: read from `viewedNodeStore.getViewedNode(pageKey, localNodeId)`
+  - On change: `viewedNodeStore.setViewedNode(pageKey, selectedId)`
+- N=1 AIO mode: dropdown is disabled (only one option) — renders but grayed
+- Loading: disabled Dropdown with skeleton item
+- Files: `web/src/app/components/NodeContextPicker/NodeContextPicker.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T152-sub2
+Status: [✓] Done
+Title: Integrate NodeContextPicker into major pages
+Description:
+- Add `NodeContextPicker` to each of the following pages, immediately below the page title / Carbon `Heading`:
+  - `web/src/app/pages/AudioEnginePage.tsx` — pageKey="audio-engine"
+  - `web/src/app/pages/LV2PluginsPage.tsx` — pageKey="lv2-plugins"
+  - `web/src/app/pages/DSPPage.tsx` — pageKey="dsp"
+  - `web/src/app/pages/ChainsPage.tsx` — pageKey="chains"
+  - `web/src/app/pages/MidiHubPage.tsx` — pageKey="midi-hub"
+  - `web/src/app/pages/HomePage.tsx` — pageKey="home"
+- Also add `NodeContextBanner` to each page (same pageKey) — position: top of page content, below Carbon `Header`
+- Pass `useNodeTopology().data` to picker and banner
+- The selected node_id from the store must be passed down to the page's data-fetching hooks so that all API calls on the page are scoped to the viewed node (forward node_id as a query param or header — align with backend T147 endpoint design)
+- Files: all 6 page components listed above
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+ID: T152-sub3
+Status: [✓] Done
+Title: Write NodeContextPicker tests
+Description:
+- Create `web/src/app/components/NodeContextPicker/NodeContextPicker.test.tsx`
+- Required test cases:
+  1. Renders without crash
+  2. Dropdown shows all nodes from topology
+  3. Selecting a node calls setViewedNode with correct pageKey and node_id
+  4. Display label shown in item when set: "hostname (label)"
+  5. N=1 mode: dropdown disabled
+  6. Loading: dropdown disabled/skeleton
+- Run: `cd web && npx jest --testPathPattern=NodeContextPicker --no-coverage`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Added `NodeContextPicker` and the shared `useNodePageContext` helper, integrated the picker/banner pattern into Audio Engine, LV2 Plugins, DSP, Chains, MIDI Hub, and Home, and scoped remote-node page data through the backend proxy path so pages can view different nodes independently.
+  - Validation: `NodeContextPicker`, `HomePage`, and `MidiHubPage` regressions pass in the node-standard test bundle; remote-node scoping is also covered by the backend proxy tests in `tests/test_node_proxy.py`.
+
+---
+
+ID: T153
+Status: [✓] Done
+Title: [NODE-STD] Alert System — Severity-Tiered Node Alerts
+Description:
+- Goal / acceptance criteria: Node health changes surface through a three-tier alert system. INFO: node card accent updates only. WARN: card update + a row appears in a persistent global alert bar. CRITICAL: card + alert bar + Carbon Toast notification. Alert bar is globally visible but collapsible.
+- Why it matters: Operators need ambient awareness of node health problems without constant focus on the topology page. Severity tiers match standard ops tooling norms.
+- Dependencies: T148, T150
+- Estimated effort: Medium
+- Required outputs: `NodeAlertBar`, `NodeAlertToast`, integration into app shell, tests.
+
+Subtasks:
+
+ID: T153-sub1
+Status: [✓] Done
+Title: Implement NodeAlertBar component
+Description:
+- Create `web/src/app/components/NodeAlerts/NodeAlertBar.tsx`
+- A horizontal bar that renders below the Carbon `Header` (above page content), only when WARN or CRITICAL alerts are active
+- Layout: Carbon `ActionableNotification` rows stacked vertically (max 3 visible; overflow scrollable)
+- Each row:
+  - `⚠ [hostname]: [human-readable issue]` for WARN — e.g. "⚠ map2-stage-3: 3 xruns in last 60s"
+  - `✕ [hostname]: [issue]` for CRITICAL — e.g. "✕ map2-monitor-1: JUCE engine offline"
+  - Dismiss button (X) per row — removes from active alerts list
+- Bar is collapsible: a Carbon `Button` kind=ghost with `ChevronDown/Up` icon toggles the bar open/closed
+- Collapsed state: shows only a count chip "3 alerts" in the nav bar area (or below it)
+- State: managed in a Zustand store `nodeAlertStore` — `{ alerts: NodeAlert[], addAlert, dismissAlert }`
+- `NodeAlert` type: `{ id: string, node_id: string, hostname: string, severity: 'warn'|'critical', message: string, timestamp: string, dismissed: boolean }`
+- Files: `web/src/app/components/NodeAlerts/NodeAlertBar.tsx`, `web/src/app/stores/nodeAlertStore.ts`
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+ID: T153-sub2
+Status: [✓] Done
+Title: Implement NodeAlertToast for CRITICAL alerts
+Description:
+- Create `web/src/app/components/NodeAlerts/NodeAlertToast.tsx`
+- Uses Carbon `ToastNotification` kind=error
+- Fired only on CRITICAL status transitions: when a node transitions from ok/warn → critical or offline
+- Content: title="Node Critical", subtitle="{hostname}: {issue}", caption=timestamp
+- Auto-dismisses after 8 seconds; also dismissable by operator
+- Multiple CRITICAL events: stack up to 3 toasts (oldest auto-dismissed first when limit reached)
+- Position: top-right, below the Carbon Header, above page content (z-index above tearsheet)
+- Toast fires on state transition only — not on every 5s poll if node is already critical (debounce via comparing previous status in useEffect dependency)
+- Files: `web/src/app/components/NodeAlerts/NodeAlertToast.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T153-sub3
+Status: [✓] Done
+Title: Wire alert detection into app shell
+Description:
+- In `web/src/app/App.tsx` (or a top-level `NodeAlertMonitor` component):
+  - Subscribe to `useNodeTopology()` with `refetchInterval: 5000`
+  - On each data update, compare previous node statuses to current
+  - Status transition logic:
+    - `ok → warn` or `warn → warn` (first occurrence): `addAlert({ severity: 'warn', ... })`
+    - `* → critical` or `* → offline`: `addAlert({ severity: 'critical', ... })` + trigger toast
+    - `critical/warn → ok`: auto-dismiss the corresponding alert row
+  - Use `useRef` to track previous topology for comparison — no setState in comparison logic
+- Render `<NodeAlertBar />` and `<NodeAlertToast />` in the app shell, outside page routing
+- Files: `web/src/app/App.tsx`, new `web/src/app/components/NodeAlerts/NodeAlertMonitor.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T153-sub4
+Status: [✓] Done
+Title: Write NodeAlertBar and alert system tests
+Description:
+- Create `web/src/app/components/NodeAlerts/NodeAlertBar.test.tsx`
+- Required test cases:
+  1. Renders nothing when no active alerts
+  2. WARN alert: bar renders with amber row
+  3. CRITICAL alert: bar renders with red row
+  4. Dismiss button removes alert row
+  5. Collapsible: click toggle hides/shows rows
+  6. CRITICAL transition: toast fired (mock ToastNotification)
+  7. Recovery transition (critical → ok): alert auto-dismissed from store
+  8. Stale: same node already-critical does NOT fire new toast on next poll
+- Run: `cd web && npx jest --testPathPattern=NodeAlertBar --no-coverage`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Added the in-memory `nodeAlertStore`, `NodeAlertMonitor`, `NodeAlertBar`, and `NodeAlertToast`, then wired topology-poll status transitions into the shell so WARN states raise collapsible alert rows and CRITICAL/OFFLINE transitions raise toast notifications without duplicating stale alerts.
+  - Validation: `npm --prefix web run test -- --testPathPatterns="NodeNav|NodeAlert|NodeContextBanner|NodeContextPicker|NodesPage|HomePage|MidiHubPage" --runInBand` -> PASS, including dismiss, collapse, transition, recovery, and stale-critical coverage.
+
+---
+
+ID: T154
+Status: [✓] Done
+Title: [NODE-STD] Node Display Label Editor
+Description:
+- Goal / acceptance criteria: Operators can assign or edit a display label (e.g. "Stage Left") for any node from the NodeDetailTearsheet. Label is persisted via `PATCH /api/node/identity` and reflected immediately in all nav chips, banners, and graph cards.
+- Why it matters: Hostnames like `map2-stage-2` are meaningful to admins but not to live operators. Display labels make the UI readable under pressure.
+- Dependencies: T147, T148, T151
+- Estimated effort: Small (built into T151 Tearsheet — this task covers the backend persistence and cache invalidation)
+
+Subtasks:
+
+ID: T154-sub1
+Status: [✓] Done
+Title: Persist display_label in backend config
+Description:
+- In `app/services/node_discovery_service.py`: implement `set_display_label(label: str)`
+- Persist to the existing config system (`app/config.py` → key `node.display_label`)
+- Validate: max 64 chars, strip whitespace, allow empty string (clears the label)
+- On update: invalidate the 4s discovery cache so next poll returns the new label
+- Files: `app/services/node_discovery_service.py`, `app/config.py` (add `node.display_label` to schema)
+- Estimated effort: Small
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+
+ID: T154-sub2
+Status: [✓] Done
+Title: Frontend cache invalidation after label edit
+Description:
+- In `NodeDetailTearsheet` (T151-sub4): after `patchNodeLabel()` resolves, call `queryClient.invalidateQueries({ queryKey: ['nodeTopology'] })` and `queryClient.invalidateQueries({ queryKey: ['nodeIdentity'] })`
+- This forces nav chips, banner, and graph card to re-render with the new label within one poll cycle
+- Files: `web/src/app/components/NodeGraph/NodeDetailTearsheet.tsx`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Completed the frontend half of label editing inside `NodeDetailTearsheet` by calling `patchNodeLabel()` and invalidating the `nodeTopology` and `nodeIdentity` queries after save, so updated display labels propagate immediately to nav chips, banners, graph cards, and selectors.
+  - Validation: Backend persistence remains covered by `pytest tests/test_node_api.py tests/test_node_proxy.py -q` -> PASS, and the tear-sheet label workflow is exercised by the passing node UI regression suite.
+
+---
+
+ID: T155
+Status: [✓] Done
+Title: [NODE-STD] Remote Node Data Proxying (Backend)
+Description:
+- Goal / acceptance criteria: When an operator sets a remote node as the viewed node for a page, API calls from that page are proxied through the local backend to the remote node's backend. This means the frontend never calls remote node IPs directly — all remote data flows through `/api/node/{node_id}/proxy/...`.
+- Why it matters: The frontend SPA only knows the local backend address. Enabling per-page remote node viewing requires the local backend to act as a proxy for remote node APIs.
+- Dependencies: T147
+- Estimated effort: Medium
+- Required outputs: Proxy route, security guardrails, integration tests.
+
+Subtasks:
+
+ID: T155-sub1
+Status: [✓] Done
+Title: Implement generic node proxy endpoint
+Description:
+- Add to `app/routes/nodes.py`:
+  ```
+  GET/POST/PATCH /api/node/{node_id}/proxy/{path:path}
+  ```
+- Behavior:
+  1. If `node_id` matches local node identity → forward to local handler (no HTTP hop)
+  2. Else: look up peer IP from discovery cache; `httpx.AsyncClient().request(method, f"http://{peer_ip}:8080/{path}", ...)` with 3s timeout
+  3. Forward request body and response body transparently; preserve status codes
+  4. On peer not found: 404 `{ "error": { "code": "node_not_found", ... } }`
+  5. On peer timeout: 504 `{ "error": { "code": "node_unreachable", ... } }`
+- Security guardrails:
+  - Only proxy to known peers (must be in discovery cache — no arbitrary IP forwarding)
+  - Strip `Authorization` headers before forwarding (internal network, no cross-node auth)
+  - Rate limit: max 60 proxy requests/minute per `node_id` to prevent abuse
+- Files: `app/routes/nodes.py`
+- Estimated effort: Medium
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+
+ID: T155-sub2
+Status: [✓] Done
+Title: Write proxy endpoint tests
+Description:
+- Create `tests/test_node_proxy.py`
+- Required test cases:
+  1. Proxy to local node_id: routes to local handler, no HTTP hop
+  2. Proxy to known peer: mocked httpx forwards correctly
+  3. Unknown node_id: 404 response
+  4. Peer timeout: 504 response
+  5. Path traversal attempt (../../etc/passwd): 400 rejected
+  6. Rate limit: 61st request returns 429
+- Run: `pytest tests/test_node_proxy.py -q`
+- Estimated effort: Small
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 09:55 - Codex
+- Completion notes:
+  - What was done: Added the guarded `/api/node/{node_id}/proxy/{path}` route in `app/routes/nodes.py` with known-peer resolution only, local ASGI forwarding for the current node, remote forwarding with timeout handling, path traversal rejection, stripped `Authorization`, and an in-memory 60 req/min per-node rate limiter.
+  - Validation: `pytest tests/test_node_api.py tests/test_node_proxy.py -q` -> PASS (`14 passed`), including local proxy routing, remote forwarding, unknown-node handling, timeout handling, traversal rejection, and rate-limit coverage.
+
+---
+
+ID: T156
+Status: [✓] Done
+Title: [NODE-STD] Validate — Full Integration & Typecheck
+Description:
+- Goal / acceptance criteria: All node display standard components pass typecheck and build. All new tests pass. The topology page renders in production build. Nav chips appear. Alerts fire correctly. AIO single-node mode works. No Phosphor icon imports in any new node component.
+- Why it matters: "Done" means clean build — per CLAUDE.md standing rule.
+- Dependencies: T147, T148, T149, T150, T151, T152, T153, T154, T155
+- Estimated effort: Small
+- Required outputs: Validation evidence logged in completion notes.
+
+Subtasks:
+
+ID: T156-sub1
+Status: [✓] Done
+Title: Run typecheck + build
+Description:
+- `cd web && npm run typecheck` — must pass with 0 errors
+- `cd web && npm run build` — must pass; bundle must include NodesPage
+- Verify: `grep -c 'NodesPage' web/dist/assets/*.js`
+- Verify no Phosphor imports in new components: `grep -rn '@phosphor-icons' web/src/app/components/NodeNav web/src/app/components/NodeGraph web/src/app/components/NodeAlerts web/src/app/components/NodeContextBanner web/src/app/components/NodeContextPicker`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T156-sub2
+Status: [✓] Done
+Title: Run all new test suites
+Description:
+- `cd web && npm run test -- --testPathPattern="NodeNav|NodeGraph|NodeAlert|NodeContextBanner|NodeContextPicker|NodesPage" --runInBand`
+- `pytest tests/test_node_api.py tests/test_node_proxy.py -q`
+- All must pass — 0 failures, 0 errors
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T156-sub3
+Status: [✓] Done
+Title: Smoke-test in production build
+Description:
+- `cd web && npm run preview` (port 3000)
+- Navigate to `/nodes` — graph renders
+- Verify nav chips appear in top bar
+- Simulate N=1 AIO: confirm single chip, no edges
+- Simulate WARN: manually trigger a warn health state via mock/dev API endpoint, confirm alert bar appears
+- Confirm NodeContextPicker appears on AudioEnginePage and dropdown is populated
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Completed the node-standard validation pass across frontend, backend, and production-preview surfaces, including build/typecheck, focused UI suites, topology/proxy pytest coverage, and production smoke for the new node-aware shell routes.
+  - Validation: `npm --prefix web run typecheck` -> PASS, `npm --prefix web run test -- --testPathPatterns="NodeNav|NodeAlert|NodeContextBanner|NodeContextPicker|NodesPage|HomePage|MidiHubPage" --runInBand` -> PASS, `pytest tests/test_node_api.py tests/test_node_proxy.py -q` -> PASS (`14 passed`), and `npm --prefix web run build` -> PASS.
+  - Validation: Production artifact checks confirmed `NodesPage` is present in the built bundle and `rg -n "@phosphor-icons" web/src/app/components/NodeNav web/src/app/components/NodeGraph web/src/app/components/NodeAlerts web/src/app/components/NodeContextBanner web/src/app/components/NodeContextPicker` returned no matches.
+
+---
+
+ID: T157
+Status: [✓] Done
+Title: [NODE-STD] Documentation & Design System Conformance Notes
+Description:
+- Goal / acceptance criteria: All node display standard components are documented for conformance with IBM Carbon Design System. Non-conforming exceptions (if any) are recorded. CLAUDE.md updated with node display patterns.
+- Why it matters: Future contributors need to know the Carbon patterns used and any deliberate deviations.
+- Dependencies: T156
+- Estimated effort: Small
+
+Subtasks:
+
+ID: T157-sub1
+Status: [✓] Done
+Title: Record Carbon conformance notes in worklist
+Description:
+- For each new component, note which Carbon components/patterns were used:
+  - NodeNavChip: Carbon Popover + Tooltip + Tag
+  - NodeMiniCard: Carbon Tag + Button + Link
+  - NodeContextBanner: Carbon Layer + Tag (no InlineNotification for non-alert content)
+  - NodeGraph: ReactFlow (existing approved dep) + Carbon color tokens for edges
+  - NodeGraphCard: Carbon Tag + focus ring tokens
+  - NodeDetailTearsheet: Carbon TearsheetNarrow or SidePanel + TextInput + Button + Tag
+  - NodeAlertBar: Carbon ActionableNotification + Button
+  - NodeAlertToast: Carbon ToastNotification
+  - NodeContextPicker: Carbon Dropdown (inline)
+- Note any deviations from Carbon (e.g. custom CSS animations for critical pulse)
+- Files: this worklist entry (completion notes)
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T157-sub2
+Status: [✓] Done
+Title: Update CLAUDE.md with node display patterns
+Description:
+- Add to CLAUDE.md "Style & Architecture Rules" section:
+  - Node Display Standard: `web/src/app/components/NodeNav/`, `NodeGraph/`, `NodeAlerts/`, `NodeContextBanner/`, `NodeContextPicker/`
+  - Viewed node state: `viewedNodeStore` (Zustand, localStorage key `map2_viewed_nodes`)
+  - Alert state: `nodeAlertStore` (Zustand, in-memory only — not persisted)
+  - Node API layer: `web/src/app/hooks/useNodeTopology.ts`, `web/src/app/types/node.ts`
+  - Backend: `app/routes/nodes.py`, `app/services/node_discovery_service.py`, `app/services/node_health_service.py`
+  - Proxy pattern: `GET /api/node/{node_id}/proxy/{path}` — never call remote node IPs from frontend directly
+- Files: `CLAUDE.md`
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Recorded the Carbon-aligned node-display grammar in this worklist and updated `CLAUDE.md` with the node standard, viewed-node store, alert store, hook/API layer, backend services, and proxy-routing rule.
+  - Carbon conformance: `NodeNavChip`/`NodeMiniCard` use Carbon `Popover`, `Tooltip`, `Tag`, `Button`, and `Link`; `NodeContextBanner` uses Carbon `Layer`, `Tag`, and `InlineLoading`; `NodeAlertBar`/`NodeAlertToast` use Carbon `ActionableNotification`, `Button`, and `ToastNotification`; `NodeContextPicker` uses Carbon `Dropdown`; `NodeGraph` and `NodeGraphCard` intentionally use ReactFlow for layout/rendering while keeping Carbon tokens, tags, spacing, and focus treatment.
+  - Carbon deviations: The critical-status pulse and graph edge rendering are custom CSS/ReactFlow behaviors because Carbon does not provide an equivalent network-topology primitive; the implementation stays on Carbon tokens and motion constraints.
+
+---
+
+## Epic: Advanced Grid — Unified Platform Stack Interface
+
+ID: T158
+Status: [✓] Done
+Title: [ADVANCED-GRID] PlatformShell scaffold & routing
+Description:
+- Goal / acceptance criteria: Create `PlatformShell` top-level component at `/platform` route. Single route entry; workspace mode controlled by state (`currentView: "stack" | "layer"`). Implement `GlobalHeader` (Carbon `Header`). Wire `?layer=` query-param deep-linking. Remove the five replaced pages from `AppShell` routing once T159–T165 are complete. All TypeScript/build clean.
+- Why it matters: Foundation for the unified interface — every other subtask builds on top of this shell.
+- Dependencies: None
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Added the unified `/platform` route in `web/src/app/App.tsx`, created the shared platform layer model helpers in `web/src/app/platform/model.ts`, and scaffolded `PlatformShellPage` with global header, stack/layer view switching, and `?layer=` deep-link handling.
+
+---
+
+ID: T159
+Status: [✓] Done
+Title: [ADVANCED-GRID] Zustand platformState store
+Description:
+- Goal / acceptance criteria: Create `web/src/app/stores/platformStore.ts` with Zustand. State shape: `currentView`, `activeLayer`, `layerHealth` (record per layer), `alerts[]`, `summaryMetrics`, `animationState` (`expandingLayer`, `collapsingLayer`). Export typed selectors and action creators. TypeScript strict, no `any`.
+- Why it matters: Global state required before StackVisualization or LayerWorkspace can read/write layer selection.
+- Dependencies: T158
+- Estimated effort: Small
+Subtasks: None
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Implemented `web/src/app/stores/platformStore.ts` with typed Zustand state for `currentView`, `activeLayer`, per-layer health, alert collection, summary metrics, and stack/workspace animation state, plus selectors and actions used by the shell.
+
+---
+
+ID: T160
+Status: [✓] Done
+Title: [ADVANCED-GRID] LayerPlane component & isometric StackVisualization
+Description:
+- Goal / acceptance criteria: Build `StackVisualization` rendering six `LayerPlane` tiles in a CSS-transform isometric stack (no WebGL, no Three.js). Each `LayerPlane` has: rounded outer frame, inset grid cells from MAP2 brand grid motif, color band (Carbon tokens — spec §14), health glow, Framer Motion health heartbeat pulse (scale 1→1.01→1, 4–6 s loop), alert markers. Click triggers expand animation (§8: highlight → elevate → forward → flatten → workspace). Reduced-motion media query disables animation. 60 fps target; GPU CSS transforms only.
+- Why it matters: Primary orientation surface — communicates the platform as one system with six operational layers.
+- Dependencies: T158, T159
+- Estimated effort: Large
+Subtasks: None
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Built the six-plane stack visualization inside `PlatformShellPage.tsx` and `PlatformShellPage.css` with isometric transforms, layer color bands, health glow/pulse states, click-to-expand transitions, and reduced-motion-safe behavior.
+
+---
+
+ID: T161
+Status: [✓] Done
+Title: [ADVANCED-GRID] LayerWorkspace shell (header, notification strip, tile row, table)
+Description:
+- Goal / acceptance criteria: Build `LayerWorkspace` with consistent layout: `LayerHeader` (layer name + "Back to Platform Stack" button triggering collapse animation), `NotificationStrip` (Carbon `InlineNotification`, severity: info/warning/error/critical), `LayerSummaryTiles` (Carbon `ClickableTile` grid — title, status indicator, mini metrics, alert badge), `LayerDataTable` (Carbon `DataTable` with sorting, filtering, pagination — common columns: Name, Status, Metric1, Metric2, Alerts, Actions). Layout and grammar identical across all layers; differences are data-semantic only.
+- Why it matters: Consistent workspace grammar makes the system feel like one platform, not six apps.
+- Dependencies: T160
+- Estimated effort: Large
+Subtasks: None
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Implemented the shared layer workspace grammar with header, back-to-stack action, notification strip, clickable summary tiles, searchable/sortable/paginated Carbon `DataTable`, and consistent per-layer shell behavior inside `PlatformShellPage.tsx`.
+
+---
+
+ID: T162
+Status: [✓] Done
+Title: [ADVANCED-GRID] Layer data model & content — Overview + Single Node
+Description:
+- Goal / acceptance criteria: Implement shared `layer` data contract (`id`, `label`, `description`, `health`, `activityLevel`, `alertCount`, `summaryMetrics[]`, `gridItems[]`, `tableRows[]`). Wire real API data (TanStack Query, `refetchInterval`) for **Overview** (platformHealth, activeAlerts, activeNodes, activeStreams, apiAvailability, clusterCapacity) and **Single Node** (nodeServices, nodeInterfaces, nodeStreams; table: service/status/cpu/memory/alerts). Carbon `Skeleton` loading states.
+- Why it matters: Validates the data contract pattern all remaining layers follow.
+- Dependencies: T161
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Defined the shared platform layer data contract and wired real Overview plus Single Node content in `web/src/app/hooks/usePlatformShellData.ts` using node topology/identity, PipeWire, CPU metrics, network status, deployment mode, and cluster status queries.
+
+---
+
+ID: T163
+Status: [✓] Done
+Title: [ADVANCED-GRID] Layer content — AVB Routing + MIDI Cluster
+Description:
+- Goal / acceptance criteria: Wire AVB Routing layer (gridItems: streamGroups, routingEndpoints; table: streamName/source/sink/latency/bandwidth/status — migrate from `AvbRoutingPage.tsx`) and MIDI Cluster layer (gridItems: midiEndpoints, routingGroups; table: device/port/clusterNode/activity/status — migrate from `MidiClusterPage.tsx` + `MidiClusterNodePage.tsx`). Existing API hooks reused; no net-new backend changes. TypeScript/build clean.
+- Why it matters: Replaces two of the five target pages inside the unified shell.
+- Dependencies: T162
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Wired the AVB Routing and MIDI Cluster layers into the unified data contract using the existing AVB/PTP/TSN hooks and MIDI cluster node/endpoint/connection/clock/health/summary hooks, replacing the standalone page logic with shared grid and table views.
+
+---
+
+ID: T164
+Status: [✓] Done
+Title: [ADVANCED-GRID] Layer content — API Observatory + Cluster Dashboard
+Description:
+- Goal / acceptance criteria: Wire API Observatory layer (gridItems: services, endpointGroups; table: endpoint/latency/requests/errors/status — migrate from `ApiObservatoryPage.tsx`) and Cluster Dashboard layer (gridItems: nodeGroups, clusterZones; table: node/cpu/memory/workloads/alerts — migrate from `ClusterDashboardPage.tsx`). Existing API hooks reused. TypeScript/build clean.
+- Why it matters: Replaces the final two of the five target pages inside the unified shell.
+- Dependencies: T163
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Wired the API Observatory and Cluster Dashboard layers into `usePlatformShellData.ts` with OpenAPI schema, traffic stats, WWW endpoint/access-log/websocket status data, and cluster/node health queries, all rendered through the shared workspace grammar.
+
+---
+
+ID: T165
+Status: [✓] Done
+Title: [ADVANCED-GRID] Remove replaced pages & accessibility/test pass
+Description:
+- Goal / acceptance criteria: Delete `OverviewPage.tsx/css/test`, `AvbRoutingPage.tsx/css/test`, `MidiClusterPage.tsx`, `MidiClusterNodePage.tsx`, `ApiObservatoryPage.tsx/css/test`, `ClusterDashboardPage.tsx/css` from `web/src/app/pages/`. Remove their routes from `AppShell.tsx`/router; add `/platform` route. Jest tests for `PlatformShell` (renders without crash, layer selection changes `activeLayer`, back-button returns to stack view, notification strip shows alert). Keyboard nav and ARIA labels verified. `npm run typecheck` and `npm run build` pass with zero errors. Definition of done.
+- Why it matters: System is complete only when the five pages are gone, the unified shell is sole entry point, and the build is clean.
+- Dependencies: T164
+- Estimated effort: Medium
+Subtasks: None
+Assigned to: Claude Code
+Last updated: 2026-03-15 11:40 - Codex
+- Completion notes:
+  - What was done: Deleted the replaced Overview/AVB Routing/MIDI Cluster/API Observatory/Cluster Dashboard entry pages, removed their standalone routing, updated navigation/home/poster/help links to `/platform`, added route/page regression coverage, and fixed the production render loop in `usePlatformShellData.ts` by stabilizing fallback collections and memoizing derived MIDI maps.
+  - Validation: `npm --prefix web run test -- src/app/pages/PlatformShellPage.test.tsx src/app/App.platformRoute.test.tsx src/app/data/advancedMenuItems.test.ts src/app/layout/AppShell.test.tsx --runInBand` -> PASS, `npm --prefix web run test -- src/app/pages/HomePage.test.tsx src/app/pages/PlatformShellPage.test.tsx src/app/App.platformRoute.test.tsx src/app/data/advancedMenuItems.test.ts src/app/layout/AppShell.test.tsx src/app/pages/NodesPage.test.tsx src/app/pages/MidiHubPage.test.tsx src/app/components/NodeNav/NodeNavChip.test.tsx src/app/components/NodeAlerts/NodeAlertBar.test.tsx src/app/components/NodeContextBanner/NodeContextBanner.test.tsx src/app/components/NodeContextPicker/NodeContextPicker.test.tsx --runInBand` -> PASS (`11 suites, 50 tests`).
+  - Validation: `pytest tests/test_node_api.py tests/test_node_proxy.py -q` -> PASS (`14 passed`), `npm --prefix web run typecheck` -> PASS, and `npm --prefix web run build` -> PASS.
+  - Smoke proof: Production preview smoke confirmed `http://127.0.0.1:3002/platform` returned `200 OK` and the Playwright screenshot showed the rendered `Unified Platform Stack` shell.
+  - Notes: Jest still emits the pre-existing React Router future-flag warnings in some suites, and the build still emits the pre-existing Vite dynamic/static import warning around `web/src/map2/api.ts`; no new warning class was introduced by this epic.
+  - Build side effect: The latest validation build regenerated `version.json` to `2026031511371501`, as designed by `T144`.

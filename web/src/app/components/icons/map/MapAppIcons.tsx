@@ -44,6 +44,21 @@ export function MapSignalFlowIcon(props: MapIconProps) {
   )
 }
 
+export function MapAudioGridIcon(props: MapIconProps) {
+  return (
+    <MapIconBase {...props}>
+      <rect x="2" y="2" width="28" height="28" rx="6" fill="#0f172a" />
+      <rect x="2.8" y="2.8" width="26.4" height="26.4" rx="5.4" fill="#3b82f6" />
+      <rect x="6.6" y="6.6" width="8.2" height="8.2" rx="1.2" fill="#18181b" />
+      <rect x="17.2" y="6.6" width="8.2" height="8.2" rx="1.2" fill="#18181b" />
+      <rect x="6.6" y="17.2" width="8.2" height="8.2" rx="1.2" fill="#18181b" />
+      <rect x="17.2" y="17.2" width="8.2" height="8.2" rx="1.2" fill="#18181b" />
+      <path d="M2.8 9.2c0-3.53 2.87-6.4 6.4-6.4h13.6c3.53 0 6.4 2.87 6.4 6.4v1.2H2.8z" fill="#ffffff" fillOpacity="0.16" />
+      <rect x="2.8" y="2.8" width="26.4" height="26.4" rx="5.4" fill="none" stroke="#bfdbfe" strokeOpacity="0.32" />
+    </MapIconBase>
+  )
+}
+
 export function MapRealtimeEngineIcon(props: MapIconProps) {
   return (
     <MapIconBase {...props}>

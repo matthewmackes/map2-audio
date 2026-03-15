@@ -2,6 +2,7 @@ import { Modal, Tag } from '@carbon/react'
 import type { Plugin } from '../../map2/types'
 import { useToasts } from './Toasts'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+import './PluginDetailsModal.css'
 
 interface PluginDetailsModalProps {
   plugin: Plugin | null
@@ -56,8 +57,8 @@ export function PluginDetailsModal({ plugin, open, onClose, onAdd }: PluginDetai
       selectorPrimaryFocus="#plugin-details-modal-content"
     >
       <div id="plugin-details-modal-content">
-        <div className="flex-between" style={{ marginBottom: 16 }}>
-          <span className="muted">{displayAuthor}</span>
+        <div className="plugin-details-modal__meta">
+          <span className="plugin-details-modal__author">{displayAuthor}</span>
           <Tag type="cool-gray" size="sm">
             {plugin.category}
           </Tag>
@@ -90,7 +91,7 @@ export function PluginDetailsModal({ plugin, open, onClose, onAdd }: PluginDetai
           </div>
 
           {plugin.parameters.length > 0 && (
-            <div className="disclosure-params">
+            <div className="plugin-details-modal__params disclosure-params">
               <span className="disclosure-label">Parameters ({plugin.parameters.length})</span>
               <ul className="param-list">
                 {plugin.parameters.slice(0, 5).map((param, idx) => (
@@ -100,7 +101,7 @@ export function PluginDetailsModal({ plugin, open, onClose, onAdd }: PluginDetai
                   </li>
                 ))}
                 {plugin.parameters.length > 5 && (
-                  <li className="param-item muted">...and {plugin.parameters.length - 5} more</li>
+                  <li className="param-item plugin-details-modal__truncated">...and {plugin.parameters.length - 5} more</li>
                 )}
               </ul>
             </div>

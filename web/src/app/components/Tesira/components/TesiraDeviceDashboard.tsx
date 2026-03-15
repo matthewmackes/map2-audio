@@ -5,6 +5,7 @@ import { useTesiraDevice } from '../hooks/useTesiraApi'
 import { TesiraFleetHealth } from './TesiraFleetHealth'
 import { TesiraPtpTopology } from './TesiraPtpTopology'
 import { TesiraDeployDialog } from './TesiraDeployDialog'
+import { buildPlatformHref } from '../../../platform/model'
 
 interface TesiraDeviceDashboardProps {
   deviceId: string
@@ -61,7 +62,7 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/dsp`} variant="outlined">DSP</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/settings`} variant="outlined">Settings</Button>
         <Button size="small" onClick={() => setDeployOpen(true)} variant="outlined">Export for SageVue</Button>
-        <Button size="small" component={RouterLink} to="/avb-routing" variant="outlined">AVB Routing</Button>
+        <Button size="small" component={RouterLink} to={buildPlatformHref('avb-routing')} variant="outlined">AVB Routing</Button>
       </Box>
 
       <Paper variant="outlined" sx={{ p: 1.25 }}>

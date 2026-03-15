@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { MapSignalFlowIcon } from '../components/icons/map'
+import { MapAudioGridIcon } from '../components/icons/map'
 import {
   MAX_PINNED_NAV_ITEMS,
   defaultPinnedRoutes,
@@ -87,7 +87,7 @@ describe('navigation catalog', () => {
     ])
   })
 
-  it('pins JUCE-GRID by default and removes legacy Grid entries from navigation', () => {
+  it('pins Audio Grid by default and removes legacy Grid entries from navigation', () => {
     expect(defaultPinnedRoutes).toEqual(['/juce-grid'])
 
     const juceGrid = navigationCatalogItems.find((item) => item.to === '/juce-grid')
@@ -97,7 +97,8 @@ describe('navigation catalog', () => {
     expect(juceGrid).toBeDefined()
     expect(juceGrid?.showOnHome).toBe(true)
     expect(juceGrid?.includeInAdvancedMenu).toBe(false)
-    expect(juceGrid?.icon).toBe(MapSignalFlowIcon)
+    expect(juceGrid?.label).toBe('Audio Grid')
+    expect(juceGrid?.icon).toBe(MapAudioGridIcon)
     expect(legacyGrid).toBeUndefined()
     expect(legacyGrid3d).toBeUndefined()
   })
@@ -119,26 +120,22 @@ describe('navigation catalog', () => {
   it('keeps the advanced menu limited to explicitly designated routes', () => {
     const advancedItems = navigationCatalogItems.filter((item) => item.includeInAdvancedMenu)
     expect(advancedItems.map((item) => item.to)).toEqual([
-      '/avb-routing',
-      '/midi-cluster',
-      '/api-observatory',
       '/midi-hub',
       '/mpx1',
       '/intelfx',
-      '/cluster-dashboard',
     ])
   })
 
-  it('keeps API Observatory in advanced navigation only', () => {
-    const observatory = navigationCatalogItems.find((item) => item.to === '/api-observatory')
-    expect(observatory).toBeDefined()
-    expect(observatory?.includeInAdvancedMenu).toBe(true)
-    expect(observatory?.showOnHome).toBe(false)
+  it('keeps Platform Stack on Home instead of the removed dedicated cluster pages', () => {
+    const platform = navigationCatalogItems.find((item) => item.to === '/platform')
+    expect(platform).toBeDefined()
+    expect(platform?.includeInAdvancedMenu).toBe(false)
+    expect(platform?.showOnHome).toBe(true)
 
     const appearsOnHome = homeNavigationSections.some((section) =>
-      section.items.some((item) => item.to === '/api-observatory'),
+      section.items.some((item) => item.to === '/platform'),
     )
-    expect(appearsOnHome).toBe(false)
+    expect(appearsOnHome).toBe(true)
   })
 
   it('keeps MPX1 Rack and IntelFX Rack in advanced navigation only', () => {
