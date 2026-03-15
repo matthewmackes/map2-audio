@@ -94,6 +94,31 @@ const mockFlowSnapshotsApi = {
   update: jest.fn(async () => ({})),
 }
 
+const mockMidiApiV2 = {
+  getStatus: jest.fn(async () => ({
+    enabled: true,
+    input_open: true,
+    output_open: false,
+    input_device: 'Test Input',
+    output_device: null,
+    mappings_count: 0,
+    commands_count: 0,
+    learning: false,
+    last_channel: 0,
+    last_cc: 0,
+    last_value: 0,
+  })),
+  getLearnStatus: jest.fn(async () => ({
+    learning: false,
+    target: null,
+  })),
+  getMappings: jest.fn(async () => ({ mappings: [], count: 0 })),
+  updateMapping: jest.fn(async () => ({ mapping: {}, message: 'ok' })),
+  deleteMapping: jest.fn(async () => ({ success: true, message: 'deleted' })),
+  startLearn: jest.fn(async () => ({ success: true, target: {} })),
+  stopLearn: jest.fn(async () => ({ success: true })),
+}
+
 jest.mock('@carbon/react', () => {
   const actual = jest.requireActual('@carbon/react')
   return {
@@ -149,6 +174,7 @@ jest.mock('../../map2/api', () => ({
   audioApi: mockAudioApi,
   metricsApi: mockMetricsApi,
   flowSnapshotsApi: mockFlowSnapshotsApi,
+  midiApiV2: mockMidiApiV2,
 }))
 
 jest.mock('../components/Toasts', () => ({
@@ -176,7 +202,12 @@ jest.mock('../hooks/useFlowSnapshots', () => ({
   useFlowSnapshots: () => ({ isConnected: false }),
 }))
 
-jest.mock('../../map2/components/MIDI/MidiLearnButton', () => () => <button type="button">MIDI learn</button>)
+jest.mock('../../map2/components/MIDI/MidiLearnButton', () => ({
+  __esModule: true,
+  default: ({ onToggle }: { onToggle?: () => void }) => (
+    <button type="button" onClick={onToggle}>MIDI learn</button>
+  ),
+}))
 
 jest.mock('../components/PluginDetailsModal', () => ({
   PluginDetailsModal: () => null,
@@ -286,6 +317,33 @@ describe('JuceGridPage snapshot rail layout', () => {
     mockPluginsApi.flushParameterBatch.mockResolvedValue({})
     mockPluginsApi.setParameterBatched.mockReset()
     mockPluginsApi.setParameterBatched.mockResolvedValue({})
+    Object.values(mockMidiApiV2).forEach((mockFn) => {
+      if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
+        ;(mockFn as jest.Mock).mockReset()
+      }
+    })
+    mockMidiApiV2.getStatus.mockResolvedValue({
+      enabled: true,
+      input_open: true,
+      output_open: false,
+      input_device: 'Test Input',
+      output_device: null,
+      mappings_count: 0,
+      commands_count: 0,
+      learning: false,
+      last_channel: 0,
+      last_cc: 0,
+      last_value: 0,
+    })
+    mockMidiApiV2.getLearnStatus.mockResolvedValue({
+      learning: false,
+      target: null,
+    })
+    mockMidiApiV2.getMappings.mockResolvedValue({ mappings: [], count: 0 })
+    mockMidiApiV2.updateMapping.mockResolvedValue({ mapping: {}, message: 'ok' })
+    mockMidiApiV2.deleteMapping.mockResolvedValue({ success: true, message: 'deleted' })
+    mockMidiApiV2.startLearn.mockResolvedValue({ success: true, target: {} })
+    mockMidiApiV2.stopLearn.mockResolvedValue({ success: true })
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
@@ -464,6 +522,149 @@ describe('JuceGridPage snapshot rail layout', () => {
       expect(screen.queryByText('Test Chorus')).toBeNull()
     })
     expect(mockSetQueryData).toHaveBeenCalled()
+  })
+
+  it('renders canonical MIDI mappings from midiApiV2 in the rail', async () => {
+    mockMidiApiV2.getStatus.mockResolvedValue({
+      enabled: true,
+      input_open: true,
+      output_open: false,
+      input_device: 'Test Input',
+      output_device: null,
+      mappings_count: 1,
+      commands_count: 0,
+      learning: false,
+      last_channel: 3,
+      last_cc: 11,
+      last_value: 96,
+    })
+    mockMidiApiV2.getMappings.mockResolvedValue({
+      mappings: [
+        {
+          id: 77,
+          channel: 0,
+          cc: 11,
+          chain_id: null,
+          target_plugin_uri: 'map2://juce/modulation/chorus',
+          target_param_index: 0,
+          target_param_symbol: 'depth',
+          min_val: 0,
+          max_val: 1,
+          curve_type: 'linear',
+          invert: false,
+          feedback_enabled: false,
+          feedback_cc: null,
+          name: 'Chorus - Depth',
+          group_id: null,
+          is_learned: true,
+          is_enabled: true,
+        },
+      ],
+      count: 1,
+    })
+    mockPluginsApi.discover.mockResolvedValue({
+      plugins: [
+        {
+          uri: 'map2://juce/modulation/chorus',
+          name: 'Chorus',
+          author: 'MAP2 Audio',
+          category: 'Modulation',
+          format: 'JUCE',
+          in_ports: 2,
+          out_ports: 2,
+          parameters: [
+            { index: 0, name: 'Depth', symbol: 'depth', min: 0, max: 1, default: 0.5, is_toggled: false, is_log: false },
+          ],
+        },
+      ],
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByText('Depth')).toBeTruthy()
+    expect(screen.getByText('Chorus')).toBeTruthy()
+    expect(screen.getByText('CC 11')).toBeTruthy()
+    expect(mockMidiApiV2.getMappings).toHaveBeenCalledWith()
+  })
+
+  it('queries canonical chain-scoped MIDI mappings when the active-chain filter is selected', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#0f62fe', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: null, label: 'B', color: '#24a148', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await screen.findByText('MIDI mappings')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Active chain' }))
+
+    await waitFor(() => {
+      expect(mockMidiApiV2.getMappings).toHaveBeenCalledWith({ chain_id: 1 })
+    })
+  })
+
+  it('stops canonical MIDI learn even when the backend is already learning before local arming', async () => {
+    mockMidiApiV2.getLearnStatus.mockResolvedValue({
+      learning: true,
+      target: {
+        parameter_symbol: 'depth',
+        parameter_index: 0,
+      },
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await screen.findAllByText('Learning')
+    const [midiLearnButton] = await screen.findAllByRole('button', { name: 'MIDI learn' })
+    fireEvent.click(midiLearnButton)
+
+    await waitFor(() => {
+      expect(mockMidiApiV2.stopLearn).toHaveBeenCalled()
+    })
   })
 
   it('renders plugin browser results in a stable alphabetical order', async () => {

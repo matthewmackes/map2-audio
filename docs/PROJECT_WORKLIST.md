@@ -10354,6 +10354,44 @@ Assigned to: Codex
 Last updated: 2026-03-15 17:08 - Codex
 - Completion notes:
   - What was done: Renamed the Presets surface to Snapshots across the dedicated page route (`/snapshots` with `/presets` redirect), page/component filenames, visible UI copy, navigation/home/poster metadata, and the page-scoped generic snapshot API/types route wiring used by this surface.
-  - Validation: `npm --prefix web run typecheck`; `python3 -m py_compile app/routes/presets.py`; `npm --prefix web run test -- src/app/components/snapshots/SnapshotImportDialog.test.tsx src/app/components/snapshots/SnapshotDeployModal.test.tsx src/app/pages/JuceGridPage.test.tsx --runInBand`
-  - Deployment: Rebuilt the production frontend, restarted the port-3000 server, and verified `http://127.0.0.1:3000/` serves bundle `assets/index-Brk_VLCy.js`.
-  - Compliance: AGPL/license spot-check found no new licensing gaps introduced by the snapshot rename.
+- Validation: `npm --prefix web run typecheck`; `python3 -m py_compile app/routes/presets.py`; `npm --prefix web run test -- src/app/components/snapshots/SnapshotImportDialog.test.tsx src/app/components/snapshots/SnapshotDeployModal.test.tsx src/app/pages/JuceGridPage.test.tsx --runInBand`
+- Deployment: Rebuilt the production frontend, restarted the port-3000 server, and verified `http://127.0.0.1:3000/` serves bundle `assets/index-Brk_VLCy.js`.
+- Compliance: AGPL/license spot-check found no new licensing gaps introduced by the snapshot rename.
+
+ID: T173
+Status: [✓] Done
+Title: Align JUCE-GRID MIDI rail with canonical MIDI and MIDI Hub platform state
+Description:
+- Goal / acceptance criteria: Rework the `/juce-grid` MIDI rail so it reads and writes canonical platform MIDI data instead of route-local placeholder state. The rail must use the same `midiApiV2` mappings/learn/status surfaces as the main MIDI window, scope results appropriately for the active chain and selected plugin when helpful, preserve the existing Carbon rail layout, and keep behavior consistent with the platform's MIDI Hub model rather than introducing a separate JUCE-GRID-only MIDI store. Acceptance requires JUCE-GRID rail edits and learn state to match the underlying MIDI platform state, focused regression coverage, and passing frontend validation.
+- Why it matters: The current JUCE-GRID right rail shows different results than the MIDI window because it is not backed by the platform MIDI system of record, which makes operator edits unreliable and breaks parity with MIDI Hub capabilities.
+- Dependencies: T079, T130, T140
+- Estimated effort: Medium
+- Required outputs: Updated `JUCE-GRID` MIDI rail data flow and mutations, any supporting query/test refactors, worklist evidence, and validation logs.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 17:57 - Codex
+- Completion notes:
+  - What was done: Replaced the JUCE-GRID route-local MIDI rail state with canonical `midiApiV2` status, learn, and mapping queries so the right sidebar now mirrors the same platform data model as MIDI Hub. Added scope filters for all mappings, the active chain, and the selected block; routed parameter-touch learn flows through backend MIDI learn; and made range, curve, enabled, invert, and delete actions persist through the canonical mapping API.
+  - Files produced: `web/src/app/pages/JuceGridPage.tsx`; `web/src/app/pages/JuceGridPage.test.tsx`
+  - Validation: `npm --prefix web run typecheck`; `npm --prefix web run test -- src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run build`
+  - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced.
+  - Compliance: AGPL/license spot-check found no new licensing gaps introduced by the JUCE-GRID MIDI parity work.
+
+ID: T174
+Status: [✓] Done
+Title: Refine JUCE-GRID live-path side strips for slimmer borders and clearer labels
+Description:
+- Goal / acceptance criteria: Tighten the left/right live-path border strips in `/juce-grid` so the edge treatments consume less width while making the live/branch labels more legible. The fix must preserve the existing live-path layout behavior across desktop and compact breakpoints, keep the visual intent of the signal arrows and selected-flow strip, and validate cleanly in the frontend build.
+- Why it matters: The current live-path edge strips take more horizontal space than needed while the label text is harder to read than the user wants during flow selection and monitoring.
+- Dependencies: T170, T173
+- Estimated effort: Low
+- Required outputs: Updated `JUCE-GRID` live-path card markup/styles as needed, validation evidence, and worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 18:12 - Codex
+- Completion notes:
+  - What was done: Reduced the live-path row side-strip column widths, tightened the selected-branch title strip padding, increased label contrast/weight for the live edge text, and renamed the active flow strip label from `Flow` to `Selected branch` so the side treatments read more clearly while taking less width.
+  - Files produced: `web/src/app/pages/JuceGridPage.tsx`; `web/src/app/pages/JuceGridPage.css`
+  - Validation: `npm --prefix web run typecheck`; `npm --prefix web run test -- src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run build`
+  - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced.
+  - Compliance: AGPL/license spot-check found no new licensing gaps introduced by the JUCE-GRID live-path strip refinement.

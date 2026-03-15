@@ -52,6 +52,8 @@ import {
   OverflowMenu,
   OverflowMenuItem,
   Search,
+  Select,
+  SelectItem,
   SideNav,
   SideNavFooter,
   SideNavItems,
@@ -65,8 +67,8 @@ import {
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getCategoryConfig } from '../grid/shared'
-import type { MidiMapping, AutomationLane } from '../grid/shared'
-import { chainsApi, pluginsApi, historyApi, audioApi, metricsApi, flowSnapshotsApi, type AudioAvbEndpoint, type AudioPort } from '../../map2/api'
+import type { AutomationLane } from '../grid/shared'
+import { chainsApi, pluginsApi, historyApi, audioApi, metricsApi, flowSnapshotsApi, midiApiV2, type AudioAvbEndpoint, type AudioPort } from '../../map2/api'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
@@ -77,7 +79,7 @@ import { NumberInput } from '../components/Controls/NumberInput'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, HistoryStatus, FlowSnapshot, FlowSnapshotData, FlowSnapshotDetail, ChainSnapshot, ChainsResponse, Snapshot } from '../../map2/types'
+import type { Chain, Plugin, HistoryStatus, FlowSnapshot, FlowSnapshotData, FlowSnapshotDetail, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
@@ -143,6 +145,29 @@ function formatInspectorList(values: string[]): string {
     return 'None'
   }
   return values.join(', ')
+}
+
+function formatMidiMappingValue(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '0'
+  }
+
+  const rounded = Math.round(value * 1000) / 1000
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded)
+}
+
+function parseMidiMappingValue(rawValue: string, fallback: number): number {
+  const parsed = Number.parseFloat(rawValue)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function fallbackPluginLabel(pluginUri: string | null): string {
+  if (!pluginUri) {
+    return 'Processor'
+  }
+
+  const tail = pluginUri.split('/').pop()
+  return tail ? tail.replace(/[-_]+/g, ' ') : pluginUri
 }
 
 function JuceGridHeroMark() {
@@ -225,6 +250,13 @@ type CompactTabId =
   | 'presets'
 
 type CompactRailPanelId = 'snapshots' | 'midi' | null
+type JuceGridMidiScope = 'all' | 'active-chain' | 'selected-plugin'
+type MidiRangeDraft = {
+  min: string
+  max: string
+  sourceMin: string
+  sourceMax: string
+}
 
 // ============================================================================
 // Constants
@@ -260,6 +292,13 @@ const ROUTING_MODE_OPTIONS: Array<{
   { id: 'parameter_morph', label: 'Morph', summary: 'Crossfade parameter states between two flows.' },
   { id: 'sidechain', label: 'Sidechain', summary: 'Drive one flow with another as control input.' },
 ]
+
+const MIDI_CURVE_LABELS: Record<MIDIMappingV2['curve_type'], string> = {
+  linear: 'Linear',
+  logarithmic: 'Log',
+  exponential: 'Exp',
+  s_curve: 'S-Curve',
+}
 
 const KEYBOARD_SHORTCUT_SECTIONS: Array<{
   title: string
@@ -452,6 +491,8 @@ export function JuceGridPage() {
   const [isAssigningFlow, setIsAssigningFlow] = useState(false)
   const [pluginSearchQuery, setPluginSearchQuery] = useState('')
   const [midiLearnActive, setMidiLearnActive] = useState(false)
+  const [midiScope, setMidiScope] = useState<JuceGridMidiScope>('all')
+  const [midiRangeDrafts, setMidiRangeDrafts] = useState<Record<number, MidiRangeDraft>>({})
   const [isRefreshingPlugins, setIsRefreshingPlugins] = useState(false)
 
   // Enhanced UI State
@@ -484,9 +525,6 @@ export function JuceGridPage() {
     } catch { return new Set() }
   })
 
-  // MIDI Mappings Panel State
-  const [midiMappings, setMidiMappings] = useState<MidiMapping[]>([])
-
   // Automation Timeline State
   const [automationTimelineExpanded, setAutomationTimelineExpanded] = useState(false)
 
@@ -513,7 +551,6 @@ export function JuceGridPage() {
   const [snapshotMorphDurationMs, setSnapshotMorphDurationMs] = useState(1200)
   const [snapshotMorphRunning, setSnapshotMorphRunning] = useState(false)
   const [snapshotLibraryExpanded, setSnapshotLibraryExpanded] = useState(false)
-  const [midiRailExpanded, setMidiRailExpanded] = useState(false)
   const [midiPanelExpanded, setMidiPanelExpanded] = useState(() => {
     try {
       const saved = localStorage.getItem('map2_juce_grid_midi_panel')
@@ -522,6 +559,7 @@ export function JuceGridPage() {
   })
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const momentaryRestoreStateRef = useRef<FlowSnapshotData | null>(null)
+  const midiLearnWasInProgressRef = useRef(false)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
   const [automationLoopEnabled, setAutomationLoopEnabled] = useState(false)
@@ -539,9 +577,6 @@ export function JuceGridPage() {
 
   // Preset Import Dialog
   const [showImportDialog, setShowImportDialog] = useState(false)
-
-  // MIDI Learn Feedback
-  const [lastMidiEvent, setLastMidiEvent] = useState<{ cc: number; value: number } | null>(null)
 
   // Toolbar Customization
   const [toolbarCollapsed, setToolbarCollapsed] = useState(() => {
@@ -586,6 +621,8 @@ export function JuceGridPage() {
     } catch {}
   }, [midiPanelExpanded])
 
+  const activeFlowChainId = flowSlots[activeFlowIndex]?.chainId ?? null
+
   // ============================================================================
   // Queries
   // ============================================================================
@@ -616,6 +653,44 @@ export function JuceGridPage() {
   const presetsQuery = useQuery({
     queryKey: ['chains', 'presets'],
     queryFn: () => chainsApi.listPresets(),
+  })
+
+  const midiStatusQuery = useQuery({
+    queryKey: ['midi', 'status'],
+    queryFn: midiApiV2.getStatus,
+    refetchInterval: 2000,
+  })
+
+  const midiLearnStatusQuery = useQuery({
+    queryKey: ['midi', 'learn', 'status'],
+    queryFn: midiApiV2.getLearnStatus,
+    refetchInterval: (query) => {
+      const learnStatus = query.state.data as { learning?: boolean } | undefined
+      return midiLearnActive || learnStatus?.learning ? 500 : 2000
+    },
+  })
+
+  const midiMappingsQuery = useQuery({
+    queryKey: ['midi', 'mappings', 'juce-grid', midiScope, activeFlowChainId, selectedPluginUri ?? null],
+    queryFn: () => {
+      if (midiScope === 'selected-plugin' && selectedPluginUri) {
+        return midiApiV2.getMappings({
+          chain_id: activeFlowChainId ?? undefined,
+          plugin_uri: selectedPluginUri,
+        })
+      }
+
+      if (midiScope === 'active-chain' && activeFlowChainId !== null) {
+        return midiApiV2.getMappings({ chain_id: activeFlowChainId })
+      }
+
+      if (midiScope === 'selected-plugin' && activeFlowChainId !== null) {
+        return midiApiV2.getMappings({ chain_id: activeFlowChainId })
+      }
+
+      return midiApiV2.getMappings()
+    },
+    refetchInterval: 5000,
   })
 
   const flowSnapshotsQuery = useQuery<{
@@ -1397,6 +1472,137 @@ export function JuceGridPage() {
     return meta || null
   }, [selectedPluginUri, pluginMeta, pluginsQuery.status, pluginsQuery.data?.plugins?.length])
 
+  const midiStatus = midiStatusQuery.data as MIDIStatus | undefined
+  const midiLearnStatus = midiLearnStatusQuery.data
+  const midiMappings = midiMappingsQuery.data?.mappings ?? []
+  const midiLearnInProgress = midiLearnStatus?.learning ?? false
+  const lastMidiEvent = useMemo(() => {
+    if (!midiStatus || midiStatus.last_channel <= 0) {
+      return null
+    }
+
+    return {
+      cc: midiStatus.last_cc,
+      value: midiStatus.last_value,
+      channel: midiStatus.last_channel,
+    }
+  }, [midiStatus])
+
+  const midiScopeLabel = useMemo(() => {
+    switch (midiScope) {
+      case 'selected-plugin':
+        return selectedPlugin
+          ? `Selected block: ${getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}`
+          : 'Selected block'
+      case 'active-chain':
+        return currentChain ? `Active chain: ${currentChain.name}` : 'Active chain'
+      case 'all':
+      default:
+        return 'All mappings'
+    }
+  }, [currentChain, midiScope, selectedPlugin])
+
+  const midiPluginNameByUri = useMemo(() => {
+    const names = new Map<string, string>()
+
+    chains.forEach((chain) => {
+      chain.plugins.forEach((plugin) => {
+        if (!names.has(plugin.uri)) {
+          names.set(plugin.uri, getDisplayPluginName(plugin.name, plugin.uri))
+        }
+      })
+    })
+
+    Object.values(pluginMeta).forEach((plugin) => {
+      if (!names.has(plugin.uri)) {
+        names.set(plugin.uri, getDisplayPluginName(plugin.name, plugin.uri))
+      }
+    })
+
+    return names
+  }, [chains, pluginMeta])
+
+  const getMidiMappingPluginName = useCallback((pluginUri: string | null) => {
+    if (!pluginUri) {
+      return 'Processor'
+    }
+    return midiPluginNameByUri.get(pluginUri) ?? fallbackPluginLabel(pluginUri)
+  }, [midiPluginNameByUri])
+
+  const getMidiMappingParameterName = useCallback((mapping: MIDIMappingV2) => {
+    if (!mapping.target_plugin_uri) {
+      return mapping.target_param_symbol ?? `Parameter #${mapping.target_param_index ?? 0}`
+    }
+
+    const meta = pluginMeta[mapping.target_plugin_uri]
+    const parameter = meta?.parameters?.find((entry) => entry.index === mapping.target_param_index)
+    return parameter?.name ?? mapping.target_param_symbol ?? `Parameter #${mapping.target_param_index ?? 0}`
+  }, [pluginMeta])
+
+  useEffect(() => {
+    if (midiScope === 'selected-plugin' && !selectedPluginUri) {
+      setMidiScope(activeFlowChainId !== null ? 'active-chain' : 'all')
+      return
+    }
+
+    if (midiScope === 'active-chain' && activeFlowChainId === null) {
+      setMidiScope('all')
+    }
+  }, [activeFlowChainId, midiScope, selectedPluginUri])
+
+  useEffect(() => {
+    setMidiRangeDrafts((previous) => {
+      const next: Record<number, MidiRangeDraft> = {}
+      let changed = Object.keys(previous).length !== midiMappings.length
+
+      midiMappings.forEach((mapping) => {
+        const sourceMin = formatMidiMappingValue(mapping.min_val)
+        const sourceMax = formatMidiMappingValue(mapping.max_val)
+        const current = previous[mapping.id]
+        const nextDraft: MidiRangeDraft = current
+          ? {
+              min: current.min === current.sourceMin ? sourceMin : current.min,
+              max: current.max === current.sourceMax ? sourceMax : current.max,
+              sourceMin,
+              sourceMax,
+            }
+          : {
+              min: sourceMin,
+              max: sourceMax,
+              sourceMin,
+              sourceMax,
+            }
+        next[mapping.id] = nextDraft
+
+        if (!current) {
+          changed = true
+          return
+        }
+
+        if (
+          current.min !== nextDraft.min
+          || current.max !== nextDraft.max
+          || current.sourceMin !== nextDraft.sourceMin
+          || current.sourceMax !== nextDraft.sourceMax
+        ) {
+          changed = true
+        }
+      })
+
+      return changed ? next : previous
+    })
+  }, [midiMappings])
+
+  useEffect(() => {
+    const learning = midiLearnStatus?.learning ?? false
+    if (midiLearnWasInProgressRef.current && !learning) {
+      setMidiLearnActive(false)
+      void queryClient.invalidateQueries({ queryKey: ['midi'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings', 'juce-grid'] })
+    }
+    midiLearnWasInProgressRef.current = learning
+  }, [midiLearnStatus?.learning, queryClient])
+
   // Compute available categories
   const categories = useMemo(() => {
     const set = new Set<string>(['all'])
@@ -1705,6 +1911,62 @@ export function JuceGridPage() {
     },
     [queryClient]
   )
+
+  const invalidateMidiQueries = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['midi'] })
+    void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings', 'juce-grid'] })
+  }, [queryClient])
+
+  const updateMidiMappingMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: number; updates: Partial<MIDIMappingV2> }) =>
+      midiApiV2.updateMapping(id, updates),
+    onSuccess: () => {
+      invalidateMidiQueries()
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to update MIDI mapping', 'error')
+    },
+  })
+
+  const deleteMidiMappingMutation = useMutation({
+    mutationFn: (id: number) => midiApiV2.deleteMapping(id),
+    onSuccess: () => {
+      invalidateMidiQueries()
+      pushToast('MIDI mapping deleted', 'info')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to delete MIDI mapping', 'error')
+    },
+  })
+
+  const startMidiLearnMutation = useMutation({
+    mutationFn: (params: {
+      chain_id: number
+      plugin_uri: string
+      param_symbol: string
+      param_index: number
+      min_val?: number
+      max_val?: number
+    }) => midiApiV2.startLearn(params),
+    onSuccess: () => {
+      invalidateMidiQueries()
+    },
+    onError: (error) => {
+      setMidiLearnActive(false)
+      pushToast(error instanceof Error ? error.message : 'Failed to start MIDI learn', 'error')
+    },
+  })
+
+  const stopMidiLearnMutation = useMutation({
+    mutationFn: () => midiApiV2.stopLearn(),
+    onSuccess: () => {
+      setMidiLearnActive(false)
+      invalidateMidiQueries()
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to stop MIDI learn', 'error')
+    },
+  })
 
   const reorderMutation = useMutation({
     mutationFn: ({ chainId, pluginUris }: { chainId: number; pluginUris: string[] }) =>
@@ -2139,13 +2401,120 @@ export function JuceGridPage() {
     addPluginMutation.mutate({ chainId: currentChain.id, pluginUri: uri })
   }, [currentChain, addPluginMutation])
 
+  const handleMidiLearnToggle = useCallback(() => {
+    if (midiLearnInProgress) {
+      stopMidiLearnMutation.mutate()
+      return
+    }
+
+    if (midiLearnActive) {
+      setMidiLearnActive(false)
+      return
+    }
+
+    if (!selectedPlugin || !selectedPluginMeta || !currentChain) {
+      pushToast('Select a block before arming MIDI learn', 'warn')
+      return
+    }
+
+    setMidiLearnActive(true)
+    pushToast('MIDI learn armed. Touch a block parameter to bind the next controller message.', 'info')
+  }, [
+    currentChain,
+    midiLearnActive,
+    midiLearnInProgress,
+    pushToast,
+    selectedPlugin,
+    selectedPluginMeta,
+    stopMidiLearnMutation,
+  ])
+
+  const updateMidiMappingRangeDraft = useCallback((mappingId: number, field: 'min' | 'max', value: string) => {
+    setMidiRangeDrafts((previous) => ({
+      ...previous,
+      [mappingId]: {
+        sourceMin: previous[mappingId]?.sourceMin ?? '',
+        sourceMax: previous[mappingId]?.sourceMax ?? '',
+        min: field === 'min' ? value : previous[mappingId]?.min ?? '',
+        max: field === 'max' ? value : previous[mappingId]?.max ?? '',
+      },
+    }))
+  }, [])
+
+  const commitMidiMappingRange = useCallback((mapping: MIDIMappingV2) => {
+    const draft = midiRangeDrafts[mapping.id]
+    if (!draft) {
+      return
+    }
+
+    const nextMin = parseMidiMappingValue(draft.min, mapping.min_val)
+    const nextMax = parseMidiMappingValue(draft.max, mapping.max_val)
+    const hasChanged = nextMin !== mapping.min_val || nextMax !== mapping.max_val
+
+    setMidiRangeDrafts((previous) => ({
+      ...previous,
+      [mapping.id]: {
+        min: formatMidiMappingValue(nextMin),
+        max: formatMidiMappingValue(nextMax),
+        sourceMin: formatMidiMappingValue(nextMin),
+        sourceMax: formatMidiMappingValue(nextMax),
+      },
+    }))
+
+    if (!hasChanged) {
+      return
+    }
+
+    updateMidiMappingMutation.mutate({
+      id: mapping.id,
+      updates: {
+        min_val: nextMin,
+        max_val: nextMax,
+      },
+    })
+  }, [midiRangeDrafts, updateMidiMappingMutation])
+
   // Parameter handling
   const handleParameterChange = useCallback((symbol: string, value: number) => {
     if (!selectedPluginMeta || !selectedPluginUri) return
     const paramIndex = selectedPluginMeta.parameters.findIndex((p) => p.symbol === symbol)
     if (paramIndex === -1) return
+
+    if (midiLearnActive) {
+      if (!currentChain || !selectedPlugin) {
+        setMidiLearnActive(false)
+        pushToast('Select a block before starting MIDI learn', 'warn')
+        return
+      }
+
+      if (startMidiLearnMutation.isPending || midiLearnInProgress) {
+        return
+      }
+
+      const parameterMeta = selectedPluginMeta.parameters[paramIndex]
+      pushToast(`Learning ${parameterMeta.name}… move a MIDI controller`, 'info')
+      startMidiLearnMutation.mutate({
+        chain_id: currentChain.id,
+        plugin_uri: selectedPlugin.uri,
+        param_symbol: parameterMeta.symbol,
+        param_index: parameterMeta.index,
+        min_val: parameterMeta.min,
+        max_val: parameterMeta.max,
+      })
+      return
+    }
+
     pluginsApi.setParameterBatched(selectedPluginUri, paramIndex, value)
-  }, [selectedPluginMeta, selectedPluginUri])
+  }, [
+    currentChain,
+    midiLearnActive,
+    midiLearnInProgress,
+    pushToast,
+    selectedPlugin,
+    selectedPluginMeta,
+    selectedPluginUri,
+    startMidiLearnMutation,
+  ])
 
   const handleParameterChangeEnd = useCallback(() => {
     pluginsApi.flushParameterBatch()
@@ -2891,15 +3260,30 @@ export function JuceGridPage() {
                 {midiPanelExpanded && (
                   <div className="juce-grid-page__midi-rail-copy">
                     <strong>MIDI</strong>
-                    <span>{midiMappings.length} mappings</span>
+                    <span>
+                      {midiStatus?.mappings_count !== undefined && midiStatus.mappings_count !== midiMappings.length
+                        ? `${midiMappings.length} shown / ${midiStatus.mappings_count} total`
+                        : `${midiMappings.length} mappings`}
+                    </span>
                   </div>
                 )}
               </div>
 
               {midiPanelExpanded && (
                 <div className="juce-grid-page__midi-rail-summary">
-                  <Tag type={midiLearnActive ? 'green' : 'cool-gray'}>
-                    {midiLearnActive ? `Learn active${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}` : 'Learn idle'}
+                  <Tag type={midiLearnActive || midiLearnInProgress ? 'green' : 'cool-gray'}>
+                    {midiLearnInProgress
+                      ? `Learning${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}`
+                      : midiLearnActive
+                        ? 'Learn armed'
+                        : 'Learn idle'}
+                  </Tag>
+                  <Tag type={midiStatus?.enabled ? (midiStatus.input_open ? 'green' : 'warm-gray') : 'cool-gray'}>
+                    {!midiStatus?.enabled
+                      ? 'Engine standby'
+                      : midiStatus.input_open
+                        ? 'Input armed'
+                        : 'Engine online'}
                   </Tag>
                 </div>
               )}
@@ -2907,10 +3291,11 @@ export function JuceGridPage() {
               {midiPanelExpanded && (
                 <div className="juce-grid-page__midi-rail-toolbar">
                   <MidiLearnButton
-                    isActive={midiLearnActive}
-                    onToggle={() => setMidiLearnActive((prev) => !prev)}
+                    isActive={midiLearnActive || midiLearnInProgress}
+                    onToggle={handleMidiLearnToggle}
                     position="relative"
                     size="small"
+                    mappingCount={midiMappings.length}
                   />
                 </div>
               )}
@@ -2929,17 +3314,17 @@ export function JuceGridPage() {
                 <Button
                   hasIconOnly
                   size="sm"
-                  kind={midiLearnActive ? 'secondary' : 'ghost'}
+                  kind={midiLearnActive || midiLearnInProgress ? 'secondary' : 'ghost'}
                   renderIcon={Music}
-                  iconDescription={midiLearnActive ? 'MIDI learn active' : 'Toggle MIDI learn'}
-                  onClick={() => setMidiLearnActive((prev) => !prev)}
+                  iconDescription={midiLearnInProgress ? 'MIDI learn running' : midiLearnActive ? 'MIDI learn armed' : 'Toggle MIDI learn'}
+                  onClick={handleMidiLearnToggle}
                 />
                 {midiMappings.length > 0 && (
                   <button
                     type="button"
                     className="juce-grid-page__midi-rail-pill"
                     onClick={() => setMidiPanelExpanded(true)}
-                    aria-label={`Expand MIDI rail. ${midiMappings.length} mappings`}
+                    aria-label={`Expand MIDI rail. ${midiMappings.length} mappings shown`}
                   >
                     {midiMappings.length}
                   </button>
@@ -2958,16 +3343,6 @@ export function JuceGridPage() {
     </aside>
   )
 
-  const updateMidiMapping = useCallback((id: string, updates: Partial<MidiMapping>) => {
-    setMidiMappings((previous) => previous.map((mapping) => (
-      mapping.id === id ? { ...mapping, ...updates } : mapping
-    )))
-  }, [])
-
-  const deleteMidiMapping = useCallback((id: string) => {
-    setMidiMappings((previous) => previous.filter((mapping) => mapping.id !== id))
-  }, [])
-
   const renderMidiMappingsWorkspace = (options: { closable: boolean; onClose?: () => void }) => (
     <div className="juce-grid-page__midi-workspace">
       <div className="juce-grid-page__midi-header">
@@ -2976,13 +3351,20 @@ export function JuceGridPage() {
             <Music size={16} />
             <span>MIDI mappings</span>
           </div>
-          <p>Review learned assignments, adjust ranges, and flip response direction.</p>
+          <p>Review canonical platform mappings, filter by scope, and arm backend MIDI learn from the grid.</p>
         </div>
         <div className="juce-grid-page__compact-actions">
-          <Tag type={midiLearnActive ? 'green' : 'cool-gray'}>
-            {midiLearnActive ? `Learn active${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}` : 'Learn idle'}
+          <Tag type={midiLearnActive || midiLearnInProgress ? 'green' : 'cool-gray'}>
+            {midiLearnInProgress
+              ? `Learning${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}`
+              : midiLearnActive
+                ? 'Learn armed'
+                : 'Learn idle'}
           </Tag>
-          <Tag type="cool-gray">{midiMappings.length} mappings</Tag>
+          <Tag type="cool-gray">
+            {midiMappings.length} shown
+            {midiStatus?.mappings_count !== undefined ? ` / ${midiStatus.mappings_count} total` : ''}
+          </Tag>
           {options.closable && options.onClose && (
             <Button size="sm" kind="ghost" onClick={options.onClose}>
               Close
@@ -2991,11 +3373,59 @@ export function JuceGridPage() {
         </div>
       </div>
 
-      {midiMappings.length === 0 ? (
+      <div className="juce-grid-page__toolbar-buttons">
+        <Button
+          size="sm"
+          kind={midiScope === 'all' ? 'secondary' : 'ghost'}
+          onClick={() => setMidiScope('all')}
+        >
+          All
+        </Button>
+        <Button
+          size="sm"
+          kind={midiScope === 'active-chain' ? 'secondary' : 'ghost'}
+          onClick={() => setMidiScope('active-chain')}
+          disabled={activeFlowChainId === null}
+        >
+          Active chain
+        </Button>
+        <Button
+          size="sm"
+          kind={midiScope === 'selected-plugin' ? 'secondary' : 'ghost'}
+          onClick={() => setMidiScope('selected-plugin')}
+          disabled={!selectedPluginUri}
+        >
+          Selected block
+        </Button>
+      </div>
+
+      <div className="juce-grid-page__compact-actions">
+        <Tag type="cool-gray">{midiScopeLabel}</Tag>
+        {midiLearnInProgress && midiLearnStatus?.target && (
+          <Tag type="green">
+            Target {midiLearnStatus.target.parameter_symbol || `#${midiLearnStatus.target.parameter_index}`}
+          </Tag>
+        )}
+      </div>
+
+      {midiMappingsQuery.isLoading ? (
         <div className="juce-grid-page__empty-state">
-          <p>No MIDI mappings yet</p>
+          <InlineLoading description="Loading MIDI mappings" />
+        </div>
+      ) : midiMappingsQuery.isError ? (
+        <div className="juce-grid-page__empty-state">
+          <p>Unable to load MIDI mappings</p>
           <p className="juce-grid-page__empty-state-copy">
-            Enable MIDI Learn from the toolbar, then touch a block parameter to bind the next controller message.
+            {midiMappingsQuery.error instanceof Error ? midiMappingsQuery.error.message : 'The MIDI API did not return a mapping list.'}
+          </p>
+        </div>
+      ) : midiMappings.length === 0 ? (
+        <div className="juce-grid-page__empty-state">
+          <p>No MIDI mappings in this scope</p>
+          <p className="juce-grid-page__empty-state-copy">
+            {midiLearnActive
+              ? 'Touch a block parameter to start canonical MIDI learn for the selected processor.'
+              : 'Arm MIDI Learn, then touch a block parameter, or use the MIDI window for full mapping authoring.'}
           </p>
         </div>
       ) : (
@@ -3004,13 +3434,20 @@ export function JuceGridPage() {
             <Tile key={mapping.id} className="juce-grid-page__midi-tile">
               <div className="juce-grid-page__midi-tile-header">
                 <div className="juce-grid-page__midi-tile-copy">
-                  <strong>{mapping.parameterName}</strong>
-                  <p>{sanitizeRestrictedDisplayText(mapping.pluginName) || 'Processor'}</p>
+                  <strong>{getMidiMappingParameterName(mapping)}</strong>
+                  <p>{sanitizeRestrictedDisplayText(getMidiMappingPluginName(mapping.target_plugin_uri)) || 'Processor'}</p>
                 </div>
                 <div className="juce-grid-page__compact-tags">
-                  <Tag type="purple">CC {mapping.ccNumber}</Tag>
+                  <Tag type="purple">CC {mapping.cc}</Tag>
                   <Tag type="cool-gray">Ch {mapping.channel}</Tag>
-                  {mapping.inverted && <Tag type="warm-gray">Inverted</Tag>}
+                  <Tag type={mapping.chain_id === null ? 'cool-gray' : 'blue'}>
+                    {mapping.chain_id === null ? 'Global' : `Chain ${mapping.chain_id}`}
+                  </Tag>
+                  <Tag type={mapping.is_enabled ? 'green' : 'warm-gray'}>
+                    {mapping.is_enabled ? 'Enabled' : 'Disabled'}
+                  </Tag>
+                  <Tag type="cool-gray">{MIDI_CURVE_LABELS[mapping.curve_type]}</Tag>
+                  {mapping.invert && <Tag type="warm-gray">Inverted</Tag>}
                 </div>
               </div>
 
@@ -3019,29 +3456,68 @@ export function JuceGridPage() {
                   id={`juce-grid-midi-min-${mapping.id}`}
                   labelText="Min"
                   type="number"
-                  value={String(mapping.min)}
-                  onChange={(event) => updateMidiMapping(mapping.id, { min: Number.parseInt(event.target.value || '0', 10) || 0 })}
+                  value={midiRangeDrafts[mapping.id]?.min ?? formatMidiMappingValue(mapping.min_val)}
+                  onChange={(event) => updateMidiMappingRangeDraft(mapping.id, 'min', event.target.value)}
+                  onBlur={() => commitMidiMappingRange(mapping)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.currentTarget.blur()
+                    }
+                  }}
                 />
                 <TextInput
                   id={`juce-grid-midi-max-${mapping.id}`}
                   labelText="Max"
                   type="number"
-                  value={String(mapping.max)}
-                  onChange={(event) => updateMidiMapping(mapping.id, { max: Number.parseInt(event.target.value || '0', 10) || 0 })}
+                  value={midiRangeDrafts[mapping.id]?.max ?? formatMidiMappingValue(mapping.max_val)}
+                  onChange={(event) => updateMidiMappingRangeDraft(mapping.id, 'max', event.target.value)}
+                  onBlur={() => commitMidiMappingRange(mapping)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.currentTarget.blur()
+                    }
+                  }}
                 />
               </div>
 
+              <Select
+                id={`juce-grid-midi-curve-${mapping.id}`}
+                labelText="Curve"
+                value={mapping.curve_type}
+                onChange={(event) => updateMidiMappingMutation.mutate({
+                  id: mapping.id,
+                  updates: { curve_type: event.target.value as MIDIMappingV2['curve_type'] },
+                })}
+              >
+                <SelectItem value="linear" text="Linear" />
+                <SelectItem value="logarithmic" text="Logarithmic" />
+                <SelectItem value="exponential" text="Exponential" />
+                <SelectItem value="s_curve" text="S-Curve" />
+              </Select>
+
               <div className="juce-grid-page__midi-actions">
+                <Checkbox
+                  id={`juce-grid-midi-enabled-${mapping.id}`}
+                  labelText="Enabled"
+                  checked={mapping.is_enabled}
+                  onChange={(_, data) => updateMidiMappingMutation.mutate({
+                    id: mapping.id,
+                    updates: { is_enabled: Boolean(data.checked) },
+                  })}
+                />
                 <Checkbox
                   id={`juce-grid-midi-invert-${mapping.id}`}
                   labelText="Invert response"
-                  checked={mapping.inverted}
-                  onChange={(_, data) => updateMidiMapping(mapping.id, { inverted: Boolean(data.checked) })}
+                  checked={mapping.invert}
+                  onChange={(_, data) => updateMidiMappingMutation.mutate({
+                    id: mapping.id,
+                    updates: { invert: Boolean(data.checked) },
+                  })}
                 />
                 <Button
                   size="sm"
                   kind="danger--tertiary"
-                  onClick={() => deleteMidiMapping(mapping.id)}
+                  onClick={() => deleteMidiMappingMutation.mutate(mapping.id)}
                 >
                   Delete
                 </Button>
@@ -3661,7 +4137,7 @@ export function JuceGridPage() {
         >
           <div className="juce-grid-page__flow-card-title">
             <Branch size={14} />
-            <span>Flow</span>
+            <span>{isActive ? 'Selected branch' : 'Branch'}</span>
           </div>
 
           <div className="juce-grid-page__flow-card-body">
@@ -3882,14 +4358,17 @@ export function JuceGridPage() {
 
               <div className="juce-grid-page__toolbar-status">
                 <MidiLearnButton
-                  isActive={midiLearnActive}
-                  onToggle={() => setMidiLearnActive((prev) => !prev)}
+                  isActive={midiLearnActive || midiLearnInProgress}
+                  onToggle={handleMidiLearnToggle}
                   position="relative"
                   size="small"
+                  mappingCount={midiMappings.length}
                 />
-                {midiLearnActive && (
+                {(midiLearnActive || midiLearnInProgress) && (
                   <span className="juce-grid-page__midi-status">
-                    Listening{lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}
+                    {midiLearnInProgress
+                      ? `Learning${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}`
+                      : 'Touch a parameter to learn'}
                   </span>
                 )}
                 {selectedPlugin && (

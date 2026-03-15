@@ -27,6 +27,7 @@ const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => 
 const AboutPage             = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const LV2PluginsPage        = lazy(() => import('./pages/LV2PluginsPage').then(m => ({ default: m.LV2PluginsPage })))
 const LibraryPage           = lazy(() => import('./pages/LibraryPage').then(m => ({ default: m.LibraryPage })))
+const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').then(m => ({ default: m.AudioArtifactsPage })))
 const MIDIPage              = lazy(() => import('./pages/MIDIPage').then(m => ({ default: m.MIDIPage })))
 const MidiHubPage           = lazy(() => import('./pages/MidiHubPage').then(m => ({ default: m.MidiHubPage })))
 const JuceGridPage          = lazy(() => import('./pages/JuceGridPage').then(m => ({ default: m.JuceGridPage })))
@@ -167,8 +168,9 @@ export function App() {
                                 <Route path="/presets" element={<Navigate to="/snapshots" replace />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
                                 <Route path="/about" element={<AboutPage />} />
-                                <Route path="/plugins" element={<LV2PluginsPage />} />
-                                <Route path="/library" element={<LibraryPage />} />
+                                <Route path="/plugins" element={<Navigate to="/audio-artifacts?category=lv2-plugins" replace />} />
+                                <Route path="/library" element={<Navigate to="/audio-artifacts" replace />} />
+                                <Route path="/audio-artifacts" element={<AudioArtifactsPage />} />
                                 <Route path="/midi" element={<MIDIPage />} />
                                 <Route path="/midi-hub" element={<MidiHubPage />} />
                                 <Route path="/midi-hub-2" element={<Navigate to="/midi-hub" replace />} />

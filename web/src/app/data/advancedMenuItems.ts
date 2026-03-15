@@ -221,16 +221,18 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     kind: 'link',
   },
   {
-    to: '/plugins',
-    label: 'LV2 Plugins',
+    to: '/audio-artifacts',
+    label: 'Audio Artifacts',
+    shortLabel: 'Artifacts',
     icon: Package,
-    description: 'Browse the LV2 plugin inventory, inspect what is installed, and manage the effect catalog used across MAP2 workflows.',
-    color: 'var(--cds-support-info)',
+    description: 'Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.',
+    color: '#be95ff',
     homeSection: 'Audio Grid',
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'beta',
     kind: 'link',
+    showOnHome: true,
   },
   {
     to: '/midi',
@@ -312,18 +314,6 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     maturity: 'beta',
     kind: 'link',
     showOnHome: true,
-  },
-  {
-    to: '/library',
-    label: 'IR & NAM Library',
-    icon: MapPatchLibraryIcon,
-    description: 'Browse impulse-response and model-management workflows for acquiring, curating, and testing NAM and IR content in MAP2.',
-    color: 'var(--cds-support-info)',
-    homeSection: 'Audio Grid',
-    includeInAdvancedMenu: false,
-    pinnable: true,
-    maturity: 'experimental',
-    kind: 'link',
   },
   {
     to: '/lcd',
@@ -451,6 +441,8 @@ const PINNED_ROUTE_ALIASES: Record<string, string> = {
   '/midi-cluster': '/platform',
   '/api-observatory': '/platform',
   '/cluster-dashboard': '/platform',
+  '/plugins': '/audio-artifacts',
+  '/library': '/audio-artifacts',
 }
 
 export function normalizePinnedRoutes(routes: string[] | null | undefined): string[] {
