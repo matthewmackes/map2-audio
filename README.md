@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**753** Python | **1085** TypeScript | **282** C++/H | **117** Docs | **499** total commits | **0** stars | **0** forks | **0** open issues
+**753** Python | **1085** TypeScript | **282** C++/H | **117** Docs | **501** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,12 +169,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [AVB + JUCE Availability and Channel Integration Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_JUCE_AVAILABILITY_INTEGRATION_PLAN_2026-02-22.md) | 2026-03-15 |
+| [MAP2 Audio Platform — Operations Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATIONS_GUIDE.md) | 2026-03-15 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-15 |
-| [AVB Latency Optimizer](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_LATENCY_OPTIMIZER.md) | 2026-03-14 |
-| [AVB Legacy Work Plan (Historical Reference Only)](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MASTER_WORK_PLAN.md) | 2026-03-14 |
-| [AVB Milestone Evidence Template](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MILESTONE_EVIDENCE_TEMPLATE.md) | 2026-03-14 |
-| [AVB Routing Matrix - Multi-Node Implementation Summary](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MULTI_NODE_IMPLEMENTATION_SUMMARY.md) | 2026-03-14 |
-| [AVB Qualification Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_QUALIFICATION_MATRIX.md) | 2026-03-14 |
+| [Quick Reference: Common Operations](https://github.com/matthewmackes/map2-audio/blob/master/docs/QUICK_REFERENCE.md) | 2026-03-15 |
+| [⚠️ WEB SERVER DEPLOYMENT NOTES](https://github.com/matthewmackes/map2-audio/blob/master/docs/WEB_SERVER_DEPLOYMENT.md) | 2026-03-15 |
+| [Web Server Port Configuration](https://github.com/matthewmackes/map2-audio/blob/master/docs/WEB_SERVER_PORTS.md) | 2026-03-15 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b80eea61`](https://github.com/matthewmackes/map2-audio/commit/b80eea6128d0cbafd4fe140359ab0242956bf1e5) | Enforce production-only web serving and update home navig... | Map2 Audio | 2026-03-15 |
+| [`d7627d98`](https://github.com/matthewmackes/map2-audio/commit/d7627d980ff1e9417bf8c9bcf40aeace91922e44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-15 |
 | [`ee3b09d8`](https://github.com/matthewmackes/map2-audio/commit/ee3b09d8a3eb4488ea340ad93845cd602060cbc7) | Finalize MAP2 burn-down and unified platform shell | Map2 Audio | 2026-03-15 |
 | [`e60d56f5`](https://github.com/matthewmackes/map2-audio/commit/e60d56f5eb876cfc1f21f6e9e89e08351badda68) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-15 |
 | [`27ce7c20`](https://github.com/matthewmackes/map2-audio/commit/27ce7c20d89a9057fa327c43a6ff28ba584c9ba3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-15 |
 | [`4a501acf`](https://github.com/matthewmackes/map2-audio/commit/4a501acffa602f90a742b339037bdea4e66d282b) | Merge branch 'tui-carbon-unification' | Map2 Audio | 2026-03-14 |
 | [`02fec51d`](https://github.com/matthewmackes/map2-audio/commit/02fec51d3e1d726ef07425734334f4f8c6330db9) | Unify MIDI Hub wizard and pending UI updates | Map2 Audio | 2026-03-14 |
 | [`5f416e1e`](https://github.com/matthewmackes/map2-audio/commit/5f416e1e12c82f2579ce33f0d19a198a0461a1e6) | chore: sync current workspace changes | Map2 Audio | 2026-03-14 |
-| [`3ee37b03`](https://github.com/matthewmackes/map2-audio/commit/3ee37b03e46151f33fed00ad622268077016e0d1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-14 |
-| [`2e9aada2`](https://github.com/matthewmackes/map2-audio/commit/2e9aada225ab946fdbed6f123ab54c79c96cc942) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
