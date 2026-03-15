@@ -20,8 +20,18 @@ These are the only workflows promoted into the default left navigation:
 
 These stay visible, but they are informational rather than operator workflow entry points:
 
-- `/welcome` — `Guide` — `production`
-- `/about` — `About` — `production`
+- `/about` — `Platform Guide` — `production`
+
+### Supported editor route
+
+The legacy grid routes are retired. The supported signal-flow editor is:
+
+- `/juce-grid` — `JUCE-GRID` — `beta`
+
+Legacy aliases kept for inbound links:
+
+- `/welcome` redirects to `/about`
+- `/grid` and `/grid-3d` redirect to `/juce-grid`
 
 ### Advanced menu
 
@@ -31,11 +41,12 @@ The advanced menu is reserved for surfaces that must not read as routine/default
 - `experimental`
 - `hardware-blocked`
 
-Current advanced groupings:
+Current advanced entries:
 
-- `Beta workflows`: Presets, LV2 Plugins, MIDI, MIDI Hub, MPX1 Rack, Tesira AVB, Cluster Dashboard, Multi-System
-- `Experimental`: Grid, 3D Grid, IR & NAM Library
-- `Hardware-blocked`: LCD Console, Audio Interfaces
+- `qualified-with-waiver`: AVB Routing
+- `production`: API Observatory
+- `beta`: MIDI Cluster, MIDI Hub, MIDI Hub-2, MPX1 Rack, IntelFX Rack, Cluster Dashboard
+- `hardware-blocked`: LCD Console and the hardware interface submenu remain suppressed from default operator tabs
 
 ## UI rules
 

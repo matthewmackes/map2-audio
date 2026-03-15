@@ -1939,6 +1939,7 @@ class IntelFXService:
             "active_midi_map_id": midi_maps.get("active_map_id"),
             "midi_map_count": map_count,
             "learn_target_param_id": midi_maps.get("learn_target_param_id"),
+            "simulator": _SIMULATOR_ACTIVE,
             # T036 sync-hardening fields
             "drift_status": self._drift_status,
             "verify_pass": self._verify_pass_count,
@@ -1972,6 +1973,7 @@ class IntelFXService:
             "learn_target_param_id": midi_maps.get("learn_target_param_id"),
             "packet_error_count": self._packet_error_count,
             "last_heartbeat": self._last_event_ts,
+            "simulator": _SIMULATOR_ACTIVE,
         }
 
     async def register_ws_client(self, client_id: str) -> asyncio.Queue:

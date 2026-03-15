@@ -52,6 +52,6 @@ Use this template at each milestone checkpoint so results are comparable across 
 
 ## Risks / Follow-ups
 
-- New tech debt added to `docs/AVB_MASTER_WORK_PLAN.md`:
+- New tech debt added to `docs/PROJECT_WORKLIST.md`:
 - Blockers:
 - Recommended next tasks:

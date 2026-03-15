@@ -116,3 +116,17 @@ def test_start_and_stop_cluster_midi_services(monkeypatch):
         "rtp.stop",
         "discovery.stop",
     ]
+
+
+def test_start_cluster_midi_services_skips_when_cluster_config_is_absent(monkeypatch):
+    monkeypatch.setattr("app.config.config_get", lambda key, default=None: default)
+
+    async def _run():
+        return await app_main.start_cluster_midi_services(
+            app_main.logger,
+            node_id="node-a",
+            hostname="host-a",
+            api_port=8080,
+        )
+
+    assert asyncio.run(_run()) is None

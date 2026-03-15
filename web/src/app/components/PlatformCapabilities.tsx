@@ -1,4 +1,21 @@
-import { Graph, Broadcast, Lightning, CheckCircle, WarningCircle, XCircle, Plug, Play, Square, ArrowsClockwise, SpinnerGap, CaretDown, CaretRight, Clock, TrendUp, Cpu, HardDrive } from '@phosphor-icons/react'
+import {
+  CaretDown,
+  CaretRight,
+  ChartLine as TrendUp,
+  ChartNetwork as Graph,
+  CheckmarkFilled as CheckCircle,
+  Chip as Cpu,
+  CloseFilled as XCircle,
+  DataBase as HardDrive,
+  Lightning,
+  Play,
+  Plug,
+  Renew as ArrowsClockwise,
+  Renew as SpinnerGap,
+  Stop as Square,
+  Timer as Clock,
+  WarningAlt as WarningCircle,
+} from '@carbon/icons-react'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { servicesApi, type ServiceStatus, type ServicesStatusResponse, metricsApi } from '../../map2/api'
@@ -277,10 +294,10 @@ export function PlatformCapabilities() {
   }
 
   const getStatusIcon = (status: string, score: number) => {
-    if (status === 'excellent' || score >= 90) return <CheckCircle size={20} weight="duotone" style={{ color: '#4caf50' }} />
-    if (status === 'good' || score >= 75) return <CheckCircle size={20} weight="duotone" style={{ color: '#64b5f6' }} />
-    if (status === 'fair' || score >= 50) return <WarningCircle size={20} weight="duotone" style={{ color: '#ffa726' }} />
-    return <XCircle size={20} weight="duotone" style={{ color: '#ef5350' }} />
+    if (status === 'excellent' || score >= 90) return <CheckCircle size={20} style={{ color: '#4caf50' }} />
+    if (status === 'good' || score >= 75) return <CheckCircle size={20} style={{ color: '#64b5f6' }} />
+    if (status === 'fair' || score >= 50) return <WarningCircle size={20} style={{ color: '#ffa726' }} />
+    return <XCircle size={20} style={{ color: '#ef5350' }} />
   }
 
   return (
@@ -299,7 +316,7 @@ export function PlatformCapabilities() {
         <div className="card" style={{ padding: 16, gridColumn: '1 / -1' }}>
           <div className="flex" style={{ gap: 10, marginBottom: 12, alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <Graph size={20} weight="duotone" style={{ color: '#4caf50', flexShrink: 0, marginTop: 2 }} />
+              <Graph size={20} style={{ color: '#4caf50', flexShrink: 0, marginTop: 2 }} />
               <div>
                 <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Connectivity & Integration - Service Management</h4>
                 <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Audio protocols, APIs, services, and real-time control</p>
@@ -324,7 +341,7 @@ export function PlatformCapabilities() {
                   gap: 4,
                 }}
               >
-                {startAllMutation.isPending ? <SpinnerGap size={12} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={12} weight="duotone" />}
+                {startAllMutation.isPending ? <SpinnerGap size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={12} />}
                 Start All
               </button>
               <button
@@ -344,7 +361,7 @@ export function PlatformCapabilities() {
                   gap: 4,
                 }}
               >
-                {stopAllMutation.isPending ? <SpinnerGap size={12} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <Square size={12} weight="duotone" />}
+                {stopAllMutation.isPending ? <SpinnerGap size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Square size={12} />}
                 Stop All
               </button>
             </div>
@@ -429,7 +446,7 @@ export function PlatformCapabilities() {
           {/* Services List - Grouped by Priority */}
           {servicesStatus.isLoading ? (
             <div style={{ padding: 20, textAlign: 'center', color: '#9ca3af' }}>
-              <SpinnerGap size={16} weight="duotone" style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
+              <SpinnerGap size={16} style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
               Loading services...
             </div>
           ) : servicesStatus.error ? (
@@ -469,9 +486,9 @@ export function PlatformCapabilities() {
                           <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggleServiceExpanded(service.name)}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               {expandedServices.has(service.name) ? (
-                                <CaretDown size={14} weight="bold" style={{ color: '#9ca3af' }} />
+                                <CaretDown size={14} style={{ color: '#9ca3af' }} />
                               ) : (
-                                <CaretRight size={14} weight="bold" style={{ color: '#9ca3af' }} />
+                                <CaretRight size={14} style={{ color: '#9ca3af' }} />
                               )}
                               <strong style={{ fontSize: 12 }}>{service.display_name}</strong>
                               {service.is_optional && <span style={{ fontSize: 9, color: '#9ca3af', background: '#111111', padding: '2px 6px', borderRadius: 3 }}>optional</span>}
@@ -517,7 +534,7 @@ export function PlatformCapabilities() {
                                   opacity: loadingService === service.name ? 0.6 : 1,
                                 }}
                               >
-                                {loadingService === service.name ? <SpinnerGap size={10} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={10} weight="duotone" />}
+                                {loadingService === service.name ? <SpinnerGap size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={10} />}
                               </button>
                             ) : (
                               <>
@@ -539,7 +556,7 @@ export function PlatformCapabilities() {
                                     opacity: loadingService === service.name ? 0.6 : 1,
                                   }}
                                 >
-                                  {loadingService === service.name ? <SpinnerGap size={10} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <Square size={10} weight="duotone" />}
+                                  {loadingService === service.name ? <SpinnerGap size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <Square size={10} />}
                                 </button>
                                 <button
                                   onClick={() => handleServiceRestart(service.name)}
@@ -559,7 +576,7 @@ export function PlatformCapabilities() {
                                     opacity: loadingService === service.name ? 0.6 : 1,
                                   }}
                                 >
-                                  {loadingService === service.name ? <SpinnerGap size={10} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <ArrowsClockwise size={10} weight="duotone" />}
+                                  {loadingService === service.name ? <SpinnerGap size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <ArrowsClockwise size={10} />}
                                 </button>
                               </>
                             )}
@@ -626,7 +643,7 @@ export function PlatformCapabilities() {
         <div className="card" style={{ padding: 16, gridColumn: '1 / -1' }}>
           <div className="flex" style={{ gap: 10, marginBottom: 12, alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <TrendUp size={20} weight="duotone" style={{ color: '#64b5f6', flexShrink: 0, marginTop: 2 }} />
+              <TrendUp size={20} style={{ color: '#64b5f6', flexShrink: 0, marginTop: 2 }} />
               <div>
                 <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>System Metrics - Live Performance</h4>
                 <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Real-time CPU, memory, disk, and audio metrics</p>
@@ -642,7 +659,7 @@ export function PlatformCapabilities() {
             {/* CPU */}
             <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Cpu size={14} weight="duotone" style={{ color: '#64b5f6' }} />
+                <Cpu size={14} style={{ color: '#64b5f6' }} />
                 <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>CPU Load</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: getMetricColor(metricsCurrentQuery.data?.cpu_percent, { warn: 70, critical: 90 }) }}>
@@ -653,7 +670,7 @@ export function PlatformCapabilities() {
             {/* Memory */}
             <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <HardDrive size={14} weight="duotone" style={{ color: '#81c784' }} />
+                <HardDrive size={14} style={{ color: '#81c784' }} />
                 <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Memory</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: getMetricColor(metricsCurrentQuery.data?.memory_percent, { warn: 80, critical: 95 }) }}>
@@ -667,7 +684,7 @@ export function PlatformCapabilities() {
             {/* Disk */}
             <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <HardDrive size={14} weight="duotone" style={{ color: '#ffa726' }} />
+                <HardDrive size={14} style={{ color: '#ffa726' }} />
                 <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Disk</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: getMetricColor(metricsCurrentQuery.data?.disk_percent, { warn: 80, critical: 90 }) }}>
@@ -678,7 +695,7 @@ export function PlatformCapabilities() {
             {/* Audio Latency */}
             <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Clock size={14} weight="duotone" style={{ color: '#4caf50' }} />
+                <Clock size={14} style={{ color: '#4caf50' }} />
                 <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Latency</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: getMetricColor(metricsCurrentQuery.data?.audio_latency_ms, { warn: 8, critical: 16 }) }}>
@@ -689,7 +706,7 @@ export function PlatformCapabilities() {
             {/* XRuns */}
             <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <WarningCircle size={14} weight="duotone" style={{ color: typeof metricsCurrentQuery.data?.audio_xruns === 'number' && metricsCurrentQuery.data.audio_xruns === 0 ? '#4caf50' : '#ef5350' }} />
+                <WarningCircle size={14} style={{ color: typeof metricsCurrentQuery.data?.audio_xruns === 'number' && metricsCurrentQuery.data.audio_xruns === 0 ? '#4caf50' : '#ef5350' }} />
                 <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>XRuns</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: typeof metricsCurrentQuery.data?.audio_xruns === 'number' && metricsCurrentQuery.data.audio_xruns === 0 ? '#4caf50' : '#ef5350' }}>
@@ -701,7 +718,7 @@ export function PlatformCapabilities() {
             {/* Uptime */}
             <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Clock size={14} weight="duotone" style={{ color: '#64b5f6' }} />
+                <Clock size={14} style={{ color: '#64b5f6' }} />
                 <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Uptime</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: '#64b5f6' }}>
@@ -740,7 +757,7 @@ export function PlatformCapabilities() {
           {/* Loading State */}
           {metricsCurrentQuery.isLoading && (
             <div style={{ padding: 20, textAlign: 'center', color: '#9ca3af' }}>
-              <SpinnerGap size={16} weight="duotone" style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
+              <SpinnerGap size={16} style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
               Loading metrics...
             </div>
           )}
@@ -763,7 +780,7 @@ export function PlatformCapabilities() {
         {/* Platform Standards, Assets & Tools - Table Card */}
         <div className="card" style={{ padding: 16 }}>
           <div className="flex" style={{ gap: 10, marginBottom: 16, alignItems: 'flex-start' }}>
-            <Lightning size={20} weight="duotone" style={{ color: '#ffa726', flexShrink: 0, marginTop: 2 }} />
+            <Lightning size={20} style={{ color: '#ffa726', flexShrink: 0, marginTop: 2 }} />
             <div>
               <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Platform Standards & Tools</h4>
               <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Supported formats, protocols, and development tools</p>
@@ -854,7 +871,7 @@ export function PlatformCapabilities() {
                 style={{ padding: '4px 8px', flexShrink: 0 }}
                 title="Rerun performance test"
               >
-                <ArrowsClockwise size={14} weight="duotone" className={runningTest ? 'animate-spin' : ''} style={{ color: runningTest ? '#ffa726' : undefined }} />
+                <ArrowsClockwise size={14} className={runningTest ? 'animate-spin' : ''} style={{ color: runningTest ? '#ffa726' : undefined }} />
               </button>
             </div>
 
@@ -932,8 +949,8 @@ export function PlatformCapabilities() {
                       fontSize: 11
                     }}>
                       {test.passed
-                        ? <CheckCircle size={14} weight="duotone" style={{ color: '#4caf50', flexShrink: 0 }} />
-                        : <XCircle size={14} weight="duotone" style={{ color: '#ef5350', flexShrink: 0 }} />}
+                        ? <CheckCircle size={14} style={{ color: '#4caf50', flexShrink: 0 }} />
+                        : <XCircle size={14} style={{ color: '#ef5350', flexShrink: 0 }} />}
                       <span style={{ fontWeight: 500 }}>{test.name}</span>
                       <span style={{ color: '#6b7280', flex: 1 }}>— {test.details}</span>
                       <span style={{

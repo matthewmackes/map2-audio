@@ -1,0 +1,54 @@
+{
+  "date": "YYYY-MM-DD",
+  "run_folder": "docs/fit-for-purpose-evidence/YYYYMMDD/t099",
+  "reference_amp": "",
+  "map2_nam_model": "",
+  "competitor_modeler": "",
+  "ir_used": "",
+  "recording_interface_and_daw": "",
+  "rtl_offset_ms": 0,
+  "map2_chain_label": "MAP2 NAM",
+  "chain_identity_map": {
+    "set_1": "Reference",
+    "set_2": "MAP2 NAM",
+    "set_3": "Competitor"
+  },
+  "phrases": [
+    {
+      "phrase_id": "phrase_1",
+      "label": "Single-note lead dynamics"
+    },
+    {
+      "phrase_id": "phrase_2",
+      "label": "Chord swells"
+    },
+    {
+      "phrase_id": "phrase_3",
+      "label": "Fast alternate-picked run"
+    },
+    {
+      "phrase_id": "phrase_4",
+      "label": "Palm-muted chugs"
+    },
+    {
+      "phrase_id": "phrase_5",
+      "label": "Clean fingerpicked arpeggios"
+    }
+  ],
+  "pairs": [
+    {
+      "pair_id": "phrase_1_map2_vs_ref",
+      "phrase_id": "phrase_1",
+      "pair_label": "MAP2 vs Ref",
+      "reference_chain": "Reference",
+      "candidate_chain": "MAP2 NAM"
+    },
+    {
+      "pair_id": "phrase_1_competitor_vs_ref",
+      "phrase_id": "phrase_1",
+      "pair_label": "Competitor vs Ref",
+      "reference_chain": "Reference",
+      "candidate_chain": "Competitor"
+    }
+  ]
+}

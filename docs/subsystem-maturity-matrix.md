@@ -26,7 +26,7 @@ The machine-readable source of truth is [subsystem-maturity-matrix.json](/home/m
 | MPX-1 integration | `beta` | Significant feature depth, still missing enough qualification closure. |
 | PipeWire diagnostics and audio path tooling | `beta` | Valuable tools, but recovery and measurement contracts need hardening. |
 | NAM/IR/Soundfont acquisition and scraper-driven libraries | `experimental` | Maintenance-heavy and too far from the core appliance story for default trust. |
-| 3D Grid and GridFlow-style exploratory surfaces | `experimental` | The evaluation identified these as exploratory/stub-like surfaces that are too exposed today. |
+| JUCE-GRID signal-flow editing and routing workflows | `beta` | `JUCE-GRID` is now the sole supported editor path, but workflow closure, validation depth, and dense-control polish still keep it below operator-safe default trust. |
 | LCD and dedicated hardware panels | `hardware-blocked` | Only meaningful when the required hardware and qualification evidence are present. |
 
 ## Default UI and navigation policy

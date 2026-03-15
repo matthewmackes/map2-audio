@@ -29,6 +29,26 @@ def _run_command(command: list[str], timeout_sec: int = 30) -> tuple[int, str]:
     return proc.returncode, (proc.stdout or "").strip()
 
 
+def _resolve_check_command(spec: _CheckSpec) -> tuple[list[str] | None, str | None]:
+    """Resolve executable alternatives for checks that accept more than one tool."""
+
+    if spec.check_id == "V004":
+        for candidate in (
+            ["tshark", "-v"],
+            ["tcpdump", "--version"],
+            ["dumpcap", "-v"],
+        ):
+            if shutil.which(candidate[0]) is not None:
+                return candidate, None
+        return None, "Skipped: none of `tshark`, `tcpdump`, or `dumpcap` found on host."
+
+    executable = spec.command[0]
+    if shutil.which(executable) is None:
+        return None, f"Skipped: `{executable}` not found on host."
+
+    return spec.command, None
+
+
 def run_verification_tests(root_path: str) -> list[VerificationCheck]:
     """Run available checks and mark unavailable tools as skipped."""
 
@@ -63,29 +83,30 @@ def run_verification_tests(root_path: str) -> list[VerificationCheck]:
 
     results: list[VerificationCheck] = []
     for spec in checks:
-        executable = spec.command[0]
-        if shutil.which(executable) is None:
+        command, skip_reason = _resolve_check_command(spec)
+        if command is None:
             results.append(
                 VerificationCheck(
                     id=spec.check_id,
                     name=spec.name,
                     status="skipped",
                     command=" ".join(spec.command),
-                    details=f"Skipped: `{executable}` not found on host.",
+                    details=skip_reason or "Skipped: required tool not found on host.",
                 )
             )
             continue
 
+        executable = command[0]
         timeout_sec = 120 if executable in {"pytest", "npm"} else 30
         try:
-            rc, output = _run_command(spec.command, timeout_sec=timeout_sec)
+            rc, output = _run_command(command, timeout_sec=timeout_sec)
         except subprocess.TimeoutExpired:
             results.append(
                 VerificationCheck(
                     id=spec.check_id,
                     name=spec.name,
                     status="fail",
-                    command=" ".join(spec.command),
+                    command=" ".join(command),
                     details="Command timed out.",
                 )
             )
@@ -98,7 +119,7 @@ def run_verification_tests(root_path: str) -> list[VerificationCheck]:
                 id=spec.check_id,
                 name=spec.name,
                 status=status,
-                command=" ".join(spec.command),
+                command=" ".join(command),
                 details=details,
             )
         )

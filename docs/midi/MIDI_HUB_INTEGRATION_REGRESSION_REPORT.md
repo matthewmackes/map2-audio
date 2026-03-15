@@ -6,7 +6,32 @@ Owner: Codex
 ## Summary
 Software-only integration regression is largely green across the MIDI Hub API and service surfaces. Hardware-in-the-loop and long-duration performance gates remain blocked in this environment.
 
+The current rerun path is the unified qualification runner:
+
+```bash
+python3 scripts/run_t066_midi_hub_qualification.py \
+  --output-dir "/tmp/map2-t066-qualification-$(date +%Y%m%d-%H%M%S)"
+```
+
+That command wraps the regression suites, `npm --prefix web run typecheck`, the virtual-port performance microbench, the delegated `T066-subQ` adapter precheck, and an explicit soak-duration gate into one summary bundle.
+
 ## Executed Validation
+
+### Unified qualification rerun
+```bash
+python3 scripts/run_t066_midi_hub_qualification.py \
+  --output-dir /tmp/map2-t066-qualification-check-fixed \
+  --adapter-label "Generic USB-to-DIN Adapter"
+```
+Result: `BLOCKED`.
+
+Latest host evidence (`2026-03-14`):
+- Software regression bundle: `PASS` (`23 passed`, clean exit after the `test_device_registry.py` async-engine teardown fix)
+- Frontend/API contract validation: `PASS`
+- Performance microbench: `BLOCKED` (`3.930 ms` hop latency, `4736.90 msg/s`, delivery ratio `1.0`)
+- Adapter precheck: `BLOCKED` (`/dev/snd/seq` / physical adapter prerequisites absent on this host)
+- Soak duration gate: `BLOCKED` (`0.0 / 86400.0` seconds observed)
+- Summary artifact: `/tmp/map2-t066-qualification-check-fixed/t066-midi-hub-qualification-summary.json`
 
 ### Regression suites
 ```bash
@@ -79,4 +104,4 @@ Measured:
 ## Next Steps to Close
 1. Execute HIL matrix on a hardware-connected host with `/dev/snd/seq` access.
 2. Run 24h soak and capture xrun/jitter/throughput artifacts.
-3. Re-run hop-latency and throughput targets against real interface path.
+3. Re-run the unified qualification bundle from `docs/midi/T066_MIDI_HUB_QUALIFICATION_RUNBOOK.md` and archive the resulting summary directory under dated `fit-for-purpose-evidence`.

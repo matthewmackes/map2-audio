@@ -7,7 +7,7 @@ import WifiOffIcon from '@mui/icons-material/WifiOff'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import SyncIcon from '@mui/icons-material/Sync'
 import type { TesiraDeviceSummary } from '../types'
-import { BiampIcon } from '../BiampIcon'
+import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useTesiraDeviceState } from '../hooks/useTesiraWebSocket'
 import { useCluster } from '../../../contexts/ClusterContext'
 
@@ -54,7 +54,7 @@ export function TesiraDeviceCard({ device, selected, onSelect }: TesiraDeviceCar
       <CardActionArea onClick={onSelect}>
         <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BiampIcon size={18} color={device.connected ? BIAMP_RED : '#888'} />
+            <MapMatrixProcessorIcon size={18} color={device.connected ? BIAMP_RED : '#888'} />
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="body2" fontWeight={600} noWrap>

@@ -1,23 +1,23 @@
 /**
  * Section Icon Mapping Utility
  *
- * Maps parameter section titles to appropriate FontAudio and Lucide icons.
+ * Maps parameter section titles to approved MAP-owned audio icons and Carbon UI icons.
  * Used by ParameterSection component to automatically select icons.
  */
 
 import React from 'react'
 import {
-  DynamicsIcon,
-  ReverbIcon,
-  DelayIcon,
-  EQIcon,
-  ModulationIcon,
-  PitchIcon,
-  AmplifierIcon,
-  CabinetIcon,
-  MultiEffectIcon,
-} from '../../icons/fontaudio'
-import { Clock, SpeakerHigh, Sliders, GearSix } from '@phosphor-icons/react'
+  MapAmplifierIcon,
+  MapCabinetIcon,
+  MapDelayIcon,
+  MapDynamicsIcon,
+  MapEqualizerIcon,
+  MapModulationIcon,
+  MapMultiEffectIcon,
+  MapPitchIcon,
+  MapReverbIcon,
+} from '../../icons/map'
+import { SettingsAdjust as GearSix, Timer as Clock, VolumeUp as SpeakerHigh, Waveform } from '@carbon/icons-react'
 
 /**
  * Get appropriate icon for a parameter section title
@@ -38,7 +38,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('compressor') ||
     lowerTitle.includes('limiter')
   ) {
-    return <DynamicsIcon size={size} />
+    return <MapDynamicsIcon size={size} />
   }
 
   // Reverb/Space icons
@@ -50,12 +50,12 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('atmosphere') ||
     lowerTitle.includes('reverb')
   ) {
-    return <ReverbIcon size={size} />
+    return <MapReverbIcon size={size} />
   }
 
   // Delay/Echo icons
   if (lowerTitle.includes('delay') || lowerTitle.includes('echo')) {
-    return <DelayIcon size={size} />
+    return <MapDelayIcon size={size} />
   }
 
   // EQ/Filter icons
@@ -66,7 +66,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle === 'tone' ||
     lowerTitle.includes('equalization')
   ) {
-    return <EQIcon size={size} />
+    return <MapEqualizerIcon size={size} />
   }
 
   // Modulation/LFO icons
@@ -78,7 +78,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('flanger') ||
     lowerTitle.includes('phaser')
   ) {
-    return <ModulationIcon size={size} />
+    return <MapModulationIcon size={size} />
   }
 
   // Pitch/Tuning icons
@@ -91,7 +91,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('fine tune') ||
     lowerTitle.includes('transpose')
   ) {
-    return <PitchIcon size={size} />
+    return <MapPitchIcon size={size} />
   }
 
   // Amplifier/Distortion icons
@@ -102,7 +102,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('distortion') ||
     lowerTitle.includes('overdrive')
   ) {
-    return <AmplifierIcon size={size} />
+    return <MapAmplifierIcon size={size} />
   }
 
   // Cabinet/IR icons
@@ -111,7 +111,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('ir') ||
     lowerTitle.includes('speaker')
   ) {
-    return <CabinetIcon size={size} />
+    return <MapCabinetIcon size={size} />
   }
 
   // Timing/Clock icons (for envelope timing, not delay)
@@ -119,12 +119,12 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle === 'timing' ||
     (lowerTitle === 'time' && !title.toLowerCase().includes('delay'))
   ) {
-    return <Clock size={size} weight="duotone" />
+    return <Clock size={size} />
   }
 
   // Output/Mix icons
   if (lowerTitle.includes('output') || lowerTitle === 'mix') {
-    return <SpeakerHigh size={size} weight="duotone" />
+    return <SpeakerHigh size={size} />
   }
 
   // Character/Shape/Waveform icons
@@ -135,7 +135,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('boss ce-2') ||
     lowerTitle.includes('boss bf-2')
   ) {
-    return <Sliders size={size} weight="duotone" />
+    return <Waveform size={size} />
   }
 
   // Expression/Settings icons
@@ -144,7 +144,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('pedal') ||
     lowerTitle.includes('settings')
   ) {
-    return <GearSix size={size} weight="duotone" />
+    return <GearSix size={size} />
   }
 
   // Multi-Effect/Misc icons (fallback for generic sections)
@@ -158,7 +158,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('levels') ||
     lowerTitle.includes('hush')
   ) {
-    return <MultiEffectIcon size={size} />
+    return <MapMultiEffectIcon size={size} />
   }
 
   // No mapping found

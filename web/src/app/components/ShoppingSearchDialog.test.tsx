@@ -108,6 +108,7 @@ describe('ShoppingSearchDialog', () => {
 
     expect(await screen.findByText('Focusrite Scarlett 18i20 Rack Interface')).toBeInTheDocument()
     expect(screen.getByText(/Found 1 of 1 results/)).toBeInTheDocument()
+    expect(document.querySelector('.cds--ai-label')).toBeTruthy()
   })
 
   it('filters visible rows with search input', async () => {

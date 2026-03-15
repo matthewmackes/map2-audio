@@ -28,7 +28,7 @@ import {
 import { usePluginChooser } from '../PluginChooserContext'
 import PluginFormatBadge from './PluginFormatBadge'
 import PluginIOIndicator from './PluginIOIndicator'
-import PluginIcon from '../../../../pipedal/PluginIcon'
+import { LegacyPluginIcon } from './LegacyPluginIcon'
 
 interface PluginPreviewPanelProps {
   onAdd?: (uri: string) => void
@@ -138,7 +138,7 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
         {/* Plugin header */}
         <Stack direction="row" spacing={1.5} alignItems="flex-start" mb={2}>
           <Box sx={{ flexShrink: 0 }}>
-            <PluginIcon pluginType={selectedPlugin.pluginType} size={40} opacity={0.9} />
+            <LegacyPluginIcon pluginType={selectedPlugin.pluginType} size={40} opacity={0.9} />
           </Box>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" alignItems="center" spacing={0.5} mb={0.5}>
@@ -179,8 +179,8 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
             size="small"
             onClick={() => toggleFavorite(selectedPlugin.uri)}
             sx={{
-              color: selectedPlugin.isFavorite ? '#F59E0B' : 'text.disabled',
-              '&:hover': { color: '#F59E0B' },
+              color: selectedPlugin.isFavorite ? 'warning.main' : 'text.disabled',
+              '&:hover': { color: 'warning.main' },
             }}
           >
             {selectedPlugin.isFavorite ? (
@@ -223,10 +223,10 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
             <Chip label="Stereo" size="small" color="success" sx={{ height: 20 }} />
           )}
           {selectedPlugin.hasMidiInput && (
-            <Chip label="MIDI In" size="small" sx={{ height: 20, bgcolor: '#F472B6', color: 'white' }} />
+            <Chip label="MIDI In" size="small" sx={{ height: 20, bgcolor: 'secondary.main', color: 'secondary.contrastText' }} />
           )}
           {selectedPlugin.hasMidiOutput && (
-            <Chip label="MIDI Out" size="small" sx={{ height: 20, bgcolor: '#F472B6', color: 'white' }} />
+            <Chip label="MIDI Out" size="small" sx={{ height: 20, bgcolor: 'secondary.main', color: 'secondary.contrastText' }} />
           )}
           {selectedPlugin.hasUi && (
             <Chip label="Custom UI" size="small" color="info" sx={{ height: 20 }} />

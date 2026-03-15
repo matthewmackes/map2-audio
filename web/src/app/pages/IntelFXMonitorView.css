@@ -109,13 +109,33 @@
   background: var(--cds-layer-01);
 }
 
-.intelfx-monitor-page__traffic-title {
-  margin: 0;
+.intelfx-monitor-page__traffic-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cds-spacing-04);
+  flex-wrap: wrap;
   padding: var(--cds-spacing-04);
   border-bottom: 1px solid var(--cds-border-subtle-01);
+}
+
+.intelfx-monitor-page__traffic-title {
+  margin: 0;
   color: var(--cds-text-primary);
   font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: var(--cds-heading-02-font-weight, 600);
+}
+
+.intelfx-monitor-page__traffic-meta {
+  margin: var(--cds-spacing-02) 0 0;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.intelfx-monitor-page__traffic-last {
+  display: grid;
+  gap: var(--cds-spacing-02);
+  align-items: center;
+  justify-items: start;
 }
 
 .intelfx-monitor-page__traffic-table-wrap {
@@ -133,6 +153,50 @@
 
 .intelfx-monitor-page__decoded-cell {
   color: var(--cds-link-primary);
+}
+
+.intelfx-monitor-page__log-card,
+.intelfx-monitor-page__shadow-card {
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
+  padding: var(--cds-spacing-04);
+}
+
+.intelfx-monitor-page__log-title {
+  margin: 0 0 var(--cds-spacing-03);
+  color: var(--cds-text-primary);
+  font-size: var(--cds-heading-02-font-size, 1rem);
+  font-weight: var(--cds-heading-02-font-weight, 600);
+}
+
+.intelfx-monitor-page__log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--cds-spacing-02);
+}
+
+.intelfx-monitor-page__log-list li {
+  display: grid;
+  grid-template-columns: 6rem minmax(6rem, 1fr) minmax(10rem, 2fr);
+  gap: var(--cds-spacing-03);
+  align-items: center;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.intelfx-monitor-page__shadow-json {
+  max-height: 16rem;
+  overflow: auto;
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle-01);
+  padding: var(--cds-spacing-03);
+  color: var(--cds-text-primary);
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
 }
 
 .intelfx-monitor-page__empty {
@@ -154,5 +218,9 @@
 
   .intelfx-monitor-page__traffic-table {
     min-width: 34rem;
+  }
+
+  .intelfx-monitor-page__log-list li {
+    grid-template-columns: 1fr;
   }
 }

@@ -609,7 +609,7 @@ class MidiNetworkBridge:
             self._hub.send(source_port=f"osc:{addr[0]}:{addr[1]}", destination_port=mapping.destination_port, data=payload)
 
     def _sync_discovered_mesh_peers(self) -> None:
-        if not bool(config_get("midi.cluster.enabled", True)):
+        if not bool(config_get("midi.cluster.enabled", False)):
             return
         try:
             from app.services.midi_hub.midi_discovery import get_midi_discovery_service

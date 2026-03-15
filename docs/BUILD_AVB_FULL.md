@@ -1,7 +1,7 @@
 # Full Build Checklist (Plan 3 AVB)
 
 Date: 2026-02-20
-Execution source of truth: `docs/AVB_MASTER_WORK_PLAN.md`
+Execution source of truth: `docs/PROJECT_WORKLIST.md`
 
 ## Prereqs (one-time)
 - OS packages: `cmake ninja-build clang pkg-config libasio-dev libcap-dev libavtp-dev libssl-dev python3-dev nodejs npm`

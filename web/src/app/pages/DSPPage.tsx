@@ -207,7 +207,7 @@ export function DSPPage() {
         icon={<WaveSine size={32} weight="duotone" style={{ color: '#2563eb' }} />}
         actions={
           <button
-            onClick={() => navigate('/grid')}
+            onClick={() => navigate('/juce-grid')}
             disabled={remoteSelected}
             style={{
               display: 'flex',
@@ -222,9 +222,9 @@ export function DSPPage() {
               fontSize: 13,
               fontWeight: 500,
             }}
-            title={remoteSelected ? 'Grid editor is still local-only. Select the node locally to edit chains there.' : 'Open in Grid Editor'}
+            title={remoteSelected ? 'JUCE-GRID is still local-only. Select the node locally to edit chains there.' : 'Open in JUCE-GRID'}
           >
-            <GridFour size={14} weight="bold" /> Open in Grid Editor
+            <GridFour size={14} weight="bold" /> Open in JUCE-GRID
           </button>
         }
       />
@@ -318,7 +318,7 @@ export function DSPPage() {
                         opacity: remoteSelected ? 0.75 : 1,
                       }}
                       onClick={() => {
-                        if (!remoteSelected) navigate('/grid')
+                        if (!remoteSelected) navigate('/juce-grid')
                       }}
                       onMouseEnter={(event) => {
                         if (remoteSelected) return

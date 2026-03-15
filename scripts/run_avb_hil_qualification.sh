@@ -124,7 +124,7 @@ classify_as_blocked_if_env_issue() {
   fi
 
   if grep -Eqi \
-    "AVB API not reachable|AVB hardware not available|AVB not available|No such device|Network is unreachable|Connection refused|timed out|required but not found|not reachable|interface.*does not exist" \
+    "AVB API not reachable|AVB hardware not available|AVB not available|No such device|Network is unreachable|Connection refused|timed out|required but not found|not reachable|interface.*does not exist|no AVTP frames captured|active AVB traffic required|no valid PTP offset samples|live PTP telemetry required|no active running streams observed|live AVB stream activity required|no locked PTP snapshots observed|stable PTP lock required" \
     "$log_file"; then
     return 0
   fi

@@ -6,7 +6,7 @@ Reusable modal screens for user input, confirmation, and information display.
 from typing import Optional, List, Callable
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, TextArea, Select
+from textual.widgets import Button, Checkbox, Input, Label, TextArea, Select
 from textual.containers import Container, Horizontal, Vertical, Grid
 from textual.binding import Binding
 
@@ -21,38 +21,6 @@ class ConfirmDialog(ModalScreen[bool]):
         )
         if result:
             # User confirmed
-    """
-
-    CSS = """
-    ConfirmDialog {
-        align: center middle;
-    }
-
-    #dialog-container {
-        width: 60;
-        height: auto;
-        background: $panel;
-        border: thick $primary;
-        padding: 1 2;
-    }
-
-    #dialog-title {
-        text-align: center;
-        text-style: bold;
-        color: $warning;
-        margin-bottom: 1;
-    }
-
-    #dialog-message {
-        text-align: center;
-        margin-bottom: 2;
-    }
-
-    #dialog-buttons {
-        width: 100%;
-        height: auto;
-        align: center middle;
-    }
     """
 
     BINDINGS = [
@@ -107,47 +75,6 @@ class InputDialog(ModalScreen[Optional[str]]):
         )
         if result:
             # User entered: result
-    """
-
-    CSS = """
-    InputDialog {
-        align: center middle;
-    }
-
-    #dialog-container {
-        width: 60;
-        height: auto;
-        background: $panel;
-        border: thick $primary;
-        padding: 1 2;
-    }
-
-    #dialog-title {
-        text-align: center;
-        text-style: bold;
-        color: $accent;
-        margin-bottom: 1;
-    }
-
-    #dialog-label {
-        margin-bottom: 1;
-    }
-
-    #dialog-input {
-        margin-bottom: 1;
-    }
-
-    #validation-error {
-        color: $error;
-        text-align: center;
-        margin-bottom: 1;
-    }
-
-    #dialog-buttons {
-        width: 100%;
-        height: auto;
-        align: center middle;
-    }
     """
 
     BINDINGS = [
@@ -239,53 +166,6 @@ class NumberInputDialog(ModalScreen[Optional[float]]):
         )
         if result is not None:
             # User entered: result (float)
-    """
-
-    CSS = """
-    NumberInputDialog {
-        align: center middle;
-    }
-
-    #dialog-container {
-        width: 50;
-        height: auto;
-        background: $panel;
-        border: thick $primary;
-        padding: 1 2;
-    }
-
-    #dialog-title {
-        text-align: center;
-        text-style: bold;
-        color: $accent;
-        margin-bottom: 1;
-    }
-
-    #dialog-label {
-        margin-bottom: 1;
-    }
-
-    #input-container {
-        width: 100%;
-        height: auto;
-        margin-bottom: 1;
-    }
-
-    #number-input {
-        width: 1fr;
-    }
-
-    #validation-error {
-        color: $error;
-        text-align: center;
-        margin-bottom: 1;
-    }
-
-    #dialog-buttons {
-        width: 100%;
-        height: auto;
-        align: center middle;
-    }
     """
 
     BINDINGS = [
@@ -398,37 +278,6 @@ class MessageDialog(ModalScreen[None]):
         )
     """
 
-    CSS = """
-    MessageDialog {
-        align: center middle;
-    }
-
-    #dialog-container {
-        width: 60;
-        height: auto;
-        background: $panel;
-        border: thick $primary;
-        padding: 1 2;
-    }
-
-    #dialog-title {
-        text-align: center;
-        text-style: bold;
-        margin-bottom: 1;
-    }
-
-    #dialog-message {
-        text-align: center;
-        margin-bottom: 2;
-    }
-
-    #dialog-buttons {
-        width: 100%;
-        height: auto;
-        align: center middle;
-    }
-    """
-
     BINDINGS = [
         Binding("escape", "close", "Close", show=False),
         Binding("enter", "close", "Close", show=False),
@@ -484,53 +333,6 @@ class FormDialog(ModalScreen[Optional[dict]]):
             # result is dict: {"name": "...", "description": "...", "tags": "..."}
     """
 
-    CSS = """
-    FormDialog {
-        align: center middle;
-    }
-
-    #dialog-container {
-        width: 70;
-        height: auto;
-        background: $panel;
-        border: thick $primary;
-        padding: 1 2;
-    }
-
-    #dialog-title {
-        text-align: center;
-        text-style: bold;
-        color: $accent;
-        margin-bottom: 1;
-    }
-
-    #form-fields {
-        width: 100%;
-        height: auto;
-        margin-bottom: 1;
-    }
-
-    .field-label {
-        margin-bottom: 0;
-    }
-
-    .field-input {
-        margin-bottom: 1;
-    }
-
-    #validation-error {
-        color: $error;
-        text-align: center;
-        margin-bottom: 1;
-    }
-
-    #dialog-buttons {
-        width: 100%;
-        height: auto;
-        align: center middle;
-    }
-    """
-
     BINDINGS = [
         Binding("escape", "cancel", "Cancel", show=False),
     ]
@@ -543,10 +345,12 @@ class FormDialog(ModalScreen[Optional[dict]]):
             fields: List of field definitions with keys:
                    - name: Field name (key in result dict)
                    - label: Display label
-                   - type: "text" or "textarea"
+                   - type: "text", "textarea", "select", "checkbox", or "section"
                    - required: Optional bool
                    - placeholder: Optional placeholder text
                    - default: Optional default value
+                   - options: Optional list[tuple[label, value]] for select fields
+                   - hint: Optional helper text displayed beneath the field
             title: Dialog title
         """
         self.fields_def = fields
@@ -565,20 +369,54 @@ class FormDialog(ModalScreen[Optional[dict]]):
             field_type = field.get("type", "text")
             placeholder = field.get("placeholder", "")
             default = field.get("default", "")
+            hint = field.get("hint", "")
 
-            fields_container.mount(Label(field_label, classes="field-label"))
+            if field_type == "section":
+                fields_container.mount(Label(field_label, classes="field-section"))
+                if hint:
+                    fields_container.mount(Label(str(hint), classes="field-hint"))
+                continue
 
             if field_type == "textarea":
+                fields_container.mount(Label(field_label, classes="field-label"))
                 # TextArea widget for multi-line
                 fields_container.mount(
                     TextArea(text=default, id=f"field-{field_name}", classes="field-input")
                 )
+            elif field_type == "select":
+                fields_container.mount(Label(field_label, classes="field-label"))
+                options = field.get("options", [])
+                allow_blank = field.get("allow_blank", not field.get("required", False))
+                value = default if default != "" else Select.BLANK
+                fields_container.mount(
+                    Select(
+                        options,
+                        value=value,
+                        allow_blank=allow_blank,
+                        prompt=field.get("prompt", "Select"),
+                        id=f"field-{field_name}",
+                        classes="field-input",
+                    )
+                )
+            elif field_type == "checkbox":
+                fields_container.mount(
+                    Checkbox(
+                        field_label,
+                        value=bool(default),
+                        id=f"field-{field_name}",
+                        classes="field-input",
+                    )
+                )
             else:
+                fields_container.mount(Label(field_label, classes="field-label"))
                 # Regular Input for text
                 fields_container.mount(
                     Input(placeholder=placeholder, value=default,
                          id=f"field-{field_name}", classes="field-input")
                 )
+
+            if hint:
+                fields_container.mount(Label(str(hint), classes="field-hint"))
 
         container.mount(fields_container)
         container.mount(Label("", id="validation-error"))
@@ -591,6 +429,13 @@ class FormDialog(ModalScreen[Optional[dict]]):
         )
 
         yield container
+
+    def on_mount(self) -> None:
+        """Focus the first interactive field when the form opens."""
+        for widget_type in (Input, TextArea, Select, Checkbox):
+            for widget in self.query(widget_type):
+                widget.focus()
+                return
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button clicks."""
@@ -607,11 +452,19 @@ class FormDialog(ModalScreen[Optional[dict]]):
             field_name = field["name"]
             field_id = f"field-{field_name}"
             required = field.get("required", False)
+            if field.get("type") == "section":
+                continue
 
             try:
                 widget = self.query_one(f"#{field_id}")
                 if isinstance(widget, TextArea):
                     value = widget.text.strip()
+                elif isinstance(widget, Select):
+                    value = widget.value
+                    if value == Select.BLANK:
+                        value = ""
+                elif isinstance(widget, Checkbox):
+                    value = widget.value
                 else:
                     value = widget.value.strip()
 
@@ -648,45 +501,6 @@ class SelectDialog(ModalScreen[Optional[str]]):
         )
         if result:
             # result is the selected option value (first element of tuple)
-    """
-
-    CSS = """
-    SelectDialog {
-        align: center middle;
-    }
-
-    #dialog-container {
-        width: 70;
-        height: auto;
-        max-height: 80%;
-        background: $panel;
-        border: thick $primary;
-        padding: 1 2;
-    }
-
-    #dialog-title {
-        text-align: center;
-        text-style: bold;
-        color: $accent;
-        margin-bottom: 1;
-    }
-
-    #dialog-message {
-        margin-bottom: 1;
-    }
-
-    #option-list {
-        width: 100%;
-        height: auto;
-        max-height: 20;
-        margin-bottom: 1;
-    }
-
-    #dialog-buttons {
-        width: 100%;
-        height: auto;
-        align: center middle;
-    }
     """
 
     BINDINGS = [

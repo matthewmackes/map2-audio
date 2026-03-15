@@ -17,7 +17,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { BiampIcon } from '../BiampIcon'
+import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useAddDevice } from '../hooks/useTesiraApi'
 
 const BIAMP_RED = '#E31837'
@@ -84,7 +84,7 @@ export function ManualAddDialog({ open, onClose }: ManualAddDialogProps) {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-        <BiampIcon size={18} color={BIAMP_RED} />
+        <MapMatrixProcessorIcon size={18} color={BIAMP_RED} />
         <Typography variant="h6" component="span">Add Tesira Device</Typography>
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" onClick={handleClose} disabled={addDevice.isPending}>

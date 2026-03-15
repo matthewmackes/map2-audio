@@ -8,6 +8,7 @@ import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
+import { MAP2_PLATFORM_META, MAP2_PRIMARY_LABEL, Map2BrandMark } from '../components/branding/map2Branding'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import { NodeSelector } from '../components/shared/NodeSelector'
@@ -170,7 +171,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const HomeIcon = homeTopNavItem.icon
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
-  const isFullBleedRoute = location.pathname === '/avb-routing' || location.pathname.startsWith('/avb-routing/')
+  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/avb-routing' || location.pathname.startsWith('/avb-routing/')
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   useEffect(() => {
@@ -553,6 +554,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Header className="topbar-pro" aria-label="MAP2 primary navigation shell">
         <HeaderNavigation className="nav-tabs-left" aria-label="Primary navigation">
           {renderNavItem(homeTopNavItem)}
+          <NavLink to="/" className="topbar-pro__brand" aria-label="Mackes Audio Platform home">
+            <span className="topbar-pro__brand-mark-wrap" aria-hidden="true">
+              <Map2BrandMark className="topbar-pro__brand-mark" />
+            </span>
+            <span className="topbar-pro__brand-copy">
+              <span className="topbar-pro__brand-primary">{MAP2_PRIMARY_LABEL}</span>
+              <span className="topbar-pro__brand-secondary">{MAP2_PLATFORM_META}</span>
+            </span>
+          </NavLink>
         </HeaderNavigation>
 
         <HeaderNavigation className="nav-tabs-center" aria-label="Pinned navigation">

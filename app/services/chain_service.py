@@ -268,6 +268,140 @@ class ChainService:
             "updated_at": insertion.updated_at.isoformat() if insertion.updated_at else None,
         }
 
+    @staticmethod
+    def _touchscreen_config_key(chain_id: int) -> str:
+        return f"chain_touchscreen_{chain_id}"
+
+    @staticmethod
+    def _normalize_touchscreen_stomp_assignments(assignments: List[Dict[str, Any]] | None) -> List[Dict[str, Any]]:
+        normalized: List[Dict[str, Any]] = []
+        seen_slots: set[int] = set()
+        for raw in assignments or []:
+            if not isinstance(raw, dict):
+                continue
+
+            try:
+                slot = int(raw.get("slot"))
+                plugin_position = int(raw.get("plugin_position"))
+            except (TypeError, ValueError):
+                continue
+
+            plugin_uri = raw.get("plugin_uri")
+            if slot < 1 or slot > 8 or slot in seen_slots:
+                continue
+            if not isinstance(plugin_uri, str) or not plugin_uri.strip():
+                continue
+
+            normalized.append(
+                {
+                    "slot": slot,
+                    "plugin_uri": plugin_uri.strip(),
+                    "plugin_position": plugin_position,
+                }
+            )
+            seen_slots.add(slot)
+
+        normalized.sort(key=lambda assignment: assignment["slot"])
+        return normalized
+
+    async def _load_touchscreen_stomp_assignments(self, chain_id: int) -> List[Dict[str, Any]]:
+        if not self.session:
+            return []
+
+        from app.database import SystemConfig
+
+        result = await self.session.execute(
+            select(SystemConfig).filter(SystemConfig.key == self._touchscreen_config_key(chain_id))
+        )
+        record = result.scalar_one_or_none()
+        if not record:
+            return []
+
+        try:
+            payload = json.loads(record.value)
+        except Exception:
+            return []
+
+        if isinstance(payload, dict):
+            assignments = payload.get("stomp_assignments", [])
+        elif isinstance(payload, list):
+            assignments = payload
+        else:
+            assignments = []
+
+        return self._normalize_touchscreen_stomp_assignments(assignments)
+
+    async def get_touchscreen_state(self, chain_id: int) -> Optional[Dict[str, Any]]:
+        if not self.session:
+            return None
+
+        from app.database import Chain
+
+        result = await self.session.execute(select(Chain).filter(Chain.id == chain_id))
+        chain = result.scalar_one_or_none()
+        if not chain:
+            return None
+
+        assignments = await self._load_touchscreen_stomp_assignments(chain_id)
+        return {
+            "chain_id": chain_id,
+            "stomp_assignments": assignments,
+        }
+
+    async def set_touchscreen_stomp_assignments(
+        self,
+        chain_id: int,
+        assignments: List[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        if not self.session:
+            return None
+
+        from app.database import Chain, ChainPlugin, SystemConfig
+
+        chain_result = await self.session.execute(select(Chain).filter(Chain.id == chain_id))
+        chain = chain_result.scalar_one_or_none()
+        if not chain:
+            return None
+
+        plugin_result = await self.session.execute(
+            select(ChainPlugin)
+            .filter(ChainPlugin.chain_id == chain_id)
+            .order_by(ChainPlugin.position)
+        )
+        valid_plugins = {
+            (plugin.plugin_uri, int(plugin.position))
+            for plugin in plugin_result.scalars().all()
+        }
+
+        normalized = self._normalize_touchscreen_stomp_assignments(assignments)
+        persisted = [
+            assignment
+            for assignment in normalized
+            if (assignment["plugin_uri"], assignment["plugin_position"]) in valid_plugins
+        ]
+
+        payload = {
+            "version": 1,
+            "chain_id": chain_id,
+            "stomp_assignments": persisted,
+        }
+        config_key = self._touchscreen_config_key(chain_id)
+        config_result = await self.session.execute(
+            select(SystemConfig).filter(SystemConfig.key == config_key)
+        )
+        record = config_result.scalar_one_or_none()
+        if record is None:
+            record = SystemConfig(key=config_key, value=json.dumps(payload))
+            self.session.add(record)
+        else:
+            record.value = json.dumps(payload)
+
+        await self.session.flush()
+        return {
+            "chain_id": chain_id,
+            "stomp_assignments": persisted,
+        }
+
     async def create_chain(self, name: str) -> Optional[Dict[str, Any]]:
         """Create a new signal chain.
         
@@ -341,6 +475,7 @@ class ChainService:
                     "uri": p.plugin_uri,
                     "name": meta.get("name", p.plugin_uri),
                     "author": meta.get("author", ""),
+                    "category": meta.get("category", ""),
                     "position": p.position,
                     "bypassed": p.bypass,
                     "in_ports": meta.get("in_port_count", 0),
@@ -369,8 +504,12 @@ class ChainService:
                 "name": chain.name,
                 "is_active": chain.is_active,
                 "plugins": plugins_list,
+                "plugin_count": len(plugins_list),
                 "loop_insertions": [self._serialize_loop_insertion(ins) for ins in insertions],
                 "effects_loops": [effects_loops[loop_id] for loop_id in loop_ids if loop_id in effects_loops],
+                "touchscreen": {
+                    "stomp_assignments": await self._load_touchscreen_stomp_assignments(chain_id),
+                },
                 "created_at": chain.created_at.isoformat() if chain.created_at else None,
                 "updated_at": chain.updated_at.isoformat() if chain.updated_at else None
             }
@@ -421,6 +560,7 @@ class ChainService:
                         "uri": p.plugin_uri,
                         "name": meta.get("name", p.plugin_uri),
                         "author": meta.get("author", ""),
+                        "category": meta.get("category", ""),
                         "position": p.position,
                         "bypassed": p.bypass,
                         "in_ports": meta.get("in_port_count", 0),
@@ -708,100 +848,45 @@ class ChainService:
                 return False
             
             from app.database import ChainPlugin
-            from sqlalchemy import delete, text
-            
+            from sqlalchemy import delete
+
             logger.info(
-                "REMOVE_PLUGIN: === START deletion of %s from chain %s (position=%s) ===",
+                "REMOVE_PLUGIN: deleting %s from chain %s (position=%s)",
                 plugin_uri,
                 chain_id,
                 plugin_position,
             )
-            logger.info(f"REMOVE_PLUGIN: Plugin URI type: {type(plugin_uri)}, length: {len(plugin_uri)}, repr: {repr(plugin_uri)}")
 
             filters = [
                 ChainPlugin.chain_id == chain_id,
                 ChainPlugin.plugin_uri == plugin_uri,
             ]
-            sql_params = {"chain_id": chain_id, "plugin_uri": plugin_uri}
             if plugin_position is not None:
                 filters.append(ChainPlugin.position == plugin_position)
-                sql_params["plugin_position"] = plugin_position
 
-            if plugin_position is None:
-                sql_where_clause = "chain_id = :chain_id AND plugin_uri = :plugin_uri"
-            else:
-                sql_where_clause = "chain_id = :chain_id AND plugin_uri = :plugin_uri AND position = :plugin_position"
-            
-            # Step 1: Check plugin exists
-            logger.info(f"REMOVE_PLUGIN: Step 1 - Checking if plugin exists...")
             count_result = await self.session.execute(
                 select(ChainPlugin).filter(*filters)
             )
             matching_plugins = count_result.scalars().all()
-            count_before = len(matching_plugins)
-            logger.info(f"REMOVE_PLUGIN: Found {count_before} matching record(s) by direct filter")
-            
-            if count_before == 0:
-                logger.error(f"REMOVE_PLUGIN: Plugin NOT FOUND - nothing to delete")
+
+            if not matching_plugins:
+                logger.error("REMOVE_PLUGIN: plugin not found in chain %s", chain_id)
                 return False
-            
-            # Log details of what we're about to delete
-            for plugin in matching_plugins:
-                logger.info(f"REMOVE_PLUGIN: About to delete: id={plugin.id}, chain_id={plugin.chain_id}, uri={plugin.plugin_uri}, pos={plugin.position}")
-            
-            # Step 2: Try TWO methods to delete - ORM and raw SQL
-            # Method 1: ORM delete
-            logger.info(f"REMOVE_PLUGIN: Step 2a - Trying ORM DELETE...")
+
             delete_stmt = delete(ChainPlugin).where(*filters)
             result = await self.session.execute(delete_stmt)
-            deleted_count_orm = result.rowcount
-            logger.info(f"REMOVE_PLUGIN: ORM DELETE returned rowcount={deleted_count_orm}")
-            
-            # Method 2: Raw SQL delete (as backup/verification)
-            logger.info(f"REMOVE_PLUGIN: Step 2b - Trying raw SQL DELETE...")
-            sql_delete = text(f"DELETE FROM chain_plugins WHERE {sql_where_clause}")
-            result_sql = await self.session.execute(sql_delete, sql_params)
-            deleted_count_sql = result_sql.rowcount
-            logger.info(f"REMOVE_PLUGIN: Raw SQL DELETE returned rowcount={deleted_count_sql}")
-            
-            deleted_count = max(deleted_count_orm, deleted_count_sql)
+            deleted_count = result.rowcount if (result.rowcount or 0) > 0 else len(matching_plugins)
             if deleted_count == 0:
-                logger.error(f"REMOVE_PLUGIN: Both methods returned 0 rows - deletion failed")
+                logger.error("REMOVE_PLUGIN: delete returned 0 rows for chain %s", chain_id)
                 return False
-            
-            logger.info(f"REMOVE_PLUGIN: Total deleted: {deleted_count} row(s)")
-            
-            # Step 3: Flush
-            logger.info(f"REMOVE_PLUGIN: Step 3 - Flushing session...")
-            try:
-                await self.session.flush()
-                logger.info(f"REMOVE_PLUGIN: Flush successful")
-            except Exception as e:
-                logger.error(f"REMOVE_PLUGIN: Flush FAILED: {e}", exc_info=True)
-                return False
-            
-            # Step 4: Verify within same transaction - use BOTH ORM and raw SQL
-            logger.info(f"REMOVE_PLUGIN: Step 4 - Verifying deletion...")
-            
-            # ORM verify
-            verify_result = await self.session.execute(
-                select(ChainPlugin).filter(*filters)
+
+            await self.session.flush()
+            logger.info(
+                "REMOVE_PLUGIN: removed %s row(s) for %s from chain %s",
+                deleted_count,
+                plugin_uri,
+                chain_id,
             )
-            verify_orm_count = len(verify_result.scalars().all())
-            logger.info(f"REMOVE_PLUGIN: ORM verify - {verify_orm_count} record(s) still exist")
-            
-            # Raw SQL verify
-            sql_verify = text(f"SELECT COUNT(*) as cnt FROM chain_plugins WHERE {sql_where_clause}")
-            result_verify = await self.session.execute(sql_verify, sql_params)
-            row = result_verify.one()
-            verify_sql_count = row[0] if row else 0
-            logger.info(f"REMOVE_PLUGIN: Raw SQL verify - {verify_sql_count} record(s) still exist")
-            
-            if verify_orm_count > 0 or verify_sql_count > 0:
-                logger.error(f"REMOVE_PLUGIN: VERIFICATION FAILED - Plugin still exists!")
-                return False
-            
-            logger.info(f"REMOVE_PLUGIN: === SUCCESS - Deletion verified, {deleted_count} record(s) removed ===")
             return True
             
         except Exception as e:
@@ -1090,8 +1175,7 @@ class ChainService:
                 return None
             
             from app.database import Chain, ChainPlugin, SystemConfig
-            import json
-            
+
             # Get chain
             result = await self.session.execute(
                 select(Chain).filter(Chain.id == chain_id)
@@ -1121,13 +1205,21 @@ class ChainService:
                     for cp in chain_plugins
                 ]
             }
-            
-            # Save as system config
-            preset = SystemConfig(
-                key=f"chain_preset_{preset_name}",
-                value=json.dumps(preset_data)
+
+            preset_key = f"chain_preset_{preset_name}"
+            preset_result = await self.session.execute(
+                select(SystemConfig).filter(SystemConfig.key == preset_key)
             )
-            self.session.add(preset)
+            preset = preset_result.scalar_one_or_none()
+            if preset is None:
+                preset = SystemConfig(
+                    key=preset_key,
+                    value=json.dumps(preset_data)
+                )
+                self.session.add(preset)
+            else:
+                preset.value = json.dumps(preset_data)
+
             await self.session.flush()
             await self.session.refresh(preset)
             

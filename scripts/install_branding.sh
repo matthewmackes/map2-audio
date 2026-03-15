@@ -29,10 +29,16 @@ if [ "$EUID" -eq 0 ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BRANDING_DIR="$SCRIPT_DIR/branding"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+BRANDING_DIR="$REPO_ROOT/branding"
+PLYMOUTH_CONFIG_SOURCE="$BRANDING_DIR/map2-boot-splash.plymouth"
+
+if [ ! -f "$PLYMOUTH_CONFIG_SOURCE" ] && [ -f "$BRANDING_DIR/map2.plymouth" ]; then
+    PLYMOUTH_CONFIG_SOURCE="$BRANDING_DIR/map2.plymouth"
+fi
 
 # Check if branding files exist
-if [ ! -f "$BRANDING_DIR/map2-boot-splash.script" ] || [ ! -f "$BRANDING_DIR/map2-boot-splash.plymouth" ]; then
+if [ ! -f "$BRANDING_DIR/map2-boot-splash.script" ] || [ ! -f "$PLYMOUTH_CONFIG_SOURCE" ] || [ ! -f "$BRANDING_DIR/map2-login-issue.sh" ]; then
     echo -e "${RED}Error: Branding files not found in $BRANDING_DIR${NC}"
     exit 1
 fi
@@ -54,7 +60,7 @@ echo -e "${YELLOW}Installing MAP2 Plymouth theme...${NC}"
 sudo mkdir -p /usr/share/plymouth/themes/map2
 
 sudo cp "$BRANDING_DIR/map2-boot-splash.script" /usr/share/plymouth/themes/map2/
-sudo cp "$BRANDING_DIR/map2-boot-splash.plymouth" /usr/share/plymouth/themes/map2/
+sudo cp "$PLYMOUTH_CONFIG_SOURCE" /usr/share/plymouth/themes/map2/map2-boot-splash.plymouth
 
 # Set permissions
 sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.script
@@ -78,15 +84,20 @@ echo -e "${YELLOW}  Note: Boot splash will be visible on next reboot${NC}"
 echo ""
 
 # ============================================================================
-# 2. Install Welcome Message
+# 2. Install Shell and Local Console Branding
 # ============================================================================
-echo -e "${YELLOW}[2/3] Installing welcome message...${NC}"
+echo -e "${YELLOW}[2/3] Installing shell and login branding...${NC}"
 echo ""
 
 # Copy welcome script to system location
 sudo mkdir -p /etc/profile.d
-sudo cp "$BRANDING_DIR/welcome.sh" /etc/profile.d/map2-welcome.sh
+sudo cp "$BRANDING_DIR/map2-welcome.sh" /etc/profile.d/map2-welcome.sh
 sudo chmod 755 /etc/profile.d/map2-welcome.sh
+
+# Generate and install the local-console login banner.
+sudo mkdir -p /etc/issue.d
+bash "$BRANDING_DIR/map2-login-issue.sh" | sudo tee /etc/issue.d/map2-login.issue > /dev/null
+sudo chmod 644 /etc/issue.d/map2-login.issue
 
 # Also add to user's bashrc for immediate effect
 BASHRC_LINE='# MAP2 Audio Platform Welcome
@@ -111,7 +122,7 @@ if [ -f /etc/skel/.bashrc ]; then
     fi
 fi
 
-echo -e "${GREEN}✓ Welcome message installed${NC}"
+echo -e "${GREEN}✓ Shell and login branding installed${NC}"
 echo ""
 
 # ============================================================================
@@ -188,6 +199,9 @@ echo -e "  ${GREEN}✓${NC} Welcome message script"
 echo -e "    ${BLUE}→${NC} /etc/profile.d/map2-welcome.sh"
 echo -e "    ${BLUE}→${NC} ~/.bashrc (current user)"
 echo ""
+echo -e "  ${GREEN}✓${NC} Local console login banner"
+echo -e "    ${BLUE}→${NC} /etc/issue.d/map2-login.issue"
+echo ""
 echo -e "${YELLOW}Next steps:${NC}"
 echo ""
 echo -e "  1. ${BLUE}Reboot to see the boot splash${NC}"
@@ -200,6 +214,7 @@ echo ""
 echo -e "${YELLOW}Customization:${NC}"
 echo ""
 echo -e "  ${BLUE}→${NC} Edit boot splash: $BRANDING_DIR/map2-boot-splash.script"
-echo -e "  ${BLUE}→${NC} Edit welcome message: $BRANDING_DIR/welcome.sh"
+echo -e "  ${BLUE}→${NC} Edit welcome message: $BRANDING_DIR/map2-welcome.sh"
+echo -e "  ${BLUE}→${NC} Edit login banner: $BRANDING_DIR/map2-login-issue.sh"
 echo -e "  ${BLUE}→${NC} Then run this script again to apply changes"
 echo ""

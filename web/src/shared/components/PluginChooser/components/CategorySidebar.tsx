@@ -22,6 +22,7 @@ import {
   Button,
   Badge,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import {
   ExpandLess,
   ExpandMore,
@@ -36,7 +37,7 @@ import {
 import { usePluginChooser } from '../PluginChooserContext'
 import { buildCategoryTree } from '../utils/pluginFilters'
 import { CategoryNode, PluginFolder } from '../types'
-import PluginIcon from '../../../../pipedal/PluginIcon'
+import { LegacyPluginIcon } from './LegacyPluginIcon'
 import { PluginType } from '../../../../pipedal/Lv2Plugin'
 
 interface CategorySidebarProps {
@@ -185,7 +186,7 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
           sx={{ py: 0.5, minHeight: 36 }}
         >
           <ListItemIcon sx={{ minWidth: 32 }}>
-            <PluginIcon pluginType={PluginType.Plugin} size={18} opacity={0.7} />
+            <LegacyPluginIcon pluginType={PluginType.Plugin} size={18} opacity={0.7} />
           </ListItemIcon>
           {!state.sidebarCollapsed && (
             <>
@@ -213,7 +214,7 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
               max={99}
               sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', height: 14, minWidth: 14 } }}
             >
-              <StarIcon sx={{ fontSize: 18, color: state.showFavoritesOnly ? '#F59E0B' : 'text.secondary' }} />
+              <StarIcon sx={{ fontSize: 18, color: state.showFavoritesOnly ? 'warning.main' : 'text.secondary' }} />
             </Badge>
           </ListItemIcon>
           {!state.sidebarCollapsed && (
@@ -254,12 +255,12 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
         {plugins.some(p => p.format === 'hardware') && (
           <>
             {!state.sidebarCollapsed && (
-              <Typography
-                variant="caption"
-                sx={{ px: 2, py: 0.5, display: 'block', color: '#C8A951', fontWeight: 600 }}
-              >
-                HARDWARE
-              </Typography>
+            <Typography
+              variant="caption"
+              sx={{ px: 2, py: 0.5, display: 'block', color: 'warning.main', fontWeight: 600 }}
+            >
+              HARDWARE
+            </Typography>
             )}
             <ListItemButton
               selected={state.selectedCategory === 'lexicon'}
@@ -268,10 +269,10 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
                 py: 0.5,
                 minHeight: 36,
                 '&.Mui-selected': {
-                  bgcolor: 'rgba(200,169,81,0.15)',
-                  '&:hover': { bgcolor: 'rgba(200,169,81,0.25)' },
+                  bgcolor: (theme) => alpha(theme.palette.warning.main, 0.15),
+                  '&:hover': { bgcolor: (theme) => alpha(theme.palette.warning.main, 0.25) },
                 },
-                '&:hover': { bgcolor: 'rgba(200,169,81,0.08)' },
+                '&:hover': { bgcolor: (theme) => alpha(theme.palette.warning.main, 0.08) },
               }}
             >
               <ListItemIcon sx={{ minWidth: 32 }}>
@@ -281,9 +282,9 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
                 <>
                   <ListItemText
                     primary="Lexicon MPX-1"
-                    primaryTypographyProps={{ fontSize: '0.8rem', noWrap: true, sx: { color: '#C8A951' } }}
+                    primaryTypographyProps={{ fontSize: '0.8rem', noWrap: true, sx: { color: 'warning.main' } }}
                   />
-                  <Typography variant="caption" sx={{ color: '#C8A951' }}>
+                  <Typography variant="caption" sx={{ color: 'warning.main' }}>
                     {plugins.filter(p => p.format === 'hardware').length}
                   </Typography>
                 </>
@@ -302,7 +303,7 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
             sx={{ py: 0.5, minHeight: 36 }}
           >
             <ListItemIcon sx={{ minWidth: 32 }}>
-              <PluginIcon
+              <LegacyPluginIcon
                 pluginType={getCategoryPluginType(category.name)}
                 size={18}
                 opacity={0.7}

@@ -308,9 +308,9 @@ If TMF is not included, the ZIP includes `MISSING_TMF.txt` with remediation step
 For required instance tags and the full TMF registration workflow, use:
 - `docs/tesira/MAP2_TMF_AUTHORING_GUIDE.md`
 
-In the MAP2 GridFlow UI:
+In the MAP2 JUCE-GRID UI:
 1. Click the **INPUT** endpoint card on your signal chain
-2. In the AudioPortSelector modal, select the Forte CI AVB endpoint under the AVB tab
+2. In the audio port modal, select the Forte CI AVB endpoint under the AVB tab
 3. Repeat for **OUTPUT** to route audio back to the Forte CI's analog outputs
 
 ---

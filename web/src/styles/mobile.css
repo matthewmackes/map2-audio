@@ -208,6 +208,20 @@
     gap: 8px;
   }
 
+  .page-header__aside {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .page-header__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .page-header__brand {
+    width: 100%;
+  }
+
   .page-header h1 {
     font-size: clamp(20px, 6vw, 24px);
     line-height: 1.15;
@@ -216,6 +230,24 @@
   .page-header p {
     font-size: var(--type-body);
     margin-top: 4px;
+  }
+
+  .topbar-pro__brand {
+    padding-left: 8px;
+  }
+
+  .topbar-pro__brand-secondary {
+    display: none;
+  }
+
+  .platform-brand-backdrop__mark--primary {
+    top: 112px;
+    width: 240px;
+    opacity: 0.05;
+  }
+
+  .platform-brand-backdrop__mark--secondary {
+    width: 148px;
   }
 
   .stat-grid {

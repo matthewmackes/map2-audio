@@ -1,7 +1,13 @@
 import type { CSSProperties, KeyboardEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Home, Idea, Pin, PinFilled } from '@carbon/icons-react'
+import { ChevronLeft, ChevronRight, Idea, Pin, PinFilled } from '@carbon/icons-react'
+import {
+  MAP2_PLATFORM_META,
+  MAP2_PLATFORM_NAME,
+  MAP2_PRIMARY_LABEL,
+  Map2BrandMark,
+} from '../components/branding/map2Branding'
 
 import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
@@ -280,6 +286,71 @@ export function HomePage() {
 
   const activeCard = filteredCards[activeCardIndex] ?? filteredCards[0] ?? null
 
+  const scrollToCard = useCallback(
+    (index: number, behavior: ScrollBehavior = 'smooth') => {
+      const viewport = carouselRef.current
+      const maxIndex = Math.max(0, filteredCards.length - 1)
+      const nextIndex = Math.min(Math.max(index, 0), maxIndex)
+
+      if (!viewport) {
+        setActiveCardIndex(nextIndex)
+        return
+      }
+
+      const width = viewport.clientWidth || 1
+      const left = width * nextIndex
+      if (typeof viewport.scrollTo === 'function') {
+        viewport.scrollTo({ left, behavior })
+      } else {
+        viewport.scrollLeft = left
+      }
+      setActiveCardIndex(nextIndex)
+    },
+    [filteredCards.length],
+  )
+
+  useEffect(() => {
+    scrollToCard(0, 'auto')
+  }, [activeSection, scrollToCard])
+
+  useEffect(() => {
+    const viewport = carouselRef.current
+    if (!viewport) {
+      return
+    }
+
+    let raf = 0
+    const handleScroll = () => {
+      if (raf) {
+        window.cancelAnimationFrame(raf)
+      }
+
+      raf = window.requestAnimationFrame(() => {
+        const width = viewport.clientWidth || 1
+        const nextIndex = Math.min(filteredCards.length - 1, Math.max(0, Math.round(viewport.scrollLeft / width)))
+        setActiveCardIndex((current) => (current === nextIndex ? current : nextIndex))
+      })
+    }
+
+    viewport.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      viewport.removeEventListener('scroll', handleScroll)
+      if (raf) {
+        window.cancelAnimationFrame(raf)
+      }
+    }
+  }, [filteredCards.length])
+
+  useEffect(() => {
+    const handleResize = () => {
+      scrollToCard(activeCardIndex, 'auto')
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [activeCardIndex, scrollToCard])
+
   const handleTogglePin = async (item: HomeNavigationItem, checked: boolean) => {
     if (!item.pinnable) {
       return
@@ -311,14 +382,16 @@ export function HomePage() {
     if (filteredCards.length <= 1) {
       return
     }
-    setActiveCardIndex((prev) => (prev + 1) % filteredCards.length)
+    const nextIndex = (activeCardIndex + 1) % filteredCards.length
+    scrollToCard(nextIndex)
   }
 
   const previousCard = () => {
     if (filteredCards.length <= 1) {
       return
     }
-    setActiveCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
+    const nextIndex = activeCardIndex === 0 ? filteredCards.length - 1 : activeCardIndex - 1
+    scrollToCard(nextIndex)
   }
 
   const handleCarouselKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -361,14 +434,27 @@ export function HomePage() {
 
       <section className="home-cinematic-panel">
         <div className="home-cinematic-banner">
-          <img src="/map2-banner.png" alt="MAP2 cinematic banner" loading="eager" />
+          <div className="home-cinematic-banner__background-brand" aria-hidden="true">
+            <Map2BrandMark className="home-cinematic-banner__background-mark" />
+          </div>
           <div className="home-cinematic-banner__overlay" />
           <div className="home-cinematic-banner__headline">
-            <div className="home-cinematic-banner__title-row">
-              <Home size={24} />
-              <h1>MAP2</h1>
+            <div className="home-cinematic-banner__hero-mark" aria-hidden="true">
+              <Map2BrandMark className="home-cinematic-banner__hero-mark-svg" />
             </div>
-            <p>{clusterName || 'Local Node'}</p>
+            <div className="home-cinematic-banner__copy">
+              <p className="home-cinematic-banner__eyebrow">{MAP2_PRIMARY_LABEL}</p>
+              <div className="home-cinematic-banner__title-row">
+                <h1>{MAP2_PLATFORM_NAME}</h1>
+              </div>
+              <p className="home-cinematic-banner__summary">
+                Unified routing, control, and node orchestration across the full Mackes Audio Platform.
+              </p>
+              <div className="home-cinematic-banner__meta">
+                <span>{MAP2_PLATFORM_META}</span>
+                <span>{clusterName || 'Local Node'}</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -465,144 +551,139 @@ export function HomePage() {
               onKeyDown={handleCarouselKeyDown}
               aria-label="Home spotlight carousel"
             >
-              <div
-                className="home-spotlight-track"
-                style={{ transform: `translateX(-${activeCardIndex * 100}%)` }}
-              >
-                {filteredCards.map((card, index) => {
-                  const cardId = `${card.item.to}-${card.item.label}`
-                  const isBlocked = isBlockedHomeItem(card.item)
-                  const checked = pinnedRouteSet.has(card.item.to)
-                  const limitReached = !checked && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
-                  const pinDisabled = specialSettingsLoading || !card.item.pinnable || limitReached
-                  const maturityMeta = navigationMaturityMeta[card.item.maturity]
-                  const isExpanded = expandedCardId === cardId
+              {filteredCards.map((card, index) => {
+                const cardId = `${card.item.to}-${card.item.label}`
+                const isBlocked = isBlockedHomeItem(card.item)
+                const checked = pinnedRouteSet.has(card.item.to)
+                const limitReached = !checked && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
+                const pinDisabled = specialSettingsLoading || !card.item.pinnable || limitReached
+                const maturityMeta = navigationMaturityMeta[card.item.maturity]
+                const isExpanded = expandedCardId === cardId
 
-                  return (
-                    <article
-                      key={cardId}
-                      className={`home-spotlight-card poster-fallback poster-fallback--${card.posterSlug}${isBlocked ? ' is-blocked' : ''}`}
-                      aria-hidden={index !== activeCardIndex}
-                    >
-                      {!failedPosterSlugs.has(card.posterSlug) && (
-                        <img
-                          src={`/posters/${card.posterSlug}.webp`}
-                          alt={`${card.item.label} poster`}
-                          loading="lazy"
-                          onError={() => {
-                            setFailedPosterSlugs((prev) => {
-                              const next = new Set(prev)
-                              next.add(card.posterSlug)
-                              return next
-                            })
-                          }}
-                        />
-                      )}
+                return (
+                  <article
+                    key={cardId}
+                    className={`home-spotlight-card poster-fallback poster-fallback--${card.posterSlug}${isBlocked ? ' is-blocked' : ''}`}
+                    aria-hidden={index !== activeCardIndex}
+                  >
+                    {!failedPosterSlugs.has(card.posterSlug) && (
+                      <img
+                        src={`/posters/${card.posterSlug}.webp`}
+                        alt={`${card.item.label} poster`}
+                        loading="lazy"
+                        onError={() => {
+                          setFailedPosterSlugs((prev) => {
+                            const next = new Set(prev)
+                            next.add(card.posterSlug)
+                            return next
+                          })
+                        }}
+                      />
+                    )}
 
-                      <div className="home-spotlight-card__shade" />
+                    <div className="home-spotlight-card__shade" />
 
-                      <div className="home-spotlight-card__content">
-                        <div className="home-spotlight-card__main">
-                          <div className="home-spotlight-card__meta">
-                            <span className={`home-cinematic-card__temperature is-${card.temperature}`}>{card.sectionTitle}</span>
-                            <span
-                              className="home-spotlight-card__maturity"
-                              style={{
-                                '--maturity-surface': maturityMeta.surface,
-                                '--maturity-border': maturityMeta.border,
-                                '--maturity-accent': maturityMeta.accent,
-                              } as CSSProperties}
-                            >
-                              {maturityMeta.label}
-                            </span>
-                          </div>
-
-                          <h3>{card.item.label}</h3>
-                          <p className="home-spotlight-card__summary">{card.profile.summary}</p>
-
-                          <div className="home-spotlight-card__actions">
-                            <button
-                              type="button"
-                              className="home-spotlight-card__btn home-spotlight-card__btn--primary"
-                              disabled={isBlocked}
-                              onClick={() => {
-                                if (!isBlocked) {
-                                  navigateToCard(card)
-                                }
-                              }}
-                            >
-                              Open Interface
-                            </button>
-
-                            <button
-                              type="button"
-                              className="home-spotlight-card__btn home-spotlight-card__btn--secondary"
-                              onClick={() => {
-                                setExpandedCardId((current) => (current === cardId ? null : cardId))
-                              }}
-                              aria-expanded={isExpanded}
-                            >
-                              Learn More
-                            </button>
-
-                            <button
-                              type="button"
-                              className={`home-spotlight-card__btn home-spotlight-card__btn--pin${checked ? ' is-pinned' : ''}`}
-                              onClick={(event) => {
-                                event.preventDefault()
-                                event.stopPropagation()
-                                if (!pinDisabled) {
-                                  void handleTogglePin(card.item, !checked)
-                                }
-                              }}
-                              title={
-                                !card.item.pinnable
-                                  ? 'This card cannot be pinned to the top navigation'
-                                  : limitReached
-                                    ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
-                                    : checked
-                                      ? 'Unpin from top navigation'
-                                      : 'Pin to top navigation'
-                              }
-                              aria-label={checked ? `Unpin ${card.item.label}` : `Pin ${card.item.label}`}
-                              aria-pressed={checked}
-                              disabled={pinDisabled}
-                            >
-                              {checked ? <PinFilled size={14} aria-hidden /> : <Pin size={14} aria-hidden />}
-                              {checked ? 'Pinned' : 'Pin'}
-                            </button>
-                          </div>
-
-                          {isExpanded && (
-                            <div className="home-spotlight-card__learn-more" role="note">
-                              <div className="home-spotlight-card__learn-more-title">
-                                <Idea size={14} aria-hidden />
-                                Workflow Notes
-                              </div>
-                              <p>{card.profile.learnMore}</p>
-                              {card.item.gatedReason && <p className="home-spotlight-card__gated">{card.item.gatedReason}</p>}
-                            </div>
-                          )}
+                    <div className="home-spotlight-card__content">
+                      <div className="home-spotlight-card__main">
+                        <div className="home-spotlight-card__meta">
+                          <span className={`home-cinematic-card__temperature is-${card.temperature}`}>{card.sectionTitle}</span>
+                          <span
+                            className="home-spotlight-card__maturity"
+                            style={{
+                              '--maturity-surface': maturityMeta.surface,
+                              '--maturity-border': maturityMeta.border,
+                              '--maturity-accent': maturityMeta.accent,
+                            } as CSSProperties}
+                          >
+                            {maturityMeta.label}
+                          </span>
                         </div>
 
-                        <aside className="home-spotlight-card__details" aria-label={`${card.item.label} capabilities`}>
-                          <h4>Capabilities</h4>
-                          <ul>
-                            {card.profile.capabilities.map((capability) => (
-                              <li key={`${cardId}-${capability}`}>{capability}</li>
-                            ))}
-                          </ul>
-                          <div className="home-spotlight-card__best-for">
-                            <span>Best for</span>
-                            <strong>{card.profile.bestFor}</strong>
+                        <h3>{card.item.label}</h3>
+                        <p className="home-spotlight-card__summary">{card.profile.summary}</p>
+
+                        <div className="home-spotlight-card__actions">
+                          <button
+                            type="button"
+                            className="home-spotlight-card__btn home-spotlight-card__btn--primary"
+                            disabled={isBlocked}
+                            onClick={() => {
+                              if (!isBlocked) {
+                                navigateToCard(card)
+                              }
+                            }}
+                          >
+                            Open Interface
+                          </button>
+
+                          <button
+                            type="button"
+                            className="home-spotlight-card__btn home-spotlight-card__btn--secondary"
+                            onClick={() => {
+                              setExpandedCardId((current) => (current === cardId ? null : cardId))
+                            }}
+                            aria-expanded={isExpanded}
+                          >
+                            Learn More
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`home-spotlight-card__btn home-spotlight-card__btn--pin${checked ? ' is-pinned' : ''}`}
+                            onClick={(event) => {
+                              event.preventDefault()
+                              event.stopPropagation()
+                              if (!pinDisabled) {
+                                void handleTogglePin(card.item, !checked)
+                              }
+                            }}
+                            title={
+                              !card.item.pinnable
+                                ? 'This card cannot be pinned to the top navigation'
+                                : limitReached
+                                  ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
+                                  : checked
+                                    ? 'Unpin from top navigation'
+                                    : 'Pin to top navigation'
+                            }
+                            aria-label={checked ? `Unpin ${card.item.label}` : `Pin ${card.item.label}`}
+                            aria-pressed={checked}
+                            disabled={pinDisabled}
+                          >
+                            {checked ? <PinFilled size={14} aria-hidden /> : <Pin size={14} aria-hidden />}
+                            {checked ? 'Pinned' : 'Pin'}
+                          </button>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="home-spotlight-card__learn-more" role="note">
+                            <div className="home-spotlight-card__learn-more-title">
+                              <Idea size={14} aria-hidden />
+                              Workflow Notes
+                            </div>
+                            <p>{card.profile.learnMore}</p>
+                            {card.item.gatedReason && <p className="home-spotlight-card__gated">{card.item.gatedReason}</p>}
                           </div>
-                          <div className="home-spotlight-card__route">Route: {card.item.to}</div>
-                        </aside>
+                        )}
                       </div>
-                    </article>
-                  )
-                })}
-              </div>
+
+                      <aside className="home-spotlight-card__details" aria-label={`${card.item.label} capabilities`}>
+                        <h4>Capabilities</h4>
+                        <ul>
+                          {card.profile.capabilities.map((capability) => (
+                            <li key={`${cardId}-${capability}`}>{capability}</li>
+                          ))}
+                        </ul>
+                        <div className="home-spotlight-card__best-for">
+                          <span>Best for</span>
+                          <strong>{card.profile.bestFor}</strong>
+                        </div>
+                        <div className="home-spotlight-card__route">Route: {card.item.to}</div>
+                      </aside>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
 
             <div className="home-spotlight-indicators" aria-label="Card indicators">
@@ -611,7 +692,7 @@ export function HomePage() {
                   key={`dot-${card.item.to}-${card.item.label}`}
                   type="button"
                   className={`home-spotlight-indicator${index === activeCardIndex ? ' is-active' : ''}`}
-                  onClick={() => setActiveCardIndex(index)}
+                  onClick={() => scrollToCard(index)}
                   aria-label={`View ${card.item.label}`}
                   aria-current={index === activeCardIndex}
                 />

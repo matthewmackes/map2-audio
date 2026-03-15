@@ -8,11 +8,14 @@ import signal
 import asyncio
 import logging
 import resource
+import shlex
 import subprocess
+import tempfile
 import time
 import multiprocessing
 import re
 import json
+from pathlib import Path
 from typing import Dict, Any, List
 from fastapi import APIRouter, HTTPException
 
@@ -26,6 +29,7 @@ router = APIRouter(prefix="/api/system", tags=["system"])
 _core_config_state: Dict[int, Dict[str, Any]] = {}
 _core_config_loaded = False
 _core_config_file = os.getenv("MAP2_CORE_CONFIG_FILE", "/tmp/map2_core_config_state.json")
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _get_available_activities() -> List[Dict[str, str]]:
@@ -160,6 +164,82 @@ def _validate_core_config_payload(config_data: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
+def _node_install_config_lines(config: Dict[str, Any]) -> List[str]:
+    return [
+        f"INSTALL_MODE={shlex.quote(str(config.get('install_mode', 'rpm') or 'rpm'))}",
+        f"NODE_ID={shlex.quote(str(config.get('node_id', '')).strip())}",
+        f"NODE_NAME={shlex.quote(str(config.get('node_name', '')).strip())}",
+        f"NODE_ROLE={shlex.quote(str(config.get('node_role', 'worker') or 'worker'))}",
+        f"CLUSTER_JOIN_METHOD={shlex.quote(str(config.get('cluster_join_method', 'mdns') or 'mdns'))}",
+        f"CLUSTER_MASTER_IP={shlex.quote(str(config.get('cluster_master_ip', '')).strip())}",
+        f"CLUSTER_JOIN_TOKEN={shlex.quote(str(config.get('cluster_join_token', '')).strip())}",
+        f"CONFIGURE_NETWORK={'true' if bool(config.get('configure_network')) else 'false'}",
+        f"NETWORK_INTERFACE={shlex.quote(str(config.get('network_interface', '')).strip())}",
+        f"NETWORK_IP={shlex.quote(str(config.get('network_ip', '')).strip())}",
+        f"NETWORK_NETMASK={shlex.quote(str(config.get('network_netmask', '255.255.255.0') or '255.255.255.0'))}",
+        f"NETWORK_GATEWAY={shlex.quote(str(config.get('network_gateway', '')).strip())}",
+        f"NETWORK_DNS={shlex.quote(str(config.get('network_dns', '8.8.8.8') or '8.8.8.8'))}",
+        f"ENABLE_AUDIO={'true' if bool(config.get('enable_audio')) else 'false'}",
+        f"AUDIO_DEVICE={shlex.quote(str(config.get('audio_device', 'default') or 'default'))}",
+        f"AUDIO_SAMPLE_RATE={shlex.quote(str(config.get('audio_sample_rate', '48000') or '48000'))}",
+        f"AUDIO_BUFFER_SIZE={shlex.quote(str(config.get('audio_buffer_size', '256') or '256'))}",
+        f"ENABLE_FIREWALL={'true' if bool(config.get('enable_firewall')) else 'false'}",
+    ]
+
+
+async def _run_node_install(config: Dict[str, Any], *, dry_run: bool, auto_yes: bool) -> Dict[str, Any]:
+    script_path = _REPO_ROOT / "scripts" / "install-node.sh"
+    if not script_path.exists():
+        raise HTTPException(status_code=404, detail=f"Missing installer script: {script_path}")
+
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        prefix="map2-node-install-",
+        suffix=".env",
+        delete=False,
+    ) as handle:
+        handle.write("\n".join(_node_install_config_lines(config)))
+        config_path = Path(handle.name)
+
+    command = [
+        "bash",
+        str(script_path),
+        "--config",
+        str(config_path),
+        "--no-dialog",
+    ]
+    if auto_yes:
+        command.append("--yes")
+    if dry_run:
+        command.append("--dry-run")
+
+    try:
+        completed = await asyncio.to_thread(
+            subprocess.run,
+            command,
+            cwd=str(_REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=1800,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(status_code=504, detail="install-node.sh timed out after 1800s") from exc
+    except Exception as exc:
+        logger.error("Failed to execute install-node.sh: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to execute install-node.sh: {exc}") from exc
+    finally:
+        config_path.unlink(missing_ok=True)
+
+    return {
+        "ok": completed.returncode == 0,
+        "command": command,
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
+
+
 @router.post("/restart-backend")
 async def restart_backend():
     """
@@ -217,6 +297,25 @@ async def restart_system():
         "status": "rebooting",
         "message": "System is rebooting..."
     }
+
+
+@router.post("/node-install")
+async def apply_node_install(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Run the non-interactive node installer through the backend.
+
+    Request body:
+        - config: structured installer configuration values
+        - dry_run: preview/validation mode
+        - auto_yes: auto-confirm prompts (defaults true)
+    """
+    config = request.get("config")
+    if not isinstance(config, dict):
+        raise HTTPException(status_code=400, detail="request.config must be an object")
+
+    dry_run = bool(request.get("dry_run", False))
+    auto_yes = bool(request.get("auto_yes", True))
+    return await _run_node_install(config, dry_run=dry_run, auto_yes=auto_yes)
 
 
 def _check_status(condition: bool, name: str, good_msg: str, bad_msg: str, fix: str = "") -> Dict[str, Any]:
@@ -723,7 +822,7 @@ async def reinstall_branding() -> Dict[str, Any]:
     # Check source files
     splash_script = os.path.join(branding_dir, "map2-boot-splash.script")
     splash_plymouth = os.path.join(branding_dir, "map2-boot-splash.plymouth")
-    welcome_script = os.path.join(branding_dir, "welcome.sh")
+    welcome_script = os.path.join(branding_dir, "map2-welcome.sh")
 
     if not os.path.exists(splash_script):
         errors.append(f"Missing: {splash_script}")
@@ -835,7 +934,7 @@ async def toggle_welcome_banner(install: bool = True) -> Dict[str, Any]:
             # Find branding directory
             script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             branding_dir = os.path.join(script_dir, "branding")
-            welcome_script = os.path.join(branding_dir, "welcome.sh")
+            welcome_script = os.path.join(branding_dir, "map2-welcome.sh")
 
             if not os.path.exists(welcome_script):
                 return {

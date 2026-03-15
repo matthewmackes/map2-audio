@@ -1,0 +1,520 @@
+Screen {
+    layout: vertical;
+    background: $background;
+    color: $foreground;
+}
+
+#shell-header {
+    height: 3;
+    background: $carbon-panel;
+    border-bottom: solid $carbon-border-strong;
+    padding: 0 1;
+}
+
+#shell-title {
+    height: 1;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#shell-meta {
+    height: 1;
+    color: $carbon-text-secondary;
+    content-align: left middle;
+}
+
+#shell-body {
+    height: 1fr;
+}
+
+#nav-pane {
+    width: 28;
+    min-width: 24;
+    background: $surface;
+    border-right: solid $carbon-border-subtle;
+    padding: 1;
+}
+
+.nav-group {
+    margin: 1 0 1 0;
+    color: $carbon-text-secondary;
+    text-style: bold;
+}
+
+.nav-button {
+    width: 100%;
+    margin: 0 0 1 0;
+    content-align: left middle;
+}
+
+.nav-button.-active {
+    border-left: heavy $carbon-primary-action;
+    background: $carbon-panel;
+    text-style: bold;
+}
+
+.nav-button:focus {
+    border: round $carbon-focus;
+}
+
+#workspace-panel {
+    width: 1fr;
+    background: $background;
+    padding: 1 2;
+}
+
+#workspace-switcher {
+    width: 100%;
+    height: auto;
+}
+
+#secondary-panel {
+    width: 38;
+    min-width: 30;
+    background: $carbon-runtime-panel;
+    border-left: solid $carbon-border-subtle;
+    padding: 1;
+    display: none;
+}
+
+#secondary-panel.-visible {
+    display: block;
+}
+
+.secondary-title {
+    margin: 0 0 1 0;
+    text-style: bold;
+    color: $foreground;
+}
+
+.secondary-body {
+    border: solid $carbon-border-subtle;
+    background: $surface;
+    color: $foreground;
+    padding: 1;
+    margin: 0 0 1 0;
+    min-height: 7;
+}
+
+.route-title {
+    text-style: bold;
+    margin: 0 0 1 0;
+}
+
+.route-summary {
+    color: $carbon-text-secondary;
+    margin: 0 0 1 0;
+}
+
+ActionBar {
+    width: 100%;
+    height: auto;
+    margin-bottom: 1;
+}
+
+ActionBar Button {
+    margin-right: 1;
+}
+
+.section-title {
+    margin: 1 0 0 0;
+    text-style: bold;
+}
+
+.section-panel {
+    border: solid $carbon-border-subtle;
+    background: $surface;
+    padding: 1;
+    margin: 0 0 1 0;
+    min-height: 4;
+}
+
+.section-table {
+    height: 10;
+    margin: 0 0 1 0;
+}
+
+Footer {
+    background: $carbon-panel;
+    color: $foreground;
+}
+
+ConfirmDialog,
+InputDialog,
+NumberInputDialog,
+MessageDialog,
+FormDialog,
+SelectDialog {
+    align: center middle;
+}
+
+ConfirmDialog #dialog-container,
+InputDialog #dialog-container,
+NumberInputDialog #dialog-container,
+MessageDialog #dialog-container,
+FormDialog #dialog-container,
+SelectDialog #dialog-container {
+    height: auto;
+    background: $carbon-panel;
+    border: thick $carbon-border-strong;
+    padding: 1 2;
+}
+
+ConfirmDialog #dialog-container,
+InputDialog #dialog-container,
+MessageDialog #dialog-container {
+    width: 60;
+}
+
+NumberInputDialog #dialog-container {
+    width: 50;
+}
+
+FormDialog #dialog-container,
+SelectDialog #dialog-container {
+    width: 70;
+}
+
+SelectDialog #dialog-container {
+    max-height: 80%;
+}
+
+ConfirmDialog #dialog-title,
+InputDialog #dialog-title,
+NumberInputDialog #dialog-title,
+MessageDialog #dialog-title,
+FormDialog #dialog-title,
+SelectDialog #dialog-title {
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+ConfirmDialog #dialog-title {
+    color: $carbon-warning;
+}
+
+InputDialog #dialog-title,
+NumberInputDialog #dialog-title,
+FormDialog #dialog-title,
+SelectDialog #dialog-title {
+    color: $carbon-accent;
+}
+
+MessageDialog #dialog-title {
+    color: $foreground;
+}
+
+ConfirmDialog #dialog-message,
+MessageDialog #dialog-message {
+    text-align: center;
+    margin-bottom: 2;
+}
+
+InputDialog #dialog-label,
+NumberInputDialog #dialog-label,
+SelectDialog #dialog-message {
+    margin-bottom: 1;
+}
+
+InputDialog #dialog-input,
+FormDialog .field-input,
+SelectDialog #option-list {
+    margin-bottom: 1;
+}
+
+FormDialog #form-fields,
+SelectDialog #option-list {
+    width: 100%;
+    height: auto;
+}
+
+FormDialog #form-fields {
+    margin-bottom: 1;
+}
+
+FormDialog .field-label {
+    margin-bottom: 0;
+}
+
+FormDialog .field-section {
+    margin: 1 0 0 0;
+    text-style: bold;
+    color: $foreground;
+}
+
+FormDialog .field-hint {
+    color: $carbon-text-secondary;
+    margin: 0 0 1 0;
+}
+
+InputDialog #validation-error,
+NumberInputDialog #validation-error,
+FormDialog #validation-error {
+    color: $carbon-error;
+    text-align: center;
+    margin-bottom: 1;
+}
+
+ConfirmDialog #dialog-buttons,
+InputDialog #dialog-buttons,
+NumberInputDialog #dialog-buttons,
+MessageDialog #dialog-buttons,
+FormDialog #dialog-buttons,
+SelectDialog #dialog-buttons {
+    width: 100%;
+    height: auto;
+    align: center middle;
+}
+
+NumberInputDialog #input-container {
+    width: 100%;
+    height: auto;
+    margin-bottom: 1;
+}
+
+NumberInputDialog #number-input {
+    width: 1fr;
+}
+
+SelectDialog #option-list {
+    max-height: 20;
+}
+
+QuadCortexTouchscreenApp {
+    background: $qc-canvas;
+    color: $foreground;
+}
+
+#qc-root {
+    layout: vertical;
+    width: 100%;
+    height: 100%;
+    padding: 1;
+    background: $qc-canvas;
+}
+
+HeaderBar {
+    height: 4;
+    border: solid $qc-border-subtle;
+    background: $qc-surface-0;
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+#qc-header-shell {
+    height: 100%;
+}
+
+#qc-header-left {
+    width: 1fr;
+}
+
+#qc-header-right {
+    width: 62;
+}
+
+#qc-chain-name {
+    text-style: bold;
+    color: $foreground;
+}
+
+#qc-chain-meta {
+    color: $qc-text-secondary;
+}
+
+#qc-header-control-strip {
+    width: 100%;
+    height: auto;
+    align-horizontal: right;
+}
+
+HeaderControl,
+ModeBadge {
+    height: 3;
+    min-width: 18;
+    border: solid $qc-border-subtle;
+    background: $qc-surface-1;
+    color: $foreground;
+    padding: 0 1;
+    content-align: center middle;
+    margin-left: 1;
+}
+
+HeaderControl.-focused,
+ModeBadge.-focused {
+    border: round $carbon-focus;
+    background: $qc-surface-2;
+}
+
+#qc-status-strip {
+    color: $qc-text-secondary;
+    text-align: right;
+}
+
+#qc-main-surface {
+    height: 1fr;
+    border: solid $qc-border-subtle;
+    background: $qc-surface-0;
+    padding: 0 1;
+}
+
+#qc-content-switcher {
+    width: 100%;
+    height: 1fr;
+}
+
+GridView,
+GigView {
+    width: 100%;
+    height: 1fr;
+}
+
+#qc-grid-shell {
+    width: 100%;
+    height: 1fr;
+}
+
+#qc-grid-rows {
+    width: 9;
+    height: 1fr;
+    padding-top: 1;
+}
+
+.qc-row-label {
+    height: 1fr;
+    color: $qc-text-secondary;
+    text-style: bold;
+    content-align: center middle;
+}
+
+#qc-grid-layout {
+    width: 1fr;
+    height: 1fr;
+    layout: grid;
+    grid-size: 8 4;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr 1fr;
+}
+
+GridCell {
+    height: 1fr;
+    border: solid $qc-border-subtle;
+    background: $qc-surface-1;
+    padding: 0 1;
+    content-align: left middle;
+    margin: 0 1 1 0;
+}
+
+GridCell.-selected {
+    border: round $qc-border-strong;
+    background: $qc-surface-2;
+}
+
+GridCell.-region-active {
+    border: round $carbon-focus;
+}
+
+GridCell.-empty {
+    background: $qc-inactive;
+    color: $qc-text-muted;
+}
+
+GridCell.-bypassed {
+    color: $qc-text-secondary;
+}
+
+#qc-gig-layout {
+    width: 100%;
+    height: 1fr;
+    layout: grid;
+    grid-size: 4 2;
+    grid-columns: 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr;
+}
+
+GigTile {
+    height: 1fr;
+    border: solid $qc-border-subtle;
+    background: $qc-surface-1;
+    padding: 1;
+    content-align: center middle;
+    text-align: center;
+    margin: 0 1 1 0;
+}
+
+GigTile.-selected {
+    border: round $qc-border-strong;
+    background: $qc-surface-2;
+}
+
+GigTile.-region-active {
+    border: round $carbon-focus;
+}
+
+GigTile.-active {
+    text-style: bold;
+}
+
+GigTile.-empty {
+    background: $qc-inactive;
+    color: $qc-text-muted;
+}
+
+GigTile.-bypassed {
+    color: $qc-text-secondary;
+}
+
+#qc-context-panel {
+    height: 3;
+    border: solid $qc-border-subtle;
+    background: $qc-surface-1;
+    padding: 0 1;
+    margin-top: 1;
+    color: $foreground;
+}
+
+#qc-context-panel.-focused {
+    border: round $carbon-focus;
+    background: $qc-surface-2;
+}
+
+#qc-footer-hints {
+    height: 2;
+    border-top: solid $qc-border-subtle;
+    background: $qc-canvas;
+    color: $qc-text-secondary;
+    padding: 0;
+}
+
+.fx-signal-io {
+    color: $qc-signal-io;
+}
+
+.fx-dynamics {
+    color: $qc-dynamics;
+}
+
+.fx-drive {
+    color: $qc-drive;
+}
+
+.fx-amp {
+    color: $qc-amp;
+}
+
+.fx-modulation {
+    color: $qc-modulation;
+}
+
+.fx-delay {
+    color: $qc-delay;
+}
+
+.fx-reverb {
+    color: $qc-reverb;
+}
+
+.fx-pitch-filter {
+    color: $qc-pitch-filter;
+}

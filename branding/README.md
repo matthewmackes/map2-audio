@@ -5,15 +5,17 @@ Professional branding components for MAP2 Audio Platform.
 ## Files
 
 - **`map2-boot-splash.script`** - Plymouth boot splash theme (VSCode Dark)
-- **`map2-boot-splash.plymouth`** - Plymouth theme configuration
-- **`welcome.sh`** - Terminal welcome message with service status
+- **`map2.plymouth`** - Plymouth theme configuration
+- **`map2-welcome.sh`** - Installable terminal profile script and shell action source
+- **`map2-login-issue.sh`** - Generator for the local-console login banner shown before authentication
+- **`welcome.sh`** - Compatibility wrapper for direct welcome output
 
 ## Quick Install
 
 From the root directory:
 
 ```bash
-./install_branding.sh
+./scripts/install_branding.sh
 ```
 
 ## What Gets Installed
@@ -30,18 +32,27 @@ From the root directory:
 - System information and quick commands
 - Installed to: `/etc/profile.d/map2-welcome.sh`
 
+### Local Console Login Banner
+- Shows on the physical tty login screen before authentication
+- Carbon-styled rack framing with version, hostname, mode, and login hint
+- Installed to: `/etc/issue.d/map2-login.issue`
+
 ## Manual Installation
 
 ```bash
 # Boot splash
 sudo mkdir -p /usr/share/plymouth/themes/map2
-sudo cp map2-boot-splash.* /usr/share/plymouth/themes/map2/
+sudo cp map2-boot-splash.script /usr/share/plymouth/themes/map2/
+sudo cp map2.plymouth /usr/share/plymouth/themes/map2/map2-boot-splash.plymouth
 sudo plymouth-set-default-theme map2-boot-splash
 sudo dracut -f
 
 # Welcome message
-sudo cp welcome.sh /etc/profile.d/map2-welcome.sh
+sudo cp map2-welcome.sh /etc/profile.d/map2-welcome.sh
 echo 'source /etc/profile.d/map2-welcome.sh' >> ~/.bashrc
+
+# Local console login banner
+bash map2-login-issue.sh | sudo tee /etc/issue.d/map2-login.issue > /dev/null
 ```
 
 ## Service Ports Reference
@@ -63,7 +74,7 @@ Edit the files in this directory, then run:
 
 ```bash
 cd ..
-./install_branding.sh
+./scripts/install_branding.sh
 ```
 
 Changes will be applied system-wide.

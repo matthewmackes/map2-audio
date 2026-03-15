@@ -4,8 +4,8 @@
   --home-temp-glow: rgba(120, 169, 255, 0.24);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-bottom: 40px;
+  gap: 16px;
+  padding: 16px 0 48px;
 }
 
 .home-cinematic-sticky {
@@ -13,6 +13,7 @@
   top: 8px;
   z-index: 12;
   margin-left: auto;
+  margin-right: 20px;
   width: fit-content;
   display: inline-flex;
   align-items: center;
@@ -51,7 +52,7 @@
 
 .home-cinematic-panel {
   border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
   background:
     radial-gradient(circle at top left, var(--home-temp-soft), transparent 42%),
@@ -61,55 +62,111 @@
 .home-cinematic-banner {
   position: relative;
   width: 100%;
-  aspect-ratio: 24 / 5;
+  min-height: clamp(260px, 34vw, 520px);
   overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--home-temp-accent) 24%, transparent), transparent 32%),
+    linear-gradient(140deg, #0f1013 0%, #171a1f 44%, #111317 100%);
 }
 
-.home-cinematic-banner img {
+.home-cinematic-banner__background-brand {
+  position: absolute;
+  inset: auto -42px -74px auto;
+  width: min(48vw, 420px);
+  opacity: 0.16;
+  transform: rotate(-8deg);
+}
+
+.home-cinematic-banner__background-mark {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-  transform: scale(1.04);
+  height: auto;
+}
+
+.home-cinematic-banner__hero-mark {
+  width: clamp(96px, 12vw, 168px);
+  flex: 0 0 auto;
+}
+
+.home-cinematic-banner__hero-mark-svg {
+  width: 100%;
+  height: auto;
 }
 
 .home-cinematic-banner__overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(0deg, rgba(22, 22, 22, 0.9) 0%, rgba(22, 22, 22, 0.12) 52%, rgba(22, 22, 22, 0.7) 100%),
-    radial-gradient(circle at 16% 30%, var(--home-temp-glow), transparent 46%);
+    linear-gradient(90deg, rgba(9, 12, 18, 0.92) 0%, rgba(12, 15, 22, 0.4) 34%, rgba(12, 15, 22, 0.18) 54%, rgba(9, 12, 18, 0.82) 100%),
+    linear-gradient(0deg, rgba(9, 12, 18, 0.88) 0%, rgba(9, 12, 18, 0.18) 44%, rgba(9, 12, 18, 0.72) 100%),
+    radial-gradient(circle at 16% 28%, var(--home-temp-glow), transparent 46%);
 }
 
 .home-cinematic-banner__headline {
-  position: absolute;
-  left: 24px;
-  top: 14px;
+  position: relative;
   z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: clamp(18px, 2.8vw, 32px);
   color: var(--text-primary);
-  text-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  padding: clamp(28px, 4vw, 52px);
+  border: 1px solid color-mix(in srgb, var(--home-temp-accent) 32%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, #11151c 78%, transparent);
+  backdrop-filter: blur(14px);
+  width: min(860px, calc(100% - clamp(24px, 4vw, 56px) * 2));
+  margin: clamp(24px, 4vw, 42px);
 }
 
 .home-cinematic-banner__title-row {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
 }
 
 .home-cinematic-banner__title-row h1 {
   margin: 0;
-  font-size: clamp(1.35rem, 1.9vw, 2.05rem);
-  letter-spacing: -0.01em;
+  font-size: clamp(1.8rem, 3.6vw, 3.3rem);
+  letter-spacing: -0.02em;
   font-family: var(--font-sans);
 }
 
-.home-cinematic-banner__headline p {
-  margin: 3px 0 0;
-  font-size: var(--type-label);
-  letter-spacing: 0.06em;
+.home-cinematic-banner__copy {
+  display: grid;
+  gap: 10px;
+}
+
+.home-cinematic-banner__eyebrow {
+  margin: 0;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: #d0e2ff;
+}
+
+.home-cinematic-banner__summary {
+  margin: 0;
+  max-width: 52ch;
+  font-size: clamp(0.95rem, 1.25vw, 1.08rem);
+  line-height: 1.5;
+  color: color-mix(in srgb, #ffffff 82%, var(--text-secondary));
+}
+
+.home-cinematic-banner__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
   color: var(--text-secondary);
+  font-size: var(--type-caption);
+}
+
+.home-cinematic-banner__meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--interactive) 16%, var(--border));
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
 }
 
 .home-cinematic-content {
@@ -356,23 +413,24 @@
 .home-spotlight-viewport {
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--border) 64%, transparent);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  display: flex;
+  scroll-padding-inline: 1px;
   background: #161616;
   outline: none;
-}
-
-.home-spotlight-track {
-  display: flex;
-  width: 100%;
-  transition: transform 0.38s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .home-spotlight-card {
   position: relative;
   flex: 0 0 100%;
-  min-height: clamp(460px, 66vh, 780px);
+  min-height: clamp(368px, 53vh, 624px);
   overflow: hidden;
   isolation: isolate;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .home-spotlight-card img {
@@ -659,7 +717,7 @@
 
   .home-spotlight-card__content {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 6px;
   }
 
   .home-spotlight-card {
@@ -669,18 +727,20 @@
 
 @media (max-width: 920px) {
   .home-cinematic-banner {
-    aspect-ratio: 18 / 5;
+    min-height: clamp(220px, 42vw, 340px);
   }
 
   .home-cinematic-banner__headline {
-    left: 16px;
-    top: 10px;
+    width: calc(100% - 32px);
+    margin: 16px;
+    padding: 18px;
   }
 }
 
 @media (max-width: 768px) {
   .home-cinematic-sticky {
     width: 100%;
+    margin-right: 0;
     justify-content: space-between;
   }
 
@@ -705,6 +765,16 @@
     padding: 14px;
   }
 
+  .home-cinematic-banner__headline {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 14px;
+  }
+
+  .home-cinematic-banner__hero-mark {
+    width: 92px;
+  }
+
   .home-spotlight-card h3 {
     font-size: clamp(1.35rem, 6vw, 1.9rem);
   }
@@ -724,15 +794,26 @@
 
 @media (max-width: 640px) {
   .home-cinematic-banner {
-    aspect-ratio: 16 / 6;
+    min-height: clamp(180px, 56vw, 260px);
+  }
+
+  .home-cinematic-banner__background-brand {
+    inset: auto -28px -56px auto;
+    width: 220px;
   }
 
   .home-cinematic-banner__title-row h1 {
     font-size: 1.35rem;
   }
 
-  .home-cinematic-banner__headline p {
-    font-size: var(--type-caption);
+  .home-cinematic-banner__summary {
+    font-size: var(--type-body);
+  }
+
+  .home-cinematic-banner__headline {
+    width: calc(100% - 24px);
+    margin: 12px;
+    padding: 14px;
   }
 
   .home-spotlight-controls {

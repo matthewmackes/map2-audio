@@ -1,6 +1,8 @@
 import asyncio
 from unittest.mock import patch
 
+import pytest
+
 from app import database as database_module
 from app.database import MIDIDeviceConfig, get_session
 from sqlalchemy import select
@@ -10,9 +12,16 @@ from app.services.midi_hub.ports import VirtualMidiPort
 
 
 def _init_temp_db(tmp_path):
+    asyncio.run(database_module.dispose_async_db())
     database_module._tables_created = False
     database_module._pragmas_set = False
     database_module.init_async_db(f"sqlite+aiosqlite:///{tmp_path / 'midi-hub-registry.db'}")
+
+
+@pytest.fixture(autouse=True)
+def _dispose_async_db_after_test():
+    yield
+    asyncio.run(database_module.dispose_async_db())
 
 
 def test_registry_profile_matching_and_custom_profile(tmp_path):

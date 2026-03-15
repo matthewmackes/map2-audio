@@ -19,7 +19,7 @@ FAILED=0
 WARNINGS=0
 
 # Check 1: Plymouth installed
-echo -e "${YELLOW}[1/7] Checking Plymouth installation...${NC}"
+echo -e "${YELLOW}[1/8] Checking Plymouth installation...${NC}"
 if command -v plymouth &> /dev/null; then
     VERSION=$(plymouth --version 2>&1 | head -1)
     echo -e "  ${GREEN}✓${NC} Plymouth installed: $VERSION"
@@ -32,13 +32,13 @@ fi
 echo ""
 
 # Check 2: Boot splash theme files
-echo -e "${YELLOW}[2/7] Checking boot splash theme files...${NC}"
+echo -e "${YELLOW}[2/8] Checking boot splash theme files...${NC}"
 if [ -f "/usr/share/plymouth/themes/map2/map2-boot-splash.script" ]; then
     echo -e "  ${GREEN}✓${NC} Theme script: /usr/share/plymouth/themes/map2/map2-boot-splash.script"
     ((PASSED++))
 else
     echo -e "  ${RED}✗${NC} Theme script not found"
-    echo -e "      Run: ${BLUE}./install_branding.sh${NC}"
+    echo -e "      Run: ${BLUE}./scripts/install_branding.sh${NC}"
     ((FAILED++))
 fi
 
@@ -52,7 +52,7 @@ fi
 echo ""
 
 # Check 3: Plymouth theme set
-echo -e "${YELLOW}[3/7] Checking default Plymouth theme...${NC}"
+echo -e "${YELLOW}[3/8] Checking default Plymouth theme...${NC}"
 if command -v plymouth-set-default-theme &> /dev/null; then
     CURRENT_THEME=$(plymouth-set-default-theme 2>&1)
     if [ "$CURRENT_THEME" = "map2-boot-splash" ]; then
@@ -70,7 +70,7 @@ fi
 echo ""
 
 # Check 4: Initramfs contains theme
-echo -e "${YELLOW}[4/7] Checking initramfs...${NC}"
+echo -e "${YELLOW}[4/8] Checking initramfs...${NC}"
 KERNEL_VERSION=$(uname -r)
 INITRAMFS="/boot/initramfs-${KERNEL_VERSION}.img"
 if [ -f "$INITRAMFS" ]; then
@@ -93,7 +93,7 @@ fi
 echo ""
 
 # Check 5: Welcome message script
-echo -e "${YELLOW}[5/7] Checking welcome message...${NC}"
+echo -e "${YELLOW}[5/8] Checking welcome message...${NC}"
 if [ -f "/etc/profile.d/map2-welcome.sh" ]; then
     echo -e "  ${GREEN}✓${NC} System-wide: /etc/profile.d/map2-welcome.sh"
     
@@ -109,13 +109,43 @@ if [ -f "/etc/profile.d/map2-welcome.sh" ]; then
     fi
 else
     echo -e "  ${RED}✗${NC} Welcome script not found"
-    echo -e "      Install with: ${BLUE}./install_branding.sh${NC}"
+    echo -e "      Install with: ${BLUE}./scripts/install_branding.sh${NC}"
     ((FAILED++))
 fi
 echo ""
 
-# Check 6: Bashrc integration
-echo -e "${YELLOW}[6/7] Checking bashrc integration...${NC}"
+# Check 6: Local console login banner
+echo -e "${YELLOW}[6/8] Checking local console login banner...${NC}"
+if [ -f "/etc/issue.d/map2-login.issue" ]; then
+    echo -e "  ${GREEN}✓${NC} Local console banner: /etc/issue.d/map2-login.issue"
+    if grep -q "Mackes Audio Platform" /etc/issue.d/map2-login.issue; then
+        echo -e "  ${GREEN}✓${NC} Contains MAP2 login branding"
+        ((PASSED++))
+    else
+        echo -e "  ${YELLOW}⚠${NC} Branding text missing from /etc/issue.d/map2-login.issue"
+        ((WARNINGS++))
+    fi
+
+    if LC_ALL=C grep -q $'\033' /etc/issue.d/map2-login.issue; then
+        echo -e "  ${GREEN}✓${NC} Console-safe ANSI escapes detected"
+        ((PASSED++))
+    elif grep -q '\[38;2;' /etc/issue.d/map2-login.issue; then
+        echo -e "  ${RED}✗${NC} Broken literal color markup detected"
+        echo -e "      Regenerate with: ${BLUE}bash branding/map2-login-issue.sh | sudo tee /etc/issue.d/map2-login.issue > /dev/null${NC}"
+        ((FAILED++))
+    else
+        echo -e "  ${YELLOW}⚠${NC} Banner is present but not colorized"
+        ((WARNINGS++))
+    fi
+else
+    echo -e "  ${RED}✗${NC} Local console banner not found"
+    echo -e "      Install with: ${BLUE}./scripts/install_branding.sh${NC}"
+    ((FAILED++))
+fi
+echo ""
+
+# Check 7: Bashrc integration
+echo -e "${YELLOW}[7/8] Checking bashrc integration...${NC}"
 if [ -f ~/.bashrc ]; then
     if grep -q "map2-welcome" ~/.bashrc; then
         echo -e "  ${GREEN}✓${NC} User bashrc: ~/.bashrc"
@@ -142,8 +172,8 @@ if [ -f /etc/skel/.bashrc ]; then
 fi
 echo ""
 
-# Check 7: Test welcome message
-echo -e "${YELLOW}[7/7] Testing welcome message execution...${NC}"
+# Check 8: Test welcome message
+echo -e "${YELLOW}[8/8] Testing welcome message execution...${NC}"
 if [ -f "/etc/profile.d/map2-welcome.sh" ]; then
     # Try to execute and check for errors
     if bash -n /etc/profile.d/map2-welcome.sh 2>/dev/null; then
@@ -219,7 +249,7 @@ else
     echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     echo "Run the installer to fix issues:"
-    echo -e "  ${BLUE}./install_branding.sh${NC}"
+    echo -e "  ${BLUE}./scripts/install_branding.sh${NC}"
     EXIT_CODE=1
 fi
 

@@ -117,36 +117,15 @@ def test_remove_plugin_route_passes_position_to_service(monkeypatch):
             captured["plugin_position"] = plugin_position
             return True
 
-    class _FakeExecuteResult:
-        def __init__(self, scalar_value=None):
-            self._scalar_value = scalar_value
-
-        def scalars(self):
-            return SimpleNamespace(all=lambda: [])
-
-        def scalar(self):
-            return self._scalar_value
-
-    class _FakeSession:
-        async def execute(self, statement, params=None):
-            sql_text = str(statement)
-            if "SELECT COUNT(*)" in sql_text:
-                return _FakeExecuteResult(0)
-            return _FakeExecuteResult()
-
     @asynccontextmanager
     async def _fake_session():
-        yield _FakeSession()
-
-    async def _fake_checkpoint():
-        return None
+        yield object()
 
     async def _fake_publish(channel, event_type, payload):
         captured["event_payload"] = payload
 
     monkeypatch.setattr(chains_routes, "ChainService", _FakeChainService)
     monkeypatch.setattr("app.database.get_session", lambda: _fake_session())
-    monkeypatch.setattr("app.database.checkpoint_database", _fake_checkpoint)
     monkeypatch.setattr(chains_routes.event_publisher, "publish", _fake_publish)
 
     payload = asyncio.run(
@@ -173,15 +152,28 @@ def test_add_plugin_route_returns_plugin_position(monkeypatch):
     captured: dict[str, object] = {}
 
     class _FakeExecuteResult:
-        def __init__(self, scalar_value=None):
+        def __init__(self, *, scalar_value=None, scalar_one_value=None, scalar_items=None):
             self._scalar_value = scalar_value
+            self._scalar_one_value = scalar_one_value
+            self._scalar_items = scalar_items or []
 
         def scalar_one_or_none(self):
             return self._scalar_value
 
+        def scalar_one(self):
+            return self._scalar_one_value
+
+        def scalars(self):
+            return SimpleNamespace(first=lambda: self._scalar_items[0] if self._scalar_items else None)
+
     class _FakeSession:
         async def execute(self, statement):
-            return _FakeExecuteResult(SimpleNamespace(name="Test Chain"))
+            sql_text = str(statement)
+            if "count(*)" in sql_text.lower():
+                return _FakeExecuteResult(scalar_one_value=3)
+            if "chain_plugins.position" in sql_text.lower():
+                return _FakeExecuteResult(scalar_items=[4])
+            return _FakeExecuteResult(scalar_value=SimpleNamespace(name="Test Chain"))
 
     class _FakeChainService:
         def __init__(self, session) -> None:
@@ -191,16 +183,6 @@ def test_add_plugin_route_returns_plugin_position(monkeypatch):
             captured["chain_id"] = chain_id
             captured["plugin_uri"] = plugin_uri
             return True
-
-        async def get_chain(self, chain_id):
-            return {
-                "id": chain_id,
-                "plugins": [
-                    {"uri": "map2://juce/modulation/chorus", "position": 1},
-                    {"uri": "map2://juce/modulation/chorus", "position": 4},
-                    {"uri": "map2://juce/dynamics/limiter", "position": 5},
-                ],
-            }
 
     @asynccontextmanager
     async def _fake_session():
@@ -230,6 +212,76 @@ def test_add_plugin_route_returns_plugin_position(monkeypatch):
         "plugin_uri": "map2://juce/modulation/chorus",
         "plugin_position": 4,
     }
+
+
+def test_update_touchscreen_stomps_route_passes_assignments_to_service(monkeypatch):
+    captured: dict[str, object] = {}
+
+    class _FakeChainService:
+        def __init__(self, session) -> None:
+            self.session = session
+
+        async def set_touchscreen_stomp_assignments(self, chain_id, assignments):
+            captured["chain_id"] = chain_id
+            captured["assignments"] = assignments
+            return {"chain_id": chain_id, "stomp_assignments": assignments}
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(chains_routes, "ChainService", _FakeChainService)
+    monkeypatch.setattr("app.database.get_session", lambda: _fake_session())
+
+    payload = asyncio.run(
+        chains_routes.update_chain_touchscreen_stomps(
+            9,
+            chains_routes.TouchscreenStompAssignmentsRequest(
+                assignments=[
+                    chains_routes.TouchscreenStompAssignment(
+                        slot=1,
+                        plugin_uri="map2://juce/dynamics/comp",
+                        plugin_position=0,
+                    ),
+                    chains_routes.TouchscreenStompAssignment(
+                        slot=2,
+                        plugin_uri="map2://juce/delay/stereo",
+                        plugin_position=3,
+                    ),
+                ]
+            ),
+        )
+    )
+
+    assert payload["chain_id"] == 9
+    assert payload["stomp_assignments"] == [
+        {"slot": 1, "plugin_uri": "map2://juce/dynamics/comp", "plugin_position": 0},
+        {"slot": 2, "plugin_uri": "map2://juce/delay/stereo", "plugin_position": 3},
+    ]
+    assert captured["chain_id"] == 9
+    assert captured["assignments"] == payload["stomp_assignments"]
+
+
+def test_get_chain_touchscreen_state_raises_404_when_chain_missing(monkeypatch):
+    class _FakeChainService:
+        def __init__(self, session) -> None:
+            self.session = session
+
+        async def get_touchscreen_state(self, chain_id):
+            assert chain_id == 99
+            return None
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(chains_routes, "ChainService", _FakeChainService)
+    monkeypatch.setattr("app.database.get_session", lambda: _fake_session())
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(chains_routes.get_chain_touchscreen_state(99))
+
+    assert exc.value.status_code == 404
 
 
 def test_history_status_route_awaits_service(monkeypatch):

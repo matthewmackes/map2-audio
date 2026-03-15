@@ -34,6 +34,7 @@
 
 import React, { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Layer } from '@carbon/react'
 import {
   Monitor,
   Lightning,
@@ -98,6 +99,7 @@ import type {
   FT232HStatus,
 } from '../../map2/lcd'
 import type { LCDEvent, EventSeverity } from '../models/lcd_event'
+import './LCDPage.css'
 
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -957,7 +959,9 @@ export function LCDPage() {
   ]
 
   return (
-    <div className="lcd-page">
+    <section className="lcd-page-route">
+      <Layer className="lcd-page-route__surface">
+      <div className="lcd-page">
       <PageHeader
         title="LCD Management Console"
         subtitle="Unified control center for dual-LCD display hardware, real-time events, alert routing, and system configuration"
@@ -1801,6 +1805,8 @@ export function LCDPage() {
         .btn-sm { padding: 5px 10px; font-size: 12px; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
-    </div>
+      </div>
+      </Layer>
+    </section>
   )
 }

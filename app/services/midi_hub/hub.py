@@ -373,7 +373,7 @@ class MidiHub:
         except Exception:
             return
 
-        if not bool(config_get("midi.cluster.enabled", True)):
+        if not bool(config_get("midi.cluster.enabled", False)):
             return
 
         self._cluster_broadcast_stop_evt.clear()
@@ -405,7 +405,7 @@ class MidiHub:
         except Exception:
             return
 
-        if not bool(config_get("midi.cluster.enabled", True)):
+        if not bool(config_get("midi.cluster.enabled", False)):
             return
 
         try:

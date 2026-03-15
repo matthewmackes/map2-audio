@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import svgr from "vite-plugin-svgr"
+import fs from 'node:fs'
 import path from 'path'
+
+const packageJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'))
 
 // ============================================================================
 // MAP2 Audio Platform - Vite Configuration
@@ -16,6 +19,9 @@ import path from 'path'
 // ============================================================================
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __MAP2_PLATFORM_VERSION__: JSON.stringify(packageJson.version),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

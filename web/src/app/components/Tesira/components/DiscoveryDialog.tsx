@@ -23,7 +23,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
-import { BiampIcon } from '../BiampIcon'
+import { MapMatrixProcessorIcon } from '../../icons/map'
 import {
   useStartDiscovery,
   useDiscoveryStatus,
@@ -122,7 +122,7 @@ function DeviceCard({
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-        <BiampIcon size={14} color={BIAMP_RED} />
+        <MapMatrixProcessorIcon size={14} color={BIAMP_RED} />
         <Typography variant="body2" fontWeight={700} sx={{ flex: 1 }}>
           {device.model ?? device.mdns_name}
         </Typography>
@@ -259,7 +259,7 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-        <BiampIcon size={20} color={BIAMP_RED} />
+        <MapMatrixProcessorIcon size={20} color={BIAMP_RED} />
         <Typography variant="h6" component="span">Discover Tesira Devices</Typography>
         <Box sx={{ flex: 1 }} />
         {isScanning && <ScanAnimation />}

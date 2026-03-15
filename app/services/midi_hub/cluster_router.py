@@ -431,7 +431,7 @@ class MidiClusterRouter:
         return [endpoint for endpoint in self.get_endpoints() if endpoint.node_id == target]
 
     def _is_auto_connect_enabled(self) -> bool:
-        return bool(config_get("midi.cluster.auto_connect", True))
+        return bool(config_get("midi.cluster.auto_connect", False))
 
     def _build_auto_connect_pairs(self) -> List[Tuple[MidiEndpoint, MidiEndpoint]]:
         outputs = [
@@ -560,13 +560,53 @@ class MidiClusterRouter:
     async def _handle_node_discovered(self, node_id: str) -> None:
         if not self._is_auto_connect_enabled():
             return
-        new_pairs = [
-            pair
-            for pair in self._build_auto_connect_pairs()
-            if pair[1].node_id == str(node_id)
-        ]
+        try:
+            new_pairs = [
+                pair
+                for pair in self._build_auto_connect_pairs()
+                if pair[1].node_id == str(node_id)
+            ]
+        except Exception as exc:
+            logger.warning("Cluster MIDI auto-connect skipped for discovered node %s: %s", node_id, exc)
+            self._last_auto_connect_summary = {
+                "reason": "node_discovered",
+                "last_run_at": _isoformat(_utcnow()),
+                "pair_count": 0,
+                "created_count": 0,
+                "failed_count": 1,
+                "created_connections": [],
+                "failed_connections": [{"node_id": str(node_id), "error": str(exc), "state": "error"}],
+                "transport": self._transport_mode(),
+            }
+            return
         for source, destination in new_pairs:
-            await self.connect(source.endpoint_id(), destination.endpoint_id())
+            try:
+                await self.connect(source.endpoint_id(), destination.endpoint_id())
+            except Exception as exc:
+                logger.warning(
+                    "Cluster MIDI auto-connect skipped for discovered node %s (%s -> %s): %s",
+                    node_id,
+                    source.endpoint_id(),
+                    destination.endpoint_id(),
+                    exc,
+                )
+                self._last_auto_connect_summary = {
+                    "reason": "node_discovered",
+                    "last_run_at": _isoformat(_utcnow()),
+                    "pair_count": len(new_pairs),
+                    "created_count": 0,
+                    "failed_count": 1,
+                    "created_connections": [],
+                    "failed_connections": [
+                        {
+                            "source_endpoint_id": source.endpoint_id(),
+                            "destination_endpoint_id": destination.endpoint_id(),
+                            "error": str(exc),
+                            "state": "error",
+                        }
+                    ],
+                    "transport": self._transport_mode(),
+                }
 
     async def _attempt_failover(self, connection: MidiClusterConnection) -> None:
         if connection.source.node_id != self._local_node_id:
@@ -596,12 +636,42 @@ class MidiClusterRouter:
         attempt: Optional[int] = None,
         attempts_total: Optional[int] = None,
     ) -> Dict[str, Any]:
-        pairs = self._build_auto_connect_pairs()
+        try:
+            pairs = self._build_auto_connect_pairs()
+        except Exception as exc:
+            summary = {
+                "reason": str(reason),
+                "last_run_at": _isoformat(_utcnow()),
+                "pair_count": 0,
+                "created_count": 0,
+                "failed_count": 1,
+                "created_connections": [],
+                "failed_connections": [{"error": str(exc), "state": "error"}],
+                "transport": self._transport_mode(),
+            }
+            if attempt is not None:
+                summary["attempt"] = int(attempt)
+            if attempts_total is not None:
+                summary["attempts_total"] = int(attempts_total)
+            self._last_auto_connect_summary = summary
+            logger.warning("Cluster MIDI auto-connect pass failed (%s): %s", reason, exc)
+            return dict(summary)
         created_connections: List[str] = []
         failed_connections: List[Dict[str, Any]] = []
 
         for source, destination in pairs:
-            connection = await self.connect(source.endpoint_id(), destination.endpoint_id())
+            try:
+                connection = await self.connect(source.endpoint_id(), destination.endpoint_id())
+            except Exception as exc:
+                failed_connections.append(
+                    {
+                        "source_endpoint_id": source.endpoint_id(),
+                        "destination_endpoint_id": destination.endpoint_id(),
+                        "error": str(exc),
+                        "state": "error",
+                    }
+                )
+                continue
             if connection.state == "connected":
                 created_connections.append(connection.connection_id)
                 continue

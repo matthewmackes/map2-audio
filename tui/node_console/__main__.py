@@ -67,7 +67,11 @@ def main() -> None:
     # Import app here to avoid heavy imports if just --help/--version
     from .app import NodeConsoleApp
 
-    app = NodeConsoleApp(api_url=args.api_url, no_color=args.no_color)
+    app = NodeConsoleApp(
+        api_url=args.api_url or "http://localhost:8080",
+        initial_route="dashboard",
+        no_color=args.no_color,
+    )
     app.REFRESH_INTERVAL = args.refresh
 
     if args.no_color:

@@ -32,6 +32,14 @@ try:
         mode: str = "active"  # active | standby
         activate: bool = True
 
+    class TouchscreenStompAssignment(BaseModel):
+        slot: int
+        plugin_uri: str
+        plugin_position: int
+
+    class TouchscreenStompAssignmentsRequest(BaseModel):
+        assignments: List[TouchscreenStompAssignment] = []
+
     _CHAIN_ROUTE_TIMEOUT_SECONDS = 0.09
     _CHAIN_LIST_CACHE_TTL_SECONDS = 30.0
     _CHAIN_DETAILS_CACHE_TTL_SECONDS = 30.0
@@ -460,6 +468,44 @@ try:
             _set_cached_chain_details(chain_id, result)
             return result
 
+    @router.get("/{chain_id}/touchscreen")
+    async def get_chain_touchscreen_state(chain_id: int):
+        """Get persisted touchscreen state for a chain."""
+        from app.database import get_session
+
+        async with get_session() as session:
+            service = ChainService(session)
+            result = await service.get_touchscreen_state(chain_id)
+            if result is None:
+                raise HTTPException(status_code=404, detail="Chain not found")
+            return result
+
+    @router.put("/{chain_id}/touchscreen/stomps")
+    async def update_chain_touchscreen_stomps(
+        chain_id: int,
+        request: TouchscreenStompAssignmentsRequest,
+    ):
+        """Persist touchscreen stomp slot assignments for a chain."""
+        from app.database import get_session
+
+        assignments = [
+            {
+                "slot": assignment.slot,
+                "plugin_uri": assignment.plugin_uri,
+                "plugin_position": assignment.plugin_position,
+            }
+            for assignment in request.assignments
+        ]
+
+        async with get_session() as session:
+            service = ChainService(session)
+            result = await service.set_touchscreen_stomp_assignments(chain_id, assignments)
+            if result is None:
+                raise HTTPException(status_code=404, detail="Chain not found")
+
+        _invalidate_chain_cache(chain_id)
+        return result
+
     @router.get("/{chain_id}/analysis")
     async def get_chain_analysis(chain_id: int):
         """Get estimated resource requirements for a chain."""
@@ -485,44 +531,39 @@ try:
         if not plugin_uri or not isinstance(plugin_uri, str):
             raise HTTPException(status_code=400, detail="Plugin URI must be a non-empty string")
 
-        from app.database import get_session, Chain
-        from sqlalchemy import select
         import logging
+        from sqlalchemy import func, select
+        from app.database import ChainPlugin, get_session
+
         logger = logging.getLogger(__name__)
-        
+
         try:
-            logger.info(f"add_plugin route: chain_id={chain_id}, plugin_uri={plugin_uri}")
+            logger.info("add_plugin route: chain_id=%s, plugin_uri=%s", chain_id, plugin_uri)
 
             async with get_session() as session:
-                # DEBUG: Check if chain exists directly
-                debug_result = await session.execute(select(Chain).filter(Chain.id == chain_id))
-                debug_chain = debug_result.scalar_one_or_none()
-                if debug_chain:
-                    logger.info(f"DEBUG: Chain {chain_id} EXISTS: {debug_chain.name}")
-                else:
-                    logger.error(f"DEBUG: Chain {chain_id} NOT FOUND")
-                    # List all chains
-                    all_chains = await session.execute(select(Chain))
-                    all = all_chains.scalars().all()
-                    logger.error(f"DEBUG: Available chains: {[(c.id, c.name) for c in all]}")
-
                 service = ChainService(session)
-                success = await service.add_plugin_to_chain(chain_id, plugin_uri)
-                logger.info(f"add_plugin_to_chain returned: {success}")
-
-                if not success:
+                added = await service.add_plugin_to_chain(chain_id, plugin_uri)
+                if not added:
                     raise HTTPException(status_code=404, detail=f"Chain {chain_id} not found or plugin add failed")
 
-                result = await service.get_chain(chain_id)
-                plugins = result.get("plugins", []) if result else []
-                plugins_count = len(plugins)
-                plugin_position = None
-                for plugin in plugins:
-                    if plugin.get("uri") != plugin_uri:
-                        continue
-                    position = plugin.get("position")
-                    if isinstance(position, int):
-                        plugin_position = position if plugin_position is None else max(plugin_position, position)
+                plugin_position = (
+                    await session.execute(
+                        select(ChainPlugin.position)
+                        .filter(
+                            ChainPlugin.chain_id == chain_id,
+                            ChainPlugin.plugin_uri == plugin_uri,
+                        )
+                        .order_by(ChainPlugin.position.desc())
+                        .limit(1)
+                    )
+                ).scalars().first()
+                plugins_count = (
+                    await session.execute(
+                        select(func.count())
+                        .select_from(ChainPlugin)
+                        .filter(ChainPlugin.chain_id == chain_id)
+                    )
+                ).scalar_one()
 
             _invalidate_chain_cache(chain_id)
 
@@ -559,9 +600,6 @@ try:
     ):
         """Remove plugin from signal chain.
 
-        CRITICAL: This endpoint uses atomic, synchronous database operations
-        to ensure deletion persists completely before returning.
-        
         Args:
             chain_id: Signal chain ID
             plugin_uri: Plugin URI string (query parameter)
@@ -572,118 +610,32 @@ try:
 
         import logging
         logger = logging.getLogger(__name__)
-        
-        logger.info(f"DELETE_ENDPOINT: === ATOMIC DELETION START ===")
+
         logger.info(
-            "DELETE_ENDPOINT: chain_id=%s, plugin_uri=%s, plugin_position=%s",
+            "DELETE_ENDPOINT: removing plugin from chain_id=%s, plugin_uri=%s, plugin_position=%s",
             chain_id,
             plugin_uri,
             plugin_position,
         )
 
-        from app.database import get_session, ChainPlugin, checkpoint_database
-        from sqlalchemy import select
-        
-        # Step 1: Perform deletion
-        deletion_succeeded = False
-        deletion_error = None
-        
+        from app.database import get_session
+
         try:
             async with get_session() as session:
                 service = ChainService(session)
-                
-                logger.info(f"DELETE_ENDPOINT: Calling service.remove_plugin_from_chain()...")
                 deletion_succeeded = await service.remove_plugin_from_chain(
                     chain_id,
                     plugin_uri,
                     plugin_position=plugin_position,
                 )
-                
+
                 if not deletion_succeeded:
-                    deletion_error = "Service failed to remove plugin"
-                    logger.error(f"DELETE_ENDPOINT: {deletion_error}")
-                    raise HTTPException(status_code=404, detail=deletion_error)
-            
-            logger.info(f"DELETE_ENDPOINT: Transaction committed by context manager")
-            
+                    raise HTTPException(status_code=404, detail="Service failed to remove plugin")
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"DELETE_ENDPOINT: Unexpected exception: {e}", exc_info=True)
             raise HTTPException(status_code=500, detail="Failed to delete plugin")
-        
-        if not deletion_succeeded:
-            logger.error(f"DELETE_ENDPOINT: Service did not succeed")
-            raise HTTPException(status_code=500, detail="Deletion failed")
-
-        # Step 2: SYNC database checkpoint to ensure deletion is written to disk
-        logger.info(f"DELETE_ENDPOINT: Performing WAL checkpoint...")
-        try:
-            await checkpoint_database()
-            logger.info(f"DELETE_ENDPOINT: Checkpoint completed")
-        except Exception as e:
-            logger.warning(f"DELETE_ENDPOINT: Checkpoint failed (non-fatal): {e}")
-
-        # Step 3: Verify deletion with fresh sessions
-        logger.info(f"DELETE_ENDPOINT: Beginning verification phase...")
-        max_attempts = 7
-        deletion_confirmed = False
-        
-        for attempt in range(1, max_attempts + 1):
-            try:
-                async with get_session() as verify_session:
-                    # Use raw text query as backup to ORM
-                    from sqlalchemy import text
-                    filters = [
-                        ChainPlugin.chain_id == chain_id,
-                        ChainPlugin.plugin_uri == plugin_uri,
-                    ]
-                    sql_params = {"cid": chain_id, "uri": plugin_uri}
-                    if plugin_position is not None:
-                        filters.append(ChainPlugin.position == plugin_position)
-                        sql_params["position"] = plugin_position
-                    sql_where = "chain_id = :cid AND plugin_uri = :uri"
-                    if plugin_position is not None:
-                        sql_where += " AND position = :position"
-                    
-                    # Method 1: ORM query
-                    verify_result = await verify_session.execute(
-                        select(ChainPlugin).filter(*filters)
-                    )
-                    orm_count = len(verify_result.scalars().all())
-                    
-                    # Method 2: Raw SQL query (more direct)
-                    sql_result = await verify_session.execute(
-                        text(f"SELECT COUNT(*) FROM chain_plugins WHERE {sql_where}"),
-                        sql_params,
-                    )
-                    sql_count = sql_result.scalar()
-                    
-                    logger.info(f"DELETE_ENDPOINT: Attempt {attempt} - ORM: {orm_count} records, SQL: {sql_count} records")
-                    
-                    if orm_count == 0 and sql_count == 0:
-                        deletion_confirmed = True
-                        logger.info(f"DELETE_ENDPOINT: ✓ VERIFIED - Plugin deleted (attempt {attempt})")
-                        break
-                    else:
-                        logger.error(f"DELETE_ENDPOINT: ✗ Still in database - ORM:{orm_count}, SQL:{sql_count}")
-                        
-                        if attempt < max_attempts:
-                            wait_time = 0.1 * attempt
-                            logger.info(f"DELETE_ENDPOINT: Waiting {wait_time}s before attempt {attempt+1}...")
-                            import asyncio
-                            await asyncio.sleep(wait_time)
-                            
-            except Exception as e:
-                logger.error(f"DELETE_ENDPOINT: Verification error on attempt {attempt}: {e}")
-                if attempt >= max_attempts:
-                    raise HTTPException(status_code=500, detail="Failed to verify deletion")
-        
-        if not deletion_confirmed:
-            logger.error(f"DELETE_ENDPOINT: ✗✗✗ CRITICAL - Could not verify deletion after {max_attempts} attempts")
-            raise HTTPException(status_code=500, detail="Deletion could not be verified")
-
-        logger.info(f"DELETE_ENDPOINT: === ATOMIC DELETION SUCCESS ===")
 
         _invalidate_chain_cache(chain_id)
         

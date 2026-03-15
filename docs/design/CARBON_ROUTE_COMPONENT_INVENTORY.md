@@ -50,8 +50,9 @@ Primary route table:
 | `/midi` | `MIDIPage` | `web/src/app/pages/MIDIPage.tsx` |
 | `/midi-hub` | `MidiHubPage` | `web/src/app/pages/MidiHubPage.tsx` |
 | `/midi-hub-2` | `MidiHub2Page` | `web/src/app/pages/MidiHub2Page.tsx` |
-| `/grid` | `GridFlowPage` | `web/src/app/pages/GridFlowPage.tsx` |
-| `/grid-3d` | `GridFlowAdvancedPage` | `web/src/app/pages/GridFlowAdvancedPage.tsx` |
+| `/juce-grid` | `JuceGridPage` | `web/src/app/pages/JuceGridPage.tsx` |
+| `/grid` | `Navigate` | `web/src/app/App.tsx` |
+| `/grid-3d` | `Navigate` | `web/src/app/App.tsx` |
 | `/dsp` | `DSPPage` | `web/src/app/pages/DSPPage.tsx` |
 | `/edirol-ua1000` | `EdirolUA1000Page` | `web/src/app/pages/EdirolUA1000Page.tsx` |
 | `/motu-rme` | `MOTURMEPage` | `web/src/app/pages/MOTURMEPage.tsx` |
@@ -61,7 +62,7 @@ Primary route table:
 | `/engine` | `AudioEnginePage` | `web/src/app/pages/AudioEnginePage.tsx` |
 | `/metering` | `MeteringPage` | `web/src/app/pages/MeteringPage.tsx` |
 | `/pipewire` | `PipeWirePage` | `web/src/app/pages/PipeWirePage.tsx` |
-| `/welcome` | `WelcomePage` | `web/src/app/pages/WelcomePage.tsx` |
+| `/welcome` | `WelcomePage` (redirect alias) | `web/src/app/pages/WelcomePage.tsx` |
 | `/lcd` | `LCDPage` | `web/src/app/pages/LCDPage.tsx` |
 | `/cluster-dashboard` | `ClusterDashboardPage` | `web/src/app/pages/ClusterDashboardPage.tsx` |
 | `/midi-cluster` | `MidiClusterPage` | `web/src/app/pages/MidiClusterPage.tsx` |
@@ -155,9 +156,9 @@ Reusable plugin-card templates:
 
 ## 4. Shared Component Inventory
 
-Top-level UI domain directories under `web/src/app/components` (`30` domains):
+Top-level UI domain directories under `web/src/app/components` (`29` domains):
 
-- `ApiObservatory`, `AudioEngine`, `AvbRouting`, `BottomRoutingPanel`, `ChainPanel`, `ClusterDashboard`, `Controls`, `Dynamics`, `EQ`, `GridFlow`, `GridFlowAdvanced`, `HorizontalSignalChain`, `HostMachine`, `IntelFX`, `MPX1`, `MidiCluster`, `MidiHub`, `PluginBrowser`, `PluginCards`, `PluginTags`, `Routing`, `Tesira`, `Visualizations`, `chains`, `icons`, `library`, `loaders`, `presets`, `shared`, `upload`
+- `ApiObservatory`, `AudioEngine`, `AvbRouting`, `BottomRoutingPanel`, `ChainPanel`, `ClusterDashboard`, `Controls`, `Dynamics`, `EQ`, `HorizontalSignalChain`, `HostMachine`, `IntelFX`, `MPX1`, `MidiCluster`, `MidiHub`, `PluginBrowser`, `PluginCards`, `PluginTags`, `Routing`, `Tesira`, `Visualizations`, `branding`, `chains`, `icons`, `library`, `loaders`, `presets`, `shared`, `upload`
 
 Cross-page primitives with direct reuse intent:
 
@@ -183,8 +184,8 @@ Icon library usage by file count (snapshot):
 
 Custom icon components and icon assets:
 
-- `web/src/app/components/icons/fontaudio/*`
-- `web/src/app/components/Tesira/BiampIcon` (used by navigation catalog)
+- Historical snapshot: `web/src/app/components/icons/fontaudio/*` was part of the earlier mixed stack and has since been removed.
+- Historical snapshot: `web/src/app/components/Tesira/BiampIcon` was previously used by the navigation catalog and has since been removed.
 - Extensive static icon/image assets in `web/public/img/*` and `web/public/posters/*`
 
 ## 6. Charts, Tables, and Forms Inventory

@@ -1,7 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { MapSignalFlowIcon } from '../components/icons/map'
 import {
   MAX_PINNED_NAV_ITEMS,
+  defaultPinnedRoutes,
   hardwareInterfaceMenuItems,
   homeNavigationItem,
   homeNavigationSections,
@@ -77,11 +79,27 @@ describe('navigation catalog', () => {
     }
   })
 
-  it('normalizes pinned routes by trimming, filtering invalid values, and deduplicating', () => {
-    expect(normalizePinnedRoutes(['/grid', ' /grid ', '', '#oops', 'grid', '/midi-hub'])).toEqual([
-      '/grid',
+  it('normalizes pinned routes by trimming, aliasing legacy paths, filtering invalid values, and deduplicating', () => {
+    expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi-hub', '/about'])).toEqual([
+      '/juce-grid',
+      '/about',
       '/midi-hub',
     ])
+  })
+
+  it('pins JUCE-GRID by default and removes legacy Grid entries from navigation', () => {
+    expect(defaultPinnedRoutes).toEqual(['/juce-grid'])
+
+    const juceGrid = navigationCatalogItems.find((item) => item.to === '/juce-grid')
+    const legacyGrid = navigationCatalogItems.find((item) => item.to === '/grid')
+    const legacyGrid3d = navigationCatalogItems.find((item) => item.to === '/grid-3d')
+
+    expect(juceGrid).toBeDefined()
+    expect(juceGrid?.showOnHome).toBe(true)
+    expect(juceGrid?.includeInAdvancedMenu).toBe(false)
+    expect(juceGrid?.icon).toBe(MapSignalFlowIcon)
+    expect(legacyGrid).toBeUndefined()
+    expect(legacyGrid3d).toBeUndefined()
   })
 
   it('uses exact maturity labels for UI badges', () => {
@@ -106,6 +124,8 @@ describe('navigation catalog', () => {
       '/api-observatory',
       '/midi-hub',
       '/midi-hub-2',
+      '/mpx1',
+      '/intelfx',
       '/cluster-dashboard',
     ])
   })
@@ -120,5 +140,19 @@ describe('navigation catalog', () => {
       section.items.some((item) => item.to === '/api-observatory'),
     )
     expect(appearsOnHome).toBe(false)
+  })
+
+  it('keeps MPX1 Rack and IntelFX Rack in advanced navigation only', () => {
+    for (const route of ['/mpx1', '/intelfx']) {
+      const item = navigationCatalogItems.find((candidate) => candidate.to === route)
+      expect(item).toBeDefined()
+      expect(item?.includeInAdvancedMenu).toBe(true)
+      expect(item?.showOnHome).toBe(false)
+
+      const appearsOnHome = homeNavigationSections.some((section) =>
+        section.items.some((candidate) => candidate.to === route),
+      )
+      expect(appearsOnHome).toBe(false)
+    }
   })
 })

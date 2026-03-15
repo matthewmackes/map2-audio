@@ -289,6 +289,20 @@ async def checkpoint_database() -> None:
                 logger.info("Database checkpoint completed")
 
 
+async def dispose_async_db(reset_state: bool = True) -> None:
+    """Dispose the async engine and optionally clear cached schema/session state."""
+    global _async_engine, _async_session_maker, _tables_created, _pragmas_set
+
+    if _async_engine is not None:
+        await _async_engine.dispose()
+
+    _async_engine = None
+    _async_session_maker = None
+    if reset_state:
+        _tables_created = False
+        _pragmas_set = False
+
+
 class Plugin(Base):
     """LV2 Plugin metadata and state."""
     __tablename__ = "plugins"

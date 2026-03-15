@@ -1,0 +1,16 @@
+{
+  "study_id": "t102",
+  "issues": [
+    {
+      "issue_id": "T102-ISSUE-001",
+      "issue_key": "",
+      "summary": "",
+      "severity": "major",
+      "participants": [],
+      "affected_tasks": [],
+      "evidence_files": [],
+      "proposed_remediation": "",
+      "decision": "open"
+    }
+  ]
+}

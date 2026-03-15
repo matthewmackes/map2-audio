@@ -1315,8 +1315,8 @@ find web/src -name "*.css" -not -name "index.css" -not -name "mobile.css" -not -
    - `/engine` (Audio Engine)
    - `/avb-routing` (AVB Routing)
    - `/host-machine` (Host Machine)
-   - `/welcome` (Guide)
-   - `/grid` (Grid — experimental)
+   - `/about` (Platform Guide)
+   - `/juce-grid` (JUCE-GRID — beta)
    - `/mpx1` (MPX-1 Panel — exempted from flat)
    - `/tesira` (Tesira AVB)
 3. For each page, verify:

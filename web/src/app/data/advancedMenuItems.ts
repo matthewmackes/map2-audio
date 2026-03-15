@@ -1,6 +1,27 @@
 import type { ComponentType } from 'react'
-import { House, Info, SquaresFour, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube, BookOpen, GridFour, Guitar, SlidersHorizontal, Gauge, Terminal } from '@phosphor-icons/react'
-import { BiampIcon } from '../components/Tesira/BiampIcon'
+import {
+  Catalog as SquaresFour,
+  Dashboard as Gauge,
+  Devices as Monitor,
+  Home as House,
+  Information as Info,
+  Music as MusicNotes,
+  Package,
+  SettingsAdjust as SlidersHorizontal,
+  Terminal,
+  Usb,
+  Waveform,
+} from '@carbon/icons-react'
+import {
+  MapClusterFabricIcon,
+  MapMatrixProcessorIcon,
+  MapPatchLibraryIcon,
+  MapRackDeviceIcon,
+  MapRealtimeEngineIcon,
+  MapRoutingMatrixIcon,
+  MapSignalFlowIcon,
+  MapStagePerformanceIcon,
+} from '../components/icons/map'
 
 export type NavigationMaturityState = 'production' | 'qualified-with-waiver' | 'beta' | 'experimental' | 'hardware-blocked'
 export type NavigationRenderKind = 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
@@ -9,7 +30,7 @@ export type NavigationHomeSection = 'System' | 'JUCE' | 'MIDI' | 'AVB' | 'Hardwa
 export const DEFAULT_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['production', 'qualified-with-waiver']
 export const ADVANCED_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['beta', 'experimental', 'hardware-blocked']
 export const MAX_PINNED_NAV_ITEMS = 4
-export const defaultPinnedRoutes: string[] = []
+export const defaultPinnedRoutes: string[] = ['/juce-grid']
 
 export interface ShellNavigationItem {
   to: string
@@ -126,7 +147,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/engine',
     label: 'Audio Engine',
     shortLabel: 'Engine',
-    icon: Pulse,
+    icon: MapRealtimeEngineIcon,
     description: 'Monitor the realtime audio engine, inspect metering and signal-path health, and adjust the runtime controls that drive the main processing path.',
     color: 'var(--cds-link-primary)',
     homeSection: 'JUCE',
@@ -139,7 +160,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/avb-routing',
     label: 'AVB Routing',
     shortLabel: 'AVB',
-    icon: ShareNetwork,
+    icon: MapRoutingMatrixIcon,
     description: 'Create, inspect, and troubleshoot AVB and TSN routes between endpoints, including stream state, topology, and transport-level failures.',
     color: 'var(--cds-support-info)',
     homeSection: 'AVB',
@@ -153,7 +174,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/midi-cluster',
     label: 'MIDI Cluster',
     shortLabel: 'Cluster',
-    icon: ShareNetwork,
+    icon: MapClusterFabricIcon,
     description: 'Discover cluster MIDI nodes, connect remote ports, and monitor distributed clock health.',
     color: 'var(--cds-link-primary)',
     homeSection: 'MIDI',
@@ -181,7 +202,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/host-machine',
     label: 'Host Machine',
     shortLabel: 'Host',
-    icon: HardDrives,
+    icon: MapRackDeviceIcon,
     description: 'Review CPU, memory, storage, and machine-readiness signals that affect low-latency performance and host stability.',
     color: 'var(--cds-link-primary)',
     homeSection: 'System',
@@ -194,7 +215,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     to: '/perform',
     label: 'Stage Mode',
     shortLabel: 'Stage',
-    icon: Guitar,
+    icon: MapStagePerformanceIcon,
     description: 'Open the full-screen live-performance surface for fast preset access, bypass control, tempo actions, and stage-focused guitar operation.',
     color: 'var(--cds-support-warning)',
     homeSection: 'JUCE',
@@ -204,25 +225,12 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     kind: 'link',
   },
   {
-    to: '/welcome',
-    label: 'Guide',
-    shortLabel: 'Guide',
-    icon: BookOpen,
-    description: 'Read the platform guide for operating concepts, workflow orientation, and the mental model behind how MAP2 is organized.',
-    color: 'var(--cds-support-info)',
-    homeSection: 'System',
-    includeInAdvancedMenu: false,
-    pinnable: true,
-    maturity: 'production',
-    kind: 'link',
-  },
-  {
     to: '/about',
-    label: 'About',
-    shortLabel: 'About',
+    label: 'Platform Guide',
+    shortLabel: 'Guide',
     icon: Info,
-    description: 'Review build details, runtime identity, and system information useful for verification, support, and release traceability.',
-    color: 'var(--cds-text-secondary)',
+    description: 'Open the canonical MAP2 information page for operator orientation, documentation, build identity, support details, and guided next steps.',
+    color: 'var(--cds-support-info)',
     homeSection: 'System',
     includeInAdvancedMenu: false,
     pinnable: true,
@@ -306,33 +314,35 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
   {
     to: '/mpx1',
     label: 'MPX1 Rack',
-    icon: Waveform,
+    icon: MapRackDeviceIcon,
     description: 'Control the Lexicon MPX-1 from MAP2, including editor access, live program changes, diagnostics, library tasks, and MIDI mapping tools.',
     color: 'var(--cds-link-primary)',
     homeSection: 'MIDI',
-    includeInAdvancedMenu: false,
+    includeInAdvancedMenu: true,
     pinnable: true,
     maturity: 'beta',
     kind: 'mpx1-mega-menu',
+    showOnHome: false,
     deviceType: 'lexicon-mpx1',
   },
   {
     to: '/intelfx',
     label: 'IntelFX Rack',
-    icon: Guitar,
+    icon: MapRackDeviceIcon,
     description: 'Control the Rocktron Intellifex from MAP2, including signal flow editing, preset library, MIDI mapping, scenes, and real-time parameter control.',
-    color: 'var(--cds-support-error)',
+    color: '#e53935',
     homeSection: 'MIDI',
-    includeInAdvancedMenu: false,
+    includeInAdvancedMenu: true,
     pinnable: true,
     maturity: 'beta',
     kind: 'link',
+    showOnHome: false,
     deviceType: 'rocktron-intelfx',
   },
   {
     to: '/tesira',
     label: 'Tesira AVB',
-    icon: BiampIcon as ComponentType<any>,
+    icon: MapMatrixProcessorIcon as ComponentType<any>,
     description: 'Work with Biamp Tesira AVB devices for fleet views, device pages, DSP surfaces, AVB context, and multi-device operational control.',
     color: 'var(--cds-support-error)',
     homeSection: 'AVB',
@@ -345,7 +355,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
   {
     to: '/cluster-dashboard',
     label: 'Cluster Dashboard',
-    icon: HardDrives,
+    icon: MapClusterFabricIcon,
     description: 'Observe and operate multi-node MAP2 clusters, including orchestration state, node health, and advanced cluster administration tasks.',
     color: 'var(--cds-link-primary)',
     homeSection: 'System',
@@ -358,7 +368,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
   {
     to: '/multi-system',
     label: 'Multi-System',
-    icon: Monitor,
+    icon: MapClusterFabricIcon,
     description: 'Compare multiple systems side by side so state differences, host metrics, and distributed rig behavior are visible in one place.',
     color: 'var(--cds-support-info)',
     homeSection: 'System',
@@ -368,33 +378,23 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     kind: 'link',
   },
   {
-    to: '/grid',
-    label: 'Grid',
-    icon: GridFour,
-    description: 'Explore the experimental Cortex-style grid editor for non-default signal-flow design and routing concepts under active development.',
+    to: '/juce-grid',
+    label: 'JUCE-GRID',
+    shortLabel: 'J-GRID',
+    icon: MapSignalFlowIcon,
+    description: 'Open the Carbon-first JUCE grid editor for full signal-flow design, routing, automation, snapshots, MIDI mapping, and audio-workflow control.',
     color: 'var(--cds-link-primary)',
     homeSection: 'JUCE',
     includeInAdvancedMenu: false,
     pinnable: true,
-    maturity: 'experimental',
+    maturity: 'beta',
     kind: 'link',
-  },
-  {
-    to: '/grid-3d',
-    label: '3D Grid',
-    icon: Cube,
-    description: 'Inspect an experimental 3D graph of signal flow and relationships when spatial exploration is more useful than the standard 2D tools.',
-    color: 'var(--cds-link-primary)',
-    homeSection: 'JUCE',
-    includeInAdvancedMenu: false,
-    pinnable: true,
-    maturity: 'experimental',
-    kind: 'link',
+    showOnHome: true,
   },
   {
     to: '/library',
     label: 'IR & NAM Library',
-    icon: Waveform,
+    icon: MapPatchLibraryIcon,
     description: 'Browse impulse-response and model-management workflows for acquiring, curating, and testing NAM and IR content in MAP2.',
     color: 'var(--cds-support-info)',
     homeSection: 'JUCE',
@@ -516,6 +516,12 @@ export const pinnableNavigationItems: Array<ShellNavigationItem | HardwareInterf
   ...hardwareInterfaceMenuItems.filter((item) => item.pinnable),
 ]
 
+const PINNED_ROUTE_ALIASES: Record<string, string> = {
+  '/welcome': '/about',
+  '/grid': '/juce-grid',
+  '/grid-3d': '/juce-grid',
+}
+
 export function normalizePinnedRoutes(routes: string[] | null | undefined): string[] {
   if (!routes || routes.length === 0) {
     return []
@@ -526,11 +532,12 @@ export function normalizePinnedRoutes(routes: string[] | null | undefined): stri
 
   for (const rawRoute of routes) {
     const route = typeof rawRoute === 'string' ? rawRoute.trim() : ''
-    if (!route || !route.startsWith('/') || seen.has(route)) {
+    const canonicalRoute = PINNED_ROUTE_ALIASES[route] ?? route
+    if (!canonicalRoute || !canonicalRoute.startsWith('/') || seen.has(canonicalRoute)) {
       continue
     }
-    seen.add(route)
-    normalized.push(route)
+    seen.add(canonicalRoute)
+    normalized.push(canonicalRoute)
   }
 
   return normalized

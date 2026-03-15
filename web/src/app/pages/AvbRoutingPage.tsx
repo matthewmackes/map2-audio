@@ -1,109 +1,210 @@
-import React from 'react';
-import { Box, CssBaseline, Typography } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { AvbRoutingApp } from '../components/AvbRouting';
-import { LandscapePrompt } from '../components/shared/LandscapePrompt';
+import React from 'react'
+import { Layer } from '@carbon/react'
+import { CssBaseline } from '@mui/material'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
 
-const avbRoutingTheme = createTheme({
+import { AvbRoutingApp } from '../components/AvbRouting'
+import { LandscapePrompt } from '../components/shared/LandscapePrompt'
+import './AvbRoutingPage.css'
+
+const avbRoutingMuiTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#0ea5e9',
+      main: '#0f62fe',
+      light: '#78a9ff',
+      dark: '#002d9c',
+      contrastText: '#f4f4f4',
     },
     secondary: {
-      main: '#22d3ee',
+      main: '#4589ff',
+      contrastText: '#f4f4f4',
     },
     background: {
-      default: '#050607',
-      paper: '#101418',
+      default: '#161616',
+      paper: '#262626',
     },
-    divider: 'rgba(255,255,255,0.12)',
     text: {
-      primary: '#f1f5f9',
-      secondary: '#94a3b8',
+      primary: '#f4f4f4',
+      secondary: '#c6c6c6',
+      disabled: '#8d8d8d',
     },
+    divider: '#525252',
+    info: { main: '#4589ff' },
+    success: { main: '#24a148' },
+    warning: { main: '#f1c21b' },
+    error: { main: '#da1e28' },
+  },
+  shape: {
+    borderRadius: 0,
+  },
+  typography: {
+    fontFamily: 'var(--font-sans, "IBM Plex Sans", sans-serif)',
   },
   components: {
-    MuiPaper: {
+    MuiCssBaseline: {
       styleOverrides: {
-        root: {
-          backgroundImage: 'none',
+        ':root': {
+          colorScheme: 'dark',
         },
       },
     },
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: '#0b0f14',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-        },
-      },
-    },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          backgroundColor: '#0d1117',
           backgroundImage: 'none',
+          backgroundColor: 'var(--surface-2)',
+          color: 'var(--text-primary)',
+          boxShadow: 'none',
+          borderBottom: '1px solid var(--border-strong)',
         },
       },
     },
-    MuiPopover: {
+    MuiPaper: {
       styleOverrides: {
-        paper: {
-          backgroundColor: '#121821',
-          border: '1px solid rgba(255,255,255,0.12)',
+        root: {
+          backgroundImage: 'none',
+          backgroundColor: 'var(--surface-2)',
+          color: 'var(--text-primary)',
+          boxShadow: 'none',
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          border: '1px solid var(--border)',
         },
       },
     },
     MuiDialog: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#121821',
+          backgroundImage: 'none',
+          backgroundColor: 'var(--surface-2)',
+          color: 'var(--text-primary)',
+        },
+      },
+    },
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          backgroundImage: 'none',
+          backgroundColor: 'var(--surface-2)',
+          color: 'var(--text-primary)',
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundImage: 'none',
+          backgroundColor: 'var(--surface-2)',
+          color: 'var(--text-primary)',
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'var(--surface)',
+          color: 'var(--text-primary)',
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'var(--border-strong)',
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'var(--text-secondary)',
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'var(--interactive)',
+          },
+        },
+        input: {
+          color: 'var(--text-primary)',
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          color: 'var(--text-primary)',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+          textTransform: 'none',
+          boxShadow: 'none',
+        },
+        contained: {
+          backgroundColor: 'var(--interactive)',
+          color: 'var(--text-primary)',
+        },
+        outlined: {
+          borderColor: 'var(--border-strong)',
+          color: 'var(--text-primary)',
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          color: 'var(--text-primary)',
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          color: 'var(--text-secondary)',
+          '&.Mui-selected': {
+            color: 'var(--text-primary)',
+          },
+        },
+      },
+    },
+    MuiTabs: {
+      styleOverrides: {
+        indicator: {
+          backgroundColor: 'var(--interactive)',
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
           backgroundImage: 'none',
         },
       },
     },
   },
-});
+})
 
 export function AvbRoutingPage() {
   return (
-    <ThemeProvider theme={avbRoutingTheme}>
+    <ThemeProvider theme={avbRoutingMuiTheme}>
       <CssBaseline enableColorScheme />
-      <Box
-        className="avb-routing-page"
-        sx={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-          bgcolor: 'background.default',
-        }}
-      >
+      <section className="avb-routing-page">
         <LandscapePrompt componentId="avb-routing" />
-        <Box
-          sx={{
-            px: { xs: 1.5, sm: 2 },
-            py: { xs: 1, sm: 1.25 },
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            backgroundColor: '#262626',
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-            Unified Routing Studio
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{ color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}
-          >
+        <Layer className="avb-routing-page__hero">
+          <h2 className="avb-routing-page__title">Unified routing studio</h2>
+          <p className="avb-routing-page__subtitle">
             Topology + matrix + signal-chain mapping with canonical AVB health diagnostics
-          </Typography>
-        </Box>
-        <Box sx={{ flex: 1, minHeight: 0 }}>
+          </p>
+        </Layer>
+        <div className="avb-routing-page__content">
           <AvbRoutingApp />
-        </Box>
-      </Box>
+        </div>
+      </section>
     </ThemeProvider>
-  );
+  )
 }
