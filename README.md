@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**789** Python | **1063** TypeScript | **282** C++/H | **119** Docs | **492** total commits | **0** stars | **0** forks | **0** open issues
+**742** Python | **1061** TypeScript | **282** C++/H | **117** Docs | **496** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,12 +169,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [AVB Canonical Worklist (Single Source of Truth)](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MASTER_WORK_PLAN.md) | 2026-03-12 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-12 |
-| [MAP2 Platform Evaluation Report](https://github.com/matthewmackes/map2-audio/blob/master/docs/PLATFORM_EVALUATION_REPORT.md) | 2026-03-11 |
-| [Operator Navigation Model](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATOR_NAVIGATION_MODEL.md) | 2026-03-10 |
-| [Repository Bloat Cleanup Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/REPO_BLOAT_CLEANUP_RUNBOOK.md) | 2026-03-10 |
-| [MAP2 API Authentication and Authorization Model](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-auth-model.md) | 2026-03-10 |
+| [AVB Latency Optimizer](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_LATENCY_OPTIMIZER.md) | 2026-03-14 |
+| [AVB Legacy Work Plan (Historical Reference Only)](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MASTER_WORK_PLAN.md) | 2026-03-14 |
+| [AVB Milestone Evidence Template](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MILESTONE_EVIDENCE_TEMPLATE.md) | 2026-03-14 |
+| [AVB Routing Matrix - Multi-Node Implementation Summary](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MULTI_NODE_IMPLEMENTATION_SUMMARY.md) | 2026-03-14 |
+| [AVB Qualification Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_QUALIFICATION_MATRIX.md) | 2026-03-14 |
+| [Full Build Checklist (Plan 3 AVB)](https://github.com/matthewmackes/map2-audio/blob/master/docs/BUILD_AVB_FULL.md) | 2026-03-14 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4a501acf`](https://github.com/matthewmackes/map2-audio/commit/4a501acffa602f90a742b339037bdea4e66d282b) | Merge branch 'tui-carbon-unification' | Map2 Audio | 2026-03-14 |
+| [`02fec51d`](https://github.com/matthewmackes/map2-audio/commit/02fec51d3e1d726ef07425734334f4f8c6330db9) | Unify MIDI Hub wizard and pending UI updates | Map2 Audio | 2026-03-14 |
+| [`5f416e1e`](https://github.com/matthewmackes/map2-audio/commit/5f416e1e12c82f2579ce33f0d19a198a0461a1e6) | chore: sync current workspace changes | Map2 Audio | 2026-03-14 |
+| [`3ee37b03`](https://github.com/matthewmackes/map2-audio/commit/3ee37b03e46151f33fed00ad622268077016e0d1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-14 |
 | [`2e9aada2`](https://github.com/matthewmackes/map2-audio/commit/2e9aada225ab946fdbed6f123ab54c79c96cc942) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-13 |
 | [`51af8795`](https://github.com/matthewmackes/map2-audio/commit/51af8795fabe7c9c87faf649705f7bd3fb783282) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-12 |
 | [`af7f1cbb`](https://github.com/matthewmackes/map2-audio/commit/af7f1cbb41139fe46a0e5250d56e08115e686034) | chore: commit all current repository changes | Map2 Audio | 2026-03-12 |
 | [`871e3b1c`](https://github.com/matthewmackes/map2-audio/commit/871e3b1c3bcdabd61eb96031a5d7f560971f2f2b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-12 |
-| [`8bc80f18`](https://github.com/matthewmackes/map2-audio/commit/8bc80f188e0321d6c017e8a8ca1fc593bfc73f8f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-11 |
-| [`26f474e0`](https://github.com/matthewmackes/map2-audio/commit/26f474e09ec3e29284118ae6fa594c3a89e7b48a) | Complete cluster burndown implementation and test coverage | Map2 Audio | 2026-03-11 |
-| [`a3ddd00f`](https://github.com/matthewmackes/map2-audio/commit/a3ddd00f602dc8696c8a89d60526cdb5daceba8e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-11 |
-| [`3dcfe8c7`](https://github.com/matthewmackes/map2-audio/commit/3dcfe8c7ecf0da8c19e6af224e556054b8d65cf0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
