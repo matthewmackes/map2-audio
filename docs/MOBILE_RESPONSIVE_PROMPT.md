@@ -49,9 +49,8 @@ Review every page below. For each, the route, primary file, and UI patterns are 
 | `/pipewire` | `pages/PipeWirePage.tsx` | Audio server status, node list |
 | `/welcome` | `pages/WelcomePage.tsx` | Redirect alias to `/about` |
 | `/lcd` | `pages/LCDPage.tsx` | LCD emulator display |
-| `/cluster-dashboard` | `pages/ClusterDashboardPage.tsx` | Multi-node monitoring, MUI DataGrid, live events tab |
+| `/platform?layer=cluster-dashboard` | `pages/PlatformShellPage.tsx` | Cluster Dashboard workspace inside the unified platform shell |
 | `/drums` | `pages/DrumsPage.tsx` | Drum machine interface |
-| `/multi-system` | `pages/MultiSystemDashboardPage.tsx` | Cluster management |
 | `/avb-routing` | `pages/AvbRoutingPage.tsx` | AVB stream routing matrix (RoutingGrid), full-bleed layout |
 | `/tesira/*` | `pages/TesiraPage.tsx` | Biamp Tesira fleet — device cards, compile controls, block diagrams |
 | `/mpx1/panel` | `pages/MPX1PanelView.tsx` | Hardware panel emulation (SVG, knobs) |

@@ -10160,7 +10160,7 @@ Last updated: 2026-03-15 11:40 - Codex
 ## Epic: Advanced Grid — Cluster Dashboard Expansion (Multi-System + Nodes + MIDI Cluster Node)
 
 ID: T166
-Status: [ ] Todo
+Status: [✓] Done
 Title: [ADVANCED-GRID] Integrate Multi-System, Nodes, and MIDI Cluster Node into Cluster Dashboard layer
 Description:
 - Goal / acceptance criteria: The Cluster Dashboard layer in `PlatformShellPage` gains a Carbon `Tabs` strip organizing all cluster-related content into three tabs: "Cluster" (existing content), "Nodes" (fleet view from `NodesPage.tsx` + node display components), and "Multi-System" (from `MultiSystemDashboardPage.tsx`). MIDI Cluster Node content migrates from `MidiClusterNodePage.tsx` into the MIDI Cluster layer tab (already in T163 scope — closes that gap here). Clicking a node row in the Nodes tab switches `activeLayer` to `singleNode` via the platform store (stack transition, not a tearsheet). All source pages (`MultiSystemDashboardPage.tsx`, `NodesPage.tsx`, `MidiClusterNodePage.tsx`) are deleted and their routes removed from `App.tsx`. Existing node display components (`NodeNav/`, `NodeGraph/`, `NodeAlerts/`, `NodeContextBanner/`, `NodeContextPicker/`) are reused inside the Nodes tab — not replaced. All TypeScript/build/test clean.
@@ -10171,7 +10171,7 @@ Description:
 Subtasks:
 
 ID: T166-sub1
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add Carbon Tabs to Cluster Dashboard LayerWorkspace
 Description:
 - Introduce Carbon `Tabs` + `Tab` + `TabPanels` + `TabPanel` into the Cluster Dashboard layer's workspace render path inside `PlatformShellPage.tsx` (or a new `ClusterDashboardLayer.tsx` component extracted from the shell if the file is growing too large).
@@ -10184,7 +10184,7 @@ Description:
 Assigned to: Claude Code
 
 ID: T166-sub2
-Status: [ ] Todo
+Status: [✓] Done
 Title: Nodes tab — fleet view inside Cluster Dashboard
 Description:
 - Implement the "Nodes" tab content by migrating the fleet view from `NodesPage.tsx` into the Cluster Dashboard tab panel.
@@ -10199,7 +10199,7 @@ Description:
 Assigned to: Claude Code
 
 ID: T166-sub3
-Status: [ ] Todo
+Status: [✓] Done
 Title: Multi-System tab — multi-system dashboard inside Cluster Dashboard
 Description:
 - Implement the "Multi-System" tab content by migrating `MultiSystemDashboardPage.tsx` (691 lines) into the Cluster Dashboard tab panel.
@@ -10211,7 +10211,7 @@ Description:
 Assigned to: Claude Code
 
 ID: T166-sub4
-Status: [ ] Todo
+Status: [✓] Done
 Title: Migrate MIDI Cluster Node content into MIDI Cluster layer
 Description:
 - `MidiClusterNodePage.tsx` contains per-node MIDI routing detail. This belongs in the MIDI Cluster layer (already established in T163), not the Cluster Dashboard layer.
@@ -10224,7 +10224,7 @@ Description:
 Assigned to: Claude Code
 
 ID: T166-sub5
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove migrated pages and routes, clean build
 Description:
 - Delete: `web/src/app/pages/MultiSystemDashboardPage.tsx`, `web/src/app/pages/NodesPage.tsx`, `web/src/app/pages/NodesPage.css`, `web/src/app/pages/NodesPage.test.tsx`, `web/src/app/pages/MidiClusterNodePage.tsx` (if it exists as a separate file).
@@ -10237,4 +10237,123 @@ Description:
 Assigned to: Claude Code
 
 Assigned to: Claude Code
-Last updated: 2026-03-15
+Last updated: 2026-03-15 13:30 - Codex
+- Completion notes:
+  - What was done: Reworked `web/src/app/pages/PlatformShellPage.tsx` so the Cluster Dashboard layer now owns a contained Carbon tab strip with `Cluster`, `Nodes`, and `Multi-System`, persisting the active tab in `localStorage` under `map2_cluster_active_tab`.
+  - What was done: Migrated the old Nodes route into the Cluster Dashboard `Nodes` tab using the existing node context/banner/picker/graph components; selecting a node now updates the platform viewed-node store and transitions into the `single-node` platform layer instead of opening a tearsheet.
+  - What was done: Embedded `components/HostMachine/MultiSystemDashboard.tsx` directly into the Cluster Dashboard `Multi-System` tab, moved MIDI node detail into the `midi-cluster` layer as an inline detail section driven by table-row selection, and updated the `single-node` layer to follow the platform-selected viewed node.
+  - What was done: Removed the standalone `NodesPage` and `MultiSystemDashboardPage` route/page files, removed their `App.tsx` routes, retargeted navigation/home-card/deep-link helpers to Platform Stack URLs, and updated node-alert / node-nav links to the unified shell flow. `MidiClusterNodePage.tsx` was already absent in the current tree, so that stale route/page cleanup requirement resolved as a no-op while the missing inline detail gap was closed in `PlatformShellPage.tsx`.
+  - Files/links produced: `web/src/app/pages/PlatformShellPage.tsx`, `web/src/app/pages/PlatformShellPage.css`, `web/src/app/pages/PlatformShellPage.test.tsx`, `web/src/app/hooks/usePlatformShellData.ts`, `web/src/app/platform/model.ts`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/advancedMenuItems.test.ts`, `web/src/app/components/NodeNav/NodeMiniCard.tsx`, `web/src/app/components/NodeAlerts/NodeAlertBar.tsx`, `web/src/app/components/NodeNav/NodeNavChip.test.tsx`, `web/src/app/App.tsx`.
+  - Validation: `npm --prefix web run typecheck` PASS; `npm --prefix web run test -- src/app/pages/PlatformShellPage.test.tsx src/app/data/advancedMenuItems.test.ts src/app/components/NodeNav/NodeNavChip.test.tsx src/app/App.platformRoute.test.tsx src/app/layout/AppShell.test.tsx src/app/components/NodeAlerts/NodeAlertBar.test.tsx --runInBand` PASS; `pytest tests/test_node_api.py tests/test_node_proxy.py -q` PASS (`14 passed`); `npm --prefix web run build` PASS.
+  - Notes: Jest still emits the pre-existing React Router future-flag warnings in some suites, and the build still emits the pre-existing Vite dynamic/static import warning around `web/src/map2/api.ts`; no new warning class was introduced by this epic.
+  - Build side effect: The validation build regenerated `VERSION` and `version.json` as designed by `T144`.
+
+ID: T167
+Status: [✓] Done
+Title: Eliminate production homepage asset-load races on port 3000
+Description:
+- Goal / acceptance criteria: The production web publish flow must never expose `index.html` that references a missing or not-yet-written hashed bundle while the port-3000 server stays live. Frontend builds must publish atomically, preserving prior hashed assets long enough for active browsers to finish loading. Validation must prove `GET /` and the referenced `assets/index-*.js` return `200` before and after a rebuild.
+- Why it matters: Users are seeing homepage boot failures where the production server serves HTML whose module bundle is temporarily unavailable, leaving the UI blank on `172.20.234.234:3000`.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Atomic frontend build/publish implementation, regression coverage for asset preservation/publish behavior, updated deploy/runtime docs or scripts as needed, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 15:57 - Codex
+- What was done: Added an atomic production web publish path that builds into a staged directory, carries forward prior hashed assets for in-flight browser sessions, and swaps the staged bundle into `web/dist` only after the new build is complete. Wired `web/package.json` to use that publisher, restored clean staged Vite output, and documented the production-safe build behavior.
+- Files/links produced: `scripts/build_web_dist_atomic.py`, `tests/test_build_web_dist_atomic.py`, `web/package.json`, `web/vite.config.ts`, `web/README.md`.
+- Validation: `pytest tests/test_build_web_dist_atomic.py -q` PASS (`2 passed`); `npm --prefix web run build` PASS; live rebuild probe PASS (`samples=366`, no missing bundle fetches while rebuilding against the live port-3000 server); direct remote validation PASS (`GET http://172.20.234.234:3000/` referenced `/assets/index-CViKykcy.js`, and that module returned `200 text/javascript`).
+- Notes: Root cause was direct mutation of the live `web/dist` tree during rebuilds, which could briefly expose a new `index.html` before its hashed module bundle was fully written. AGPL spot-check against `LICENSE`, `README.md`, and `docs/THIRD_PARTY_NOTICES.md` found no new compliance gaps.
+- Build side effect: Validation regenerated `VERSION` and `version.json` as designed by the existing versioning flow.
+
+ID: T168
+Status: [✓] Done
+Title: Replace Vite preview with a strict production web server on port 3000
+Description:
+- Goal / acceptance criteria: Port `3000` must be served by a production-grade static/proxy server rather than `vite preview`. The server must serve `web/dist`, proxy API and WebSocket traffic to the backend on `8080`, return `404` for missing static assets instead of HTML fallback, and still return `index.html` for client-side SPA routes. Validation must prove the reported IP serves the current homepage bundle and that missing `/assets/*.js` requests no longer return HTML.
+- Why it matters: Users still report homepage boot failures where the browser cannot load the top-level module on `172.20.234.234:3000`, and the current runtime was confirmed to be `vite preview`, which serves `index.html` for missing asset paths.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Production web server implementation, updated service/startup wiring, regression coverage for route-vs-asset behavior, and live validation evidence on port `3000`.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 16:16 - Codex
+- What was done: Added a dedicated production web server that serves `web/dist`, proxies `/api`, `/folders`, `/resources`, and `/var` to `8080`, tunnels WebSocket upgrades for `/ws` and `/pipedal`, serves SPA routes from `index.html`, and returns real `404` responses for missing static assets. Updated the active startup paths, package scripts, systemd/install wiring, and core web-server docs to use the new server contract on port `3000`. Kept `npm run preview` as a compatibility alias to the same production server so the existing `systemd` unit could be restarted live without privileged daemon-reload access.
+- Files/links produced: `scripts/serve_web_dist.mjs`, `tests/test_serve_web_dist.py`, `web/package.json`, `web/vite.config.ts`, `scripts/start-web.sh`, `branding/map2-welcome.sh`, `systemd/map2-web-prod.service`, `scripts/install-node.sh`, `web/README.md`, `web/PORTS.md`, `docs/WEB_SERVER_PORTS.md`, `docs/WEB_SERVER_DEPLOYMENT.md`, `docs/OPERATIONS_GUIDE.md`.
+- Validation: `pytest tests/test_serve_web_dist.py -q` PASS; `bash -n scripts/start-web.sh branding/map2-welcome.sh` PASS; `node --check scripts/serve_web_dist.mjs` PASS; `npm --prefix web run build` PASS; live service cutover PASS (`map2-web-prod` now runs `node ../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000`); direct remote validation PASS (`GET http://172.20.234.234:3000/` returned `200` with `Cache-Control: no-store, must-revalidate`, referenced `/assets/index-Boqa2727.js`, and that asset returned `200 text/javascript; charset=utf-8` with `Cache-Control: public, max-age=31536000, immutable`); missing-asset validation PASS (`GET http://172.20.234.234:3000/assets/definitely-missing.js` now returns `404 text/plain` instead of HTML); proxy validation PASS (`GET http://172.20.234.234:3000/api/health` returned `200 application/json`); WebSocket proxy validation PASS (successful connection to `ws://172.20.234.234:3000/ws/v1`).
+- Notes: Root cause was not only bundle-publish timing but also the runtime contract of `vite preview`, which responded to missing asset paths with HTML fallback semantics unsuitable for a production bundle server. AGPL spot-check against `LICENSE`, `README.md`, and `docs/THIRD_PARTY_NOTICES.md` found no new compliance gaps.
+- Build side effect: Validation regenerated `VERSION` and `version.json` as designed by the existing versioning flow.
+
+ID: T169
+Status: [✓] Done
+Title: Remove Nodes and Multi-System surfaces from Platform Stack
+Description:
+- Goal / acceptance criteria: Remove the `Nodes` and `Multi-System` Cluster Dashboard tabs from `web/src/app/pages/PlatformShellPage.tsx`, drop their platform deep links/cards/posters from the web navigation data, and ensure any stale `clusterTab=nodes|multi-system` links fall back cleanly to the default cluster dashboard view. Update affected tests and keep frontend typecheck/build clean.
+- Why it matters: The user explicitly wants those platform surfaces gone, so the unified shell, navigation metadata, and legacy deep links all need to stop advertising or rendering them.
+- Dependencies: T166
+- Estimated effort: Medium
+- Required outputs: Platform shell/tab cleanup, navigation/poster/home profile cleanup, route fallback behavior for removed tabs, updated tests, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 16:31 - Codex
+- Completion notes:
+  - What was done: Removed the `Nodes` and `Multi-System` Cluster Dashboard surfaces from `web/src/app/pages/PlatformShellPage.tsx`, simplifying the cluster dashboard layer back to a single workspace view while leaving stale `clusterTab` query params harmless.
+  - What was done: Removed the corresponding navigation and discoverability entries from `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/homeCardProfiles.ts`, `web/src/app/pages/posterManifest.ts`, and updated `web/src/app/components/NodeAlerts/NodeAlertBar.tsx` to point alerts to the default cluster dashboard instead of the removed nodes view.
+  - What was done: Updated route/design docs that still advertised the removed `clusterTab=multi-system` path so current platform documentation matches runtime behavior.
+- Validation: `npm --prefix web run typecheck` PASS; `npm --prefix web run test -- src/app/pages/PlatformShellPage.test.tsx src/app/data/advancedMenuItems.test.ts src/app/components/NodeAlerts/NodeAlertBar.test.tsx --runInBand` PASS (`3 suites, 20 tests`); `npm --prefix web run build` PASS.
+- Compliance: MAP2-owned platform/docs/test/worklist changes remain under the repository AGPLv3 posture; licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no new compliance task was required.
+- Build side effect: The production build regenerated `VERSION` and `version.json` through the existing versioning flow.
+
+ID: T170
+Status: [✓] Done
+Title: Move Host Machine card into Hardware home category
+Description:
+- Goal / acceptance criteria: Reclassify the `Host Machine` navigation/home card so it appears under the `Hardware` category instead of `System`, while preserving its route, card metadata, and pinnable behavior. Update the home-navigation regression test to assert the new placement.
+- Why it matters: The user wants the Host Machine surface grouped with hardware-facing operations rather than general system navigation.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated navigation catalog category assignment, updated home-category test coverage, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 16:36 - Codex
+- Completion notes:
+  - What was done: Reassigned the `Host Machine` navigation card in `web/src/app/data/advancedMenuItems.ts` from `System` to `Hardware`, which moves the card into the Hardware home category without changing its route or other card metadata.
+  - What was done: Updated `web/src/app/data/advancedMenuItems.test.ts` to assert that `/host-machine` appears in the Hardware section and no longer appears in the System section.
+- Validation: `npm --prefix web run test -- src/app/data/advancedMenuItems.test.ts --runInBand` PASS (`1 suite, 13 tests`); `npm --prefix web run typecheck` PASS.
+- Compliance: MAP2-owned frontend/test/worklist changes remain under the repository AGPLv3 posture; licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no new compliance task was required.
+
+ID: T171
+Status: [✓] Done
+Title: Publish and verify Host Machine category move in live frontend
+Description:
+- Goal / acceptance criteria: Build/publish the current frontend so the `Host Machine` card move from `System` to `Hardware` is reflected on the live port-3000 UI, then verify the served bundle changed from the previously cached build and document the result.
+- Why it matters: The user hard-refreshed and still saw the old UI, which indicates the runtime bundle did not include the source change.
+- Dependencies: T170
+- Estimated effort: Low
+- Required outputs: Fresh production frontend build/publish, served-bundle verification evidence, and updated worklist status.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 16:42 - Codex
+- Completion notes:
+  - What was done: Rebuilt/published the production frontend with `npm --prefix web run build`, which swapped the live port-3000 shell from bundle `index-D9blbMib.js` to `index-BBUTWWHm.js`.
+  - Verification: `curl http://127.0.0.1:3000/` now returns the new bundle hash, and a Playwright screenshot of the rendered Home page (`/tmp/map2-home-rendered.png`) shows the updated tab counts `System 2` and `Hardware 5`, matching the expected Host Machine category move.
+  - Notes: The original issue was not a React/category bug; the live server was still serving the prior published bundle when the user checked.
+  - Build side effect: The publish regenerated `VERSION` and `version.json` through the existing versioning flow.
+
+ID: T172
+Status: [✓] Done
+Title: Rename Presets page surface to Snapshots
+Description:
+- Goal / acceptance criteria: Replace the Presets page route, visible copy, and page-scoped identifiers with Snapshot terminology, including navigation/home metadata, page/component names, and directly supporting tests/docs. Update any dedicated page route or API wrapper names that are specific to this surface without spilling into unrelated preset domains unless required by the page rename.
+- Why it matters: The user wants the Presets surface presented and maintained as Snapshots end to end, not just as a one-off label swap.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated frontend route/page/component naming, adjusted supporting API wrapper or route names where page-scoped, passing targeted validation, and worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 17:08 - Codex
+- Completion notes:
+  - What was done: Renamed the Presets surface to Snapshots across the dedicated page route (`/snapshots` with `/presets` redirect), page/component filenames, visible UI copy, navigation/home/poster metadata, and the page-scoped generic snapshot API/types route wiring used by this surface.
+  - Validation: `npm --prefix web run typecheck`; `python3 -m py_compile app/routes/presets.py`; `npm --prefix web run test -- src/app/components/snapshots/SnapshotImportDialog.test.tsx src/app/components/snapshots/SnapshotDeployModal.test.tsx src/app/pages/JuceGridPage.test.tsx --runInBand`
+  - Deployment: Rebuilt the production frontend, restarted the port-3000 server, and verified `http://127.0.0.1:3000/` serves bundle `assets/index-Brk_VLCy.js`.
+  - Compliance: AGPL/license spot-check found no new licensing gaps introduced by the snapshot rename.

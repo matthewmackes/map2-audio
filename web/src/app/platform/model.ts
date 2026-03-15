@@ -136,6 +136,10 @@ export function buildPlatformHref(layerId?: PlatformLayerId | null): string {
   return `/platform?layer=${encodeURIComponent(layerId)}`
 }
 
+export function buildClusterDashboardHref(): string {
+  return '/platform?layer=cluster-dashboard'
+}
+
 export function makePlatformHealthRecord<T>(valueFactory: (layerId: PlatformLayerId) => T): Record<PlatformLayerId, T> {
   return PLATFORM_LAYER_IDS.reduce<Record<PlatformLayerId, T>>((acc, layerId) => {
     acc[layerId] = valueFactory(layerId)

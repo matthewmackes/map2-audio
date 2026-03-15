@@ -39,7 +39,7 @@ show_help() {
     echo "Usage: $0 [command] [options]"
     echo ""
     echo "Commands:"
-    echo "  preview     Start the production web server (default)"
+    echo "  serve       Start the production web server (default)"
     echo "  build       Build for production"
     echo "  install     Install dependencies"
     echo "  clean       Clean build artifacts"
@@ -50,9 +50,9 @@ show_help() {
     echo "  --port      Port to use (default: 3000)"
     echo ""
     echo "Examples:"
-    echo "  $0 preview          # Start production web server"
+    echo "  $0 serve            # Start production web server"
     echo "  $0 build            # Build for production"
-    echo "  $0 preview --port 3000  # Production web server on port 3000"
+    echo "  $0 serve --port 3000  # Production web server on port 3000"
 }
 
 check_node() {
@@ -99,11 +99,11 @@ run_build() {
     print_status "The backend will automatically serve from this directory."
 }
 
-run_preview() {
+run_serve() {
     local HOST="${HOST:-0.0.0.0}"
     local PORT="${PORT:-3000}"
 
-    print_status "Previewing production build..."
+    print_status "Serving production build..."
     print_status "Host: $HOST, Port: $PORT"
     print_status "API proxy: http://localhost:8080"
     cd "$WEB_DIR"
@@ -113,7 +113,7 @@ run_preview() {
         npm run build
     fi
 
-    npm run preview -- --host "$HOST" --port "$PORT"
+    npm run serve -- --host "$HOST" --port "$PORT"
 }
 
 run_clean() {
@@ -124,7 +124,7 @@ run_clean() {
 }
 
 # Parse arguments
-COMMAND="${1:-preview}"
+COMMAND="${1:-serve}"
 shift || true
 
 HOST="0.0.0.0"
@@ -155,8 +155,8 @@ case $COMMAND in
     build)
         run_build
         ;;
-    preview)
-        run_preview
+    serve)
+        run_serve
         ;;
     install)
         install_deps

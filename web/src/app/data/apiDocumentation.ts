@@ -115,9 +115,9 @@ export const API_SEQUENCE_DIAGRAMS: ApiSequenceDiagram[] = [
     mermaid: `sequenceDiagram\n  participant UI\n  participant API as /api/audio/restart\n  participant Engine\n  UI->>API: restart request\n  API->>Engine: stop\n  API->>Engine: apply runtime config\n  API->>Engine: start\n  Engine-->>API: health status\n  API-->>UI: restart result`,
   },
   {
-    id: 'preset-save-load',
-    title: 'Preset Save / Load Cycle',
-    mermaid: `sequenceDiagram\n  participant UI\n  participant PresetsAPI\n  participant Storage\n  participant Engine\n  UI->>PresetsAPI: save preset\n  PresetsAPI->>Storage: persist blob\n  UI->>PresetsAPI: load preset\n  PresetsAPI->>Engine: apply state\n  Engine-->>UI: confirmation + health`,
+    id: 'snapshot-save-load',
+    title: 'Snapshot Save / Load Cycle',
+    mermaid: `sequenceDiagram\n  participant UI\n  participant SnapshotsAPI\n  participant Storage\n  participant Engine\n  UI->>SnapshotsAPI: save snapshot\n  SnapshotsAPI->>Storage: persist blob\n  UI->>SnapshotsAPI: update snapshot\n  SnapshotsAPI->>Engine: apply state\n  Engine-->>UI: confirmation + health`,
   },
 ]
 
@@ -148,9 +148,10 @@ export const API_ENDPOINT_DOCS: Record<string, ApiEndpointDocumentation> = {
   'GET /api/chains': doc('Chain List', 'Returns chain inventory and active chain references.', 'Use in chain management pages.', ['POST /api/chains', 'POST /api/chains/deploy']),
   'POST /api/chains': doc('Chain Create', 'Creates a new chain model.', 'Use for first-time rig setup or templating.', ['GET /api/chains', 'POST /api/chains/deploy']),
   'POST /api/chains/deploy': doc('Chain Deploy', 'Deploys chain configuration to selected node(s).', 'Use to push validated chains across cluster nodes.', ['GET /api/chains', 'GET /api/cluster/health/extended/overview']),
-  'GET /api/presets': doc('Preset List', 'Returns saved preset inventory.', 'Use in preset browser and quick-load UI.', ['POST /api/presets', 'POST /api/presets/load']),
-  'POST /api/presets': doc('Preset Save', 'Persists current engine state into preset storage.', 'Use after dial-in or during scene programming.', ['GET /api/presets', 'POST /api/presets/load']),
-  'POST /api/presets/load': doc('Preset Load', 'Loads selected preset into engine runtime.', 'Use during show control and patch changes.', ['GET /api/presets', 'POST /api/audio/restart']),
+  'GET /api/snapshots': doc('Snapshot List', 'Returns saved snapshot inventory.', 'Use in snapshot browser and quick-load UI.', ['POST /api/snapshots', 'PATCH /api/snapshots/{snapshot_id}']),
+  'POST /api/snapshots': doc('Snapshot Save', 'Persists current engine state into snapshot storage.', 'Use after dial-in or during scene programming.', ['GET /api/snapshots', 'PATCH /api/snapshots/{snapshot_id}']),
+  'PATCH /api/snapshots/{snapshot_id}': doc('Snapshot Update', 'Updates snapshot metadata such as naming, categorization, and favorites.', 'Use when curating snapshot libraries.', ['GET /api/snapshots', 'POST /api/snapshots/{snapshot_id}/favorite']),
+  'POST /api/snapshots/{snapshot_id}/favorite': doc('Snapshot Favorite Toggle', 'Toggles snapshot favorite status.', 'Use to mark known-good or frequently recalled states.', ['GET /api/snapshots', 'PATCH /api/snapshots/{snapshot_id}']),
   'GET /api/midi/status': doc('MIDI Status', 'Returns MIDI service status and active devices.', 'Use for readiness and troubleshooting.', ['GET /api/midi/devices', 'GET /api/midi-hub/status']),
   'GET /api/midi/devices': doc('MIDI Devices', 'Returns discovered MIDI input/output devices.', 'Use in controller mapping and health views.', ['GET /api/midi/status', 'POST /api/midi/routes']),
   'POST /api/midi/routes': doc('MIDI Route Create', 'Creates a MIDI routing rule.', 'Use when wiring controller inputs to targets.', ['GET /api/midi/routes', 'GET /api/midi/status']),

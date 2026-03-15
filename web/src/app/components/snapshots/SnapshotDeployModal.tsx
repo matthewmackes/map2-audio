@@ -19,16 +19,16 @@ import { irApi, namApi } from '../../../map2/api'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import { useCluster } from '../../contexts/ClusterContext'
 import { useToasts } from '../Toasts'
-import './PresetDeployModal.css'
+import './SnapshotDeployModal.css'
 
-type PluginPresetSummary = {
+type PluginSnapshotSummary = {
   id: number
   name: string
   plugin_uri: string
   plugin_name: string
 }
 
-type PresetAvailability = {
+type SnapshotAvailability = {
   preset_id: number
   checksum: string
   source_node_id?: string
@@ -75,10 +75,10 @@ type DependencyDescriptor = {
   pathToken?: string | null
 }
 
-interface PresetDeployModalProps {
+interface SnapshotDeployModalProps {
   open: boolean
-  preset: PluginPresetSummary | null
-  availability?: PresetAvailability | null
+  snapshot: PluginSnapshotSummary | null
+  availability?: SnapshotAvailability | null
   sourceNodeId: string
   onClose: () => void
 }
@@ -130,13 +130,13 @@ function statusTag(type: 'green' | 'red' | 'blue' | 'purple' | 'warm-gray' | 'co
   )
 }
 
-export function PresetDeployModal({
+export function SnapshotDeployModal({
   open,
-  preset,
+  snapshot,
   availability,
   sourceNodeId,
   onClose,
-}: PresetDeployModalProps) {
+}: SnapshotDeployModalProps) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
   const { nodes, localNodeId } = useCluster()
@@ -166,21 +166,21 @@ export function PresetDeployModal({
       }
       return response.json() as Promise<ClusterPluginResponse>
     },
-    enabled: open && Boolean(preset),
+    enabled: open && Boolean(snapshot),
     staleTime: 10000,
   })
 
   const namStatusQuery = useQuery<NAMStatus>({
-    queryKey: ['nam', 'status', sourceNodeId, 'preset-deploy'],
+    queryKey: ['nam', 'status', sourceNodeId, 'snapshot-deploy'],
     queryFn: () => namApi.getStatus(sourceApiNodeId),
-    enabled: open && preset?.plugin_uri === 'map2://juce/amp/nam',
+    enabled: open && snapshot?.plugin_uri === 'map2://juce/amp/nam',
     staleTime: 5000,
   })
 
   const irStatusQuery = useQuery<IRStatus>({
-    queryKey: ['ir', 'status', sourceNodeId, 'preset-deploy'],
+    queryKey: ['ir', 'status', sourceNodeId, 'snapshot-deploy'],
     queryFn: () => irApi.getStatus(sourceApiNodeId),
-    enabled: open && (preset?.plugin_uri === 'map2://juce/ir/cabinet' || preset?.plugin_uri === 'map2://juce/ir/reverb'),
+    enabled: open && (snapshot?.plugin_uri === 'map2://juce/ir/cabinet' || snapshot?.plugin_uri === 'map2://juce/ir/reverb'),
     staleTime: 5000,
   })
 
@@ -193,7 +193,7 @@ export function PresetDeployModal({
       }
       return response.json() as Promise<ClusterLibraryFanoutResponse>
     },
-    enabled: open && preset?.plugin_uri === 'map2://juce/amp/nam',
+    enabled: open && snapshot?.plugin_uri === 'map2://juce/amp/nam',
     staleTime: 10000,
   })
 
@@ -206,32 +206,32 @@ export function PresetDeployModal({
       }
       return response.json() as Promise<ClusterLibraryFanoutResponse>
     },
-    enabled: open && (preset?.plugin_uri === 'map2://juce/ir/cabinet' || preset?.plugin_uri === 'map2://juce/ir/reverb'),
+    enabled: open && (snapshot?.plugin_uri === 'map2://juce/ir/cabinet' || snapshot?.plugin_uri === 'map2://juce/ir/reverb'),
     staleTime: 10000,
   })
 
   const pluginDependency = useMemo<DependencyDescriptor | null>(() => {
-    if (!preset) {
+    if (!snapshot) {
       return null
     }
 
-    const plugin = pluginCatalogQuery.data?.plugins?.find((candidate) => candidate.uri === preset.plugin_uri)
-    const installedOn = plugin?.installed_on ?? (preset.plugin_uri.startsWith('map2://juce/') ? nodes.map((node) => node.nodeId) : [])
+    const plugin = pluginCatalogQuery.data?.plugins?.find((candidate) => candidate.uri === snapshot.plugin_uri)
+    const installedOn = plugin?.installed_on ?? (snapshot.plugin_uri.startsWith('map2://juce/') ? nodes.map((node) => node.nodeId) : [])
 
     return {
       kind: 'plugin',
-      label: sanitizeRestrictedDisplayText(preset.plugin_name) || preset.plugin_uri,
+      label: sanitizeRestrictedDisplayText(snapshot.plugin_name) || snapshot.plugin_uri,
       availableOn: installedOn,
       canDeploy: false,
     }
-  }, [nodes, pluginCatalogQuery.data?.plugins, preset])
+  }, [nodes, pluginCatalogQuery.data?.plugins, snapshot])
 
   const assetDependency = useMemo<DependencyDescriptor | null>(() => {
-    if (!preset) {
+    if (!snapshot) {
       return null
     }
 
-    if (preset.plugin_uri === 'map2://juce/amp/nam') {
+    if (snapshot.plugin_uri === 'map2://juce/amp/nam') {
       const activeModel = namStatusQuery.data?.activeModel
       if (!activeModel) {
         return null
@@ -246,7 +246,7 @@ export function PresetDeployModal({
       }
     }
 
-    if (preset.plugin_uri === 'map2://juce/ir/cabinet') {
+    if (snapshot.plugin_uri === 'map2://juce/ir/cabinet') {
       const loadedCabinet = irStatusQuery.data?.loaded_cabinet
       if (!loadedCabinet) {
         return null
@@ -261,7 +261,7 @@ export function PresetDeployModal({
       }
     }
 
-    if (preset.plugin_uri === 'map2://juce/ir/reverb') {
+    if (snapshot.plugin_uri === 'map2://juce/ir/reverb') {
       const loadedReverb = irStatusQuery.data?.loaded_reverb
       if (!loadedReverb) {
         return null
@@ -283,7 +283,7 @@ export function PresetDeployModal({
     irStatusQuery.data?.loaded_reverb,
     namLibraryQuery.data,
     namStatusQuery.data?.activeModel,
-    preset,
+    snapshot,
     sourceNodeId,
   ])
 
@@ -292,8 +292,8 @@ export function PresetDeployModal({
 
   const deployMutation = useMutation({
     mutationFn: async (targetNodeIds: string[]) => {
-      if (!preset) {
-        throw new Error('No preset selected')
+      if (!snapshot) {
+        throw new Error('No snapshot selected')
       }
 
       const pluginMissingTargets = targetNodeIds.filter((nodeId) => pluginDependency && !pluginDependency.availableOn.includes(nodeId))
@@ -322,39 +322,39 @@ export function PresetDeployModal({
           })
           if (!assetResponse.ok) {
             const body = await assetResponse.json().catch(() => ({}))
-            throw new Error((body as { detail?: string }).detail || 'Failed to deploy preset dependencies')
+            throw new Error((body as { detail?: string }).detail || 'Failed to deploy snapshot dependencies')
           }
         }
       }
 
-      const presetResponse = await fetch('/api/preset-exchange/deploy', {
+      const snapshotResponse = await fetch('/api/preset-exchange/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content_type: 'preset',
-          preset_id: preset.id,
+          preset_id: snapshot.id,
           source_node_id: sourceNodeId,
           target_node_ids: targetNodeIds,
         }),
       })
-      if (!presetResponse.ok) {
-        const body = await presetResponse.json().catch(() => ({}))
-        throw new Error((body as { detail?: string }).detail || 'Failed to deploy preset')
+      if (!snapshotResponse.ok) {
+        const body = await snapshotResponse.json().catch(() => ({}))
+        throw new Error((body as { detail?: string }).detail || 'Failed to deploy snapshot')
       }
-      return presetResponse.json() as Promise<{ successful?: string[]; failed?: string[] }>
+      return snapshotResponse.json() as Promise<{ successful?: string[]; failed?: string[] }>
     },
     onSuccess: async (payload, targetNodeIds) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['plugin-presets'] }),
-        queryClient.invalidateQueries({ queryKey: ['plugin-presets', 'availability'] }),
-        queryClient.invalidateQueries({ queryKey: ['plugin-presets', 'cluster-catalog'] }),
+        queryClient.invalidateQueries({ queryKey: ['plugin-snapshots'] }),
+        queryClient.invalidateQueries({ queryKey: ['plugin-snapshots', 'availability'] }),
+        queryClient.invalidateQueries({ queryKey: ['plugin-snapshots', 'cluster-catalog'] }),
         queryClient.invalidateQueries({ queryKey: ['cluster', 'library'] }),
       ])
-      pushToast(`Deployed preset to ${payload.successful?.length ?? targetNodeIds.length} node${targetNodeIds.length === 1 ? '' : 's'}`, 'success')
+      pushToast(`Deployed snapshot to ${payload.successful?.length ?? targetNodeIds.length} node${targetNodeIds.length === 1 ? '' : 's'}`, 'success')
       onClose()
     },
     onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Preset deployment failed', 'error')
+      pushToast(error instanceof Error ? error.message : 'Snapshot deployment failed', 'error')
     },
   })
 
@@ -363,7 +363,7 @@ export function PresetDeployModal({
       const pluginReady = pluginDependency ? pluginDependency.availableOn.includes(node.nodeId) : true
       const assetReady = assetDependency ? assetDependency.availableOn.includes(node.nodeId) : true
       const assetWillDeploy = Boolean(assetDependency && !assetReady && assetDependency.canDeploy && selectedTargetIds.has(node.nodeId))
-      const presetReady = availability?.available_on.includes(node.nodeId) ?? false
+      const snapshotReady = availability?.available_on.includes(node.nodeId) ?? false
       const canTargetDeploy = node.isOnline && pluginReady && (!assetDependency || assetReady || assetDependency.canDeploy)
 
       return {
@@ -371,7 +371,7 @@ export function PresetDeployModal({
         pluginReady,
         assetReady,
         assetWillDeploy,
-        presetReady,
+        snapshotReady,
         canTargetDeploy,
       }
     })
@@ -385,7 +385,7 @@ export function PresetDeployModal({
   const canSubmit =
     selectedTargetIds.size > 0 && !dependencyLoading && !dependencyError && !deployMutation.isPending
 
-  if (!open || !preset) {
+  if (!open || !snapshot) {
     return null
   }
 
@@ -393,9 +393,9 @@ export function PresetDeployModal({
     <Modal
       open={open}
       size="lg"
-      modalHeading={`Deploy preset: ${preset.name}`}
+      modalHeading={`Deploy snapshot: ${snapshot.name}`}
       modalLabel={`Source node: ${sourceNodeLabel}`}
-      primaryButtonText={deployMutation.isPending ? 'Deploying...' : 'Deploy preset'}
+      primaryButtonText={deployMutation.isPending ? 'Deploying...' : 'Deploy snapshot'}
       secondaryButtonText="Cancel"
       primaryButtonDisabled={!canSubmit}
       onRequestClose={() => {
@@ -414,31 +414,31 @@ export function PresetDeployModal({
         }
       }}
     >
-      <div className="preset-deploy-modal">
-        <p className="preset-deploy-modal__description">
+      <div className="snapshot-deploy-modal">
+        <p className="snapshot-deploy-modal__description">
           Dependency checks verify plugin availability and optional NAM/IR content before deploying to selected nodes.
         </p>
 
-        <div className="preset-deploy-modal__summary-grid">
-          <article className="preset-deploy-modal__summary-card">
+        <div className="snapshot-deploy-modal__summary-grid">
+          <article className="snapshot-deploy-modal__summary-card">
             <h4>
               <Information size={16} aria-hidden="true" />
-              Preset
+              Snapshot
             </h4>
-            <p>{preset.name}</p>
+            <p>{snapshot.name}</p>
             <span>{availability?.available_on.length ?? 0}/{nodes.length} nodes already have this checksum.</span>
           </article>
 
-          <article className="preset-deploy-modal__summary-card">
+          <article className="snapshot-deploy-modal__summary-card">
             <h4>
               <MachineLearningModel size={16} aria-hidden="true" />
               Plugin dependency
             </h4>
-            <p>{pluginDependency?.label ?? (sanitizeRestrictedDisplayText(preset.plugin_name) || preset.plugin_uri)}</p>
+            <p>{pluginDependency?.label ?? (sanitizeRestrictedDisplayText(snapshot.plugin_name) || snapshot.plugin_uri)}</p>
             <span>Available on {pluginDependency?.availableOn.length ?? 0}/{nodes.length} nodes.</span>
           </article>
 
-          <article className="preset-deploy-modal__summary-card">
+          <article className="snapshot-deploy-modal__summary-card">
             <h4>
               {assetDependency?.kind === 'nam' ? (
                 <MachineLearningModel size={16} aria-hidden="true" />
@@ -447,13 +447,13 @@ export function PresetDeployModal({
               )}
               Content dependency
             </h4>
-            <p>{assetDependency ? assetDependency.label : 'No IR or NAM dependency inferred for this preset.'}</p>
+            <p>{assetDependency ? assetDependency.label : 'No IR or NAM dependency inferred for this snapshot.'}</p>
             <span>
               {assetDependency
                 ? assetDependency.canDeploy
                   ? `Available on ${assetDependency.availableOn.length}/${nodes.length} nodes.`
                   : 'Detected on source node, but not indexed for cluster deployment.'
-                : 'Generic parameter preset.'}
+                : 'Generic parameter snapshot.'}
             </span>
           </article>
         </div>
@@ -468,27 +468,27 @@ export function PresetDeployModal({
           />
         )}
 
-        <TableContainer className="preset-deploy-modal__table-wrap">
+        <TableContainer className="snapshot-deploy-modal__table-wrap">
           <Table size="sm" useZebraStyles={false}>
             <TableHead>
               <TableRow>
                 <TableHeader>Target node</TableHeader>
                 <TableHeader>Plugin</TableHeader>
                 <TableHeader>Content</TableHeader>
-                <TableHeader>Preset</TableHeader>
+                <TableHeader>Snapshot</TableHeader>
                 <TableHeader>Select</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map(({ node, pluginReady, assetReady, assetWillDeploy, presetReady, canTargetDeploy }) => {
+              {rows.map(({ node, pluginReady, assetReady, assetWillDeploy, snapshotReady, canTargetDeploy }) => {
                 const checked = selectedTargetIds.has(node.nodeId)
                 const nodeLabel = nodeLabelById.get(node.nodeId) ?? node.nodeId
 
                 return (
                   <TableRow key={node.nodeId}>
                     <TableCell>
-                      <p className="preset-deploy-modal__node-label">{nodeLabel}</p>
-                      <span className="preset-deploy-modal__node-meta">
+                      <p className="snapshot-deploy-modal__node-label">{nodeLabel}</p>
+                      <span className="snapshot-deploy-modal__node-meta">
                         {node.isOnline ? `Latency ${node.latencyMs ?? 'n/a'} ms` : 'Offline'}
                       </span>
                     </TableCell>
@@ -505,7 +505,7 @@ export function PresetDeployModal({
                               : statusTag('red', 'Blocked')}
                     </TableCell>
                     <TableCell>
-                      {presetReady
+                      {snapshotReady
                         ? statusTag('green', 'Installed')
                         : checked
                           ? statusTag('blue', 'Will deploy')
@@ -513,7 +513,7 @@ export function PresetDeployModal({
                     </TableCell>
                     <TableCell>
                       <Checkbox
-                        id={`preset-deploy-select-${node.nodeId}`}
+                        id={`snapshot-deploy-select-${node.nodeId}`}
                         labelText={`Select ${nodeLabel}`}
                         hideLabel
                         checked={checked}
@@ -550,10 +550,10 @@ export function PresetDeployModal({
           />
         )}
 
-        <div className="preset-deploy-modal__selection-status">
+        <div className="snapshot-deploy-modal__selection-status">
           {statusTag('blue', `${selectedTargetIds.size} target node${selectedTargetIds.size === 1 ? '' : 's'} selected`)}
           {assetDependency && !assetDependency.canDeploy && (
-            <span className="preset-deploy-modal__blocked-hint">
+            <span className="snapshot-deploy-modal__blocked-hint">
               <WarningAlt size={16} aria-hidden="true" />
               Asset dependency cannot be deployed until indexed in library.
             </span>
@@ -574,4 +574,4 @@ export function PresetDeployModal({
   )
 }
 
-export default PresetDeployModal
+export default SnapshotDeployModal

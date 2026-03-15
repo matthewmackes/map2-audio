@@ -330,6 +330,90 @@
   gap: 1rem;
 }
 
+.platform-shell__cluster-tabs {
+  display: grid;
+  gap: 1rem;
+}
+
+.platform-shell__cluster-tabs .cds--tabs__nav {
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, transparent);
+}
+
+.platform-shell__cluster-tabs .cds--tab-content,
+.platform-shell__cluster-tabs .cds--tab-panel {
+  padding-inline: 0;
+}
+
+.platform-shell__cluster-tab-panel {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.platform-shell__cluster-tab-panel--multi-system {
+  overflow: hidden;
+}
+
+.platform-shell__nodes-header,
+.platform-shell__detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.platform-shell__nodes-header h3,
+.platform-shell__detail-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.platform-shell__nodes-header p,
+.platform-shell__detail-head p,
+.platform-shell__detail-empty p,
+.platform-shell__detail-empty-copy {
+  margin: 0.35rem 0 0;
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__nodes-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.platform-shell__nodes-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.platform-shell__nodes-toolbar .node-context-picker {
+  min-width: min(28rem, 100%);
+}
+
+.platform-shell__nodes-skeleton {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, transparent);
+}
+
+.platform-shell__nodes-skeleton-grid,
+.platform-shell__midi-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.platform-shell__nodes-skeleton-card {
+  min-height: 9rem;
+}
+
 .platform-shell__table-toolbar {
   gap: 0.6rem;
 }
@@ -350,6 +434,53 @@
 
 .platform-shell__table-alert.is-clear {
   color: var(--cds-support-success);
+}
+
+.platform-shell__table-row.is-interactive {
+  cursor: pointer;
+}
+
+.platform-shell__table-row.is-interactive:hover,
+.platform-shell__table-row.is-interactive:focus-visible,
+.platform-shell__table-row.is-selected {
+  background: color-mix(in srgb, var(--cds-link-primary) 10%, var(--cds-layer-01));
+  outline: none;
+}
+
+.platform-shell__midi-node-detail,
+.platform-shell__detail-empty {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, transparent);
+}
+
+.platform-shell__midi-detail-card {
+  min-height: 16rem;
+}
+
+.platform-shell__midi-detail-card--wide {
+  min-height: 20rem;
+}
+
+.platform-shell__detail-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.platform-shell__detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-02) 94%, transparent);
+}
+
+.platform-shell__detail-row span {
+  color: var(--cds-text-secondary);
 }
 
 @media (max-width: 960px) {
@@ -385,6 +516,12 @@
 
   .platform-shell__plane-surface {
     min-height: 13.25rem;
+  }
+
+  .platform-shell__nodes-toolbar,
+  .platform-shell__detail-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

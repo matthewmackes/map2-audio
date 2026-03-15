@@ -6,13 +6,14 @@
   "type": "module",
   "scripts": {
     "prebuild": "python3 ../scripts/generate_platform_version.py",
-    "build": "tsc -b && vite build",
+    "build": "python3 ../scripts/build_web_dist_atomic.py",
     "deploy": "../scripts/build/deploy",
     "deploy:restart": "../scripts/build/deploy --skip-build",
     "deploy:status": "../scripts/build/deploy --status",
     "lint": "eslint .",
-    "preview": "vite preview --host 0.0.0.0 --port 3000",
-    "start:prod": "npm run build && npm run preview",
+    "preview": "node ../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000",
+    "serve": "node ../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000",
+    "start:prod": "npm run build && npm run serve",
     "typecheck": "tsc --noEmit",
     "test": "node ../node_modules/jest/bin/jest.js --config ../package.json",
     "version:sync": "python3 ../scripts/generate_platform_version.py"

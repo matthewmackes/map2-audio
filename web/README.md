@@ -9,7 +9,7 @@ The MAP2 web UI is production-only at `http://localhost:3000`.
 npm run build
 
 # Serve the full production UI on port 3000
-npm run preview
+npm run serve
 
 # Combined build + production start
 npm run start:prod
@@ -19,6 +19,9 @@ npm run typecheck
 npm run test -- --runInBand
 npm run lint
 ```
+
+`npm run build` now publishes `dist/` atomically so the live port-3000 server does not briefly serve an `index.html` that points at a not-yet-written hashed bundle.
+`npm run serve` runs the dedicated production server for `web/dist`, with backend proxying to `8080` and strict `404` responses for missing static assets.
 
 ## Port Contract
 

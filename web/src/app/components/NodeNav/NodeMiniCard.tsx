@@ -3,9 +3,11 @@ import './NodeMiniCard.css'
 import { Button, Link, Tag } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 
+import { buildPlatformHref } from '../../platform/model'
 import { useViewedNodeStore } from '../../stores/viewedNodeStore'
 import type { NodeSummary } from '../../types/node'
 import {
+  NODE_PAGE_KEYS,
   formatNodeDisplayName,
   getNodePresenceAccent,
   getNodeRoleLabel,
@@ -23,6 +25,7 @@ export function NodeMiniCard({ node, pageKey, onClose }: NodeMiniCardProps) {
   const navigate = useNavigate()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
   const accentColor = getNodePresenceAccent(getNodePresence(node))
+  const singleNodeHref = buildPlatformHref('single-node')
 
   return (
     <div className="node-mini-card" style={{ borderInlineStartColor: accentColor }}>
@@ -49,10 +52,12 @@ export function NodeMiniCard({ node, pageKey, onClose }: NodeMiniCardProps) {
           Set as page node
         </Button>
         <Link
-          href={`/nodes?selectedNodeId=${encodeURIComponent(node.node_id)}`}
+          href={singleNodeHref}
           onClick={(event) => {
             event.preventDefault()
-            navigate(`/nodes?selectedNodeId=${encodeURIComponent(node.node_id)}`)
+            setViewedNode(pageKey, node.node_id)
+            setViewedNode(NODE_PAGE_KEYS.platform, node.node_id)
+            navigate(singleNodeHref)
             onClose?.()
           }}
         >
@@ -64,4 +69,3 @@ export function NodeMiniCard({ node, pageKey, onClose }: NodeMiniCardProps) {
 }
 
 export type { NodeMiniCardProps }
-

@@ -19,11 +19,11 @@ const platformBuildChannel = digitsOnly(platformVersionJson.build_channel).slice
 const platformBuildTimestamp = String(platformVersionJson.build_timestamp ?? '')
 
 // ============================================================================
-// MAP2 Audio Platform - Vite Configuration
+// MAP2 Audio Platform - Vite Build Configuration
 // ============================================================================
 //
-// MAP2 runs the web UI only as a production preview on port 3000.
-// There is no supported alternate frontend port or alternate browser-serving workflow.
+// MAP2 builds the frontend bundle here, then serves `web/dist` through the
+// dedicated production server in `scripts/serve_web_dist.mjs` on port 3000.
 // ============================================================================
 // https://vite.dev/config/
 export default defineConfig({
@@ -44,11 +44,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     outDir: 'dist',
     sourcemap: true,
-    // Keep prior hashed bundles during rebuilds so active clients don't 404
-    // when /index.html or in-memory tabs still reference previous asset names.
-    // This avoids transient "Loading failed for module index-*.js" outages on
-    // the long-running port-3000 preview server while new builds are written.
-    emptyOutDir: false,
+    // Supported production builds publish atomically via
+    // scripts/build_web_dist_atomic.py. That helper builds into a staging
+    // directory, merges prior hashed assets, and swaps the finished bundle
+    // into place, so Vite can safely clear the staging outDir each run.
+    emptyOutDir: true,
     // NOTE: manualChunks was removed because splitting React-dependent
     // libraries (recharts, @emotion, @mui, reactflow) into separate
     // chunks from React itself causes circular initialization errors
@@ -56,45 +56,4 @@ export default defineConfig({
     // Vite's automatic chunking handles dependency ordering correctly.
   },
   plugins: [react(), svgr()],
-  preview: {
-    port: 3000,
-    host: '0.0.0.0',
-    strictPort: true,
-    proxy: {
-      // Proxy all API requests to FastAPI backend
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      // Proxy folder endpoints to FastAPI backend
-      '/folders': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      // WebSocket proxy for real-time updates
-      '/ws': {
-        target: 'ws://localhost:8080',
-        ws: true,
-        changeOrigin: true,
-      },
-      // PiPedal-compatible WebSocket endpoint
-      '/pipedal': {
-        target: 'ws://localhost:8080',
-        ws: true,
-        changeOrigin: true,
-      },
-      // Legacy resources endpoint
-      '/resources': {
-        target: 'http://localhost:8080',
-        changeOrigin: false,
-      },
-      // Static var files (PiPedal compatibility)
-      '/var': {
-        target: 'http://localhost:8080',
-        changeOrigin: false,
-      },
-    }
-  },
 })

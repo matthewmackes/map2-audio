@@ -22,7 +22,9 @@ import {
   type MidiClusterNode,
   wwwApi,
 } from '../../map2/api'
+import { useViewedNode } from '../stores/viewedNodeStore'
 import type { NodeSummary } from '../types/node'
+import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import type { AccessLog, APIEndpoint, NetworkStatus, WebSocketStats, WWWStatus } from '../../map2/types'
 import type {
   PlatformAlert,
@@ -293,6 +295,10 @@ export function usePlatformShellData(): PlatformShellData {
 
   const topology = topologyQuery.data
   const localNode = topology?.nodes.find((node) => node.is_local) ?? topology?.nodes[0]
+  const platformViewedNodeId = useViewedNode(NODE_PAGE_KEYS.platform, localNode?.node_id ?? 'local')
+  const platformViewedNode = topology?.nodes.find((node) => node.node_id === platformViewedNodeId) ?? localNode
+  const platformNode = platformViewedNode ?? localNode
+  const platformNodeIsRemote = Boolean(platformNode && localNode && platformNode.node_id !== localNode.node_id)
   const onlineNodes = topology?.nodes.filter((node) => node.status !== 'offline').length ?? 0
   const totalNodes = topology?.nodes.length ?? 0
   const criticalNodes = topology?.nodes.filter((node) => node.status === 'critical' || node.status === 'offline').length ?? 0
@@ -383,21 +389,21 @@ export function usePlatformShellData(): PlatformShellData {
       )
     }
 
-    if (pipewire.hasXruns) {
+    if ((platformNode?.xrun_count ?? 0) > 0 || (!platformNodeIsRemote && pipewire.hasXruns)) {
       pushNotification(
         nodeNotifications,
         'node-xruns',
         'warning',
         'XRuns detected',
-        `${pipewire.xruns} xrun${pipewire.xruns === 1 ? '' : 's'} observed on the local node.`,
+        `${platformNode?.xrun_count ?? pipewire.xruns} xrun${(platformNode?.xrun_count ?? pipewire.xruns) === 1 ? '' : 's'} observed on the ${platformNodeIsRemote ? 'selected node' : 'local node'}.`,
       )
     }
-    if (!localNode?.services.backend || !localNode?.services.juce_engine || !localNode?.services.pipewire) {
+    if (!platformNode?.services.backend || !platformNode?.services.juce_engine || !platformNode?.services.pipewire) {
       pushNotification(
         nodeNotifications,
         'node-services',
         'critical',
-        'Local services are degraded',
+        `${platformNodeIsRemote ? 'Selected' : 'Local'} services are degraded`,
         'Backend, JUCE engine, and PipeWire should all be online for steady operation.',
       )
     }
@@ -507,7 +513,11 @@ export function usePlatformShellData(): PlatformShellData {
       warningNodes > 0 ? 'warning' : 'healthy',
       criticalNodes > 0 ? 'critical' : 'healthy',
     )
-    const nodeHealth = worstHealth(statusToHealth(localNode), stringToHealth(pipewire.overallStatus), cpu.hasXruns ? 'warning' : 'healthy')
+    const nodeHealth = worstHealth(
+      statusToHealth(platformNode),
+      platformNodeIsRemote ? 'healthy' : stringToHealth(pipewire.overallStatus),
+      (platformNode?.xrun_count ?? 0) > 0 || cpu.hasXruns ? 'warning' : 'healthy',
+    )
     const avbHealth = worstHealth(
       stringToHealth(avbStatusQuery.data?.state ?? (avbStatusQuery.data?.available ? 'operational' : 'offline')),
       avbStreamErrors > 0 ? 'critical' : 'healthy',
@@ -639,36 +649,41 @@ export function usePlatformShellData(): PlatformShellData {
     } satisfies PlatformLayerData
 
     const localInterfaces = (networkQuery.data?.ethernet.length ?? 0) + (networkQuery.data?.wifi.length ?? 0)
-    const localStreamCount = (topology?.audio_edges ?? []).filter((edge) => edge.source_node_id === localNode?.node_id || edge.dest_node_id === localNode?.node_id).length
+    const platformNodeStreamCount = (topology?.audio_edges ?? []).filter((edge) => edge.source_node_id === platformNode?.node_id || edge.dest_node_id === platformNode?.node_id).length
+    const platformNodeDisplayName = platformNode?.display_label ? `${platformNode.hostname} (${platformNode.display_label})` : (platformNode?.hostname ?? 'pending')
 
     const nodeLayer = {
       ...PLATFORM_LAYER_META[1],
       health: nodeHealth,
-      activityLevel: clampPercent((cpu.metrics.totalCpuPercent * 0.7) + (localStreamCount * 8)),
+      activityLevel: clampPercent(((platformNode?.cpu_percent ?? cpu.metrics.totalCpuPercent) * 0.7) + (platformNodeStreamCount * 8)),
       alertCount: nodeNotifications.length,
-      isLoading: (identityQuery.isLoading || topologyQuery.isLoading) && !localNode,
+      isLoading: (identityQuery.isLoading || topologyQuery.isLoading) && !platformNode,
       error: topologyQuery.error instanceof Error ? topologyQuery.error.message : null,
       summaryMetrics: [
         {
           id: 'node-identity',
-          label: 'Local node',
-          value: identityQuery.data?.display_label ? `${identityQuery.data.hostname} (${identityQuery.data.display_label})` : (identityQuery.data?.hostname ?? localNode?.hostname ?? 'pending'),
-          helper: identityQuery.data?.node_id ?? localNode?.node_id ?? 'Waiting for identity',
+          label: platformNodeIsRemote ? 'Viewed node' : 'Local node',
+          value: platformNodeDisplayName,
+          helper: platformNode?.node_id ?? 'Waiting for identity',
           tone: nodeHealth,
         },
         {
           id: 'node-cpu',
           label: 'CPU',
-          value: formatPercent(cpu.metrics.totalCpuPercent, 1),
-          helper: `Headroom ${formatPercent(cpu.metrics.headroomPercent, 0)}`,
-          tone: cpu.status === 'critical' ? 'critical' : cpu.status === 'warning' ? 'warning' : 'healthy',
+          value: formatPercent(platformNode?.cpu_percent ?? cpu.metrics.totalCpuPercent, 1),
+          helper: platformNodeIsRemote ? 'Remote node telemetry from cluster topology' : `Headroom ${formatPercent(cpu.metrics.headroomPercent, 0)}`,
+          tone: platformNode?.status === 'critical' || cpu.status === 'critical'
+            ? 'critical'
+            : platformNode?.status === 'warn' || cpu.status === 'warning'
+              ? 'warning'
+              : 'healthy',
         },
         {
           id: 'node-latency',
           label: 'Latency',
-          value: formatLatencyMs(pipewire.totalLatencyMs),
-          helper: `XRuns ${pipewire.xruns}`,
-          tone: pipewire.hasXruns ? 'warning' : 'healthy',
+          value: formatLatencyMs(platformNode?.audio_latency_ms ?? pipewire.totalLatencyMs),
+          helper: `XRuns ${platformNode?.xrun_count ?? pipewire.xruns}`,
+          tone: (platformNode?.xrun_count ?? pipewire.xruns) > 0 ? 'warning' : 'healthy',
         },
       ],
       gridItems: [
@@ -676,7 +691,7 @@ export function usePlatformShellData(): PlatformShellData {
           id: 'node-services',
           title: 'Node Services',
           eyebrow: 'Single Node',
-          metric: `${Number(Boolean(localNode?.services.backend)) + Number(Boolean(localNode?.services.juce_engine)) + Number(Boolean(localNode?.services.pipewire))}/3 online`,
+          metric: `${Number(Boolean(platformNode?.services.backend)) + Number(Boolean(platformNode?.services.juce_engine)) + Number(Boolean(platformNode?.services.pipewire))}/3 online`,
           helper: 'Backend, JUCE engine, PipeWire',
           status: nodeHealth,
           alertCount: nodeNotifications.length,
@@ -685,17 +700,21 @@ export function usePlatformShellData(): PlatformShellData {
           id: 'node-interfaces',
           title: 'Node Interfaces',
           eyebrow: 'Network',
-          metric: String(localInterfaces),
-          helper: `${networkQuery.data?.hostname ?? localNode?.hostname ?? 'pending'} · ${networkQuery.data?.internet_connected ? 'Internet up' : 'Isolated'}`,
-          status: localInterfaces > 0 ? 'healthy' : 'warning',
+          metric: platformNodeIsRemote ? 'Remote' : String(localInterfaces),
+          helper: platformNodeIsRemote
+            ? `${platformNode?.hostname ?? 'pending'} · interface inventory only available on the local host`
+            : `${networkQuery.data?.hostname ?? platformNode?.hostname ?? 'pending'} · ${networkQuery.data?.internet_connected ? 'Internet up' : 'Isolated'}`,
+          status: platformNodeIsRemote || localInterfaces > 0 ? 'healthy' : 'warning',
         },
         {
           id: 'node-streams',
           title: 'Node Streams',
           eyebrow: 'Audio',
-          metric: String(localStreamCount + pipewire.streams.length),
-          helper: `${localStreamCount} cluster edges · ${pipewire.streams.length} PipeWire streams`,
-          status: pipewire.hasXruns ? 'warning' : 'healthy',
+          metric: String(platformNodeStreamCount + (platformNodeIsRemote ? 0 : pipewire.streams.length)),
+          helper: platformNodeIsRemote
+            ? `${platformNodeStreamCount} cluster edges visible for this remote node`
+            : `${platformNodeStreamCount} cluster edges · ${pipewire.streams.length} PipeWire streams`,
+          status: (platformNode?.xrun_count ?? 0) > 0 || pipewire.hasXruns ? 'warning' : 'healthy',
         },
       ],
       tableColumns: [
@@ -709,30 +728,34 @@ export function usePlatformShellData(): PlatformShellData {
         {
           id: 'backend',
           name: 'Backend API',
-          status: localNode?.services.backend ? 'healthy' : 'critical',
-          metric1: formatPercent(cpu.metrics.totalCpuPercent, 0),
-          metric2: formatPercent(localNode?.memory_percent, 0),
-          alerts: localNode?.services.backend ? 'Clear' : 'Down',
+          status: platformNode?.services.backend ? 'healthy' : 'critical',
+          metric1: formatPercent(platformNode?.cpu_percent ?? cpu.metrics.totalCpuPercent, 0),
+          metric2: formatPercent(platformNode?.memory_percent, 0),
+          alerts: platformNode?.services.backend ? 'Clear' : 'Down',
         },
         {
           id: 'juce',
           name: 'JUCE Engine',
-          status: localNode?.services.juce_engine ? (cpu.hasXruns ? 'warning' : 'healthy') : 'critical',
-          metric1: formatPercent(cpu.metrics.audioCallbackPercent, 0),
-          metric2: formatLatencyMs(pipewire.totalLatencyMs),
-          alerts: cpu.hasXruns ? `${pipewire.xruns} xruns` : 'Clear',
+          status: platformNode?.services.juce_engine ? ((platformNode?.xrun_count ?? pipewire.xruns) > 0 ? 'warning' : 'healthy') : 'critical',
+          metric1: formatPercent(platformNode?.cpu_percent ?? cpu.metrics.audioCallbackPercent, 0),
+          metric2: formatLatencyMs(platformNode?.audio_latency_ms ?? pipewire.totalLatencyMs),
+          alerts: (platformNode?.xrun_count ?? pipewire.xruns) > 0 ? `${platformNode?.xrun_count ?? pipewire.xruns} xruns` : 'Clear',
         },
         {
           id: 'pipewire',
           name: 'PipeWire',
-          status: localNode?.services.pipewire ? stringToHealth(pipewire.overallStatus) : 'critical',
-          metric1: formatNumber(pipewire.clientCount),
-          metric2: formatNumber(localInterfaces),
-          alerts: pipewire.alerts.length > 0 ? `${pipewire.alerts.length} alert${pipewire.alerts.length === 1 ? '' : 's'}` : 'Clear',
+          status: platformNode?.services.pipewire ? (platformNodeIsRemote ? 'healthy' : stringToHealth(pipewire.overallStatus)) : 'critical',
+          metric1: platformNodeIsRemote ? formatPercent(platformNode?.memory_percent, 0) : formatNumber(pipewire.clientCount),
+          metric2: platformNodeIsRemote ? formatLastSeen(platformNode?.last_seen) : formatNumber(localInterfaces),
+          alerts: platformNodeIsRemote
+            ? (platformNode?.services.pipewire ? 'Cluster topology healthy' : 'Unavailable')
+            : pipewire.alerts.length > 0 ? `${pipewire.alerts.length} alert${pipewire.alerts.length === 1 ? '' : 's'}` : 'Clear',
         },
       ],
       tableTitle: 'Single-node services',
-      tableDescription: 'Operational service posture for the local node, aligned to CPU, memory, and alert pressure.',
+      tableDescription: platformNodeIsRemote
+        ? 'Operational service posture for the selected remote node using cluster topology telemetry.'
+        : 'Operational service posture for the local node, aligned to CPU, memory, and alert pressure.',
       notifications: nodeNotifications,
     } satisfies PlatformLayerData
 

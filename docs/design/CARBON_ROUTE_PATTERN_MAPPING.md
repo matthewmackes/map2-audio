@@ -41,12 +41,11 @@ Scope: Map each active app route to a nearest Carbon pattern/template and concre
 | `/pipewire` | `web/src/app/pages/PipeWirePage.tsx` | Runtime status + controls | `DataTable`, `InlineNotification`, `Modal`, `CodeSnippet` pattern |
 | `/welcome` | `web/src/app/pages/WelcomePage.tsx` | Legacy redirect alias to the canonical platform guide | `Navigate` |
 | `/lcd` | `web/src/app/pages/LCDPage.tsx` | Device status workspace | `Tile`, `DataTable`, `InlineLoading`, `Tag` |
-| `/cluster-dashboard` | `web/src/app/pages/ClusterDashboardPage.tsx` | Multi-panel operations dashboard | `Tabs`, `DataTable`, `Tag`, `Modal`, `InlineNotification` |
-| `/midi-cluster` | `web/src/app/pages/MidiClusterPage.tsx` | Cluster matrix and diagnostics | `DataTable`, `Tabs`, `Tag`, `Tooltip` |
-| `/midi-cluster/node/:nodeId` | `web/src/app/pages/MidiClusterNodePage.tsx` | Node detail page | `StructuredList`, `Tile`, `Tag`, `InlineNotification` |
+| `/platform?layer=cluster-dashboard` | `web/src/app/pages/PlatformShellPage.tsx` | Cluster Dashboard workspace inside the unified platform shell | `DataTable`, `Tag`, `InlineNotification`, `ClickableTile` |
+| `/platform?layer=midi-cluster` | `web/src/app/pages/PlatformShellPage.tsx` | MIDI cluster matrix plus inline node detail | `DataTable`, `Tabs`, `Tag`, `InlineNotification`, `Tile` |
+| `/platform?layer=single-node` | `web/src/app/pages/PlatformShellPage.tsx` | Single-node detail workspace reached from cluster node selection | `DataTable`, `Tag`, `InlineNotification`, `ClickableTile` |
 | `/api-observatory` | `web/src/app/pages/ApiObservatoryPage.tsx` | Developer tool workspace | `Tabs`, `DataTable`, `Search`, `CodeSnippet`, `Modal`, `Tag` |
 | `/drums` | `web/src/app/pages/DrumsPage.tsx` | Instrument management panel | `DataTable`, `FileUploader`, `Tabs`, `Modal` |
-| `/multi-system` | `web/src/app/pages/MultiSystemDashboardPage.tsx` | Comparative dashboard | `Grid`, `DataTable`, `Tag`, `ProgressBar` |
 | `/avb-routing` | `web/src/app/pages/AvbRoutingPage.tsx` | Routing matrix + inspector workspace | `DataTable`, `Tabs`, `Tag`, `InlineNotification`, `Search` |
 | `/expression` | `web/src/app/pages/ExpressionPage.tsx` | Parameter mapping and calibration form | `FormGroup`, `Slider`, `NumberInput`, `DataTable`, `Modal` |
 | `/tesira/*` | `web/src/app/pages/TesiraPage.tsx` | Device-fleet dashboard with nested device tabs | `Tabs`, `DataTable`, `Tile`, `Tag`, `Modal` |

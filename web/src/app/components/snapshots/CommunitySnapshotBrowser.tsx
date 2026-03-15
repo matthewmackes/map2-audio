@@ -1,12 +1,12 @@
 /**
- * CommunityPresetBrowser - Browse, download, and rate community presets
+ * CommunitySnapshotBrowser - Browse, download, and rate community snapshots
  *
  * Features:
  * - Search and filter by plugin, category, tags
  * - Sort by downloads, rating, or newest
- * - Rate presets (1-5 stars)
- * - Download presets to local library
- * - Upload new presets to community
+ * - Rate snapshots (1-5 stars)
+ * - Download snapshots to local library
+ * - Upload new snapshots to community
  */
 
 import { useState, useCallback, useEffect } from 'react'
@@ -25,7 +25,7 @@ import {
 } from '@phosphor-icons/react'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 
-interface CommunityPreset {
+interface CommunitySnapshot {
   uuid: string
   name: string
   plugin_uri: string
@@ -39,20 +39,20 @@ interface CommunityPreset {
   created_at: string
 }
 
-interface CommunityPresetBrowserProps {
+interface CommunitySnapshotBrowserProps {
   pluginUri?: string
-  onPresetDownloaded?: (parameters: Record<string, number>) => void
+  onSnapshotDownloaded?: (parameters: Record<string, number>) => void
   onUploadClick?: () => void
 }
 
 type SortOption = 'downloads' | 'rating' | 'newest'
 
-export function CommunityPresetBrowser({
+export function CommunitySnapshotBrowser({
   pluginUri,
-  onPresetDownloaded,
+  onSnapshotDownloaded,
   onUploadClick,
-}: CommunityPresetBrowserProps) {
-  const [presets, setPresets] = useState<CommunityPreset[]>([])
+}: CommunitySnapshotBrowserProps) {
+  const [snapshots, setSnapshots] = useState<CommunitySnapshot[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -69,8 +69,8 @@ export function CommunityPresetBrowser({
   // Categories
   const [categories, setCategories] = useState<{ name: string; count: number }[]>([])
 
-  // Fetch presets
-  const fetchPresets = useCallback(async () => {
+  // Fetch snapshots
+  const fetchSnapshots = useCallback(async () => {
     setLoading(true)
     setError(null)
 
@@ -89,13 +89,13 @@ export function CommunityPresetBrowser({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to load presets')
+        throw new Error(data.detail || 'Failed to load snapshots')
       }
 
-      setPresets(data.presets)
+      setSnapshots(data.presets)
       setTotal(data.total)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load presets')
+      setError(err instanceof Error ? err.message : 'Failed to load snapshots')
     } finally {
       setLoading(false)
     }
@@ -113,18 +113,18 @@ export function CommunityPresetBrowser({
   }, [])
 
   useEffect(() => {
-    fetchPresets()
-  }, [fetchPresets])
+    fetchSnapshots()
+  }, [fetchSnapshots])
 
   useEffect(() => {
     fetchCategories()
   }, [fetchCategories])
 
-  // Download preset
+  // Download snapshot
   const handleDownload = useCallback(
-    async (preset: CommunityPreset) => {
+    async (snapshot: CommunitySnapshot) => {
       try {
-        const response = await fetch(`/api/preset-exchange/community/${preset.uuid}/download`, {
+        const response = await fetch(`/api/preset-exchange/community/${snapshot.uuid}/download`, {
           method: 'POST',
         })
         const data = await response.json()
@@ -133,32 +133,32 @@ export function CommunityPresetBrowser({
           throw new Error(data.detail || 'Download failed')
         }
 
-        // Update local preset count
-        setPresets((prev) =>
-          prev.map((p) => (p.uuid === preset.uuid ? { ...p, downloads: p.downloads + 1 } : p))
+        // Update local snapshot count
+        setSnapshots((prev) =>
+          prev.map((entry) => (entry.uuid === snapshot.uuid ? { ...entry, downloads: entry.downloads + 1 } : entry))
         )
 
-        if (onPresetDownloaded && data.parameters) {
-          onPresetDownloaded(data.parameters)
+        if (onSnapshotDownloaded && data.parameters) {
+          onSnapshotDownloaded(data.parameters)
         }
 
         // Show success toast (simplified)
-        alert(`Downloaded "${preset.name}" successfully!`)
+        alert(`Downloaded "${snapshot.name}" successfully!`)
       } catch (err) {
         alert(`Download failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     },
-    [onPresetDownloaded]
+    [onSnapshotDownloaded]
   )
 
-  // Rate preset
-  const handleRate = useCallback(async (preset: CommunityPreset, rating: number) => {
+  // Rate snapshot
+  const handleRate = useCallback(async (snapshot: CommunitySnapshot, rating: number) => {
     try {
       // Generate device fingerprint
       const fingerprint = await generateFingerprint()
 
       const response = await fetch(
-        `/api/preset-exchange/community/${preset.uuid}/rate?rating=${rating}&fingerprint=${fingerprint}`,
+        `/api/preset-exchange/community/${snapshot.uuid}/rate?rating=${rating}&fingerprint=${fingerprint}`,
         { method: 'POST' }
       )
       const data = await response.json()
@@ -168,11 +168,11 @@ export function CommunityPresetBrowser({
       }
 
       // Update local rating
-      setPresets((prev) =>
-        prev.map((p) =>
-          p.uuid === preset.uuid
-            ? { ...p, rating: data.new_rating, rating_count: data.rating_count }
-            : p
+      setSnapshots((prev) =>
+        prev.map((entry) =>
+          entry.uuid === snapshot.uuid
+            ? { ...entry, rating: data.new_rating, rating_count: data.rating_count }
+            : entry
         )
       )
     } catch (err) {
@@ -193,10 +193,10 @@ export function CommunityPresetBrowser({
           marginBottom: '16px',
         }}
       >
-        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Community Presets</h2>
+        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Community Snapshots</h2>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
-            onClick={fetchPresets}
+            onClick={fetchSnapshots}
             disabled={loading}
             style={{
               padding: '8px 12px',
@@ -260,7 +260,7 @@ export function CommunityPresetBrowser({
           />
           <input
             type="text"
-            placeholder="Search presets..."
+            placeholder="Search snapshots..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -357,12 +357,12 @@ export function CommunityPresetBrowser({
           }}
         >
           <SpinnerGap size={24} weight="duotone" className="animate-spin" />
-          <span style={{ marginLeft: '12px' }}>Loading presets...</span>
+          <span style={{ marginLeft: '12px' }}>Loading snapshots...</span>
         </div>
       )}
 
-      {/* Preset Grid */}
-      {!loading && presets.length > 0 && (
+      {/* Snapshot Grid */}
+      {!loading && snapshots.length > 0 && (
         <div
           style={{
             display: 'grid',
@@ -370,19 +370,19 @@ export function CommunityPresetBrowser({
             gap: '16px',
           }}
         >
-          {presets.map((preset) => (
-            <PresetCard
-              key={preset.uuid}
-              preset={preset}
-              onDownload={() => handleDownload(preset)}
-              onRate={(rating) => handleRate(preset, rating)}
+          {snapshots.map((snapshot) => (
+            <SnapshotCard
+              key={snapshot.uuid}
+              snapshot={snapshot}
+              onDownload={() => handleDownload(snapshot)}
+              onRate={(rating) => handleRate(snapshot, rating)}
             />
           ))}
         </div>
       )}
 
       {/* Empty State */}
-      {!loading && presets.length === 0 && (
+      {!loading && snapshots.length === 0 && (
         <div
           style={{
             textAlign: 'center',
@@ -390,7 +390,7 @@ export function CommunityPresetBrowser({
             color: 'var(--text-secondary, #888)',
           }}
         >
-          <p>No presets found.</p>
+          <p>No snapshots found.</p>
           {search && <p>Try adjusting your search or filters.</p>}
         </div>
       )}
@@ -451,13 +451,13 @@ export function CommunityPresetBrowser({
   )
 }
 
-// Preset Card Component
-function PresetCard({
-  preset,
+// Snapshot Card Component
+function SnapshotCard({
+  snapshot,
   onDownload,
   onRate,
 }: {
-  preset: CommunityPreset
+  snapshot: CommunitySnapshot
   onDownload: () => void
   onRate: (rating: number) => void
 }) {
@@ -484,20 +484,20 @@ function PresetCard({
             textOverflow: 'ellipsis',
           }}
         >
-          {preset.name}
+          {snapshot.name}
         </h3>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #888)' }}>
-          by {sanitizeRestrictedDisplayText(preset.author)}
+          by {sanitizeRestrictedDisplayText(snapshot.author)}
         </div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary, #666)' }}>
-          for {sanitizeRestrictedDisplayText(preset.plugin_name) || 'Processor'}
+          for {sanitizeRestrictedDisplayText(snapshot.plugin_name) || 'Processor'}
         </div>
       </div>
 
       {/* Tags */}
-      {preset.tags.length > 0 && (
+      {snapshot.tags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
-          {preset.tags.slice(0, 3).map((tag) => (
+          {snapshot.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
               style={{
@@ -527,7 +527,7 @@ function PresetCard({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <CloudArrowDown size={14} weight="duotone" />
-          {preset.downloads}
+          {snapshot.downloads}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           {/* Rating stars */}
@@ -535,14 +535,14 @@ function PresetCard({
             <Star
               key={star}
               size={14}
-              weight={star <= (hoverRating || preset.rating) ? 'fill' : 'duotone'}
-              style={{ cursor: 'pointer', color: star <= (hoverRating || preset.rating) ? '#fbbf24' : '#666' }}
+              weight={star <= (hoverRating || snapshot.rating) ? 'fill' : 'duotone'}
+              style={{ cursor: 'pointer', color: star <= (hoverRating || snapshot.rating) ? '#fbbf24' : '#666' }}
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => onRate(star)}
             />
           ))}
-          <span style={{ marginLeft: '4px' }}>({preset.rating_count})</span>
+          <span style={{ marginLeft: '4px' }}>({snapshot.rating_count})</span>
         </div>
       </div>
 
@@ -588,4 +588,4 @@ async function generateFingerprint(): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-export default CommunityPresetBrowser
+export default CommunitySnapshotBrowser

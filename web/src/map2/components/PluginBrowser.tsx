@@ -57,8 +57,8 @@ import {
   CheckCircle as InstalledIcon,
   Error as ErrorIcon,
 } from '@mui/icons-material';
-import { pluginsApi, presetsApi, chainsApi, pluginPresetsApi } from '../api';
-import type { Plugin, Preset, PresetCategory } from '../types';
+import { pluginsApi, snapshotsApi, chainsApi, pluginPresetsApi } from '../api';
+import type { Plugin, Snapshot, SnapshotCategory } from '../types';
 import PluginPresetManager from './PluginPresetManager';
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../displayNames';
 
@@ -89,15 +89,15 @@ export default function PluginBrowser() {
   const [isCached, setIsCached] = useState(false);
 
   // Preset state
-  const [presets, setPresets] = useState<Preset[]>([]);
-  const [presetCategories, setPresetCategories] = useState<PresetCategory[]>([]);
+  const [presets, setPresets] = useState<Snapshot[]>([]);
+  const [presetCategories, setPresetCategories] = useState<SnapshotCategory[]>([]);
   const [presetTags, setPresetTags] = useState<string[]>([]);
   const [presetSearchQuery, setPresetSearchQuery] = useState('');
   const [selectedPresetCategory, setSelectedPresetCategory] = useState<string>('all');
   const [selectedPresetTag, setSelectedPresetTag] = useState<string>('all');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<Snapshot | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -246,17 +246,17 @@ export default function PluginBrowser() {
   const loadPresets = useCallback(async () => {
     try {
       const [presetsRes, categoriesRes, tagsRes] = await Promise.all([
-        presetsApi.list({
+        snapshotsApi.list({
           category: selectedPresetCategory !== 'all' ? selectedPresetCategory : undefined,
           tags: selectedPresetTag !== 'all' ? selectedPresetTag : undefined,
           favorites_only: favoritesOnly || undefined,
           search: presetSearchQuery || undefined,
         }),
-        presetsApi.getCategories(),
-        presetsApi.getTags(),
+        snapshotsApi.getCategories(),
+        snapshotsApi.getTags(),
       ]);
 
-      setPresets(presetsRes.presets || []);
+      setPresets(presetsRes.snapshots || []);
       setPresetCategories(categoriesRes.categories || []);
       setPresetTags(tagsRes.tags || []);
     } catch (err) {
@@ -271,7 +271,7 @@ export default function PluginBrowser() {
   // Preset handlers
   const handleToggleFavorite = async (presetId: number) => {
     try {
-      await presetsApi.toggleFavorite(presetId);
+      await snapshotsApi.toggleFavorite(presetId);
       await loadPresets();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle favorite');
@@ -291,7 +291,7 @@ export default function PluginBrowser() {
     if (!confirm('Are you sure you want to delete this preset?')) return;
 
     try {
-      await presetsApi.delete(presetId);
+      await snapshotsApi.delete(presetId);
       await loadPresets();
       setMenuAnchor(null);
     } catch (err) {
@@ -299,7 +299,7 @@ export default function PluginBrowser() {
     }
   };
 
-  const handleOpenEdit = (preset: Preset) => {
+  const handleOpenEdit = (preset: Snapshot) => {
     setSelectedPreset(preset);
     setEditName(preset.name);
     setEditDescription(preset.description || '');
@@ -312,7 +312,7 @@ export default function PluginBrowser() {
     if (!selectedPreset) return;
 
     try {
-      await presetsApi.update(selectedPreset.id, {
+      await snapshotsApi.update(selectedPreset.id, {
         name: editName,
         description: editDescription,
         category: editCategory,

@@ -1,5 +1,5 @@
 """
-Preset Browser Routes - Enhanced preset management
+Snapshot Browser Routes - Enhanced snapshot management
 """
 
 import logging
@@ -8,11 +8,11 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/presets", tags=["presets"])
+router = APIRouter(prefix="/api/snapshots", tags=["snapshots"])
 
 
-class CreatePresetRequest(BaseModel):
-    """Create preset request"""
+class CreateSnapshotRequest(BaseModel):
+    """Create snapshot request"""
     name: str
     chain_id: int
     plugin_states: Dict[str, Any]
@@ -22,8 +22,8 @@ class CreatePresetRequest(BaseModel):
     is_favorite: bool = False
 
 
-class UpdatePresetRequest(BaseModel):
-    """Update preset request"""
+class UpdateSnapshotRequest(BaseModel):
+    """Update snapshot request"""
     name: Optional[str] = None
     tags: Optional[List[str]] = None
     category: Optional[str] = None
@@ -32,21 +32,21 @@ class UpdatePresetRequest(BaseModel):
 
 
 @router.post("/")
-async def create_preset(request: CreatePresetRequest) -> Dict[str, Any]:
+async def create_snapshot(request: CreateSnapshotRequest) -> Dict[str, Any]:
     """
-    Create a new preset
+    Create a new snapshot
     
     Request body:
-    - name: Preset name
+    - name: Snapshot name
     - chain_id: Associated chain ID
     - plugin_states: Plugin state data
-    - tags: Preset tags (optional)
-    - category: Preset category (optional)
-    - description: Preset description (optional)
+    - tags: Snapshot tags (optional)
+    - category: Snapshot category (optional)
+    - description: Snapshot description (optional)
     - is_favorite: Mark as favorite (optional)
     
     Returns:
-        Created preset info
+        Created snapshot info
     """
     try:
         from app.database import get_session
@@ -55,43 +55,43 @@ async def create_preset(request: CreatePresetRequest) -> Dict[str, Any]:
         async with get_session() as session:
             service = ChainService(session)
             
-            preset_data = {
+            snapshot_data = {
                 **request.plugin_states,
                 'tags': request.tags,
                 'category': request.category,
                 'description': request.description,
                 'is_favorite': request.is_favorite
             }
-            
-            preset_id = await service.save_preset(
+
+            snapshot_id = await service.save_preset(
                 chain_id=request.chain_id,
                 preset_name=request.name,
-                preset_data=preset_data
+                preset_data=snapshot_data
             )
-            
-            if not preset_id:
-                raise HTTPException(status_code=500, detail="Failed to create preset")
-            
+
+            if not snapshot_id:
+                raise HTTPException(status_code=500, detail="Failed to create snapshot")
+
             return {
                 "status": "success",
-                "preset_id": preset_id,
-                "message": f"Created preset: {request.name}"
+                "snapshot_id": snapshot_id,
+                "message": f"Created snapshot: {request.name}"
             }
             
     except Exception as e:
-        logger.error(f"Error creating preset: {e}")
+        logger.error(f"Error creating snapshot: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/")
-async def list_presets(
+async def list_snapshots(
     category: Optional[str] = None,
     tags: Optional[str] = None,
     favorites_only: bool = False,
     search: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    List presets with filtering
+    List snapshots with filtering
     
     Query parameters:
     - category: Filter by category (optional)
@@ -100,7 +100,7 @@ async def list_presets(
     - search: Search query for name/description (optional)
     
     Returns:
-        List of presets
+        List of snapshots
     """
     try:
         from app.database import get_session, Preset
@@ -124,17 +124,17 @@ async def list_presets(
                 )
             
             result = await session.execute(query)
-            presets = result.scalars().all()
+            snapshots = result.scalars().all()
             
             # Filter by tags if specified
             if tags:
                 tag_list = [t.strip() for t in tags.split(',')]
-                presets = [
-                    p for p in presets
+                snapshots = [
+                    p for p in snapshots
                     if any(tag in p.tags for tag in tag_list)
                 ]
             
-            preset_list = [
+            snapshot_list = [
                 {
                     "id": p.id,
                     "name": p.name,
@@ -146,23 +146,23 @@ async def list_presets(
                     "created_at": p.created_at.isoformat(),
                     "updated_at": p.updated_at.isoformat()
                 }
-                for p in presets
+                for p in snapshots
             ]
             
             return {
-                "presets": preset_list,
-                "count": len(preset_list)
+                "snapshots": snapshot_list,
+                "count": len(snapshot_list)
             }
             
     except Exception as e:
-        logger.error(f"Error listing presets: {e}")
+        logger.error(f"Error listing snapshots: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/categories")
 async def get_categories() -> Dict[str, Any]:
     """
-    Get all preset categories
+    Get all snapshot categories
     
     Returns:
         List of categories
@@ -195,7 +195,7 @@ async def get_categories() -> Dict[str, Any]:
 @router.get("/tags")
 async def get_all_tags() -> Dict[str, Any]:
     """
-    Get all preset tags
+    Get all snapshot tags
     
     Returns:
         List of unique tags
@@ -206,12 +206,12 @@ async def get_all_tags() -> Dict[str, Any]:
         
         async with get_session() as session:
             result = await session.execute(select(Preset))
-            presets = result.scalars().all()
+            snapshots = result.scalars().all()
             
             # Collect all unique tags
             all_tags = set()
-            for preset in presets:
-                all_tags.update(preset.tags)
+            for snapshot in snapshots:
+                all_tags.update(snapshot.tags)
             
             return {
                 "tags": sorted(list(all_tags)),
@@ -223,13 +223,13 @@ async def get_all_tags() -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.patch("/{preset_id}")
-async def update_preset(preset_id: int, request: UpdatePresetRequest) -> Dict[str, Any]:
+@router.patch("/{snapshot_id}")
+async def update_snapshot(snapshot_id: int, request: UpdateSnapshotRequest) -> Dict[str, Any]:
     """
-    Update preset metadata
+    Update snapshot metadata
     
     Path parameters:
-    - preset_id: Preset ID
+    - snapshot_id: Snapshot ID
     
     Request body:
     - name: New name (optional)
@@ -239,7 +239,7 @@ async def update_preset(preset_id: int, request: UpdatePresetRequest) -> Dict[st
     - is_favorite: New favorite status (optional)
     
     Returns:
-        Updated preset info
+        Updated snapshot info
     """
     try:
         from app.database import get_session, Preset
@@ -247,44 +247,44 @@ async def update_preset(preset_id: int, request: UpdatePresetRequest) -> Dict[st
         
         async with get_session() as session:
             result = await session.execute(
-                select(Preset).filter(Preset.id == preset_id)
+                select(Preset).filter(Preset.id == snapshot_id)
             )
-            preset = result.scalar_one_or_none()
+            snapshot = result.scalar_one_or_none()
             
-            if not preset:
-                raise HTTPException(status_code=404, detail=f"Preset {preset_id} not found")
+            if not snapshot:
+                raise HTTPException(status_code=404, detail=f"Snapshot {snapshot_id} not found")
             
             # Update fields
             if request.name is not None:
-                preset.name = request.name
+                snapshot.name = request.name
             if request.tags is not None:
-                preset.tags = request.tags
+                snapshot.tags = request.tags
             if request.category is not None:
-                preset.category = request.category
+                snapshot.category = request.category
             if request.description is not None:
-                preset.description = request.description
+                snapshot.description = request.description
             if request.is_favorite is not None:
-                preset.is_favorite = request.is_favorite
+                snapshot.is_favorite = request.is_favorite
             
             await session.commit()
             
             return {
                 "status": "success",
-                "message": f"Updated preset {preset_id}"
+                "message": f"Updated snapshot {snapshot_id}"
             }
             
     except Exception as e:
-        logger.error(f"Error updating preset: {e}")
+        logger.error(f"Error updating snapshot: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/{preset_id}/favorite")
-async def toggle_favorite(preset_id: int) -> Dict[str, Any]:
+@router.post("/{snapshot_id}/favorite")
+async def toggle_favorite(snapshot_id: int) -> Dict[str, Any]:
     """
-    Toggle preset favorite status
+    Toggle snapshot favorite status
     
     Path parameters:
-    - preset_id: Preset ID
+    - snapshot_id: Snapshot ID
     
     Returns:
         New favorite status
@@ -295,34 +295,34 @@ async def toggle_favorite(preset_id: int) -> Dict[str, Any]:
         
         async with get_session() as session:
             result = await session.execute(
-                select(Preset).filter(Preset.id == preset_id)
+                select(Preset).filter(Preset.id == snapshot_id)
             )
-            preset = result.scalar_one_or_none()
+            snapshot = result.scalar_one_or_none()
             
-            if not preset:
-                raise HTTPException(status_code=404, detail=f"Preset {preset_id} not found")
+            if not snapshot:
+                raise HTTPException(status_code=404, detail=f"Snapshot {snapshot_id} not found")
             
-            preset.is_favorite = not preset.is_favorite
+            snapshot.is_favorite = not snapshot.is_favorite
             await session.commit()
             
             return {
                 "status": "success",
-                "is_favorite": preset.is_favorite,
-                "message": f"{'Added to' if preset.is_favorite else 'Removed from'} favorites"
+                "is_favorite": snapshot.is_favorite,
+                "message": f"{'Added to' if snapshot.is_favorite else 'Removed from'} favorites"
             }
             
     except Exception as e:
-        logger.error(f"Error toggling favorite: {e}")
+        logger.error(f"Error toggling snapshot favorite: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/{preset_id}")
-async def delete_preset(preset_id: int) -> Dict[str, str]:
+@router.delete("/{snapshot_id}")
+async def delete_snapshot(snapshot_id: int) -> Dict[str, str]:
     """
-    Delete a preset
+    Delete a snapshot
     
     Path parameters:
-    - preset_id: Preset ID
+    - snapshot_id: Snapshot ID
     
     Returns:
         Deletion confirmation
@@ -333,21 +333,21 @@ async def delete_preset(preset_id: int) -> Dict[str, str]:
         
         async with get_session() as session:
             result = await session.execute(
-                select(Preset).filter(Preset.id == preset_id)
+                select(Preset).filter(Preset.id == snapshot_id)
             )
-            preset = result.scalar_one_or_none()
+            snapshot = result.scalar_one_or_none()
             
-            if not preset:
-                raise HTTPException(status_code=404, detail=f"Preset {preset_id} not found")
+            if not snapshot:
+                raise HTTPException(status_code=404, detail=f"Snapshot {snapshot_id} not found")
             
-            session.delete(preset)
+            session.delete(snapshot)
             await session.commit()
             
             return {
                 "status": "success",
-                "message": f"Deleted preset {preset_id}"
+                "message": f"Deleted snapshot {snapshot_id}"
             }
             
     except Exception as e:
-        logger.error(f"Error deleting preset: {e}")
+        logger.error(f"Error deleting snapshot: {e}")
         raise HTTPException(status_code=500, detail=str(e))

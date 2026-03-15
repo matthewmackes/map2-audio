@@ -39,12 +39,12 @@ import {
   Refresh as RefreshIcon,
   FilterList as FilterIcon,
 } from '@mui/icons-material';
-import { presetsApi, chainsApi } from '../api';
-import type { Preset, PresetCategory } from '../types';
+import { snapshotsApi, chainsApi } from '../api';
+import type { Snapshot, SnapshotCategory } from '../types';
 
 export default function PresetManager() {
-  const [presets, setPresets] = useState<Preset[]>([]);
-  const [categories, setCategories] = useState<PresetCategory[]>([]);
+  const [presets, setPresets] = useState<Snapshot[]>([]);
+  const [categories, setCategories] = useState<SnapshotCategory[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export default function PresetManager() {
 
   // Menu state
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<Snapshot | null>(null);
 
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -69,17 +69,17 @@ export default function PresetManager() {
   const loadData = useCallback(async () => {
     try {
       const [presetsRes, categoriesRes, tagsRes] = await Promise.all([
-        presetsApi.list({
+        snapshotsApi.list({
           category: selectedCategory !== 'all' ? selectedCategory : undefined,
           tags: selectedTag !== 'all' ? selectedTag : undefined,
           favorites_only: favoritesOnly || undefined,
           search: searchQuery || undefined,
         }),
-        presetsApi.getCategories(),
-        presetsApi.getTags(),
+        snapshotsApi.getCategories(),
+        snapshotsApi.getTags(),
       ]);
 
-      setPresets(presetsRes.presets || []);
+      setPresets(presetsRes.snapshots || []);
       setCategories(categoriesRes.categories || []);
       setTags(tagsRes.tags || []);
       setError(null);
@@ -97,7 +97,7 @@ export default function PresetManager() {
   // Toggle favorite
   const handleToggleFavorite = async (presetId: number) => {
     try {
-      await presetsApi.toggleFavorite(presetId);
+      await snapshotsApi.toggleFavorite(presetId);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle favorite');
@@ -119,7 +119,7 @@ export default function PresetManager() {
     if (!confirm('Are you sure you want to delete this preset?')) return;
 
     try {
-      await presetsApi.delete(presetId);
+      await snapshotsApi.delete(presetId);
       await loadData();
       setMenuAnchor(null);
     } catch (err) {
@@ -128,7 +128,7 @@ export default function PresetManager() {
   };
 
   // Open edit dialog
-  const handleOpenEdit = (preset: Preset) => {
+  const handleOpenEdit = (preset: Snapshot) => {
     setSelectedPreset(preset);
     setEditName(preset.name);
     setEditDescription(preset.description || '');
@@ -142,7 +142,7 @@ export default function PresetManager() {
     if (!selectedPreset) return;
 
     try {
-      await presetsApi.update(selectedPreset.id, {
+      await snapshotsApi.update(selectedPreset.id, {
         name: editName,
         description: editDescription,
         category: editCategory,

@@ -65,11 +65,10 @@ Primary route table:
 | `/welcome` | `WelcomePage` (redirect alias) | `web/src/app/pages/WelcomePage.tsx` |
 | `/lcd` | `LCDPage` | `web/src/app/pages/LCDPage.tsx` |
 | `/cluster-dashboard` | `ClusterDashboardPage` | `web/src/app/pages/ClusterDashboardPage.tsx` |
-| `/midi-cluster` | `MidiClusterPage` | `web/src/app/pages/MidiClusterPage.tsx` |
-| `/midi-cluster/node/:nodeId` | `MidiClusterNodePage` | `web/src/app/pages/MidiClusterNodePage.tsx` |
+| `/platform?layer=midi-cluster` | `PlatformShellPage` | `web/src/app/pages/PlatformShellPage.tsx` |
+| `/platform?layer=single-node` | `PlatformShellPage` | `web/src/app/pages/PlatformShellPage.tsx` |
 | `/api-observatory` | `ApiObservatoryPage` | `web/src/app/pages/ApiObservatoryPage.tsx` |
 | `/drums` | `DrumsPage` | `web/src/app/pages/DrumsPage.tsx` |
-| `/multi-system` | `MultiSystemDashboard` | `web/src/app/pages/MultiSystemDashboardPage.tsx` |
 | `/avb-routing` | `AvbRoutingPage` | `web/src/app/pages/AvbRoutingPage.tsx` |
 | `/expression` | `ExpressionPage` | `web/src/app/pages/ExpressionPage.tsx` |
 | `/tesira/*` | `TesiraPage` (delegates nested routes) | `web/src/app/pages/TesiraPage.tsx` |

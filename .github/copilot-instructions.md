@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 11, 2026 (Carbon conformance standard + UI review gate)
+> **Last Updated**: March 15, 2026 (snapshot rail test harness note)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -983,6 +983,62 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `ASAN_OPTIONS='abort_on_error=1:detect_leaks=0' LD_PRELOAD=/usr/lib/clang/21/lib/x86_64-redhat-linux-gnu/libclang_rt.asan.so python3 /tmp/repro_t009_asan.py`; `pytest -q tests/test_juce_engine_audio_start_stability.py`
 - **Lesson**: Under MAP2's `-ffast-math` profile, use deterministic bound guards rather than NaN/Inf-dependent safety checks in RT DSP code.
 
+**17. Carbon SideNav Test Mocks Need Rail-Specific Selectors**
+- **File**: `web/src/app/pages/JuceGridPage.test.tsx`
+- **Problem**: A shared `SideNav` mock assigned the same test id to both the snapshot rail and the MIDI rail, so `getByTestId()` failed once both rails rendered.
+- **Fix**: Derive mock test ids from the rail variant (`className` / `assistiveText`) so snapshot and MIDI assertions stay distinct.
+- **Lesson**: When mocking shared layout primitives, selectors need to preserve the rendered variant boundary or the test starts failing for harness reasons instead of UI regressions.
+
+---
+
+## 5-Question Clarification Protocol
+
+Before acting on any directive that involves code changes or architectural decisions, **ask exactly 5 multiple-choice questions** to disambiguate intent, scope, constraints, and edge cases.
+
+### Rules
+
+1. **Trigger**: Fires on any directive involving code changes or architectural decisions. Does not fire on trivial one-liners (e.g. "fix this typo", "rename this variable").
+
+2. **Delivery**: Questions are asked **one at a time, sequentially**. After each answer, give a **one-word acknowledgement** ("Got it." or "Noted.") on its own line, then immediately ask the next question.
+
+3. **Question content**: Choose all 4 substantive questions freely — pick the dimensions most relevant to this specific directive (scope, approach, risk, constraints, edge cases, etc.). No fixed order for Q1–Q4.
+
+4. **Q5 is always the continue question**, rephrased each round to naturally reflect what has been established so far. Options are always:
+   - A) Yes — I have more nuance to share
+   - B) No — proceed with my answers
+
+5. **Skipping**: If the user says "just do it" or similar, ask Q5 only: *"Should I skip the 5-question protocol this time? A) Yes — skip it  B) No — run the protocol."* The user's answer is final.
+
+6. **New directives inside answers**: If a user's answer introduces a new directive, flag it silently, finish the current cycle, then surface it at the end: *"I also noticed a new directive — shall we start a cycle for that?"* Do not interrupt mid-cycle.
+
+7. **Recursion**: A new directive flagged at the end triggers its own fresh 5-question cycle if the user agrees.
+
+8. **Depth**: No cap on consecutive "Yes" answers to Q5. The user controls depth entirely.
+
+### Skeleton
+
+```
+Q1: [Most critical ambiguity for this directive]
+   A) ...  B) ...  C) ...  D) ...
+
+[User answers]
+
+Got it.
+Q2: [Next most relevant dimension]
+   A) ...  B) ...  C) ...  D) ...
+
+[User answers]
+
+Noted.
+Q3: [Next dimension]  ...
+Q4: [Final substantive dimension]  ...
+
+Noted.
+Q5: [Rephrased to reflect coverage — e.g. "We've established scope, approach, and constraints. Should I ask 5 more questions?"]
+   A) Yes — I have more nuance to share
+   B) No — proceed with my answers
+```
+
 ---
 
 ## Plan-First Meta Rule
@@ -1204,6 +1260,13 @@ Target: < 5 ms total
 
 ## Update Log
 
+### [2026-03-15] - Snapshot Rail Test Harness Fix
+- **Section**: Gotchas & Learned Fixes (#17)
+- **Change**: Documented the need for rail-specific Carbon `SideNav` mock selectors when a page renders more than one rail.
+- **Reason**: Snapshot rename validation exposed a false failing Juce Grid test caused by duplicate mock test ids, not by a page regression.
+- **Impact**: Multi-rail page tests now have a durable selector pattern that tracks snapshot vs MIDI rails correctly.
+- **Files**: `web/src/app/pages/JuceGridPage.test.tsx`, `.github/copilot-instructions.md`
+
 ### [2026-03-11] - Carbon UI Conformance Standard Activated
 - **Section**: Tech Stack & Versions, Web Development Guidelines, CSS/Styling Rules
 - **Change**: Added Carbon as required UI standard for new/refactored surfaces, added mandatory UI conformance gate, and marked legacy hard-coded palette guidance as deprecated.
@@ -1386,5 +1449,5 @@ systemctl --user status pipewire
 ---
 
 **For Questions**: Consult the documentation files listed in Additional Resources  
-**Last Updated**: March 11, 2026
+**Last Updated**: March 15, 2026
 **Maintained by**: GitHub Copilot AI Assistants

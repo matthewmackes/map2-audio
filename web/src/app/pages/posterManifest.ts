@@ -12,13 +12,12 @@ export const POSTER_MANIFEST: PosterManifestEntry[] = [
   { route: '/perform', label: 'Stage Mode', slug: 'stage-mode', temperature: 'warm' },
   { route: '/about', label: 'Platform Guide', slug: 'platform-guide', temperature: 'cool' },
   { route: '/expression', label: 'Expression', slug: 'expression', temperature: 'cool' },
-  { route: '/presets', label: 'Presets', slug: 'presets', temperature: 'cool' },
+  { route: '/snapshots', label: 'Snapshots', slug: 'snapshots', temperature: 'cool' },
   { route: '/plugins', label: 'LV2 Plugins', slug: 'lv2-plugins', temperature: 'cool' },
   { route: '/midi', label: 'MIDI', slug: 'midi', temperature: 'cool' },
   { route: '/midi-hub', label: 'MIDI Hub', slug: 'midi-hub', temperature: 'cool' },
   { route: '/mpx1', label: 'MPX1 Rack', slug: 'mpx1-rack', temperature: 'cool' },
   { route: '/tesira', label: 'Tesira AVB', slug: 'tesira-avb', temperature: 'neutral' },
-  { route: '/multi-system', label: 'Multi-System', slug: 'multi-system', temperature: 'cool' },
   { route: '/library', label: 'IR & NAM Library', slug: 'ir-nam-library', temperature: 'cool' },
   { route: '/lcd', label: 'LCD Console', slug: 'lcd-console', temperature: 'warm' },
   { route: '/edirol-ua1000', label: 'Edirol UA-1000', slug: 'edirol-ua1000', temperature: 'cool' },
@@ -30,6 +29,14 @@ const MANIFEST_INDEX = new Map(
   POSTER_MANIFEST.map((entry) => [`${entry.route}::${entry.label}`, entry]),
 )
 
+function getRoutePathname(route: string): string {
+  try {
+    return new URL(route, 'https://map2.local').pathname
+  } catch {
+    return route
+  }
+}
+
 export function resolvePoster(route: string, label: string): PosterManifestEntry {
   const key = `${route}::${label}`
   const exact = MANIFEST_INDEX.get(key)
@@ -40,6 +47,12 @@ export function resolvePoster(route: string, label: string): PosterManifestEntry
   const fallbackByRoute = POSTER_MANIFEST.find((entry) => entry.route === route)
   if (fallbackByRoute) {
     return fallbackByRoute
+  }
+
+  const pathname = getRoutePathname(route)
+  const fallbackByPathname = POSTER_MANIFEST.find((entry) => getRoutePathname(entry.route) === pathname)
+  if (fallbackByPathname) {
+    return fallbackByPathname
   }
 
   return {

@@ -55,12 +55,15 @@ describe('navigation catalog', () => {
 
   it('keeps hardware cards in the Hardware section with real routes', () => {
     const hardwareSection = homeNavigationSections.find((section) => section.title === 'Hardware')
+    const systemSection = homeNavigationSections.find((section) => section.title === 'System')
 
     expect(hardwareSection).toBeDefined()
     expect(hardwareSection?.items.length).toBeGreaterThan(0)
     for (const item of hardwareSection?.items ?? []) {
       expect(item.to.startsWith('/')).toBe(true)
     }
+    expect(hardwareSection?.items.some((item) => item.to === '/host-machine')).toBe(true)
+    expect(systemSection?.items.some((item) => item.to === '/host-machine')).toBe(false)
 
     for (const item of hardwareInterfaceMenuItems) {
       expect(item.maturity).not.toBe('hardware-blocked')
@@ -68,8 +71,10 @@ describe('navigation catalog', () => {
   })
 
   it('keeps every Home card aligned with an application route', () => {
-    const hasRouteRegistration = (route: string) =>
-      appSource.includes(`path="${route}"`) || appSource.includes(`path="${route}/*"`)
+    const hasRouteRegistration = (route: string) => {
+      const pathname = new URL(route, 'https://map2.local').pathname
+      return appSource.includes(`path="${pathname}"`) || appSource.includes(`path="${pathname}/*"`)
+    }
 
     for (const section of homeNavigationSections) {
       for (const item of section.items) {
@@ -145,6 +150,14 @@ describe('navigation catalog', () => {
       section.items.some((item) => item.to === '/platform'),
     )
     expect(appearsOnHome).toBe(true)
+  })
+
+  it('does not expose removed Nodes or Multi-System navigation cards', () => {
+    const nodes = navigationCatalogItems.find((item) => item.label === 'Nodes')
+    const multiSystem = navigationCatalogItems.find((item) => item.label === 'Multi-System')
+
+    expect(nodes).toBeUndefined()
+    expect(multiSystem).toBeUndefined()
   })
 
   it('keeps MPX1 Rack, IntelFX Rack, and Tesira AVB in advanced navigation only', () => {

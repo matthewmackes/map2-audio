@@ -45,7 +45,7 @@ jest.mock('../Toasts', () => ({
   }),
 }))
 
-import { PresetDeployModal } from './PresetDeployModal'
+import { SnapshotDeployModal } from './SnapshotDeployModal'
 
 function renderDialog(onClose = jest.fn()) {
   const queryClient = new QueryClient({
@@ -57,11 +57,11 @@ function renderDialog(onClose = jest.fn()) {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <PresetDeployModal
+      <SnapshotDeployModal
         open
         onClose={onClose}
         sourceNodeId="node-local"
-        preset={{
+        snapshot={{
           id: 101,
           name: 'Studio Clean',
           plugin_uri: 'urn:map2:test-plugin',
@@ -79,7 +79,7 @@ function renderDialog(onClose = jest.fn()) {
   )
 }
 
-describe('PresetDeployModal', () => {
+describe('SnapshotDeployModal', () => {
   beforeEach(() => {
     mockGetNAMStatus.mockReset()
     mockGetIRStatus.mockReset()
@@ -156,7 +156,7 @@ describe('PresetDeployModal', () => {
 
     expect(await screen.findByText('node-b')).toBeInTheDocument()
 
-    const deployButton = screen.getByRole('button', { name: 'Deploy preset' })
+    const deployButton = screen.getByRole('button', { name: 'Deploy snapshot' })
     await waitFor(() => {
       expect(deployButton).toBeEnabled()
     })

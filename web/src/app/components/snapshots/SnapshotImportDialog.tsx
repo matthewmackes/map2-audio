@@ -7,12 +7,12 @@ import {
   Modal,
   Tag,
 } from '@carbon/react'
-import './PresetImportDialog.css'
+import './SnapshotImportDialog.css'
 
-interface PresetImportDialogProps {
+interface SnapshotImportDialogProps {
   isOpen: boolean
   onClose: () => void
-  onImportSuccess?: (presetId: number, name: string) => void
+  onImportSuccess?: (snapshotId: number, name: string) => void
   targetPluginUri?: string
 }
 
@@ -39,12 +39,12 @@ const SUPPORTED_FORMATS = [
 
 const ACCEPTED_EXTENSIONS = SUPPORTED_FORMATS.map((format) => format.ext)
 
-export function PresetImportDialog({
+export function SnapshotImportDialog({
   isOpen,
   onClose,
   onImportSuccess,
   targetPluginUri,
-}: PresetImportDialogProps) {
+}: SnapshotImportDialogProps) {
   const [file, setFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
@@ -121,8 +121,8 @@ export function PresetImportDialog({
     <Modal
       open={isOpen}
       size="md"
-      modalHeading="Import preset"
-      modalLabel="Preset exchange"
+      modalHeading="Import snapshot"
+      modalLabel="Snapshot exchange"
       primaryButtonText={result?.success ? 'Done' : 'Import'}
       secondaryButtonText="Cancel"
       primaryButtonDisabled={!result?.success && (!file || importing)}
@@ -135,12 +135,12 @@ export function PresetImportDialog({
         }
         void handleImport()
       }}
-      selectorPrimaryFocus="#preset-import-dropzone"
+      selectorPrimaryFocus="#snapshot-import-dropzone"
     >
-      <div className="preset-import-dialog">
-        <section className="preset-import-dialog__formats">
+      <div className="snapshot-import-dialog">
+        <section className="snapshot-import-dialog__formats">
           <p>Supported formats</p>
-          <div className="preset-import-dialog__format-tags">
+          <div className="snapshot-import-dialog__format-tags">
             {SUPPORTED_FORMATS.map((format) => (
               <Tag key={format.ext} type={format.primary ? 'blue' : 'cool-gray'} size="sm">
                 {format.ext}
@@ -150,25 +150,25 @@ export function PresetImportDialog({
         </section>
 
         <FileUploaderDropContainer
-          id="preset-import-dropzone"
-          labelText="Drop preset file here or click to browse"
+          id="snapshot-import-dropzone"
+          labelText="Drop snapshot file here or click to browse"
           accept={ACCEPTED_EXTENSIONS}
           multiple={false}
           onAddFiles={handleAddFiles}
-          className="preset-import-dialog__dropzone"
+          className="snapshot-import-dialog__dropzone"
         />
 
         {file && (
           <FileUploaderItem
-            uuid={`preset-import-${file.name}`}
+            uuid={`snapshot-import-${file.name}`}
             name={file.name}
             status="edit"
             size="md"
-            className="preset-import-dialog__file"
+            className="snapshot-import-dialog__file"
           />
         )}
 
-        {importing && <InlineLoading description="Importing preset" status="active" />}
+        {importing && <InlineLoading description="Importing snapshot" status="active" />}
 
         {error && (
           <InlineNotification
@@ -181,7 +181,7 @@ export function PresetImportDialog({
         )}
 
         {result?.success && (
-          <section className="preset-import-dialog__result">
+          <section className="snapshot-import-dialog__result">
             <InlineNotification
               kind="success"
               lowContrast
@@ -189,7 +189,7 @@ export function PresetImportDialog({
               title="Imported successfully"
               subtitle={result.message || `${result.parameters_imported} parameters imported from ${result.original_format}`}
             />
-            <div className="preset-import-dialog__result-details">
+            <div className="snapshot-import-dialog__result-details">
               <p>
                 <strong>Name:</strong> {result.name}
               </p>
@@ -201,7 +201,7 @@ export function PresetImportDialog({
               </p>
             </div>
             {result.warnings.length > 0 && (
-              <div className="preset-import-dialog__warnings">
+              <div className="snapshot-import-dialog__warnings">
                 {result.warnings.map((warning) => (
                   <Tag key={warning} type="warm-gray" size="sm">
                     {warning}
@@ -216,4 +216,4 @@ export function PresetImportDialog({
   )
 }
 
-export default PresetImportDialog
+export default SnapshotImportDialog

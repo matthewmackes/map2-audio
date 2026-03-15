@@ -40,7 +40,7 @@ cd /home/mm/map2-audio
 ```bash
 cd /home/mm/map2-audio/web
 npm run build
-npm run preview -- --host 0.0.0.0 --port 3000
+npm run serve -- --host 0.0.0.0 --port 3000
 ```
 - **Web UI**: http://localhost:3000
 - **Mode**: full production frontend
@@ -313,7 +313,7 @@ npm install
 
 # Rebuild and start the production server
 npm run build
-npm run preview -- --host 0.0.0.0 --port 3000
+npm run serve -- --host 0.0.0.0 --port 3000
 ```
 
 ### Node Console Display Issues

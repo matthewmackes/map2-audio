@@ -22,7 +22,7 @@ const ReactQueryDevtools = lazy(() =>
 const HomePage              = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })))
 const PlatformShellPage     = lazy(() => import('./pages/PlatformShellPage').then(m => ({ default: m.PlatformShellPage })))
 const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => ({ default: m.ChainsPage })))
-const PresetsPage           = lazy(() => import('./pages/PresetsPage').then(m => ({ default: m.PresetsPage })))
+const SnapshotsPage         = lazy(() => import('./pages/SnapshotsPage').then(m => ({ default: m.SnapshotsPage })))
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
 const AboutPage             = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const LV2PluginsPage        = lazy(() => import('./pages/LV2PluginsPage').then(m => ({ default: m.LV2PluginsPage })))
@@ -39,9 +39,7 @@ const MOTURMEPage           = lazy(() => import('./pages/MOTURMEPage'))
 const CPUPerformancePage    = lazy(() => import('./pages/CPUPerformancePage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
 const LCDPage               = lazy(() => import('./pages/LCDPage').then(m => ({ default: m.LCDPage })))
-const NodesPage             = lazy(() => import('./pages/NodesPage').then(m => ({ default: m.NodesPage })))
 const DrumsPage             = lazy(() => import('./pages/DrumsPage').then(m => ({ default: m.DrumsPage })))
-const MultiSystemDashboard  = lazy(() => import('./pages/MultiSystemDashboardPage'))
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
 const TesiraPage            = lazy(() => import('./pages/TesiraPage').then(m => ({ default: m.TesiraPage })))
@@ -165,7 +163,8 @@ export function App() {
                                 <Route path="/" element={<HomePage />} />
                                 <Route path="/platform" element={<PlatformShellPage />} />
                                 <Route path="/chains" element={<ChainsPage />} />
-                                <Route path="/presets" element={<PresetsPage />} />
+                                <Route path="/snapshots" element={<SnapshotsPage />} />
+                                <Route path="/presets" element={<Navigate to="/snapshots" replace />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
                                 <Route path="/about" element={<AboutPage />} />
                                 <Route path="/plugins" element={<LV2PluginsPage />} />
@@ -187,9 +186,7 @@ export function App() {
                                 <Route path="/pipewire" element={<PipeWirePage />} />
                                 <Route path="/welcome" element={<WelcomePage />} />
                                 <Route path="/lcd" element={<LCDPage />} />
-                                <Route path="/nodes" element={<NodesPage />} />
                                 <Route path="/drums" element={<DrumsPage />} />
-                                <Route path="/multi-system" element={<MultiSystemDashboard />} />
                                 <Route path="/expression" element={<ExpressionPage />} />
                                 <Route path="/tesira/*" element={<TesiraPage />} />
                                 <Route path="/mpx1/*" element={<MPX1Page />}>

@@ -2685,14 +2685,14 @@ No authentication required (local use only).
 | POST | `/api/midi/mappings` | Create mapping |
 | POST | `/api/midi/learn` | Start MIDI learn |
 
-### Presets
+### Snapshots
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/presets/` | List presets |
-| POST | `/api/presets/` | Create preset |
-| POST | `/api/presets/{id}/load` | Load preset |
-| DELETE | `/api/presets/{id}` | Delete preset |
+| GET | `/api/snapshots/` | List snapshots |
+| POST | `/api/snapshots/` | Create snapshot |
+| PATCH | `/api/snapshots/{id}` | Update snapshot metadata |
+| DELETE | `/api/snapshots/{id}` | Delete snapshot |
 
 ### Sessions
 

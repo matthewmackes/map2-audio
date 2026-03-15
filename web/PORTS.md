@@ -5,7 +5,7 @@
 ### Port 3000
 
 - **Purpose:** The only supported frontend port
-- **Server:** `vite preview --host 0.0.0.0 --port 3000`
+- **Server:** `node ../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000`
 - **Source:** Production bundle from `dist/`
 - **Use Case:** Local verification and deployed web access
 
@@ -19,7 +19,7 @@
 ```bash
 cd /home/mm/map2-audio/web
 npm run build
-npm run preview
+npm run serve
 ```
 
 ```bash

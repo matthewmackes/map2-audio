@@ -617,7 +617,7 @@
   .pipewire-tabbar,
   .audio-engine-tabbar,
   .drums-tab-strip,
-  .presets-tab-strip {
+  .snapshots-tab-strip {
     overflow-x: auto;
     white-space: nowrap;
   }
@@ -665,25 +665,25 @@
   }
 
   .chains-page .table,
-  .presets-page .table,
+  .snapshots-page .table,
   .midi-page .table {
     width: 100%;
   }
 
   .chains-page .table thead,
-  .presets-page .table thead,
+  .snapshots-page .table thead,
   .midi-page .table thead {
     display: none;
   }
 
   .chains-page .table tbody,
-  .presets-page .table tbody,
+  .snapshots-page .table tbody,
   .midi-page .table tbody {
     display: block;
   }
 
   .chains-page .table tr,
-  .presets-page .table tr,
+  .snapshots-page .table tr,
   .midi-page .table tr {
     border: 1px solid rgba(71, 85, 105, 0.45);
     border-radius: 10px;
@@ -694,7 +694,7 @@
   }
 
   .chains-page .table td,
-  .presets-page .table td,
+  .snapshots-page .table td,
   .midi-page .table td {
     border: 0;
     display: flex;
@@ -786,7 +786,7 @@
   .audio-engine-page,
   .lcd-page,
   .pipewire-page,
-  .presets-page,
+  .snapshots-page,
   .library-page,
   .mpx1-panel-view {
     max-width: 100% !important;
@@ -805,7 +805,7 @@
   }
 
   .dsp-page .dsp-section,
-  .presets-page .card,
+  .snapshots-page .card,
   .library-page .card,
   .lcd-section-card {
     min-width: 0;
@@ -821,8 +821,8 @@
     grid-template-columns: 1fr !important;
   }
 
-  .presets-page [style*='min-width: 260'],
-  .presets-page [style*='minWidth: 260'] {
+  .snapshots-page [style*='min-width: 260'],
+  .snapshots-page [style*='minWidth: 260'] {
     min-width: 0 !important;
     width: 100% !important;
   }

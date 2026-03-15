@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 const mockSideNav = jest.fn(({ children, expanded, isFixedNav, className }: any) => (
   <nav
-    data-testid="juce-grid-snapshot-rail"
+    data-testid={String(className).includes('snapshot-rail') ? 'juce-grid-snapshot-rail' : 'juce-grid-midi-rail'}
     data-expanded={String(Boolean(expanded))}
     data-fixed={String(Boolean(isFixedNav))}
     className={className}
@@ -103,7 +103,9 @@ jest.mock('@carbon/react', () => {
     SideNavFooter: ({ assistiveText, expanded, onToggle }: any) => (
       <button
         type="button"
-        data-testid="juce-grid-snapshot-rail-footer"
+        data-testid={String(assistiveText).toLowerCase().includes('midi')
+          ? 'juce-grid-midi-rail-footer'
+          : 'juce-grid-snapshot-rail-footer'}
         aria-label={assistiveText}
         data-expanded={String(Boolean(expanded))}
         onClick={onToggle}
@@ -184,8 +186,8 @@ jest.mock('../components/Controls/NumberInput', () => ({
   NumberInput: ({ value }: { value: number }) => <input aria-label="Number input" readOnly value={value} />,
 }))
 
-jest.mock('../components/presets/PresetImportDialog', () => ({
-  PresetImportDialog: () => null,
+jest.mock('../components/snapshots/SnapshotImportDialog', () => ({
+  SnapshotImportDialog: () => null,
 }))
 
 jest.mock('../components/shared/LandscapePrompt', () => ({

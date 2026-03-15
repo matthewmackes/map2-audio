@@ -240,9 +240,9 @@ export interface Plugin {
   is_hardware?: boolean;
 }
 
-// ==================== Preset Types ====================
+// ==================== Snapshot Types ====================
 
-export interface Preset {
+export interface Snapshot {
   id: number;
   name: string;
   chain_id: number;
@@ -254,12 +254,12 @@ export interface Preset {
   updated_at: string;
 }
 
-export interface PresetCategory {
+export interface SnapshotCategory {
   name: string;
   count: number;
 }
 
-export interface CreatePresetRequest {
+export interface CreateSnapshotRequest {
   name: string;
   chain_id: number;
   plugin_states: Record<string, unknown>;
@@ -647,7 +647,7 @@ export interface SessionMetadata {
 export interface Session {
   metadata: SessionMetadata;
   chains: Chain[];
-  presets: Preset[];
+  snapshots: Snapshot[];
   midi_mappings: MIDIMapping[];
   automation: AutomationLane[];
 }
@@ -767,8 +767,8 @@ export interface PluginsResponse {
   error?: string;
 }
 
-export interface PresetsResponse {
-  presets: Preset[];
+export interface SnapshotsResponse {
+  snapshots: Snapshot[];
   count: number;
 }
 

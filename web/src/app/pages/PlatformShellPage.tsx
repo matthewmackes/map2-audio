@@ -16,6 +16,8 @@ import {
   InlineLoading,
   InlineNotification,
   Pagination,
+  SkeletonPlaceholder,
+  SkeletonText,
   Tag,
   Table,
   TableBody,
@@ -32,6 +34,13 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
+import { MidiClusterNodeCard } from '../components/MidiCluster/MidiClusterNodeCard'
+import { MidiClusterTopology } from '../components/MidiCluster/MidiClusterTopology'
+import {
+  useMidiClusterConnections,
+  useMidiClusterEndpoints,
+  useMidiClusterNodes,
+} from '../hooks/useMidiCluster'
 import { usePlatformShellData } from '../hooks/usePlatformShellData'
 import type {
   PlatformAlert,
@@ -43,7 +52,11 @@ import type {
   PlatformSummaryMetric,
   PlatformTableValue,
 } from '../platform/model'
-import { PLATFORM_LAYER_META, buildPlatformHref, isPlatformLayerId } from '../platform/model'
+import {
+  PLATFORM_LAYER_META,
+  buildPlatformHref,
+  isPlatformLayerId,
+} from '../platform/model'
 import {
   usePlatformActions,
   usePlatformActiveLayer,
@@ -242,11 +255,20 @@ function LayerSummaryTiles({
   )
 }
 
-function LayerDataTable({ layer }: { layer: PlatformLayerData }) {
+function LayerDataTable({
+  layer,
+  onRowSelect,
+  selectedRowId,
+}: {
+  layer: PlatformLayerData
+  onRowSelect?: ((rowId: string) => void) | undefined
+  selectedRowId?: string | null
+}) {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1])
   const deferredSearch = useDeferredValue(searchValue)
+  const interactive = typeof onRowSelect === 'function'
 
   useEffect(() => {
     setSearchValue('')
@@ -294,7 +316,7 @@ function LayerDataTable({ layer }: { layer: PlatformLayerData }) {
           <TableContainer
             {...getTableContainerProps()}
             title={layer.tableTitle}
-            description={layer.tableDescription}
+            description={interactive ? `${layer.tableDescription} Select a row to inspect more detail.` : layer.tableDescription}
             className="platform-shell__table-container"
           >
             <TableToolbar {...getToolbarProps()}>
@@ -327,8 +349,22 @@ function LayerDataTable({ layer }: { layer: PlatformLayerData }) {
               <TableBody>
                 {rows.map((row) => {
                   const { key: _rowKey, ...rowProps } = getRowProps({ row })
+                  const isSelected = selectedRowId === row.id
                   return (
-                    <TableRow key={row.id} {...rowProps}>
+                    <TableRow
+                      key={row.id}
+                      {...rowProps}
+                      className={`platform-shell__table-row${interactive ? ' is-interactive' : ''}${isSelected ? ' is-selected' : ''}`}
+                      onClick={interactive ? () => onRowSelect?.(row.id) : undefined}
+                      onKeyDown={interactive ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          onRowSelect?.(row.id)
+                        }
+                      } : undefined}
+                      tabIndex={interactive ? 0 : undefined}
+                      aria-selected={interactive ? isSelected : undefined}
+                    >
                       {row.cells.map((cell) => (
                         <TableCell key={cell.id}>{renderCellValue(cell.info.header, cell.value as PlatformTableValue)}</TableCell>
                       ))}
@@ -355,6 +391,124 @@ function LayerDataTable({ layer }: { layer: PlatformLayerData }) {
   )
 }
 
+function ClusterDashboardWorkspace({
+  layer,
+}: {
+  layer: PlatformLayerData
+}) {
+  return (
+    <div className="platform-shell__cluster-tabs">
+      <div className="platform-shell__cluster-tab-panel">
+        <LayerSummaryTiles items={layer.gridItems} />
+        <LayerDataTable layer={layer} />
+      </div>
+    </div>
+  )
+}
+
+function MidiClusterNodeDetail({
+  selectedEndpointId,
+}: {
+  selectedEndpointId: string | null
+}) {
+  const midiNodesQuery = useMidiClusterNodes()
+  const midiConnectionsQuery = useMidiClusterConnections()
+  const midiEndpointsQuery = useMidiClusterEndpoints()
+
+  const midiNodes = midiNodesQuery.data ?? []
+  const midiConnections = midiConnectionsQuery.data ?? []
+  const midiEndpoints = midiEndpointsQuery.data ?? []
+  const selectedEndpoint = midiEndpoints.find((endpoint) => endpoint.endpoint_id === selectedEndpointId) ?? null
+  const selectedNode = midiNodes.find((node) => node.node_id === selectedEndpoint?.node_id) ?? null
+  const nodeNameById = useMemo(
+    () => new Map(midiNodes.map((node) => [node.node_id, node.hostname])),
+    [midiNodes],
+  )
+
+  const selectedConnections = useMemo(() => {
+    if (!selectedNode) {
+      return []
+    }
+    return midiConnections.filter((connection) =>
+      connection.source.node_id === selectedNode.node_id || connection.destination.node_id === selectedNode.node_id,
+    )
+  }, [midiConnections, selectedNode])
+
+  if (!selectedEndpointId) {
+    return (
+      <section className="platform-shell__detail-empty" aria-label="MIDI node detail hint">
+        <h3>Node Detail</h3>
+        <p>Select a MIDI endpoint row above to inspect the owning cluster node and its active routes.</p>
+      </section>
+    )
+  }
+
+  if ((midiNodesQuery.isLoading && midiNodes.length === 0) || (midiConnectionsQuery.isLoading && midiConnections.length === 0)) {
+    return (
+      <section className="platform-shell__midi-node-detail">
+        <SkeletonText heading paragraph lineCount={2} />
+        <div className="platform-shell__midi-detail-grid">
+          <SkeletonPlaceholder className="platform-shell__midi-detail-card" />
+          <SkeletonPlaceholder className="platform-shell__midi-detail-card platform-shell__midi-detail-card--wide" />
+        </div>
+      </section>
+    )
+  }
+
+  if (!selectedEndpoint || !selectedNode) {
+    return (
+      <InlineNotification
+        kind="warning"
+        lowContrast
+        hideCloseButton
+        title="MIDI node detail unavailable"
+        subtitle="The selected endpoint no longer maps to a discovered MIDI cluster node."
+      />
+    )
+  }
+
+  return (
+    <section className="platform-shell__midi-node-detail">
+      <div className="platform-shell__detail-head">
+        <div>
+          <h3>Node Detail</h3>
+          <p>{selectedNode.hostname} owns {selectedEndpoint.device_name} / {selectedEndpoint.port_name}.</p>
+        </div>
+        <div className="platform-shell__nodes-tags">
+          <Tag type={selectedNode.online ? 'green' : 'red'}>{selectedNode.online ? 'online' : 'offline'}</Tag>
+          <Tag type="cool-gray">{`${selectedConnections.length} connection${selectedConnections.length === 1 ? '' : 's'}`}</Tag>
+        </div>
+      </div>
+
+      <div className="platform-shell__midi-detail-grid">
+        <MidiClusterNodeCard
+          node={selectedNode}
+          connections={selectedConnections.map((connection) => connection.connection_id)}
+          onSelect={() => undefined}
+        />
+        <MidiClusterTopology nodes={midiNodes} connections={midiConnections} />
+      </div>
+
+      <div className="platform-shell__detail-list" aria-label="Selected MIDI node routes">
+        {selectedConnections.length === 0 ? (
+          <p className="platform-shell__detail-empty-copy">No active cluster routes currently involve this node.</p>
+        ) : (
+          selectedConnections.map((connection) => (
+            <div key={connection.connection_id} className="platform-shell__detail-row">
+              <strong>
+                {nodeNameById.get(connection.source.node_id) ?? connection.source.node_id}
+                {' -> '}
+                {nodeNameById.get(connection.destination.node_id) ?? connection.destination.node_id}
+              </strong>
+              <span>{connection.transport} · {connection.state}</span>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  )
+}
+
 function LayerWorkspace({
   layer,
   alerts,
@@ -367,6 +521,22 @@ function LayerWorkspace({
   onDismissAlert: (alertId: string) => void
 }) {
   const Icon = LAYER_ICONS[layer.id]
+  const [selectedMidiRowId, setSelectedMidiRowId] = useState<string | null>(null)
+  const isClusterLayer = layer.id === 'cluster-dashboard'
+  const isMidiLayer = layer.id === 'midi-cluster'
+
+  useEffect(() => {
+    setSelectedMidiRowId(null)
+  }, [layer.id])
+
+  useEffect(() => {
+    if (!isMidiLayer || !selectedMidiRowId) {
+      return
+    }
+    if (!layer.tableRows.some((row) => row.id === selectedMidiRowId)) {
+      setSelectedMidiRowId(null)
+    }
+  }, [isMidiLayer, layer.tableRows, selectedMidiRowId])
 
   return (
     <motion.section
@@ -414,8 +584,19 @@ function LayerWorkspace({
         />
       ) : null}
 
-      <LayerSummaryTiles items={layer.gridItems} />
-      <LayerDataTable layer={layer} />
+      {isClusterLayer ? (
+        <ClusterDashboardWorkspace layer={layer} />
+      ) : (
+        <>
+          <LayerSummaryTiles items={layer.gridItems} />
+          <LayerDataTable
+            layer={layer}
+            onRowSelect={isMidiLayer ? setSelectedMidiRowId : undefined}
+            selectedRowId={selectedMidiRowId}
+          />
+          {isMidiLayer ? <MidiClusterNodeDetail selectedEndpointId={selectedMidiRowId} /> : null}
+        </>
+      )}
     </motion.section>
   )
 }
@@ -566,7 +747,12 @@ export function PlatformShellPage() {
           </div>
         ) : (
           <AnimatePresence mode="wait">
-            <LayerWorkspace layer={activeLayer} alerts={visibleAlerts} onBack={handleBack} onDismissAlert={dismissAlert} />
+            <LayerWorkspace
+              layer={activeLayer}
+              alerts={visibleAlerts}
+              onBack={handleBack}
+              onDismissAlert={dismissAlert}
+            />
           </AnimatePresence>
         )}
       </div>

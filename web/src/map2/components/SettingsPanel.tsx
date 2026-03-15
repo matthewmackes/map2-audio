@@ -733,7 +733,7 @@ export default function SettingsPanel() {
                   { name: 'Audio', endpoint: '/api/audio/status' },
                   { name: 'Chains', endpoint: '/api/chains/' },
                   { name: 'Plugins', endpoint: '/api/plugins/discover' },
-                  { name: 'Presets', endpoint: '/api/presets/' },
+                  { name: 'Snapshots', endpoint: '/api/snapshots/' },
                   { name: 'MIDI', endpoint: '/api/midi/devices' },
                   { name: 'IR', endpoint: '/api/ir/' },
                   { name: 'NAM', endpoint: '/api/nam/' },

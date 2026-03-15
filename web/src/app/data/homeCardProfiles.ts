@@ -75,30 +75,17 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Platform Guide whenever you need a single place for first-run orientation, document lookup, release provenance, or support escalation context.',
     bestFor: 'Onboarding and support traceability',
   },
-  '/multi-system': {
-    summary: 'Comparative operations view for understanding differences and coordination across multiple MAP2 systems.',
-    capabilities: [
-      'Side-by-side system state comparison',
-      'Cross-node metric correlation',
-      'Distributed rig behavior visibility',
-      'Difference spotting across environments',
-      'Shared operational situational awareness',
-      'Multi-node troubleshooting acceleration',
-    ],
-    learnMore: 'Use Multi-System to validate consistency between rigs, compare behavior during rollout, and isolate node-specific faults.',
-    bestFor: 'Cross-system operations',
-  },
-  '/presets': {
-    summary: 'Preset lifecycle management for storing, organizing, sharing, and restoring stable rig states quickly.',
+  '/snapshots': {
+    summary: 'Snapshot lifecycle management for storing, organizing, sharing, and restoring stable rig states quickly.',
     capabilities: [
       'Save and recall tone/session states',
-      'Organize preset libraries for retrieval',
-      'Import and export preset payloads',
+      'Organize snapshot libraries for retrieval',
+      'Import and export snapshot payloads',
       'Rapid restoration of known-good setups',
       'Consistency across repeated workflows',
-      'Preset portability between environments',
+      'Snapshot portability between environments',
     ],
-    learnMore: 'Use Presets as the operational backbone for repeatability, rollback, and reliable transitions between working sounds.',
+    learnMore: 'Use Snapshots as the operational backbone for repeatability, rollback, and reliable transitions between working sounds.',
     bestFor: 'Repeatable sound state management',
   },
   '/plugins': {
@@ -282,6 +269,14 @@ function getProfileKey(item: HomeItem): string {
   return `${item.to}::${item.label}`
 }
 
+function getRoutePathname(route: string): string {
+  try {
+    return new URL(route, 'https://map2.local').pathname
+  } catch {
+    return route
+  }
+}
+
 export function resolveHomeCardProfile(item: HomeItem): HomeCardProfile {
   const exact = PROFILE_BY_KEY[getProfileKey(item)]
   if (exact) {
@@ -291,6 +286,11 @@ export function resolveHomeCardProfile(item: HomeItem): HomeCardProfile {
   const byRoute = PROFILE_BY_KEY[item.to]
   if (byRoute) {
     return byRoute
+  }
+
+  const byPathname = PROFILE_BY_KEY[getRoutePathname(item.to)]
+  if (byPathname) {
+    return byPathname
   }
 
   return {

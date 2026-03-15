@@ -1,7 +1,7 @@
 import React from 'react'
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { NodeNavBar } from './NodeNavBar'
 import { NodeNavChip } from './NodeNavChip'
@@ -48,6 +48,11 @@ const baseNode = {
 }
 
 describe('NodeNavChip', () => {
+  function LocationProbe() {
+    const location = useLocation()
+    return <div data-testid="location-probe">{`${location.pathname}${location.search}`}</div>
+  }
+
   beforeEach(() => {
     useViewedNodeStore.setState({ pageNodeMap: {} })
     mockUseNodePageContext.mockReturnValue({
@@ -105,6 +110,21 @@ describe('NodeNavChip', () => {
 
     fireEvent.click(screen.getByText('Set as page node'))
     expect(useViewedNodeStore.getState().pageNodeMap.home).toBe('node-b')
+  })
+
+  it('routes platform node details into the single-node layer', () => {
+    render(
+      <MemoryRouter initialEntries={['/platform?layer=cluster-dashboard']}>
+        <NodeNavBar />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /node node-b/i }))
+    fireEvent.click(screen.getByText('View details'))
+
+    expect(useViewedNodeStore.getState().pageNodeMap.nodes).toBe('node-b')
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platform?layer=single-node')
   })
 
   it('renders a single chip for n=1 mode and shows a skeleton while loading', () => {

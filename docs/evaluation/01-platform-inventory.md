@@ -471,7 +471,7 @@ Largest individual route modules by decorator count:
 - Audio Processing: `Audio Engine` -> `/engine`
 - Control: `MIDI` -> `/midi`, `MIDI Hub` -> `/midi-hub`, `MPX1 Rack` -> `/mpx1`
 - Hardware & Interfaces: `LCD Console` -> `/lcd`, `Audio Interfaces` -> `#hardware-interfaces`, `AVB Routing` -> `/avb-routing`, `Tesira AVB` -> `/tesira`
-- Infrastructure: `Host Machine` -> `/host-machine`, `Cluster Dashboard` -> `/cluster-dashboard`, `Multi-System` -> `/multi-system`
+- Infrastructure: `Host Machine` -> `/host-machine`, `Cluster Dashboard` -> `/platform?layer=cluster-dashboard`
 
 Hardware submenu:
 
@@ -502,7 +502,7 @@ Notable navigation observation: the hardware submenu currently exposes both `HoT
 - `web/src/app/pages/AvbRoutingPage.tsx`
 - `web/src/app/pages/CPUPerformancePage.tsx`
 - `web/src/app/pages/ChainsPage.tsx`
-- `web/src/app/pages/ClusterDashboardPage.tsx`
+- `web/src/app/pages/PlatformShellPage.tsx`
 - `web/src/app/pages/DSPPage.tsx`
 - `web/src/app/pages/DrumsPage.tsx`
 - `web/src/app/pages/EdirolUA1000Page.tsx`
@@ -527,7 +527,6 @@ Notable navigation observation: the hardware submenu currently exposes both `HoT
 - `web/src/app/pages/MPX1PerformView.tsx`
 - `web/src/app/pages/MeteringPage.tsx`
 - `web/src/app/pages/MidiHubPage.tsx`
-- `web/src/app/pages/MultiSystemDashboardPage.tsx`
 - `web/src/app/pages/PipeWirePage.tsx`
 - `web/src/app/pages/PresetsPage.tsx`
 - `web/src/app/pages/TesiraPage.tsx`

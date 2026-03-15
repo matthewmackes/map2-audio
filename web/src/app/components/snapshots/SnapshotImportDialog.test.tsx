@@ -2,9 +2,9 @@ import React from 'react'
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-import { PresetImportDialog } from './PresetImportDialog'
+import { SnapshotImportDialog } from './SnapshotImportDialog'
 
-describe('PresetImportDialog', () => {
+describe('SnapshotImportDialog', () => {
   const mockFetch = jest.fn()
 
   beforeEach(() => {
@@ -71,7 +71,7 @@ describe('PresetImportDialog', () => {
 
     const onImportSuccess = jest.fn()
     const { container } = render(
-      <PresetImportDialog
+      <SnapshotImportDialog
         isOpen
         onClose={jest.fn()}
         onImportSuccess={onImportSuccess}
@@ -96,7 +96,7 @@ describe('PresetImportDialog', () => {
     })
 
     const { container } = render(
-      <PresetImportDialog
+      <SnapshotImportDialog
         isOpen
         onClose={jest.fn()}
       />,

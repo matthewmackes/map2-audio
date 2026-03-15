@@ -755,7 +755,7 @@ map2-restart() {
     (
         cd "${map2_dir}/web"
         npm run build > /tmp/map2-frontend-build.log 2>&1
-        npm run preview -- --host 0.0.0.0 --port 3000 > /tmp/map2-frontend.log 2>&1 &
+        npm run serve -- --host 0.0.0.0 --port 3000 > /tmp/map2-frontend.log 2>&1 &
         frontend_pid=$!
         echo "${frontend_pid}" > /tmp/map2-frontend.pid
     )

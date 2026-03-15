@@ -1,10 +1,10 @@
 /**
- * PresetsPage - Complete Preset Management
+ * SnapshotsPage - Complete Snapshot Management
  *
  * Features:
- * - Local preset library (chain presets)
- * - Plugin presets management
- * - Community preset browser
+ * - Local snapshot library (chain snapshots)
+ * - Plugin snapshot management
+ * - Community snapshot browser
  * - Universal import/export (FXP, VST3, LV2, JUCE, MAP2UPF)
  */
 
@@ -18,7 +18,6 @@ import {
   useComboboxStore,
 } from '@ariakit/react'
 import {
-  BookmarkSimple,
   SpinnerGap,
   Star,
   GearSix,
@@ -28,33 +27,30 @@ import {
   FolderOpen,
   Trash,
   ArrowsClockwise,
-  FileArrowUp,
-  Users,
   Package,
   Play,
   Check,
 } from '@phosphor-icons/react'
-import type { Preset, FlowSnapshot } from '../../map2/types'
-import { presetsApi, pluginPresetsApi, flowSnapshotsApi } from '../../map2/api'
+import type { FlowSnapshot } from '../../map2/types'
+import { pluginPresetsApi as pluginSnapshotsApi, flowSnapshotsApi } from '../../map2/api'
 import { sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { PageHeader } from '../components/PageHeader'
 import { useToasts } from '../components/Toasts'
-import { PresetImportDialog } from '../components/presets/PresetImportDialog'
-import { CommunityPresetBrowser } from '../components/presets/CommunityPresetBrowser'
-import { PresetDeployModal } from '../components/presets/PresetDeployModal'
+import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
+import { CommunitySnapshotBrowser } from '../components/snapshots/CommunitySnapshotBrowser'
+import { SnapshotDeployModal } from '../components/snapshots/SnapshotDeployModal'
 import { useCluster } from '../contexts/ClusterContext'
 
-type PresetsResponse = { presets: Preset[] }
 type FlowSnapshotsResponse = { snapshots: FlowSnapshot[]; count: number; active_id: number | null }
 type TabType = 'local' | 'plugin' | 'community'
-type PresetAvailability = {
+type SnapshotAvailability = {
   preset_id: number
   checksum: string
   source_node_id?: string
   available_on: string[]
   missing_on: string[]
 }
-type ClusterPresetCatalogRow = {
+type ClusterSnapshotCatalogRow = {
   checksum: string
   name: string
   plugin_name: string
@@ -63,7 +59,7 @@ type ClusterPresetCatalogRow = {
   origin_nodes: string[]
 }
 
-export function PresetsPage() {
+export function SnapshotsPage() {
   const queryClient = useQueryClient()
   const combobox = useComboboxStore()
   const searchValue = combobox.getState().value
@@ -76,48 +72,48 @@ export function PresetsPage() {
   const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [uploadForm, setUploadForm] = useState({ name: '', description: '', category: 'User', tags: '' })
   const [uploading, setUploading] = useState(false)
-  const [clusterPresetView, setClusterPresetView] = useState(activeNodeId === 'all')
-  const [deployPreset, setDeployPreset] = useState<any | null>(null)
+  const [clusterSnapshotView, setClusterSnapshotView] = useState(activeNodeId === 'all')
+  const [deploySnapshot, setDeploySnapshot] = useState<any | null>(null)
   const apiNodeId = activeNodeId && activeNodeId !== 'all' && activeNodeId !== localNodeId ? activeNodeId : null
   const sourceNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
   const selectedNode = clusterNodes.find((node) => node.nodeId === sourceNodeId)
   const sourceNodeLabel = selectedNode?.isLocal ? `${selectedNode.hostname} (Local)` : selectedNode?.hostname ?? 'Local'
-  const clusterPresetViewActive = activeTab === 'plugin' && (activeNodeId === 'all' || clusterPresetView)
+  const clusterSnapshotViewActive = activeTab === 'plugin' && (activeNodeId === 'all' || clusterSnapshotView)
 
   useEffect(() => {
     if (activeNodeId === 'all') {
-      setClusterPresetView(true)
+      setClusterSnapshotView(true)
     }
   }, [activeNodeId])
 
-  // Queries - Flow Snapshots (Chain Presets)
+  // Queries - Flow Snapshots (Chain Snapshots)
   const snapshotsQuery = useQuery<FlowSnapshotsResponse>({
     queryKey: ['flow-snapshots', sourceNodeId],
     queryFn: () => flowSnapshotsApi.list(apiNodeId),
   })
 
-  const pluginPresetsQuery = useQuery({
-    queryKey: ['plugin-presets', sourceNodeId],
-    queryFn: () => pluginPresetsApi.list({}, apiNodeId),
-    enabled: activeTab === 'plugin' && !clusterPresetViewActive,
+  const pluginSnapshotsQuery = useQuery({
+    queryKey: ['plugin-snapshots', sourceNodeId],
+    queryFn: () => pluginSnapshotsApi.list({}, apiNodeId),
+    enabled: activeTab === 'plugin' && !clusterSnapshotViewActive,
   })
 
   const snapshots = snapshotsQuery.data?.snapshots ?? []
   const activeSnapshotId = snapshotsQuery.data?.active_id ?? null
-  const pluginPresets = pluginPresetsQuery.data?.presets ?? []
+  const pluginSnapshots = pluginSnapshotsQuery.data?.presets ?? []
   const clusterNodeCount = clusterNodes.length
 
-  const clusterPresetCatalogQuery = useQuery<ClusterPresetCatalogRow[]>({
-    queryKey: ['plugin-presets', 'cluster-catalog'],
+  const clusterSnapshotCatalogQuery = useQuery<ClusterSnapshotCatalogRow[]>({
+    queryKey: ['plugin-snapshots', 'cluster-catalog'],
     queryFn: async () => {
       const response = await fetch('/api/preset-exchange/cluster/library?content_type=preset&node_id=all')
       if (!response.ok) {
-        throw new Error('Failed to load cluster preset catalog')
+        throw new Error('Failed to load cluster snapshot catalog')
       }
       const payload = await response.json() as {
         nodes?: Record<string, { body?: { items?: Array<{ checksum: string; name: string; plugin_name: string; plugin_uri: string }> } }>
       }
-      const byChecksum = new Map<string, ClusterPresetCatalogRow>()
+      const byChecksum = new Map<string, ClusterSnapshotCatalogRow>()
       Object.entries(payload.nodes ?? {}).forEach(([nodeId, nodePayload]) => {
         for (const item of nodePayload.body?.items ?? []) {
           const existing = byChecksum.get(item.checksum)
@@ -138,26 +134,26 @@ export function PresetsPage() {
       })
       return Array.from(byChecksum.values()).sort((a, b) => a.name.localeCompare(b.name))
     },
-    enabled: clusterPresetViewActive,
+    enabled: clusterSnapshotViewActive,
     staleTime: 10000,
   })
 
-  const presetAvailabilityQuery = useQuery<Record<number, PresetAvailability>>({
-    queryKey: ['plugin-presets', 'availability', sourceNodeId, pluginPresets.map((preset: any) => preset.id)],
+  const snapshotAvailabilityQuery = useQuery<Record<number, SnapshotAvailability>>({
+    queryKey: ['plugin-snapshots', 'availability', sourceNodeId, pluginSnapshots.map((snapshot: any) => snapshot.id)],
     queryFn: async () => {
       const entries = await Promise.all(
-        pluginPresets.map(async (preset: any) => {
-          const response = await fetch(`/api/preset-exchange/availability?preset_id=${preset.id}&source_node_id=${encodeURIComponent(sourceNodeId)}`)
+        pluginSnapshots.map(async (snapshot: any) => {
+          const response = await fetch(`/api/preset-exchange/availability?preset_id=${snapshot.id}&source_node_id=${encodeURIComponent(sourceNodeId)}`)
           if (!response.ok) {
-            throw new Error(`Failed to load availability for preset ${preset.id}`)
+            throw new Error(`Failed to load availability for snapshot ${snapshot.id}`)
           }
-          const payload = (await response.json()) as PresetAvailability
-          return [preset.id, payload] as const
+          const payload = (await response.json()) as SnapshotAvailability
+          return [snapshot.id, payload] as const
         })
       )
       return Object.fromEntries(entries)
     },
-    enabled: activeTab === 'plugin' && !clusterPresetViewActive && pluginPresets.length > 0,
+    enabled: activeTab === 'plugin' && !clusterSnapshotViewActive && pluginSnapshots.length > 0,
     staleTime: 10000,
   })
 
@@ -228,16 +224,16 @@ export function PresetsPage() {
   }
 
   // Import success handler
-  const handleImportSuccess = (presetId: number, name: string) => {
+  const handleImportSuccess = (_snapshotId: number, name: string) => {
     queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-    queryClient.invalidateQueries({ queryKey: ['plugin-presets'] })
+    queryClient.invalidateQueries({ queryKey: ['plugin-snapshots'] })
     pushToast(`Imported "${name}" successfully`, 'success')
   }
 
-  // Community preset upload handler
+  // Community snapshot upload handler
   const handleCommunityUpload = async () => {
     if (!uploadForm.name.trim()) {
-      pushToast('Preset name is required', 'error')
+      pushToast('Snapshot name is required', 'error')
       return
     }
     setUploading(true)
@@ -270,13 +266,13 @@ export function PresetsPage() {
   }
 
   return (
-    <div className="stack presets-page">
+    <div className="stack snapshots-page">
       <PageHeader
-        title="Presets"
+        title="Snapshots"
         subtitle={
           activeNodeId === 'all'
-            ? 'Compare cluster-wide preset coverage, then switch to a source node to deploy missing content.'
-            : `Manage presets for ${sourceNodeLabel}, browse community, and import/export cross-platform formats.`
+            ? 'Compare cluster-wide snapshot coverage, then switch to a source node to deploy missing content.'
+            : `Manage snapshots for ${sourceNodeLabel}, browse community, and import/export cross-platform formats.`
         }
         icon={<GearSix size={32} weight="duotone" style={{ color: '#2563eb' }} />}
         actions={
@@ -315,17 +311,17 @@ export function PresetsPage() {
           }}
         >
           <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.1, color: '#94a3b8', marginBottom: 8 }}>
-            Preset Scope
+            Snapshot Scope
           </div>
           <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>
             {activeNodeId === 'all' ? 'All Nodes cluster comparison' : sourceNodeLabel}
           </div>
           <p style={{ margin: 0, color: '#cbd5e1', fontSize: 14, lineHeight: 1.6 }}>
             {activeNodeId === 'all'
-              ? 'Cluster Presets mode merges the union of all plugin presets and shows which nodes already have each checksum. Switch to a specific node to deploy missing presets from that source.'
+              ? 'Cluster Snapshots mode merges the union of all plugin snapshots and shows which nodes already have each checksum. Switch to a specific node to deploy missing snapshots from that source.'
               : apiNodeId
-                ? 'Preset actions run on the selected remote node through the cluster proxy. Availability and deploy commands use that node as the source.'
-                : 'Preset availability is still measured across the cluster, so you can push missing presets from the local node without leaving the page.'}
+                ? 'Snapshot actions run on the selected remote node through the cluster proxy. Availability and deploy commands use that node as the source.'
+                : 'Snapshot availability is still measured across the cluster, so you can push missing snapshots from the local node without leaving the page.'}
           </p>
         </div>
       )}
@@ -333,7 +329,7 @@ export function PresetsPage() {
       {/* Tabs */}
       <div className="card" style={{ padding: 0 }}>
         <div
-          className="presets-tab-strip"
+          className="snapshots-tab-strip"
           style={{
             display: 'flex',
             borderBottom: '1px solid var(--border, #333)',
@@ -343,15 +339,15 @@ export function PresetsPage() {
             active={activeTab === 'local'}
             onClick={() => setActiveTab('local')}
             icon={<FolderOpen size={16} weight="duotone" />}
-            label="Chain Presets"
+            label="Chain Snapshots"
             count={snapshots.length}
           />
           <TabButton
             active={activeTab === 'plugin'}
             onClick={() => setActiveTab('plugin')}
             icon={<Package size={16} weight="duotone" />}
-            label="Plugin Presets"
-            count={pluginPresets.length}
+            label="Plugin Snapshots"
+            count={pluginSnapshots.length}
           />
           <TabButton
             active={activeTab === 'community'}
@@ -361,12 +357,12 @@ export function PresetsPage() {
           />
         </div>
 
-        {/* Local Chain Presets Tab - Now showing Flow Snapshots */}
+        {/* Local Chain Snapshots Tab - backed by Flow Snapshots */}
         {activeTab === 'local' && (
           <div style={{ padding: '16px' }}>
             <div className="section-heading">
               <div>
-                <h3>Chain Preset Library</h3>
+                <h3>Chain Snapshot Library</h3>
                 <p className="subtitle">
                   Complete signal chain configurations (Flow Snapshots). Type to filter or pick from the popover.
                 </p>
@@ -377,12 +373,12 @@ export function PresetsPage() {
                     <Combobox
                       store={combobox}
                       className="combobox"
-                      placeholder="Search presets"
+                      placeholder="Search snapshots"
                     />
                     <ComboboxPopover store={combobox} className="menu" gutter={6}>
                       {names.length === 0 ? (
                         <div className="menu-item" aria-disabled>
-                          {snapshotsQuery.isLoading ? 'Loading presets…' : 'No presets yet'}
+                          {snapshotsQuery.isLoading ? 'Loading snapshots…' : 'No snapshots yet'}
                         </div>
                       ) : (
                         names.map((name) => (
@@ -404,14 +400,14 @@ export function PresetsPage() {
 
             {snapshotsQuery.isLoading ? (
               <div className="flex" style={{ padding: '12px 4px' }}>
-                <SpinnerGap className="spin" size={18} weight="duotone" /> Loading presets...
+                <SpinnerGap className="spin" size={18} weight="duotone" /> Loading snapshots...
               </div>
             ) : snapshotsQuery.error ? (
-              <div className="pill warn">Failed to load presets</div>
+              <div className="pill warn">Failed to load snapshots</div>
             ) : snapshots.length === 0 ? (
               <div className="empty-state">
                 <FolderOpen size={48} weight="duotone" style={{ opacity: 0.3, marginBottom: '12px' }} />
-                <p>No chain presets yet.</p>
+                <p>No chain snapshots yet.</p>
                 <p className="subtitle">Save one from the Grid editor (press S) or import from file.</p>
               </div>
             ) : (
@@ -437,7 +433,7 @@ export function PresetsPage() {
                         onLoad={() => loadSnapshotMutation.mutate(snapshot.id)}
                         onToggleFavorite={() => toggleFavoriteMutation.mutate({ id: snapshot.id, currentValue: snapshot.is_favorite })}
                         onDelete={() => {
-                          if (confirm(`Delete preset "${snapshot.name}"?`)) {
+                          if (confirm(`Delete snapshot "${snapshot.name}"?`)) {
                             deleteSnapshotMutation.mutate(snapshot.id)
                           }
                         }}
@@ -451,38 +447,38 @@ export function PresetsPage() {
           </div>
         )}
 
-        {/* Plugin Presets Tab */}
+        {/* Plugin Snapshots Tab */}
         {activeTab === 'plugin' && (
           <div style={{ padding: '16px' }}>
             <div className="section-heading">
               <div>
-                <h3>Plugin Preset Library</h3>
+                <h3>Plugin Snapshot Library</h3>
                 <p className="subtitle">
-                  {clusterPresetViewActive
-                    ? 'Unified preset catalog across the cluster with per-node coverage.'
-                    : 'Individual plugin parameter presets. Reusable across chains.'}
+                  {clusterSnapshotViewActive
+                    ? 'Unified snapshot catalog across the cluster with per-node coverage.'
+                    : 'Individual plugin parameter snapshots. Reusable across chains.'}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {isClusterMode && (
                   <button
-                    className={clusterPresetViewActive ? 'btn btn-primary' : 'btn btn-secondary'}
+                    className={clusterSnapshotViewActive ? 'btn btn-primary' : 'btn btn-secondary'}
                     onClick={() => {
                       if (activeNodeId === 'all') return
-                      setClusterPresetView((previous) => !previous)
+                      setClusterSnapshotView((previous) => !previous)
                     }}
                     disabled={activeNodeId === 'all'}
                   >
-                    {clusterPresetViewActive ? 'Cluster View On' : 'Cluster Presets'}
+                    {clusterSnapshotViewActive ? 'Cluster View On' : 'Cluster Snapshots'}
                   </button>
                 )}
                 <button
                   className="btn btn-icon"
                   onClick={() => {
-                    if (clusterPresetViewActive) {
-                      clusterPresetCatalogQuery.refetch()
+                    if (clusterSnapshotViewActive) {
+                      clusterSnapshotCatalogQuery.refetch()
                     } else {
-                      pluginPresetsQuery.refetch()
+                      pluginSnapshotsQuery.refetch()
                     }
                   }}
                   title="Refresh"
@@ -492,17 +488,17 @@ export function PresetsPage() {
               </div>
             </div>
 
-            {clusterPresetViewActive ? (
-              clusterPresetCatalogQuery.isLoading ? (
+            {clusterSnapshotViewActive ? (
+              clusterSnapshotCatalogQuery.isLoading ? (
                 <div className="flex" style={{ padding: '12px 4px' }}>
-                  <SpinnerGap className="spin" size={18} weight="duotone" /> Loading cluster preset catalog...
+                  <SpinnerGap className="spin" size={18} weight="duotone" /> Loading cluster snapshot catalog...
                 </div>
-              ) : clusterPresetCatalogQuery.error ? (
-                <div className="pill warn">Failed to load cluster preset catalog</div>
-              ) : !clusterPresetCatalogQuery.data?.length ? (
+              ) : clusterSnapshotCatalogQuery.error ? (
+                <div className="pill warn">Failed to load cluster snapshot catalog</div>
+              ) : !clusterSnapshotCatalogQuery.data?.length ? (
                 <div className="empty-state">
                   <Package size={48} weight="duotone" style={{ opacity: 0.3, marginBottom: '12px' }} />
-                  <p>No plugin presets found across the cluster.</p>
+                  <p>No plugin snapshots found across the cluster.</p>
                 </div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
@@ -516,17 +512,17 @@ export function PresetsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {clusterPresetCatalogQuery.data.map((preset) => (
-                        <tr key={preset.checksum}>
-                          <td>{preset.name}</td>
-                          <td className="muted">{sanitizeRestrictedDisplayText(preset.plugin_name) || 'Processor'}</td>
-                          <td>{preset.origin_nodes.join(', ')}</td>
+                      {clusterSnapshotCatalogQuery.data.map((snapshot) => (
+                        <tr key={snapshot.checksum}>
+                          <td>{snapshot.name}</td>
+                          <td className="muted">{sanitizeRestrictedDisplayText(snapshot.plugin_name) || 'Processor'}</td>
+                          <td>{snapshot.origin_nodes.join(', ')}</td>
                           <td>
                             <span
-                              className={preset.available_on.length === clusterNodeCount ? 'pill success' : 'pill warn'}
-                              title={`Available on: ${preset.available_on.join(', ')}`}
+                              className={snapshot.available_on.length === clusterNodeCount ? 'pill success' : 'pill warn'}
+                              title={`Available on: ${snapshot.available_on.join(', ')}`}
                             >
-                              {preset.available_on.length}/{clusterNodeCount || preset.available_on.length} nodes
+                              {snapshot.available_on.length}/{clusterNodeCount || snapshot.available_on.length} nodes
                             </span>
                           </td>
                         </tr>
@@ -535,18 +531,18 @@ export function PresetsPage() {
                   </table>
                 </div>
               )
-            ) : pluginPresetsQuery.isLoading ? (
+            ) : pluginSnapshotsQuery.isLoading ? (
               <div className="flex" style={{ padding: '12px 4px' }}>
-                <SpinnerGap className="spin" size={18} weight="duotone" /> Loading plugin presets...
+                <SpinnerGap className="spin" size={18} weight="duotone" /> Loading plugin snapshots...
               </div>
-            ) : pluginPresetsQuery.error ? (
-              <div className="pill warn">Failed to load plugin presets</div>
-            ) : pluginPresets.length === 0 ? (
+            ) : pluginSnapshotsQuery.error ? (
+              <div className="pill warn">Failed to load plugin snapshots</div>
+            ) : pluginSnapshots.length === 0 ? (
               <div className="empty-state">
                 <Package size={48} weight="duotone" style={{ opacity: 0.3, marginBottom: '12px' }} />
-                <p>No plugin presets yet.</p>
+                <p>No plugin snapshots yet.</p>
                 <p className="subtitle">
-                  Save presets from plugin parameter editors or import from file.
+                  Save snapshots from plugin parameter editors or import from file.
                 </p>
               </div>
             ) : (
@@ -565,19 +561,19 @@ export function PresetsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pluginPresets.map((preset: any) => (
-                      <tr key={preset.id}>
-                        <td>{preset.name}</td>
-                        <td className="muted">{sanitizeRestrictedDisplayText(preset.plugin_name) || 'Processor'}</td>
-                        <td>{preset.category}</td>
-                        <td>{preset.usage_count}x</td>
+                    {pluginSnapshots.map((snapshot: any) => (
+                      <tr key={snapshot.id}>
+                        <td>{snapshot.name}</td>
+                        <td className="muted">{sanitizeRestrictedDisplayText(snapshot.plugin_name) || 'Processor'}</td>
+                        <td>{snapshot.category}</td>
+                        <td>{snapshot.usage_count}x</td>
                         <td>
-                          {presetAvailabilityQuery.isLoading ? (
+                          {snapshotAvailabilityQuery.isLoading ? (
                             <span className="muted">Checking…</span>
-                          ) : presetAvailabilityQuery.error ? (
+                          ) : snapshotAvailabilityQuery.error ? (
                             <span className="pill warn">Unavailable</span>
                           ) : (() => {
-                            const availability = presetAvailabilityQuery.data?.[preset.id]
+                            const availability = snapshotAvailabilityQuery.data?.[snapshot.id]
                             if (!availability) return <span className="muted">Unknown</span>
                             if (availability.missing_on.length === 0) {
                               return <span className="pill success">In Sync {availability.available_on.length}/{clusterNodeCount || availability.available_on.length}</span>
@@ -590,12 +586,12 @@ export function PresetsPage() {
                           })()}
                         </td>
                         <td>
-                          {preset.is_default && (
+                          {snapshot.is_default && (
                             <span className="pill success">Default</span>
                           )}
                         </td>
                         <td>
-                          {preset.is_favorite ? (
+                          {snapshot.is_favorite ? (
                             <Star size={16} fill="#fbbf24" stroke="#fbbf24" />
                           ) : (
                             <Star size={16} style={{ opacity: 0.3 }} />
@@ -603,12 +599,12 @@ export function PresetsPage() {
                         </td>
                         <td>
                           {(() => {
-                            const availability = presetAvailabilityQuery.data?.[preset.id]
+                            const availability = snapshotAvailabilityQuery.data?.[snapshot.id]
                             return (
                               <button
                                 className="btn btn-secondary"
                                 style={{ padding: '6px 10px', fontSize: 12 }}
-                                onClick={() => setDeployPreset(preset)}
+                                onClick={() => setDeploySnapshot(snapshot)}
                               >
                                 {availability?.missing_on.length ? 'Deploy…' : 'Review…'}
                               </button>
@@ -626,9 +622,9 @@ export function PresetsPage() {
 
         {/* Community Tab */}
         {activeTab === 'community' && (
-          <CommunityPresetBrowser
-            onPresetDownloaded={(params) => {
-              pushToast('Preset downloaded and ready to apply', 'success')
+          <CommunitySnapshotBrowser
+            onSnapshotDownloaded={() => {
+              pushToast('Snapshot downloaded and ready to apply', 'success')
             }}
             onUploadClick={() => {
               setShowUploadDialog(true)
@@ -638,18 +634,18 @@ export function PresetsPage() {
       </div>
 
       {/* Import Dialog */}
-      <PresetImportDialog
+      <SnapshotImportDialog
         isOpen={showImportDialog}
         onClose={() => setShowImportDialog(false)}
         onImportSuccess={handleImportSuccess}
       />
 
-      <PresetDeployModal
-        open={Boolean(deployPreset)}
-        preset={deployPreset}
-        availability={deployPreset ? presetAvailabilityQuery.data?.[deployPreset.id] ?? null : null}
+      <SnapshotDeployModal
+        open={Boolean(deploySnapshot)}
+        snapshot={deploySnapshot}
+        availability={deploySnapshot ? snapshotAvailabilityQuery.data?.[deploySnapshot.id] ?? null : null}
         sourceNodeId={sourceNodeId}
-        onClose={() => setDeployPreset(null)}
+        onClose={() => setDeploySnapshot(null)}
       />
 
       {/* Community Upload Dialog */}
@@ -668,7 +664,7 @@ export function PresetsPage() {
             <h3 style={{ margin: '0 0 16px', color: '#f3f4f6' }}>Upload to Community Library</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Preset Name *</label>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Snapshot Name *</label>
                 <input
                   value={uploadForm.name}
                   onChange={(e) => setUploadForm(f => ({ ...f, name: e.target.value }))}
@@ -681,7 +677,7 @@ export function PresetsPage() {
                 <textarea
                   value={uploadForm.description}
                   onChange={(e) => setUploadForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Describe your preset..."
+                  placeholder="Describe your snapshot..."
                   rows={3}
                   style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6', resize: 'vertical' }}
                 />
@@ -789,7 +785,7 @@ function TabButton({
   )
 }
 
-// Snapshot Row Component (Flow Snapshot as Chain Preset)
+// Snapshot Row Component (Flow Snapshot as Chain Snapshot)
 function SnapshotRow({
   snapshot,
   isActive,
@@ -877,7 +873,7 @@ function SnapshotRow({
           <button
             onClick={onLoad}
             className="btn btn-icon"
-            title="Load preset"
+            title="Load snapshot"
             style={{ padding: '4px' }}
             disabled={isLoading || isActive}
           >
@@ -892,7 +888,7 @@ function SnapshotRow({
           <button
             onClick={onDelete}
             className="btn btn-icon btn-danger"
-            title="Delete preset"
+            title="Delete snapshot"
             style={{ padding: '4px' }}
           >
             <Trash size={14} weight="duotone" />

@@ -75,9 +75,9 @@ import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { NumberInput } from '../components/Controls/NumberInput'
 import { MapAudioGridIcon } from '../components/icons/map'
-import { PresetImportDialog } from '../components/presets/PresetImportDialog'
+import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, HistoryStatus, FlowSnapshot, FlowSnapshotData, FlowSnapshotDetail, ChainSnapshot, ChainsResponse, Preset } from '../../map2/types'
+import type { Chain, Plugin, HistoryStatus, FlowSnapshot, FlowSnapshotData, FlowSnapshotDetail, ChainSnapshot, ChainsResponse, Snapshot } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
@@ -443,7 +443,7 @@ export function JuceGridPage() {
   const [savePresetName, setSavePresetName] = useState('')
   const [showRenameChainModal, setShowRenameChainModal] = useState(false)
   const [renameChainName, setRenameChainName] = useState('')
-  const [presetPendingDelete, setPresetPendingDelete] = useState<Preset | null>(null)
+  const [presetPendingDelete, setPresetPendingDelete] = useState<Snapshot | null>(null)
   const [showClearFlowsModal, setShowClearFlowsModal] = useState(false)
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false)
   const [selectedFlowForAssignment, setSelectedFlowForAssignment] = useState<FlowSlot | null>(null)
@@ -514,6 +514,12 @@ export function JuceGridPage() {
   const [snapshotMorphRunning, setSnapshotMorphRunning] = useState(false)
   const [snapshotLibraryExpanded, setSnapshotLibraryExpanded] = useState(false)
   const [midiRailExpanded, setMidiRailExpanded] = useState(false)
+  const [midiPanelExpanded, setMidiPanelExpanded] = useState(() => {
+    try {
+      const saved = localStorage.getItem('map2_juce_grid_midi_panel')
+      return saved !== null ? saved === 'true' : true // Default to expanded
+    } catch { return true }
+  })
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const momentaryRestoreStateRef = useRef<FlowSnapshotData | null>(null)
   const [automationPlaying, setAutomationPlaying] = useState(false)
@@ -572,6 +578,13 @@ export function JuceGridPage() {
       localStorage.setItem('map2_juce_grid_snapshots_panel', String(snapshotsPanelExpanded))
     } catch {}
   }, [snapshotsPanelExpanded])
+
+  // Persist midi panel state
+  useEffect(() => {
+    try {
+      localStorage.setItem('map2_juce_grid_midi_panel', String(midiPanelExpanded))
+    } catch {}
+  }, [midiPanelExpanded])
 
   // ============================================================================
   // Queries
@@ -1954,7 +1967,7 @@ export function JuceGridPage() {
     pushToast('Flows cleared', 'info')
   }, [pushToast])
 
-  const handleDeletePresetRequest = useCallback((preset: Preset) => {
+  const handleDeletePresetRequest = useCallback((preset: Snapshot) => {
     setPresetPendingDelete(preset)
   }, [])
 
@@ -2447,178 +2460,12 @@ export function JuceGridPage() {
           </div>
         ) : (
           <>
-            <div className={`juce-grid-page__snapshot-guidance ${options.rail ? 'juce-grid-page__snapshot-guidance--rail' : ''}`}>
-              <div className="juce-grid-page__snapshot-guidance-card">
-                <strong>Snapshots</strong>
-                <p>Save the whole rig so you can jump back to exact sounds and routing in one move.</p>
-              </div>
-              <div className="juce-grid-page__snapshot-guidance-card">
-                <strong>Favorites</strong>
-                <p>Pin the snapshot recalls you reach for the most and keep them close at hand.</p>
-              </div>
-            </div>
-
-            <section className={`juce-grid-page__snapshot-group ${options.rail ? 'juce-grid-page__snapshot-group--rail' : ''}`}>
-              <div className="juce-grid-page__snapshot-group-header">
-                <button
-                  type="button"
-                  className="juce-grid-page__snapshot-group-toggle"
-                  onClick={() => setSnapshotLibraryExpanded((previous) => !previous)}
-                  aria-expanded={snapshotLibraryExpanded}
-                >
-                  <ChevronRight size={16} className={`juce-grid-page__snapshot-group-chevron ${snapshotLibraryExpanded ? 'is-open' : ''}`} />
-                  <strong>Snapshot Library</strong>
-                  <span>{librarySnapshots.length}</span>
-                </button>
-                <p className="juce-grid-page__snapshot-group-copy">
-                  Keep the full recall library tucked away until you need it.
-                </p>
-              </div>
-
-              {snapshotLibraryExpanded && (
-                librarySnapshots.length === 0 ? (
-                  <div className="juce-grid-page__snapshot-group-empty">
-                    <p className="juce-grid-page__empty-state-copy">
-                      Everything saved right now is favorited. Unfavorite a snapshot to park it in the wider library.
-                    </p>
-                  </div>
-                ) : (
-                  <div className={`juce-grid-page__snapshot-list ${options.rail ? 'juce-grid-page__snapshot-list--rail' : ''}`}>
-                    {librarySnapshots.map((snapshot) => {
-                      const isActiveSnapshot = snapshot.id === activeSnapshotId || snapshot.is_active
-
-                      return (
-                        <Tile
-                          key={snapshot.id}
-                          className={`juce-grid-page__snapshot-tile ${options.rail ? 'juce-grid-page__snapshot-tile--rail' : ''} ${isActiveSnapshot ? 'is-active' : ''} ${draggedSnapshotId === snapshot.id ? 'is-dragging' : ''} ${dragOverSnapshotId === snapshot.id ? 'is-drag-over' : ''}`}
-                          role="button"
-                          tabIndex={0}
-                          draggable
-                          onClick={() => loadFlowSnapshotMutation.mutate(snapshot.id)}
-                          onKeyDown={(event) => handleSnapshotCardKeyDown(event, snapshot)}
-                          onDragStart={(event) => handleSnapshotDragStart(event, snapshot.id)}
-                          onDragOver={(event) => handleSnapshotDragOver(event, snapshot.id)}
-                          onDragEnd={handleSnapshotDragEnd}
-                          onDrop={(event) => handleSnapshotDrop(event, snapshot.id)}
-                        >
-                          <div className="juce-grid-page__snapshot-main">
-                            <div className="juce-grid-page__snapshot-top">
-                              <div className="juce-grid-page__snapshot-name-row">
-                                <Draggable size={14} aria-hidden />
-                                <strong>{snapshot.name}</strong>
-                              </div>
-                              <div className="juce-grid-page__compact-tags">
-                                {isActiveSnapshot && <Tag type="blue">Active</Tag>}
-                                {isActiveSnapshot && activeSnapshotNeedsUpdate && <Tag type="warm-gray">Needs update</Tag>}
-                                {snapshot.program_number !== null && <Tag type="purple">PC {snapshot.program_number}</Tag>}
-                              </div>
-                            </div>
-
-                            <p className="juce-grid-page__snapshot-description">
-                              {snapshot.description || 'Recallable snapshot for the current multi-flow rig.'}
-                            </p>
-
-                            <div className="juce-grid-page__snapshot-slot-row">
-                              {snapshot.flow_slots.map((slot) => (
-                                <span
-                                  key={`${snapshot.id}-${slot.id}`}
-                                  className="juce-grid-page__snapshot-slot"
-                                  style={{ '--snapshot-slot-color': slot.color } as React.CSSProperties}
-                                >
-                                  {slot.label}
-                                </span>
-                              ))}
-                            </div>
-
-                            <div className="juce-grid-page__compact-tags">
-                              <Tag type="warm-gray">
-                                Updated {new Date(snapshot.updated_at).toLocaleDateString()}
-                              </Tag>
-                            </div>
-                          </div>
-
-                          <div className="juce-grid-page__snapshot-actions" onClick={(event) => event.stopPropagation()}>
-                            <Button
-                              size="sm"
-                              kind="primary"
-                              onClick={() => loadFlowSnapshotMutation.mutate(snapshot.id)}
-                              disabled={loadFlowSnapshotMutation.isPending}
-                            >
-                              Recall
-                            </Button>
-                            {snapshot.id !== activeSnapshotId && (
-                              <Button
-                                size="sm"
-                                kind={momentarySnapshotId === snapshot.id ? 'secondary' : 'ghost'}
-                                onPointerDown={(event) => {
-                                  event.preventDefault()
-                                  void startMomentaryPreview(snapshot)
-                                }}
-                                onKeyDown={(event) => {
-                                  if (event.key === 'Enter' || event.key === ' ') {
-                                    event.preventDefault()
-                                    void startMomentaryPreview(snapshot)
-                                  }
-                                }}
-                                disabled={(momentarySnapshotId !== null && momentarySnapshotId !== snapshot.id) || snapshotMorphRunning}
-                              >
-                                {momentarySnapshotId === snapshot.id ? 'Previewing...' : 'Hold to preview'}
-                              </Button>
-                            )}
-                            <Button size="sm" kind="ghost" onClick={() => handleSnapshotFavoriteToggle(snapshot)}>
-                              Favorite
-                            </Button>
-                            <OverflowMenu
-                              ariaLabel={`Actions for ${snapshot.name}`}
-                              iconDescription={`Actions for ${snapshot.name}`}
-                              size="sm"
-                              flipped
-                            >
-                              <OverflowMenuItem itemText="Rename" onClick={() => openSnapshotRenameModal(snapshot)} />
-                              <OverflowMenuItem itemText="Duplicate" onClick={() => handleSnapshotDuplicate(snapshot)} />
-                              {snapshot.id !== activeSnapshotId && (
-                                <OverflowMenuItem
-                                  itemText={snapshotCompareTargetId === snapshot.id ? 'Stop comparing' : activeSnapshot ? 'Compare with active snapshot' : 'Compare with live workspace'}
-                                  onClick={() => toggleSnapshotCompare(snapshot)}
-                                />
-                              )}
-                              {snapshot.id !== activeSnapshotId && (
-                                <OverflowMenuItem
-                                  itemText="Prepare morph"
-                                  disabled={!activeSnapshot || activeSnapshotNeedsUpdate}
-                                  onClick={() => {
-                                    setSnapshotCompareTargetId(snapshot.id)
-                                    setSnapshotMorphTarget(snapshot)
-                                  }}
-                                />
-                              )}
-                              <OverflowMenuItem
-                                itemText={snapshot.program_number === null ? 'Set MIDI PC' : 'Edit MIDI PC'}
-                                onClick={() => openSnapshotProgramModal(snapshot)}
-                              />
-                              {snapshot.program_number !== null && (
-                                <OverflowMenuItem itemText="Clear MIDI PC" onClick={() => clearSnapshotProgram(snapshot)} />
-                              )}
-                              <OverflowMenuItem itemText="Delete" isDelete onClick={() => requestSnapshotDelete(snapshot)} />
-                            </OverflowMenu>
-                          </div>
-                        </Tile>
-                      )
-                    })}
-                  </div>
-                )
-              )}
-            </section>
-
             <section className={`juce-grid-page__snapshot-group ${options.rail ? 'juce-grid-page__snapshot-group--rail' : ''}`}>
               <div className="juce-grid-page__snapshot-group-header">
                 <div className="juce-grid-page__snapshot-group-title">
                   <strong>Favorites</strong>
                   <span>{favoriteSnapshots.length}</span>
                 </div>
-                <p className="juce-grid-page__snapshot-group-copy">
-                  The saved sounds you grab the most stay open here for quick recall.
-                </p>
               </div>
 
               {favoriteSnapshots.length === 0 ? (
@@ -2758,6 +2605,155 @@ export function JuceGridPage() {
                 </div>
               )}
             </section>
+
+            <section className={`juce-grid-page__snapshot-group ${options.rail ? 'juce-grid-page__snapshot-group--rail' : ''}`}>
+              <div className="juce-grid-page__snapshot-group-header">
+                <button
+                  type="button"
+                  className="juce-grid-page__snapshot-group-toggle"
+                  onClick={() => setSnapshotLibraryExpanded((previous) => !previous)}
+                  aria-expanded={snapshotLibraryExpanded}
+                >
+                  <ChevronRight size={16} className={`juce-grid-page__snapshot-group-chevron ${snapshotLibraryExpanded ? 'is-open' : ''}`} />
+                  <strong>Snapshot Library</strong>
+                  <span>{librarySnapshots.length}</span>
+                </button>
+              </div>
+
+              {snapshotLibraryExpanded && (
+                librarySnapshots.length === 0 ? (
+                  <div className="juce-grid-page__snapshot-group-empty">
+                    <p className="juce-grid-page__empty-state-copy">
+                      Everything saved right now is favorited. Unfavorite a snapshot to park it in the wider library.
+                    </p>
+                  </div>
+                ) : (
+                  <div className={`juce-grid-page__snapshot-list ${options.rail ? 'juce-grid-page__snapshot-list--rail' : ''}`}>
+                    {librarySnapshots.map((snapshot) => {
+                      const isActiveSnapshot = snapshot.id === activeSnapshotId || snapshot.is_active
+
+                      return (
+                        <Tile
+                          key={snapshot.id}
+                          className={`juce-grid-page__snapshot-tile ${options.rail ? 'juce-grid-page__snapshot-tile--rail' : ''} ${isActiveSnapshot ? 'is-active' : ''} ${draggedSnapshotId === snapshot.id ? 'is-dragging' : ''} ${dragOverSnapshotId === snapshot.id ? 'is-drag-over' : ''}`}
+                          role="button"
+                          tabIndex={0}
+                          draggable
+                          onClick={() => loadFlowSnapshotMutation.mutate(snapshot.id)}
+                          onKeyDown={(event) => handleSnapshotCardKeyDown(event, snapshot)}
+                          onDragStart={(event) => handleSnapshotDragStart(event, snapshot.id)}
+                          onDragOver={(event) => handleSnapshotDragOver(event, snapshot.id)}
+                          onDragEnd={handleSnapshotDragEnd}
+                          onDrop={(event) => handleSnapshotDrop(event, snapshot.id)}
+                        >
+                          <div className="juce-grid-page__snapshot-main">
+                            <div className="juce-grid-page__snapshot-top">
+                              <div className="juce-grid-page__snapshot-name-row">
+                                <Draggable size={14} aria-hidden />
+                                <strong>{snapshot.name}</strong>
+                              </div>
+                              <div className="juce-grid-page__compact-tags">
+                                {isActiveSnapshot && <Tag type="blue">Active</Tag>}
+                                {isActiveSnapshot && activeSnapshotNeedsUpdate && <Tag type="warm-gray">Needs update</Tag>}
+                                {snapshot.program_number !== null && <Tag type="purple">PC {snapshot.program_number}</Tag>}
+                              </div>
+                            </div>
+
+                            <p className="juce-grid-page__snapshot-description">
+                              {snapshot.description || 'Recallable snapshot for the current multi-flow rig.'}
+                            </p>
+
+                            <div className="juce-grid-page__snapshot-slot-row">
+                              {snapshot.flow_slots.map((slot) => (
+                                <span
+                                  key={`${snapshot.id}-${slot.id}`}
+                                  className="juce-grid-page__snapshot-slot"
+                                  style={{ '--snapshot-slot-color': slot.color } as React.CSSProperties}
+                                >
+                                  {slot.label}
+                                </span>
+                              ))}
+                            </div>
+
+                            <div className="juce-grid-page__compact-tags">
+                              <Tag type="warm-gray">
+                                Updated {new Date(snapshot.updated_at).toLocaleDateString()}
+                              </Tag>
+                            </div>
+                          </div>
+
+                          <div className="juce-grid-page__snapshot-actions" onClick={(event) => event.stopPropagation()}>
+                            <Button
+                              size="sm"
+                              kind="primary"
+                              onClick={() => loadFlowSnapshotMutation.mutate(snapshot.id)}
+                              disabled={loadFlowSnapshotMutation.isPending}
+                            >
+                              Recall
+                            </Button>
+                            {snapshot.id !== activeSnapshotId && (
+                              <Button
+                                size="sm"
+                                kind={momentarySnapshotId === snapshot.id ? 'secondary' : 'ghost'}
+                                onPointerDown={(event) => {
+                                  event.preventDefault()
+                                  void startMomentaryPreview(snapshot)
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault()
+                                    void startMomentaryPreview(snapshot)
+                                  }
+                                }}
+                                disabled={(momentarySnapshotId !== null && momentarySnapshotId !== snapshot.id) || snapshotMorphRunning}
+                              >
+                                {momentarySnapshotId === snapshot.id ? 'Previewing...' : 'Hold to preview'}
+                              </Button>
+                            )}
+                            <Button size="sm" kind="ghost" onClick={() => handleSnapshotFavoriteToggle(snapshot)}>
+                              Favorite
+                            </Button>
+                            <OverflowMenu
+                              ariaLabel={`Actions for ${snapshot.name}`}
+                              iconDescription={`Actions for ${snapshot.name}`}
+                              size="sm"
+                              flipped
+                            >
+                              <OverflowMenuItem itemText="Rename" onClick={() => openSnapshotRenameModal(snapshot)} />
+                              <OverflowMenuItem itemText="Duplicate" onClick={() => handleSnapshotDuplicate(snapshot)} />
+                              {snapshot.id !== activeSnapshotId && (
+                                <OverflowMenuItem
+                                  itemText={snapshotCompareTargetId === snapshot.id ? 'Stop comparing' : activeSnapshot ? 'Compare with active snapshot' : 'Compare with live workspace'}
+                                  onClick={() => toggleSnapshotCompare(snapshot)}
+                                />
+                              )}
+                              {snapshot.id !== activeSnapshotId && (
+                                <OverflowMenuItem
+                                  itemText="Prepare morph"
+                                  disabled={!activeSnapshot || activeSnapshotNeedsUpdate}
+                                  onClick={() => {
+                                    setSnapshotCompareTargetId(snapshot.id)
+                                    setSnapshotMorphTarget(snapshot)
+                                  }}
+                                />
+                              )}
+                              <OverflowMenuItem
+                                itemText={snapshot.program_number === null ? 'Set MIDI PC' : 'Edit MIDI PC'}
+                                onClick={() => openSnapshotProgramModal(snapshot)}
+                              />
+                              {snapshot.program_number !== null && (
+                                <OverflowMenuItem itemText="Clear MIDI PC" onClick={() => clearSnapshotProgram(snapshot)} />
+                              )}
+                              <OverflowMenuItem itemText="Delete" isDelete onClick={() => requestSnapshotDelete(snapshot)} />
+                            </OverflowMenu>
+                          </div>
+                        </Tile>
+                      )
+                    })}
+                  </div>
+                )
+              )}
+            </section>
           </>
         )}
       </>
@@ -2809,20 +2805,9 @@ export function JuceGridPage() {
                   {snapshotsPanelExpanded && (
                     <div className="juce-grid-page__snapshot-rail-copy">
                       <strong>Snapshots</strong>
-                      <span>{flowSnapshots.length} saved snapshots</span>
                     </div>
                   )}
                 </div>
-
-                {snapshotsPanelExpanded && (
-                  <div className="juce-grid-page__snapshot-rail-summary">
-                    <span className="juce-grid-page__snapshot-rail-number">{activeSnapshotDisplayNumber}</span>
-                    <div className="juce-grid-page__snapshot-rail-summary-copy">
-                      <strong>{activeSnapshotDisplayName}</strong>
-                      <span>{activeSnapshot ? 'Primary recall state' : 'Current live rig state'}</span>
-                    </div>
-                  </div>
-                )}
 
                 {snapshotsPanelExpanded && (
                   <div className="juce-grid-page__snapshot-rail-toolbar">
@@ -2839,25 +2824,6 @@ export function JuceGridPage() {
                 <div className="juce-grid-page__snapshot-rail-scroll">
                   <div className="juce-grid-page__snapshot-content juce-grid-page__snapshot-content--rail">
                     {renderSnapshotLibraryContent({ rail: true })}
-                    <section className="juce-grid-page__snapshot-group juce-grid-page__snapshot-group--rail">
-                      <div className="juce-grid-page__snapshot-group-header">
-                        <button
-                          type="button"
-                          className="juce-grid-page__snapshot-group-toggle"
-                          onClick={() => setMidiRailExpanded((previous) => !previous)}
-                          aria-expanded={midiRailExpanded}
-                        >
-                          <ChevronRight size={16} className={`juce-grid-page__snapshot-group-chevron ${midiRailExpanded ? 'is-open' : ''}`} />
-                          <strong>MIDI</strong>
-                          <span>{midiMappings.length}</span>
-                        </button>
-                        <p className="juce-grid-page__snapshot-group-copy">
-                          Learned controls stay on the left rail too, without taking over the top toolbar.
-                        </p>
-                      </div>
-
-                      {midiRailExpanded && renderMidiMappingsWorkspace({ closable: false })}
-                    </section>
                   </div>
                 </div>
               </li>
@@ -2871,17 +2837,6 @@ export function JuceGridPage() {
                     renderIcon={Add}
                     iconDescription="Save as new snapshot"
                     onClick={openSnapshotCreateModal}
-                  />
-                  <Button
-                    hasIconOnly
-                    size="sm"
-                    kind="ghost"
-                    renderIcon={Music}
-                    iconDescription="Open MIDI controls"
-                    onClick={() => {
-                      setSnapshotsPanelExpanded(true)
-                      setMidiRailExpanded(true)
-                    }}
                   />
                   {activeSnapshot && (
                     <Button
@@ -2916,6 +2871,92 @@ export function JuceGridPage() {
       </aside>
     )
   }
+
+  const renderMidiRail = () => (
+    <aside className={`juce-grid-page__midi-rail-shell ${midiPanelExpanded ? 'is-expanded' : 'is-collapsed'}`}>
+      <SideNav
+        aria-label="Audio Grid MIDI"
+        expanded={midiPanelExpanded}
+        isChildOfHeader={false}
+        isFixedNav={false}
+        className="juce-grid-page__midi-rail"
+      >
+        <SideNavItems className="juce-grid-page__midi-rail-items" isSideNavExpanded={midiPanelExpanded}>
+          <li className="juce-grid-page__midi-rail-section juce-grid-page__midi-rail-section--header">
+            <div className="juce-grid-page__midi-rail-header">
+              <div className="juce-grid-page__midi-rail-heading">
+                <div className="juce-grid-page__midi-rail-mark" aria-hidden>
+                  <Music size={20} />
+                </div>
+                {midiPanelExpanded && (
+                  <div className="juce-grid-page__midi-rail-copy">
+                    <strong>MIDI</strong>
+                    <span>{midiMappings.length} mappings</span>
+                  </div>
+                )}
+              </div>
+
+              {midiPanelExpanded && (
+                <div className="juce-grid-page__midi-rail-summary">
+                  <Tag type={midiLearnActive ? 'green' : 'cool-gray'}>
+                    {midiLearnActive ? `Learn active${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}` : 'Learn idle'}
+                  </Tag>
+                </div>
+              )}
+
+              {midiPanelExpanded && (
+                <div className="juce-grid-page__midi-rail-toolbar">
+                  <MidiLearnButton
+                    isActive={midiLearnActive}
+                    onToggle={() => setMidiLearnActive((prev) => !prev)}
+                    position="relative"
+                    size="small"
+                  />
+                </div>
+              )}
+            </div>
+          </li>
+
+          {midiPanelExpanded ? (
+            <li className="juce-grid-page__midi-rail-section juce-grid-page__midi-rail-section--content">
+              <div className="juce-grid-page__midi-rail-scroll">
+                {renderMidiMappingsWorkspace({ closable: false })}
+              </div>
+            </li>
+          ) : (
+            <li className="juce-grid-page__midi-rail-section juce-grid-page__midi-rail-section--collapsed">
+              <div className="juce-grid-page__midi-rail-collapsed">
+                <Button
+                  hasIconOnly
+                  size="sm"
+                  kind={midiLearnActive ? 'secondary' : 'ghost'}
+                  renderIcon={Music}
+                  iconDescription={midiLearnActive ? 'MIDI learn active' : 'Toggle MIDI learn'}
+                  onClick={() => setMidiLearnActive((prev) => !prev)}
+                />
+                {midiMappings.length > 0 && (
+                  <button
+                    type="button"
+                    className="juce-grid-page__midi-rail-pill"
+                    onClick={() => setMidiPanelExpanded(true)}
+                    aria-label={`Expand MIDI rail. ${midiMappings.length} mappings`}
+                  >
+                    {midiMappings.length}
+                  </button>
+                )}
+              </div>
+            </li>
+          )}
+        </SideNavItems>
+
+        <SideNavFooter
+          assistiveText={midiPanelExpanded ? 'Collapse MIDI rail' : 'Expand MIDI rail'}
+          expanded={midiPanelExpanded}
+          onToggle={() => setMidiPanelExpanded((previous) => !previous)}
+        />
+      </SideNav>
+    </aside>
+  )
 
   const updateMidiMapping = useCallback((id: string, updates: Partial<MidiMapping>) => {
     setMidiMappings((previous) => previous.map((mapping) => (
@@ -3911,7 +3952,7 @@ export function JuceGridPage() {
       )}
 
       {/* Main content area */}
-      <div className={`juce-grid-page__workspace ${!isCompactLayout ? 'has-snapshot-rail' : ''} ${snapshotsPanelExpanded ? 'is-snapshot-rail-expanded' : 'is-snapshot-rail-collapsed'}`}>
+      <div className={`juce-grid-page__workspace ${!isCompactLayout ? 'has-snapshot-rail has-midi-rail' : ''} ${snapshotsPanelExpanded ? 'is-snapshot-rail-expanded' : 'is-snapshot-rail-collapsed'} ${midiPanelExpanded ? 'is-midi-rail-expanded' : 'is-midi-rail-collapsed'}`}>
         {!isCompactLayout && renderSnapshotRail()}
 
         <main className="juce-grid-page__main">
@@ -4029,6 +4070,8 @@ export function JuceGridPage() {
           </Layer>
         )}
         </main>
+
+        {!isCompactLayout && renderMidiRail()}
       </div>
 
       {isCompactLayout && (
@@ -4728,17 +4771,17 @@ export function JuceGridPage() {
               )}
             </div>
             <div className="juce-grid-page__modal-link">
-              <a href="/presets">
+              <a href="/snapshots">
                 <Launch size={14} />
-                Browse community presets
+                Browse community snapshots
               </a>
             </div>
           </div>
         </Modal>
       )}
 
-      {/* Preset Import Dialog */}
-      <PresetImportDialog
+      {/* Snapshot Import Dialog */}
+      <SnapshotImportDialog
         isOpen={showImportDialog}
         onClose={() => setShowImportDialog(false)}
         onImportSuccess={(presetId, name) => {

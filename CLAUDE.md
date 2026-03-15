@@ -1,6 +1,6 @@
 # MAP2 Audio Platform — AI Instructions
 
-> **Last Updated**: 2026-03-14
+> **Last Updated**: 2026-03-15
 > **Purpose**: Central reference for Claude Code working on the MAP2 Audio codebase.
 > Also see: [.github/copilot-instructions.md](.github/copilot-instructions.md) · [.gemini/instructions.md](.gemini/instructions.md)
 
@@ -30,15 +30,16 @@ Severity tags: `CRITICAL` · `HIGH` · `MEDIUM` · `LOW`
 3. [Build & Test Commands](#build--test-commands)
 4. [Global Work List](#global-work-list)
 5. [Key File Locations](#key-file-locations)
-6. [Plan-First Meta Rule](#plan-first-meta-rule)
-7. [Critical System Rules](#critical-system-rules)
-8. [Frontend Conventions](#frontend-conventions)
-9. [Style & Architecture Rules](#style--architecture-rules)
-10. [API Contract Standards](#api-contract-standards)
-11. [Server Management Patterns](#server-management-patterns)
-12. [Performance & Latency](#performance--latency)
-13. [Gotchas & Learned Fixes](#gotchas--learned-fixes)
-14. [Common Pitfalls to Avoid](#common-pitfalls-to-avoid)
+6. [5-Question Clarification Protocol](#5-question-clarification-protocol)
+7. [Plan-First Meta Rule](#plan-first-meta-rule)
+8. [Critical System Rules](#critical-system-rules)
+9. [Frontend Conventions](#frontend-conventions)
+10. [Style & Architecture Rules](#style--architecture-rules)
+11. [API Contract Standards](#api-contract-standards)
+12. [Server Management Patterns](#server-management-patterns)
+13. [Performance & Latency](#performance--latency)
+14. [Gotchas & Learned Fixes](#gotchas--learned-fixes)
+15. [Common Pitfalls to Avoid](#common-pitfalls-to-avoid)
 
 ---
 
@@ -216,6 +217,56 @@ All planned and in-progress work is tracked in:
 
 `JuceAudioGraphViz.tsx` is **never imported** — editing it has no effect on the build.
 Always verify before editing: `grep -rn 'import.*ComponentName' web/src/app/`
+
+---
+
+## 5-Question Clarification Protocol
+
+Before acting on any directive that involves code changes or architectural decisions, **ask exactly 5 multiple-choice questions** to disambiguate intent, scope, constraints, and edge cases.
+
+### Rules
+
+1. **Trigger**: Fires on any directive involving code changes or architectural decisions. Does not fire on trivial one-liners (e.g. "fix this typo", "rename this variable").
+
+2. **Delivery**: Questions are asked **one at a time, sequentially**. After each answer, give a **one-word acknowledgement** ("Got it." or "Noted.") on its own line, then immediately ask the next question.
+
+3. **Question content**: Choose all 4 substantive questions freely — pick the dimensions most relevant to this specific directive (scope, approach, risk, constraints, edge cases, etc.). No fixed order for Q1–Q4.
+
+4. **Q5 is always the continue question**, rephrased each round to naturally reflect what has been established so far. Options are always:
+   - A) Yes — I have more nuance to share
+   - B) No — proceed with my answers
+
+5. **Skipping**: If the user says "just do it" or similar, ask Q5 only: *"Should I skip the 5-question protocol this time? A) Yes — skip it  B) No — run the protocol."* The user's answer is final.
+
+6. **New directives inside answers**: If a user's answer introduces a new directive, flag it silently, finish the current cycle, then surface it at the end: *"I also noticed a new directive — shall we start a cycle for that?"* Do not interrupt mid-cycle.
+
+7. **Recursion**: A new directive flagged at the end triggers its own fresh 5-question cycle if the user agrees.
+
+8. **Depth**: No cap on consecutive "Yes" answers to Q5. The user controls depth entirely.
+
+### Skeleton
+
+```
+Q1: [Most critical ambiguity for this directive]
+   A) ...  B) ...  C) ...  D) ...
+
+[User answers]
+
+Got it.
+Q2: [Next most relevant dimension]
+   A) ...  B) ...  C) ...  D) ...
+
+[User answers]
+
+Noted.
+Q3: [Next dimension]  ...
+Q4: [Final substantive dimension]  ...
+
+Noted.
+Q5: [Rephrased to reflect coverage — e.g. "We've established scope, approach, and constraints. Should I ask 5 more questions?"]
+   A) Yes — I have more nuance to share
+   B) No — proceed with my answers
+```
 
 ---
 

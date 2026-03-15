@@ -1146,7 +1146,7 @@ Type=simple
 User=map2
 Group=map2
 WorkingDirectory=/opt/map2-audio/web
-ExecStart=/usr/bin/npm run preview
+ExecStart=/usr/bin/npm run serve
 Restart=always
 RestartSec=10
 

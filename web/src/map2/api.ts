@@ -13,9 +13,9 @@ import type {
   LoopInsertion,
   ChainTemplate,
   Plugin,
-  Preset,
-  PresetCategory,
-  CreatePresetRequest,
+  Snapshot,
+  SnapshotCategory,
+  CreateSnapshotRequest,
   MIDIDevice,
   MIDIMapping,
   MIDIMappingV2,
@@ -54,7 +54,7 @@ import type {
   BrandingStatus,
   ChainsResponse,
   PluginsResponse,
-  PresetsResponse,
+  SnapshotsResponse,
   IRsResponse,
   NAMModelsResponse,
   SessionsResponse,
@@ -126,7 +126,7 @@ const RAW_API_BASE = (() => {
   const port = window.location.port
 
   // On localhost and on the supported production web port, /api is routed
-  // through the same origin and proxied by the port-3000 preview server.
+  // through the same origin and proxied by the production web server on port 3000.
   if (isLocalhost || port === '3000') {
     return '/api'
   }
@@ -793,7 +793,7 @@ export const chainsApi = {
       { method: 'POST' }
     ),
 
-  listPresets: (nodeId?: string | null) => fetchJson<{ presets: Preset[]; count: number }>(appendNodeQuery(`${API_BASE}/chains/presets`, nodeId)),
+  listPresets: (nodeId?: string | null) => fetchJson<{ presets: Snapshot[]; count: number }>(appendNodeQuery(`${API_BASE}/chains/presets`, nodeId)),
 
   loadPreset: (presetId: number, nodeId?: string | null) =>
     fetchJson<{ status: string; chain_id: number }>(appendNodeQuery(`${API_BASE}/chains/preset/${presetId}/load`, nodeId), {
@@ -1047,9 +1047,9 @@ export const pluginsApi = {
     }),
 };
 
-// ==================== Presets API ====================
+// ==================== Snapshots API ====================
 
-export const presetsApi = {
+export const snapshotsApi = {
   list: (options?: { category?: string; tags?: string; favorites_only?: boolean; search?: string }) => {
     const params = new URLSearchParams();
     if (options?.category) params.set('category', options.category);
@@ -1057,38 +1057,38 @@ export const presetsApi = {
     if (options?.favorites_only) params.set('favorites_only', 'true');
     if (options?.search) params.set('search', options.search);
     const query = params.toString();
-    return fetchJson<PresetsResponse>(`${API_BASE}/presets/${query ? `?${query}` : ''}`);
+    return fetchJson<SnapshotsResponse>(`${API_BASE}/snapshots/${query ? `?${query}` : ''}`);
   },
 
-  create: (request: CreatePresetRequest) =>
-    fetchJson<{ status: string; preset_id: number; message: string }>(`${API_BASE}/presets/`, {
+  create: (request: CreateSnapshotRequest) =>
+    fetchJson<{ status: string; snapshot_id: number; message: string }>(`${API_BASE}/snapshots/`, {
       method: 'POST',
       body: JSON.stringify(request),
     }),
 
   update: (
-    presetId: number,
+    snapshotId: number,
     updates: { name?: string; tags?: string[]; category?: string; description?: string; is_favorite?: boolean }
   ) =>
-    fetchJson<{ status: string; message: string }>(`${API_BASE}/presets/${presetId}`, {
+    fetchJson<{ status: string; message: string }>(`${API_BASE}/snapshots/${snapshotId}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     }),
 
-  delete: (presetId: number) =>
-    fetchJson<{ status: string; message: string }>(`${API_BASE}/presets/${presetId}`, {
+  delete: (snapshotId: number) =>
+    fetchJson<{ status: string; message: string }>(`${API_BASE}/snapshots/${snapshotId}`, {
       method: 'DELETE',
     }),
 
-  toggleFavorite: (presetId: number) =>
+  toggleFavorite: (snapshotId: number) =>
     fetchJson<{ status: string; is_favorite: boolean; message: string }>(
-      `${API_BASE}/presets/${presetId}/favorite`,
+      `${API_BASE}/snapshots/${snapshotId}/favorite`,
       { method: 'POST' }
     ),
 
-  getCategories: () => fetchJson<{ categories: PresetCategory[]; count: number }>(`${API_BASE}/presets/categories`),
+  getCategories: () => fetchJson<{ categories: SnapshotCategory[]; count: number }>(`${API_BASE}/snapshots/categories`),
 
-  getTags: () => fetchJson<{ tags: string[]; count: number }>(`${API_BASE}/presets/tags`),
+  getTags: () => fetchJson<{ tags: string[]; count: number }>(`${API_BASE}/snapshots/tags`),
 };
 
 // ==================== MIDI API ====================
@@ -4532,7 +4532,7 @@ export const map2Api = {
   audio: audioApi,
   chains: chainsApi,
   plugins: pluginsApi,
-  presets: presetsApi,
+  snapshots: snapshotsApi,
   pluginPresets: pluginPresetsApi,
   midi: midiApi,
   midiV2: midiApiV2,

@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from '@carbon/icons-react'
 import { ActionableNotification, Button, Tag } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 
+import { buildClusterDashboardHref } from '../../platform/model'
 import { useNodeAlertStore } from '../../stores/nodeAlertStore'
 
 export function NodeAlertBar() {
@@ -44,8 +45,8 @@ export function NodeAlertBar() {
               inline
               title={`${alert.severity === 'critical' ? '✕' : '⚠'} ${alert.hostname}`}
               subtitle={alert.message}
-              actionButtonLabel="Open nodes"
-              onActionButtonClick={() => navigate('/nodes')}
+              actionButtonLabel="Open cluster"
+              onActionButtonClick={() => navigate(buildClusterDashboardHref())}
               onCloseButtonClick={() => dismissAlert(alert.node_id)}
             />
           ))}
@@ -54,4 +55,3 @@ export function NodeAlertBar() {
     </div>
   )
 }
-

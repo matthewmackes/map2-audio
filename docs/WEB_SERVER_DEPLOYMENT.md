@@ -7,7 +7,7 @@
 ### Port Configuration
 
 - **Port 3000**: Production web server ONLY
-  - Server: `vite preview --port 3000 --host 0.0.0.0`
+  - Server: `node ../scripts/serve_web_dist.mjs --port 3000 --host 0.0.0.0`
   - Serves: Pre-built optimized bundles from `/web/dist/`
   - Type: Full production UI with backend proxy rules on the same web port
 
@@ -32,11 +32,11 @@
 2. **Start production web server (port 3000):**
    ```bash
    cd /home/mm/map2-audio/web
-   vite preview --port 3000 --host 0.0.0.0
+   node ../scripts/serve_web_dist.mjs --port 3000 --host 0.0.0.0
    ```
    Or run in background:
    ```bash
-   nohup vite preview --port 3000 --host 0.0.0.0 > /tmp/vite_prod.log 2>&1 &
+   nohup node ../scripts/serve_web_dist.mjs --port 3000 --host 0.0.0.0 > /tmp/map2-web-prod.log 2>&1 &
    ```
 
 3. **Verify servers:**
