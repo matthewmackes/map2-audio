@@ -606,7 +606,6 @@ Full SynthForge subtree:
 - `systemd/map2-port80-proxy.service`
 - `systemd/map2-selinux-disable.service`
 - `systemd/map2-system-check.service`
-- `systemd/map2-web-dev.service`
 - `systemd/map2-web-prod.service`
 - `systemd/modes/all-in-one.conf`
 - `systemd/modes/audio.conf`

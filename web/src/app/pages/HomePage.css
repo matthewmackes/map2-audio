@@ -362,15 +362,15 @@
 .hp-tabs__btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--hp-s-03);
-  padding: 0.75rem 1rem;
+  gap: calc(var(--hp-s-03) * 1.2);
+  padding: 0.9rem 1.2rem;
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
   margin-bottom: -1px;
   color: var(--hp-text-secondary);
   font-family: inherit;
-  font-size: var(--hp-body-01);
+  font-size: calc(var(--hp-body-01) * 1.2);
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -392,13 +392,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
   background: var(--hp-layer-01);
   border: 1px solid var(--hp-border-subtle);
   border-radius: 1px;
-  font-size: 0.6875rem;
+  font-size: 0.825rem;
   font-weight: 400;
   color: var(--hp-text-secondary);
   transition: background 70ms, border-color 70ms, color 70ms;

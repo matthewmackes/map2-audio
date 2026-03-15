@@ -5,8 +5,6 @@
   "description": "Mackes Audio Platform 3.0 FEB2026 (Multinode) - Professional Guitar Effects Processor Web Interface with Cluster Management",
   "type": "module",
   "scripts": {
-    "_comment_ports": "IMPORTANT: Port 3000 = PRODUCTION (serves dist/), Port 3001 = DEVELOPMENT (vite dev server with HMR). Do NOT confuse these!",
-    "dev": "vite --host 0.0.0.0 --port 3001",
     "prebuild": "python3 ../scripts/generate_platform_version.py",
     "build": "tsc -b && vite build",
     "deploy": "../scripts/build/deploy",
@@ -14,10 +12,7 @@
     "deploy:status": "../scripts/build/deploy --status",
     "lint": "eslint .",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
-    "serve": "npx serve dist -l 3000 --no-clipboard -s",
-    "start:prod": "npm run build && npm run serve",
-    "start:dev": "npm run dev",
-    "start:all": "npm run build && concurrently \"npm run serve\" \"npm run dev\"",
+    "start:prod": "npm run build && npm run preview",
     "typecheck": "tsc --noEmit",
     "test": "node ../node_modules/jest/bin/jest.js --config ../package.json",
     "version:sync": "python3 ../scripts/generate_platform_version.py"
@@ -79,7 +74,6 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.14.0",
-    "serve": "^14.2.5",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.22.0",
     "vite": "^6.4.1",

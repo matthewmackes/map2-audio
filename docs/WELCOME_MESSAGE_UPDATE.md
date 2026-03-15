@@ -75,7 +75,7 @@ The welcome message now displays:
 
 ### 4. **Service Scripts Section**
 - `systemctl start map2-backend` (systemd)
-- `scripts/start_web.sh` (Vite dev server)
+- `scripts/start-web.sh` (production web server on port 3000)
 - `python -m tui.node_console` (Node Console)
 
 ### 5. **Model & IR File Paths**

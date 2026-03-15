@@ -23,8 +23,8 @@ systemctl restart map2-backend
 ## Web Dashboard
 
 ```bash
-# Start dev server
-/home/mm/map2-audio/scripts/start_web.sh
+# Start production web server
+/home/mm/map2-audio/scripts/start-web.sh
 
 # Access at: http://localhost:3000
 ```

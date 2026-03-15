@@ -110,7 +110,6 @@ Severity tags: `CRITICAL` · `HIGH` · `MEDIUM` · `LOW`
 |---|---|
 | **3000** | Frontend production server (`vite preview`) |
 | **8080** | Backend API (`uvicorn`) |
-| 3001 | ❌ NOT USED — reserved but unused |
 
 ---
 
@@ -448,7 +447,7 @@ cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
 ```
 
 **NEVER use `sleep` in automated scripts** — it causes `^C` interrupts that kill builds mid-run.
-**ONLY use `vite preview`** for production — never `vite dev` (no HMR, port 3000 only).
+**ONLY use `vite preview`** for the frontend — port 3000 is the sole supported web entry point.
 
 ### Diagnostic Stack (Bottom to Top)
 
@@ -621,7 +620,7 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 - **Don't** add coaching, wizards, tutorials, or explanatory `InlineNotification` banners to pages
 - **Don't** expand MUI or Phosphor Icons usage — Carbon only for new work
 - **Don't** use `manualChunks` in Vite config
-- **Don't** use `vite dev` — production only via `vite preview` on port 3000
+- **Don't** use any alternate frontend serving mode — `vite preview` on port 3000 is the supported path
 - **Don't** use `sleep` in scripts
 - **Don't** commit with known TypeScript or build errors
 - **Don't** manually commit in SQLAlchemy service methods

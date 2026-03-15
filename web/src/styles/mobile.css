@@ -120,7 +120,7 @@
     bottom: 0;
     display: flex;
     gap: 2px;
-    height: 56px;
+    height: 58px;
     left: 0;
     overflow-x: auto;
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -144,12 +144,12 @@
     flex-direction: column;
     font-size: var(--type-body);
     font-weight: 600;
-    gap: 4px;
+    gap: 5px;
     justify-content: center;
     letter-spacing: 0.06em;
-    min-width: 76px;
-    min-height: 56px;
-    padding: 0 4px;
+    min-width: 91px;
+    min-height: 58px;
+    padding: 0 5px;
     text-decoration: none;
     text-transform: uppercase;
     flex: 0 0 auto;
@@ -166,8 +166,13 @@
     justify-content: center;
   }
 
+  .mobile-bottom-tab-icon > svg {
+    width: 19px;
+    height: 19px;
+  }
+
   .app-content {
-    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .app-shell.has-mobile-connection-banner .topbar-pro {
@@ -883,17 +888,17 @@
   }
 
   .mobile-bottom-tabbar {
-    height: 48px;
+    height: 58px;
     background: var(--surface);
     border-top: 1px solid var(--border);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .mobile-bottom-tab {
-    min-height: 48px;
-    gap: 2px;
+    min-height: 58px;
+    gap: 3px;
     color: var(--text-secondary);
-    font-size: var(--type-caption);
+    font-size: calc(var(--type-caption) * 1.2);
     font-weight: 500;
     text-transform: none;
     letter-spacing: 0;

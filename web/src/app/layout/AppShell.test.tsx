@@ -134,6 +134,7 @@ describe('AppShell navigation', () => {
 
     expect(screen.getByRole('menu', { name: 'Advanced menu' })).toBeTruthy()
     expect(screen.getByText('MIDI Hub')).toBeTruthy()
+    expect(screen.getByText('Tesira AVB')).toBeTruthy()
     expect(screen.queryByText('API Observatory')).toBeNull()
     expect(screen.queryByText('MIDI Cluster')).toBeNull()
   })

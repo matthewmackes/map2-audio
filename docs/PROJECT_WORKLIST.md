@@ -10154,3 +10154,87 @@ Last updated: 2026-03-15 11:40 - Codex
   - Smoke proof: Production preview smoke confirmed `http://127.0.0.1:3002/platform` returned `200 OK` and the Playwright screenshot showed the rendered `Unified Platform Stack` shell.
   - Notes: Jest still emits the pre-existing React Router future-flag warnings in some suites, and the build still emits the pre-existing Vite dynamic/static import warning around `web/src/map2/api.ts`; no new warning class was introduced by this epic.
   - Build side effect: The latest validation build regenerated `version.json` to `2026031511371501`, as designed by `T144`.
+
+---
+
+## Epic: Advanced Grid — Cluster Dashboard Expansion (Multi-System + Nodes + MIDI Cluster Node)
+
+ID: T166
+Status: [ ] Todo
+Title: [ADVANCED-GRID] Integrate Multi-System, Nodes, and MIDI Cluster Node into Cluster Dashboard layer
+Description:
+- Goal / acceptance criteria: The Cluster Dashboard layer in `PlatformShellPage` gains a Carbon `Tabs` strip organizing all cluster-related content into three tabs: "Cluster" (existing content), "Nodes" (fleet view from `NodesPage.tsx` + node display components), and "Multi-System" (from `MultiSystemDashboardPage.tsx`). MIDI Cluster Node content migrates from `MidiClusterNodePage.tsx` into the MIDI Cluster layer tab (already in T163 scope — closes that gap here). Clicking a node row in the Nodes tab switches `activeLayer` to `singleNode` via the platform store (stack transition, not a tearsheet). All source pages (`MultiSystemDashboardPage.tsx`, `NodesPage.tsx`, `MidiClusterNodePage.tsx`) are deleted and their routes removed from `App.tsx`. Existing node display components (`NodeNav/`, `NodeGraph/`, `NodeAlerts/`, `NodeContextBanner/`, `NodeContextPicker/`) are reused inside the Nodes tab — not replaced. All TypeScript/build/test clean.
+- Why it matters: Cluster is the natural home for fleet-wide node visibility and multi-system orchestration. Keeping these as separate routes contradicts the one-unified-shell mandate and creates operator context-switching overhead.
+- Dependencies: T165 (Advanced Grid shell complete)
+- Estimated effort: Large
+
+Subtasks:
+
+ID: T166-sub1
+Status: [ ] Todo
+Title: Add Carbon Tabs to Cluster Dashboard LayerWorkspace
+Description:
+- Introduce Carbon `Tabs` + `Tab` + `TabPanels` + `TabPanel` into the Cluster Dashboard layer's workspace render path inside `PlatformShellPage.tsx` (or a new `ClusterDashboardLayer.tsx` component extracted from the shell if the file is growing too large).
+- Three tabs: "Cluster" (existing `LayerSummaryTiles` + `LayerDataTable` content, unchanged), "Nodes" (new — T166-sub2), "Multi-System" (new — T166-sub3).
+- Active tab index persisted to `localStorage` under key `map2_cluster_active_tab` (matching `activeTab` localStorage pattern already used in the codebase).
+- No other layer's workspace is affected — tabs are Cluster Dashboard-specific.
+- Tab strip uses Carbon `contained` variant to match the operator surface aesthetic.
+- Files: `web/src/app/pages/PlatformShellPage.tsx` (or extracted `ClusterDashboardLayer.tsx`), `PlatformShellPage.css`.
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T166-sub2
+Status: [ ] Todo
+Title: Nodes tab — fleet view inside Cluster Dashboard
+Description:
+- Implement the "Nodes" tab content by migrating the fleet view from `NodesPage.tsx` into the Cluster Dashboard tab panel.
+- Reuse existing node display components exactly as-is: `NodeNav/NodeNavBar`, `NodeGraph/NodeGraph`, `NodeGraph/NodeGraphCard`, `NodeAlerts/NodeAlertBar`, `NodeAlerts/NodeAlertMonitor`, `NodeContextBanner/`, `NodeContextPicker/`. Do not duplicate or re-implement these.
+- Data layer: reuse `web/src/app/hooks/useNodeTopology.ts` and `web/src/app/types/node.ts`. No new hooks needed.
+- Viewed node state: `viewedNodeStore` (Zustand, `localStorage` key `map2_viewed_nodes`) — already wired into the node components, no changes needed.
+- Alert state: `nodeAlertStore` (Zustand, in-memory) — already wired, no changes needed.
+- Node row / card click action: call `platformStore.setActiveLayer('singleNode')` AND update `viewedNodeStore` with the selected node ID, then the stack animates to the Single Node layer. Do NOT open a tearsheet — this is a full layer switch.
+- Carbon `Skeleton` loading states while node topology query is pending.
+- Files: tab panel component inline or extracted. `web/src/app/pages/NodesPage.tsx`, `web/src/app/pages/NodesPage.css`, `web/src/app/pages/NodesPage.test.tsx` deleted after content migrated.
+- Estimated effort: Medium
+Assigned to: Claude Code
+
+ID: T166-sub3
+Status: [ ] Todo
+Title: Multi-System tab — multi-system dashboard inside Cluster Dashboard
+Description:
+- Implement the "Multi-System" tab content by migrating `MultiSystemDashboardPage.tsx` (691 lines) into the Cluster Dashboard tab panel.
+- Source component: `web/src/app/components/HostMachine/MultiSystemDashboard.tsx` — reuse directly inside the tab panel; do not rewrite its internals.
+- The tab panel is a thin wrapper: import `MultiSystemDashboard`, pass through any required props/context, render inside Carbon `TabPanel`.
+- All existing API hooks used by `MultiSystemDashboard` remain unchanged.
+- Files: tab panel component inline or extracted. `web/src/app/pages/MultiSystemDashboardPage.tsx` deleted after migration.
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T166-sub4
+Status: [ ] Todo
+Title: Migrate MIDI Cluster Node content into MIDI Cluster layer
+Description:
+- `MidiClusterNodePage.tsx` contains per-node MIDI routing detail. This belongs in the MIDI Cluster layer (already established in T163), not the Cluster Dashboard layer.
+- Audit `MidiClusterNodePage.tsx`: identify which components it renders (likely draws from `web/src/app/components/MidiCluster/MidiClusterNodeCard.tsx`, `MidiClusterTopology.tsx`, etc.).
+- Add a "Node Detail" section or contextual panel within the MIDI Cluster layer workspace — triggered when a MIDI cluster node row is selected in the MIDI Cluster `LayerDataTable`. Implementation: Carbon `ExpandedRow` or an inline detail section beneath the table (Carbon pattern), not a separate route or tearsheet.
+- Reuse all existing `MidiCluster/` components unchanged.
+- After migration: `MidiClusterNodePage.tsx` deleted, its `/midi-cluster/:nodeId` route removed from `App.tsx`.
+- Files: MIDI Cluster layer section of `PlatformShellPage.tsx` (or `MidiClusterLayer.tsx` if extracted), `web/src/app/pages/MidiClusterNodePage.tsx` (deleted).
+- Estimated effort: Small
+Assigned to: Claude Code
+
+ID: T166-sub5
+Status: [ ] Todo
+Title: Remove migrated pages and routes, clean build
+Description:
+- Delete: `web/src/app/pages/MultiSystemDashboardPage.tsx`, `web/src/app/pages/NodesPage.tsx`, `web/src/app/pages/NodesPage.css`, `web/src/app/pages/NodesPage.test.tsx`, `web/src/app/pages/MidiClusterNodePage.tsx` (if it exists as a separate file).
+- Remove from `App.tsx`: lazy imports and `<Route>` entries for `/nodes`, `/multi-system`, `/midi-cluster/:nodeId`.
+- Update any nav links, advanced menu items (`advancedMenuItems.ts`), or breadcrumbs pointing to those routes — redirect to `/platform?layer=clusterDashboard` or `/platform?layer=midiCluster` as appropriate.
+- Run full validation suite: `npm run typecheck` (must pass), `npm run build` (must pass), `npx jest --testPathPattern=PlatformShell --no-coverage` (must pass), `pytest tests/test_node_api.py tests/test_node_proxy.py -q` (must pass).
+- Update `advancedMenuItems.test.ts` to reflect removed routes.
+- Files: `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/advancedMenuItems.test.ts`, deleted page files.
+- Estimated effort: Small
+Assigned to: Claude Code
+
+Assigned to: Claude Code
+Last updated: 2026-03-15

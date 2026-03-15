@@ -26,7 +26,7 @@ import {
 
 export type NavigationMaturityState = 'production' | 'qualified-with-waiver' | 'beta' | 'experimental' | 'hardware-blocked'
 export type NavigationRenderKind = 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
-export type NavigationHomeSection = 'System' | 'JUCE' | 'MIDI' | 'AVB' | 'Hardware'
+export type NavigationHomeSection = 'Audio Grid' | 'AVB' | 'MIDI' | 'System' | 'Hardware'
 
 export const DEFAULT_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['production', 'qualified-with-waiver']
 export const ADVANCED_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['beta', 'experimental', 'hardware-blocked']
@@ -152,7 +152,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     icon: MapRealtimeEngineIcon,
     description: 'Monitor the realtime audio engine, inspect metering and signal-path health, and adjust the runtime controls that drive the main processing path.',
     color: 'var(--cds-link-primary)',
-    homeSection: 'JUCE',
+    homeSection: 'Audio Grid',
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'qualified-with-waiver',
@@ -178,7 +178,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     icon: MapStagePerformanceIcon,
     description: 'Open the full-screen live-performance surface for fast preset access, bypass control, tempo actions, and stage-focused guitar operation.',
     color: 'var(--cds-support-warning)',
-    homeSection: 'JUCE',
+    homeSection: 'Audio Grid',
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'beta',
@@ -215,7 +215,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     icon: SquaresFour,
     description: 'Save, organize, recall, import, and export tone or session states so rigs can be restored quickly and consistently.',
     color: 'var(--cds-support-success)',
-    homeSection: 'JUCE',
+    homeSection: 'Audio Grid',
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'beta',
@@ -227,7 +227,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     icon: Package,
     description: 'Browse the LV2 plugin inventory, inspect what is installed, and manage the effect catalog used across MAP2 workflows.',
     color: 'var(--cds-support-info)',
-    homeSection: 'JUCE',
+    homeSection: 'Audio Grid',
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'beta',
@@ -293,10 +293,11 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     description: 'Work with Biamp Tesira AVB devices for fleet views, device pages, DSP surfaces, AVB context, and multi-device operational control.',
     color: 'var(--cds-support-error)',
     homeSection: 'AVB',
-    includeInAdvancedMenu: false,
-    pinnable: true,
+    includeInAdvancedMenu: true,
+    pinnable: false,
     maturity: 'beta',
     kind: 'link',
+    showOnHome: false,
     deviceType: 'tesira-fleet',
   },
   {
@@ -331,7 +332,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     icon: MapAudioGridIcon,
     description: 'Open the Carbon-first Audio Grid editor for full signal-flow design, routing, automation, snapshots, MIDI mapping, and audio-workflow control.',
     color: 'var(--cds-link-primary)',
-    homeSection: 'JUCE',
+    homeSection: 'Audio Grid',
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'beta',
@@ -344,7 +345,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     icon: MapPatchLibraryIcon,
     description: 'Browse impulse-response and model-management workflows for acquiring, curating, and testing NAM and IR content in MAP2.',
     color: 'var(--cds-support-info)',
-    homeSection: 'JUCE',
+    homeSection: 'Audio Grid',
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'experimental',
@@ -432,9 +433,9 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
 
 export const homeNavigationItem = navigationCatalogItems.find((item) => item.to === '/') as ShellNavigationItem
 
-const HOME_SECTION_ORDER: NavigationHomeSection[] = ['System', 'JUCE', 'MIDI', 'AVB', 'Hardware']
+const HOME_SECTION_ORDER: NavigationHomeSection[] = ['Audio Grid', 'AVB', 'MIDI', 'System', 'Hardware']
 
-export const homeNavigationSections: NavigationSection[] = HOME_SECTION_ORDER.map((title) => {
+export const homeNavigationTabSections: NavigationSection[] = HOME_SECTION_ORDER.map((title) => {
   const catalogItems = navigationCatalogItems.filter(
     (item) => item.homeSection === title && item.showOnHome !== false,
   )
@@ -451,7 +452,9 @@ export const homeNavigationSections: NavigationSection[] = HOME_SECTION_ORDER.ma
     title,
     items: catalogItems,
   }
-}).filter((section) => section.items.length > 0)
+})
+
+export const homeNavigationSections: NavigationSection[] = homeNavigationTabSections.filter((section) => section.items.length > 0)
 
 export const allRouteNavigationItems: Array<ShellNavigationItem | HardwareInterfaceMenuItem> = [
   ...navigationCatalogItems.filter((item) => item.to.startsWith('/')),

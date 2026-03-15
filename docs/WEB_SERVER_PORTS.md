@@ -1,69 +1,34 @@
 # Web Server Port Configuration
 
-## ⚠️ CRITICAL: Production-Only Server Setup
+## Supported Ports
 
-**MAP2 uses ONLY a production server configuration.**
+### Port 3000
 
-### Port 3000 - Production Web Server
+- **Role:** The only supported MAP2 web UI port
+- **Server:** `vite preview --host 0.0.0.0 --port 3000`
+- **Content:** The full production build from `/web/dist/`
 
-- **Purpose:** Serves optimized, pre-built production bundles from `/web/dist/`
-- **Server:** Vite preview server (`vite preview --port 3000 --host 0.0.0.0`)
-- **Build:** `cd web && npm run build` (creates optimized bundle)
-- **Start:** `cd web && vite preview --port 3000 --host 0.0.0.0`
+### Port 8080
 
-### Port 8080 - FastAPI Backend Server
+- **Role:** FastAPI backend for `/api/*`, `/ws`, and related services
+- **Server:** `python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080`
 
-- **Purpose:** Python FastAPI backend serving `/api/*` endpoints
-- **Server:** Uvicorn ASGI server
-- **Start:** `python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080`
+## Required Workflow
 
----
+1. Edit files in `/web/src/`
+2. Run `cd web && npm run build`
+3. Run `cd web && npm run preview`
+4. Refresh `http://localhost:3000`
 
-## ❌ What We DO NOT Use
-
-- **NO Vite dev server** (no `vite --port 3001`)
-- **NO hot module replacement (HMR)** in development
-- **NO port 3001** - this port should remain unused
-- **NO dual-server setup** - production build only
-
----
-
-## Why Production-Only?
-
-1. **Stability:** Production builds are optimized and tested
-2. **Consistency:** Same build pipeline for development and deployment
-3. **Performance:** Minified, tree-shaken, optimized bundles
-4. **No HMR Issues:** Avoid hot-reload edge cases and state bugs
-
----
-
-## Development Workflow
-
-1. Make code changes in `/web/src/`
-2. Run `cd web && npm run build` to create production bundle
-3. Production server on port 3000 automatically serves new build
-4. Refresh browser to see changes
-
-**Tip:** Use `inotifywait` or similar tools to auto-rebuild on file changes if needed.
-
----
-
-## Quick Reference Commands
+## Quick Reference
 
 ```bash
-# Build production bundle
-cd web && npm run build
-
-# Start production web server (port 3000)
-cd web && vite preview --port 3000 --host 0.0.0.0
-
-# Start backend API server (port 8080)
-python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080
-
-# Build + Start (combined)
-cd web && npm run start:prod
+cd /home/mm/map2-audio/web
+npm run build
+npm run preview
 ```
 
----
-
-**Last Updated:** February 11, 2026
+```bash
+cd /home/mm/map2-audio
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+```

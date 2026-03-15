@@ -6,6 +6,7 @@ import {
   defaultPinnedRoutes,
   hardwareInterfaceMenuItems,
   homeNavigationItem,
+  homeNavigationTabSections,
   homeNavigationSections,
   navigationCatalogItems,
   navigationMaturityMeta,
@@ -16,14 +17,21 @@ import {
 describe('navigation catalog', () => {
   const appSource = fs.readFileSync(path.resolve(__dirname, '../App.tsx'), 'utf8')
 
-  it('groups all items under the five domain categories', () => {
-    const validSections = new Set(['System', 'JUCE', 'MIDI', 'AVB', 'Hardware'])
+  it('defines the Home tabs in Audio Grid-first order while keeping shared groups non-empty', () => {
+    expect(homeNavigationTabSections.map((section) => section.title)).toEqual([
+      'Audio Grid',
+      'AVB',
+      'MIDI',
+      'System',
+      'Hardware',
+    ])
 
-    for (const section of homeNavigationSections) {
-      expect(validSections.has(section.title)).toBe(true)
-    }
-
-    expect(homeNavigationSections.length).toBeGreaterThan(0)
+    expect(homeNavigationSections.map((section) => section.title)).toEqual([
+      'Audio Grid',
+      'MIDI',
+      'System',
+      'Hardware',
+    ])
   })
 
   it('exposes home sections without rendering Home as a self-link card', () => {
@@ -123,6 +131,7 @@ describe('navigation catalog', () => {
       '/midi-hub',
       '/mpx1',
       '/intelfx',
+      '/tesira',
     ])
   })
 
@@ -138,12 +147,15 @@ describe('navigation catalog', () => {
     expect(appearsOnHome).toBe(true)
   })
 
-  it('keeps MPX1 Rack and IntelFX Rack in advanced navigation only', () => {
-    for (const route of ['/mpx1', '/intelfx']) {
+  it('keeps MPX1 Rack, IntelFX Rack, and Tesira AVB in advanced navigation only', () => {
+    for (const route of ['/mpx1', '/intelfx', '/tesira']) {
       const item = navigationCatalogItems.find((candidate) => candidate.to === route)
       expect(item).toBeDefined()
       expect(item?.includeInAdvancedMenu).toBe(true)
       expect(item?.showOnHome).toBe(false)
+      if (route === '/tesira') {
+        expect(item?.pinnable).toBe(false)
+      }
 
       const appearsOnHome = homeNavigationSections.some((section) =>
         section.items.some((candidate) => candidate.to === route),

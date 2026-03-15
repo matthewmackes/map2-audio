@@ -167,7 +167,7 @@ async def get_www_status() -> Dict[str, Any]:
         "uptime": None,
         "frontend_running": False,
         "frontend_port": 3000,
-        "frontend_mode": "development",
+        "frontend_mode": "production",
         "cpu_percent": 0,
         "memory_percent": 0,
         "memory_mb": 0,
@@ -213,7 +213,7 @@ async def get_www_status() -> Dict[str, Any]:
         if uptime_seconds > 0:
             status["requests_per_minute"] = (_request_count / uptime_seconds) * 60
 
-        # Check frontend (Vite dev server or nginx)
+        # Check the production web UI listener on port 3000
         status["frontend_running"] = check_port_listening(3000)
 
         # Check for SSL certificate

@@ -754,7 +754,8 @@ map2-restart() {
     echo "[4/4] Starting frontend..."
     (
         cd "${map2_dir}/web"
-        npm run dev -- --host 0.0.0.0 --port 3000 > /tmp/map2-frontend.log 2>&1 &
+        npm run build > /tmp/map2-frontend-build.log 2>&1
+        npm run preview -- --host 0.0.0.0 --port 3000 > /tmp/map2-frontend.log 2>&1 &
         frontend_pid=$!
         echo "${frontend_pid}" > /tmp/map2-frontend.pid
     )

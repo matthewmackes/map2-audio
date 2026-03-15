@@ -39,9 +39,8 @@ show_help() {
     echo "Usage: $0 [command] [options]"
     echo ""
     echo "Commands:"
-    echo "  dev         Start development server (default)"
+    echo "  preview     Start the production web server (default)"
     echo "  build       Build for production"
-    echo "  preview     Preview production build"
     echo "  install     Install dependencies"
     echo "  clean       Clean build artifacts"
     echo "  help        Show this help message"
@@ -51,9 +50,9 @@ show_help() {
     echo "  --port      Port to use (default: 3000)"
     echo ""
     echo "Examples:"
-    echo "  $0 dev              # Start dev server"
+    echo "  $0 preview          # Start production web server"
     echo "  $0 build            # Build for production"
-    echo "  $0 dev --port 3001  # Dev server on port 3001"
+    echo "  $0 preview --port 3000  # Production web server on port 3000"
 }
 
 check_node() {
@@ -83,25 +82,6 @@ install_deps() {
     print_success "Dependencies installed!"
 }
 
-run_dev() {
-    local HOST="${HOST:-0.0.0.0}"
-    local PORT="${PORT:-3000}"
-
-    print_status "Starting development server..."
-    print_status "Host: $HOST, Port: $PORT"
-    print_status "API proxy: http://localhost:8080"
-
-    cd "$WEB_DIR"
-
-    # Check if node_modules exists
-    if [ ! -d "node_modules" ]; then
-        print_warning "node_modules not found, installing dependencies..."
-        npm install
-    fi
-
-    npm run dev -- --host "$HOST" --port "$PORT"
-}
-
 run_build() {
     print_status "Building for production..."
     cd "$WEB_DIR"
@@ -120,7 +100,12 @@ run_build() {
 }
 
 run_preview() {
+    local HOST="${HOST:-0.0.0.0}"
+    local PORT="${PORT:-3000}"
+
     print_status "Previewing production build..."
+    print_status "Host: $HOST, Port: $PORT"
+    print_status "API proxy: http://localhost:8080"
     cd "$WEB_DIR"
 
     if [ ! -d "dist" ]; then
@@ -128,7 +113,7 @@ run_preview() {
         npm run build
     fi
 
-    npm run preview
+    npm run preview -- --host "$HOST" --port "$PORT"
 }
 
 run_clean() {
@@ -139,7 +124,7 @@ run_clean() {
 }
 
 # Parse arguments
-COMMAND="${1:-dev}"
+COMMAND="${1:-preview}"
 shift || true
 
 HOST="0.0.0.0"
@@ -167,9 +152,6 @@ check_npm
 
 # Execute command
 case $COMMAND in
-    dev)
-        run_dev
-        ;;
     build)
         run_build
         ;;

@@ -33,16 +33,17 @@ cd /home/mm/map2-audio
 
 ### Via Script
 ```bash
-/home/mm/map2-audio/scripts/start_web.sh
+/home/mm/map2-audio/scripts/start-web.sh
 ```
 
 ### Manual Start
 ```bash
 cd /home/mm/map2-audio/web
-npm run dev -- --host 0.0.0.0 --port 3000
+npm run build
+npm run preview -- --host 0.0.0.0 --port 3000
 ```
 - **Web UI**: http://localhost:3000
-- **Development mode** with hot-reload
+- **Mode**: full production frontend
 - **Logs**: Printed to terminal (Ctrl+C to stop)
 
 ### Production Build
@@ -133,7 +134,7 @@ map2-restart
 - Stops backend (port 8080) and frontend (port 3000)
 - Waits for ports to be released
 - Starts backend (FastAPI)
-- Starts frontend (Vite dev server)
+- Builds and starts the production frontend
 - Displays progress and connection URLs
 
 **Steps**:
@@ -260,7 +261,7 @@ curl -s http://localhost:8080/api/plugins/engine-ops/status | python3 -m json.to
 
 ### Scripts
 - **Backend**: `/home/mm/map2-audio/scripts/` (various)
-- **Web UI**: `/home/mm/map2-audio/scripts/start_web.sh`
+- **Web UI**: `/home/mm/map2-audio/scripts/start-web.sh`
 - **TUI wrapper**: `/home/mm/map2-audio/tui.sh`
 
 ### Audio Models & IRs
@@ -276,8 +277,7 @@ curl -s http://localhost:8080/api/plugins/engine-ops/status | python3 -m json.to
 
 ### Web UI
 - **Source**: `/home/mm/map2-audio/web/`
-- **Dev build**: `web/` (hot-reload on port 3000)
-- **Prod build**: `web/dist/` (optimized static files)
+- **Production build**: `web/dist/` (optimized assets served on port 3000)
 
 ---
 
@@ -311,8 +311,9 @@ kill -9 <PID>
 cd /home/mm/map2-audio/web
 npm install
 
-# Start with verbose logging
-npm run dev -- --host 0.0.0.0 --port 3000
+# Rebuild and start the production server
+npm run build
+npm run preview -- --host 0.0.0.0 --port 3000
 ```
 
 ### Node Console Display Issues
@@ -347,13 +348,13 @@ journalctl -u map2-backend -f
 
 ## 9. COMMON WORKFLOWS
 
-### Full Development Setup
+### Full Local Setup
 ```bash
 # Terminal 1: Start backend
 systemctl start map2-backend
 
 # Terminal 2: Start web dashboard
-/home/mm/map2-audio/scripts/start_web.sh
+/home/mm/map2-audio/scripts/start-web.sh
 
 # Terminal 3: Monitor with Node Console
 python3 -m tui.node_console

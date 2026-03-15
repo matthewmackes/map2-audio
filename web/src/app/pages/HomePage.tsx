@@ -11,7 +11,7 @@ import {
 import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import {
-  homeNavigationSections,
+  homeNavigationTabSections,
   MAX_PINNED_NAV_ITEMS,
   navigationMaturityMeta,
   normalizePinnedRoutes,
@@ -351,7 +351,7 @@ export function HomePage() {
   const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
 
   const [activeSection, setActiveSection] = useState<NavigationHomeSection>(
-    homeNavigationSections[0]?.title ?? 'System',
+    homeNavigationTabSections[0]?.title ?? 'Audio Grid',
   )
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
 
@@ -543,7 +543,7 @@ export function HomePage() {
   // ── Active section cards ────────────────────────────────────────────────────
 
   const activeCards = useMemo(() => {
-    const section = homeNavigationSections.find((s) => s.title === activeSection)
+    const section = homeNavigationTabSections.find((s) => s.title === activeSection)
     return section?.items ?? []
   }, [activeSection])
 
@@ -591,7 +591,9 @@ export function HomePage() {
           {/* Live cluster node strip */}
           <div className="hp-hero__cluster" aria-label="Cluster node status">
             <span className="hp-hero__cluster-label">
-              {tiles.length > 1 ? 'MAP2 Cluster' : 'MAP2 Node'} · {clusterName}
+              {tilesError
+                ? 'Cluster status unavailable'
+                : `${tiles.length > 1 ? 'MAP2 Cluster' : 'MAP2 Node'} · ${clusterName}`}
             </span>
 
             <div className="hp-hero__nodes">
@@ -603,6 +605,7 @@ export function HomePage() {
               )}
 
               {!tilesLoading &&
+                !tilesError &&
                 tiles.map((tile) => (
                   <button
                     key={`hero-node-${tile.id}`}
@@ -643,7 +646,7 @@ export function HomePage() {
         {/* ── Section tab bar ─────────────────────────────────── */}
         <nav className="hp-tabs" aria-label="Navigation sections">
           <div className="hp-tabs__list" role="tablist">
-            {homeNavigationSections.map((section) => (
+            {homeNavigationTabSections.map((section) => (
               <button
                 key={section.title}
                 type="button"
@@ -813,96 +816,6 @@ export function HomePage() {
             )
           })}
         </div>
-
-        {/* ══════════════════════════════════════════════════════════
-            CLUSTER NODE TILES SECTION
-            ══════════════════════════════════════════════════════════ */}
-        <section className="hp-cluster-section" aria-label="Cluster node status">
-          <div className="hp-cluster-header">
-            <h2>{tiles.length > 1 ? 'MAP2 Cluster' : 'MAP2 Node Status'}</h2>
-            <button
-              type="button"
-              className="hp-cluster-refresh-btn"
-              onClick={() => void loadTiles()}
-            >
-              <Renew size={14} aria-hidden />
-              Refresh
-            </button>
-          </div>
-
-          {tilesLoading && (
-            <div className="hp-cluster-grid">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={`sk-${i}`} className="hp-cluster-tile hp-cluster-tile--skeleton" />
-              ))}
-            </div>
-          )}
-
-          {tilesError && !tilesLoading && (
-            <div className="hp-cluster-error">
-              <span>Cluster status unavailable — {tilesError}</span>
-              <button
-                type="button"
-                className="hp-cluster-error__retry"
-                onClick={() => void loadTiles()}
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {!tilesLoading && !tilesError && (
-            <div className="hp-cluster-grid">
-              {tiles.map((tile) => (
-                <button
-                  key={tile.id}
-                  type="button"
-                  className={`hp-cluster-tile${tile.isLocal ? ' is-local' : ''}`}
-                  onClick={() => navigate(buildPlatformHref('cluster-dashboard'))}
-                >
-                  <div className="hp-cluster-tile__head">
-                    <span
-                      className="hp-cluster-tile__dot"
-                      style={{ background: clusterDotClass(tile.status) }}
-                      aria-label={tile.status}
-                    />
-                    <div>
-                      <div className="hp-cluster-tile__hostname">{tile.hostname}</div>
-                      <div className="hp-cluster-tile__ip">{tile.ip}</div>
-                    </div>
-                    {tile.isLocal && (
-                      <span className="hp-cluster-tile__local-badge">This node</span>
-                    )}
-                  </div>
-
-                  <div className="hp-cluster-tile__role">{tile.role}</div>
-
-                  <div
-                    className="hp-cluster-tile__bar-track"
-                    role="progressbar"
-                    aria-valuenow={tile.healthScore}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`Health ${tile.healthScore}%`}
-                  >
-                    <span
-                      className="hp-cluster-tile__bar-fill"
-                      style={{ width: `${Math.max(4, Math.min(100, tile.healthScore))}%` }}
-                    />
-                  </div>
-
-                  <div className="hp-cluster-tile__meta">{tile.cpuRam}</div>
-                  <div className="hp-cluster-tile__meta">
-                    {tile.audioDevices.slice(0, 2).join(' · ')}
-                  </div>
-                  <div className="hp-cluster-tile__meta">
-                    {tile.version} · last seen {tile.lastSeenSeconds}s ago
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
       </main>
     </div>
   )

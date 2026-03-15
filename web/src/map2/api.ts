@@ -125,9 +125,9 @@ const RAW_API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   const port = window.location.port
 
-  // On localhost, /api works via the Vite dev server proxy (3001), the
-  // port-80 reverse proxy, or direct 8080 access.
-  if (isLocalhost) {
+  // On localhost and on the supported production web port, /api is routed
+  // through the same origin and proxied by the port-3000 preview server.
+  if (isLocalhost || port === '3000') {
     return '/api'
   }
 
@@ -137,16 +137,15 @@ const RAW_API_BASE = (() => {
     return '/api'
   }
 
-  // For any other port on a remote host (e.g., the static "serve" on 3000,
-  // or the Vite dev server on 3001), call the backend on port 8080 directly.
+  // For any other port on a remote host, call the backend on port 8080 directly.
   return `http://${window.location.hostname}:8080/api`
 })()
 export const API_BASE = RAW_API_BASE.endsWith('/') ? RAW_API_BASE.slice(0, -1) : RAW_API_BASE
 
 /**
  * Get the WebSocket base URL that correctly targets the backend.
- * Mirrors the API_BASE logic: on port 80/8080/localhost use relative ws,
- * on any other port (3000, 3001) target ws://hostname:8080 directly.
+ * Mirrors the API_BASE logic: on localhost, port 3000, port 80, or port 8080
+ * use the same origin; on any other port target ws://hostname:8080 directly.
  */
 export function getWsBaseUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -154,10 +153,10 @@ export function getWsBaseUrl(): string {
   const port = window.location.port
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
 
-  if (isLocalhost || port === '' || port === '80' || port === '8080') {
+  if (isLocalhost || port === '3000' || port === '' || port === '80' || port === '8080') {
     return `${protocol}//${window.location.host}`
   }
-  // Port 3000/3001 or other dev ports — connect directly to backend
+  // Any non-standard port connects directly to the backend.
   return `${protocol}//${hostname}:8080`
 }
 

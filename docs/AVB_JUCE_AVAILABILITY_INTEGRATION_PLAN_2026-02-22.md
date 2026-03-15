@@ -12,10 +12,10 @@ Resolve AVB "not available" behavior and missing JUCE AVB input/output channel v
 1. AVB routing web hooks call `response.json()` directly on successful HTTP responses.
    - `web/src/app/components/AvbRouting/hooks/useAvbApi.ts:123`
    - `web/src/app/components/AvbRouting/hooks/useNodeApi.ts:417`
-2. Port mode split exists:
-   - Port 3000 documented as static production server (`serve`) with SPA fallback: `web/PORTS.md:5`
-   - Port 3001 documented as dev proxy mode to backend API: `web/PORTS.md:18`, `web/vite.config.ts:36`
-3. Web startup script defaults dev mode to port 3000, increasing mode/proxy confusion:
+2. Web port behavior was documented inconsistently across frontend docs and config, which increased proxy confusion:
+   - `web/PORTS.md`
+   - `web/vite.config.ts`
+3. Web startup script previously mixed local edit assumptions with the production access path:
    - `scripts/start-web.sh:86`
 4. AVB readiness is checked differently in Python and C++:
    - Python (`config + interface + ptp4l binary`): `app/services/avb/__init__.py:17`
@@ -72,8 +72,8 @@ Follow a single capability contract aligned to IEEE 802.1AS / 1722 / 1722.1 oper
 ## Phase 0: Immediate Containment (0-1 day)
 
 - Standardize deployment runbook:
-  - dev: Vite proxy path (3001 or script-driven proxy mode)
-  - prod: backend/reverse-proxy path with API forwarding
+  - single production web path on port 3000
+  - backend/reverse-proxy path with API forwarding
 - Add operator check: verify `/api/avb/status` and `/api/avb/devices` consistency before opening `/avb-routing`.
 
 Deliverables:

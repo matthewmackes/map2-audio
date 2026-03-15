@@ -416,10 +416,11 @@ start_map2_frontend() {
             if [ -f "$web_dir/package.json" ]; then
                 # Run as the original user, not as root
                 if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-                    sudo -u "$SUDO_USER" bash -c "cd '$web_dir' && npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT > /tmp/map2-frontend.log 2>&1 &"
+                    sudo -u "$SUDO_USER" bash -lc "cd '$web_dir' && npm run build > /tmp/map2-frontend-build.log 2>&1 && nohup npm run preview -- --host 0.0.0.0 --port $FRONTEND_PORT > /tmp/map2-frontend.log 2>&1 &"
                 else
                     cd "$web_dir"
-                    npm run dev -- --host 0.0.0.0 --port $FRONTEND_PORT > /tmp/map2-frontend.log 2>&1 &
+                    npm run build > /tmp/map2-frontend-build.log 2>&1
+                    nohup npm run preview -- --host 0.0.0.0 --port $FRONTEND_PORT > /tmp/map2-frontend.log 2>&1 &
                     cd - > /dev/null
                 fi
                 log_info "Frontend starting..."

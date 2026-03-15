@@ -21,13 +21,9 @@ const platformBuildTimestamp = String(platformVersionJson.build_timestamp ?? '')
 // ============================================================================
 // MAP2 Audio Platform - Vite Configuration
 // ============================================================================
-// 
-// PORT CONFIGURATION (IMPORTANT - DO NOT CONFUSE):
-// - Port 3000: PRODUCTION preview server (npm run preview) - serves dist/ with proxy
-// - Port 3001: DEVELOPMENT Vite server (npm run dev) - HMR + source maps
 //
-// Common mistake: Thinking port 3000 is the dev server. It's NOT!
-// See web/PORTS.md for full documentation.
+// MAP2 runs the web UI only as a production preview on port 3000.
+// There is no supported alternate frontend port or alternate browser-serving workflow.
 // ============================================================================
 // https://vite.dev/config/
 export default defineConfig({
@@ -60,46 +56,6 @@ export default defineConfig({
     // Vite's automatic chunking handles dependency ordering correctly.
   },
   plugins: [react(), svgr()],
-  server: {
-    port: 3001,
-    host: '0.0.0.0',
-    proxy: {
-      // Proxy all API requests to FastAPI backend
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      // Proxy folder endpoints to FastAPI backend
-      '/folders': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
-      // WebSocket proxy for real-time updates
-      '/ws': {
-        target: 'ws://localhost:8080',
-        ws: true,
-        changeOrigin: true,
-      },
-      // PiPedal-compatible WebSocket endpoint
-      '/pipedal': {
-        target: 'ws://localhost:8080',
-        ws: true,
-        changeOrigin: true,
-      },
-      // Legacy resources endpoint
-      '/resources': {
-        target: 'http://localhost:8080',
-        changeOrigin: false,
-      },
-      // Static var files (PiPedal compatibility)
-      '/var': {
-        target: 'http://localhost:8080',
-        changeOrigin: false,
-      },
-    }
-  },
   preview: {
     port: 3000,
     host: '0.0.0.0',
@@ -140,5 +96,5 @@ export default defineConfig({
         changeOrigin: false,
       },
     }
-  }
+  },
 })

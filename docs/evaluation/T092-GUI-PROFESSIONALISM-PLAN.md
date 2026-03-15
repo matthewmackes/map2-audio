@@ -1309,7 +1309,7 @@ find web/src -name "*.css" -not -name "index.css" -not -name "mobile.css" -not -
 
 **Exact steps:**
 
-1. Start the dev server: `cd web && npm run dev`
+1. Start the production web UI: `cd web && npm run build && npm run preview`
 2. Open the following pages and verify the flat/corporate aesthetic:
    - `/` (Overview/home)
    - `/engine` (Audio Engine)

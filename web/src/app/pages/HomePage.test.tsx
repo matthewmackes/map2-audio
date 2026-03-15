@@ -185,12 +185,26 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByText('172.20.146.63')
+    await screen.findByText('MAP2-TESTBED')
 
     expect(screen.getByText('MAP2')).toBeTruthy()
-    expect(screen.getByText(/MAP2 Node Status/i)).toBeTruthy()
+    expect(screen.queryByText(/MAP2 Node Status/i)).toBeNull()
+    expect(screen.getByLabelText('Cluster node status')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Audio Grid/i })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /AVB/i })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /MIDI/i })).toBeTruthy()
     expect(screen.getByRole('tab', { name: /System/i })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /JUCE/i })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Hardware/i })).toBeTruthy()
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent?.replace(/\d+$/, '').trim())).toEqual([
+      'Audio Grid',
+      'AVB',
+      'MIDI',
+      'System',
+      'Hardware',
+    ])
+    expect(screen.getAllByText('Audio Engine').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Audio Grid').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('tab', { name: /System/i }))
     expect(screen.getAllByText('Platform Stack').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Host Machine').length).toBeGreaterThan(0)
     expect(container.querySelector('.hp-hero__brand-mark')).toBeTruthy()
@@ -211,9 +225,9 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByText('172.20.146.63')
+    await screen.findByText('MAP2-TESTBED')
 
-    fireEvent.click(screen.getByRole('tab', { name: /JUCE/i }))
+    fireEvent.click(screen.getByRole('tab', { name: /Audio Grid/i }))
     fireEvent.click(screen.getByLabelText('Pin Audio Engine'))
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({ pinnedRoutes: ['/engine'] })
@@ -238,12 +252,13 @@ describe('HomePage navigation landing', () => {
     )
 
     expect((await screen.findAllByText('MAP2-TESTBED')).length).toBeGreaterThanOrEqual(1)
-    expect(await screen.findByText('172.20.146.63')).toBeTruthy()
-    expect(await screen.findByText('MANAGEMENT-NODE')).toBeTruthy()
-    expect(await screen.findByText('6 cores · 31 GB')).toBeTruthy()
-    expect(await screen.findByText(/Hotone Jogg USB Audio/i)).toBeTruthy()
     expect(screen.queryByText('127.0.0.1')).toBeNull()
     expect(screen.queryByText('LOCAL-NODE')).toBeNull()
+
+    const calledUrls = (global.fetch as jest.MockedFunction<typeof fetch>).mock.calls.map(([input]) => String(input))
+    expect(calledUrls).toContain('/api/system/host-machine-info')
+    expect(calledUrls).toContain('/api/network/status')
+    expect(calledUrls).toContain('/api/cluster/health/extended/devices')
   })
 
   it('proxies home telemetry through the viewed remote node when page scope is remote', async () => {
@@ -319,7 +334,6 @@ describe('HomePage navigation landing', () => {
     )
 
     expect((await screen.findAllByText('MAP2-STAGE-R')).length).toBeGreaterThanOrEqual(1)
-    expect(await screen.findByText('172.20.146.88')).toBeTruthy()
 
     const calledUrls = (global.fetch as jest.MockedFunction<typeof fetch>).mock.calls.map(([input]) => String(input))
     expect(calledUrls).toContain('/api/node/AUDIO-NODE-2/proxy/system/host-machine-info')
