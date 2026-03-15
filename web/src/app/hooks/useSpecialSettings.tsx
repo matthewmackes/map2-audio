@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { apiUrl, wsUrl } from '../utils/apiTarget'
-import { defaultPinnedRoutes } from '../data/advancedMenuItems'
+import { defaultPinnedRoutes, normalizePinnedRoutes } from '../data/advancedMenuItems'
 
 const SPECIAL_SETTINGS_ENDPOINT = '/api/settings/special/'
 const SPECIAL_SETTINGS_SYNC_EVENT = 'map2:special-settings-sync'
@@ -37,15 +37,15 @@ interface UseSpecialSettingsReturn {
 function resolvePinnedRoutes(data: Record<string, unknown>): string[] {
   const pinnedRoutes = data.pinned_routes
   if (Array.isArray(pinnedRoutes)) {
-    return pinnedRoutes.filter((route): route is string => typeof route === 'string')
+    return normalizePinnedRoutes(pinnedRoutes.filter((route): route is string => typeof route === 'string'))
   }
 
   const legacyRoutes = data.promoted_advanced_routes
   if (Array.isArray(legacyRoutes)) {
-    return legacyRoutes.filter((route): route is string => typeof route === 'string')
+    return normalizePinnedRoutes(legacyRoutes.filter((route): route is string => typeof route === 'string'))
   }
 
-  return defaultPinnedRoutes
+  return normalizePinnedRoutes(defaultPinnedRoutes)
 }
 
 function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
@@ -60,6 +60,19 @@ function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
     version: typeof data.version === 'number' ? data.version : undefined,
     lastUpdated: typeof data.last_updated === 'string' ? data.last_updated : undefined,
     updatedByNode: typeof data.updated_by_node === 'string' ? data.updated_by_node : undefined,
+  }
+}
+
+function buildUpdatePayload(newSettings: Partial<SpecialSettings>, currentSettings: SpecialSettings | null) {
+  const pinnedRoutes = normalizePinnedRoutes(newSettings.pinnedRoutes ?? currentSettings?.pinnedRoutes ?? defaultPinnedRoutes)
+
+  return {
+    enabled: newSettings.enabled ?? currentSettings?.enabled ?? false,
+    hidden_plugins: newSettings.hiddenPlugins ?? currentSettings?.hiddenPlugins ?? [],
+    menu_location: newSettings.menuLocation ?? currentSettings?.menuLocation ?? 'top-nav',
+    pinned_routes: pinnedRoutes,
+    promoted_advanced_routes: pinnedRoutes,
+    last_active_node: newSettings.lastActiveNode ?? currentSettings?.lastActiveNode ?? null,
   }
 }
 
@@ -94,13 +107,8 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
     setError(null)
 
     try {
-      const payload = {
-        enabled: newSettings.enabled ?? settings?.enabled ?? false,
-        hidden_plugins: newSettings.hiddenPlugins ?? settings?.hiddenPlugins ?? [],
-        menu_location: newSettings.menuLocation ?? settings?.menuLocation ?? 'top-nav',
-        pinned_routes: newSettings.pinnedRoutes ?? settings?.pinnedRoutes ?? defaultPinnedRoutes,
-        last_active_node: newSettings.lastActiveNode ?? settings?.lastActiveNode ?? null,
-      }
+      // Keep legacy writes until every deployed backend accepts pinned_routes.
+      const payload = buildUpdatePayload(newSettings, settings)
 
       let response = await fetch(apiUrl(SPECIAL_SETTINGS_ENDPOINT), {
         method: 'POST',

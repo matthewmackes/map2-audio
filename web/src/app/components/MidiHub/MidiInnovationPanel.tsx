@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AILabel, AILabelContent } from '@carbon/react'
 import { Button, FormControlLabel, Switch, TextField } from '@mui/material'
 import { midiHubApi, type MidiHubLearnSuggestion } from '../../../map2/api'
 import { useToasts } from '../Toasts'
@@ -108,7 +109,14 @@ export function MidiInnovationPanel() {
   return (
     <div className="stack" style={{ gap: 14 }}>
       <div className="card" style={{ padding: 12 }}>
-        <h4 style={{ marginTop: 0 }}>AI-Assisted MIDI Learn + Plugin Splits</h4>
+        <div className="flex" style={{ justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+          <h4 style={{ marginTop: 0, marginBottom: 0 }}>AI-assisted MIDI learn and plugin splits</h4>
+          <AILabel kind="inline" size="mini" textLabel="AI">
+            <AILabelContent>
+              Suggested CC mappings are generated from the active chain context and should be reviewed before applying.
+            </AILabelContent>
+          </AILabel>
+        </div>
         <div className="grid grid-3" style={{ gap: 8 }}>
           <TextField label="Parameter" size="small" value={parameterId} onChange={(event) => setParameterId(event.target.value)} />
           <TextField

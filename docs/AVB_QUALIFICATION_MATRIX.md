@@ -1,6 +1,6 @@
 # AVB Qualification Matrix
 
-Last updated: 2026-02-26 17:44 - Codex
+Last updated: 2026-03-13 18:14 - Codex
 Scope: AVB/AVDECC release-readiness gates for MAP2 with software and hardware evidence.
 
 ## Status Legend
@@ -18,8 +18,8 @@ Scope: AVB/AVDECC release-readiness gates for MAP2 with software and hardware ev
 | Q02 | Backend | AVB service/router/SRP contracts | `pytest tests/test_avb_service_engine_contract.py tests/test_avb_router_map2.py tests/test_avb_routes_srp.py -q` | Zero failed tests | 95 passed in 0.83s (2026-02-21) | PASS |
 | Q03 | JUCE C++ | AVB + AVDECC model harness | `cmake --build juce-engine/build --target check-avb -j4` | `avb_tests` and `avdecc_model_tests` both pass | Both suites passed, including AVTP init/teardown hardening coverage (2026-02-21) | PASS |
 | Q04 | Hardware (HIL) | Multi-node discovery and route churn | `pytest -m avb tests/test_avb_integration.py -q` on AVB-capable lab network | Discovery completes <=10s and route churn succeeds >=99% with no orphaned routes | HIL run 2026-02-26T23:29:57Z; see /tmp/map2-avb-hil-20260226-182951/q04_pytest.log | PASS |
-| Q05 | Hardware (HIL) | PTP lock and transport timing | `scripts/avb_capture_clock_drift.sh <iface> <duration_seconds> <output_dir>` during active traffic | 100% active streams report PTP lock; max timestamp skew within release target | Blocked: Environment prevented Q05 execution; see /tmp/map2-avb-hil-20260226-182951/q05_capture.log; see /tmp/map2-avb-hil-20260226-182951/q05_capture.log | BLOCKED |
-| Q06 | Hardware (HIL) | 24h endurance soak (8 streams) | Run `scripts/run_avb_24h_soak.sh` (or execute `docs/AVB_24H_SOAK_TEMPLATE.md`) and archive artifacts | No unrecovered stream failures; no sustained transport degradation; no orphaned SRP state | Deferred in this run; see /tmp/map2-avb-hil-20260226-182951/q06_soak.log | PENDING |
+| Q05 | Hardware (HIL) | PTP lock and transport timing | `scripts/avb_capture_clock_drift.sh <iface> <duration_seconds> <output_dir>` during active traffic | 100% active streams report PTP lock; max timestamp skew within release target | Blocked: Environment prevented Q05 execution; see /tmp/map2-avb-hil-20260226-182951/q05_capture.log; packet capture no longer requires `tshark` specifically, but live AVB traffic is still required | BLOCKED |
+| Q06 | Hardware (HIL) | 24h endurance soak (8 streams) | Run `scripts/run_avb_24h_soak.sh` (or execute `docs/AVB_24H_SOAK_TEMPLATE.md`) and archive artifacts | No unrecovered stream failures; no sustained transport degradation; no orphaned SRP state | Deferred in this run; see /tmp/map2-avb-hil-20260226-182951/q06_soak.log. Software-side gating now rejects idle or unlocked soak windows without live AVB evidence. | PENDING |
 | Q07 | Failure Handling | Rollback and SRP release behavior under faults | Included in Q02 (`test_avb_routes_srp.py`) | Failure paths clean up reservations and surface explicit errors/warnings | Covered in Q02 (2026-02-21) | PASS |
 | Q08 | Rollout/Backout | Feature-flag and rollback playbook validation | `pytest tests/test_avb_routes_srp.py -k "rollback or release_warning or exception_releases" -q` + runbook checks in `docs/AVB_ROLLOUT_BACKOUT_RUNBOOK.md` | Rollback-focused tests pass and runbook no-orphan checks return zero active streams/connections/unreleased reservations | 7 passed, 44 deselected (2026-02-21) | PASS |
 | Q09 | Installer Automation | AVB default/skip/uninstall/interface branch controls | `pytest tests/test_avb_ops_scripts.py -q` | Dry-run installer branch checks pass for default, `--skip-avb`, `--uninstall-avb`, and `--avb-interface` flows | 8 passed (2026-02-21) | PASS |
@@ -37,9 +37,12 @@ pytest tests/test_avb_service_engine_contract.py tests/test_avb_router_map2.py t
 cmake --build juce-engine/build --target check-avb -j4
 
 # PTP drift + AVTP capture evidence (hardware required)
+# Host tools: `pmc` plus one of `tshark`, `tcpdump`, or `dumpcap`
+# Q05 now exits non-zero when no AVTP frames or valid PTP offset samples are captured.
 ./scripts/avb_capture_clock_drift.sh enp2s0 600 /tmp/map2-avb-evidence
 
 # 24h soak runner (hardware required)
+# Q06 now exits non-zero when the soak never observes running streams or locked PTP snapshots.
 ./scripts/run_avb_24h_soak.sh --duration-hours 24 --checkpoint-minutes 60 --output-dir /tmp/map2-avb-soak
 
 # Optional: run Q04/Q05/Q06 gate commands in one wrapper

@@ -112,13 +112,14 @@
       "reason": "These flows expand maintenance surface area and content breadth, but they are not central enough or governed enough to present as default operator workflows."
     },
     {
-      "name": "3D Grid and GridFlow-style exploratory surfaces",
-      "state": "experimental",
+      "name": "JUCE-GRID signal-flow editing and routing workflows",
+      "state": "beta",
       "evidence": [
         "docs/evaluation/02-completeness.md",
-        "docs/evaluation/07-ux-critique.md"
+        "docs/evaluation/07-ux-critique.md",
+        "docs/design/GRID_ROUTE_CUTOVER_AUDIT.md"
       ],
-      "reason": "The completeness review identified 3D Grid as the clearest stub and the UI critique found exploratory surfaces too exposed."
+      "reason": "JUCE-GRID is now the sole supported editor path, but workflow closure, validation depth, and dense-control polish still keep it below operator-safe default trust."
     },
     {
       "name": "LCD and dedicated hardware panels",

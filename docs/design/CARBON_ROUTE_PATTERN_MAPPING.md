@@ -26,9 +26,10 @@ Scope: Map each active app route to a nearest Carbon pattern/template and concre
 | `/library` | `web/src/app/pages/LibraryPage.tsx` | Library + filtering + import/export | `Tabs`, `DataTable`, `ComboBox`, `FileUploader`, `Tag`, `Pagination` |
 | `/midi` | `web/src/app/pages/MIDIPage.tsx` | Control panel with forms and diagnostics | `Tabs`, `FormGroup`, `TextInput`, `NumberInput`, `Toggle`, `DataTable` |
 | `/midi-hub` | `web/src/app/pages/MidiHubPage.tsx` | Complex tool workspace (tabbed) | `Tabs`, `DataTable`, `Modal`, `InlineLoading`, `InlineNotification` |
-| `/midi-hub-2` | `web/src/app/pages/MidiHub2Page.tsx` | Console-style workflow panels | `Tabs`, `Tile`, `DataTable`, `ButtonSet`, `Tag` |
-| `/grid` | `web/src/app/pages/GridFlowPage.tsx` | Node/workflow editor shell | `Grid`, `Accordion`, `Toolbar pattern`, `Popover`, `Modal` |
-| `/grid-3d` | `web/src/app/pages/GridFlowAdvancedPage.tsx` | Specialized visualization workspace | `Tile`, `StructuredList`, `Tooltip`, `Tag`, `InlineNotification` |
+| `/midi-hub-2` | `web/src/app/App.tsx` | Compatibility redirect to the canonical MIDI Hub route | `Navigate` |
+| `/juce-grid` | `web/src/app/pages/JuceGridPage.tsx` | Signal-flow editor workspace | `Grid`, `Accordion`, `Toolbar pattern`, `Popover`, `Modal` |
+| `/grid` | `web/src/app/App.tsx` | Legacy redirect alias to the supported editor | `Navigate` |
+| `/grid-3d` | `web/src/app/App.tsx` | Legacy redirect alias to the supported editor | `Navigate` |
 | `/dsp` | `web/src/app/pages/DSPPage.tsx` | Signal processing control panel | `Tabs`, `DataTable`, `NumberInput`, `Slider`, `Toggle` |
 | `/edirol-ua1000` | `web/src/app/pages/EdirolUA1000Page.tsx` | Hardware profile dashboard | `Tile`, `DataTable`, `Tag`, `InlineNotification` |
 | `/motu-rme` | `web/src/app/pages/MOTURMEPage.tsx` | Hardware profile dashboard | `Tile`, `DataTable`, `Tag`, `InlineNotification` |
@@ -38,7 +39,7 @@ Scope: Map each active app route to a nearest Carbon pattern/template and concre
 | `/engine` | `web/src/app/pages/AudioEnginePage.tsx` | Realtime engine operations panel | `Tabs`, `Tile`, `NumberInput`, `Toggle`, `InlineNotification` |
 | `/metering` | `web/src/app/pages/MeteringPage.tsx` | Telemetry dashboard | `Grid`, `Tile`, chart pattern wrappers, `Tag` |
 | `/pipewire` | `web/src/app/pages/PipeWirePage.tsx` | Runtime status + controls | `DataTable`, `InlineNotification`, `Modal`, `CodeSnippet` pattern |
-| `/welcome` | `web/src/app/pages/WelcomePage.tsx` | Guided getting-started page | `Grid`, `Accordion`, `ProgressIndicator`, `Link` |
+| `/welcome` | `web/src/app/pages/WelcomePage.tsx` | Legacy redirect alias to the canonical platform guide | `Navigate` |
 | `/lcd` | `web/src/app/pages/LCDPage.tsx` | Device status workspace | `Tile`, `DataTable`, `InlineLoading`, `Tag` |
 | `/cluster-dashboard` | `web/src/app/pages/ClusterDashboardPage.tsx` | Multi-panel operations dashboard | `Tabs`, `DataTable`, `Tag`, `Modal`, `InlineNotification` |
 | `/midi-cluster` | `web/src/app/pages/MidiClusterPage.tsx` | Cluster matrix and diagnostics | `DataTable`, `Tabs`, `Tag`, `Tooltip` |

@@ -4,6 +4,11 @@
   gap: var(--cds-spacing-05);
 }
 
+.shopping-search-dialog__ai-label-row {
+  display: inline-flex;
+  align-items: center;
+}
+
 .shopping-search-dialog__disclaimer-toggle {
   appearance: none;
   border: none;

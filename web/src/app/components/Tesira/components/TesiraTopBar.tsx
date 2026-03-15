@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Box, Typography, Chip, Tooltip, Button } from '@mui/material'
 import SyncIcon from '@mui/icons-material/Sync'
 import SearchIcon from '@mui/icons-material/Search'
-import { BiampIcon } from '../BiampIcon'
+import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useTesiraDevices, useDiscoveryStatus } from '../hooks/useTesiraApi'
 import { DiscoveryDialog } from './DiscoveryDialog'
 
@@ -32,7 +32,7 @@ export function TesiraTopBar() {
           bgcolor: 'background.paper',
         }}
       >
-        <BiampIcon size={22} color={BIAMP_RED} />
+        <MapMatrixProcessorIcon size={22} color={BIAMP_RED} />
         <Typography variant="subtitle1" fontWeight={700}>
           Tesira AVB Fleet
         </Typography>

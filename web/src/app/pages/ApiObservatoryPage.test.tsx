@@ -125,6 +125,7 @@ describe('ApiObservatoryPage', () => {
     expect(screen.getByRole('button', { name: 'API Catalog' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Request Builder' })).toBeTruthy()
     expect(screen.getByText('OpenAPI-driven endpoint explorer with hand-authored context and schema diffs.')).toBeTruthy()
+    expect(document.querySelector('.cds--ai-label')).toBeTruthy()
 
     await waitFor(() => expect(screen.getByText('Cluster Topology')).toBeTruthy())
   })

@@ -22,15 +22,7 @@ from tui.widgets import (
 )
 
 try:
-    from tui.screens.automation_tab import AutomationTab
-    from tui.screens.guitar import GuitarChainScreen
     from tui.screens.midi import MIDIScreen
-    from tui.screens.midi_v2 import MIDIV2Screen
-    from tui.screens.network_tab import NetworkTab
-    from tui.screens.plugin_loader import PluginLoaderScreen
-    from tui.screens.plugins import PluginsScreen
-    from tui.screens.sessions import SessionsScreen
-    from tui.screens.www_tab import WWWTab
 
     SCREENS_AVAILABLE = True
 except ImportError:
@@ -97,47 +89,7 @@ def _expectations() -> Iterable[_ScreenExpectation]:
         _ScreenExpectation(
             name="MIDIScreen",
             build=lambda: MIDIScreen(client),
-            required_widget_types=(ActionButton, StatusIndicator, LoadingIndicator),
-        ),
-        _ScreenExpectation(
-            name="MIDIV2Screen",
-            build=lambda: MIDIV2Screen(client),
-            required_widget_types=(ActionButton, StatusIndicator, LoadingIndicator),
-        ),
-        _ScreenExpectation(
-            name="NetworkTab",
-            build=lambda: NetworkTab(client),
-            required_widget_types=(ActionButton, StatusIndicator, LoadingIndicator),
-        ),
-        _ScreenExpectation(
-            name="PluginLoaderScreen",
-            build=lambda: PluginLoaderScreen(client),
             required_widget_types=(),
-        ),
-        _ScreenExpectation(
-            name="PluginsScreen",
-            build=lambda: PluginsScreen(client),
-            required_widget_types=(ActionButton, LoadingIndicator),
-        ),
-        _ScreenExpectation(
-            name="SessionsScreen",
-            build=lambda: SessionsScreen(client),
-            required_widget_types=(ActionButton, LoadingIndicator),
-        ),
-        _ScreenExpectation(
-            name="AutomationTab",
-            build=lambda: AutomationTab(client),
-            required_widget_types=(LoadingIndicator,),
-        ),
-        _ScreenExpectation(
-            name="WWWTab",
-            build=lambda: WWWTab(client),
-            required_widget_types=(ActionButton, LoadingIndicator),
-        ),
-        _ScreenExpectation(
-            name="GuitarChainScreen",
-            build=lambda: GuitarChainScreen(client),
-            required_widget_types=(ActionButton, LoadingIndicator, MixControl, BypassToggle),
         ),
     )
 

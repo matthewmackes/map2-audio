@@ -1,0 +1,69 @@
+{
+  "participant_id": "P01",
+  "session": {
+    "study_id": "t102",
+    "date": "YYYY-MM-DD",
+    "moderator": "",
+    "build_ref": "",
+    "environment": {
+      "browser": "",
+      "device_type": "laptop",
+      "midi_device_label": "",
+      "traffic_source": ""
+    }
+  },
+  "participant_profile": {
+    "role": "gigging_guitarist",
+    "developer": false,
+    "familiar_with_map2": false,
+    "midi_experience_level": "intermediate"
+  },
+  "tasks": [
+    {
+      "task_id": "connect_device",
+      "title": "Connect a device and verify signal",
+      "success": false,
+      "completed_without_coaching": false,
+      "time_to_complete_seconds": 0,
+      "assists": [],
+      "confusion_points": [],
+      "notes": ""
+    },
+    {
+      "task_id": "create_route",
+      "title": "Create a route",
+      "success": false,
+      "completed_without_coaching": false,
+      "time_to_complete_seconds": 0,
+      "assists": [],
+      "confusion_points": [],
+      "notes": ""
+    },
+    {
+      "task_id": "troubleshoot_no_signal",
+      "title": "Troubleshoot no-signal",
+      "success": false,
+      "completed_without_coaching": false,
+      "time_to_complete_seconds": 0,
+      "assists": [],
+      "confusion_points": [],
+      "notes": ""
+    }
+  ],
+  "issues": [
+    {
+      "issue_key": "",
+      "summary": "",
+      "severity": "major",
+      "task_id": "",
+      "recommendation": ""
+    }
+  ],
+  "overall_feedback": {
+    "confidence_after_session": 0,
+    "would_use_without_help": false,
+    "strongest_area": "",
+    "largest_confusion": "",
+    "notes": ""
+  }
+}

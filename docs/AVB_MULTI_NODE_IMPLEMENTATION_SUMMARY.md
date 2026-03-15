@@ -444,7 +444,7 @@ The implementation supports various network topologies:
 ## 📚 Documentation
 
 1. **Architecture Guide**: [AVB_MULTI_NODE_ARCHITECTURE.md](AVB_MULTI_NODE_ARCHITECTURE.md) - 400 lines
-2. **Implementation Plan**: [AVB_MASTER_WORK_PLAN.md](AVB_MASTER_WORK_PLAN.md) - 2026-02-21
+2. **Implementation Plan / Canonical Tracking**: [PROJECT_WORKLIST.md](PROJECT_WORKLIST.md) - current source of truth
 3. **This Summary**: AVB_MULTI_NODE_IMPLEMENTATION_SUMMARY.md
 
 **Total Documentation**: ~1,600 lines

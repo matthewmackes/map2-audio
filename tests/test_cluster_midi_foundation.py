@@ -29,6 +29,11 @@ def test_cluster_midi_config_schema_contains_foundation_keys():
         assert CONFIG_SCHEMA[key].env_var == env_var
 
 
+def test_cluster_midi_defaults_fail_closed():
+    assert CONFIG_SCHEMA["midi.cluster.enabled"].default is False
+    assert CONFIG_SCHEMA["midi.cluster.auto_connect"].default is False
+
+
 def test_cluster_event_bus_exposes_midi_event_types():
     expected_values = {
         "MIDI_PORT_DISCOVERED": "midi.port.discovered",

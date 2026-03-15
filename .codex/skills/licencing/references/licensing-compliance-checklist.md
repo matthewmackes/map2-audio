@@ -56,7 +56,7 @@ For each gap, record:
 
 ## 6) Worklist Task Template
 
-Add unresolved items to `docs/AVB_MASTER_WORK_PLAN.md`:
+Add unresolved items to `docs/PROJECT_WORKLIST.md`:
 
 ```text
 ID: T###

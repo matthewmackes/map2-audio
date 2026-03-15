@@ -1,4 +1,7 @@
 #!/bin/bash
+# Deprecated as a primary user interface.
+# Use the unified Textual Workflow route or `map2 workflow` for guided execution.
+# This script remains as a non-interactive fallback/bootstrap path.
 ################################################################################
 # MAP2 Audio Platform - Node Installation Script
 # 
@@ -77,6 +80,14 @@ ENABLE_AUDIO=true
 ENABLE_SSH=true
 ENABLE_FIREWALL=true
 CONFIGURE_NETWORK=false
+AUTO_YES=false
+USE_DIALOG=true
+DRY_RUN=false
+CONFIG_FILE=""
+NETWORK_INTERFACE=""
+NETWORK_NETMASK="255.255.255.0"
+NETWORK_GATEWAY=""
+NETWORK_DNS="8.8.8.8"
 
 ################################################################################
 # Logging Functions
@@ -176,11 +187,57 @@ check_internet() {
 
 confirm() {
     local message="$1"
+    if [[ "$AUTO_YES" == "true" ]]; then
+        log_info "Auto-confirmed: ${message}"
+        return 0
+    fi
     local response
     read -p "${message} [y/N] " response
     case "$response" in
         [yY][eE][sS]|[yY]) return 0 ;;
         *) return 1 ;;
+    esac
+}
+
+ensure_map2_user() {
+    if id -u map2 &> /dev/null; then
+        return
+    fi
+    useradd -r -s /sbin/nologin -d /var/lib/map2 -m map2 2>&1 | tee -a "${LOG_FILE}"
+    log_info "Created system user: map2"
+}
+
+netmask_to_prefix() {
+    local netmask=$1
+    case "$netmask" in
+        255.255.255.255) echo "32" ;;
+        255.255.255.254) echo "31" ;;
+        255.255.255.252) echo "30" ;;
+        255.255.255.248) echo "29" ;;
+        255.255.255.240) echo "28" ;;
+        255.255.255.224) echo "27" ;;
+        255.255.255.192) echo "26" ;;
+        255.255.255.128) echo "25" ;;
+        255.255.255.0) echo "24" ;;
+        255.255.254.0) echo "23" ;;
+        255.255.252.0) echo "22" ;;
+        255.255.248.0) echo "21" ;;
+        255.255.240.0) echo "20" ;;
+        255.255.224.0) echo "19" ;;
+        255.255.192.0) echo "18" ;;
+        255.255.128.0) echo "17" ;;
+        255.255.0.0) echo "16" ;;
+        255.254.0.0) echo "15" ;;
+        255.252.0.0) echo "14" ;;
+        255.248.0.0) echo "13" ;;
+        255.240.0.0) echo "12" ;;
+        255.224.0.0) echo "11" ;;
+        255.192.0.0) echo "10" ;;
+        255.128.0.0) echo "9" ;;
+        255.0.0.0) echo "8" ;;
+        *)
+            echo "$netmask"
+            ;;
     esac
 }
 
@@ -197,8 +254,8 @@ setup_logging() {
 check_dependencies() {
     local missing_deps=()
     
-    # Check for dialog (required for TUI)
-    if ! command -v dialog &> /dev/null; then
+    # Check for dialog only when the legacy dialog UI is enabled
+    if [[ "$USE_DIALOG" == "true" ]] && ! command -v dialog &> /dev/null; then
         missing_deps+=("dialog")
     fi
     
@@ -215,11 +272,67 @@ check_dependencies() {
     fi
 }
 
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --config)
+                CONFIG_FILE="${2:-}"
+                shift 2
+                ;;
+            --no-dialog)
+                USE_DIALOG=false
+                shift
+                ;;
+            --yes|-y)
+                AUTO_YES=true
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --help|-h)
+                cat <<'EOF'
+Usage: install-node.sh [--config FILE] [--no-dialog] [--yes] [--dry-run]
+
+  --config FILE   Load node configuration from a shell-compatible env file
+  --no-dialog     Disable dialog UI and use plain terminal output
+  --yes, -y       Auto-confirm prompts
+  --dry-run       Validate configuration and print planned steps without applying changes
+EOF
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1" >&2
+                exit 1
+                ;;
+        esac
+    done
+}
+
+load_config() {
+    if [[ -z "$CONFIG_FILE" ]]; then
+        return
+    fi
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        print_error "Config file not found: ${CONFIG_FILE}"
+        exit 1
+    fi
+    # shellcheck disable=SC1090
+    source "$CONFIG_FILE"
+    log_info "Loaded install configuration from ${CONFIG_FILE}"
+}
+
 ################################################################################
 # Dialog/TUI Functions
 ################################################################################
 
 show_welcome() {
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        print_header
+        print_info "This native workflow will prepare system updates, install MAP2, configure network/audio, and join the cluster."
+        return
+    fi
     dialog --title "Welcome to MAP2 Audio Platform" \
            --backtitle "MAP2 Node Installation v${SCRIPT_VERSION}" \
            --msgbox "This wizard will guide you through installing and configuring a new MAP2 Audio cluster node.\n\nThe process includes:\n\n• System preparation and updates\n• MAP2 software installation\n• Network and firewall configuration\n• Audio subsystem setup\n• Cluster join process\n\nEstimated time: 15-30 minutes\n\nPress OK to continue..." \
@@ -227,6 +340,11 @@ show_welcome() {
 }
 
 show_installation_mode() {
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        INSTALL_MODE="${INSTALL_MODE:-rpm}"
+        log_info "Installation mode selected: ${INSTALL_MODE}"
+        return
+    fi
     local choice
     choice=$(dialog --title "Installation Mode" \
                     --backtitle "MAP2 Node Installation" \
@@ -245,6 +363,17 @@ show_installation_mode() {
 }
 
 show_node_configuration() {
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        NODE_ID="${NODE_ID:-node-$(hostname -s)}"
+        NODE_NAME="${NODE_NAME:-MAP2 Node $(hostname -s)}"
+        NODE_ROLE="${NODE_ROLE:-worker}"
+        if [[ -z "$NODE_ID" ]] || [[ -z "$NODE_NAME" ]]; then
+            print_error "Node ID and Name are required"
+            exit 1
+        fi
+        log_info "Node configured: ID=${NODE_ID}, Name=${NODE_NAME}, Role=${NODE_ROLE}"
+        return
+    fi
     local temp_file=$(mktemp)
     
     dialog --title "Node Configuration" \
@@ -276,6 +405,25 @@ show_node_configuration() {
 }
 
 show_cluster_join_method() {
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        CLUSTER_JOIN_METHOD="${CLUSTER_JOIN_METHOD:-mdns}"
+        case "$CLUSTER_JOIN_METHOD" in
+            manual)
+                if [[ -z "${CLUSTER_MASTER_IP}" ]]; then
+                    print_error "Master node IP is required for manual cluster join"
+                    exit 1
+                fi
+                ;;
+            token)
+                if [[ -z "${CLUSTER_JOIN_TOKEN}" ]]; then
+                    print_error "Join token is required for token cluster join"
+                    exit 1
+                fi
+                ;;
+        esac
+        log_info "Cluster join method: ${CLUSTER_JOIN_METHOD}"
+        return
+    fi
     local choice
     choice=$(dialog --title "Cluster Join Method" \
                     --backtitle "MAP2 Node Installation" \
@@ -344,6 +492,21 @@ show_cluster_join_token() {
 }
 
 show_network_configuration() {
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        if [[ "$CONFIGURE_NETWORK" == "true" ]]; then
+            NETWORK_INTERFACE="${NETWORK_INTERFACE:-$(ip route | awk '/default/ {print $5; exit}')}"
+            if [[ -z "${NETWORK_IP}" ]] || [[ -z "${NETWORK_GATEWAY}" ]]; then
+                print_error "Static IP and gateway are required when CONFIGURE_NETWORK=true"
+                exit 1
+            fi
+            apply_network_config "${NETWORK_INTERFACE}" "${NETWORK_IP}" "${NETWORK_NETMASK}" "${NETWORK_GATEWAY}" "${NETWORK_DNS}"
+        else
+            CONFIGURE_NETWORK=false
+            NODE_IP=$(hostname -I | awk '{print $1}')
+            log_info "Using DHCP IP: ${NODE_IP}"
+        fi
+        return
+    fi
     if dialog --title "Network Configuration" \
                --backtitle "MAP2 Node Installation" \
                --yesno "Would you like to configure a static IP address?\n\n(Required for production cluster nodes)\n\nCurrent IP: $(hostname -I | awk '{print $1}')" \
@@ -396,13 +559,21 @@ apply_network_config() {
     local netmask=$3
     local gateway=$4
     local dns=$5
+    local prefix
     
     print_info "Applying network configuration..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would configure ${iface} to ${ip}/${netmask} with gateway ${gateway} and DNS ${dns}"
+        NODE_IP="$ip"
+        return
+    fi
+
+    prefix=$(netmask_to_prefix "$netmask")
     
     # Create NetworkManager connection
     nmcli connection modify "$iface" \
         ipv4.method manual \
-        ipv4.addresses "${ip}/24" \
+        ipv4.addresses "${ip}/${prefix}" \
         ipv4.gateway "$gateway" \
         ipv4.dns "$dns" 2>&1 | tee -a "${LOG_FILE}"
     
@@ -413,6 +584,17 @@ apply_network_config() {
 }
 
 show_audio_configuration() {
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        if [[ "$ENABLE_AUDIO" == "true" ]]; then
+            AUDIO_DEVICE="${AUDIO_DEVICE:-default}"
+            AUDIO_SAMPLE_RATE="${AUDIO_SAMPLE_RATE:-48000}"
+            AUDIO_BUFFER_SIZE="${AUDIO_BUFFER_SIZE:-256}"
+            log_info "Audio configured: device=${AUDIO_DEVICE}, rate=${AUDIO_SAMPLE_RATE}, buffer=${AUDIO_BUFFER_SIZE}"
+        else
+            log_info "Audio configuration skipped"
+        fi
+        return
+    fi
     if dialog --title "Audio Configuration" \
                --backtitle "MAP2 Node Installation" \
                --yesno "Configure audio subsystem?\n\n(Required for nodes that process audio)" \
@@ -506,6 +688,16 @@ show_configuration_summary() {
         summary+="Buffer Size: ${AUDIO_BUFFER_SIZE} frames\n"
     fi
     
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        print_info "Installation summary"
+        printf '%b\n' "$summary"
+        if [[ "$AUTO_YES" == "true" ]]; then
+            return 0
+        fi
+        confirm "Proceed with installation?" || exit 0
+        return 0
+    fi
+
     if ! dialog --title "Confirm Configuration" \
                 --backtitle "MAP2 Node Installation" \
                 --yesno "${summary}\n\nProceed with installation?" \
@@ -538,6 +730,16 @@ show_progress() {
 
 update_system() {
     print_info "Updating system packages..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would run dnf makecache --refresh -y and dnf upgrade -y"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        dnf makecache --refresh -y 2>&1 | tee -a "${LOG_FILE}"
+        dnf upgrade -y 2>&1 | tee -a "${LOG_FILE}"
+        print_success "System packages updated"
+        return
+    fi
     
     (
         echo "10"
@@ -584,6 +786,19 @@ install_dependencies() {
             "alsa-utils"
         )
     fi
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would install packages: ${packages[*]}"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        for pkg in "${packages[@]}"; do
+            print_info "Installing ${pkg}..."
+            dnf install -y "$pkg" 2>&1 | tee -a "${LOG_FILE}"
+        done
+        print_success "Dependencies installed"
+        return
+    fi
     
     (
         local total=${#packages[@]}
@@ -606,6 +821,24 @@ install_dependencies() {
 
 install_map2_rpm() {
     print_info "Installing MAP2 Audio from RPM..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would fetch the latest MAP2 RPM release and install it"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        local latest_version
+        latest_version=$(curl -s "${GITHUB_API}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/' || true)
+        if [[ -z "$latest_version" ]]; then
+            latest_version="1.0.0"
+        fi
+        local rpm_url="https://github.com/${GITHUB_REPO}/releases/download/v${latest_version}/map2-audio-${latest_version}-1.fc40.x86_64.rpm"
+        local rpm_file="/tmp/map2-audio-${latest_version}.rpm"
+        wget -q -O "$rpm_file" "$rpm_url" 2>&1 | tee -a "${LOG_FILE}"
+        dnf install -y "$rpm_file" 2>&1 | tee -a "${LOG_FILE}"
+        rm -f "$rpm_file"
+        print_success "MAP2 Audio installed from RPM"
+        return
+    fi
     
     (
         echo "10"
@@ -648,6 +881,24 @@ install_map2_rpm() {
 
 install_map2_git() {
     print_info "Installing MAP2 Audio from Git repository..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would clone ${GITHUB_REPO} into ${INSTALL_DIR} and build the frontend"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        git clone "https://github.com/${GITHUB_REPO}.git" "${INSTALL_DIR}" 2>&1 | tee -a "${LOG_FILE}"
+        cd "${INSTALL_DIR}"
+        pip3 install -r requirements.txt 2>&1 | tee -a "${LOG_FILE}"
+        cd web
+        npm ci 2>&1 | tee -a "${LOG_FILE}"
+        npm run build 2>&1 | tee -a "${LOG_FILE}"
+        cd ..
+        ensure_map2_user
+        chown -R map2:map2 "${INSTALL_DIR}"
+        chmod -R 755 "${INSTALL_DIR}"
+        print_success "MAP2 Audio installed from Git"
+        return
+    fi
     
     (
         echo "10"
@@ -676,7 +927,7 @@ install_map2_git() {
         echo "85"
         echo "# Creating system user..."
         
-        useradd -r -s /sbin/nologin -d /var/lib/map2 -m map2 2>&1 | tee -a "${LOG_FILE}" || true
+        ensure_map2_user
         
         echo "95"
         echo "# Setting permissions..."
@@ -696,6 +947,12 @@ install_map2_git() {
 
 create_directories() {
     print_info "Creating directory structure..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would create ${CONFIG_DIR}, ${DATA_DIR}, and ${LOG_DIR}"
+        return
+    fi
+
+    ensure_map2_user
     
     mkdir -p "${CONFIG_DIR}"/{ssl,ssh}
     mkdir -p "${DATA_DIR}"/{backups,config-repo,logs}
@@ -709,6 +966,12 @@ create_directories() {
 
 create_configuration() {
     print_info "Creating configuration file..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would write ${CONFIG_DIR}/config.yml for ${NODE_ID}"
+        return
+    fi
+
+    ensure_map2_user
     
     cat > "${CONFIG_DIR}/config.yml" <<EOF
 # MAP2 Audio Platform Configuration
@@ -781,6 +1044,19 @@ configure_firewall() {
     fi
     
     print_info "Configuring firewall..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would open ports 8080, 3000, 8765 and enable mDNS"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        firewall-cmd --permanent --add-port=8080/tcp 2>&1 | tee -a "${LOG_FILE}"
+        firewall-cmd --permanent --add-port=3000/tcp 2>&1 | tee -a "${LOG_FILE}"
+        firewall-cmd --permanent --add-port=8765/tcp 2>&1 | tee -a "${LOG_FILE}"
+        firewall-cmd --permanent --add-service=mdns 2>&1 | tee -a "${LOG_FILE}"
+        firewall-cmd --reload 2>&1 | tee -a "${LOG_FILE}"
+        print_success "Firewall configured"
+        return
+    fi
     
     (
         echo "20"
@@ -816,6 +1092,10 @@ configure_audio() {
     fi
     
     print_info "Configuring audio subsystem..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would enable PipeWire for the map2 user and start avahi-daemon"
+        return
+    fi
     
     # Enable and start PipeWire for map2 user
     sudo -u map2 systemctl --user enable pipewire pipewire-pulse wireplumber 2>&1 | tee -a "${LOG_FILE}"
@@ -829,6 +1109,10 @@ configure_audio() {
 
 install_systemd_services() {
     print_info "Installing systemd services..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would install MAP2 backend, frontend, and cluster service units"
+        return
+    fi
     
     # These would be installed by RPM, or we create them for git install
     if [[ "$INSTALL_MODE" == "git" ]]; then
@@ -917,6 +1201,16 @@ join_cluster() {
 
 join_cluster_mdns() {
     print_info "Using mDNS auto-discovery..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would broadcast mDNS service and wait for cluster registration"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        sleep 1
+        print_success "Cluster join initiated (mDNS)"
+        print_info "Node will register automatically when services start"
+        return
+    fi
     
     (
         echo "30"
@@ -946,6 +1240,23 @@ join_cluster_manual() {
     print_info "Joining cluster manually..."
     
     local api_url="http://${CLUSTER_MASTER_IP}:8080/api/cluster/nodes/join"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would POST node registration to ${api_url}"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        curl -s -X POST "$api_url" \
+            -H "Content-Type: application/json" \
+            -d "{
+                \"node_id\": \"${NODE_ID}\",
+                \"node_name\": \"${NODE_NAME}\",
+                \"node_role\": \"${NODE_ROLE}\",
+                \"api_address\": \"${NODE_IP}:8080\",
+                \"websocket_address\": \"${NODE_IP}:8765\"
+            }" 2>&1 | tee -a "${LOG_FILE}"
+        print_success "Cluster join complete"
+        return
+    fi
     
     (
         echo "30"
@@ -984,6 +1295,17 @@ join_cluster_token() {
     print_info "Joining cluster with token..."
     
     local api_url="http://localhost:8080/api/cluster/join-with-token"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would POST the cluster join token to ${api_url}"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        curl -s -X POST "$api_url" \
+            -H "Content-Type: application/json" \
+            -d "{\"token\": \"${CLUSTER_JOIN_TOKEN}\"}" 2>&1 | tee -a "${LOG_FILE}"
+        print_success "Cluster join complete (token)"
+        return
+    fi
     
     (
         echo "30"
@@ -1014,6 +1336,18 @@ join_cluster_token() {
 
 start_services() {
     print_info "Starting MAP2 services..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Would enable and start map2-backend, map2-frontend, and map2-cluster"
+        return
+    fi
+    if [[ "$USE_DIALOG" != "true" ]]; then
+        systemctl enable map2-backend map2-frontend map2-cluster 2>&1 | tee -a "${LOG_FILE}"
+        systemctl start map2-backend 2>&1 | tee -a "${LOG_FILE}"
+        systemctl start map2-frontend 2>&1 | tee -a "${LOG_FILE}"
+        systemctl start map2-cluster 2>&1 | tee -a "${LOG_FILE}"
+        print_success "MAP2 services started"
+        return
+    fi
     
     (
         echo "25"
@@ -1047,6 +1381,10 @@ start_services() {
 
 verify_installation() {
     print_info "Verifying installation..."
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "[DRY RUN] Verification skipped because no services were started"
+        return 0
+    fi
     
     local issues=()
     
@@ -1077,9 +1415,16 @@ verify_installation() {
     
     if [[ ${#issues[@]} -gt 0 ]]; then
         local issue_text=$(printf '%s\n' "${issues[@]}")
-        dialog --title "Verification Issues" \
-               --msgbox "The following issues were detected:\n\n${issue_text}\n\nPlease check the logs:\njournalctl -u map2-backend -n 50" \
-               ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
+        if [[ "$USE_DIALOG" == "true" ]]; then
+            dialog --title "Verification Issues" \
+                   --msgbox "The following issues were detected:\n\n${issue_text}\n\nPlease check the logs:\njournalctl -u map2-backend -n 50" \
+                   ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
+        else
+            print_warning "Verification issues detected:"
+            printf '%s\n' "${issues[@]}"
+            print_info "Check the logs: ${LOG_FILE}"
+            print_info "Inspect service logs with: journalctl -u map2-backend -n 50"
+        fi
         return 1
     fi
     
@@ -1090,6 +1435,19 @@ verify_installation() {
 show_completion() {
     local master_url="http://${CLUSTER_MASTER_IP:-master-ip}:3000"
     local node_url="http://${NODE_IP}:8080"
+    local backend_status="Running"
+    local frontend_status="Running"
+    local cluster_status="Running"
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        backend_status="Not started (dry run)"
+        frontend_status="Not started (dry run)"
+        cluster_status="Not started (dry run)"
+    else
+        backend_status=$(systemctl is-active map2-backend 2>/dev/null || echo "unknown")
+        frontend_status=$(systemctl is-active map2-frontend 2>/dev/null || echo "unknown")
+        cluster_status=$(systemctl is-active map2-cluster 2>/dev/null || echo "unknown")
+    fi
     
     local completion_msg="╔════════════════════════════════════════════════╗\n"
     completion_msg+="║                                                ║\n"
@@ -1105,9 +1463,9 @@ show_completion() {
     completion_msg+="  API URL:      ${node_url}\n\n"
     completion_msg+="Services Status:\n"
     completion_msg+="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-    completion_msg+="  Backend:      Running\n"
-    completion_msg+="  Frontend:     Running\n"
-    completion_msg+="  Cluster:      Running\n\n"
+    completion_msg+="  Backend:      ${backend_status}\n"
+    completion_msg+="  Frontend:     ${frontend_status}\n"
+    completion_msg+="  Cluster:      ${cluster_status}\n\n"
     completion_msg+="Next Steps:\n"
     completion_msg+="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
     completion_msg+="  1. Access cluster Web UI:\n"
@@ -1120,10 +1478,12 @@ show_completion() {
     completion_msg+="  Backend:      journalctl -u map2-backend\n"
     completion_msg+="  Cluster:      journalctl -u map2-cluster\n"
     
-    dialog --title "Installation Complete!" \
-           --backtitle "MAP2 Node Installation" \
-           --msgbox "${completion_msg}" \
-           ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
+    if [[ "$USE_DIALOG" == "true" ]]; then
+        dialog --title "Installation Complete!" \
+               --backtitle "MAP2 Node Installation" \
+               --msgbox "${completion_msg}" \
+               ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
+    fi
     
     # Also print to terminal
     clear
@@ -1146,9 +1506,9 @@ show_completion() {
     echo ""
     echo -e "${CYAN}Services Status:${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  Backend:      $(systemctl is-active map2-backend)"
-    echo "  Frontend:     $(systemctl is-active map2-frontend)"
-    echo "  Cluster:      $(systemctl is-active map2-cluster)"
+    echo "  Backend:      ${backend_status}"
+    echo "  Frontend:     ${frontend_status}"
+    echo "  Cluster:      ${cluster_status}"
     echo ""
     echo -e "${CYAN}Access Web UI:${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -1163,9 +1523,12 @@ show_completion() {
 ################################################################################
 
 main() {
+    parse_args "$@"
+
     # Pre-flight checks
     check_root
     setup_logging
+    load_config
     check_os
     check_dependencies
     
@@ -1221,9 +1584,15 @@ main() {
     if verify_installation; then
         show_completion
     else
-        dialog --title "Installation Issues" \
-               --msgbox "Installation completed but some issues were detected.\n\nPlease check the logs:\n${LOG_FILE}\n\njournalctl -u map2-backend -n 50" \
-               12 ${DIALOG_WIDTH}
+        if [[ "$USE_DIALOG" == "true" ]]; then
+            dialog --title "Installation Issues" \
+                   --msgbox "Installation completed but some issues were detected.\n\nPlease check the logs:\n${LOG_FILE}\n\njournalctl -u map2-backend -n 50" \
+                   12 ${DIALOG_WIDTH}
+        else
+            print_warning "Installation completed with issues."
+            print_info "Please check the logs: ${LOG_FILE}"
+            print_info "Inspect service logs with: journalctl -u map2-backend -n 50"
+        fi
     fi
     
     log_info "Installation script completed"

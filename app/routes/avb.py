@@ -13,8 +13,10 @@ import asyncio
 import inspect
 import json
 import logging
+import subprocess
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
+from pathlib import Path
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse
@@ -55,6 +57,57 @@ _STREAM_OWNERSHIP_FIELDS = (
     "talker_endpoint_id",
     "listener_endpoint_id",
 )
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+class AVBSetupRequest(BaseModel):
+    """Request payload for AVB/TSN platform setup."""
+
+    interface: str = ""
+    dry_run: bool = False
+    auto_yes: bool = True
+
+
+class AVBPTPSetupRequest(BaseModel):
+    """Request payload for AVB/PTP setup."""
+
+    interface: str = ""
+    domain: int = 0
+    priority: int = 128
+    dry_run: bool = False
+    auto_yes: bool = True
+
+
+async def _run_avb_setup_script(script_name: str, *args: str, timeout: int = 900) -> Dict[str, Any]:
+    script_path = _REPO_ROOT / "scripts" / script_name
+    if not script_path.exists():
+        raise HTTPException(status_code=404, detail=f"Missing AVB setup script: {script_path}")
+
+    command = ["bash", str(script_path), *args]
+
+    try:
+        completed = await asyncio.to_thread(
+            subprocess.run,
+            command,
+            cwd=str(_REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(status_code=504, detail=f"{script_name} timed out after {timeout}s") from exc
+    except Exception as exc:
+        logger.error("Failed to execute %s: %s", script_name, exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to execute {script_name}: {exc}") from exc
+
+    return {
+        "ok": completed.returncode == 0,
+        "command": command,
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
 
 
 def _srp_enabled() -> bool:
@@ -1284,6 +1337,43 @@ async def get_avb_config_compatibility() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error getting AVB compatibility matrix: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/setup")
+async def apply_avb_setup(request: AVBSetupRequest) -> Dict[str, Any]:
+    """Run the non-interactive AVB/TSN setup flow through the backend."""
+    args: list[str] = []
+    interface = str(request.interface or "").strip()
+    if request.auto_yes:
+        args.append("--yes")
+    if interface:
+        args.extend(["--interface", interface])
+    if request.dry_run:
+        args.append("--dry-run")
+
+    result = await _run_avb_setup_script("setup_avb.sh", *args)
+    status = await get_avb_status()
+    result["status"] = status
+    return result
+
+
+@router.post("/ptp/setup")
+async def apply_avb_ptp_setup(request: AVBPTPSetupRequest) -> Dict[str, Any]:
+    """Run the non-interactive AVB/PTP setup flow through the backend."""
+    args: list[str] = []
+    interface = str(request.interface or "").strip()
+    if request.auto_yes:
+        args.append("--yes")
+    if interface:
+        args.extend(["--interface", interface])
+    args.extend(["--domain", str(int(request.domain)), "--priority", str(int(request.priority))])
+    if request.dry_run:
+        args.append("--dry-run")
+
+    result = await _run_avb_setup_script("setup_avb_ptp.sh", *args)
+    result["ptp"] = await get_ptp_status()
+    result["tsn"] = await get_tsn_status()
+    return result
 
 
 @router.get("/srp/status")

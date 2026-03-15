@@ -1,6 +1,6 @@
 # Carbon Conformance Matrix
 
-Date: 2026-03-12 19:33 EDT
+Date: 2026-03-12 20:27 EDT
 Canonical task: T114-subE
 Scope: Consolidated issue matrix from T114-subB inventory, T114-subC drift audit, and T114-subD route-to-pattern mapping.
 
@@ -15,7 +15,7 @@ Scope: Consolidated issue matrix from T114-subB inventory, T114-subC drift audit
 | Typography baseline anchored to Roboto/public font bundles | High | IBM Plex + Carbon type tokens | Swap typography references to Carbon type scale + IBM Plex assets | Better readability consistency and predictable typographic rhythm | `web/package.json`, `web/public/fonts/*`, `web/src/index.css`, `web/src/app/pages/*`, `web/src/app/components/*` | Medium |
 | Custom spacing rhythm and non-2x grid layout decisions | High | Carbon 2x grid and 8px base rhythm | Normalize gaps/margins/paddings to Carbon spacing tokens | More predictable responsive flow and focus movement | `web/src/app/pages/*`, `web/src/app/components/*`, `web/src/styles/mobile.css` | Medium |
 | Table surfaces use heterogeneous custom/MUI implementations | High | Carbon DataTable pattern | Standardize table spacing, headers, and sortable/filterable controls via Carbon tokens | Better keyboard navigation and table semantics | `web/src/app/components/library/InstalledAssetsTable.tsx`, `web/src/app/components/Tesira/components/TesiraAvbTab.tsx`, `web/src/app/components/ClusterDashboard/*`, `web/src/app/components/MidiCluster/*` | High |
-| Form surfaces mix bespoke and MUI patterns | High | Carbon form controls (`TextInput`, `Dropdown`, `ComboBox`, `NumberInput`, `Toggle`) | Replace custom field styling with Carbon form tokens | Improves label associations, focus states, and error semantics | `web/src/app/components/PasswordDialog.tsx`, `web/src/app/components/MidiHub/*`, `web/src/app/components/PluginCards/Dialogs/*`, `web/src/app/pages/MidiHub2Page.tsx` | High |
+| Form surfaces mix bespoke and MUI patterns | High | Carbon form controls (`TextInput`, `Dropdown`, `ComboBox`, `NumberInput`, `Toggle`) | Replace custom field styling with Carbon form tokens | Improves label associations, focus states, and error semantics | `web/src/app/components/PasswordDialog.tsx`, `web/src/app/components/MidiHub/*`, `web/src/app/components/PluginCards/Dialogs/*`, `web/src/app/pages/MidiHubPage.tsx` | High |
 | Dialog/modal patterns inconsistent | High | Carbon modal/dialog patterns | Apply Carbon layer/border/elevation tokens | Better focus trap consistency and screen-reader flow | `web/src/app/components/PluginDetailsModal.tsx`, `web/src/app/components/ShoppingSearchDialog.tsx`, `web/src/app/components/ProductDetailDialog.tsx`, `web/src/app/components/SpecialSettingsDialog.tsx` | Medium |
 | Notification/loading/empty states are mixed custom implementations | Medium | Carbon notifications + loading + empty-state guidance | Tokenize severity colors and loading visuals | Improves status communication and non-visual announcements | `web/src/app/components/Toasts.tsx`, `web/src/app/App.tsx`, `web/src/app/pages/ApiObservatory/*`, `web/src/app/pages/HomePage.tsx` | Medium |
 | Search/filter control patterns inconsistent by route | Medium | Carbon search/filter toolbar pattern | Normalize control spacing and field tokens | Improves keyboard discoverability and consistent labeling | `web/src/app/pages/LibraryPage.tsx`, `web/src/app/pages/LV2PluginsPage.tsx`, `web/src/app/pages/ApiObservatory/*`, `web/src/app/components/PluginBrowser/PluginBrowser.tsx` | Medium |
@@ -30,7 +30,7 @@ Scope: Consolidated issue matrix from T114-subB inventory, T114-subC drift audit
 
 - This matrix is the execution backlog input for T114-subF/T114-subG migration waves.
 - File scopes are intentionally broad for planning; implementation phases should split these into 15-60 minute restartable work units.
-- Route migration status: `T114-subG` is active with completed route conversions for `ClusterDashboardPage`, `ChainsPage`, `OverviewPage`, `PipeWirePage`, `MidiHub2Page`, `IntelFXPage`, `IntelFXPerformView`, `IntelFXMonitorView`, `IntelFXPanelView`, `IntelFXFlowView`, `IntelFXLibraryView`, `IntelFXMidiMapView`, and `IntelFXEditorView`.
+- Route migration status: `T114-subG` route conversion waves are complete for `ClusterDashboardPage`, `ChainsPage`, `OverviewPage`, `PipeWirePage`, `MidiHubPage` (with the former `/midi-hub-2` route retired into a redirect), `IntelFXPage`, `IntelFXPerformView`, `IntelFXMonitorView`, `IntelFXPanelView`, `IntelFXFlowView`, `IntelFXLibraryView`, `IntelFXMidiMapView`, `IntelFXEditorView`, `TesiraPage`, `AvbRoutingPage`, `AboutPage`, `LCDPage`, `LV2PluginsPage`, and `ApiObservatoryPage` (route-shell conversion).
 
 ## Migration Notes (T114-subF Progress)
 
@@ -88,11 +88,11 @@ Date: 2026-03-12 13:42 EDT
 - Remaining high-priority shared-primitives scope:
   - Shared-primitives migration scope for `T114-subF` is complete through `T118-subD`.
   - Broader page-level typography/spacing cleanup remains for dense route surfaces that still rely on legacy inline style compositions (tracked in `T114-subG`).
-  - Accessibility validation/reporting exceptions and final ledger packaging remain (`T114-subH` through `T114-subJ`).
+  - Remaining deep internal token/icon cleanup scope is tracked under `T114-subO`.
 
 ## Route Migration Notes (T114-subG Progress)
 
-Date: 2026-03-12 19:33 EDT
+Date: 2026-03-12 19:56 EDT
 
 - Completed: Refactored `web/src/app/pages/ClusterDashboardPage.tsx` to Carbon route patterns with tokenized stylesheet `web/src/app/pages/ClusterDashboardPage.css`, replacing inline style-heavy route composition and Phosphor icon usage with Carbon `Layer`, `Button`, `Checkbox`, `InlineNotification`, `Tag`, and Carbon iconography while preserving tab behavior and cluster APIs.
 - Completed: Refactored `web/src/app/pages/ChainsPage.tsx` to Carbon route patterns with tokenized stylesheet `web/src/app/pages/ChainsPage.css`, replacing Ariakit + MUI search/menu/dialog/table patterns with Carbon `Search`, `Table*`, `OverflowMenu`, `Modal`, `Button`, and `Tag`.
@@ -110,9 +110,43 @@ Date: 2026-03-12 19:33 EDT
 - Completed: Updated `web/src/app/components/IntelFX/IntelFXFlowCanvas.tsx` + `web/src/app/components/IntelFX/IntelFXFlowCanvas.css` to remove Phosphor icon usage from flow-toolbar/sidebar control actions and standardize these controls on Carbon icons/buttons.
 - Completed: Removed temporary local Carbon adapter wrappers from `web/src/app/pages/MidiHub2Page.tsx` and migrated all wrapper call sites to direct `@carbon/react` components (`Button`, `Select`, `SelectItem`, `TextInput`, `TextArea`, `Tag`, `InlineNotification`).
 - Completed: Updated route regression expectation for overview content in `web/src/app/pages/OverviewPage.test.tsx`.
+- Completed: Refactored `web/src/app/pages/TesiraPage.tsx` and `web/src/app/pages/AvbRoutingPage.tsx` to Carbon route-shell patterns by removing route-level MUI `ThemeProvider`/`createTheme` usage and replacing wrapper composition with Carbon `Layer` plus tokenized route styles in `web/src/app/pages/TesiraPage.css` and `web/src/app/pages/AvbRoutingPage.css`.
+- Completed: Refactored deferred high-drift route shells `web/src/app/pages/AboutPage.tsx`, `web/src/app/pages/LCDPage.tsx`, `web/src/app/pages/LV2PluginsPage.tsx`, and `web/src/app/pages/ApiObservatoryPage.tsx` to Carbon layer-based wrappers with tokenized route CSS (`AboutPage.css`, `LCDPage.css`, `LV2PluginsPage.css`) and Carbon AI label treatment on API Observatory.
+- Completed: Added route regression coverage for About shell migration in `web/src/app/pages/AboutPage.test.tsx`.
+- Completed: Applied Carbon AI labels to additional AI-enabled surfaces in `web/src/app/components/ShoppingSearchDialog.tsx` and `web/src/app/components/MidiHub/MidiInnovationPanel.tsx`, with focused test assertions in `ShoppingSearchDialog.test.tsx` and `ApiObservatoryPage.test.tsx`.
+- Completed: Classified and isolated legacy `map2`/`pipedal` islands with Carbon wrapper migration on retained pipedal icon surfaces (`LegacyPluginIcon` adapter) and documented freeze-path guardrails in `docs/design/CARBON_LEGACY_UI_ISLAND_CLASSIFICATION.md`.
 - Validation evidence:
   - `npm --prefix web run test -- src/app/components/ClusterDashboard/AVBNetworkTab.test.tsx src/app/components/ClusterDashboard/MultiNodeMonitoringTab.test.tsx --runInBand` (pass)
   - `npm --prefix web run test -- src/app/pages/OverviewPage.test.tsx --runInBand` (pass)
   - `npm --prefix web run test -- src/app/pages/PipeWirePage.test.tsx --runInBand` (pass)
-  - `npm --prefix web run typecheck` (pass) after `IntelFXPerformView`, `MidiHub2Page`, `IntelFXPage`, `IntelFXMonitorView`, `IntelFXPanelView`, `IntelFXFlowView`, `IntelFXLibraryView`, `IntelFXMidiMapView`, and `IntelFXEditorView` route waves
-  - `npm --prefix web run build` (pass) after `IntelFXPerformView`, `MidiHub2Page`, `IntelFXPage`, `IntelFXMonitorView`, `IntelFXPanelView`, `IntelFXFlowView`, `IntelFXLibraryView`, `IntelFXMidiMapView`, and `IntelFXEditorView` route waves
+  - `npm --prefix web run test -- src/app/pages/AvbRoutingPage.test.tsx src/app/pages/TesiraPage.test.tsx --runInBand` (pass)
+  - `npm --prefix web run test -- src/app/pages/AboutPage.test.tsx src/app/components/ShoppingSearchDialog.test.tsx src/app/pages/ApiObservatoryPage.test.tsx --runInBand` (pass)
+  - `npm --prefix web run typecheck` (pass) after `IntelFXPerformView`, `MidiHub2Page`, `IntelFXPage`, `IntelFXMonitorView`, `IntelFXPanelView`, `IntelFXFlowView`, `IntelFXLibraryView`, `IntelFXMidiMapView`, `IntelFXEditorView`, `TesiraPage`, and `AvbRoutingPage` route waves
+  - `npm --prefix web run build` (pass) after `IntelFXPerformView`, `MidiHub2Page`, `IntelFXPage`, `IntelFXMonitorView`, `IntelFXPanelView`, `IntelFXFlowView`, `IntelFXLibraryView`, `IntelFXMidiMapView`, `IntelFXEditorView`, `TesiraPage`, and `AvbRoutingPage` route waves
+
+## Accessibility Validation Notes (T114-subH Progress)
+
+Date: 2026-03-12 19:45 EDT
+
+- Scope: IntelFX Carbon migration surfaces (`IntelFXPage`, `IntelFXPerformView`, `IntelFXMonitorView`, `IntelFXFlowView`, `IntelFXPanelView`, `IntelFXEditorView`, `IntelFXLibraryView`, `IntelFXMidiMapView`).
+- Completed: Added deterministic accessibility regression tests for labeled controls and actionable names in `web/src/app/pages/IntelFXLibraryView.test.tsx`, `web/src/app/pages/IntelFXMidiMapView.test.tsx`, and `web/src/app/pages/IntelFXEditorView.test.tsx`.
+- Completed: Strengthened IntelFX status-bar semantics in `web/src/app/pages/IntelFXPage.tsx` by explicitly associating the mix label (`label` + `htmlFor`) and adding stateful bypass semantics (`aria-label`, `aria-pressed`) on bypass toggles.
+- Validation evidence:
+  - `npm --prefix web run test -- src/app/pages/IntelFXLibraryView.test.tsx src/app/pages/IntelFXMidiMapView.test.tsx src/app/pages/IntelFXEditorView.test.tsx --runInBand` (pass)
+  - `npm --prefix web run typecheck` (pass)
+  - `npm --prefix web run build` (pass)
+- Findings:
+  - Pass: IntelFX library/midi-map/editor surfaces expose visible labels and keyboard-actionable controls with stable accessible names.
+  - Pass: IntelFX status-bar mix and bypass controls now expose explicit semantics suitable for assistive technology.
+  - Pass: Manual responsive/contrast sweep evidence is now recorded in `docs/design/CARBON_MANUAL_A11Y_SWEEP_2026-03-12.md`.
+
+## Exception Register (T114-subI)
+
+Date: 2026-03-12 20:27 EDT
+
+| Exception ID | Surface | Resolution | Accessibility / UX impact | Follow-up task |
+| --- | --- | --- | --- | --- |
+| EX-001 | Legacy UI islands under `web/src/map2/**` and `web/src/pipedal/**` | Classified retain/freeze/migrate decisions published, retained pipedal icon surface wrapped behind Carbon layer adapter, and freeze-path guardrails documented. | Active dependency boundaries are explicit and isolated, reducing accidental legacy UI leakage. | Completed (`T114-subL`) |
+| EX-002 | Deferred high-drift routes (`LCDPage`, `AboutPage`, `LV2PluginsPage`, `ApiObservatoryPage`) | Route-shell migration completed with Carbon `Layer` wrappers/tokenized CSS and focused route validation. | Route-level Carbon consistency restored for deferred bundle. | Completed (`T114-subK`) |
+| EX-003 | Manual contrast/viewport audit debt across full migrated route set | Manual sweep artifact delivered with route-level pass/fail evidence and validation commands. | Responsive/contrast review now explicitly captured and auditable. | Completed (`T114-subM`) |
+| EX-004 | AI label conventions on AI-enabled surfaces | Carbon AI labels now applied on API Observatory, Shopping Search, and MIDI Innovation surfaces; checklist/test gate updated. | AI affordance clarity and assistive naming consistency improved across active AI surfaces. | Completed (`T114-subN`) |

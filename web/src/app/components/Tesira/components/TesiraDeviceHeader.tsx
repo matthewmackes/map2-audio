@@ -3,7 +3,7 @@ import { Box, Typography, Chip, Button, Tooltip } from '@mui/material'
 import LinkIcon from '@mui/icons-material/Link'
 import LinkOffIcon from '@mui/icons-material/LinkOff'
 import type { TesiraDeviceDetail } from '../types'
-import { BiampIcon } from '../BiampIcon'
+import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useConnectDevice, useDisconnectDevice } from '../hooks/useTesiraApi'
 import { useCluster } from '../../../contexts/ClusterContext'
 
@@ -23,7 +23,7 @@ export function TesiraDeviceHeader({ device }: TesiraDeviceHeaderProps) {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderBottom: 1, borderColor: 'divider' }}>
-      <BiampIcon size={24} color={device.connected ? BIAMP_RED : '#666'} />
+      <MapMatrixProcessorIcon size={24} color={device.connected ? BIAMP_RED : '#666'} />
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography variant="subtitle1" fontWeight={700} noWrap>

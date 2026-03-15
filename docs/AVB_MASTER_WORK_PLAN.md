@@ -1,8 +1,11 @@
-# AVB Canonical Worklist (Single Source of Truth)
+# AVB Legacy Work Plan (Historical Reference Only)
 
-Canonical file: `docs/AVB_MASTER_WORK_PLAN.md`  
-Rule status: Active (disable only with `DISABLE WORKLIST RULE`)  
-Last updated: 2026-03-12 13:12 - Codex
+Canonical file: `docs/PROJECT_WORKLIST.md`  
+Legacy reference file: `docs/AVB_MASTER_WORK_PLAN.md`  
+Rule status: Archived reference only; do not update task status here.  
+Last updated: 2026-03-14 21:24 - Codex
+
+> This document is preserved as historical AVB planning/evidence context. All live task tracking, status changes, and new work items now belong only in `docs/PROJECT_WORKLIST.md`.
 
 ## Status Legend
 
@@ -28,7 +31,7 @@ Last updated: 2026-03-12 13:12 - Codex
 ## Top Tasks (Priority Order)
 
 ID: T050  
-Status: [ ] Todo  
+Status: [✓] Done  
 Title: Implement unified MAP2 Textual console per IBM Carbon directive  
 Description:  
 - Goal / acceptance criteria: Deliver one unified `MAP2AudioTUI` host app and shell entry experience aligned to all approved decisions in `docs/design/TUI_UNIFIED_CONSOLE_DIRECTIVE.md` (Q1-Q35), replacing fragmented TUI/shell interaction paths with Carbon-tokenized Textual-native architecture.  
@@ -36,9 +39,14 @@ Description:
 - Dependencies: T049  
 - Estimated effort: High (~5-8 days)  
 - Required outputs: Unified Textual app architecture, phased migration PRs, command/theme/polling refactor, shell-to-Python wizard replacements, and validation evidence updates in this worklist.  
+Last updated: 2026-03-13 16:16 - Codex
+Completion notes:
+- What was done: Completed the unified Textual host cutover in `tui/app.py`, removed the custom theme/palette stack, centralized polling/workflows/runtime feedback, absorbed the old standalone app boundaries, and retired the remaining legacy non-host screen/widget islands that still carried inline CSS, raw colors, or duplicate exports.
+- Key findings: The final blocker was not the active host path but a shrinking set of dead legacy modules. Deleting those islands and locking the repo to shared-style regression tests was lower risk and more directive-compliant than continuing to token-migrate code that no longer belonged in the product surface.
+- Validation/evidence: `python3 -m py_compile tui/screens/__init__.py tui/screens/chains_manager_screen.py tui/screens/midi.py tui/tests/test_unified_console_app.py tui/tests/test_widget_export_smoke.py` passed; `pytest -q tui/tests/test_unified_console_app.py tui/tests/test_unified_poll_and_api.py tui/tests/test_workflows.py tui/tests/test_widget_export_smoke.py tests/test_system_node_install_routes.py tests/test_avb_setup_routes.py tests/test_branding_shell.py` passed (`52 passed`).
 Subtasks:  
 - ID: T050-subA  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 0 foundation and Textual-native theme/command baseline  
   Description:  
   - Goal / acceptance criteria: Create feature branch `tui-carbon-unification`; add `version.json`; replace custom `tui/theme_engine.py` and `tui/command_palette.py` with Textual `Theme()` registration and `App.COMMANDS` provider wiring.  
@@ -47,9 +55,9 @@ Subtasks:
   - Estimated effort: Medium (~4-6 hours)  
   - Required outputs: `tui/theme/carbon.py`, `tui/commands/` provider scaffold, app wiring updates, and removal/deprecation plan for custom command/theme engines.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 10:40 - Codex  
 - ID: T050-subB  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 1 split monolithic API client into domain modules  
   Description:  
   - Goal / acceptance criteria: Refactor `tui/api_client.py` into `tui/api/{base,audio,chains,midi,cluster,plugins,system}.py` with stable facade imports and targeted unit tests.  
@@ -58,9 +66,9 @@ Subtasks:
   - Estimated effort: Medium (~4-8 hours)  
   - Required outputs: New `tui/api/` package, migrated call sites, and passing module tests.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 10:40 - Codex  
 - ID: T050-subC  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 2 implement centralized poll manager and subscriptions  
   Description:  
   - Goal / acceptance criteria: Add `tui/poll_manager.py` with single 1s timer; enforce `get_subscriptions() -> list[str]`; remove per-screen `set_interval` polling.  
@@ -69,9 +77,9 @@ Subtasks:
   - Estimated effort: Medium (~4-6 hours)  
   - Required outputs: Poll manager implementation, screen subscription integration, and visibility-gated polling tests.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 10:40 - Codex  
 - ID: T050-subD  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 3 deduplicate and merge overlapping screen variants  
   Description:  
   - Goal / acceptance criteria: Merge `_enhanced`/`_v2`/`_refactored` variants into canonical screens and retire duplicate files, including extraction/deletion path for `chains_refactored.py`.  
@@ -80,9 +88,9 @@ Subtasks:
   - Estimated effort: High (~1-2 days)  
   - Required outputs: Consolidated `tui/screens/` set with deterministic ownership and regression-safe behavior.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 10:40 - Codex  
 - ID: T050-subE  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 4 implement grouped navigation and global-only key model  
   Description:  
   - Goal / acceptance criteria: Replace flat tab nav with Dashboard/Audio/Platform/Settings groups; remove per-screen `BINDINGS`; set `Ctrl+K` palette, `Ctrl+Z` suspend, `Ctrl+U` undo, and cache size 8.  
@@ -91,9 +99,9 @@ Subtasks:
   - Estimated effort: High (~1 day)  
   - Required outputs: Navigation shell refactor, global keybinding policy, command mapping for former screen-local actions.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 13:52 - Codex  
 - ID: T050-subF  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 5 migrate async/system operations to `@work` and normalize notifications  
   Description:  
   - Goal / acceptance criteria: Apply `@work` to API/system operations; enforce info/success/warning/error timeout policy; add 30s error dedup window with count suffix.  
@@ -102,9 +110,9 @@ Subtasks:
   - Estimated effort: Medium (~4-8 hours)  
   - Required outputs: Updated operation handlers, notification policy utilities, and notify audit evidence.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 13:52 - Codex  
 - ID: T050-subG  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 6 complete Carbon token and stylesheet migration  
   Description:  
   - Goal / acceptance criteria: Create single shared `tui/styles/carbon.tcss`; remove hardcoded hex colors and legacy per-app theme TCSS files; ensure semantic token usage.  
@@ -113,9 +121,19 @@ Subtasks:
   - Estimated effort: Medium (~4-6 hours)  
   - Required outputs: Carbon stylesheet, migrated widget styles, and visual smoke pass for all four nav group landing screens.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 16:16 - Codex  
+  Completion notes:
+  - Removed dead inline-styled legacy modules not used by the unified host path: `tui/widgets/landing_dashboard_widget.py`, `tui/widgets/api_log_widget.py`, `tui/widgets/stats_panel_widget.py`, `tui/components/backup_restore.py`, `tui/screens/update_progress_screen.py`, and `tui/screens/cluster_admin_screen.py`.
+  - Retired additional duplicate legacy screen modules from the package surface: `tui/screens/about_tab.py`, `tui/screens/automation_tab.py`, `tui/screens/backup_tab.py`, `tui/screens/control_panel.py`, `tui/screens/guitar.py`, `tui/screens/lcd_services_screen.py`, `tui/screens/metrics_tab.py`, `tui/screens/network_tab.py`, `tui/screens/onboarding_wizard_screen.py`, `tui/screens/plugins.py`, `tui/screens/sessions.py`, `tui/screens/system_update_screen.py`, `tui/screens/workflow_tab.py`, and `tui/screens/www_tab.py`.
+  - Removed further dead non-host screens with no live code references: `tui/screens/backend_monitor_screen.py`, `tui/screens/developer_mode_screen.py`, `tui/screens/favorites_tab.py`, `tui/screens/lcd_management_screen.py`, `tui/screens/parameter_automation.py`, and `tui/screens/test_screen.py`.
+  - Removed another dead non-host legacy island kept alive only by standalone utilities/tests: `tui/screens/plugin_loader.py`, `tui/screens/cluster_mode_screen.py`, `tui/screens/midi_sessions_screen.py`, `tui/screens/settings_screen.py`, `tui/screens/workflow_settings_screen.py`, `tui/screens/avb_tab.py`, `tui/widgets/ssh_setup_dialog.py`, plus obsolete standalone tests `tests/test_plugin_loading.py` and `tests/test_plugin_screen.py`.
+  - Removed the old cluster/helper screen family that was no longer on the unified host path and only persisted through dedicated legacy tests: `tui/screens/cluster_node_dashboard.py`, `tui/screens/flow_assignment_matrix.py`, `tui/screens/node_recommendation_screen.py`, `tui/screens/failover_controller_screen.py`, `tui/screens/cluster_diagnostics_screen.py`, `tui/screens/batch_operations_screen.py`, `tui/screens/help_screen.py`, `tui/screens/health_tab.py`, plus their dedicated legacy test files under `tui/tests/`.
+  - Removed the remaining dead verification and widget-layer residue: `tui/widgets.py`, `tui/status_bar.py`, `tui/test_all.py`, `tui/tests/test_cluster_integration.py`, `tui/tests/test_cluster_widgets.py`, `tui/verify_improvements.sh`, the full `tui/widgets/monitoring/` package, `tui/widgets/notification_widget.py`, `tui/widgets/system_stats_footer.py`, `tui/widgets/status_indicator_widget.py`, `tui/screens/diagnostics_screen.py`, `tui/screens/stage_view_screen.py`, `tui/screens/cluster_lcd_monitoring_screen.py`, and `tui/chain_overview.py`.
+  - Reduced `tui/screens/__init__.py`, `tui/screens/chains_manager_screen.py`, and `tui/screens/midi.py` to canonical unsuffixed exports only, removing stale aliases such as `ChainsScreenRefactored`, `MIDIV2Screen`, and the legacy exported `StageViewScreen`.
+  - Added regression guards proving the new end state: only `tui/styles/carbon.tcss` remains under `tui/`, only `tui/theme/carbon.py` contains raw hex literals, no Python module under `tui/` embeds `DEFAULT_CSS`/`CSS`, and only the app-level poll tick plus the loading animation still use `set_interval()`.
+  - Validation/evidence: `python3 -m py_compile tui/screens/__init__.py tui/screens/chains_manager_screen.py tui/screens/midi.py tui/tests/test_unified_console_app.py tui/tests/test_widget_export_smoke.py` passed; `pytest -q tui/tests/test_unified_console_app.py tui/tests/test_unified_poll_and_api.py tui/tests/test_workflows.py tui/tests/test_widget_export_smoke.py tests/test_system_node_install_routes.py tests/test_avb_setup_routes.py tests/test_branding_shell.py` passed (`52 passed`).
 - ID: T050-subH  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 7 replace interactive shell setup flows with native Python/Textual wizards  
   Description:  
   - Goal / acceptance criteria: Replace interactive flows from `scripts/setup_realtime.sh`, `scripts/setup_avb.sh`, `scripts/map2-mode.sh`, and `scripts/install-node.sh` with Python-native screens/bootstrap commands; keep shell fallbacks marked deprecated.  
@@ -124,9 +142,14 @@ Subtasks:
   - Estimated effort: High (~1-2 days)  
   - Required outputs: Wizard screens, minimal bootstrap command path, and deprecation headers in legacy shell scripts.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 14:45 - Codex  
+  Completion notes:
+  - What was done: Converted `mode-set`, `realtime-setup`, `cpu-pinning`, `avb-setup`, `avb-ptp-setup`, and `node-install` into unified Workflow-route actions with native Textual forms and backend-owned execution paths, while keeping the legacy scripts as deprecated non-interactive fallbacks.
+  - Key findings: The fastest safe migration path was to move shell interaction behind backend wrapper routes for the remaining installer/setup scripts, rather than leaving the TUI process to spawn those scripts directly.
+  - Files/links produced: `tui/workflows.py`, `tui/screens/unified_console.py`, `tui/api/system.py`, `app/routes/system.py`, `app/routes/avb.py`, `tests/test_system_node_install_routes.py`, `tests/test_avb_setup_routes.py`, `tui/tests/test_workflows.py`, `tui/tests/test_unified_console_app.py`, `tui/tests/test_unified_poll_and_api.py`.
+  - Validation/evidence: `python3 -m py_compile app/routes/system.py app/routes/avb.py tui/api/system.py tui/workflows.py tui/screens/unified_console.py tui/tests/test_workflows.py tui/tests/test_unified_console_app.py tui/tests/test_unified_poll_and_api.py tests/test_system_node_install_routes.py tests/test_avb_setup_routes.py` passed; `pytest -q tests/test_system_node_install_routes.py tests/test_avb_setup_routes.py tui/tests/test_workflows.py tui/tests/test_unified_console_app.py tui/tests/test_unified_poll_and_api.py tests/test_branding_shell.py tui/tests/test_widget_export_smoke.py` passed (`45 passed`).
 - ID: T050-subI  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 8 consolidate shell welcome system into one Carbon-aligned source  
   Description:  
   - Goal / acceptance criteria: Consolidate welcome logic into one `/etc/profile.d/map2-welcome.sh` source with compact status grid, command hints, Carbon-aligned ANSI colors, and fallback prompt behavior.  
@@ -135,9 +158,14 @@ Subtasks:
   - Estimated effort: Medium (~3-5 hours)  
   - Required outputs: Consolidated profile script, duplicate removal from shell startup files, and updated alias/version sourcing behavior.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 10:55 - Codex  
+  Completion notes:
+  - What was done: Created `branding/map2-welcome.sh` as the installable shell source of truth, reduced `branding/fallback-shell.sh` and `branding/welcome.sh` to compatibility wrappers, retargeted `.map2-aliases` and `map2.sh`, and updated branding installation/backend deployment paths to install the consolidated profile script into `/etc/profile.d/map2-welcome.sh`.
+  - Key findings: The previous install path copied a repo-relative wrapper to `/etc/profile.d`, which broke because `fallback-shell.sh` was no longer adjacent after installation.
+  - Files/links produced: `branding/map2-welcome.sh`, `branding/fallback-shell.sh`, `branding/welcome.sh`, `.map2-aliases`, `map2.sh`, `scripts/install_branding.sh`, `app/routes/system.py`, `branding/README.md`, `tests/test_branding_shell.py`.
+  - Validation/evidence: `bash -n branding/map2-welcome.sh branding/fallback-shell.sh branding/welcome.sh .map2-aliases map2.sh map2-info map2-install m2.sh scripts/install_branding.sh`, `python3 -m py_compile app/routes/system.py`, and `pytest -q tests/test_branding_shell.py tui/tests/test_workflows.py tui/tests/test_unified_console_app.py tui/tests/test_unified_poll_and_api.py tui/tests/test_widget_export_smoke.py` passed (`30 passed`).
 - ID: T050-subJ  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 9 absorb NodeConsole and ClusterManagement apps into unified app  
   Description:  
   - Goal / acceptance criteria: Migrate `tui/node_console/` and `tui/apps/cluster_management_app.py` functionality into unified screens; redirect old entrypoints to `tui.app`.  
@@ -146,9 +174,9 @@ Subtasks:
   - Estimated effort: High (~1 day)  
   - Required outputs: Unified screen coverage, entrypoint redirect updates, and retired legacy app modules.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 13:52 - Codex  
 - ID: T050-subK  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Phase 10 execute full validation matrix and cutover readiness evidence  
   Description:  
   - Goal / acceptance criteria: Add unit/integration/smoke coverage for API modules, theme tokens, nav lifecycle, command palette, poll subscriptions, and first-run onboarding; verify existing TUI tests remain green before cutover.  
@@ -157,9 +185,89 @@ Subtasks:
   - Estimated effort: High (~1 day)  
   - Required outputs: Expanded automated test suite, migration validation report, and explicit go/no-go checklist in docs/worklist notes.  
   Assigned to: MAP2 TUI + Platform UX  
-  Last updated: 2026-03-12 13:12 - Codex  
+  Last updated: 2026-03-13 16:16 - Codex  
+  Completion notes:
+  - Go/no-go checklist (final): `[x]` first-run onboarding smoke, `[x]` returning-user dashboard startup, `[x]` grouped-nav landing screens, `[x]` command provider discovery/search, `[x]` screen cache capacity at 8, `[x]` Ctrl+Z suspend action, `[x]` resume refresh path, `[x]` Carbon theme registration and theme persistence, `[x]` centralized poll-manager/API workflow coverage, `[x]` regression guards for dead legacy inline-styled modules, retired screen exports, removed verification utilities, and legacy widget/screen style islands, `[x]` migration validation report and cutover status doc (`docs/TUI_UNIFIED_CONSOLE_VALIDATION_REPORT.md`), `[x]` remaining legacy widget-layer style residue under T050-subG resolved.
+  - Added focused regression coverage for route landing screens, route cache policy, theme persistence, resume lifecycle, command-provider discovery, deleted legacy files, canonical screen exports, raw-hex confinement to `tui/theme/carbon.py`, absence of inline screen CSS, and `set_interval()` confinement to approved cases.
+  - Validation/evidence: `pytest -q tui/tests/test_unified_console_app.py tui/tests/test_unified_poll_and_api.py tui/tests/test_workflows.py tui/tests/test_widget_export_smoke.py tests/test_system_node_install_routes.py tests/test_avb_setup_routes.py tests/test_branding_shell.py` passed (`52 passed`).
 Assigned to: MAP2 TUI + Platform UX  
-Last updated: 2026-03-12 13:12 - Codex
+Last updated: 2026-03-13 16:16 - Codex
+
+ID: T051
+Status: [✓] Done
+Title: Restore homepage and advanced-menu pin toggles against legacy special-settings backend payloads
+Description:
+- Goal / acceptance criteria: Make homepage and advanced-menu pin actions persist again when the backend still expects legacy `promoted_advanced_routes` writes, while preserving current `pinned_routes` behavior and adding automated frontend regression coverage.
+- Why it matters: Operators currently see pin controls but cannot change navigation state from the home surface or advanced menu, which breaks the intended shell workflow and creates a visible GUI regression.
+- Dependencies: None
+- Estimated effort: Low (~1-2 hours)
+- Required outputs: Compatibility fix in the special-settings frontend hook, regression test coverage, and updated worklist evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-13 08:50 - Codex
+Completion notes:
+- What was done: Patched the shared special-settings hook to POST both `pinned_routes` and legacy `promoted_advanced_routes`, then added a hook-level regression test that verifies dual-key writes and legacy-response normalization.
+- Key findings: The live backend on this host still updates pins only when `promoted_advanced_routes` is present in the POST body, so the frontend needed a backward-compatible write path even though it already reads legacy responses.
+- Files/links produced: `web/src/app/hooks/useSpecialSettings.tsx`, `web/src/app/hooks/useSpecialSettings.test.tsx`.
+- Validation/evidence: Browser repro against `http://127.0.0.1:3000/` and `http://127.0.0.1:8080/api/settings/special/` confirmed `pinned_routes`-only writes were ignored while `promoted_advanced_routes` writes succeeded; `npx jest web/src/app/hooks/useSpecialSettings.test.tsx web/src/app/pages/HomePage.test.tsx web/src/app/layout/AppShell.test.tsx --runInBand` passed; `cd web && npm run build` passed.
+- Suggested next tasks: Rebuild/redeploy the web bundle to the host serving port `3000`; align the backend route to emit `pinned_routes` consistently once all deployments are updated.
+
+ID: T052
+Status: [✓] Done
+Title: Restrict MPX1 Rack and IntelFX Rack discovery cards to Advanced navigation only
+Description:
+- Goal / acceptance criteria: Ensure `MPX1 Rack` and `IntelFX Rack` no longer appear in homepage card sections and are discoverable only through the Advanced menu catalog, while preserving their routes and pinnable behavior.
+- Why it matters: These rack workflows are non-default hardware/control surfaces and should not occupy homepage spotlight space intended for broader operator entry points.
+- Dependencies: None
+- Estimated effort: Low (~30-60 minutes)
+- Required outputs: Navigation catalog flag update, regression coverage for Advanced/home visibility, and updated worklist evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-13 08:57 - Codex
+Completion notes:
+- What was done: Updated the navigation catalog so `MPX1 Rack` is Advanced-menu-only and `IntelFX Rack` is removed from the homepage while remaining in Advanced; added regression assertions covering both visibility rules and the explicit Advanced route list.
+- Key findings: The visibility model is already data-driven, so this change only required catalog flag adjustments (`includeInAdvancedMenu`, `showOnHome`) rather than page-component logic changes.
+- Files/links produced: `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/advancedMenuItems.test.ts`.
+- Validation/evidence: `npx jest web/src/app/data/advancedMenuItems.test.ts web/src/app/pages/HomePage.test.tsx web/src/app/layout/AppShell.test.tsx --runInBand` passed; `cd web && npm run build` passed.
+- Suggested next tasks: Redeploy the frontend bundle if you want the visibility change reflected on the live host immediately.
+
+ID: T053
+Status: [✓] Done
+Title: Tighten homepage spotlight spacing between action buttons and capabilities panel
+Description:
+- Goal / acceptance criteria: Reduce the vertical gap between the `Open Interface`/`Learn More`/`Pin` button row and the `Capabilities` panel by 50% in the stacked homepage spotlight layout without altering the overall card structure.
+- Why it matters: The current spacing makes the card feel visually disconnected once the layout collapses to a single column.
+- Dependencies: None
+- Estimated effort: Low (~15-30 minutes)
+- Required outputs: Targeted homepage CSS adjustment, build verification, and updated worklist evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-13 09:02 - Codex
+Completion notes:
+- What was done: Reduced the stacked spotlight card grid gap from `12px` to `6px` so the action-button row sits 50% closer to the `Capabilities` panel on the homepage.
+- Key findings: The requested spacing only occurs after the spotlight card collapses to a single-column grid at `max-width: 1120px`, so the correct fix was the responsive `.home-spotlight-card__content` gap rather than button or list-specific margins.
+- Files/links produced: `web/src/app/pages/HomePage.css`.
+- Validation/evidence: `cd web && npm run build` passed.
+- Suggested next tasks: Visually verify the updated stacked layout in the live frontend after the next deploy if you want confirmation at runtime.
+
+ID: T054
+Status: [✓] Done
+Title: Align AVB Routing Matrix page with platform dark theme
+Description:
+- Goal / acceptance criteria: Ensure the AVB Routing Matrix route uses a dark visual system consistent with the platform shell so Material UI surfaces, tabs, menus, inputs, and alerts no longer render with light-theme defaults.
+- Why it matters: The AVB routing studio is a core operator workflow and looked visually broken against the rest of the dark platform chrome.
+- Dependencies: None
+- Estimated effort: Low (~30-60 minutes)
+- Required outputs: Route-scoped dark theme fix, regression coverage for dark theme provisioning, and updated worklist evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-13 09:08 - Codex
+Completion notes:
+- What was done: Wrapped `AvbRoutingPage` in a route-local Material UI dark `ThemeProvider` plus `CssBaseline`, mapping the route to the platform's dark palette and adding component overrides for common AVB routing surfaces.
+- Key findings: The page shell CSS was already dark, but the embedded Material UI routing app had no theme provider, so every `background.paper`, `text.secondary`, tab, menu, and alert color came from Material's light defaults.
+- Files/links produced: `web/src/app/pages/AvbRoutingPage.tsx`, `web/src/app/pages/AvbRoutingPage.test.tsx`.
+- Validation/evidence: `npx jest web/src/app/pages/AvbRoutingPage.test.tsx --runInBand` passed; `cd web && npm run build` passed.
+- Suggested next tasks: Spot-check the live `/avb-routing` route after the next frontend deploy to confirm the updated palette on real data and dialogs.
 
 ID: T001  
 Status: [✓] Done  
@@ -1845,7 +1953,7 @@ Subtasks:
   Assigned to: Codex  
   Last updated: 2026-02-21 22:07 - Codex  
 Assigned to: MAP2 Release Engineering  
-Last updated: 2026-02-26 18:30 - Codex
+Last updated: 2026-03-13 18:14 - Codex
 Blocked notes:
 - What was done: Published and updated qualification matrix/runbook artifacts with reproducible command set and explicit rollback/backout checks; added dedicated capture/soak references and wrappers (`scripts/avb_capture_clock_drift.sh`, `scripts/run_avb_24h_soak.sh`, `scripts/run_avb_hil_qualification.sh`, `docs/AVB_24H_SOAK_TEMPLATE.md`), including auto-generated matrix update snippet output (`matrix_update.md`) for Q04-Q06.
 - Why blocked: Hardware-in-the-loop qualification rows (`Q04`-`Q06`) still require AVB-capable lab execution and measured outcomes.
@@ -1853,6 +1961,9 @@ Blocked notes:
 - Latest run evidence (2026-02-26): executed `scripts/run_avb_hil_qualification.sh --interface enp0s25 --capture-seconds 30 --output-dir /tmp/map2-avb-hil-20260226-174155-tesira`, producing `Q04/Q05=BLOCKED` (`AVB status reports enabled=true available=false`) and `Q06=SKIPPED`; summary at `/tmp/map2-avb-hil-20260226-174155-tesira/summary.txt`, matrix snippet at `/tmp/map2-avb-hil-20260226-174155-tesira/matrix_update.md`, and canonical matrix updated via `scripts/apply_avb_hil_matrix_update.sh`.
 - Latest run evidence (2026-02-26): runtime AVB readiness blocker cleared on MAP2 host by rebuilding active backend engine with `USE_AVB=ON`, hardening JUCE ptp4l probe fallback (`pidof` + `systemd is-active`), and writing explicit marker metadata (`/etc/map2/avb-enabled` with `enabled=true`, `interface=enp11s0`). Post-restart API checks report `state=operational`, `available=true`, `interface=enp11s0`, and AVB device inventory `count=2` (`AVB Listener (Local)`, `AVB Talker (Local)`).
 - Latest run evidence (2026-02-26): executed `scripts/run_avb_hil_qualification.sh --interface enp11s0 --capture-seconds 30 --output-dir /tmp/map2-avb-hil-20260226-182951`, then applied update via `scripts/apply_avb_hil_matrix_update.sh /tmp/map2-avb-hil-20260226-182951/summary.txt docs/AVB_QUALIFICATION_MATRIX.md`; run reported `Q04=PASS` (log: `23 skipped`), `Q05=BLOCKED` (`ERROR: tshark is required but not found in PATH`), `Q06=SKIPPED/PENDING`.
+- Latest software-side evidence (2026-03-13): removed `tshark` as the sole Q05 capture dependency by adding `tcpdump`/`dumpcap` fallback in `scripts/avb_capture_clock_drift.sh`, aligning optimizer verification checks, and adding focused coverage (`tests/test_avb_capture_scripts.py`, `tests/test_avb_latency_optimizer_verification.py`); `pytest -q tests/test_avb_capture_scripts.py tests/test_avb_latency_optimizer_verification.py tests/test_avb_ops_scripts.py tests/test_avb_setup_routes.py tests/test_system_node_install_routes.py` passed (`15 passed`), and a direct host run `bash scripts/avb_capture_clock_drift.sh lo 1 /tmp/map2-avb-capture-fallback-check` completed using `tcpdump`.
+- Latest software-side evidence (2026-03-13): hardened Q05 gating so empty captures cannot false-pass. `scripts/avb_capture_clock_drift.sh` now exits non-zero when no AVTP frames or valid PTP offset samples are captured, and `scripts/run_avb_hil_qualification.sh` classifies those empty-capture cases as `BLOCKED`. `pytest -q tests/test_avb_capture_scripts.py tests/test_avb_latency_optimizer_verification.py tests/test_avb_ops_scripts.py tests/test_avb_setup_routes.py tests/test_system_node_install_routes.py` passed (`17 passed`); direct host run `bash scripts/avb_capture_clock_drift.sh lo 1 /tmp/map2-avb-capture-empty-check` now fails as expected with `ERROR: no valid PTP offset samples captured; live PTP telemetry required`.
+- Latest software-side evidence (2026-03-13): hardened Q06 gating so idle or unlocked soak windows cannot false-pass. `scripts/run_avb_24h_soak.sh` now records `soak_requirements_met`, `failure_reason`, active-stream maxima, and locked-PTP snapshot counts in `summary.txt`, exits non-zero when no active running streams or locked PTP snapshots are observed, and honors a test-only duration override for deterministic coverage. `scripts/run_avb_hil_qualification.sh` now maps those empty-soak conditions to `BLOCKED`. `pytest -q tests/test_avb_capture_scripts.py tests/test_avb_latency_optimizer_verification.py tests/test_avb_ops_scripts.py tests/test_avb_setup_routes.py tests/test_system_node_install_routes.py` passed (`19 passed`); direct host run `env MAP2_AVB_SOAK_DURATION_SECONDS_OVERRIDE=1 bash scripts/run_avb_24h_soak.sh --duration-hours 1 --checkpoint-minutes 60 --output-dir /tmp/map2-avb-soak-empty-check` now fails as expected with `ERROR: no active running streams observed during soak; live AVB stream activity required`.
 - Unblock condition: Run HIL matrix scenarios and record measured evidence in `docs/AVB_QUALIFICATION_MATRIX.md`.
 
 
@@ -1897,7 +2008,7 @@ Subtasks:
   Assigned to: Codex  
   Last updated: 2026-02-22 13:10 - Codex  
 Assigned to: Release Engineering + QA  
-Last updated: 2026-02-26 18:30 - Codex
+Last updated: 2026-03-13 18:14 - Codex
 Blocked notes:
 - What was done: Added/confirmed stream manager transition + timestamp/sequence coverage (`juce-engine/tests/AvbStreamManagerTests.cpp`), added reproducible AVTP/PTP drift capture workflow (`scripts/avb_capture_clock_drift.sh`), and added executable soak/qualification runners (`scripts/run_avb_24h_soak.sh`, `scripts/run_avb_hil_qualification.sh`) plus explicit 8-stream/24h soak template (`docs/AVB_24H_SOAK_TEMPLATE.md`); HIL wrapper now emits `matrix_update.md` for direct qualification matrix updates.
 - Why blocked: Final qualification acceptance still depends on running these workflows on AVB-capable hardware and recording measured outcomes.
@@ -1905,4 +2016,120 @@ Blocked notes:
 - Latest run evidence (2026-02-26): hardware wrapper still blocked by runtime readiness (`AVB status reports enabled=true available=false`) with summary `/tmp/map2-avb-hil-20260226-174155-tesira/summary.txt`; direct API checks show `state=configured`, `reason=JUCE engine AVB readiness probe unavailable`, and discovery/device lists empty.
 - Latest run evidence (2026-02-26): runtime readiness now reports `state=operational` and `available=true` on `enp11s0` after enabling AVB build flags in active backend module, adding ptp4l probe fallback in JUCE AVB readiness checks, and writing marker metadata; next blocker is strictly hardware qualification evidence capture for Q04-Q06.
 - Latest run evidence (2026-02-26): HIL wrapper run on `enp11s0` (`/tmp/map2-avb-hil-20260226-182951/summary.txt`) now advances matrix state (`Q04=PASS`, `Q05=BLOCKED`, `Q06=PENDING`); Q05 remains blocked due missing `tshark`, and Q06 remains deferred until explicit soak execution.
+- Latest software-side evidence (2026-03-13): Q05 tooling no longer depends on `tshark` specifically. `scripts/avb_capture_clock_drift.sh` now falls back to `tcpdump`/`dumpcap`, emits backend metadata in `summary.txt`, and passes focused regression coverage together with the AVB optimizer verification update (`15 passed`). Remaining `T017` blockers are live AVB timing capture and explicit Q06 soak execution, not host packet-capture tooling.
+- Latest software-side evidence (2026-03-13): empty Q05 captures now fail cleanly instead of returning misleading success. The capture script rejects missing AVTP/PTP evidence, and the HIL wrapper maps that condition to `BLOCKED`, so the remaining `T017` blockers are strictly live AVB timing capture and explicit Q06 soak execution.
+- Latest software-side evidence (2026-03-13): Q06 soak gating now rejects idle or unlocked runs instead of allowing misleading success. `scripts/run_avb_24h_soak.sh` records active-stream/PTP-lock evidence in `summary.txt` and exits non-zero when the soak never sees running streams or locked PTP snapshots, while the HIL wrapper maps those cases to `BLOCKED`. Focused AVB validation passed (`19 passed`), and a direct host check with `MAP2_AVB_SOAK_DURATION_SECONDS_OVERRIDE=1` now fails as expected on an idle host. Remaining `T017` blockers are strictly live AVB timing capture and explicit 24-hour soak execution on AVB-capable hardware.
 - Validation/evidence available now: software-side matrix and commands documented in `docs/AVB_QUALIFICATION_MATRIX.md`.
+
+ID: T055
+Status: [✓] Done
+Title: Align TUI docs and legacy cluster-app residue with unified host architecture
+Description:
+- Goal / acceptance criteria: Remove or update stale operator-facing docs and dead test/compatibility modules that still present `ClusterManagementApp`, `nav_controller.py`, deleted widgets, or deleted screens as first-class product surfaces; keep compatibility launch wrappers only where intentionally preserved.
+- Why it matters: `T050` is complete in code, but stale docs and legacy tests still describe an architecture that no longer exists, which creates avoidable confusion for operators and future maintainers.
+- Dependencies: T050
+- Estimated effort: Low (~1-2 hours)
+- Required outputs: Updated `tui/README.md` and `tui/DEPLOYMENT_GUIDE.md`, removal or reduction of dead legacy cluster-app compatibility/test surface, and focused validation evidence.
+Assigned to: Codex
+Last updated: 2026-03-13 17:38 - Codex
+Completion notes:
+- What was done: Rewrote `tui/README.md` and `tui/DEPLOYMENT_GUIDE.md` to document the unified host app, removed the dead `tui/apps/nav_controller.py` compatibility surface, shrank `tui/apps/__init__.py` to the retained wrapper exports, and deleted legacy standalone-cluster tests `tui/tests/test_user_interactions.py`, `tui/tests/test_e2e_workflows.py`, and `tui/tests/test_app_performance.py`.
+- Key findings: The highest-signal post-`T050` residue was not additional runtime code but stale operator docs and tests that still modeled the deleted standalone cluster UI. Retiring that slice was lower risk than preserving compatibility shims with no live consumers.
+- Validation/evidence: `python3 -m py_compile tui/apps/__init__.py tui/tests/test_unified_console_app.py` passed; `pytest -q tui/tests/test_unified_console_app.py tui/tests/test_unified_poll_and_api.py tui/tests/test_workflows.py tui/tests/test_widget_export_smoke.py tests/test_system_node_install_routes.py tests/test_avb_setup_routes.py tests/test_branding_shell.py` passed (`53 passed`); stale-reference scan across `tui/README.md`, `tui/DEPLOYMENT_GUIDE.md`, `tui/apps`, and `tui/tests` only reports the intentional regression guards in `tui/tests/test_unified_console_app.py`.
+
+ID: T056
+Status: [✓] Done
+Title: Remove `tshark` as the sole packet-capture blocker for AVB Q05 evidence
+Description:
+- Goal / acceptance criteria: Allow `scripts/avb_capture_clock_drift.sh` and related AVB qualification tooling to run with `tcpdump` or `dumpcap` when `tshark` is unavailable, while preserving offline artifact generation and documenting the capture/decode backend used.
+- Why it matters: `T007`/`T017` are still blocked by hardware execution, but the latest `Q05` failure was also gated by a host-tool dependency (`tshark`) that can be removed in software.
+- Dependencies: T007, T017
+- Estimated effort: Low (~1-2 hours)
+- Required outputs: Capture-script fallback implementation, related verification-tool updates, focused regression coverage, and updated qualification docs/worklist evidence.
+Assigned to: Codex
+Last updated: 2026-03-13 17:44 - Codex
+Completion notes:
+- What was done: Updated `scripts/avb_capture_clock_drift.sh` to select `tshark`, `tcpdump`, or `dumpcap` for live capture, use `tshark` or `tcpdump` for offline frame extraction, and record the chosen capture/decode backend in `summary.txt`. Updated `scripts/avb_latency_optimizer/verification.py` so packet-capture verification accepts any supported capture tool rather than only `tshark`. Updated `docs/AVB_QUALIFICATION_MATRIX.md` to reflect the broader host-tool support.
+- Key findings: The `Q05` software-side blocker was narrower than the worklist implied. On this host, `tcpdump` and `pmc` were already present, so the qualification script could be unblocked without changing the hardware-side evidence requirements.
+- Validation/evidence: `bash -n scripts/avb_capture_clock_drift.sh scripts/run_avb_hil_qualification.sh` passed; `python3 -m py_compile scripts/avb_latency_optimizer/verification.py tests/test_avb_capture_scripts.py tests/test_avb_latency_optimizer_verification.py` passed; `pytest -q tests/test_avb_capture_scripts.py tests/test_avb_latency_optimizer_verification.py tests/test_avb_ops_scripts.py tests/test_avb_setup_routes.py tests/test_system_node_install_routes.py` passed (`15 passed`); direct host run `bash scripts/avb_capture_clock_drift.sh lo 1 /tmp/map2-avb-capture-fallback-check` completed using `tcpdump`.
+
+ID: T057
+Status: [✓] Done
+Title: Prevent false-positive Q05 passes when AVB traffic or PTP telemetry is absent
+Description:
+- Goal / acceptance criteria: Make `scripts/avb_capture_clock_drift.sh` fail when no AVTP frames or valid PTP offset samples are captured, and ensure `scripts/run_avb_hil_qualification.sh` classifies those empty-capture cases as `BLOCKED` environment issues rather than recording misleading passes.
+- Why it matters: With the new `tcpdump` fallback in place, Q05 should no longer be blocked by host tooling, but it also must not pass on empty loopback/non-lab captures that provide no real AVB evidence.
+- Dependencies: T056, T007, T017
+- Estimated effort: Low (~30-60 minutes)
+- Required outputs: Capture-validation hardening in the Q05 tooling, focused regression coverage, and updated blocked-task evidence language.
+Assigned to: Codex
+Last updated: 2026-03-13 17:50 - Codex
+Completion notes:
+- What was done: Hardened `scripts/avb_capture_clock_drift.sh` so it now records `capture_requirements_met` / `failure_reason` in `summary.txt` and exits non-zero when no valid PTP offset samples, no AVTP frames, or an offset-target miss occurs. Updated `scripts/run_avb_hil_qualification.sh` so empty-capture errors are classified as `BLOCKED` environment issues. Added regression coverage for both the direct capture path and the wrapper behavior.
+- Key findings: After removing the `tshark` dependency, the next real risk was silent false-positive success on empty captures. Fixing that keeps `Q05` honest and makes the remaining blocker purely lab evidence, not script behavior.
+- Validation/evidence: `bash -n scripts/avb_capture_clock_drift.sh scripts/run_avb_hil_qualification.sh` passed; `python3 -m py_compile tests/test_avb_capture_scripts.py` passed; `pytest -q tests/test_avb_capture_scripts.py tests/test_avb_latency_optimizer_verification.py tests/test_avb_ops_scripts.py tests/test_avb_setup_routes.py tests/test_system_node_install_routes.py` passed (`17 passed`); direct host run `bash scripts/avb_capture_clock_drift.sh lo 1 /tmp/map2-avb-capture-empty-check` now exits non-zero with the expected missing-telemetry error.
+
+ID: T058
+Status: [✓] Done
+Title: Prevent false-positive Q06 soak passes when no active streams or PTP lock are observed
+Description:
+- Goal / acceptance criteria: Make `scripts/run_avb_24h_soak.sh` fail when the soak window never observes active running streams or valid PTP lock snapshots, and ensure `scripts/run_avb_hil_qualification.sh` maps those empty-soak cases to `BLOCKED` instead of recording misleading `Q06=PASS`.
+- Why it matters: `Q06` should represent actual endurance evidence, not just successful snapshot collection against an idle or unlocked host.
+- Dependencies: T057, T007, T017
+- Estimated effort: Low (~30-60 minutes)
+- Required outputs: Soak-validation hardening, focused regression coverage, and updated blocked-task evidence language for the remaining HIL-only work.
+Assigned to: Codex
+Last updated: 2026-03-13 18:14 - Codex
+Completion notes:
+- What was done: Hardened `scripts/run_avb_24h_soak.sh` so it now computes active-stream and PTP-lock evidence across the soak window, writes `soak_requirements_met`, `failure_reason`, observed maxima/counts, and effective duration metadata into `summary.txt`, and exits non-zero when no active running streams or no locked PTP snapshots are observed. Updated `scripts/run_avb_hil_qualification.sh` so those empty-soak conditions are classified as `BLOCKED`. Added focused regression coverage for both the direct soak path and the HIL-wrapper behavior.
+- Key findings: After fixing Q05 empty-capture false positives, Q06 still had the same class of integrity gap. The remaining software-side issue was not the soak runner’s collection mechanics but its ability to pass on idle or unlocked hosts with no endurance evidence. A bounded duration override was required to test that path deterministically without waiting an hour.
+- Validation/evidence: `bash -n scripts/run_avb_24h_soak.sh scripts/run_avb_hil_qualification.sh` passed; `python3 -m py_compile tests/test_avb_capture_scripts.py` passed; `pytest -q tests/test_avb_capture_scripts.py tests/test_avb_latency_optimizer_verification.py tests/test_avb_ops_scripts.py tests/test_avb_setup_routes.py tests/test_system_node_install_routes.py` passed (`19 passed`); direct host run `env MAP2_AVB_SOAK_DURATION_SECONDS_OVERRIDE=1 bash scripts/run_avb_24h_soak.sh --duration-hours 1 --checkpoint-minutes 60 --output-dir /tmp/map2-avb-soak-empty-check` now exits non-zero with `ERROR: no active running streams observed during soak; live AVB stream activity required`.
+
+ID: T059
+Status: [✓] Done
+Title: Restore immediate plugin add/remove response in JUCE-GRID and Grid Flow plugin browsers
+Description:
+- Goal / acceptance criteria: Make plugin add/remove actions feel immediate again in the active grid editors by removing redundant backend blocking from chain plugin deletion and by applying optimistic frontend cache updates with rollback for chooser-driven add/remove operations.
+- Why it matters: Operators reported that adding, removing, or selecting plugins from the chooser felt delayed or sometimes non-responsive, which undermines the core chain-editing workflow.
+- Dependencies: None
+- Estimated effort: Low (~1-2 hours)
+- Required outputs: Faster `/api/chains/{chain_id}/plugins` add/remove behavior, optimistic mutation handling in `JuceGridPage` and `GridFlowPage`, focused regression coverage, and updated worklist evidence.
+Assigned to: Codex
+Last updated: 2026-03-14 14:47 - Codex
+Completion notes:
+- What was done: Simplified chain plugin deletion so the route now relies on the normal session commit path instead of a WAL checkpoint plus multi-pass verification loop, trimmed the add route to direct position/count lookups, and moved `JuceGridPage` / `GridFlowPage` plugin add-remove mutations to optimistic cache updates with rollback so the chooser closes and chain state updates on click.
+- Key findings: The delay came from both layers at once: backend deletion intentionally blocked on checkpoint/retry work, while the frontend waited for request success before closing the chooser or updating the visible chain.
+- Validation/evidence: `pytest -q tests/test_route_caching_and_latency_metrics.py` passed (`12 passed`); `cd web && npm run test -- --runTestsByPath src/app/pages/JuceGridPage.test.tsx --runInBand` passed (`2 passed`); `cd web && npm run typecheck` passed.
+- Confidence: 93 - the blocking backend path was removed directly, both affected grid pages now update optimistically with rollback, and the targeted backend/frontend test slices passed.
+- Compliance: MAP2-owned backend/frontend/test/worklist changes remain under the repository AGPLv3 posture; spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional licensing task was required.
+
+ID: T060
+Status: [ ] Todo
+Title: Prevent default single-node backend startup from hard-failing on cluster MIDI routing
+Description:
+- Goal / acceptance criteria: Ensure a normal backend restart on a single-node host does not enter cluster MIDI routing unless the machine is explicitly configured for it, or otherwise degrade that path to a non-fatal warning when endpoint auto-connect data is invalid.
+- Why it matters: On this host, `midi.cluster.enabled` fell back to the schema default `true`, which caused backend startup to fail before the UI could serve plugin actions after a restart.
+- Dependencies: None
+- Estimated effort: Medium (~2-4 hours)
+- Required outputs: Root-cause fix or startup guard for cluster MIDI initialization, regression coverage for single-node startup defaults, and removal of the need for host-specific config intervention.
+Assigned to: Codex
+Last updated: 2026-03-14 15:02 - Codex
+- Notes: For immediate recovery on this workstation, `~/.map2/config.json` was updated through the app config layer to persist `midi.cluster.enabled=false` and `midi.cluster.auto_connect=false`, after which a normal `uvicorn app.main:app` startup completed successfully.
+
+ID: T061
+Status: [✓] Done
+Title: Stabilize JUCE-GRID and Grid Flow plugin browser selection layout
+Description:
+- Goal / acceptance criteria: Stop the plugin browser from visually jumping while users browse/select items by keeping browser ordering deterministic and reducing layout churn during modal interaction.
+- Why it matters: Operators reported that the plugin browser moved around while they were trying to select plugins, which makes auditioning or inspecting processors unreliable.
+- Dependencies: T059
+- Estimated effort: Low (~1 hour)
+- Required outputs: Deterministic browser sorting, reduced browser refetch churn, stable results-pane behavior in the JUCE-GRID modal, focused regression coverage, and updated evidence in the canonical worklist.
+Assigned to: Codex
+Last updated: 2026-03-14 15:30 - Codex
+Completion notes:
+- What was done: Added a shared browser sort helper so JUCE-GRID and Grid Flow now render filtered plugin results in a stable alphabetical order, disabled plugin discovery refetch-on-focus in both pages, and converted the JUCE-GRID plugin browser to use its own scrollable results pane instead of letting the full modal body reflow during browsing.
+- Key findings: The browser implementations on these pages were still custom and retained backend discovery order, so small data refreshes or modal-body reflow could make the visible plugin list feel unstable even when the underlying selection actions were correct.
+- Validation/evidence: `cd web && npm run test -- --runTestsByPath src/app/pages/JuceGridPage.test.tsx src/app/utils/pluginBrowserSort.test.ts --runInBand` passed (`5 passed`); `cd web && npm run typecheck` passed; `cd web && npm run build` passed, and port `3000` now serves bundle `index-BzS40_xb.js`.
+- Confidence: 85 - deterministic ordering and reduced refetch churn remove the main instability vectors visible in code, and the focused browser-order regression plus full typecheck/build passed.
+- Compliance: MAP2-owned frontend/test/worklist changes remain under the repository AGPLv3 posture; spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new licensing gaps.

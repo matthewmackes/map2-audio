@@ -25,7 +25,7 @@ Scope: Detect package/tooling drift, non-Carbon UI systems, custom styling drift
 | Custom CSS surface area is large and ungoverned | High | `47` CSS files in `web/src`, including route-level and plugin-card specific CSS | **Retain selectively**: keep layout-specific CSS, replace visual tokens/typography/spacing with Carbon tokens |
 | Typography baseline conflicts with Carbon rule | High | `web/package.json` includes `@fontsource/roboto`; `web/public/fonts/Roboto-*.woff2` assets present | **Replace**: adopt IBM Plex and Carbon type tokens as default product typography |
 | Parallel legacy UI systems expand conformance scope | Medium | `web/src/map2/components` (`31` files), `web/src/pipedal` (`163` files) | **Phase + classify**: tag each surface as active, legacy-readonly, or migration-required |
-| Custom icon components and asset icons bypass token sizing | Medium | `web/src/app/components/icons/fontaudio/*`, extensive `web/public/img/*` icon assets | **Wrap**: standardize icon wrapper sizing/aria and retire or map custom icons where possible |
+| Custom icon components and asset icons bypass token sizing | Medium | Historical audit included `web/src/app/components/icons/fontaudio/*` plus extensive `web/public/img/*` icon assets. `fontaudio` has since been retired; static image assets still need governance. | **Wrap / retire**: standardize icon wrapper sizing/aria, keep retired sources removed, and map remaining assets to the approved stack |
 | Table/form/dialog patterns rely on MUI conventions | High | Representative files: `web/src/app/components/library/InstalledAssetsTable.tsx`, `web/src/app/components/MidiHub/MidiPatchbay.tsx`, `web/src/app/components/PasswordDialog.tsx` | **Replace**: map to Carbon DataTable/Form/Dialog patterns and migrate shared primitives first |
 | Accessibility semantics likely inconsistent for decorative icons | Medium | Widespread icon imports with mixed libraries and many icon-heavy controls | **Audit + replace**: enforce decorative `aria-hidden`, add accessible names for meaningful icons |
 
@@ -63,4 +63,3 @@ Backend contract domains most coupled to UI changes:
 - Hard-coded style hotspot scan: `rg -n '#[0-9A-Fa-f]{3,8}\b|rgba?\(' web/src/app web/src/map2 web/src/pipedal`
 - Icon import distribution scan: `rg -n "from '@carbon/icons-react'|from '@mui/icons-material'|from '@phosphor-icons/react'" web/src`
 - Theme override scan: `rg -n "createTheme\(|ThemeProvider|Mui[A-Za-z]+: \{|styleOverrides" web/src`
-

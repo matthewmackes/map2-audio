@@ -96,6 +96,8 @@ describe('AppShell navigation', () => {
     )
 
     expect(screen.getByLabelText('Home')).toBeTruthy()
+    expect(screen.getByLabelText('Mackes Audio Platform home')).toBeTruthy()
+    expect(screen.getByText(/Mackes Audio Platform/i)).toBeTruthy()
     expect(screen.getByLabelText('Open advanced menu')).toBeTruthy()
     expect(screen.getByLabelText('Open special settings')).toBeTruthy()
     expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
@@ -130,7 +132,7 @@ describe('AppShell navigation', () => {
     )
 
     const labels = Array.from(container.querySelectorAll('.nav-tabs-center .nav-tab-label')).map((node) => node.textContent)
-    expect(labels).toEqual(['Audio Engine', 'AVB Routing', 'Host Machine', 'Guide'])
+    expect(labels).toEqual(['Audio Engine', 'AVB Routing', 'Host Machine', 'Platform Guide'])
   })
 
   it('renders MPX1 as a mega-menu trigger when it is pinned', () => {

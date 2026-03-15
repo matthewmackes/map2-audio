@@ -2,21 +2,21 @@
  * PluginCards Type Definitions
  *
  * Types for the plugin card system including templates, visualizations,
- * and parameter grouping.
+ * and MAP iconography-backed parameter grouping.
  */
 
 import type { Plugin, PluginParameter, OutputPort } from '../../../map2/types'
 import {
-  DynamicsIcon,
-  EQIcon,
-  CabinetIcon,
-  ReverbIcon,
-  AmplifierIcon,
-  DelayIcon,
-  ModulationIcon,
-  PitchIcon,
-  MultiEffectIcon,
-} from '../icons/fontaudio'
+  MapAmplifierIcon,
+  MapCabinetIcon,
+  MapDelayIcon,
+  MapDynamicsIcon,
+  MapEqualizerIcon,
+  MapModulationIcon,
+  MapMultiEffectIcon,
+  MapPitchIcon,
+  MapReverbIcon,
+} from '../icons/map'
 import type { FC, SVGProps } from 'react'
 
 // Icon component type
@@ -105,7 +105,7 @@ export interface ParameterGroupConfig {
   id: string
   /** Display label */
   label: string
-  /** Icon name (@phosphor-icons/react) */
+  /** Icon key or component name from the approved MAP/Carbon system */
   icon?: string
   /** Parameter indices or symbols to include */
   parameters: (number | string)[]
@@ -233,26 +233,26 @@ export interface CategoryColorConfig {
   icon?: IconComponent
 }
 
-/** Category colors (matching existing system) with FontAudio icons */
+/** Category colors using the approved MAP-owned audio taxonomy icons */
 export const CATEGORY_COLORS: Record<string, CategoryColorConfig> = {
   'Distortion': { color: '#ff6b6b', bg: 'rgba(255, 107, 107, 0.15)', gradient: 'linear-gradient(135deg, #ff6b6b20 0%, #ff6b6b05 100%)' },
-  'Amplifier': { color: '#ff6b6b', bg: 'rgba(255, 107, 107, 0.15)', gradient: 'linear-gradient(135deg, #ff6b6b20 0%, #ff6b6b05 100%)', icon: AmplifierIcon },
+  'Amplifier': { color: '#ff6b6b', bg: 'rgba(255, 107, 107, 0.15)', gradient: 'linear-gradient(135deg, #ff6b6b20 0%, #ff6b6b05 100%)', icon: MapAmplifierIcon },
   'Filter': { color: '#4ecdc4', bg: 'rgba(78, 205, 196, 0.15)', gradient: 'linear-gradient(135deg, #4ecdc420 0%, #4ecdc405 100%)' },
-  'EQ': { color: '#4ecdc4', bg: 'rgba(78, 205, 196, 0.15)', gradient: 'linear-gradient(135deg, #4ecdc420 0%, #4ecdc405 100%)', icon: EQIcon },
-  'Delay': { color: '#45b7d1', bg: 'rgba(69, 183, 209, 0.15)', gradient: 'linear-gradient(135deg, #45b7d120 0%, #45b7d105 100%)', icon: DelayIcon },
-  'Reverb': { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', gradient: 'linear-gradient(135deg, #a855f720 0%, #a855f705 100%)', icon: ReverbIcon },
-  'Modulation': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', gradient: 'linear-gradient(135deg, #f59e0b20 0%, #f59e0b05 100%)', icon: ModulationIcon },
-  'Compressor': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', gradient: 'linear-gradient(135deg, #22c55e20 0%, #22c55e05 100%)', icon: DynamicsIcon },
-  'Dynamics': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', gradient: 'linear-gradient(135deg, #22c55e20 0%, #22c55e05 100%)', icon: DynamicsIcon },
-  'Limiter': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', gradient: 'linear-gradient(135deg, #22c55e20 0%, #22c55e05 100%)', icon: DynamicsIcon },
-  'Gate': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', gradient: 'linear-gradient(135deg, #22c55e20 0%, #22c55e05 100%)', icon: DynamicsIcon },
+  'EQ': { color: '#4ecdc4', bg: 'rgba(78, 205, 196, 0.15)', gradient: 'linear-gradient(135deg, #4ecdc420 0%, #4ecdc405 100%)', icon: MapEqualizerIcon },
+  'Delay': { color: '#45b7d1', bg: 'rgba(69, 183, 209, 0.15)', gradient: 'linear-gradient(135deg, #45b7d120 0%, #45b7d105 100%)', icon: MapDelayIcon },
+  'Reverb': { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', gradient: 'linear-gradient(135deg, #a855f720 0%, #a855f705 100%)', icon: MapReverbIcon },
+  'Modulation': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', gradient: 'linear-gradient(135deg, #f59e0b20 0%, #f59e0b05 100%)', icon: MapModulationIcon },
+  'Compressor': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', gradient: 'linear-gradient(135deg, #22c55e20 0%, #22c55e05 100%)', icon: MapDynamicsIcon },
+  'Dynamics': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', gradient: 'linear-gradient(135deg, #22c55e20 0%, #22c55e05 100%)', icon: MapDynamicsIcon },
+  'Limiter': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', gradient: 'linear-gradient(135deg, #22c55e20 0%, #22c55e05 100%)', icon: MapDynamicsIcon },
+  'Gate': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', gradient: 'linear-gradient(135deg, #22c55e20 0%, #22c55e05 100%)', icon: MapDynamicsIcon },
   'Simulator': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', gradient: 'linear-gradient(135deg, #ec489920 0%, #ec489905 100%)' },
-  'Cabinet': { color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)', gradient: 'linear-gradient(135deg, #f9731620 0%, #f9731605 100%)', icon: CabinetIcon },
+  'Cabinet': { color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)', gradient: 'linear-gradient(135deg, #f9731620 0%, #f9731605 100%)', icon: MapCabinetIcon },
   'Utility': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', gradient: 'linear-gradient(135deg, #64748b20 0%, #64748b05 100%)' },
   'Generator': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', gradient: 'linear-gradient(135deg, #8b5cf620 0%, #8b5cf605 100%)' },
   'Instrument': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', gradient: 'linear-gradient(135deg, #8b5cf620 0%, #8b5cf605 100%)' },
-  'Pitch': { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', gradient: 'linear-gradient(135deg, #06b6d420 0%, #06b6d405 100%)', icon: PitchIcon },
-  'Multi-Effect': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', gradient: 'linear-gradient(135deg, #ec489920 0%, #ec489905 100%)', icon: MultiEffectIcon },
+  'Pitch': { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', gradient: 'linear-gradient(135deg, #06b6d420 0%, #06b6d405 100%)', icon: MapPitchIcon },
+  'Multi-Effect': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', gradient: 'linear-gradient(135deg, #ec489920 0%, #ec489905 100%)', icon: MapMultiEffectIcon },
 }
 
 /** Get color configuration for a category */

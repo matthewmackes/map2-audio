@@ -1,0 +1,5 @@
+{
+  "product": "MAP2 Audio Platform",
+  "fallback_version": "0.0.0-dev",
+  "version_source": "git describe --tags --dirty --always || VERSION"
+}

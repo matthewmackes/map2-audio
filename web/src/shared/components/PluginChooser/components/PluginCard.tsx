@@ -18,6 +18,7 @@ import {
   Divider,
   Button,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
@@ -32,7 +33,7 @@ import {
 import { UnifiedPlugin } from '../types'
 import PluginFormatBadge from './PluginFormatBadge'
 import { PluginIOBadge } from './PluginIOIndicator'
-import PluginIcon from '../../../../pipedal/PluginIcon'
+import { LegacyPluginIcon } from './LegacyPluginIcon'
 import { getPluginDescription } from '../utils/pluginDescriptions'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
 
@@ -120,12 +121,16 @@ export const PluginCard = memo(function PluginCard({
       sx={{
         cursor: draggable ? 'grab' : 'pointer',
         border: 2,
-        borderColor: selected ? 'primary.main' : isHardware ? '#C8A951' : 'divider',
-        bgcolor: selected ? 'action.selected' : isHardware ? 'rgba(200,169,81,0.06)' : 'background.paper',
+        borderColor: selected ? 'primary.main' : isHardware ? 'warning.main' : 'divider',
+        bgcolor: selected
+          ? 'action.selected'
+          : isHardware
+            ? (theme) => alpha(theme.palette.warning.main, 0.06)
+            : 'background.paper',
         transition: 'all 0.15s ease',
         '&:hover': {
-          borderColor: isHardware ? '#D4B86A' : 'primary.light',
-          boxShadow: isHardware ? '0 0 12px rgba(200,169,81,0.3)' : 4,
+          borderColor: isHardware ? 'warning.light' : 'primary.light',
+          boxShadow: isHardware ? (theme) => `0 0 12px ${alpha(theme.palette.warning.main, 0.3)}` : 4,
           transform: 'translateY(-1px)',
         },
         '&:active': {
@@ -153,7 +158,7 @@ export const PluginCard = memo(function PluginCard({
             {isHardware ? (
               <img src="/img/fx_lexicon.svg" alt="Hardware" width={20} height={20} style={{ display: 'block' }} />
             ) : (
-              <PluginIcon pluginType={plugin.pluginType} size={20} opacity={0.8} />
+              <LegacyPluginIcon pluginType={plugin.pluginType} size={20} opacity={0.8} />
             )}
           </Box>
 
@@ -202,12 +207,12 @@ export const PluginCard = memo(function PluginCard({
           <IconButton
             size="small"
             onClick={handleFavoriteClick}
-            sx={{
-              p: 0.25,
-              color: plugin.isFavorite ? '#F59E0B' : 'text.disabled',
-              '&:hover': { color: '#F59E0B' },
-            }}
-          >
+          sx={{
+            p: 0.25,
+            color: plugin.isFavorite ? 'warning.main' : 'text.disabled',
+            '&:hover': { color: 'warning.main' },
+          }}
+        >
             {plugin.isFavorite ? (
               <StarIcon sx={{ fontSize: 18 }} />
             ) : (
@@ -224,9 +229,9 @@ export const PluginCard = memo(function PluginCard({
             height: 18,
             fontSize: '0.6rem',
             mb: 0.75,
-            bgcolor: isHardware ? 'rgba(200,169,81,0.2)' : 'action.selected',
-            color: isHardware ? '#C8A951' : undefined,
-            border: isHardware ? '1px solid rgba(200,169,81,0.4)' : undefined,
+            bgcolor: isHardware ? (theme) => alpha(theme.palette.warning.main, 0.2) : 'action.selected',
+            color: isHardware ? 'warning.main' : undefined,
+            border: isHardware ? (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.4)}` : undefined,
             '& .MuiChip-label': { px: 0.75 },
           }}
         />
@@ -242,8 +247,8 @@ export const PluginCard = memo(function PluginCard({
             sx={{
               height: 18,
               fontSize: '0.55rem',
-              bgcolor: isHardware ? '#C8A951' : 'primary.main',
-              color: isHardware ? '#1A1A1A' : 'primary.contrastText',
+              bgcolor: isHardware ? 'warning.main' : 'primary.main',
+              color: isHardware ? 'warning.contrastText' : 'primary.contrastText',
               '& .MuiChip-label': { px: 0.5 },
               '& .MuiChip-icon': { ml: 0.25, mr: -0.25, color: 'inherit' },
             }}
@@ -289,8 +294,8 @@ export const PluginCard = memo(function PluginCard({
               sx={{
                 height: 16,
                 fontSize: '0.55rem',
-                bgcolor: '#F472B6',
-                color: 'white',
+                bgcolor: 'secondary.main',
+                color: 'secondary.contrastText',
                 '& .MuiChip-label': { px: 0.5 },
               }}
             />
@@ -538,12 +543,18 @@ function CompactPluginCard({
         px: 1.5,
         py: 1,
         cursor: draggable ? 'grab' : 'pointer',
-        bgcolor: selected ? 'action.selected' : isHardware ? 'rgba(200,169,81,0.06)' : 'transparent',
+        bgcolor: selected
+          ? 'action.selected'
+          : isHardware
+            ? (theme) => alpha(theme.palette.warning.main, 0.06)
+            : 'transparent',
         borderRadius: 1,
         borderBottom: 1,
-        borderColor: isHardware ? 'rgba(200,169,81,0.3)' : 'divider',
+        borderColor: isHardware ? (theme) => alpha(theme.palette.warning.main, 0.3) : 'divider',
         transition: 'background-color 0.15s',
-        '&:hover': { bgcolor: isHardware ? 'rgba(200,169,81,0.12)' : 'action.hover' },
+        '&:hover': {
+          bgcolor: isHardware ? (theme) => alpha(theme.palette.warning.main, 0.12) : 'action.hover',
+        },
       }}
     >
       {draggable && (
@@ -553,7 +564,7 @@ function CompactPluginCard({
       {isHardware ? (
         <img src="/img/fx_lexicon.svg" alt="Hardware" width={18} height={18} style={{ display: 'block', flexShrink: 0 }} />
       ) : (
-        <PluginIcon pluginType={plugin.pluginType} size={18} opacity={0.7} />
+        <LegacyPluginIcon pluginType={plugin.pluginType} size={18} opacity={0.7} />
       )}
 
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -574,9 +585,9 @@ function CompactPluginCard({
         sx={{
           height: 18,
           fontSize: '0.6rem',
-          bgcolor: isHardware ? 'rgba(200,169,81,0.2)' : 'action.selected',
-          color: isHardware ? '#C8A951' : undefined,
-          border: isHardware ? '1px solid rgba(200,169,81,0.4)' : undefined,
+          bgcolor: isHardware ? (theme) => alpha(theme.palette.warning.main, 0.2) : 'action.selected',
+          color: isHardware ? 'warning.main' : undefined,
+          border: isHardware ? (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.4)}` : undefined,
           '& .MuiChip-label': { px: 0.5 },
         }}
       />
@@ -588,10 +599,10 @@ function CompactPluginCard({
         sx={{
           height: 18,
           fontSize: '0.6rem',
-          bgcolor: isHardware ? '#C8A951' : undefined,
-          color: isHardware ? '#1A1A1A' : undefined,
+          bgcolor: isHardware ? 'warning.main' : undefined,
+          color: isHardware ? 'warning.contrastText' : undefined,
           '& .MuiChip-label': { px: 0.25 },
-          '& .MuiChip-icon': { ml: 0.25, color: isHardware ? '#1A1A1A' : undefined },
+          '& .MuiChip-icon': { ml: 0.25, color: isHardware ? 'warning.contrastText' : undefined },
         }}
       />
 
@@ -606,7 +617,7 @@ function CompactPluginCard({
           e.stopPropagation()
           onToggleFavorite?.(plugin.uri)
         }}
-        sx={{ p: 0.25, color: plugin.isFavorite ? '#F59E0B' : 'text.disabled' }}
+        sx={{ p: 0.25, color: plugin.isFavorite ? 'warning.main' : 'text.disabled' }}
       >
         {plugin.isFavorite ? (
           <StarIcon sx={{ fontSize: 16 }} />

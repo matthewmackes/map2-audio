@@ -242,7 +242,7 @@ app/services/tesira/
 │  /tesira ─────── Fleet Overview (device cards + health)   │
 │  /tesira/:id ─── Device Dashboard + sub-route views       │
 │  /avb-routing ── Unified AVB Routing Matrix               │
-│  /audio-engine ─ GridFlow (chain + Tesira insertion)      │
+│  /juce-grid ─ JUCE-GRID (chain + Tesira insertion)        │
 │                                                           │
 │  State: React Query (server) + TesiraContext (client)     │
 │  Realtime: WebSocket subscriptions                        │
@@ -677,12 +677,12 @@ When AVB is not configured, offline, or unsupported, the UI shows:
 ```
 MAP2 Audio Platform
 │
-├── Audio Engine (/audio-engine)
-│   └── GridFlow signal chain
-│       ├── ChainEndpoint (INPUT) ← Tesira AVB endpoints selectable
+├── JUCE-GRID (/juce-grid)
+│   └── JUCE-GRID signal chain
+│       ├── Input endpoint selection ← Tesira AVB endpoints selectable
 │       ├── Plugin chain
 │       ├── Effects Loop insertion points ← Tesira loop integration
-│       └── ChainEndpoint (OUTPUT) ← Tesira AVB endpoints selectable
+│       └── Output endpoint selection ← Tesira AVB endpoints selectable
 │
 ├── Tesira Fleet (/tesira)                           ◄── ENHANCED
 │   │
@@ -749,8 +749,8 @@ MAP2 Audio Platform
 |------|----|---------|
 | Fleet Overview → Device Dashboard | Click device card | Navigation |
 | Device Dashboard → AVB Routing | Click AVB stream count | Deep link with device filter |
-| Device Loops → GridFlow | "Insert into chain" button | Navigate to `/audio-engine` with loop pre-selected |
-| GridFlow ChainEndpoint → AVB Routing | Click endpoint AVB badge | Deep link to endpoint in routing matrix |
+| Device Loops → JUCE-GRID | "Insert into chain" button | Navigate to `/juce-grid` with loop pre-selected |
+| JUCE-GRID routing visualizer → AVB Routing | Click endpoint AVB badge | Deep link to endpoint in routing matrix |
 | AVB Routing → Device Dashboard | Click Tesira node in tree | Navigate to `/tesira/:id` |
 
 ---
@@ -940,7 +940,7 @@ MAP2 Audio Platform
 
 **Relocation**: Moved from tab 7 of `TesiraControlPanel` to its own route.
 
-**Enhancement**: "Insert into GridFlow chain" button navigates to `/audio-engine` with the loop pre-selected for insertion.
+**Enhancement**: "Insert into JUCE-GRID chain" button navigates to `/juce-grid` with the loop pre-selected for insertion.
 
 **Reuses**: Existing `TesiraLoopBuilderTab.tsx` (838 lines, fully functional — relocate).
 
@@ -1034,7 +1034,7 @@ TesiraFleetProvider (context: selected device, connection states, fleet health)
 | Existing Component | Used In | Source |
 |-------------------|---------|--------|
 | `AudioMeter` | Levels view channel strips | `web/src/app/components/AudioMeter.tsx` |
-| `ChainEndpoint` | Loop insertion visualization | `web/src/app/components/GridFlow/ChainEndpoint.tsx` |
+| `JuceGridRoutingVisualizer` | Loop insertion visualization | `web/src/app/pages/JuceGridRoutingVisualizer.tsx` |
 | Matrix cell pattern | Mixer crosspoint grid | `web/src/app/components/AvbRouting/RoutingGrid/` |
 | `useWebSocketTopic` | All real-time data | `web/src/map2/websocket.ts` |
 | `useRealtimePollingGating` | Visibility-gated queries | `web/src/app/hooks/useRealtimePollingGating` |
@@ -1648,7 +1648,7 @@ When a template is applied, the UI renders a React Flow diagram:
 ```
 ┌────────┐     ┌─────────┐     ┌─────┐     ┌──────────┐     ┌────────────┐
 │Analog  │────▶│ Level   │────▶│ PEQ │────▶│ AVB Out  │────▶│ MAP2 Chain │
-│Input   │     │ Control │     │     │     │ Stream   │     │ (GridFlow) │
+│Input   │     │ Control │     │     │     │ Stream   │     │ (JUCE-GRID) │
 └────────┘     └─────────┘     └─────┘     └──────────┘     └────────────┘
 ```
 
@@ -1713,12 +1713,12 @@ The `══▶` edge uses a distinct visual style (dashed, with AVB badge) to in
 ### Workflow 3: Effects Loop Creation
 
 ```
-1. User on GridFlow page (/audio-engine)
-2. Opens AudioPortSelector for chain input/output
+1. User on JUCE-GRID page (/juce-grid)
+2. Opens the JUCE-GRID audio port modal for chain input/output
 3. Selects Tesira AVB endpoint (existing flow)
 4. OR: navigates to /tesira/:id/loops
 5. Creates new effects loop (topology, endpoints) — existing LoopBuilder
-6. Clicks "Insert into chain" → navigates to /audio-engine with loop pre-selected
+6. Clicks "Insert into chain" → navigates to /juce-grid with loop pre-selected
 7. System creates AVB send/return streams (existing)
 8. Signal chain shows Tesira loop insertion point
 ```

@@ -37,8 +37,7 @@ Review every page below. For each, the route, primary file, and UI patterns are 
 | `/plugins` | `pages/LV2PluginsPage.tsx` | Plugin table (sortable, filterable), install/uninstall actions, detail modals |
 | `/library` | `pages/LibraryPage.tsx` | InstalledAssetsTable, IR/NAM loader dialogs, upload dialog |
 | `/midi` | `pages/MIDIPage.tsx` | MIDI mapping table, binding editor, curve display |
-| `/grid` | `pages/GridFlowPage.tsx` | Full ReactFlow grid editor — nodes, edges, knob panels, snapshots |
-| `/grid-3d` | `pages/GridFlowAdvancedPage.tsx` | Three.js 3D visualization |
+| `/juce-grid` | `pages/JuceGridPage.tsx` | Supported JUCE signal-flow editor — nodes, routing, automation, MIDI mapping, snapshots |
 | `/dsp` | `pages/DSPPage.tsx` | Audio processing metrics, charts |
 | `/edirol-ua1000` | `pages/EdirolUA1000Page.tsx` | Audio interface config form |
 | `/motu-rme` | `pages/MOTURMEPage.tsx` | Audio interface config form |
@@ -48,7 +47,7 @@ Review every page below. For each, the route, primary file, and UI patterns are 
 | `/engine` | `pages/AudioEnginePage.tsx` | JUCE engine status, controls |
 | `/metering` | `pages/MeteringPage.tsx` | Real-time VU/peak meters via WebSocket |
 | `/pipewire` | `pages/PipeWirePage.tsx` | Audio server status, node list |
-| `/welcome` | `pages/WelcomePage.tsx` | Onboarding flow |
+| `/welcome` | `pages/WelcomePage.tsx` | Redirect alias to `/about` |
 | `/lcd` | `pages/LCDPage.tsx` | LCD emulator display |
 | `/cluster-dashboard` | `pages/ClusterDashboardPage.tsx` | Multi-node monitoring, MUI DataGrid, live events tab |
 | `/drums` | `pages/DrumsPage.tsx` | Drum machine interface |
@@ -163,8 +162,7 @@ Report what you find, but do not propose restructuring `index.css` itself — th
 
 ### Desktop-Only Components
 If a component cannot reasonably work on 360px portrait, flag it as desktop-only and show the `LandscapePrompt` overlay. These are likely desktop-only:
-- `/grid` — ReactFlow grid editor
-- `/grid-3d` — Three.js 3D view
+- `/juce-grid` — signal-flow editor with dense spatial manipulation
 - `/mpx1/flow` — SVG drag-and-drop canvas
 - `/avb-routing` — routing matrix
 - `/mpx1/matrix` — modulation matrix

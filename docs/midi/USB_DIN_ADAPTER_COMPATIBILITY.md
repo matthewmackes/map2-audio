@@ -10,6 +10,17 @@ This guide validates the MAP2 MIDI Hub behavior when USB-to-DIN adapters are use
 - Blocking condition encountered: ALSA sequencer access unavailable in this execution environment (`open /dev/snd/seq failed`).
 - Result: physical adapter verification for specific hardware SKUs cannot be executed in this run.
 
+Repeatable capture tooling is now available:
+
+```bash
+python3 scripts/run_t066_usb_din_adapter_qualification.py \
+  --output-dir docs/fit-for-purpose-evidence/<YYYYMMDD>/t066/<adapter-slug>/baseline \
+  --adapter-label "Roland UM-ONE mk2" \
+  --adapter-name-pattern "UM-ONE"
+```
+
+Runbook: `docs/midi/T066_USB_DIN_ADAPTER_HIL_RUNBOOK.md`
+
 ### Evidence from this run
 ```bash
 aconnect -l
@@ -45,34 +56,11 @@ Covered behaviors:
 | MOTU micro lite / iConnectivity mioXM | Pending | Pending | Pending | Pending | Multi-port naming and jitter characterization |
 
 ## Lab Procedure (When Hardware Is Connected)
-1. Connect adapter to host and run:
-```bash
-aconnect -l
-amidi -l
-python3 -c "from app.services.midi_hub.ports import discover_alsa_port_descriptors as d; import json; print(json.dumps(d(), indent=2))"
-```
-2. Start hub and refresh registry:
-```bash
-curl -X POST http://localhost:8080/api/midi/hub/start
-curl -X POST http://localhost:8080/api/midi/hub/devices/refresh
-curl http://localhost:8080/api/midi/hub/status
-```
-3. Verify SysEx pass-through with loop/device target:
-```bash
-# Example identity request payload
-curl -X POST http://localhost:8080/api/midi/hub/network/sessions/<session>/send \
-  -H 'Content-Type: application/json' \
-  -d '{"message":[240,126,127,6,1,247]}'
-```
-4. Capture traffic and latency evidence:
-```bash
-curl "http://localhost:8080/api/midi/hub/traffic/snapshot?limit=200"
-curl "http://localhost:8080/api/midi/hub/network/sessions"
-```
-5. Hot-plug test:
-- Unplug adapter.
-- Wait up to 10s.
-- Re-run status/refresh and confirm recovery.
+1. Run the qualification runner for the baseline connected state.
+2. If SysEx smoke-send is required, include `--session-id <existing-session>`.
+3. Perform the manual unplug/replug cycle described in `docs/midi/T066_USB_DIN_ADAPTER_HIL_RUNBOOK.md`.
+4. Run the same command again into a second output directory and compare the summary artifacts.
+5. Update the matrix below with measured results and any adapter-specific quirks.
 
 ## Optional CME H2MIDI Pro Standalone Notes
 MAP2 does not depend on CME standalone behavior. If used:

@@ -80,7 +80,7 @@ echo "Build complete!"
 **Solution**:
 ```bash
 # Verify build has changes
-grep -c '00d9ff' /home/mm/map2-audio/web/dist/assets/GridFlowPage-*.js
+grep -c '00d9ff' /home/mm/map2-audio/web/dist/assets/*.js
 
 # If build is correct, problem is browser cache
 # Instruct user to:

@@ -358,8 +358,8 @@ export function ChainsPage() {
 
           <div className="chains-page__actions">
             {remoteSelected ? <Tag type="warm-gray">Grid editor local only</Tag> : (
-              <Button kind="ghost" size="sm" href="/grid" renderIcon={Launch}>
-                Grid view
+              <Button kind="ghost" size="sm" href="/juce-grid" renderIcon={Launch}>
+                JUCE-GRID
               </Button>
             )}
             <Button kind="ghost" size="sm" renderIcon={Renew} onClick={handleRefresh}>

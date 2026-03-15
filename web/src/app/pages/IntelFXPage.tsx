@@ -9,14 +9,15 @@ import {
   type CSSProperties,
 } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Book, Branch, ChevronLeft, ChevronRight, Dashboard, Music, Play, SettingsAdjust, Warning } from '@carbon/icons-react'
+import { Book, Branch, Dashboard, Music, Play, SettingsAdjust, Warning } from '@carbon/icons-react'
 import { Button, InlineLoading, InlineNotification } from '@carbon/react'
 
+import { IntelFXStatusBar } from '../components/IntelFX/IntelFXStatusBar'
 import { formatIntelFXProgramName, formatIntelFXProgramNumber } from '../components/IntelFX/programNumber'
-import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '../../map2/mpx1Api'
+import { useIntelFXState, type IntelFXRegistryParam, type UseIntelFXStateResult } from '../../map2/intelfxApi'
 import { useCluster } from '../contexts/ClusterContext'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
-import '../components/MPX1/MPX1PageShell.css'
+import '../components/IntelFX/IntelFXPageShell.css'
 import './IntelFXPage.css'
 
 type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'library' | 'perform' | 'diag' | 'flow'
@@ -55,7 +56,7 @@ const DEFAULT_BYPASS_STATE: Record<BypassBlock, boolean> = {
 }
 
 export interface IntelFXPageContextValue {
-  intelfx: UseMPX1StateResult
+  intelfx: UseIntelFXStateResult
   nodeId: string | null
   activeSection: SidebarSectionId
   currentProgramName: string
@@ -91,104 +92,13 @@ function sectionFromPath(pathname: string): SidebarSectionId {
   return 'panel'
 }
 
-function findParamByCandidates(params: MPX1RegistryParam[] | undefined, candidates: string[]): MPX1RegistryParam | null {
+function findParamByCandidates(params: IntelFXRegistryParam[] | undefined, candidates: string[]): IntelFXRegistryParam | null {
   if (!params || params.length === 0) return null
   for (const candidate of candidates) {
     const found = params.find((param) => param.id === candidate)
     if (found) return found
   }
   return null
-}
-
-/* -------------------------------------------------------------------------- */
-/*  IntelFX Status Bar (inline component)                                     */
-/* -------------------------------------------------------------------------- */
-
-interface IntelFXStatusBarProps {
-  connected: boolean
-  programNumber: number
-  programName: string
-  lcdText: string
-  mixValue: number
-  bypassState: Record<BypassBlock, boolean>
-  onProgramStep: (delta: number) => void
-  onMixChange: (value: number) => void
-  onToggleBypass: (block: BypassBlock) => void
-}
-
-function IntelFXStatusBar({
-  connected,
-  programNumber,
-  programName,
-  lcdText,
-  mixValue,
-  bypassState,
-  onProgramStep,
-  onMixChange,
-  onToggleBypass,
-}: IntelFXStatusBarProps) {
-  return (
-    <div className="mpx1-statusbar">
-      <div className="mpx1-statusbar__left">
-        <span className={`mpx1-statusbar__dot${connected ? ' is-online' : ''}`} />
-        <span className="mpx1-statusbar__device">INTELFX</span>
-      </div>
-
-      <div className="mpx1-statusbar__program">
-        <button
-          type="button"
-          className="mpx1-statusbar__prog-btn"
-          onClick={() => onProgramStep(-1)}
-          aria-label="Previous program"
-        >
-          <ChevronLeft size={12} aria-hidden />
-        </button>
-        <span className="mpx1-statusbar__prog-number">
-          {formatIntelFXProgramNumber(programNumber)}
-        </span>
-        <span className="mpx1-statusbar__prog-name">{programName}</span>
-        <button
-          type="button"
-          className="mpx1-statusbar__prog-btn"
-          onClick={() => onProgramStep(1)}
-          aria-label="Next program"
-        >
-          <ChevronRight size={12} aria-hidden />
-        </button>
-      </div>
-
-      <div className="mpx1-statusbar__lcd">
-        <span className="mpx1-statusbar__lcd-track">{lcdText}</span>
-      </div>
-
-      <div className="mpx1-statusbar__mix">
-        <span className="mpx1-statusbar__mix-label">MIX</span>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={mixValue}
-          onChange={(event) => onMixChange(Number(event.target.value))}
-          aria-label="Mix level"
-        />
-      </div>
-
-      <div className="mpx1-statusbar__bypass">
-        {(Object.keys(bypassState) as BypassBlock[]).map((block) => (
-          <button
-            key={block}
-            type="button"
-            className={`mpx1-statusbar__pill${bypassState[block] ? '' : ' is-bypassed'}`}
-            onClick={() => onToggleBypass(block)}
-            title={`${block}: ${bypassState[block] ? 'Engaged' : 'Bypassed'}`}
-          >
-            {block}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 /* -------------------------------------------------------------------------- */
@@ -207,13 +117,15 @@ export function IntelFXPage() {
   const apiNodeId = remoteSelected ? selectedNodeId : null
   const needsSwitch = Boolean(deviceLocation && selectedNodeId !== deviceLocation.nodeId)
   const locationOffline = Boolean(locationNode && locationNode.nodeId !== localNodeId && !locationNode.isOnline)
-  const intelfx = useMPX1State({
+  const intelfx = useIntelFXState({
     nodeId: apiNodeId,
     autoConnectWs: !apiNodeId,
     pollIntervalMs: apiNodeId ? 5000 : 0,
   })
 
   const [lcdText, setLcdText] = useState('INTELFX READY')
+  const [tapTempoBpm, setTapTempoBpm] = useState(120)
+  const [lastTapAtMs, setLastTapAtMs] = useState<number | null>(null)
   const [bypassState, setBypassState] = useState(DEFAULT_BYPASS_STATE)
 
   const currentProgram = intelfx.state?.current_program ?? 0
@@ -268,6 +180,22 @@ export function IntelFXPage() {
     })
   }, [])
 
+  const handleTapTempo = useCallback(() => {
+    const now = Date.now()
+    setLastTapAtMs((previous) => {
+      if (previous) {
+        const delta = now - previous
+        if (delta > 120 && delta < 2000) {
+          const bpm = Math.round(60000 / delta)
+          const normalized = Math.min(260, Math.max(40, bpm))
+          setTapTempoBpm(normalized)
+          setLcdText(`TAP TEMPO ${normalized} BPM`)
+        }
+      }
+      return now
+    })
+  }, [])
+
   const contextValue = useMemo<IntelFXPageContextValue>(() => ({
     intelfx,
     nodeId: apiNodeId,
@@ -281,9 +209,9 @@ export function IntelFXPage() {
 
   if (locationLoading) {
     return (
-      <div className="mpx1-shell">
-        <div className="mpx1-shell__main">
-          <div className="mpx1-shell__content">
+      <div className="intelfx-shell">
+        <div className="intelfx-shell__main">
+          <div className="intelfx-shell__content">
             <InlineLoading status="active" description="Checking cluster MIDI inventory for the Rocktron IntelFX." />
           </div>
         </div>
@@ -293,9 +221,9 @@ export function IntelFXPage() {
 
   if (!deviceLocation) {
     return (
-      <div className="mpx1-shell">
-        <div className="mpx1-shell__main">
-          <div className="mpx1-shell__content">
+      <div className="intelfx-shell">
+        <div className="intelfx-shell__main">
+          <div className="intelfx-shell__content">
             <InlineNotification
               kind="warning"
               lowContrast
@@ -312,9 +240,9 @@ export function IntelFXPage() {
   if (needsSwitch) {
     const locationLabel = deviceLocation.hostname ?? deviceLocation.nodeId
     return (
-      <div className="mpx1-shell">
-        <div className="mpx1-shell__main">
-          <div className="mpx1-shell__content">
+      <div className="intelfx-shell">
+        <div className="intelfx-shell__main">
+          <div className="intelfx-shell__content">
             <InlineNotification
               kind="info"
               lowContrast
@@ -338,9 +266,9 @@ export function IntelFXPage() {
 
   if (locationOffline) {
     return (
-      <div className="mpx1-shell">
-        <div className="mpx1-shell__main">
-          <div className="mpx1-shell__content">
+      <div className="intelfx-shell">
+        <div className="intelfx-shell__main">
+          <div className="intelfx-shell__content">
             <InlineNotification
               kind="warning"
               lowContrast
@@ -356,8 +284,8 @@ export function IntelFXPage() {
 
   return (
     <IntelFXPageContext.Provider value={contextValue}>
-      <div className="mpx1-shell">
-        <aside className="mpx1-shell__sidebar" aria-label="IntelFX section navigation">
+      <div className="intelfx-shell">
+        <aside className="intelfx-shell__sidebar" aria-label="IntelFX section navigation">
           {SIDEBAR_SECTIONS.map((section) => {
             const SectionIcon = section.icon
             return (
@@ -366,7 +294,7 @@ export function IntelFXPage() {
                 to={section.to}
                 title={section.label}
                 aria-label={section.label}
-                className={({ isActive }) => `mpx1-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
+                className={({ isActive }) => `intelfx-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
                 style={{ '--section-accent': section.color } as CSSProperties}
               >
                 <SectionIcon size={18} aria-hidden />
@@ -375,7 +303,7 @@ export function IntelFXPage() {
           })}
         </aside>
 
-        <div className="mpx1-shell__main">
+        <div className="intelfx-shell__main">
           {remoteSelected ? (
             <div className="intelfx-page__proxy-notice">
               <InlineNotification
@@ -387,20 +315,23 @@ export function IntelFXPage() {
               />
             </div>
           ) : null}
-          <div className="mpx1-shell__content">
+          <div className="intelfx-shell__content">
             <Outlet />
           </div>
 
           <IntelFXStatusBar
+            deviceName="INTELFX"
             connected={Boolean(intelfx.state?.connected)}
             programNumber={currentProgram}
             programName={currentProgramName}
             lcdText={lcdText}
             mixValue={mixValue}
+            tapTempoBpm={tapTempoBpm}
             bypassState={bypassState}
             onProgramStep={handleProgramStep}
             onMixChange={handleMixChange}
-            onToggleBypass={handleToggleBypass}
+            onTapTempo={handleTapTempo}
+            onToggleBypass={(block) => handleToggleBypass(block as BypassBlock)}
           />
         </div>
       </div>

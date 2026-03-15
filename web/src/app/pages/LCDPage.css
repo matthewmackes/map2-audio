@@ -1,0 +1,10 @@
+.lcd-page-route {
+  min-height: 100%;
+  background: var(--cds-background);
+}
+
+.lcd-page-route__surface {
+  min-height: 100%;
+  padding: var(--cds-spacing-05);
+  background: var(--cds-layer-01);
+}

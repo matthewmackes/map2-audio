@@ -44,6 +44,10 @@
   padding: 4px 10px;
 }
 
+.api-observatory-page__badge .cds--ai-label {
+  margin-left: 2px;
+}
+
 .api-observatory-page__heading h1 {
   margin: 10px 0 8px;
   font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;

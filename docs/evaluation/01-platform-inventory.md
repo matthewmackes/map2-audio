@@ -465,7 +465,8 @@ Largest individual route modules by decorator count:
 
 ### 6.1 Navigation tree
 
-- System: `Overview` -> `/`, `Guide` -> `/welcome`, `Grid` -> `/grid`, `Presets` -> `/presets`, `3D Grid` -> `/grid-3d`
+- System: `Overview` -> `/`, `Platform Guide` -> `/about`, `JUCE-GRID` -> `/juce-grid`, `Presets` -> `/presets`
+- Legacy aliases: `/welcome` -> `/about`, `/grid` -> `/juce-grid`, `/grid-3d` -> `/juce-grid`
 - Content & Plugins: `LV2 Plugins` -> `/plugins`, `IR & NAM Library` -> `/library`
 - Audio Processing: `Audio Engine` -> `/engine`
 - Control: `MIDI` -> `/midi`, `MIDI Hub` -> `/midi-hub`, `MPX1 Rack` -> `/mpx1`
@@ -484,7 +485,7 @@ Notable navigation observation: the hardware submenu currently exposes both `HoT
 
 | Page group | Count | Representative pages |
 | --- | ---: | --- |
-| Audio workflow | 7 | `AudioEnginePage.tsx`, `GridFlowPage.tsx`, `ChainsPage.tsx` |
+| Audio workflow | 7 | `AudioEnginePage.tsx`, `JuceGridPage.tsx`, `ChainsPage.tsx` |
 | Infrastructure / hardware | 9 | `HostMachinePage.tsx`, `ClusterDashboardPage.tsx`, `PipeWirePage.tsx` |
 | Library / plugins | 3 | `LibraryPage.tsx`, `PresetsPage.tsx`, `LV2PluginsPage.tsx` |
 | MIDI | 2 | `MIDIPage.tsx`, `MidiHubPage.tsx` |
@@ -505,8 +506,7 @@ Notable navigation observation: the hardware submenu currently exposes both `HoT
 - `web/src/app/pages/DSPPage.tsx`
 - `web/src/app/pages/DrumsPage.tsx`
 - `web/src/app/pages/EdirolUA1000Page.tsx`
-- `web/src/app/pages/GridFlowAdvancedPage.tsx`
-- `web/src/app/pages/GridFlowPage.tsx`
+- `web/src/app/pages/JuceGridPage.tsx`
 - `web/src/app/pages/HoToneJoGGPage.tsx`
 - `web/src/app/pages/HomePage.tsx`
 - `web/src/app/pages/HostMachinePage.tsx`
@@ -542,8 +542,6 @@ Notable navigation observation: the hardware submenu currently exposes both `HoT
 - `web/src/app/components/Controls`
 - `web/src/app/components/Dynamics`
 - `web/src/app/components/EQ`
-- `web/src/app/components/GridFlow`
-- `web/src/app/components/GridFlowAdvanced`
 - `web/src/app/components/HorizontalSignalChain`
 - `web/src/app/components/HostMachine`
 - `web/src/app/components/MPX1`

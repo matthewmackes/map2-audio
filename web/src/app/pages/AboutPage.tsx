@@ -1,10 +1,42 @@
-import { GithubLogo, ArrowSquareOut, Info, MusicNote, Code, Lightning, DesktopTower, PenNib, Cpu, Package, Pulse, Palette, CaretDown, Scales, Database, Globe, Stack, Cube, Terminal, FileCode, Headphones, Broadcast, BookOpen, Shield, Heart, TrendUp } from '@phosphor-icons/react'
+import {
+  Accessibility,
+  Application,
+  BareMetalServer,
+  Book,
+  CaretDown,
+  ChartLine,
+  Chip,
+  Code,
+  CodeReference,
+  Cube,
+  DataBase,
+  FavoriteFilled,
+  Flow,
+  Globe,
+  Headphones,
+  Information,
+  Launch,
+  Lightning,
+  LogoGithub,
+  Music,
+  Package,
+  PaintBrush,
+  PenFountain,
+  Scales,
+  Security,
+  Terminal,
+  UserFavorite,
+} from '@carbon/icons-react'
+import { Layer } from '@carbon/react'
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { themes, themeOrder, applyTheme, getSavedThemeId, saveCustomTheme, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 import type { Theme } from '../theme'
 import { ThemeCreatorDialog } from '../components/ThemeCreatorDialog'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
+import { MapAmplifierIcon, MapSignalFlowIcon } from '../components/icons/map'
+import { PlatformInfoGuideSection } from './PlatformInfoGuideSection'
+import './AboutPage.css'
 
 interface VersionInfo {
   version?: string
@@ -54,7 +86,7 @@ const CORE_PROJECTS: ProjectCredit[] = [
     description: 'Cross-platform C++ audio application framework with support for VST, VST3, AU, AUv3, LV2, and AAX plugins',
     website: 'https://juce.com/',
     color: '#1e40af',
-    icon: <MusicNote size={20} weight="duotone" />,
+    icon: <MapSignalFlowIcon size={20} />,
     role: 'Audio Engine',
     license: 'GPLv3 / Commercial',
   },
@@ -63,7 +95,7 @@ const CORE_PROJECTS: ProjectCredit[] = [
     description: 'Deep learning technology for modeling guitar amplifiers, pedals, and signal chains using WaveNet architecture',
     website: 'https://www.neuralampmodeler.com/',
     color: '#60a5fa',
-    icon: <Lightning size={20} weight="duotone" />,
+    icon: <MapAmplifierIcon size={20} />,
     role: 'AI Amp Modeling',
     license: 'MIT',
   },
@@ -72,7 +104,7 @@ const CORE_PROJECTS: ProjectCredit[] = [
     description: 'Extensible open standard audio plugin format specification for cross-DAW plugin compatibility',
     website: 'https://lv2plug.in/',
     color: '#059669',
-    icon: <Cpu size={20} weight="duotone" />,
+    icon: <Chip size={20} />,
     role: 'Plugin Format',
     license: 'ISC',
   },
@@ -81,7 +113,7 @@ const CORE_PROJECTS: ProjectCredit[] = [
     description: 'Fedora Linux distribution with real-time kernel support for deterministic low-latency performance',
     website: 'https://fedoraproject.org/',
     color: '#0b57a4',
-    icon: <PenNib size={20} weight="duotone" />,
+    icon: <BareMetalServer size={20} />,
     role: 'Real-time OS',
     license: 'Various (GPL)',
   },
@@ -94,7 +126,7 @@ const BACKEND_PROJECTS: ProjectCredit[] = [
     description: 'Modern, high-performance Python web framework for building APIs with automatic OpenAPI documentation',
     website: 'https://fastapi.tiangolo.com/',
     color: '#0ea5e9',
-    icon: <DesktopTower size={20} weight="duotone" />,
+    icon: <Application size={20} />,
     role: 'Backend API',
     license: 'MIT',
   },
@@ -103,7 +135,7 @@ const BACKEND_PROJECTS: ProjectCredit[] = [
     description: 'Lightning-fast ASGI server implementation using uvloop and httptools',
     website: 'https://www.uvicorn.org/',
     color: '#2dd4bf',
-    icon: <Broadcast size={20} weight="duotone" />,
+    icon: <Application size={20} />,
     role: 'ASGI Server',
     license: 'BSD-3-Clause',
   },
@@ -112,7 +144,7 @@ const BACKEND_PROJECTS: ProjectCredit[] = [
     description: 'Python SQL toolkit and Object-Relational Mapping library for database interactions',
     website: 'https://www.sqlalchemy.org/',
     color: '#dc2626',
-    icon: <Database size={20} weight="duotone" />,
+    icon: <DataBase size={20} />,
     role: 'Database ORM',
     license: 'MIT',
   },
@@ -121,7 +153,7 @@ const BACKEND_PROJECTS: ProjectCredit[] = [
     description: 'Data validation and settings management using Python type annotations',
     website: 'https://docs.pydantic.dev/',
     color: '#e91e63',
-    icon: <Shield size={20} weight="duotone" />,
+    icon: <Security size={20} />,
     role: 'Data Validation',
     license: 'MIT',
   },
@@ -134,7 +166,7 @@ const FRONTEND_PROJECTS: ProjectCredit[] = [
     description: 'Open-source JavaScript library for building user interfaces with component-based architecture',
     website: 'https://react.dev/',
     color: '#60a5fa',
-    icon: <Code size={20} weight="duotone" />,
+    icon: <Code size={20} />,
     role: 'UI Framework',
     license: 'MIT',
   },
@@ -143,7 +175,7 @@ const FRONTEND_PROJECTS: ProjectCredit[] = [
     description: 'Next-generation frontend tooling with instant server start and lightning-fast HMR',
     website: 'https://vitejs.dev/',
     color: '#646cff',
-    icon: <Lightning size={20} weight="duotone" />,
+    icon: <Lightning size={20} />,
     role: 'Build Tool',
     license: 'MIT',
   },
@@ -152,7 +184,7 @@ const FRONTEND_PROJECTS: ProjectCredit[] = [
     description: 'Strongly typed programming language that builds on JavaScript with type safety',
     website: 'https://www.typescriptlang.org/',
     color: '#3178c6',
-    icon: <FileCode size={20} weight="duotone" />,
+    icon: <CodeReference size={20} />,
     role: 'Type System',
     license: 'Apache-2.0',
   },
@@ -161,7 +193,7 @@ const FRONTEND_PROJECTS: ProjectCredit[] = [
     description: 'React component library implementing Google\'s Material Design with customizable themes',
     website: 'https://mui.com/',
     color: '#007fff',
-    icon: <Stack size={20} weight="duotone" />,
+    icon: <PaintBrush size={20} />,
     role: 'UI Components',
     license: 'MIT',
   },
@@ -170,7 +202,7 @@ const FRONTEND_PROJECTS: ProjectCredit[] = [
     description: 'Highly customizable library for building node-based editors and interactive diagrams',
     website: 'https://reactflow.dev/',
     color: '#60a5fa',
-    icon: <Globe size={20} weight="duotone" />,
+    icon: <Flow size={20} />,
     role: 'Flow Editor',
     license: 'MIT',
   },
@@ -179,7 +211,7 @@ const FRONTEND_PROJECTS: ProjectCredit[] = [
     description: 'Beautiful & consistent icon toolkit with 1000+ carefully crafted icons',
     website: 'https://lucide.dev/',
     color: '#f56565',
-    icon: <Heart size={20} weight="duotone" />,
+    icon: <FavoriteFilled size={20} />,
     role: 'Icons',
     license: 'ISC',
   },
@@ -192,7 +224,7 @@ const AUDIO_PROJECTS: ProjectCredit[] = [
     description: 'C++ template library for linear algebra: matrices, vectors, numerical solvers',
     website: 'https://eigen.tuxfamily.org/',
     color: '#1f77b4',
-    icon: <Cube size={20} weight="duotone" />,
+    icon: <Cube size={20} />,
     role: 'Linear Algebra',
     license: 'MPL-2.0',
   },
@@ -201,7 +233,7 @@ const AUDIO_PROJECTS: ProjectCredit[] = [
     description: 'C library to discover, load, and run LV2 plugins with RDF-based metadata',
     website: 'https://drobilla.net/software/lilv.html',
     color: '#22c55e',
-    icon: <Package size={20} weight="duotone" />,
+    icon: <Package size={20} />,
     role: 'Plugin Discovery',
     license: 'ISC',
   },
@@ -210,7 +242,7 @@ const AUDIO_PROJECTS: ProjectCredit[] = [
     description: 'Open source machine learning framework for neural network training and inference',
     website: 'https://pytorch.org/',
     color: '#ee4c2c',
-    icon: <Lightning size={20} weight="duotone" />,
+    icon: <Lightning size={20} />,
     role: 'ML Framework',
     license: 'BSD-3-Clause',
   },
@@ -219,7 +251,7 @@ const AUDIO_PROJECTS: ProjectCredit[] = [
     description: 'Fundamental package for scientific computing with Python arrays and matrices',
     website: 'https://numpy.org/',
     color: '#013243',
-    icon: <Terminal size={20} weight="duotone" />,
+    icon: <Terminal size={20} />,
     role: 'Numerical Computing',
     license: 'BSD-3-Clause',
   },
@@ -228,7 +260,7 @@ const AUDIO_PROJECTS: ProjectCredit[] = [
     description: 'Python library for scientific and technical computing with signal processing',
     website: 'https://scipy.org/',
     color: '#8caae6',
-    icon: <Pulse size={20} weight="duotone" />,
+    icon: <ChartLine size={20} />,
     role: 'Signal Processing',
     license: 'BSD-3-Clause',
   },
@@ -237,7 +269,7 @@ const AUDIO_PROJECTS: ProjectCredit[] = [
     description: 'Python bindings for RtMidi providing cross-platform real-time MIDI I/O',
     website: 'https://github.com/SpotlightKid/python-rtmidi',
     color: '#60a5fa',
-    icon: <MusicNote size={20} weight="duotone" />,
+    icon: <Music size={20} />,
     role: 'MIDI Interface',
     license: 'MIT',
   },
@@ -250,7 +282,7 @@ const UTILITY_PROJECTS: ProjectCredit[] = [
     description: 'Modern C++ JSON library with intuitive syntax and excellent performance',
     website: 'https://github.com/nlohmann/json',
     color: '#f5a623',
-    icon: <FileCode size={20} weight="duotone" />,
+    icon: <CodeReference size={20} />,
     role: 'JSON Parser (C++)',
     license: 'MIT',
   },
@@ -259,7 +291,7 @@ const UTILITY_PROJECTS: ProjectCredit[] = [
     description: 'Seamless operability between C++11 and Python for creating bindings',
     website: 'https://pybind11.readthedocs.io/',
     color: '#306998',
-    icon: <Code size={20} weight="duotone" />,
+    icon: <Code size={20} />,
     role: 'Python Bindings',
     license: 'BSD-3-Clause',
   },
@@ -268,7 +300,7 @@ const UTILITY_PROJECTS: ProjectCredit[] = [
     description: 'Powerful asynchronous state management for data fetching and caching',
     website: 'https://tanstack.com/query',
     color: '#60a5fa',
-    icon: <Database size={20} weight="duotone" />,
+    icon: <DataBase size={20} />,
     role: 'Data Fetching',
     license: 'MIT',
   },
@@ -277,7 +309,7 @@ const UTILITY_PROJECTS: ProjectCredit[] = [
     description: 'Declarative routing library for React applications with nested routes',
     website: 'https://reactrouter.com/',
     color: '#ca4245',
-    icon: <Globe size={20} weight="duotone" />,
+    icon: <Globe size={20} />,
     role: 'Routing',
     license: 'MIT',
   },
@@ -286,7 +318,7 @@ const UTILITY_PROJECTS: ProjectCredit[] = [
     description: 'Composable charting library built on React components for data visualization',
     website: 'https://recharts.org/',
     color: '#60a5fa',
-    icon: <Pulse size={20} weight="duotone" />,
+    icon: <ChartLine size={20} />,
     role: 'Charts',
     license: 'MIT',
   },
@@ -295,7 +327,7 @@ const UTILITY_PROJECTS: ProjectCredit[] = [
     description: 'Accessible React component library with unstyled, primitive components',
     website: 'https://ariakit.org/',
     color: '#007acc',
-    icon: <Stack size={20} weight="duotone" />,
+    icon: <Accessibility size={20} />,
     role: 'Accessibility',
     license: 'MIT',
   },
@@ -375,12 +407,12 @@ const LICENSES: LicenseInfo[] = [
 const PROJECTS: ProjectCredit[] = CORE_PROJECTS
 
 const LINKS = [
-  { label: 'GitHub', url: 'https://github.com/matthewmackes/map2-audio', icon: GithubLogo },
-  { label: 'JUCE', url: 'https://juce.com', icon: ArrowSquareOut },
-  { label: 'NAM', url: 'https://www.neuralampmodeler.com', icon: ArrowSquareOut },
-  { label: 'LV2', url: 'https://lv2plug.in', icon: ArrowSquareOut },
-  { label: 'FastAPI', url: 'https://fastapi.tiangolo.com', icon: ArrowSquareOut },
-  { label: 'React', url: 'https://react.dev', icon: ArrowSquareOut },
+  { label: 'GitHub', url: 'https://github.com/matthewmackes/map2-audio', icon: LogoGithub },
+  { label: 'JUCE', url: 'https://juce.com', icon: Launch },
+  { label: 'NAM', url: 'https://www.neuralampmodeler.com', icon: Launch },
+  { label: 'LV2', url: 'https://lv2plug.in', icon: Launch },
+  { label: 'FastAPI', url: 'https://fastapi.tiangolo.com', icon: Launch },
+  { label: 'React', url: 'https://react.dev', icon: Launch },
 ]
 
 // Helper component for rendering project cards
@@ -578,11 +610,8 @@ export function AboutPage() {
   }
 
   return (
-    <div className="about-page" style={{
-      padding: '32px',
-      background: 'linear-gradient(135deg, rgba(10, 15, 25, 0.5) 0%, rgba(20, 25, 40, 0.3) 100%)',
-      minHeight: '100vh'
-    }}>
+    <section className="about-page">
+      <Layer className="about-page__surface">
       {/* Header Section */}
       <header style={{
         marginBottom: 40,
@@ -590,7 +619,7 @@ export function AboutPage() {
         borderBottom: '2px solid rgba(59, 130, 246, 0.2)'
       }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <Info size={36} weight="duotone" style={{ color: '#3b82f6', marginRight: 8, flexShrink: 0 }} />
+          <Information size={36} style={{ color: '#3b82f6', marginRight: 8, flexShrink: 0 }} />
           <h1 style={{
             fontSize: 32,
             fontWeight: 800,
@@ -598,7 +627,7 @@ export function AboutPage() {
             margin: 0,
             letterSpacing: '-0.5px'
           }}>
-            About MAP2
+            MAP2 Platform Guide
           </h1>
         </div>
         <p style={{
@@ -607,9 +636,11 @@ export function AboutPage() {
           margin: '12px 0 0',
           fontWeight: 500
         }}>
-          Version information, credits, and system configuration
+          Orientation, documentation, build identity, and support context in one canonical information surface
         </p>
       </header>
+
+      <PlatformInfoGuideSection />
 
       {/* Main Content Grid */}
       <div className="about-main-grid" style={{
@@ -627,6 +658,9 @@ export function AboutPage() {
           backdropFilter: 'blur(8px)'
         }}>
           <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
             fontSize: 14,
             fontWeight: 700,
             color: '#3b82f6',
@@ -634,7 +668,8 @@ export function AboutPage() {
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
-            ℹ️ Version Information
+            <Information size={16} />
+            Version Information
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
@@ -665,6 +700,9 @@ export function AboutPage() {
           backdropFilter: 'blur(8px)'
         }}>
           <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
             fontSize: 14,
             fontWeight: 700,
             color: '#22c55e',
@@ -672,7 +710,8 @@ export function AboutPage() {
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
-            🔗 Resources & Links
+            <Launch size={16} />
+            Resources & Links
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {LINKS.map(link => (
@@ -721,7 +760,7 @@ export function AboutPage() {
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
-          <SectionHeader title="Core Technologies" icon={<Cpu size={16} weight="duotone" />} color="#f59e0b" />
+          <SectionHeader title="Core Technologies" icon={<Chip size={16} />} color="#f59e0b" />
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
@@ -741,7 +780,7 @@ export function AboutPage() {
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
-          <SectionHeader title="Backend & API" icon={<DesktopTower size={16} weight="duotone" />} color="#0ea5e9" />
+          <SectionHeader title="Backend & API" icon={<Application size={16} />} color="#0ea5e9" />
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -761,7 +800,7 @@ export function AboutPage() {
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
-          <SectionHeader title="Frontend & UI" icon={<Code size={16} weight="duotone" />} color="#60a5fa" />
+          <SectionHeader title="Frontend & UI" icon={<Code size={16} />} color="#60a5fa" />
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -782,7 +821,7 @@ export function AboutPage() {
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
-          <SectionHeader title="Audio & DSP Libraries" icon={<Headphones size={16} weight="duotone" />} color="#60a5fa" />
+          <SectionHeader title="Audio & DSP Libraries" icon={<Headphones size={16} />} color="#60a5fa" />
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
@@ -803,7 +842,7 @@ export function AboutPage() {
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
-          <SectionHeader title="Utilities & Tools" icon={<Package size={16} weight="duotone" />} color="#22c55e" />
+          <SectionHeader title="Utilities & Tools" icon={<Package size={16} />} color="#22c55e" />
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
@@ -831,7 +870,7 @@ export function AboutPage() {
           gap: 10,
           marginBottom: 20
         }}>
-          <Scales size={24} weight="duotone" style={{ color: '#60a5fa' }} />
+          <Scales size={24} style={{ color: '#60a5fa' }} />
           <div>
             <h2 style={{
               fontSize: 18,
@@ -891,7 +930,7 @@ export function AboutPage() {
                   }}
                 >
                   {license.name}
-                  <ArrowSquareOut size={10} weight="duotone" />
+                  <Launch size={10} />
                 </a>
               </div>
               <p style={{
@@ -929,7 +968,7 @@ export function AboutPage() {
           borderRadius: 8
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <BookOpen size={16} style={{ color: '#3b82f6' }} />
+            <Book size={16} style={{ color: '#3b82f6' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6' }}>MAP2 License</span>
           </div>
           <p style={{
@@ -938,10 +977,9 @@ export function AboutPage() {
             lineHeight: '1.6',
             margin: 0
           }}>
-            MAP2 Audio Platform is licensed under the <strong style={{ color: '#22c55e' }}>MIT License</strong>.
-            You are free to use, modify, and distribute this software for personal and commercial purposes.
-            See the LICENSE file in the repository for full terms. Some components (JUCE framework) may require
-            separate licensing for commercial distribution.
+            MAP2-owned code in this repository is licensed under the <strong style={{ color: '#22c55e' }}>GNU Affero
+            General Public License v3.0 only (AGPL-3.0-only)</strong>. Third-party dependencies remain under their
+            original licenses, and commercial distribution may require separate compliance for those components.
           </p>
         </div>
       </div>
@@ -977,7 +1015,7 @@ export function AboutPage() {
             e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.3)'
           }}
         >
-          <Palette size={16} weight="duotone" />
+          <PaintBrush size={16} />
           Themes
         </button>
       </div>
@@ -1015,7 +1053,7 @@ export function AboutPage() {
           gap: 10,
           marginBottom: 16
         }}>
-          <Heart size={24} style={{ color: '#22c55e' }} />
+          <FavoriteFilled size={24} style={{ color: '#22c55e' }} />
           <h2 style={{
             fontSize: 18,
             fontWeight: 700,
@@ -1124,7 +1162,7 @@ export function AboutPage() {
               Version {versionInfo?.version || '3.1.0'} · {versionInfo?.build_date || 'Feb 2025'}
             </div>
             <div style={{ fontSize: 10, color: '#6b7280' }}>
-              Licensed under MIT · Made with ❤️ for musicians
+              AGPLv3 for MAP2-owned code · Built for musicians
             </div>
           </div>
         </div>
@@ -1147,6 +1185,9 @@ export function AboutPage() {
         }}>
           <div>
             <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
               fontSize: 14,
               fontWeight: 700,
               color: '#60a5fa',
@@ -1154,7 +1195,8 @@ export function AboutPage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              ✨ Platform Leadership
+              <UserFavorite size={16} />
+              Platform Leadership
             </div>
             <div style={{ fontSize: 12, color: '#d4d4d8', marginBottom: 4 }}>
               <strong style={{ color: '#f2f6ff' }}>Matthew Mackes</strong> — Vibe Scrum Master & AI Taskmaster
@@ -1178,7 +1220,9 @@ export function AboutPage() {
             border: '1px solid rgba(96, 165, 250, 0.2)',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: 24, marginBottom: 4 }}>🎵</div>
+            <div style={{ marginBottom: 4, display: 'flex', justifyContent: 'center' }}>
+              <MapSignalFlowIcon size={24} style={{ color: '#60a5fa' }} />
+            </div>
             <div style={{ fontSize: 10, color: '#60a5fa', fontWeight: 600 }}>PLATFORM</div>
             <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>v3.1</div>
           </div>
@@ -1209,12 +1253,12 @@ export function AboutPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Scales size={16} weight="duotone" style={{ color: '#a1a1aa' }} />
+            <Scales size={16} style={{ color: '#a1a1aa' }} />
             <span style={{ fontSize: 14, fontWeight: 700, color: '#d4d4d8', letterSpacing: '0.5px' }}>
               LEGAL DISCLAIMER – IMPORTANT NOTICE
             </span>
           </div>
-          <CaretDown weight="bold"
+          <CaretDown
             size={16}
             style={{
               transform: legalOpen ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -1350,7 +1394,7 @@ export function AboutPage() {
               e.currentTarget.style.boxShadow = 'none'
             }}
           >
-            <Cpu size={32} style={{ color: '#3b82f6', marginBottom: 12 }} />
+            <Chip size={32} style={{ color: '#3b82f6', marginBottom: 12 }} />
             <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
               CPU Performance Guide
             </div>
@@ -1383,7 +1427,7 @@ export function AboutPage() {
               e.currentTarget.style.boxShadow = 'none'
             }}
           >
-            <Stack size={32} style={{ color: '#2563eb', marginBottom: 12 }} />
+            <Flow size={32} style={{ color: '#2563eb', marginBottom: 12 }} />
             <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
               Multi Channel ADAT Is Magic
             </div>
@@ -1448,7 +1492,7 @@ export function AboutPage() {
               e.currentTarget.style.boxShadow = 'none'
             }}
           >
-            <TrendUp size={32} weight="duotone" style={{ color: '#60a5fa', marginBottom: 12 }} />
+            <ChartLine size={32} style={{ color: '#60a5fa', marginBottom: 12 }} />
             <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
               Does CPU Matter?
             </div>
@@ -1464,6 +1508,7 @@ export function AboutPage() {
         open={showShoppingDialog}
         onClose={() => setShowShoppingDialog(false)}
       />
-    </div>
+      </Layer>
+    </section>
   )
 }

@@ -3665,6 +3665,7 @@ export const flowSnapshotsApi = {
       tags?: string[];
       display_order?: number;
       is_favorite?: boolean;
+      snapshot_data?: FlowSnapshotData;
     },
     nodeId?: string | null
   ) =>
@@ -3692,6 +3693,18 @@ export const flowSnapshotsApi = {
       name: string;
       snapshot_data: FlowSnapshotData;
     }>(appendNodeQuery(`${API_BASE}/flow-snapshots/${snapshotId}/load`, nodeId), { method: 'POST' }),
+
+  /**
+   * Preview snapshot data without changing the active snapshot record
+   */
+  preview: (request: { snapshot_data: FlowSnapshotData }) =>
+    fetchJson<{
+      status: string;
+      snapshot_data: FlowSnapshotData;
+      chains_created: number;
+      params_applied: number;
+      bypass_applied: number;
+    }>(`${API_BASE}/flow-snapshots/preview`, { method: 'POST', body: JSON.stringify(request) }),
 
   /**
    * Set or clear MIDI program number

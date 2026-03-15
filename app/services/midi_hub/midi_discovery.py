@@ -120,7 +120,7 @@ class MidiDiscoveryService:
     """Broadcast and discover MAP2 MIDI capabilities over mDNS."""
 
     def __init__(self) -> None:
-        self.enabled = bool(config_get("midi.enabled", True)) and bool(config_get("midi.cluster.enabled", True))
+        self.enabled = bool(config_get("midi.enabled", True)) and bool(config_get("midi.cluster.enabled", False))
         self.mdns_discovery: Optional[EnhancedMDNSDiscovery] = None
         self.discovered_midi_nodes: Dict[str, MidiNode] = {}
         self._zeroconf = None

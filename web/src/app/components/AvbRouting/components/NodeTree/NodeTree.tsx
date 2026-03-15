@@ -350,7 +350,7 @@ function NodeTreeItem({
   const listeners = nodeEndpoints.filter((ep) => ep.direction === 'listener');
 
   const deviceIcon = node.type === 'tesira'
-    ? null   // Tesira uses BiampIcon SVG badge below
+    ? null   // Tesira uses a neutral matrix-processor badge below
     : node.type.startsWith('map2') ? '🎛️' : '🔌';
 
   // Biamp brand red — used for Tesira node accent

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AILabel, AILabelContent, Layer } from '@carbon/react'
 import {
   ArrowsClockwise,
   Database,
@@ -200,10 +201,15 @@ export function ApiObservatoryPage() {
 
   return (
     <div className="api-observatory-page">
-      <header className="api-observatory-page__header">
+      <Layer className="api-observatory-page__header">
         <div className="api-observatory-page__heading">
           <span className="api-observatory-page__badge">
             <TerminalWindow size={14} weight="duotone" /> API Observatory
+            <AILabel kind="inline" size="mini" textLabel="AI">
+              <AILabelContent>
+                AI-assisted endpoint summaries and workflow hints are shown where available.
+              </AILabelContent>
+            </AILabel>
           </span>
           <h1>API Observatory</h1>
           <p>
@@ -230,9 +236,9 @@ export function ApiObservatoryPage() {
             <strong>{lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'pending'}</strong>
           </div>
         </div>
-      </header>
+      </Layer>
 
-      <div className="api-observatory-page__toolbar">
+      <Layer className="api-observatory-page__toolbar">
         <nav className="api-observatory-page__tabs" aria-label="API Observatory tabs">
           {OBSERVATORY_TABS.map((tab) => {
             const Icon = tab.icon
@@ -275,7 +281,7 @@ export function ApiObservatoryPage() {
             <Keyboard size={15} /> Shortcuts
           </button>
         </div>
-      </div>
+      </Layer>
 
       <p className="api-observatory-page__tab-description">{currentTab.description}</p>
 

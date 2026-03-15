@@ -73,5 +73,5 @@ Latency budget framing used by the tool:
 
 ## MAP2 Integration Notes
 
-- Canonical AVB task tracking remains in `docs/AVB_MASTER_WORK_PLAN.md`.
+- Canonical task tracking now lives only in `docs/PROJECT_WORKLIST.md`.
 - Tool output is designed to feed qualification work (Q04/Q05/Q06) and deferred hardware tasks (`T007`, `T017`).

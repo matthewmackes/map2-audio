@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQueryClient, useMutation } from '@tanstack/react-query'
+import { Layer } from '@carbon/react'
 import { PageHeader } from '../components/PageHeader'
 import { Package, DownloadSimple, Trash, ArrowsClockwise, CheckCircle, XCircle, SpinnerGap, CaretDown, CaretUp, EyeSlash, Eye, Faders, Lightning, WaveSine, Gauge, Warning, Check, Plug } from '@phosphor-icons/react'
 import { pluginsApi } from '../../map2/api'
@@ -7,6 +8,7 @@ import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/
 import { useCluster } from '../contexts/ClusterContext'
 import { withNodeQuery } from '../utils/clusterTransport'
 import { usePluginBrowser, type PluginInfo } from '../hooks/usePluginBrowser'
+import './LV2PluginsPage.css'
 
 interface PluginPack {
   id: string
@@ -306,6 +308,8 @@ export function LV2PluginsPage() {
   const packCategories = [...new Set(pluginPacks.map(p => p.category))].sort()
 
   return (
+    <section className="lv2-plugins-page">
+      <Layer className="lv2-plugins-page__surface">
     <div className="stack">
       <PageHeader
         title="LV2 Plugin Pack Manager"
@@ -1233,5 +1237,7 @@ export function LV2PluginsPage() {
         </p>
       </div>
     </div>
+      </Layer>
+    </section>
   )
 }

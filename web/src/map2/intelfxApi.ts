@@ -85,6 +85,15 @@ export interface IntelFXState {
   shadow_state_count: number
   pending_realtime_updates: number
   rtmidi_available: boolean
+  active_midi_map_id?: string | null
+  midi_map_count?: number
+  learn_target_param_id?: string | null
+  drift_status?: string
+  verify_pass?: number
+  verify_fail?: number
+  writer_client_id?: string | null
+  pending_readbacks?: number
+  simulator?: boolean
 }
 
 export interface IntelFXProgram {
@@ -139,6 +148,7 @@ export interface IntelFXHealth {
   }>
   packet_error_count?: number
   last_heartbeat?: number
+  simulator?: boolean
 }
 
 export interface IntelFXTrafficEvent {
@@ -209,6 +219,30 @@ export interface IntelFXLibraryTagResponse {
   status: string
   program: number
   tags: string[]
+}
+
+export interface IntelFXLibraryImportSyxResponse {
+  status: string
+  imported?: number
+  skipped_duplicates?: number
+  total_frames?: number
+  [key: string]: unknown
+}
+
+export interface IntelFXLibraryVersion {
+  version: number
+  note?: string
+  created_at?: string
+  source_program?: number
+  [key: string]: unknown
+}
+
+export interface IntelFXLibraryVersionsResponse {
+  status?: string
+  program?: number
+  versions: IntelFXLibraryVersion[]
+  count?: number
+  [key: string]: unknown
 }
 
 export interface IntelFXMidiConnectResponse {
@@ -386,21 +420,33 @@ async function fetchIntelFXJson<T>(path: string, options?: RequestInit, nodeId?:
   })
 
   if (!response.ok) {
-    let body: unknown
-    try {
-      const text = await response.text()
-      try {
-        body = JSON.parse(text)
-      } catch {
-        body = text
-      }
-    } catch {
-      body = response.statusText
-    }
+    const body = await readErrorBody(response)
     throw new IntelFXApiError(response.status, response.statusText, body)
   }
 
   return response.json() as Promise<T>
+}
+
+async function readErrorBody(response: Response): Promise<unknown> {
+  try {
+    const text = await response.text()
+    try {
+      return JSON.parse(text)
+    } catch {
+      return text
+    }
+  } catch {
+    return response.statusText
+  }
+}
+
+async function fetchIntelFXBlob(path: string, options?: RequestInit, nodeId?: string | null): Promise<Blob> {
+  const response = await fetch(appendNodeQuery(`${INTELFX_API_BASE}${path}`, nodeId), options)
+  if (!response.ok) {
+    const body = await readErrorBody(response)
+    throw new IntelFXApiError(response.status, response.statusText, body)
+  }
+  return response.blob()
 }
 
 function buildDefaultShadow(registry: IntelFXRegistry | null): IntelFXShadow {
@@ -467,6 +513,81 @@ export const intelfxApi = {
       method: 'POST',
       body: JSON.stringify({ entries }),
     }, nodeId),
+
+  importSyx: async (file: File, skipDuplicates = true, nodeId?: string | null) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const path = `/library/import-syx?skip_duplicates=${skipDuplicates ? 'true' : 'false'}`
+    const response = await fetch(appendNodeQuery(`${INTELFX_API_BASE}${path}`, nodeId), {
+      method: 'POST',
+      body: formData,
+    })
+    if (!response.ok) {
+      const body = await readErrorBody(response)
+      throw new IntelFXApiError(response.status, response.statusText, body)
+    }
+    return response.json() as Promise<IntelFXLibraryImportSyxResponse>
+  },
+
+  exportBundle: (programs?: number[], nodeId?: string | null) => {
+    const query = Array.isArray(programs) && programs.length > 0
+      ? `?programs=${programs.map((program) => Math.max(0, Math.floor(program))).join(',')}`
+      : ''
+    return fetchIntelFXBlob(`/library/export-bundle${query}`, undefined, nodeId)
+  },
+
+  savePresetVersion: (program: number, note = '', nodeId?: string | null) =>
+    fetchIntelFXJson<{ status?: string; version?: IntelFXLibraryVersion; [key: string]: unknown }>(
+      `/library/${Math.max(0, Math.floor(program))}/version`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ note }),
+      },
+      nodeId
+    ),
+
+  listPresetVersions: (program: number, nodeId?: string | null) =>
+    fetchIntelFXJson<IntelFXLibraryVersionsResponse>(
+      `/library/${Math.max(0, Math.floor(program))}/versions`,
+      undefined,
+      nodeId
+    ),
+
+  revertPresetVersion: (program: number, version: number, nodeId?: string | null) =>
+    fetchIntelFXJson<{ status?: string; [key: string]: unknown }>(
+      `/library/${Math.max(0, Math.floor(program))}/revert/${Math.max(1, Math.floor(version))}`,
+      {
+        method: 'POST',
+      },
+      nodeId
+    ),
+
+  auditionProgram: (program: number, nodeId?: string | null) =>
+    fetchIntelFXJson<{ status?: string; [key: string]: unknown }>(
+      `/library/${Math.max(0, Math.floor(program))}/audition`,
+      {
+        method: 'POST',
+      },
+      nodeId
+    ),
+
+  auditionRevert: (nodeId?: string | null) =>
+    fetchIntelFXJson<{ status?: string; [key: string]: unknown }>(
+      '/library/audition/revert',
+      {
+        method: 'POST',
+      },
+      nodeId
+    ),
+
+  auditionConfirm: (nodeId?: string | null) =>
+    fetchIntelFXJson<{ status?: string; [key: string]: unknown }>(
+      '/library/audition/confirm',
+      {
+        method: 'POST',
+      },
+      nodeId
+    ),
 
   getMidiPorts: (nodeId?: string | null) => fetchIntelFXJson<IntelFXMidiPorts>('/midi/ports', undefined, nodeId),
 

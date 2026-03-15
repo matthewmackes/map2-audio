@@ -1,4 +1,7 @@
 #!/bin/bash
+# Deprecated as a primary user interface.
+# Use the unified Textual Workflow route or `map2 workflow` for guided execution.
+# This script remains as a non-interactive fallback/bootstrap path.
 #
 # MAP2 Audio Platform - AVB/TSN Setup Script
 #

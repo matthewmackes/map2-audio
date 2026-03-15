@@ -1,163 +1,85 @@
-# MAP2 Audio Cluster Management TUI
+# MAP2 Unified Textual Console
 
-A professional Terminal User Interface (TUI) for managing MAP2 Audio clusters with real-time monitoring, flow assignment, failover management, and diagnostics.
+The local MAP2 console now runs through one Textual host app: [tui/app.py](/home/mm/map2-audio/tui/app.py).
 
-## Features
-
-- **Real-time Dashboard** - Node status, metrics, and health monitoring
-- **Flow Assignment Matrix** - Interactive flow-to-node assignment display
-- **Smart Recommendations** - AI-based node recommendations with apply capability
-- **Failover Management** - Manual failover control with history tracking
-- **Cluster Diagnostics** - Health reports, issues, and warnings
-- **Batch Operations** - Multi-flow management
-- **Settings & Configuration** - Customizable cluster URLs and refresh intervals
-- **Help & Documentation** - Built-in shortcuts and information
-
-## Quick Start
+## Start
 
 ```bash
-# Start the cluster management TUI
+python3 -m tui.app
+```
+
+Compatibility entrypoints still resolve into the same host app:
+
+```bash
+python3 -m tui.node_console
 python3 -m tui.apps.cluster_management_app
-
-# With custom API server
-python3 -m tui.apps.cluster_management_app --api-url http://cluster.local:8080
+./map2.sh
+./m2.sh
+./map2-info
 ```
 
-## Keyboard Shortcuts
-
-| Key | Function |
-|-----|----------|
-| **1** | Dashboard |
-| **2** | Flow Assignment Matrix |
-| **3** | Node Recommendations |
-| **4** | Failover Controller |
-| **5** | Cluster Diagnostics |
-| **6** | Batch Operations |
-| **7** | Help & About |
-| **Ctrl+R** | Reconnect to cluster |
-| **Ctrl+Q** | Quit |
-
-## Architecture
-
-### Screens (Phase 2-4)
-- `ClusterNodeDashboard` - Real-time node grid with metrics
-- `FlowAssignmentMatrix` - Interactive assignment display
-- `NodeRecommendationScreen` - Smart assignment suggestions
-- `FailoverControllerScreen` - Failover management & history
-- `ClusterDiagnosticsScreen` - Health monitoring
-- `BatchOperationsScreen` - Multi-flow operations
-- `HelpScreen` - Documentation
-- `SettingsScreen` - Configuration
-
-### API Client (Phase 1.2)
-- `ClusterAPIClient` - Full cluster API integration
-- Async/await throughout
-- WebSocket real-time updates
-- Automatic reconnection
-- Comprehensive error handling
-
-### Widgets (Phase 1.3)
-- `SearchableListWidget` - Filterable list display
-- `DataGridWidget` - Sortable data tables
-- `NotificationWidget` - User notifications
-- `StatusBar` - Real-time status display
-- Additional UI components
-
-### Testing (Phase 1.4)
-- 100+ unit tests
-- Integration tests
-- E2E workflow tests
-- Performance benchmarks
-- CI/CD pipeline ready
-
-## Project Structure
-
-```
-tui/
-├── apps/                      # Main applications
-│   ├── cluster_management_app.py
-│   └── nav_controller.py
-├── screens/                   # All TUI screens
-│   ├── cluster_node_dashboard.py
-│   ├── flow_assignment_matrix.py
-│   ├── node_recommendation_screen.py
-│   ├── failover_controller_screen.py
-│   ├── cluster_diagnostics_screen.py
-│   ├── batch_operations_screen.py
-│   ├── help_screen.py
-│   └── settings_screen.py
-├── widgets/                   # Reusable UI components
-│   ├── searchable_list_widget.py
-│   ├── data_grid_widget.py
-│   ├── notification_widget.py
-│   └── others
-├── cluster_api_client.py      # API client
-├── cluster_types.py           # Type definitions
-├── cluster_websocket.py       # WebSocket manager
-└── tests/                     # Test suite
-    ├── test_cluster_integration.py
-    ├── test_phase3_integration.py
-    ├── test_phase4_integration.py
-    └── more...
-```
-
-## Configuration
-
-Set via Settings screen or environment variables:
+The Quad Cortex touchscreen clone is a separate standalone entrypoint:
 
 ```bash
-export MAP2_API_URL=http://localhost:8080
-export MAP2_WS_URL=ws://localhost:8080
-export MAP2_REFRESH_INTERVAL=5
+python3 -m tui.quad_cortex_touchscreen
+./map2.sh touchscreen
+./map2-touchscreen
 ```
 
-## Performance
+It now runs against real MAP2 backend services rather than sample rig data. Point it at a backend explicitly when needed:
 
-- Handles 100+ nodes
-- 1000+ flows
-- Real-time updates with <100ms latency
-- Efficient WebSocket updates
-- Async operations throughout
-
-## Development
-
-### Running Tests
 ```bash
-pytest tui/tests/ -v
+python3 -m tui.quad_cortex_touchscreen --api-url http://localhost:8080
+MAP2_API_URL=http://localhost:8080 python3 -m tui.quad_cortex_touchscreen
 ```
 
-### Code Coverage
+Scope notes:
+
+- Touchscreen only, no hardware chassis rendering
+- Launches directly into `The Grid`
+- Supports `Chain`, `Stomp`, and `Gig View`
+- Uses live chain, bypass, save, audio, MIDI, and persisted touchscreen stomp-assignment services
+- Carbon-restyled structure, not a faceplate replica
+- Design/behavior spec: [docs/design/QUAD_CORTEX_TOUCHSCREEN_TEXTUAL_SPEC.md](/home/mm/map2-audio/docs/design/QUAD_CORTEX_TOUCHSCREEN_TEXTUAL_SPEC.md)
+
+## Operator Model
+
+- One host shell with grouped navigation: `Dashboard`, `Audio`, `Platform`, `Settings`
+- Carbon-aligned themes: `carbon-dark` and `carbon-light`
+- Built-in command palette via `Ctrl+K`
+- Suspend to shell via `Ctrl+Z`, return with `fg`
+- Undo standardized on `Ctrl+U`
+- First run opens onboarding; returning users land on `Dashboard`
+
+## Structure
+
+- Host app: [tui/app.py](/home/mm/map2-audio/tui/app.py)
+- Unified routes: [tui/screens/unified_console.py](/home/mm/map2-audio/tui/screens/unified_console.py)
+- Shared base screen model: [tui/base_screen.py](/home/mm/map2-audio/tui/base_screen.py)
+- Theme registration: [tui/theme/carbon.py](/home/mm/map2-audio/tui/theme/carbon.py)
+- Shared stylesheet: [tui/styles/carbon.tcss](/home/mm/map2-audio/tui/styles/carbon.tcss)
+- Command providers: [tui/commands/providers.py](/home/mm/map2-audio/tui/commands/providers.py)
+- Poll manager: [tui/poll_manager.py](/home/mm/map2-audio/tui/poll_manager.py)
+- Native workflows: [tui/workflows.py](/home/mm/map2-audio/tui/workflows.py)
+
+## Compatibility Notes
+
+- [tui/node_console/app.py](/home/mm/map2-audio/tui/node_console/app.py) and [tui/apps/cluster_management_app.py](/home/mm/map2-audio/tui/apps/cluster_management_app.py) are wrappers, not standalone product shells.
+- Legacy duplicated screens, widgets, theme engines, and custom command-palette code were removed during `T050`.
+
+## Validation
+
+Run the focused unified-console suite:
+
 ```bash
-pytest tui/tests/ --cov=tui --cov-report=html
+pytest -q \
+  tui/tests/test_unified_console_app.py \
+  tui/tests/test_unified_poll_and_api.py \
+  tui/tests/test_workflows.py \
+  tui/tests/test_widget_export_smoke.py \
+  tests/test_system_node_install_routes.py \
+  tests/test_avb_setup_routes.py \
+  tests/test_branding_shell.py
 ```
 
-### Adding New Screens
-
-1. Create screen in `tui/screens/`
-2. Export in `tui/screens/__init__.py`
-3. Add navigation binding in `tui/apps/cluster_management_app.py`
-4. Add ScreenName enum value
-5. Create action method
-6. Add tests
-
-## Status
-
-**Project Status: 80% Complete (16/20 checkpoints)**
-
-- ✅ Phase 1: Infrastructure (4/4)
-- ✅ Phase 2: Critical Features (4/4)
-- ✅ Phase 3: High-Priority Features (4/4)
-- ✅ Phase 4: Medium-Priority Features (4/4)
-- 🟨 Phase 5: Final Polish & Docs (0/4)
-
-## Deployment
-
-See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for production deployment instructions.
-
-## Support
-
-For issues, questions, or feature requests, see the help screen (Press 7) or consult documentation.
-
----
-
-Built with Textual for Terminal UI | February 2026
+See [DEPLOYMENT_GUIDE.md](/home/mm/map2-audio/tui/DEPLOYMENT_GUIDE.md) for rollout notes and [docs/TUI_UNIFIED_CONSOLE_VALIDATION_REPORT.md](/home/mm/map2-audio/docs/TUI_UNIFIED_CONSOLE_VALIDATION_REPORT.md) for the current architecture and cutover report.

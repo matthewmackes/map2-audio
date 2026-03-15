@@ -15,7 +15,7 @@ import {
 import { useMemo, useState, type CSSProperties } from 'react'
 
 import { ParameterKnob } from '../components/Controls/ParameterKnob'
-import type { MPX1RegistryParam } from '../../map2/mpx1Api'
+import type { IntelFXRegistryParam } from '../../map2/intelfxApi'
 import { useIntelFXPageContext } from './IntelFXPage'
 import './IntelFXEditorView.css'
 
@@ -23,7 +23,7 @@ interface BlockGroup {
   blockId: string
   label: string
   color: string
-  params: MPX1RegistryParam[]
+  params: IntelFXRegistryParam[]
 }
 
 const BLOCK_COLORS: Record<string, string> = {
@@ -44,12 +44,26 @@ const BLOCK_COLORS: Record<string, string> = {
   midi: '#a1a1aa',
 }
 
-function groupParamsByBlock(params: MPX1RegistryParam[] | undefined): BlockGroup[] {
+const BLOCK_ORDER = [
+  'hush',
+  'compressor',
+  'wah',
+  'eq',
+  'pitch',
+  'chorus',
+  'flanger',
+  'phaser',
+  'tremolo',
+  'delay',
+  'reverb',
+] as const
+
+function groupParamsByBlock(params: IntelFXRegistryParam[] | undefined): BlockGroup[] {
   if (!params || params.length === 0) {
     return []
   }
 
-  const groups: Record<string, MPX1RegistryParam[]> = {}
+  const groups: Record<string, IntelFXRegistryParam[]> = {}
   for (const param of params) {
     const block = param.block || 'other'
     if (!groups[block]) {
@@ -58,11 +72,16 @@ function groupParamsByBlock(params: MPX1RegistryParam[] | undefined): BlockGroup
     groups[block].push(param)
   }
 
-  return Object.entries(groups).map(([blockId, blockParams]) => ({
+  const orderedBlockIds = [
+    ...BLOCK_ORDER.filter((blockId) => groups[blockId]),
+    ...Object.keys(groups).filter((blockId) => !BLOCK_ORDER.includes(blockId as typeof BLOCK_ORDER[number])).sort(),
+  ]
+
+  return orderedBlockIds.map((blockId) => ({
     blockId,
     label: blockId.charAt(0).toUpperCase() + blockId.slice(1),
     color: BLOCK_COLORS[blockId] ?? '#64748b',
-    params: blockParams,
+    params: groups[blockId],
   }))
 }
 

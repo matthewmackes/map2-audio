@@ -1,0 +1,36 @@
+{
+  "evaluator_id": "E01",
+  "role": "guitarist",
+  "date": "YYYY-MM-DD",
+  "developer": false,
+  "familiar_with_map2": false,
+  "sets": {
+    "set_1": {
+      "dynamic_feel": 0,
+      "pick_attack_clarity": 0,
+      "compression_sag": 0,
+      "overall_tone": 0,
+      "notes": ""
+    },
+    "set_2": {
+      "dynamic_feel": 0,
+      "pick_attack_clarity": 0,
+      "compression_sag": 0,
+      "overall_tone": 0,
+      "notes": ""
+    },
+    "set_3": {
+      "dynamic_feel": 0,
+      "pick_attack_clarity": 0,
+      "compression_sag": 0,
+      "overall_tone": 0,
+      "notes": ""
+    }
+  },
+  "stage_rank": {
+    "set_1": 0,
+    "set_2": 0,
+    "set_3": 0
+  },
+  "overall_notes": ""
+}

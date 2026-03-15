@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  AILabel,
+  AILabelContent,
   Button,
   Checkbox,
   InlineNotification,
@@ -269,6 +271,13 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
             title="AI-generated recommendations are not verified"
             subtitle="Compatibility, latency, and driver behavior may vary. Verify all specs independently before purchase."
           />
+          <div className="shopping-search-dialog__ai-label-row">
+            <AILabel kind="inline" size="mini" textLabel="AI">
+              <AILabelContent>
+                Recommendations are inferred from marketplace listings and historical metadata.
+              </AILabelContent>
+            </AILabel>
+          </div>
 
           <button
             type="button"

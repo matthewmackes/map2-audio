@@ -400,6 +400,34 @@ def test_trigger_auto_connect_reports_summary(monkeypatch):
     assert summary["created_connections"] == ["node-a:Keys Out→node-b:Remote Rack In"]
 
 
+def test_start_ignores_auto_connect_discovery_errors(monkeypatch):
+    values = _config_values(**{"midi.cluster.auto_connect": True})
+    monkeypatch.setattr(cluster_router_module, "config_get", lambda key, default=None: values.get(key, default))
+
+    router = MidiClusterRouter(
+        discovery=_FakeDiscoveryService([_FakeDiscoveryNode("node-b", "10.0.0.2", ["Remote Rack In"], ["Remote Keys Out"])]),
+        transport=_FakeTransport(),
+        hub=_make_hub(),
+        event_bus=_FakeEventBus(),
+        network_bridge=_FakeNetworkBridge(),
+        device_registry=_FakeRegistry(),
+        local_node_id="node-a",
+    )
+    monkeypatch.setattr(router, "_build_auto_connect_pairs", lambda: (_ for _ in ()).throw(RuntimeError("invalid endpoint cache")))
+
+    async def _run():
+        await router.start()
+        summary = router.get_auto_connect_status()
+        await router.stop()
+        return summary
+
+    summary = asyncio.run(_run())
+
+    assert summary["reason"] == "node_discovered"
+    assert summary["failed_count"] == 1
+    assert summary["failed_connections"][0]["error"] == "invalid endpoint cache"
+
+
 def test_failover_port_switches_to_equivalent_input(monkeypatch):
     values = _config_values()
     monkeypatch.setattr(cluster_router_module, "config_get", lambda key, default=None: values.get(key, default))

@@ -42,6 +42,8 @@ Source standard: `docs/design/CARBON_CONFORMANCE_STANDARD.md`
 ## 7. AI and Branding
 
 - [ ] AI features use Carbon for AI conventions and AI labeling where applicable.
+- [ ] AI surfaces include a visible `AILabel` with short disclosure content (what is AI-assisted and what is not guaranteed).
+- [ ] AI affordance naming is test-covered for touched surfaces (query by label text or `.cds--ai-label` presence in focused tests).
 - [ ] No restricted IBM logos/app marks were added or modified.
 
 ## 8. Validation Evidence

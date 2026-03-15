@@ -17,6 +17,7 @@ Notes:
 
 - The nested build-tree count overlaps the plugin-directory counts; do not sum these rows naively.
 - This host does not currently have `git-filter-repo` installed, so the destructive rewrite step remains blocked here until the tool is installed or the rewrite is run from a prepared mirror clone.
+- `scripts/prepare_repo_bloat_rewrite_window.py` can now generate a rewrite-window bundle containing a guarded helper shell script, collaborator notice, and readiness summary.
 
 ## Guardrails added now
 
@@ -42,6 +43,20 @@ Run the destructive rewrite from a fresh mirror clone, not from a day-to-day wor
 - Ensure `MAP2-RELEASES` nightly flow is already functional before rewriting source history
 - Install `git-filter-repo`
 
+Optional prep bundle from any repo checkout:
+
+```bash
+python3 scripts/prepare_repo_bloat_rewrite_window.py \
+  --output-dir docs/fit-for-purpose-evidence/<YYYYMMDD>/t082-rewrite-window
+```
+
+This writes:
+
+- `run_repo_bloat_rewrite_window.sh`
+- `T082_REPO_REWRITE_COLLABORATOR_NOTICE.md`
+- `t082-rewrite-window-plan.json`
+- `T082_REPO_BLOAT_REWRITE_WINDOW_PLAN.md`
+
 Example install options:
 
 ```bash
@@ -55,6 +70,13 @@ python3 -m pip install --user git-filter-repo
 ```bash
 git clone --mirror git@github.com:matthewmackes/map2-audio.git map2-audio-cleanup.git
 cd map2-audio-cleanup.git
+```
+
+If you prepared a bundle earlier, copy or regenerate it against the mirror clone and run the generated helper from there:
+
+```bash
+MAP2_REWRITE_CONFIRM=YES MAP2_REWRITE_PUSH=1 \
+  ./run_repo_bloat_rewrite_window.sh "$(pwd)"
 ```
 
 ### Rewrite command
