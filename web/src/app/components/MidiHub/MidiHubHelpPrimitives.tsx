@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { Button, Chip, Drawer } from '@mui/material'
-import { Question } from '@phosphor-icons/react'
+import { Information } from '@carbon/icons-react'
+import { Button, Layer, Modal, Tag } from '@carbon/react'
 import {
   MIDI_HUB_FAMILY_LABELS,
   MIDI_HUB_PANEL_GUIDANCE,
@@ -18,47 +18,36 @@ export function MidiHubPanelShell({ panelId, children, onOpenHelp, hideHints = f
   const guidance = MIDI_HUB_PANEL_GUIDANCE[panelId]
 
   return (
-    <article className="card midi-hub-panel-shell" id={`midi-hub-panel-${panelId}`}>
+    <Layer className="midi-hub-panel-shell" id={`midi-hub-panel-${panelId}`}>
       <header className="midi-hub-panel-shell__header">
-        <div className="stack" style={{ gap: 6 }}>
+        <div className="midi-hub-panel-shell__copy">
           <div className="midi-hub-panel-shell__meta-row">
-            <Chip
-              size="small"
-              label={MIDI_HUB_FAMILY_LABELS[guidance.family]}
-              className="midi-hub-family-chip"
-            />
-            {guidance.advanced ? (
-              <Chip
-                size="small"
-                color="warning"
-                variant="outlined"
-                label="Advanced"
-              />
-            ) : null}
+            <Tag type="cool-gray">{MIDI_HUB_FAMILY_LABELS[guidance.family]}</Tag>
+            {guidance.advanced ? <Tag type="warm-gray">Advanced</Tag> : null}
           </div>
-          <h3 style={{ marginTop: 0 }}>{guidance.title}</h3>
-          <p className="subtitle" style={{ marginTop: 0 }}>{guidance.summary}</p>
+          <h3>{guidance.title}</h3>
+          <p className="midi-hub-panel-shell__summary">{guidance.summary}</p>
           {!hideHints ? (
-            <div className="midi-hub-inline-hints">
+            <ul className="midi-hub-inline-hints">
               {guidance.inlineHints.map((hint) => (
-                <p key={hint}>{hint}</p>
+                <li key={hint}>{hint}</li>
               ))}
-            </div>
+            </ul>
           ) : null}
         </div>
 
         <Button
-          size="small"
-          variant="outlined"
-          startIcon={<Question size={16} weight="duotone" />}
+          kind="ghost"
+          size="sm"
+          renderIcon={Information}
           onClick={() => onOpenHelp(panelId)}
         >
-          Deep Help
+          Deep help
         </Button>
       </header>
 
       <div className="midi-hub-panel-shell__content">{children}</div>
-    </article>
+    </Layer>
   )
 }
 
@@ -72,64 +61,50 @@ export function MidiHubHelpDrawer({ panelId, open, onClose }: MidiHubHelpDrawerP
   const guidance = panelId ? MIDI_HUB_PANEL_GUIDANCE[panelId] : null
 
   return (
-    <Drawer
-      anchor="right"
+    <Modal
       open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: {
-          width: { xs: '100%', sm: 420 },
-          background: 'var(--surface-2)',
-          color: 'var(--text-primary)',
-          borderLeft: '1px solid var(--border)',
-          padding: 2,
-        },
-      }}
+      passiveModal
+      size="lg"
+      modalLabel={guidance ? MIDI_HUB_FAMILY_LABELS[guidance.family] : 'MIDI Hub'}
+      modalHeading={guidance?.title ?? 'MIDI Hub help'}
+      onRequestClose={onClose}
     >
       {guidance ? (
-        <div className="stack" style={{ gap: 14 }}>
-          <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ marginTop: 0 }}>{guidance.title}</h3>
-            <Button size="small" variant="outlined" onClick={onClose}>
-              Close
-            </Button>
+        <div className="midi-hub-help-modal">
+          <div className="midi-hub-help-modal__row">
+            <Tag type="cool-gray">{MIDI_HUB_FAMILY_LABELS[guidance.family]}</Tag>
+            {guidance.advanced ? <Tag type="warm-gray">Advanced surface</Tag> : null}
           </div>
 
-          <Chip
-            size="small"
-            label={MIDI_HUB_FAMILY_LABELS[guidance.family]}
-            className="midi-hub-family-chip"
-          />
+          <section className="midi-hub-help-modal__section">
+            <h4>Why this surface matters</h4>
+            <p>{guidance.whyItMatters}</p>
+          </section>
 
-          <div className="stack" style={{ gap: 6 }}>
-            <h4 style={{ marginTop: 0 }}>Why It Matters</h4>
-            <p className="subtitle" style={{ marginTop: 0 }}>{guidance.whyItMatters}</p>
-          </div>
-
-          <div className="stack" style={{ gap: 6 }}>
-            <h4 style={{ marginTop: 0 }}>Prerequisites</h4>
+          <section className="midi-hub-help-modal__section">
+            <h4>Prerequisites</h4>
             <ul className="midi-hub-help-list">
               {guidance.prerequisites.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
-          </div>
+          </section>
 
-          <div className="stack" style={{ gap: 6 }}>
-            <h4 style={{ marginTop: 0 }}>Worked Example</h4>
-            <p className="subtitle" style={{ marginTop: 0 }}>{guidance.example}</p>
-          </div>
+          <section className="midi-hub-help-modal__section">
+            <h4>Worked example</h4>
+            <p>{guidance.example}</p>
+          </section>
 
-          <div className="stack" style={{ gap: 6 }}>
-            <h4 style={{ marginTop: 0 }}>Recovery Guidance</h4>
+          <section className="midi-hub-help-modal__section">
+            <h4>Recovery guidance</h4>
             <ul className="midi-hub-help-list">
               {guidance.recovery.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
-          </div>
+          </section>
         </div>
       ) : null}
-    </Drawer>
+    </Modal>
   )
 }

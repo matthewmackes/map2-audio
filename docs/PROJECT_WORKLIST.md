@@ -8548,6 +8548,79 @@ Last updated: 2026-03-14 20:16 - Codex
   - What was done: Moved `New chain` from the chain-card header into the `Chain operations` action row, promoted the live-path summary into a shared `JUCE-GRID` surface across desktop and compact layouts, and relocated `Add flow` plus `Clear flows` into that live audio path card header with Carbon-aligned action grouping and destructive-button semantics for the clear action.
   - Key findings: The previous toolbar/header placement split chain and flow management away from the surfaces they affect; a shared live-path summary card gives both breakpoints the same control location and keeps the top toolbar focused on page-level actions only.
   - Files/links produced: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridChainManagementCard.tsx`, `web/src/app/pages/JuceGridPage.test.tsx`, `web/src/app/pages/JuceGridChainManagementCard.test.tsx`, `docs/PROJECT_WORKLIST.md`.
-  - Validation: `npm --prefix web run test -- src/app/pages/JuceGridPage.test.tsx src/app/pages/JuceGridChainManagementCard.test.tsx --runInBand` -> PASS (`6 passed`), `npm --prefix web run typecheck` -> PASS, `npm --prefix web run build` -> PASS.
-  - Validation: Build still reports the pre-existing dynamic/static import warning around `web/src/map2/api.ts`; no new warning class was introduced by this layout change.
-  - Compliance: Touched files are MAP2-owned `JUCE-GRID` page/card/style/test/worklist artifacts under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional remediation task was required.
+- Validation: `npm --prefix web run test -- src/app/pages/JuceGridPage.test.tsx src/app/pages/JuceGridChainManagementCard.test.tsx --runInBand` -> PASS (`6 passed`), `npm --prefix web run typecheck` -> PASS, `npm --prefix web run build` -> PASS.
+- Validation: Build still reports the pre-existing dynamic/static import warning around `web/src/map2/api.ts`; no new warning class was introduced by this layout change.
+- Compliance: Touched files are MAP2-owned `JUCE-GRID` page/card/style/test/worklist artifacts under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional remediation task was required.
+
+ID: T140
+Status: [✓] Done
+Title: Unify `midi-hub` into a Carbon-standard MIDI services wizard and retire `midi-hub-2`
+Description:
+- Goal / acceptance criteria: Refactor `/midi-hub` into a single Carbon-aligned operator page with a substantially improved setup wizard, stronger explanatory content, and integrated capabilities from `/midi-hub-2`; remove the duplicate `/midi-hub-2` route/menu exposure once all relevant capabilities are ingested. Acceptance requires a unified information architecture, Carbon-consistent wizard/progress/action behavior, coverage for the required MIDI transport/routing/clocking/automation feature set in the page content and controls, and successful frontend validation.
+- Why it matters: The current split between `midi-hub` and `midi-hub-2` fragments operator workflows, weakens guidance quality, and drifts from the IBM Carbon interaction and motion standards the product is now targeting.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: Updated MIDI Hub page/component/style code, merged workflow/content model, removed duplicate route/navigation entry for `midi-hub-2`, validation evidence, and updated worklist/compliance notes.
+Subtasks:
+ID: T140-subA
+Status: [✓] Done
+Title: Define unified MIDI Hub information architecture and wizard flow model
+Description:
+- Goal / acceptance criteria: Replace the split page concept with one canonical IA for setup, routing, transformation, sync, discovery, diagnostics, and automation, with wizard steps and helper copy grounded in supported MAP2 capabilities and current MIDI deployment practices.
+- Why it matters: A coherent IA is required before moving controls or rewriting wizard content, otherwise the merge will remain inconsistent and hard to operate.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated page structure, scenario taxonomy, and wizard step/content model in the touched frontend files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-14 21:18 - Codex
+ID: T140-subB
+Status: [✓] Done
+Title: Implement Carbon-aligned wizard surfaces and ingest `midi-hub-2` capabilities into `/midi-hub`
+Description:
+- Goal / acceptance criteria: Rebuild the page UI using Carbon-consistent shells, states, spacing, and action grouping while preserving or folding in the useful controls from `midi-hub-2` for presets, filtering, mapping, routing, device support, and settings.
+- Why it matters: The user explicitly wants one strict Carbon page rather than two overlapping experiences with mixed component systems.
+- Dependencies: T140-subA
+- Estimated effort: High
+- Required outputs: Refactored `MidiHubPage` and related component/style updates with `midi-hub-2` functionality merged.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-14 21:18 - Codex
+ID: T140-subC
+Status: [✓] Done
+Title: Remove duplicate `midi-hub-2` routing/navigation exposure after feature merge
+Description:
+- Goal / acceptance criteria: Delete or retire the standalone `midi-hub-2` page entry points after its capabilities are represented on `/midi-hub`, including route registration, navigation metadata, and tests that assume the duplicate page remains visible.
+- Why it matters: Keeping both pages after the merge would reintroduce operator confusion and duplicate maintenance burden.
+- Dependencies: T140-subB
+- Estimated effort: Medium
+- Required outputs: Route/menu cleanup and any required test or manifest updates.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-14 21:18 - Codex
+ID: T140-subD
+Status: [✓] Done
+Title: Validate unified MIDI Hub frontend behavior and record compliance notes
+Description:
+- Goal / acceptance criteria: Run targeted frontend tests plus `typecheck` and `build`, confirm no new license/compliance gaps were introduced in the touched MIDI Hub surfaces, and record the results in the canonical worklist.
+- Why it matters: This page is a large operator-facing route and the merge touches shared navigation plus multiple UI surfaces, so validation and compliance tracking cannot be implicit.
+- Dependencies: T140-subB, T140-subC
+- Estimated effort: Medium
+- Required outputs: Command results, worklist completion notes, and any follow-up gaps/tasks if validation fails.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-14 21:18 - Codex
+Assigned to: Codex
+Last updated: 2026-03-14 21:18 - Codex
+- Progress notes:
+  - 2026-03-14: User requested a full review/refactor of `/midi-hub`, modernized wizard content, IBM Carbon alignment including animation guidance, incorporation of modern MIDI setup recommendations from web research, ingestion of all useful `midi-hub-2` ideas/capabilities, and retirement of the duplicate page after merge.
+  - 2026-03-14 20:56: Began execution pass for the final non-blocked global work item by collapsing page-shell audit, official MIDI/IBM guidance review, and `midi-hub-2` feature ingestion planning into the unified `/midi-hub` redesign.
+- Completion notes:
+  - What was done: Rebuilt `web/src/app/pages/MidiHubPage.tsx` into one Carbon-guided operator route with a persistent setup wizard (`ProgressIndicator`), scenario-based guided flows, transport/capability explainer cards, and a tabbed workbench that absorbs the useful `midi-hub-2` ideas via new helper cards for quick routing, filter planning, mapper planning, and operator-profile/device-intake workflows. Replaced the old MUI help shell with Carbon modal/tag patterns in `web/src/app/components/MidiHub/MidiHubHelpPrimitives.tsx`, expanded the shared content model in `web/src/app/components/MidiHub/midiHubGuidance.ts`, added `web/src/app/components/MidiHub/MidiHubWorkbenchCards.tsx`, retired the standalone `MidiHub2Page` files, removed the extra advanced-menu/poster exposure, and turned `/midi-hub-2` into a compatibility redirect in `web/src/app/App.tsx`.
+  - Key findings: The live MIDI Hub backend already had enough runtime capability (`routes`, `presets`, `clock`, `network`, `traffic`, `midi2`, `macros`, `scheduler`, `scripts`) to support a much stronger canonical page without inventing a second route. The genuinely useful `midi-hub-2` ideas were the fast router toggles, filter/mapper planning surfaces, and operator-profile/support utilities; these now fit better as guided adjuncts inside `/midi-hub` than as a separate product-like page.
+  - Web research used: IBM Design Language animation overview (`https://www.ibm.com/design/language/animation/overview/`), W3C Web MIDI draft (`https://www.w3.org/TR/webmidi/`), Apple Audio MIDI Setup guides for Bluetooth MIDI and network MIDI (`https://support.apple.com/guide/audio-midi-setup/set-up-bluetooth-midi-devices-ams1012/mac`, `https://support.apple.com/guide/audio-midi-setup/set-up-a-midi-network-configuration-ams1013/mac`), and MIDI Association MIDI 2.0 overview/material (`https://midi.org/why-midi-2-0-midi-ci-profiles-and-property-exchange`, `https://midi.org/midi-2-0-details`). These were used to ground transport recommendations, permission cautions, and the MIDI 1.0 ↔ MIDI 2.0 migration posture.
+  - Files/links produced: `web/src/app/pages/MidiHubPage.tsx`, `web/src/app/pages/MidiHubPage.css`, `web/src/app/pages/MidiHubPage.test.tsx`, `web/src/app/components/MidiHub/midiHubGuidance.ts`, `web/src/app/components/MidiHub/MidiHubHelpPrimitives.tsx`, `web/src/app/components/MidiHub/MidiHubWorkbenchCards.tsx`, `web/src/app/App.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/advancedMenuItems.test.ts`, `web/src/app/pages/posterManifest.ts`, `docs/design/CARBON_CONFORMANCE_REPORT.md`, `docs/design/CARBON_ROUTE_PATTERN_MAPPING.md`, `docs/design/CARBON_ROUTE_COMPONENT_INVENTORY.md`, `docs/design/CARBON_CONFORMANCE_MATRIX.md`, `docs/PROJECT_WORKLIST.md`.
+  - Validation: `npm --prefix web run test -- src/app/pages/MidiHubPage.test.tsx src/app/data/advancedMenuItems.test.ts --runInBand` -> PASS (`13 passed`), `npm --prefix web run typecheck` -> PASS, `npm --prefix web run build` -> PASS.
+  - Validation: Build still reports the pre-existing dynamic/static import warning around `web/src/map2/api.ts` and the existing large bundle/chunk warnings; no new warning class was introduced by `T140`.
+  - Compliance: Touched frontend/docs/test/worklist artifacts are MAP2-owned and remain under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional licensing remediation task was required.
+  - Suggested next tasks: No remaining non-blocked tasks in `docs/PROJECT_WORKLIST.md`; only previously blocked work such as `T004` remains open.

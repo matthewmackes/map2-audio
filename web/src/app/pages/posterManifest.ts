@@ -17,7 +17,6 @@ export const POSTER_MANIFEST: PosterManifestEntry[] = [
   { route: '/plugins', label: 'LV2 Plugins', slug: 'lv2-plugins', temperature: 'cool' },
   { route: '/midi', label: 'MIDI', slug: 'midi', temperature: 'cool' },
   { route: '/midi-hub', label: 'MIDI Hub', slug: 'midi-hub', temperature: 'cool' },
-  { route: '/midi-hub-2', label: 'MIDI Hub-2', slug: 'midi-hub-2', temperature: 'cool' },
   { route: '/mpx1', label: 'MPX1 Rack', slug: 'mpx1-rack', temperature: 'cool' },
   { route: '/tesira', label: 'Tesira AVB', slug: 'tesira-avb', temperature: 'neutral' },
   { route: '/cluster-dashboard', label: 'Cluster Dashboard', slug: 'cluster-dashboard', temperature: 'cool' },

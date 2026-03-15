@@ -29,7 +29,6 @@ const LV2PluginsPage        = lazy(() => import('./pages/LV2PluginsPage').then(m
 const LibraryPage           = lazy(() => import('./pages/LibraryPage').then(m => ({ default: m.LibraryPage })))
 const MIDIPage              = lazy(() => import('./pages/MIDIPage').then(m => ({ default: m.MIDIPage })))
 const MidiHubPage           = lazy(() => import('./pages/MidiHubPage').then(m => ({ default: m.MidiHubPage })))
-const MidiHub2Page          = lazy(() => import('./pages/MidiHub2Page').then(m => ({ default: m.MidiHub2Page })))
 const JuceGridPage          = lazy(() => import('./pages/JuceGridPage').then(m => ({ default: m.JuceGridPage })))
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
@@ -176,7 +175,7 @@ export function App() {
                             <Route path="/library" element={<LibraryPage />} />
                             <Route path="/midi" element={<MIDIPage />} />
                             <Route path="/midi-hub" element={<MidiHubPage />} />
-                            <Route path="/midi-hub-2" element={<MidiHub2Page />} />
+                            <Route path="/midi-hub-2" element={<Navigate to="/midi-hub" replace />} />
                             <Route path="/grid" element={<Navigate to="/juce-grid" replace />} />
                             <Route path="/juce-grid" element={<JuceGridPage />} />
                             <Route path="/grid-3d" element={<Navigate to="/juce-grid" replace />} />

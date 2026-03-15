@@ -110,7 +110,7 @@ Route migration waves:
 - `web/src/app/pages/ChainsPage.tsx`
 - `web/src/app/pages/OverviewPage.tsx`
 - `web/src/app/pages/PipeWirePage.tsx`
-- `web/src/app/pages/MidiHub2Page.tsx`
+- `web/src/app/pages/MidiHubPage.tsx` (absorbed the former `/midi-hub-2` route)
 - `web/src/app/pages/IntelFXPage.tsx`
 - `web/src/app/pages/IntelFXPerformView.tsx`
 - `web/src/app/pages/IntelFXMonitorView.tsx`

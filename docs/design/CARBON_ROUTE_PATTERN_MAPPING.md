@@ -26,7 +26,7 @@ Scope: Map each active app route to a nearest Carbon pattern/template and concre
 | `/library` | `web/src/app/pages/LibraryPage.tsx` | Library + filtering + import/export | `Tabs`, `DataTable`, `ComboBox`, `FileUploader`, `Tag`, `Pagination` |
 | `/midi` | `web/src/app/pages/MIDIPage.tsx` | Control panel with forms and diagnostics | `Tabs`, `FormGroup`, `TextInput`, `NumberInput`, `Toggle`, `DataTable` |
 | `/midi-hub` | `web/src/app/pages/MidiHubPage.tsx` | Complex tool workspace (tabbed) | `Tabs`, `DataTable`, `Modal`, `InlineLoading`, `InlineNotification` |
-| `/midi-hub-2` | `web/src/app/pages/MidiHub2Page.tsx` | Console-style workflow panels | `Tabs`, `Tile`, `DataTable`, `ButtonSet`, `Tag` |
+| `/midi-hub-2` | `web/src/app/App.tsx` | Compatibility redirect to the canonical MIDI Hub route | `Navigate` |
 | `/juce-grid` | `web/src/app/pages/JuceGridPage.tsx` | Signal-flow editor workspace | `Grid`, `Accordion`, `Toolbar pattern`, `Popover`, `Modal` |
 | `/grid` | `web/src/app/App.tsx` | Legacy redirect alias to the supported editor | `Navigate` |
 | `/grid-3d` | `web/src/app/App.tsx` | Legacy redirect alias to the supported editor | `Navigate` |

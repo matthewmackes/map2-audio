@@ -123,7 +123,6 @@ describe('navigation catalog', () => {
       '/midi-cluster',
       '/api-observatory',
       '/midi-hub',
-      '/midi-hub-2',
       '/mpx1',
       '/intelfx',
       '/cluster-dashboard',
