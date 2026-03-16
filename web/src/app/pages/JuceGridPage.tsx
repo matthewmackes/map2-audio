@@ -318,6 +318,14 @@ const SLOT_COLORS = [
   { label: 'F', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.15)' },
 ]
 
+const FLOW_CARD_ROUTING_MODE_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus['routingMode']>, string> = {
+  parallel_blend: 'MIX',
+  ab_switch: 'A/B',
+  series: 'SER',
+  parameter_morph: 'MOR',
+  sidechain: 'S/C',
+}
+
 const MIN_FLOWS = 2
 const MAX_FLOWS = 6
 const DEFAULT_FLOW_COUNT = 3
@@ -1321,6 +1329,40 @@ export function JuceGridPage() {
     avbReadinessState,
     meterLevels: [audioLevels?.output_left || 0, audioLevels?.output_right || 0],
   }), [audioLevels, audioStatus, avbReadinessState, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
+
+  const flowCardRoutingSummary = useMemo(() => {
+    const inputCount = audioInterfaceStatus.channels || 0
+    const outputCount = audioOutputStatus.channels || 0
+    const sampleRate = Math.round((audioInterfaceStatus.sampleRate || audioOutputStatus.sampleRate || 48000) / 1000)
+    const bufferSize = audioInterfaceStatus.bufferSize || audioOutputStatus.bufferSize || 256
+    const routingMode = audioInterfaceStatus.routingMode
+      ? FLOW_CARD_ROUTING_MODE_LABELS[audioInterfaceStatus.routingMode]
+      : 'n/a'
+    const allBindings = [...(audioInterfaceStatus.bindings || []), ...(audioOutputStatus.bindings || [])]
+    const hasAvbRoutes = allBindings.some((binding) => binding.selection_type === 'avb_endpoint')
+    const hasAvbWarning = allBindings.some(
+      (binding) => binding.selection_type === 'avb_endpoint' && (binding.missing || !binding.available),
+    ) || (hasAvbRoutes && !['operational', 'ready', 'locked'].includes(avbReadinessState.toLowerCase()))
+    const statusLabel = audioInterfaceStatus.isRunning && audioOutputStatus.isRunning ? 'Run' : 'Stop'
+    const avbLabel = hasAvbRoutes ? (hasAvbWarning ? 'AVB warning' : 'AVB routed') : 'Local only'
+
+    return {
+      statusLabel,
+      ioLabel: `${inputCount} in / ${outputCount} out`,
+      clockLabel: `${sampleRate}K / ${bufferSize}`,
+      routingMode,
+      avbLabel,
+      title: [
+        `Input: ${audioInterfaceStatus.deviceName || 'Audio interface'}`,
+        `Output: ${audioOutputStatus.deviceName || 'Audio interface'}`,
+        `State: ${statusLabel}`,
+        `Channels: ${inputCount} in / ${outputCount} out`,
+        `Clock: ${audioInterfaceStatus.sampleRate || audioOutputStatus.sampleRate || 48000}Hz / ${bufferSize} smp`,
+        `Routing: ${routingMode}`,
+        `Transport: ${avbLabel}`,
+      ].join('\n'),
+    }
+  }, [audioInterfaceStatus, audioOutputStatus, avbReadinessState])
 
   const compactRoutingInspectorItems = useMemo(
     () => getJuceGridRoutingInspectorItems(routing.mode, true),
@@ -3206,6 +3248,24 @@ export function JuceGridPage() {
               </div>
 
               <div className="juce-grid-page__flow-card-actions">
+                <button
+                  type="button"
+                  className="juce-grid-page__flow-card-routing-summary"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    selectFlowIndex(index)
+                    setPortSelectorFlowIndex(index)
+                  }}
+                  title={flowCardRoutingSummary.title}
+                >
+                  <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
+                  <span>{flowCardRoutingSummary.statusLabel}</span>
+                  <span>{flowCardRoutingSummary.ioLabel}</span>
+                  <span>{flowCardRoutingSummary.clockLabel}</span>
+                  <span>{flowCardRoutingSummary.routingMode}</span>
+                  <span>{flowCardRoutingSummary.avbLabel}</span>
+                </button>
+
                 <div className="juce-grid-page__flow-card-input" onClick={(event) => event.stopPropagation()} title={`Dry/Wet: ${flow.dryWetMix}%`}>
                   <NumberInput
                     value={flow.dryWetMix}
@@ -3310,9 +3370,6 @@ export function JuceGridPage() {
                 audioStatus={audioInterfaceStatus}
                 audioOutputStatus={audioOutputStatus}
                 pluginLevels={pluginLevels}
-                showEndpoints={true}
-                onInputPortSelectClick={() => setPortSelectorFlowIndex(index)}
-                onOutputPortSelectClick={() => setPortSelectorFlowIndex(index)}
               />
             </div>
           </div>

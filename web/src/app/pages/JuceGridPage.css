@@ -1237,6 +1237,30 @@
   margin-left: auto;
 }
 
+.juce-grid-page__flow-card-routing-summary {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font: inherit;
+  cursor: pointer;
+}
+
+.juce-grid-page__flow-card-routing-summary:hover,
+.juce-grid-page__flow-card-routing-summary:focus-visible {
+  color: var(--cds-text-primary, var(--text));
+  outline: none;
+}
+
+.juce-grid-page__flow-card-routing-label {
+  color: var(--cds-text-primary, var(--text));
+  font-weight: 600;
+}
+
 .juce-grid-page__flow-card-input {
   max-width: 5rem;
 }
