@@ -4,6 +4,7 @@ import { Button, TextField } from '@mui/material'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { NumberInput } from '../Controls/NumberInput'
 
 function parseMessage(value: string): number[] {
   return value
@@ -80,12 +81,15 @@ export function MidiSchedulerPanel() {
         />
         <TextField label="Message Bytes" size="small" value={messageText} onChange={(event) => setMessageText(event.target.value)} />
         <div className="flex" style={{ alignItems: 'center', gap: 8 }}>
-          <TextField
+          <NumberInput
             label="Delay ms"
-            size="small"
-            type="number"
             value={delayMs}
-            onChange={(event) => setDelayMs(Math.max(0, Number(event.target.value) || 0))}
+            min={0}
+            max={86400000}
+            step={1}
+            profile="integer"
+            onChange={(value) => setDelayMs(Math.max(0, value))}
+            size="small"
             style={{ width: 120 }}
           />
           <Button size="small" variant="contained" onClick={() => scheduleMutation.mutate()} disabled={!scheduleId.trim()}>

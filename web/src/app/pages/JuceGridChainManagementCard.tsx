@@ -136,7 +136,7 @@ export function JuceGridChainManagementCard({
               <Branch size={18} />
               <strong>Chains</strong>
             </div>
-            <p>Assign a chain to the focused flow, manage preset actions, and handle chain lifecycle inside one Carbon surface.</p>
+            <p>A Chain is the Audio that will "Go Live" or be "Activated"</p>
           </div>
           <div className="juce-grid-page__chain-card-header-actions">
             <Tag type="cool-gray">Focus {focusedFlowLabel}</Tag>

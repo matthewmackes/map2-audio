@@ -1,19 +1,32 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import type { CSSProperties } from 'react'
+
+import { createParameterDescriptor, type SensitivityProfile } from '../../data/parameterSchema'
+import { NumericInput } from '../NumericInput/NumericInput'
 
 interface NumberInputProps {
   label?: string
-  value: number
+  value: number | null
   min: number
   max: number
   step?: number
   unit?: string
+  defaultValue?: number
+  precision?: number
+  profile?: SensitivityProfile
   onChange?: (value: number) => void
   onChangeEnd?: () => void
+  onClear?: () => void
   disabled?: boolean
-  size?: 'small' | 'medium'
+  size?: 'small' | 'medium' | 'large' | 'responsive'
   showLabel?: boolean
+  showBounds?: boolean
   valueFormatter?: (value: number) => string
   inline?: boolean
+  accentColor?: string
+  className?: string
+  fullWidth?: boolean
+  style?: CSSProperties
+  nullable?: boolean
 }
 
 export function NumberInput({
@@ -23,188 +36,76 @@ export function NumberInput({
   max,
   step = 1,
   unit = '',
+  defaultValue = value,
+  precision,
+  profile,
   onChange,
   onChangeEnd,
+  onClear,
   disabled = false,
   size = 'medium',
   showLabel = true,
+  showBounds = false,
   valueFormatter,
-  inline = false
+  inline = false,
+  accentColor = '#0f62fe',
+  className = '',
+  fullWidth = false,
+  style,
+  nullable = false,
 }: NumberInputProps) {
-  const [localValue, setLocalValue] = useState(value)
-  const [isEditing, setIsEditing] = useState(false)
-  const [inputText, setInputText] = useState('')
-
-  useEffect(() => {
-    if (!isEditing) {
-      setLocalValue(value)
-    }
-  }, [value, isEditing])
-
-  const formatValue = useCallback((v: number) => {
-    if (valueFormatter) return valueFormatter(v)
-    // Auto-format based on step size
-    if (step < 0.01) return v.toFixed(3)
-    if (step < 0.1) return v.toFixed(2)
-    if (step < 1) return v.toFixed(1)
-    return v.toFixed(0)
-  }, [valueFormatter, step])
-
-  const clamp = useCallback((v: number) => {
-    return Math.min(max, Math.max(min, v))
-  }, [min, max])
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputText(e.target.value)
-  }, [])
-
-  const handleInputBlur = useCallback(() => {
-    setIsEditing(false)
-    const parsed = parseFloat(inputText)
-    if (!isNaN(parsed)) {
-      const clamped = clamp(parsed)
-      setLocalValue(clamped)
-      onChange?.(clamped)
-      onChangeEnd?.()
-    }
-  }, [inputText, clamp, onChange, onChangeEnd])
-
-  const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleInputBlur()
-      ;(e.target as HTMLInputElement).blur()
-    } else if (e.key === 'Escape') {
-      setIsEditing(false)
-      setInputText('')
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      const newValue = clamp(localValue + step)
-      setLocalValue(newValue)
-      setInputText(formatValue(newValue))
-      onChange?.(newValue)
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      const newValue = clamp(localValue - step)
-      setLocalValue(newValue)
-      setInputText(formatValue(newValue))
-      onChange?.(newValue)
-    }
-  }, [handleInputBlur, clamp, localValue, step, formatValue, onChange])
-
-  const handleFocus = useCallback(() => {
-    setIsEditing(true)
-    setInputText(formatValue(localValue))
-  }, [formatValue, localValue])
-
-  const increment = useCallback(() => {
-    if (disabled) return
-    const newValue = clamp(localValue + step)
-    setLocalValue(newValue)
-    onChange?.(newValue)
-    onChangeEnd?.()
-  }, [disabled, clamp, localValue, step, onChange, onChangeEnd])
-
-  const decrement = useCallback(() => {
-    if (disabled) return
-    const newValue = clamp(localValue - step)
-    setLocalValue(newValue)
-    onChange?.(newValue)
-    onChangeEnd?.()
-  }, [disabled, clamp, localValue, step, onChange, onChangeEnd])
-
-  const inputHeight = size === 'small' ? 24 : 32
-  const fontSize = size === 'small' ? 11 : 13
-  const buttonWidth = size === 'small' ? 20 : 24
-
-  const containerStyle: React.CSSProperties = inline
-    ? { display: 'inline-flex', alignItems: 'center', gap: 6 }
-    : { marginBottom: 12 }
+  const numericValue = value ?? min
+  const descriptor = createParameterDescriptor({
+    min,
+    max,
+    step,
+    unit,
+    defaultValue,
+    name: label,
+    symbol: label,
+    precision,
+    profile,
+  })
 
   return (
-    <div style={containerStyle}>
-      {showLabel && label && !inline && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <label style={{ fontSize: 12, color: '#888' }}>
-            {label}
-          </label>
-        </div>
-      )}
-      {showLabel && label && inline && (
-        <label style={{ fontSize: fontSize, color: '#888', marginRight: 4 }}>
-          {label}
-        </label>
-      )}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        background: disabled ? '#1a1a2e' : '#252540',
-        borderRadius: 4,
-        border: '1px solid #3a3a5a',
-        overflow: 'hidden',
-        opacity: disabled ? 0.6 : 1,
-      }}>
+    <div style={{ width: fullWidth ? '100%' : undefined, ...style, display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+      <NumericInput
+        label={label}
+        ariaLabel={label}
+        descriptor={descriptor}
+        value={numericValue}
+        onChange={(nextValue) => onChange?.(nextValue)}
+        onChangeEnd={() => onChangeEnd?.()}
+        disabled={disabled}
+        size={size}
+        showLabel={showLabel}
+        inline={inline}
+        showBounds={showBounds}
+        valueFormatter={valueFormatter}
+        accentColor={accentColor}
+        className={className}
+      />
+      {nullable && onClear && (
         <button
           type="button"
-          onClick={decrement}
-          disabled={disabled || localValue <= min}
-          style={{
-            width: buttonWidth,
-            height: inputHeight,
-            border: 'none',
-            background: 'transparent',
-            color: disabled || localValue <= min ? '#555' : '#888',
-            cursor: disabled || localValue <= min ? 'not-allowed' : 'pointer',
-            fontSize: fontSize + 2,
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          −
-        </button>
-        <input
-          type="text"
-          value={isEditing ? inputText : `${formatValue(localValue)}${unit ? ` ${unit}` : ''}`}
-          onChange={handleInputChange}
-          onFocus={handleFocus}
-          onBlur={handleInputBlur}
-          onKeyDown={handleInputKeyDown}
           disabled={disabled}
+          onClick={onClear}
+          aria-label={label ? `Clear ${label}` : 'Clear value'}
           style={{
-            width: size === 'small' ? 50 : 70,
-            height: inputHeight,
-            border: 'none',
+            minHeight: '2rem',
+            padding: '0 0.5rem',
+            border: '1px solid var(--cds-border-subtle, var(--border))',
             background: 'transparent',
-            color: '#f2f6ff',
-            fontSize: fontSize,
-            fontWeight: 500,
-            textAlign: 'center',
-            outline: 'none',
-            fontFamily: 'inherit',
-          }}
-        />
-        <button
-          type="button"
-          onClick={increment}
-          disabled={disabled || localValue >= max}
-          style={{
-            width: buttonWidth,
-            height: inputHeight,
-            border: 'none',
-            background: 'transparent',
-            color: disabled || localValue >= max ? '#555' : '#888',
-            cursor: disabled || localValue >= max ? 'not-allowed' : 'pointer',
-            fontSize: fontSize + 2,
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            color: 'var(--cds-text-secondary, var(--text-secondary))',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.6 : 1,
           }}
         >
-          +
+          Clear
         </button>
-      </div>
+      )}
     </div>
   )
 }
+
+export default NumberInput

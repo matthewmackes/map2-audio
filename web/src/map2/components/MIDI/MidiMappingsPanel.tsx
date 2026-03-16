@@ -34,6 +34,7 @@ import {
   Alert,
   Collapse,
 } from '@mui/material';
+import { NumberInput } from '../NumberInput';
 import {
   Delete as DeleteIcon,
   Edit as EditIcon,
@@ -142,21 +143,25 @@ const EditDialog = memo(({ open, mapping, onClose, onSave }: EditDialogProps) =>
           <Box>
             <Typography variant="subtitle2" gutterBottom>Value Range</Typography>
             <Stack direction="row" spacing={2}>
-              <TextField
+              <NumberInput
                 label="Min"
-                type="number"
-                size="small"
                 value={minValue}
-                onChange={(e) => setMinValue(parseFloat(e.target.value))}
-                inputProps={{ step: 0.01 }}
-              />
-              <TextField
-                label="Max"
-                type="number"
+                min={-1}
+                max={1}
+                step={0.01}
                 size="small"
+                showBounds={false}
+                onChange={(value) => setMinValue(value)}
+              />
+              <NumberInput
+                label="Max"
                 value={maxValue}
-                onChange={(e) => setMaxValue(parseFloat(e.target.value))}
-                inputProps={{ step: 0.01 }}
+                min={-1}
+                max={1}
+                step={0.01}
+                size="small"
+                showBounds={false}
+                onChange={(value) => setMaxValue(value)}
               />
             </Stack>
           </Box>

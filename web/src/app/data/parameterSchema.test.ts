@@ -1,9 +1,12 @@
 import {
+  createParameterDescriptor,
   getParameterDescriptor,
   hydrateParameterSchema,
   hasParameterDescriptor,
+  inferSensitivityProfile,
   requireParameterDescriptor,
   resetParameterSchema,
+  sensitivityProfiles,
   validateParameterSchema,
   parameterSchema,
   type ParameterRegistry,
@@ -75,5 +78,26 @@ describe('parameterSchema', () => {
       profile: 'default',
     })
     expect(getParameterDescriptor('juce-grid', 'dryWet')).toEqual(parameterSchema['juce-grid:dryWet'])
+  })
+
+  it('infers profile hints for normalized, frequency, and gain ranges', () => {
+    expect(inferSensitivityProfile({ min: 0, max: 1, unit: '', name: 'Mix', symbol: 'mix' })).toBe('normalized_0_1')
+    expect(inferSensitivityProfile({ min: 20, max: 20_000, unit: 'Hz', name: 'Cutoff', symbol: 'cutoff' })).toBe('frequency')
+    expect(inferSensitivityProfile({ min: -24, max: 12, unit: 'dB', name: 'Output Gain', symbol: 'gain' })).toBe('gain-db')
+  })
+
+  it('creates parameter descriptors with inferred profile config defaults', () => {
+    const descriptor = createParameterDescriptor({
+      min: 0,
+      max: 1,
+      defaultValue: 0.5,
+      name: 'Resonance',
+      symbol: 'resonance',
+    })
+
+    expect(descriptor.profile).toBe('normalized_0_1')
+    expect(descriptor.step).toBe(0.01)
+    expect(descriptor.defaultValue).toBe(0.5)
+    expect(sensitivityProfiles[descriptor.profile].fineDivisor).toBe(20)
   })
 })

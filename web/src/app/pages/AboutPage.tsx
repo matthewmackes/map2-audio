@@ -2,15 +2,12 @@ import {
   Accessibility,
   Application,
   BareMetalServer,
-  Book,
-  CaretDown,
   ChartLine,
   Chip,
   Code,
   CodeReference,
   Cube,
   DataBase,
-  FavoriteFilled,
   Flow,
   Globe,
   Headphones,
@@ -21,13 +18,28 @@ import {
   Music,
   Package,
   PaintBrush,
-  PenFountain,
   Scales,
   Security,
   Terminal,
   UserFavorite,
 } from '@carbon/icons-react'
-import { Button, Layer, Tag } from '@carbon/react'
+import {
+  Accordion,
+  AccordionItem,
+  Button,
+  DataTable,
+  Layer,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  Tag,
+} from '@carbon/react'
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { applyTheme, getSavedThemeId, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
@@ -194,13 +206,13 @@ const FRONTEND_PROJECTS: ProjectCredit[] = [
     license: 'Apache-2.0',
   },
   {
-    name: 'Material UI',
-    description: 'React component library implementing Google\'s Material Design with customizable themes',
-    website: 'https://mui.com/',
-    color: '#007fff',
+    name: 'Carbon Design System',
+    description: 'IBM\'s open-source design system for products and digital experiences, with React component library',
+    website: 'https://carbondesignsystem.com/',
+    color: '#0f62fe',
     icon: <PaintBrush size={20} />,
     role: 'UI Components',
-    license: 'MIT',
+    license: 'Apache-2.0',
   },
   {
     name: 'React Flow',
@@ -210,15 +222,6 @@ const FRONTEND_PROJECTS: ProjectCredit[] = [
     icon: <Flow size={20} />,
     role: 'Flow Editor',
     license: 'MIT',
-  },
-  {
-    name: 'Lucide React',
-    description: 'Beautiful & consistent icon toolkit with 1000+ carefully crafted icons',
-    website: 'https://lucide.dev/',
-    color: '#f56565',
-    icon: <FavoriteFilled size={20} />,
-    role: 'Icons',
-    license: 'ISC',
   },
 ]
 
@@ -406,10 +409,18 @@ const LICENSES: LicenseInfo[] = [
     conditions: ['Disclose source (modified files)', 'License and copyright notice', 'Same license (modified files)'],
     limitations: ['Liability', 'Warranty', 'Trademark use'],
   },
+  {
+    id: 'agpl3',
+    name: 'GNU Affero General Public License v3.0',
+    shortName: 'AGPL-3.0',
+    color: '#a78bfa',
+    url: 'https://www.gnu.org/licenses/agpl-3.0.html',
+    description: 'Strong copyleft license that extends GPL to cover networked use, requiring source disclosure for all users who interact with the software over a network.',
+    permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
+    conditions: ['License and copyright notice', 'State changes', 'Disclose source', 'Same license', 'Network use disclosure'],
+    limitations: ['Liability', 'Warranty'],
+  },
 ]
-
-// Combine all projects for the legacy PROJECTS export
-const PROJECTS: ProjectCredit[] = CORE_PROJECTS
 
 const LINKS = [
   { label: 'GitHub', url: 'https://github.com/matthewmackes/map2-audio', icon: LogoGithub },
@@ -420,118 +431,63 @@ const LINKS = [
   { label: 'React', url: 'https://react.dev', icon: Launch },
 ]
 
-// Helper component for rendering project cards
-const ProjectCard = ({ project }: { project: ProjectCredit }) => (
-  <a
-    href={project.website}
-    target="_blank"
-    rel="noreferrer"
-    style={{
-      textDecoration: 'none',
-      color: 'inherit',
-      transition: 'all 150ms'
-    }}
-    onMouseEnter={e => {
-      const el = e.currentTarget as HTMLElement
-      el.style.transform = 'translateY(-2px)'
-    }}
-    onMouseLeave={e => {
-      const el = e.currentTarget as HTMLElement
-      el.style.transform = 'translateY(0)'
-    }}
-  >
-    <div
-      style={{
-        padding: 14,
-        background: `linear-gradient(135deg, rgba(15, 20, 35, 0.8) 0%, rgba(15, 20, 35, 0.6) 100%)`,
-        border: `1px solid ${project.color}40`,
-        borderRadius: 8,
-        backdropFilter: 'blur(8px)',
-        cursor: 'pointer',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-        transition: 'all 150ms'
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget as HTMLElement
-        el.style.borderColor = project.color
-        el.style.background = `linear-gradient(135deg, ${project.color}10 0%, ${project.color}05 100%)`
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLElement
-        el.style.borderColor = `${project.color}40`
-        el.style.background = `linear-gradient(135deg, rgba(15, 20, 35, 0.8) 0%, rgba(15, 20, 35, 0.6) 100%)`
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ color: project.color }}>
-          {project.icon}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: project.color }}>
-            {project.name}
-          </div>
-          <div style={{ fontSize: 10, color: '#6b7280' }}>
-            {project.role}
-          </div>
-        </div>
-        <div style={{
-          fontSize: 9,
-          padding: '2px 6px',
-          background: `${project.color}20`,
-          borderRadius: 4,
-          color: project.color,
-          fontWeight: 500
-        }}>
-          {project.license}
-        </div>
-      </div>
-      <p style={{
-        margin: 0,
-        fontSize: 11,
-        color: '#a1a1aa',
-        lineHeight: '1.4',
-        flex: 1
-      }}>
-        {project.description}
-      </p>
-    </div>
-  </a>
+// ── Table definitions ──────────────────────────────────────────────────────────
+
+const VERSION_HEADERS = [
+  { key: 'field', header: 'Field' },
+  { key: 'value', header: 'Value' },
+]
+
+const TECH_HEADERS = [
+  { key: 'name',        header: 'Name' },
+  { key: 'category',    header: 'Category' },
+  { key: 'role',        header: 'Role' },
+  { key: 'license',     header: 'License' },
+  { key: 'description', header: 'Description' },
+]
+
+const LICENSE_HEADERS = [
+  { key: 'shortName',   header: 'License' },
+  { key: 'description', header: 'Summary' },
+  { key: 'permissions', header: 'Permissions' },
+  { key: 'conditions',  header: 'Conditions' },
+]
+
+const LINKS_HEADERS = [
+  { key: 'label', header: 'Resource' },
+  { key: 'url',   header: 'URL' },
+]
+
+const CREDITS_HEADERS = [
+  { key: 'role',    header: 'Role' },
+  { key: 'person',  header: 'Person' },
+  { key: 'contact', header: 'Contact' },
+  { key: 'note',    header: 'Note' },
+]
+
+const LICENSE_URL_MAP: Record<string, string> = Object.fromEntries(
+  LICENSES.map((l) => [l.id, l.url]),
 )
 
-// Helper component for section headers
-const SectionHeader = ({ title, icon, color }: { title: string; icon: React.ReactNode; color: string }) => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    fontSize: 13,
-    fontWeight: 700,
-    color: color,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-  }}>
-    {icon}
-    {title}
-  </div>
+const TECH_WEBSITE_MAP: Record<string, string> = Object.fromEntries(
+  [...CORE_PROJECTS, ...BACKEND_PROJECTS, ...FRONTEND_PROJECTS, ...AUDIO_PROJECTS, ...UTILITY_PROJECTS].map(
+    (p) => [p.name, p.website],
+  ),
 )
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function carbonThemeLabel(carbonTheme: Theme['carbonTheme']): string {
   switch (carbonTheme) {
-    case 'white':
-      return 'White'
-    case 'g10':
-      return 'Gray 10'
-    case 'g90':
-      return 'Gray 90'
+    case 'white':  return 'White'
+    case 'g10':    return 'Gray 10'
+    case 'g90':    return 'Gray 90'
     case 'g100':
-    default:
-      return 'Gray 100'
+    default:       return 'Gray 100'
   }
 }
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export function AboutPage() {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
@@ -543,7 +499,6 @@ export function AboutPage() {
   const [customThemes, setCustomThemes] = useState<Record<string, Theme>>({})
   const [currentTheme, setCurrentTheme] = useState(getSavedThemeId())
   const [showShoppingDialog, setShowShoppingDialog] = useState(false)
-  const [legalOpen, setLegalOpen] = useState(false)
 
   const refreshCustomThemes = useCallback(() => {
     setCustomThemes(getCustomThemes())
@@ -560,19 +515,16 @@ export function AboutPage() {
         }),
       )
 
-    // Check welcome banner status
     fetch('/api/system/welcome-banner')
       .then(r => r.json())
       .then(setWelcomeBanner)
       .catch(() => setWelcomeBanner({ installed: false }))
 
-    // Check boot splash status
     fetch('/api/system/boot-splash')
       .then(r => r.json())
       .then(setBootSplash)
       .catch(() => setBootSplash({ installed: false }))
 
-    // Load custom themes
     refreshCustomThemes()
   }, [refreshCustomThemes])
 
@@ -597,15 +549,11 @@ export function AboutPage() {
     if (!welcomeBanner || bannerLoading) return
     setBannerLoading(true)
     try {
-      const response = await fetch(`/api/system/welcome-banner?install=${!welcomeBanner.installed}`, {
-        method: 'POST'
-      })
+      const response = await fetch(`/api/system/welcome-banner?install=${!welcomeBanner.installed}`, { method: 'POST' })
       const result = await response.json()
-      if (result.success) {
-        setWelcomeBanner({ installed: result.installed })
-      }
-    } catch (e) {
-      console.error('Failed to toggle welcome banner:', e)
+      if (result.success) setWelcomeBanner({ installed: result.installed })
+    } catch {
+      // silent
     } finally {
       setBannerLoading(false)
     }
@@ -615,903 +563,654 @@ export function AboutPage() {
     if (!bootSplash || splashLoading) return
     setSplashLoading(true)
     try {
-      const response = await fetch(`/api/system/boot-splash?install=${!bootSplash.installed}`, {
-        method: 'POST'
-      })
+      const response = await fetch(`/api/system/boot-splash?install=${!bootSplash.installed}`, { method: 'POST' })
       const result = await response.json()
-      if (result.success) {
-        setBootSplash({ ...bootSplash, installed: result.installed })
-      }
-    } catch (e) {
-      console.error('Failed to toggle boot splash:', e)
+      if (result.success) setBootSplash({ ...bootSplash, installed: result.installed })
+    } catch {
+      // silent
     } finally {
       setSplashLoading(false)
     }
   }
 
-  return (
-    <section className="about-page">
-      <Layer className="about-page__surface">
-      {/* Header Section */}
-      <header style={{
-        marginBottom: 40,
-        paddingBottom: 24,
-        borderBottom: '2px solid rgba(59, 130, 246, 0.2)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <Information size={36} style={{ color: '#3b82f6', marginRight: 8, flexShrink: 0 }} />
-          <h1 style={{
-            fontSize: 32,
-            fontWeight: 800,
-            color: '#f2f6ff',
-            margin: 0,
-            letterSpacing: '-0.5px'
-          }}>
-            MAP2 Platform Guide
-          </h1>
-        </div>
-        <p style={{
-          fontSize: 13,
-          color: '#6b7280',
-          margin: '12px 0 0',
-          fontWeight: 500
-        }}>
-          Orientation, documentation, build identity, and support context in one canonical information surface
-        </p>
-      </header>
 
-      <PlatformInfoGuideSection />
+  // ── Table row data (computed) ────────────────────────────────────────────────
 
-      {/* Main Content Grid */}
-      <div className="about-main-grid" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: 20,
-        marginBottom: 32
-      }}>
-        {/* Version Info - Top Left */}
-        <div style={{
-          background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
-          borderRadius: 12,
-          padding: 20,
-          backdropFilter: 'blur(8px)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#3b82f6',
-            marginBottom: 16,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            <Information size={16} />
-            Version Information
+  const versionRows = [
+    { id: 'version',    field: 'Version',    value: versionInfo?.version    ?? MAP2_PLATFORM_VERSION },
+    { id: 'build_date', field: 'Build Date', value: versionInfo?.build_date ?? MAP2_PLATFORM_BUILD_DATE },
+    { id: 'commit',     field: 'Commit',     value: versionInfo?.commit     ? versionInfo.commit.slice(0, 7) : '—' },
+    { id: 'license',    field: 'License',    value: 'AGPL-3.0-only (MAP2-owned code)' },
+  ]
+
+  const techRows = [
+    ...CORE_PROJECTS.map((p, i)     => ({ id: `core-${i}`,     category: 'Core',       name: p.name, role: p.role, license: p.license, description: p.description })),
+    ...BACKEND_PROJECTS.map((p, i)  => ({ id: `backend-${i}`,  category: 'Backend',    name: p.name, role: p.role, license: p.license, description: p.description })),
+    ...FRONTEND_PROJECTS.map((p, i) => ({ id: `frontend-${i}`, category: 'Frontend',   name: p.name, role: p.role, license: p.license, description: p.description })),
+    ...AUDIO_PROJECTS.map((p, i)    => ({ id: `audio-${i}`,    category: 'Audio DSP',  name: p.name, role: p.role, license: p.license, description: p.description })),
+    ...UTILITY_PROJECTS.map((p, i)  => ({ id: `util-${i}`,     category: 'Utilities',  name: p.name, role: p.role, license: p.license, description: p.description })),
+  ]
+
+  const licenseRows = LICENSES.map((lic) => ({
+    id:          lic.id,
+    shortName:   lic.shortName,
+    description: lic.description,
+    permissions: lic.permissions.join(' · '),
+    conditions:  lic.conditions.join(' · '),
+  }))
+
+  const linkRows = LINKS.map((l, i) => ({
+    id:    `link-${i}`,
+    label: l.label,
+    url:   l.url,
+  }))
+
+  const creditRows = [
+    {
+      id:      'lead',
+      role:    'Platform Leadership',
+      person:  'Matthew Mackes',
+      contact: 'matthewmackes@outlook.com',
+      note:    'Vibe Scrum Master & AI Taskmaster · Buffalo, NY',
+    },
+  ]
+
+  // ── Theme card node (passed to PlatformInfoGuideSection) ────────────────────
+
+  const themeCard = (
+    <section className="about-theme-card">
+      <div className="about-theme-card__copy">
+        <div className="about-theme-card__header">
+          <div>
+            <h2 className="about-theme-card__title">Theme settings</h2>
+            <p className="about-theme-card__description">
+              Choose a Carbon color palette, pick dark or light base shell, and fine-tune individual color slots.
+            </p>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Version</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{versionInfo?.version || '—'}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Build Date</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{versionInfo?.build_date || '—'}</div>
-            </div>
-            {versionInfo?.commit && (
-              <div>
-                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Commit</div>
-                <div style={{ fontSize: 13, fontFamily: 'monospace', color: '#3b82f6', fontWeight: 600 }}>
-                  {versionInfo.commit.slice(0, 7)}
-                </div>
-              </div>
+          <div className="about-theme-card__tags">
+            <Tag type="blue" size="sm">
+              {activeTheme?.name ?? 'Carbon gray 100'}
+            </Tag>
+            <Tag type="cool-gray" size="sm">
+              {carbonThemeLabel(activeTheme?.carbonTheme)}
+            </Tag>
+            {customThemes[currentTheme] && (
+              <Tag type="warm-gray" size="sm">
+                Custom
+              </Tag>
             )}
           </div>
         </div>
-
-        {/* Links - Top Right */}
-        <div style={{
-          background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(34, 197, 94, 0.2)',
-          borderRadius: 12,
-          padding: 20,
-          backdropFilter: 'blur(8px)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#22c55e',
-            marginBottom: 16,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            <Launch size={16} />
-            Resources & Links
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {LINKS.map(link => (
-              <a
-                key={link.label}
-                href={link.url}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '8px 12px',
-                  background: 'rgba(34, 197, 94, 0.05)',
-                  border: '1px solid rgba(34, 197, 94, 0.2)',
-                  borderRadius: 6,
-                  color: '#22c55e',
-                  textDecoration: 'none',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  transition: 'all 150ms',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(34, 197, 94, 0.1)'
-                  e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.4)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(34, 197, 94, 0.05)'
-                  e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.2)'
-                }}
-              >
-                <link.icon size={14} />
-                {link.label}
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Core Technologies - Full Width */}
-        <div style={{
-          gridColumn: 'span 2',
-          background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(245, 158, 11, 0.2)',
-          borderRadius: 12,
-          padding: 20,
-          backdropFilter: 'blur(8px)'
-        }}>
-          <SectionHeader title="Core Technologies" icon={<Chip size={16} />} color="#f59e0b" />
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: 10
-          }}>
-            {CORE_PROJECTS.map(project => (
-              <ProjectCard key={project.name} project={project} />
-            ))}
-          </div>
-        </div>
-
-        {/* Backend Technologies */}
-        <div style={{
-          background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(14, 165, 233, 0.2)',
-          borderRadius: 12,
-          padding: 20,
-          backdropFilter: 'blur(8px)'
-        }}>
-          <SectionHeader title="Backend & API" icon={<Application size={16} />} color="#0ea5e9" />
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10
-          }}>
-            {BACKEND_PROJECTS.map(project => (
-              <ProjectCard key={project.name} project={project} />
-            ))}
-          </div>
-        </div>
-
-        {/* Frontend Technologies */}
-        <div style={{
-          background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(97, 219, 251, 0.2)',
-          borderRadius: 12,
-          padding: 20,
-          backdropFilter: 'blur(8px)'
-        }}>
-          <SectionHeader title="Frontend & UI" icon={<Code size={16} />} color="#60a5fa" />
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10
-          }}>
-            {FRONTEND_PROJECTS.map(project => (
-              <ProjectCard key={project.name} project={project} />
-            ))}
-          </div>
-        </div>
-
-        {/* Audio & DSP Libraries - Full Width */}
-        <div style={{
-          gridColumn: 'span 2',
-          background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(96, 165, 250, 0.2)',
-          borderRadius: 12,
-          padding: 20,
-          backdropFilter: 'blur(8px)'
-        }}>
-          <SectionHeader title="Audio & DSP Libraries" icon={<Headphones size={16} />} color="#60a5fa" />
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: 10
-          }}>
-            {AUDIO_PROJECTS.map(project => (
-              <ProjectCard key={project.name} project={project} />
-            ))}
-          </div>
-        </div>
-
-        {/* Utilities & Tools - Full Width */}
-        <div style={{
-          gridColumn: 'span 2',
-          background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(34, 197, 94, 0.2)',
-          borderRadius: 12,
-          padding: 20,
-          backdropFilter: 'blur(8px)'
-        }}>
-          <SectionHeader title="Utilities & Tools" icon={<Package size={16} />} color="#22c55e" />
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: 10
-          }}>
-            {UTILITY_PROJECTS.map(project => (
-              <ProjectCard key={project.name} project={project} />
-            ))}
-          </div>
-        </div>
       </div>
+      <div className="about-theme-card__actions">
+        <Button kind="tertiary" renderIcon={PaintBrush} onClick={() => setShowThemeChooser(true)}>
+          Choose theme
+        </Button>
+      </div>
+    </section>
+  )
 
-      {/* Licensing Section */}
-      <div style={{
-        marginBottom: 32,
-        background: 'rgba(15, 20, 35, 0.6)',
-        border: '1px solid rgba(96, 165, 250, 0.2)',
-        borderRadius: 12,
-        padding: 24,
-        backdropFilter: 'blur(8px)'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 20
-        }}>
-          <Scales size={24} style={{ color: '#60a5fa' }} />
-          <div>
-            <h2 style={{
-              fontSize: 18,
-              fontWeight: 700,
-              color: '#f2f6ff',
-              margin: 0
-            }}>
-              Open Source Licenses
-            </h2>
-            <p style={{
-              fontSize: 12,
-              color: '#6b7280',
-              margin: '4px 0 0'
-            }}>
-              MAP2 is built on open source software. Here are the licenses used by our dependencies.
-            </p>
+  // ── Render ───────────────────────────────────────────────────────────────────
+
+  return (
+    <section className="about-page">
+      <Layer className="about-page__surface">
+
+        {/* Page header */}
+        <header style={{ marginBottom: 32, paddingBottom: 20, borderBottom: '1px solid var(--cds-border-subtle)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Information size={28} style={{ color: 'var(--cds-link-primary)', flexShrink: 0 }} />
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--cds-text-primary)', margin: 0 }}>
+              MAP2 Platform Guide
+            </h1>
           </div>
+          <p style={{ fontSize: 13, color: 'var(--cds-text-secondary)', margin: '8px 0 0' }}>
+            Orientation, documentation, build identity, and support context in one canonical information surface
+          </p>
+        </header>
+
+        {/* Guide section — theme card first, then document library */}
+        <PlatformInfoGuideSection themeCard={themeCard} />
+
+        {/* ── Version Information ─────────────────────────────────────────── */}
+        <DataTable rows={versionRows} headers={VERSION_HEADERS} useZebraStyles>
+          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+            <TableContainer
+              {...getTableContainerProps()}
+              title="Platform version"
+              description="Build identity and license for the running MAP2 instance."
+              style={{ marginBottom: 24 }}
+            >
+              <Table {...getTableProps()} aria-label="Platform version table">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _k, ...hProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...hProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => {
+                    const { key: _k, ...rProps } = getRowProps({ row })
+                    return (
+                      <TableRow key={row.id} {...rProps}>
+                        {row.cells.map((cell) => (
+                          <TableCell key={cell.id}>
+                            {cell.info.header === 'field' ? (
+                              <strong>{String(cell.value)}</strong>
+                            ) : cell.info.header === 'value' && row.id === 'commit' && cell.value !== '—' ? (
+                              <code style={{ fontFamily: 'var(--cds-code-01-font-family, monospace)', color: 'var(--cds-link-primary)' }}>
+                                {String(cell.value)}
+                              </code>
+                            ) : (
+                              String(cell.value)
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DataTable>
+
+        {/* ── Technology Stack ────────────────────────────────────────────── */}
+        <DataTable rows={techRows} headers={TECH_HEADERS} isSortable useZebraStyles>
+          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+            <TableContainer
+              {...getTableContainerProps()}
+              title="Technology stack"
+              description={`${techRows.length} open-source components across Core, Backend, Frontend, Audio DSP, and Utilities.`}
+              style={{ marginBottom: 24 }}
+            >
+              <TableToolbar {...getToolbarProps()}>
+                <TableToolbarContent>
+                  <Tag type="cool-gray" size="sm" style={{ margin: '0 8px' }}>
+                    {techRows.length} dependencies
+                  </Tag>
+                </TableToolbarContent>
+              </TableToolbar>
+              <Table {...getTableProps()} aria-label="Technology stack table">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _k, ...hProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...hProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => {
+                    const { key: _k, ...rProps } = getRowProps({ row })
+                    return (
+                      <TableRow key={row.id} {...rProps}>
+                        {row.cells.map((cell) => {
+                          if (cell.info.header === 'name') {
+                            const website = TECH_WEBSITE_MAP[String(cell.value)]
+                            return (
+                              <TableCell key={cell.id}>
+                                <a
+                                  href={website}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{ color: 'var(--cds-link-primary)', textDecoration: 'none', fontWeight: 500 }}
+                                >
+                                  {String(cell.value)}
+                                </a>
+                              </TableCell>
+                            )
+                          }
+                          if (cell.info.header === 'license') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type="cool-gray" size="sm">{String(cell.value)}</Tag>
+                              </TableCell>
+                            )
+                          }
+                          if (cell.info.header === 'description') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <span
+                                  title={String(cell.value)}
+                                  style={{
+                                    display: 'block',
+                                    maxWidth: 360,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    color: 'var(--cds-text-secondary)',
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  {String(cell.value)}
+                                </span>
+                              </TableCell>
+                            )
+                          }
+                          if (cell.info.header === 'category') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type="blue" size="sm">{String(cell.value)}</Tag>
+                              </TableCell>
+                            )
+                          }
+                          return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                        })}
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DataTable>
+
+        {/* ── Open Source Licenses ────────────────────────────────────────── */}
+        <DataTable rows={licenseRows} headers={LICENSE_HEADERS} isSortable useZebraStyles>
+          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+            <TableContainer
+              {...getTableContainerProps()}
+              title="Open source licenses"
+              description="Licenses used by MAP2 and its dependencies. MAP2-owned code: AGPL-3.0-only."
+              style={{ marginBottom: 24 }}
+            >
+              <Table {...getTableProps()} aria-label="Open source licenses table">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _k, ...hProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...hProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => {
+                    const { key: _k, ...rProps } = getRowProps({ row })
+                    return (
+                      <TableRow key={row.id} {...rProps}>
+                        {row.cells.map((cell) => {
+                          if (cell.info.header === 'shortName') {
+                            const url = LICENSE_URL_MAP[row.id]
+                            return (
+                              <TableCell key={cell.id}>
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{ color: 'var(--cds-link-primary)', textDecoration: 'none', fontWeight: 600 }}
+                                >
+                                  {String(cell.value)}
+                                </a>
+                              </TableCell>
+                            )
+                          }
+                          if (cell.info.header === 'description') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <span
+                                  title={String(cell.value)}
+                                  style={{
+                                    display: 'block',
+                                    maxWidth: 300,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    color: 'var(--cds-text-secondary)',
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  {String(cell.value)}
+                                </span>
+                              </TableCell>
+                            )
+                          }
+                          return (
+                            <TableCell key={cell.id}>
+                              <span style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                                {String(cell.value)}
+                              </span>
+                            </TableCell>
+                          )
+                        })}
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DataTable>
+
+        {/* ── Resources & Links ───────────────────────────────────────────── */}
+        <DataTable rows={linkRows} headers={LINKS_HEADERS} useZebraStyles>
+          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+            <TableContainer
+              {...getTableContainerProps()}
+              title="Resources & links"
+              style={{ marginBottom: 24 }}
+            >
+              <Table {...getTableProps()} aria-label="Resources and links table">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _k, ...hProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...hProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => {
+                    const { key: _k, ...rProps } = getRowProps({ row })
+                    return (
+                      <TableRow key={row.id} {...rProps}>
+                        {row.cells.map((cell) => {
+                          if (cell.info.header === 'url') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <a
+                                  href={String(cell.value)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    color: 'var(--cds-link-primary)',
+                                    fontSize: 12,
+                                    textDecoration: 'none',
+                                  }}
+                                >
+                                  {String(cell.value)}
+                                  <Launch size={12} />
+                                </a>
+                              </TableCell>
+                            )
+                          }
+                          return <TableCell key={cell.id}><strong>{String(cell.value)}</strong></TableCell>
+                        })}
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DataTable>
+
+        {/* ── Platform Credits ────────────────────────────────────────────── */}
+        <DataTable rows={creditRows} headers={CREDITS_HEADERS} useZebraStyles>
+          {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps }) => (
+            <TableContainer
+              {...getTableContainerProps()}
+              title="Platform credits"
+              style={{ marginBottom: 24 }}
+            >
+              <Table {...getTableProps()} aria-label="Platform credits table">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _k, ...hProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...hProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => {
+                    const { key: _k, ...rProps } = getRowProps({ row })
+                    return (
+                      <TableRow key={row.id} {...rProps}>
+                        {row.cells.map((cell) => {
+                          if (cell.info.header === 'contact') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <a
+                                  href={`mailto:${String(cell.value)}`}
+                                  style={{ color: 'var(--cds-link-primary)', textDecoration: 'none', fontSize: 12 }}
+                                >
+                                  {String(cell.value)}
+                                </a>
+                              </TableCell>
+                            )
+                          }
+                          if (cell.info.header === 'person') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <UserFavorite size={16} style={{ color: 'var(--cds-link-primary)', flexShrink: 0 }} />
+                                  <strong>{String(cell.value)}</strong>
+                                </div>
+                              </TableCell>
+                            )
+                          }
+                          return (
+                            <TableCell key={cell.id}>
+                              <span style={{ fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                                {String(cell.value)}
+                              </span>
+                            </TableCell>
+                          )
+                        })}
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DataTable>
+
+        {/* ── Legal Disclaimer ────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 24 }}>
+          <Accordion align="start">
+            <AccordionItem
+              title={
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Scales size={16} />
+                  Legal Disclaimer — Important Notice
+                </span>
+              }
+            >
+              <p style={{ marginTop: 0, fontWeight: 600, fontSize: 13 }}>
+                MAP2 is maintained as an educational and research-focused project for learning, teaching, experimentation, and technical study in real-time audio systems.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>License</h4>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                MAP2-owned code in this repository is licensed under the{' '}
+                <strong>GNU Affero General Public License v3.0 (AGPL-3.0-only)</strong>. Educational intent statements describe project goals and do not add restrictions beyond AGPLv3.
+              </p>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                Source availability path for MAP2-owned code is this repository. Modified networked deployments should provide corresponding source in an accessible location for their users.
+              </p>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                Third-party components remain under their original licenses and are not relicensed by MAP2.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>No Affiliation or Endorsement</h4>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                This software, source code, documentation, presets, examples, impulse responses, UI text, comments, demo files, and related materials are{' '}
+                <strong>not affiliated with, endorsed by, sponsored by, or officially connected to</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>Trademarks and Product Names</h4>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                All trademarks, service marks, trade names, brand names, product names, model designations, logos, and related intellectual property are the{' '}
+                <strong>property of their respective owners</strong>. References are used for educational, historical, descriptive, comparative, referential, and interoperability purposes only. No trademark rights are granted by this repository license, documentation, or code.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>No Warranty</h4>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                This project and all associated materials are provided <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong>, without warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>Your Responsibility</h4>
+              <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                By accessing, studying, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
+              </p>
+              <ol style={{ margin: '0 0 12px', paddingLeft: 24, fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                <li style={{ marginBottom: 4 }}>Comply with AGPLv3 requirements for MAP2-owned code.</li>
+                <li style={{ marginBottom: 4 }}>Comply with all applicable third-party licenses for included dependencies.</li>
+                <li style={{ marginBottom: 4 }}>Avoid representing this project as officially affiliated with third-party brands or products.</li>
+                <li>Comply with applicable trademark, copyright, and other IP laws in your jurisdiction.</li>
+              </ol>
+
+              <p style={{ margin: '12px 0 4px', fontStyle: 'italic', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+                This project continues to prioritize education, transparency, and respectful attribution.
+              </p>
+              <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--cds-text-placeholder)' }}>
+                Last updated: 2026-02-22
+              </p>
+            </AccordionItem>
+          </Accordion>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: 16
-        }}>
-          {LICENSES.map(license => (
-            <div
-              key={license.id}
+        {/* ── Help Me Find Hardware ────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 16,
+              paddingBottom: 12,
+              borderBottom: '1px solid var(--cds-border-subtle)',
+            }}
+          >
+            <Headphones size={20} style={{ color: 'var(--cds-link-primary)' }} />
+            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0, color: 'var(--cds-text-primary)' }}>
+              Help Me Find Hardware
+            </h2>
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 12,
+            }}
+          >
+            <NavLink
+              to="/cpu-performance"
               style={{
-                padding: 16,
-                background: 'rgba(10, 15, 25, 0.5)',
-                border: `1px solid ${license.color}30`,
-                borderRadius: 8
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: 20,
+                background: 'var(--cds-layer)',
+                border: '1px solid var(--cds-border-subtle)',
+                textDecoration: 'none',
+                cursor: 'pointer',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <div style={{
-                  padding: '4px 8px',
-                  background: `${license.color}20`,
-                  borderRadius: 4,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: license.color
-                }}>
-                  {license.shortName}
-                </div>
-                <a
-                  href={license.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    fontSize: 12,
-                    color: license.color,
-                    textDecoration: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4
-                  }}
-                >
-                  {license.name}
-                  <Launch size={10} />
-                </a>
+              <Chip size={28} style={{ color: 'var(--cds-link-primary)', marginBottom: 10 }} />
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cds-text-primary)', textAlign: 'center', marginBottom: 4 }}>
+                CPU Performance Guide
               </div>
-              <p style={{
-                fontSize: 11,
-                color: '#a1a1aa',
-                lineHeight: '1.5',
-                margin: '0 0 12px'
-              }}>
-                {license.description}
-              </p>
-              <div style={{ display: 'flex', gap: 16, fontSize: 10 }}>
-                <div>
-                  <div style={{ color: '#22c55e', fontWeight: 600, marginBottom: 4 }}>Permissions</div>
-                  {license.permissions.slice(0, 3).map(p => (
-                    <div key={p} style={{ color: '#71717a' }}>+ {p}</div>
-                  ))}
-                </div>
-                <div>
-                  <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 4 }}>Conditions</div>
-                  {license.conditions.slice(0, 3).map(c => (
-                    <div key={c} style={{ color: '#71717a' }}>= {c}</div>
-                  ))}
-                </div>
+              <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+                Compare Intel generations & capacity
               </div>
-            </div>
-          ))}
-        </div>
+            </NavLink>
 
-        {/* MAP2 License Notice */}
-        <div style={{
-          marginTop: 20,
-          padding: 16,
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          borderRadius: 8
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <Book size={16} style={{ color: '#3b82f6' }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6' }}>MAP2 License</span>
-          </div>
-          <p style={{
-            fontSize: 12,
-            color: '#d4d4d8',
-            lineHeight: '1.6',
-            margin: 0
-          }}>
-            MAP2-owned code in this repository is licensed under the <strong style={{ color: '#22c55e' }}>GNU Affero
-            General Public License v3.0 only (AGPL-3.0-only)</strong>. Third-party dependencies remain under their
-            original licenses, and commercial distribution may require separate compliance for those components.
-          </p>
-        </div>
-      </div>
+            <NavLink
+              to="/motu-rme"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: 20,
+                background: 'var(--cds-layer)',
+                border: '1px solid var(--cds-border-subtle)',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <Flow size={28} style={{ color: 'var(--cds-link-primary)', marginBottom: 10 }} />
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cds-text-primary)', textAlign: 'center', marginBottom: 4 }}>
+                Multi Channel ADAT Is Magic
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+                MOTU + RME ADAT monitoring
+              </div>
+            </NavLink>
 
-      <section className="about-theme-card">
-        <div className="about-theme-card__copy">
-          <div className="about-theme-card__header">
-            <div>
-              <h2 className="about-theme-card__title">Theme settings</h2>
-              <p className="about-theme-card__description">
-                Choose a Carbon color palette, pick dark or light base shell, and fine-tune individual color slots.
-              </p>
-            </div>
-            <div className="about-theme-card__tags">
-              <Tag type="blue" size="sm">
-                {activeTheme?.name ?? 'Carbon gray 100'}
-              </Tag>
-              <Tag type="cool-gray" size="sm">
-                {carbonThemeLabel(activeTheme?.carbonTheme)}
-              </Tag>
-              {customThemes[currentTheme] && (
-                <Tag type="warm-gray" size="sm">
-                  Custom
-                </Tag>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="about-theme-card__actions">
-          <Button kind="tertiary" renderIcon={PaintBrush} onClick={() => setShowThemeChooser(true)}>
-            Choose theme
-          </Button>
-        </div>
-      </section>
+            <button
+              onClick={() => setShowShoppingDialog(true)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: 20,
+                background: 'var(--cds-layer)',
+                border: '1px solid var(--cds-border-subtle)',
+                cursor: 'pointer',
+              }}
+            >
+              <Package size={28} style={{ color: 'var(--cds-link-primary)', marginBottom: 10 }} />
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cds-text-primary)', textAlign: 'center', marginBottom: 4 }}>
+                Find a Pro Interface
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+                Search eBay, Reverb & ShopGoodwill
+              </div>
+            </button>
 
-      {/* Theme Chooser Modal */}
-      <ThemeChooserModal
-        isOpen={showThemeChooser}
-        onClose={() => setShowThemeChooser(false)}
-        onThemeChange={handleThemeChange}
-      />
-
-      {/* Open Source Commitment */}
-      <div style={{
-        marginBottom: 32,
-        background: 'rgba(15, 20, 35, 0.6)',
-        border: '1px solid rgba(34, 197, 94, 0.2)',
-        borderRadius: 12,
-        padding: 24,
-        backdropFilter: 'blur(8px)'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 16
-        }}>
-          <FavoriteFilled size={24} style={{ color: '#22c55e' }} />
-          <h2 style={{
-            fontSize: 18,
-            fontWeight: 700,
-            color: '#f2f6ff',
-            margin: 0
-          }}>
-            Open Source Commitment
-          </h2>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: 16
-        }}>
-          <div style={{
-            padding: 16,
-            background: 'rgba(10, 15, 25, 0.5)',
-            borderRadius: 8,
-            border: '1px solid rgba(34, 197, 94, 0.15)'
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', marginBottom: 8 }}>
-              Community Driven
-            </div>
-            <p style={{ fontSize: 11, color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
-              MAP2 is developed with the audio community in mind. Contributions, feedback, and feature requests are welcome.
-            </p>
-          </div>
-
-          <div style={{
-            padding: 16,
-            background: 'rgba(10, 15, 25, 0.5)',
-            borderRadius: 8,
-            border: '1px solid rgba(59, 130, 246, 0.15)'
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6', marginBottom: 8 }}>
-              Transparent Development
-            </div>
-            <p style={{ fontSize: 11, color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
-              All source code is publicly available. Report bugs, suggest features, or contribute directly via GitHub.
-            </p>
-          </div>
-
-          <div style={{
-            padding: 16,
-            background: 'rgba(10, 15, 25, 0.5)',
-            borderRadius: 8,
-            border: '1px solid rgba(96, 165, 250, 0.15)'
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#60a5fa', marginBottom: 8 }}>
-              Built on Giants
-            </div>
-            <p style={{ fontSize: 11, color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
-              We stand on the shoulders of incredible open source projects. Thank you to all the developers who make this possible.
-            </p>
-          </div>
-
-          <div style={{
-            padding: 16,
-            background: 'rgba(10, 15, 25, 0.5)',
-            borderRadius: 8,
-            border: '1px solid rgba(245, 158, 11, 0.15)'
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#f59e0b', marginBottom: 8 }}>
-              License Compliance
-            </div>
-            <p style={{ fontSize: 11, color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
-              We respect all license requirements and provide proper attribution. Contact us with any licensing questions.
-            </p>
+            <NavLink
+              to="/cpu-performance"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: 20,
+                background: 'var(--cds-layer)',
+                border: '1px solid var(--cds-border-subtle)',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <ChartLine size={28} style={{ color: 'var(--cds-link-primary)', marginBottom: 10 }} />
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cds-text-primary)', textAlign: 'center', marginBottom: 4 }}>
+                Does CPU Matter?
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', textAlign: 'center', lineHeight: 1.4 }}>
+                Performance gains by generation
+              </div>
+            </NavLink>
           </div>
         </div>
-      </div>
 
-      {/* Footer Info */}
-      <div style={{
-        padding: 20,
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(96, 165, 250, 0.08) 100%)',
-        borderRadius: 12,
-        border: '1px solid rgba(59, 130, 246, 0.2)',
-        backdropFilter: 'blur(8px)'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          flexWrap: 'wrap',
-          gap: 20
-        }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#3b82f6', marginBottom: 8 }}>
-              MAP2 Audio Platform
-            </div>
-            <p style={{
-              fontSize: 12,
-              color: '#6b7280',
-              lineHeight: '1.6',
-              margin: 0,
-              maxWidth: 500
-            }}>
-              Professional audio processing, neural amp modeling, DSP control, and real-time monitoring
-              for Linux-based audio workstations. Built with JUCE, FastAPI, and React.
-            </p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>
-              Version {versionInfo?.version || MAP2_PLATFORM_VERSION} · {versionInfo?.build_date || MAP2_PLATFORM_BUILD_DATE}
-            </div>
-            <div style={{ fontSize: 10, color: '#6b7280' }}>
-              AGPLv3 for MAP2-owned code · Built for musicians
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* Dialogs */}
+        <ThemeChooserModal
+          isOpen={showThemeChooser}
+          onClose={() => setShowThemeChooser(false)}
+          onThemeChange={handleThemeChange}
+        />
+        <ShoppingSearchDialog
+          open={showShoppingDialog}
+          onClose={() => setShowShoppingDialog(false)}
+        />
 
-      {/* Attribution Section */}
-      <div style={{
-        marginTop: 32,
-        padding: 20,
-        background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.08) 0%, rgba(96, 165, 250, 0.08) 100%)',
-        borderRadius: 12,
-        border: '1px solid rgba(96, 165, 250, 0.2)',
-        backdropFilter: 'blur(8px)'
-      }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          gap: 20,
-          alignItems: 'center'
-        }}>
-          <div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 14,
-              fontWeight: 700,
-              color: '#60a5fa',
-              marginBottom: 8,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              <UserFavorite size={16} />
-              Platform Leadership
-            </div>
-            <div style={{ fontSize: 12, color: '#d4d4d8', marginBottom: 4 }}>
-              <strong style={{ color: '#f2f6ff' }}>Matthew Mackes</strong> — Vibe Scrum Master & AI Taskmaster
-            </div>
-            <div style={{ fontSize: 11, color: '#6b7280' }}>
-              Buffalo, NY · <a href="mailto:matthewmackes@outlook.com" style={{ color: '#60a5fa', textDecoration: 'none' }}>matthewmackes@outlook.com</a>
-            </div>
-            <p style={{
-              fontSize: 11,
-              color: '#6b7280',
-              margin: '12px 0 0 0',
-              lineHeight: '1.5'
-            }}>
-              Orchestrating the vision, managing the ecosystem, and ensuring MAP2 delivers professional-grade audio processing with precision and style.
-            </p>
-          </div>
-          <div style={{
-            padding: 12,
-            background: 'rgba(96, 165, 250, 0.1)',
-            borderRadius: 8,
-            border: '1px solid rgba(96, 165, 250, 0.2)',
-            textAlign: 'center'
-          }}>
-            <div style={{ marginBottom: 4, display: 'flex', justifyContent: 'center' }}>
-              <MapSignalFlowIcon size={24} style={{ color: '#60a5fa' }} />
-            </div>
-            <div style={{ fontSize: 10, color: '#60a5fa', fontWeight: 600 }}>PLATFORM</div>
-            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>v3.1</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Legal Disclaimer Panel */}
-      <div style={{
-        marginTop: 32,
-        borderRadius: 12,
-        border: '1px solid rgba(161, 161, 170, 0.2)',
-        background: 'rgba(24, 24, 27, 0.6)',
-        backdropFilter: 'blur(8px)',
-        overflow: 'hidden'
-      }}>
-        <button
-          onClick={() => setLegalOpen(prev => !prev)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '16px 20px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#a1a1aa'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Scales size={16} style={{ color: '#a1a1aa' }} />
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#d4d4d8', letterSpacing: '0.5px' }}>
-              LEGAL DISCLAIMER – IMPORTANT NOTICE
-            </span>
-          </div>
-          <CaretDown
-            size={16}
-            style={{
-              transform: legalOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 200ms ease'
-            }}
-          />
-        </button>
-        {legalOpen && (
-          <div style={{
-            padding: '0 20px 20px',
-            fontSize: 12,
-            color: '#a1a1aa',
-            lineHeight: '1.7',
-            borderTop: '1px solid rgba(161, 161, 170, 0.1)'
-          }}>
-            <p style={{ marginTop: 16, color: '#d4d4d8', fontWeight: 600, fontSize: 13 }}>
-              MAP2 is maintained as an educational and research-focused project for learning, teaching, experimentation, and technical study in real-time audio systems.
-            </p>
-
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>License</h4>
-            <p style={{ margin: '0 0 12px' }}>
-              MAP2-owned code in this repository is licensed under the <strong style={{ color: '#d4d4d8' }}>GNU Affero General Public License v3.0 (AGPL-3.0-only)</strong>. Educational intent statements describe project goals and do not add restrictions beyond AGPLv3.
-            </p>
-            <p style={{ margin: '0 0 12px' }}>
-              Source availability path for MAP2-owned code is this repository. Modified networked deployments should provide corresponding source in an accessible location for their users.
-            </p>
-            <p style={{ margin: '0 0 12px' }}>
-              Third-party components remain under their original licenses and are not relicensed by MAP2.
-            </p>
-
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Affiliation or Endorsement</h4>
-            <p style={{ margin: '0 0 12px' }}>
-              This software, source code, documentation, presets, examples, impulse responses, UI text, comments, demo files, and related materials are <strong style={{ color: '#d4d4d8' }}>not affiliated with, endorsed by, sponsored by, or officially connected to</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder.
-            </p>
-
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Trademarks and Product Names</h4>
-            <p style={{ margin: '0 0 12px' }}>
-              All trademarks, service marks, trade names, brand names, product names, model designations, logos, and related intellectual property are the <strong style={{ color: '#d4d4d8' }}>property of their respective owners</strong>.
-            </p>
-            <p style={{ margin: '0 0 12px' }}>
-              References are used for educational, historical, descriptive, comparative, referential, and interoperability purposes only.
-            </p>
-            <p style={{ margin: '0 0 8px' }}>
-              No trademark rights are granted by this repository license, documentation, or code.
-            </p>
-
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Additional IP Permissions</h4>
-            <p style={{ margin: '0 0 12px' }}>
-              Nothing in this project grants rights to third-party patented technology, copyrighted brand materials, or proprietary assets beyond what applicable law and third-party licenses permit.
-            </p>
-            <p style={{ margin: '0 0 12px' }}>
-              If your use case requires separate permissions from a third-party rights holder, you are responsible for obtaining them.
-            </p>
-
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Warranty</h4>
-            <p style={{ margin: '0 0 12px' }}>
-              This project and all associated materials are provided <strong style={{ color: '#d4d4d8' }}>"AS IS"</strong> and <strong style={{ color: '#d4d4d8' }}>"AS AVAILABLE"</strong>, without warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.
-            </p>
-
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Your Responsibility</h4>
-            <p style={{ margin: '0 0 8px' }}>
-              By accessing, studying, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
-            </p>
-            <ol style={{ margin: '0 0 12px', paddingLeft: 24 }}>
-              <li style={{ marginBottom: 6 }}>Comply with AGPLv3 requirements for MAP2-owned code.</li>
-              <li style={{ marginBottom: 6 }}>Comply with all applicable third-party licenses for included dependencies.</li>
-              <li style={{ marginBottom: 6 }}>Avoid representing this project as officially affiliated with third-party brands or products.</li>
-              <li>Comply with applicable trademark, copyright, and other IP laws in your jurisdiction.</li>
-            </ol>
-
-            <p style={{ margin: '16px 0 8px', color: '#d4d4d8', fontStyle: 'italic', fontSize: 12 }}>
-              This project continues to prioritize education, transparency, and respectful attribution.
-            </p>
-            <p style={{ margin: '12px 0 0', color: '#71717a', fontSize: 11 }}>
-              Last updated: 2026-02-22
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Help Me Find Hardware! Section */}
-      <div style={{
-        marginTop: 32,
-        padding: 24,
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%)',
-        borderRadius: 12,
-        border: '1px solid rgba(59, 130, 246, 0.2)',
-        backdropFilter: 'blur(8px)'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 20
-        }}>
-          <Headphones size={24} style={{ color: '#3b82f6' }} />
-          <h2 style={{
-            fontSize: 18,
-            fontWeight: 700,
-            color: '#f2f6ff',
-            margin: 0
-          }}>
-            Help Me Find Hardware!
-          </h2>
-        </div>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: 16
-        }}>
-          {/* Button 1: CPU Performance */}
-          <NavLink
-            to="/cpu-performance"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: 20,
-              background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.1), rgba(59, 130, 246, 0.1))',
-              borderRadius: 8,
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              textDecoration: 'none',
-              transition: 'all 200ms',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.2)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            <Chip size={32} style={{ color: '#3b82f6', marginBottom: 12 }} />
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
-              CPU Performance Guide
-            </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
-              Compare Intel generations & capacity
-            </div>
-          </NavLink>
-
-          {/* Button 2: Multi Channel ADAT Is Magic */}
-          <NavLink
-            to="/motu-rme"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: 20,
-              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(34, 197, 94, 0.1))',
-              borderRadius: 8,
-              border: '1px solid rgba(37, 99, 235, 0.3)',
-              textDecoration: 'none',
-              transition: 'all 200ms',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(37, 99, 235, 0.2)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            <Flow size={32} style={{ color: '#2563eb', marginBottom: 12 }} />
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
-              Multi Channel ADAT Is Magic
-            </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
-              MOTU + RME ADAT monitoring
-            </div>
-          </NavLink>
-
-          {/* Button 3: Find a Pro Interface */}
-          <button
-            onClick={() => setShowShoppingDialog(true)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: 20,
-              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(245, 158, 11, 0.1))',
-              borderRadius: 8,
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 200ms'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(34, 197, 94, 0.2)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            <Package size={32} style={{ color: '#22c55e', marginBottom: 12 }} />
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
-              Find a Pro Interface
-            </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
-              Search eBay, Reverb & ShopGoodwill
-            </div>
-          </button>
-
-          {/* Button 4: Does CPU Matter */}
-          <NavLink
-            to="/cpu-performance"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: 20,
-              background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(96, 165, 250, 0.1))',
-              borderRadius: 8,
-              border: '1px solid rgba(96, 165, 250, 0.3)',
-              textDecoration: 'none',
-              transition: 'all 200ms',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(96, 165, 250, 0.2)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            <ChartLine size={32} style={{ color: '#60a5fa', marginBottom: 12 }} />
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
-              Does CPU Matter?
-            </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
-              Performance gains by generation
-            </div>
-          </NavLink>
-        </div>
-      </div>
-
-      {/* Shopping Search Dialog */}
-      <ShoppingSearchDialog
-        open={showShoppingDialog}
-        onClose={() => setShowShoppingDialog(false)}
-      />
       </Layer>
     </section>
   )

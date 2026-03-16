@@ -5,20 +5,20 @@
  */
 
 import { useCallback } from 'react'
-import { Box, Paper, Typography, TextField, Button, Grid, Switch, FormControlLabel, Divider, Alert } from '@mui/material'
+import { Box, Paper, Typography, Button, Grid, Switch, FormControlLabel, Divider, Alert } from '@mui/material'
 import { useHealthSettings, useWebSocketPreference } from '@/app/hooks/useLocalStorage'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import SaveIcon from '@mui/icons-material/Save'
+import { NumberInput } from '../Controls/NumberInput'
 
 export default function HostMachineSettings() {
   const { settings, updateSettings, resetToDefaults } = useHealthSettings()
   const { enabled: webSocketEnabled, setEnabled: setWebSocketEnabled } = useWebSocketPreference()
 
   const handleNumberChange = useCallback(
-    (field: keyof typeof settings, value: string) => {
-      const numValue = parseFloat(value)
-      if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
-        updateSettings({ [field]: numValue })
+    (field: keyof typeof settings, value: number) => {
+      if (value >= 0 && value <= 100) {
+        updateSettings({ [field]: value })
       }
     },
     [updateSettings]
@@ -45,13 +45,16 @@ export default function HostMachineSettings() {
             Warning Threshold
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TextField
-              type="number"
+            <NumberInput
               value={settings[warningKey]}
-              onChange={(e) => handleNumberChange(warningKey, e.target.value)}
-              inputProps={{ min: 0, max: 100, step: 1 }}
+              min={0}
+              max={100}
+              step={1}
+              profile="integer"
+              onChange={(value) => handleNumberChange(warningKey, value)}
               size="small"
-              sx={{ width: 100 }}
+              showLabel={false}
+              style={{ width: 100 }}
             />
             <Typography sx={{ fontSize: 12, color: '#666' }}>{suffix}</Typography>
           </Box>
@@ -64,13 +67,16 @@ export default function HostMachineSettings() {
             Critical Threshold
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TextField
-              type="number"
+            <NumberInput
               value={settings[criticalKey]}
-              onChange={(e) => handleNumberChange(criticalKey, e.target.value)}
-              inputProps={{ min: 0, max: 100, step: 1 }}
+              min={0}
+              max={100}
+              step={1}
+              profile="integer"
+              onChange={(value) => handleNumberChange(criticalKey, value)}
               size="small"
-              sx={{ width: 100 }}
+              showLabel={false}
+              style={{ width: 100 }}
             />
             <Typography sx={{ fontSize: 12, color: '#666' }}>{suffix}</Typography>
           </Box>

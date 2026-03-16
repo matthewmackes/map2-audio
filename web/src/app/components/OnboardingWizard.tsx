@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { CaretRight, Check, WarningCircle, DesktopTower, Graph, Shield, FileText } from '@phosphor-icons/react'
+import { NumberInput } from './Controls/NumberInput'
 
 interface WizardStep {
   id: number
@@ -416,22 +417,16 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>
-                  API Port:
-                </label>
-                <input
-                  type="number"
-                  value={apiPort}
-                  onChange={e => setApiPort(e.target.value)}
-                  placeholder="8080"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    background: '#111',
-                    border: '1px solid #333',
-                    borderRadius: 6,
-                    color: '#fff',
-                  }}
+                <NumberInput
+                  label="API Port"
+                  value={Number.parseInt(apiPort || '8080', 10) || 8080}
+                  min={1}
+                  max={65535}
+                  step={1}
+                  profile="integer"
+                  onChange={(value) => setApiPort(String(value))}
+                  size="small"
+                  fullWidth
                 />
               </div>
             </div>

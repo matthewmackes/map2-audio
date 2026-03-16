@@ -4,6 +4,7 @@ import { Button } from '@carbon/react'
 
 import type { IntelFXRegistryParam, UseIntelFXStateResult } from '../../../map2/intelfxApi'
 import type { IntelFXBlockState } from './intelfxFlowRouting'
+import { NumberInput } from '../Controls/NumberInput'
 
 function getParamValue(param: IntelFXRegistryParam, shadow: Record<string, number>): number {
   const raw = shadow[param.id]
@@ -102,13 +103,16 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
   return (
     <label className="intelfx-flow-sidebar__control intelfx-flow-sidebar__slider-wrap">
       <span className="intelfx-flow-sidebar__label">{param.display_name}</span>
-      <input
-        type="range"
+      <NumberInput
+        label={param.display_name}
+        value={value}
         min={min}
         max={max}
         step={Math.max(0.01, (max - min) / 200)}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        showLabel={false}
+        showBounds={false}
+        size="small"
+        onChange={onChange}
       />
       <span className="intelfx-flow-sidebar__value">{formatValue(param, value)}</span>
     </label>

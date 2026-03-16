@@ -166,15 +166,18 @@ function AddPointDialog({ open, parameterId, onClose, onAdd }: AddPointDialogPro
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Add Automation Point</DialogTitle>
       <DialogContent>
-        <TextField
-          label="Time (seconds)"
-          type="number"
-          value={time}
-          onChange={(e) => setTime(parseFloat(e.target.value) || 0)}
-          fullWidth
-          sx={{ mt: 2 }}
-          inputProps={{ min: 0, step: 0.1 }}
-        />
+        <Box sx={{ mt: 2 }}>
+          <NumberInput
+            label="Time (seconds)"
+            value={time}
+            onChange={(v) => setTime(Math.max(0, v))}
+            min={0}
+            max={3600}
+            step={0.1}
+            size="small"
+            fullWidth
+          />
+        </Box>
 
         <Box sx={{ mt: 3 }}>
           <NumberInput

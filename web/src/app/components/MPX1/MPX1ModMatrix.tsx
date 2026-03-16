@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { ArrowsClockwise } from '@phosphor-icons/react'
 
 import { useMPX1PageContext } from '../../pages/MPX1Page'
+import { NumberInput } from '../Controls/NumberInput'
 import './MPX1ModMatrix.css'
 
 type CurveType = 'linear' | 'log' | 'exp' | 's_curve'
@@ -181,25 +182,31 @@ export function MPX1ModMatrix() {
             <div className="mpx1-matrix__section-title">LFO Editor</div>
             <label>
               Rate (Hz)
-              <input
-                type="range"
+              <NumberInput
+                label="LFO rate"
+                value={selectedSourceLfo.rateHz}
                 min={0.1}
                 max={12}
                 step={0.1}
-                value={selectedSourceLfo.rateHz}
-                onChange={(event) => updateLfoConfig({ rateHz: clamp(Number(event.target.value), 0.1, 12) })}
+                showLabel={false}
+                showBounds={false}
+                size="small"
+                onChange={(value) => updateLfoConfig({ rateHz: clamp(value, 0.1, 12) })}
               />
               <span>{selectedSourceLfo.rateHz.toFixed(1)} Hz</span>
             </label>
             <label>
               Depth
-              <input
-                type="range"
+              <NumberInput
+                label="LFO depth"
+                value={selectedSourceLfo.depth}
                 min={0}
                 max={1}
                 step={0.01}
-                value={selectedSourceLfo.depth}
-                onChange={(event) => updateLfoConfig({ depth: clamp(Number(event.target.value), 0, 1) })}
+                showLabel={false}
+                showBounds={false}
+                size="small"
+                onChange={(value) => updateLfoConfig({ depth: clamp(value, 0, 1) })}
               />
               <span>{Math.round(selectedSourceLfo.depth * 100)}%</span>
             </label>
@@ -264,13 +271,16 @@ export function MPX1ModMatrix() {
 
               <label>
                 Amount
-                <input
-                  type="range"
+                <NumberInput
+                  label="Matrix amount"
+                  value={selectedCell.amount}
                   min={-1}
                   max={1}
                   step={0.01}
-                  value={selectedCell.amount}
-                  onChange={(event) => updateSelectedCell({ amount: clamp(Number(event.target.value), -1, 1) })}
+                  showLabel={false}
+                  showBounds={false}
+                  size="small"
+                  onChange={(value) => updateSelectedCell({ amount: clamp(value, -1, 1) })}
                 />
                 <span>{selectedCell.amount.toFixed(2)}</span>
               </label>

@@ -14,6 +14,7 @@ import {
   type MPX1MidiMapping,
 } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
+import { NumberInput } from '../Controls/NumberInput'
 import './MPX1MidiMapper.css'
 
 interface ObservedCc {
@@ -341,26 +342,34 @@ export function MPX1MidiMapper() {
         <aside className="mpx1-midi-map__column">
           <div className="mpx1-midi-map__title">MIDI Sources</div>
           <div className="mpx1-midi-map__source-picker">
-            <label>
-              CC
-              <input
-                type="number"
-                min={0}
-                max={127}
-                value={selectedSourceCc}
-                onChange={(event) => setSelectedSourceCc(clampInt(Number(event.target.value), 0, 127))}
-              />
-            </label>
-            <label>
-              Ch
-              <input
-                type="number"
-                min={1}
-                max={16}
-                value={selectedSourceChannel}
-                onChange={(event) => setSelectedSourceChannel(clampInt(Number(event.target.value), 1, 16))}
-              />
-            </label>
+                <label>
+                  CC
+                  <NumberInput
+                    label="CC"
+                    value={selectedSourceCc}
+                    min={0}
+                    max={127}
+                    step={1}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => setSelectedSourceCc(clampInt(value, 0, 127))}
+                  />
+                </label>
+                <label>
+                  Ch
+                  <NumberInput
+                    label="Channel"
+                    value={selectedSourceChannel}
+                    min={1}
+                    max={16}
+                    step={1}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => setSelectedSourceChannel(clampInt(value, 1, 16))}
+                  />
+                </label>
           </div>
           <div className="mpx1-midi-map__list">
             {sourceRows.map((source) => (
@@ -416,58 +425,86 @@ export function MPX1MidiMapper() {
               <div className="mpx1-midi-map__detail-grid">
                 <label>
                   CC
-                  <input
-                    type="number"
+                  <NumberInput
+                    label="Mapping CC"
+                    value={selectedMapping.cc}
                     min={0}
                     max={127}
-                    value={selectedMapping.cc}
-                    onChange={(event) => void updateSelectedMapping({ cc: clampInt(Number(event.target.value), 0, 127) })}
+                    step={1}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => void updateSelectedMapping({ cc: clampInt(value, 0, 127) })}
                   />
                 </label>
                 <label>
                   Channel
-                  <input
-                    type="number"
+                  <NumberInput
+                    label="Mapping channel"
+                    value={selectedMapping.channel}
                     min={1}
                     max={16}
-                    value={selectedMapping.channel}
-                    onChange={(event) => void updateSelectedMapping({ channel: clampInt(Number(event.target.value), 1, 16) })}
+                    step={1}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => void updateSelectedMapping({ channel: clampInt(value, 1, 16) })}
                   />
                 </label>
                 <label>
                   Source Min
-                  <input
-                    type="number"
+                  <NumberInput
+                    label="Source minimum"
+                    value={selectedMapping.source_min}
                     min={0}
                     max={127}
-                    value={selectedMapping.source_min}
-                    onChange={(event) => void updateSelectedMapping({ source_min: clampInt(Number(event.target.value), 0, 127) })}
+                    step={1}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => void updateSelectedMapping({ source_min: clampInt(value, 0, 127) })}
                   />
                 </label>
                 <label>
                   Source Max
-                  <input
-                    type="number"
+                  <NumberInput
+                    label="Source maximum"
+                    value={selectedMapping.source_max}
                     min={0}
                     max={127}
-                    value={selectedMapping.source_max}
-                    onChange={(event) => void updateSelectedMapping({ source_max: clampInt(Number(event.target.value), 0, 127) })}
+                    step={1}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => void updateSelectedMapping({ source_max: clampInt(value, 0, 127) })}
                   />
                 </label>
                 <label>
                   Target Min
-                  <input
-                    type="number"
+                  <NumberInput
+                    label="Target minimum"
                     value={selectedMapping.target_min}
-                    onChange={(event) => void updateSelectedMapping({ target_min: clampFloat(Number(event.target.value), -16384, 16384) })}
+                    min={-16384}
+                    max={16384}
+                    step={0.01}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => void updateSelectedMapping({ target_min: clampFloat(value, -16384, 16384) })}
                   />
                 </label>
                 <label>
                   Target Max
-                  <input
-                    type="number"
+                  <NumberInput
+                    label="Target maximum"
                     value={selectedMapping.target_max}
-                    onChange={(event) => void updateSelectedMapping({ target_max: clampFloat(Number(event.target.value), -16384, 16384) })}
+                    min={-16384}
+                    max={16384}
+                    step={0.01}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => void updateSelectedMapping({ target_max: clampFloat(value, -16384, 16384) })}
                   />
                 </label>
                 <label>
@@ -485,12 +522,16 @@ export function MPX1MidiMapper() {
                 </label>
                 <label>
                   Smoothing (ms)
-                  <input
-                    type="number"
+                  <NumberInput
+                    label="Smoothing ms"
+                    value={selectedMapping.smoothing_ms}
                     min={0}
                     max={500}
-                    value={selectedMapping.smoothing_ms}
-                    onChange={(event) => void updateSelectedMapping({ smoothing_ms: clampFloat(Number(event.target.value), 0, 500) })}
+                    step={1}
+                    showLabel={false}
+                    showBounds={false}
+                    size="small"
+                    onChange={(value) => void updateSelectedMapping({ smoothing_ms: clampFloat(value, 0, 500) })}
                   />
                 </label>
                 <label>

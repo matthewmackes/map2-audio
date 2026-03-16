@@ -11,6 +11,7 @@ import { useState, useMemo } from 'react'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
+import { NumberInput } from '../../../Controls/NumberInput'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { PitchDisplay } from '../../Visualizations/PitchDisplay'
 import { ArrowUp, ArrowDown, Link, LinkBreak } from '@phosphor-icons/react'
@@ -103,21 +104,19 @@ export function WhammyCard({
           <span>TOE</span>
         </div>
         <div className="whammy-pedal-track">
-          <input
-            type="range"
-            min="0"
-            max="100"
+          <NumberInput
             value={pedalPosition}
-            onChange={(e) => handlePedalChange(parseInt(e.target.value))}
+            min={0}
+            max={100}
+            step={1}
+            defaultValue={100}
+            profile="integer"
+            unit="%"
+            onChange={handlePedalChange}
+            size="small"
+            showLabel={false}
+            accentColor={accentColor}
             className="whammy-pedal-slider"
-            style={{ '--accent': accentColor } as React.CSSProperties}
-          />
-          <div
-            className="whammy-pedal-fill"
-            style={{
-              width: `${pedalPosition}%`,
-              background: `linear-gradient(90deg, #333, ${accentColor})`,
-            }}
           />
         </div>
         <div className="whammy-pedal-value">

@@ -538,6 +538,7 @@ try:
             "has_ui": p.has_ui,
             "in_ports": p.in_port_count,
             "out_ports": p.out_port_count,
+            "format": "LV2",
             "parameters": [
                 {
                     "index": param.index,
@@ -609,15 +610,34 @@ try:
         default_value: float,
     ) -> tuple[str, str]:
         token = f"{name} {symbol}".strip().lower()
+        integer_hints = (
+            "bank",
+            "channel",
+            "count",
+            "index",
+            "mode",
+            "octave",
+            "preset",
+            "program",
+            "quality",
+            "root",
+            "voice",
+            "voices",
+            "zone",
+        )
         if is_toggled:
             return "", "integer"
+        if minimum == 0.0 and maximum == 1.0:
+            return "", "normalized_0_1"
         if any(hint in token for hint in ("hz", "freq", "frequency", "cutoff")):
             return "Hz", "frequency"
         if any(hint in token for hint in ("db", "gain", "trim", "threshold", "level")):
             return "dB", "gain-db"
         if any(hint in token for hint in ("ms", "delay", "attack", "release", "time", "predelay", "pre-delay", "decay", "hold")):
             return "ms", "time-ms"
-        if all(_is_integral_value(value) for value in (minimum, maximum, default_value)):
+        if all(_is_integral_value(value) for value in (minimum, maximum, default_value)) and any(
+            hint in token for hint in integer_hints
+        ):
             return "", "integer"
         return "", "default"
 
@@ -639,6 +659,8 @@ try:
             return 1.0
         if profile == "time-ms":
             return 1.0 if span >= 10 else 0.1
+        if profile == "normalized_0_1":
+            return 0.01
         if span <= 1:
             return 0.01
         if span <= 10:

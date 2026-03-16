@@ -1,6 +1,7 @@
 import { ArrowsClockwise, GitBranch, Plus, SpinnerGap, Trash, WarningCircle } from '@phosphor-icons/react'
 import { useParallel } from '../../hooks/useParallel'
 import { useToasts } from '../Toasts'
+import { NumberInput } from '../Controls/NumberInput'
 
 interface ParallelRoutingPanelProps {
   nodeId?: string | null
@@ -137,19 +138,22 @@ export function ParallelRoutingPanel({
                   <span>A/B Blend</span>
                   <span>{Math.round(group.abBlend * 100)}%</span>
                 </div>
-                <input
-                  type="range"
+                <NumberInput
+                  label="A/B Blend"
+                  value={Math.round(group.abBlend * 100)}
                   min={0}
                   max={100}
-                  value={Math.round(group.abBlend * 100)}
+                  step={1}
+                  showLabel={false}
+                  showBounds={false}
+                  size="small"
                   disabled={isUpdating}
-                  onChange={(event) => {
-                    const blend = Number(event.target.value) / 100
+                  onChange={(value) => {
+                    const blend = value / 100
                     void setGroupABBlend(group.id, blend).catch((error) => {
                       pushToast(error instanceof Error ? error.message : 'Failed to update blend', 'error')
                     })
                   }}
-                  style={{ width: '100%' }}
                 />
               </label>
 

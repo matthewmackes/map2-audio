@@ -998,21 +998,25 @@ export default function MIDIMapper() {
         <DialogTitle>Add MIDI CC Mapping</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
+            <NumberInput
               label="MIDI Channel"
-              type="number"
-              fullWidth
               value={newMapping.channel}
-              onChange={(e) => setNewMapping({ ...newMapping, channel: parseInt(e.target.value) })}
-              inputProps={{ min: 1, max: 16 }}
-            />
-            <TextField
-              label="CC Number"
-              type="number"
+              onChange={(v) => setNewMapping({ ...newMapping, channel: Math.max(1, Math.min(16, Math.round(v))) })}
+              min={1}
+              max={16}
+              step={1}
+              size="small"
               fullWidth
+            />
+            <NumberInput
+              label="CC Number"
               value={newMapping.cc}
-              onChange={(e) => setNewMapping({ ...newMapping, cc: parseInt(e.target.value) })}
-              inputProps={{ min: 0, max: 127 }}
+              onChange={(v) => setNewMapping({ ...newMapping, cc: Math.max(0, Math.min(127, Math.round(v))) })}
+              min={0}
+              max={127}
+              step={1}
+              size="small"
+              fullWidth
             />
             <TextField
               label="Target Plugin"
@@ -1027,13 +1031,15 @@ export default function MIDIMapper() {
                 </MenuItem>
               ))}
             </TextField>
-            <TextField
+            <NumberInput
               label="Parameter Index"
-              type="number"
-              fullWidth
               value={newMapping.paramIndex}
-              onChange={(e) => setNewMapping({ ...newMapping, paramIndex: parseInt(e.target.value) })}
-              inputProps={{ min: 0 }}
+              onChange={(v) => setNewMapping({ ...newMapping, paramIndex: Math.max(0, Math.round(v)) })}
+              min={0}
+              max={4096}
+              step={1}
+              size="small"
+              fullWidth
             />
           </Stack>
         </DialogContent>

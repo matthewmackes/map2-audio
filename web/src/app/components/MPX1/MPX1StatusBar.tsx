@@ -2,6 +2,7 @@ import React from 'react'
 import { CaretLeft, CaretRight, Lightning } from '@phosphor-icons/react'
 
 import { formatMpx1ProgramNumber } from './programNumber'
+import { NumberInput } from '../Controls/NumberInput'
 
 type BypassBlock = 'REV' | 'PIT' | 'DLY' | 'CHO' | 'EQ' | 'MOD'
 
@@ -77,14 +78,16 @@ export function MPX1StatusBar({
 
       <div className="mpx1-statusbar__mix">
         <span className="mpx1-statusbar__mix-label">Mix</span>
-        <input
-          type="range"
+        <NumberInput
+          label="MPX1 global mix"
+          value={safeMix}
           min={0}
           max={1}
           step={0.01}
-          value={safeMix}
-          onChange={(event) => onMixChange(Number(event.target.value))}
-          aria-label="MPX1 global mix"
+          showLabel={false}
+          showBounds={false}
+          size="small"
+          onChange={(value) => onMixChange(value)}
         />
       </div>
 

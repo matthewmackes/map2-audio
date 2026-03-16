@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from '@mui/material'
+import { NumberInput } from '../../Controls/NumberInput'
 
 interface TesiraDspProbeDialogProps {
   open: boolean
@@ -22,13 +23,15 @@ export function TesiraDspProbeDialog({ open, busy = false, onClose, onProbe }: T
         <Typography variant="caption" color="text.secondary">
           Probe runtime instance tags (LevelControl, Mixer, PEQ, Router, GPIO).
         </Typography>
-        <TextField
+        <NumberInput
           label="Max instances per block family"
-          type="number"
-          size="small"
           value={maxInstances}
-          onChange={(e) => setMaxInstances(Number(e.target.value || 32))}
-          inputProps={{ min: 1, max: 128 }}
+          min={1}
+          max={128}
+          step={1}
+          size="small"
+          showBounds={false}
+          onChange={(value) => setMaxInstances(Math.round(value))}
         />
       </DialogContent>
       <DialogActions>
@@ -40,4 +43,3 @@ export function TesiraDspProbeDialog({ open, busy = false, onClose, onProbe }: T
     </Dialog>
   )
 }
-

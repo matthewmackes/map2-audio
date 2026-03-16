@@ -340,7 +340,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
         {
           id: 'sidechain-main',
           kind: 'series',
-          title: 'Live audio path',
+          title: 'Place a single Flow inside a Chain',
           entryLabel: 'Input',
           exitLabel: 'Output',
           flowIds: audioFlowId ? [audioFlowId] : [],
@@ -403,7 +403,7 @@ export function buildJuceGridLivePath(input: JuceGridLivePathInput): JuceGridLiv
         groups.push({
           id: 'series-main',
           kind: 'series',
-          title: 'Live audio path',
+          title: 'Place a single Flow inside a Chain',
           entryLabel: 'Input',
           exitLabel: 'Output',
           flowIds: activeIds,

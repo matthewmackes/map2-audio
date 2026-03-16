@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useSetCrosspoint, useSetCrosspointMute, useTesiraCrosspointMatrix } from '../hooks/useTesiraApi'
+import { NumberInput } from '../../Controls/NumberInput'
 
 interface TesiraMixerTabProps {
   deviceId: string
@@ -45,23 +46,27 @@ export function TesiraMixerTab({ deviceId }: TesiraMixerTabProps) {
           sx={{ width: 220 }}
           inputProps={{ style: { fontSize: 12 } }}
         />
-        <TextField
+        <NumberInput
           label="Inputs"
-          size="small"
-          type="number"
           value={rows}
-          onChange={(event) => setRows(Math.min(32, Math.max(1, Number(event.target.value) || 1)))}
-          sx={{ width: 80 }}
-          inputProps={{ style: { fontSize: 12 }, min: 1, max: 32 }}
-        />
-        <TextField
-          label="Outputs"
+          min={1}
+          max={32}
+          step={1}
           size="small"
-          type="number"
+          showBounds={false}
+          style={{ width: 80 }}
+          onChange={(value) => setRows(Math.min(32, Math.max(1, Math.round(value))))}
+        />
+        <NumberInput
+          label="Outputs"
           value={cols}
-          onChange={(event) => setCols(Math.min(32, Math.max(1, Number(event.target.value) || 1)))}
-          sx={{ width: 80 }}
-          inputProps={{ style: { fontSize: 12 }, min: 1, max: 32 }}
+          min={1}
+          max={32}
+          step={1}
+          size="small"
+          showBounds={false}
+          style={{ width: 80 }}
+          onChange={(value) => setCols(Math.min(32, Math.max(1, Math.round(value))))}
         />
         <Button
           size="small"

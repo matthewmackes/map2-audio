@@ -20,6 +20,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { chainsApi, effectsLoopsApi } from '../../../../map2/api'
 import type { EffectsLoop, LoopInsertion } from '../../../../map2/types'
 import { useWebSocketConnection, useWebSocketTopic } from '../../../../map2/hooks/useWebSocket'
+import { NumberInput } from '../../Controls/NumberInput'
 
 const LOOP_TOPOLOGIES = [
   'serial_insert',
@@ -376,14 +377,16 @@ export function TesiraLoopBuilderTab({ deviceId }: TesiraLoopBuilderTabProps) {
                     />
                   </Grid>
                   <Grid item xs={6} md={3}>
-                    <TextField
-                      size="small"
-                      type="number"
+                    <NumberInput
                       label="Channels"
                       value={createLoopChannels}
-                      onChange={(e) => setCreateLoopChannels(Math.max(1, Math.min(8, toNumber(e.target.value, 2))))}
-                      inputProps={{ min: 1, max: 8 }}
+                      min={1}
+                      max={8}
+                      step={1}
+                      size="small"
+                      showBounds={false}
                       fullWidth
+                      onChange={(value) => setCreateLoopChannels(Math.max(1, Math.min(8, Math.round(value))))}
                     />
                   </Grid>
                   <Grid item xs={6} md={3}>
@@ -486,25 +489,29 @@ export function TesiraLoopBuilderTab({ deviceId }: TesiraLoopBuilderTabProps) {
                     </FormControl>
                   </Grid>
                   <Grid item xs={3}>
-                    <TextField
-                      size="small"
-                      type="number"
+                    <NumberInput
                       label="Slot"
                       value={insertSlotIndex}
-                      onChange={(e) => setInsertSlotIndex(Math.max(0, toNumber(e.target.value, 0)))}
-                      inputProps={{ min: 0 }}
+                      min={0}
+                      max={128}
+                      step={1}
+                      size="small"
+                      showBounds={false}
                       fullWidth
+                      onChange={(value) => setInsertSlotIndex(Math.max(0, Math.round(value)))}
                     />
                   </Grid>
                   <Grid item xs={3}>
-                    <TextField
-                      size="small"
-                      type="number"
+                    <NumberInput
                       label="Blend %"
                       value={insertBlendPct}
-                      onChange={(e) => setInsertBlendPct(Math.max(0, Math.min(100, toNumber(e.target.value, 100))))}
-                      inputProps={{ min: 0, max: 100 }}
+                      min={0}
+                      max={100}
+                      step={1}
+                      size="small"
+                      showBounds={false}
                       fullWidth
+                      onChange={(value) => setInsertBlendPct(Math.max(0, Math.min(100, Math.round(value))))}
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -715,67 +722,77 @@ export function TesiraLoopBuilderTab({ deviceId }: TesiraLoopBuilderTabProps) {
                         </FormControl>
                       </Grid>
                       <Grid item xs={6} sm={2}>
-                        <TextField
-                          size="small"
-                          type="number"
+                        <NumberInput
                           label="Blend %"
                           value={draft.blend_pct}
-                          onChange={(e) => {
-                            const value = Math.max(0, Math.min(100, toNumber(e.target.value, draft.blend_pct)))
+                          min={0}
+                          max={100}
+                          step={1}
+                          size="small"
+                          showBounds={false}
+                          fullWidth
+                          onChange={(value) => {
+                            const nextValue = Math.max(0, Math.min(100, value))
                             setInsertionDrafts((prev) => ({
                               ...prev,
-                              [insertion.insertion_id]: { ...draft, blend_pct: value },
+                              [insertion.insertion_id]: { ...draft, blend_pct: nextValue },
                             }))
                           }}
-                          fullWidth
                         />
                       </Grid>
                       <Grid item xs={6} sm={2}>
-                        <TextField
-                          size="small"
-                          type="number"
+                        <NumberInput
                           label="Crossfade ms"
                           value={draft.crossfade_ms}
-                          onChange={(e) => {
-                            const value = Math.max(0, toNumber(e.target.value, draft.crossfade_ms))
+                          min={0}
+                          max={10000}
+                          step={1}
+                          size="small"
+                          showBounds={false}
+                          fullWidth
+                          onChange={(value) => {
+                            const nextValue = Math.max(0, value)
                             setInsertionDrafts((prev) => ({
                               ...prev,
-                              [insertion.insertion_id]: { ...draft, crossfade_ms: value },
+                              [insertion.insertion_id]: { ...draft, crossfade_ms: nextValue },
                             }))
                           }}
-                          fullWidth
                         />
                       </Grid>
                       <Grid item xs={6} sm={2}>
-                        <TextField
-                          size="small"
-                          type="number"
+                        <NumberInput
                           label="Send dB"
                           value={draft.send_gain_db}
-                          onChange={(e) => {
-                            const value = toNumber(e.target.value, draft.send_gain_db)
+                          min={-120}
+                          max={24}
+                          step={0.1}
+                          size="small"
+                          showBounds={false}
+                          fullWidth
+                          onChange={(value) => {
                             setInsertionDrafts((prev) => ({
                               ...prev,
                               [insertion.insertion_id]: { ...draft, send_gain_db: value },
                             }))
                           }}
-                          fullWidth
                         />
                       </Grid>
                       <Grid item xs={6} sm={2}>
-                        <TextField
-                          size="small"
-                          type="number"
+                        <NumberInput
                           label="Return dB"
                           value={draft.return_gain_db}
-                          onChange={(e) => {
-                            const value = toNumber(e.target.value, draft.return_gain_db)
+                          min={-120}
+                          max={24}
+                          step={0.1}
+                          size="small"
+                          showBounds={false}
+                          fullWidth
+                          onChange={(value) => {
                             setInsertionDrafts((prev) => ({
                               ...prev,
                               [insertion.insertion_id]: { ...draft, return_gain_db: value },
                             }))
                           }}
-                          fullWidth
                         />
                       </Grid>
                     </Grid>

@@ -48,6 +48,7 @@ import {
   LinearProgress,
   Slider,
 } from '@mui/material';
+import { NumberInput } from './NumberInput';
 import {
   Refresh as RefreshIcon,
   CheckCircle as OkIcon,
@@ -885,26 +886,31 @@ export default function WWWPanel() {
                     config: { ...configDialog.config, host: e.target.value }
                   })}
                 />
-                <TextField
-                  fullWidth
+                <NumberInput
                   label="Port"
-                  type="number"
-                  value={configDialog.config?.port || 8080}
-                  onChange={(e) => setConfigDialog({
+                  value={Number(configDialog.config?.port || 8080)}
+                  min={1}
+                  max={65535}
+                  step={1}
+                  size="small"
+                  fullWidth
+                  onChange={(value) => setConfigDialog({
                     ...configDialog,
-                    config: { ...configDialog.config, port: parseInt(e.target.value) }
+                    config: { ...configDialog.config, port: Math.max(1, Math.min(65535, Math.round(value))) }
                   })}
                 />
-                <TextField
-                  fullWidth
+                <NumberInput
                   label="Workers"
-                  type="number"
-                  value={configDialog.config?.workers || 1}
-                  onChange={(e) => setConfigDialog({
+                  value={Number(configDialog.config?.workers || 1)}
+                  min={1}
+                  max={8}
+                  step={1}
+                  size="small"
+                  fullWidth
+                  onChange={(value) => setConfigDialog({
                     ...configDialog,
-                    config: { ...configDialog.config, workers: parseInt(e.target.value) }
+                    config: { ...configDialog.config, workers: Math.max(1, Math.min(8, Math.round(value))) }
                   })}
-                  inputProps={{ min: 1, max: 8 }}
                 />
                 <FormControlLabel
                   control={

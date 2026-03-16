@@ -178,10 +178,6 @@ function fallbackPluginLabel(pluginUri: string | null): string {
   return tail ? tail.replace(/[-_]+/g, ' ') : pluginUri
 }
 
-function JuceGridHeroMark() {
-  return <MapAudioGridIcon className="juce-grid-page__hero-mark-svg" size={192} />
-}
-
 function getAudioRouteLabels(
   selectedPorts: number[] | undefined,
   ports: AudioPort[] | undefined,
@@ -1006,20 +1002,11 @@ export function JuceGridPage() {
     data: FlowSnapshotData,
     options?: { toastMessage?: string | null; invalidateChains?: boolean },
   ) => {
-    console.log('[Snapshot Load] Received data:', JSON.stringify({
-      flowSlotsCount: data.flowSlots?.length,
-      flowSlots: data.flowSlots,
-      routing: data.routing,
-      activeFlowIndex: data.activeFlowIndex,
-      chainsCount: Object.keys(data.chains || {}).length,
-    }, null, 2))
-
     const normalizedSnapshotState = normalizeRuntimeGridState(
       data.flowSlots,
       data.routing,
       data.activeFlowIndex,
     )
-    console.log('[Snapshot Load] Setting flowSlots:', normalizedSnapshotState.flowSlots)
     setFlowSlots(normalizedSnapshotState.flowSlots)
     setRouting(normalizedSnapshotState.routing)
     setActiveFlowIndex(normalizedSnapshotState.activeFlowIndex)
@@ -2616,31 +2603,27 @@ export function JuceGridPage() {
               </div>
 
               <div className="juce-grid-page__midi-range-grid">
-                <TextInput
-                  id={`juce-grid-midi-min-${mapping.id}`}
-                  labelText="Min"
-                  type="number"
-                  value={midiRangeDrafts[mapping.id]?.min ?? formatMidiMappingValue(mapping.min_val)}
-                  onChange={(event) => updateMidiMappingRangeDraft(mapping.id, 'min', event.target.value)}
-                  onBlur={() => commitMidiMappingRange(mapping)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.currentTarget.blur()
-                    }
-                  }}
+                <NumberInput
+                  label="Min"
+                  value={Number(midiRangeDrafts[mapping.id]?.min ?? mapping.min_val)}
+                  min={-100000}
+                  max={100000}
+                  step={0.01}
+                  precision={2}
+                  showBounds={false}
+                  onChange={(nextValue) => updateMidiMappingRangeDraft(mapping.id, 'min', String(nextValue))}
+                  onChangeEnd={() => commitMidiMappingRange(mapping)}
                 />
-                <TextInput
-                  id={`juce-grid-midi-max-${mapping.id}`}
-                  labelText="Max"
-                  type="number"
-                  value={midiRangeDrafts[mapping.id]?.max ?? formatMidiMappingValue(mapping.max_val)}
-                  onChange={(event) => updateMidiMappingRangeDraft(mapping.id, 'max', event.target.value)}
-                  onBlur={() => commitMidiMappingRange(mapping)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.currentTarget.blur()
-                    }
-                  }}
+                <NumberInput
+                  label="Max"
+                  value={Number(midiRangeDrafts[mapping.id]?.max ?? mapping.max_val)}
+                  min={-100000}
+                  max={100000}
+                  step={0.01}
+                  precision={2}
+                  showBounds={false}
+                  onChange={(nextValue) => updateMidiMappingRangeDraft(mapping.id, 'max', String(nextValue))}
+                  onChangeEnd={() => commitMidiMappingRange(mapping)}
                 />
               </div>
 
@@ -3080,7 +3063,7 @@ export function JuceGridPage() {
       <div className="juce-grid-page__routing-header">
         <div className="juce-grid-page__routing-copy">
           <strong>Routing topology</strong>
-          <p>Keep topology selection and flow-routing actions inside the visual routing card.</p>
+          <p>Next, Choose how the Chain, or Multiple Chains are routed in reference to one another</p>
         </div>
         <div className="juce-grid-page__routing-meta">
           <Tag type="blue">{activeRoutingMode.label}</Tag>
@@ -3478,52 +3461,25 @@ export function JuceGridPage() {
     <div className="juce-grid-page">
       <LandscapePrompt componentId="juce-grid" />
       <div className="juce-grid-page__header-shell">
-        <Layer className="juce-grid-page__hero">
-          <div className="juce-grid-page__hero-brand">
-            <div className="juce-grid-page__hero-mark">
-              <JuceGridHeroMark />
-            </div>
-            <div className="juce-grid-page__hero-copy">
-              <div className="juce-grid-page__hero-tags">
-                <Tag type="blue">Audio Grid</Tag>
-                <Tag type={currentChain?.is_active ? 'green' : 'red'}>
-                  {currentChain?.is_active ? 'Active chain' : 'Standby chain'}
-                </Tag>
-                <Tag type="gray">{flowSlots.length} flows</Tag>
-                {currentChain && <Tag type="cool-gray">{currentChain.name}</Tag>}
-              </div>
-              <h1 className="juce-grid-page__title">Audio Grid</h1>
-              <p className="juce-grid-page__subtitle">
-                MAP-integrated audio grid editor delivering full JUCE workflow coverage, enabling visual routing, real-time signal graph manipulation, and complete audio processing pipeline control.
-              </p>
+        <Layer className="juce-grid-page__thin-bar">
+          <div className="juce-grid-page__thin-bar-brand">
+            <MapAudioGridIcon size={20} />
+            <span className="juce-grid-page__thin-bar-title">Audio Grid</span>
+            <div className="juce-grid-page__hero-tags">
+              <Tag type={currentChain?.is_active ? 'green' : 'red'}>
+                {currentChain?.is_active ? 'Active chain' : 'Standby chain'}
+              </Tag>
+              <Tag type="gray">{flowSlots.length} flows</Tag>
+              {currentChain && <Tag type="cool-gray">{currentChain.name}</Tag>}
             </div>
           </div>
           <div className="juce-grid-page__hero-actions">
-            <Button size="sm" kind="ghost" onClick={handleAddPlugin}>
-              Add plugin
-            </Button>
             <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
               Shortcuts
             </Button>
           </div>
         </Layer>
       </div>
-
-      {/* Chains Grid - below title */}
-      <JuceGridChainManagementCard
-        selectedChainId={activeFlow?.chainId}
-        onChainSelect={(chainId) => {
-          if (activeFlow) {
-            updateFlow(activeFlow.id, { chainId })
-          }
-        }}
-        onSelectedChainRemoved={handleChainRemoved}
-        flowSlots={flowSlots}
-        focusedFlowLabel={activeFlowLabel}
-        onToggleSelectedChainActive={handleToggleChainActive}
-        onDuplicateChain={handleDuplicateChain}
-        onRenameChain={handleRenameChain}
-      />
 
       {isCompactLayout && (
         <Layer className="juce-grid-page__compact-tabs">
@@ -3542,149 +3498,166 @@ export function JuceGridPage() {
         </Layer>
       )}
 
-      {/* Main content area */}
-      <div className="juce-grid-page__workspace">
-        <main className="juce-grid-page__main">
-        {!isCompactLayout && <JuceGridClusterSummaryBar />}
+      <div className="juce-grid-page__unified-block">
+        {/* Chains Grid - below title */}
+        <JuceGridChainManagementCard
+          selectedChainId={activeFlow?.chainId}
+          onChainSelect={(chainId) => {
+            if (activeFlow) {
+              updateFlow(activeFlow.id, { chainId })
+            }
+          }}
+          onSelectedChainRemoved={handleChainRemoved}
+          flowSlots={flowSlots}
+          focusedFlowLabel={activeFlowLabel}
+          onToggleSelectedChainActive={handleToggleChainActive}
+          onDuplicateChain={handleDuplicateChain}
+          onRenameChain={handleRenameChain}
+        />
 
-        {/* Signal Routing Topology Diagram */}
-        <Layer className="juce-grid-page__routing-shell">
-          {renderRoutingSurface(false)}
-        </Layer>
+        {/* Main content area */}
+        <div className="juce-grid-page__workspace">
+          <main className="juce-grid-page__main">
+          {!isCompactLayout && <JuceGridClusterSummaryBar />}
 
-        {/* Multi-flow signal grids */}
-        <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
-          {livePathLayout.groups.map((group, groupIndex) => (
-            <Layer
-              key={group.id}
-              className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
-            >
-              <div className="juce-grid-page__live-path-group-header">
-                <div className="juce-grid-page__live-path-group-copy">
-                  <strong>{group.title}</strong>
-                  <p>
-                    {group.entryLabel && group.exitLabel
-                      ? `${group.entryLabel} to ${group.exitLabel}`
-                      : 'Current live routing context'}
-                  </p>
-                </div>
-                <div className="juce-grid-page__live-path-group-actions">
-                  {groupIndex === 0 && (
-                    <>
-                      <div className="juce-grid-page__live-path-summary-meta">
-                        <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
-                          {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
-                        </Tag>
-                        <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
-                        <Tag type="cool-gray">
-                          {flowSlots.length} {flowSlots.length === 1 ? 'flow' : 'flows'}
-                        </Tag>
-                      </div>
-                      <div className="juce-grid-page__live-path-summary-flow-actions">
-                        <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
-                          Add flow
-                        </Button>
-                        <Button
-                          size="sm"
-                          kind="danger--tertiary"
-                          onClick={() => setShowClearFlowsModal(true)}
-                          disabled={flowSlots.length <= 1}
-                        >
-                          Clear flows
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                  <div className="juce-grid-page__compact-tags">
-                    {group.entryLabel && <Tag type="cool-gray">{group.entryLabel}</Tag>}
-                    {group.exitLabel && <Tag type={group.dashed ? 'purple' : 'blue'}>{group.exitLabel}</Tag>}
+          {/* Signal Routing Topology Diagram */}
+          <Layer className="juce-grid-page__routing-shell">
+            {renderRoutingSurface(false)}
+          </Layer>
+
+          {/* Multi-flow signal grids */}
+          <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
+            {livePathLayout.groups.map((group, groupIndex) => (
+              <Layer
+                key={group.id}
+                className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
+              >
+                <div className="juce-grid-page__live-path-group-header">
+                  <div className="juce-grid-page__live-path-group-copy">
+                    <strong>{group.title}</strong>
+                    <p>
+                      {group.entryLabel && group.exitLabel
+                        ? `${group.entryLabel} to ${group.exitLabel}`
+                        : 'Current live routing context'}
+                    </p>
+                  </div>
+                  <div className="juce-grid-page__live-path-group-actions">
+                    {groupIndex === 0 && (
+                      <>
+                        <div className="juce-grid-page__live-path-summary-meta">
+                          <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
+                            {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
+                          </Tag>
+                          <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
+                          <Tag type="cool-gray">
+                            {flowSlots.length} {flowSlots.length === 1 ? 'flow' : 'flows'}
+                          </Tag>
+                        </div>
+                        <div className="juce-grid-page__live-path-summary-flow-actions">
+                          <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
+                            Add flow
+                          </Button>
+                          <Button
+                            size="sm"
+                            kind="danger--tertiary"
+                            onClick={() => setShowClearFlowsModal(true)}
+                            disabled={flowSlots.length <= 1}
+                          >
+                            Clear flows
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    <div className="juce-grid-page__compact-tags">
+                      {group.entryLabel && <Tag type="cool-gray">{group.entryLabel}</Tag>}
+                      {group.exitLabel && <Tag type={group.dashed ? 'purple' : 'blue'}>{group.exitLabel}</Tag>}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
-                {group.flowIds.map((flowId, groupIndex) => {
-                  const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
-                    ? 'Series'
-                    : group.kind === 'morph' && groupIndex === 0 && group.flowIds.length > 1
-                      ? `Morph ${Math.round(routing.morphProgress * 100)}%`
-                      : null
-                  const connectorTone = group.kind === 'morph'
-                    ? routing.morphProgress > 0 ? 'active' : 'dim'
-                    : group.tone === 'active' ? 'active' : 'dim'
-                  const connectorDashed = group.kind === 'morph'
-                    ? routing.morphProgress <= 0
-                    : Boolean(group.dashed)
+                <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
+                  {group.flowIds.map((flowId, groupIndex) => {
+                    const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
+                      ? 'Series'
+                      : group.kind === 'morph' && groupIndex === 0 && group.flowIds.length > 1
+                        ? `Morph ${Math.round(routing.morphProgress * 100)}%`
+                        : null
+                    const connectorTone = group.kind === 'morph'
+                      ? routing.morphProgress > 0 ? 'active' : 'dim'
+                      : group.tone === 'active' ? 'active' : 'dim'
+                    const connectorDashed = group.kind === 'morph'
+                      ? routing.morphProgress <= 0
+                      : Boolean(group.dashed)
 
-                  return (
-                    <div key={`${group.id}-${flowId}`} className="juce-grid-page__live-path-item">
-                      {renderLivePathFlowCard(flowId, group.kind)}
-                      {connectorLabel && (
-                        <div
-                          className={`juce-grid-page__live-path-connector is-${connectorTone} ${connectorDashed ? 'is-dashed' : ''}`}
-                          aria-hidden
-                        >
-                          <div className="juce-grid-page__live-path-connector-arrow">
-                            <span className="juce-grid-page__live-path-connector-shaft" />
-                            <ArrowDown size={16} />
-                            <span className="juce-grid-page__live-path-connector-shaft" />
+                    return (
+                      <div key={`${group.id}-${flowId}`} className="juce-grid-page__live-path-item">
+                        {renderLivePathFlowCard(flowId, group.kind)}
+                        {connectorLabel && (
+                          <div
+                            className={`juce-grid-page__live-path-connector is-${connectorTone} ${connectorDashed ? 'is-dashed' : ''}`}
+                            aria-hidden
+                          >
+                            <div className="juce-grid-page__live-path-connector-arrow">
+                              <span className="juce-grid-page__live-path-connector-shaft" />
+                              <ArrowDown size={16} />
+                              <span className="juce-grid-page__live-path-connector-shaft" />
+                            </div>
+                            <span>{connectorLabel}</span>
                           </div>
-                          <span>{connectorLabel}</span>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </Layer>
+            ))}
+          </section>
+
+          {!isCompactLayout && (
+            <Layer className="juce-grid-page__editor-shell">
+              <JuceGridParameterEditor
+                plugin={selectedPlugin}
+                meta={selectedPluginMeta}
+                onParameterChange={handleParameterChange}
+                onParameterChangeEnd={handleParameterChangeEnd}
+                onToggleBypass={handleToggleSelectedBypass}
+                onRefreshPlugins={handleRefreshPlugins}
+                isRefreshing={isRefreshingPlugins}
+              />
+
+              {selectedPlugin && selectedPluginMeta && (
+                <div className="juce-grid-page__editor-tags">
+                  {selectedPlugin.format && (
+                    <Tag type="blue">
+                      {selectedPlugin.format}
+                    </Tag>
+                  )}
+                  <Tag type="cool-gray">
+                    {selectedPluginMeta.in_ports}→{selectedPluginMeta.out_ports}
+                  </Tag>
+                  <Tag type="cool-gray">
+                    {selectedPluginMeta.parameters?.length || 0} params
+                  </Tag>
+                  {getPluginCpu(selectedPlugin.uri) > 0 && (
+                    <Tag type={getPluginCpu(selectedPlugin.uri) >= 50 ? 'red' : 'blue'}>
+                      CPU {getPluginCpu(selectedPlugin.uri).toFixed(1)}%
+                    </Tag>
+                  )}
+                  {selectedPlugin.latency_samples && selectedPlugin.latency_samples > 0 && (
+                    <Tag type="warm-gray">Latency {selectedPlugin.latency_samples}smp</Tag>
+                  )}
+                  {selectedPlugin.latency_compensated && (
+                    <Tag type="green">PDC</Tag>
+                  )}
+                  {selectedPlugin.sidechain_source && (
+                    <Tag type="purple">Sidechain</Tag>
+                  )}
+                </div>
+              )}
             </Layer>
-          ))}
-        </section>
-
-        {!isCompactLayout && (
-          <Layer className="juce-grid-page__editor-shell">
-            <JuceGridParameterEditor
-              plugin={selectedPlugin}
-              meta={selectedPluginMeta}
-              onParameterChange={handleParameterChange}
-              onParameterChangeEnd={handleParameterChangeEnd}
-              onToggleBypass={handleToggleSelectedBypass}
-              onRefreshPlugins={handleRefreshPlugins}
-              isRefreshing={isRefreshingPlugins}
-            />
-
-            {selectedPlugin && selectedPluginMeta && (
-              <div className="juce-grid-page__editor-tags">
-                {selectedPlugin.format && (
-                  <Tag type="blue">
-                    {selectedPlugin.format}
-                  </Tag>
-                )}
-                <Tag type="cool-gray">
-                  {selectedPluginMeta.in_ports}→{selectedPluginMeta.out_ports}
-                </Tag>
-                <Tag type="cool-gray">
-                  {selectedPluginMeta.parameters?.length || 0} params
-                </Tag>
-                {getPluginCpu(selectedPlugin.uri) > 0 && (
-                  <Tag type={getPluginCpu(selectedPlugin.uri) >= 50 ? 'red' : 'blue'}>
-                    CPU {getPluginCpu(selectedPlugin.uri).toFixed(1)}%
-                  </Tag>
-                )}
-                {selectedPlugin.latency_samples && selectedPlugin.latency_samples > 0 && (
-                  <Tag type="warm-gray">Latency {selectedPlugin.latency_samples}smp</Tag>
-                )}
-                {selectedPlugin.latency_compensated && (
-                  <Tag type="green">PDC</Tag>
-                )}
-                {selectedPlugin.sidechain_source && (
-                  <Tag type="purple">Sidechain</Tag>
-                )}
-              </div>
-            )}
-          </Layer>
-        )}
-        </main>
-
+          )}
+          </main>
+        </div>
       </div>
 
       {isCompactLayout && (

@@ -1,0 +1,139 @@
+/* ── API Activity Overlay ──────────────────────────────────────────────────── */
+
+.api-overlay {
+  position: fixed;
+  top: 3rem; /* below Carbon header */
+  right: 0;
+  width: 25vw;
+  height: 80vh;
+  max-height: 80vh;
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Preview box slides in from above when a line is hovered */
+.api-overlay__preview {
+  flex-shrink: 0;
+  padding: 0.25rem 0.75rem 0.25rem 0;
+  font-family: monospace;
+  font-size: 10px;
+  color: #0f62fe;
+  text-align: right;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: transparent;
+  pointer-events: none;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 220ms ease,
+    opacity 220ms ease;
+}
+
+.api-overlay__preview--visible {
+  max-height: 6rem;
+  opacity: 1;
+}
+
+/* Scroll container — no scrollbars, no chrome */
+.api-overlay__log {
+  flex: 1 1 auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 1px;
+  padding: 0 0.5rem 0.5rem 0;
+}
+
+/* Individual log line */
+.api-overlay__line {
+  font-family: monospace;
+  font-size: 10px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip; /* left-truncation done in JS */
+  direction: rtl; /* right-anchor: text overflows left */
+  unicode-bidi: plaintext;
+  background: transparent;
+  cursor: default;
+  pointer-events: auto; /* hover works, clicks pass through via overlay wrapper */
+  line-height: 1.4;
+
+  /* Entry animation: slide in from right */
+  animation: api-line-in 280ms ease forwards;
+
+  /* Exit fade — applied via class */
+  transition: opacity 800ms ease;
+}
+
+.api-overlay__line--fading {
+  opacity: 0;
+}
+
+/* Color by status tier */
+.api-overlay__line--2xx {
+  color: #0f62fe; /* Carbon Blue 60 */
+}
+
+.api-overlay__line--4xx {
+  color: #f1c21b; /* Carbon Yellow 30 / amber */
+}
+
+.api-overlay__line--5xx {
+  color: #da1e28; /* Carbon Red 60 */
+}
+
+.api-overlay__line--dim-ts {
+  /* timestamp part — rendered as a span inside the line */
+}
+
+.api-overlay__ts {
+  color: rgba(82, 82, 82, 0.7);
+  font-size: 9px;
+}
+
+/* Hovered line highlight */
+.api-overlay__line--hovered {
+  color: #4589ff; /* Carbon Blue 50 — slightly lighter for hover */
+}
+
+/* Toggle button — lives outside the overlay, inside the page */
+.api-overlay-toggle {
+  position: fixed;
+  top: 3.25rem;
+  right: 0.5rem;
+  z-index: 101;
+  background: transparent;
+  border: 1px solid rgba(15, 98, 254, 0.35);
+  border-radius: 2px;
+  color: #0f62fe;
+  font-family: monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  cursor: pointer;
+  line-height: 1;
+  transition: opacity 180ms ease;
+  opacity: 0.5;
+}
+
+.api-overlay-toggle:hover {
+  opacity: 1;
+}
+
+/* Entry keyframe */
+@keyframes api-line-in {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

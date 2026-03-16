@@ -22,6 +22,7 @@ import {
 } from '@mui/material'
 import { Trash, Plus, ArrowsClockwise, Warning } from '@phosphor-icons/react'
 import type { HealthAlert } from '@/app/hooks/useHealthMonitoring'
+import { NumberInput } from '../Controls/NumberInput'
 
 interface SystemHost {
   id: string
@@ -412,13 +413,16 @@ export default function MultiSystemDashboard({
             size="small"
           />
 
-          <TextField
-            fullWidth
+          <NumberInput
             label="Port"
-            type="number"
             value={newHostPort}
-            onChange={(e) => setNewHostPort(parseInt(e.target.value))}
+            min={1}
+            max={65535}
+            step={1}
+            profile="integer"
+            onChange={setNewHostPort}
             size="small"
+            fullWidth
           />
 
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>

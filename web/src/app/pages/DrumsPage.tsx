@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 // Note: Phosphor has no Drum icon — MusicNote used as closest match
 import { MusicNote, UploadSimple, FolderOpen, ArrowsClockwise, Play, Square, CaretDown } from '@phosphor-icons/react'
 import { PageHeader } from '../components/PageHeader'
+import { NumberInput } from '../components/Controls/NumberInput'
 import { drumsApi } from '../../map2/api'
 import type { DrumMachineState, DrumPack } from '../../map2/types'
 
@@ -138,38 +139,46 @@ export function DrumsPage() {
           {/* Practice Settings */}
           {state?.ui_mode === 'practice' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-              <div>
-                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Variation</label>
-                <input
-                  type="number"
-                  value={state.practice_variation}
-                  onChange={e => updateState.mutate({ practice_variation: Number(e.target.value) })}
-                  min={0}
-                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Count-in Bars</label>
-                <input
-                  type="number"
-                  value={state.practice_count_in_bars}
-                  onChange={e => updateState.mutate({ practice_count_in_bars: Number(e.target.value) })}
-                  min={0}
-                  max={4}
-                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Quantization</label>
-                <input
-                  type="number"
-                  value={state.practice_change_quantization}
-                  onChange={e => updateState.mutate({ practice_change_quantization: Number(e.target.value) })}
-                  min={1}
-                  max={8}
-                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
-                />
-              </div>
+              <NumberInput
+                label="Variation"
+                value={state.practice_variation}
+                min={0}
+                max={10}
+                step={1}
+                defaultValue={0}
+                profile="integer"
+                onChange={(value) => updateState.mutate({ practice_variation: value })}
+                size="small"
+                fullWidth
+                accentColor="#2563eb"
+              />
+              <NumberInput
+                label="Count-in Bars"
+                value={state.practice_count_in_bars}
+                min={0}
+                max={4}
+                step={1}
+                defaultValue={1}
+                profile="integer"
+                onChange={(value) => updateState.mutate({ practice_count_in_bars: value })}
+                size="small"
+                fullWidth
+                accentColor="#2563eb"
+                valueFormatter={(value) => value === 0 ? 'Off' : `${value}`}
+              />
+              <NumberInput
+                label="Quantization"
+                value={state.practice_change_quantization}
+                min={1}
+                max={8}
+                step={1}
+                defaultValue={1}
+                profile="integer"
+                onChange={(value) => updateState.mutate({ practice_change_quantization: value })}
+                size="small"
+                fullWidth
+                accentColor="#2563eb"
+              />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
                   type="checkbox"

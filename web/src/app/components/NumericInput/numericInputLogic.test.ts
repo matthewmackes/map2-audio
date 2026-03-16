@@ -111,4 +111,24 @@ describe('numericInputLogic', () => {
       modifiers: { fine: true },
     })).toBe(0.01)
   })
+
+  it('uses the normalized profile for finer 0..1 adjustments', () => {
+    const normalizedDescriptor: ParameterDescriptor = {
+      min: 0,
+      max: 1,
+      step: 0.01,
+      unit: '',
+      defaultValue: 0.5,
+      profile: 'normalized_0_1',
+      precision: 3,
+    }
+
+    expect(getFineStep(normalizedDescriptor)).toBe(0.0005)
+    expect(applyNumericDelta({
+      value: 0.5,
+      deltaSteps: 2,
+      descriptor: normalizedDescriptor,
+      modifiers: { fine: true },
+    })).toBe(0.501)
+  })
 })

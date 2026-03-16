@@ -10,6 +10,7 @@ import { X, Sliders, FloppyDisk, Trash, WarningCircle } from '@phosphor-icons/re
 import type { Plugin, PluginParameter, MIDIMappingV2, MIDICurveType } from '../../../../map2/types'
 import { midiApiV2 } from '../../../../map2/api'
 import { getDisplayPluginName } from '../../../../map2/displayNames'
+import { NumberInput } from '../../Controls/NumberInput'
 
 interface MidiMappingDialogProps {
   isOpen: boolean
@@ -305,18 +306,22 @@ export function MidiMappingDialog({
                       <span className="param-name">{row.paramName}</span>
                     </td>
                     <td className="col-cc">
-                      <input
-                        type="number"
+                      <NumberInput
+                        label={`CC for ${row.paramName}`}
+                        value={row.cc}
                         min={0}
                         max={127}
-                        value={row.cc ?? ''}
-                        placeholder="--"
-                        onChange={(e) => {
-                          const val = e.target.value
-                          const cc = val === '' ? null : Math.max(0, Math.min(127, parseInt(val, 10)))
-                          updateMapping(row.paramIndex, { cc: isNaN(cc as number) ? null : cc })
-                        }}
+                        step={1}
+                        size="small"
+                        showLabel={false}
+                        showBounds={false}
                         className="cc-input"
+                        nullable
+                        onChange={(nextValue) => {
+                          const cc = Math.max(0, Math.min(127, Math.round(nextValue)))
+                          updateMapping(row.paramIndex, { cc })
+                        }}
+                        onClear={() => updateMapping(row.paramIndex, { cc: null })}
                       />
                     </td>
                     <td className="col-channel">

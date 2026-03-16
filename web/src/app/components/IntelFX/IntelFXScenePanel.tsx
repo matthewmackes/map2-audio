@@ -19,6 +19,7 @@ import {
 } from '../../../map2/intelfxApi'
 import { useIntelFXPageContext } from '../../pages/IntelFXPage'
 import { formatIntelFXProgramNumber } from './programNumber'
+import { NumberInput } from '../Controls/NumberInput'
 import './IntelFXScenePanel.css'
 
 const MORPH_CURVES: IntelFXMorphRequest['curve'][] = ['linear', 'ease_in', 'ease_out', 's_curve']
@@ -388,13 +389,15 @@ export function IntelFXScenePanel() {
               <SelectItem key={scene.id} value={scene.id} text={scene.name} />
             ))}
           </Select>
-          <TextInput
-            id="intelfx-morph-duration"
-            labelText="Duration (seconds)"
-            size="sm"
-            type="number"
-            value={String(morphDuration)}
-            onChange={(event) => setMorphDuration(clampDuration(Number(event.target.value)))}
+          <NumberInput
+            label="Duration (seconds)"
+            value={morphDuration}
+            min={0.05}
+            max={60}
+            step={0.05}
+            size="small"
+            showBounds={false}
+            onChange={(value) => setMorphDuration(clampDuration(value))}
           />
           <Select
             id="intelfx-morph-curve"
@@ -416,13 +419,15 @@ export function IntelFXScenePanel() {
             Beat sync
           </label>
           {morphBeatSync ? (
-            <TextInput
-              id="intelfx-morph-bpm"
-              labelText="BPM"
-              size="sm"
-              type="number"
-              value={String(morphBpm)}
-              onChange={(event) => setMorphBpm(clampBpm(Number(event.target.value)))}
+            <NumberInput
+              label="BPM"
+              value={morphBpm}
+              min={20}
+              max={300}
+              step={1}
+              size="small"
+              showBounds={false}
+              onChange={(value) => setMorphBpm(clampBpm(value))}
             />
           ) : null}
         </div>

@@ -1,4 +1,5 @@
 import { memo, useMemo, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { ArrowRight } from '@carbon/icons-react'
 
 type RoutingMode =
   | 'parallel_blend'
@@ -49,14 +50,22 @@ interface DiagramPoint {
   y: number
 }
 
-const TERMINAL_FILL = 'var(--cds-layer-accent, rgba(255,255,255,0.04))'
-const TERMINAL_STROKE = 'var(--cds-border-subtle, rgba(255,255,255,0.16))'
-const TERMINAL_TEXT = 'var(--cds-text-secondary, rgba(255,255,255,0.65))'
-const NODE_FILL = 'var(--cds-layer, rgba(255,255,255,0.02))'
-const NODE_STROKE = 'var(--cds-border-strong, rgba(255,255,255,0.24))'
-const ACTIVE_WIRE = 'var(--cds-link-primary, #0f62fe)'
-const WIRE = 'var(--cds-border-subtle, rgba(255,255,255,0.18))'
-const ACTIVE_MARKER_FILL = 'color-mix(in srgb, var(--cds-link-primary, #0f62fe) 18%, var(--cds-layer, rgba(255,255,255,0.04)))'
+// ── Carbon Design token constants ──────────────────────────────────────────────
+// All fills, strokes, and text use Carbon tokens with semantically correct fallbacks.
+// No hardcoded hex or rgba values outside of these constants.
+const C_BACKGROUND   = 'var(--cds-background, #161616)'
+const C_LAYER        = 'var(--cds-layer, #262626)'
+const C_BORDER       = 'var(--cds-border-subtle, #393939)'
+const C_BORDER_STRONG= 'var(--cds-border-strong, #525252)'
+const C_TEXT_PRIMARY = 'var(--cds-text-primary, #f4f4f4)'
+const C_TEXT_SECONDARY='var(--cds-text-secondary, #c6c6c6)'
+const C_LINK         = 'var(--cds-link-primary, #0f62fe)'
+const C_PURPLE       = 'var(--cds-purple-60, #8a3ffc)'
+const C_FOCUS        = 'var(--cds-focus, #ffffff)'
+
+// Unique gradient IDs for animated active-path wires (gradient sweeps signal direction)
+const GRAD_ACTIVE_ID = 'jgr-wire-gradient-active'
+const GRAD_MORPH_ID  = 'jgr-wire-gradient-morph'
 
 export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer({
   mode,
@@ -100,6 +109,10 @@ export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer
     return null
   }
 
+  // Determine accent color for active-wire gradient (morph mode = purple, else link)
+  const isMorph = mode === 'parameter_morph'
+  const activeWireColor = isMorph ? C_PURPLE : C_LINK
+
   return (
     <div className="juce-grid-page__routing-diagram">
       <svg
@@ -110,32 +123,34 @@ export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
-          <marker
-            id="juce-grid-routing-arrow"
-            markerWidth="8"
-            markerHeight="8"
-            refX="7"
-            refY="4"
-            orient="auto"
-          >
-            <path d="M0,0 L8,4 L0,8 z" fill={WIRE} />
-          </marker>
-          <marker
-            id="juce-grid-routing-arrow-active"
-            markerWidth="8"
-            markerHeight="8"
-            refX="7"
-            refY="4"
-            orient="auto"
-          >
-            <path d="M0,0 L8,4 L0,8 z" fill={ACTIVE_WIRE} />
-          </marker>
+          {/* Gradient for active wire — sweeps left→right in signal direction */}
+          <linearGradient id={GRAD_ACTIVE_ID} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={activeWireColor} stopOpacity="0" />
+            <stop offset="60%" stopColor={activeWireColor} stopOpacity="0.55" />
+            <stop offset="100%" stopColor={activeWireColor} stopOpacity="1" />
+          </linearGradient>
+          <linearGradient id={GRAD_MORPH_ID} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={C_PURPLE} stopOpacity="0" />
+            <stop offset="60%" stopColor={C_PURPLE} stopOpacity="0.55" />
+            <stop offset="100%" stopColor={C_PURPLE} stopOpacity="1" />
+          </linearGradient>
         </defs>
 
-        {diagram.wires.map((wire, index) => renderWire(wire.points, wire.active, wire.dashed, `wire-${index}`))}
-        {diagram.terminals.map((terminal) => renderTerminal(terminal, onMarkerSelect, `terminal-${terminal.id}`))}
-        {diagram.markers.map((marker) => renderMarker(marker, onMarkerSelect, `marker-${marker.id}`))}
-        {diagram.morphBlock && renderMorphBlock(diagram.morphBlock.progress, diagram.morphBlock.x, diagram.morphBlock.y, compact)}
+        {diagram.wires.map((wire, index) =>
+          renderWire(wire.points, wire.active, wire.dashed, isMorph, `wire-${index}`)
+        )}
+        {diagram.terminals.map((terminal) =>
+          renderTerminal(terminal, onMarkerSelect, `terminal-${terminal.id}`)
+        )}
+        {diagram.markers.map((marker) =>
+          renderMarker(marker, onMarkerSelect, `marker-${marker.id}`)
+        )}
+        {diagram.morphBlock && renderMorphBlock(
+          diagram.morphBlock.progress,
+          diagram.morphBlock.x,
+          diagram.morphBlock.y,
+          compact,
+        )}
         {diagram.flows.map((flow) => renderFlowNode(flow, compact))}
       </svg>
 
@@ -243,93 +258,77 @@ export function getJuceGridRoutingInspectorItems(
   }
 }
 
+// ── Layout constants — more generous spacing for professional look ──────────────
+// Responsive: compact mode used when panel is narrow or many flows exist.
+function nodeW(compact: boolean) { return compact ? 112 : 132 }
+function nodeH(compact: boolean) { return compact ? 52 : 62 }
+function hGap(compact: boolean)  { return compact ? 40 : 56 }
+function rowGap(compact: boolean){ return compact ? 76 : 92 }
+
 function buildSeriesDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: string, compact: boolean): DiagramData {
-  const nodeWidth = compact ? 100 : 116
-  const nodeHeight = compact ? 48 : 56
-  const gap = compact ? 24 : 32
-  const terminalX = 52
-  const y = compact ? 68 : 80
-  const flowStartX = 124
-  const flowY = y - nodeHeight / 2
+  const nW = nodeW(compact)
+  const nH = nodeH(compact)
+  const gap = hGap(compact)
+  const y = compact ? 72 : 88
+  const flowY = y - nH / 2
+  const firstX = 80  // more leading space for bookend
   const flowNodes = flows.map((flow, index) => ({
     id: flow.id,
-    x: flowStartX + index * (nodeWidth + gap),
+    x: firstX + index * (nW + gap),
     y: flowY,
-    width: nodeWidth,
-    height: nodeHeight,
+    width: nW,
+    height: nH,
     label: flow.label,
     title: `Flow ${flow.label}`,
     caption: index === 0 ? 'Input stage' : 'Serial stage',
     color: flow.color,
     active: flow.id === activeFlowId,
   }))
-  const outputX = flowStartX + flowNodes.length * (nodeWidth + gap)
-  const terminals = [
-    { id: 'input' as const, x: terminalX, y, label: compact ? 'In' : 'Input', active: true },
-    { id: 'output' as const, x: outputX, y, label: compact ? 'Out' : 'Output', active: true },
-  ]
+  const lastNodeRight = flowNodes.length > 0 ? flowNodes[flowNodes.length - 1].x + nW : firstX
+  const outputX = lastNodeRight + gap + 20
 
   const wires = [
-    {
-      points: [
-        { x: terminalX + 40, y },
-        { x: flowNodes[0].x, y },
-      ],
-      active: true,
-    },
+    { points: [{ x: 32, y }, { x: firstX, y }], active: true },
     ...flowNodes.flatMap((node, index) => {
       if (index === flowNodes.length - 1) {
-        return [
-          {
-            points: [
-              { x: node.x + node.width, y },
-              { x: outputX - 40, y },
-            ],
-            active: true,
-          },
-        ]
+        return [{ points: [{ x: node.x + nW, y }, { x: outputX - 20, y }], active: true }]
       }
-
-      return [
-        {
-          points: [
-            { x: node.x + node.width, y },
-            { x: flowNodes[index + 1].x, y },
-          ],
-          active: true,
-        },
-      ]
+      return [{ points: [{ x: node.x + nW, y }, { x: flowNodes[index + 1].x, y }], active: true }]
     }),
   ]
 
   return {
-    width: outputX + 40,
-    height: compact ? 136 : 152,
+    width: outputX + 32,
+    height: compact ? 144 : 168,
     ariaLabel: 'Series',
     wires,
-    terminals,
+    terminals: [
+      { id: 'input', x: 16, y, label: compact ? 'In' : 'Input', active: true },
+      { id: 'output', x: outputX, y, label: compact ? 'Out' : 'Output', active: true },
+    ],
     markers: [
-      { id: 'series', x: flowStartX - 36, y: y - 30, label: 'Series', active: true },
+      { id: 'series', x: firstX + (flowNodes.length * (nW + gap)) / 2, y: flowY - 24, label: 'Series', active: true },
     ],
     flows: flowNodes,
   }
 }
 
 function buildParallelDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: string, compact: boolean): DiagramData {
-  const nodeWidth = compact ? 100 : 116
-  const nodeHeight = compact ? 48 : 56
-  const rowGap = compact ? 68 : 78
-  const startY = compact ? 42 : 50
-  const splitterX = 128
-  const flowX = 196
-  const mixX = flowX + nodeWidth + 84
-  const outputX = mixX + 76
+  const nW = nodeW(compact)
+  const nH = nodeH(compact)
+  const rGap = rowGap(compact)
+  const startY = compact ? 48 : 58
+  const splitterX = 72
+  const flowX = splitterX + 60
+  const mixX = flowX + nW + 80
+  const outputX = mixX + 60
+
   const flowNodes = flows.map((flow, index) => ({
     id: flow.id,
     x: flowX,
-    y: startY + index * rowGap,
-    width: nodeWidth,
-    height: nodeHeight,
+    y: startY + index * rGap,
+    width: nW,
+    height: nH,
     label: flow.label,
     title: `Flow ${flow.label}`,
     caption: `${Math.round(flow.blendPercent ?? 100)}% blend`,
@@ -337,147 +336,102 @@ function buildParallelDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: st
     active: flow.id === activeFlowId,
   }))
   const centerY = average(flowNodes.map((flow) => flow.y + flow.height / 2))
-  const terminals = [
-    { id: 'input' as const, x: 56, y: centerY, label: compact ? 'In' : 'Input', active: true },
-    { id: 'output' as const, x: outputX, y: centerY, label: compact ? 'Out' : 'Output', active: true },
-  ]
 
   const wires = [
+    { points: [{ x: 16, y: centerY }, { x: splitterX, y: centerY }], active: true },
     {
       points: [
-        { x: 96, y: centerY },
-        { x: splitterX, y: centerY },
+        { x: splitterX, y: flowNodes[0].y + nH / 2 },
+        { x: splitterX, y: flowNodes[flowNodes.length - 1].y + nH / 2 },
       ],
       active: true,
     },
     {
       points: [
-        { x: splitterX, y: flowNodes[0].y + flowNodes[0].height / 2 },
-        { x: splitterX, y: flowNodes[flowNodes.length - 1].y + flowNodes[flowNodes.length - 1].height / 2 },
+        { x: mixX, y: flowNodes[0].y + nH / 2 },
+        { x: mixX, y: flowNodes[flowNodes.length - 1].y + nH / 2 },
       ],
       active: true,
     },
-    {
-      points: [
-        { x: mixX, y: flowNodes[0].y + flowNodes[0].height / 2 },
-        { x: mixX, y: flowNodes[flowNodes.length - 1].y + flowNodes[flowNodes.length - 1].height / 2 },
-      ],
-      active: true,
-    },
-    {
-      points: [
-        { x: mixX, y: centerY },
-        { x: outputX - 40, y: centerY },
-      ],
-      active: true,
-    },
+    { points: [{ x: mixX, y: centerY }, { x: outputX - 16, y: centerY }], active: true },
     ...flowNodes.flatMap((flow) => {
-      const center = flow.y + flow.height / 2
+      const cy = flow.y + nH / 2
       return [
-        {
-          points: [
-            { x: splitterX, y: center },
-            { x: flow.x, y: center },
-          ],
-          active: flow.active,
-        },
-        {
-          points: [
-            { x: flow.x + flow.width, y: center },
-            { x: mixX, y: center },
-          ],
-          active: flow.active,
-        },
+        { points: [{ x: splitterX, y: cy }, { x: flow.x, y: cy }], active: flow.active },
+        { points: [{ x: flow.x + nW, y: cy }, { x: mixX, y: cy }], active: flow.active },
       ]
     }),
   ]
 
   return {
-    width: outputX + 40,
-    height: startY + flowNodes.length * rowGap,
+    width: outputX + 32,
+    height: startY + flowNodes.length * rGap + 16,
     ariaLabel: 'Parallel blend',
     wires,
-    terminals,
+    terminals: [
+      { id: 'input', x: 16, y: centerY, label: compact ? 'In' : 'Input', active: true },
+      { id: 'output', x: outputX, y: centerY, label: compact ? 'Out' : 'Output', active: true },
+    ],
     markers: [
-      { id: 'split', x: splitterX, y: startY - 12, label: 'Split', active: true },
-      { id: 'mix', x: mixX, y: startY - 12, label: 'Mix', active: true },
+      { id: 'split', x: splitterX, y: startY - 16, label: 'Split', active: true },
+      { id: 'mix', x: mixX, y: startY - 16, label: 'Mix', active: true },
     ],
     flows: flowNodes,
   }
 }
 
 function buildABDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: string, compact: boolean): DiagramData {
-  const nodeWidth = compact ? 100 : 116
-  const nodeHeight = compact ? 48 : 56
-  const rowGap = compact ? 68 : 78
-  const startY = compact ? 42 : 50
-  const switchX = 136
-  const flowX = 208
-  const outputX = flowX + nodeWidth + 112
+  const nW = nodeW(compact)
+  const nH = nodeH(compact)
+  const rGap = rowGap(compact)
+  const startY = compact ? 48 : 58
+  const switchX = 80
+  const flowX = switchX + 64
+  const outputX = flowX + nW + 80
+
   const flowNodes = flows.map((flow, index) => ({
     id: flow.id,
     x: flowX,
-    y: startY + index * rowGap,
-    width: nodeWidth,
-    height: nodeHeight,
+    y: startY + index * rGap,
+    width: nW,
+    height: nH,
     label: flow.label,
     title: `Flow ${flow.label}`,
     caption: flow.id === activeFlowId ? 'Live path' : 'Standby path',
     color: flow.color,
     active: flow.id === activeFlowId,
   }))
-  const centerY = average(flowNodes.map((flow) => flow.y + flow.height / 2))
-  const terminals = [
-    { id: 'input' as const, x: 56, y: centerY, label: compact ? 'In' : 'Input', active: true },
-    { id: 'output' as const, x: outputX, y: centerY, label: compact ? 'Out' : 'Output', active: true },
-  ]
+  const centerY = average(flowNodes.map((flow) => flow.y + nH / 2))
 
   const wires = [
+    { points: [{ x: 16, y: centerY }, { x: switchX, y: centerY }], active: true },
     {
       points: [
-        { x: 96, y: centerY },
-        { x: switchX, y: centerY },
-      ],
-      active: true,
-    },
-    {
-      points: [
-        { x: switchX, y: flowNodes[0].y + flowNodes[0].height / 2 },
-        { x: switchX, y: flowNodes[flowNodes.length - 1].y + flowNodes[flowNodes.length - 1].height / 2 },
+        { x: switchX, y: flowNodes[0].y + nH / 2 },
+        { x: switchX, y: flowNodes[flowNodes.length - 1].y + nH / 2 },
       ],
       active: true,
     },
     ...flowNodes.flatMap((flow) => {
-      const center = flow.y + flow.height / 2
+      const cy = flow.y + nH / 2
       return [
-        {
-          points: [
-            { x: switchX, y: center },
-            { x: flow.x, y: center },
-          ],
-          active: flow.active,
-          dashed: !flow.active,
-        },
-        {
-          points: [
-            { x: flow.x + flow.width, y: center },
-            { x: outputX - 40, y: centerY },
-          ],
-          active: flow.active,
-          dashed: !flow.active,
-        },
+        { points: [{ x: switchX, y: cy }, { x: flow.x, y: cy }], active: flow.active, dashed: !flow.active },
+        { points: [{ x: flow.x + nW, y: cy }, { x: outputX - 16, y: centerY }], active: flow.active, dashed: !flow.active },
       ]
     }),
   ]
 
   return {
-    width: outputX + 40,
-    height: startY + flowNodes.length * rowGap,
+    width: outputX + 32,
+    height: startY + flowNodes.length * rGap + 16,
     ariaLabel: 'A/B switch',
     wires,
-    terminals,
+    terminals: [
+      { id: 'input', x: 16, y: centerY, label: compact ? 'In' : 'Input', active: true },
+      { id: 'output', x: outputX, y: centerY, label: compact ? 'Out' : 'Output', active: true },
+    ],
     markers: [
-      { id: 'ab', x: switchX, y: startY - 12, label: 'A/B', active: true },
+      { id: 'ab', x: switchX, y: startY - 16, label: 'A/B', active: true },
     ],
     flows: flowNodes,
   }
@@ -489,21 +443,24 @@ function buildMorphDiagram(
   progress: number,
   compact: boolean,
 ): DiagramData {
-  const nodeWidth = compact ? 100 : 116
-  const nodeHeight = compact ? 48 : 56
-  const y = compact ? 72 : 84
-  const sourceX = 128
-  const morphX = sourceX + nodeWidth + 48
-  const targetX = morphX + 84
-  const outputX = targetX + nodeWidth + 76
+  const nW = nodeW(compact)
+  const nH = nodeH(compact)
+  const y = compact ? 80 : 96
+  const sourceX = 80
+  const gap = hGap(compact)
+  const morphBlockW = compact ? 60 : 72
+  const morphX = sourceX + nW + gap
+  const targetX = morphX + morphBlockW + gap
+  const outputX = targetX + nW + gap + 20
   const clampedProgress = Math.max(0, Math.min(1, progress))
+
   const flows: DiagramFlowNode[] = [
     {
       id: source.id,
       x: sourceX,
-      y: y - nodeHeight / 2,
-      width: nodeWidth,
-      height: nodeHeight,
+      y: y - nH / 2,
+      width: nW,
+      height: nH,
       label: source.label,
       title: `Flow ${source.label}`,
       caption: 'Morph source',
@@ -513,9 +470,9 @@ function buildMorphDiagram(
     {
       id: target.id,
       x: targetX,
-      y: y - nodeHeight / 2,
-      width: nodeWidth,
-      height: nodeHeight,
+      y: y - nH / 2,
+      width: nW,
+      height: nH,
       label: target.label,
       title: `Flow ${target.label}`,
       caption: 'Morph target',
@@ -525,50 +482,26 @@ function buildMorphDiagram(
   ]
 
   return {
-    width: outputX + 40,
-    height: compact ? 144 : 160,
+    width: outputX + 32,
+    height: compact ? 160 : 184,
     ariaLabel: 'Morph',
     terminals: [
-      { id: 'input', x: 52, y, label: compact ? 'In' : 'Input', active: true },
+      { id: 'input', x: 16, y, label: compact ? 'In' : 'Input', active: true },
       { id: 'output', x: outputX, y, label: compact ? 'Out' : 'Output', active: true },
     ],
     markers: [
-      { id: 'morph', x: morphX + 26, y: y - 38, label: 'Morph', active: true },
+      { id: 'morph', x: morphX + morphBlockW / 2, y: y - nH / 2 - 24, label: 'Morph', active: true },
     ],
     wires: [
-      {
-        points: [
-          { x: 92, y },
-          { x: sourceX, y },
-        ],
-        active: true,
-      },
-      {
-        points: [
-          { x: sourceX + nodeWidth, y },
-          { x: morphX, y },
-        ],
-        active: true,
-      },
-      {
-        points: [
-          { x: morphX + 56, y },
-          { x: targetX, y },
-        ],
-        active: true,
-      },
-      {
-        points: [
-          { x: targetX + nodeWidth, y },
-          { x: outputX - 36, y },
-        ],
-        active: true,
-      },
+      { points: [{ x: 32, y }, { x: sourceX, y }], active: true },
+      { points: [{ x: sourceX + nW, y }, { x: morphX, y }], active: true },
+      { points: [{ x: morphX + morphBlockW, y }, { x: targetX, y }], active: true },
+      { points: [{ x: targetX + nW, y }, { x: outputX - 20, y }], active: true },
     ],
     flows,
     morphBlock: {
       x: morphX,
-      y: y - 18,
+      y: y - nH / 2,
       progress: clampedProgress,
     },
   }
@@ -579,19 +512,20 @@ function buildSidechainDiagram(primary: JuceGridRoutingFlowInfo, secondary: Juce
     return buildSeriesDiagram([primary], primary.id, compact)
   }
 
-  const nodeWidth = compact ? 100 : 116
-  const nodeHeight = compact ? 48 : 56
-  const primaryY = compact ? 102 : 114
-  const sidechainY = compact ? 32 : 40
-  const inputX = 52
-  const flowX = 180
-  const outputX = flowX + nodeWidth + 112
+  const nW = nodeW(compact)
+  const nH = nodeH(compact)
+  const primaryY = compact ? 112 : 128
+  const sidechainY = compact ? 36 : 44
+  const inputX = 16
+  const flowX = 160
+  const outputX = flowX + nW + 80
+
   const primaryNode: DiagramFlowNode = {
     id: primary.id,
     x: flowX,
-    y: primaryY - nodeHeight / 2,
-    width: nodeWidth,
-    height: nodeHeight,
+    y: primaryY - nH / 2,
+    width: nW,
+    height: nH,
     label: primary.label,
     title: `Flow ${primary.label}`,
     caption: 'Primary path',
@@ -600,10 +534,10 @@ function buildSidechainDiagram(primary: JuceGridRoutingFlowInfo, secondary: Juce
   }
   const sidechainNode: DiagramFlowNode = {
     id: secondary.id,
-    x: flowX - 64,
+    x: flowX - 48,
     y: sidechainY,
-    width: nodeWidth,
-    height: nodeHeight,
+    width: nW,
+    height: nH,
     label: secondary.label,
     title: `Flow ${secondary.label}`,
     caption: 'Sidechain source',
@@ -612,44 +546,26 @@ function buildSidechainDiagram(primary: JuceGridRoutingFlowInfo, secondary: Juce
   }
 
   return {
-    width: outputX + 40,
-    height: compact ? 168 : 188,
+    width: outputX + 32,
+    height: compact ? 184 : 212,
     ariaLabel: 'Sidechain',
     terminals: [
       { id: 'input', x: inputX, y: primaryY, label: compact ? 'In' : 'Input', active: true },
       { id: 'output', x: outputX, y: primaryY, label: compact ? 'Out' : 'Output', active: true },
-      { id: 'key', x: inputX, y: sidechainY + nodeHeight / 2, label: 'Key', active: false },
+      { id: 'key', x: inputX, y: sidechainY + nH / 2, label: 'Key', active: false },
     ],
     markers: [
-      { id: 'sidechain', x: primaryNode.x - 20, y: primaryNode.y - 20, label: compact ? 'SC' : 'Sidechain', active: true },
+      { id: 'sidechain', x: primaryNode.x - 16, y: primaryNode.y - 20, label: compact ? 'SC' : 'Sidechain', active: true },
     ],
     wires: [
+      { points: [{ x: inputX + 32, y: primaryY }, { x: primaryNode.x, y: primaryY }], active: true },
+      { points: [{ x: primaryNode.x + nW, y: primaryY }, { x: outputX - 32, y: primaryY }], active: true },
+      { points: [{ x: inputX + 32, y: sidechainY + nH / 2 }, { x: sidechainNode.x, y: sidechainY + nH / 2 }], active: false },
       {
         points: [
-          { x: inputX + 36, y: primaryY },
-          { x: primaryNode.x, y: primaryY },
-        ],
-        active: true,
-      },
-      {
-        points: [
-          { x: primaryNode.x + nodeWidth, y: primaryY },
-          { x: outputX - 36, y: primaryY },
-        ],
-        active: true,
-      },
-      {
-        points: [
-          { x: inputX + 36, y: sidechainY + nodeHeight / 2 },
-          { x: sidechainNode.x, y: sidechainY + nodeHeight / 2 },
-        ],
-        active: false,
-      },
-      {
-        points: [
-          { x: sidechainNode.x + nodeWidth / 2, y: sidechainY + nodeHeight },
-          { x: sidechainNode.x + nodeWidth / 2, y: primaryNode.y + nodeHeight / 2 },
-          { x: primaryNode.x + 18, y: primaryNode.y + nodeHeight / 2 },
+          { x: sidechainNode.x + nW / 2, y: sidechainY + nH },
+          { x: sidechainNode.x + nW / 2, y: primaryNode.y + nH / 2 },
+          { x: primaryNode.x + 16, y: primaryNode.y + nH / 2 },
         ],
         active: false,
         dashed: true,
@@ -659,16 +575,44 @@ function buildSidechainDiagram(primary: JuceGridRoutingFlowInfo, secondary: Juce
   }
 }
 
-function renderWire(points: DiagramPoint[], active: boolean, dashed: boolean | undefined, key: string) {
+// ── Render helpers ─────────────────────────────────────────────────────────────
+
+function renderWire(
+  points: DiagramPoint[],
+  active: boolean,
+  dashed: boolean | undefined,
+  isMorphMode: boolean,
+  key: string,
+) {
   const path = pointsToPath(points)
+  const gradId = isMorphMode ? GRAD_MORPH_ID : GRAD_ACTIVE_ID
+  const strokeColor = active ? `url(#${gradId})` : C_BORDER
+  const strokeWidth = active ? 1.5 : 1
+
   return (
-    <path
-      key={key}
-      d={path}
-      className={`juce-grid-page__routing-wire ${active ? 'is-active' : ''} ${dashed ? 'is-dashed' : ''}`}
-      stroke={active ? ACTIVE_WIRE : WIRE}
-      markerEnd={active ? 'url(#juce-grid-routing-arrow-active)' : 'url(#juce-grid-routing-arrow)'}
-    />
+    <g key={key}>
+      {/* Base wire — always visible at low opacity */}
+      <path
+        d={path}
+        fill="none"
+        stroke={active ? (isMorphMode ? C_PURPLE : C_LINK) : C_BORDER}
+        strokeWidth={strokeWidth}
+        strokeOpacity={active ? 0.18 : 0.6}
+        strokeDasharray={dashed ? '5 4' : undefined}
+      />
+      {/* Animated gradient sweep — only on active paths */}
+      {active && (
+        <path
+          d={path}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={dashed ? '5 4' : undefined}
+          className="juce-grid-page__routing-wire-sweep"
+        />
+      )}
+    </g>
   )
 }
 
@@ -686,11 +630,17 @@ function handleMarkerKeyDown(
   }
 }
 
+/**
+ * Terminal nodes — purely typographic bookends with a horizontal rule on each side.
+ * No box, no border, no fill. Just label + flanking rules.
+ */
 function renderTerminal(
   terminal: { id: JuceGridRoutingMarkerId; x: number; y: number; label: string; active?: boolean },
   onMarkerSelect: ((markerId: JuceGridRoutingMarkerId) => void) | undefined,
   key: string,
 ) {
+  const labelWidth = terminal.label.length * 7 + 8
+  const ruleLen = 22
   const interactiveProps = onMarkerSelect
     ? {
         role: 'button' as const,
@@ -703,28 +653,48 @@ function renderTerminal(
 
   return (
     <g key={key} className={`juce-grid-page__routing-terminal ${terminal.active ? 'is-active' : ''}`} {...interactiveProps}>
-      <rect
-        x={terminal.x - 38}
-        y={terminal.y - 16}
-        width={76}
-        height={32}
-        rx={16}
-        fill={TERMINAL_FILL}
-        stroke={terminal.active ? ACTIVE_WIRE : TERMINAL_STROKE}
+      {/* Left rule */}
+      <line
+        x1={terminal.x - labelWidth / 2 - ruleLen - 4}
+        y1={terminal.y}
+        x2={terminal.x - labelWidth / 2 - 4}
+        y2={terminal.y}
+        stroke={terminal.active ? C_LINK : C_BORDER_STRONG}
+        strokeWidth={1}
       />
-      <text x={terminal.x} y={terminal.y + 4} textAnchor="middle" className="juce-grid-page__routing-terminal-label">
+      {/* Right rule */}
+      <line
+        x1={terminal.x + labelWidth / 2 + 4}
+        y1={terminal.y}
+        x2={terminal.x + labelWidth / 2 + ruleLen + 4}
+        y2={terminal.y}
+        stroke={terminal.active ? C_LINK : C_BORDER_STRONG}
+        strokeWidth={1}
+      />
+      <text
+        x={terminal.x}
+        y={terminal.y + 4}
+        textAnchor="middle"
+        className="juce-grid-page__routing-terminal-label"
+      >
         {terminal.label}
       </text>
     </g>
   )
 }
 
+/**
+ * Marker chips — small pill labels for topology points (Series, Split, Mix, A/B, Morph…).
+ * Active markers use link/purple accent; inactive use layer background.
+ */
 function renderMarker(
   marker: { id: JuceGridRoutingMarkerId; x: number; y: number; label: string; active?: boolean },
   onMarkerSelect: ((markerId: JuceGridRoutingMarkerId) => void) | undefined,
   key: string,
 ) {
-  const width = Math.max(52, marker.label.length * 8 + 18)
+  const width = Math.max(48, marker.label.length * 8 + 20)
+  const isMorphMarker = marker.id === 'morph'
+  const accentColor = isMorphMarker ? C_PURPLE : C_LINK
   const interactiveProps = onMarkerSelect
     ? {
         role: 'button' as const,
@@ -739,12 +709,13 @@ function renderMarker(
     <g key={key} className={`juce-grid-page__routing-marker ${marker.active ? 'is-active' : ''}`} {...interactiveProps}>
       <rect
         x={marker.x - width / 2}
-        y={marker.y - 12}
+        y={marker.y - 11}
         width={width}
-        height={24}
-        rx={12}
-        fill={marker.active ? ACTIVE_MARKER_FILL : TERMINAL_FILL}
-        stroke={marker.active ? ACTIVE_WIRE : TERMINAL_STROKE}
+        height={22}
+        rx={0}
+        fill={marker.active ? C_LAYER : C_BACKGROUND}
+        stroke={marker.active ? accentColor : C_BORDER}
+        strokeWidth={1}
       />
       <text x={marker.x} y={marker.y + 4} textAnchor="middle" className="juce-grid-page__routing-marker-label">
         {marker.label}
@@ -753,38 +724,71 @@ function renderMarker(
   )
 }
 
+/**
+ * Morph block — sharp-edged processor node with purple accent and animated progress bar.
+ * Distinct from flow nodes: uses C_PURPLE throughout.
+ */
 function renderMorphBlock(progress: number, x: number, y: number, compact: boolean) {
-  const width = compact ? 52 : 60
-  const height = compact ? 32 : 38
+  const width = compact ? 60 : 72
+  const height = compact ? 40 : 48
   const clamped = Math.max(0, Math.min(1, progress))
+  const progressBarW = (width - 8) * clamped
+  const percentLabel = `${Math.round(clamped * 100)}%`
+
   return (
     <g>
-      <rect x={x} y={y} width={width} height={height} rx={10} fill={NODE_FILL} stroke={NODE_STROKE} />
+      {/* Sharp-edge box with purple left accent stripe */}
       <rect
-        x={x + 4}
-        y={y + height - 8}
-        width={(width - 8) * clamped}
-        height={5}
-        rx={3}
-        fill={ACTIVE_WIRE}
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx={0}
+        fill={C_LAYER}
+        stroke={C_PURPLE}
+        strokeWidth={1}
       />
-      <text x={x + width / 2} y={y + 15} textAnchor="middle" className="juce-grid-page__routing-morph-label">
+      {/* Left accent stripe — 3px, purple */}
+      <rect x={x} y={y} width={3} height={height} fill={C_PURPLE} />
+      {/* Labels */}
+      <text x={x + width / 2 + 2} y={y + (compact ? 16 : 19)} textAnchor="middle" className="juce-grid-page__routing-morph-label">
         Morph
       </text>
-      <text x={x + width / 2} y={y + 27} textAnchor="middle" className="juce-grid-page__routing-morph-value">
-        {Math.round(clamped * 100)}%
+      <text x={x + width / 2 + 2} y={y + (compact ? 29 : 33)} textAnchor="middle" className="juce-grid-page__routing-morph-value">
+        {percentLabel}
       </text>
+      {/* Animated progress bar track */}
+      <rect x={x + 4} y={y + height - 6} width={width - 8} height={3} rx={0} fill={C_BORDER} />
+      {/* Animated progress bar fill */}
+      {progressBarW > 0 && (
+        <rect
+          x={x + 4}
+          y={y + height - 6}
+          width={progressBarW}
+          height={3}
+          rx={0}
+          fill={C_PURPLE}
+          className="juce-grid-page__routing-morph-progress"
+        />
+      )}
     </g>
   )
 }
 
+/**
+ * Flow node — Carbon sharp-edge style.
+ * Sharp rectangle, no border-radius, colored left-border stripe using --flow-color (slot accent).
+ * Badge circle preserved for letter identity; node body is layer background.
+ */
 function renderFlowNode(flow: DiagramFlowNode, compact: boolean) {
-  const badgeRadius = compact ? 12 : 14
-  const badgeCenterX = flow.x + 18
-  const textStartX = flow.x + (compact ? 38 : 40)
-  const style = {
-    '--routing-accent': flow.color,
-  } as CSSProperties
+  const badgeR = compact ? 11 : 13
+  const badgeCX = flow.x + 20
+  const textStartX = flow.x + (compact ? 40 : 44)
+  const style = { '--flow-color': flow.color } as CSSProperties
+  const stripeW = 3
+  const bodyFill = C_LAYER
+  const bodyStroke = flow.active ? flow.color : C_BORDER
+  const badgeFill = flow.active ? flow.color : toAlphaColor(flow.color, 0.22)
 
   return (
     <g
@@ -792,36 +796,71 @@ function renderFlowNode(flow: DiagramFlowNode, compact: boolean) {
       className={`juce-grid-page__routing-node ${flow.active ? 'is-active' : ''}`}
       style={style}
     >
+      {/* Node body — sharp, Carbon layer background */}
       <rect
         x={flow.x}
         y={flow.y}
         width={flow.width}
         height={flow.height}
-        rx={12}
-        fill={flow.active ? toAlphaColor(flow.color, 0.14) : NODE_FILL}
-        stroke={flow.active ? flow.color : NODE_STROKE}
+        rx={0}
+        fill={bodyFill}
+        stroke={bodyStroke}
+        strokeWidth={1}
       />
+      {/* Left accent stripe — flow's slot color */}
+      <rect
+        x={flow.x}
+        y={flow.y}
+        width={stripeW}
+        height={flow.height}
+        fill={flow.color}
+      />
+      {/* Letter badge circle */}
       <circle
-        cx={badgeCenterX}
+        cx={badgeCX}
         cy={flow.y + flow.height / 2}
-        r={badgeRadius}
-        fill={flow.active ? flow.color : toAlphaColor(flow.color, 0.16)}
+        r={badgeR}
+        fill={badgeFill}
         stroke={flow.color}
+        strokeWidth={1}
       />
       <text
-        x={badgeCenterX}
+        x={badgeCX}
         y={flow.y + flow.height / 2 + 4}
         textAnchor="middle"
         className="juce-grid-page__routing-node-letter"
       >
         {flow.label}
       </text>
-      <text x={textStartX} y={flow.y + (compact ? 20 : 21)} className="juce-grid-page__routing-node-title">
+      {/* Title */}
+      <text
+        x={textStartX}
+        y={flow.y + (compact ? 21 : 24)}
+        className="juce-grid-page__routing-node-title"
+      >
         {flow.title}
       </text>
-      <text x={textStartX} y={flow.y + (compact ? 36 : 38)} className="juce-grid-page__routing-node-caption">
+      {/* Caption */}
+      <text
+        x={textStartX}
+        y={flow.y + (compact ? 37 : 42)}
+        className="juce-grid-page__routing-node-caption"
+      >
         {flow.caption}
       </text>
+    </g>
+  )
+}
+
+// ── Wire arrow: Carbon ArrowRight icon rendered as SVG foreignObject ───────────
+// Placed at mid-wire for active paths. Note: foreignObject has limited SVG export
+// support, so we use a <g transform> with a React SVG icon instead via a wrapper.
+// Since ArrowRight from @carbon/icons-react renders as <svg>, we embed it via
+// a <g> with translate and use the icon's own SVG output inline.
+export function WireArrow({ x, y, color }: { x: number; y: number; color: string }) {
+  return (
+    <g transform={`translate(${x - 8}, ${y - 8})`} aria-hidden>
+      <ArrowRight size={16} color={color} />
     </g>
   )
 }

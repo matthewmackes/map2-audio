@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 import uuid
 from typing import Callable
@@ -13,11 +14,32 @@ from starlette.types import ASGIApp
 from app.services.api_observatory import get_api_observatory_service
 from app.services.websocket_manager import ws_manager
 
+_BODY_SNIPPET_BYTES = 400  # enough for ~100 visible chars of JSON
+
 
 def _utc_now_iso() -> str:
     from datetime import datetime, timezone
 
     return datetime.now(timezone.utc).isoformat()
+
+
+def _snippet(raw: bytes) -> str | None:
+    """Return a compact JSON snippet (first 100 visible chars) or None."""
+    if not raw:
+        return None
+    try:
+        text = raw.decode("utf-8", errors="replace").strip()
+        if not text:
+            return None
+        # Try to re-minify if it looks like JSON
+        try:
+            obj = json.loads(text)
+            minified = json.dumps(obj, separators=(",", ":"))
+        except Exception:
+            minified = text
+        return minified[:100]
+    except Exception:
+        return None
 
 
 class TrafficCaptureMiddleware(BaseHTTPMiddleware):
@@ -32,14 +54,23 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         path = request.url.path
-        # Avoid recording static assets and websocket upgrades.
-        if path.startswith(("/assets", "/css", "/img", "/ws", "/api/observatory")):
+        # Only record /api/* paths; skip WS upgrades, static assets, observatory itself.
+        if not path.startswith("/api/") or path.startswith("/api/observatory"):
             return await call_next(request)
 
         started = time.perf_counter()
         request_size = int(request.headers.get("content-length") or 0)
         request_id = getattr(request.state, "request_id", None) or str(uuid.uuid4())
         request.state.request_id = request_id
+
+        # Capture request body for mutations
+        req_body_snippet: str | None = None
+        if request.method in ("POST", "PUT", "PATCH", "DELETE") and request_size > 0:
+            try:
+                raw_body = await request.body()
+                req_body_snippet = _snippet(raw_body)
+            except Exception:
+                pass
 
         try:
             response = await call_next(request)
@@ -56,7 +87,11 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                     "response_size": 0,
                     "client_ip": request.client.host if request.client else "unknown",
                     "request_id": request_id,
-                    "meta": {"error": "unhandled_exception"},
+                    "meta": {
+                        "error": "unhandled_exception",
+                        "req_body": req_body_snippet,
+                        "res_body": None,
+                    },
                 }
             )
             await ws_manager.broadcast_json(
@@ -72,6 +107,27 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
         duration_ms = (time.perf_counter() - started) * 1000.0
         response_size = int(response.headers.get("content-length") or 0)
 
+        # Capture response body snippet by consuming the streaming body
+        res_body_snippet: str | None = None
+        try:
+            body_chunks: list[bytes] = []
+            async for chunk in response.body_iterator:  # type: ignore[attr-defined]
+                body_chunks.append(chunk if isinstance(chunk, bytes) else chunk.encode())
+            raw_response_body = b"".join(body_chunks)
+            if not response_size:
+                response_size = len(raw_response_body)
+            res_body_snippet = _snippet(raw_response_body[:_BODY_SNIPPET_BYTES])
+            # Reconstruct a new response with the consumed body
+            from starlette.responses import Response as StarletteResponse
+            response = StarletteResponse(
+                content=raw_response_body,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+                media_type=response.media_type,
+            )
+        except Exception:
+            pass
+
         event = get_api_observatory_service().record_traffic_event(
             {
                 "timestamp": _utc_now_iso(),
@@ -85,6 +141,8 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                 "request_id": request_id,
                 "meta": {
                     "query": dict(request.query_params),
+                    "req_body": req_body_snippet,
+                    "res_body": res_body_snippet,
                 },
             }
         )

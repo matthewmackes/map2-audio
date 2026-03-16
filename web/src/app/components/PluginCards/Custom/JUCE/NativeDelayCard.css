@@ -73,19 +73,26 @@
 
 .delay-tempo-input {
   width: 70px;
+  min-width: 70px;
+}
+
+.delay-tempo-input .numeric-input__control {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--border-radius-sm);
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.delay-tempo-input .numeric-input__field {
   color: var(--accent);
   font-size: var(--type-subheading);
   font-weight: 700;
   font-family: var(--font-sans);
-  padding: 6px 10px;
   text-align: center;
 }
 
-.delay-tempo-input:focus {
-  outline: none;
+.delay-tempo-input .numeric-input__control:focus-within {
   border-color: var(--accent);
   box-shadow: none;
 }
@@ -409,6 +416,10 @@
 
   .delay-tempo-input {
     width: 60px;
+    min-width: 60px;
+  }
+
+  .delay-tempo-input .numeric-input__field {
     font-size: var(--type-subheading);
   }
 }

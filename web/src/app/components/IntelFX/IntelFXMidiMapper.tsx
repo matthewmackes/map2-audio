@@ -20,6 +20,7 @@ import {
   type IntelFXRegistryParam,
 } from '../../../map2/intelfxApi'
 import { useIntelFXPageContext } from '../../pages/IntelFXPage'
+import { NumberInput } from '../Controls/NumberInput'
 import './IntelFXMidiMapper.css'
 
 const CURVES: IntelFXMidiCurve[] = ['linear', 'log', 'exp', 's_curve', 'reverse']
@@ -387,29 +388,29 @@ export function IntelFXMidiMapper() {
                       <MidiCcBadge mapping={mapping} />
                     </td>
                     <td>
-                      <input
-                        type="number"
+                      <NumberInput
+                        label={`Mapping ${mapping.id} cc`}
+                        value={mapping.cc}
                         min={0}
                         max={127}
-                        value={mapping.cc}
-                        aria-label={`Mapping ${mapping.id} cc`}
-                        onChange={(event) => {
-                          const value = clampInt(Number(event.target.value), 0, 127)
-                          handleUpdateRow(mapping.id, { cc: value })
-                        }}
+                        step={1}
+                        showLabel={false}
+                        showBounds={false}
+                        size="small"
+                        onChange={(value) => handleUpdateRow(mapping.id, { cc: clampInt(value, 0, 127) })}
                       />
                     </td>
                     <td>
-                      <input
-                        type="number"
+                      <NumberInput
+                        label={`Mapping ${mapping.id} channel`}
+                        value={mapping.channel}
                         min={1}
                         max={16}
-                        value={mapping.channel}
-                        aria-label={`Mapping ${mapping.id} channel`}
-                        onChange={(event) => {
-                          const value = clampInt(Number(event.target.value), 1, 16)
-                          handleUpdateRow(mapping.id, { channel: value })
-                        }}
+                        step={1}
+                        showLabel={false}
+                        showBounds={false}
+                        size="small"
+                        onChange={(value) => handleUpdateRow(mapping.id, { channel: clampInt(value, 1, 16) })}
                       />
                     </td>
                     <td>
@@ -439,21 +440,31 @@ export function IntelFXMidiMapper() {
                     </td>
                     <td>
                       <div className="intelfx-midi-mapper__range-grid">
-                        <input
-                          type="number"
+                        <NumberInput
+                          label={`Mapping ${mapping.id} target minimum`}
                           value={mapping.target_min}
-                          aria-label={`Mapping ${mapping.id} target minimum`}
-                          onChange={(event) => {
-                            handleUpdateRow(mapping.id, { target_min: Number(event.target.value) || 0 })
+                          min={-16384}
+                          max={16384}
+                          step={0.01}
+                          showLabel={false}
+                          showBounds={false}
+                          size="small"
+                          onChange={(value) => {
+                            handleUpdateRow(mapping.id, { target_min: value })
                           }}
                         />
                         <span>to</span>
-                        <input
-                          type="number"
+                        <NumberInput
+                          label={`Mapping ${mapping.id} target maximum`}
                           value={mapping.target_max}
-                          aria-label={`Mapping ${mapping.id} target maximum`}
-                          onChange={(event) => {
-                            handleUpdateRow(mapping.id, { target_max: Number(event.target.value) || 0 })
+                          min={-16384}
+                          max={16384}
+                          step={0.01}
+                          showLabel={false}
+                          showBounds={false}
+                          size="small"
+                          onChange={(value) => {
+                            handleUpdateRow(mapping.id, { target_max: value })
                           }}
                         />
                       </div>

@@ -4,6 +4,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { NumberInput } from '../components/Controls/NumberInput'
 
 const C = {
   bg: '#161616',
@@ -482,6 +483,10 @@ function AssignmentForm({
       param.label.toLowerCase().includes(q) || param.id.toLowerCase().includes(q),
     )
   }, [params, search])
+  const selectedParam = useMemo(
+    () => params.find((param) => param.id === paramId),
+    [paramId, params],
+  )
 
   const handleParamSelect = useCallback((param: EngineParam) => {
     setParamId(param.id)
@@ -597,19 +602,63 @@ function AssignmentForm({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
         <div>
           <span style={fieldLabel}>CC</span>
-          <input style={inputBase} type="number" min={0} max={127} value={cc} onChange={(e) => setCc(Number(e.target.value))} />
+          <NumberInput
+            value={cc}
+            min={0}
+            max={127}
+            step={1}
+            profile="integer"
+            onChange={setCc}
+            showLabel={false}
+            size="small"
+            fullWidth
+            accentColor={C.blue}
+          />
         </div>
         <div>
           <span style={fieldLabel}>Channel (0=Omni)</span>
-          <input style={inputBase} type="number" min={0} max={16} value={channel} onChange={(e) => setChannel(Number(e.target.value))} />
+          <NumberInput
+            value={channel}
+            min={0}
+            max={16}
+            step={1}
+            profile="integer"
+            onChange={setChannel}
+            showLabel={false}
+            size="small"
+            fullWidth
+            accentColor={C.blue}
+          />
         </div>
         <div>
           <span style={fieldLabel}>Input Min</span>
-          <input style={inputBase} type="number" min={0} max={127} value={ccMin} onChange={(e) => setCcMin(Number(e.target.value))} />
+          <NumberInput
+            value={ccMin}
+            min={0}
+            max={127}
+            step={1}
+            profile="integer"
+            onChange={setCcMin}
+            showLabel={false}
+            size="small"
+            fullWidth
+            accentColor={C.blue}
+          />
         </div>
         <div>
           <span style={fieldLabel}>Input Max</span>
-          <input style={inputBase} type="number" min={0} max={127} value={ccMax} onChange={(e) => setCcMax(Number(e.target.value))} />
+          <NumberInput
+            value={ccMax}
+            min={0}
+            max={127}
+            step={1}
+            profile="integer"
+            onChange={setCcMax}
+            showLabel={false}
+            size="small"
+            fullWidth
+            accentColor={C.blue}
+          />
         </div>
       </div>
 
@@ -661,11 +710,49 @@ function AssignmentForm({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
         <div>
           <span style={fieldLabel}>Output Min</span>
-          <input style={inputBase} type="number" value={outMin} onChange={(e) => setOutMin(Number(e.target.value))} />
+          <NumberInput
+            value={outMin}
+            min={selectedParam?.min ?? 0}
+            max={selectedParam?.max ?? 1}
+            step={
+              selectedParam && Number.isInteger(selectedParam.min) && Number.isInteger(selectedParam.max)
+                ? 1
+                : 0.01
+            }
+            profile={
+              selectedParam && Number.isInteger(selectedParam.min) && Number.isInteger(selectedParam.max)
+                ? 'integer'
+                : undefined
+            }
+            onChange={setOutMin}
+            showLabel={false}
+            size="small"
+            fullWidth
+            accentColor={C.teal}
+          />
         </div>
         <div>
           <span style={fieldLabel}>Output Max</span>
-          <input style={inputBase} type="number" value={outMax} onChange={(e) => setOutMax(Number(e.target.value))} />
+          <NumberInput
+            value={outMax}
+            min={selectedParam?.min ?? 0}
+            max={selectedParam?.max ?? 1}
+            step={
+              selectedParam && Number.isInteger(selectedParam.min) && Number.isInteger(selectedParam.max)
+                ? 1
+                : 0.01
+            }
+            profile={
+              selectedParam && Number.isInteger(selectedParam.min) && Number.isInteger(selectedParam.max)
+                ? 'integer'
+                : undefined
+            }
+            onChange={setOutMax}
+            showLabel={false}
+            size="small"
+            fullWidth
+            accentColor={C.teal}
+          />
         </div>
         <button
           onClick={() => {

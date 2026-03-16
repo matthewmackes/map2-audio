@@ -1,24 +1,6 @@
-import { Link } from 'react-router-dom'
-import { useEffect, useState, type ComponentType, type CSSProperties } from 'react'
-import {
-  Api,
-  ArrowRight,
-  Book,
-  Branch,
-  CheckmarkFilled,
-  Close,
-  Document,
-  Globe,
-  Keyboard,
-  Lightning,
-  Music,
-  Play,
-  Renew,
-  Save,
-  Search,
-  Terminal,
-} from '@carbon/icons-react'
-import { MapAudioGridIcon } from '../components/icons/map'
+import { useEffect, useMemo, useState } from 'react'
+import { marked } from 'marked'
+import { Book, Close, Document, Search } from '@carbon/icons-react'
 
 interface DocumentRecord {
   name: string
@@ -27,314 +9,6 @@ interface DocumentRecord {
 interface SelectedDocument {
   name: string
   content: string
-}
-
-function PlatformDiagram() {
-  return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        padding: 32,
-      }}
-    >
-      <h3
-        style={{
-          fontSize: 16,
-          fontWeight: 600,
-          marginBottom: 24,
-          textAlign: 'center',
-          color: 'var(--text-primary)',
-        }}
-      >
-        How MAP2 moves from edit state to live audio
-      </h3>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 16,
-          marginBottom: 32,
-        }}
-      >
-        <div
-          style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            padding: 20,
-            textAlign: 'center',
-            position: 'relative',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: -12,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'var(--surface-3)',
-              color: 'var(--text-secondary)',
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '4px 12px',
-              border: '1px solid var(--border-strong)',
-              letterSpacing: '0.05em',
-            }}
-          >
-            STEP 1
-          </div>
-          <MapAudioGridIcon size={40} style={{ margin: '12px auto 12px' }} />
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>
-            Build a flow
-          </h4>
-          <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-            Arrange processors inside Audio Grid without disturbing the current live chain.
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <div
-              style={{
-                flex: 1,
-                height: 2,
-                background: 'var(--border-strong)',
-              }}
-            />
-            <ArrowRight size={24} style={{ color: 'var(--text-secondary)', margin: '0 -4px' }} />
-          </div>
-        </div>
-
-        <div
-          style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            padding: 20,
-            textAlign: 'center',
-            position: 'relative',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: -12,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'var(--surface-3)',
-              color: 'var(--text-secondary)',
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '4px 12px',
-              border: '1px solid var(--border-strong)',
-              letterSpacing: '0.05em',
-            }}
-          >
-            STEP 2
-          </div>
-          <Save size={40} style={{ color: 'var(--text-primary)', margin: '12px auto 12px' }} />
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>
-            Save as a chain
-          </h4>
-          <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-            Turn the draft flow into a recallable chain that can be activated later.
-          </p>
-        </div>
-      </div>
-
-      <div
-        style={{
-          background: 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          padding: 24,
-          textAlign: 'center',
-          position: 'relative',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: -12,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'var(--surface-3)',
-            color: 'var(--text-secondary)',
-            fontSize: 10,
-            fontWeight: 700,
-            padding: '4px 12px',
-            border: '1px solid var(--border-strong)',
-            letterSpacing: '0.05em',
-          }}
-        >
-          STEP 3
-        </div>
-        <Lightning size={36} style={{ color: 'var(--text-primary)', margin: '8px auto 12px' }} />
-        <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
-          Activate when ready
-        </h4>
-        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 16px', lineHeight: 1.5 }}>
-          Activation is the moment audio changes. Editing, reordering, and tuning remain offline until then.
-        </p>
-
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 12,
-            justifyContent: 'center',
-          }}
-        >
-            {[
-              { icon: Music, label: 'MIDI' },
-              { icon: Api, label: 'API' },
-              { icon: Keyboard, label: 'Keyboard' },
-              { icon: Terminal, label: 'TUI' },
-              { icon: Globe, label: 'Web' },
-          ].map((method) => (
-            <div
-              key={method.label}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 14px',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              <method.icon size={14} style={{ color: 'var(--text-secondary)' }} />
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>{method.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: 24,
-          padding: 16,
-          background: 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div
-          data-state="active"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '6px 12px',
-            background: 'var(--surface-3)',
-            border: '1px solid var(--border)',
-            fontSize: 11,
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
-          }}
-        >
-          <Branch size={12} />
-          Flow (editing)
-        </div>
-        <ArrowRight size={16} style={{ color: 'var(--muted)' }} />
-        <div
-          data-state="active"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '6px 12px',
-            background: 'var(--surface-3)',
-            border: '1px solid var(--border)',
-            fontSize: 11,
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
-          }}
-        >
-          <Save size={12} />
-          Chain (saved)
-        </div>
-        <ArrowRight size={16} style={{ color: 'var(--muted)' }} />
-        <div
-          data-state="active"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '6px 12px',
-            background: 'rgba(15, 98, 254, 0.16)',
-            border: '1px solid var(--interactive)',
-            fontSize: 11,
-            fontWeight: 500,
-            color: 'var(--interactive)',
-          }}
-        >
-          <Play size={12} />
-          Active (live audio)
-        </div>
-      </div>
-    </div>
-  )
-}
-
-type GuideIcon = ComponentType<{ size?: number; style?: CSSProperties; className?: string }>
-
-function ConceptCard({
-  icon: Icon,
-  title,
-  description,
-  color,
-}: {
-  icon: GuideIcon
-  title: string
-  description: string
-  color: string
-}) {
-  return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        padding: 20,
-        display: 'flex',
-        gap: 14,
-        alignItems: 'flex-start',
-      }}
-    >
-      <div
-        style={{
-          background: 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          padding: 10,
-          flexShrink: 0,
-        }}
-      >
-        <Icon size={20} style={{ color }} />
-      </div>
-      <div>
-        <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color }}>{title}</h4>
-        <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>{description}</p>
-      </div>
-    </div>
-  )
 }
 
 function normalizeDocumentList(payload: unknown): DocumentRecord[] {
@@ -369,18 +43,23 @@ function DocumentLibrary() {
   const [selectedDoc, setSelectedDoc] = useState<SelectedDocument | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
-  const [sortBy, setSortBy] = useState<'name' | 'date'>('name')
+  const [error, setError] = useState<string | null>(null)
+  const [sortAsc, setSortAsc] = useState(true)
 
   useEffect(() => {
     const loadDocs = async () => {
       try {
         const response = await fetch('/api/system/docs/list')
-        if (response.ok) {
-          const docs = await response.json()
-          setDocuments(normalizeDocumentList(docs))
+        if (!response.ok) {
+          setError(`Failed to load documents (${response.status})`)
+          setDocuments([])
+          return
         }
-      } catch (error) {
-        console.error('Failed to load documents:', error)
+        const docs = await response.json()
+        setDocuments(normalizeDocumentList(docs))
+      } catch {
+        setError('Network error — document list unavailable')
+        setDocuments([])
       } finally {
         setLoading(false)
       }
@@ -391,90 +70,90 @@ function DocumentLibrary() {
 
   const loadDocument = async (docName: string) => {
     try {
-      const response = await fetch(`/api/system/docs/${docName}`)
+      const response = await fetch(`/api/system/docs/${encodeURIComponent(docName)}`)
       if (response.ok) {
         const content = await response.text()
         setSelectedDoc({ name: docName, content })
       }
-    } catch (error) {
-      console.error('Failed to load document:', error)
+    } catch {
+      // silent — user can retry by clicking again
     }
   }
 
-  const filteredDocs = documents
-    .filter((doc) => doc.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.name.localeCompare(b.name)
-      }
+  const filteredDocs = useMemo(
+    () =>
+      documents
+        .filter((doc) => doc.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        .sort((a, b) => (sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name))),
+    [documents, searchTerm, sortAsc],
+  )
 
-      return b.name.localeCompare(a.name)
-    })
+  const renderedHtml = useMemo((): string => {
+    if (!selectedDoc) return ''
+    return String(marked(selectedDoc.content))
+  }, [selectedDoc])
 
   return (
     <div
       style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
+        background: 'var(--cds-layer)',
+        border: '1px solid var(--cds-border-subtle)',
         overflow: 'hidden',
       }}
     >
+      {/* Header */}
       <div
         style={{
-          background: 'var(--surface-2)',
-          padding: '24px 32px',
-          borderBottom: '1px solid var(--border)',
+          background: 'var(--cds-layer-accent)',
+          padding: '16px 24px',
+          borderBottom: '1px solid var(--cds-border-subtle)',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
         }}
       >
-        <Book size={28} style={{ color: '#2563eb' }} />
+        <Book size={24} style={{ color: 'var(--cds-link-primary)', flexShrink: 0 }} />
         <div>
           <h2
             style={{
-              fontSize: 24,
-              fontWeight: 700,
-              margin: '0 0 4px 0',
-              color: 'var(--text-primary)',
+              fontSize: 16,
+              fontWeight: 600,
+              margin: '0 0 2px',
+              color: 'var(--cds-text-primary)',
             }}
           >
             Documentation library
           </h2>
-          <p
-            style={{
-              fontSize: 13,
-              color: 'var(--text-secondary)',
-              margin: 0,
-            }}
-          >
-            Read workflow notes, architecture docs, and operational references without leaving the shell.
+          <p style={{ fontSize: 12, color: 'var(--cds-text-secondary)', margin: 0 }}>
+            Browse and read workflow notes, architecture docs, and operational references without leaving the shell.
           </p>
         </div>
       </div>
 
+      {/* Body — split pane */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: selectedDoc ? '320px 1fr' : '1fr',
-          minHeight: 'calc(100vh - 400px)',
-          maxHeight: 'calc(100vh - 200px)',
-          gap: 0,
+          gridTemplateColumns: selectedDoc ? '280px 1fr' : '280px 1fr',
+          minHeight: 480,
+          maxHeight: 'calc(100vh - 320px)',
         }}
       >
+        {/* Left — file list */}
         <div
           style={{
-            background: 'var(--surface)',
-            borderRight: selectedDoc ? '1px solid var(--border)' : 'none',
+            borderRight: '1px solid var(--cds-border-subtle)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            background: 'var(--cds-layer)',
           }}
         >
+          {/* Search + sort toolbar */}
           <div
             style={{
-              padding: '16px',
-              borderBottom: '1px solid var(--border)',
+              padding: '8px',
+              borderBottom: '1px solid var(--cds-border-subtle)',
               flexShrink: 0,
             }}
           >
@@ -482,334 +161,290 @@ function DocumentLibrary() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border-strong)',
-                padding: '8px 12px',
+                background: 'var(--cds-field)',
+                border: '1px solid var(--cds-border-strong)',
+                padding: '6px 10px',
                 gap: 8,
-                marginBottom: '8px',
+                marginBottom: 6,
               }}
             >
-              <Search size={16} style={{ color: 'rgba(242, 246, 255, 0.5)' }} />
+              <Search size={14} style={{ color: 'var(--cds-text-placeholder)', flexShrink: 0 }} />
               <input
                 type="text"
-                placeholder="Search docs..."
+                placeholder="Filter documents…"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
                   flex: 1,
                   background: 'none',
                   border: 'none',
-                  color: '#f2f6ff',
-                  fontSize: 13,
+                  color: 'var(--cds-text-primary)',
+                  fontSize: 12,
                   outline: 'none',
                 }}
               />
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               <button
-                onClick={() => setSortBy('name')}
-                aria-pressed={sortBy === 'name'}
-                data-selected={sortBy === 'name' ? 'true' : 'false'}
+                onClick={() => setSortAsc(true)}
                 style={{
                   flex: 1,
-                  padding: '6px 10px',
-                  background: sortBy === 'name' ? 'rgba(15, 98, 254, 0.18)' : 'var(--surface)',
-                  border: `1px solid ${sortBy === 'name' ? 'var(--interactive)' : 'var(--border)'}`,
-                  color: '#f2f6ff',
+                  padding: '4px 8px',
+                  background: sortAsc ? 'var(--cds-button-primary)' : 'var(--cds-layer-accent)',
+                  border: '1px solid var(--cds-border-subtle)',
+                  color: sortAsc ? 'var(--cds-text-on-color)' : 'var(--cds-text-secondary)',
                   fontSize: 11,
                   cursor: 'pointer',
-                  fontWeight: sortBy === 'name' ? 600 : 400,
-                  transition: 'all 0.2s ease',
+                  fontWeight: sortAsc ? 600 : 400,
                 }}
               >
-                A-Z
+                A → Z
               </button>
               <button
-                onClick={() => setSortBy('date')}
-                aria-pressed={sortBy === 'date'}
-                data-selected={sortBy === 'date' ? 'true' : 'false'}
+                onClick={() => setSortAsc(false)}
                 style={{
                   flex: 1,
-                  padding: '6px 10px',
-                  background: sortBy === 'date' ? 'rgba(15, 98, 254, 0.18)' : 'var(--surface)',
-                  border: `1px solid ${sortBy === 'date' ? 'var(--interactive)' : 'var(--border)'}`,
-                  color: '#f2f6ff',
+                  padding: '4px 8px',
+                  background: !sortAsc ? 'var(--cds-button-primary)' : 'var(--cds-layer-accent)',
+                  border: '1px solid var(--cds-border-subtle)',
+                  color: !sortAsc ? 'var(--cds-text-on-color)' : 'var(--cds-text-secondary)',
                   fontSize: 11,
                   cursor: 'pointer',
-                  fontWeight: sortBy === 'date' ? 600 : 400,
-                  transition: 'all 0.2s ease',
+                  fontWeight: !sortAsc ? 600 : 400,
                 }}
               >
-                Recent
+                Z → A
               </button>
             </div>
           </div>
 
-          <div
-            style={{
-              flex: 1,
-              overflow: 'auto',
-              padding: '8px 8px',
-            }}
-          >
+          {/* List */}
+          <div style={{ flex: 1, overflow: 'auto' }}>
             {loading ? (
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 200,
-                  color: 'rgba(242, 246, 255, 0.5)',
+                  padding: 24,
+                  textAlign: 'center',
+                  color: 'var(--cds-text-placeholder)',
+                  fontSize: 12,
                 }}
               >
-                <Renew
-                  size={20}
-                  style={{
-                    animation: 'rotate 1s linear infinite',
-                    transformOrigin: 'center',
-                  }}
-                />
+                Loading…
+              </div>
+            ) : error ? (
+              <div
+                style={{
+                  padding: 16,
+                  color: 'var(--cds-support-error)',
+                  fontSize: 12,
+                  borderTop: '1px solid var(--cds-support-error)',
+                  background: 'var(--cds-notification-error-background)',
+                }}
+              >
+                {error}
               </div>
             ) : filteredDocs.length === 0 ? (
               <div
                 style={{
-                  padding: '20px 12px',
-                  color: 'rgba(242, 246, 255, 0.4)',
-                  fontSize: 13,
+                  padding: 24,
                   textAlign: 'center',
+                  color: 'var(--cds-text-placeholder)',
+                  fontSize: 12,
                 }}
               >
-                No documents found
+                No documents match
               </div>
             ) : (
-              filteredDocs.map((doc) => (
-                <button
-                  key={doc.name}
-                  onClick={() => loadDocument(doc.name)}
-                  aria-pressed={selectedDoc?.name === doc.name}
-                  data-selected={selectedDoc?.name === doc.name ? 'true' : 'false'}
-                  style={{
-                    width: '100%',
-                    padding: '12px 12px',
-                    marginBottom: '4px',
-                    background: selectedDoc?.name === doc.name ? 'rgba(15, 98, 254, 0.18)' : 'var(--surface)',
-                    border: `1px solid ${selectedDoc?.name === doc.name ? 'var(--interactive)' : 'var(--border)'}`,
-                    color: '#f2f6ff',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  <Document size={14} style={{ flexShrink: 0, color: '#2563eb' }} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {doc.name.replace(/\.md$/, '').replace(/_/g, ' ')}
-                  </span>
-                </button>
-              ))
+              filteredDocs.map((doc) => {
+                const isActive = selectedDoc?.name === doc.name
+                return (
+                  <button
+                    key={doc.name}
+                    onClick={() => loadDocument(doc.name)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      background: isActive ? 'var(--cds-layer-selected)' : 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid var(--cds-border-subtle)',
+                      borderLeft: isActive ? '2px solid var(--cds-border-interactive)' : '2px solid transparent',
+                      color: isActive ? 'var(--cds-text-primary)' : 'var(--cds-text-secondary)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <Document size={14} style={{ flexShrink: 0, color: 'var(--cds-link-primary)' }} />
+                    <span
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        flex: 1,
+                      }}
+                    >
+                      {doc.name.replace(/\.md$/i, '').replace(/_/g, ' ')}
+                    </span>
+                  </button>
+                )
+              })
             )}
           </div>
+
+          {/* Footer count */}
+          {!loading && !error && (
+            <div
+              style={{
+                padding: '6px 12px',
+                borderTop: '1px solid var(--cds-border-subtle)',
+                fontSize: 11,
+                color: 'var(--cds-text-placeholder)',
+                flexShrink: 0,
+              }}
+            >
+              {filteredDocs.length} of {documents.length} documents
+            </div>
+          )}
         </div>
 
+        {/* Right — viewer */}
         {selectedDoc ? (
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              background: 'var(--surface-2)',
+              background: 'var(--cds-layer-02)',
+              overflow: 'hidden',
             }}
           >
+            {/* Viewer header */}
             <div
               style={{
-                padding: '16px 24px',
-                borderBottom: '1px solid var(--border)',
+                padding: '12px 20px',
+                borderBottom: '1px solid var(--cds-border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexShrink: 0,
+                background: 'var(--cds-layer-accent)',
               }}
             >
-              <div>
-                <h3
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 600,
-                    margin: '0 0 4px 0',
-                    color: '#f2f6ff',
-                  }}
-                >
-                  {selectedDoc.name.replace(/\.md$/, '').replace(/_/g, ' ')}
-                </h3>
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: 'rgba(242, 246, 255, 0.5)',
-                    margin: 0,
-                  }}
-                >
-                  Markdown document
-                </p>
-              </div>
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: 'var(--cds-text-primary)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {selectedDoc.name.replace(/\.md$/i, '').replace(/_/g, ' ')}
+              </span>
               <button
                 onClick={() => setSelectedDoc(null)}
+                title="Close document"
                 style={{
-                  padding: '8px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#ef4444',
+                  padding: 6,
+                  background: 'transparent',
+                  border: '1px solid var(--cds-border-subtle)',
+                  color: 'var(--cds-text-secondary)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.2s ease',
+                  flexShrink: 0,
+                  marginLeft: 12,
                 }}
               >
-                <Close size={18} />
+                <Close size={16} />
               </button>
             </div>
 
-            <div
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                background: 'var(--surface)',
-              }}
-            >
-              <iframe
-                key={selectedDoc.name}
-                srcDoc={`<!DOCTYPE html>
-<html>
+            {/* iframe content */}
+            <iframe
+              key={selectedDoc.name}
+              srcDoc={`<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+  * { box-sizing: border-box; }
   body {
-    font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
-    line-height: 1.8;
+    font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.7;
     color: #f4f4f4;
     background: #161616;
-    padding: 40px;
+    padding: 32px 40px;
     margin: 0;
-    max-width: 900px;
+    max-width: 860px;
   }
-  h1, h2, h3, h4, h5, h6 {
-    color: #ffffff;
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-  }
-  h1 {
-    font-size: 32px;
-    border-bottom: 1px solid #525252;
-    padding-bottom: 16px;
-  }
-  h2 {
-    font-size: 24px;
-    border-left: 2px solid #525252;
-    padding-left: 16px;
-  }
-  h3 {
-    font-size: 18px;
-    color: #e0e7ff;
-  }
-  h4 {
-    font-size: 16px;
-    color: #c7d2fe;
-  }
-  p {
-    margin-bottom: 1em;
-    text-align: justify;
-  }
-  a {
-    color: #60a5fa;
-    text-decoration: none;
-  }
-  a:hover {
-    text-decoration: underline;
-  }
-  ul, ol {
-    margin: 1em 0;
-    padding-left: 2em;
-  }
-  li {
-    margin-bottom: 0.5em;
-    line-height: 1.8;
-  }
+  h1 { font-size: 28px; color: #fff; border-bottom: 1px solid #393939; padding-bottom: 12px; margin-top: 0; }
+  h2 { font-size: 20px; color: #f4f4f4; border-left: 3px solid #0f62fe; padding-left: 12px; margin-top: 2em; }
+  h3 { font-size: 16px; color: #e0e0e0; margin-top: 1.6em; }
+  h4 { font-size: 14px; color: #c6c6c6; margin-top: 1.4em; }
+  h5, h6 { font-size: 13px; color: #a8a8a8; }
+  p { margin: 0 0 1em; }
+  a { color: #78a9ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  ul, ol { margin: 0.8em 0; padding-left: 1.8em; }
+  li { margin-bottom: 0.3em; }
   blockquote {
-    border-left: 2px solid #525252;
-    padding-left: 20px;
-    margin-left: 0;
+    border-left: 3px solid #525252;
+    margin: 1em 0;
+    padding: 10px 16px;
+    background: #262626;
     color: #c6c6c6;
     font-style: italic;
-    background: #262626;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    padding-right: 16px;
   }
   code {
+    font-family: 'IBM Plex Mono', 'Consolas', monospace;
+    font-size: 13px;
     background: #262626;
-    padding: 2px 6px;
-    font-family: 'IBM Plex Mono', monospace;
-    color: #94e2d5;
-    font-size: 14px;
+    color: #3ddbd9;
+    padding: 1px 5px;
+    border-radius: 2px;
   }
   pre {
     background: #262626;
-    border: 1px solid #525252;
+    border: 1px solid #393939;
+    border-left: 3px solid #0f62fe;
     padding: 16px;
     overflow-x: auto;
-    font-family: 'IBM Plex Mono', monospace;
-    color: #94e2d5;
-    line-height: 1.5;
+    border-radius: 2px;
+    margin: 1em 0;
   }
-  pre code {
-    background: none;
-    padding: 0;
-    color: inherit;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1.5em 0;
-  }
-  th, td {
-    padding: 12px 16px;
-    border: 1px solid #525252;
-    text-align: left;
-  }
+  pre code { background: none; padding: 0; color: #3ddbd9; }
+  table { width: 100%; border-collapse: collapse; margin: 1.2em 0; font-size: 13px; }
   th {
     background: #262626;
+    color: #f4f4f4;
     font-weight: 600;
+    padding: 10px 14px;
+    border: 1px solid #393939;
+    text-align: left;
   }
-  hr {
-    border: none;
-    height: 1px;
-    background: #525252;
-    margin: 2em 0;
-  }
-  img {
-    max-width: 100%;
-    height: auto;
-  }
+  td { padding: 8px 14px; border: 1px solid #393939; color: #e0e0e0; }
+  tr:nth-child(even) td { background: #1e1e1e; }
+  hr { border: none; border-top: 1px solid #393939; margin: 2em 0; }
+  img { max-width: 100%; height: auto; }
+  strong { color: #f4f4f4; }
+  em { color: #c6c6c6; }
 </style>
 </head>
-<body>
-${selectedDoc.content}
-</body>
+<body>${renderedHtml}</body>
 </html>`}
-                style={{
-                  flex: 1,
-                  border: 'none',
-                  background: '#050815',
-                }}
-              />
-            </div>
+              style={{
+                flex: 1,
+                border: 'none',
+                width: '100%',
+                minHeight: 0,
+              }}
+            />
           </div>
         ) : (
           <div
@@ -817,16 +452,14 @@ ${selectedDoc.content}
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'rgba(0, 0, 0, 0.1)',
-              color: 'rgba(242, 246, 255, 0.4)',
-              fontSize: 16,
-              textAlign: 'center',
+              background: 'var(--cds-background)',
+              color: 'var(--cds-text-placeholder)',
+              flexDirection: 'column',
+              gap: 12,
             }}
           >
-            <div>
-              <Document size={48} style={{ marginBottom: 16, opacity: 0.3 }} />
-              <p>Select a document to read</p>
-            </div>
+            <Document size={40} style={{ opacity: 0.3 }} />
+            <span style={{ fontSize: 13 }}>Select a document to read</span>
           </div>
         )}
       </div>
@@ -834,173 +467,14 @@ ${selectedDoc.content}
   )
 }
 
-export function PlatformInfoGuideSection() {
+interface PlatformInfoGuideSectionProps {
+  themeCard: React.ReactNode
+}
+
+export function PlatformInfoGuideSection({ themeCard }: PlatformInfoGuideSectionProps) {
   return (
     <div id="guide" style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
-      <div style={{ textAlign: 'center', paddingTop: 4 }}>
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 12px',
-            marginBottom: 12,
-            border: '1px solid rgba(59, 130, 246, 0.25)',
-            background: 'rgba(59, 130, 246, 0.08)',
-            color: '#93c5fd',
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}
-        >
-          <Book size={14} />
-          Platform guide
-        </div>
-        <h2
-          style={{
-            fontSize: 26,
-            fontWeight: 700,
-            margin: '0 0 10px',
-            color: 'var(--text-primary)',
-          }}
-        >
-          One page for orientation, reference, and next steps
-        </h2>
-        <p
-          style={{
-            fontSize: 14,
-            color: 'var(--muted)',
-            maxWidth: 760,
-            margin: '0 auto',
-            lineHeight: 1.6,
-          }}
-        >
-          Use this surface as the canonical operator guide: understand how MAP2 moves from editing to activation,
-          jump into the supported editor, and review the current documentation set alongside build and support data.
-        </p>
-      </div>
-
-      <PlatformDiagram />
-
-      <div>
-        <h3
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            marginBottom: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <CheckmarkFilled size={18} style={{ color: 'var(--success)' }} />
-          Core operating concepts
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
-          <ConceptCard
-            icon={Branch}
-            title="Flow"
-            description="A flow is the editable draft of your signal path inside Audio Grid. It stays offline until you choose to save and activate it."
-            color="#2563eb"
-          />
-          <ConceptCard
-            icon={Save}
-            title="Chain"
-            description="A chain is a saved flow state. Treat it as the stable recall point you can activate during rehearsal, support, or live use."
-            color="#60a5fa"
-          />
-          <ConceptCard
-            icon={Lightning}
-            title="Activation"
-            description="Activation is the controlled cutover to live audio. MAP2 lets you rehearse edits first and change sound only when you intend to."
-            color="#2563eb"
-          />
-          <ConceptCard
-            icon={MapAudioGridIcon}
-            title="Parallel routing"
-            description="Audio Grid supports layered and split paths so wet/dry blends, sidechains, and multi-branch structures can be built without hidden topology."
-            color="#60a5fa"
-          />
-        </div>
-      </div>
-
-      <div
-        style={{
-          background: 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          padding: 20,
-          display: 'flex',
-          gap: 14,
-          alignItems: 'flex-start',
-        }}
-      >
-        <div
-          style={{
-            background: 'var(--surface-3)',
-            border: '1px solid var(--border)',
-            padding: 8,
-            flexShrink: 0,
-          }}
-        >
-          <Play size={18} style={{ color: 'var(--text-primary)' }} />
-        </div>
-        <div>
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: 'var(--text-primary)' }}>
-            Editing stays non-destructive
-          </h4>
-          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>
-            Building a new flow, reordering plugins, or changing routing does not interrupt the active signal path.
-            The current live chain keeps running until you explicitly activate a new state.
-          </p>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 12,
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          paddingTop: 8,
-        }}
-      >
-        <Link
-          to="/juce-grid"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '12px 24px',
-            background: 'var(--primary)',
-            color: '#000',
-            fontWeight: 600,
-            fontSize: 14,
-            textDecoration: 'none',
-          }}
-        >
-          <MapAudioGridIcon size={18} />
-          Open Audio Grid
-        </Link>
-        <Link
-          to="/platform?layer=overview"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '12px 24px',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            color: 'inherit',
-            fontWeight: 500,
-            fontSize: 14,
-            textDecoration: 'none',
-          }}
-        >
-          Open platform stack
-        </Link>
-      </div>
-
+      {themeCard}
       <DocumentLibrary />
     </div>
   )

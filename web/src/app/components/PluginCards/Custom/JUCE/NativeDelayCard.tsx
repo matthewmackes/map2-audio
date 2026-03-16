@@ -11,6 +11,7 @@ import { useDelay, TEMPO_DIVISIONS, STEREO_MODES, MOD_WAVEFORMS, calculateDelayF
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
+import { NumberInput } from '../../../Controls/NumberInput'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { DelayTapGrid } from '../../Visualizations/DelayTapGrid'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
@@ -225,14 +226,20 @@ function NativeDelayCardBase({
       <div className="delay-tempo-section">
         <div className="delay-tempo-display">
           <span className="delay-tempo-label">BPM</span>
-          <input
-            type="number"
-            className="delay-tempo-input"
-            value={Math.round(parameters.tempo)}
-            onChange={(e) => setTempo(parseFloat(e.target.value) || 120)}
+          <NumberInput
+            value={parameters.tempo}
             min={20}
             max={300}
-            style={{ '--accent': accentColor } as React.CSSProperties}
+            step={1}
+            defaultValue={120}
+            profile="integer"
+            onChange={setTempo}
+            size="small"
+            showLabel={false}
+            inline
+            accentColor={accentColor}
+            className="delay-tempo-input"
+            valueFormatter={(value) => Math.round(value).toString()}
           />
           {tapCount > 0 && <span className="delay-tap-count">{tapCount} taps</span>}
         </div>

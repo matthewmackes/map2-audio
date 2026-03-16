@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { mpx1Api, type MPX1Scene, type MPX1MorphRequest } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
 import { formatMpx1ProgramLabel } from './programNumber'
+import { NumberInput } from '../Controls/NumberInput'
 import './MPX1ScenePanel.css'
 
 const MORPH_CURVES = ['linear', 'ease_in', 'ease_out', 's_curve'] as const
@@ -148,14 +149,17 @@ function MorphStrip({ scenes, activeJobId, onMorphStart, onMorphCancel }: MorphS
         </select>
 
         <span className="mpx1-morph-strip__label">{duration.toFixed(1)}s</span>
-        <input
-          type="range"
-          className="mpx1-morph-slider"
+        <NumberInput
+          label="Morph duration"
+          value={duration}
           min={0.1}
           max={30}
           step={0.1}
-          value={duration}
-          onChange={(e) => setDuration(parseFloat(e.target.value))}
+          className="mpx1-morph-slider"
+          showLabel={false}
+          showBounds={false}
+          size="small"
+          onChange={(value) => setDuration(value)}
         />
 
         <select
@@ -181,14 +185,17 @@ function MorphStrip({ scenes, activeJobId, onMorphStart, onMorphCancel }: MorphS
         {beatSync && (
           <>
             <span className="mpx1-morph-strip__label">{bpm} BPM</span>
-            <input
-              type="range"
+            <NumberInput
+              label="Morph BPM"
+              value={bpm}
               min={40}
               max={240}
               step={1}
-              value={bpm}
-              onChange={(e) => setBpm(parseInt(e.target.value, 10))}
-              style={{ width: 80, accentColor: '#a78bfa' }}
+              showLabel={false}
+              showBounds={false}
+              size="small"
+              style={{ width: 80 }}
+              onChange={(value) => setBpm(Math.round(value))}
             />
           </>
         )}

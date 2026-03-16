@@ -20,6 +20,7 @@ import {
 import { midiHubApi, type MidiHubRoute, type MidiHubRouteRequest } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { NumberInput } from '../Controls/NumberInput'
 
 type MatrixSelection = {
   sourcePort: string
@@ -318,12 +319,16 @@ export function MidiRoutingMatrix() {
                 <Alert severity="info">
                   Advanced settings are optional. Keep defaults unless you need explicit message filtering or transformation.
                 </Alert>
-                <TextField
-                  type="number"
+                <NumberInput
                   label="Priority"
-                  size="small"
                   value={priority}
-                  onChange={(event) => setPriority(Number(event.target.value || 0))}
+                  min={0}
+                  max={10000}
+                  step={1}
+                  profile="integer"
+                  onChange={setPriority}
+                  size="small"
+                  fullWidth
                 />
                 <TextField
                   label="Message Types (comma separated)"

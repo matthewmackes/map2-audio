@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronUp, Pin, PinFilled } from '@carbon/icons-react'
+import { ApiActivityOverlay } from '../components/ApiActivityOverlay/ApiActivityOverlay'
 import {
   Map2BrandMark,
   MAP2_PLATFORM_VERSION,
@@ -349,6 +350,7 @@ export function HomePage() {
   const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
 
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
+  const [overlayVisible, setOverlayVisible] = useState(true)
 
   const [tiles, setTiles] = useState<ClusterTile[]>([])
   const [tilesLoading, setTilesLoading] = useState(true)
@@ -766,6 +768,19 @@ export function HomePage() {
           </section>
         ))}
       </main>
+
+      {/* ══════════════════════════════════════════════════════════
+          API ACTIVITY OVERLAY — live scrolling request log
+          ══════════════════════════════════════════════════════════ */}
+      <button
+        type="button"
+        className="api-overlay-toggle"
+        onClick={() => setOverlayVisible((v) => !v)}
+        title={overlayVisible ? 'Hide API activity' : 'Show API activity'}
+      >
+        {overlayVisible ? 'API ▶' : 'API ▷'}
+      </button>
+      <ApiActivityOverlay visible={overlayVisible} />
     </div>
   )
 }

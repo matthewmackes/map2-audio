@@ -12,6 +12,7 @@ import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
+import { NumberInput } from '../../../Controls/NumberInput'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
 import { formatSemitones, formatPitch, formatDetune, formatShift } from '../../utils/formatters'
@@ -319,20 +320,34 @@ function BossXS1CardBase({
               <div className="boss-pedal-range">
                 <label>Range</label>
                 <div className="boss-pedal-range-inputs">
-                  <input
-                    type="number"
+                  <NumberInput
                     value={parameters.pedalMin}
-                    onChange={(e) => setPedalRange(Number(e.target.value), parameters.pedalMax)}
                     min={-36}
                     max={36}
+                    step={1}
+                    defaultValue={-12}
+                    profile="integer"
+                    onChange={(value) => setPedalRange(value, parameters.pedalMax)}
+                    size="small"
+                    showLabel={false}
+                    inline
+                    accentColor={accentColor}
+                    className="boss-pedal-range-input"
                   />
                   <span>to</span>
-                  <input
-                    type="number"
+                  <NumberInput
                     value={parameters.pedalMax}
-                    onChange={(e) => setPedalRange(parameters.pedalMin, Number(e.target.value))}
                     min={-36}
                     max={36}
+                    step={1}
+                    defaultValue={12}
+                    profile="integer"
+                    onChange={(value) => setPedalRange(parameters.pedalMin, value)}
+                    size="small"
+                    showLabel={false}
+                    inline
+                    accentColor={accentColor}
+                    className="boss-pedal-range-input"
                   />
                 </div>
               </div>

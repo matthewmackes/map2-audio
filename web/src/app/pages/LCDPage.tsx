@@ -77,6 +77,7 @@ import {
 } from '@phosphor-icons/react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
+import { NumberInput } from '../components/Controls/NumberInput'
 import { useToasts } from '../components/Toasts'
 import { lcdApi } from '../../map2/lcd'
 import { useLCDEvents, useLCDStatistics, useLCDEventHistory } from '../hooks/useLCDEvents'
@@ -293,8 +294,17 @@ function CustomMessageComposer({ onSend }: CustomMessageComposerProps) {
 
         <div className="composer-duration">
           <label>Duration:</label>
-          <input type="range" min="1" max="30" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} />
-          <span>{duration}s</span>
+          <NumberInput
+            label="Duration"
+            value={duration}
+            min={1}
+            max={30}
+            unit="s"
+            profile="time-ms"
+            showLabel={false}
+            showBounds={false}
+            onChange={(nextValue) => setDuration(nextValue)}
+          />
         </div>
 
         <button
@@ -429,15 +439,32 @@ function AlertRouterConfig({ config, onUpdate }: AlertRouterConfigProps) {
                 <div className="alert-type-details">
                   <div className="alert-detail-row">
                     <label>Duration (sec):</label>
-                    <input type="number" min="1" max="60" value={routing?.duration_seconds ?? 5}
-                      onChange={(e) => onUpdate({ routing: { [type]: { duration_seconds: parseInt(e.target.value) || 5 } } })}
-                      onClick={(e) => e.stopPropagation()} />
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <NumberInput
+                        label="Duration (sec)"
+                        value={routing?.duration_seconds ?? 5}
+                        min={1}
+                        max={60}
+                        unit="s"
+                        showLabel={false}
+                        showBounds={false}
+                        onChange={(nextValue) => onUpdate({ routing: { [type]: { duration_seconds: nextValue } } })}
+                      />
+                    </div>
                   </div>
                   <div className="alert-detail-row">
                     <label>Priority (1-10):</label>
-                    <input type="number" min="1" max="10" value={routing?.priority ?? 5}
-                      onChange={(e) => onUpdate({ routing: { [type]: { priority: parseInt(e.target.value) || 5 } } })}
-                      onClick={(e) => e.stopPropagation()} />
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <NumberInput
+                        label="Priority"
+                        value={routing?.priority ?? 5}
+                        min={1}
+                        max={10}
+                        showLabel={false}
+                        showBounds={false}
+                        onChange={(nextValue) => onUpdate({ routing: { [type]: { priority: nextValue } } })}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -1252,7 +1279,16 @@ export function LCDPage() {
                         <label style={{ color: '#d1d5db', fontWeight: 600 }}>Brightness</label>
                         <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>{settings.brightness}%</span>
                       </div>
-                      <input type="range" min={0} max={100} value={settings.brightness} onChange={(e) => setSettings({ ...settings, brightness: parseInt(e.target.value) })} className="lcd-slider" />
+                      <NumberInput
+                        label="Brightness"
+                        value={settings.brightness}
+                        min={0}
+                        max={100}
+                        unit="%"
+                        showLabel={false}
+                        showBounds={false}
+                        onChange={(nextValue) => setSettings({ ...settings, brightness: nextValue })}
+                      />
                       <p className="setting-hint">Adjust LCD backlight brightness</p>
                     </div>
 
@@ -1290,7 +1326,16 @@ export function LCDPage() {
                           <label style={{ color: '#d1d5db', fontWeight: 600 }}>Scroll Speed</label>
                           <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>{settings.autoScrollDelay}s</span>
                         </div>
-                        <input type="range" min={1} max={5} value={settings.autoScrollDelay} onChange={(e) => setSettings({ ...settings, autoScrollDelay: parseInt(e.target.value) })} className="lcd-slider" />
+                        <NumberInput
+                          label="Scroll Speed"
+                          value={settings.autoScrollDelay}
+                          min={1}
+                          max={5}
+                          unit="s"
+                          showLabel={false}
+                          showBounds={false}
+                          onChange={(nextValue) => setSettings({ ...settings, autoScrollDelay: nextValue })}
+                        />
                         <p className="setting-hint">Delay between scroll steps</p>
                       </div>
                     )}
@@ -1325,7 +1370,16 @@ export function LCDPage() {
                             <label style={{ color: '#d1d5db', fontWeight: 600 }}>Alert Volume</label>
                             <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>{settings.soundVolume}%</span>
                           </div>
-                          <input type="range" min={0} max={100} value={settings.soundVolume} onChange={(e) => setSettings({ ...settings, soundVolume: parseInt(e.target.value) })} className="lcd-slider" />
+                          <NumberInput
+                            label="Alert Volume"
+                            value={settings.soundVolume}
+                            min={0}
+                            max={100}
+                            unit="%"
+                            showLabel={false}
+                            showBounds={false}
+                            onChange={(nextValue) => setSettings({ ...settings, soundVolume: nextValue })}
+                          />
                           <p className="setting-hint">Volume for critical alert sounds</p>
                         </div>
 

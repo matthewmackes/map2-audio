@@ -13,6 +13,7 @@ import {
 } from '../hooks/useTesiraApi'
 import { useTesiraReversePresetSync } from '../hooks/useTesiraWebSocket'
 import type { TesiraReversePresetSyncEvent } from '../types'
+import { NumberInput } from '../../Controls/NumberInput'
 
 interface TesiraPresetsTabProps {
   deviceId: string
@@ -133,23 +134,27 @@ export function TesiraPresetsTab({ deviceId }: TesiraPresetsTabProps) {
 
       {/* Add rule */}
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        <TextField
+        <NumberInput
           label="MAP2 Preset ID"
+          value={newMap2Id === '' ? 0 : Number(newMap2Id)}
+          min={0}
+          max={999999}
+          step={1}
           size="small"
-          value={newMap2Id}
-          onChange={(e) => setNewMap2Id(e.target.value)}
-          type="number"
-          sx={{ width: 140 }}
-          inputProps={{ min: 0 }}
+          showBounds={false}
+          style={{ width: 140 }}
+          onChange={(value) => setNewMap2Id(String(Math.max(0, Math.round(value))))}
         />
-        <TextField
+        <NumberInput
           label="Tesira Preset #"
+          value={newPresetIdx === '' ? 0 : Number(newPresetIdx)}
+          min={0}
+          max={999999}
+          step={1}
           size="small"
-          value={newPresetIdx}
-          onChange={(e) => setNewPresetIdx(e.target.value)}
-          type="number"
-          sx={{ width: 140 }}
-          inputProps={{ min: 0 }}
+          showBounds={false}
+          style={{ width: 140 }}
+          onChange={(value) => setNewPresetIdx(String(Math.max(0, Math.round(value))))}
         />
         <Button
           size="small"

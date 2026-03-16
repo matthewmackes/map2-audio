@@ -4,6 +4,7 @@ import { Button, FormControlLabel, Switch, TextField } from '@mui/material'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { NumberInput } from '../Controls/NumberInput'
 
 export function MidiMacroPanel() {
   const queryClient = useQueryClient()
@@ -65,12 +66,16 @@ export function MidiMacroPanel() {
       <div className="grid grid-3" style={{ gap: 10 }}>
         <TextField label="Macro ID" size="small" value={macroId} onChange={(event) => setMacroId(event.target.value)} />
         <TextField label="Name" size="small" value={name} onChange={(event) => setName(event.target.value)} />
-        <TextField
+        <NumberInput
           label="Trigger CC"
-          size="small"
-          type="number"
           value={triggerCc}
-          onChange={(event) => setTriggerCc(Math.max(0, Math.min(127, Number(event.target.value) || 0)))}
+          min={0}
+          max={127}
+          step={1}
+          profile="integer"
+          onChange={(nextValue) => setTriggerCc(Math.max(0, Math.min(127, nextValue)))}
+          size="small"
+          fullWidth
         />
         <TextField
           label="Destination Port"
@@ -78,12 +83,16 @@ export function MidiMacroPanel() {
           value={destination}
           onChange={(event) => setDestination(event.target.value)}
         />
-        <TextField
+        <NumberInput
           label="CC Value"
-          size="small"
-          type="number"
           value={value}
-          onChange={(event) => setValue(Math.max(0, Math.min(127, Number(event.target.value) || 0)))}
+          min={0}
+          max={127}
+          step={1}
+          profile="integer"
+          onChange={(nextValue) => setValue(Math.max(0, Math.min(127, nextValue)))}
+          size="small"
+          fullWidth
         />
         <div className="flex" style={{ alignItems: 'center', gap: 8 }}>
           <FormControlLabel

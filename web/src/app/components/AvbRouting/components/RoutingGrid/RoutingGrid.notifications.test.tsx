@@ -229,7 +229,7 @@ describe('RoutingGrid notification contracts', () => {
     fireEvent.click(screen.getByTestId('cell-talker-1-listener-1'))
 
     expect(mockPatchMutate).toHaveBeenCalledWith(
-      { talker_id: 'talker-1', listener_id: 'listener-1' },
+      { talker_id: 'talker-1', listener_id: 'listener-1', node_id: 'local' },
       expect.any(Object)
     )
     expect(mockNotify.success).toHaveBeenCalledWith('Connected: Talker A -> Listener A')
@@ -262,7 +262,7 @@ describe('RoutingGrid notification contracts', () => {
     fireEvent.click(screen.getByTestId('cell-talker-1-listener-1'))
 
     expect(mockUnpatchMutate).toHaveBeenCalledWith(
-      { talker_id: 'talker-1', listener_id: 'listener-1' },
+      { talker_id: 'talker-1', listener_id: 'listener-1', node_id: 'local' },
       expect.any(Object)
     )
     expect(mockNotify.success).toHaveBeenCalledWith('Disconnected: Talker A -> Listener A')
@@ -326,8 +326,8 @@ describe('RoutingGrid notification contracts', () => {
     await waitFor(() => {
       expect(mockBatchMutateAsync).toHaveBeenCalledWith(
         [
-          { talker_id: 'talker-1', listener_id: 'listener-1', action: 'connect' },
-          { talker_id: 'talker-2', listener_id: 'listener-1', action: 'connect' },
+          { talker_id: 'talker-1', listener_id: 'listener-1', node_id: 'local', action: 'connect' },
+          { talker_id: 'talker-2', listener_id: 'listener-1', node_id: 'local', action: 'connect' },
         ],
         expect.any(Object)
       )
@@ -457,6 +457,7 @@ describe('RoutingGrid notification contracts', () => {
     expect(mockUnpatchMutateAsync).toHaveBeenCalledWith({
       talker_id: 'talker-2',
       listener_id: 'listener-1',
+      node_id: 'local',
     })
     expect(mockClearSelection).toHaveBeenCalledTimes(1)
   })

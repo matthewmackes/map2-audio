@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import type { MPX1RegistryParam } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
 import { MPX1Knob } from './MPX1Knob'
+import { NumberInput } from '../Controls/NumberInput'
 import './MPX1BlockEditor.css'
 
 type EditorBlockId = 'reverb' | 'pitch' | 'delay' | 'chorus' | 'eq' | 'mod'
@@ -250,13 +251,16 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
     return (
       <label className="mpx1-editor__slider-wrap">
         <span className="mpx1-editor__label">{param.display_name}</span>
-        <input
-          type="range"
+        <NumberInput
+          label={param.display_name}
+          value={value}
           min={min}
           max={max}
           step={Math.max(0.01, (max - min) / 200)}
-          value={value}
-          onChange={(event) => onChange(Number(event.target.value))}
+          showLabel={false}
+          showBounds={false}
+          size="small"
+          onChange={onChange}
         />
         <span className="mpx1-editor__value">{formatValue(param, value)}</span>
       </label>

@@ -14,6 +14,7 @@ import {
   Tile,
 } from '@carbon/react'
 import { useToasts } from '../Toasts'
+import { NumberInput } from '../Controls/NumberInput'
 import { flowSnapshotsApi } from '../../../map2/api'
 import type { ChainSnapshot, FlowSnapshot, FlowSnapshotDetail, FlowSnapshotData } from '../../../map2/types'
 import {
@@ -1088,13 +1089,23 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
             <p className="juce-grid-page__modal-copy">
               Leave this field empty to clear the assigned Program Change number.
             </p>
-            <input
-              id="juce-grid-snapshot-program"
-              aria-label="Program Change number"
-              type="number"
-              value={snapshotProgramValue}
-              onChange={(event) => setSnapshotProgramValue(event.target.value)}
-              placeholder="0-127"
+            <NumberInput
+              label="Program Change number"
+              value={(() => {
+                const trimmed = snapshotProgramValue.trim()
+                if (trimmed === '') return null
+                const parsed = Number.parseInt(trimmed, 10)
+                return Number.isFinite(parsed) ? parsed : null
+              })()}
+              min={0}
+              max={127}
+              step={1}
+              size="small"
+              showBounds={false}
+              showLabel={false}
+              nullable
+              onChange={(value) => setSnapshotProgramValue(String(Math.max(0, Math.min(127, Math.round(value)))))}
+              onClear={() => setSnapshotProgramValue('')}
             />
           </div>
         </Modal>
@@ -1154,15 +1165,16 @@ const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLEle
                 Update the active snapshot before starting a morph so the source state is deterministic.
               </p>
             )}
-            <input
-              id="juce-grid-snapshot-morph-duration"
-              aria-label="Duration (ms)"
-              type="number"
-              value={String(snapshotMorphDurationMs)}
-              onChange={(event) => {
-                const nextValue = Number.parseInt(event.target.value || '0', 10)
-                setSnapshotMorphDurationMs(Number.isFinite(nextValue) ? Math.max(250, Math.min(5000, nextValue)) : 1200)
-              }}
+            <NumberInput
+              label="Duration (ms)"
+              value={snapshotMorphDurationMs}
+              min={250}
+              max={5000}
+              step={50}
+              unit="ms"
+              profile="time-ms"
+              showBounds={false}
+              onChange={(nextValue) => setSnapshotMorphDurationMs(nextValue)}
             />
           </div>
         </Modal>

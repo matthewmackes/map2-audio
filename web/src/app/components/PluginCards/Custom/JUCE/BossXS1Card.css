@@ -341,20 +341,28 @@
   gap: 6px;
 }
 
-.boss-pedal-range-inputs input {
+.boss-pedal-range-input {
   width: 50px;
+  min-width: 50px;
+}
+
+.boss-pedal-range-input .numeric-input__control {
+  min-height: 32px;
   padding: 6px;
   background: var(--surface-3);
   border: 1px solid var(--border-strong);
   border-radius: var(--border-radius-sm);
+}
+
+.boss-pedal-range-input .numeric-input__field {
   color: var(--text-primary);
   font-size: var(--type-label);
   text-align: center;
 }
 
-.boss-pedal-range-inputs input:focus {
-  outline: none;
+.boss-pedal-range-input .numeric-input__control:focus-within {
   border-color: var(--support-warning);
+  box-shadow: none;
 }
 
 .boss-pedal-range-inputs span {

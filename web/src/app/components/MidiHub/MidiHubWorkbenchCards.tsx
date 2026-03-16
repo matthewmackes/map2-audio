@@ -11,6 +11,7 @@ import {
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { NumberInput } from '../Controls/NumberInput'
 
 export type HubPort = {
   port_id: string
@@ -528,53 +529,59 @@ export function MidiHubMapperPlannerCard() {
                 <SelectItem key={message} value={message} text={message} />
               ))}
             </Select>
-            <TextInput
-              id="midi-hub-source-channel-min"
-              size="sm"
-              labelText="Channel min"
-              type="number"
-              value={String(mapper.sourceChannelMin)}
-              onChange={(event) => setMapper({ sourceChannelMin: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Channel min"
+              size="small"
+              value={mapper.sourceChannelMin}
+              min={1}
+              max={16}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ sourceChannelMin: nextValue })}
             />
-            <TextInput
-              id="midi-hub-source-channel-max"
-              size="sm"
-              labelText="Channel max"
-              type="number"
-              value={String(mapper.sourceChannelMax)}
-              onChange={(event) => setMapper({ sourceChannelMax: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Channel max"
+              size="small"
+              value={mapper.sourceChannelMax}
+              min={1}
+              max={16}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ sourceChannelMax: nextValue })}
             />
-            <TextInput
-              id="midi-hub-source-value1-min"
-              size="sm"
-              labelText="Value 1 min"
-              type="number"
-              value={String(mapper.sourceValue1Min)}
-              onChange={(event) => setMapper({ sourceValue1Min: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Value 1 min"
+              size="small"
+              value={mapper.sourceValue1Min}
+              min={0}
+              max={127}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ sourceValue1Min: nextValue })}
             />
-            <TextInput
-              id="midi-hub-source-value1-max"
-              size="sm"
-              labelText="Value 1 max"
-              type="number"
-              value={String(mapper.sourceValue1Max)}
-              onChange={(event) => setMapper({ sourceValue1Max: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Value 1 max"
+              size="small"
+              value={mapper.sourceValue1Max}
+              min={0}
+              max={127}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ sourceValue1Max: nextValue })}
             />
-            <TextInput
-              id="midi-hub-source-value2-min"
-              size="sm"
-              labelText="Value 2 min"
-              type="number"
-              value={String(mapper.sourceValue2Min)}
-              onChange={(event) => setMapper({ sourceValue2Min: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Value 2 min"
+              size="small"
+              value={mapper.sourceValue2Min}
+              min={0}
+              max={127}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ sourceValue2Min: nextValue })}
             />
-            <TextInput
-              id="midi-hub-source-value2-max"
-              size="sm"
-              labelText="Value 2 max"
-              type="number"
-              value={String(mapper.sourceValue2Max)}
-              onChange={(event) => setMapper({ sourceValue2Max: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Value 2 max"
+              size="small"
+              value={mapper.sourceValue2Max}
+              min={0}
+              max={127}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ sourceValue2Max: nextValue })}
             />
           </div>
         </div>
@@ -593,53 +600,59 @@ export function MidiHubMapperPlannerCard() {
                 <SelectItem key={message} value={message} text={message} />
               ))}
             </Select>
-            <TextInput
-              id="midi-hub-target-channel-min"
-              size="sm"
-              labelText="Channel min"
-              type="number"
-              value={String(mapper.targetChannelMin)}
-              onChange={(event) => setMapper({ targetChannelMin: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Channel min"
+              size="small"
+              value={mapper.targetChannelMin}
+              min={1}
+              max={16}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ targetChannelMin: nextValue })}
             />
-            <TextInput
-              id="midi-hub-target-channel-max"
-              size="sm"
-              labelText="Channel max"
-              type="number"
-              value={String(mapper.targetChannelMax)}
-              onChange={(event) => setMapper({ targetChannelMax: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Channel max"
+              size="small"
+              value={mapper.targetChannelMax}
+              min={1}
+              max={16}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ targetChannelMax: nextValue })}
             />
-            <TextInput
-              id="midi-hub-target-value1-min"
-              size="sm"
-              labelText="Value 1 min"
-              type="number"
-              value={String(mapper.targetValue1Min)}
-              onChange={(event) => setMapper({ targetValue1Min: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Value 1 min"
+              size="small"
+              value={mapper.targetValue1Min}
+              min={0}
+              max={127}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ targetValue1Min: nextValue })}
             />
-            <TextInput
-              id="midi-hub-target-value1-max"
-              size="sm"
-              labelText="Value 1 max"
-              type="number"
-              value={String(mapper.targetValue1Max)}
-              onChange={(event) => setMapper({ targetValue1Max: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Value 1 max"
+              size="small"
+              value={mapper.targetValue1Max}
+              min={0}
+              max={127}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ targetValue1Max: nextValue })}
             />
-            <TextInput
-              id="midi-hub-target-value2-min"
-              size="sm"
-              labelText="Value 2 min"
-              type="number"
-              value={String(mapper.targetValue2Min)}
-              onChange={(event) => setMapper({ targetValue2Min: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Value 2 min"
+              size="small"
+              value={mapper.targetValue2Min}
+              min={0}
+              max={127}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ targetValue2Min: nextValue })}
             />
-            <TextInput
-              id="midi-hub-target-value2-max"
-              size="sm"
-              labelText="Value 2 max"
-              type="number"
-              value={String(mapper.targetValue2Max)}
-              onChange={(event) => setMapper({ targetValue2Max: Number(event.currentTarget.value) })}
+            <NumberInput
+              label="Value 2 max"
+              size="small"
+              value={mapper.targetValue2Max}
+              min={0}
+              max={127}
+              showBounds={false}
+              onChange={(nextValue) => setMapper({ targetValue2Max: nextValue })}
             />
           </div>
 

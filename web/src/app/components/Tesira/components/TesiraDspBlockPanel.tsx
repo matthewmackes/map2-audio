@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useSetTesiraDspParam, useTesiraDspBlock, useTesiraDspParams } from '../hooks/useTesiraApi'
+import { NumberInput } from '../../Controls/NumberInput'
 
 interface TesiraDspBlockPanelProps {
   deviceId: string
@@ -142,21 +143,27 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
             <Typography variant="caption" fontWeight={700}>
               Crosspoint Helper
             </Typography>
-            <TextField
+            <NumberInput
               label="Input"
-              size="small"
-              type="number"
               value={matrixInput}
-              onChange={(event) => setMatrixInput(Math.max(1, Number(event.target.value) || 1))}
-              sx={{ width: 90 }}
-            />
-            <TextField
-              label="Output"
+              min={1}
+              max={128}
+              step={1}
+              showBounds={false}
               size="small"
-              type="number"
+              style={{ width: 90 }}
+              onChange={(value) => setMatrixInput(Math.max(1, Math.round(value) || 1))}
+            />
+            <NumberInput
+              label="Output"
               value={matrixOutput}
-              onChange={(event) => setMatrixOutput(Math.max(1, Number(event.target.value) || 1))}
-              sx={{ width: 90 }}
+              min={1}
+              max={128}
+              step={1}
+              showBounds={false}
+              size="small"
+              style={{ width: 90 }}
+              onChange={(value) => setMatrixOutput(Math.max(1, Math.round(value) || 1))}
             />
             <TextField
               label="Gain dB"

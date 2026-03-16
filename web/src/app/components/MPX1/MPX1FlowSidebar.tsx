@@ -13,6 +13,7 @@ import { X } from '@phosphor-icons/react'
 import type { MPX1RegistryParam, UseMPX1StateResult } from '../../../map2/mpx1Api'
 import { MPX1Knob } from './MPX1Knob'
 import type { BlockRoutingState } from './mpx1FlowRouting'
+import { NumberInput } from '../Controls/NumberInput'
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -128,13 +129,16 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
     return (
       <label className="mpx1-flow-sidebar__control mpx1-flow-sidebar__slider-wrap">
         <span className="mpx1-flow-sidebar__label">{param.display_name}</span>
-        <input
-          type="range"
+        <NumberInput
+          label={param.display_name}
+          value={value}
           min={min}
           max={max}
           step={Math.max(0.01, (max - min) / 200)}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
+          showLabel={false}
+          showBounds={false}
+          size="small"
+          onChange={onChange}
         />
         <span className="mpx1-flow-sidebar__value">{formatValue(param, value)}</span>
       </label>

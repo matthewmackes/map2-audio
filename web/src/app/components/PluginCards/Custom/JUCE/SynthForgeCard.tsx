@@ -11,7 +11,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowsClockwise, Moon, PianoKeys, Sun } from '@phosphor-icons/react'
 
 import { PluginCardShell } from '../../Base/PluginCardShell'
+import { NumberInput } from '../../../Controls/NumberInput'
 import type { PluginCardProps } from '../../types'
+import type { SensitivityProfile } from '../../../../data/parameterSchema'
 import {
   soundfontApi,
   synthforgeApi,
@@ -46,6 +48,7 @@ const KEYBOARD_MIN_NOTE = 36
 const KEYBOARD_MAX_NOTE = 96
 const KEYBOARD_BASE_NOTE = 48
 const MAX_NOTE_EVENTS = 120
+const SYNTHFORGE_NUMERIC_ACCENT = 'var(--interactive)'
 
 const QWERTY_NOTE_OFFSETS: Record<string, number> = {
   z: 0,
@@ -107,6 +110,59 @@ interface SliderFieldProps {
   step: number
   formatter?: (value: number) => string
   onChange: (value: number) => void
+  profile?: SensitivityProfile
+}
+
+interface NumericFieldProps {
+  label?: string
+  value: number
+  min: number
+  max: number
+  step?: number
+  unit?: string
+  formatter?: (value: number) => string
+  onChange: (value: number) => void
+  profile?: SensitivityProfile
+  showLabel?: boolean
+  inline?: boolean
+  className?: string
+  defaultValue?: number
+}
+
+function NumericField({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  unit = '',
+  formatter,
+  onChange,
+  profile,
+  showLabel = true,
+  inline = false,
+  className,
+  defaultValue,
+}: NumericFieldProps) {
+  return (
+    <NumberInput
+      label={label}
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      unit={unit}
+      defaultValue={defaultValue}
+      profile={profile}
+      onChange={onChange}
+      size="small"
+      showLabel={showLabel}
+      inline={inline}
+      accentColor={SYNTHFORGE_NUMERIC_ACCENT}
+      className={['synthforge-number-input', className].filter(Boolean).join(' ')}
+      valueFormatter={formatter}
+    />
+  )
 }
 
 function SliderField({
@@ -117,22 +173,20 @@ function SliderField({
   step,
   formatter,
   onChange,
+  profile,
 }: SliderFieldProps) {
   return (
-    <label className="synthforge-field synthforge-slider-field">
-      <span>{label}</span>
-      <div className="synthforge-slider-row">
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(event) => onChange(Number(event.target.value))}
-        />
-        <strong>{formatter ? formatter(value) : value.toFixed(2)}</strong>
-      </div>
-    </label>
+    <NumericField
+      label={label}
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      formatter={formatter}
+      onChange={onChange}
+      profile={profile}
+      className="synthforge-slider-input"
+    />
   )
 }
 
@@ -1002,26 +1056,26 @@ export function SynthForgeCard({
 
             <div className="synthforge-panel-title">Patch Save</div>
             <div className="synthforge-compact-grid">
-              <label className="synthforge-field">
-                Bank
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={saveBank}
-                  onChange={(event) => setSaveBank(Number(event.target.value))}
-                />
-              </label>
-              <label className="synthforge-field">
-                Program
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={saveProgram}
-                  onChange={(event) => setSaveProgram(Number(event.target.value))}
-                />
-              </label>
+              <NumericField
+                label="Bank"
+                value={saveBank}
+                min={0}
+                max={16384}
+                step={1}
+                profile="integer"
+                onChange={setSaveBank}
+                defaultValue={0}
+              />
+              <NumericField
+                label="Program"
+                value={saveProgram}
+                min={0}
+                max={16384}
+                step={1}
+                profile="integer"
+                onChange={setSaveProgram}
+                defaultValue={0}
+              />
             </div>
             <label className="synthforge-field">
               Patch Name
@@ -1074,6 +1128,7 @@ export function SynthForgeCard({
               step={1}
               formatter={(value) => `${Math.round(value)} st`}
               onChange={(value) => setPartParam('osc1.coarse', value)}
+              profile="integer"
             />
 
             <SliderField
@@ -1256,65 +1311,61 @@ export function SynthForgeCard({
             </label>
 
             <div className="synthforge-compact-grid">
-              <label className="synthforge-field">
-                Preload (bytes)
-                <input
-                  type="number"
-                  min={16384}
-                  max={16777216}
-                  step={4096}
-                  value={streamingDraft.preload_size}
-                  onChange={(event) => setStreamingDraft((prev) => ({
-                    ...prev,
-                    preload_size: Number(event.target.value),
-                  }))}
-                />
-              </label>
-              <label className="synthforge-field">
-                Max Voices
-                <input
-                  type="number"
-                  min={8}
-                  max={512}
-                  step={1}
-                  value={streamingDraft.max_voices}
-                  onChange={(event) => setStreamingDraft((prev) => ({
-                    ...prev,
-                    max_voices: Number(event.target.value),
-                  }))}
-                />
-              </label>
+              <NumericField
+                label="Preload (bytes)"
+                value={streamingDraft.preload_size}
+                min={16384}
+                max={16777216}
+                step={4096}
+                profile="integer"
+                onChange={(value) => setStreamingDraft((prev) => ({
+                  ...prev,
+                  preload_size: value,
+                }))}
+                defaultValue={262144}
+              />
+              <NumericField
+                label="Max Voices"
+                value={streamingDraft.max_voices}
+                min={8}
+                max={512}
+                step={1}
+                profile="integer"
+                onChange={(value) => setStreamingDraft((prev) => ({
+                  ...prev,
+                  max_voices: value,
+                }))}
+                defaultValue={64}
+              />
             </div>
 
             <div className="synthforge-compact-grid">
-              <label className="synthforge-field">
-                Live Quality
-                <input
-                  type="number"
-                  min={0}
-                  max={10}
-                  step={1}
-                  value={streamingDraft.quality_live}
-                  onChange={(event) => setStreamingDraft((prev) => ({
-                    ...prev,
-                    quality_live: Number(event.target.value),
-                  }))}
-                />
-              </label>
-              <label className="synthforge-field">
-                Freewheel Quality
-                <input
-                  type="number"
-                  min={0}
-                  max={10}
-                  step={1}
-                  value={streamingDraft.quality_freewheeling}
-                  onChange={(event) => setStreamingDraft((prev) => ({
-                    ...prev,
-                    quality_freewheeling: Number(event.target.value),
-                  }))}
-                />
-              </label>
+              <NumericField
+                label="Live Quality"
+                value={streamingDraft.quality_live}
+                min={0}
+                max={10}
+                step={1}
+                profile="integer"
+                onChange={(value) => setStreamingDraft((prev) => ({
+                  ...prev,
+                  quality_live: value,
+                }))}
+                defaultValue={4}
+              />
+              <NumericField
+                label="Freewheel Quality"
+                value={streamingDraft.quality_freewheeling}
+                min={0}
+                max={10}
+                step={1}
+                profile="integer"
+                onChange={(value) => setStreamingDraft((prev) => ({
+                  ...prev,
+                  quality_freewheeling: value,
+                }))}
+                defaultValue={6}
+              />
             </div>
 
             <button className="synthforge-primary-button" onClick={handleApplyStreaming} disabled={setStreamingMutation.isPending}>
@@ -1327,13 +1378,16 @@ export function SynthForgeCard({
               <button className={hotReloadEnabled ? 'active' : ''} onClick={() => setHotReloadEnabled((prev) => !prev)}>
                 {hotReloadEnabled ? 'Enabled' : 'Disabled'}
               </button>
-              <input
-                className="synthforge-text-input"
-                type="number"
+              <NumericField
+                value={hotReloadIntervalMs}
                 min={100}
                 max={10000}
-                value={hotReloadIntervalMs}
-                onChange={(event) => setHotReloadIntervalMs(Number(event.target.value))}
+                step={1}
+                profile="integer"
+                onChange={setHotReloadIntervalMs}
+                showLabel={false}
+                className="synthforge-inline-number"
+                defaultValue={1000}
               />
             </div>
             <div className="synthforge-button-row">
@@ -1353,27 +1407,27 @@ export function SynthForgeCard({
               <button onClick={handleApplyScala} disabled={loadScalaMutation.isPending}>Load Scala</button>
             </div>
             <div className="synthforge-compact-grid">
-              <label className="synthforge-field">
-                Root
-                <input
-                  type="number"
-                  min={0}
-                  max={127}
-                  value={scalaRoot}
-                  onChange={(event) => setScalaRoot(Number(event.target.value))}
-                />
-              </label>
-              <label className="synthforge-field">
-                Ref Hz
-                <input
-                  type="number"
-                  min={300}
-                  max={500}
-                  step={0.1}
-                  value={scalaReferenceHz}
-                  onChange={(event) => setScalaReferenceHz(Number(event.target.value))}
-                />
-              </label>
+              <NumericField
+                label="Root"
+                value={scalaRoot}
+                min={0}
+                max={127}
+                step={1}
+                profile="integer"
+                onChange={setScalaRoot}
+                defaultValue={69}
+              />
+              <NumericField
+                label="Ref Hz"
+                value={scalaReferenceHz}
+                min={300}
+                max={500}
+                step={0.1}
+                unit="Hz"
+                profile="frequency"
+                onChange={setScalaReferenceHz}
+                defaultValue={440}
+              />
             </div>
 
             <div className="synthforge-compact-grid">
@@ -1387,38 +1441,38 @@ export function SynthForgeCard({
                   <option value="on">On</option>
                 </select>
               </label>
-              <label className="synthforge-field">
-                PB Range
-                <input
-                  type="number"
-                  min={1}
-                  max={96}
-                  value={mpePitchRange}
-                  onChange={(event) => setMpePitchRange(Number(event.target.value))}
-                />
-              </label>
+              <NumericField
+                label="PB Range"
+                value={mpePitchRange}
+                min={1}
+                max={96}
+                step={1}
+                profile="integer"
+                onChange={setMpePitchRange}
+                defaultValue={48}
+              />
             </div>
             <div className="synthforge-compact-grid">
-              <label className="synthforge-field">
-                Lower Zone
-                <input
-                  type="number"
-                  min={0}
-                  max={15}
-                  value={mpeLowerZone}
-                  onChange={(event) => setMpeLowerZone(Number(event.target.value))}
-                />
-              </label>
-              <label className="synthforge-field">
-                Upper Zone
-                <input
-                  type="number"
-                  min={0}
-                  max={15}
-                  value={mpeUpperZone}
-                  onChange={(event) => setMpeUpperZone(Number(event.target.value))}
-                />
-              </label>
+              <NumericField
+                label="Lower Zone"
+                value={mpeLowerZone}
+                min={0}
+                max={15}
+                step={1}
+                profile="integer"
+                onChange={setMpeLowerZone}
+                defaultValue={1}
+              />
+              <NumericField
+                label="Upper Zone"
+                value={mpeUpperZone}
+                min={0}
+                max={15}
+                step={1}
+                profile="integer"
+                onChange={setMpeUpperZone}
+                defaultValue={15}
+              />
             </div>
             <button onClick={handleApplyMpe} disabled={setMpeMutation.isPending}>Apply MPE</button>
 

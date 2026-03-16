@@ -1,4 +1,5 @@
-import type { ParameterDescriptor, SensitivityProfile } from '../../data/parameterSchema'
+import type { ParameterDescriptor } from '../../data/parameterSchema'
+import { sensitivityProfiles } from '../../data/parameterSchema'
 
 export interface NumericInputModifiers {
   fine?: boolean
@@ -15,42 +16,6 @@ export interface NumericInputDeltaRequest {
 export interface NumericInputAccelerationProfile {
   minVelocity: number
   multiplier: number
-}
-
-const FINE_DIVISOR_BY_PROFILE: Record<SensitivityProfile, number> = {
-  default: 10,
-  integer: 1,
-  frequency: 20,
-  'gain-db': 10,
-  'time-ms': 10,
-}
-
-const ACCELERATION_BY_PROFILE: Record<SensitivityProfile, NumericInputAccelerationProfile[]> = {
-  default: [
-    { minVelocity: 0.5, multiplier: 1.5 },
-    { minVelocity: 1.5, multiplier: 2 },
-    { minVelocity: 3, multiplier: 4 },
-  ],
-  integer: [
-    { minVelocity: 0.5, multiplier: 2 },
-    { minVelocity: 1.5, multiplier: 4 },
-    { minVelocity: 3, multiplier: 8 },
-  ],
-  frequency: [
-    { minVelocity: 0.5, multiplier: 2 },
-    { minVelocity: 1.25, multiplier: 5 },
-    { minVelocity: 2.5, multiplier: 10 },
-  ],
-  'gain-db': [
-    { minVelocity: 0.5, multiplier: 1.5 },
-    { minVelocity: 1.5, multiplier: 3 },
-    { minVelocity: 3, multiplier: 6 },
-  ],
-  'time-ms': [
-    { minVelocity: 0.5, multiplier: 1.5 },
-    { minVelocity: 1.5, multiplier: 2.5 },
-    { minVelocity: 3, multiplier: 5 },
-  ],
 }
 
 function getPrecision(step: number, fallback = 6): number {
@@ -72,7 +37,7 @@ export function clampNumericValue(value: number, descriptor: ParameterDescriptor
 }
 
 export function getFineStep(descriptor: ParameterDescriptor): number {
-  const divisor = FINE_DIVISOR_BY_PROFILE[descriptor.profile] ?? 10
+  const divisor = sensitivityProfiles[descriptor.profile]?.fineDivisor ?? 10
   if (divisor <= 1) {
     return descriptor.step
   }
@@ -99,7 +64,7 @@ export function getAccelerationMultiplier(
     return 1
   }
 
-  const profile = ACCELERATION_BY_PROFILE[descriptor.profile] ?? ACCELERATION_BY_PROFILE.default
+  const profile = sensitivityProfiles[descriptor.profile]?.acceleration ?? sensitivityProfiles.default.acceleration
   let multiplier = 1
   for (const entry of profile) {
     if (velocity >= entry.minVelocity) {

@@ -268,7 +268,12 @@ jest.mock('./JuceGridRoutingVisualizer', () => ({
 }))
 
 jest.mock('./JuceGridSignalCanvas', () => ({
-  JuceGridSignalCanvas: () => <div data-testid="juce-grid-signal-canvas">Signal canvas</div>,
+  JuceGridSignalCanvas: ({ onAddPlugin }: { onAddPlugin?: () => void }) => (
+    <div data-testid="juce-grid-signal-canvas">
+      <button type="button" onClick={onAddPlugin}>Add block</button>
+      Signal canvas
+    </div>
+  ),
 }))
 
 jest.mock('./juceGridLivePath', () => ({
@@ -724,7 +729,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
     expect(livePathGroupHeader).toBeTruthy()
     expect(within(livePathGroupHeader as HTMLElement).getByRole('button', { name: 'Add flow' })).toBeTruthy()
     expect(within(livePathGroupHeader as HTMLElement).getByRole('button', { name: /Clear flows/i })).toBeTruthy()
-    expect(screen.queryByRole('region', { name: 'Live audio path' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Place a single Flow inside a Chain' })).toBeNull()
     expect(container.querySelector('.juce-grid-page__toolbar')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Redo' })).toBeNull()
@@ -753,7 +758,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       secondaryFlowId: null,
       mobileSummary: ['Series: A > B'],
       groups: [
-        { id: 'series-main', kind: 'series', title: 'Live audio path', flowIds: ['flow-0'], tone: 'active' },
+        { id: 'series-main', kind: 'series', title: 'Place a single Flow inside a Chain', flowIds: ['flow-0'], tone: 'active' },
         { id: 'series-context', kind: 'inactive', title: 'Dimmed context', flowIds: ['flow-1'], tone: 'dim' },
       ],
       flowStates: {
@@ -794,7 +799,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    await screen.findByText('Live audio path')
+    await screen.findByText('Place a single Flow inside a Chain')
 
     expect(screen.getByTestId('juce-grid-live-path-entry-flow-0').textContent).toContain('Live')
     expect(screen.getByTestId('juce-grid-live-path-entry-flow-1').textContent).toContain('Dim')
@@ -806,6 +811,33 @@ describe('JuceGridPage snapshot modal workflow', () => {
   })
 
   it('closes the plugin chooser immediately when adding a plugin', async () => {
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'lead-flow',
+          kind: 'parallel',
+          title: 'Lead flow',
+          flowIds: ['flow-0'],
+          tone: 'active',
+        },
+      ],
+      flowStates: {
+        'flow-0': {
+          flowId: 'flow-0',
+          activeAudio: true,
+          dimmed: false,
+          placeholder: false,
+          annotation: 'Live branch',
+          secondaryAnnotation: 'Lead chain',
+          sidechainKey: false,
+        },
+      },
+    }
     localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
       { id: 'flow-0', chainId: 1, label: 'A', color: '#0f62fe', muted: false, solo: false, dryWetMix: 100 },
       { id: 'flow-1', chainId: null, label: 'B', color: '#24a148', muted: false, solo: false, dryWetMix: 100 },
@@ -840,7 +872,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add plugin' }))
+    fireEvent.keyDown(window, { key: 'a' })
 
     await screen.findByText('Test Chorus')
     await act(async () => {
@@ -1149,6 +1181,33 @@ describe('JuceGridPage snapshot modal workflow', () => {
   })
 
   it('renders plugin browser results in a stable alphabetical order', async () => {
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'lead-flow',
+          kind: 'parallel',
+          title: 'Lead flow',
+          flowIds: ['flow-0'],
+          tone: 'active',
+        },
+      ],
+      flowStates: {
+        'flow-0': {
+          flowId: 'flow-0',
+          activeAudio: true,
+          dimmed: false,
+          placeholder: false,
+          annotation: 'Live branch',
+          secondaryAnnotation: 'Lead chain',
+          sidechainKey: false,
+        },
+      },
+    }
     localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
       { id: 'flow-0', chainId: 1, label: 'A', color: '#0f62fe', muted: false, solo: false, dryWetMix: 100 },
     ]))
@@ -1202,7 +1261,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add plugin' }))
+    fireEvent.keyDown(window, { key: 'a' })
 
     await screen.findByText('Alpha Delay')
 

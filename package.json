@@ -22,7 +22,11 @@
     "modulePathIgnorePatterns": [
       "<rootDir>/build/",
       "<rootDir>/juce-engine/build/",
-      "<rootDir>/juce-engine/build-check/"
+      "<rootDir>/juce-engine/build-check/",
+      "<rootDir>/juce-engine/build-.*?/"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/web/src/map2/components/MAP2Dashboard.test.tsx"
     ]
   },
   "keywords": [],

@@ -757,12 +757,16 @@ function MappingDialog({
                 ))}
               </Select>
             </FormControl>
-            <TextField
+            <NumberInput
               label="CC Number"
-              type="number"
               value={cc}
-              onChange={(e) => setCc(Number(e.target.value))}
-              inputProps={{ min: 0, max: 127 }}
+              min={0}
+              max={127}
+              step={1}
+              profile="integer"
+              onChange={(value) => setCc(value)}
+              size="small"
+              fullWidth
             />
           </div>
 
@@ -789,12 +793,16 @@ function MappingDialog({
             fullWidth
           />
 
-          <TextField
+          <NumberInput
             label="Parameter Index"
-            type="number"
             value={paramIndex}
-            onChange={(e) => setParamIndex(Number(e.target.value))}
-            inputProps={{ min: 0 }}
+            min={0}
+            max={4096}
+            step={1}
+            profile="integer"
+            onChange={(value) => setParamIndex(value)}
+            size="small"
+            fullWidth
           />
 
           <div>
@@ -1043,12 +1051,16 @@ function CommandDialog({
                 ))}
               </Select>
             </FormControl>
-            <TextField
+            <NumberInput
               label={triggerType === 'program_change' ? 'Program #' : 'Note/CC #'}
-              type="number"
               value={data1}
-              onChange={(e) => setData1(Number(e.target.value))}
-              inputProps={{ min: 0, max: 127 }}
+              min={0}
+              max={127}
+              step={1}
+              profile="integer"
+              onChange={(value) => setData1(value)}
+              size="small"
+              fullWidth
             />
           </div>
 

@@ -9,6 +9,7 @@ const mockUseCluster = jest.fn()
 const mockUsePluginBrowser = jest.fn()
 const mockDiscover = jest.fn()
 const mockDelete = jest.fn()
+const mockUseNodePageContext = jest.fn()
 
 jest.mock('../contexts/ClusterContext', () => ({
   useCluster: () => mockUseCluster(),
@@ -16,6 +17,16 @@ jest.mock('../contexts/ClusterContext', () => ({
 
 jest.mock('../hooks/usePluginBrowser', () => ({
   usePluginBrowser: (...args: unknown[]) => mockUsePluginBrowser(...args),
+}))
+jest.mock('../components/NodeContextBanner/NodeContextBanner', () => ({
+  NodeContextBanner: () => <div data-testid="node-context-banner">Node Context Banner</div>,
+}))
+jest.mock('../components/NodeContextPicker/NodeContextPicker', () => ({
+  NodeContextPicker: () => <div data-testid="node-context-picker">Node Context Picker</div>,
+}))
+
+jest.mock('../hooks/useNodePageContext', () => ({
+  useNodePageContext: (...args: unknown[]) => mockUseNodePageContext(...args),
 }))
 
 jest.mock('../../map2/api', () => ({
@@ -68,6 +79,26 @@ describe('LV2PluginsPage', () => {
       isLoading: false,
       isError: false,
       error: null,
+    })
+    mockUseNodePageContext.mockReturnValue({
+      localNode: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true },
+      topology: {
+        nodes: [
+          { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true },
+          { node_id: 'node-b', hostname: 'rack-b', role: 'REMOTE', is_local: false },
+        ],
+      },
+      viewedNode: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true },
+      viewedNodeId: 'node-local',
+      nodeIdentityQuery: { data: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true } },
+      nodeTopologyQuery: {
+        data: {
+          nodes: [
+            { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true },
+            { node_id: 'node-b', hostname: 'rack-b', role: 'REMOTE', is_local: false },
+          ],
+        },
+      },
     })
     mockDiscover.mockResolvedValue({ plugins: [], count: 0 })
     mockDelete.mockResolvedValue({ uri: 'plugin://compressor' })

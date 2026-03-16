@@ -172,23 +172,29 @@
   gap: 6px;
 }
 
-.synthforge-slider-field .synthforge-slider-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
+.synthforge-number-input {
+  min-width: 0;
 }
 
-.synthforge-slider-field input[type='range'] {
-  width: 100%;
-  accent-color: var(--interactive);
-}
-
-.synthforge-slider-field strong {
-  min-width: 72px;
-  text-align: right;
-  color: var(--sf-text);
+.synthforge-number-input .numeric-input__label {
   font-size: var(--type-label);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--sf-text-muted);
+}
+
+.synthforge-number-input .numeric-input__control {
+  min-height: 32px;
+  border-color: var(--sf-line);
+  background: color-mix(in srgb, var(--sf-surface) 92%, black 8%);
+}
+
+.synthforge-number-input .numeric-input__field {
+  font-size: var(--type-label);
+}
+
+.synthforge-inline-number {
+  flex: 1 1 9rem;
 }
 
 .synthforge-button-row {

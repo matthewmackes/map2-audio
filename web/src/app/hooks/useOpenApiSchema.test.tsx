@@ -15,6 +15,10 @@ jest.mock('../../map2/hooks/useWebSocket', () => ({
   },
 }))
 
+jest.mock('../utils/apiTarget', () => ({
+  apiUrl: (path: string) => path,
+}))
+
 function makeJsonResponse(payload: unknown): Response {
   return {
     ok: true,

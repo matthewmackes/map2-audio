@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from '@carbon/icons-react'
 
 import { formatIntelFXProgramNumber } from './programNumber'
+import { NumberInput } from '../Controls/NumberInput'
 
 export type IntelFXBypassState = Record<string, boolean>
 
@@ -69,15 +70,16 @@ export function IntelFXStatusBar({
         <label htmlFor="intelfx-status-mix" className="intelfx-statusbar__mix-label">
           Mix
         </label>
-        <input
-          id="intelfx-status-mix"
-          type="range"
+        <NumberInput
+          label="Mix level"
+          value={mixValue}
           min={0}
           max={1}
           step={0.01}
-          value={mixValue}
-          onChange={(event) => onMixChange(Number(event.target.value))}
-          aria-label="Mix level"
+          showLabel={false}
+          showBounds={false}
+          size="small"
+          onChange={(value) => onMixChange(value)}
         />
       </div>
 
@@ -103,4 +105,3 @@ export function IntelFXStatusBar({
     </div>
   )
 }
-

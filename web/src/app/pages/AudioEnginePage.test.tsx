@@ -11,6 +11,7 @@ const mockUsePipeWire = jest.fn()
 const mockGetSourceOfTruth = jest.fn()
 const mockGetJitterStats = jest.fn()
 const mockResetXruns = jest.fn()
+const mockUseNodePageContext = jest.fn()
 
 jest.mock('../contexts/ClusterContext', () => ({
   useCluster: () => mockUseCluster(),
@@ -18,6 +19,10 @@ jest.mock('../contexts/ClusterContext', () => ({
 
 jest.mock('../hooks/usePipeWire', () => ({
   usePipeWire: (...args: unknown[]) => mockUsePipeWire(...args),
+}))
+
+jest.mock('../hooks/useNodePageContext', () => ({
+  useNodePageContext: (...args: unknown[]) => mockUseNodePageContext(...args),
 }))
 
 jest.mock('../../map2/api', () => ({
@@ -32,6 +37,12 @@ jest.mock('../../map2/api', () => ({
 
 jest.mock('../components/AudioEngine/ClusterEngineGrid', () => ({
   ClusterEngineGrid: () => <div data-testid="cluster-engine-grid">Cluster Engine Grid Mock</div>,
+}))
+jest.mock('../components/NodeContextBanner/NodeContextBanner', () => ({
+  NodeContextBanner: () => <div data-testid="node-context-banner">Node Context Banner</div>,
+}))
+jest.mock('../components/NodeContextPicker/NodeContextPicker', () => ({
+  NodeContextPicker: () => <div data-testid="node-context-picker">Node Context Picker</div>,
 }))
 
 jest.mock('../components/Visualizations/SpectrumAnalyzer', () => ({
@@ -134,6 +145,14 @@ describe('AudioEnginePage', () => {
       setActiveNode: jest.fn(),
     })
     mockUsePipeWire.mockReturnValue(buildPipeWireMock())
+    mockUseNodePageContext.mockReturnValue({
+      localNode: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true },
+      topology: { nodes: [{ node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true }] },
+      viewedNode: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true },
+      viewedNodeId: 'node-local',
+      nodeIdentityQuery: { data: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true } },
+      nodeTopologyQuery: { data: { nodes: [{ node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true }] } },
+    })
     mockGetSourceOfTruth.mockResolvedValue({
       timestamp: '2026-03-15T10:15:00.000Z',
       status: 'aligned',
@@ -233,7 +252,7 @@ describe('AudioEnginePage', () => {
       expect(screen.getByText('Frequency Spectrum')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('Signal Levels')).toBeInTheDocument()
+    expect(screen.getByText('VU Meter Mock')).toBeInTheDocument()
     expect(screen.getByText('Loudness (LUFS)')).toBeInTheDocument()
     expect(screen.getByText('Phase Correlation')).toBeInTheDocument()
     expect(screen.getByText('Audio devices')).toBeInTheDocument()

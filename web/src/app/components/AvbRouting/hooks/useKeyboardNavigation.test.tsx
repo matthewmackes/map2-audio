@@ -152,6 +152,7 @@ describe('useKeyboardNavigation', () => {
     expect(mockPatchMutate).toHaveBeenCalledWith({
       talker_id: 'talker-1',
       listener_id: 'listener-1',
+      node_id: null,
     })
     expect(mockDispatch).toHaveBeenCalledWith({
       type: 'FOCUS_CELL',
@@ -199,6 +200,7 @@ describe('useKeyboardNavigation', () => {
     expect(mockUnpatchMutate).toHaveBeenCalledWith({
       talker_id: 'talker-1',
       listener_id: 'listener-1',
+      node_id: null,
     })
   })
 
