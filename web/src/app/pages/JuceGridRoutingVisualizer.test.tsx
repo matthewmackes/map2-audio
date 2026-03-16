@@ -102,4 +102,21 @@ describe('JuceGridRoutingVisualizer', () => {
     const diagram = screen.getByRole('img', { name: 'Morph routing diagram' })
     expect(diagram.getAttribute('style') || '').toContain('max-width')
   })
+
+  it('can hide the flow list while preserving the routing diagram', () => {
+    render(
+      <JuceGridRoutingVisualizer
+        mode="series"
+        flows={[
+          createFlow('a', { active: true }),
+          createFlow('b', { active: false }),
+        ]}
+        activeFlowId="a"
+        showFlowList={false}
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: 'Series routing diagram' })).toBeTruthy()
+    expect(screen.queryByRole('list', { name: 'Routing flows' })).toBeNull()
+  })
 })

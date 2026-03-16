@@ -583,6 +583,31 @@ describe('JuceGridPage snapshot modal workflow', () => {
     })
   })
 
+  it('moves flow focus selection into the left routing controls and removes the visual legend cards', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const focusPanel = (await screen.findByText('Focus flow')).closest('.juce-grid-page__routing-panel')
+    expect(focusPanel).toBeTruthy()
+    expect(within(focusPanel as HTMLElement).getByRole('button', { name: /Flow A/i })).toBeTruthy()
+    expect(within(focusPanel as HTMLElement).getByRole('button', { name: /Flow B/i })).toBeTruthy()
+    expect(within(focusPanel as HTMLElement).getAllByText('100% blend')).toHaveLength(3)
+    expect(screen.queryByRole('list', { name: 'Routing flows' })).toBeNull()
+  })
+
   it('normalizes malformed persisted flow slots instead of crashing on first render', async () => {
     localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
       { id: 'flow-0', chainId: 1, label: 'Lead', color: '#0f62fe', muted: 'true', solo: false, dryWetMix: 75 },

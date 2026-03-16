@@ -40,6 +40,7 @@ interface JuceGridRoutingVisualizerProps {
   morphSourceId?: string | null
   morphTargetId?: string | null
   compact?: boolean
+  showFlowList?: boolean
   onMarkerSelect?: (markerId: JuceGridRoutingMarkerId) => void
 }
 
@@ -65,6 +66,7 @@ export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer
   morphSourceId,
   morphTargetId,
   compact = false,
+  showFlowList = true,
   onMarkerSelect,
 }: JuceGridRoutingVisualizerProps) {
   const visibleFlows = useMemo(() => flows.filter((flow) => !flow.muted), [flows])
@@ -138,27 +140,29 @@ export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer
         {diagram.flows.map((flow) => renderFlowNode(flow, compact))}
       </svg>
 
-      <div className="juce-grid-page__routing-flow-list" role="list" aria-label="Routing flows">
-        {diagram.flows.map((flow) => (
-          <div
-            key={`flow-legend-${flow.id}`}
-            className={`juce-grid-page__routing-flow-item ${flow.active ? 'is-active' : ''}`}
-            role="listitem"
-          >
-            <span
-              className="juce-grid-page__routing-flow-dot"
-              style={{
-                backgroundColor: flow.active ? flow.color : toAlphaColor(flow.color, 0.16),
-                borderColor: flow.color,
-              }}
-            />
-            <div className="juce-grid-page__routing-flow-copy">
-              <strong>{flow.title}</strong>
-              <span>{flow.caption}</span>
+      {showFlowList && (
+        <div className="juce-grid-page__routing-flow-list" role="list" aria-label="Routing flows">
+          {diagram.flows.map((flow) => (
+            <div
+              key={`flow-legend-${flow.id}`}
+              className={`juce-grid-page__routing-flow-item ${flow.active ? 'is-active' : ''}`}
+              role="listitem"
+            >
+              <span
+                className="juce-grid-page__routing-flow-dot"
+                style={{
+                  backgroundColor: flow.active ? flow.color : toAlphaColor(flow.color, 0.16),
+                  borderColor: flow.color,
+                }}
+              />
+              <div className="juce-grid-page__routing-flow-copy">
+                <strong>{flow.title}</strong>
+                <span>{flow.caption}</span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 })

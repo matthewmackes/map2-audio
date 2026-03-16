@@ -108,6 +108,7 @@ import {
   createDefaultJuceGridRouting,
   normalizeJuceGridStateSources,
 } from './juceGridState'
+import type { JuceGridRoutingState } from './juceGridState'
 import {
   fingerprintSnapshotData,
 } from './juceGridSnapshots'
@@ -324,6 +325,31 @@ const FLOW_CARD_ROUTING_MODE_LABELS: Record<NonNullable<JuceGridAudioInterfaceSt
   series: 'SER',
   parameter_morph: 'MOR',
   sidechain: 'S/C',
+}
+
+function getRoutingFocusFlowSummary(
+  routingMode: JuceGridRoutingState['mode'],
+  flowIndex: number,
+  flowId: string,
+  activeFlowId: string | null,
+  secondaryFlowId: string | null,
+  blendPercent: number,
+): string {
+  switch (routingMode) {
+    case 'parallel_blend':
+      return `${Math.round(blendPercent)}% blend`
+    case 'ab_switch':
+      return flowId === activeFlowId ? 'Primary branch' : 'Standby branch'
+    case 'parameter_morph':
+      if (flowId === activeFlowId) return 'Morph focus'
+      if (flowId === secondaryFlowId) return 'Morph target'
+      return 'Morph context'
+    case 'sidechain':
+      return flowIndex === 0 ? 'Main audio' : 'Sidechain key'
+    case 'series':
+    default:
+      return flowIndex === 0 ? 'Input stage' : 'Serial stage'
+  }
 }
 
 const MIN_FLOWS = 2
@@ -1037,6 +1063,28 @@ export function JuceGridPage() {
   )
 
   const activeFlowLabel = SLOT_COLORS[activeFlowIndex]?.label || activeFlow?.label || 'A'
+  const secondaryRoutingFlowId = useMemo(
+    () => flowSlots.find((flow) => flow.id !== routing.activeSlotId)?.id ?? null,
+    [flowSlots, routing.activeSlotId],
+  )
+  const routingFocusButtons = useMemo(() => (
+    flowSlots.map((slot, index) => {
+      const flowLabel = SLOT_COLORS[index]?.label || slot.label
+      return {
+        id: slot.id,
+        title: `Flow ${flowLabel}`,
+        caption: getRoutingFocusFlowSummary(
+          routing.mode,
+          index,
+          slot.id,
+          routing.activeSlotId,
+          secondaryRoutingFlowId,
+          routing.blendPositions[slot.id] ?? 100,
+        ),
+        active: activeFlowIndex === index,
+      }
+    })
+  ), [activeFlowIndex, flowSlots, routing.activeSlotId, routing.blendPositions, routing.mode, secondaryRoutingFlowId])
 
   const pluginMeta = useMemo(() => {
     const plugins = pluginsQuery.data?.plugins || []
@@ -3043,15 +3091,19 @@ export function JuceGridPage() {
             <Tile className="juce-grid-page__routing-panel">
               <span className="juce-grid-page__routing-panel-label">Focus flow</span>
               <p className="juce-grid-page__routing-panel-copy">Choose which flow stays primary while editing and routing.</p>
-              <div className="juce-grid-page__toolbar-buttons">
-                {flowSlots.map((slot, index) => (
+              <div className="juce-grid-page__routing-focus-list">
+                {routingFocusButtons.map((flowButton, index) => (
                   <Button
-                    key={slot.id}
+                    key={flowButton.id}
                     size="sm"
-                    kind={activeFlowIndex === index ? 'secondary' : 'ghost'}
+                    kind={flowButton.active ? 'secondary' : 'ghost'}
+                    className="juce-grid-page__routing-focus-button"
                     onClick={() => selectFlowIndex(index)}
                   >
-                    {SLOT_COLORS[index]?.label || slot.label}
+                    <span className="juce-grid-page__routing-focus-button-copy">
+                      <span className="juce-grid-page__routing-focus-button-title">{flowButton.title}</span>
+                      <span className="juce-grid-page__routing-focus-button-caption">{flowButton.caption}</span>
+                    </span>
                   </Button>
                 ))}
               </div>
@@ -3104,6 +3156,7 @@ export function JuceGridPage() {
             morphSourceId={routing.morphSourceSlotId}
             morphTargetId={routing.morphTargetSlotId}
             compact={compact || flowSlots.length > 4}
+            showFlowList={false}
             onMarkerSelect={setRoutingInspectorId}
           />
         </div>

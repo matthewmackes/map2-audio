@@ -144,6 +144,38 @@
   font-size: 0.875rem;
 }
 
+.juce-grid-page__routing-focus-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__routing-focus-button.cds--btn {
+  inline-size: 100%;
+  justify-content: flex-start;
+  min-block-size: 3.5rem;
+  padding-inline: 1rem;
+  text-align: left;
+}
+
+.juce-grid-page__routing-focus-button-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.juce-grid-page__routing-focus-button-title {
+  font-weight: 600;
+}
+
+.juce-grid-page__routing-focus-button-caption {
+  color: inherit;
+  opacity: 0.72;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
 .juce-grid-page__routing-workspace {
   display: grid;
   grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);

@@ -32,7 +32,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { applyTheme, getSavedThemeId, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 import type { Theme } from '../theme'
-import { ThemeCreatorDialog } from '../components/ThemeCreatorDialog'
+import { ThemeChooserModal } from '../components/ThemeChooserModal'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
 import { MapAmplifierIcon, MapSignalFlowIcon } from '../components/icons/map'
 import {
@@ -539,7 +539,7 @@ export function AboutPage() {
   const [bannerLoading, setBannerLoading] = useState(false)
   const [bootSplash, setBootSplash] = useState<BootSplashStatus | null>(null)
   const [splashLoading, setSplashLoading] = useState(false)
-  const [showThemeCreator, setShowThemeCreator] = useState(false)
+  const [showThemeChooser, setShowThemeChooser] = useState(false)
   const [customThemes, setCustomThemes] = useState<Record<string, Theme>>({})
   const [currentTheme, setCurrentTheme] = useState(getSavedThemeId())
   const [showShoppingDialog, setShowShoppingDialog] = useState(false)
@@ -586,8 +586,8 @@ export function AboutPage() {
   }
 
   const handleThemeChange = (themeId: string) => {
-    applyTheme(themeId)
     setCurrentTheme(themeId)
+    refreshCustomThemes()
   }
 
   const availableThemes = { ...getAllThemes(), ...customThemes }
@@ -1010,7 +1010,7 @@ export function AboutPage() {
             <div>
               <h2 className="about-theme-card__title">Theme settings</h2>
               <p className="about-theme-card__description">
-                Manage the active Carbon theme zone and any legacy browser-saved themes.
+                Choose a Carbon color palette, pick dark or light base shell, and fine-tune individual color slots.
               </p>
             </div>
             <div className="about-theme-card__tags">
@@ -1022,34 +1022,24 @@ export function AboutPage() {
               </Tag>
               {customThemes[currentTheme] && (
                 <Tag type="warm-gray" size="sm">
-                  Legacy custom theme
+                  Custom
                 </Tag>
               )}
             </div>
           </div>
         </div>
         <div className="about-theme-card__actions">
-          <Button kind="tertiary" renderIcon={PaintBrush} onClick={() => setShowThemeCreator(true)}>
-            Manage theme
+          <Button kind="tertiary" renderIcon={PaintBrush} onClick={() => setShowThemeChooser(true)}>
+            Choose theme
           </Button>
         </div>
       </section>
 
-
-      {/* Theme Creator Dialog */}
-      <ThemeCreatorDialog
-        isOpen={showThemeCreator}
-        onClose={() => setShowThemeCreator(false)}
-        currentTheme={currentTheme}
+      {/* Theme Chooser Modal */}
+      <ThemeChooserModal
+        isOpen={showThemeChooser}
+        onClose={() => setShowThemeChooser(false)}
         onThemeChange={handleThemeChange}
-        customThemes={customThemes}
-        onDeleteCustomTheme={handleDeleteCustomTheme}
-        welcomeBanner={welcomeBanner}
-        onToggleWelcomeBanner={toggleWelcomeBanner}
-        bannerLoading={bannerLoading}
-        bootSplash={bootSplash}
-        onToggleBootSplash={toggleBootSplash}
-        splashLoading={splashLoading}
       />
 
       {/* Open Source Commitment */}
