@@ -114,6 +114,7 @@ import type {
   TesiraSceneListResponse,
   TesiraStreamInfo,
 } from '../app/components/Tesira/types';
+import type { ParameterDescriptor, ParameterRegistry } from '../app/data/parameterSchema';
 import type { NodeHealth, NodeIdentity, NodeTopology } from '../app/types/node';
 import { sanitizeDisplayPayload } from './displayNames';
 
@@ -966,29 +967,83 @@ export interface PluginDiscoverResponse extends PluginsResponse {
   error?: string;
 }
 
+export interface PluginParameterSchemaEntry {
+  pluginId: string;
+  paramKey: string;
+  index: number;
+  name: string;
+  symbol: string;
+  descriptor: ParameterDescriptor;
+  isLog: boolean;
+  isToggled: boolean;
+  source: 'native' | 'lv2' | 'hardware' | 'plugin';
+  format?: string;
+}
+
+export interface PluginParameterSchemaPlugin {
+  pluginId: string;
+  name: string;
+  format?: string;
+  source: 'native' | 'lv2' | 'hardware' | 'plugin';
+  parameterCount: number;
+  parameters: PluginParameterSchemaEntry[];
+}
+
+export interface PluginParameterSchemaResponse {
+  schema: ParameterRegistry;
+  plugins: PluginParameterSchemaPlugin[];
+  count: number;
+  cached?: boolean;
+  warning?: string;
+  error?: string;
+}
+
+export const PLUGIN_INVENTORY_CHANGED_EVENT = 'map2:plugins-changed';
+
+function notifyPluginInventoryChanged(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PLUGIN_INVENTORY_CHANGED_EVENT));
+  }
+}
+
 export const pluginsApi = {
   discover: (refresh = false, nodeId?: string | null) =>
     fetchJson<PluginDiscoverResponse>(
       appendNodeQuery(`${API_BASE}/plugins/discover${refresh ? '?refresh=true' : ''}`, nodeId)
     ),
 
-  refresh: () =>
-    fetchJson<PluginDiscoverResponse>(`${API_BASE}/plugins/refresh`, { method: 'POST' }),
+  refresh: async () => {
+    const response = await fetchJson<PluginDiscoverResponse>(`${API_BASE}/plugins/refresh`, { method: 'POST' });
+    notifyPluginInventoryChanged();
+    return response;
+  },
 
-  clearCache: () =>
-    fetchJson<{ status: string; plugins_cleared: number }>(`${API_BASE}/plugins/cache`, { method: 'DELETE' }),
+  clearCache: async () => {
+    const response = await fetchJson<{ status: string; plugins_cleared: number }>(`${API_BASE}/plugins/cache`, { method: 'DELETE' });
+    notifyPluginInventoryChanged();
+    return response;
+  },
 
   list: () => fetchJson<{ loaded: Plugin[]; count: number }>(`${API_BASE}/plugins/list`),
 
-  load: (uri: string) =>
-    fetchJson<{ status: string; plugin: Plugin }>(`${API_BASE}/plugins/load?uri=${encodeURIComponent(uri)}`, {
+  load: async (uri: string) => {
+    const response = await fetchJson<{ status: string; plugin: Plugin }>(`${API_BASE}/plugins/load?uri=${encodeURIComponent(uri)}`, {
       method: 'POST',
-    }),
+    });
+    notifyPluginInventoryChanged();
+    return response;
+  },
 
-  unload: (uri: string) =>
-    fetchJson<{ status: string; uri: string }>(`${API_BASE}/plugins/unload?uri=${encodeURIComponent(uri)}`, {
+  unload: async (uri: string) => {
+    const response = await fetchJson<{ status: string; uri: string }>(`${API_BASE}/plugins/unload?uri=${encodeURIComponent(uri)}`, {
       method: 'POST',
-    }),
+    });
+    notifyPluginInventoryChanged();
+    return response;
+  },
+
+  getParameterSchema: (refresh = false) =>
+    fetchJson<PluginParameterSchemaResponse>(`${API_BASE}/plugins/parameter-schema${refresh ? '?refresh=true' : ''}`),
 
   delete: (uri: string, nodeId?: string | null) =>
     fetchJson<{ status: string; uri: string; path: string; removed: number }>(

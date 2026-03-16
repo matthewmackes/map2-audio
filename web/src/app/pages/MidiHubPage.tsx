@@ -40,13 +40,15 @@ import { useToasts } from '../components/Toasts'
 import { midiHubApi } from '../../map2/api'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
+import { MidiCoreControlCenter } from './MIDIPage'
 import './MidiHubPage.css'
 
 const ACTIVE_TAB_KEY = 'map2:midi-hub:active-tab:v2'
 
-type MidiHubTabId = 'setup' | 'automation' | 'sync' | 'future'
+type MidiHubTabId = 'core' | 'setup' | 'automation' | 'sync' | 'future'
 
 const TAB_ORDER: Array<{ id: MidiHubTabId; label: string }> = [
+  { id: 'core', label: 'Core Controls' },
   { id: 'setup', label: 'Setup & Routing' },
   { id: 'automation', label: 'Filters & Automation' },
   { id: 'sync', label: 'Clock & Diagnostics' },
@@ -217,6 +219,14 @@ export function MidiHubPage() {
             </TabList>
           </Tabs>
         </Layer>
+
+        {activeTab === 'core' ? (
+          <div className="midi-hub-tab-panel">
+            <MidiHubPanelShell panelId="core">
+              <MidiCoreControlCenter embedded />
+            </MidiHubPanelShell>
+          </div>
+        ) : null}
 
         {activeTab === 'setup' ? (
           <div className="midi-hub-tab-panel">

@@ -3,6 +3,7 @@ import path from 'node:path'
 import { MapAudioGridIcon } from '../components/icons/map'
 import {
   MAX_PINNED_NAV_ITEMS,
+  advancedMenuItems,
   defaultPinnedRoutes,
   hardwareInterfaceMenuItems,
   homeNavigationItem,
@@ -93,7 +94,7 @@ describe('navigation catalog', () => {
   })
 
   it('normalizes pinned routes by trimming, aliasing legacy paths, filtering invalid values, and deduplicating', () => {
-    expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi-hub', '/about'])).toEqual([
+    expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/about'])).toEqual([
       '/juce-grid',
       '/about',
       '/midi-hub',
@@ -131,12 +132,14 @@ describe('navigation catalog', () => {
   })
 
   it('keeps the advanced menu limited to explicitly designated routes', () => {
-    const advancedItems = navigationCatalogItems.filter((item) => item.includeInAdvancedMenu)
+    const advancedItems = advancedMenuItems
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi-hub',
       '/mpx1',
       '/intelfx',
       '/tesira',
+      '/edirol-ua1000',
+      '/hotone-jogg',
     ])
   })
 
@@ -155,9 +158,11 @@ describe('navigation catalog', () => {
   it('does not expose removed Nodes or Multi-System navigation cards', () => {
     const nodes = navigationCatalogItems.find((item) => item.label === 'Nodes')
     const multiSystem = navigationCatalogItems.find((item) => item.label === 'Multi-System')
+    const midi = navigationCatalogItems.find((item) => item.to === '/midi')
 
     expect(nodes).toBeUndefined()
     expect(multiSystem).toBeUndefined()
+    expect(midi).toBeUndefined()
   })
 
   it('keeps MPX1 Rack, IntelFX Rack, and Tesira AVB in advanced navigation only', () => {
@@ -172,6 +177,22 @@ describe('navigation catalog', () => {
 
       const appearsOnHome = homeNavigationSections.some((section) =>
         section.items.some((candidate) => candidate.to === route),
+      )
+      expect(appearsOnHome).toBe(false)
+    }
+  })
+
+  it('keeps Edirol UA-1000 and HoTone JoGG in advanced navigation only', () => {
+    for (const route of ['/edirol-ua1000', '/hotone-jogg']) {
+      const item = hardwareInterfaceMenuItems.find((candidate) => candidate.to === route && candidate.deviceType !== 'generic-interface')
+      expect(item).toBeDefined()
+      expect(item?.includeInAdvancedMenu).toBe(true)
+      expect(item?.pinnable).toBe(false)
+      expect(item?.showOnHome).toBe(false)
+      expect(item?.showInHardwareSubmenu).toBe(false)
+
+      const appearsOnHome = homeNavigationSections.some((section) =>
+        section.items.some((candidate) => candidate.to === route && candidate.deviceType === item?.deviceType),
       )
       expect(appearsOnHome).toBe(false)
     }

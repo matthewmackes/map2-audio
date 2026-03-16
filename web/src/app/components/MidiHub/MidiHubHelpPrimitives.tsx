@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Layer, Tag } from '@carbon/react'
 
 export type MidiHubPanelId =
+  | 'core'
   | 'routing'
   | 'presets'
   | 'network'
@@ -25,6 +26,12 @@ type MidiHubPanelMeta = {
 }
 
 export const MIDI_HUB_PANEL_META: Record<MidiHubPanelId, MidiHubPanelMeta> = {
+  core: {
+    title: 'Core MIDI Control',
+    family: 'Controller & Engine',
+    shortLabel: 'Legacy core',
+    summary: 'Run the classic controller, command, device, activity, and preset workflows now housed inside MIDI Hub.',
+  },
   routing: {
     title: 'Routing Workspace',
     family: 'Route & Transform',

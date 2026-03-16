@@ -10538,3 +10538,516 @@ Last updated: 2026-03-15 20:29 - Codex
   - Validation: `npm --prefix web run typecheck`; `npm --prefix web run test -- src/app/pages/JuceGridSignalCanvas.test.tsx src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run build`
   - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced. The standard build flow also regenerated `VERSION` and `version.json`.
   - Compliance: Touched `JUCE-GRID` frontend/test/worklist files remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional remediation task was required.
+
+ID: T179
+Status: [✓] Done
+Title: Expand JUCE-GRID desktop flow cards by reclaiming live-path side-strip width and add mobile status slivers
+Description:
+- Goal / acceptance criteria: Rework the `/juce-grid` live-path row layout so desktop flow cards reclaim roughly 20% more horizontal room from the left/right status-strip area while preserving the incoming/outgoing arrows and all relevant path state information. The left/right strip labels should move to cleaner near-vertical counterclockwise rails with larger text, only show branch-status wording when it actually applies, and avoid serial-path branch labels when the flow is simply continuing the main series chain. On mobile, the side-strip status treatment must condense into a horizontal sliver above each card and the effect blocks should stack vertically.
+- Why it matters: The current live-path side strips still take more desktop width than the user wants, which leaves less room for effect blocks and makes the branch-state treatment denser than necessary.
+- Dependencies: T174, T178
+- Estimated effort: Medium
+- Required outputs: Updated JUCE-GRID live-path row markup/styles and any supporting tests/worklist notes, plus validation and compliance evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 21:09 - Codex
+- Completion notes:
+  - What was done: Reworked the live-path row in `web/src/app/pages/JuceGridPage.tsx` so desktop flows reclaim side-strip width into the main flow card while keeping the incoming/outgoing arrows intact, moving status wording into larger near-vertical side rails, and suppressing branch wording for continuing serial rows where it does not apply.
+  - What was done: Added a Carbon-aligned horizontal mobile status sliver above each flow card in `web/src/app/pages/JuceGridPage.tsx` / `web/src/app/pages/JuceGridPage.css`, then forced the effect/plugin blocks to stack vertically on compact layouts for better mobile fit.
+  - What was done: Tightened the flow-card and plugin-grid styling in `web/src/app/pages/JuceGridPage.css` so desktop rows use the reclaimed width for more obvious plugin columns without breaking the existing live-path grouping visuals.
+  - What was done: Expanded `web/src/app/pages/JuceGridPage.test.tsx` to verify serial continuation rows keep `Live`/`Dim` state labels while suppressing branch labels in both desktop rails and the mobile sliver treatment.
+  - Files produced: `web/src/app/pages/JuceGridPage.tsx`; `web/src/app/pages/JuceGridPage.css`; `web/src/app/pages/JuceGridPage.test.tsx`; `docs/PROJECT_WORKLIST.md`
+  - Validation: `npm --prefix web run test -- src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+  - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced. The standard build flow also regenerated `VERSION` and `version.json`.
+  - Compliance: Touched `JUCE-GRID` frontend/test/worklist files remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional remediation task was required.
+
+ID: T180
+Status: [✓] Done
+Title: Compact JUCE-GRID mobile effect cards by moving block actions beneath titles and slimming meters
+Description:
+- Goal / acceptance criteria: Rework the mobile `/juce-grid` effect block cards so the action icons use a compact Carbon-style row beneath the block title instead of competing with the title horizontally. Full block titles must remain fully visible on mobile, the cards may grow taller as needed, and the input/output level indicators must shrink to a matching compact treatment without removing direct access to bypass/delete controls.
+- Why it matters: The current mobile block header spends too much horizontal space on inline action icons and meter treatment, which makes the effect cards feel wider and denser than the user wants.
+- Dependencies: T178, T179
+- Estimated effort: Medium
+- Required outputs: Updated JUCE-GRID signal-canvas markup/styles plus focused validation, worklist notes, and compliance evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 21:32 - Codex
+- Completion notes:
+  - What was done: Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so each plugin card now exposes stable action/level hooks and carries the full block title text explicitly, enabling the mobile layout to move the action row beneath the title without losing direct access to bypass/delete controls.
+  - What was done: Reworked the mobile plugin-card styling in `web/src/app/pages/JuceGridPage.css` so stacked effect cards use a compact Carbon-aligned header grid, allow full block titles to wrap/grow taller, place the action buttons beneath the title column, and shrink the input/output micro-meters to match the tighter layout.
+  - What was done: Extended `web/src/app/pages/JuceGridSignalCanvas.test.tsx` to cover the new plugin-card action/level hooks and preserve full-title metadata for the compact mobile card treatment.
+  - Files produced: `web/src/app/pages/JuceGridSignalCanvas.tsx`; `web/src/app/pages/JuceGridPage.css`; `web/src/app/pages/JuceGridSignalCanvas.test.tsx`; `docs/PROJECT_WORKLIST.md`
+  - Validation: `npm --prefix web run test -- src/app/pages/JuceGridSignalCanvas.test.tsx src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+  - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced. The standard build flow also regenerated `VERSION` and `version.json`.
+  - Compliance: Touched `JUCE-GRID` frontend/test/worklist files remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional remediation task was required.
+
+---
+
+## Epic: Universal Numeric Input Standard (T181–T187)
+
+**Goal**: Establish a shared `NumericInput` primitive backed by a frontend parameter schema registry. Every numeric input across all plugin cards and platform pages uses this primitive, guaranteeing value-range clamping, step/precision fidelity, bidirectional sync, fine-mode + accelerated scroll/touch, and Carbon conformance. All plugins are re-registered against the schema on completion.
+
+---
+
+ID: T181
+Status: [✓] Done
+Title: Define frontend parameter schema and registry
+Description:
+- Goal / acceptance criteria: Implement `web/src/app/data/parameterSchema.ts` — a typed registry mapping parameter descriptors (min, max, step, unit, default, sensitivity profile) keyed by `pluginId + paramKey`. All plugin and non-plugin numeric inputs must be able to look up their descriptor from this registry. Schema contract must be enforced via TypeScript types so missing fields cause compile errors.
+- Why it matters: The registry is the single source of truth that all downstream primitives and plugin cards depend on. Without it, clamping and step fidelity cannot be uniformly enforced.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: `web/src/app/data/parameterSchema.ts`; TypeScript types for `ParameterDescriptor` and `ParameterRegistry`; unit tests covering lookup, missing-key guard, and schema validation; `docs/PROJECT_WORKLIST.md` updated.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-16 10:41 - Codex
+- Completion notes:
+  - Added `web/src/app/data/parameterSchema.test.ts` covering `getParameterDescriptor`, `hasParameterDescriptor`, `requireParameterDescriptor`, and `validateParameterSchema` invalid-entry detection.
+  - Validation coverage now verifies baseline registry validity and correct missing-descriptor error text.
+
+ID: T182
+Status: [✓] Done
+Title: Populate schema registry from JUCE plugin descriptors (all Native + LV2 plugins)
+Description:
+- Goal / acceptance criteria: Write a backend route `GET /api/plugins/parameter-schema` that serialises every loaded plugin's parameter descriptors (min, max, step, unit, default) as JSON. On the frontend, a `useParameterSchema` hook fetches this route and populates the registry defined in T181. All currently loaded native and LV2 plugins must appear; re-registration must trigger automatically on plugin load/unload events.
+- Why it matters: Plugin parameter metadata lives in the JUCE engine — the registry must be hydrated from authoritative data, not hand-coded.
+- Dependencies: T181
+- Estimated effort: Medium–Large
+- Required outputs: Backend route in `app/routes/plugins.py` (or new `app/routes/parameter_schema.py`); `web/src/app/hooks/useParameterSchema.ts`; integration test covering schema round-trip for at least one native and one LV2 plugin; worklist updated.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-16 00:00 - Codex
+- Completion notes:
+  - Added `/api/plugins/parameter-schema` in `app/routes/plugins.py`, reusing plugin discovery output and serialising inferred `ParameterDescriptor` payloads for native JUCE and LV2 plugins only.
+  - Made the frontend registry hydratable in `web/src/app/data/parameterSchema.ts`, added `pluginsApi.getParameterSchema()` plus automatic `map2:plugins-changed` dispatches in `web/src/map2/api.ts`, and implemented `web/src/app/hooks/useParameterSchema.ts` for initial hydration plus automatic refresh on plugin inventory changes.
+  - Added focused coverage in `tests/test_plugin_parameter_schema_route.py`, `web/src/app/data/parameterSchema.test.ts`, and `web/src/app/hooks/useParameterSchema.test.tsx`.
+  - Validation: `pytest -q tests/test_plugin_parameter_schema_route.py` -> pass, `npm --prefix web run test -- src/app/data/parameterSchema.test.ts src/app/hooks/useParameterSchema.test.tsx --runInBand` -> pass, `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass.
+
+ID: T183
+Status: [>] In Progress
+Title: Build shared `NumericInput` Carbon-conformant primitive component
+Description:
+- Goal / acceptance criteria: Implement `web/src/app/components/NumericInput/NumericInput.tsx` — a Carbon-conformant primitive that accepts a `ParameterDescriptor` prop (from T181 registry) and exposes full control via keyboard (arrow keys + shift for fine), mouse scroll wheel (with acceleration + fine modifier), and touch drag (px-per-step ratio + two-finger fine mode). Must enforce: value clamped to [min, max], increments respect `step`, fine mode uses sub-step precision (÷10 by default, configurable per sensitivity profile), scroll acceleration scales with velocity. Component emits `onChange(value: number)` only for valid, changed values. Must be fully accessible (ARIA slider role).
+- Why it matters: This is the shared primitive all surfaces depend on — correctness and interaction quality here propagates everywhere.
+- Dependencies: T181
+- Estimated effort: Large
+- Required outputs: `web/src/app/components/NumericInput/NumericInput.tsx`; `NumericInput.css` (Carbon tokens only); `NumericInput.test.tsx` with coverage for clamping, step fidelity, fine mode, scroll acceleration, keyboard, touch; Storybook or isolated demo (optional); worklist updated.
+Subtasks:
+ID: T183-sub1
+Status: [✓] Done
+Title: Core value logic — clamping, step, fine mode, acceleration
+Description: Pure logic layer (no DOM). Input: raw delta + descriptor + modifier state → output: clamped, stepped new value. Fully unit-tested.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-16 00:14 - Codex
+- Completion notes:
+  - Added pure numeric delta helpers in `web/src/app/components/NumericInput/numericInputLogic.ts` covering bounds clamping, nearest-step quantisation, fine-step derivation by profile, and deterministic velocity-based acceleration.
+  - Added unit coverage in `web/src/app/components/NumericInput/numericInputLogic.test.ts` for clamping, step fidelity, integer/fine behavior, acceleration, and decimal precision.
+  - Validation: `npm --prefix web run test -- src/app/components/NumericInput/numericInputLogic.test.ts --runInBand` -> pass, `npm --prefix web run typecheck` -> pass.
+ID: T183-sub2
+Status: [ ] Todo
+Title: Keyboard handler — arrow keys, shift-fine, Home/End, Enter-to-confirm
+Description: Attach keydown handler; integrate with core logic from T183-sub1.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+- Completion notes:
+  - Final integration pass performed against the migrated surface with worklist state updated to reflect the completed modal migration.
+ID: T183-sub3
+Status: [ ] Todo
+Title: Scroll wheel handler — velocity tracking, acceleration curve, ctrl/alt-fine
+Description: Attach wheel event; measure inter-event timing for velocity; apply configurable acceleration curve.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+ID: T183-sub4
+Status: [ ] Todo
+Title: Touch drag handler — single-finger step drag, two-finger fine mode
+Description: Attach pointer/touch events; map px delta → value delta via sensitivity profile.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+ID: T183-sub5
+Status: [ ] Todo
+Title: Carbon-conformant render + ARIA
+Description: Render using Carbon tokens; expose ARIA slider role, aria-valuemin/max/now; visible value label with unit suffix.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T184
+Status: [ ] Todo
+Title: Integrate `NumericInput` primitive into all JUCE-GRID plugin parameter cards
+Description:
+- Goal / acceptance criteria: Replace every numeric knob, slider, and text input on plugin cards in `JuceGridPage.tsx` and any related `PluginCards/` components with the `NumericInput` primitive from T183, driven by descriptors from the T181/T182 registry. Each control must: clamp to descriptor range, use descriptor step, stay bidirectionally in sync with engine state (via existing polling or WS), and support fine + accelerated scroll/touch. No MUI or non-Carbon numeric controls may remain on JUCE-GRID plugin cards.
+- Why it matters: Plugin cards are the primary operator surface — this is the first visible payoff of the primitive and schema work.
+- Dependencies: T182, T183
+- Estimated effort: Large
+- Required outputs: Updated plugin card components; removed legacy numeric input code; passing typecheck + build + jest; worklist updated.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T185
+Status: [ ] Todo
+Title: Audit and migrate all other platform pages to `NumericInput` primitive
+Description:
+- Goal / acceptance criteria: Systematically audit every page under `web/src/app/pages/` and every component under `web/src/app/components/` for numeric inputs (sliders, number fields, knobs, spinners). Replace each with the `NumericInput` primitive from T183. Non-plugin parameters must register manual `ParameterDescriptor` props (min, max, step, unit, default). Pages in scope include (but are not limited to): `AudioArtifactsPage`, `MIDIPage`, `MidiHubPage`, `JuceGridPage` side rails, and any MUI `TextField type="number"` or Phosphor numeric elements. Document any surface deferred with a follow-up task ID.
+- Why it matters: The standard is only valuable if it is universal — partial adoption leaves inconsistent operator experience.
+- Dependencies: T183
+- Estimated effort: Large
+- Required outputs: Audit checklist (can be inline in worklist notes); migrated components; no new MUI/Phosphor numeric inputs; passing typecheck + build + jest for all touched files; worklist updated.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T186
+Status: [ ] Todo
+Title: Per-parameter-type sensitivity profiles
+Description:
+- Goal / acceptance criteria: Define a set of named sensitivity profiles in `parameterSchema.ts` (e.g. `frequency`, `gain_db`, `time_ms`, `integer`, `normalized_0_1`) with pre-tuned fine-mode divisors, acceleration curves, and scroll step multipliers. Assign the appropriate profile to each parameter type in the JUCE descriptor hydration (T182) and allow manual override in non-plugin `ParameterDescriptor` props. The `NumericInput` primitive reads the active profile from its descriptor and applies it transparently.
+- Why it matters: A frequency parameter spanning 20 Hz–20 kHz needs very different scroll feel than a 0–100% mix level — one-size-fits-all sensitivity degrades operator precision.
+- Dependencies: T183, T182
+- Estimated effort: Medium
+- Required outputs: `sensitivityProfiles` map in `parameterSchema.ts`; updated `NumericInput` core logic to consume profile; updated JUCE descriptor hydration route to emit profile hint; tests covering at least 3 profile types; worklist updated.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T188
+Status: [✓] Done
+Title: Move Audio Engine card to System section; uniform advanced menu card height
+Description:
+- Goal / acceptance criteria: (1) Audio Engine nav card moves from the Audio Grid home section to System. (2) All cards in the advanced menu (desktop dropdown) render at equal height so the tallest card in each row sets the row height — no card is shorter than its siblings.
+- Why it matters: Audio Engine is a system-level operational surface, not a grid editing tool. Uniform card height gives the advanced menu a clean, structured appearance.
+- Dependencies: None
+- Estimated effort: Small
+- Required outputs: `homeSection` change in `advancedMenuItems.ts`; CSS changes in `index.css`.
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-15
+- Completion notes:
+  - Changed `homeSection` for `/engine` from `'Audio Grid'` to `'System'` in `web/src/app/data/advancedMenuItems.ts:154`.
+  - Added `align-items: stretch` to `.nav-mobile-menu-content--desktop .nav-mobile-group-grid` in `web/src/index.css`.
+  - Added `display: flex; flex-direction: column` to `.nav-mobile-menu-content--desktop .nav-mobile-item-wrap` and `flex: 1` to child `.nav-mobile-item` so every card fills the full row height.
+
+ID: T187
+Status: [ ] Todo
+Title: Full plugin re-registration and end-to-end validation
+Description:
+- Goal / acceptance criteria: After T181–T186 are complete: (1) trigger a full plugin re-registration cycle (reload all Native + LV2 plugins via the engine API, confirm schema endpoint returns complete descriptors for all), (2) run a cross-plugin smoke test confirming every parameter card on JUCE-GRID correctly clamps, steps, and bidirectionally syncs for at least one native and one LV2 plugin, (3) run full jest + typecheck + build suite with zero errors, (4) document any plugins whose descriptors are incomplete or non-conformant with a follow-up task.
+- Why it matters: Re-registration closes the loop — it proves the schema pipeline is live end-to-end, not just theoretically wired.
+- Dependencies: T184, T185, T186
+- Estimated effort: Medium
+- Required outputs: Re-registration evidence (curl or test output showing all plugins in schema response); smoke test results; clean build/typecheck/jest output; worklist completion notes; any follow-up task IDs for non-conformant plugins.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T189
+Status: [✓] Done
+Title: Fix /engine page layout — full-bleed, Carbon-conformant, no decorative copy
+Description:
+- Goal / acceptance criteria: The Audio Engine page at /engine renders correctly — full-width grid, no constrained max-width box, no tightly packed header, no decorative copy in subtitles or section descriptions.
+- Why it matters: Page was constrained by .app-content max-width causing the live metering strip to be squeezed left; header copy violated Carbon "no coaching/wizard/tutorial UI" rule.
+- Dependencies: None
+- Estimated effort: Small
+- Required outputs: /engine added to full-bleed routes in AppShell; all decorative subtitle/description paragraphs removed; surface padding added for full-bleed inset; typecheck + build clean.
+Subtasks: None
+Completion notes (2026-03-15):
+- AppShell.tsx: added `/engine` to `isFullBleedRoute` check
+- AudioEnginePage.tsx: removed PageHeader subtitle, removed all decorative `<p>` descriptions from section headers, HealthList, LatencyMonitorPanel, RoutingTable/TableContainer, and header-band; removed `description` field from RoutingDefinition type and all useMemo objects; removed unused `sourceHost` variable
+- AudioEnginePage.css: changed surface from vertical-only padding to `0 spacing-05 spacing-09` to properly inset full-bleed content
+Files changed: web/src/app/layout/AppShell.tsx, web/src/app/pages/AudioEnginePage.tsx, web/src/app/pages/AudioEnginePage.css
+Last updated: 2026-03-15
+
+---
+
+## Epic: Snapshots Modal Migration
+
+ID: T190
+Status: [✓] Done
+Title: Migrate Snapshots from left-rail panel and standalone page to a JUCE-GRID modal with live rail icon trigger
+Description:
+- Goal / acceptance criteria: The Snapshots feature is completely removed from its current incarnation as (a) a standalone `/snapshots` route+page and (b) a `SideNav`-based collapsible left rail panel inside `JuceGridPage`. In their place, a single icon button is inserted into the JUCE-GRID left rail's state-management group. Clicking it opens a Carbon `ComposedModal` (centered, max-width 960px, internal scroll) containing the full `SnapshotsPage` content rehoused. The rail button carries a count badge (below the icon, truncated at 99+) that is overridden by a Framer Motion pulsing ring when client-side dirty state is detected. All nav registrations for `/snapshots` are removed. The `/snapshots` route is deleted. The `SnapshotsPage` component is removed. Modal persists active-tab + scroll position to `localStorage` across reloads. Recall auto-closes the modal. Audio engine stays live while modal is open (no audio interruption). Typecheck + build + jest all pass at completion.
+- Why it matters: The existing snapshot rail consumes 21rem of horizontal grid real-estate and duplicates the SnapshotsPage content in a constrained, hard-to-use column. Moving to a modal gives the full SnapshotsPage layout room to breathe, removes the route from the nav entirely, and consolidates the entry point into the grid's left rail where state-management actions already live.
+- Dependencies: None
+- Estimated effort: Large
+- Required outputs: See subtasks T190-sub1 through T190-sub8.
+Subtasks:
+  T190-sub1, T190-sub2, T190-sub3, T190-sub4, T190-sub5, T190-sub6, T190-sub7, T190-sub8
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T190-sub1
+Status: [✓] Done
+Title: Remove `/snapshots` route, `SnapshotsPage` component, and all navigation registrations
+Description:
+- Goal / acceptance criteria:
+  1. Delete `web/src/app/pages/SnapshotsPage.tsx` (the standalone page file).
+  2. Remove the `lazy(() => import('./pages/SnapshotsPage'))` import from `web/src/app/App.tsx`.
+  3. Remove `<Route path="/snapshots" element={<SnapshotsPage />} />` and the `<Route path="/presets" element={<Navigate to="/snapshots" replace />} />` redirect from `App.tsx`.
+  4. Remove the `/snapshots` entry from `baseNavigationCatalog` in `web/src/app/data/advancedMenuItems.ts` (the `ShellNavigationItem` with `to: '/snapshots'`, `label: 'Snapshots'`, `icon: SquaresFour`).
+  5. Remove the `/snapshots` profile block from `web/src/app/data/homeCardProfiles.ts` (the block at key `'/snapshots'` with summary, bullets, and learnMore).
+  6. Audit `web/src/app/App.tsx` and all files under `web/src/app/` for any remaining `import` of `SnapshotsPage` or any `NavLink`/`href`/`to` pointing to `'/snapshots'` — remove all.
+  7. Audit `web/src/app/data/advancedMenuItems.ts` → `PINNED_ROUTE_ALIASES` — do NOT add a `/snapshots` alias; the route is gone completely.
+  8. Check `defaultPinnedRoutes` in `advancedMenuItems.ts` — if `'/snapshots'` appears there, remove it.
+  9. After removal, run `cd web && npx tsc --noEmit` — must pass with zero errors. Run `npm run build` — must pass.
+- Why it matters: Sub1 is the destructive prerequisite — nothing else in T190 is safe to build until the old surface is cleanly excised and the build is green.
+- Dependencies: None
+- Estimated effort: Small
+- Required outputs: Deleted `SnapshotsPage.tsx`; clean `App.tsx`; clean `advancedMenuItems.ts`; clean `homeCardProfiles.ts`; passing typecheck + build.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 20:40 - Codex
+- Completion notes:
+  - Removed lazy import and route entries for `/snapshots` and `/presets` redirect from `web/src/app/App.tsx`.
+  - Removed `/snapshots` navigation item from `web/src/app/data/advancedMenuItems.ts`.
+  - Removed `/snapshots` home card profile and poster manifest entries from `web/src/app/data/homeCardProfiles.ts` and `web/src/app/pages/posterManifest.ts`.
+  - Deleted `web/src/app/pages/SnapshotsPage.tsx` and removed the direct `/snapshots` UI link in `web/src/app/pages/JuceGridPage.tsx`.
+
+ID: T190-sub2
+Status: [✓] Done
+Title: Extract reusable `SnapshotModalContent` component from existing JuceGridPage snapshot logic
+Description:
+- Goal / acceptance criteria:
+  1. Create `web/src/app/components/snapshots/SnapshotModalContent.tsx` (and a companion `.css` if needed).
+  2. The component encapsulates all snapshot management UI currently rendered by `renderSnapshotLibraryContent({ rail: false })` and `renderSnapshotPanel()` inside `JuceGridPage.tsx`. This includes: active snapshot display, compare display, favorites group, library group, drag-and-drop reorder, rename modal, delete modal, program-number modal, morph controls, import dialog trigger, and the "New Snapshot" CTA button.
+  3. The component receives no route-level props — it re-uses the same TanStack Query hooks already present in `JuceGridPage` (`flowSnapshotsQuery`, `activeSnapshotDetailQuery`, `snapshotCompareDetailQuery`) by lifting them into the component itself using the same query keys (`['flow-snapshots']`, `['flow-snapshots', 'detail', activeSnapshotId]`, etc.) so the cache is shared automatically — no prop-drilling of query results.
+  4. All mutation handlers (`flowSnapshotsApi.create`, `flowSnapshotsApi.recall`, `flowSnapshotsApi.rename`, `flowSnapshotsApi.delete`, `flowSnapshotsApi.reorder`, `flowSnapshotsApi.favorite`, `flowSnapshotsApi.exportBundle`, `SnapshotImportDialog` trigger) are owned by the component.
+  5. The `onRecall` callback prop is accepted by the component: `onRecall?: () => void`. When a snapshot is recalled successfully, the component calls `onRecall?.()` after invalidating the query — this is how the modal auto-close is triggered (see T190-sub4).
+  6. Component accepts an `activeTab` prop (`string`) and `onTabChange` callback for tab persistence (see T190-sub5).
+  7. The component renders only the content body — no modal chrome, no outer container. It is designed to be dropped inside a Carbon `ComposedModal` body.
+  8. Remove the `rail: boolean` option from `renderSnapshotLibraryContent` — the rail variant is being deleted. The extracted component only renders the non-rail full layout.
+  9. Run `cd web && npx tsc --noEmit` — must pass.
+- Why it matters: Clean extraction prevents duplication and makes the modal content independently testable.
+- Dependencies: T190-sub1
+- Estimated effort: Medium
+- Required outputs: `SnapshotModalContent.tsx`; optionally `SnapshotModalContent.css`; updated `JuceGridPage.tsx` (remove inline snapshot panel render, replace with the new component call inside the modal); passing typecheck.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-16 10:41 - Codex
+- Completion notes:
+  - `JuceGridPage.tsx` now uses `<SnapshotModalContent />` in `renderSnapshotLibrary()` with snapshot draft + apply callback wiring (`snapshotActiveTab` + `setSnapshotActiveTab`).
+  - Added `SnapshotModalContent` import from `components/snapshots/SnapshotModalContent`.
+
+ID: T190-sub3
+Status: [✓] Done
+Title: Remove snapshot left-rail panel from JuceGridPage layout
+Description:
+- Goal / acceptance criteria:
+  1. Remove `renderSnapshotRail()` function entirely from `JuceGridPage.tsx`.
+  2. Remove all JSX that renders the snapshot rail shell: `<aside className="juce-grid-page__snapshot-rail-shell ...">` and its entire subtree, including the `SideNav`, `SideNavItems`, pill buttons, header, toolbar, scroll container, and collapsed state.
+  3. Remove the `snapshotsPanelExpanded` state variable and its `useEffect` that writes to `localStorage` under `'map2_juce_grid_snapshots_panel'` — this state is no longer needed (tab/scroll persistence moves to T190-sub5).
+  4. Remove the `has-snapshot-rail` CSS class from the workspace container. The workspace `className` computation that currently produces `has-snapshot-rail has-midi-rail` should drop `has-snapshot-rail` entirely; the `is-snapshot-rail-collapsed` modifier is also removed.
+  5. Remove from `JuceGridPage.css` all rules prefixed with `.juce-grid-page__snapshot-rail` and `.juce-grid-page__snapshot-content--rail`, `.juce-grid-page__snapshot-guidance--rail`, `.juce-grid-page__snapshot-active-display--rail`, `.juce-grid-page__snapshot-compare-display--rail`, `.juce-grid-page__snapshot-group--rail`, `.juce-grid-page__snapshot-list--rail`, `.juce-grid-page__snapshot-tile--rail`. Also remove the workspace grid-template-columns definition that references `--juce-grid-snapshot-rail-width` and the collapsed variant.
+  6. Remove the `CompactRailPanelId` union type value `'snapshots'` if `'snapshots'` was the only non-null value used exclusively for the rail; if the type is also used for the MIDI rail, reduce it to `'midi' | null`.
+  7. After removal the JUCE-GRID workspace should be a 2-column layout: center content + MIDI rail (or 1-column if midi rail is also absent). Confirm the grid still renders correctly with the rail removed.
+  8. Run `cd web && npx tsc --noEmit` and `npm run build` — must pass.
+- Why it matters: The rail is the largest piece of removed surface area. Leaving dead CSS and dead render functions would bloat the bundle and create confusion.
+- Dependencies: T190-sub2
+- Estimated effort: Medium
+- Required outputs: Updated `JuceGridPage.tsx` (no snapshot rail render); updated `JuceGridPage.css` (all snapshot-rail rules removed); passing typecheck + build.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T190-sub4
+Status: [✓] Done
+Title: Build `SnapshotModal` wrapper component with Carbon ComposedModal chrome
+Description:
+- Goal / acceptance criteria:
+  1. Create `web/src/app/components/snapshots/SnapshotModal.tsx`.
+  2. The component renders a Carbon `ComposedModal` with the following props:
+     - `open`: boolean (controlled externally)
+     - `onClose`: `() => void` callback — wired to modal's `onClose` and the `X` button
+     - `size`: not set (default) — modal is sized via CSS class override (see point 5)
+     - `preventCloseOnClickOutside`: `false` — clicking backdrop closes the modal
+  3. Modal header: Carbon `ModalHeader` with `title="Snapshots"` and `label` omitted. No custom title-bar chrome beyond what Carbon provides. The close X button is Carbon's default.
+  4. Modal body: Carbon `ModalBody` containing `<SnapshotModalContent onRecall={handleRecall} activeTab={activeTab} onTabChange={setActiveTab} />` (see T190-sub2 and T190-sub5).
+  5. Max-width override: add a CSS class `snapshot-modal` to the `ComposedModal`. In `web/src/index.css` (or a new `SnapshotModal.css`), add:
+     ```css
+     .snapshot-modal .cds--modal-container {
+       max-width: 960px;
+       width: 100%;
+       max-height: 90vh;
+       overflow: hidden;
+       display: flex;
+       flex-direction: column;
+     }
+     .snapshot-modal .cds--modal-content {
+       overflow-y: auto;
+       flex: 1;
+     }
+     ```
+     This produces the centered 960px-max modal with internal vertical scroll and no overflow to the page.
+  6. Audio backdrop: the standard Carbon modal overlay dims the page (`background: rgba(0,0,0,0.5)`). The grid and audio engine continue running behind it — no JS pausing of queries, no audio stop. The dimming is purely visual.
+  7. Auto-close on recall: `handleRecall` inside `SnapshotModal` simply calls `onClose()`. This is passed to `SnapshotModalContent` as the `onRecall` prop.
+  8. The component accepts no other props. It is a pure controlled modal: `{ open, onClose }`.
+  9. Run `cd web && npx tsc --noEmit` — must pass.
+- Why it matters: Isolating the modal chrome into its own wrapper makes T190-sub6 (the trigger button) trivially simple and keeps `JuceGridPage` clean.
+- Dependencies: T190-sub2
+- Estimated effort: Small
+- Required outputs: `SnapshotModal.tsx`; CSS override rules; passing typecheck.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T190-sub5
+Status: [✓] Done
+Title: Implement modal tab + scroll position persistence to localStorage
+Description:
+- Goal / acceptance criteria:
+  1. The `SnapshotModal` component (T190-sub4) owns two pieces of persisted state:
+     - `activeTab: string` — the currently selected tab key inside `SnapshotModalContent`; stored in `localStorage` under key `'map2_snapshots_modal_tab'`; initialized by reading that key on mount, defaulting to `'library'` (or whatever the first tab key is in the content component).
+     - `scrollTop: number` — the scroll position of the `ModalBody` element; stored under `'map2_snapshots_modal_scroll'`; initialized by reading on mount, defaulting to `0`.
+  2. `activeTab` is passed down to `SnapshotModalContent` as a prop; tab changes call `onTabChange(newTab)` which sets state and writes to localStorage.
+  3. Scroll position restore: attach a `ref` to the `ModalBody` div. In a `useEffect` that fires when `open` transitions from `false` to `true`, set `ref.current.scrollTop = scrollTop` (the restored value). On scroll events, write the current `scrollTop` back to state (debounced 200ms) and to localStorage.
+  4. Both values persist across page reloads (localStorage, not sessionStorage).
+  5. If localStorage read throws (e.g. private browsing restriction), catch silently and use defaults — no crash.
+  6. Run `cd web && npx tsc --noEmit` — must pass.
+- Why it matters: Operators frequently open and close the modal during a session; forcing them back to the top of the library list every open is friction.
+- Dependencies: T190-sub4
+- Estimated effort: Small
+- Required outputs: Updated `SnapshotModal.tsx` with persistence logic; passing typecheck.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T190-sub6
+Status: [✓] Done
+Title: Add Snapshots icon button with count badge and Framer Motion dirty-state pulse to JUCE-GRID left rail
+Description:
+- Goal / acceptance criteria:
+
+  ### Button placement
+  1. Locate the state-management control group in the JUCE-GRID left rail (the area currently containing save/recall/undo/redo or equivalent controls). Insert a new `<button>` element — or Carbon `IconButton` — immediately adjacent to the nearest state-management peer. The button must have:
+     - `aria-label="Open Snapshots"` plus a `title` tooltip with the same text (tooltip shown on hover via native browser title, not a custom tooltip component).
+     - The Carbon `SquaresFour` icon at size 20px inside the button.
+     - A wrapping `position: relative` container (class `snapshot-rail-trigger`) to anchor the badge and the pulse ring.
+
+  ### Count badge
+  2. Below the icon (not overlaid on it), render a small numeric label showing the total number of saved snapshots from `flowSnapshotsQuery.data?.snapshots.length ?? 0`. Truncate at 99: if count > 99 render `"99+"`, otherwise render the exact number. Use a `<span>` with class `snapshot-rail-trigger__count` styled with:
+     ```css
+     .snapshot-rail-trigger__count {
+       display: block;
+       font-size: 10px;
+       line-height: 1;
+       text-align: center;
+       color: var(--cds-text-secondary);
+       margin-top: 2px;
+       min-width: 1.5ch;
+       font-variant-numeric: tabular-nums;
+     }
+     ```
+  3. When the dirty-state pulse is active (see below), the count span is hidden (`visibility: hidden`) so the pulse ring is the sole live indicator.
+
+  ### Client-side dirty flag
+  4. Add a `snapshotsDirty: boolean` state variable to `JuceGridPage`, initialized to `false`.
+  5. Set `snapshotsDirty = true` whenever any of the following mutations complete successfully: any chain parameter change, any plugin add/remove/reorder, any routing mode change — i.e. any mutation that `queryClient.invalidateQueries(['chains'])` is called for.
+  6. Set `snapshotsDirty = false` after a successful snapshot save (`flowSnapshotsApi.create` mutation onSuccess) or snapshot recall (`flowSnapshotsApi.recall` mutation onSuccess).
+  7. Pass `snapshotsDirty` as a prop down to the trigger button's parent container (or use a local hook) so the pulse render is conditioned on it.
+
+  ### Framer Motion pulse ring
+  8. Import `motion` from `framer-motion`. Inside the `snapshot-rail-trigger` container, render:
+     ```tsx
+     {snapshotsDirty && (
+       <motion.span
+         className="snapshot-rail-trigger__pulse"
+         style={{
+           position: 'absolute',
+           top: '2px',
+           right: '2px',
+           width: '10px',
+           height: '10px',
+           borderRadius: '50%',
+           background: 'var(--cds-support-warning)',
+           zIndex: 0,
+           pointerEvents: 'none',
+         }}
+         animate={{ scale: [1, 1.5], opacity: [0.8, 0] }}
+         transition={{
+           repeat: Infinity,
+           repeatType: 'loop',
+           stiffness: 80,
+           damping: 20,
+           duration: 1.0,
+         }}
+       />
+     )}
+     ```
+     The icon button itself sits above the pulse ring (`z-index: 1`).
+  9. `prefers-reduced-motion` fallback: wrap the `motion.span` render in a media-query check using `window.matchMedia('(prefers-reduced-motion: reduce)').matches`. If `true`, render a plain `<span>` instead — same positioning and background color as the `motion.span`, but static (no animation). This static span is a filled circle (width/height 10px, borderRadius 50%) in `var(--cds-support-warning)`.
+
+  ### Wire to modal open state
+  10. The button's `onClick` handler sets `snapshotsModalOpen = true` (a new boolean state in `JuceGridPage`). The `SnapshotModal` component (T190-sub4) is rendered unconditionally at the bottom of `JuceGridPage`'s JSX tree with `open={snapshotsModalOpen}` and `onClose={() => setSnapshotsModalOpen(false)}`.
+
+  ### Accessibility
+  11. When the modal is open, the trigger button gets `aria-expanded="true"` and `aria-controls="snapshots-modal"`. The `ComposedModal` root gets `id="snapshots-modal"`.
+
+  ### Run verification
+  12. `cd web && npx tsc --noEmit` must pass. `npm run build` must pass.
+- Why it matters: This is the user-visible entry point for the entire migration — without it, the modal is unreachable.
+- Dependencies: T190-sub3, T190-sub4
+- Estimated effort: Medium
+- Required outputs: Updated `JuceGridPage.tsx` (trigger button, dirty flag, modal render); updated `JuceGridPage.css` (trigger CSS); passing typecheck + build.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T190-sub7
+Status: [✓] Done
+Title: Update tests — JuceGridPage and SnapshotModal
+Description:
+- Goal / acceptance criteria:
+  1. Update `web/src/app/pages/JuceGridPage.test.tsx`:
+     - Remove any test that asserts the snapshot rail renders in the page shell (the rail is gone).
+     - Add a test: "Snapshots trigger button is present in the left rail" — assert the button with `aria-label="Open Snapshots"` is in the document.
+     - Add a test: "Snapshots modal opens when trigger is clicked" — click the trigger button, assert the `ComposedModal` with title "Snapshots" becomes visible.
+     - Add a test: "Snapshots modal closes on recall" — mock `flowSnapshotsApi.recall` to resolve successfully, trigger a recall action inside the modal content, assert the modal is no longer visible.
+     - Add a test: "Snapshot count badge shows correct count" — mock `flowSnapshotsApi.list` to return 5 snapshots, assert the count label shows "5".
+     - Add a test: "Count badge shows 99+ when count exceeds 99" — mock list to return 100 snapshots, assert label shows "99+".
+     - Add a test: "Dirty pulse ring renders when snapshotsDirty is true" — trigger a chain mutation, assert the pulse element (`.snapshot-rail-trigger__pulse`) is present.
+  2. Create `web/src/app/components/snapshots/SnapshotModal.test.tsx`:
+     - Test: "renders closed when open=false" — modal container not visible.
+     - Test: "renders open with title Snapshots when open=true".
+     - Test: "calls onClose when close button clicked".
+     - Test: "calls onClose after recall" — mock onRecall propagation.
+  3. All new and updated tests must pass: `cd web && npx jest --testPathPattern="JuceGridPage|SnapshotModal" --no-coverage`.
+- Why it matters: Test coverage confirms the migration is correct and prevents regression on the entry point and the modal lifecycle.
+- Dependencies: T190-sub4, T190-sub6
+- Estimated effort: Medium
+- Required outputs: Updated `JuceGridPage.test.tsx`; new `SnapshotModal.test.tsx`; all tests passing.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15
+
+ID: T190-sub8
+Status: [✓] Done
+Title: Final integration pass — typecheck, build, jest, and worklist update
+Description:
+- Goal / acceptance criteria:
+  1. `cd web && npx tsc --noEmit` — zero errors.
+  2. `cd web && npm run build` — clean build, no warnings about missing chunks or missing imports.
+  3. `cd web && npm run test -- --runInBand` — all tests pass (no regressions across the full suite).
+  4. Verify in production preview (`npm run preview`, port 3000):
+     - `/juce-grid` loads correctly with no snapshot rail visible.
+     - Trigger button is present in the left rail state-management group.
+     - Clicking trigger opens the modal with title "Snapshots" and full content.
+     - Recalling a snapshot closes the modal.
+     - Snapshot count badge renders below the icon.
+     - Dirty pulse appears after a chain parameter change and clears after a save.
+     - Tab and scroll position survive a modal close/reopen and a page reload.
+  5. Verify `/snapshots` returns 404 (route no longer registered).
+  6. Verify no remaining references to `SnapshotsPage` or the `/snapshots` route exist anywhere under `web/src/`.
+  7. Update this worklist task T190 status to `[✓] Done` with completion notes listing all files changed.
+- Why it matters: The migration is not done until the full stack is green and the user-visible behavior is confirmed in production mode.
+- Dependencies: T190-sub1 through T190-sub7
+- Estimated effort: Small
+- Required outputs: Clean typecheck + build + jest; production smoke confirmation; worklist marked done.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15

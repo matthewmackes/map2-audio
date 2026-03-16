@@ -14,9 +14,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  /* No max-width or horizontal padding — app-content handles containment.
-     Vertical padding only so sections touch the full shell width. */
-  padding-bottom: var(--cds-spacing-09);
+  padding: 0 var(--cds-spacing-05) var(--cds-spacing-09);
   width: 100%;
   box-sizing: border-box;
 }
@@ -241,10 +239,10 @@
   font-size: var(--cds-code-01-font-size, 0.75rem);
 }
 
-/* ── Carbon Grid row gap override ──────────────────────────────────────── */
+/* ── Carbon Grid column row-gap (condensed removes it) ─────────────────── */
 
-/* Add vertical spacing between DataTable rows in each section */
-.audio-engine-page__section .cds--row {
+.audio-engine-page__section .cds--css-grid,
+.audio-engine-page__section .cds--grid {
   row-gap: var(--cds-spacing-04);
 }
 

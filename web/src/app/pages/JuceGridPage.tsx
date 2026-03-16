@@ -18,12 +18,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Add,
   Branch,
+  Camera,
   ArrowDown,
   ArrowRight,
   ChevronLeft,
   ChevronRight,
   Download,
-  Draggable,
   Flow,
   Headphones,
   Launch,
@@ -54,9 +54,6 @@ import {
   Search,
   Select,
   SelectItem,
-  SideNav,
-  SideNavFooter,
-  SideNavItems,
   Tab,
   TabList,
   Tabs,
@@ -64,6 +61,7 @@ import {
   TextInput,
   Tile,
 } from '@carbon/react'
+import { motion } from 'framer-motion'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getCategoryConfig } from '../grid/shared'
@@ -89,8 +87,9 @@ import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { NumberInput } from '../components/Controls/NumberInput'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
+import { SnapshotModal } from '../components/snapshots/SnapshotModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, HistoryStatus, FlowSnapshot, FlowSnapshotData, FlowSnapshotDetail, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus } from '../../map2/types'
+import type { Chain, Plugin, HistoryStatus, FlowSnapshot, FlowSnapshotData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
@@ -110,11 +109,7 @@ import {
   normalizeJuceGridStateSources,
 } from './juceGridState'
 import {
-  buildSnapshotComparisonSummary,
-  checkSnapshotMorphCompatibility,
   fingerprintSnapshotData,
-  interpolateSnapshotData,
-  type SnapshotComparisonSummary,
 } from './juceGridSnapshots'
 import './JuceGridPage.css'
 
@@ -150,6 +145,7 @@ interface RoutingInspectorContent {
 }
 
 type LivePathArrowTone = 'active' | 'dim' | 'sidechain'
+type LivePathGroupKind = 'series' | 'parallel' | 'ab' | 'morph' | 'sidechain' | 'inactive'
 
 function formatInspectorList(values: string[]): string {
   if (values.length === 0) {
@@ -233,8 +229,35 @@ function getLivePathArrowTone(
   return 'dim'
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => window.setTimeout(resolve, ms))
+function getLivePathStateLabel(
+  flowState: { activeAudio?: boolean; dimmed?: boolean; sidechainKey?: boolean } | undefined,
+): string | null {
+  if (flowState?.sidechainKey) {
+    return 'Key'
+  }
+  if (flowState?.activeAudio) {
+    return 'Live'
+  }
+  if (flowState?.dimmed) {
+    return 'Dim'
+  }
+  return null
+}
+
+function getLivePathBranchLabel(
+  routingMode: RoutingMode,
+  groupKind: LivePathGroupKind,
+  flowState: { annotation?: string } | undefined,
+): string | null {
+  if (!flowState?.annotation) {
+    return null
+  }
+
+  if (routingMode === 'series' && (groupKind === 'series' || groupKind === 'inactive')) {
+    return null
+  }
+
+  return flowState.annotation
 }
 
 // ============================================================================
@@ -274,7 +297,6 @@ type CompactTabId =
   | 'routing'
   | 'presets'
 
-type CompactRailPanelId = 'snapshots' | 'midi' | null
 type JuceGridMidiScope = 'all' | 'active-chain' | 'selected-plugin'
 type MidiRangeDraft = {
   min: string
@@ -476,7 +498,6 @@ export function JuceGridPage() {
   const isMobile = useIsMobile()
   const [isTablet, setIsTablet] = useState<boolean>(() => isTabletViewport())
   const [compactTab, setCompactTab] = useState<CompactTabId>('grid')
-  const [compactRailPanel, setCompactRailPanel] = useState<CompactRailPanelId>(null)
 
   useEffect(() => {
     const handleResize = () => setIsTablet(isTabletViewport())
@@ -554,36 +575,10 @@ export function JuceGridPage() {
   const [automationTimelineExpanded, setAutomationTimelineExpanded] = useState(false)
 
   // Flow Snapshots Panel State
-  const [snapshotsPanelExpanded, setSnapshotsPanelExpanded] = useState(() => {
-    try {
-      const saved = localStorage.getItem('map2_juce_grid_snapshots_panel')
-        ?? localStorage.getItem('map2_grid_snapshots_panel')
-      return saved !== null ? saved === 'true' : true // Default to expanded
-    } catch { return true }
-  })
-  const [showSnapshotCreateModal, setShowSnapshotCreateModal] = useState(false)
-  const [newSnapshotName, setNewSnapshotName] = useState('')
-  const [snapshotPendingRename, setSnapshotPendingRename] = useState<FlowSnapshot | null>(null)
-  const [snapshotRenameValue, setSnapshotRenameValue] = useState('')
-  const [snapshotPendingDelete, setSnapshotPendingDelete] = useState<FlowSnapshot | null>(null)
-  const [snapshotPendingProgram, setSnapshotPendingProgram] = useState<FlowSnapshot | null>(null)
-  const [snapshotProgramValue, setSnapshotProgramValue] = useState('')
-  const [draggedSnapshotId, setDraggedSnapshotId] = useState<number | null>(null)
-  const [dragOverSnapshotId, setDragOverSnapshotId] = useState<number | null>(null)
-  const [snapshotCompareTargetId, setSnapshotCompareTargetId] = useState<number | null>(null)
-  const [momentarySnapshotId, setMomentarySnapshotId] = useState<number | null>(null)
-  const [snapshotMorphTarget, setSnapshotMorphTarget] = useState<FlowSnapshot | null>(null)
-  const [snapshotMorphDurationMs, setSnapshotMorphDurationMs] = useState(1200)
-  const [snapshotMorphRunning, setSnapshotMorphRunning] = useState(false)
-  const [snapshotLibraryExpanded, setSnapshotLibraryExpanded] = useState(false)
-  const [midiPanelExpanded, setMidiPanelExpanded] = useState(() => {
-    try {
-      const saved = localStorage.getItem('map2_juce_grid_midi_panel')
-      return saved !== null ? saved === 'true' : true // Default to expanded
-    } catch { return true }
-  })
+  const [snapshotsModalOpen, setSnapshotsModalOpen] = useState(false)
+  const [midiModalOpen, setMidiModalOpen] = useState(false)
+  const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
-  const momentaryRestoreStateRef = useRef<FlowSnapshotData | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
@@ -612,25 +607,19 @@ export function JuceGridPage() {
     localStorage.setItem('map2_juce_grid_active_v2', String(activeFlowIndex))
   }, [activeFlowIndex])
 
+  const markSnapshotsDirty = useCallback(() => {
+    setSnapshotsDirty(true)
+  }, [])
+
+  const clearSnapshotsDirty = useCallback(() => {
+    setSnapshotsDirty(false)
+  }, [])
+
   useEffect(() => {
     try {
       localStorage.removeItem('map2_juce_grid_toolbar_collapsed')
     } catch {}
   }, [])
-
-  // Persist snapshots panel state
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_juce_grid_snapshots_panel', String(snapshotsPanelExpanded))
-    } catch {}
-  }, [snapshotsPanelExpanded])
-
-  // Persist midi panel state
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_juce_grid_midi_panel', String(midiPanelExpanded))
-    } catch {}
-  }, [midiPanelExpanded])
 
   const activeFlowChainId = flowSlots[activeFlowIndex]?.chainId ?? null
 
@@ -712,20 +701,6 @@ export function JuceGridPage() {
     queryKey: ['flow-snapshots'],
     queryFn: () => flowSnapshotsApi.list(),
     refetchInterval: 5000,
-  })
-
-  const activeSnapshotId = flowSnapshotsQuery.data?.active_id ?? null
-
-  const activeSnapshotDetailQuery = useQuery<FlowSnapshotDetail>({
-    queryKey: ['flow-snapshots', 'detail', activeSnapshotId],
-    queryFn: () => flowSnapshotsApi.get(activeSnapshotId as number),
-    enabled: activeSnapshotId !== null,
-  })
-
-  const snapshotCompareDetailQuery = useQuery<FlowSnapshotDetail>({
-    queryKey: ['flow-snapshots', 'compare-detail', snapshotCompareTargetId],
-    queryFn: () => flowSnapshotsApi.get(snapshotCompareTargetId as number),
-    enabled: snapshotCompareTargetId !== null,
   })
 
   // Fetch audio status
@@ -847,10 +822,11 @@ export function JuceGridPage() {
 
         // Invalidate queries to refresh UI
         queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+        clearSnapshotsDirty()
 
         pushToast(`Loaded: ${event.snapshot_name} (MIDI PC#${event.program_number})`, 'success')
       }
-    }, [queryClient, pushToast]),
+    }, [queryClient, clearSnapshotsDirty, pushToast]),
   })
 
   // ============================================================================
@@ -906,26 +882,6 @@ export function JuceGridPage() {
   const chains = chainsQuery.data?.chains || []
   const historyStatus = historyQuery.data as HistoryStatus | undefined
   const presets = presetsQuery.data?.presets || []
-  const flowSnapshots = useMemo(() => {
-    const raw = flowSnapshotsQuery.data?.snapshots || []
-    return [...raw].sort((a, b) => {
-      if (a.is_favorite && !b.is_favorite) return -1
-      if (!a.is_favorite && b.is_favorite) return 1
-      return a.display_order - b.display_order
-    })
-  }, [flowSnapshotsQuery.data?.snapshots])
-  const activeSnapshot = useMemo(
-    () => flowSnapshots.find((snapshot) => snapshot.id === activeSnapshotId || snapshot.is_active) ?? null,
-    [activeSnapshotId, flowSnapshots],
-  )
-  const favoriteSnapshots = useMemo(
-    () => flowSnapshots.filter((snapshot) => snapshot.is_favorite),
-    [flowSnapshots],
-  )
-  const librarySnapshots = useMemo(
-    () => flowSnapshots.filter((snapshot) => !snapshot.is_favorite),
-    [flowSnapshots],
-  )
   const armedAutomationLane = useMemo(
     () => automationLanes.find((lane) => lane.armed) ?? null,
     [automationLanes],
@@ -988,27 +944,6 @@ export function JuceGridPage() {
     () => fingerprintSnapshotData(currentSnapshotDraft),
     [currentSnapshotDraft],
   )
-  const activeSnapshotFingerprint = useMemo(
-    () => activeSnapshotDetailQuery.data?.snapshot_data
-      ? fingerprintSnapshotData(activeSnapshotDetailQuery.data.snapshot_data)
-      : null,
-    [activeSnapshotDetailQuery.data?.snapshot_data],
-  )
-  const activeSnapshotNeedsUpdate = useMemo(
-    () => Boolean(activeSnapshot && activeSnapshotFingerprint && activeSnapshotFingerprint !== currentSnapshotFingerprint),
-    [activeSnapshot, activeSnapshotFingerprint, currentSnapshotFingerprint],
-  )
-  const compareTargetSnapshot = useMemo(
-    () => flowSnapshots.find((snapshot) => snapshot.id === snapshotCompareTargetId) ?? null,
-    [flowSnapshots, snapshotCompareTargetId],
-  )
-  const snapshotComparisonSummary = useMemo(() => {
-    if (!snapshotCompareDetailQuery.data?.snapshot_data) {
-      return null
-    }
-    const baseData = activeSnapshotDetailQuery.data?.snapshot_data ?? currentSnapshotDraft
-    return buildSnapshotComparisonSummary(baseData, snapshotCompareDetailQuery.data.snapshot_data)
-  }, [activeSnapshotDetailQuery.data?.snapshot_data, currentSnapshotDraft, snapshotCompareDetailQuery.data?.snapshot_data])
 
   const applySnapshotState = useCallback((
     data: FlowSnapshotData,
@@ -1038,375 +973,6 @@ export function JuceGridPage() {
       pushToast(options.toastMessage, 'success')
     }
   }, [pushToast, queryClient])
-
-  // Flow Snapshots: Handle snapshot loaded (from UI or MIDI PC)
-  // Note: The backend applies plugin parameters and bypass states directly to the engine.
-  const handleSnapshotLoaded = useCallback((data: FlowSnapshotData) => {
-    applySnapshotState(data, { toastMessage: 'Snapshot recalled', invalidateChains: true })
-  }, [applySnapshotState])
-
-  const createFlowSnapshotMutation = useMutation({
-    mutationFn: flowSnapshotsApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-      pushToast('Snapshot saved', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to save snapshot', 'error')
-    },
-  })
-
-  const loadFlowSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => flowSnapshotsApi.load(snapshotId),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-      handleSnapshotLoaded(data.snapshot_data)
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to recall snapshot', 'error')
-    },
-  })
-
-  const updateFlowSnapshotMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: Parameters<typeof flowSnapshotsApi.update>[1] }) =>
-      flowSnapshotsApi.update(id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
-    },
-  })
-
-  const refreshActiveSnapshotMutation = useMutation({
-    mutationFn: ({ id, snapshotData }: { id: number; snapshotData: FlowSnapshotData }) =>
-      flowSnapshotsApi.update(id, { snapshot_data: snapshotData }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-      pushToast('Snapshot updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
-    },
-  })
-
-  const deleteFlowSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => flowSnapshotsApi.delete(snapshotId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-      pushToast('Snapshot deleted', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to delete snapshot', 'error')
-    },
-  })
-
-  const duplicateFlowSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => flowSnapshotsApi.duplicate(snapshotId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-      pushToast('Snapshot duplicated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to duplicate snapshot', 'error')
-    },
-  })
-
-  const setFlowSnapshotProgramMutation = useMutation({
-    mutationFn: ({ id, programNumber }: { id: number; programNumber: number | null }) =>
-      flowSnapshotsApi.setProgram(id, programNumber),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-      pushToast('Snapshot MIDI program updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot MIDI program', 'error')
-    },
-  })
-
-  const reorderFlowSnapshotsMutation = useMutation({
-    mutationFn: (snapshotIds: number[]) => flowSnapshotsApi.reorder(snapshotIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to reorder flow snapshots', 'error')
-    },
-  })
-
-  const openSnapshotCreateModal = useCallback(() => {
-    setNewSnapshotName(`Snapshot ${flowSnapshots.length + 1}`)
-    setShowSnapshotCreateModal(true)
-  }, [flowSnapshots.length])
-
-  const submitSnapshotCreate = useCallback(() => {
-    const name = newSnapshotName.trim()
-    if (!name) {
-      return
-    }
-    createFlowSnapshotMutation.mutate({
-      name,
-      description: 'Saved from Audio Grid',
-      snapshot_data: captureCurrentState(),
-    })
-    setShowSnapshotCreateModal(false)
-    setNewSnapshotName('')
-  }, [captureCurrentState, createFlowSnapshotMutation, newSnapshotName])
-
-  const openSnapshotRenameModal = useCallback((snapshot: FlowSnapshot) => {
-    setSnapshotPendingRename(snapshot)
-    setSnapshotRenameValue(snapshot.name)
-  }, [])
-
-  const submitSnapshotRename = useCallback(() => {
-    if (!snapshotPendingRename) {
-      return
-    }
-    const name = snapshotRenameValue.trim()
-    if (!name) {
-      return
-    }
-    updateFlowSnapshotMutation.mutate({
-      id: snapshotPendingRename.id,
-      updates: { name },
-    })
-    setSnapshotPendingRename(null)
-    setSnapshotRenameValue('')
-  }, [snapshotPendingRename, snapshotRenameValue, updateFlowSnapshotMutation])
-
-  const requestSnapshotDelete = useCallback((snapshot: FlowSnapshot) => {
-    setSnapshotPendingDelete(snapshot)
-  }, [])
-
-  const submitSnapshotDelete = useCallback(() => {
-    if (!snapshotPendingDelete) {
-      return
-    }
-    deleteFlowSnapshotMutation.mutate(snapshotPendingDelete.id)
-    setSnapshotPendingDelete(null)
-  }, [deleteFlowSnapshotMutation, snapshotPendingDelete])
-
-  const openSnapshotProgramModal = useCallback((snapshot: FlowSnapshot) => {
-    setSnapshotPendingProgram(snapshot)
-    setSnapshotProgramValue(snapshot.program_number?.toString() || '')
-  }, [])
-
-  const closeSnapshotProgramModal = useCallback(() => {
-    setSnapshotPendingProgram(null)
-    setSnapshotProgramValue('')
-  }, [])
-
-  const submitSnapshotProgram = useCallback(() => {
-    if (!snapshotPendingProgram) {
-      return
-    }
-    const trimmed = snapshotProgramValue.trim()
-    const programNumber = trimmed === '' ? null : Number.parseInt(trimmed, 10)
-    if (programNumber !== null && (Number.isNaN(programNumber) || programNumber < 0 || programNumber > 127)) {
-      pushToast('MIDI Program Change must be between 0 and 127', 'error')
-      return
-    }
-    setFlowSnapshotProgramMutation.mutate({
-      id: snapshotPendingProgram.id,
-      programNumber,
-    })
-    closeSnapshotProgramModal()
-  }, [closeSnapshotProgramModal, pushToast, setFlowSnapshotProgramMutation, snapshotPendingProgram, snapshotProgramValue])
-
-  const clearSnapshotProgram = useCallback((snapshot: FlowSnapshot) => {
-    setFlowSnapshotProgramMutation.mutate({ id: snapshot.id, programNumber: null })
-  }, [setFlowSnapshotProgramMutation])
-
-  const handleSnapshotFavoriteToggle = useCallback((snapshot: FlowSnapshot) => {
-    updateFlowSnapshotMutation.mutate({
-      id: snapshot.id,
-      updates: { is_favorite: !snapshot.is_favorite },
-    })
-  }, [updateFlowSnapshotMutation])
-
-  const handleSnapshotDuplicate = useCallback((snapshot: FlowSnapshot) => {
-    duplicateFlowSnapshotMutation.mutate(snapshot.id)
-  }, [duplicateFlowSnapshotMutation])
-
-  const handleActiveSnapshotRefresh = useCallback(() => {
-    if (!activeSnapshot) {
-      return
-    }
-    refreshActiveSnapshotMutation.mutate({
-      id: activeSnapshot.id,
-      snapshotData: currentSnapshotDraft,
-    })
-  }, [activeSnapshot, currentSnapshotDraft, refreshActiveSnapshotMutation])
-
-  const fetchSnapshotDetail = useCallback((snapshotId: number) => (
-    queryClient.fetchQuery({
-      queryKey: ['flow-snapshots', 'detail', snapshotId],
-      queryFn: () => flowSnapshotsApi.get(snapshotId),
-    })
-  ), [queryClient])
-
-  const previewSnapshotData = useCallback(async (snapshotData: FlowSnapshotData) => {
-    const result = await flowSnapshotsApi.preview({ snapshot_data: snapshotData })
-    applySnapshotState(result.snapshot_data, { toastMessage: null, invalidateChains: false })
-    return result.snapshot_data
-  }, [applySnapshotState])
-
-  const toggleSnapshotCompare = useCallback((snapshot: FlowSnapshot) => {
-    setSnapshotCompareTargetId((current) => current === snapshot.id ? null : snapshot.id)
-  }, [])
-
-  const startMomentaryPreview = useCallback(async (snapshot: FlowSnapshot) => {
-    if (momentarySnapshotId !== null || snapshotMorphRunning) {
-      return
-    }
-
-    try {
-      const detail = await fetchSnapshotDetail(snapshot.id)
-      momentaryRestoreStateRef.current = currentSnapshotDraft
-      setMomentarySnapshotId(snapshot.id)
-      await previewSnapshotData(detail.snapshot_data)
-    } catch (error) {
-      momentaryRestoreStateRef.current = null
-      setMomentarySnapshotId(null)
-      pushToast(error instanceof Error ? error.message : 'Failed to preview snapshot', 'error')
-    }
-  }, [currentSnapshotDraft, fetchSnapshotDetail, momentarySnapshotId, previewSnapshotData, pushToast, snapshotMorphRunning])
-
-  const endMomentaryPreview = useCallback(async () => {
-    if (momentarySnapshotId === null) {
-      return
-    }
-
-    const restoreState = momentaryRestoreStateRef.current
-    momentaryRestoreStateRef.current = null
-    setMomentarySnapshotId(null)
-    if (!restoreState) {
-      return
-    }
-
-    try {
-      await previewSnapshotData(restoreState)
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Failed to restore the current snapshot preview', 'error')
-    }
-  }, [momentarySnapshotId, previewSnapshotData, pushToast])
-
-  const handleSnapshotMorphStart = useCallback(async () => {
-    if (!snapshotMorphTarget || snapshotMorphRunning || !activeSnapshot) {
-      return
-    }
-    if (activeSnapshotNeedsUpdate) {
-      pushToast('Update the active snapshot before starting a morph.', 'error')
-      return
-    }
-
-    try {
-      const sourceDetail = activeSnapshotDetailQuery.data ?? await fetchSnapshotDetail(activeSnapshot.id)
-      const targetDetail = await fetchSnapshotDetail(snapshotMorphTarget.id)
-      const compatibility = checkSnapshotMorphCompatibility(sourceDetail.snapshot_data, targetDetail.snapshot_data)
-      if (!compatibility.ok) {
-        pushToast(compatibility.reason || 'Snapshots are not morph-compatible.', 'error')
-        return
-      }
-
-      setSnapshotMorphRunning(true)
-      const steps = Math.max(6, Math.min(20, Math.round(snapshotMorphDurationMs / 100)))
-      for (let step = 1; step < steps; step += 1) {
-        const frame = interpolateSnapshotData(
-          sourceDetail.snapshot_data,
-          targetDetail.snapshot_data,
-          step / steps,
-        )
-        await previewSnapshotData(frame)
-        await delay(snapshotMorphDurationMs / steps)
-      }
-
-      await loadFlowSnapshotMutation.mutateAsync(snapshotMorphTarget.id)
-      setSnapshotCompareTargetId(snapshotMorphTarget.id)
-      setSnapshotMorphTarget(null)
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Failed to morph between snapshots', 'error')
-    } finally {
-      setSnapshotMorphRunning(false)
-    }
-  }, [
-    activeSnapshot,
-    activeSnapshotDetailQuery.data,
-    activeSnapshotNeedsUpdate,
-    fetchSnapshotDetail,
-    loadFlowSnapshotMutation,
-    previewSnapshotData,
-    pushToast,
-    snapshotMorphDurationMs,
-    snapshotMorphRunning,
-    snapshotMorphTarget,
-  ])
-
-  useEffect(() => {
-    if (momentarySnapshotId === null) {
-      return undefined
-    }
-
-    const releasePreview = () => {
-      void endMomentaryPreview()
-    }
-
-    window.addEventListener('pointerup', releasePreview)
-    window.addEventListener('keyup', releasePreview)
-    window.addEventListener('blur', releasePreview)
-    return () => {
-      window.removeEventListener('pointerup', releasePreview)
-      window.removeEventListener('keyup', releasePreview)
-      window.removeEventListener('blur', releasePreview)
-    }
-  }, [endMomentaryPreview, momentarySnapshotId])
-
-  const handleSnapshotCardKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>, snapshot: FlowSnapshot) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      loadFlowSnapshotMutation.mutate(snapshot.id)
-    }
-  }, [loadFlowSnapshotMutation])
-
-  const handleSnapshotDragStart = useCallback((event: React.DragEvent<HTMLElement>, snapshotId: number) => {
-    setDraggedSnapshotId(snapshotId)
-    event.dataTransfer.effectAllowed = 'move'
-  }, [])
-
-  const handleSnapshotDragOver = useCallback((event: React.DragEvent<HTMLElement>, snapshotId: number) => {
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'move'
-    if (draggedSnapshotId !== snapshotId) {
-      setDragOverSnapshotId(snapshotId)
-    }
-  }, [draggedSnapshotId])
-
-  const handleSnapshotDragEnd = useCallback(() => {
-    setDraggedSnapshotId(null)
-    setDragOverSnapshotId(null)
-  }, [])
-
-  const handleSnapshotDrop = useCallback((event: React.DragEvent<HTMLElement>, targetSnapshotId: number) => {
-    event.preventDefault()
-    if (draggedSnapshotId === null || draggedSnapshotId === targetSnapshotId) {
-      handleSnapshotDragEnd()
-      return
-    }
-
-    const nextOrder = [...flowSnapshots]
-    const draggedIndex = nextOrder.findIndex((snapshot) => snapshot.id === draggedSnapshotId)
-    const targetIndex = nextOrder.findIndex((snapshot) => snapshot.id === targetSnapshotId)
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      handleSnapshotDragEnd()
-      return
-    }
-
-    const [movedSnapshot] = nextOrder.splice(draggedIndex, 1)
-    nextOrder.splice(targetIndex, 0, movedSnapshot)
-    reorderFlowSnapshotsMutation.mutate(nextOrder.map((snapshot) => snapshot.id))
-    handleSnapshotDragEnd()
-  }, [draggedSnapshotId, flowSnapshots, handleSnapshotDragEnd, reorderFlowSnapshotsMutation])
 
   const activeFlow = flowSlots[activeFlowIndex]
   const flowIndexById = useMemo(() => (
@@ -2013,14 +1579,20 @@ export function JuceGridPage() {
   const reorderMutation = useMutation({
     mutationFn: ({ chainId, pluginUris }: { chainId: number; pluginUris: string[] }) =>
       chainsApi.reorderPlugins(chainId, pluginUris),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chains'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chains'] })
+      markSnapshotsDirty()
+    },
     onError: (error) => pushToast(`Failed to reorder: ${error}`, 'error'),
   })
 
   const bypassMutation = useMutation({
     mutationFn: ({ chainId, pluginUri, bypass }: { chainId: number; pluginUri: string; bypass: boolean }) =>
       chainsApi.togglePluginBypass(chainId, pluginUri, bypass),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chains'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chains'] })
+      markSnapshotsDirty()
+    },
     onError: (error) => pushToast(`Failed to toggle bypass: ${error}`, 'error'),
   })
 
@@ -2071,6 +1643,7 @@ export function JuceGridPage() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      markSnapshotsDirty()
     },
   })
 
@@ -2127,6 +1700,7 @@ export function JuceGridPage() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      markSnapshotsDirty()
     },
   })
 
@@ -2134,6 +1708,7 @@ export function JuceGridPage() {
     mutationFn: (chainId: number) => chainsApi.activate(chainId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      markSnapshotsDirty()
       pushToast('Chain activated', 'success')
     },
     onError: (error) => pushToast(`Failed to activate: ${error}`, 'error'),
@@ -2143,6 +1718,7 @@ export function JuceGridPage() {
     mutationFn: (chainId: number) => chainsApi.deactivate(chainId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      markSnapshotsDirty()
       pushToast('Chain deactivated', 'info')
     },
     onError: (error) => pushToast(`Failed to deactivate: ${error}`, 'error'),
@@ -2153,6 +1729,7 @@ export function JuceGridPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       queryClient.invalidateQueries({ queryKey: ['history'] })
+      markSnapshotsDirty()
       pushToast(data.message || 'Undo successful', 'success')
     },
     onError: (error) => pushToast(`Undo failed: ${error}`, 'error'),
@@ -2163,6 +1740,7 @@ export function JuceGridPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       queryClient.invalidateQueries({ queryKey: ['history'] })
+      markSnapshotsDirty()
       pushToast(data.message || 'Redo successful', 'success')
     },
     onError: (error) => pushToast(`Redo failed: ${error}`, 'error'),
@@ -2204,6 +1782,7 @@ export function JuceGridPage() {
       chainsApi.rename(chainId, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
+      markSnapshotsDirty()
       setShowRenameChainModal(false)
       setRenameChainName('')
       pushToast('Chain renamed', 'success')
@@ -2361,6 +1940,7 @@ export function JuceGridPage() {
 
   // Routing
   const setRoutingMode = useCallback((mode: RoutingMode) => {
+    markSnapshotsDirty()
     setRouting((previous) => {
       const fallbackActiveId = previous.activeSlotId ?? activeFlow?.id ?? flowSlots[0]?.id ?? null
       if (mode === 'parameter_morph') {
@@ -2383,7 +1963,7 @@ export function JuceGridPage() {
         activeSlotId: fallbackActiveId,
       }
     })
-  }, [activeFlow?.id, flowSlots])
+  }, [activeFlow?.id, flowSlots, markSnapshotsDirty])
 
   const setBlendPosition = useCallback((slotId: string, position: number) => {
     setRouting(prev => ({
@@ -2561,7 +2141,8 @@ export function JuceGridPage() {
   const handleParameterChangeEnd = useCallback(() => {
     pluginsApi.flushParameterBatch()
     queryClient.invalidateQueries({ queryKey: ['chains'] })
-  }, [queryClient])
+    markSnapshotsDirty()
+  }, [queryClient, markSnapshotsDirty])
 
   const handleToggleSelectedBypass = useCallback(() => {
     if (!selectedPlugin || !currentChain) return
@@ -2629,10 +2210,11 @@ export function JuceGridPage() {
           }
         })
         queryClient.invalidateQueries({ queryKey: ['chains'] })
+        markSnapshotsDirty()
         pushToast(`Chain "${newName}" created`, 'success')
       })
       .catch((error) => pushToast(`Failed to duplicate: ${error}`, 'error'))
-  }, [currentChain, queryClient, pushToast])
+  }, [currentChain, queryClient, pushToast, markSnapshotsDirty])
 
   const handleRenameChain = useCallback(() => {
     if (!currentChain) return
@@ -2653,7 +2235,8 @@ export function JuceGridPage() {
       }
       return null
     })
-  }, [currentChain])
+    markSnapshotsDirty()
+  }, [currentChain, markSnapshotsDirty])
 
   const submitRenameChain = useCallback(() => {
     const normalizedName = renameChainName.trim()
@@ -2740,651 +2323,64 @@ export function JuceGridPage() {
     setDetailsPlugin(plugin)
   }, [])
 
-  const renderSnapshotLibraryContent = (options: { rail: boolean }) => {
-    const activeSnapshotDisplayName = activeSnapshot?.name || 'Live Workspace'
-    const activeSnapshotDisplayNumber = activeSnapshot ? String(activeSnapshot.id).padStart(2, '0') : 'LIVE'
-    const activeSnapshotDescription = activeSnapshot?.description?.trim()
-      || (activeSnapshot
-        ? 'Recallable snapshot for the current multi-flow rig.'
-        : 'Capture the current routing, chains, and active blocks into the snapshot library.')
+  const snapshotCount = flowSnapshotsQuery.data?.snapshots.length ?? 0
+  const snapshotCountLabel = snapshotCount > 99 ? '99+' : String(snapshotCount)
+  const midiMappingCount = midiMappings.length
+  const midiMappingCountLabel = midiMappingCount > 99 ? '99+' : String(midiMappingCount)
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false
+    }
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  }, [])
 
-    return (
-      <>
-        <div className={`juce-grid-page__snapshot-active-display ${options.rail ? 'juce-grid-page__snapshot-active-display--rail' : ''}`}>
-          <div className="juce-grid-page__snapshot-active-header">
-            <span className="juce-grid-page__snapshot-action-label">
-              {activeSnapshot ? 'Active snapshot' : 'Live workspace'}
-            </span>
-            <div className="juce-grid-page__compact-tags">
-              {activeSnapshot && <Tag type="blue">Active</Tag>}
-              {activeSnapshot && activeSnapshotNeedsUpdate && <Tag type="warm-gray">Needs update</Tag>}
-              {activeSnapshot && !activeSnapshotNeedsUpdate && <Tag type="green">Current</Tag>}
-              {activeSnapshot?.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
-              {activeSnapshot?.program_number !== null && activeSnapshot?.program_number !== undefined && (
-                <Tag type="purple">PC {activeSnapshot.program_number}</Tag>
-              )}
-            </div>
-          </div>
-
-          <div className="juce-grid-page__snapshot-active-line">
-            <span className="juce-grid-page__snapshot-active-number">{activeSnapshotDisplayNumber}</span>
-            <span className="juce-grid-page__snapshot-active-name">{activeSnapshotDisplayName}</span>
-          </div>
-
-          <p className="juce-grid-page__snapshot-active-description">{activeSnapshotDescription}</p>
-
-          <div className="juce-grid-page__compact-tags">
-            {activeSnapshot ? (
-              <Tag type="warm-gray">
-                Updated {new Date(activeSnapshot.updated_at).toLocaleString()}
-              </Tag>
-            ) : (
-              <Tag type="warm-gray">{flowSnapshots.length} saved snapshots available</Tag>
-            )}
-            {activeSnapshot && activeSnapshotDetailQuery.isLoading && (
-              <Tag type="blue">Inspecting active snapshot</Tag>
-            )}
-          </div>
-
-          <div className="juce-grid-page__snapshot-command-row">
-            {activeSnapshot && (
-              <Button
-                size="sm"
-                kind={activeSnapshotNeedsUpdate ? 'primary' : 'secondary'}
-                renderIcon={Renew}
-                onClick={handleActiveSnapshotRefresh}
-                disabled={!activeSnapshotNeedsUpdate || refreshActiveSnapshotMutation.isPending || activeSnapshotDetailQuery.isLoading}
-              >
-                {refreshActiveSnapshotMutation.isPending ? 'Updating...' : 'Update snapshot'}
-              </Button>
-            )}
-            <Button
-              size="sm"
-              kind={activeSnapshot ? 'secondary' : 'primary'}
-              renderIcon={Add}
-              onClick={openSnapshotCreateModal}
-            >
-              Save as new snapshot
-            </Button>
-            {activeSnapshot && (
-              <Button size="sm" kind="ghost" onClick={() => openSnapshotRenameModal(activeSnapshot)}>
-                Rename
-              </Button>
-            )}
-            {activeSnapshot && (
-              <Button size="sm" kind="ghost" onClick={() => openSnapshotProgramModal(activeSnapshot)}>
-                {activeSnapshot.program_number === null ? 'Set MIDI PC' : 'Edit MIDI PC'}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {compareTargetSnapshot && snapshotComparisonSummary && (
-          <div className={`juce-grid-page__snapshot-compare-display ${options.rail ? 'juce-grid-page__snapshot-compare-display--rail' : ''}`}>
-            <div className="juce-grid-page__snapshot-active-header">
-              <span className="juce-grid-page__snapshot-action-label">Snapshot compare</span>
-              <div className="juce-grid-page__snapshot-command-row">
-                <Button
-                  size="sm"
-                  kind="secondary"
-                  onClick={() => setSnapshotMorphTarget(compareTargetSnapshot)}
-                  disabled={!activeSnapshot || activeSnapshotNeedsUpdate}
-                >
-                  Prepare morph
-                </Button>
-                <Button size="sm" kind="ghost" onClick={() => setSnapshotCompareTargetId(null)}>
-                  Clear compare
-                </Button>
-              </div>
-            </div>
-
-            <div className="juce-grid-page__snapshot-compare-line">
-              <strong>{activeSnapshot?.name || 'Live Workspace'}</strong>
-              <span>vs</span>
-              <strong>{compareTargetSnapshot.name}</strong>
-            </div>
-
-            <div className="juce-grid-page__compact-tags">
-              <Tag type="cool-gray">{snapshotComparisonSummary.flowChanges} flow changes</Tag>
-              <Tag type="cool-gray">{snapshotComparisonSummary.chainChanges} chain changes</Tag>
-              <Tag type="cool-gray">{snapshotComparisonSummary.paramChanges} param changes</Tag>
-              {snapshotComparisonSummary.routingChanged && <Tag type="purple">Routing changed</Tag>}
-              {snapshotComparisonSummary.activeFlowChanged && <Tag type="blue">Active flow changed</Tag>}
-            </div>
-
-            {activeSnapshot && activeSnapshotNeedsUpdate && (
-              <p className="juce-grid-page__snapshot-compare-copy">
-                Compare is using the saved active snapshot. Update it first if you want the current live edits included.
-              </p>
-            )}
-          </div>
-        )}
-
-        {flowSnapshotsQuery.isLoading ? (
-          <InlineLoading description="Loading snapshots" status="active" />
-        ) : flowSnapshots.length === 0 ? (
-          <div className="juce-grid-page__empty-state">
-            <p>No snapshots saved yet</p>
-            <p className="juce-grid-page__empty-state-copy">
-              Capture the current multi-flow state to build a reusable snapshot library.
-            </p>
-          </div>
+  const renderSnapshotsTrigger = () => (
+    <div className="snapshot-rail-trigger snapshot-floating-trigger">
+      {snapshotsDirty && (
+        prefersReducedMotion ? (
+          <span className="snapshot-rail-trigger__pulse" aria-hidden />
         ) : (
-          <>
-            <section className={`juce-grid-page__snapshot-group ${options.rail ? 'juce-grid-page__snapshot-group--rail' : ''}`}>
-              <div className="juce-grid-page__snapshot-group-header">
-                <div className="juce-grid-page__snapshot-group-title">
-                  <strong>Favorites</strong>
-                  <span>{favoriteSnapshots.length}</span>
-                </div>
-              </div>
-
-              {favoriteSnapshots.length === 0 ? (
-                <div className="juce-grid-page__snapshot-group-empty">
-                  <p className="juce-grid-page__empty-state-copy">
-                    Star any saved snapshot and it will show up here automatically.
-                  </p>
-                </div>
-              ) : (
-                <div className={`juce-grid-page__snapshot-list ${options.rail ? 'juce-grid-page__snapshot-list--rail' : ''}`}>
-                  {favoriteSnapshots.map((snapshot, index) => {
-                    const isActiveSnapshot = snapshot.id === activeSnapshotId || snapshot.is_active
-
-                    return (
-                      <Tile
-                        key={snapshot.id}
-                        className={`juce-grid-page__snapshot-tile ${options.rail ? 'juce-grid-page__snapshot-tile--rail' : ''} ${isActiveSnapshot ? 'is-active' : ''} ${draggedSnapshotId === snapshot.id ? 'is-dragging' : ''} ${dragOverSnapshotId === snapshot.id ? 'is-drag-over' : ''}`}
-                        data-stripe-tone={index % 2 === 0 ? 'base' : 'alt'}
-                        role="button"
-                        tabIndex={0}
-                        draggable
-                        onClick={() => loadFlowSnapshotMutation.mutate(snapshot.id)}
-                        onKeyDown={(event) => handleSnapshotCardKeyDown(event, snapshot)}
-                        onDragStart={(event) => handleSnapshotDragStart(event, snapshot.id)}
-                        onDragOver={(event) => handleSnapshotDragOver(event, snapshot.id)}
-                        onDragEnd={handleSnapshotDragEnd}
-                        onDrop={(event) => handleSnapshotDrop(event, snapshot.id)}
-                      >
-                        <div className="juce-grid-page__snapshot-main">
-                          <div className="juce-grid-page__snapshot-top">
-                            <div className="juce-grid-page__snapshot-name-row">
-                              <Draggable size={14} aria-hidden />
-                              <strong>{snapshot.name}</strong>
-                            </div>
-                            <div className="juce-grid-page__compact-tags">
-                              {isActiveSnapshot && <Tag type="blue">Active</Tag>}
-                              {isActiveSnapshot && activeSnapshotNeedsUpdate && <Tag type="warm-gray">Needs update</Tag>}
-                              <Tag type="cool-gray">Favorite</Tag>
-                              {snapshot.program_number !== null && <Tag type="purple">PC {snapshot.program_number}</Tag>}
-                            </div>
-                          </div>
-
-                          <p className="juce-grid-page__snapshot-description">
-                            {snapshot.description || 'A pinned recall for the sounds you return to most often.'}
-                          </p>
-
-                          <div className="juce-grid-page__snapshot-slot-row">
-                            {snapshot.flow_slots.map((slot) => (
-                              <span
-                                key={`${snapshot.id}-${slot.id}`}
-                                className="juce-grid-page__snapshot-slot"
-                                style={{ '--snapshot-slot-color': slot.color } as React.CSSProperties}
-                              >
-                                {slot.label}
-                              </span>
-                            ))}
-                          </div>
-
-                          <div className="juce-grid-page__compact-tags">
-                            <Tag type="warm-gray">
-                              Updated {new Date(snapshot.updated_at).toLocaleDateString()}
-                            </Tag>
-                          </div>
-                        </div>
-
-                        <div className="juce-grid-page__snapshot-actions" onClick={(event) => event.stopPropagation()}>
-                          <Button
-                            size="sm"
-                            kind="primary"
-                            onClick={() => loadFlowSnapshotMutation.mutate(snapshot.id)}
-                            disabled={loadFlowSnapshotMutation.isPending}
-                          >
-                            Recall
-                          </Button>
-                          {snapshot.id !== activeSnapshotId && (
-                            <Button
-                              size="sm"
-                              kind={momentarySnapshotId === snapshot.id ? 'secondary' : 'ghost'}
-                              onPointerDown={(event) => {
-                                event.preventDefault()
-                                void startMomentaryPreview(snapshot)
-                              }}
-                              onKeyDown={(event) => {
-                                if (event.key === 'Enter' || event.key === ' ') {
-                                  event.preventDefault()
-                                  void startMomentaryPreview(snapshot)
-                                }
-                              }}
-                              disabled={(momentarySnapshotId !== null && momentarySnapshotId !== snapshot.id) || snapshotMorphRunning}
-                            >
-                              {momentarySnapshotId === snapshot.id ? 'Previewing...' : 'Hold to preview'}
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            kind="secondary"
-                            onClick={() => handleSnapshotFavoriteToggle(snapshot)}
-                          >
-                            Favorited
-                          </Button>
-                          <OverflowMenu
-                            ariaLabel={`Actions for ${snapshot.name}`}
-                            iconDescription={`Actions for ${snapshot.name}`}
-                            size="sm"
-                            flipped
-                          >
-                            <OverflowMenuItem itemText="Rename" onClick={() => openSnapshotRenameModal(snapshot)} />
-                            <OverflowMenuItem itemText="Duplicate" onClick={() => handleSnapshotDuplicate(snapshot)} />
-                            {snapshot.id !== activeSnapshotId && (
-                              <OverflowMenuItem
-                                itemText={snapshotCompareTargetId === snapshot.id ? 'Stop comparing' : activeSnapshot ? 'Compare with active snapshot' : 'Compare with live workspace'}
-                                onClick={() => toggleSnapshotCompare(snapshot)}
-                              />
-                            )}
-                            {snapshot.id !== activeSnapshotId && (
-                              <OverflowMenuItem
-                                itemText="Prepare morph"
-                                disabled={!activeSnapshot || activeSnapshotNeedsUpdate}
-                                onClick={() => {
-                                  setSnapshotCompareTargetId(snapshot.id)
-                                  setSnapshotMorphTarget(snapshot)
-                                }}
-                              />
-                            )}
-                            <OverflowMenuItem
-                              itemText={snapshot.program_number === null ? 'Set MIDI PC' : 'Edit MIDI PC'}
-                              onClick={() => openSnapshotProgramModal(snapshot)}
-                            />
-                            {snapshot.program_number !== null && (
-                              <OverflowMenuItem itemText="Clear MIDI PC" onClick={() => clearSnapshotProgram(snapshot)} />
-                            )}
-                            <OverflowMenuItem itemText="Delete" isDelete onClick={() => requestSnapshotDelete(snapshot)} />
-                          </OverflowMenu>
-                        </div>
-                      </Tile>
-                    )
-                  })}
-                </div>
-              )}
-            </section>
-
-            <section className={`juce-grid-page__snapshot-group ${options.rail ? 'juce-grid-page__snapshot-group--rail' : ''}`}>
-              <div className="juce-grid-page__snapshot-group-header">
-                <button
-                  type="button"
-                  className="juce-grid-page__snapshot-group-toggle"
-                  onClick={() => setSnapshotLibraryExpanded((previous) => !previous)}
-                  aria-expanded={snapshotLibraryExpanded}
-                >
-                  <ChevronRight size={16} className={`juce-grid-page__snapshot-group-chevron ${snapshotLibraryExpanded ? 'is-open' : ''}`} />
-                  <strong>Snapshot Library</strong>
-                  <span>{librarySnapshots.length}</span>
-                </button>
-              </div>
-
-              {snapshotLibraryExpanded && (
-                librarySnapshots.length === 0 ? (
-                  <div className="juce-grid-page__snapshot-group-empty">
-                    <p className="juce-grid-page__empty-state-copy">
-                      Everything saved right now is favorited. Unfavorite a snapshot to park it in the wider library.
-                    </p>
-                  </div>
-                ) : (
-                  <div className={`juce-grid-page__snapshot-list ${options.rail ? 'juce-grid-page__snapshot-list--rail' : ''}`}>
-                    {librarySnapshots.map((snapshot, index) => {
-                      const isActiveSnapshot = snapshot.id === activeSnapshotId || snapshot.is_active
-
-                      return (
-                        <Tile
-                          key={snapshot.id}
-                          className={`juce-grid-page__snapshot-tile ${options.rail ? 'juce-grid-page__snapshot-tile--rail' : ''} ${isActiveSnapshot ? 'is-active' : ''} ${draggedSnapshotId === snapshot.id ? 'is-dragging' : ''} ${dragOverSnapshotId === snapshot.id ? 'is-drag-over' : ''}`}
-                          data-stripe-tone={index % 2 === 0 ? 'base' : 'alt'}
-                          role="button"
-                          tabIndex={0}
-                          draggable
-                          onClick={() => loadFlowSnapshotMutation.mutate(snapshot.id)}
-                          onKeyDown={(event) => handleSnapshotCardKeyDown(event, snapshot)}
-                          onDragStart={(event) => handleSnapshotDragStart(event, snapshot.id)}
-                          onDragOver={(event) => handleSnapshotDragOver(event, snapshot.id)}
-                          onDragEnd={handleSnapshotDragEnd}
-                          onDrop={(event) => handleSnapshotDrop(event, snapshot.id)}
-                        >
-                          <div className="juce-grid-page__snapshot-main">
-                            <div className="juce-grid-page__snapshot-top">
-                              <div className="juce-grid-page__snapshot-name-row">
-                                <Draggable size={14} aria-hidden />
-                                <strong>{snapshot.name}</strong>
-                              </div>
-                              <div className="juce-grid-page__compact-tags">
-                                {isActiveSnapshot && <Tag type="blue">Active</Tag>}
-                                {isActiveSnapshot && activeSnapshotNeedsUpdate && <Tag type="warm-gray">Needs update</Tag>}
-                                {snapshot.program_number !== null && <Tag type="purple">PC {snapshot.program_number}</Tag>}
-                              </div>
-                            </div>
-
-                            <p className="juce-grid-page__snapshot-description">
-                              {snapshot.description || 'Recallable snapshot for the current multi-flow rig.'}
-                            </p>
-
-                            <div className="juce-grid-page__snapshot-slot-row">
-                              {snapshot.flow_slots.map((slot) => (
-                                <span
-                                  key={`${snapshot.id}-${slot.id}`}
-                                  className="juce-grid-page__snapshot-slot"
-                                  style={{ '--snapshot-slot-color': slot.color } as React.CSSProperties}
-                                >
-                                  {slot.label}
-                                </span>
-                              ))}
-                            </div>
-
-                            <div className="juce-grid-page__compact-tags">
-                              <Tag type="warm-gray">
-                                Updated {new Date(snapshot.updated_at).toLocaleDateString()}
-                              </Tag>
-                            </div>
-                          </div>
-
-                          <div className="juce-grid-page__snapshot-actions" onClick={(event) => event.stopPropagation()}>
-                            <Button
-                              size="sm"
-                              kind="primary"
-                              onClick={() => loadFlowSnapshotMutation.mutate(snapshot.id)}
-                              disabled={loadFlowSnapshotMutation.isPending}
-                            >
-                              Recall
-                            </Button>
-                            {snapshot.id !== activeSnapshotId && (
-                              <Button
-                                size="sm"
-                                kind={momentarySnapshotId === snapshot.id ? 'secondary' : 'ghost'}
-                                onPointerDown={(event) => {
-                                  event.preventDefault()
-                                  void startMomentaryPreview(snapshot)
-                                }}
-                                onKeyDown={(event) => {
-                                  if (event.key === 'Enter' || event.key === ' ') {
-                                    event.preventDefault()
-                                    void startMomentaryPreview(snapshot)
-                                  }
-                                }}
-                                disabled={(momentarySnapshotId !== null && momentarySnapshotId !== snapshot.id) || snapshotMorphRunning}
-                              >
-                                {momentarySnapshotId === snapshot.id ? 'Previewing...' : 'Hold to preview'}
-                              </Button>
-                            )}
-                            <Button size="sm" kind="ghost" onClick={() => handleSnapshotFavoriteToggle(snapshot)}>
-                              Favorite
-                            </Button>
-                            <OverflowMenu
-                              ariaLabel={`Actions for ${snapshot.name}`}
-                              iconDescription={`Actions for ${snapshot.name}`}
-                              size="sm"
-                              flipped
-                            >
-                              <OverflowMenuItem itemText="Rename" onClick={() => openSnapshotRenameModal(snapshot)} />
-                              <OverflowMenuItem itemText="Duplicate" onClick={() => handleSnapshotDuplicate(snapshot)} />
-                              {snapshot.id !== activeSnapshotId && (
-                                <OverflowMenuItem
-                                  itemText={snapshotCompareTargetId === snapshot.id ? 'Stop comparing' : activeSnapshot ? 'Compare with active snapshot' : 'Compare with live workspace'}
-                                  onClick={() => toggleSnapshotCompare(snapshot)}
-                                />
-                              )}
-                              {snapshot.id !== activeSnapshotId && (
-                                <OverflowMenuItem
-                                  itemText="Prepare morph"
-                                  disabled={!activeSnapshot || activeSnapshotNeedsUpdate}
-                                  onClick={() => {
-                                    setSnapshotCompareTargetId(snapshot.id)
-                                    setSnapshotMorphTarget(snapshot)
-                                  }}
-                                />
-                              )}
-                              <OverflowMenuItem
-                                itemText={snapshot.program_number === null ? 'Set MIDI PC' : 'Edit MIDI PC'}
-                                onClick={() => openSnapshotProgramModal(snapshot)}
-                              />
-                              {snapshot.program_number !== null && (
-                                <OverflowMenuItem itemText="Clear MIDI PC" onClick={() => clearSnapshotProgram(snapshot)} />
-                              )}
-                              <OverflowMenuItem itemText="Delete" isDelete onClick={() => requestSnapshotDelete(snapshot)} />
-                            </OverflowMenu>
-                          </div>
-                        </Tile>
-                      )
-                    })}
-                  </div>
-                )
-              )}
-            </section>
-          </>
-        )}
-      </>
-    )
-  }
-
-  const renderSnapshotLibrary = () => {
-    return (
-      <div className="juce-grid-page__snapshot-panel">
-        <div className="juce-grid-page__snapshot-header">
-          <div className="juce-grid-page__snapshot-copy">
-            <strong>Snapshots</strong>
-            <span>{flowSnapshots.length} saved snapshots</span>
-          </div>
-          <div className="juce-grid-page__compact-actions">
-            <Button size="sm" kind="primary" onClick={openSnapshotCreateModal}>
-              Save as new snapshot
-            </Button>
-          </div>
-        </div>
-
-        <div className="juce-grid-page__snapshot-content">
-          {renderSnapshotLibraryContent({ rail: false })}
-        </div>
-      </div>
-    )
-  }
-
-  const renderSnapshotRail = () => {
-    const activeSnapshotDisplayName = activeSnapshot?.name || 'Live Workspace'
-    const activeSnapshotDisplayNumber = activeSnapshot ? String(activeSnapshot.id).padStart(2, '0') : 'LIVE'
-
-    return (
-      <aside className={`juce-grid-page__snapshot-rail-shell ${snapshotsPanelExpanded ? 'is-expanded' : 'is-collapsed'}`}>
-        <SideNav
-          aria-label="Audio Grid snapshots"
-          expanded={snapshotsPanelExpanded}
-          isChildOfHeader={false}
-          isFixedNav={false}
-          className="juce-grid-page__snapshot-rail"
-        >
-          <SideNavItems className="juce-grid-page__snapshot-rail-items" isSideNavExpanded={snapshotsPanelExpanded}>
-            <li className="juce-grid-page__snapshot-rail-section juce-grid-page__snapshot-rail-section--header">
-              <div className="juce-grid-page__snapshot-rail-header">
-                <div className="juce-grid-page__snapshot-rail-heading">
-                  <div className="juce-grid-page__snapshot-rail-mark" aria-hidden>
-                    <Flow size={20} />
-                  </div>
-                  {snapshotsPanelExpanded && (
-                    <div className="juce-grid-page__snapshot-rail-copy">
-                      <strong>Snapshots</strong>
-                    </div>
-                  )}
-                </div>
-
-                {snapshotsPanelExpanded && (
-                  <div className="juce-grid-page__snapshot-rail-toolbar">
-                    <Button size="sm" kind="primary" onClick={openSnapshotCreateModal}>
-                      Save as new snapshot
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </li>
-
-            {snapshotsPanelExpanded ? (
-              <li className="juce-grid-page__snapshot-rail-section juce-grid-page__snapshot-rail-section--content">
-                <div className="juce-grid-page__snapshot-rail-scroll">
-                  <div className="juce-grid-page__snapshot-content juce-grid-page__snapshot-content--rail">
-                    {renderSnapshotLibraryContent({ rail: true })}
-                  </div>
-                </div>
-              </li>
-            ) : (
-              <li className="juce-grid-page__snapshot-rail-section juce-grid-page__snapshot-rail-section--collapsed">
-                <div className="juce-grid-page__snapshot-rail-collapsed">
-                  <Button
-                    hasIconOnly
-                    size="sm"
-                    kind="ghost"
-                    renderIcon={Add}
-                    iconDescription="Save as new snapshot"
-                    onClick={openSnapshotCreateModal}
-                  />
-                  {activeSnapshot && (
-                    <Button
-                      hasIconOnly
-                      size="sm"
-                      kind={activeSnapshotNeedsUpdate ? 'primary' : 'ghost'}
-                      renderIcon={Renew}
-                      iconDescription={activeSnapshotNeedsUpdate ? 'Update active snapshot' : 'Active snapshot is current'}
-                      onClick={handleActiveSnapshotRefresh}
-                      disabled={!activeSnapshotNeedsUpdate || refreshActiveSnapshotMutation.isPending || activeSnapshotDetailQuery.isLoading}
-                    />
-                  )}
-                  <button
-                    type="button"
-                    className="juce-grid-page__snapshot-rail-pill"
-                    onClick={() => setSnapshotsPanelExpanded(true)}
-                    aria-label={`Expand snapshot rail. Active state ${activeSnapshotDisplayName}`}
-                  >
-                    {activeSnapshot ? activeSnapshotDisplayNumber : 'L'}
-                  </button>
-                </div>
-              </li>
-            )}
-          </SideNavItems>
-
-          <SideNavFooter
-            assistiveText={snapshotsPanelExpanded ? 'Collapse snapshots rail' : 'Expand snapshots rail'}
-            expanded={snapshotsPanelExpanded}
-            onToggle={() => setSnapshotsPanelExpanded((previous) => !previous)}
+          <motion.span
+            className="snapshot-rail-trigger__pulse"
+            aria-hidden
+            initial={{ scale: 0.9, opacity: 0.7 }}
+            animate={{ scale: [0.95, 1.25, 0.95], opacity: [0.8, 0.25, 0.8] }}
+            transition={{ repeat: Infinity, repeatType: 'loop', stiffness: 80, damping: 20, duration: 1 }}
           />
-        </SideNav>
-      </aside>
-    )
-  }
+        )
+      )}
+      <Button
+        hasIconOnly
+        size="md"
+        kind="secondary"
+        renderIcon={Camera}
+        iconDescription="Open Snapshots"
+        aria-label="Open Snapshots"
+        aria-expanded={snapshotsModalOpen}
+        aria-controls="snapshots-modal"
+        className="snapshot-rail-trigger__button"
+        onClick={() => setSnapshotsModalOpen(true)}
+      />
+      <span className="snapshot-rail-trigger__count">{snapshotCountLabel}</span>
+    </div>
+  )
 
-  const renderMidiRail = () => (
-    <aside className={`juce-grid-page__midi-rail-shell ${midiPanelExpanded ? 'is-expanded' : 'is-collapsed'}`}>
-      <SideNav
-        aria-label="Audio Grid MIDI"
-        expanded={midiPanelExpanded}
-        isChildOfHeader={false}
-        isFixedNav={false}
-        className="juce-grid-page__midi-rail"
-      >
-        <SideNavItems className="juce-grid-page__midi-rail-items" isSideNavExpanded={midiPanelExpanded}>
-          <li className="juce-grid-page__midi-rail-section juce-grid-page__midi-rail-section--header">
-            <div className="juce-grid-page__midi-rail-header">
-              <div className="juce-grid-page__midi-rail-heading">
-                <div className="juce-grid-page__midi-rail-mark" aria-hidden>
-                  <Music size={20} />
-                </div>
-                {midiPanelExpanded && (
-                  <div className="juce-grid-page__midi-rail-copy">
-                    <strong>MIDI</strong>
-                    <span>
-                      {midiStatus?.mappings_count !== undefined && midiStatus.mappings_count !== midiMappings.length
-                        ? `${midiMappings.length} shown / ${midiStatus.mappings_count} total`
-                        : `${midiMappings.length} mappings`}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {midiPanelExpanded && (
-                <div className="juce-grid-page__midi-rail-summary">
-                  <Tag type={midiLearnActive || midiLearnInProgress ? 'green' : 'cool-gray'}>
-                    {midiLearnInProgress
-                      ? `Learning${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}`
-                      : midiLearnActive
-                        ? 'Learn armed'
-                        : 'Learn idle'}
-                  </Tag>
-                  <Tag type={midiStatus?.enabled ? (midiStatus.input_open ? 'green' : 'warm-gray') : 'cool-gray'}>
-                    {!midiStatus?.enabled
-                      ? 'Engine standby'
-                      : midiStatus.input_open
-                        ? 'Input armed'
-                        : 'Engine online'}
-                  </Tag>
-                </div>
-              )}
-
-              {midiPanelExpanded && (
-                <div className="juce-grid-page__midi-rail-toolbar">
-                  <MidiLearnButton
-                    isActive={midiLearnActive || midiLearnInProgress}
-                    onToggle={handleMidiLearnToggle}
-                    position="relative"
-                    size="small"
-                    mappingCount={midiMappings.length}
-                  />
-                </div>
-              )}
-            </div>
-          </li>
-
-          {midiPanelExpanded ? (
-            <li className="juce-grid-page__midi-rail-section juce-grid-page__midi-rail-section--content">
-              <div className="juce-grid-page__midi-rail-scroll">
-                {renderMidiMappingsWorkspace({ closable: false })}
-              </div>
-            </li>
-          ) : (
-            <li className="juce-grid-page__midi-rail-section juce-grid-page__midi-rail-section--collapsed">
-              <div className="juce-grid-page__midi-rail-collapsed">
-                <Button
-                  hasIconOnly
-                  size="sm"
-                  kind={midiLearnActive || midiLearnInProgress ? 'secondary' : 'ghost'}
-                  renderIcon={Music}
-                  iconDescription={midiLearnInProgress ? 'MIDI learn running' : midiLearnActive ? 'MIDI learn armed' : 'Toggle MIDI learn'}
-                  onClick={handleMidiLearnToggle}
-                />
-                {midiMappings.length > 0 && (
-                  <button
-                    type="button"
-                    className="juce-grid-page__midi-rail-pill"
-                    onClick={() => setMidiPanelExpanded(true)}
-                    aria-label={`Expand MIDI rail. ${midiMappings.length} mappings shown`}
-                  >
-                    {midiMappings.length}
-                  </button>
-                )}
-              </div>
-            </li>
-          )}
-        </SideNavItems>
-
-        <SideNavFooter
-          assistiveText={midiPanelExpanded ? 'Collapse MIDI rail' : 'Expand MIDI rail'}
-          expanded={midiPanelExpanded}
-          onToggle={() => setMidiPanelExpanded((previous) => !previous)}
-        />
-      </SideNav>
-    </aside>
+  const renderMidiTrigger = () => (
+    <div className="snapshot-rail-trigger snapshot-floating-trigger snapshot-floating-trigger--midi">
+      <Button
+        hasIconOnly
+        size="md"
+        kind="secondary"
+        renderIcon={Music}
+        iconDescription="Open MIDI"
+        aria-label="Open MIDI"
+        aria-expanded={midiModalOpen}
+        aria-controls="juce-grid-midi-modal"
+        className="snapshot-rail-trigger__button"
+        onClick={() => setMidiModalOpen(true)}
+      />
+      <span className="snapshot-rail-trigger__count">{midiMappingCountLabel}</span>
+    </div>
   )
 
   const renderMidiMappingsWorkspace = (options: { closable: boolean; onClose?: () => void }) => (
@@ -3398,6 +2394,13 @@ export function JuceGridPage() {
           <p>Review canonical platform mappings, filter by scope, and arm backend MIDI learn from the grid.</p>
         </div>
         <div className="juce-grid-page__compact-actions">
+          <MidiLearnButton
+            isActive={midiLearnActive || midiLearnInProgress}
+            onToggle={handleMidiLearnToggle}
+            position="relative"
+            size="small"
+            mappingCount={midiMappings.length}
+          />
           <Tag type={midiLearnActive || midiLearnInProgress ? 'green' : 'cool-gray'}>
             {midiLearnInProgress
               ? `Learning${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}`
@@ -3818,11 +2821,8 @@ export function JuceGridPage() {
           else if (showRenameChainModal) setShowRenameChainModal(false)
           else if (presetPendingDelete) setPresetPendingDelete(null)
           else if (showClearFlowsModal) setShowClearFlowsModal(false)
-          else if (showSnapshotCreateModal) setShowSnapshotCreateModal(false)
-          else if (snapshotPendingRename) setSnapshotPendingRename(null)
-          else if (snapshotPendingProgram) closeSnapshotProgramModal()
-          else if (snapshotPendingDelete) setSnapshotPendingDelete(null)
-          else if (snapshotMorphTarget && !snapshotMorphRunning) setSnapshotMorphTarget(null)
+          else if (snapshotsModalOpen) setSnapshotsModalOpen(false)
+          else if (midiModalOpen) setMidiModalOpen(false)
           else if (routingInspectorId) setRoutingInspectorId(null)
         }
         return
@@ -3935,11 +2935,8 @@ export function JuceGridPage() {
         else if (showRenameChainModal) setShowRenameChainModal(false)
         else if (presetPendingDelete) setPresetPendingDelete(null)
         else if (showClearFlowsModal) setShowClearFlowsModal(false)
-        else if (showSnapshotCreateModal) setShowSnapshotCreateModal(false)
-        else if (snapshotPendingRename) setSnapshotPendingRename(null)
-        else if (snapshotPendingProgram) closeSnapshotProgramModal()
-        else if (snapshotPendingDelete) setSnapshotPendingDelete(null)
-        else if (snapshotMorphTarget && !snapshotMorphRunning) setSnapshotMorphTarget(null)
+        else if (snapshotsModalOpen) setSnapshotsModalOpen(false)
+        else if (midiModalOpen) setMidiModalOpen(false)
         else if (routingInspectorId) setRoutingInspectorId(null)
         else if (showPluginBrowser) setShowPluginBrowser(false)
         else if (showPresetBrowser) setShowPresetBrowser(false)
@@ -3956,11 +2953,9 @@ export function JuceGridPage() {
     historyStatus, undoMutation, redoMutation, selectedPlugin, currentChain,
     bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, showRenameChainModal, presetPendingDelete,
-    showClearFlowsModal, showSnapshotCreateModal, snapshotPendingRename,
-    snapshotPendingProgram, snapshotPendingDelete, snapshotMorphTarget,
-    snapshotMorphRunning, routingInspectorId, showPluginBrowser,
+    showClearFlowsModal, snapshotsModalOpen, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin,
-    handleSavePreset, toggleFavorite, closeSnapshotProgramModal, selectFlowIndex,
+    handleSavePreset, toggleFavorite, selectFlowIndex,
   ])
 
   // ============================================================================
@@ -4130,7 +3125,7 @@ export function JuceGridPage() {
 
   const renderLivePathFlowCard = (
     flowId: string,
-    groupKind: 'series' | 'parallel' | 'ab' | 'morph' | 'sidechain' | 'inactive',
+    groupKind: LivePathGroupKind,
   ) => {
     const index = flowIndexById.get(flowId)
     if (index === undefined) {
@@ -4149,20 +3144,67 @@ export function JuceGridPage() {
       : 'Assign a chain to start editing'
     const arrowTone = getLivePathArrowTone(flowState)
     const arrowDashed = Boolean(flowState?.dimmed || flowState?.sidechainKey)
+    const stateLabel = getLivePathStateLabel(flowState)
+    const branchLabel = getLivePathBranchLabel(routing.mode, groupKind, flowState)
+    const mobileStatusLabels = [stateLabel, branchLabel].filter((label): label is string => Boolean(label))
+    const flowCardTitle = routing.mode === 'series'
+      ? 'Flow'
+      : flowState?.sidechainKey
+        ? 'Key lane'
+        : groupKind === 'morph'
+          ? 'Morph lane'
+          : isActive
+            ? 'Selected branch'
+            : 'Branch'
 
     return (
       <div
         key={flow.id}
         className={`juce-grid-page__live-path-row juce-grid-page__live-path-row--${groupKind} ${flowState?.activeAudio ? 'is-live' : ''} ${flowState?.dimmed ? 'is-dimmed' : ''}`}
       >
+        <div
+          className="juce-grid-page__live-path-mobile-sliver"
+          data-testid={`juce-grid-live-path-mobile-sliver-${flow.id}`}
+        >
+          <div
+            className={`juce-grid-page__live-path-mobile-arrow is-${arrowTone} ${arrowDashed ? 'is-dashed' : ''}`}
+            aria-hidden
+          >
+            <span className="juce-grid-page__live-path-mobile-arrow-line" />
+            <ArrowRight size={16} />
+          </div>
+          <div className="juce-grid-page__live-path-mobile-statuses">
+            {mobileStatusLabels.map((label) => (
+              <span
+                key={`${flow.id}-${label}`}
+                className={`juce-grid-page__live-path-mobile-chip ${label === stateLabel ? 'is-state' : 'is-branch'} ${label === 'Live' ? 'is-live' : ''} ${label === 'Dim' ? 'is-dim' : ''} ${label === 'Key' ? 'is-sidechain' : ''}`}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+          <div
+            className={`juce-grid-page__live-path-mobile-arrow is-${arrowTone} ${arrowDashed ? 'is-dashed' : ''}`}
+            aria-hidden
+          >
+            <span className="juce-grid-page__live-path-mobile-arrow-line" />
+            <ArrowRight size={16} />
+          </div>
+        </div>
+
         <div className="juce-grid-page__live-path-side juce-grid-page__live-path-side--entry" aria-hidden>
           <span
             className={`juce-grid-page__live-path-dot ${flowState?.activeAudio ? 'is-live' : ''} ${flowState?.sidechainKey ? 'is-sidechain' : ''}`}
             style={{ '--flow-color': flow.color } as React.CSSProperties}
           />
-          <span className="juce-grid-page__live-path-side-copy">
-            {flowState?.sidechainKey ? 'KEY' : flowState?.activeAudio ? 'LIVE' : 'DIM'}
-          </span>
+          {stateLabel && (
+            <span
+              className="juce-grid-page__live-path-side-copy juce-grid-page__live-path-side-copy--state"
+              data-testid={`juce-grid-live-path-entry-${flow.id}`}
+            >
+              {stateLabel}
+            </span>
+          )}
         </div>
 
         <div
@@ -4185,7 +3227,7 @@ export function JuceGridPage() {
         >
           <div className="juce-grid-page__flow-card-title">
             <Branch size={14} />
-            <span>{isActive ? 'Selected branch' : 'Branch'}</span>
+            <span>{flowCardTitle}</span>
           </div>
 
           <div className="juce-grid-page__flow-card-body">
@@ -4201,8 +3243,11 @@ export function JuceGridPage() {
               <div className="juce-grid-page__flow-card-meta">
                 {isActive && <Tag type="blue">Selected</Tag>}
                 {flowState?.activeAudio && <Tag type="green">Live path</Tag>}
-                {!flowState?.activeAudio && flowState?.annotation && (
-                  <Tag type="cool-gray">{flowState.annotation}</Tag>
+                {!flowState?.activeAudio && branchLabel && (
+                  <Tag type="cool-gray">{branchLabel}</Tag>
+                )}
+                {flowState?.secondaryAnnotation && (
+                  <Tag type="cool-gray">{flowState.secondaryAnnotation}</Tag>
                 )}
                 {flow.solo && <Tag type="warm-gray">Solo</Tag>}
                 {flow.muted && <Tag type="red">Muted</Tag>}
@@ -4336,11 +3381,13 @@ export function JuceGridPage() {
         </div>
 
         <div className="juce-grid-page__live-path-side juce-grid-page__live-path-side--meta">
-          <Tag type={flowState?.activeAudio ? 'green' : flowState?.sidechainKey ? 'purple' : 'cool-gray'}>
-            {flowState?.annotation || 'Live path'}
-          </Tag>
-          {flowState?.secondaryAnnotation && (
-            <span className="juce-grid-page__live-path-note">{flowState.secondaryAnnotation}</span>
+          {branchLabel && (
+            <span
+              className="juce-grid-page__live-path-side-copy juce-grid-page__live-path-side-copy--branch"
+              data-testid={`juce-grid-live-path-branch-${flow.id}`}
+            >
+              {branchLabel}
+            </span>
           )}
         </div>
       </div>
@@ -4394,9 +3441,6 @@ export function JuceGridPage() {
         flowSlots={flowSlots}
         focusedFlowLabel={activeFlowLabel}
         onToggleSelectedChainActive={handleToggleChainActive}
-        onSavePreset={handleSavePreset}
-        onLoadPreset={() => setShowPresetBrowser(true)}
-        onImportPreset={() => setShowImportDialog(true)}
         onDuplicateChain={handleDuplicateChain}
         onRenameChain={handleRenameChain}
       />
@@ -4406,7 +3450,6 @@ export function JuceGridPage() {
           <Tabs
             selectedIndex={Math.max(0, COMPACT_TAB_ORDER.findIndex((tab) => tab.id === compactTab))}
             onChange={({ selectedIndex }) => {
-              setCompactRailPanel(null)
               setCompactTab(COMPACT_TAB_ORDER[selectedIndex]?.id ?? 'grid')
             }}
           >
@@ -4420,9 +3463,7 @@ export function JuceGridPage() {
       )}
 
       {/* Main content area */}
-      <div className={`juce-grid-page__workspace ${!isCompactLayout ? 'has-snapshot-rail has-midi-rail' : ''} ${snapshotsPanelExpanded ? 'is-snapshot-rail-expanded' : 'is-snapshot-rail-collapsed'} ${midiPanelExpanded ? 'is-midi-rail-expanded' : 'is-midi-rail-collapsed'}`}>
-        {!isCompactLayout && renderSnapshotRail()}
-
+      <div className="juce-grid-page__workspace">
         <main className="juce-grid-page__main">
         {!isCompactLayout && <JuceGridClusterPanel />}
         {!isCompactLayout && <JuceGridFlowAssignmentPanel />}
@@ -4539,50 +3580,12 @@ export function JuceGridPage() {
         )}
         </main>
 
-        {!isCompactLayout && renderMidiRail()}
       </div>
 
       {isCompactLayout && (
         <div className="juce-grid-page__compact-shell">
-          <aside className="juce-grid-page__compact-workflow-rail" aria-label="Compact workflow rail">
-            <Button
-              size="sm"
-              kind={compactRailPanel === 'snapshots' ? 'secondary' : 'ghost'}
-              onClick={() => setCompactRailPanel((previous) => previous === 'snapshots' ? null : 'snapshots')}
-            >
-              Snapshots
-            </Button>
-            <Button
-              size="sm"
-              kind={compactRailPanel === 'midi' ? 'secondary' : 'ghost'}
-              onClick={() => setCompactRailPanel((previous) => previous === 'midi' ? null : 'midi')}
-            >
-              MIDI
-            </Button>
-          </aside>
-
           <section className="juce-grid-page__compact-panel">
-            {compactRailPanel === 'snapshots' && (
-              <Layer className="juce-grid-page__compact-layer">
-                <div className="juce-grid-page__compact-section-header">
-                  <h2>Snapshots</h2>
-                  <p>Your pinned favorites stay open, while the wider snapshot library stays tucked away until you need it.</p>
-                </div>
-                {renderSnapshotLibrary()}
-              </Layer>
-            )}
-
-            {compactRailPanel === 'midi' && (
-              <Layer className="juce-grid-page__compact-layer">
-                <div className="juce-grid-page__compact-section-header">
-                  <h2>MIDI</h2>
-                  <p>MIDI learn, mapping review, and parameter-range adjustments now live on the left rail too.</p>
-                </div>
-                {renderMidiMappingsWorkspace({ closable: false })}
-              </Layer>
-            )}
-
-            {compactRailPanel === null && compactTab === 'grid' && (
+            {compactTab === 'grid' && (
               <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
                   <h2>Grid workspace</h2>
@@ -4595,7 +3598,7 @@ export function JuceGridPage() {
               </Layer>
             )}
 
-            {compactRailPanel === null && compactTab === 'editor' && (
+            {compactTab === 'editor' && (
               <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
                   <h2>Editor</h2>
@@ -4620,13 +3623,13 @@ export function JuceGridPage() {
               </Layer>
             )}
 
-            {compactRailPanel === null && compactTab === 'routing' && (
+            {compactTab === 'routing' && (
               <Layer className="juce-grid-page__compact-layer juce-grid-page__routing-shell juce-grid-page__routing-shell--compact">
                 {renderRoutingSurface(true)}
               </Layer>
             )}
 
-            {compactRailPanel === null && compactTab === 'presets' && (
+            {compactTab === 'presets' && (
               <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
                   <h2>Presets</h2>
@@ -4637,6 +3640,11 @@ export function JuceGridPage() {
           </section>
         </div>
       )}
+
+      <div className="juce-grid-page__floating-actions" aria-label="Audio Grid floating actions">
+        {renderSnapshotsTrigger()}
+        {renderMidiTrigger()}
+      </div>
 
       {showSavePresetModal && (
         <Modal
@@ -4750,170 +3758,24 @@ export function JuceGridPage() {
           </div>
         </Modal>
       )}
-
-      {showSnapshotCreateModal && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Save snapshot"
-          modalLabel="Audio Grid workspace"
-          primaryButtonText={createFlowSnapshotMutation.isPending ? 'Saving...' : 'Save snapshot'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={newSnapshotName.trim().length === 0 || createFlowSnapshotMutation.isPending}
-          onRequestClose={() => {
-            setShowSnapshotCreateModal(false)
-            setNewSnapshotName('')
-          }}
-          onSecondarySubmit={() => {
-            setShowSnapshotCreateModal(false)
-            setNewSnapshotName('')
-          }}
-          onRequestSubmit={submitSnapshotCreate}
-          selectorPrimaryFocus="#juce-grid-snapshot-name"
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Capture the current multi-flow layout, chain routing, and active block state into the snapshot library.
-            </p>
-            <TextInput
-              id="juce-grid-snapshot-name"
-              labelText="Snapshot name"
-              value={newSnapshotName}
-              onChange={(event) => setNewSnapshotName(event.target.value)}
-              placeholder="Friday rehearsal"
-            />
-          </div>
-        </Modal>
-      )}
-
-      {snapshotPendingRename && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Rename snapshot"
-          modalLabel={snapshotPendingRename.name}
-          primaryButtonText={updateFlowSnapshotMutation.isPending ? 'Saving...' : 'Save name'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={snapshotRenameValue.trim().length === 0 || updateFlowSnapshotMutation.isPending}
-          onRequestClose={() => {
-            setSnapshotPendingRename(null)
-            setSnapshotRenameValue('')
-          }}
-          onSecondarySubmit={() => {
-            setSnapshotPendingRename(null)
-            setSnapshotRenameValue('')
-          }}
-          onRequestSubmit={submitSnapshotRename}
-          selectorPrimaryFocus="#juce-grid-snapshot-rename"
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <TextInput
-              id="juce-grid-snapshot-rename"
-              labelText="Snapshot name"
-              value={snapshotRenameValue}
-              onChange={(event) => setSnapshotRenameValue(event.target.value)}
-            />
-          </div>
-        </Modal>
-      )}
-
-      {snapshotPendingProgram && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Snapshot MIDI Program Change"
-          modalLabel={snapshotPendingProgram.name}
-          primaryButtonText={setFlowSnapshotProgramMutation.isPending ? 'Saving...' : 'Save MIDI PC'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={setFlowSnapshotProgramMutation.isPending}
-          onRequestClose={closeSnapshotProgramModal}
-          onSecondarySubmit={closeSnapshotProgramModal}
-          onRequestSubmit={submitSnapshotProgram}
-          selectorPrimaryFocus="#juce-grid-snapshot-program"
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Leave this field empty to clear the assigned Program Change number.
-            </p>
-            <TextInput
-              id="juce-grid-snapshot-program"
-              labelText="Program Change number"
-              type="number"
-              value={snapshotProgramValue}
-              onChange={(event) => setSnapshotProgramValue(event.target.value)}
-              placeholder="0-127"
-            />
-          </div>
-        </Modal>
-      )}
-
-      {snapshotPendingDelete && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Delete snapshot"
-          modalLabel={snapshotPendingDelete.name}
-          primaryButtonText={deleteFlowSnapshotMutation.isPending ? 'Deleting...' : 'Delete snapshot'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={deleteFlowSnapshotMutation.isPending}
-          onRequestClose={() => setSnapshotPendingDelete(null)}
-          onSecondarySubmit={() => setSnapshotPendingDelete(null)}
-          onRequestSubmit={submitSnapshotDelete}
-          danger
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Delete <strong>{snapshotPendingDelete.name}</strong> from the snapshot library. This action cannot be undone.
-            </p>
-          </div>
-        </Modal>
-      )}
-
-      {snapshotMorphTarget && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Morph snapshots"
-          modalLabel={snapshotMorphTarget.name}
-          primaryButtonText={snapshotMorphRunning ? 'Morphing...' : 'Start morph'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={!activeSnapshot || activeSnapshotNeedsUpdate || snapshotMorphRunning}
-          onRequestClose={() => {
-            if (!snapshotMorphRunning) {
-              setSnapshotMorphTarget(null)
-            }
-          }}
-          onSecondarySubmit={() => {
-            if (!snapshotMorphRunning) {
-              setSnapshotMorphTarget(null)
-            }
-          }}
-          onRequestSubmit={() => {
-            void handleSnapshotMorphStart()
-          }}
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Morph from <strong>{activeSnapshot?.name || 'the current source snapshot'}</strong> into <strong>{snapshotMorphTarget.name}</strong>. This uses the snapshot preview path and finishes by recalling the target snapshot.
-            </p>
-            {activeSnapshotNeedsUpdate && (
-              <p className="juce-grid-page__snapshot-compare-copy">
-                Update the active snapshot before starting a morph so the source state is deterministic.
-              </p>
-            )}
-            <TextInput
-              id="juce-grid-snapshot-morph-duration"
-              labelText="Duration (ms)"
-              type="number"
-              value={String(snapshotMorphDurationMs)}
-              onChange={(event) => {
-                const nextValue = Number.parseInt(event.target.value || '0', 10)
-                setSnapshotMorphDurationMs(Number.isFinite(nextValue) ? Math.max(250, Math.min(5000, nextValue)) : 1200)
-              }}
-            />
-          </div>
-        </Modal>
-      )}
+      <SnapshotModal
+        open={snapshotsModalOpen}
+        onClose={() => setSnapshotsModalOpen(false)}
+        snapshotDraft={currentSnapshotDraft}
+        applySnapshotData={applySnapshotState}
+        onSnapshotSave={clearSnapshotsDirty}
+      />
+      <Modal
+        open={midiModalOpen}
+        size="lg"
+        modalHeading="MIDI mappings"
+        modalLabel="Audio Grid"
+        passiveModal
+        onRequestClose={() => setMidiModalOpen(false)}
+        id="juce-grid-midi-modal"
+      >
+        {renderMidiMappingsWorkspace({ closable: false })}
+      </Modal>
 
       {routingInspectorContent && (
         <Modal
@@ -5237,12 +4099,6 @@ export function JuceGridPage() {
                   ))}
                 </div>
               )}
-            </div>
-            <div className="juce-grid-page__modal-link">
-              <a href="/snapshots">
-                <Launch size={14} />
-                Browse community snapshots
-              </a>
             </div>
           </div>
         </Modal>

@@ -1517,10 +1517,22 @@ class JuceEngineService(Singleton):
             return []
         return self._engine.list_lv2_plugins()
 
+    async def list_all_plugins(self) -> List[Dict[str, Any]]:
+        """List all plugins across all formats (alias used by /api/plugins/all route)."""
+        return await self.list_plugins()
+
     async def scan_for_plugins(self, rescan_all: bool = False) -> None:
         """Scan for available plugins"""
         if self._engine:
             self._engine.scan_for_plugins(rescan_all)
+
+    async def scan_plugins(self, format: str = None) -> None:
+        """Scan for plugins (route-compatible alias); format ignored — engine scans all."""
+        await self.scan_for_plugins(rescan_all=True)
+
+    async def get_plugin_scan_status(self) -> dict:
+        """Return plugin scan status."""
+        return {"is_scanning": False, "progress": 0.0, "current_path": "", "total_found": 0, "errors": []}
 
     # System Info
 

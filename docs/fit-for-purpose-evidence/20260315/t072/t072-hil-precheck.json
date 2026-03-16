@@ -1,0 +1,329 @@
+{
+  "avb_devices": {
+    "available": true,
+    "count": 2,
+    "device_names": [
+      "AVB Listener (Local)",
+      "AVB Talker (Local)"
+    ],
+    "discovered_count": 0,
+    "discovered_devices": [],
+    "readiness": {
+      "available": true,
+      "checks": {
+        "config_enabled": true,
+        "config_interface": "enp11s0",
+        "engine_avb_available": true,
+        "engine_bound": true,
+        "engine_probe": "is_avb_available",
+        "env_enabled": false,
+        "interface_exists": true,
+        "interface_present": true,
+        "marker_enabled": true,
+        "marker_interface": "enp11s0",
+        "marker_present": true,
+        "ptp4l_binary_present": true,
+        "ptp4l_probe": "pidof",
+        "ptp4l_running": true
+      },
+      "configured": true,
+      "degraded": false,
+      "enabled": true,
+      "interface": "enp11s0",
+      "interface_source": "config",
+      "operational": true,
+      "reason": null,
+      "state": "operational"
+    },
+    "source_node_id": "MANAGEMENT-NODE-907d2acf-98B785"
+  },
+  "avb_ptp_status": {
+    "available": true,
+    "domain": null,
+    "error": null,
+    "grandmaster_clock_class": null,
+    "grandmaster_id": null,
+    "grandmaster_priority1": null,
+    "last_update": "2026-03-15T22:37:46.164765",
+    "local_clock_id": null,
+    "mean_path_delay_ns": null,
+    "offset_ns": null,
+    "readiness": {
+      "available": true,
+      "checks": {
+        "config_enabled": true,
+        "config_interface": "enp11s0",
+        "engine_avb_available": true,
+        "engine_bound": true,
+        "engine_probe": "is_avb_available",
+        "env_enabled": false,
+        "interface_exists": true,
+        "interface_present": true,
+        "marker_enabled": true,
+        "marker_interface": "enp11s0",
+        "marker_present": true,
+        "ptp4l_binary_present": true,
+        "ptp4l_probe": "pidof",
+        "ptp4l_running": true
+      },
+      "configured": true,
+      "degraded": false,
+      "enabled": true,
+      "interface": "enp11s0",
+      "interface_source": "config",
+      "operational": true,
+      "reason": null,
+      "state": "operational"
+    },
+    "state": "INITIALIZING"
+  },
+  "avb_streams": {
+    "active_stream_count": 0,
+    "available": true,
+    "streams": []
+  },
+  "captured_at": "2026-03-15T22:37:46Z",
+  "conclusion": "Blocked: Tesira control, AVB entity/stream presence, or PTP lock prerequisites are still incomplete for T072.",
+  "gates": {
+    "avb_discovery_ready": {
+      "reason": "Need at least 1 discovered AVB device(s); found 0.",
+      "status": "BLOCKED"
+    },
+    "avb_stream_ready": {
+      "reason": "Need at least 1 active AVB stream(s); found 0.",
+      "status": "BLOCKED"
+    },
+    "ptp_lock_ready": {
+      "reason": "Host AVB PTP state is INITIALIZING; expected one of MASTER, SLAVE.",
+      "status": "BLOCKED"
+    },
+    "tesira_control_ready": {
+      "reason": "Need at least 2 connected Tesira devices; found 0 in scope.",
+      "status": "BLOCKED"
+    }
+  },
+  "missing_device_ids": [],
+  "overall_status": "BLOCKED",
+  "selected_device_count": 5,
+  "selected_device_ids": [
+    "tesira_172_20_146_238",
+    "tesira_172_20_146_241",
+    "tesira_172_20_146_240",
+    "tesira_172_20_146_236",
+    "tesira_172_20_146_237"
+  ],
+  "selected_devices": [
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_238",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.238",
+      "name": "172.20.146.238",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_241",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.241",
+      "name": "172.20.146.241",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_240",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.240",
+      "name": "172.20.146.240",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_236",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.236",
+      "name": "172.20.146.236",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_237",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.237",
+      "name": "172.20.146.237",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    }
+  ],
+  "settings": {
+    "accepted_ptp_states": [
+      "MASTER",
+      "SLAVE"
+    ],
+    "api_base": "http://127.0.0.1:8080/api",
+    "device_ids": [],
+    "min_active_streams": 1,
+    "min_avb_discovered_devices": 1,
+    "min_connected_devices": 2
+  },
+  "task_id": "T072",
+  "tesira_devices": [
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_238",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.238",
+      "name": "172.20.146.238",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_241",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.241",
+      "name": "172.20.146.241",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_240",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.240",
+      "name": "172.20.146.240",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_236",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.236",
+      "name": "172.20.146.236",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_237",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.237",
+      "name": "172.20.146.237",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    }
+  ],
+  "tesira_fleet_health": {
+    "connected_devices": 0,
+    "connected_ratio": 0.0,
+    "offline_devices": 5,
+    "status": "degraded",
+    "total_devices": 5
+  },
+  "tesira_ptp_topology": {
+    "grandmaster_ids": [],
+    "node_count": 5,
+    "nodes": [
+      {
+        "connected": false,
+        "device_id": "tesira_172_20_146_238",
+        "grandmaster_id": null,
+        "host": "172.20.146.238",
+        "name": "172.20.146.238",
+        "offset_ns": null,
+        "ptp_state": "OFFLINE"
+      },
+      {
+        "connected": false,
+        "device_id": "tesira_172_20_146_241",
+        "grandmaster_id": null,
+        "host": "172.20.146.241",
+        "name": "172.20.146.241",
+        "offset_ns": null,
+        "ptp_state": "OFFLINE"
+      },
+      {
+        "connected": false,
+        "device_id": "tesira_172_20_146_240",
+        "grandmaster_id": null,
+        "host": "172.20.146.240",
+        "name": "172.20.146.240",
+        "offset_ns": null,
+        "ptp_state": "OFFLINE"
+      },
+      {
+        "connected": false,
+        "device_id": "tesira_172_20_146_236",
+        "grandmaster_id": null,
+        "host": "172.20.146.236",
+        "name": "172.20.146.236",
+        "offset_ns": null,
+        "ptp_state": "OFFLINE"
+      },
+      {
+        "connected": false,
+        "device_id": "tesira_172_20_146_237",
+        "grandmaster_id": null,
+        "host": "172.20.146.237",
+        "name": "172.20.146.237",
+        "offset_ns": null,
+        "ptp_state": "OFFLINE"
+      }
+    ]
+  }
+}

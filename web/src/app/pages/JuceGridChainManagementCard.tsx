@@ -20,9 +20,6 @@ interface JuceGridChainManagementCardProps {
   flowSlots?: FlowSlotRef[]
   focusedFlowLabel?: string
   onToggleSelectedChainActive: () => void
-  onSavePreset: () => void
-  onLoadPreset: () => void
-  onImportPreset: () => void
   onDuplicateChain: () => void
   onRenameChain: () => void
 }
@@ -34,9 +31,6 @@ export function JuceGridChainManagementCard({
   flowSlots = [],
   focusedFlowLabel = 'A',
   onToggleSelectedChainActive,
-  onSavePreset,
-  onLoadPreset,
-  onImportPreset,
   onDuplicateChain,
   onRenameChain,
 }: JuceGridChainManagementCardProps) {
@@ -183,169 +177,160 @@ export function JuceGridChainManagementCard({
             </div>
           </div>
 
-          <Tile className="juce-grid-page__chain-action-tile">
-            <span className="juce-grid-page__chain-action-label">Selected chain</span>
-            {selectedChain ? (
-              <>
-                <div className="juce-grid-page__chain-action-heading">
-                  <strong>{selectedChain.name}</strong>
-                  <div className="juce-grid-page__chain-action-tags">
-                    <Tag type={selectedChain.is_active ? 'green' : 'cool-gray'}>
-                      {selectedChain.is_active ? 'Active' : 'Inactive'}
-                    </Tag>
-                    <Tag type="cool-gray">{selectedChain.plugins.length} blocks</Tag>
-                  </div>
-                </div>
-                <p className="juce-grid-page__chain-action-copy">
-                  Assigned to focused flow {focusedFlowLabel}. Choose preset and chain actions without leaving the library card.
-                </p>
-                {selectedChainFlowSlots.length > 0 && (
-                  <div className="juce-grid-page__chain-flow-tags">
-                    {selectedChainFlowSlots.map((slot) => (
-                      <Tag key={`${slot.id}-${slot.label}`} type="blue">
-                        Flow {slot.label}
-                      </Tag>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <strong>No chain assigned</strong>
-                <p className="juce-grid-page__chain-action-copy">
-                  Select a chain below to bind it to the focused flow before using save, duplicate, rename, or activation controls.
-                </p>
-              </>
-            )}
-          </Tile>
-
-          <Tile className="juce-grid-page__chain-action-tile">
-            <span className="juce-grid-page__chain-action-label">Preset library</span>
-            <p className="juce-grid-page__chain-action-copy">Store and recall chain states with Carbon modal workflows.</p>
-            <div className="juce-grid-page__chain-button-row">
-              <Button size="sm" kind="primary" onClick={onSavePreset} disabled={!selectedChain}>
-                Save preset
-              </Button>
-              <Button size="sm" kind="secondary" onClick={onLoadPreset}>
-                Load preset
-              </Button>
-              <Button size="sm" kind="ghost" onClick={onImportPreset}>
-                Import
-              </Button>
-            </div>
-          </Tile>
-
-          <Tile className="juce-grid-page__chain-action-tile">
-            <span className="juce-grid-page__chain-action-label">Chain operations</span>
-            <p className="juce-grid-page__chain-action-copy">Create a new chain or manage the focused chain lifecycle inside the same Carbon action group.</p>
-            <div className="juce-grid-page__chain-button-row">
-              <Button
-                size="sm"
-                kind="ghost"
-                renderIcon={Add}
-                onClick={() => setShowCreateModal(true)}
-                disabled={createMutation.isPending}
-              >
-                New chain
-              </Button>
-              <Button
-                size="sm"
-                kind={selectedChain?.is_active ? 'secondary' : 'primary'}
-                onClick={onToggleSelectedChainActive}
-                disabled={!selectedChain}
-              >
-                {selectedChain?.is_active ? 'Deactivate chain' : 'Activate chain'}
-              </Button>
-              <Button size="sm" kind="ghost" onClick={onDuplicateChain} disabled={!selectedChain}>
-                Duplicate
-              </Button>
-              <Button size="sm" kind="ghost" onClick={onRenameChain} disabled={!selectedChain}>
-                Rename chain
-              </Button>
-            </div>
-          </Tile>
-        </div>
-
-        {chainsQuery.isLoading ? (
-          <div className="juce-grid-page__chain-loading">
-            <InlineLoading description="Loading chains" status="active" />
-          </div>
-        ) : (
-          <div className="juce-grid-page__chain-grid" role="list" aria-label="Available chains">
-            {chains.map((chain) => {
-              const flowsUsingChain = flowSlots.filter((slot) => slot.chainId === chain.id)
-              const isSelected = selectedChainId === chain.id
-
-              return (
-                <article
-                  key={chain.id}
-                  role="listitem"
-                  tabIndex={0}
-                  className={`juce-grid-page__chain-tile ${isSelected ? 'is-selected' : ''} ${chain.is_active ? 'is-active' : ''}`}
-                  onClick={() => onChainSelect?.(chain.id)}
-                  onKeyDown={(event) => handleTileKeyDown(event, chain.id)}
-                  aria-pressed={isSelected}
-                >
-                  <div className="juce-grid-page__chain-tile-header">
-                    <div className="juce-grid-page__chain-tile-copy">
-                      <strong>{chain.name}</strong>
-                      <span>{chain.plugins.length} loaded {chain.plugins.length === 1 ? 'block' : 'blocks'}</span>
+          <div className="juce-grid-page__chain-management-layout">
+            <div className="juce-grid-page__chain-management-sidebar">
+              <Tile className="juce-grid-page__chain-action-tile">
+                <span className="juce-grid-page__chain-action-label">Selected chain</span>
+                {selectedChain ? (
+                  <>
+                    <div className="juce-grid-page__chain-action-heading">
+                      <strong>{selectedChain.name}</strong>
+                      <div className="juce-grid-page__chain-action-tags">
+                        <Tag type={selectedChain.is_active ? 'green' : 'cool-gray'}>
+                          {selectedChain.is_active ? 'Active' : 'Inactive'}
+                        </Tag>
+                        <Tag type="cool-gray">{selectedChain.plugins.length} blocks</Tag>
+                      </div>
                     </div>
-                    <div className="juce-grid-page__chain-tile-tags">
-                      {isSelected && <Tag type="blue">Focused</Tag>}
-                      {chain.is_active && <Tag type="green">Active</Tag>}
-                    </div>
-                  </div>
-
-                  <div className="juce-grid-page__chain-tile-meta">
-                    {flowsUsingChain.length > 0 ? (
-                      <div className="juce-grid-page__chain-flow-pills">
-                        {flowsUsingChain.map((slot) => (
-                          <span
-                            key={`${chain.id}-${slot.id}`}
-                            className="juce-grid-page__chain-flow-pill"
-                            style={{ '--chain-flow-color': slot.color } as CSSProperties}
-                          >
-                            {slot.label}
-                          </span>
+                    <p className="juce-grid-page__chain-action-copy">
+                      Assigned to focused flow {focusedFlowLabel}. Manage the focused chain while keeping the chooser visible beside this summary.
+                    </p>
+                    {selectedChainFlowSlots.length > 0 && (
+                      <div className="juce-grid-page__chain-flow-tags">
+                        {selectedChainFlowSlots.map((slot) => (
+                          <Tag key={`${slot.id}-${slot.label}`} type="blue">
+                            Flow {slot.label}
+                          </Tag>
                         ))}
                       </div>
-                    ) : (
-                      <span className="juce-grid-page__chain-empty-copy">Not assigned to a flow</span>
                     )}
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <strong>No chain assigned</strong>
+                    <p className="juce-grid-page__chain-action-copy">
+                      Select a chain from the chooser to the right to bind it to focused flow {focusedFlowLabel} before duplicating, renaming, or changing activation.
+                    </p>
+                  </>
+                )}
+              </Tile>
 
-                  <div className="juce-grid-page__chain-tile-actions">
-                    <Button
-                      size="sm"
-                      kind={chain.is_active ? 'secondary' : 'ghost'}
-                      hasIconOnly
-                      renderIcon={Power}
-                      iconDescription={chain.is_active ? `Deactivate ${chain.name}` : `Activate ${chain.name}`}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        toggleChainPower(chain)
-                      }}
-                      disabled={isBusy}
-                    />
-                    <Button
-                      size="sm"
-                      kind="danger--tertiary"
-                      hasIconOnly
-                      renderIcon={TrashCan}
-                      iconDescription={`Delete ${chain.name}`}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        setPendingDeleteChain(chain)
-                      }}
-                      disabled={isBusy}
-                    />
-                  </div>
-                </article>
-              )
-            })}
+              <Tile className="juce-grid-page__chain-action-tile">
+                <span className="juce-grid-page__chain-action-label">Chain operations</span>
+                <p className="juce-grid-page__chain-action-copy">Create a new chain or manage the focused chain lifecycle inside the same Carbon action group.</p>
+                <div className="juce-grid-page__chain-button-row">
+                  <Button
+                    size="sm"
+                    kind="ghost"
+                    renderIcon={Add}
+                    onClick={() => setShowCreateModal(true)}
+                    disabled={createMutation.isPending}
+                  >
+                    New chain
+                  </Button>
+                  <Button
+                    size="sm"
+                    kind={selectedChain?.is_active ? 'secondary' : 'primary'}
+                    onClick={onToggleSelectedChainActive}
+                    disabled={!selectedChain}
+                  >
+                    {selectedChain?.is_active ? 'Deactivate chain' : 'Activate chain'}
+                  </Button>
+                  <Button size="sm" kind="ghost" onClick={onDuplicateChain} disabled={!selectedChain}>
+                    Duplicate
+                  </Button>
+                  <Button size="sm" kind="ghost" onClick={onRenameChain} disabled={!selectedChain}>
+                    Rename chain
+                  </Button>
+                </div>
+              </Tile>
+            </div>
+
+            <div className="juce-grid-page__chain-chooser-panel">
+              <span className="juce-grid-page__chain-action-label">Chains chooser</span>
+              {chainsQuery.isLoading ? (
+                <div className="juce-grid-page__chain-loading">
+                  <InlineLoading description="Loading chains" status="active" />
+                </div>
+              ) : (
+                <div className="juce-grid-page__chain-grid" role="list" aria-label="Available chains">
+                  {chains.map((chain) => {
+                    const flowsUsingChain = flowSlots.filter((slot) => slot.chainId === chain.id)
+                    const isSelected = selectedChainId === chain.id
+
+                    return (
+                      <article
+                        key={chain.id}
+                        role="listitem"
+                        tabIndex={0}
+                        className={`juce-grid-page__chain-tile ${isSelected ? 'is-selected' : ''} ${chain.is_active ? 'is-active' : ''}`}
+                        onClick={() => onChainSelect?.(chain.id)}
+                        onKeyDown={(event) => handleTileKeyDown(event, chain.id)}
+                        aria-pressed={isSelected}
+                      >
+                        <div className="juce-grid-page__chain-tile-header">
+                          <div className="juce-grid-page__chain-tile-copy">
+                            <strong>{chain.name}</strong>
+                            <span>{chain.plugins.length} loaded {chain.plugins.length === 1 ? 'block' : 'blocks'}</span>
+                          </div>
+                          <div className="juce-grid-page__chain-tile-tags">
+                            {isSelected && <Tag type="blue">Focused</Tag>}
+                            {chain.is_active && <Tag type="green">Active</Tag>}
+                          </div>
+                        </div>
+
+                        <div className="juce-grid-page__chain-tile-meta">
+                          {flowsUsingChain.length > 0 ? (
+                            <div className="juce-grid-page__chain-flow-pills">
+                              {flowsUsingChain.map((slot) => (
+                                <span
+                                  key={`${chain.id}-${slot.id}`}
+                                  className="juce-grid-page__chain-flow-pill"
+                                  style={{ '--chain-flow-color': slot.color } as CSSProperties}
+                                >
+                                  {slot.label}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="juce-grid-page__chain-empty-copy">Not assigned to a flow</span>
+                          )}
+                        </div>
+
+                        <div className="juce-grid-page__chain-tile-actions">
+                          <Button
+                            size="sm"
+                            kind={chain.is_active ? 'secondary' : 'ghost'}
+                            hasIconOnly
+                            renderIcon={Power}
+                            iconDescription={chain.is_active ? `Deactivate ${chain.name}` : `Activate ${chain.name}`}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              toggleChainPower(chain)
+                            }}
+                            disabled={isBusy}
+                          />
+                          <Button
+                            size="sm"
+                            kind="danger--tertiary"
+                            hasIconOnly
+                            renderIcon={TrashCan}
+                            iconDescription={`Delete ${chain.name}`}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setPendingDeleteChain(chain)
+                            }}
+                            disabled={isBusy}
+                          />
+                        </div>
+                      </article>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </Layer>
 
       {showCreateModal && (

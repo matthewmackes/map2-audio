@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 const mockSideNav = jest.fn(({ children, expanded, isFixedNav, className }: any) => (
   <nav
-    data-testid={String(className).includes('snapshot-rail') ? 'juce-grid-snapshot-rail' : 'juce-grid-midi-rail'}
+    data-testid="juce-grid-midi-rail"
     data-expanded={String(Boolean(expanded))}
     data-fixed={String(Boolean(isFixedNav))}
     className={className}
@@ -19,6 +19,15 @@ const mockFetchQuery = jest.fn()
 const mockSetQueryData = jest.fn()
 const mockCancelQueries = jest.fn(async () => undefined)
 const mockGetQueryData = jest.fn()
+let mockLivePathLayout: any = {
+  status: 'unavailable',
+  activeFlowIds: [],
+  primaryFlowId: null,
+  secondaryFlowId: null,
+  flowStates: {},
+  mobileSummary: ['No live path available'],
+  groups: [],
+}
 
 const mockChainsApi = {
   list: jest.fn(async () => ({
@@ -134,9 +143,7 @@ jest.mock('@carbon/react', () => {
     SideNavFooter: ({ assistiveText, expanded, onToggle }: any) => (
       <button
         type="button"
-        data-testid={String(assistiveText).toLowerCase().includes('midi')
-          ? 'juce-grid-midi-rail-footer'
-          : 'juce-grid-snapshot-rail-footer'}
+        data-testid="juce-grid-midi-rail-footer"
         aria-label={assistiveText}
         data-expanded={String(Boolean(expanded))}
         onClick={onToggle}
@@ -264,22 +271,36 @@ jest.mock('./JuceGridSignalCanvas', () => ({
 }))
 
 jest.mock('./juceGridLivePath', () => ({
-  buildJuceGridLivePath: () => ({
-    status: 'unavailable',
-    activeFlowIds: [],
-    primaryFlowId: null,
-    secondaryFlowId: null,
-    flowStates: {},
-    mobileSummary: ['No live path available'],
-    groups: [],
-  }),
+  buildJuceGridLivePath: () => mockLivePathLayout,
 }))
 
 const { JuceGridPage } = require('./JuceGridPage') as typeof import('./JuceGridPage')
 
-describe('JuceGridPage snapshot rail layout', () => {
+describe('JuceGridPage snapshot modal workflow', () => {
   beforeEach(() => {
     localStorage.clear()
+    mockLivePathLayout = {
+      status: 'unavailable',
+      activeFlowIds: [],
+      primaryFlowId: null,
+      secondaryFlowId: null,
+      flowStates: {},
+      mobileSummary: ['No live path available'],
+      groups: [],
+    }
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: (query: string) => ({
+        matches: query === '(max-width: 768px)' ? false : false,
+        media: query,
+        onchange: null,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      }),
+    })
     mockSideNav.mockClear()
     mockInvalidateQueries.mockReset()
     mockFetchQuery.mockReset()
@@ -372,9 +393,7 @@ describe('JuceGridPage snapshot rail layout', () => {
     delete (globalThis as { fetch?: typeof fetch }).fetch
   })
 
-  it('keeps the desktop snapshot rail scoped to the workspace column on first render', async () => {
-    localStorage.setItem('map2_juce_grid_snapshots_panel', 'false')
-
+  it('renders floating snapshot and MIDI triggers without either side rail', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -391,12 +410,176 @@ describe('JuceGridPage snapshot rail layout', () => {
       </QueryClientProvider>,
     )
 
-    const rail = screen.getByTestId('juce-grid-snapshot-rail')
+    expect(await screen.findByLabelText('Open Snapshots')).toBeTruthy()
+    expect(screen.getByLabelText('Open MIDI')).toBeTruthy()
+    expect(container.querySelector('.juce-grid-page__state-rail')).toBeNull()
+    expect(container.querySelector('.juce-grid-page__midi-rail-shell')).toBeNull()
+    expect(container.querySelector('.snapshot-floating-trigger')).toBeTruthy()
+  })
 
-    expect(rail.getAttribute('data-fixed')).toBe('false')
-    expect(rail.getAttribute('data-expanded')).toBe('false')
-    expect(container.querySelector('.juce-grid-page__workspace.has-snapshot-rail')).toBeTruthy()
-    expect(container.querySelector('.juce-grid-page__snapshot-rail-shell')).toBeTruthy()
+  it('opens the snapshots modal from the trigger button', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    fireEvent.click(await screen.findByLabelText('Open Snapshots'))
+
+    expect(await screen.findByText('Snapshots', { selector: 'h2' })).toBeTruthy()
+  })
+
+  it('shows the snapshot count badge and clamps it at 99+', async () => {
+    mockFlowSnapshotsApi.list.mockResolvedValueOnce({
+      snapshots: Array.from({ length: 5 }, (_, index) => ({
+        id: index + 1,
+        name: `Snapshot ${index + 1}`,
+        description: '',
+        updated_at: '2026-03-15T18:00:00.000Z',
+        flow_slots: [],
+        is_active: false,
+        is_favorite: false,
+        program_number: null,
+      })),
+      count: 5,
+      active_id: null,
+    })
+
+    let queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    const firstRender = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await waitFor(async () => {
+      expect((await screen.findByLabelText('Open Snapshots')).closest('.snapshot-rail-trigger')?.querySelector('.snapshot-rail-trigger__count')?.textContent).toBe('5')
+    })
+    firstRender.unmount()
+
+    mockFlowSnapshotsApi.list.mockResolvedValueOnce({
+      snapshots: Array.from({ length: 100 }, (_, index) => ({
+        id: index + 1,
+        name: `Snapshot ${index + 1}`,
+        description: '',
+        updated_at: '2026-03-15T18:00:00.000Z',
+        flow_slots: [],
+        is_active: false,
+        is_favorite: false,
+        program_number: null,
+      })),
+      count: 100,
+      active_id: null,
+    })
+
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await waitFor(async () => {
+      expect((await screen.findByLabelText('Open Snapshots')).closest('.snapshot-rail-trigger')?.querySelector('.snapshot-rail-trigger__count')?.textContent).toBe('99+')
+    })
+  })
+
+  it('closes the snapshots modal after recall', async () => {
+    mockFlowSnapshotsApi.list.mockResolvedValue({
+      snapshots: [
+        {
+          id: 11,
+          name: 'Verse Wash',
+          description: 'Favorite snapshot A',
+          updated_at: '2026-03-15T18:00:00.000Z',
+          flow_slots: [{ id: 'flow-0', label: 'A', color: '#0f62fe' }],
+          is_active: false,
+          is_favorite: true,
+          program_number: null,
+          display_order: 0,
+        },
+      ],
+      count: 1,
+      active_id: null,
+    })
+    mockFlowSnapshotsApi.load.mockResolvedValue({
+      snapshot_data: { flowSlots: [], routing: {}, activeFlowIndex: 0, chains: {} },
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    fireEvent.click(await screen.findByLabelText('Open Snapshots'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Recall' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Snapshots' })).toBeNull()
+    })
+  })
+
+  it('renders the dirty pulse after a routing change', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Parallel' }))
+
+    await waitFor(() => {
+      expect(container.querySelector('.snapshot-rail-trigger__pulse')).toBeTruthy()
+    })
   })
 
   it('normalizes malformed persisted flow slots instead of crashing on first render', async () => {
@@ -480,6 +663,80 @@ describe('JuceGridPage snapshot rail layout', () => {
     expect(screen.queryByRole('button', { name: 'Show Audio Grid controls' })).toBeNull()
   })
 
+  it('shows state labels while suppressing branch labels for continuing serial rows', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#0f62fe', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 2, label: 'B', color: '#24a148', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_routing_v2', JSON.stringify({
+      mode: 'series',
+      activeSlotId: 'flow-0',
+      blendPositions: {},
+      morphProgress: 0,
+      morphSourceSlotId: null,
+      morphTargetSlotId: null,
+      seriesOrder: ['flow-0', 'flow-1'],
+    }))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      mobileSummary: ['Series: A > B'],
+      groups: [
+        { id: 'series-main', kind: 'series', title: 'Live audio path', flowIds: ['flow-0'], tone: 'active' },
+        { id: 'series-context', kind: 'inactive', title: 'Dimmed context', flowIds: ['flow-1'], tone: 'dim' },
+      ],
+      flowStates: {
+        'flow-0': {
+          flowId: 'flow-0',
+          activeAudio: true,
+          dimmed: false,
+          placeholder: false,
+          annotation: 'Serial stage',
+          secondaryAnnotation: 'Processing live audio',
+          sidechainKey: false,
+        },
+        'flow-1': {
+          flowId: 'flow-1',
+          activeAudio: false,
+          dimmed: true,
+          placeholder: false,
+          annotation: 'Inactive branch',
+          secondaryAnnotation: 'Held offline',
+          sidechainKey: false,
+        },
+      },
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await screen.findByRole('region', { name: 'Live audio path' })
+
+    expect(screen.getByTestId('juce-grid-live-path-entry-flow-0').textContent).toContain('Live')
+    expect(screen.getByTestId('juce-grid-live-path-entry-flow-1').textContent).toContain('Dim')
+    expect(screen.queryByTestId('juce-grid-live-path-branch-flow-0')).toBeNull()
+    expect(screen.queryByTestId('juce-grid-live-path-branch-flow-1')).toBeNull()
+    expect(screen.getByTestId('juce-grid-live-path-mobile-sliver-flow-0').textContent).toContain('Live')
+    expect(screen.getByTestId('juce-grid-live-path-mobile-sliver-flow-1').textContent).toContain('Dim')
+    expect(screen.queryByText('Inactive branch')).toBeNull()
+  })
+
   it('closes the plugin chooser immediately when adding a plugin', async () => {
     localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
       { id: 'flow-0', chainId: 1, label: 'A', color: '#0f62fe', muted: false, solo: false, dryWetMix: 100 },
@@ -529,7 +786,7 @@ describe('JuceGridPage snapshot rail layout', () => {
     expect(mockSetQueryData).toHaveBeenCalled()
   })
 
-  it('renders canonical MIDI mappings from midiApiV2 in the rail', async () => {
+  it('renders canonical MIDI mappings from midiApiV2 in the modal', async () => {
     mockMidiApiV2.getStatus.mockResolvedValue({
       enabled: true,
       input_open: true,
@@ -600,13 +857,14 @@ describe('JuceGridPage snapshot rail layout', () => {
       </QueryClientProvider>,
     )
 
+    fireEvent.click(await screen.findByLabelText('Open MIDI'))
     expect(await screen.findByText('Depth')).toBeTruthy()
     expect(screen.getByText('Chorus')).toBeTruthy()
     expect(screen.getByText('CC 11')).toBeTruthy()
     expect(mockMidiApiV2.getMappings).toHaveBeenCalledWith()
   })
 
-  it('marks snapshot and MIDI rail rows with alternating stripe tones', async () => {
+  it('marks snapshot and MIDI modal rows with alternating stripe tones', async () => {
     mockFlowSnapshotsApi.list.mockResolvedValue({
       snapshots: [
         {
@@ -734,7 +992,9 @@ describe('JuceGridPage snapshot rail layout', () => {
       </QueryClientProvider>,
     )
 
+    fireEvent.click(await screen.findByLabelText('Open Snapshots'))
     expect(await screen.findByText('Verse Wash')).toBeTruthy()
+    fireEvent.click(screen.getByLabelText('Open MIDI'))
     expect(await screen.findByText('Depth')).toBeTruthy()
 
     const snapshotTiles = Array.from(
@@ -775,7 +1035,8 @@ describe('JuceGridPage snapshot rail layout', () => {
       </QueryClientProvider>,
     )
 
-    await screen.findByText('MIDI mappings')
+    fireEvent.click(await screen.findByLabelText('Open MIDI'))
+    await screen.findAllByText('MIDI mappings')
 
     fireEvent.click(screen.getByRole('button', { name: 'Active chain' }))
 
@@ -809,6 +1070,7 @@ describe('JuceGridPage snapshot rail layout', () => {
       </QueryClientProvider>,
     )
 
+    fireEvent.click(await screen.findByLabelText('Open MIDI'))
     await screen.findAllByText('Learning')
     const [midiLearnButton] = await screen.findAllByRole('button', { name: 'MIDI learn' })
     fireEvent.click(midiLearnButton)

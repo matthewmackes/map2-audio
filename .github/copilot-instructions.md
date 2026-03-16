@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 15, 2026 (snapshot rail test harness note)
+> **Last Updated**: March 15, 2026 (explicit "ask questions" trigger preference)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -89,6 +89,11 @@ When adding significant updates, append to this log:
   - GitLab remote: `gitlab` → https://gitlab.com/matthewmackes-group/matthewmackes-project
   - When user requests push/sync: `git push origin master && git push gitlab master`
   - Both repositories must stay in sync at all times
+
+### Questioning Workflow
+- **When the user says "ask questions", use the 5-Question Clarification Protocol**
+  - Do not switch to ad-hoc grouped question lists
+  - Ask questions one at a time, sequentially, per the protocol
 
 ---
 
@@ -997,7 +1002,7 @@ Before acting on any directive that involves code changes or architectural decis
 
 ### Rules
 
-1. **Trigger**: Fires on any directive involving code changes or architectural decisions. Does not fire on trivial one-liners (e.g. "fix this typo", "rename this variable").
+1. **Trigger**: Fires on any directive involving code changes or architectural decisions. Does not fire on trivial one-liners (e.g. "fix this typo", "rename this variable"). If the user explicitly says "ask questions", "ask me questions", or "ask 5 questions", that phrase itself requires this protocol instead of ad-hoc batch questioning.
 
 2. **Delivery**: Questions are asked **one at a time, sequentially**. After each answer, give a **one-word acknowledgement** ("Got it." or "Noted.") on its own line, then immediately ask the next question.
 
@@ -1259,6 +1264,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-15] - Explicit "Ask Questions" Trigger Preference
+- **Section**: User Preferences, 5-Question Clarification Protocol
+- **Change**: Added a user-preference note and an explicit protocol trigger that the phrases "ask questions", "ask me questions", and "ask 5 questions" must invoke the documented one-at-a-time clarification flow.
+- **Reason**: Preserve the user's stated preference and prevent regressions to batched free-form questioning.
+- **Impact**: Future clarification turns should follow the sequential 5-question rule whenever the user explicitly asks for questions.
+- **Files**: `.github/copilot-instructions.md`
 
 ### [2026-03-15] - Snapshot Rail Test Harness Fix
 - **Section**: Gotchas & Learned Fixes (#17)

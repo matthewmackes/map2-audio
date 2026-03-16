@@ -12,7 +12,7 @@ import { NodeAlertBar } from '../components/NodeAlerts/NodeAlertBar'
 import { NodeAlertMonitor } from '../components/NodeAlerts/NodeAlertMonitor'
 import { NodeAlertToast } from '../components/NodeAlerts/NodeAlertToast'
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
-import { MAP2_PLATFORM_META, MAP2_PRIMARY_LABEL, Map2BrandMark } from '../components/branding/map2Branding'
+import { Map2BrandMark } from '../components/branding/map2Branding'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import { NodeSelector } from '../components/shared/NodeSelector'
@@ -26,7 +26,7 @@ import {
   MAX_PINNED_NAV_ITEMS,
   normalizePinnedRoutes,
   pinnableNavigationItems,
-  type AdvancedMenuItem,
+  type AdvancedNavigationItem,
   type HardwareInterfaceMenuItem,
   type NavigationMaturityState,
   type ShellNavigationItem,
@@ -175,7 +175,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const HomeIcon = homeTopNavItem.icon
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
-  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/platform' || location.pathname.startsWith('/platform/')
+  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/platform' || location.pathname.startsWith('/platform/') || location.pathname === '/engine'
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   useEffect(() => {
@@ -429,7 +429,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const renderHardwareSubmenuTrigger = (item: TopNavItem) => {
     const Icon = item.icon
-    const isHardwareRouteActive = hardwareInterfaceMenuItems.some((hardwareItem) =>
+    const hardwareSubmenuItems = hardwareInterfaceMenuItems.filter((hardwareItem) => hardwareItem.showInHardwareSubmenu !== false)
+    const isHardwareRouteActive = hardwareSubmenuItems.some((hardwareItem) =>
       isRouteMatch(location.pathname, hardwareItem.to)
     )
 
@@ -460,7 +461,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {topHardwareSubmenuOpen && (
           <Layer id="top-hardware-menu" className="top-hardware-menu-panel" role="menu" aria-label="Audio interfaces">
-            {hardwareInterfaceMenuItems.map((hardwareItem) => (
+            {hardwareSubmenuItems.map((hardwareItem) => (
               <NavLink
                 key={`top-hardware-${hardwareItem.label}-${hardwareItem.to}`}
                 to={hardwareItem.to}
@@ -487,7 +488,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const renderMobileMenuItem = (item: MobileMenuItem, keyPrefix: string) => {
     const Icon = item.icon
-    const isBlocked = 'includeInAdvancedMenu' in item ? isBlockedAdvancedMenuItem(item as AdvancedMenuItem) : false
+    const isBlocked = isBlockedAdvancedMenuItem(item)
     const hardwareLocation = hardwareLocationNotes[item.to]
     const itemBody = (
       <>
@@ -538,7 +539,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   const advancedSections = useMemo(() => {
-    const grouped = new Map<string, AdvancedMenuItem[]>()
+    const grouped = new Map<string, AdvancedNavigationItem[]>()
     for (const item of advancedMenuItems) {
       const existing = grouped.get(item.homeSection) ?? []
       existing.push(item)
@@ -563,10 +564,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavLink to="/" className="topbar-pro__brand" aria-label="Mackes Audio Platform home">
             <span className="topbar-pro__brand-mark-wrap" aria-hidden="true">
               <Map2BrandMark className="topbar-pro__brand-mark" />
-            </span>
-            <span className="topbar-pro__brand-copy">
-              <span className="topbar-pro__brand-primary">{MAP2_PRIMARY_LABEL}</span>
-              <span className="topbar-pro__brand-secondary">{MAP2_PLATFORM_META}</span>
             </span>
           </NavLink>
         </HeaderNavigation>

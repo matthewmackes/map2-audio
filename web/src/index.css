@@ -604,6 +604,16 @@ img {
 .nav-mobile-menu-content--desktop .nav-mobile-group-grid {
   grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
   gap: 7px;
+  align-items: stretch;
+}
+
+.nav-mobile-menu-content--desktop .nav-mobile-item-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-mobile-menu-content--desktop .nav-mobile-item-wrap .nav-mobile-item {
+  flex: 1;
 }
 
 /* Horizontal card layout for desktop */
@@ -9656,6 +9666,16 @@ textarea {
 
 .audio-engine-page__accordion-body {
   padding-block-start: var(--cds-spacing-04);
+}
+
+.snapshot-modal .cds--modal-container {
+  inline-size: min(60rem, calc(100vw - 2rem));
+  max-inline-size: 60rem;
+}
+
+.snapshot-modal .cds--modal-content {
+  max-block-size: min(80vh, 52rem);
+  overflow-y: auto;
 }
 
 @media (max-width: 42rem) {

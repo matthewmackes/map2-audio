@@ -416,6 +416,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
               <article
                 key={`${plugin.uri}:${plugin.position}`}
                 className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''}`}
+                data-testid={`juce-grid-signal-plugin-card-${plugin.position}`}
                 draggable
                 onDragStart={() => setDraggedUri(plugin.uri)}
                 onDragOver={(event) => {
@@ -439,11 +440,14 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                       <Draggable size={16} />
                     </span>
                     <span className="juce-grid-page__signal-plugin-copy">
-                      <strong>{displayName}</strong>
-                      <span>{meta?.category || 'Utility'}</span>
+                      <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
+                      <span className="juce-grid-page__signal-plugin-category">{meta?.category || 'Utility'}</span>
                     </span>
                   </button>
-                  <div className="juce-grid-page__signal-plugin-actions">
+                  <div
+                    className="juce-grid-page__signal-plugin-actions"
+                    data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
+                  >
                     <Button
                       size="sm"
                       kind={plugin.bypassed ? 'secondary' : 'ghost'}
@@ -471,7 +475,10 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                   {plugin.bypassed && <Tag type="warm-gray">Bypassed</Tag>}
                 </div>
 
-                <div className="juce-grid-page__signal-levels">
+                <div
+                  className="juce-grid-page__signal-levels"
+                  data-testid={`juce-grid-signal-plugin-levels-${plugin.position}`}
+                >
                   <div className="juce-grid-page__signal-level">
                     <span>In</span>
                     <div className="juce-grid-page__signal-level-track">

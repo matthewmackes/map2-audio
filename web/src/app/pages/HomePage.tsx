@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Pin, PinFilled, Renew } from '@carbon/icons-react'
+import { ChevronDown, ChevronUp, Pin, PinFilled } from '@carbon/icons-react'
 import {
   Map2BrandMark,
-  MAP2_PLATFORM_META,
   MAP2_PLATFORM_VERSION,
   MAP2_PLATFORM_NAME,
   MAP2_PRIMARY_LABEL,
@@ -18,7 +17,6 @@ import {
   pinnableNavigationItems,
   type AdvancedMenuItem,
   type HardwareInterfaceMenuItem,
-  type NavigationHomeSection,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
@@ -350,9 +348,6 @@ export function HomePage() {
   )
   const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
 
-  const [activeSection, setActiveSection] = useState<NavigationHomeSection>(
-    homeNavigationTabSections[0]?.title ?? 'Audio Grid',
-  )
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
 
   const [tiles, setTiles] = useState<ClusterTile[]>([])
@@ -540,12 +535,12 @@ export function HomePage() {
     await updateSpecialSettings({ pinnedRoutes: nextRoutes })
   }
 
-  // ── Active section cards ────────────────────────────────────────────────────
+  // ── Visible sections (non-empty only) ──────────────────────────────────────
 
-  const activeCards = useMemo(() => {
-    const section = homeNavigationTabSections.find((s) => s.title === activeSection)
-    return section?.items ?? []
-  }, [activeSection])
+  const visibleSections = useMemo(
+    () => homeNavigationTabSections.filter((s) => s.items.length > 0),
+    [],
+  )
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -572,11 +567,6 @@ export function HomePage() {
         {/* Scanline shimmer */}
         <div className="hp-hero__scanlines" aria-hidden="true" />
 
-        {/* Version badge — bottom right */}
-        <div className="hp-hero__version-badge" aria-label="Platform version">
-          {MAP2_PLATFORM_META}
-        </div>
-
         {/* Hero copy + cluster status */}
         <div className="hp-hero__inner">
           <div className="hp-hero__copy">
@@ -590,12 +580,6 @@ export function HomePage() {
 
           {/* Live cluster node strip */}
           <div className="hp-hero__cluster" aria-label="Cluster node status">
-            <span className="hp-hero__cluster-label">
-              {tilesError
-                ? 'Cluster status unavailable'
-                : `${tiles.length > 1 ? 'MAP2 Cluster' : 'MAP2 Node'} · ${clusterName}`}
-            </span>
-
             <div className="hp-hero__nodes">
               {tilesLoading && (
                 <>
@@ -624,16 +608,6 @@ export function HomePage() {
                   </button>
                 ))}
             </div>
-
-            <button
-              type="button"
-              className="hp-hero__cluster-refresh"
-              onClick={() => void loadTiles()}
-              aria-label="Refresh cluster status"
-            >
-              <Renew size={14} aria-hidden />
-              Refresh
-            </button>
           </div>
         </div>
       </header>
@@ -642,180 +616,155 @@ export function HomePage() {
           CONTENT AREA
           ══════════════════════════════════════════════════════════ */}
       <main className="hp-content">
+        {visibleSections.map((section) => (
+          <section key={section.title} className="hp-group" aria-label={`${section.title} interfaces`}>
+            {/* ── Group heading ── */}
+            <div className="hp-group__heading">
+              <h2 className="hp-group__title">{section.title}</h2>
+              <span className="hp-group__count">{section.items.length}</span>
+            </div>
 
-        {/* ── Section tab bar ─────────────────────────────────── */}
-        <nav className="hp-tabs" aria-label="Navigation sections">
-          <div className="hp-tabs__list" role="tablist">
-            {homeNavigationTabSections.map((section) => (
-              <button
-                key={section.title}
-                type="button"
-                role="tab"
-                className={`hp-tabs__btn${activeSection === section.title ? ' is-active' : ''}`}
-                aria-selected={activeSection === section.title}
-                onClick={() => {
-                  setActiveSection(section.title)
-                  setExpandedCardId(null)
-                }}
-              >
-                {section.title}
-                <span className="hp-tabs__count">{section.items.length}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
+            {/* ── 4-up card grid ── */}
+            <div className="hp-card-grid" role="list" aria-label={`${section.title} navigation cards`}>
+              {section.items.map((item) => {
+                const cardId = `${item.to}-${item.label}`
+                const isBlocked = isBlockedHomeItem(item)
+                const isPinned = pinnedRouteSet.has(item.to)
+                const limitReached = !isPinned && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
+                const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
+                const maturityMeta = navigationMaturityMeta[item.maturity]
+                const profile = resolveHomeCardProfile(item)
+                const isExpanded = expandedCardId === cardId
+                const Icon = item.icon
 
-        {/* ── Section header ──────────────────────────────────── */}
-        <div className="hp-section-header" role="region" aria-label={`${activeSection} interfaces`}>
-          <h2>{activeSection} Interfaces</h2>
-          <span className="hp-section-count">
-            {activeCards.length} interface{activeCards.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-
-        {/* ── 4-up card grid ──────────────────────────────────── */}
-        <div
-          className="hp-card-grid"
-          role="list"
-          aria-label={`${activeSection} navigation cards`}
-        >
-          {activeCards.map((item) => {
-            const cardId = `${item.to}-${item.label}`
-            const isBlocked = isBlockedHomeItem(item)
-            const isPinned = pinnedRouteSet.has(item.to)
-            const limitReached = !isPinned && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
-            const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
-            const maturityMeta = navigationMaturityMeta[item.maturity]
-            const profile = resolveHomeCardProfile(item)
-            const isExpanded = expandedCardId === cardId
-            const Icon = item.icon
-
-            return (
-              <article
-                key={cardId}
-                role="listitem"
-                className={`hp-card${isBlocked ? ' is-blocked' : ''}`}
-                onClick={() => {
-                  if (!isBlocked) navigate(item.to)
-                }}
-                onKeyDown={(e) => {
-                  if ((e.key === 'Enter' || e.key === ' ') && !isBlocked) {
-                    e.preventDefault()
-                    navigate(item.to)
-                  }
-                }}
-                tabIndex={0}
-                aria-label={`Open ${item.label}`}
-              >
-                {/* Pin button */}
-                <button
-                  type="button"
-                  className={`hp-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (!pinDisabled) void handleTogglePin(item, !isPinned)
-                  }}
-                  title={
-                    !item.pinnable
-                      ? 'Cannot be pinned'
-                      : limitReached
-                        ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned`
-                        : isPinned
-                          ? 'Unpin from navigation'
-                          : 'Pin to navigation'
-                  }
-                  aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                  aria-pressed={isPinned}
-                  disabled={pinDisabled}
-                >
-                  {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
-                </button>
-
-                {/* Icon */}
-                <Icon className="hp-card__icon" aria-hidden />
-
-                {/* Maturity badge */}
-                <span
-                  className={`hp-card__maturity hp-card__maturity--${item.maturity}`}
-                  title={maturityMeta.description}
-                >
-                  {maturityMeta.label}
-                </span>
-
-                {/* Label */}
-                <h3 className="hp-card__label">{item.label}</h3>
-
-                {/* Description */}
-                <p className="hp-card__desc">{item.description}</p>
-
-                {/* Footer actions */}
-                <div className="hp-card__footer">
-                  <button
-                    type="button"
-                    className="hp-card__open-btn"
-                    disabled={isBlocked}
-                    onClick={(e) => {
-                      e.stopPropagation()
+                return (
+                  <article
+                    key={cardId}
+                    role="listitem"
+                    className={`hp-card${isBlocked ? ' is-blocked' : ''}`}
+                    onClick={() => {
                       if (!isBlocked) navigate(item.to)
                     }}
-                  >
-                    Open Interface
-                  </button>
-
-                  <button
-                    type="button"
-                    className="hp-card__details-btn"
-                    aria-expanded={isExpanded}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setExpandedCardId((current) => (current === cardId ? null : cardId))
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && !isBlocked) {
+                        e.preventDefault()
+                        navigate(item.to)
+                      }
                     }}
+                    tabIndex={0}
+                    aria-label={`Open ${item.label}`}
                   >
-                    {isExpanded ? (
-                      <>
-                        <ChevronUp size={14} aria-hidden /> Less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown size={14} aria-hidden /> Details
-                      </>
+                    {/* Pin button */}
+                    <button
+                      type="button"
+                      className={`hp-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (!pinDisabled) void handleTogglePin(item, !isPinned)
+                      }}
+                      title={
+                        !item.pinnable
+                          ? 'Cannot be pinned'
+                          : limitReached
+                            ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned`
+                            : isPinned
+                              ? 'Unpin from navigation'
+                              : 'Pin to navigation'
+                      }
+                      aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                      aria-pressed={isPinned}
+                      disabled={pinDisabled}
+                    >
+                      {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
+                    </button>
+
+                    {/* Icon */}
+                    <Icon className="hp-card__icon" aria-hidden />
+
+                    {/* Maturity badge */}
+                    <span
+                      className={`hp-card__maturity hp-card__maturity--${item.maturity}`}
+                      title={maturityMeta.description}
+                    >
+                      {maturityMeta.label}
+                    </span>
+
+                    {/* Label */}
+                    <h3 className="hp-card__label">{item.label}</h3>
+
+                    {/* Description */}
+                    <p className="hp-card__desc">{item.description}</p>
+
+                    {/* Footer actions */}
+                    <div className="hp-card__footer">
+                      <button
+                        type="button"
+                        className="hp-card__open-btn"
+                        disabled={isBlocked}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!isBlocked) navigate(item.to)
+                        }}
+                      >
+                        Open Interface
+                      </button>
+
+                      <button
+                        type="button"
+                        className="hp-card__details-btn"
+                        aria-expanded={isExpanded}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setExpandedCardId((current) => (current === cardId ? null : cardId))
+                        }}
+                      >
+                        {isExpanded ? (
+                          <>
+                            <ChevronUp size={14} aria-hidden /> Less
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown size={14} aria-hidden /> Details
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Expandable detail panel */}
+                    {isExpanded && (
+                      <div className="hp-card__detail-panel" role="note">
+                        <div>
+                          <p className="hp-card__detail-heading">Capabilities</p>
+                          <ul className="hp-card__detail-list">
+                            {profile.capabilities.slice(0, 4).map((cap) => (
+                              <li key={`${cardId}-${cap}`}>{cap}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div>
+                          <p className="hp-card__detail-heading">Workflow notes</p>
+                          <p className="hp-card__detail-body">{profile.learnMore}</p>
+                        </div>
+
+                        <div>
+                          <p className="hp-card__best-for-label">Best for</p>
+                          <p className="hp-card__best-for-value">{profile.bestFor}</p>
+                        </div>
+
+                        {item.gatedReason && (
+                          <p className="hp-card__detail-body" style={{ color: '#ffd7d9' }}>
+                            {item.gatedReason}
+                          </p>
+                        )}
+                      </div>
                     )}
-                  </button>
-                </div>
-
-                {/* Expandable detail panel */}
-                {isExpanded && (
-                  <div className="hp-card__detail-panel" role="note">
-                    <div>
-                      <p className="hp-card__detail-heading">Capabilities</p>
-                      <ul className="hp-card__detail-list">
-                        {profile.capabilities.slice(0, 4).map((cap) => (
-                          <li key={`${cardId}-${cap}`}>{cap}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="hp-card__detail-heading">Workflow notes</p>
-                      <p className="hp-card__detail-body">{profile.learnMore}</p>
-                    </div>
-
-                    <div>
-                      <p className="hp-card__best-for-label">Best for</p>
-                      <p className="hp-card__best-for-value">{profile.bestFor}</p>
-                    </div>
-
-                    {item.gatedReason && (
-                      <p className="hp-card__detail-body" style={{ color: '#ffd7d9' }}>
-                        {item.gatedReason}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </article>
-            )
-          })}
-        </div>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+        ))}
       </main>
     </div>
   )

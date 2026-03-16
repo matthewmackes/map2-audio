@@ -181,7 +181,11 @@ const MIDI_OPERATOR_PLAYBOOKS = [
 
 type MidiTabId = 'controller' | 'mappings' | 'commands' | 'devices' | 'activity' | 'presets'
 
-export function MIDIPage() {
+interface MidiCoreControlCenterProps {
+  embedded?: boolean
+}
+
+export function MidiCoreControlCenter({ embedded = false }: MidiCoreControlCenterProps) {
   const queryClient = useQueryClient()
   const [selectedTab, setSelectedTab] = useState<MidiTabId>('controller')
 
@@ -256,73 +260,92 @@ export function MIDIPage() {
   }
 
   return (
-    <div className="stack midi-page">
-      <PageHeader
-        title="MIDI Control Center"
-        subtitle="Professional MIDI operations for controller onboarding, automation logic, device orchestration, and show-safe recall."
-        icon={<MusicNote size={32} weight="duotone" style={{ color: '#3b82f6' }} />}
-        actions={
-          <div className="midi-header-actions">
-            <Link className="btn btn-ghost" to="/midi-hub">
-              <Broadcast size={16} weight="duotone" /> MIDI Hub
-            </Link>
-            <button
-              className="btn btn-ghost"
-              onClick={refreshMidiViews}
-            >
-              <ArrowsClockwise size={16} weight="duotone" /> Refresh All
+    <div className={`stack midi-page${embedded ? ' midi-page--embedded' : ''}`}>
+      {!embedded ? (
+        <>
+          <PageHeader
+            title="MIDI Control Center"
+            subtitle="Professional MIDI operations for controller onboarding, automation logic, device orchestration, and show-safe recall."
+            icon={<MusicNote size={32} weight="duotone" style={{ color: '#3b82f6' }} />}
+            actions={
+              <div className="midi-header-actions">
+                <Link className="btn btn-ghost" to="/midi-hub">
+                  <Broadcast size={16} weight="duotone" /> MIDI Hub
+                </Link>
+                <button
+                  className="btn btn-ghost"
+                  onClick={refreshMidiViews}
+                >
+                  <ArrowsClockwise size={16} weight="duotone" /> Refresh All
+                </button>
+              </div>
+            }
+          />
+
+          <section className="midi-overview card">
+            <div className="midi-overview__header">
+              <div>
+                <p className="midi-overview__eyebrow">MIDI Architecture</p>
+                <h3>Signal-to-Action Pipeline</h3>
+                <p className="subtitle">
+                  MAP2 now spans two layers: this page for core MIDI control and <strong>MIDI Hub</strong> for advanced routing,
+                  scripting, scheduling, and networked orchestration.
+                </p>
+              </div>
+              <div className="midi-overview__status">
+                <span className={`pill ${midiReadinessTone}`}>Readiness: {midiReadinessLabel}</span>
+                <span className="pill muted">Coverage: {workflowCoverage}%</span>
+                <span className="pill muted">Connections: {activeConnections}/2</span>
+              </div>
+            </div>
+
+            <div className="midi-overview__path">
+              {MIDI_SIGNAL_PATH_STEPS.map((step, index) => (
+                <article key={step.title} className="midi-overview__path-step">
+                  <span className="midi-overview__step-index">{index + 1}</span>
+                  <div>
+                    <h4>{step.title}</h4>
+                    <p>{step.detail}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="midi-overview__actions">
+              <button className="btn btn-primary" onClick={() => setSelectedTab('controller')}>
+                <GameController size={16} weight="duotone" /> Configure Controllers
+              </button>
+              <button className="btn btn-ghost" onClick={() => setSelectedTab('mappings')}>
+                <MusicNote size={16} weight="duotone" /> Edit Mapping Layer
+              </button>
+              <button className="btn btn-ghost" onClick={() => setSelectedTab('commands')}>
+                <Lightning size={16} weight="duotone" /> Program Command Logic
+              </button>
+              <button className="btn btn-ghost" onClick={() => setSelectedTab('presets')}>
+                <FloppyDisk size={16} weight="duotone" /> Manage Presets
+              </button>
+              <Link className="btn btn-ghost" to="/midi-hub">
+                <Broadcast size={16} weight="duotone" /> Open Advanced MIDI Hub
+              </Link>
+            </div>
+          </section>
+        </>
+      ) : (
+        <section className="card">
+          <div className="section-heading">
+            <div>
+              <h3>Core MIDI Controls</h3>
+              <p className="subtitle">
+                Legacy `/midi` workflows now live inside MIDI Hub so controller setup, commands, device selection, activity,
+                and core presets remain available after the dedicated page is retired.
+              </p>
+            </div>
+            <button className="btn btn-ghost" onClick={refreshMidiViews}>
+              <ArrowsClockwise size={16} weight="duotone" /> Refresh Core MIDI
             </button>
           </div>
-        }
-      />
-
-      <section className="midi-overview card">
-        <div className="midi-overview__header">
-          <div>
-            <p className="midi-overview__eyebrow">MIDI Architecture</p>
-            <h3>Signal-to-Action Pipeline</h3>
-            <p className="subtitle">
-              MAP2 now spans two layers: this page for core MIDI control and <strong>MIDI Hub</strong> for advanced routing,
-              scripting, scheduling, and networked orchestration.
-            </p>
-          </div>
-          <div className="midi-overview__status">
-            <span className={`pill ${midiReadinessTone}`}>Readiness: {midiReadinessLabel}</span>
-            <span className="pill muted">Coverage: {workflowCoverage}%</span>
-            <span className="pill muted">Connections: {activeConnections}/2</span>
-          </div>
-        </div>
-
-        <div className="midi-overview__path">
-          {MIDI_SIGNAL_PATH_STEPS.map((step, index) => (
-            <article key={step.title} className="midi-overview__path-step">
-              <span className="midi-overview__step-index">{index + 1}</span>
-              <div>
-                <h4>{step.title}</h4>
-                <p>{step.detail}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <div className="midi-overview__actions">
-          <button className="btn btn-primary" onClick={() => setSelectedTab('controller')}>
-            <GameController size={16} weight="duotone" /> Configure Controllers
-          </button>
-          <button className="btn btn-ghost" onClick={() => setSelectedTab('mappings')}>
-            <MusicNote size={16} weight="duotone" /> Edit Mapping Layer
-          </button>
-          <button className="btn btn-ghost" onClick={() => setSelectedTab('commands')}>
-            <Lightning size={16} weight="duotone" /> Program Command Logic
-          </button>
-          <button className="btn btn-ghost" onClick={() => setSelectedTab('presets')}>
-            <FloppyDisk size={16} weight="duotone" /> Manage Presets
-          </button>
-          <Link className="btn btn-ghost" to="/midi-hub">
-            <Broadcast size={16} weight="duotone" /> Open Advanced MIDI Hub
-          </Link>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Status Cards */}
       <div className="grid four">
@@ -373,51 +396,55 @@ export function MIDIPage() {
         />
       </div>
 
-      <section className="midi-capabilities card">
-        <div className="section-heading">
-          <div>
-            <h3>Capability Matrix</h3>
-            <p className="subtitle">Every MIDI feature family in MAP2, organized by operational objective.</p>
+      {!embedded ? (
+        <section className="midi-capabilities card">
+          <div className="section-heading">
+            <div>
+              <h3>Capability Matrix</h3>
+              <p className="subtitle">Every MIDI feature family in MAP2, organized by operational objective.</p>
+            </div>
           </div>
-        </div>
-        <div className="midi-capabilities__grid">
-          {MIDI_CAPABILITY_CLUSTERS.map((cluster) => (
-            <article key={cluster.title} className="midi-capability-card">
-              <header>
-                <h4>{cluster.title}</h4>
-                <p>{cluster.subtitle}</p>
-              </header>
-              <ul>
-                {cluster.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-      </section>
+          <div className="midi-capabilities__grid">
+            {MIDI_CAPABILITY_CLUSTERS.map((cluster) => (
+              <article key={cluster.title} className="midi-capability-card">
+                <header>
+                  <h4>{cluster.title}</h4>
+                  <p>{cluster.subtitle}</p>
+                </header>
+                <ul>
+                  {cluster.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-      <section className="midi-playbooks card">
-        <div className="section-heading">
-          <div>
-            <h3>Operator Playbooks</h3>
-            <p className="subtitle">Recommended execution patterns for live and studio MIDI operations.</p>
+      {!embedded ? (
+        <section className="midi-playbooks card">
+          <div className="section-heading">
+            <div>
+              <h3>Operator Playbooks</h3>
+              <p className="subtitle">Recommended execution patterns for live and studio MIDI operations.</p>
+            </div>
           </div>
-        </div>
-        <div className="midi-playbooks__grid">
-          {MIDI_OPERATOR_PLAYBOOKS.map((playbook) => (
-            <article key={playbook.title} className="midi-playbook-card">
-              <h4>{playbook.title}</h4>
-              <p>{playbook.detail}</p>
-              <ol>
-                {playbook.steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            </article>
-          ))}
-        </div>
-      </section>
+          <div className="midi-playbooks__grid">
+            {MIDI_OPERATOR_PLAYBOOKS.map((playbook) => (
+              <article key={playbook.title} className="midi-playbook-card">
+                <h4>{playbook.title}</h4>
+                <p>{playbook.detail}</p>
+                <ol>
+                  {playbook.steps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* Tabs */}
       <div className="card midi-workbench">
@@ -494,6 +521,10 @@ export function MIDIPage() {
       </div>
     </div>
   )
+}
+
+export function MIDIPage() {
+  return <MidiCoreControlCenter />
 }
 
 // ========== Mappings Tab ==========

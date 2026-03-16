@@ -61,13 +61,17 @@ export interface HardwareInterfaceMenuItem {
   description: string
   color: string
   homeSection: 'Hardware'
+  includeInAdvancedMenu?: boolean
   pinnable: boolean
   maturity: NavigationMaturityState
   kind: 'link'
   gatedReason?: string
   showOnHome?: boolean
+  showInHardwareSubmenu?: boolean
   deviceType?: string
 }
+
+export type AdvancedNavigationItem = AdvancedMenuItem | HardwareInterfaceMenuItem
 
 export interface NavigationSection {
   title: NavigationHomeSection
@@ -151,7 +155,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     icon: MapRealtimeEngineIcon,
     description: 'Monitor the realtime audio engine, inspect metering and signal-path health, and adjust the runtime controls that drive the main processing path.',
     color: 'var(--cds-link-primary)',
-    homeSection: 'Audio Grid',
+    homeSection: 'System',
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'qualified-with-waiver',
@@ -209,18 +213,6 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     kind: 'link',
   },
   {
-    to: '/snapshots',
-    label: 'Snapshots',
-    icon: SquaresFour,
-    description: 'Save, organize, recall, import, and export snapshot states so rigs can be restored quickly and consistently.',
-    color: 'var(--cds-support-success)',
-    homeSection: 'Audio Grid',
-    includeInAdvancedMenu: false,
-    pinnable: true,
-    maturity: 'beta',
-    kind: 'link',
-  },
-  {
     to: '/audio-artifacts',
     label: 'Audio Artifacts',
     shortLabel: 'Artifacts',
@@ -235,29 +227,17 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     showOnHome: true,
   },
   {
-    to: '/midi',
-    label: 'MIDI',
-    icon: MusicNotes,
-    description: 'Operate the core MIDI control surface for mappings, commands, devices, activity monitoring, and the broader MAP2 MIDI workflow.',
-    color: 'var(--cds-support-error)',
-    homeSection: 'MIDI',
-    includeInAdvancedMenu: false,
-    pinnable: true,
-    maturity: 'beta',
-    kind: 'link',
-  },
-  {
     to: '/midi-hub',
     label: 'MIDI Hub',
     icon: MusicNotes,
-    description: 'Run the native MIDI routing and automation hub for ports, scripts, presets, clock, diagnostics, and advanced controller workflows.',
+    description: 'Run the unified MIDI surface for controller setup, core command workflows, routing, scripts, presets, clock, diagnostics, and advanced controller orchestration.',
     color: 'var(--cds-support-success)',
     homeSection: 'MIDI',
     includeInAdvancedMenu: true,
     pinnable: true,
     maturity: 'beta',
     kind: 'link',
-    showOnHome: false,
+    showOnHome: true,
   },
   {
     to: '/mpx1',
@@ -346,10 +326,6 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
 
 export const navigationCatalogItems = baseNavigationCatalog
 
-export const advancedMenuItems = navigationCatalogItems.filter(
-  (item): item is AdvancedMenuItem => item.includeInAdvancedMenu,
-)
-
 export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
   {
     to: '/edirol-ua1000',
@@ -359,10 +335,13 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     description: 'Open the Edirol UA-1000 control page to inspect device status and interface-specific audio controls for that hardware path.',
     color: 'var(--cds-link-primary)',
     homeSection: 'Hardware',
-    pinnable: true,
+    includeInAdvancedMenu: true,
+    pinnable: false,
     maturity: 'beta',
     kind: 'link',
     gatedReason: 'Opens even when the interface is offline; live controls reflect detected UA-1000 hardware.',
+    showOnHome: false,
+    showInHardwareSubmenu: false,
     deviceType: 'edirol-ua1000',
   },
   {
@@ -373,10 +352,13 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     description: 'Open the HoTone JoGG interface page for connection-state visibility and device-specific controls when that interface profile is active.',
     color: 'var(--cds-support-error)',
     homeSection: 'Hardware',
-    pinnable: true,
+    includeInAdvancedMenu: true,
+    pinnable: false,
     maturity: 'beta',
     kind: 'link',
     gatedReason: 'Opens directly; live status reflects whether the HoTone JoGG is detected on this host.',
+    showOnHome: false,
+    showInHardwareSubmenu: false,
     deviceType: 'hotone-jogg',
   },
   {
@@ -391,8 +373,16 @@ export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
     maturity: 'experimental',
     kind: 'link',
     gatedReason: 'Uses the shared HoTone page route for profile experimentation; live hardware state is still shown in-page.',
+    showOnHome: false,
     deviceType: 'generic-interface',
   },
+]
+
+export const advancedMenuItems: AdvancedNavigationItem[] = [
+  ...navigationCatalogItems.filter(
+    (item): item is AdvancedMenuItem => item.includeInAdvancedMenu,
+  ),
+  ...hardwareInterfaceMenuItems.filter((item) => item.includeInAdvancedMenu),
 ]
 
 export const homeNavigationItem = navigationCatalogItems.find((item) => item.to === '/') as ShellNavigationItem
@@ -443,6 +433,7 @@ const PINNED_ROUTE_ALIASES: Record<string, string> = {
   '/cluster-dashboard': '/platform',
   '/plugins': '/audio-artifacts',
   '/library': '/audio-artifacts',
+  '/midi': '/midi-hub',
 }
 
 export function normalizePinnedRoutes(routes: string[] | null | undefined): string[] {

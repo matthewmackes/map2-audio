@@ -28,7 +28,6 @@ import {
   ProgressBar,
   RadioButton,
   RadioButtonGroup,
-  Row,
   Select,
   SelectItem,
   StructuredListBody,
@@ -60,7 +59,6 @@ import {
   SettingsView,
   Timer,
   WarningAltFilled,
-  Wifi,
 } from '@carbon/icons-react'
 import { usePipeWire } from '../hooks/usePipeWire'
 import { audioApi, latencyV2Api } from '../../map2/api'
@@ -98,7 +96,6 @@ type RoutingRow = {
 type RoutingDefinition = {
   id: string
   title: string
-  description: string
   headers: Array<{ key: string; header: string }>
   rows: RoutingRow[]
 }
@@ -190,7 +187,6 @@ function SourceOfTruthSection({ nodeId }: { nodeId?: string | null }) {
         <div className="audio-engine-page__section-header">
           <div>
             <h2 className="audio-engine-page__section-title">Source of truth</h2>
-            <p className="audio-engine-page__muted">Loading rate, clock, and transport alignment.</p>
           </div>
         </div>
         <InlineLoading description="Loading source-of-truth snapshot" />
@@ -231,7 +227,6 @@ function SourceOfTruthSection({ nodeId }: { nodeId?: string | null }) {
       <div className="audio-engine-page__section-header">
         <div>
           <h2 className="audio-engine-page__section-title">Source of truth</h2>
-          <p className="audio-engine-page__muted">Single-node alignment snapshot for engine, PipeWire, S/PDIF, and AVB state.</p>
         </div>
         <div className="audio-engine-page__tag-row">
           <Tag type={tone}>{payload.status.toUpperCase()}</Tag>
@@ -268,20 +263,15 @@ function SourceOfTruthSection({ nodeId }: { nodeId?: string | null }) {
 
 function HealthList({
   title,
-  description,
   rows,
 }: {
   title: string
-  description: string
   rows: Array<{ label: string; value: string; tag?: React.ReactNode }>
 }) {
   return (
     <Tile className="audio-engine-page__health-tile">
       <div className="audio-engine-page__section-header">
-        <div>
-          <h3 className="audio-engine-page__section-title">{title}</h3>
-          <p className="audio-engine-page__muted">{description}</p>
-        </div>
+        <h3 className="audio-engine-page__section-title">{title}</h3>
       </div>
       <StructuredListWrapper aria-label={title}>
         <StructuredListBody>
@@ -338,10 +328,7 @@ function LatencyMonitorPanel({ nodeId }: { nodeId?: string | null }) {
   return (
     <Tile className="audio-engine-page__latency-monitor">
       <div className="audio-engine-page__section-header">
-        <div>
-          <h3 className="audio-engine-page__section-title">Latency monitor</h3>
-          <p className="audio-engine-page__muted">Round-trip latency, callback jitter, and xrun recovery.</p>
-        </div>
+        <h3 className="audio-engine-page__section-title">Latency monitor</h3>
         <Button kind="danger--tertiary" size="sm" renderIcon={Renew} onClick={() => void resetXruns()} disabled={isResetting}>
           {isResetting ? 'Resetting…' : 'Reset xruns'}
         </Button>
@@ -382,7 +369,6 @@ function RoutingTable({
         <TableContainer
           {...getTableContainerProps()}
           title={definition.title}
-          description={definition.description}
           className="audio-engine-page__table-container"
         >
           <TableToolbar {...getToolbarProps()}>
@@ -483,7 +469,6 @@ export function AudioEnginePage() {
   const quantumOptions = [32, 64, 128, 256, 512, 1024, 2048]
   const clockSourceValue = pw.settings.clock_force_rate > 0 ? 'forced' : 'pipewire'
   const clockRoleValue = detailNodeMeta.isLocal ? 'master' : 'slave'
-  const sourceHost = window.location.hostname || detailNodeMeta.hostname
 
   const pipewireRows = [
     {
@@ -544,7 +529,6 @@ export function AudioEnginePage() {
   const devicesDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'devices',
     title: 'Audio devices',
-    description: 'Physical and logical devices discovered from PipeWire.',
     headers: [
       { key: 'name', header: 'Name' },
       { key: 'type', header: 'Type' },
@@ -568,7 +552,6 @@ export function AudioEnginePage() {
   const sinksDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'sinks',
     title: 'Sink nodes',
-    description: 'Output nodes and their current channel/link state.',
     headers: [
       { key: 'name', header: 'Name' },
       { key: 'channels', header: 'Channels' },
@@ -587,7 +570,6 @@ export function AudioEnginePage() {
   const sourcesDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'sources',
     title: 'Source nodes',
-    description: 'Input nodes and their current channel/link state.',
     headers: [
       { key: 'name', header: 'Name' },
       { key: 'channels', header: 'Channels' },
@@ -606,7 +588,6 @@ export function AudioEnginePage() {
   const streamsDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'streams',
     title: 'Active streams',
-    description: 'Client-to-media stream activity observed on the detail node.',
     headers: [
       { key: 'path', header: 'Source → Sink' },
       { key: 'format', header: 'Format' },
@@ -625,7 +606,6 @@ export function AudioEnginePage() {
   const portsDefinition = useMemo<RoutingDefinition>(() => ({
     id: 'ports',
     title: 'Port connections',
-    description: 'Expanded link map for all active PipeWire ports.',
     headers: [
       { key: 'source', header: 'Source port' },
       { key: 'dest', header: 'Dest port' },
@@ -651,7 +631,6 @@ export function AudioEnginePage() {
       <Layer className="audio-engine-page__surface">
         <PageHeader
           title="Audio Engine"
-          subtitle="Carbon operator surface for engine status, live metering, routing, and diagnostics."
           icon={<Activity size={32} />}
           actions={(
             <div className="audio-engine-page__header-actions">
@@ -694,9 +673,6 @@ export function AudioEnginePage() {
             <div className="audio-engine-page__header-summary">
               <div>
                 <h2 className="audio-engine-page__section-title">Cluster mode</h2>
-                <p className="audio-engine-page__muted">
-                  Compare all nodes, then drive detailed panels from {detailNodeMeta.hostname}.
-                </p>
               </div>
               <div className="audio-engine-page__tag-row">
                 <Tag type={clusterHealth}>Cluster health</Tag>
@@ -707,7 +683,6 @@ export function AudioEnginePage() {
             <div className="audio-engine-page__header-summary">
               <div>
                 <h2 className="audio-engine-page__section-title">{detailNodeMeta.hostname}</h2>
-                <p className="audio-engine-page__muted">IP / host: {sourceHost}</p>
               </div>
               <div className="audio-engine-page__tag-row">
                 <Tag type="warm-gray">{detailNodeMeta.role || 'Standalone'}</Tag>
@@ -731,14 +706,10 @@ export function AudioEnginePage() {
 
         <section className="audio-engine-page__section" aria-labelledby="audio-engine-metering">
           <div className="audio-engine-page__section-header">
-            <div>
-              <h2 id="audio-engine-metering" className="audio-engine-page__section-title">Live Metering</h2>
-              <p className="audio-engine-page__muted">Always-visible operator strip for spectrum, levels, loudness, and dynamics.</p>
-            </div>
+            <h2 id="audio-engine-metering" className="audio-engine-page__section-title">Live Metering</h2>
           </div>
 
           <Grid condensed fullWidth>
-            <Row>
               <Column sm={4} md={4} lg={4}>
                 <Tile className="audio-engine-page__panel-tile">
                   <div className="audio-engine-page__panel-header">
@@ -749,13 +720,7 @@ export function AudioEnginePage() {
                 </Tile>
               </Column>
               <Column sm={4} md={4} lg={4}>
-                <Tile className="audio-engine-page__panel-tile">
-                  <div className="audio-engine-page__panel-header">
-                    <Wifi size={20} />
-                    <h3 className="audio-engine-page__panel-title">Signal Levels</h3>
-                  </div>
-                  <VuMeterDisplay nodeId={detailNodeId} showInput showOutput />
-                </Tile>
+                <VuMeterDisplay nodeId={detailNodeId} showInput showOutput />
               </Column>
               <Column sm={4} md={4} lg={4}>
                 <Tile className="audio-engine-page__panel-tile">
@@ -775,44 +740,30 @@ export function AudioEnginePage() {
                     </div>
                     <PhaseCorrelationMeter nodeId={detailNodeId} showStereoInfo orientation="horizontal" />
                   </Tile>
-                  <Tile className="audio-engine-page__panel-tile">
-                    <div className="audio-engine-page__panel-header">
-                      <Chip size={20} />
-                      <h3 className="audio-engine-page__panel-title">Dynamics</h3>
-                    </div>
-                    <DynamicsMeteringPanel nodeId={detailNodeId} showCompressor showLimiter showGate />
-                  </Tile>
+                  <DynamicsMeteringPanel nodeId={detailNodeId} showCompressor showLimiter showGate />
                 </div>
               </Column>
-            </Row>
           </Grid>
         </section>
 
         <section className="audio-engine-page__section" aria-labelledby="audio-engine-health">
           <div className="audio-engine-page__section-header">
-            <div>
-              <h2 id="audio-engine-health" className="audio-engine-page__section-title">Engine Health</h2>
-              <p className="audio-engine-page__muted">PipeWire daemon status, JUCE engine state, and operational alerts.</p>
-            </div>
+            <h2 id="audio-engine-health" className="audio-engine-page__section-title">Engine Health</h2>
           </div>
 
           <Grid condensed fullWidth>
-            <Row>
               <Column sm={4} md={4} lg={8}>
                 <HealthList
                   title="PipeWire daemon"
-                  description="Clocking, latency, and transport state for the current detail node."
                   rows={pipewireRows}
                 />
               </Column>
               <Column sm={4} md={4} lg={8}>
                 <HealthList
                   title="JUCE engine"
-                  description="Operator-facing summary of audio graph scale and node placement."
                   rows={juceRows}
                 />
               </Column>
-            </Row>
           </Grid>
 
           {alerts.length > 0 ? (
@@ -833,14 +784,10 @@ export function AudioEnginePage() {
 
         <section className="audio-engine-page__section" aria-labelledby="audio-engine-routing">
           <div className="audio-engine-page__section-header">
-            <div>
-              <h2 id="audio-engine-routing" className="audio-engine-page__section-title">Signal Path &amp; Routing</h2>
-              <p className="audio-engine-page__muted">Always-expanded topology tables on desktop and tablet, with mobile accordions below 672px.</p>
-            </div>
+            <h2 id="audio-engine-routing" className="audio-engine-page__section-title">Signal Path &amp; Routing</h2>
           </div>
 
           <Grid condensed fullWidth>
-            <Row>
               <Column sm={4} md={4} lg={8}>
                 <RoutingTable
                   definition={devicesDefinition}
@@ -906,20 +853,15 @@ export function AudioEnginePage() {
                   }}
                 />
               </Column>
-            </Row>
           </Grid>
         </section>
 
         <section className="audio-engine-page__section" aria-labelledby="audio-engine-diagnostics">
           <div className="audio-engine-page__section-header">
-            <div>
-              <h2 id="audio-engine-diagnostics" className="audio-engine-page__section-title">Diagnostics &amp; Controls</h2>
-              <p className="audio-engine-page__muted">Read-only metrics on the left, operator controls on the right.</p>
-            </div>
+            <h2 id="audio-engine-diagnostics" className="audio-engine-page__section-title">Diagnostics &amp; Controls</h2>
           </div>
 
           <Grid condensed fullWidth>
-            <Row>
               <Column sm={4} md={4} lg={8}>
                 <div className="audio-engine-page__stack">
                   <Tile className="audio-engine-page__panel-tile">
@@ -947,7 +889,7 @@ export function AudioEnginePage() {
                       <h3 className="audio-engine-page__panel-title">Buffer Size (samples)</h3>
                     </div>
                     <RadioButtonGroup
-                      legendText="Buffer Size (samples)"
+                      legendText="Quantum"
                       name="audio-engine-quantum"
                       valueSelected={String(currentQuantum)}
                       orientation="vertical"
@@ -977,7 +919,7 @@ export function AudioEnginePage() {
                         <SelectItem value="forced" text="Forced rate" />
                       </Select>
                       <RadioButtonGroup
-                        legendText="Clock role"
+                        legendText="Role"
                         name="audio-engine-clock-role"
                         valueSelected={clockRoleValue}
                         orientation="vertical"
@@ -1019,7 +961,6 @@ export function AudioEnginePage() {
                   </Tile>
                 </div>
               </Column>
-            </Row>
           </Grid>
         </section>
       </Layer>

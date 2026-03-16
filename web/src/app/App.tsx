@@ -22,13 +22,11 @@ const ReactQueryDevtools = lazy(() =>
 const HomePage              = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })))
 const PlatformShellPage     = lazy(() => import('./pages/PlatformShellPage').then(m => ({ default: m.PlatformShellPage })))
 const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => ({ default: m.ChainsPage })))
-const SnapshotsPage         = lazy(() => import('./pages/SnapshotsPage').then(m => ({ default: m.SnapshotsPage })))
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
 const AboutPage             = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const LV2PluginsPage        = lazy(() => import('./pages/LV2PluginsPage').then(m => ({ default: m.LV2PluginsPage })))
 const LibraryPage           = lazy(() => import('./pages/LibraryPage').then(m => ({ default: m.LibraryPage })))
 const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').then(m => ({ default: m.AudioArtifactsPage })))
-const MIDIPage              = lazy(() => import('./pages/MIDIPage').then(m => ({ default: m.MIDIPage })))
 const MidiHubPage           = lazy(() => import('./pages/MidiHubPage').then(m => ({ default: m.MidiHubPage })))
 const JuceGridPage          = lazy(() => import('./pages/JuceGridPage').then(m => ({ default: m.JuceGridPage })))
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
@@ -164,14 +162,12 @@ export function App() {
                                 <Route path="/" element={<HomePage />} />
                                 <Route path="/platform" element={<PlatformShellPage />} />
                                 <Route path="/chains" element={<ChainsPage />} />
-                                <Route path="/snapshots" element={<SnapshotsPage />} />
-                                <Route path="/presets" element={<Navigate to="/snapshots" replace />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
                                 <Route path="/about" element={<AboutPage />} />
                                 <Route path="/plugins" element={<Navigate to="/audio-artifacts?category=lv2-plugins" replace />} />
                                 <Route path="/library" element={<Navigate to="/audio-artifacts" replace />} />
                                 <Route path="/audio-artifacts" element={<AudioArtifactsPage />} />
-                                <Route path="/midi" element={<MIDIPage />} />
+                                <Route path="/midi" element={<Navigate to="/midi-hub" replace />} />
                                 <Route path="/midi-hub" element={<MidiHubPage />} />
                                 <Route path="/midi-hub-2" element={<Navigate to="/midi-hub" replace />} />
                                 <Route path="/grid" element={<Navigate to="/juce-grid" replace />} />

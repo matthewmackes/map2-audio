@@ -10,6 +10,8 @@ import json
 import threading
 import asyncio
 import os
+import math
+import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
@@ -591,6 +593,158 @@ try:
                 "error": str(exc),
             }
 
+    def _is_integral_value(value: Any) -> bool:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return False
+        return math.isfinite(numeric) and abs(numeric - round(numeric)) < 1e-9
+
+    def _infer_parameter_profile(
+        name: str,
+        symbol: str,
+        is_toggled: bool,
+        minimum: float,
+        maximum: float,
+        default_value: float,
+    ) -> tuple[str, str]:
+        token = f"{name} {symbol}".strip().lower()
+        if is_toggled:
+            return "", "integer"
+        if any(hint in token for hint in ("hz", "freq", "frequency", "cutoff")):
+            return "Hz", "frequency"
+        if any(hint in token for hint in ("db", "gain", "trim", "threshold", "level")):
+            return "dB", "gain-db"
+        if any(hint in token for hint in ("ms", "delay", "attack", "release", "time", "predelay", "pre-delay", "decay", "hold")):
+            return "ms", "time-ms"
+        if all(_is_integral_value(value) for value in (minimum, maximum, default_value)):
+            return "", "integer"
+        return "", "default"
+
+    def _infer_parameter_step(
+        minimum: float,
+        maximum: float,
+        default_value: float,
+        profile: str,
+        is_toggled: bool,
+    ) -> float:
+        span = max(0.0, maximum - minimum)
+        if is_toggled:
+            return 1.0
+        if all(_is_integral_value(value) for value in (minimum, maximum, default_value)) and span <= 2048:
+            return 1.0
+        if profile == "gain-db":
+            return 0.1
+        if profile == "frequency":
+            return 1.0
+        if profile == "time-ms":
+            return 1.0 if span >= 10 else 0.1
+        if span <= 1:
+            return 0.01
+        if span <= 10:
+            return 0.1
+        if span <= 100:
+            return 0.5
+        return 1.0
+
+    def _precision_from_step(step: float) -> Optional[int]:
+        if not math.isfinite(step) or step <= 0:
+            return None
+        normalized = f"{step:.12f}".rstrip("0").rstrip(".")
+        if "." not in normalized:
+            return 0
+        return len(normalized.split(".", 1)[1])
+
+    def _normalize_parameter_key(raw_value: str, fallback: str) -> str:
+        normalized = re.sub(r"[^a-z0-9]+", "-", raw_value.strip().lower()).strip("-")
+        return normalized or fallback
+
+    def _plugin_parameter_source(plugin: Dict[str, Any]) -> str:
+        format_name = str(plugin.get("format") or "").upper()
+        if format_name == "JUCE":
+            return "native"
+        if format_name == "LV2":
+            return "lv2"
+        if format_name == "HARDWARE":
+            return "hardware"
+        return "plugin"
+
+    def _build_parameter_schema_payload(plugins: List[Dict[str, Any]]) -> Dict[str, Any]:
+        schema: Dict[str, Dict[str, Any]] = {}
+        plugin_entries: List[Dict[str, Any]] = []
+
+        for plugin in plugins:
+            source = _plugin_parameter_source(plugin)
+            if source not in {"native", "lv2"}:
+                continue
+
+            plugin_id = str(plugin.get("uri") or "").strip()
+            if not plugin_id:
+                continue
+
+            parameter_entries: List[Dict[str, Any]] = []
+            for parameter in plugin.get("parameters", []):
+                try:
+                    minimum = float(parameter.get("min", 0.0))
+                    maximum = float(parameter.get("max", 1.0))
+                    default_value = float(parameter.get("default", minimum))
+                except (TypeError, ValueError):
+                    continue
+
+                if not (math.isfinite(minimum) and math.isfinite(maximum) and minimum < maximum):
+                    continue
+
+                default_value = min(max(default_value, minimum), maximum)
+                name = str(parameter.get("name") or "").strip()
+                symbol = str(parameter.get("symbol") or "").strip()
+                index = int(parameter.get("index", len(parameter_entries)))
+                is_toggled = bool(parameter.get("is_toggled", False))
+                is_log = bool(parameter.get("is_log", False))
+                param_key = _normalize_parameter_key(symbol or name, f"param-{index}")
+                unit, profile = _infer_parameter_profile(name, symbol, is_toggled, minimum, maximum, default_value)
+                step = _infer_parameter_step(minimum, maximum, default_value, profile, is_toggled)
+                precision = _precision_from_step(step)
+
+                descriptor: Dict[str, Any] = {
+                    "min": minimum,
+                    "max": maximum,
+                    "step": step,
+                    "unit": unit,
+                    "defaultValue": default_value,
+                    "profile": profile,
+                }
+                if precision is not None and precision > 0:
+                    descriptor["precision"] = precision
+
+                schema[f"{plugin_id}:{param_key}"] = descriptor
+                parameter_entries.append({
+                    "pluginId": plugin_id,
+                    "paramKey": param_key,
+                    "index": index,
+                    "name": name or param_key,
+                    "symbol": symbol,
+                    "descriptor": descriptor,
+                    "isLog": is_log,
+                    "isToggled": is_toggled,
+                    "source": source,
+                    "format": plugin.get("format"),
+                })
+
+            plugin_entries.append({
+                "pluginId": plugin_id,
+                "name": plugin.get("name", plugin_id),
+                "format": plugin.get("format"),
+                "source": source,
+                "parameterCount": len(parameter_entries),
+                "parameters": parameter_entries,
+            })
+
+        return {
+            "schema": schema,
+            "plugins": plugin_entries,
+            "count": len(schema),
+        }
+
     @router.get("/discover")
     async def discover_plugins(
         response: Response,
@@ -750,6 +904,22 @@ try:
     async def refresh_plugins(response: Response):
         """Force refresh of plugin cache and return updated list."""
         return await discover_plugins(response=response, refresh=True)
+
+    @router.get("/parameter-schema")
+    async def get_parameter_schema(
+        response: Response,
+        refresh: bool = Query(False, description="Force refresh of plugin cache before serialising schema"),
+    ):
+        """Serialise discovered native and LV2 plugin parameter descriptors for frontend hydration."""
+        _set_plugins_cache_header(response, refresh)
+        discovery = await discover_plugins(response=Response(), refresh=refresh)
+        plugins = discovery.get("plugins", []) if isinstance(discovery, dict) else []
+        payload = _build_parameter_schema_payload(plugins)
+        if isinstance(discovery, dict):
+            for key in ("cached", "warning", "error"):
+                if key in discovery:
+                    payload[key] = discovery[key]
+        return payload
 
     @router.delete("/cache")
     async def clear_plugin_cache():
@@ -1373,15 +1543,27 @@ try:
 
     def _transform_juce_plugin(p: dict) -> dict:
         """Transform a JUCE plugin info to API response format."""
+        uri = p.get("uri", "")
+        raw_format = p.get("format") or p.get("format_name") or ""
+        # Infer format from URI prefix when JUCE doesn't report it
+        if not raw_format or raw_format == "Unknown":
+            if uri.startswith("LV2-") or "lv2" in uri.lower():
+                raw_format = "LV2"
+            elif uri.startswith("VST3-") or "vst3" in uri.lower():
+                raw_format = "VST3"
+            elif p.get("is_hardware"):
+                raw_format = "Hardware"
+            else:
+                raw_format = "LV2"
         return {
-            "uri": p.get("uri", ""),
+            "uri": uri,
             "name": p.get("name", "Unknown"),
             "author": p.get("author", "Unknown"),
             "brand": p.get("brand", p.get("author", "")),
             "category": p.get("category", "Uncategorized"),
             "version": p.get("version", "1.0"),
-            "format": p.get("format", "Unknown"),
-            "formatName": p.get("format_name", p.get("format", "Unknown")),
+            "format": raw_format,
+            "formatName": p.get("format_name", raw_format),
             "filePath": p.get("file_path", ""),
             "audioInputs": p.get("audio_inputs", 0),
             "audioOutputs": p.get("audio_outputs", 0),

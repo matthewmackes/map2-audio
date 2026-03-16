@@ -1,9 +1,11 @@
-import type { AdvancedMenuItem } from '../data/advancedMenuItems'
+import type { AdvancedNavigationItem, HardwareInterfaceMenuItem, ShellNavigationItem } from '../data/advancedMenuItems'
 
-export function isHardwareInterfacesPopup(item: AdvancedMenuItem): boolean {
+type BlockableNavigationItem = AdvancedNavigationItem | ShellNavigationItem | HardwareInterfaceMenuItem
+
+export function isHardwareInterfacesPopup(item: BlockableNavigationItem): boolean {
   return item.kind === 'hardware-submenu'
 }
 
-export function isBlockedAdvancedMenuItem(item: AdvancedMenuItem): boolean {
+export function isBlockedAdvancedMenuItem(item: BlockableNavigationItem): boolean {
   return item.maturity === 'hardware-blocked' && !isHardwareInterfacesPopup(item)
 }

@@ -154,7 +154,13 @@ describe('JuceGridSignalCanvas', () => {
     expect(inputRail.getAttribute('title')).toContain('missing')
     expect(outputRail.getAttribute('title')).toContain('Main Room Listener')
 
-    expect(screen.getByText('Studio Compressor')).toBeTruthy()
+    const pluginCard = screen.getByTestId('juce-grid-signal-plugin-card-0')
+    const pluginTitle = within(pluginCard).getByText('Studio Compressor')
+
+    expect(pluginTitle).toBeTruthy()
+    expect(pluginTitle.getAttribute('title')).toBe('Studio Compressor')
+    expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
+    expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-levels-0')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Configure input routing' }))
     fireEvent.click(screen.getByRole('button', { name: 'Configure output routing' }))

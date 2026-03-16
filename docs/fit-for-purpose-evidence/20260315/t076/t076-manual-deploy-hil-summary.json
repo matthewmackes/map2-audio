@@ -1,0 +1,122 @@
+{
+  "captured_at": "2026-03-15T22:37:45Z",
+  "conclusion": "Blocked: T076 manual-package preflight or post-upload verification is still missing required evidence.",
+  "device_details": [],
+  "gates": {
+    "layout_catalog_ready": {
+      "reason": "Layout forte_ci_avb_bridge_default v1.0.0 is present in the catalog.",
+      "status": "PASS"
+    },
+    "manual_package_ready": {
+      "reason": "Package verification did not run because layout/device preflight was not ready.",
+      "status": "BLOCKED"
+    },
+    "manual_upload_execution": {
+      "reason": "Manual SageVue upload/deploy has not been confirmed yet; rerun with --manual-upload-confirmed after the lab step.",
+      "status": "BLOCKED"
+    },
+    "manual_upload_mode_ready": {
+      "reason": "Backend reports manual SageVue upload as the supported deployment workflow.",
+      "status": "PASS"
+    },
+    "post_upload_verification": {
+      "reason": "Post-upload verification is skipped until manual upload is confirmed.",
+      "status": "BLOCKED"
+    },
+    "target_devices_ready": {
+      "reason": "Need at least 2 connected Tesira devices; found 0.",
+      "status": "BLOCKED"
+    }
+  },
+  "layout": {
+    "artifact_uri": "sagevue://layouts/forte_ci_avb_bridge_default_1_0_0",
+    "channel_profile": "12x8",
+    "checksum": "sha256:e3f0450ac3a42b4d86a57c41948dc77bc0c0904a28b9c0dc29ba9676f40ec94e",
+    "created_at": "2026-03-09T19:15:30.825896",
+    "device_family": "FORTE_CI",
+    "feature_flags": [
+      "avb",
+      "crosspoint",
+      "eq",
+      "gpio",
+      "meters",
+      "presets",
+      "ptp"
+    ],
+    "instance_tag_map": {
+      "input_level": "LevelControl1",
+      "input_mixer": "Mixer1",
+      "listener_stream": "ExplicitAVBInStream1",
+      "output_level": "LevelControl2",
+      "output_mixer": "Mixer2",
+      "primary_eq": "PEQ1",
+      "secondary_eq": "PEQ2",
+      "talker_stream": "ExplicitAVBOutStream1"
+    },
+    "is_active": true,
+    "layout_id": "forte_ci_avb_bridge_default",
+    "name": "Forte CI AVB Bridge Default",
+    "notes": "Preset plan: P1 MAP2_AVB_BRIDGE_DEFAULT (normal routing), P2 MAP2_SAFE_MUTE (all outputs muted), P3 MAP2_DIAG_LOOPBACK (1:1 test loop).",
+    "required_firmware": "5.5.0.2",
+    "updated_at": "2026-03-09T19:15:30.825901",
+    "version": "1.0.0"
+  },
+  "layout_id": "forte_ci_avb_bridge_default",
+  "layout_version": "1.0.0",
+  "missing_device_ids": [],
+  "overall_status": "BLOCKED",
+  "packages": [],
+  "sagevue_status": {
+    "base_url": "",
+    "configured": false,
+    "detail": "Direct SageVue integration has been removed from MAP2. Download a manual deployment package and upload it in SageVue.",
+    "enabled": false,
+    "healthy": false,
+    "manual_upload_required": true
+  },
+  "selected_devices": [
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_236",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.236",
+      "name": "172.20.146.236",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    },
+    {
+      "avb_stream_count": 0,
+      "connected": false,
+      "device_id": "tesira_172_20_146_237",
+      "fault_count": 0,
+      "firmware_version": null,
+      "host": "172.20.146.237",
+      "name": "172.20.146.237",
+      "port": 23,
+      "ptp_state": null,
+      "serial_number": null,
+      "transport": "ssh",
+      "transport_port": 22
+    }
+  ],
+  "settings": {
+    "accepted_ptp_states": [
+      "MASTER",
+      "SLAVE"
+    ],
+    "api_base": "http://127.0.0.1:8080/api",
+    "device_ids": [
+      "tesira_172_20_146_236",
+      "tesira_172_20_146_237"
+    ],
+    "manual_upload_confirmed": false,
+    "min_active_streams": 0,
+    "min_connected_devices": 2
+  },
+  "task_id": "T076"
+}

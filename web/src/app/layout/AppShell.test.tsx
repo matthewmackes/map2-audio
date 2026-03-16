@@ -113,7 +113,6 @@ describe('AppShell navigation', () => {
 
     expect(screen.getByLabelText('Home')).toBeTruthy()
     expect(screen.getByLabelText('Mackes Audio Platform home')).toBeTruthy()
-    expect(screen.getByText(/Mackes Audio Platform/i)).toBeTruthy()
     expect(screen.getByLabelText('Open advanced menu')).toBeTruthy()
     expect(screen.getByLabelText('Open special settings')).toBeTruthy()
     expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
@@ -166,9 +165,9 @@ describe('AppShell navigation', () => {
     expect(screen.getAllByText('MPX1 Rack').length).toBeGreaterThan(0)
   })
 
-  it('shows detected node notes inside the Audio Interfaces submenu', () => {
+  it('shows only remaining hardware-submenu items inside the Audio Interfaces submenu', () => {
     mockSpecialSettings.pinnedRoutes = ['/hardware-interfaces']
-    mockHardwareLocationNotes['/edirol-ua1000'] = { hostname: 'rack-b' }
+    mockHardwareLocationNotes['/hotone-jogg'] = { hostname: 'rack-b' }
 
     renderInRouter(
       <AppShell>
@@ -178,6 +177,9 @@ describe('AppShell navigation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Audio Interfaces/i }))
 
+    expect(screen.queryByText('Edirol UA-1000')).toBeNull()
+    expect(screen.queryByText('HoTone JoGG')).toBeNull()
+    expect(screen.getByText('Generic Interface')).toBeTruthy()
     expect(screen.getByText('On rack-b')).toBeTruthy()
   })
 })

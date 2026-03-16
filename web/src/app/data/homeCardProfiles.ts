@@ -75,19 +75,6 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Platform Guide whenever you need a single place for first-run orientation, document lookup, release provenance, or support escalation context.',
     bestFor: 'Onboarding and support traceability',
   },
-  '/snapshots': {
-    summary: 'Snapshot lifecycle management for storing, organizing, sharing, and restoring stable rig states quickly.',
-    capabilities: [
-      'Save and recall tone/session states',
-      'Organize snapshot libraries for retrieval',
-      'Import and export snapshot payloads',
-      'Rapid restoration of known-good setups',
-      'Consistency across repeated workflows',
-      'Snapshot portability between environments',
-    ],
-    learnMore: 'Use Snapshots as the operational backbone for repeatability, rollback, and reliable transitions between working sounds.',
-    bestFor: 'Repeatable sound state management',
-  },
   '/plugins': {
     summary: 'LV2 inventory and catalog management surface for understanding and organizing available processing blocks.',
     capabilities: [
@@ -114,18 +101,18 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use IR & NAM Library to centralize model content operations and keep tone assets organized across projects.',
     bestFor: 'Tone asset lifecycle management',
   },
-  '/midi': {
-    summary: 'Primary MIDI operations center for mappings, device control, command workflows, and live activity visibility.',
+  '/midi-hub': {
+    summary: 'Unified MIDI operations center for controller setup, mappings, device control, command workflows, routing, presets, and live activity visibility.',
     capabilities: [
-      'MIDI device and endpoint operations',
+      'Controller profile and endpoint operations',
       'Mapping and command configuration',
       'Live MIDI activity monitoring',
-      'Control-surface workflow coordination',
+      'Core and advanced routing coordination',
       'Core MIDI diagnostics and status context',
-      'Bridge between devices and engine actions',
+      'Bridge between devices, automation, and engine actions',
     ],
-    learnMore: 'Open MIDI for day-to-day controller and routing operations where stability and direct control are required.',
-    bestFor: 'Core MIDI command workflows',
+    learnMore: 'Open MIDI Hub for day-to-day controller, command, routing, and diagnostics work now that the legacy MIDI page has been retired.',
+    bestFor: 'Unified MIDI control workflows',
   },
   '/expression': {
     summary: 'Expression-control mapping surface connecting pedals and MIDI CC to realtime engine parameters.',

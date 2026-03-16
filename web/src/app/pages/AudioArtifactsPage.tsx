@@ -36,6 +36,7 @@ import type { CarbonIconType } from '@carbon/icons-react'
 import {
   ArrowRight,
   Catalog,
+  ChevronDown,
   ChevronRight,
   Close,
   CloudUpload,
@@ -46,12 +47,14 @@ import {
   Package,
   Play,
   Renew,
+  Search,
   TrashCan,
   Upload,
   VolumeUp,
   Waveform,
 } from '@carbon/icons-react'
 import { pluginsApi, irApi, namApi, soundfontApi } from '../../map2/api'
+import { ArtifactDownloadModal } from '../components/artifacts/ArtifactDownloadModal'
 import { useCluster } from '../contexts/ClusterContext'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
@@ -456,10 +459,16 @@ interface EmptyStateProps {
   onUpload: () => void
   isClusterMode: boolean
   onBrowseNodes: () => void
+  onOpenDownload: () => void
+  onScan: (type: 'plugins' | 'folders' | 'both') => void
+  isScanning: boolean
 }
 
-function ArtifactEmptyState({ category, onUpload, isClusterMode, onBrowseNodes }: EmptyStateProps) {
+function ArtifactEmptyState({ category, onUpload, isClusterMode, onBrowseNodes, onOpenDownload, onScan, isScanning }: EmptyStateProps) {
   const Icon = category.icon
+  const [scanMenuOpen, setScanMenuOpen] = useState(false)
+  const isPluginCategory = category.id === 'lv2-plugins' || category.id === 'native-juce'
+
   return (
     <div className="aap-empty">
       <div className="aap-empty__icon-wrap">
@@ -468,11 +477,53 @@ function ArtifactEmptyState({ category, onUpload, isClusterMode, onBrowseNodes }
       <h3 className="aap-empty__title">No {category.label} found on this node</h3>
       <p className="aap-empty__subtitle">{category.description}</p>
       <div className="aap-empty__actions">
-        <Button kind="primary" size="md" renderIcon={Upload} onClick={onUpload}>
-          Upload {category.shortLabel}
+        {isPluginCategory ? (
+          <div className="aap-empty__scan-wrap">
+            <Button
+              kind="primary"
+              size="md"
+              renderIcon={isScanning ? undefined : Search}
+              onClick={() => onScan('plugins')}
+              disabled={isScanning}
+            >
+              {isScanning ? <><span style={{ marginRight: 8 }}><span className="aap-spin">↻</span></span>Scanning…</> : 'Scan for plugins'}
+            </Button>
+            <Button
+              kind="ghost"
+              size="md"
+              renderIcon={ChevronDown}
+              iconDescription="More scan options"
+              hasIconOnly
+              onClick={() => setScanMenuOpen((v) => !v)}
+              disabled={isScanning}
+            />
+            {scanMenuOpen ? (
+              <div className="aap-empty__scan-menu">
+                <button className="aap-empty__scan-option" onClick={() => { onScan('plugins'); setScanMenuOpen(false) }}>
+                  <Search size={16} aria-hidden="true" />
+                  <span>Scan plugins only</span>
+                </button>
+                <button className="aap-empty__scan-option" onClick={() => { onScan('folders'); setScanMenuOpen(false) }}>
+                  <FolderDetails size={16} aria-hidden="true" />
+                  <span>Scan all folders</span>
+                </button>
+                <button className="aap-empty__scan-option" onClick={() => { onScan('both'); setScanMenuOpen(false) }}>
+                  <Renew size={16} aria-hidden="true" />
+                  <span>Scan plugins + all folders</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <Button kind="primary" size="md" renderIcon={Upload} onClick={onUpload}>
+            Upload {category.shortLabel}
+          </Button>
+        )}
+        <Button kind="tertiary" size="md" renderIcon={CloudUpload} onClick={onOpenDownload}>
+          Download {category.shortLabel}
         </Button>
         {isClusterMode ? (
-          <Button kind="tertiary" size="md" renderIcon={Network_4} onClick={onBrowseNodes}>
+          <Button kind="ghost" size="md" renderIcon={Network_4} onClick={onBrowseNodes}>
             Browse other nodes
           </Button>
         ) : null}
@@ -523,6 +574,8 @@ export function AudioArtifactsPage() {
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<ArtifactRow | null>(null)
   const [syncDrawerOpen, setSyncDrawerOpen] = useState(false)
   const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null)
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
   const [syncJobs, setSyncJobs] = useState<SyncJob[]>(loadSyncQueue)
   const [toasts, setToasts] = useState<ToastMsg[]>([])
   const [primaryActionPending, setPrimaryActionPending] = useState(false)
@@ -577,6 +630,18 @@ export function AudioArtifactsPage() {
 
   // ── Data queries ──────────────────────────────────────────────────────────
   const pluginBrowser = usePluginBrowser({ nodeId: detailNodeId })
+
+  // Native JUCE plugins come from /plugins/discover (format='JUCE', is_native=true)
+  const nativePluginsQuery = useQuery({
+    queryKey: ['plugins', 'discover', 'native', selectedNodeId],
+    queryFn: async () => {
+      const result = await pluginsApi.discover(false, detailNodeId)
+      const list: any[] = Array.isArray(result) ? result : (result as any)?.plugins ?? []
+      return list.filter((p: any) => p.format === 'JUCE' || p.is_native === true)
+    },
+    enabled: activeCategory === 'native-juce',
+    staleTime: 30000,
+  })
 
   const irCabinetsQuery = useQuery({
     queryKey: ['ir', 'cabinets', selectedNodeId],
@@ -704,18 +769,16 @@ export function AudioArtifactsPage() {
       }))
     }
 
-    // native-juce — derive from plugin browser filtering by category keyword
-    return (pluginBrowser.allPlugins ?? [])
-      .filter((p) => (p.category ?? '').toLowerCase().includes('juce') || (p.name ?? '').toLowerCase().includes('juce'))
-      .map((p) => ({
-        id: p.uri,
-        name: getDisplayPluginName(p.name, p.uri),
-        version: p.version ?? '—',
-        category: p.category ?? '—',
-        node: nodeName,
-        status: 'active',
-        statusRaw: 'active',
-      }))
+    // native-juce — from /plugins/discover filtered to format='JUCE' / is_native=true
+    return (nativePluginsQuery.data ?? []).map((p: any) => ({
+      id: p.uri,
+      name: getDisplayPluginName(p.name, p.uri),
+      version: p.version ?? '—',
+      category: p.category ?? p.class_label ?? '—',
+      node: nodeName,
+      status: 'active',
+      statusRaw: 'active',
+    }))
   }, [
     activeCategory,
     pluginBrowser.allPlugins,
@@ -725,6 +788,7 @@ export function AudioArtifactsPage() {
     irReverbsQuery.data,
     irStatusQuery.data,
     soundfontsQuery.data,
+    nativePluginsQuery.data,
     nodes,
     selectedNodeId,
   ])
@@ -756,7 +820,7 @@ export function AudioArtifactsPage() {
     (activeCategory === 'cabinet-irs' && irCabinetsQuery.isLoading) ||
     (activeCategory === 'reverb-irs' && irReverbsQuery.isLoading) ||
     (activeCategory === 'soundfonts' && soundfontsQuery.isLoading) ||
-    (activeCategory === 'native-juce' && pluginBrowser.isLoading)
+    (activeCategory === 'native-juce' && nativePluginsQuery.isLoading)
 
   // ── Primary actions ───────────────────────────────────────────────────────
   const loadCabinetMutation = useMutation({
@@ -785,6 +849,26 @@ export function AudioArtifactsPage() {
     },
     onError: (e: Error) => pushToast('error', 'Failed to activate model', e.message),
   })
+
+  const handleScan = useCallback(async (type: 'plugins' | 'folders' | 'both') => {
+    setIsScanning(true)
+    try {
+      if (type === 'plugins' || type === 'both') {
+        await pluginBrowser.scanPlugins()
+      }
+      if (type === 'folders' || type === 'both') {
+        await fetch('/api/folders/scan/all', { method: 'POST' })
+        void queryClient.invalidateQueries({ queryKey: ['ir'] })
+        void queryClient.invalidateQueries({ queryKey: ['nam'] })
+        void queryClient.invalidateQueries({ queryKey: ['soundfonts'] })
+      }
+      pushToast('success', 'Scan complete', 'Artifact list refreshed')
+    } catch (e: unknown) {
+      pushToast('error', 'Scan failed', e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setIsScanning(false)
+    }
+  }, [pluginBrowser, queryClient, pushToast])
 
   const handlePrimaryAction = useCallback(async (item: ArtifactRow) => {
     setPrimaryActionPending(true)
@@ -936,9 +1020,17 @@ export function AudioArtifactsPage() {
               </Button>
             )}
             <Button
-              kind="primary"
+              kind="secondary"
               size="sm"
               renderIcon={CloudUpload}
+              onClick={() => setDownloadModalOpen(true)}
+            >
+              Download &amp; Discover
+            </Button>
+            <Button
+              kind="primary"
+              size="sm"
+              renderIcon={Upload}
               onClick={() => setUploadModalOpen(true)}
             >
               Upload
@@ -1044,6 +1136,9 @@ export function AudioArtifactsPage() {
                   const firstRemote = nodes.find((n) => !n.isLocal)
                   if (firstRemote) updateParams({ node: firstRemote.nodeId })
                 }}
+                onOpenDownload={() => setDownloadModalOpen(true)}
+                onScan={handleScan}
+                isScanning={isScanning}
               />
             ) : (
               <Tile className="aap__table-tile">
@@ -1237,6 +1332,13 @@ export function AudioArtifactsPage() {
           }}
         />
       </Modal>
+
+      {/* Download & Discover modal */}
+      <ArtifactDownloadModal
+        open={downloadModalOpen}
+        onClose={() => setDownloadModalOpen(false)}
+        nodeId={detailNodeId}
+      />
 
       {/* Delete confirm modal */}
       <Modal
