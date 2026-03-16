@@ -1,4 +1,4 @@
-import { useCallback, useState, type CSSProperties, memo } from 'react'
+import { useCallback, useState, type CSSProperties, type SyntheticEvent, memo } from 'react'
 import {
   Add,
   AudioConsole,
@@ -6,13 +6,11 @@ import {
   Link,
   Meter,
   SettingsAdjust,
-  TrashCan,
   VolumeDown,
-  VolumeMute,
   VolumeUp,
   WarningAlt,
 } from '@carbon/icons-react'
-import { Button, Tag, Tile } from '@carbon/react'
+import { Button, OverflowMenu, OverflowMenuItem, Tag, Tile } from '@carbon/react'
 import type { AudioRoutingSelectionBinding } from '../../map2/api'
 import { getCategoryConfig } from '../components/PluginCards/types'
 import type { Chain, Plugin } from '../../map2/types'
@@ -47,9 +45,17 @@ export interface JuceGridSignalCanvasProps {
   audioStatus?: JuceGridAudioInterfaceStatus
   audioOutputStatus?: JuceGridAudioInterfaceStatus
   pluginLevels?: Record<string, { in: number; out: number }>
+  automationSummary?: JuceGridSignalAutomationSummary
   showEndpoints?: boolean
   onInputPortSelectClick?: () => void
   onOutputPortSelectClick?: () => void
+}
+
+export interface JuceGridSignalAutomationSummary {
+  laneCountByPlugin: Record<string, number>
+  armedLaneCountByPlugin: Record<string, number>
+  playing: boolean
+  recording: boolean
 }
 
 type EndpointSide = 'input' | 'output'
@@ -83,6 +89,51 @@ const ROUTING_MODE_SHORT_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus
 
 function levelPercent(level: number | undefined) {
   return `${Math.max(0, Math.min(100, (level || 0) * 100))}%`
+}
+
+function samplesToMs(samples: number, sampleRate: number) {
+  return (samples / sampleRate) * 1000
+}
+
+function formatLatencyMetric(samples: number | undefined, sampleRate: number) {
+  if (!samples || samples <= 0) {
+    return '0.0 ms'
+  }
+
+  const latencyMs = samplesToMs(samples, sampleRate)
+  if (latencyMs < 1) {
+    return `${samples} smp`
+  }
+
+  return `${latencyMs.toFixed(latencyMs < 10 ? 1 : 0)} ms`
+}
+
+function cpuMetricTone(cpuPercent: number | undefined) {
+  if (!Number.isFinite(cpuPercent)) {
+    return 'neutral'
+  }
+  if ((cpuPercent ?? 0) >= 35) {
+    return 'warning'
+  }
+  if ((cpuPercent ?? 0) >= 10) {
+    return 'active'
+  }
+  return 'neutral'
+}
+
+function latencyMetricTone(latencySamples: number | undefined, sampleRate: number) {
+  if (!latencySamples || latencySamples <= 0) {
+    return 'neutral'
+  }
+
+  const latencyMs = samplesToMs(latencySamples, sampleRate)
+  if (latencyMs >= 12) {
+    return 'warning'
+  }
+  if (latencyMs >= 3) {
+    return 'active'
+  }
+  return 'neutral'
 }
 
 function isHealthyAvbState(state: string | undefined) {
@@ -246,12 +297,14 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   audioStatus,
   audioOutputStatus,
   pluginLevels = {},
+  automationSummary,
   showEndpoints = false,
   onInputPortSelectClick,
   onOutputPortSelectClick,
 }: JuceGridSignalCanvasProps) {
   const [draggedUri, setDraggedUri] = useState<string | null>(null)
   const [dragOverUri, setDragOverUri] = useState<string | null>(null)
+  const sampleRate = audioStatus?.sampleRate || audioOutputStatus?.sampleRate || 48000
 
   const handleDrop = useCallback((targetUri: string) => {
     if (!chain || !draggedUri || draggedUri === targetUri) {
@@ -275,6 +328,10 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
     setDraggedUri(null)
     setDragOverUri(null)
   }, [chain, draggedUri, onReorderPlugins])
+
+  const stopPluginCardEvent = useCallback((event: SyntheticEvent) => {
+    event.stopPropagation()
+  }, [])
 
   if (!chain) {
     return (
@@ -408,16 +465,64 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
             const meta = pluginMeta[plugin.uri]
             const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
             const categoryConfig = getCategoryConfig(meta?.category || 'Utility')
+            const CategoryIcon = categoryConfig.icon
             const isSelected = plugin.uri === selectedPluginUri
             const isDropTarget = dragOverUri === plugin.uri && draggedUri !== plugin.uri
             const levels = pluginLevels[plugin.uri] || { in: 0, out: 0 }
+            const formatLabel = meta?.format || plugin.format || plugin.plugin_display_type || 'Plugin'
+            const inputPorts = meta?.in_ports ?? plugin.in_ports ?? 0
+            const outputPorts = meta?.out_ports ?? plugin.out_ports ?? 0
+            const latencyLabel = formatLatencyMetric(plugin.latency_samples, sampleRate)
+            const sidechainBusCount = meta?.sidechain_buses ?? 0
+            const sidechainSourcePlugin = plugin.sidechain_source
+              ? chain.plugins.find((candidate) => candidate.uri === plugin.sidechain_source)
+              : null
+            const hasSidechainConnection = Boolean(plugin.sidechain_source)
+            const hasSidechainSupport = hasSidechainConnection || sidechainBusCount > 0 || plugin.sidechain_bus !== undefined
+            const automationLaneCount = automationSummary?.laneCountByPlugin[plugin.uri] ?? 0
+            const armedLaneCount = automationSummary?.armedLaneCountByPlugin[plugin.uri] ?? 0
+            const automationLabel = armedLaneCount > 0
+              ? 'Armed'
+              : automationLaneCount > 0
+                ? `${automationLaneCount} lane${automationLaneCount === 1 ? '' : 's'}`
+                : 'None'
+            const sidechainLabel = hasSidechainConnection ? 'Live' : hasSidechainSupport ? 'Ready' : 'None'
+            const sidechainTitle = hasSidechainConnection
+              ? `Sidechain source: ${getDisplayPluginName(sidechainSourcePlugin?.name || plugin.sidechain_source || 'Source', plugin.sidechain_source || '')}`
+              : hasSidechainSupport
+                ? `Sidechain capable${sidechainBusCount > 0 ? ` · ${sidechainBusCount} bus${sidechainBusCount === 1 ? '' : 'es'}` : ''}`
+                : 'No sidechain routing'
+            const automationTitle = automationLaneCount > 0
+              ? [
+                `${automationLaneCount} automation lane${automationLaneCount === 1 ? '' : 's'}`,
+                armedLaneCount > 0 ? `${armedLaneCount} armed` : null,
+                automationSummary?.recording ? 'transport recording' : automationSummary?.playing ? 'transport playing' : null,
+              ].filter(Boolean).join(' · ')
+              : 'No automation lanes'
+            const supportMeta = [
+              meta?.category || 'Utility',
+              formatLabel,
+              `${inputPorts} in / ${outputPorts} out`,
+              plugin.bypassed ? 'Bypassed' : null,
+            ].filter(Boolean)
 
             return (
               <article
                 key={`${plugin.uri}:${plugin.position}`}
                 className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''}`}
                 data-testid={`juce-grid-signal-plugin-card-${plugin.position}`}
+                aria-label={`${displayName}${plugin.bypassed ? ' bypassed' : ''}`}
+                aria-pressed={isSelected}
+                role="button"
+                tabIndex={0}
                 draggable
+                onClick={() => onPluginSelect(plugin.uri)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    onPluginSelect(plugin.uri)
+                  }
+                }}
                 onDragStart={() => setDraggedUri(plugin.uri)}
                 onDragOver={(event) => {
                   event.preventDefault()
@@ -430,49 +535,91 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                 }}
                 style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
               >
-                <div className="juce-grid-page__signal-plugin-header">
-                  <button
-                    type="button"
-                    className="juce-grid-page__signal-plugin-select"
-                    onClick={() => onPluginSelect(plugin.uri)}
-                  >
-                    <span className="juce-grid-page__signal-plugin-drag">
+                <div className="juce-grid-page__signal-plugin-card-top">
+                  <div className="juce-grid-page__signal-plugin-header">
+                    <span className="juce-grid-page__signal-plugin-drag" aria-hidden>
                       <Draggable size={16} />
+                    </span>
+                    <span className="juce-grid-page__signal-plugin-mark" aria-hidden>
+                      {CategoryIcon ? <CategoryIcon size={18} /> : <Meter size={18} />}
                     </span>
                     <span className="juce-grid-page__signal-plugin-copy">
                       <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
-                      <span className="juce-grid-page__signal-plugin-category">{meta?.category || 'Utility'}</span>
+                      <span className="juce-grid-page__signal-plugin-support">
+                        {supportMeta.map((item) => (
+                          <span
+                            key={`${plugin.uri}:${item}`}
+                            className={`juce-grid-page__signal-plugin-support-item ${item === (meta?.category || 'Utility') ? 'is-category' : ''}`}
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </span>
                     </span>
-                  </button>
+                  </div>
                   <div
                     className="juce-grid-page__signal-plugin-actions"
                     data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
+                    onClick={stopPluginCardEvent}
+                    onMouseDown={stopPluginCardEvent}
+                    onPointerDown={stopPluginCardEvent}
                   >
-                    <Button
+                    <OverflowMenu
+                      ariaLabel={`Actions for ${displayName}`}
+                      iconDescription={`Actions for ${displayName}`}
                       size="sm"
-                      kind={plugin.bypassed ? 'secondary' : 'ghost'}
-                      hasIconOnly
-                      renderIcon={plugin.bypassed ? VolumeMute : VolumeUp}
-                      iconDescription={plugin.bypassed ? 'Enable plugin' : 'Bypass plugin'}
-                      onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed)}
-                    />
-                    {onDeletePlugin && (
-                      <Button
-                        size="sm"
-                        kind="danger--tertiary"
-                        hasIconOnly
-                        renderIcon={TrashCan}
-                        iconDescription="Remove plugin"
-                        onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                      flipped
+                    >
+                      <OverflowMenuItem itemText="Inspect block" onClick={() => onPluginSelect(plugin.uri)} />
+                      <OverflowMenuItem
+                        itemText={plugin.bypassed ? 'Enable block' : 'Bypass block'}
+                        onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed)}
                       />
-                    )}
+                      {onDeletePlugin && (
+                        <OverflowMenuItem
+                          itemText="Remove block"
+                          isDelete
+                          onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                        />
+                      )}
+                    </OverflowMenu>
                   </div>
                 </div>
 
-                <div className="juce-grid-page__signal-plugin-meta">
-                  {meta?.format && <Tag type="blue">{meta.format}</Tag>}
-                  <Tag type="cool-gray">{(meta?.in_ports ?? plugin.in_ports ?? 0)}→{(meta?.out_ports ?? plugin.out_ports ?? 0)}</Tag>
-                  {plugin.bypassed && <Tag type="warm-gray">Bypassed</Tag>}
+                <div
+                  className="juce-grid-page__signal-plugin-metrics"
+                  data-testid={`juce-grid-signal-plugin-metrics-${plugin.position}`}
+                >
+                  <div
+                    className={`juce-grid-page__signal-plugin-metric is-${cpuMetricTone(plugin.cpu_percent)}`}
+                    title={Number.isFinite(plugin.cpu_percent) ? `CPU load ${plugin.cpu_percent?.toFixed(1)}%` : 'CPU load unavailable'}
+                  >
+                    <span className="juce-grid-page__signal-plugin-metric-label">CPU</span>
+                    <span className="juce-grid-page__signal-plugin-metric-value">
+                      {Number.isFinite(plugin.cpu_percent) ? `${plugin.cpu_percent?.toFixed(1)}%` : '--'}
+                    </span>
+                  </div>
+                  <div
+                    className={`juce-grid-page__signal-plugin-metric is-${latencyMetricTone(plugin.latency_samples, sampleRate)}`}
+                    title={plugin.latency_samples ? `${plugin.latency_samples} samples @ ${sampleRate}Hz` : 'No added latency'}
+                  >
+                    <span className="juce-grid-page__signal-plugin-metric-label">Latency</span>
+                    <span className="juce-grid-page__signal-plugin-metric-value">{latencyLabel}</span>
+                  </div>
+                  <div
+                    className={`juce-grid-page__signal-plugin-metric is-${hasSidechainConnection ? 'active' : hasSidechainSupport ? 'ready' : 'neutral'}`}
+                    title={sidechainTitle}
+                  >
+                    <span className="juce-grid-page__signal-plugin-metric-label">Sidechain</span>
+                    <span className="juce-grid-page__signal-plugin-metric-value">{sidechainLabel}</span>
+                  </div>
+                  <div
+                    className={`juce-grid-page__signal-plugin-metric is-${armedLaneCount > 0 ? 'active' : automationLaneCount > 0 ? 'ready' : 'neutral'}`}
+                    title={automationTitle}
+                  >
+                    <span className="juce-grid-page__signal-plugin-metric-label">Automation</span>
+                    <span className="juce-grid-page__signal-plugin-metric-value">{automationLabel}</span>
+                  </div>
                 </div>
 
                 <div
@@ -480,15 +627,15 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                   data-testid={`juce-grid-signal-plugin-levels-${plugin.position}`}
                 >
                   <div className="juce-grid-page__signal-level">
-                    <span>In</span>
-                    <div className="juce-grid-page__signal-level-track">
-                      <div className="juce-grid-page__signal-level-fill" style={{ width: levelPercent(levels.in) }} />
+                    <div className="juce-grid-page__signal-level-label-row">
+                      <span>Input</span>
+                      <span>{Math.round((levels.in || 0) * 100)}%</span>
                     </div>
                   </div>
                   <div className="juce-grid-page__signal-level">
-                    <span>Out</span>
-                    <div className="juce-grid-page__signal-level-track">
-                      <div className="juce-grid-page__signal-level-fill" style={{ width: levelPercent(levels.out) }} />
+                    <div className="juce-grid-page__signal-level-label-row">
+                      <span>Output</span>
+                      <span>{Math.round((levels.out || 0) * 100)}%</span>
                     </div>
                   </div>
                 </div>

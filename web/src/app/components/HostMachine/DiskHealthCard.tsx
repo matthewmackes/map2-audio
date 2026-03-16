@@ -2,8 +2,7 @@
  * Disk Health Card - SMART Health Monitoring
  */
 
-import { Box, Paper, Grid, LinearProgress, Typography, Chip } from '@mui/material'
-import { HardDrive, Warning, CheckCircle, WarningCircle } from '@phosphor-icons/react'
+import { HardDrive, CheckCircle, Warning, WarningCircle } from '@phosphor-icons/react'
 import type { DiskHealthData } from '@/map2/types'
 
 interface DiskHealthCardProps {
@@ -11,166 +10,147 @@ interface DiskHealthCardProps {
   nodeId?: string | null
 }
 
-const getHealthColor = (status: string) => {
-  switch (status) {
-    case 'passing':
-      return { bg: '#d1fae5', text: '#065f46', icon: '#10b981' }
-    case 'warning':
-      return { bg: '#fef3c7', text: '#78350f', icon: '#f59e0b' }
-    case 'failing':
-      return { bg: '#fee2e2', text: '#7f1d1d', icon: '#ef4444' }
-    default:
-      return { bg: '#f3f4f6', text: '#374151', icon: '#6b7280' }
-  }
+function normalizeDiskStatus(raw?: string): 'passing' | 'warning' | 'failing' | 'unknown' {
+  if (!raw) return 'unknown'
+  const s = raw.toLowerCase()
+  if (s === 'excellent' || s === 'good' || s === 'healthy' || s === 'passing') return 'passing'
+  if (s === 'warning') return 'warning'
+  if (s === 'critical' || s === 'failing' || s === 'failed') return 'failing'
+  return 'passing'
 }
 
-const getHealthIcon = (status: string) => {
-  switch (status) {
-    case 'passing':
-      return <CheckCircle size={16} weight="duotone" />
-    case 'warning':
-      return <WarningCircle size={16} weight="duotone" />
-    case 'failing':
-      return <Warning size={16} weight="duotone" />
-    default:
-      return <HardDrive size={16} weight="duotone" />
-  }
+function statusTone(status: 'passing' | 'warning' | 'failing' | 'unknown') {
+  if (status === 'passing') return 'success'
+  if (status === 'warning') return 'warning'
+  if (status === 'failing') return 'danger'
+  return 'info'
+}
+
+function StatusIcon({ status }: { status: 'passing' | 'warning' | 'failing' | 'unknown' }) {
+  if (status === 'passing') return <CheckCircle size={14} weight="duotone" />
+  if (status === 'warning') return <WarningCircle size={14} weight="duotone" />
+  if (status === 'failing') return <Warning size={14} weight="duotone" />
+  return <HardDrive size={14} weight="duotone" />
 }
 
 export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
   if (!diskHealth?.disks || diskHealth.disks.length === 0) {
-    return (
-      <Paper sx={{ p: 3, textAlign: 'center', color: '#999' }}>
-        <Typography>No disk information available</Typography>
-      </Paper>
-    )
+    return <div className="hm-empty">No disk information available</div>
   }
 
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 2.5 }}>
+    <div className="hm-disk-grid">
       {diskHealth.disks.map((disk, idx) => {
-        // Use per-disk health_status if available, otherwise fall back to overall_health
-        const diskStatus = disk.health_status || diskHealth.overall_health || 'unknown'
-        const overallStatus = (diskStatus === 'excellent' || diskStatus === 'good' || diskStatus === 'healthy')
-          ? 'passing' 
-          : diskStatus === 'warning' 
-          ? 'warning' 
-          : diskStatus === 'critical' || diskStatus === 'failing'
-          ? 'failing'
-          : 'passing'
-        
-        const colors = getHealthColor(overallStatus)
+        const rawStatus = disk.health_status || diskHealth.overall_health
+        const status = normalizeDiskStatus(rawStatus)
+        const tone = statusTone(status)
+        const usedPct = disk.used_percent ?? disk.use_percent ?? 0
+        const usageTone = usedPct > 85 ? 'danger' : usedPct > 75 ? 'warning' : 'success'
+        const label = (disk.health_status || diskHealth.overall_health || 'UNKNOWN').toUpperCase()
 
         return (
-          <Paper key={idx} sx={{ p: 3, border: '1px solid #e5e7eb' }}>
-            {/* Disk Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-              <Box>
-                <Typography sx={{ fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HardDrive size={18} style={{ color: colors.icon }} />
+          <div key={idx} className="hm-section-card">
+            {/* Header */}
+            <div className="hm-disk-card__header">
+              <div>
+                <div className="hm-disk-card__name">
+                  <HardDrive size={16} weight="duotone" />
                   {(disk.name || disk.device || 'Unknown').toUpperCase()}
-                </Typography>
+                </div>
                 {(disk.mount_point || disk.model) && (
-                  <Typography sx={{ fontSize: 12, color: '#666', mt: 0.5 }}>{disk.mount_point || disk.model}</Typography>
+                  <div className="hm-disk-card__sub">
+                    {disk.mount_point || disk.model}
+                  </div>
                 )}
-              </Box>
+              </div>
+              <div className={`hm-badge hm-badge--${tone}`}>
+                <StatusIcon status={status} />
+                {label}
+              </div>
+            </div>
 
-              <Chip
-                icon={getHealthIcon(overallStatus)}
-                label={(disk.health_status || diskHealth.overall_health || 'UNKNOWN').toUpperCase()}
-                size="small"
-                sx={{
-                  backgroundColor: colors.bg,
-                  color: colors.text,
-                  fontWeight: 600,
-                  fontSize: 10,
-                }}
-              />
-            </Box>
+            {/* Capacity bar */}
+            <div style={{ marginBottom: 16 }}>
+              <div className="hm-disk-card__cap-row">
+                <span>Capacity</span>
+                <span>{usedPct.toFixed(1)}% of {disk.size_gb ?? disk.total_gb ?? '?'} GB used</span>
+              </div>
+              <div className="hm-progress-track">
+                <div
+                  className={`hm-progress-fill hm-progress-fill--${usageTone}`}
+                  style={{ width: `${Math.min(usedPct, 100)}%` }}
+                />
+              </div>
+            </div>
 
-            {/* Capacity & Usage */}
-            <Box sx={{ mt: 2, mb: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, fontSize: 12 }}>
-                <span style={{ fontWeight: 600, color: '#333' }}>Capacity</span>
-                <span style={{ color: '#666' }}>
-                  {(disk.used_percent ?? disk.use_percent ?? 0).toFixed(1)}% of {disk.size_gb ?? disk.total_gb ?? '?'} GB used
-                </span>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={disk.used_percent ?? disk.use_percent ?? 0}
-                sx={{
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: '#f0f0f0',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: (disk.used_percent ?? disk.use_percent ?? 0) > 85 ? '#ef4444' : (disk.used_percent ?? disk.use_percent ?? 0) > 75 ? '#f59e0b' : '#3b82f6',
-                  },
-                }}
-              />
-            </Box>
-
-            {/* SMART Status & Temperature */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
+            {/* SMART metrics */}
+            <div className="hm-disk-metrics">
               {disk.temperature_c != null && (
-                <Box sx={{ p: 1.5, backgroundColor: '#f9fafb', borderRadius: 1 }}>
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#666', mb: 0.5 }}>
-                    Temperature
-                  </Typography>
-                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: disk.temperature_c > 50 ? '#f59e0b' : '#666' }}>
+                <div className="hm-disk-metric">
+                  <div className="hm-disk-metric__label">Temperature</div>
+                  <div className={`hm-disk-metric__value${disk.temperature_c > 50 ? ' hm-disk-metric__value--warn' : ''}`}>
                     {disk.temperature_c}°C
-                  </Typography>
-                </Box>
+                  </div>
+                </div>
               )}
               {disk.smart_status && (
-                <Box sx={{ p: 1.5, backgroundColor: '#f9fafb', borderRadius: 1 }}>
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#666', mb: 0.5 }}>
-                    SMART Status
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: disk.smart_status.includes('PASSED') ? '#10b981' : '#ef4444',
-                    }}
-                  >
-                    {disk.smart_status.includes('PASSED') ? '✓ PASSED' : '✗ FAILED'}
-                  </Typography>
-                </Box>
+                <div className="hm-disk-metric">
+                  <div className="hm-disk-metric__label">SMART</div>
+                  <div className={`hm-disk-metric__value${disk.smart_status.includes('PASSED') ? ' hm-disk-metric__value--ok' : ' hm-disk-metric__value--err'}`}>
+                    {disk.smart_status.includes('PASSED') ? 'PASSED' : 'FAILED'}
+                  </div>
+                </div>
               )}
-            </Box>
+            </div>
 
-            {/* Health Indicators */}
-            <Box sx={{ borderTop: '1px solid #f0f0f0', pt: 1.5, fontSize: 12, color: '#666' }}>
-              {disk.reallocated_sectors !== undefined && (
-                <div style={{ marginBottom: 4 }}>
-                  <strong>Reallocated:</strong> {disk.reallocated_sectors} sectors
-                  {disk.reallocated_sectors > 10 && <span style={{ color: '#f59e0b' }}> (monitor closely)</span>}
-                </div>
-              )}
-              {disk.uncorrectable_errors !== undefined && (
-                <div style={{ marginBottom: 4 }}>
-                  <strong>Errors:</strong> {disk.uncorrectable_errors}
-                  {disk.uncorrectable_errors > 0 && <span style={{ color: '#ef4444' }}> (critical)</span>}
-                </div>
-              )}
-              {disk.power_on_hours !== undefined && (
-                <div style={{ marginBottom: 4 }}>
-                  <strong>Power On:</strong> {(disk.power_on_hours / 24).toFixed(0)} days
-                </div>
-              )}
-              {disk.estimated_lifespan_percent !== undefined && (
-                <div>
-                  <strong>Lifespan:</strong>{' '}
-                  <span style={{ color: disk.estimated_lifespan_percent < 70 ? '#f59e0b' : '#10b981' }}>
-                    {disk.estimated_lifespan_percent}% estimated
-                  </span>
-                </div>
-              )}
-            </Box>
-          </Paper>
+            {/* Health indicators */}
+            <table className="hm-info-table" style={{ marginTop: 12 }}>
+              <tbody>
+                {disk.reallocated_sectors !== undefined && (
+                  <tr>
+                    <td className="hm-info-table__key">Reallocated sectors</td>
+                    <td className="hm-info-table__val">
+                      {disk.reallocated_sectors}
+                      {disk.reallocated_sectors > 10 && (
+                        <span style={{ color: 'var(--warning)', marginLeft: 8 }}>monitor closely</span>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                {disk.uncorrectable_errors !== undefined && (
+                  <tr>
+                    <td className="hm-info-table__key">Uncorrectable errors</td>
+                    <td className="hm-info-table__val">
+                      {disk.uncorrectable_errors}
+                      {disk.uncorrectable_errors > 0 && (
+                        <span style={{ color: 'var(--danger)', marginLeft: 8 }}>critical</span>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                {disk.power_on_hours !== undefined && (
+                  <tr>
+                    <td className="hm-info-table__key">Power-on time</td>
+                    <td className="hm-info-table__val">
+                      {Math.floor(disk.power_on_hours / 24)} days ({disk.power_on_hours} h)
+                    </td>
+                  </tr>
+                )}
+                {disk.estimated_lifespan_percent !== undefined && (
+                  <tr>
+                    <td className="hm-info-table__key">Estimated lifespan</td>
+                    <td className="hm-info-table__val">
+                      <span style={{ color: disk.estimated_lifespan_percent < 70 ? 'var(--warning)' : 'var(--success)' }}>
+                        {disk.estimated_lifespan_percent}%
+                      </span>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )
       })}
-    </Box>
+    </div>
   )
 }

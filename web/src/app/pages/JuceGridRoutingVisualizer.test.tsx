@@ -85,7 +85,7 @@ describe('JuceGridRoutingVisualizer', () => {
     ])
   })
 
-  it('caps the rendered svg to the diagram layout width instead of stretching across the full card', () => {
+  it('lets the rendered svg scale across the full available card width', () => {
     render(
       <JuceGridRoutingVisualizer
         mode="parameter_morph"
@@ -100,7 +100,7 @@ describe('JuceGridRoutingVisualizer', () => {
     )
 
     const diagram = screen.getByRole('img', { name: 'Morph routing diagram' })
-    expect(diagram.getAttribute('style') || '').toContain('max-width')
+    expect(diagram.getAttribute('style') || '').not.toContain('max-width')
   })
 
   it('can hide the flow list while preserving the routing diagram', () => {

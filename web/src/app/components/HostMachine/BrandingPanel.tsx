@@ -1,9 +1,8 @@
 /**
- * Branding Panel - Manufacturer Logo, Product Image, and Marketing Information
+ * Branding Panel - Manufacturer identity, product image, and quick links
  */
 
-import { Box, Paper, Grid, Link, Typography } from '@mui/material'
-import { ArrowSquareOut } from '@phosphor-icons/react'
+import { ArrowSquareOut, SealCheck } from '@phosphor-icons/react'
 
 interface BrandingPanelProps {
   branding: {
@@ -22,141 +21,66 @@ interface BrandingPanelProps {
 
 export default function BrandingPanel({ branding }: BrandingPanelProps) {
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 4,
-        mb: 3,
-        backgroundColor: '#262626',
-        borderLeft: '1px solid var(--border-strong)',
-        border: '1px solid var(--border)',
-      }}
-    >
-      <Grid container spacing={4} alignItems="center">
-        {/* Manufacturer Logo */}
-        <Grid item xs={12} sm={3} md={2} display="flex" justifyContent="center">
-          <Box
-            component="img"
-            src={branding.logo_url}
-            alt={branding.manufacturer}
-            onError={(e) => {
-              ;(e.target as HTMLImageElement).src = branding.logo_fallback
-            }}
-            sx={{
-              maxHeight: 80,
-              maxWidth: 150,
-              objectFit: 'contain',
-              filter: 'brightness(0) invert(1)',
-            }}
-          />
-        </Grid>
+    <div className="hm-branding">
+      {/* Manufacturer logo */}
+      <div className="hm-branding__logo-wrap">
+        <img
+          src={branding.logo_url}
+          alt={branding.manufacturer}
+          className="hm-branding__logo"
+          onError={(e) => {
+            ;(e.target as HTMLImageElement).src = branding.logo_fallback
+          }}
+        />
+      </div>
 
-        {/* Product Image */}
-        <Grid item xs={12} sm={4} md={3}>
-          <Paper
-            sx={{
-              overflow: 'hidden',
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: 150,
-              border: '1px solid rgba(255,255,255,0.12)',
-            }}
+      {/* Product image */}
+      <div className="hm-branding__image-wrap">
+        <img
+          src={branding.product_image_url}
+          alt={branding.product_name}
+          className="hm-branding__image"
+          onError={(e) => {
+            ;(e.target as HTMLImageElement).src = '/img/manufacturers/generic-pc.svg'
+          }}
+        />
+      </div>
+
+      {/* Product copy */}
+      <div className="hm-branding__copy">
+        <div
+          className="hm-branding__mfr"
+          style={{ color: branding.brand_color }}
+        >
+          {branding.manufacturer.toUpperCase()}
+        </div>
+        <div className="hm-branding__name">{branding.marketing_name}</div>
+        <div className="hm-branding__model">
+          Model: <strong>{branding.product_name}</strong>
+        </div>
+        {branding.warranty_status && (
+          <div className="hm-branding__warranty">
+            Warranty: <strong>{branding.warranty_status}</strong>
+          </div>
+        )}
+        {branding.sff_optimized && (
+          <div className="hm-branding__sff">
+            <SealCheck size={14} weight="fill" />
+            Small Form Factor — Audio Optimized
+          </div>
+        )}
+        {branding.support_url && (
+          <a
+            href={branding.support_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hm-branding__support-link"
+            style={{ color: branding.brand_color }}
           >
-            <Box
-              component="img"
-              src={branding.product_image_url}
-              alt={branding.product_name}
-              onError={(e) => {
-                ;(e.target as HTMLImageElement).src = '/img/manufacturers/generic-pc.svg'
-              }}
-              sx={{
-                maxHeight: '100%',
-                maxWidth: '100%',
-                objectFit: 'contain',
-                p: 1,
-              }}
-            />
-          </Paper>
-        </Grid>
-
-        {/* Product Information */}
-        <Grid item xs={12} sm={5} md={7}>
-          <Box>
-            <Typography
-              variant="overline"
-              sx={{ color: branding.brand_color, fontWeight: 600, display: 'block', mb: 1, letterSpacing: 2 }}
-            >
-              {branding.manufacturer.toUpperCase()}
-            </Typography>
-
-            <Typography
-              variant="h4"
-              sx={{
-                mt: 1,
-                fontWeight: 700,
-                color: '#fff',
-              }}
-            >
-              {branding.marketing_name}
-            </Typography>
-
-            <Typography
-              variant="body2"
-              sx={{ mt: 2, color: 'rgba(255,255,255,0.7)' }}
-            >
-              Model: <strong style={{ color: 'rgba(255,255,255,0.9)' }}>{branding.product_name}</strong>
-            </Typography>
-
-            {branding.warranty_status && (
-              <Typography
-                variant="body2"
-                sx={{ mt: 1, color: 'rgba(255,255,255,0.7)' }}
-              >
-                Warranty: <strong style={{ color: 'rgba(255,255,255,0.9)' }}>{branding.warranty_status}</strong>
-              </Typography>
-            )}
-
-            {branding.sff_optimized && (
-              <Typography
-                variant="body2"
-                sx={{
-                  mt: 1,
-                  color: '#34d399',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-              >
-                ✓ Small Form Factor Optimized for Audio Production
-              </Typography>
-            )}
-
-            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-              {branding.support_url && (
-                <Link
-                  href={branding.support_url}
-                  target="_blank"
-                  rel="noopener"
-                  sx={{
-                    color: branding.brand_color,
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    '&:hover': { textDecoration: 'underline', color: '#fff' },
-                  }}
-                >
-                  Official Support <ArrowSquareOut size={14} weight="duotone" />
-                </Link>
-              )}
-            </Box>
-          </Box>
-        </Grid>
-      </Grid>
-    </Paper>
+            Official Support <ArrowSquareOut size={13} weight="duotone" />
+          </a>
+        )}
+      </div>
+    </div>
   )
 }

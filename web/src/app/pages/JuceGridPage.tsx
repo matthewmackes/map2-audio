@@ -622,6 +622,29 @@ export function JuceGridPage() {
   const [automationLanes, setAutomationLanes] = useState<AutomationLane[]>([])
   const [lanePickerOpen, setLanePickerOpen] = useState(false)
 
+  const signalAutomationSummary = useMemo(() => {
+    const laneCountByPlugin: Record<string, number> = {}
+    const armedLaneCountByPlugin: Record<string, number> = {}
+
+    automationLanes.forEach((lane) => {
+      if (!lane.pluginUri) {
+        return
+      }
+
+      laneCountByPlugin[lane.pluginUri] = (laneCountByPlugin[lane.pluginUri] || 0) + 1
+      if (lane.armed) {
+        armedLaneCountByPlugin[lane.pluginUri] = (armedLaneCountByPlugin[lane.pluginUri] || 0) + 1
+      }
+    })
+
+    return {
+      laneCountByPlugin,
+      armedLaneCountByPlugin,
+      playing: automationPlaying,
+      recording: automationRecording,
+    }
+  }, [automationLanes, automationPlaying, automationRecording])
+
   // Audio Port Selection State — unified per-flow selector
   const [portSelectorFlowIndex, setPortSelectorFlowIndex] = useState<number | null>(null)
 
@@ -3423,6 +3446,7 @@ export function JuceGridPage() {
                 audioStatus={audioInterfaceStatus}
                 audioOutputStatus={audioOutputStatus}
                 pluginLevels={pluginLevels}
+                automationSummary={signalAutomationSummary}
               />
             </div>
           </div>

@@ -20,6 +20,8 @@ const chain: Chain = {
       parameters: {},
       in_ports: 2,
       out_ports: 2,
+      latency_samples: 96,
+      cpu_percent: 12.4,
     },
   ],
 }
@@ -38,6 +40,7 @@ const pluginMeta: Record<string, Plugin> = {
     out_ports: 2,
     parameters: [],
     format: 'VST3',
+    sidechain_buses: 1,
   },
 }
 
@@ -118,19 +121,26 @@ describe('JuceGridSignalCanvas', () => {
   it('renders input and output routing summaries above and below the block lane with full-detail tooltips and warning state', () => {
     const handleInputPorts = jest.fn()
     const handleOutputPorts = jest.fn()
+    const handlePluginSelect = jest.fn()
 
     render(
       <JuceGridSignalCanvas
         chain={chain}
         pluginMeta={pluginMeta}
         selectedPluginUri={pluginUri}
-        onPluginSelect={jest.fn()}
+        onPluginSelect={handlePluginSelect}
         onToggleBypass={jest.fn()}
         onReorderPlugins={jest.fn()}
         onAddPlugin={jest.fn()}
         audioStatus={buildInputStatus()}
         audioOutputStatus={buildOutputStatus()}
         pluginLevels={{ [pluginUri]: { in: 0.31, out: 0.48 } }}
+        automationSummary={{
+          laneCountByPlugin: { [pluginUri]: 2 },
+          armedLaneCountByPlugin: { [pluginUri]: 1 },
+          playing: false,
+          recording: true,
+        }}
         showEndpoints
         onInputPortSelectClick={handleInputPorts}
         onOutputPortSelectClick={handleOutputPorts}
@@ -163,7 +173,21 @@ describe('JuceGridSignalCanvas', () => {
     expect(pluginTitle).toBeTruthy()
     expect(pluginTitle.getAttribute('title')).toBe('Studio Compressor')
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
+    expect(within(pluginCard).getByRole('button', { name: 'Actions for Studio Compressor' })).toBeTruthy()
+    expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-metrics-0')).toBeTruthy()
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-levels-0')).toBeTruthy()
+    expect(within(pluginCard).getByText('CPU')).toBeTruthy()
+    expect(within(pluginCard).getByText('12.4%')).toBeTruthy()
+    expect(within(pluginCard).getByText('Latency')).toBeTruthy()
+    expect(within(pluginCard).getByText('2.0 ms')).toBeTruthy()
+    expect(within(pluginCard).getByText('Sidechain')).toBeTruthy()
+    expect(within(pluginCard).getByText('Ready')).toBeTruthy()
+    expect(within(pluginCard).getByText('Automation')).toBeTruthy()
+    expect(within(pluginCard).getByText('Armed')).toBeTruthy()
+
+    fireEvent.click(pluginCard)
+
+    expect(handlePluginSelect).toHaveBeenCalledWith(pluginUri)
 
     fireEvent.click(screen.getByRole('button', { name: 'Configure input routing' }))
     fireEvent.click(screen.getByRole('button', { name: 'Configure output routing' }))

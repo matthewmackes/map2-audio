@@ -108,7 +108,6 @@ export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer
         role="img"
         aria-label={`${diagram.ariaLabel} routing diagram`}
         preserveAspectRatio="xMidYMid meet"
-        style={{ maxWidth: `${diagram.width}px` }}
       >
         <defs>
           <marker

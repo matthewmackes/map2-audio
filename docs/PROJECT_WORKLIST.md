@@ -6,6 +6,8 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
+Last updated: 2026-03-16 09:47 - Codex
+
 ## Top Tasks (Show 5-10 First)
 
 ID: T001  
@@ -11051,3 +11053,23 @@ Description:
 Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-15
+
+ID: T191
+Status: [✓] Done
+Title: Expand JUCE-GRID routing visualizer to fill its allotted workspace
+Description:
+- Goal / acceptance criteria: Update the JUCE-GRID routing topology surface so the routing graphic scales to the full width of its visual panel instead of staying capped at a small intrinsic SVG size. Node, wire, and label spacing must expand proportionally with the available panel space while preserving responsive behavior on narrower layouts.
+- Why it matters: The current routing card leaves large unused margins and makes the topology harder to read, especially on wide operator displays.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Updated `JuceGridRoutingVisualizer.tsx`, `JuceGridPage.css`, and relevant frontend test coverage; passing targeted verification.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-16 09:47 - Codex
+- Completion notes:
+  - What was done: Removed the routing SVG intrinsic max-width cap, made the routing visual panel stretch its diagram with a bounded minimum height, and updated the routing visualizer test to assert full-width scaling behavior.
+  - Key findings: The unused space came from `JuceGridRoutingVisualizer.tsx` explicitly capping the SVG to the diagram's raw layout width rather than the page grid itself.
+  - Files/links produced: `web/src/app/pages/JuceGridRoutingVisualizer.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridRoutingVisualizer.test.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Verification: `cd web && npm run typecheck`; `cd web && npm run test -- --runInBand --runTestsByPath src/app/pages/JuceGridRoutingVisualizer.test.tsx`; `cd web && npm run build`.
+  - Compliance: MAP2-owned `/juce-grid` page/CSS/test/worklist changes remain under the repository AGPLv3 posture; spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no new canonical worklist task was required.
+  - Suggested next tasks: None.
