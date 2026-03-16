@@ -94,7 +94,7 @@ import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
 import { JuceGridChainManagementCard } from './JuceGridChainManagementCard'
-import { JuceGridClusterPanel, JuceGridFlowAssignmentPanel } from './JuceGridClusterPanels'
+import { JuceGridClusterSummaryBar } from './JuceGridClusterPanels'
 import { JuceGridParameterEditor } from './JuceGridParameterEditor'
 import {
   JuceGridRoutingVisualizer,
@@ -2978,149 +2978,95 @@ export function JuceGridPage() {
         </div>
       </div>
 
-      <div className="juce-grid-page__routing-panel-grid">
-        <Tile className="juce-grid-page__routing-panel">
-          <span className="juce-grid-page__routing-panel-label">Topology</span>
-          <p className="juce-grid-page__routing-panel-copy">{activeRoutingMode.summary}</p>
-          <div className="juce-grid-page__toolbar-buttons">
-            {ROUTING_MODE_OPTIONS.map((option) => (
-              <Button
-                key={option.id}
-                size="sm"
-                kind={routing.mode === option.id ? 'secondary' : 'ghost'}
-                onClick={() => setRoutingMode(option.id)}
-              >
-                {option.label}
-              </Button>
-            ))}
+      <div className="juce-grid-page__routing-workspace">
+        <div className="juce-grid-page__routing-sidebar">
+          <div className="juce-grid-page__routing-panel-grid">
+            <Tile className="juce-grid-page__routing-panel">
+              <span className="juce-grid-page__routing-panel-label">Topology</span>
+              <p className="juce-grid-page__routing-panel-copy">{activeRoutingMode.summary}</p>
+              <div className="juce-grid-page__toolbar-buttons">
+                {ROUTING_MODE_OPTIONS.map((option) => (
+                  <Button
+                    key={option.id}
+                    size="sm"
+                    kind={routing.mode === option.id ? 'secondary' : 'ghost'}
+                    onClick={() => setRoutingMode(option.id)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </Tile>
+
+            <Tile className="juce-grid-page__routing-panel">
+              <span className="juce-grid-page__routing-panel-label">Focus flow</span>
+              <p className="juce-grid-page__routing-panel-copy">Choose which flow stays primary while editing and routing.</p>
+              <div className="juce-grid-page__toolbar-buttons">
+                {flowSlots.map((slot, index) => (
+                  <Button
+                    key={slot.id}
+                    size="sm"
+                    kind={activeFlowIndex === index ? 'secondary' : 'ghost'}
+                    onClick={() => selectFlowIndex(index)}
+                  >
+                    {SLOT_COLORS[index]?.label || slot.label}
+                  </Button>
+                ))}
+              </div>
+            </Tile>
+
+            <Tile className="juce-grid-page__routing-panel">
+              <span className="juce-grid-page__routing-panel-label">Actions</span>
+              <p className="juce-grid-page__routing-panel-copy">Open port routing or assign the active flow to a cluster node.</p>
+              <div className="juce-grid-page__toolbar-buttons">
+                <Button size="sm" kind="ghost" onClick={() => setPortSelectorFlowIndex(activeFlowIndex)}>
+                  Route ports
+                </Button>
+                <Button
+                  size="sm"
+                  kind="ghost"
+                  onClick={() => activeFlow && openAssignmentDialog(activeFlow)}
+                  disabled={!activeFlow}
+                >
+                  Assign flow
+                </Button>
+              </div>
+            </Tile>
+
+            {routing.mode === 'parameter_morph' && (
+              <Tile className="juce-grid-page__routing-panel juce-grid-page__routing-panel--morph">
+                <span className="juce-grid-page__routing-panel-label">Morph amount</span>
+                <p className="juce-grid-page__routing-panel-copy">Set the crossfade position used by the routing morph state.</p>
+                <NumberInput
+                  label="Morph"
+                  value={routing.morphProgress * 100}
+                  min={0}
+                  max={100}
+                  step={1}
+                  unit="%"
+                  onChange={(value) => setMorphProgress(value / 100)}
+                  size="small"
+                  inline
+                />
+              </Tile>
+            )}
           </div>
-        </Tile>
+        </div>
 
-        <Tile className="juce-grid-page__routing-panel">
-          <span className="juce-grid-page__routing-panel-label">Focus flow</span>
-          <p className="juce-grid-page__routing-panel-copy">Choose which flow stays primary while editing and routing.</p>
-          <div className="juce-grid-page__toolbar-buttons">
-            {flowSlots.map((slot, index) => (
-              <Button
-                key={slot.id}
-                size="sm"
-                kind={activeFlowIndex === index ? 'secondary' : 'ghost'}
-                onClick={() => selectFlowIndex(index)}
-              >
-                {SLOT_COLORS[index]?.label || slot.label}
-              </Button>
-            ))}
-          </div>
-        </Tile>
-
-        <Tile className="juce-grid-page__routing-panel">
-          <span className="juce-grid-page__routing-panel-label">Actions</span>
-          <p className="juce-grid-page__routing-panel-copy">Open port routing or assign the active flow to a cluster node.</p>
-          <div className="juce-grid-page__toolbar-buttons">
-            <Button size="sm" kind="ghost" onClick={() => setPortSelectorFlowIndex(activeFlowIndex)}>
-              Route ports
-            </Button>
-            <Button
-              size="sm"
-              kind="ghost"
-              onClick={() => activeFlow && openAssignmentDialog(activeFlow)}
-              disabled={!activeFlow}
-            >
-              Assign flow
-            </Button>
-          </div>
-        </Tile>
-
-        {routing.mode === 'parameter_morph' && (
-          <Tile className="juce-grid-page__routing-panel juce-grid-page__routing-panel--morph">
-            <span className="juce-grid-page__routing-panel-label">Morph amount</span>
-            <p className="juce-grid-page__routing-panel-copy">Set the crossfade position used by the routing morph state.</p>
-            <NumberInput
-              label="Morph"
-              value={routing.morphProgress * 100}
-              min={0}
-              max={100}
-              step={1}
-              unit="%"
-              onChange={(value) => setMorphProgress(value / 100)}
-              size="small"
-              inline
-            />
-          </Tile>
-        )}
-      </div>
-
-      <div className="juce-grid-page__routing-visual">
-        <JuceGridRoutingVisualizer
-          mode={routing.mode}
-          flows={routingVisualizerFlows}
-          morphProgress={routing.morphProgress}
-          activeFlowId={routing.activeSlotId}
-          morphSourceId={routing.morphSourceSlotId}
-          morphTargetId={routing.morphTargetSlotId}
-          compact={compact || flowSlots.length > 4}
-          onMarkerSelect={setRoutingInspectorId}
-        />
+        <div className="juce-grid-page__routing-visual">
+          <JuceGridRoutingVisualizer
+            mode={routing.mode}
+            flows={routingVisualizerFlows}
+            morphProgress={routing.morphProgress}
+            activeFlowId={routing.activeSlotId}
+            morphSourceId={routing.morphSourceSlotId}
+            morphTargetId={routing.morphTargetSlotId}
+            compact={compact || flowSlots.length > 4}
+            onMarkerSelect={setRoutingInspectorId}
+          />
+        </div>
       </div>
     </>
-  )
-
-  const renderLivePathSummaryCard = () => (
-    <Layer
-      className={`juce-grid-page__live-path-summary ${livePathLayout.status === 'unavailable' ? 'is-unavailable' : ''}`}
-      role="region"
-      aria-label="Live audio path"
-    >
-      <div className="juce-grid-page__live-path-summary-header">
-        <div className="juce-grid-page__live-path-summary-heading">
-          <strong>Live audio path</strong>
-          <p>Keep flow management inside the same Carbon surface used to monitor the active signal path.</p>
-        </div>
-        <div className="juce-grid-page__live-path-summary-header-actions">
-          <div className="juce-grid-page__live-path-summary-meta">
-            <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
-              {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
-            </Tag>
-            <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
-            <Tag type="cool-gray">
-              {flowSlots.length} {flowSlots.length === 1 ? 'flow' : 'flows'}
-            </Tag>
-          </div>
-          <div className="juce-grid-page__live-path-summary-flow-actions">
-            <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
-              Add flow
-            </Button>
-            <Button
-              size="sm"
-              kind="danger--tertiary"
-              onClick={() => setShowClearFlowsModal(true)}
-              disabled={flowSlots.length <= 1}
-            >
-              Clear flows
-            </Button>
-          </div>
-        </div>
-      </div>
-      <div className="juce-grid-page__live-path-summary-copy">
-        {livePathLayout.mobileSummary.map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-      </div>
-      {isCompactLayout && compactRoutingInspectorItems.length > 0 && (
-        <div className="juce-grid-page__routing-summary-actions">
-          {compactRoutingInspectorItems.map((item) => (
-            <Button
-              key={item.id}
-              size="sm"
-              kind="ghost"
-              onClick={() => setRoutingInspectorId(item.id)}
-            >
-              {item.label}
-            </Button>
-          ))}
-        </div>
-      )}
-    </Layer>
   )
 
   const renderLivePathFlowCard = (
@@ -3465,8 +3411,7 @@ export function JuceGridPage() {
       {/* Main content area */}
       <div className="juce-grid-page__workspace">
         <main className="juce-grid-page__main">
-        {!isCompactLayout && <JuceGridClusterPanel />}
-        {!isCompactLayout && <JuceGridFlowAssignmentPanel />}
+        {!isCompactLayout && <JuceGridClusterSummaryBar />}
 
         {/* Signal Routing Topology Diagram */}
         <Layer className="juce-grid-page__routing-shell">
@@ -3475,9 +3420,7 @@ export function JuceGridPage() {
 
         {/* Multi-flow signal grids */}
         <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
-          {renderLivePathSummaryCard()}
-
-          {livePathLayout.groups.map((group) => (
+          {livePathLayout.groups.map((group, groupIndex) => (
             <Layer
               key={group.id}
               className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
@@ -3491,9 +3434,37 @@ export function JuceGridPage() {
                       : 'Current live routing context'}
                   </p>
                 </div>
-                <div className="juce-grid-page__compact-tags">
-                  {group.entryLabel && <Tag type="cool-gray">{group.entryLabel}</Tag>}
-                  {group.exitLabel && <Tag type={group.dashed ? 'purple' : 'blue'}>{group.exitLabel}</Tag>}
+                <div className="juce-grid-page__live-path-group-actions">
+                  {groupIndex === 0 && (
+                    <>
+                      <div className="juce-grid-page__live-path-summary-meta">
+                        <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
+                          {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
+                        </Tag>
+                        <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
+                        <Tag type="cool-gray">
+                          {flowSlots.length} {flowSlots.length === 1 ? 'flow' : 'flows'}
+                        </Tag>
+                      </div>
+                      <div className="juce-grid-page__live-path-summary-flow-actions">
+                        <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
+                          Add flow
+                        </Button>
+                        <Button
+                          size="sm"
+                          kind="danger--tertiary"
+                          onClick={() => setShowClearFlowsModal(true)}
+                          disabled={flowSlots.length <= 1}
+                        >
+                          Clear flows
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                  <div className="juce-grid-page__compact-tags">
+                    {group.entryLabel && <Tag type="cool-gray">{group.entryLabel}</Tag>}
+                    {group.exitLabel && <Tag type={group.dashed ? 'purple' : 'blue'}>{group.exitLabel}</Tag>}
+                  </div>
                 </div>
               </div>
 
@@ -3592,8 +3563,7 @@ export function JuceGridPage() {
                   <p>Primary editing remains in the grid above. Use the other tabs for focused workflow panels.</p>
                 </div>
                 <div className="juce-grid-page__compact-stack">
-                  <JuceGridClusterPanel />
-                  <JuceGridFlowAssignmentPanel />
+                  <JuceGridClusterSummaryBar />
                 </div>
               </Layer>
             )}

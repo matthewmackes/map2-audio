@@ -133,6 +133,10 @@
   gap: 0.5rem;
 }
 
+.juce-grid-page__routing-copy {
+  gap: 0.25rem;
+}
+
 .juce-grid-page__routing-copy p,
 .juce-grid-page__routing-panel-copy {
   margin: 0;
@@ -140,9 +144,23 @@
   font-size: 0.875rem;
 }
 
-.juce-grid-page__routing-panel-grid {
+.juce-grid-page__routing-workspace {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.juce-grid-page__routing-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.juce-grid-page__routing-panel-grid {
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
@@ -155,9 +173,10 @@
 }
 
 .juce-grid-page__routing-visual {
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: var(--cds-layer-hover, rgba(255, 255, 255, 0.03));
+  min-height: 100%;
 }
 
 .juce-grid-page__routing-shell--compact {
@@ -183,6 +202,31 @@
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+}
+
+.juce-grid-page__ops-header--combined {
+  align-items: stretch;
+}
+
+.juce-grid-page__ops-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.juce-grid-page__ops-summary-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.juce-grid-page__ops-summary-status {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .juce-grid-page__ops-heading {
@@ -727,6 +771,15 @@
 }
 
 .juce-grid-page__live-path-summary-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.juce-grid-page__live-path-group-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -1903,10 +1956,10 @@
 }
 
 .juce-grid-page__signal-canvas {
-  display: grid;
-  grid-template-columns: minmax(4.75rem, 5rem) minmax(0, 1fr) minmax(4.75rem, 5rem);
+  display: flex;
+  flex-direction: column;
   gap: 0.625rem;
-  align-items: stretch;
+  min-width: 0;
 }
 
 .juce-grid-page__signal-endpoints,
@@ -1924,22 +1977,17 @@
 .juce-grid-page__signal-path,
 .juce-grid-page__signal-empty,
 .juce-grid-page__signal-endpoints {
-  min-height: 100%;
+  min-width: 0;
 }
 
 .juce-grid-page__signal-endpoint {
   --juce-grid-rail-accent: var(--cds-border-strong, var(--border-strong, var(--border)));
   display: grid;
-  grid-template-columns: 1rem minmax(0, 1fr);
-  min-height: 100%;
+  grid-template-columns: auto minmax(0, 1fr);
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: var(--cds-layer, var(--surface));
-}
-
-.juce-grid-page__signal-endpoint--output {
-  grid-template-columns: minmax(0, 1fr) 1rem;
 }
 
 .juce-grid-page__signal-endpoint.has-avb {
@@ -1959,59 +2007,45 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0;
+  padding: 0.65rem 0.7rem;
   background: color-mix(in srgb, var(--juce-grid-rail-accent) 12%, var(--cds-layer-hover, rgba(255, 255, 255, 0.06)));
   border-right: 1px solid var(--cds-border-subtle, var(--border));
 }
 
-.juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-label-strip {
-  grid-column: 2;
-  border-right: none;
-  border-left: 1px solid var(--cds-border-subtle, var(--border));
-}
-
 .juce-grid-page__signal-rail-label {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 0.625rem;
+  font-size: 0.675rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--cds-text-primary, var(--text));
+  white-space: nowrap;
 }
 
 .juce-grid-page__signal-rail-body {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
   min-width: 0;
-  padding: 0.5rem 0.4rem;
-}
-
-.juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-body {
-  grid-column: 1;
+  padding: 0.5rem 0.7rem;
 }
 
 .juce-grid-page__signal-rail-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem;
-}
-
-.juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-top {
-  flex-direction: row-reverse;
+  gap: 0.5rem;
+  flex: 0 0 auto;
 }
 
 .juce-grid-page__signal-rail-icons {
   display: inline-flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
-  min-width: 2rem;
-  min-height: 2rem;
-  padding: 0.25rem 0;
+  gap: 0.35rem;
+  min-width: 2.5rem;
+  min-height: 2.25rem;
+  padding: 0 0.6rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--juce-grid-rail-accent) 10%, var(--cds-layer-hover, rgba(255, 255, 255, 0.08)));
   color: var(--juce-grid-rail-accent);
@@ -2024,24 +2058,26 @@
 }
 
 .juce-grid-page__signal-rail-chip-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
+  flex: 0 1 auto;
 }
 
 .juce-grid-page__signal-rail-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 1.35rem;
-  padding: 0 0.2rem;
+  min-height: 1.5rem;
+  padding: 0 0.45rem;
   border-radius: 0.35rem;
   background: var(--cds-layer-hover, rgba(255, 255, 255, 0.08));
   color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.62rem;
+  font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .juce-grid-page__signal-rail-chip.is-live {
@@ -2050,14 +2086,15 @@
 }
 
 .juce-grid-page__signal-rail-chip--wide {
-  grid-column: 1 / -1;
+  min-width: 3.25rem;
 }
 
 .juce-grid-page__signal-rail-groups {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  flex: 1;
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .juce-grid-page__signal-rail-group {
@@ -2065,6 +2102,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 8rem;
   padding: 0.35rem;
   border-radius: 0.45rem;
   background: var(--cds-layer-hover, rgba(255, 255, 255, 0.08));
@@ -2093,10 +2131,6 @@
   align-items: center;
 }
 
-.juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-group-header {
-  text-align: right;
-}
-
 .juce-grid-page__signal-rail-group-icon {
   display: inline-flex;
   align-items: center;
@@ -2123,7 +2157,7 @@
 
 .juce-grid-page__signal-rail-slot-stack {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 0.25rem;
 }
 
@@ -2131,16 +2165,13 @@
   display: grid;
   grid-template-columns: 0.35rem 1fr;
   gap: 0.35rem;
-  align-items: end;
-  min-height: 2rem;
+  align-items: center;
+  min-height: 1.85rem;
+  min-width: 3.1rem;
   padding: 0.2rem 0.28rem;
   border-radius: 0.35rem;
   background: var(--cds-layer, var(--surface));
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 85%, transparent);
-}
-
-.juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-slot {
-  grid-template-columns: 1fr 0.35rem;
 }
 
 .juce-grid-page__signal-rail-slot.is-warning {
@@ -2155,14 +2186,10 @@
   position: relative;
   display: block;
   width: 0.35rem;
-  min-height: 1.65rem;
+  min-height: 1.4rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--juce-grid-rail-meter) 18%, var(--cds-layer-selected, rgba(255, 255, 255, 0.12)));
   overflow: hidden;
-}
-
-.juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-slot-meter {
-  order: 2;
 }
 
 .juce-grid-page__signal-rail-slot-fill {
@@ -2177,10 +2204,6 @@
   font-weight: 600;
   line-height: 1;
   text-align: center;
-}
-
-.juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-slot-label {
-  order: 1;
 }
 
 .juce-grid-page__signal-rail-empty-slot {
@@ -2847,8 +2870,16 @@
     grid-template-columns: 1fr;
   }
 
+  .juce-grid-page__routing-workspace {
+    grid-template-columns: 1fr;
+  }
+
   .juce-grid-page__flow-card-header {
     align-items: flex-start;
+  }
+
+  .juce-grid-page__ops-summary-grid {
+    grid-template-columns: 1fr;
   }
 
   .juce-grid-page__flow-card-actions {
@@ -2862,46 +2893,17 @@
   }
 
   .juce-grid-page__signal-canvas {
+    gap: 0.75rem;
+  }
+
+  .juce-grid-page__signal-endpoint {
     grid-template-columns: 1fr;
   }
 
-  .juce-grid-page__signal-endpoint,
-  .juce-grid-page__signal-endpoint--output {
-    grid-template-columns: 1.1rem minmax(0, 1fr);
-    min-height: auto;
-  }
-
-  .juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-label-strip {
-    grid-column: 1;
-    border-left: none;
-    border-right: 1px solid var(--cds-border-subtle, var(--border));
-  }
-
-  .juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-body {
-    grid-column: 2;
-  }
-
-  .juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-top {
-    flex-direction: row;
-  }
-
-  .juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-group-header {
-    text-align: left;
-  }
-
-  .juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-slot {
-    grid-template-columns: 0.35rem 1fr;
-  }
-
-  .juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-slot-meter,
-  .juce-grid-page__signal-endpoint--output .juce-grid-page__signal-rail-slot-label {
-    order: 0;
-  }
-
-  .juce-grid-page__signal-rail-groups {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+  .juce-grid-page__signal-rail-label-strip {
+    justify-content: flex-start;
+    border-right: none;
+    border-bottom: 1px solid var(--cds-border-subtle, var(--border));
   }
 
   .juce-grid-page__automation-workspace {
@@ -2984,6 +2986,7 @@
   .juce-grid-page__routing-meta,
   .juce-grid-page__live-path-summary-header,
   .juce-grid-page__live-path-summary-header-actions,
+  .juce-grid-page__live-path-group-actions,
   .juce-grid-page__chain-tile-header,
   .juce-grid-page__chain-tile-tags,
   .juce-grid-page__chain-tile-actions,
@@ -3014,8 +3017,10 @@
   .juce-grid-page__chain-action-grid,
   .juce-grid-page__chain-management-layout,
   .juce-grid-page__chain-grid,
+  .juce-grid-page__routing-workspace,
   .juce-grid-page__routing-flow-list,
-  .juce-grid-page__assignment-values {
+  .juce-grid-page__assignment-values,
+  .juce-grid-page__signal-rail-groups {
     grid-template-columns: 1fr;
   }
 

@@ -255,6 +255,7 @@ jest.mock('./JuceGridChainManagementCard', () => ({
 jest.mock('./JuceGridClusterPanels', () => ({
   JuceGridClusterPanel: () => <div data-testid="juce-grid-cluster-panel">Cluster</div>,
   JuceGridFlowAssignmentPanel: () => <div data-testid="juce-grid-assignment-panel">Assignments</div>,
+  JuceGridClusterSummaryBar: () => <div data-testid="juce-grid-cluster-summary-bar">Cluster summary</div>,
 }))
 
 jest.mock('./JuceGridParameterEditor', () => ({
@@ -637,7 +638,46 @@ describe('JuceGridPage snapshot modal workflow', () => {
     })
   })
 
-  it('keeps flow controls inside the live audio path card and removes the legacy top toolbar card', async () => {
+  it('keeps flow controls inside the lead live-path group and removes the legacy top toolbar card', async () => {
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0', 'flow-1'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      mobileSummary: ['Parallel: A 100%, B 100%'],
+      groups: [
+        {
+          id: 'parallel-main',
+          kind: 'parallel',
+          title: 'Live parallel blend',
+          flowIds: ['flow-0', 'flow-1'],
+          tone: 'active',
+          entryLabel: 'Input Split',
+          exitLabel: 'Mix to Output',
+        },
+      ],
+      flowStates: {
+        'flow-0': {
+          flowId: 'flow-0',
+          activeAudio: true,
+          dimmed: false,
+          placeholder: false,
+          annotation: 'Live branch',
+          secondaryAnnotation: 'Blend 100%',
+          sidechainKey: false,
+        },
+        'flow-1': {
+          flowId: 'flow-1',
+          activeAudio: true,
+          dimmed: false,
+          placeholder: false,
+          annotation: 'Live branch',
+          secondaryAnnotation: 'Blend 100%',
+          sidechainKey: false,
+        },
+      },
+    }
+
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -654,9 +694,12 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    const livePathSummary = await screen.findByRole('region', { name: 'Live audio path' })
-    expect(within(livePathSummary).getByRole('button', { name: 'Add flow' })).toBeTruthy()
-    expect(within(livePathSummary).getByRole('button', { name: /Clear flows/i })).toBeTruthy()
+    const addFlowButton = await screen.findByRole('button', { name: 'Add flow' })
+    const livePathGroupHeader = addFlowButton.closest('.juce-grid-page__live-path-group')
+    expect(livePathGroupHeader).toBeTruthy()
+    expect(within(livePathGroupHeader as HTMLElement).getByRole('button', { name: 'Add flow' })).toBeTruthy()
+    expect(within(livePathGroupHeader as HTMLElement).getByRole('button', { name: /Clear flows/i })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Live audio path' })).toBeNull()
     expect(container.querySelector('.juce-grid-page__toolbar')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Redo' })).toBeNull()
@@ -726,7 +769,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    await screen.findByRole('region', { name: 'Live audio path' })
+    await screen.findByText('Live audio path')
 
     expect(screen.getByTestId('juce-grid-live-path-entry-flow-0').textContent).toContain('Live')
     expect(screen.getByTestId('juce-grid-live-path-entry-flow-1').textContent).toContain('Dim')

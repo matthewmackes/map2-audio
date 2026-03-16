@@ -115,7 +115,7 @@ function buildOutputStatus(): JuceGridAudioInterfaceStatus {
 }
 
 describe('JuceGridSignalCanvas', () => {
-  it('renders mirrored local and AVB side rails with full-detail tooltips and warning state', () => {
+  it('renders input and output routing summaries above and below the block lane with full-detail tooltips and warning state', () => {
     const handleInputPorts = jest.fn()
     const handleOutputPorts = jest.fn()
 
@@ -139,6 +139,10 @@ describe('JuceGridSignalCanvas', () => {
 
     const inputRail = screen.getByTestId('juce-grid-signal-rail-input')
     const outputRail = screen.getByTestId('juce-grid-signal-rail-output')
+    const pluginCard = screen.getByTestId('juce-grid-signal-plugin-card-0')
+
+    expect(inputRail.compareDocumentPosition(pluginCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(pluginCard.compareDocumentPosition(outputRail) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     expect(within(inputRail).getByText('AVB IN')).toBeTruthy()
     expect(within(outputRail).getByText('AVB OUT')).toBeTruthy()
@@ -154,7 +158,6 @@ describe('JuceGridSignalCanvas', () => {
     expect(inputRail.getAttribute('title')).toContain('missing')
     expect(outputRail.getAttribute('title')).toContain('Main Room Listener')
 
-    const pluginCard = screen.getByTestId('juce-grid-signal-plugin-card-0')
     const pluginTitle = within(pluginCard).getByText('Studio Compressor')
 
     expect(pluginTitle).toBeTruthy()
