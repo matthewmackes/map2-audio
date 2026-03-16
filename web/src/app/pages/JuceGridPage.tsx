@@ -68,7 +68,18 @@ import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getCategoryConfig } from '../grid/shared'
 import type { AutomationLane } from '../grid/shared'
-import { chainsApi, pluginsApi, historyApi, audioApi, metricsApi, flowSnapshotsApi, midiApiV2, type AudioAvbEndpoint, type AudioPort } from '../../map2/api'
+import {
+  chainsApi,
+  pluginsApi,
+  historyApi,
+  audioApi,
+  metricsApi,
+  flowSnapshotsApi,
+  midiApiV2,
+  type AudioAvbEndpoint,
+  type AudioPort,
+  type AudioRoutingSelectionBinding,
+} from '../../map2/api'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
@@ -194,6 +205,20 @@ function getAudioRouteLabels(
   })
 
   return [...portLabels, ...avbLabels]
+}
+
+function countAudioBindingChannels(
+  bindings: AudioRoutingSelectionBinding[] | undefined,
+  fallbackPortCount: number,
+  fallbackAvbCount: number,
+) {
+  if (!bindings || bindings.length === 0) {
+    return fallbackPortCount + fallbackAvbCount
+  }
+
+  return bindings.reduce((sum, binding) => (
+    sum + (binding.selection_type === 'local_port' ? 1 : Math.max(1, binding.channels || 1))
+  ), 0)
 }
 
 function getLivePathArrowTone(
@@ -571,21 +596,8 @@ export function JuceGridPage() {
   // Audio Port Selection State — unified per-flow selector
   const [portSelectorFlowIndex, setPortSelectorFlowIndex] = useState<number | null>(null)
 
-  // ============================================================================
-  // Toolbar Enhancement State
-  // ============================================================================
-
   // Preset Import Dialog
   const [showImportDialog, setShowImportDialog] = useState(false)
-
-  // Toolbar Customization
-  const [toolbarCollapsed, setToolbarCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem('map2_juce_grid_toolbar_collapsed') === 'true'
-    } catch {
-      return false
-    }
-  })
 
   // Persist state to localStorage
   useEffect(() => {
@@ -600,12 +612,11 @@ export function JuceGridPage() {
     localStorage.setItem('map2_juce_grid_active_v2', String(activeFlowIndex))
   }, [activeFlowIndex])
 
-  // Persist toolbar collapsed state
   useEffect(() => {
     try {
-      localStorage.setItem('map2_juce_grid_toolbar_collapsed', String(toolbarCollapsed))
+      localStorage.removeItem('map2_juce_grid_toolbar_collapsed')
     } catch {}
-  }, [toolbarCollapsed])
+  }, [])
 
   // Persist snapshots panel state
   useEffect(() => {
@@ -722,6 +733,12 @@ export function JuceGridPage() {
     queryKey: ['audio', 'status'],
     queryFn: () => audioApi.getStatus(),
     refetchInterval: 5000,
+  })
+
+  const audioLevelsQuery = useQuery({
+    queryKey: ['audio', 'levels'],
+    queryFn: audioApi.getLevels,
+    refetchInterval: 500,
   })
 
   // Fetch JACK metrics
@@ -914,6 +931,7 @@ export function JuceGridPage() {
     [automationLanes],
   )
   const audioStatus = audioQuery.data
+  const audioLevels = audioLevelsQuery.data
   const jackMetrics = jackQuery.data
 
   const getChainForFlow = useCallback((slot: FlowSlot): Chain | undefined => {
@@ -1685,11 +1703,25 @@ export function JuceGridPage() {
     return slot ? chains.find(c => c.id === slot.chainId) : undefined
   }, [flowSlots, activeFlowIndex, chains])
 
+  const avbReadinessState = useMemo(() => {
+    const readiness = portsInfo?.avb_readiness
+    if (!readiness || typeof readiness !== 'object') {
+      return 'unknown'
+    }
+
+    const state = (readiness as Record<string, unknown>).state
+    return typeof state === 'string' && state.trim() ? state : 'unknown'
+  }, [portsInfo?.avb_readiness])
+
   const audioInterfaceStatus: JuceGridAudioInterfaceStatus = useMemo(() => ({
     deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
     sampleRate: jackMetrics?.sample_rate || 48000,
     bufferSize: jackMetrics?.buffer_size || 256,
-    channels: (portRouting?.input_ports?.length || 0) + (portRouting?.input_avb_endpoints?.length || 0) || 2,
+    channels: countAudioBindingChannels(
+      portRouting?.input_bindings,
+      portRouting?.input_ports?.length || 0,
+      portRouting?.input_avb_endpoints?.length || 0,
+    ),
     isRunning: audioStatus?.running ?? true,
     selectedPorts: portRouting?.input_ports || [],
     selectedAvbEndpoints: portRouting?.input_avb_endpoints || [],
@@ -1697,14 +1729,21 @@ export function JuceGridPage() {
     routingMode: routing.mode,
     chainActive: activeFlowChain?.is_active ?? false,
     chainName: activeFlowChain?.name,
-  }), [audioStatus, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
+    bindings: portRouting?.input_bindings || [],
+    avbReadinessState,
+    meterLevels: [audioLevels?.input_left || 0, audioLevels?.input_right || 0],
+  }), [audioLevels, audioStatus, avbReadinessState, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
 
   // Create separate output status with output port info
   const audioOutputStatus: JuceGridAudioInterfaceStatus = useMemo(() => ({
     deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
     sampleRate: jackMetrics?.sample_rate || 48000,
     bufferSize: jackMetrics?.buffer_size || 256,
-    channels: (portRouting?.output_ports?.length || 0) + (portRouting?.output_avb_endpoints?.length || 0) || 2,
+    channels: countAudioBindingChannels(
+      portRouting?.output_bindings,
+      portRouting?.output_ports?.length || 0,
+      portRouting?.output_avb_endpoints?.length || 0,
+    ),
     isRunning: audioStatus?.running ?? true,
     selectedPorts: portRouting?.output_ports || [],
     selectedAvbEndpoints: portRouting?.output_avb_endpoints || [],
@@ -1712,7 +1751,10 @@ export function JuceGridPage() {
     routingMode: routing.mode,
     chainActive: activeFlowChain?.is_active ?? false,
     chainName: activeFlowChain?.name,
-  }), [audioStatus, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
+    bindings: portRouting?.output_bindings || [],
+    avbReadinessState,
+    meterLevels: [audioLevels?.output_left || 0, audioLevels?.output_right || 0],
+  }), [audioLevels, audioStatus, avbReadinessState, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
 
   const compactRoutingInspectorItems = useMemo(
     () => getJuceGridRoutingInspectorItems(routing.mode, true),
@@ -2845,13 +2887,14 @@ export function JuceGridPage() {
                 </div>
               ) : (
                 <div className={`juce-grid-page__snapshot-list ${options.rail ? 'juce-grid-page__snapshot-list--rail' : ''}`}>
-                  {favoriteSnapshots.map((snapshot) => {
+                  {favoriteSnapshots.map((snapshot, index) => {
                     const isActiveSnapshot = snapshot.id === activeSnapshotId || snapshot.is_active
 
                     return (
                       <Tile
                         key={snapshot.id}
                         className={`juce-grid-page__snapshot-tile ${options.rail ? 'juce-grid-page__snapshot-tile--rail' : ''} ${isActiveSnapshot ? 'is-active' : ''} ${draggedSnapshotId === snapshot.id ? 'is-dragging' : ''} ${dragOverSnapshotId === snapshot.id ? 'is-drag-over' : ''}`}
+                        data-stripe-tone={index % 2 === 0 ? 'base' : 'alt'}
                         role="button"
                         tabIndex={0}
                         draggable
@@ -2998,13 +3041,14 @@ export function JuceGridPage() {
                   </div>
                 ) : (
                   <div className={`juce-grid-page__snapshot-list ${options.rail ? 'juce-grid-page__snapshot-list--rail' : ''}`}>
-                    {librarySnapshots.map((snapshot) => {
+                    {librarySnapshots.map((snapshot, index) => {
                       const isActiveSnapshot = snapshot.id === activeSnapshotId || snapshot.is_active
 
                       return (
                         <Tile
                           key={snapshot.id}
                           className={`juce-grid-page__snapshot-tile ${options.rail ? 'juce-grid-page__snapshot-tile--rail' : ''} ${isActiveSnapshot ? 'is-active' : ''} ${draggedSnapshotId === snapshot.id ? 'is-dragging' : ''} ${dragOverSnapshotId === snapshot.id ? 'is-drag-over' : ''}`}
+                          data-stripe-tone={index % 2 === 0 ? 'base' : 'alt'}
                           role="button"
                           tabIndex={0}
                           draggable
@@ -3430,8 +3474,12 @@ export function JuceGridPage() {
         </div>
       ) : (
         <div className="juce-grid-page__midi-list">
-          {midiMappings.map((mapping) => (
-            <Tile key={mapping.id} className="juce-grid-page__midi-tile">
+          {midiMappings.map((mapping, index) => (
+            <Tile
+              key={mapping.id}
+              className="juce-grid-page__midi-tile"
+              data-stripe-tone={index % 2 === 0 ? 'base' : 'alt'}
+            >
               <div className="juce-grid-page__midi-tile-header">
                 <div className="juce-grid-page__midi-tile-copy">
                   <strong>{getMidiMappingParameterName(mapping)}</strong>
@@ -4302,96 +4350,37 @@ export function JuceGridPage() {
   return (
     <div className="juce-grid-page">
       <LandscapePrompt componentId="juce-grid" />
-      {!toolbarCollapsed && (
-        <div className="juce-grid-page__header-shell">
-          <Layer className="juce-grid-page__hero">
-            <div className="juce-grid-page__hero-brand">
-              <div className="juce-grid-page__hero-mark">
-                <JuceGridHeroMark />
-              </div>
-              <div className="juce-grid-page__hero-copy">
-                <div className="juce-grid-page__hero-tags">
-                  <Tag type="blue">Audio Grid</Tag>
-                  <Tag type={currentChain?.is_active ? 'green' : 'red'}>
-                    {currentChain?.is_active ? 'Active chain' : 'Standby chain'}
-                  </Tag>
-                  <Tag type="gray">{flowSlots.length} flows</Tag>
-                  {currentChain && <Tag type="cool-gray">{currentChain.name}</Tag>}
-                </div>
-                <h1 className="juce-grid-page__title">Audio Grid</h1>
-                <p className="juce-grid-page__subtitle">
-                  MAP-integrated audio grid editor delivering full JUCE workflow coverage, enabling visual routing, real-time signal graph manipulation, and complete audio processing pipeline control.
-                </p>
-              </div>
+      <div className="juce-grid-page__header-shell">
+        <Layer className="juce-grid-page__hero">
+          <div className="juce-grid-page__hero-brand">
+            <div className="juce-grid-page__hero-mark">
+              <JuceGridHeroMark />
             </div>
-            <div className="juce-grid-page__hero-actions">
-              <Button size="sm" kind="ghost" onClick={handleAddPlugin}>
-                Add plugin
-              </Button>
-              <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
-                Shortcuts
-              </Button>
-            </div>
-          </Layer>
-
-          <Layer className="juce-grid-page__toolbar">
-            <div className="juce-grid-page__toolbar-row">
-              <div className="juce-grid-page__toolbar-buttons">
-                <Button size="sm" kind="ghost" onClick={() => undoMutation.mutate()} disabled={!historyStatus?.can_undo}>
-                  Undo
-                </Button>
-                <Button size="sm" kind="ghost" onClick={() => redoMutation.mutate()} disabled={!historyStatus?.can_redo}>
-                  Redo
-                </Button>
-                <Button
-                  size="sm"
-                  kind="ghost"
-                  onClick={() => {
-                    queryClient.invalidateQueries({ queryKey: ['chains'] })
-                    queryClient.invalidateQueries({ queryKey: ['plugins', 'discover'] })
-                  }}
-                  disabled={chainsQuery.isRefetching || pluginsQuery.isRefetching}
-                >
-                  Refresh
-                </Button>
+            <div className="juce-grid-page__hero-copy">
+              <div className="juce-grid-page__hero-tags">
+                <Tag type="blue">Audio Grid</Tag>
+                <Tag type={currentChain?.is_active ? 'green' : 'red'}>
+                  {currentChain?.is_active ? 'Active chain' : 'Standby chain'}
+                </Tag>
+                <Tag type="gray">{flowSlots.length} flows</Tag>
+                {currentChain && <Tag type="cool-gray">{currentChain.name}</Tag>}
               </div>
-
-              <div className="juce-grid-page__toolbar-status">
-                <MidiLearnButton
-                  isActive={midiLearnActive || midiLearnInProgress}
-                  onToggle={handleMidiLearnToggle}
-                  position="relative"
-                  size="small"
-                  mappingCount={midiMappings.length}
-                />
-                {(midiLearnActive || midiLearnInProgress) && (
-                  <span className="juce-grid-page__midi-status">
-                    {midiLearnInProgress
-                      ? `Learning${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}`
-                      : 'Touch a parameter to learn'}
-                  </span>
-                )}
-                {selectedPlugin && (
-                  <Tag type="purple">
-                    {getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}
-                  </Tag>
-                )}
-                <Button size="sm" kind="tertiary" onClick={() => setToolbarCollapsed(true)}>
-                  Collapse
-                </Button>
-              </div>
+              <h1 className="juce-grid-page__title">Audio Grid</h1>
+              <p className="juce-grid-page__subtitle">
+                MAP-integrated audio grid editor delivering full JUCE workflow coverage, enabling visual routing, real-time signal graph manipulation, and complete audio processing pipeline control.
+              </p>
             </div>
-          </Layer>
-        </div>
-      )}
-
-      {toolbarCollapsed && (
-        <div className="juce-grid-page__collapsed">
-          <Button size="sm" kind="ghost" onClick={() => setToolbarCollapsed(false)}>
-            Show Audio Grid controls
-          </Button>
-        </div>
-      )}
+          </div>
+          <div className="juce-grid-page__hero-actions">
+            <Button size="sm" kind="ghost" onClick={handleAddPlugin}>
+              Add plugin
+            </Button>
+            <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
+              Shortcuts
+            </Button>
+          </div>
+        </Layer>
+      </div>
 
       {/* Chains Grid - below title */}
       <JuceGridChainManagementCard

@@ -2908,14 +2908,41 @@ Description:
 - Dependencies: T065-subG, T069, T070, T071, T030, T004
 - Estimated effort: High
 - Required outputs: HIL evidence bundle, waiver/defect log, updated go/no-go packet, and unblock decision for `T065`.
+Subtasks:
+ID: T072-subA
+Status: [✓] Done
+Title: Add a one-command T072 HIL precheck runner and operator runbook
+Description:
+- Goal / acceptance criteria: Add a restart-safe script and concise runbook that capture the T072 prerequisite matrix in one command: Tesira fleet connectivity, AVB discovered-device readiness, active stream presence, and AVB/PTP lock state. The runner must emit JSON/markdown artifacts suitable for `docs/fit-for-purpose-evidence/<YYYYMMDD>/t072/` and return `BLOCKED` when live AVB/PTP prerequisites are absent instead of forcing manual curl assembly.
+- Why it matters: T072 is currently blocked on lab conditions, but the remaining work should not also depend on ad hoc shell history or hand-written evidence bundles once the lab window opens.
+- Dependencies: T065-subG, T004, T030
+- Estimated effort: Low
+- Required outputs: Qualification/precheck runner, short runbook, focused tests, and refreshed worklist evidence.
 Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 18:38 - Codex
+- Completion notes:
+  - What was done: Added `scripts/run_t072_tesira_hil_precheck.py` to capture Tesira fleet health, AVB discovered-device/stream readiness, and AVB plus Tesira PTP lock status into one JSON/markdown bundle with explicit `PASS`/`BLOCKED` gates.
+  - What was done: Added the operator runbook `docs/tesira/T072_TESIRA_HIL_PRECHECK_RUNBOOK.md` and focused regression coverage in `tests/test_t072_tesira_hil_precheck.py`.
+  - Validation evidence:
+    - `python3 -m py_compile scripts/run_t072_tesira_hil_precheck.py tests/test_t072_tesira_hil_precheck.py`
+    - `pytest -q tests/test_t072_tesira_hil_precheck.py` -> `2 passed`
+    - `python3 scripts/run_t072_tesira_hil_precheck.py --output-dir docs/fit-for-purpose-evidence/20260315/t072` -> expected `BLOCKED`
+  - Files/links produced:
+    - `scripts/run_t072_tesira_hil_precheck.py`
+    - `docs/tesira/T072_TESIRA_HIL_PRECHECK_RUNBOOK.md`
+    - `tests/test_t072_tesira_hil_precheck.py`
+    - `docs/fit-for-purpose-evidence/20260315/t072/t072-hil-precheck.json`
+    - `docs/fit-for-purpose-evidence/20260315/t072/t072-hil-precheck.md`
 Assigned to: Codex + Lab
-Last updated: 2026-03-09 03:55 - Codex
+Last updated: 2026-03-15 18:38 - Codex
 - Blocked notes:
+  - 2026-03-15 added a one-command precheck runner + runbook (`scripts/run_t072_tesira_hil_precheck.py`, `docs/tesira/T072_TESIRA_HIL_PRECHECK_RUNBOOK.md`) and captured fresh host evidence under `docs/fit-for-purpose-evidence/20260315/t072/`.
+  - 2026-03-15 live host run shows the blocker is now explicit and restart-safe: `0` connected Tesira devices in scope, `0` discovered AVB devices, `0` active AVB streams, and host AVB PTP still `INITIALIZING`, so the remaining work is strictly restoring live Tesira/AVB/PTP lab conditions and executing the real matrix.
   - 2026-03-09 live precheck reconfirms Tesira control plane readiness (`2` connected Tesira devices), but AVB/PTP certification prerequisites remain unmet: `/api/avb/devices` reports `discovered_count=0`, `/api/avb/streams` reports `0` streams, and `/api/avb/ptp/status` remains `INITIALIZING` with no grandmaster lock data.
   - 2026-03-08 live precheck confirms Tesira control plane is online (`2` connected Tesira devices), but AVB/PTP certification prerequisites remain unmet: `/api/avb/devices` reports `discovered_count=0`, `/api/avb/streams` reports `0` streams, and `/api/avb/ptp/status` remains `INITIALIZING` with no grandmaster lock data.
   - HIL gate impact: AVB/PTP topology and under-load routing certification cannot proceed until active AVB entities/streams and stable PTP telemetry are present.
-  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260309/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260309/t072/t072-hil-precheck.md`, `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.md`.
+  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260315/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260315/t072/t072-hil-precheck.md`, `docs/fit-for-purpose-evidence/20260309/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260309/t072/t072-hil-precheck.md`, `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.md`.
 
 ID: T073
 Status: [✓] Done
@@ -2973,19 +3000,47 @@ Last updated: 2026-03-08 18:01 - Codex
 
 ID: T076
 Status: [✗] Blocked
-Title: Deliver MAP2 deploy-chain UX and HIL certification for direct deployment
+Title: Deliver MAP2 deploy-chain UX and HIL certification for the supported Tesira deployment workflow
 Description:
-- Goal / acceptance criteria: Add operator UI for layout selection, dry-run compatibility report, live deployment timeline, and rollback action; run 2-unit HIL validation and archive evidence.
-- Why it matters: The direct path is only production-ready when operators can execute it reliably and evidence shows safe behavior on real hardware.
+- Goal / acceptance criteria: Add operator UI for layout selection and manual-package download/upload guidance, then run 2-unit HIL validation and archive evidence for the supported manual SageVue deployment workflow plus MAP2 post-upload verification.
+- Why it matters: The current supported Tesira deployment path is only production-ready when operators can execute the manual-package workflow reliably and evidence shows safe behavior on real hardware.
 - Dependencies: T075, T004
 - Estimated effort: High
-- Required outputs: Deploy dialog/timeline UI components, route wiring, HIL evidence bundle under `docs/fit-for-purpose-evidence/`, and go/no-go criteria update.
+- Required outputs: Deploy dialog/manual-package UI components, route wiring, HIL evidence bundle under `docs/fit-for-purpose-evidence/`, and go/no-go criteria update.
+Subtasks:
+ID: T076-subA
+Status: [✓] Done
+Title: Add manual-package deployment HIL runner and operator runbook for the current SageVue workflow
+Description:
+- Goal / acceptance criteria: Add a restart-safe script and concise runbook that validate the current supported Tesira deployment path: catalog layout lookup, manual-package ZIP download/content verification, target-device readiness capture, and post-upload verification checkpoints. The runner must support a pre-upload `BLOCKED/ready` phase plus a post-upload confirmation phase, emit JSON/markdown artifacts for `docs/fit-for-purpose-evidence/<YYYYMMDD>/t076/`, and reflect the current manual SageVue workflow instead of the removed direct-deploy endpoints.
+- Why it matters: T076 still needs 2-unit HIL certification, but the live session should use the product that actually exists today. Right now the backend exposes manual-package download and explicitly removes direct SageVue deployment, so the evidence path must match that contract.
+- Dependencies: T075, T004
+- Estimated effort: Low
+- Required outputs: Manual-deploy HIL runner, short runbook, focused tests, and refreshed worklist notes aligned to the current workflow.
 Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 18:38 - Codex
+- Completion notes:
+  - What was done: Added `scripts/run_t076_manual_deploy_hil_bundle.py` to validate the current manual SageVue workflow in two phases: preflight/package verification before upload, then post-upload MAP2 verification after the operator reruns with `--manual-upload-confirmed`.
+  - What was done: Added the operator runbook `docs/tesira/T076_MANUAL_DEPLOY_HIL_RUNBOOK.md` and focused regression coverage in `tests/test_t076_manual_deploy_hil_bundle.py`.
+  - Validation evidence:
+    - `python3 -m py_compile scripts/run_t076_manual_deploy_hil_bundle.py tests/test_t076_manual_deploy_hil_bundle.py`
+    - `pytest -q tests/test_t076_manual_deploy_hil_bundle.py` -> `2 passed`
+    - `python3 scripts/run_t076_manual_deploy_hil_bundle.py --output-dir docs/fit-for-purpose-evidence/20260315/t076 --layout-id forte_ci_avb_bridge_default --layout-version 1.0.0 --device-ids tesira_172_20_146_236,tesira_172_20_146_237 --min-connected-devices 2` -> expected `BLOCKED`
+  - Files/links produced:
+    - `scripts/run_t076_manual_deploy_hil_bundle.py`
+    - `docs/tesira/T076_MANUAL_DEPLOY_HIL_RUNBOOK.md`
+    - `tests/test_t076_manual_deploy_hil_bundle.py`
+    - `docs/fit-for-purpose-evidence/20260315/t076/t076-manual-deploy-hil-summary.json`
+    - `docs/fit-for-purpose-evidence/20260315/t076/t076-manual-deploy-hil-summary.md`
 Assigned to: Codex + Lab
-Last updated: 2026-03-08 18:01 - Codex
+Last updated: 2026-03-15 18:38 - Codex
 - Blocked notes:
-  - Software scope delivered: added Tesira deploy UI controls (`Deploy Chain` dialog), layout/status hooks, deployment polling hooks, rollback action wiring, and API client support for new deployment/catalog endpoints.
-  - Remaining blocker: 2-unit HIL deployment certification requires live hardware/lab availability from `T004`.
+  - 2026-03-15 aligned the unfinished task to the current product contract: MAP2 direct SageVue deployment endpoints are removed, and the supported path is manual package download/upload plus MAP2 post-upload verification.
+  - 2026-03-15 added a restart-safe manual-package HIL runner + runbook (`scripts/run_t076_manual_deploy_hil_bundle.py`, `docs/tesira/T076_MANUAL_DEPLOY_HIL_RUNBOOK.md`) and captured fresh host evidence under `docs/fit-for-purpose-evidence/20260315/t076/`.
+  - 2026-03-15 live host run confirms the workflow surface is present (`manual_upload_required=true`, layout `forte_ci_avb_bridge_default` available) but the actual certification window remains blocked because the targeted Tesira devices are disconnected (`0` connected of `2` required), so no live upload or post-upload verification can be completed in this environment.
+  - Software scope delivered: added Tesira deploy UI controls (`Deploy Chain` dialog now exposing the manual-package flow), layout/status hooks, and API client support for layout catalog + manual package download endpoints.
+  - Remaining blocker: 2-unit HIL deployment certification still requires live hardware/lab availability from `T004` plus an operator-performed SageVue upload/deploy step.
   - Software files completed: `web/src/app/components/Tesira/types.ts`, `web/src/map2/api.ts`, `web/src/app/components/Tesira/hooks/useTesiraApi.ts`, `web/src/app/components/Tesira/components/TesiraDeployDialog.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`.
 
 
@@ -10395,3 +10450,91 @@ Last updated: 2026-03-15 18:12 - Codex
   - Validation: `npm --prefix web run typecheck`; `npm --prefix web run test -- src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run build`
   - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced.
   - Compliance: AGPL/license spot-check found no new licensing gaps introduced by the JUCE-GRID live-path strip refinement.
+
+ID: T175
+Status: [✓] Done
+Title: Retire the legacy `/midi` GUI route by moving its unique controls into MIDI Hub
+Description:
+- Goal / acceptance criteria: Remove `/midi` as a first-class GUI destination while preserving operator access to every unique control that only lived on that page. The surviving workflows must be accessible elsewhere in the GUI, preferably under `/midi-hub`, and stale `/midi` visits must hand off safely instead of dead-ending. Acceptance requires evidence for where mappings, commands, devices, activity, presets, and controller-setup controls now live, updated navigation metadata/tests, and frontend validation.
+- Why it matters: The user wants the MIDI window removed, but deleting it outright would strand several core MIDI workflows that are not yet surfaced anywhere else in the GUI.
+- Dependencies: T078, T079, T173
+- Estimated effort: Medium
+- Required outputs: Shared/rehosted core MIDI GUI surface, `/midi` route retirement/redirect, navigation and home-metadata cleanup, verification notes showing each former `/midi` item has a surviving GUI home, and validation logs.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 19:21 - Codex
+- Completion notes:
+  - What was done: Rehosted the unique legacy `/midi` controls inside a new `Core Controls` tab on `/midi-hub` by embedding the extracted core MIDI control center into MIDI Hub.
+  - What was done: Retired `/midi` as a first-class GUI destination by changing the app route to redirect to `/midi-hub`, removing the `/midi` navigation card/poster entry, aliasing pinned `/midi` settings to `/midi-hub`, and promoting `MIDI Hub` as the primary MIDI home card.
+  - Verification of former `/midi` items now living elsewhere in the GUI:
+    - Controller Setup: `/midi-hub` -> `Core Controls` tab -> embedded `MIDICommanderSetup`
+    - CC Mappings: `/midi-hub` -> `Core Controls` tab, plus existing plugin/JUCE-GRID mapping surfaces remain
+    - Commands: `/midi-hub` -> `Core Controls` tab
+    - Devices: `/midi-hub` -> `Core Controls` tab
+    - Activity: `/midi-hub` -> `Core Controls` tab for last-event view, plus `/midi-hub` -> `Clock & Diagnostics` -> traffic monitor
+    - Presets: `/midi-hub` -> `Core Controls` tab for legacy core MIDI presets, plus `/midi-hub` -> `Setup & Routing` -> MIDI Hub preset manager for hub-native presets
+  - Files produced: `web/src/app/App.tsx`; `web/src/app/components/MidiHub/MidiHubHelpPrimitives.tsx`; `web/src/app/data/advancedMenuItems.ts`; `web/src/app/data/advancedMenuItems.test.ts`; `web/src/app/data/homeCardProfiles.ts`; `web/src/app/pages/MIDIPage.tsx`; `web/src/app/pages/MidiHubPage.tsx`; `web/src/app/pages/posterManifest.ts`
+  - Validation: `npm --prefix web run -s typecheck`; `npm --prefix web run -s test -- src/app/data/advancedMenuItems.test.ts src/app/layout/AppShell.test.tsx src/app/pages/MidiHubPage.test.tsx --runInBand`; `npm --prefix web run -s build`
+  - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced.
+  - Compliance: AGPL/license spot-check found no new licensing gaps introduced by the MIDI GUI consolidation.
+
+ID: T176
+Status: [✓] Done
+Title: Let JUCE-GRID snapshot and MIDI side rails grow with list content and add alternating row shading
+Description:
+- Goal / acceptance criteria: Update the `/juce-grid` left snapshot rail and right MIDI rail so expanded side menus are no longer capped to viewport-height internal scroll areas, can grow down the page as list content increases, and visually alternate every other item for easier scanning. Preserve the existing desktop rail layout, collapse behavior, and compact/mobile workflow.
+- Why it matters: The current slide-in rails trap long lists inside fixed-height scroll boxes, which makes growing snapshot and MIDI mapping collections harder to review and less readable.
+- Dependencies: T173
+- Estimated effort: Low
+- Required outputs: Updated `JUCE-GRID` rail markup/CSS, focused regression coverage, validation evidence, and completion/compliance notes in the canonical worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 19:44 - Codex
+- Completion notes:
+  - What was done: Removed the fixed viewport-height cap/internal scroll treatment from the expanded `/juce-grid` snapshot and MIDI rails so both side menus now grow with their list content while preserving the existing desktop rail shells, collapse controls, and compact workflow layout.
+  - What was done: Added explicit alternating stripe markers to snapshot tiles and MIDI mapping tiles so every other row renders with a distinct background tone for faster scanning as either list grows.
+  - Files produced: `web/src/app/pages/JuceGridPage.tsx`; `web/src/app/pages/JuceGridPage.css`; `web/src/app/pages/JuceGridPage.test.tsx`; `docs/PROJECT_WORKLIST.md`
+  - Validation: `npm --prefix web run test -- src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+  - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced. The standard build flow also regenerated `VERSION` and `version.json`.
+  - Compliance: Touched `JUCE-GRID` frontend/test/worklist files remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional remediation task was required.
+
+ID: T177
+Status: [✓] Done
+Title: Remove the legacy JUCE-GRID top controls card
+Description:
+- Goal / acceptance criteria: Remove the `/juce-grid` top controls card that currently renders the `Undo`, `Redo`, `Refresh`, and `Collapse` actions beneath the hero surface. The page should no longer render that toolbar card or its collapsed placeholder, and any dead local state/CSS/test hooks for the card should be cleaned up without disturbing the rest of the JUCE-GRID layout.
+- Why it matters: The user wants that card removed from JUCE-GRID entirely rather than visually retained as an optional collapsed strip.
+- Dependencies: T174, T176
+- Estimated effort: Low
+- Required outputs: Updated `JUCE-GRID` page/CSS/test/worklist files, targeted frontend validation, and completion/compliance notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 19:53 - Codex
+- Completion notes:
+  - What was done: Removed the legacy top controls card from `/juce-grid`, including the `Undo`, `Redo`, `Refresh`, and `Collapse` surface plus its collapsed placeholder, so the page now transitions directly from the hero into the main JUCE-GRID workflow.
+  - What was done: Deleted the no-longer-used toolbar-collapse persistence path and pruned the matching page CSS/test expectations so the removal is reflected in both layout and regression coverage.
+  - Files produced: `web/src/app/pages/JuceGridPage.tsx`; `web/src/app/pages/JuceGridPage.css`; `web/src/app/pages/JuceGridPage.test.tsx`; `docs/PROJECT_WORKLIST.md`
+  - Validation: `npm --prefix web run test -- src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run typecheck`; `npm --prefix web run build`
+  - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced. The standard build flow also regenerated `VERSION` and `version.json`.
+  - Compliance: Touched `JUCE-GRID` frontend/test/worklist files remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional remediation task was required.
+
+ID: T178
+Status: [✓] Done
+Title: Rework JUCE-GRID endpoint blocks into thin Carbon side rails with local and AVB channel stacks
+Description:
+- Goal / acceptance criteria: Replace the current wide `Input` and `Output` endpoint tiles in `/juce-grid` with always-visible thin mirrored side rails that preserve the same routing information while freeing more room for the effect block canvas. The rails must use Carbon-aligned styling, rotate the main labels, keep local and AVB assignments separated, show compact assigned-channel stacks with inline meter treatment, expose the full endpoint details via tooltip text, surface AVB warning/error state distinctly with a pulsing red treatment on faults, and keep the existing routing modal workflow with explicit multi-select/local+AVB copy.
+- Why it matters: The current endpoint cards consume too much horizontal space around the effect path and do not present AVB/local assignments with the compact operator-focused density the user wants.
+- Dependencies: T173, T176, T177
+- Estimated effort: Medium
+- Required outputs: Updated JUCE-GRID signal canvas/page/modal data flow and styling, focused endpoint regression coverage, validation evidence, and completion/compliance notes in the canonical worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-15 20:29 - Codex
+- Completion notes:
+  - What was done: Replaced the old `/juce-grid` input/output endpoint tiles with narrow mirrored Carbon rails in `web/src/app/pages/JuceGridSignalCanvas.tsx`, including rotated labels, compact status chips, tooltip-backed full endpoint details, separate local and AVB channel groups, and inline per-channel rail meters that scale vertically with assigned channels.
+  - What was done: Wired `web/src/app/pages/JuceGridPage.tsx` to pass canonical `input_bindings` / `output_bindings`, AVB readiness state, and live stereo endpoint levels into the signal canvas so the rails render from the real routing model rather than from coarse local summaries.
+  - What was done: Updated `web/src/app/pages/JuceGridAudioPortModal.tsx` to expose an explicit multi-select option while clarifying that local and AVB assignments can be selected together in the same apply pass.
+  - Files produced: `web/src/app/pages/JuceGridSignalCanvas.tsx`; `web/src/app/pages/JuceGridSignalCanvas.test.tsx`; `web/src/app/pages/JuceGridPage.tsx`; `web/src/app/pages/JuceGridPage.css`; `web/src/app/pages/JuceGridAudioPortModal.tsx`; `web/src/app/pages/JuceGridPage.test.tsx`; `docs/PROJECT_WORKLIST.md`
+  - Validation: `npm --prefix web run typecheck`; `npm --prefix web run test -- src/app/pages/JuceGridSignalCanvas.test.tsx src/app/pages/JuceGridPage.test.tsx --runInBand`; `npm --prefix web run build`
+  - Notes: Frontend build completed with the existing Vite warning about `web/src/map2/api.ts` using both dynamic and static imports; no new build failures were introduced. The standard build flow also regenerated `VERSION` and `version.json`.
+  - Compliance: Touched `JUCE-GRID` frontend/test/worklist files remain MAP2-owned under the repository AGPLv3 posture. Licensing spot-check against `README.md`, `LICENSE`, and `docs/THIRD_PARTY_NOTICES.md` found no new gaps, so no additional remediation task was required.

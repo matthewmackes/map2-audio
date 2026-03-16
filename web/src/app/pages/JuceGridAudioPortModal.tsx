@@ -88,6 +88,7 @@ export function JuceGridAudioPortModal({
   const [selectedInputAvbEndpoints, setSelectedInputAvbEndpoints] = useState<string[]>([])
   const [selectedOutputAvbEndpoints, setSelectedOutputAvbEndpoints] = useState<string[]>([])
   const [linkStereo, setLinkStereo] = useState(true)
+  const [allowMultiSelect, setAllowMultiSelect] = useState(true)
   const [activeTab, setActiveTab] = useState<PortTabId>('input')
 
   const isPerChain = chainId != null && chainId > 0
@@ -206,7 +207,6 @@ export function JuceGridAudioPortModal({
 
   const togglePort = useCallback((type: PortTabId, index: number) => {
     const setter = type === 'input' ? setSelectedInputs : setSelectedOutputs
-    const current = type === 'input' ? selectedInputs : selectedOutputs
     const ports = type === 'input' ? inputPorts : outputPorts
 
     setter((previous) => {
@@ -221,23 +221,23 @@ export function JuceGridAudioPortModal({
         return next.sort((left, right) => left - right)
       }
 
-      let next = [...previous, index]
+      let next = allowMultiSelect ? [...previous, index] : [index]
       if (linkStereo) {
         const partner = index % 2 === 0 ? index + 1 : index - 1
-        if (partner >= 0 && partner < ports.length && !current.includes(partner)) {
-          next.push(partner)
+        if (partner >= 0 && partner < ports.length) {
+          next = [...next, partner]
         }
       }
-      return next.sort((left, right) => left - right)
+      return [...new Set(next)].sort((left, right) => left - right)
     })
-  }, [inputPorts, linkStereo, outputPorts, selectedInputs, selectedOutputs])
+  }, [allowMultiSelect, inputPorts, linkStereo, outputPorts])
 
   const toggleAvbEndpoint = useCallback((type: PortTabId, endpointId: string) => {
     if (type === 'input') {
       setSelectedInputAvbEndpoints((previous) => (
         previous.includes(endpointId)
           ? previous.filter((id) => id !== endpointId)
-          : [...previous, endpointId]
+          : allowMultiSelect ? [...previous, endpointId] : [endpointId]
       ))
       return
     }
@@ -245,9 +245,9 @@ export function JuceGridAudioPortModal({
     setSelectedOutputAvbEndpoints((previous) => (
       previous.includes(endpointId)
         ? previous.filter((id) => id !== endpointId)
-        : [...previous, endpointId]
+        : allowMultiSelect ? [...previous, endpointId] : [endpointId]
     ))
-  }, [])
+  }, [allowMultiSelect])
 
   const applyPreset = useCallback((preset: AudioPortPreset) => {
     setSelectedInputs(preset.input_ports)
@@ -439,12 +439,15 @@ export function JuceGridAudioPortModal({
           <div className="juce-grid-page__port-modal-copy">
             <strong>{deviceName}</strong>
             <p>
-              Choose local ports and AVB endpoints for {isPerChain ? `Flow ${flowLabel || ''}` : 'the current audio node'}.
+              Choose one or more local ports and AVB endpoints for {isPerChain ? `Flow ${flowLabel || ''}` : 'the current audio node'}.
             </p>
           </div>
           <div className="juce-grid-page__port-modal-meta">
             <Tag type="cool-gray">
               {inputPorts.length} in / {outputPorts.length} out
+            </Tag>
+            <Tag type={allowMultiSelect ? 'blue' : 'cool-gray'}>
+              {allowMultiSelect ? 'Multi-select' : 'Single-select'}
             </Tag>
             <Tag type={avbReadinessState === 'operational' ? 'green' : avbReadinessState === 'degraded' ? 'warm-gray' : 'cool-gray'}>
               AVB {avbReadinessState}
@@ -456,6 +459,12 @@ export function JuceGridAudioPortModal({
         </div>
 
         <div className="juce-grid-page__port-toolbar">
+          <Checkbox
+            id="juce-grid-port-multi-select"
+            labelText="Multi-select assignments"
+            checked={allowMultiSelect}
+            onChange={(_, data) => setAllowMultiSelect(Boolean(data.checked))}
+          />
           <Checkbox
             id="juce-grid-port-link-stereo"
             labelText="Link stereo pairs"
@@ -531,7 +540,7 @@ export function JuceGridAudioPortModal({
             <section className="juce-grid-page__port-pane">
               <div className="juce-grid-page__compact-section-header">
                 <h2>Local input ports</h2>
-                <p>Assign local channels for the active signal path.</p>
+                <p>Select one or more local channels for the active signal path.</p>
               </div>
               {inputPorts.length > 0 ? renderPortCards('input', inputGroups, selectedInputs) : (
                 <div className="juce-grid-page__empty-state">
@@ -544,7 +553,7 @@ export function JuceGridAudioPortModal({
             <section className="juce-grid-page__port-pane">
               <div className="juce-grid-page__compact-section-header">
                 <h2>AVB talker inputs</h2>
-                <p>Bring remote network streams into the flow.</p>
+                <p>Select one or more remote network streams. AVB remains available alongside local input selection.</p>
               </div>
               {renderEndpointCards('input', avbTalkers, selectedInputAvbEndpoints, missingInputAvbEndpointIds)}
             </section>
@@ -554,7 +563,7 @@ export function JuceGridAudioPortModal({
             <section className="juce-grid-page__port-pane">
               <div className="juce-grid-page__compact-section-header">
                 <h2>Local output ports</h2>
-                <p>Route processed signal back to the local interface.</p>
+                <p>Select one or more local destinations for the processed signal.</p>
               </div>
               {outputPorts.length > 0 ? renderPortCards('output', outputGroups, selectedOutputs) : (
                 <div className="juce-grid-page__empty-state">
@@ -567,7 +576,7 @@ export function JuceGridAudioPortModal({
             <section className="juce-grid-page__port-pane">
               <div className="juce-grid-page__compact-section-header">
                 <h2>AVB listener outputs</h2>
-                <p>Send this flow to remote endpoints across the AVB fabric.</p>
+                <p>Select one or more remote AVB destinations. AVB remains available alongside local output selection.</p>
               </div>
               {renderEndpointCards('output', avbListeners, selectedOutputAvbEndpoints, missingOutputAvbEndpointIds)}
             </section>

@@ -71,6 +71,12 @@ const mockAudioApi = {
     output_avb_endpoints: [],
   })),
   getStatus: jest.fn(async () => ({ running: true, engine: 'PipeWire' })),
+  getLevels: jest.fn(async () => ({
+    input_left: 0.24,
+    input_right: 0.31,
+    output_left: 0.42,
+    output_right: 0.38,
+  })),
 }
 
 const mockMetricsApi = {
@@ -448,7 +454,7 @@ describe('JuceGridPage snapshot rail layout', () => {
     })
   })
 
-  it('keeps flow controls inside the live audio path card instead of the top toolbar', async () => {
+  it('keeps flow controls inside the live audio path card and removes the legacy top toolbar card', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -468,11 +474,10 @@ describe('JuceGridPage snapshot rail layout', () => {
     const livePathSummary = await screen.findByRole('region', { name: 'Live audio path' })
     expect(within(livePathSummary).getByRole('button', { name: 'Add flow' })).toBeTruthy()
     expect(within(livePathSummary).getByRole('button', { name: /Clear flows/i })).toBeTruthy()
-
-    const toolbarButtons = container.querySelector('.juce-grid-page__toolbar .juce-grid-page__toolbar-buttons')
-    expect(toolbarButtons).toBeTruthy()
-    expect(within(toolbarButtons as HTMLElement).queryByRole('button', { name: 'Add flow' })).toBeNull()
-    expect(within(toolbarButtons as HTMLElement).queryByRole('button', { name: /Clear flows/i })).toBeNull()
+    expect(container.querySelector('.juce-grid-page__toolbar')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Redo' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Show Audio Grid controls' })).toBeNull()
   })
 
   it('closes the plugin chooser immediately when adding a plugin', async () => {
@@ -599,6 +604,152 @@ describe('JuceGridPage snapshot rail layout', () => {
     expect(screen.getByText('Chorus')).toBeTruthy()
     expect(screen.getByText('CC 11')).toBeTruthy()
     expect(mockMidiApiV2.getMappings).toHaveBeenCalledWith()
+  })
+
+  it('marks snapshot and MIDI rail rows with alternating stripe tones', async () => {
+    mockFlowSnapshotsApi.list.mockResolvedValue({
+      snapshots: [
+        {
+          id: 11,
+          name: 'Verse Wash',
+          description: 'Favorite snapshot A',
+          updated_at: '2026-03-15T18:00:00.000Z',
+          flow_slots: [{ id: 'flow-0', label: 'A', color: '#0f62fe' }],
+          is_active: false,
+          is_favorite: true,
+          program_number: null,
+        },
+        {
+          id: 12,
+          name: 'Chorus Lift',
+          description: 'Favorite snapshot B',
+          updated_at: '2026-03-15T18:05:00.000Z',
+          flow_slots: [{ id: 'flow-1', label: 'B', color: '#24a148' }],
+          is_active: false,
+          is_favorite: true,
+          program_number: null,
+        },
+      ],
+      count: 2,
+      active_id: null,
+    })
+    mockMidiApiV2.getStatus.mockResolvedValue({
+      enabled: true,
+      input_open: true,
+      output_open: false,
+      input_device: 'Test Input',
+      output_device: null,
+      mappings_count: 2,
+      commands_count: 0,
+      learning: false,
+      last_channel: 3,
+      last_cc: 11,
+      last_value: 96,
+    })
+    mockMidiApiV2.getMappings.mockResolvedValue({
+      mappings: [
+        {
+          id: 77,
+          channel: 0,
+          cc: 11,
+          chain_id: null,
+          target_plugin_uri: 'map2://juce/modulation/chorus',
+          target_param_index: 0,
+          target_param_symbol: 'depth',
+          min_val: 0,
+          max_val: 1,
+          curve_type: 'linear',
+          invert: false,
+          feedback_enabled: false,
+          feedback_cc: null,
+          name: 'Chorus - Depth',
+          group_id: null,
+          is_learned: true,
+          is_enabled: true,
+        },
+        {
+          id: 78,
+          channel: 0,
+          cc: 12,
+          chain_id: null,
+          target_plugin_uri: 'map2://juce/delay/stereo-delay',
+          target_param_index: 1,
+          target_param_symbol: 'mix',
+          min_val: 0,
+          max_val: 1,
+          curve_type: 'linear',
+          invert: false,
+          feedback_enabled: false,
+          feedback_cc: null,
+          name: 'Stereo Delay - Mix',
+          group_id: null,
+          is_learned: true,
+          is_enabled: true,
+        },
+      ],
+      count: 2,
+    })
+    mockPluginsApi.discover.mockResolvedValue({
+      plugins: [
+        {
+          uri: 'map2://juce/modulation/chorus',
+          name: 'Chorus',
+          author: 'MAP2 Audio',
+          category: 'Modulation',
+          format: 'JUCE',
+          in_ports: 2,
+          out_ports: 2,
+          parameters: [
+            { index: 0, name: 'Depth', symbol: 'depth', min: 0, max: 1, default: 0.5, is_toggled: false, is_log: false },
+          ],
+        },
+        {
+          uri: 'map2://juce/delay/stereo-delay',
+          name: 'Stereo Delay',
+          author: 'MAP2 Audio',
+          category: 'Delay',
+          format: 'JUCE',
+          in_ports: 2,
+          out_ports: 2,
+          parameters: [
+            { index: 1, name: 'Mix', symbol: 'mix', min: 0, max: 1, default: 0.5, is_toggled: false, is_log: false },
+          ],
+        },
+      ],
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByText('Verse Wash')).toBeTruthy()
+    expect(await screen.findByText('Depth')).toBeTruthy()
+
+    const snapshotTiles = Array.from(
+      container.querySelectorAll('.juce-grid-page__snapshot-list .juce-grid-page__snapshot-tile'),
+    ) as HTMLElement[]
+    const midiTiles = Array.from(
+      container.querySelectorAll('.juce-grid-page__midi-tile'),
+    ) as HTMLElement[]
+
+    expect(snapshotTiles).toHaveLength(2)
+    expect(snapshotTiles[0].getAttribute('data-stripe-tone')).toBe('base')
+    expect(snapshotTiles[1].getAttribute('data-stripe-tone')).toBe('alt')
+    expect(midiTiles).toHaveLength(2)
+    expect(midiTiles[0].getAttribute('data-stripe-tone')).toBe('base')
+    expect(midiTiles[1].getAttribute('data-stripe-tone')).toBe('alt')
   })
 
   it('queries canonical chain-scoped MIDI mappings when the active-chain filter is selected', async () => {

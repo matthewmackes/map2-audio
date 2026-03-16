@@ -1,6 +1,19 @@
 import { useCallback, useState, type CSSProperties, memo } from 'react'
-import { Add, Draggable, Meter, TrashCan, VolumeMute, VolumeUp } from '@carbon/icons-react'
+import {
+  Add,
+  AudioConsole,
+  Draggable,
+  Link,
+  Meter,
+  SettingsAdjust,
+  TrashCan,
+  VolumeDown,
+  VolumeMute,
+  VolumeUp,
+  WarningAlt,
+} from '@carbon/icons-react'
 import { Button, Tag, Tile } from '@carbon/react'
+import type { AudioRoutingSelectionBinding } from '../../map2/api'
 import { getCategoryConfig } from '../components/PluginCards/types'
 import type { Chain, Plugin } from '../../map2/types'
 import { getDisplayPluginName } from '../../map2/displayNames'
@@ -17,6 +30,9 @@ export interface JuceGridAudioInterfaceStatus {
   routingMode?: 'parallel_blend' | 'ab_switch' | 'series' | 'parameter_morph' | 'sidechain'
   chainActive?: boolean
   chainName?: string
+  bindings?: AudioRoutingSelectionBinding[]
+  avbReadinessState?: string
+  meterLevels?: number[]
 }
 
 export interface JuceGridSignalCanvasProps {
@@ -36,27 +52,186 @@ export interface JuceGridSignalCanvasProps {
   onOutputPortSelectClick?: () => void
 }
 
-function summarizeEndpoint(status?: JuceGridAudioInterfaceStatus) {
-  if (!status) {
-    return {
-      mode: 'Disconnected',
-      detail: 'No port data',
-      rate: 'n/a',
-    }
-  }
+type EndpointSide = 'input' | 'output'
+type EndpointGroupState = 'normal' | 'warning' | 'error'
 
-  const selectedCount = (status.selectedPorts?.length || 0) + (status.selectedAvbEndpoints?.length || 0)
-  const mode = selectedCount === 0 ? 'Unassigned' : selectedCount === 1 ? 'Mono' : selectedCount === 2 ? 'Stereo' : `${selectedCount}ch`
-  const avb = status.selectedAvbEndpoints?.length ? ` + ${status.selectedAvbEndpoints.length} AVB` : ''
-  return {
-    mode,
-    detail: `${status.selectedPorts?.length || 0} local${avb}`,
-    rate: `${status.sampleRate || 48000}Hz / ${status.bufferSize || 256}smp`,
-  }
+interface EndpointRailSlot {
+  id: string
+  label: string
+  detail: string
+  meterLevel: number
+  available: boolean
+  warning: boolean
+}
+
+interface EndpointRailGroup {
+  key: 'local' | 'avb'
+  heading: string
+  summary: string
+  info: string
+  slots: EndpointRailSlot[]
+  state: EndpointGroupState
+}
+
+const ROUTING_MODE_SHORT_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus['routingMode']>, string> = {
+  parallel_blend: 'MIX',
+  ab_switch: 'A/B',
+  series: 'SER',
+  parameter_morph: 'MOR',
+  sidechain: 'S/C',
 }
 
 function levelPercent(level: number | undefined) {
   return `${Math.max(0, Math.min(100, (level || 0) * 100))}%`
+}
+
+function isHealthyAvbState(state: string | undefined) {
+  if (!state) {
+    return false
+  }
+
+  return ['operational', 'ready', 'locked'].includes(state.toLowerCase())
+}
+
+function getMeterLevel(levels: number[] | undefined, index: number) {
+  if (!levels || levels.length === 0) {
+    return 0
+  }
+
+  return levels[index % levels.length] ?? 0
+}
+
+function buildFallbackBindings(status?: JuceGridAudioInterfaceStatus): AudioRoutingSelectionBinding[] {
+  if (!status) {
+    return []
+  }
+
+  const localBindings = (status.selectedPorts ?? []).map<AudioRoutingSelectionBinding>((index) => ({
+    selection_type: 'local_port',
+    available: true,
+    index,
+    name: `Port ${index + 1}`,
+    source: status.deviceName,
+  }))
+
+  const avbBindings = (status.selectedAvbEndpoints ?? []).map<AudioRoutingSelectionBinding>((endpointId) => ({
+    selection_type: 'avb_endpoint',
+    available: true,
+    endpoint_id: endpointId,
+    device_name: endpointId,
+    host: status.deviceName,
+    channels: 1,
+    sample_rate: status.sampleRate,
+  }))
+
+  return [...localBindings, ...avbBindings]
+}
+
+function buildEndpointRailGroups(
+  side: EndpointSide,
+  status?: JuceGridAudioInterfaceStatus,
+): EndpointRailGroup[] {
+  const bindings = status?.bindings?.length ? status.bindings : buildFallbackBindings(status)
+  const directionLabel = side === 'input' ? 'in' : 'out'
+
+  const localBindings = bindings.filter((binding) => binding.selection_type === 'local_port')
+  const localSlots = localBindings.map<EndpointRailSlot>((binding, index) => {
+    const portIndex = binding.index ?? index
+    const portName = binding.name || `Port ${portIndex + 1}`
+
+    return {
+      id: `local-${portIndex}`,
+      label: String(portIndex + 1),
+      detail: `${portName}\nLocal ${side} port ${portIndex + 1}${binding.available ? '' : '\nUnavailable'}`,
+      meterLevel: getMeterLevel(status?.meterLevels, index),
+      available: binding.available,
+      warning: !binding.available,
+    }
+  })
+
+  let avbSlotOffset = localSlots.length
+  const avbBindings = bindings.filter((binding) => binding.selection_type === 'avb_endpoint')
+  const avbSlots = avbBindings.flatMap<EndpointRailSlot>((binding, endpointIndex) => {
+    const channelCount = Math.max(1, binding.channels || 1)
+    const endpointName = binding.device_name || binding.endpoint_id || `AVB ${endpointIndex + 1}`
+    const endpointHost = binding.host ? ` @ ${binding.host}` : ''
+    const endpointDirection = binding.direction === 'listener' ? 'Listener' : 'Talker'
+
+    const slots = Array.from({ length: channelCount }, (_, channelIndex) => ({
+      id: `avb-${binding.endpoint_id || endpointIndex}-${channelIndex}`,
+      label: String(channelIndex + 1),
+      detail: [
+        endpointName,
+        `${endpointDirection}${endpointHost}`,
+        `Channel ${channelIndex + 1}/${channelCount}`,
+        `${binding.sample_rate || status?.sampleRate || 48000}Hz`,
+        binding.missing ? 'Missing retained endpoint' : binding.available ? 'Available' : 'Unavailable',
+      ].join('\n'),
+      meterLevel: getMeterLevel(status?.meterLevels, avbSlotOffset + channelIndex),
+      available: binding.available,
+      warning: Boolean(binding.missing || !binding.available),
+    }))
+
+    avbSlotOffset += channelCount
+    return slots
+  })
+
+  const avbInfo = avbBindings.length === 0
+    ? 'No AVB routes assigned'
+    : avbBindings.map((binding) => {
+      const endpointName = binding.device_name || binding.endpoint_id || 'AVB endpoint'
+      const endpointHost = binding.host ? ` @ ${binding.host}` : ''
+      const endpointState = binding.missing ? 'missing' : binding.available ? 'available' : 'offline'
+      return `${endpointName}${endpointHost} · ${binding.channels || 1}ch · ${endpointState}`
+    }).join('\n')
+
+  const hasAvbError = avbBindings.some((binding) => binding.missing || !binding.available)
+  const hasAvbWarning = avbBindings.length > 0 && !hasAvbError && !isHealthyAvbState(status?.avbReadinessState)
+
+  return [
+    {
+      key: 'local',
+      heading: 'LOCAL',
+      summary: `${localSlots.length} ${directionLabel}`,
+      info: localSlots.length === 0 ? 'No local routes assigned' : localSlots.map((slot) => slot.detail).join('\n\n'),
+      slots: localSlots,
+      state: localSlots.some((slot) => !slot.available) ? 'warning' : 'normal',
+    },
+    {
+      key: 'avb',
+      heading: 'AVB',
+      summary: `${avbSlots.length} ${directionLabel}`,
+      info: avbInfo,
+      slots: avbSlots,
+      state: hasAvbError ? 'error' : hasAvbWarning ? 'warning' : 'normal',
+    },
+  ]
+}
+
+function buildRailTooltip(
+  side: EndpointSide,
+  status: JuceGridAudioInterfaceStatus | undefined,
+  groups: EndpointRailGroup[],
+) {
+  const directionLabel = side === 'input' ? 'Input' : 'Output'
+  const routingMode = status?.routingMode ? ROUTING_MODE_SHORT_LABELS[status.routingMode] || status.routingMode : 'n/a'
+  const sections = [
+    `${directionLabel}: ${status?.deviceName || 'Audio interface'}`,
+    `State: ${status?.isRunning ? 'Running' : 'Stopped'}`,
+    `Clock: ${status?.sampleRate || 48000}Hz / ${status?.bufferSize || 256} smp`,
+    `Routing: ${routingMode}`,
+    `Assigned: ${groups.reduce((sum, group) => sum + group.slots.length, 0)} ${side === 'input' ? 'in' : 'out'}`,
+  ]
+
+  if (status?.avbReadinessState) {
+    sections.push(`AVB: ${status.avbReadinessState}`)
+  }
+
+  groups.forEach((group) => {
+    sections.push(`${group.heading}: ${group.info}`)
+  })
+
+  return sections.join('\n')
 }
 
 export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
@@ -114,34 +289,107 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
     )
   }
 
-  const renderEndpointTile = (
-    label: string,
+  const renderEndpointRail = (
+    side: EndpointSide,
     status: JuceGridAudioInterfaceStatus | undefined,
     onSelectPorts?: () => void,
   ) => {
-    const summary = summarizeEndpoint(status)
+    const groups = buildEndpointRailGroups(side, status)
+    const selectedChannelCount = groups.reduce((sum, group) => sum + group.slots.length, 0)
+    const hasAvbAssignments = groups[1].slots.length > 0
+    const railLabel = hasAvbAssignments
+      ? side === 'input' ? 'AVB IN' : 'AVB OUT'
+      : side === 'input' ? 'INPUT' : 'OUTPUT'
+    const railTooltip = buildRailTooltip(side, status, groups)
+    const routingMode = status?.routingMode ? ROUTING_MODE_SHORT_LABELS[status.routingMode] : 'n/a'
+
     return (
-      <Tile className="juce-grid-page__signal-endpoint">
-        <div className="juce-grid-page__signal-endpoint-copy">
-          <strong>{label}</strong>
-          <p>{status?.deviceName || 'Audio interface'}</p>
+      <Tile
+        className={`juce-grid-page__signal-endpoint juce-grid-page__signal-endpoint--${side} ${hasAvbAssignments ? 'has-avb' : ''} ${groups[1].state === 'warning' ? 'has-avb-warning' : ''} ${groups[1].state === 'error' ? 'has-avb-error' : ''}`}
+        title={railTooltip}
+        data-testid={`juce-grid-signal-rail-${side}`}
+      >
+        <div className="juce-grid-page__signal-rail-label-strip" title={railTooltip}>
+          <span className="juce-grid-page__signal-rail-label">{railLabel}</span>
         </div>
-        <div className="juce-grid-page__signal-endpoint-meta">
-          <Tag type={status?.isRunning ? 'green' : 'warm-gray'}>
-            {status?.isRunning ? 'Running' : 'Stopped'}
-          </Tag>
-          {status?.routingMode && <Tag type="cool-gray">{status.routingMode.replace('_', ' ')}</Tag>}
-          <Tag type="blue">{summary.mode}</Tag>
+
+        <div className="juce-grid-page__signal-rail-body">
+          <div className="juce-grid-page__signal-rail-top">
+            <div className="juce-grid-page__signal-rail-icons" title={railTooltip}>
+              {side === 'input' ? <VolumeDown size={20} /> : <VolumeUp size={20} />}
+              <AudioConsole size={18} />
+            </div>
+
+            {onSelectPorts && (
+              <Button
+                size="sm"
+                kind="ghost"
+                hasIconOnly
+                renderIcon={SettingsAdjust}
+                iconDescription={`Configure ${side} routing`}
+                onClick={onSelectPorts}
+                className="juce-grid-page__signal-rail-config"
+              />
+            )}
+          </div>
+
+          <div className="juce-grid-page__signal-rail-chip-grid">
+            <span className={`juce-grid-page__signal-rail-chip ${status?.isRunning ? 'is-live' : ''}`}>
+              {status?.isRunning ? 'RUN' : 'STOP'}
+            </span>
+            <span className="juce-grid-page__signal-rail-chip">
+              {selectedChannelCount}{side === 'input' ? 'I' : 'O'}
+            </span>
+            <span className="juce-grid-page__signal-rail-chip">{Math.round((status?.sampleRate || 48000) / 1000)}K</span>
+            <span className="juce-grid-page__signal-rail-chip">{status?.bufferSize || 256}</span>
+            <span className="juce-grid-page__signal-rail-chip juce-grid-page__signal-rail-chip--wide">{routingMode}</span>
+          </div>
+
+          <div className="juce-grid-page__signal-rail-groups">
+            {groups.map((group) => (
+              <section
+                key={`${side}-${group.key}`}
+                className={`juce-grid-page__signal-rail-group is-${group.key} is-${group.state}`}
+                title={group.info}
+              >
+                <div className="juce-grid-page__signal-rail-group-header">
+                  <span className="juce-grid-page__signal-rail-group-icon" aria-hidden>
+                    {group.key === 'local' ? <AudioConsole size={14} /> : <Link size={14} />}
+                  </span>
+                  <span className="juce-grid-page__signal-rail-group-heading">{group.heading}</span>
+                  <span className="juce-grid-page__signal-rail-group-summary">{group.summary}</span>
+                  {group.key === 'avb' && group.state !== 'normal' && (
+                    <WarningAlt
+                      size={14}
+                      aria-label="AVB warning"
+                      className="juce-grid-page__signal-rail-group-warning"
+                    />
+                  )}
+                </div>
+
+                <div className="juce-grid-page__signal-rail-slot-stack">
+                  {group.slots.length > 0 ? group.slots.map((slot) => (
+                    <div
+                      key={slot.id}
+                      className={`juce-grid-page__signal-rail-slot ${slot.warning ? 'is-warning' : ''} ${!slot.available ? 'is-unavailable' : ''}`}
+                      title={slot.detail}
+                    >
+                      <span className="juce-grid-page__signal-rail-slot-meter">
+                        <span
+                          className="juce-grid-page__signal-rail-slot-fill"
+                          style={{ height: levelPercent(slot.meterLevel) }}
+                        />
+                      </span>
+                      <span className="juce-grid-page__signal-rail-slot-label">{slot.label}</span>
+                    </div>
+                  )) : (
+                    <div className="juce-grid-page__signal-rail-empty-slot">None</div>
+                  )}
+                </div>
+              </section>
+            ))}
+          </div>
         </div>
-        <div className="juce-grid-page__signal-endpoint-copy">
-          <p>{summary.detail}</p>
-          <p>{summary.rate}</p>
-        </div>
-        {onSelectPorts && (
-          <Button size="sm" kind="ghost" onClick={onSelectPorts}>
-            Configure ports
-          </Button>
-        )}
       </Tile>
     )
   }
@@ -149,8 +397,8 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   return (
     <div className="juce-grid-page__signal-canvas">
       {showEndpoints && (
-        <div className="juce-grid-page__signal-endpoints">
-          {renderEndpointTile('Input', audioStatus, onInputPortSelectClick)}
+        <div className="juce-grid-page__signal-endpoints juce-grid-page__signal-endpoints--input">
+          {renderEndpointRail('input', audioStatus, onInputPortSelectClick)}
         </div>
       )}
 
@@ -265,8 +513,8 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
       </div>
 
       {showEndpoints && (
-        <div className="juce-grid-page__signal-endpoints">
-          {renderEndpointTile('Output', audioOutputStatus || audioStatus, onOutputPortSelectClick)}
+        <div className="juce-grid-page__signal-endpoints juce-grid-page__signal-endpoints--output">
+          {renderEndpointRail('output', audioOutputStatus || audioStatus, onOutputPortSelectClick)}
         </div>
       )}
     </div>
