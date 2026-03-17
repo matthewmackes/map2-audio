@@ -633,7 +633,7 @@ export function HomePage() {
                   <article
                     key={cardId}
                     role="listitem"
-                    className={`hp-card${isBlocked ? ' is-blocked' : ''}`}
+                    className={`hp-card${isBlocked ? ' is-blocked' : ''}${item.to === '/juce-grid' ? ' hp-card--wide' : ''}`}
                     onClick={() => {
                       if (!isBlocked) navigate(item.to)
                     }}

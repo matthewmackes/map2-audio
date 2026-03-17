@@ -414,25 +414,58 @@
   background: rgba(22, 22, 22, 0.45);
   padding: var(--hp-s-06);
   cursor: pointer;
+  /* Carbon $border-subtle-01 weight, interactive colour at rest */
   border: 1px solid var(--hp-interactive);
   outline: none;
   text-align: left;
   color: var(--hp-interactive);
   font-family: inherit;
-  transition: background 120ms, border-color 120ms;
+  transition:
+    background 70ms,
+    border-color 70ms,
+    box-shadow 70ms;
   min-height: 220px;
   backdrop-filter: blur(2px);
 }
 
+/*
+ * Hover — Carbon ClickableTile dark pattern:
+ *   • border upgrades to $border-strong ($blue-30 / #a6c8ff) at 2px
+ *   • background picks up a Blue-60 layer tint ($layer-hover)
+ *   • box-shadow spreads a soft glow matching the border colour
+ */
 .hp-card:hover {
-  background: rgba(22, 22, 22, 0.72);
-  border-color: var(--hp-interactive);
+  background: rgba(15, 98, 254, 0.12);
+  border: 2px solid #a6c8ff;
+  box-shadow:
+    0 0 0 1px rgba(166, 200, 255, 0.18),
+    inset 0 0 0 1px rgba(166, 200, 255, 0.08);
+  z-index: 1;
 }
 
+/*
+ * Focus-visible — Carbon focus ring: 2px white offset ring,
+ * matches $focus token on dark shell
+ */
 .hp-card:focus-visible {
-  outline: 2px solid var(--hp-interactive);
-  outline-offset: -2px;
-  z-index: 1;
+  outline: none;
+  border: 2px solid #a6c8ff;
+  box-shadow:
+    0 0 0 2px #161616,
+    0 0 0 4px #ffffff;
+  z-index: 2;
+}
+
+/* Double-wide card — spans 2 grid columns */
+.hp-card--wide {
+  grid-column: span 2;
+}
+
+/* On single-column layout, wide card collapses to 1 col */
+@media (max-width: 671px) {
+  .hp-card--wide {
+    grid-column: span 1;
+  }
 }
 
 .hp-card.is-blocked {
