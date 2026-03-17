@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Books, GitBranch, MusicNotes, Pulse, Sliders, SquaresFour, Waveform, Play } from '@phosphor-icons/react'
+import { Books, GitBranch, MusicNotes, Play, Pulse, Sliders, SquaresFour, Waveform } from '@phosphor-icons/react'
 import { Alert, Button, CircularProgress } from '@mui/material'
 
 import { MPX1StatusBar } from '../components/MPX1/MPX1StatusBar'

@@ -3577,3 +3577,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Perform Full-Screen Overlay ─────────────────────────────────────────── */
+
+.juce-grid-page__perform-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  overflow: hidden;
+}

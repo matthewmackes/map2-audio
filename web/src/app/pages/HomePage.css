@@ -54,30 +54,29 @@
 
 /* ============================================================
    HERO — full-bleed neon grid background
+   Height is driven by content (copy + card overlay). No cap.
    ============================================================ */
 .hp-hero {
   position: relative;
   width: 100%;
   overflow: hidden;
-  min-height: clamp(360px, 44vw, 600px);
+  /* No fixed min-height — hero grows to contain copy + card strip */
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
 }
 
-/* 1. The hero artwork layer */
+/* 1. Brand mark — lowest absolute layer, dot grid draws over it */
 .hp-hero__img {
   position: absolute;
   inset: 0;
+  z-index: 0;
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: clamp(2rem, 8vw, 6rem);
-  background:
-    radial-gradient(circle at 50% 42%, rgba(69, 137, 255, 0.24) 0%, rgba(69, 137, 255, 0.08) 24%, rgba(22, 22, 22, 0) 58%),
-    linear-gradient(180deg, rgba(69, 137, 255, 0.1) 0%, rgba(22, 22, 22, 0) 48%, rgba(22, 22, 22, 0.56) 100%);
   user-select: none;
   pointer-events: none;
 }
@@ -108,49 +107,48 @@
   pointer-events: none;
 }
 
-/* 3. Bottom gradient to seamlessly bleed into page bg */
+/* 3. Top fade — darkens the area directly below the controls bar */
 .hp-hero__bottom-fade {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  height: 180px;
-  background: linear-gradient(to top, var(--hp-bg) 0%, transparent 100%);
+  height: 120px;
+  background: linear-gradient(to bottom, rgba(22, 22, 22, 0.55) 0%, transparent 100%);
   pointer-events: none;
+  /* sits above dot grid but below controls bar */
+  z-index: 2;
 }
 
-/* 4. Scanline shimmer animation over the whole hero */
-.hp-hero__scanlines {
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0, 0, 0, 0.18) 3px,
-    rgba(0, 0, 0, 0.18) 4px
-  );
-  animation: hp-scanlines-drift 14s linear infinite;
-  pointer-events: none;
-  opacity: 0.55;
-}
-
-@keyframes hp-scanlines-drift {
-  0%   { background-position: 0 0; }
-  100% { background-position: 0 200px; }
-}
-
-/* 5. Hero content */
+/* 5. Hero content — z-index 2, fully opaque, interactive */
 .hp-hero__inner {
   position: relative;
   z-index: 2;
-  padding: clamp(2rem, 5vw, 4rem) var(--hp-grid-margin);
-  padding-top: clamp(4rem, 10vw, 8rem);
+  /* top padding clears the absolutely-pinned controls bar (~3.5rem) */
+  padding: clamp(5rem, 12vw, 9rem) var(--hp-grid-margin) clamp(2rem, 5vw, 4rem);
   display: flex;
   flex-direction: column;
   gap: var(--hp-s-07);
 }
 
+
+/* 6. Interactive controls layer — always legible over dot grid */
+.hp-hero__controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--hp-s-05);
+  padding: var(--hp-s-05) var(--hp-grid-margin);
+  background: rgba(22, 22, 22, 0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(15, 98, 254, 0.18);
+}
 
 /* ── Hero copy ── */
 .hp-hero__copy {
@@ -200,6 +198,15 @@
   color: rgba(244, 244, 244, 0.78);
   max-width: 56ch;
   font-weight: 300;
+}
+
+/* Thin vertical rule between NodeContextPicker and node pills */
+.hp-hero__controls-sep {
+  display: inline-block;
+  width: 1px;
+  height: 1.25rem;
+  background: rgba(166, 200, 255, 0.25);
+  flex-shrink: 0;
 }
 
 /* ── Cluster status strip ── */
@@ -271,6 +278,66 @@
 
 
 /* ============================================================
+   HERO CARD OVERLAY — wireframe grid, bottom-right justified
+   ============================================================ */
+
+/*
+ * The overlay is NOT position:absolute — it is a normal flow child
+ * of the hero flex column, so the hero grows around it.
+ * Cards align to the bottom-right corner of the hero.
+ */
+.hp-hero__card-overlay {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;       /* right-justify the section block */
+  justify-content: flex-end;
+  padding: 0 var(--hp-grid-margin) var(--hp-grid-margin);
+  pointer-events: none;
+}
+
+/* Re-enable pointer events on the grid and cards */
+.hp-hero__card-overlay .hp-card-grid,
+.hp-hero__card-overlay .hp-group {
+  pointer-events: auto;
+}
+
+/* Group heading suppressed — cards are self-labelled */
+.hp-hero__card-overlay .hp-group {
+  padding-top: 0;
+  width: 100%;
+}
+
+.hp-hero__card-overlay .hp-group__heading {
+  display: none;
+}
+
+/*
+ * Card grid — Carbon $spacing-05 (1rem) gap for clear separation.
+ * Width constrained to right portion of hero — approx ¾ of viewport.
+ */
+.hp-hero__card-overlay .hp-card-grid {
+  width: 100%;
+  max-width: 75%;
+  margin-inline-start: auto;   /* push the grid to the right */
+  gap: var(--hp-s-05);         /* Carbon $spacing-05 = 1rem */
+  background: transparent;     /* remove the 1px gap fill */
+}
+
+/* Cards: fixed height to form a clean bottom-aligned strip */
+.hp-hero__card-overlay .hp-card {
+  min-height: clamp(200px, 20vw, 280px);
+}
+
+/* On narrower viewports, allow the constrained grid to relax */
+@media (max-width: 1055px) {
+  .hp-hero__card-overlay .hp-card-grid {
+    max-width: 100%;
+  }
+}
+
+/* ============================================================
    CONTENT WRAPPER
    ============================================================ */
 .hp-content {
@@ -322,17 +389,13 @@
 }
 
 /* ============================================================
-   CARD GRID — responsive 4 → 3 → 2 → 1 columns
+   CARD GRID — 3 → 2 → 1 columns (max 3 so cards always fill)
    ============================================================ */
 .hp-card-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  background: var(--hp-grid-empty);
-}
-
-@media (max-width: 1312px) {
-  .hp-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hp-s-05); /* Carbon $spacing-05 = 1rem */
+  background: transparent;
 }
 
 @media (max-width: 1055px) {
@@ -343,25 +406,27 @@
   .hp-card-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Individual ClickableTile card ── */
+/* ── Individual card — wireframe with dark scrim for legibility ── */
 .hp-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--hp-layer-01);
+  background: rgba(22, 22, 22, 0.45);
   padding: var(--hp-s-06);
   cursor: pointer;
-  border: none;
+  border: 1px solid var(--hp-interactive);
   outline: none;
   text-align: left;
-  color: var(--hp-text-primary);
+  color: var(--hp-interactive);
   font-family: inherit;
-  transition: background 70ms;
+  transition: background 120ms, border-color 120ms;
   min-height: 220px;
+  backdrop-filter: blur(2px);
 }
 
 .hp-card:hover {
-  background: var(--hp-layer-02);
+  background: rgba(22, 22, 22, 0.72);
+  border-color: var(--hp-interactive);
 }
 
 .hp-card:focus-visible {
@@ -371,7 +436,7 @@
 }
 
 .hp-card.is-blocked {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -387,27 +452,27 @@
   height: 32px;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--hp-text-secondary);
+  color: var(--hp-interactive);
+  opacity: 0.5;
   cursor: pointer;
   font-family: inherit;
   z-index: 1;
-  transition: color 70ms, border-color 70ms, background 70ms;
+  transition: opacity 120ms, border-color 120ms;
 }
 
 .hp-card__pin-btn:hover {
-  border-color: var(--hp-border);
-  background: var(--hp-layer-02);
-  color: var(--hp-text-primary);
+  border-color: var(--hp-interactive);
+  opacity: 1;
 }
 
 .hp-card__pin-btn.is-pinned {
-  color: #4589ff;
-  border-color: rgba(69, 137, 255, 0.4);
-  background: rgba(69, 137, 255, 0.12);
+  color: var(--hp-interactive);
+  border-color: var(--hp-interactive);
+  opacity: 1;
 }
 
 .hp-card__pin-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.2;
   cursor: not-allowed;
 }
 
@@ -418,9 +483,10 @@
   color: var(--hp-interactive);
   flex-shrink: 0;
   margin-bottom: var(--hp-s-05);
+  opacity: 0.9;
 }
 
-/* Maturity badge */
+/* Maturity badge — monochrome wireframe, interactive color only */
 .hp-card__maturity {
   display: inline-flex;
   align-items: center;
@@ -429,39 +495,22 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border: 1px solid;
+  border: 1px solid var(--hp-interactive);
+  background: transparent;
+  color: var(--hp-interactive);
+  opacity: 0.7;
   margin-bottom: var(--hp-s-04);
   width: fit-content;
 }
 
-.hp-card__maturity--production {
-  color: #42be65;
-  border-color: rgba(66, 190, 101, 0.4);
-  background: rgba(66, 190, 101, 0.1);
-}
-
-.hp-card__maturity--qualified-with-waiver {
-  color: #4589ff;
-  border-color: rgba(69, 137, 255, 0.4);
-  background: rgba(69, 137, 255, 0.1);
-}
-
-.hp-card__maturity--beta {
-  color: #f1c21b;
-  border-color: rgba(241, 194, 27, 0.4);
-  background: rgba(241, 194, 27, 0.1);
-}
-
-.hp-card__maturity--experimental {
-  color: #be95ff;
-  border-color: rgba(190, 149, 255, 0.4);
-  background: rgba(190, 149, 255, 0.1);
-}
-
+.hp-card__maturity--production,
+.hp-card__maturity--qualified-with-waiver,
+.hp-card__maturity--beta,
+.hp-card__maturity--experimental,
 .hp-card__maturity--hardware-blocked {
-  color: #ff8389;
-  border-color: rgba(255, 131, 137, 0.4);
-  background: rgba(255, 131, 137, 0.1);
+  color: var(--hp-interactive);
+  border-color: var(--hp-interactive);
+  background: transparent;
 }
 
 /* Card label */
@@ -470,7 +519,7 @@
   font-size: var(--hp-heading-02);
   font-weight: 600;
   line-height: 1.25;
-  color: var(--hp-text-primary);
+  color: var(--hp-interactive);
   padding-right: var(--hp-s-07); /* clear pin btn */
 }
 
@@ -479,7 +528,8 @@
   margin: 0;
   font-size: var(--hp-body-01);
   line-height: 1.43;
-  color: var(--hp-text-secondary);
+  color: var(--hp-interactive);
+  opacity: 0.65;
   flex: 1;
 }
 
@@ -498,23 +548,22 @@
   gap: var(--hp-s-02);
   height: 32px;
   padding: 0 var(--hp-s-05);
-  background: var(--hp-interactive);
-  border: none;
-  color: var(--hp-text-on-color);
+  background: transparent;
+  border: 1px solid var(--hp-interactive);
+  color: var(--hp-interactive);
   font-family: inherit;
   font-size: var(--hp-body-01);
   font-weight: 600;
   cursor: pointer;
-  transition: background 70ms;
+  transition: background 120ms;
 }
 
 .hp-card__open-btn:hover {
-  background: var(--hp-interactive-hover);
+  background: rgba(15, 98, 254, 0.18);
 }
 
 .hp-card__open-btn:disabled {
-  background: var(--hp-layer-02);
-  color: var(--hp-text-disabled);
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
@@ -525,27 +574,26 @@
   height: 32px;
   padding: 0 var(--hp-s-04);
   background: transparent;
-  border: 1px solid var(--hp-border);
-  color: var(--hp-text-secondary);
+  border: 1px solid var(--hp-interactive);
+  color: var(--hp-interactive);
+  opacity: 0.55;
   font-family: inherit;
   font-size: var(--hp-body-01);
   font-weight: 400;
   cursor: pointer;
-  transition: background 70ms, border-color 70ms, color 70ms;
+  transition: opacity 120ms;
 }
 
 .hp-card__details-btn:hover,
 .hp-card__details-btn[aria-expanded='true'] {
-  background: var(--hp-layer-02);
-  border-color: var(--hp-interactive);
-  color: var(--hp-text-primary);
+  opacity: 1;
 }
 
 /* ── Expandable detail panel ── */
 .hp-card__detail-panel {
   margin-top: var(--hp-s-06);
   padding-top: var(--hp-s-06);
-  border-top: 1px solid var(--hp-border-subtle);
+  border-top: 1px solid rgba(15, 98, 254, 0.35);
   display: flex;
   flex-direction: column;
   gap: var(--hp-s-05);
@@ -556,7 +604,8 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--hp-text-secondary);
+  color: var(--hp-interactive);
+  opacity: 0.7;
   margin-bottom: var(--hp-s-03);
 }
 
@@ -574,20 +623,23 @@
   align-items: flex-start;
   gap: var(--hp-s-03);
   font-size: var(--hp-body-01);
-  color: var(--hp-text-secondary);
+  color: var(--hp-interactive);
+  opacity: 0.65;
   line-height: 1.43;
 }
 
 .hp-card__detail-list li::before {
   content: '—';
   color: var(--hp-interactive);
+  opacity: 1;
   flex-shrink: 0;
   font-weight: 700;
 }
 
 .hp-card__detail-body {
   font-size: var(--hp-body-01);
-  color: var(--hp-text-secondary);
+  color: var(--hp-interactive);
+  opacity: 0.65;
   line-height: 1.5;
   margin: 0;
 }
@@ -596,13 +648,14 @@
   font-size: var(--hp-label-01);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--hp-text-secondary);
+  color: var(--hp-interactive);
+  opacity: 0.6;
 }
 
 .hp-card__best-for-value {
   font-size: var(--hp-body-01);
   font-weight: 600;
-  color: var(--hp-text-primary);
+  color: var(--hp-interactive);
   margin-top: 2px;
 }
 

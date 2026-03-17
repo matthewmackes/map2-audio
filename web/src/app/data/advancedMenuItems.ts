@@ -148,6 +148,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     description: 'Open the full-screen live-performance surface for fast preset access, bypass control, tempo actions, and stage-focused guitar operation.',
     color: 'var(--cds-support-warning)',
     homeSection: 'Audio Grid',
+    showOnHome: false,
     includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'beta',

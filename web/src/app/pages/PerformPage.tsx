@@ -801,7 +801,7 @@ function ghostBtn(disabled: boolean): React.CSSProperties {
 // ═══════════════════════════════════════════════════════════════════════════
 // Main PerformPage
 // ═══════════════════════════════════════════════════════════════════════════
-export function PerformPage() {
+export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [page, setPage] = useState(0)
@@ -965,7 +965,7 @@ export function PerformPage() {
   // F11 — exit performance mode
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'F11') { e.preventDefault(); navigate(-1) }
+      if (e.key === 'F11') { e.preventDefault(); onExit ? onExit() : navigate(-1) }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -1244,7 +1244,7 @@ export function PerformPage() {
           MIDI FOOTSWITCH SETUP
         </button>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => onExit ? onExit() : navigate(-1)}
           style={{ ...ghostBtn(false), fontSize: 11, padding: '4px 10px' }}
           title="Exit Performance Mode (F11)"
         >

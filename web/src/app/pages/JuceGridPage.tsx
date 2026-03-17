@@ -115,6 +115,7 @@ import {
   fingerprintSnapshotData,
 } from './juceGridSnapshots'
 import './JuceGridPage.css'
+import { PerformPage } from './PerformPage'
 import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'
 import type { CcChannelPair } from './ExpressionPage'
 
@@ -583,6 +584,7 @@ export function JuceGridPage() {
   const [draggedPluginUri, setDraggedPluginUri] = useState<string | null>(null)
   const [dragOverPluginUri, setDragOverPluginUri] = useState<string | null>(null)
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
+  const [showPerformModal, setShowPerformModal] = useState(false)
   
   // Special settings for plugin filtering
   const { settings: specialSettings } = useSpecialSettings()
@@ -3487,6 +3489,9 @@ export function JuceGridPage() {
             </div>
           </div>
           <div className="juce-grid-page__hero-actions">
+            <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
+              Perform
+            </Button>
             <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
               Shortcuts
             </Button>
@@ -4512,6 +4517,18 @@ export function JuceGridPage() {
           <span>{flowSlots.length} flows</span>
         </div>
       </footer>
+
+      {/* Perform Full-Screen Modal */}
+      {showPerformModal && (
+        <motion.div
+          className="juce-grid-page__perform-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          <PerformPage onExit={() => setShowPerformModal(false)} />
+        </motion.div>
+      )}
     </div>
   )
 }

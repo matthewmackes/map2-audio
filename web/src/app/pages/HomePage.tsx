@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { HeroDotGrid } from '../components/HeroDotGrid/HeroDotGrid'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronUp, Pin, PinFilled } from '@carbon/icons-react'
 import { ApiActivityOverlay } from '../components/ApiActivityOverlay/ApiActivityOverlay'
@@ -555,10 +556,13 @@ export function HomePage() {
           HERO — full-bleed neon grid artwork + scanline effects
           ══════════════════════════════════════════════════════════ */}
       <header className="hp-hero">
-        {/* Background hero artwork */}
+        {/* Brand mark artwork — lowest layer, dot grid draws over it */}
         <div className="hp-hero__img" aria-hidden="true">
           <Map2BrandMark className="hp-hero__brand-mark" />
         </div>
+
+        {/* Dot-grid — second layer, sits above brand mark */}
+        <HeroDotGrid />
 
         {/* Vignette overlay */}
         <div className="hp-hero__vignette" aria-hidden="true" />
@@ -566,69 +570,55 @@ export function HomePage() {
         {/* Bottom fade to page bg */}
         <div className="hp-hero__bottom-fade" aria-hidden="true" />
 
-        {/* Scanline shimmer */}
-        <div className="hp-hero__scanlines" aria-hidden="true" />
+        {/* Combined controls bar — context picker + node pills in one row */}
+        <div className="hp-hero__controls" aria-label="Node context and cluster status">
+          <NodeContextPicker pageKey={NODE_PAGE_KEYS.home} topology={topology} />
 
-        {/* Hero copy + cluster status */}
-        <div className="hp-hero__inner">
-          <div className="hp-hero__copy">
-            <p className="hp-hero__eyebrow">{MAP2_PRIMARY_LABEL}</p>
-            <h1 className="hp-hero__title">{MAP2_PLATFORM_NAME}</h1>
-            <p className="hp-hero__summary">
-              Unified routing, control, and node orchestration across the full Mackes Audio Platform.
-            </p>
-            <NodeContextPicker pageKey={NODE_PAGE_KEYS.home} topology={topology} />
-          </div>
+          <span className="hp-hero__controls-sep" aria-hidden="true" />
 
-          {/* Live cluster node strip */}
-          <div className="hp-hero__cluster" aria-label="Cluster node status">
-            <div className="hp-hero__nodes">
-              {tilesLoading && (
-                <>
-                  <span className="hp-hero__node hp-hero__node--skeleton" aria-hidden="true" />
-                  <span className="hp-hero__node hp-hero__node--skeleton" aria-hidden="true" />
-                </>
-              )}
+          {tilesLoading && (
+            <>
+              <span className="hp-hero__node hp-hero__node--skeleton" aria-hidden="true" />
+              <span className="hp-hero__node hp-hero__node--skeleton" aria-hidden="true" />
+            </>
+          )}
 
-              {!tilesLoading &&
-                !tilesError &&
-                tiles.map((tile) => (
-                  <button
-                    key={`hero-node-${tile.id}`}
-                    type="button"
-                    className="hp-hero__node"
-                    onClick={() => navigate(buildPlatformHref('cluster-dashboard'))}
-                    title={`${tile.hostname} · ${tile.status}`}
-                  >
-                    <span
-                      className={statusDotClass(tile.status)}
-                      style={{ background: clusterDotClass(tile.status) }}
-                      aria-label={tile.status}
-                    />
-                    <span className="hp-hero__node-name">{tile.hostname}</span>
-                    <span className="hp-hero__node-score">{tile.healthScore}%</span>
-                  </button>
-                ))}
-            </div>
-          </div>
+          {!tilesLoading &&
+            !tilesError &&
+            tiles.map((tile) => (
+              <button
+                key={`hero-node-${tile.id}`}
+                type="button"
+                className="hp-hero__node"
+                onClick={() => navigate(buildPlatformHref('cluster-dashboard'))}
+                title={`${tile.hostname} · ${tile.status}`}
+              >
+                <span
+                  className={statusDotClass(tile.status)}
+                  style={{ background: clusterDotClass(tile.status) }}
+                  aria-label={tile.status}
+                />
+                <span className="hp-hero__node-name">{tile.hostname}</span>
+                <span className="hp-hero__node-score">{tile.healthScore}%</span>
+              </button>
+            ))}
         </div>
-      </header>
 
-      {/* ══════════════════════════════════════════════════════════
-          CONTENT AREA
-          ══════════════════════════════════════════════════════════ */}
-      <main className="hp-content">
-        {visibleSections.map((section) => (
-          <section key={section.title} className="hp-group" aria-label={`${section.title} interfaces`}>
-            {/* ── Group heading ── */}
-            <div className="hp-group__heading">
-              <h2 className="hp-group__title">{section.title}</h2>
-              <span className="hp-group__count">{section.items.length}</span>
-            </div>
+        {/* ══════════════════════════════════════════════════════════
+            CARD OVERLAY — wireframe cards float over hero artwork
+            ══════════════════════════════════════════════════════════ */}
+        <div className="hp-hero__card-overlay" aria-label="Navigation cards">
+          {visibleSections.map((section) => (
+            <section key={section.title} className="hp-group" aria-label={`${section.title} interfaces`}>
+              {/* ── Group heading (hidden in overlay via CSS) ── */}
+              <div className="hp-group__heading">
+                <h2 className="hp-group__title">{section.title}</h2>
+                <span className="hp-group__count">{section.items.length}</span>
+              </div>
 
-            {/* ── 4-up card grid ── */}
-            <div className="hp-card-grid" role="list" aria-label={`${section.title} navigation cards`}>
-              {section.items.map((item) => {
+              {/* ── 4-up card grid ── */}
+              <div className="hp-card-grid" role="list" aria-label={`${section.title} navigation cards`}>
+                {section.items.map((item) => {
                 const cardId = `${item.to}-${item.label}`
                 const isBlocked = isBlockedHomeItem(item)
                 const isPinned = pinnedRouteSet.has(item.to)
@@ -767,7 +757,8 @@ export function HomePage() {
             </div>
           </section>
         ))}
-      </main>
+        </div>{/* end hp-hero__card-overlay */}
+      </header>
 
       {/* ══════════════════════════════════════════════════════════
           API ACTIVITY OVERLAY — live scrolling request log
