@@ -25,7 +25,14 @@ Scope: Map each active app route to a nearest Carbon pattern/template and concre
 | `/plugins` | `web/src/app/pages/LV2PluginsPage.tsx` | Catalog and configuration table | `DataTable`, `Search`, `Dropdown`, `Tag`, `Modal` |
 | `/library` | `web/src/app/pages/LibraryPage.tsx` | Library + filtering + import/export | `Tabs`, `DataTable`, `ComboBox`, `FileUploader`, `Tag`, `Pagination` |
 | `/midi` | `web/src/app/pages/MIDIPage.tsx` | Control panel with forms and diagnostics | `Tabs`, `FormGroup`, `TextInput`, `NumberInput`, `Toggle`, `DataTable` |
-| `/midi-hub` | `web/src/app/pages/MidiHubPage.tsx` | Sequential operational workspace with progressive depth bands | `Layer`, `ClickableTile`, `Table`, `Modal`, `Tag`, tokenized custom routing and patchbay surfaces |
+| `/midi-hub` | `web/src/app/pages/MidiHubShell.tsx` | Sidebar-navigated show control platform with 7 service areas, persistent bottom status bar, deep-linkable child routes | `SideNav`, `SideNavItems`, `SideNavLink`, `Theme`, `Layer`, `Outlet` |
+| `/midi-hub/connections` | `web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx` | Port routing matrix/patchbay + traffic monitor | `DataTable`, `Tabs`, `Modal`, `Tag`, `Toggle`, custom SVG patchbay |
+| `/midi-hub/presets` | `web/src/app/pages/midi-hub/MidiHubPresetsPage.tsx` | Preset CRUD, program change slots, preset chains | `DataTable`, `FileUploader`, `ComposedModal`, `OrderedList` |
+| `/midi-hub/transport` | `web/src/app/pages/midi-hub/MidiHubTransportPage.tsx` | MIDI clock + recorder with DAW-style transport controls | `Button`, `NumberInput`, `Slider`, `DataTable`, `Toggle` |
+| `/midi-hub/events` | `web/src/app/pages/midi-hub/MidiHubEventsPage.tsx` | Timecode-driven event lists, MSC builder, Learn Mode, RTC scheduling | `DataTable`, `FormGroup`, `Select`, `NumberInput`, `TextInput` |
+| `/midi-hub/processing` | `web/src/app/pages/midi-hub/MidiHubProcessingPage.tsx` | Filters, mappers, scripts, macros, scheduler | `DataTable`, `Accordion`, `Tag`, `Modal`, `TextArea` |
+| `/midi-hub/network` | `web/src/app/pages/midi-hub/MidiHubNetworkPage.tsx` | RTP-MIDI, OSC + namespace browser, MIDI 2.0, Tesira TTP, virtual GPIO, string interface | `DataTable`, `Tabs`, `FormGroup`, `Toggle`, `TextInput` |
+| `/midi-hub/lab` | `web/src/app/pages/midi-hub/MidiHubLabPage.tsx` | AI learn suggestions, mesh networking, device shadow state | `DataTable`, `AILabel`, `ProgressBar`, `Tag` |
 | `/midi-hub-2` | `web/src/app/App.tsx` | Compatibility redirect to the canonical MIDI Hub route | `Navigate` |
 | `/juce-grid` | `web/src/app/pages/JuceGridPage.tsx` | Signal-flow editor workspace | `Grid`, `Accordion`, `Toolbar pattern`, `Popover`, `Modal` |
 | `/grid` | `web/src/app/App.tsx` | Legacy redirect alias to the supported editor | `Navigate` |

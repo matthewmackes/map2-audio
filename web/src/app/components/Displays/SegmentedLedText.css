@@ -1,0 +1,211 @@
+.segmented-led {
+  --seg-led-color: #59a8ff;
+  --seg-led-off: color-mix(in srgb, var(--seg-led-color) 14%, transparent);
+  --seg-led-width: 0.74em;
+  --seg-led-height: 1.02em;
+  --seg-led-thickness: 0.12em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05em;
+  min-width: 0;
+  white-space: nowrap;
+  font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  font-size: 1em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.segmented-led--xs {
+  --seg-led-width: 0.63em;
+  --seg-led-height: 0.88em;
+  --seg-led-thickness: 0.1em;
+}
+
+.segmented-led--md {
+  --seg-led-width: 0.82em;
+  --seg-led-height: 1.14em;
+  --seg-led-thickness: 0.13em;
+}
+
+.segmented-led__text,
+.segmented-led__space {
+  display: inline-block;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+}
+
+.segmented-led__space {
+  width: 0.28em;
+}
+
+.segmented-led__digit,
+.segmented-led__glyph {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  overflow: hidden;
+  color: transparent;
+  font: inherit;
+  line-height: 1;
+  user-select: none;
+}
+
+.segmented-led__digit {
+  width: var(--seg-led-width);
+  height: var(--seg-led-height);
+}
+
+.segmented-led__digit--plus {
+  width: 0.56em;
+}
+
+.segmented-led__glyph--dot {
+  width: 0.22em;
+  height: var(--seg-led-height);
+}
+
+.segmented-led__glyph--colon {
+  width: 0.28em;
+  height: var(--seg-led-height);
+}
+
+.segmented-led__glyph--slash {
+  width: 0.42em;
+  height: var(--seg-led-height);
+}
+
+.segmented-led__glyph--percent {
+  width: 0.72em;
+  height: var(--seg-led-height);
+}
+
+.segmented-led__segment,
+.segmented-led__plus-vertical,
+.segmented-led__slash,
+.segmented-led__dot {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.segmented-led__segment,
+.segmented-led__plus-vertical,
+.segmented-led__slash {
+  border-radius: 999px;
+}
+
+.segmented-led__segment {
+  background: var(--seg-led-off);
+}
+
+.segmented-led__segment.is-on,
+.segmented-led__plus-vertical,
+.segmented-led__slash,
+.segmented-led__dot {
+  background: var(--seg-led-color);
+}
+
+.segmented-led__segment--a,
+.segmented-led__segment--g,
+.segmented-led__segment--d {
+  left: calc(var(--seg-led-thickness) * 0.95);
+  right: calc(var(--seg-led-thickness) * 0.95);
+  height: var(--seg-led-thickness);
+}
+
+.segmented-led__segment--a {
+  top: 0;
+}
+
+.segmented-led__segment--g {
+  top: calc(50% - (var(--seg-led-thickness) / 2));
+}
+
+.segmented-led__segment--d {
+  bottom: 0;
+}
+
+.segmented-led__segment--b,
+.segmented-led__segment--c,
+.segmented-led__segment--e,
+.segmented-led__segment--f,
+.segmented-led__plus-vertical {
+  width: var(--seg-led-thickness);
+}
+
+.segmented-led__segment--b,
+.segmented-led__segment--f {
+  top: calc(var(--seg-led-thickness) * 0.82);
+  height: calc(50% - (var(--seg-led-thickness) * 1.14));
+}
+
+.segmented-led__segment--c,
+.segmented-led__segment--e {
+  bottom: calc(var(--seg-led-thickness) * 0.82);
+  height: calc(50% - (var(--seg-led-thickness) * 1.14));
+}
+
+.segmented-led__segment--b,
+.segmented-led__segment--c {
+  right: 0;
+}
+
+.segmented-led__segment--e,
+.segmented-led__segment--f {
+  left: 0;
+}
+
+.segmented-led__plus-vertical {
+  top: calc(var(--seg-led-thickness) * 0.76);
+  bottom: calc(var(--seg-led-thickness) * 0.76);
+  left: calc(50% - (var(--seg-led-thickness) / 2));
+}
+
+.segmented-led__dot {
+  width: var(--seg-led-thickness);
+  height: var(--seg-led-thickness);
+  border-radius: 50%;
+}
+
+.segmented-led__dot--single {
+  right: 0;
+  bottom: 0;
+}
+
+.segmented-led__dot--top {
+  top: 0.12em;
+  right: 0;
+}
+
+.segmented-led__dot--bottom {
+  bottom: 0.12em;
+  left: 0;
+}
+
+.segmented-led__glyph--colon .segmented-led__dot--top,
+.segmented-led__glyph--colon .segmented-led__dot--bottom {
+  left: calc(50% - (var(--seg-led-thickness) / 2));
+  right: auto;
+}
+
+.segmented-led__glyph--colon .segmented-led__dot--top {
+  top: 0.18em;
+}
+
+.segmented-led__glyph--colon .segmented-led__dot--bottom {
+  bottom: 0.18em;
+}
+
+.segmented-led__slash {
+  top: 0;
+  bottom: 0;
+  left: calc(50% - (var(--seg-led-thickness) / 2));
+  width: var(--seg-led-thickness);
+  transform: rotate(24deg);
+  transform-origin: center;
+}
+
+.segmented-led__glyph--percent .segmented-led__slash {
+  left: calc(50% - (var(--seg-led-thickness) / 2));
+}

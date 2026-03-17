@@ -89,6 +89,7 @@ import { useFlowSnapshots } from '../hooks/useFlowSnapshots'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { NumberInput } from '../components/Controls/NumberInput'
+import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { SnapshotModal } from '../components/snapshots/SnapshotModal'
@@ -130,6 +131,8 @@ const API_BASE = (() => {
   if (port === '' || port === '80' || port === '8080') return '/api'
   return `http://${window.location.hostname}:8080/api`
 })()
+
+const FLOW_CARD_LED_COLOR = '#59a8ff'
 
 function isTabletViewport(): boolean {
   if (typeof window === 'undefined') {
@@ -3277,7 +3280,9 @@ export function JuceGridPage() {
                 <span className="juce-grid-page__flow-card-label">{flowLabel}</span>
                 <div className="juce-grid-page__flow-card-copy">
                   <strong>{flowTitle}</strong>
-                  <p>{flowSummary}</p>
+                  <p>
+                    <SegmentedLedText value={flowSummary} size="sm" color={FLOW_CARD_LED_COLOR} />
+                  </p>
                 </div>
               </div>
 
@@ -3288,14 +3293,20 @@ export function JuceGridPage() {
                   <Tag type="cool-gray">{branchLabel}</Tag>
                 )}
                 {flowState?.secondaryAnnotation && (
-                  <Tag type="cool-gray">{flowState.secondaryAnnotation}</Tag>
+                  <Tag type="cool-gray">
+                    <SegmentedLedText value={flowState.secondaryAnnotation} size="xs" color={FLOW_CARD_LED_COLOR} />
+                  </Tag>
                 )}
                 {flow.solo && <Tag type="warm-gray">Solo</Tag>}
                 {flow.muted && <Tag type="red">Muted</Tag>}
-                {flowChain && <Tag type="cool-gray">{flowChain.plugins.length} blocks</Tag>}
+                {flowChain && (
+                  <Tag type="cool-gray">
+                    <SegmentedLedText value={`${flowChain.plugins.length} blocks`} size="xs" color={FLOW_CARD_LED_COLOR} />
+                  </Tag>
+                )}
                 {pluginCpuSum > 0 && (
                   <Tag type={pluginCpuSum >= 50 ? 'red' : 'blue'}>
-                    CPU {pluginCpuSum.toFixed(0)}%
+                    <SegmentedLedText value={`CPU ${pluginCpuSum.toFixed(0)}%`} size="xs" color={FLOW_CARD_LED_COLOR} />
                   </Tag>
                 )}
               </div>
@@ -3313,8 +3324,12 @@ export function JuceGridPage() {
                 >
                   <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
                   <span>{flowCardRoutingSummary.statusLabel}</span>
-                  <span>{flowCardRoutingSummary.ioLabel}</span>
-                  <span>{flowCardRoutingSummary.clockLabel}</span>
+                  <span>
+                    <SegmentedLedText value={flowCardRoutingSummary.ioLabel} size="xs" color={FLOW_CARD_LED_COLOR} />
+                  </span>
+                  <span>
+                    <SegmentedLedText value={flowCardRoutingSummary.clockLabel} size="xs" color={FLOW_CARD_LED_COLOR} />
+                  </span>
                   <span>{flowCardRoutingSummary.routingMode}</span>
                   <span>{flowCardRoutingSummary.avbLabel}</span>
                 </button>
@@ -3339,7 +3354,15 @@ export function JuceGridPage() {
                     min={0}
                     max={100}
                     step={1}
-                    unit="%"
+                    valueFormatter={(value) => `${Math.round(value)}%`}
+                    displayOverlay={(
+                      <SegmentedLedText
+                        value={`${Math.round(flow.dryWetMix)}%`}
+                        size="sm"
+                        color={FLOW_CARD_LED_COLOR}
+                        className="juce-grid-page__flow-card-led-overlay"
+                      />
+                    )}
                     onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
                     size="small"
                     showLabel={false}

@@ -87,6 +87,16 @@
   background: linear-gradient(90deg, var(--numeric-input-accent, #0f62fe), color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 35%, white));
 }
 
+.numeric-input__display-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: inherit;
+  pointer-events: none;
+}
+
 .numeric-input__field {
   position: relative;
   z-index: 1;
@@ -101,6 +111,11 @@
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
   outline: 0;
+}
+
+.numeric-input__field.is-overlay-hidden {
+  color: transparent;
+  caret-color: transparent;
 }
 
 .numeric-input__field::selection {

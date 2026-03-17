@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AppShell } from './AppShell'
 
@@ -59,6 +59,11 @@ jest.mock('../components/SpecialSettingsDialog', () => ({
 
 jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
   MPX1MegaMenu: () => <div data-testid="mpx1-mega-menu">MPX1 menu</div>,
+}))
+
+jest.mock('../components/Platform/PlatformModal', () => ({
+  PlatformModalContent: () => null,
+  isStandalonePanel: () => false,
 }))
 
 jest.mock('../components/NodeAlerts/NodeAlertBar', () => ({
@@ -122,7 +127,7 @@ describe('AppShell navigation', () => {
     expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
   })
 
-  it('shows only the remaining advanced workflows inside the advanced menu dropdown', () => {
+  it('shows advanced workflows plus the blocked/lab section inside the advanced launcher', () => {
     renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -134,22 +139,41 @@ describe('AppShell navigation', () => {
     expect(screen.getByRole('menu', { name: 'Advanced menu' })).toBeTruthy()
     expect(screen.getByText('MIDI Hub')).toBeTruthy()
     expect(screen.getByText('Tesira AVB')).toBeTruthy()
+    expect(screen.getByText('Blocked / Lab')).toBeTruthy()
+    expect(screen.getByText('LCD Console')).toBeTruthy()
+    expect(screen.getByText('Generic Interface')).toBeTruthy()
     expect(screen.queryByText('API Observatory')).toBeNull()
     expect(screen.queryByText('MIDI Cluster')).toBeNull()
   })
 
+  it('auto-expands the current route card when the advanced launcher opens', () => {
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/intelfx'],
+    )
+
+    fireEvent.click(screen.getByLabelText('Open advanced menu'))
+
+    const card = screen.getByText('IntelFX Rack').closest('article')
+    expect(card).toBeTruthy()
+    expect(within(card as HTMLElement).getByText('Capabilities')).toBeTruthy()
+    expect(within(card as HTMLElement).getByRole('button', { name: /Less/i })).toBeTruthy()
+  })
+
   it('orders pinned routes by catalog order and caps desktop pins at four items', () => {
-    mockSpecialSettings.pinnedRoutes = ['/about', '/mpx1', '/welcome', '/engine', '/host-machine', '/overview']
+    mockSpecialSettings.pinnedRoutes = ['/intelfx', '/juce-grid', '/midi-hub', '/perform', '/audio-artifacts', '/platform']
 
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
       </AppShell>,
-      ['/host-machine'],
+      ['/intelfx'],
     )
 
     const labels = Array.from(container.querySelectorAll('.nav-tabs-center .nav-tab-label')).map((node) => node.textContent)
-    expect(labels).toEqual(['Platform Stack', 'Audio Engine', 'Host Machine', 'Platform Guide'])
+    expect(labels).toEqual(['Platform Stack', 'Stage Mode', 'Audio Artifacts', 'MIDI Hub'])
   })
 
   it('renders MPX1 as a mega-menu trigger when it is pinned', () => {

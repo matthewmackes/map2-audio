@@ -1460,6 +1460,41 @@ systemctl --user status pipewire
 
 ---
 
-**For Questions**: Consult the documentation files listed in Additional Resources  
-**Last Updated**: March 15, 2026
+## T203 — MIDI Hub v2 Show Control Platform Rewrite (Active as of 2026-03-17)
+
+Epic `T203` in `docs/PROJECT_WORKLIST.md` tracks a complete clean rewrite of the MIDI Hub. Key context:
+
+### Architecture Change
+- **Old**: Monolithic scrolling page at `/midi-hub` with 20+ widgets in 5 workflow bands
+- **New**: 7-area sidebar-navigated platform with deep-linkable child routes under `/midi-hub/*`
+- Routes: `/midi-hub/connections`, `/presets`, `/transport`, `/events`, `/processing`, `/network`, `/lab`
+- Persistent left sidebar (Carbon `SideNav`), persistent bottom status bar, dark/light theme with system preference
+
+### New Features (Net3 Show Control Gateway Parity)
+- **Event Lists** (`/midi-hub/events`): Timecode-driven cue engine with MTC, RTC scheduling, Learn Mode, MSC command builder, MIDI Raw from cues
+- **Tesira TTP** (`/midi-hub/network`): Bidirectional Biamp Tesira Text Protocol client — prebuilt GUI + command console, subscription manager, auto-reconnect
+- **Virtual GPIO** (`/midi-hub/network`): 12 virtual inputs + 12 relay outputs, triggerable from event actions
+- **String Interface** (`/midi-hub/network`): UDP text command protocol (ETC-compatible syntax)
+- **`/map2/*` OSC Namespace** (`/midi-hub/network`): Hierarchical OSC address space following ETC `/eos/*` pattern with implicit output broadcasting
+
+### New Backend Services
+- `app/services/midi_hub/event_list_service.py`
+- `app/services/midi_hub/tesira_client.py`
+- `app/services/midi_hub/virtual_gpio.py`
+- `app/services/midi_hub/string_interface.py`
+- `app/services/midi_hub/osc_namespace.py`
+
+### New Frontend Structure
+- Shell: `web/src/app/pages/MidiHubShell.tsx`
+- Area pages: `web/src/app/pages/midi-hub/MidiHub*Page.tsx`
+- Nav store: `web/src/app/stores/midiHubNavStore.ts`
+- Status bar: `web/src/app/components/MidiHub/MidiHubStatusBar.tsx`
+
+### Subtasks (T203-subA through T203-subK)
+See `docs/PROJECT_WORKLIST.md` for full details. Build order: all at once. Tesira hardware testing saved for end.
+
+---
+
+**For Questions**: Consult the documentation files listed in Additional Resources
+**Last Updated**: March 17, 2026
 **Maintained by**: GitHub Copilot AI Assistants

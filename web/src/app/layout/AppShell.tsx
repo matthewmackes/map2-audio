@@ -1,8 +1,8 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
-import { NavLink, useLocation, useSearchParams } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useRef, useEffect, useMemo, startTransition } from 'react'
-import { ChevronRight, Close, Menu, Pin, PinFilled, Settings } from '@carbon/icons-react'
-import { Accordion, AccordionItem, Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
+import { ChevronDown, ChevronRight, ChevronUp, Close, Menu, Pin, PinFilled, Settings } from '@carbon/icons-react'
+import { Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
 import { PlatformModalContent, isStandalonePanel } from '../components/Platform/PlatformModal'
 import type { StandalonePanel } from '../components/Platform/PlatformModal'
 import { isPlatformLayerId } from '../platform/model'
@@ -30,13 +30,14 @@ import {
   MAX_PINNED_NAV_ITEMS,
   normalizePinnedRoutes,
   pinnableNavigationItems,
-  type AdvancedNavigationItem,
   type HardwareInterfaceMenuItem,
   type NavigationMaturityState,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
+import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { isBlockedAdvancedMenuItem } from './advancedMenuState'
+import './AppShell.css'
 
 interface TopNavItem {
   to: string
@@ -55,6 +56,24 @@ interface TopNavItem {
 type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem
 
 type MobileMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem
+
+const ADVANCED_SECTION_ORDER = ['Audio Grid', 'AVB', 'MIDI', 'System', 'Hardware', 'Blocked / Lab'] as const
+
+function routeItemKey(item: MobileMenuItem): string {
+  return `${item.to}::${item.label}`
+}
+
+function isBlockedOrLabItem(item: MobileMenuItem): boolean {
+  return isBlockedAdvancedMenuItem(item) || item.maturity === 'experimental'
+}
+
+function getAdvancedSectionTitle(item: MobileMenuItem): typeof ADVANCED_SECTION_ORDER[number] {
+  return isBlockedOrLabItem(item) ? 'Blocked / Lab' : item.homeSection
+}
+
+function getAdvancedCardId(sectionTitle: string, item: MobileMenuItem): string {
+  return `advanced-${sectionTitle}-${routeItemKey(item)}`
+}
 
 function toTopNavItem(item: PinnedMenuItem): TopNavItem {
   return {
@@ -108,10 +127,12 @@ function maturityTagLabel(maturity: NavigationMaturityState): string {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
   const [advancedMenuOpen, setAdvancedMenuOpen] = useState(false)
+  const [expandedAdvancedCardId, setExpandedAdvancedCardId] = useState<string | null>(null)
   const navMenuRef = useRef<HTMLDivElement>(null)
   const advancedMenuRef = useRef<HTMLDivElement>(null)
   const [mpx1MenuOpen, setMpx1MenuOpen] = useState(false)
@@ -173,6 +194,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const pinnedRouteSet = useMemo(() => new Set(pinnedRouteKeys), [pinnedRouteKeys])
 
+  const advancedLauncherKeySet = useMemo(
+    () => new Set(advancedMenuItems.map((item) => routeItemKey(item))),
+    [],
+  )
+
   const pinnedTopNavItems = useMemo<TopNavItem[]>(() => {
     return pinnableNavigationItems
       .filter((item) => item.to !== '/' && pinnedRouteSet.has(item.to))
@@ -223,6 +249,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setAdvancedMenuOpen(false)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
+    setExpandedAdvancedCardId(null)
   }, [location.pathname])
 
   useEffect(() => {
@@ -240,6 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       setNavOpen(false)
       setMpx1MenuOpen(false)
       setTopHardwareSubmenuOpen(false)
+      setExpandedAdvancedCardId(null)
       setPlatformModalOpen(true)
     })
   }
@@ -272,6 +300,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setAdvancedMenuOpen(false)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
+    setExpandedAdvancedCardId(null)
   }
 
   const closeMobileNavigation = () => {
@@ -279,6 +308,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     setAdvancedMenuOpen(false)
     setMpx1MenuOpen(false)
     setTopHardwareSubmenuOpen(false)
+    setExpandedAdvancedCardId(null)
+  }
+
+  const closeTransientMenus = () => {
+    setAdvancedMenuOpen(false)
+    setMpx1MenuOpen(false)
+    setTopHardwareSubmenuOpen(false)
+    setExpandedAdvancedCardId(null)
+  }
+
+  const openAdvancedRoute = (item: MobileMenuItem) => {
+    if (isBlockedAdvancedMenuItem(item)) {
+      return
+    }
+    closeTransientMenus()
+    navigate(item.to)
   }
 
   const handleSpecialSettingsIconClick = () => {
@@ -411,9 +456,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         title={`${item.description} • ${item.maturity}`}
         style={{ '--tab-color': item.color } as CSSProperties}
         onClick={() => {
-          setAdvancedMenuOpen(false)
-          setMpx1MenuOpen(false)
-          setTopHardwareSubmenuOpen(false)
+          closeTransientMenus()
         }}
       >
         <span className={`nav-tab-icon${isAudioGridTab ? ' nav-tab-icon--audio-grid' : ''}`}>
@@ -590,15 +633,194 @@ export function AppShell({ children }: { children: ReactNode }) {
     )
   }
 
+  const renderAdvancedLauncherCard = (item: MobileMenuItem, sectionTitle: string) => {
+    const cardId = getAdvancedCardId(sectionTitle, item)
+    const Icon = item.icon
+    const isBlocked = isBlockedAdvancedMenuItem(item)
+    const isPinned = pinnedRouteSet.has(item.to)
+    const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
+    const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
+    const hardwareLocation = hardwareLocationNotes[item.to]
+    const profile = resolveHomeCardProfile(item)
+    const isExpanded = expandedAdvancedCardId === cardId
+    const isActive = isRouteMatch(location.pathname, item.to)
+    const supportNotes = [
+      hardwareLocation ? `On ${hardwareLocation.hostname}` : null,
+      item.gatedReason ?? null,
+    ].filter((note): note is string => Boolean(note))
+
+    return (
+      <article
+        key={cardId}
+        role="listitem"
+        className={`advanced-menu-launcher-card${isBlocked ? ' is-blocked' : ''}${isActive ? ' is-active' : ''}`}
+        style={{ '--advanced-menu-card-accent': item.color } as CSSProperties}
+        onClick={() => openAdvancedRoute(item)}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) {
+            return
+          }
+          if ((event.key === 'Enter' || event.key === ' ') && !isBlocked) {
+            event.preventDefault()
+            openAdvancedRoute(item)
+          }
+        }}
+        tabIndex={isBlocked ? -1 : 0}
+        aria-label={`Open ${item.label}`}
+        aria-disabled={isBlocked || undefined}
+      >
+        {item.pinnable ? (
+          <button
+            type="button"
+            className={`advanced-menu-launcher-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              if (!pinDisabled) {
+                void togglePinnedRoute(item, !isPinned)
+              }
+            }}
+            title={
+              limitReached
+                ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
+                : isPinned
+                  ? 'Unpin from navigation bar'
+                  : 'Pin to navigation bar'
+            }
+            aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+            aria-pressed={isPinned}
+            disabled={pinDisabled}
+          >
+            {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
+          </button>
+        ) : null}
+
+        <div className="advanced-menu-launcher-card__meta">
+          <Icon className="advanced-menu-launcher-card__icon" aria-hidden />
+          <div className="advanced-menu-launcher-card__badges">
+            <span className="advanced-menu-launcher-card__maturity">{maturityTagLabel(item.maturity)}</span>
+            {isActive ? <span className="advanced-menu-launcher-card__status">Current route</span> : null}
+            {hardwareLocation ? (
+              <span className="advanced-menu-launcher-card__status">On {hardwareLocation.hostname}</span>
+            ) : null}
+          </div>
+        </div>
+
+        <h3 className="advanced-menu-launcher-card__label">{item.label}</h3>
+        <p className="advanced-menu-launcher-card__desc">{profile.summary}</p>
+
+        {supportNotes.length > 0 ? (
+          <div className="advanced-menu-launcher-card__notes">
+            {supportNotes.map((note) => (
+              <p key={`${cardId}-${note}`} className="advanced-menu-launcher-card__note">
+                {note}
+              </p>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="advanced-menu-launcher-card__footer">
+          <button
+            type="button"
+            className="advanced-menu-launcher-card__open-btn"
+            disabled={isBlocked}
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              if (!isBlocked) {
+                openAdvancedRoute(item)
+              }
+            }}
+          >
+            Open interface
+          </button>
+          <button
+            type="button"
+            className="advanced-menu-launcher-card__details-btn"
+            aria-expanded={isExpanded}
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              setExpandedAdvancedCardId((current) => (current === cardId ? null : cardId))
+            }}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp size={14} aria-hidden /> Less
+              </>
+            ) : (
+              <>
+                <ChevronDown size={14} aria-hidden /> Details
+              </>
+            )}
+          </button>
+        </div>
+
+        {isExpanded ? (
+          <div className="advanced-menu-launcher-card__detail-panel" role="note">
+            <div>
+              <p className="advanced-menu-launcher-card__detail-heading">Capabilities</p>
+              <ul className="advanced-menu-launcher-card__detail-list">
+                {profile.capabilities.slice(0, 4).map((capability) => (
+                  <li key={`${cardId}-${capability}`}>{capability}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <p className="advanced-menu-launcher-card__detail-heading">Workflow notes</p>
+              <p className="advanced-menu-launcher-card__detail-body">{profile.learnMore}</p>
+            </div>
+
+            <div>
+              <p className="advanced-menu-launcher-card__detail-heading">Best for</p>
+              <p className="advanced-menu-launcher-card__detail-body advanced-menu-launcher-card__detail-body--strong">
+                {profile.bestFor}
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </article>
+    )
+  }
+
+  const advancedLauncherItems = useMemo(
+    () => allRouteNavigationItems.filter(
+      (item) => advancedLauncherKeySet.has(routeItemKey(item)) || isBlockedOrLabItem(item),
+    ),
+    [advancedLauncherKeySet],
+  )
+
   const advancedSections = useMemo(() => {
-    const grouped = new Map<string, AdvancedNavigationItem[]>()
-    for (const item of advancedMenuItems) {
-      const existing = grouped.get(item.homeSection) ?? []
+    const grouped = new Map<string, MobileMenuItem[]>()
+    for (const item of advancedLauncherItems) {
+      const sectionTitle = getAdvancedSectionTitle(item)
+      const existing = grouped.get(sectionTitle) ?? []
       existing.push(item)
-      grouped.set(item.homeSection, existing)
+      grouped.set(sectionTitle, existing)
     }
-    return Array.from(grouped.entries())
-  }, [])
+    return ADVANCED_SECTION_ORDER
+      .map((sectionTitle) => [sectionTitle, grouped.get(sectionTitle) ?? []] as const)
+      .filter(([, items]) => items.length > 0)
+  }, [advancedLauncherItems])
+
+  const currentAdvancedCardId = useMemo(() => {
+    for (const [sectionTitle, items] of advancedSections) {
+      const activeItem = items.find((item) => isRouteMatch(location.pathname, item.to))
+      if (activeItem) {
+        return getAdvancedCardId(sectionTitle, activeItem)
+      }
+    }
+    return null
+  }, [advancedSections, location.pathname])
+
+  useEffect(() => {
+    if (!advancedMenuOpen) {
+      setExpandedAdvancedCardId(null)
+      return
+    }
+    setExpandedAdvancedCardId(currentAdvancedCardId)
+  }, [advancedMenuOpen, currentAdvancedCardId])
 
   return (
     <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}`}>
@@ -647,6 +869,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 onClick={() => {
                   const nextOpen = !advancedMenuOpen
                   setAdvancedMenuOpen(nextOpen)
+                  setExpandedAdvancedCardId(nextOpen ? currentAdvancedCardId : null)
                   if (nextOpen) {
                     setNavOpen(false)
                     setMpx1MenuOpen(false)
@@ -660,31 +883,59 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
 
               {advancedMenuOpen && (
-                <div id="advanced-menu-panel" className="advanced-menu-panel" role="menu" aria-label="Advanced menu">
-                  <div className="advanced-menu-header">
-                    <div className="advanced-menu-header-main">
-                      <p className="advanced-menu-kicker">Advanced</p>
-                      <h2 className="advanced-menu-title">Developer, cluster, and non-default workflows</h2>
+                <div
+                  id="advanced-menu-panel"
+                  className="advanced-menu-panel advanced-menu-panel--launcher"
+                  role="menu"
+                  aria-label="Advanced menu"
+                >
+                  <div className="advanced-menu-launcher">
+                    <div className="advanced-menu-header advanced-menu-launcher__hero">
+                      <div className="advanced-menu-launcher__hero-art" aria-hidden="true">
+                        <Map2BrandMark className="advanced-menu-launcher__brand-mark" />
+                      </div>
+                      <div className="advanced-menu-header-main advanced-menu-launcher__hero-copy">
+                        <p className="advanced-menu-kicker">Advanced launcher</p>
+                        <h2 className="advanced-menu-title">Developer, cluster, and non-default workflows</h2>
+                        <p className="advanced-menu-subtitle">
+                          Routes stay visible here even when they are not pinned into the primary shell navigation.
+                        </p>
+                      </div>
+                      <div className="advanced-menu-launcher__hero-metrics" aria-label="Advanced launcher status">
+                        <div className="advanced-menu-launcher__metric">
+                          <span className="advanced-menu-launcher__metric-label">Routes</span>
+                          <strong className="advanced-menu-launcher__metric-value">{advancedLauncherItems.length}</strong>
+                        </div>
+                        <div className="advanced-menu-launcher__metric">
+                          <span className="advanced-menu-launcher__metric-label">Pinned</span>
+                          <strong className="advanced-menu-launcher__metric-value">
+                            {pinnedRouteSet.size}/{MAX_PINNED_NAV_ITEMS}
+                          </strong>
+                        </div>
+                        <div className="advanced-menu-launcher__metric">
+                          <span className="advanced-menu-launcher__metric-label">Sections</span>
+                          <strong className="advanced-menu-launcher__metric-value">{advancedSections.length}</strong>
+                        </div>
+                      </div>
                     </div>
-                    <p className="advanced-menu-subtitle">
-                      Routes stay visible here even when they are not pinned into the primary shell navigation.
-                    </p>
-                  </div>
-                  <div className="nav-mobile-menu-content nav-mobile-menu-content--desktop">
-                    <Accordion align="start" className="advanced-menu-accordion">
+
+                    <div className="advanced-menu-launcher__body">
                       {advancedSections.map(([sectionTitle, items]) => (
-                        <AccordionItem
+                        <section
                           key={`advanced-${sectionTitle}`}
-                          className="advanced-menu-accordion-item"
-                          title={sectionTitle}
-                          open
+                          className="advanced-menu-launcher__section"
+                          aria-label={`${sectionTitle} advanced workflows`}
                         >
-                          <div className="nav-mobile-group-grid">
-                            {items.map((item) => renderMobileMenuItem(item, `advanced-${sectionTitle}`))}
+                          <div className="advanced-menu-launcher__section-heading">
+                            <h3 className="advanced-menu-launcher__section-title">{sectionTitle}</h3>
+                            <span className="advanced-menu-launcher__section-count">{items.length}</span>
                           </div>
-                        </AccordionItem>
+                          <div className="advanced-menu-launcher__grid" role="list" aria-label={`${sectionTitle} launcher cards`}>
+                            {items.map((item) => renderAdvancedLauncherCard(item, sectionTitle))}
+                          </div>
+                        </section>
                       ))}
-                    </Accordion>
+                    </div>
                   </div>
                 </div>
               )}

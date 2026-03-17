@@ -1,6 +1,6 @@
 # MAP2 Audio Platform — AI Instructions
 
-> **Last Updated**: 2026-03-15
+> **Last Updated**: 2026-03-17
 > **Purpose**: Central reference for Claude Code working on the MAP2 Audio codebase.
 > Also see: [.github/copilot-instructions.md](.github/copilot-instructions.md) · [.gemini/instructions.md](.gemini/instructions.md)
 
@@ -208,6 +208,17 @@ All planned and in-progress work is tracked in:
 | Web components | `web/src/app/components/` |
 | API layer | `web/src/map2/api.ts` |
 | Advanced menu items | `web/src/app/data/advancedMenuItems.ts` |
+| MIDI Hub v2 shell | `web/src/app/pages/MidiHubShell.tsx` |
+| MIDI Hub v2 area pages | `web/src/app/pages/midi-hub/MidiHub*Page.tsx` |
+| MIDI Hub nav store | `web/src/app/stores/midiHubNavStore.ts` |
+| MIDI Hub status bar | `web/src/app/components/MidiHub/MidiHubStatusBar.tsx` |
+| Event list service | `app/services/midi_hub/event_list_service.py` |
+| Tesira TTP client | `app/services/midi_hub/tesira_client.py` |
+| Virtual GPIO service | `app/services/midi_hub/virtual_gpio.py` |
+| String interface | `app/services/midi_hub/string_interface.py` |
+| OSC namespace router | `app/services/midi_hub/osc_namespace.py` |
+| OSC namespace docs | `docs/midi/MAP2_OSC_NAMESPACE.md` |
+| Tesira integration docs | `docs/midi/TESIRA_TTP_INTEGRATION.md` |
 | Carbon conformance standard | `docs/design/CARBON_CONFORMANCE_STANDARD.md` |
 | Carbon review checklist | `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md` |
 | API contract standards | `docs/api-contract-standards.md` |

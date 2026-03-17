@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import type { ReactNode } from 'react'
 
 import { createParameterDescriptor, type SensitivityProfile } from '../../data/parameterSchema'
 import { NumericInput } from '../NumericInput/NumericInput'
@@ -21,6 +22,7 @@ interface NumberInputProps {
   showLabel?: boolean
   showBounds?: boolean
   valueFormatter?: (value: number) => string
+  displayOverlay?: ReactNode
   inline?: boolean
   accentColor?: string
   className?: string
@@ -47,6 +49,7 @@ export function NumberInput({
   showLabel = true,
   showBounds = false,
   valueFormatter,
+  displayOverlay,
   inline = false,
   accentColor = '#0f62fe',
   className = '',
@@ -82,6 +85,7 @@ export function NumberInput({
         inline={inline}
         showBounds={showBounds}
         valueFormatter={valueFormatter}
+        displayOverlay={displayOverlay}
         accentColor={accentColor}
         className={className}
       />

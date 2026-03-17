@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-17 11:46 - Codex
+Last updated: 2026-03-17 - Claude
 
 ## Active Blockers Only
 
@@ -339,6 +339,309 @@ Last updated: 2026-03-16 00:00 - Codex
   - Ignore guardrails and rewrite prep are complete in the archive.
   - Remaining work is only the coordinated destructive rewrite.
 
+## MIDI Hub v2 — Show Control Platform Rewrite
+
+ID: T203
+Status: [ ] Todo
+Title: MIDI Hub v2 — Full show control platform rewrite with sidebar navigation, Net3 feature parity, Tesira TTP integration, and enterprise OSC namespace
+Description:
+- Goal / acceptance criteria: Complete clean rewrite of the MIDI Hub from a monolithic scrolling page into a 7-area sidebar-navigated show control platform. Add Net3 Show Control Gateway feature parity (Event Lists, MSC command builder, virtual GPIO, MIDI Raw from cues, Learn Mode, String Interface). Add bidirectional Tesira TTP integration. Add hierarchical `/map2/*` OSC namespace. Add persistent bottom status bar, dark/light theming with system preference detection, scroll/panel state persistence across navigation, and deep-linkable routes. All surfaces must pass Carbon Conformance Standard and Carbon Contribution Review Checklist. Enterprise features must be identified and flagged throughout.
+- Why it matters: The current MIDI Hub is a dense monolithic page that requires scrolling to find features. The user requires a professional show control platform competitive with ETC Net3/Response Show Control Gateways, with clean sidebar navigation, industry-standard terminology, and full Tesira integration for their production audio environment.
+- Dependencies: T202 (done — prior Carbon refactor), existing MIDI Hub backend services (21 files in `app/services/midi_hub/`), existing frontend components (15 files in `web/src/app/components/MidiHub/`), `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`
+- Estimated effort: Very High
+- Required outputs: See subtask list below. All subtasks must pass `npm run typecheck`, `npm run build`, and `pytest tests/` before marking done. Updated Carbon conformance documentation. Updated route pattern mapping.
+Subtasks:
+
+ID: T203-subA
+Status: [ ] Todo
+Title: Navigation shell — persistent left sidebar, bottom status bar, theme system, route scaffolding
+Description:
+- Goal / acceptance criteria: Replace the monolithic `MidiHubPage.tsx` with a sidebar-navigated shell containing 7 service areas as separate routable pages. Implement persistent left sidebar following Carbon `SideNav` pattern (always visible, ~240px, status badges per area). Implement persistent bottom status bar showing: clock status + BPM, active preset name, active event list status + timecode position, route count, connected device count, system health. Implement dark/light theme toggle that follows system preference with manual override per Carbon theming guidance. All 7 areas must be deep-linkable routes under `/midi-hub/*`. Each area must preserve scroll position and panel expand/collapse state when navigating away and back (use Zustand store persisted to localStorage).
+- Why it matters: Foundation for the entire rewrite — every other subtask depends on this shell existing.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs:
+  - New shell component: `web/src/app/pages/MidiHubShell.tsx` (sidebar + status bar + outlet)
+  - New CSS: `web/src/app/pages/MidiHubShell.css`
+  - Route changes in `web/src/app/App.tsx`: `/midi-hub` becomes parent route with child routes `/midi-hub/connections`, `/midi-hub/presets`, `/midi-hub/transport`, `/midi-hub/events`, `/midi-hub/processing`, `/midi-hub/network`, `/midi-hub/lab`. `/midi-hub` redirects to `/midi-hub/connections`.
+  - Legacy redirects: `/midi` → `/midi-hub/connections`, `/midi-hub-2` → `/midi-hub/connections`
+  - Zustand store: `web/src/app/stores/midiHubNavStore.ts` — persists scroll positions and panel states per area
+  - Theme integration: use Carbon `GlobalTheme` provider with `useMediaQuery('(prefers-color-scheme: dark)')` for system detection, localStorage override key `map2_theme_preference`
+  - Bottom status bar component: `web/src/app/components/MidiHub/MidiHubStatusBar.tsx` — fixed to bottom, polls hub status + clock + preset + event list state via React Query
+  - 7 placeholder page components (one per area) that render existing panels in the correct grouping
+  - `MidiHubNodeScopeProvider` must wrap the shell (not individual pages)
+  - Node context picker moves to sidebar header
+  - Sidebar badges: green dot for active routes, clock icon for running clock, count badges for presets/sessions
+- Implementation notes:
+  - Carbon SideNav: use `SideNav`, `SideNavItems`, `SideNavLink` from `@carbon/react`
+  - Bottom bar: use `Layer` with `position: fixed; bottom: 0` and Carbon spacing tokens
+  - Theme: Carbon provides `Theme` component with `theme` prop ('white', 'g10', 'g90', 'g100'). Map system dark → 'g100', system light → 'white'. Store preference in localStorage.
+  - Deep linking: use React Router `<Outlet />` pattern with `useLocation()` to restore scroll
+  - Status bar refetch interval: 2000ms for clock, 3000ms for everything else
+  - All 7 areas are lazy-loaded via `React.lazy()` for code splitting
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subB
+Status: [ ] Todo
+Title: Connections area — clean rewrite of routing, patchbay, quick router, and traffic monitor
+Description:
+- Goal / acceptance criteria: Rewrite the Connections area (`/midi-hub/connections`) as a clean Carbon page containing: Port Matrix (rewritten with Carbon `DataTable`), Patchbay Graph (SVG retained but Carbon-wrapped), Quick Router (Carbon `Toggle` switches), and Traffic Monitor (Carbon `DataTable` with streaming rows). Remove all legacy CSS classes. Use Carbon patterns exclusively. Traffic Monitor is ONLY accessible from this page (not global). Master-detail layout follows Carbon data table patterns per Carbon guidance. Port Matrix and Patchbay remain as tab-switchable views using Carbon `Tabs`.
+- Why it matters: This is the primary workflow — connections must be rock-solid and visually clean.
+- Dependencies: T203-subA
+- Estimated effort: High
+- Required outputs:
+  - `web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx`
+  - `web/src/app/pages/midi-hub/MidiHubConnectionsPage.css`
+  - Rewritten components: `MidiRoutingMatrix.tsx`, `MidiPatchbay.tsx`, `MidiTrafficMonitor.tsx`, `MidiHubQuickRouter.tsx` (renamed from MidiHubWorkbenchCards quick router section)
+  - All components use Carbon `DataTable`, `TableContainer`, `TableToolbar`, `TableToolbarSearch`, `TableToolbarContent`, `Tag`, `Modal`, `Button`, `Toggle`
+  - Traffic monitor: Carbon `DataTable` with `TableToolbar` search, column sorting, CSV export button, pause/resume toggle, clear button. No custom table implementation.
+  - Patchbay: SVG canvas retained but wrapped in Carbon `Layer` with Carbon `Toolbar` pattern for controls
+  - Route creation/edit modal: Carbon `ComposedModal` with `ModalHeader`, `ModalBody`, `ModalFooter`
+  - Tests: `MidiHubConnectionsPage.test.tsx` — renders, shows ports, matrix/patchbay tab switch, traffic data display, route creation modal opens
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subC
+Status: [ ] Todo
+Title: Presets & Recall area — presets, program change slots, preset chains
+Description:
+- Goal / acceptance criteria: Rewrite the Presets & Recall area (`/midi-hub/presets`) containing: Preset Manager (Carbon `DataTable` with toolbar actions), Program Change Slots (Carbon `DataTable` mapping program numbers 0-127 to presets), Preset Chains (Carbon `OrderedList` or `DataTable` with drag-reorder). Compare presets via Carbon `ComposedModal` with side-by-side diff. Import/export via Carbon `FileUploader` and download actions. Set default preset. All state recall operations show Carbon `InlineLoading` during mutation.
+- Why it matters: State recall is the second most critical workflow after connections.
+- Dependencies: T203-subA
+- Estimated effort: Medium
+- Required outputs:
+  - `web/src/app/pages/midi-hub/MidiHubPresetsPage.tsx`
+  - `web/src/app/pages/midi-hub/MidiHubPresetsPage.css`
+  - Rewritten `MidiHubPresetManager.tsx` → split into `PresetTable.tsx`, `ProgramChangeSlots.tsx`, `PresetChainEditor.tsx`
+  - Tests: renders, shows presets, recall mutation fires, compare modal works, chain ordering works
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subD
+Status: [ ] Todo
+Title: Transport area — clock, recorder, industry-standard transport bar
+Description:
+- Goal / acceptance criteria: Rewrite the Transport area (`/midi-hub/transport`) with industry-standard layout. Clock panel: BPM display (large numeric), tap tempo button, start/stop/continue transport controls, internal/external source toggle, output port multi-select, divider/multiplier controls. Recorder panel: record/stop/play controls, session list as Carbon `DataTable`, playback speed slider, loop toggle, SMF export with BPM/ticks config. Transport controls should follow DAW conventions (play/stop/record icons from `@carbon/icons-react`: `PlayFilled`, `StopFilled`, `RecordingFilled`, `PauseFilled`).
+- Why it matters: Transport is time-critical — musicians expect instant, familiar controls.
+- Dependencies: T203-subA
+- Estimated effort: Medium
+- Required outputs:
+  - `web/src/app/pages/midi-hub/MidiHubTransportPage.tsx`
+  - `web/src/app/pages/midi-hub/MidiHubTransportPage.css`
+  - Rewritten `MidiClockPanel.tsx` and `MidiRecorderPanel.tsx`
+  - Tests: renders, clock status displayed, transport controls fire mutations, recorder session list works
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subE
+Status: [ ] Todo
+Title: Event Lists area — NEW: timecode-driven cue engine with MTC, RTC scheduling, and Learn Mode
+Description:
+- Goal / acceptance criteria: Build a completely new Event Lists area (`/midi-hub/events`) — this is a new top-level feature inspired by ETC Net3 Show Control Gateway event lists. Must include:
+  1. **Event List Manager**: Create/delete/rename event lists. Each list has a type (MTC or RTC), a source ID, internal/external clock enable, first/last time, and FPS setting (24/25/30).
+  2. **Event Editor**: Table-based editor (Carbon `DataTable`) showing columns: Event #, Time/Address (HH:MM:SS:FF for MTC, datetime for RTC), Action (Cue/Preset/Macro/MIDI Raw), Label. Add/edit/delete events. Events fire when clock reaches specified time.
+  3. **Internal Clock**: When external MTC source is absent, internal clock auto-takes-over (if enabled). Internal clock respects first/last time loop points.
+  4. **RTC Events**: Schedule by wall-clock time and date with timezone support. "Every Tuesday at 8pm fire macro X" pattern.
+  5. **Learn Mode**: Button that captures incoming MTC timecode position and auto-creates an event at the current timestamp with a user-selected action.
+  6. **Event List Status**: Show running/stopped, current timecode position, internal/external indicator, FPS.
+  7. **MSC Command Builder**: Structured form to compose MIDI Show Control messages — Go, Stop, Resume, Timed Go, Set, Fire, All Off — with device ID (0-127), command format, and cue number fields. MSC messages can be used as event actions or sent ad-hoc.
+  8. **MIDI Raw Output**: Attach MIDI note/CC/program change output to cue events — "when event fires, also send note C4 on ch10".
+- Why it matters: Event Lists are the backbone of synchronized show control. This is the key Net3 feature parity gap. Without this, MAP2 cannot compete with ETC for show control workflows.
+- Dependencies: T203-subA
+- Estimated effort: Very High
+- Required outputs:
+  - Backend: `app/services/midi_hub/event_list_service.py` — EventList, Event models; MTC internal clock; RTC scheduler; Learn Mode capture; MSC message builder
+  - Backend routes: `app/routes/midi_hub.py` additions — CRUD for event lists and events, clock control, learn mode toggle, MSC send
+  - Frontend: `web/src/app/pages/midi-hub/MidiHubEventsPage.tsx` and `MidiHubEventsPage.css`
+  - Frontend components: `EventListManager.tsx`, `EventEditor.tsx`, `MscCommandBuilder.tsx`, `EventListStatus.tsx`, `LearnModeControl.tsx`
+  - All tables use Carbon `DataTable` with `TableToolbar`
+  - MSC builder uses Carbon `FormGroup`, `Select`, `NumberInput`, `TextInput`
+  - Time display uses monospace font via `--cds-code-01-font-family`
+  - Tests: backend — `tests/test_midi_hub_event_lists.py` (event CRUD, MTC clock, RTC scheduling, MSC builder, learn mode). Frontend — `MidiHubEventsPage.test.tsx`
+- Implementation notes:
+  - MTC timecode format: HH:MM:SS:FF (hours:minutes:seconds:frames)
+  - FPS options: 24 (film), 25 (PAL), 30 (NTSC) — match ETC convention
+  - MSC command format: F0 7F <device_id> 02 <command_format> <command> <data> F7
+  - MSC commands: 01=Go, 02=Stop, 03=Resume, 04=TimedGo, 06=Set, 07=Fire, 08=AllOff
+  - Learn Mode: listen to incoming MTC, on button press capture current timecode and insert event row with that timestamp
+  - RTC: use Python `datetime` with timezone-aware scheduling via `asyncio` timers
+  - Event action types: RecallPreset, FireMacro, SendMSC, SendMidiRaw, SendOSC, SendString
+  - Enterprise flag: Event list sharing across cluster nodes, conditional event firing based on device shadow state
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subF
+Status: [ ] Todo
+Title: Message Processing area — filters, mappers, scripts, macros, scheduler rewrite
+Description:
+- Goal / acceptance criteria: Rewrite the Message Processing area (`/midi-hub/processing`) with all existing capabilities in clean Carbon patterns. Filter Planner: Carbon pill-style `Tag` toggles for channel/type filtering with live preview. Message Mapper: Carbon `Accordion` or master-detail for 16 mapper slots with per-slot config (source, type, channel range, value range, target, curve). Script Editor: retain code editor but wrap in Carbon `Layer` with Carbon toolbar for save/load/run/examples. Macros: Carbon `DataTable` for macro list with inline trigger button. Scheduler: Carbon `DataTable` with status column (pending/sent/cancelled). All panels follow Carbon data table + accordion patterns per Carbon guidance for dense data.
+- Why it matters: Processing is the automation brain — it must be approachable for musicians, not just engineers.
+- Dependencies: T203-subA
+- Estimated effort: High
+- Required outputs:
+  - `web/src/app/pages/midi-hub/MidiHubProcessingPage.tsx` and CSS
+  - Rewritten: `MidiHubFilterPlanner.tsx`, `MidiHubMessageMapper.tsx`, `MidiScriptEditor.tsx`, `MidiMacroPanel.tsx`, `MidiSchedulerPanel.tsx`
+  - Tests: renders, filter toggles work, mapper slot CRUD, script save/run, macro trigger, scheduler create/cancel
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subG
+Status: [ ] Todo
+Title: Network & Protocol area — RTP-MIDI, OSC namespace, MIDI 2.0, Tesira TTP, Virtual GPIO, String Interface
+Description:
+- Goal / acceptance criteria: Rewrite and expand the Network area (`/midi-hub/network`) with all existing capabilities plus new features:
+  1. **RTP-MIDI** (existing, rewrite): Carbon `DataTable` for sessions with latency metrics, create/delete/test actions.
+  2. **OSC Bridge** (existing, rewrite): Carbon forms for server start/stop, message send. Enhanced with structured `/map2/*` namespace browser showing all available OSC addresses.
+  3. **MIDI 2.0** (existing, rewrite): Carbon panels for device discovery, profile management, UMP translation.
+  4. **Tesira TTP Integration** (NEW): Full bidirectional Tesira Text Protocol client.
+     - Connection manager: hostname/IP, port (default 23 for Telnet), authentication if secured
+     - Prebuilt controls: Fader level controls (get/set/subscribe with slider), mute toggles, preset recall, crosspoint matrix viewer, device info display
+     - Command console: free-text TTP command entry with response display, command history, auto-complete for known instance tags
+     - Subscription manager: subscribe to Tesira attributes, see live value updates in a streaming table
+     - Instance tag browser: `SESSION get aliases` to discover available blocks
+     - Device services: reboot, sleep/wake, start/stop audio, recall/save presets
+     - Connection status indicator with auto-reconnect
+  5. **Virtual GPIO** (NEW): 12 virtual inputs (contact closure simulation) and 12 virtual relay outputs. Each input has a label, state (open/closed), and can trigger event list actions. Each output has a label, state (energized/de-energized), and can be fired from event actions or macros. Grid display with toggle buttons.
+  6. **String Interface** (NEW): Send/receive text commands over UDP. Same syntax as ETC string protocol — fire cues, trigger macros, recall presets via text commands. Configurable TX/RX ports and IP addresses. Command log with timestamps.
+- Why it matters: Network is where MAP2 connects to the wider production ecosystem. Tesira integration is a primary user requirement. Virtual GPIO and String Interface complete Net3 feature parity.
+- Dependencies: T203-subA
+- Estimated effort: Very High
+- Required outputs:
+  - `web/src/app/pages/midi-hub/MidiHubNetworkPage.tsx` and CSS
+  - Rewritten: `MidiNetworkPanel.tsx`, `Midi2Panel.tsx`
+  - New backend: `app/services/midi_hub/tesira_client.py` — TCP socket client for TTP, command parser, subscription manager, auto-reconnect
+  - New backend: `app/services/midi_hub/virtual_gpio.py` — 12 inputs, 12 outputs, state tracking, event triggers
+  - New backend: `app/services/midi_hub/string_interface.py` — UDP string server, command parser (Go, Cue, Stop, Resume, SubMove, Macro, etc.)
+  - New backend routes in `app/routes/midi_hub.py`: Tesira connect/disconnect/command/subscribe/aliases/presets, GPIO get/set/label, String send/receive/config
+  - New frontend components: `TesiraPanel.tsx` (connection + prebuilt controls + command console), `VirtualGpioPanel.tsx` (grid of 12+12 toggles), `StringInterfacePanel.tsx` (UDP config + command log)
+  - Tests: backend — `tests/test_tesira_client.py`, `tests/test_virtual_gpio.py`, `tests/test_string_interface.py`. Frontend — `MidiHubNetworkPage.test.tsx`
+- Implementation notes:
+  - Tesira TTP syntax: `InstanceTag command attribute [index] [value] LF`
+  - Supported commands: get, set, increment, decrement, toggle, subscribe, unsubscribe
+  - Responses: `+OK` (success), `+OK "value":X` (get response), `-ERR` (error)
+  - Subscriptions: `! "publishToken":"label" "value":X` notifications
+  - Instance tags are case-sensitive, no `/` or `&` characters allowed
+  - Default Telnet port 23, baud rates for RS-232: 9600-115200
+  - Session command: `SESSION get aliases` returns available instance tags
+  - Device command: `DEVICE recallPreset 1001`, `DEVICE get deviceInfo`
+  - Prebuilt Tesira controls should cover: Level (fader + mute), MatrixMixer (crosspoint level + mute), SourceSelector, Router, Meter
+  - Virtual GPIO: stored in memory (not DB), reset on hub restart, state change fires registered callbacks
+  - String Interface: UDP socket on configurable port (default 3037), same command vocabulary as ETC serial strings
+  - Enterprise flags: Tesira fleet management (multiple Tesira servers), GPIO hardware mapping (future USB relay board), String protocol over ACN
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subH
+Status: [ ] Todo
+Title: Lab area — AI Learn, Mesh, Device Shadow rewrite
+Description:
+- Goal / acceptance criteria: Rewrite the Lab area (`/midi-hub/lab`) with all existing capabilities in clean Carbon patterns. AI Learn Suggestions: Carbon form with `AILabel` per Carbon for AI conventions, confidence scores as Carbon `ProgressBar`. Mesh Networking: Carbon `DataTable` for peers with status indicators. Device Shadow State: Carbon `DataTable` for drift events with severity tags. All AI surfaces must include `AILabel` with short disclosure content per `docs/design/CARBON_AI_LABEL_CONFORMANCE.md`.
+- Why it matters: Lab features are important to the user and must be first-class, not afterthoughts.
+- Dependencies: T203-subA
+- Estimated effort: Medium
+- Required outputs:
+  - `web/src/app/pages/midi-hub/MidiHubLabPage.tsx` and CSS
+  - Rewritten: `MidiInnovationPanel.tsx` split into `AiLearnPanel.tsx`, `MeshNetworkPanel.tsx`, `DeviceShadowPanel.tsx`
+  - All AI surfaces include Carbon `AILabel` component
+  - Tests: renders, AI suggestions display with confidence, mesh peer CRUD, shadow drift events display
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subI
+Status: [ ] Todo
+Title: `/map2/*` OSC namespace — hierarchical address space with bidirectional feedback
+Description:
+- Goal / acceptance criteria: Design and implement a hierarchical OSC namespace for MAP2 following ETC `/eos/*` industry-standard pattern. The namespace must expose ALL internal MAP2 state for external control surfaces (TouchOSC, Lemur, Open Stage Control). Namespace structure:
+  - `/map2/plugin/<id>/param/<name>` — get/set plugin parameters
+  - `/map2/plugin/<id>/bypass` — toggle plugin bypass
+  - `/map2/chain/<id>/preset/<number>/fire` — recall chain preset
+  - `/map2/cue/<list>/<number>/fire` — fire event list cue
+  - `/map2/transport/bpm` — get/set BPM
+  - `/map2/transport/start`, `/stop`, `/continue` — transport control
+  - `/map2/preset/fire` — recall MIDI hub preset by number
+  - `/map2/preset/<id>/fire` — recall by ID
+  - `/map2/macro/<id>/fire` — trigger macro
+  - `/map2/gpio/in/<number>` — read virtual GPIO input
+  - `/map2/gpio/out/<number>` — set virtual GPIO output
+  - `/map2/meter/<channel>` — subscribe to metering data
+  - `/map2/cmd` — send command string (like ETC `/eos/cmd`)
+  - `/map2/ping` → `/map2/out/ping` — latency test
+  - Implicit output (auto-broadcast when state changes):
+    - `/map2/out/active/preset` — currently active preset
+    - `/map2/out/active/cue/<list>/<number>` — active cue with progress
+    - `/map2/out/transport/bpm` — current BPM
+    - `/map2/out/event/cue/<list>/<number>/fire` — cue fired notification
+    - `/map2/out/event/preset/<id>/recall` — preset recalled notification
+    - `/map2/out/meter/<channel>` — metering data stream
+  - Namespace browser UI in the Network area showing all available addresses with descriptions
+- Why it matters: OSC namespace makes MAP2 controllable by any OSC surface — this is how professional show control systems integrate with custom control surfaces.
+- Dependencies: T203-subG (OSC bridge rewrite)
+- Estimated effort: Very High
+- Required outputs:
+  - Backend: `app/services/midi_hub/osc_namespace.py` — address router, parameter mapping, implicit output broadcaster
+  - Backend: update `app/services/midi_hub/network.py` OSC server to dispatch through namespace router
+  - Frontend: `OscNamespaceBrowser.tsx` — searchable tree view of all `/map2/*` addresses with descriptions and current values
+  - Documentation: `docs/midi/MAP2_OSC_NAMESPACE.md` — complete address reference (modeled after ETC Eos Show Control User Guide OSC section)
+  - Tests: `tests/test_osc_namespace.py` — address routing, parameter get/set, implicit output, ping
+- Implementation notes:
+  - Follow ETC hierarchical pattern: noun/verb structure, fire for actions, get/set for values
+  - Implicit output: use Python `asyncio` pub/sub — when internal state changes, broadcast to all connected OSC clients
+  - Metering: throttle to 25Hz max to avoid flooding
+  - Use `python-osc` library (already in project for OSC bridge)
+  - Enterprise flags: namespace access control (whitelist addresses per client), OSC-over-TCP for reliable transport, namespace versioning
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subJ
+Status: [ ] Todo
+Title: Documentation, conformance, and test suite finalization
+Description:
+- Goal / acceptance criteria: Update all documentation to reflect the new MIDI Hub v2 architecture. Produce all Carbon conformance evidence. Ensure full test coverage.
+  1. Update `docs/design/CARBON_ROUTE_PATTERN_MAPPING.md` with new `/midi-hub/*` child routes
+  2. Update `docs/design/CARBON_CONFORMANCE_MATRIX.md` with v2 conformance status
+  3. Complete Carbon Contribution Review Checklist for T203
+  4. Update `docs/midi/MIDI_HUB_CONTENT_INVENTORY.md` with new feature inventory
+  5. Update `docs/midi/MIDI_HUB_ARCHITECTURE.md` with v2 architecture (sidebar nav, new services, Tesira, GPIO, String Interface, Event Lists, OSC namespace)
+  6. Create `docs/midi/MAP2_OSC_NAMESPACE.md` — complete OSC address reference
+  7. Create `docs/midi/TESIRA_TTP_INTEGRATION.md` — Tesira integration guide with supported commands, connection setup, and prebuilt control reference
+  8. Update `docs/CLAUDE.md` Global Work List section and Key File Locations
+  9. Sync instruction changes to `.gemini/instructions.md` and `.github/copilot-instructions.md`
+  10. Full test suite: all new frontend pages have `.test.tsx` files, all new backend services have `tests/test_*.py` files
+  11. Final validation: `npm run typecheck` + `npm run build` + `pytest tests/` must all pass
+- Why it matters: Documentation and conformance evidence are required deliverables per the Carbon Conformance Standard. Tests are required per "Done Means Clean Build" rule.
+- Dependencies: T203-subA through T203-subI (all must be complete)
+- Estimated effort: High
+- Required outputs: All items listed above. No silent exceptions.
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
+ID: T203-subK
+Status: [ ] Todo
+Title: Tesira hardware integration testing (save for end)
+Description:
+- Goal / acceptance criteria: Test the Tesira TTP integration against the real Tesira system on the network. Verify: TCP connection, instance tag discovery, fader get/set, mute toggle, preset recall, subscription live updates, auto-reconnect on disconnect, command console free-text commands. Archive evidence.
+- Why it matters: User explicitly requested saving hardware tests for the end.
+- Dependencies: T203-subG (Tesira TTP implementation), live Tesira hardware on network
+- Estimated effort: Medium
+- Required outputs: Test evidence document, any bug fixes discovered during testing.
+Subtasks: None
+Assigned to: Claude + Lab
+Last updated: 2026-03-17 - Claude
+
+Assigned to: Claude
+Last updated: 2026-03-17 - Claude
+
 ## JUCE Grid UI Polish
 
 ID: T193
@@ -358,3 +661,24 @@ Last updated: 2026-03-16 - Claude
   - `JuceGridPage.css` routing diagram section: `.juce-grid-page__routing-diagram` gets `background: var(--cds-background)` and increased padding/gap for airy spacing. Wire sweep `@keyframes` added. All `rgba(255,255,255,*)` label fallbacks replaced with named Carbon token fallbacks (`#c6c6c6`, `#f4f4f4`). Morph value uses `var(--cds-purple-30, #d4bbff)`. `.juce-grid-page__routing-morph-progress` gets `transition: width 240ms ease`.
   - Layout constants increased: node width 132px (was 116), height 62px (was 56), horizontal gap 56px (was 32), row gap 92px (was 78).
   - Validation: `npm run typecheck` → pass, `npm run build` → pass (19.47s, zero errors).
+
+## Navigation Shell
+
+ID: T204
+Status: [✓] Done
+Title: Advanced Menu launcher redesign matches the landing-page launcher aesthetic
+Description:
+- Goal / acceptance criteria: Review the current Advanced Menu in the top shell and redesign it so the open panel mirrors the landing-page launcher design language: neon-grid/brand-mark hero treatment, expressive header hierarchy, grouped route card launcher layout, and landing-page-style card interactions for advanced workflows while preserving existing pinning, route access, blocked-state handling, and hardware/location notes.
+- Why it matters: The current Advanced Menu still reads like a generic dropdown and breaks visual continuity with the home launcher, which makes advanced workflows feel disconnected from the rest of the product.
+- Dependencies: Existing `AppShell` advanced menu state, `advancedMenuItems`, `homeCardProfiles`, and current shell navigation behavior
+- Estimated effort: Medium
+- Required outputs: Updated Advanced Menu markup/state in `web/src/app/layout/AppShell.tsx`, route-launcher styling in a co-located stylesheet, focused `AppShell` test updates if behavior/labels move, and validation notes from frontend tests/type/build checks
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 16:36 - Codex
+- Completion notes:
+  - Replaced the Advanced Menu accordion dropdown with a launcher-style panel in `AppShell` that now uses a branded hero header, launcher metrics, grouped section headings, and landing-page-style route cards with open/details actions.
+  - Preserved existing shell behavior for route navigation, pin toggles, blocked-route handling, current-route highlighting, and hardware/location notes while adding card-level detail expansion driven by `homeCardProfiles`.
+  - Added a co-located `AppShell.css` stylesheet so the Advanced Menu can carry the landing page's neon-grid/brand-mark treatment without relying on global shell dropdown styles.
+  - Validation: `npm run typecheck` -> pass, `npm test -- AppShell.test.tsx --runInBand` -> pass, `npm run build` -> pass (existing Vite chunk-size warnings only).
+  - Follow-up refinement completed: blocked and experimental routes now surface in a dedicated `Blocked / Lab` section, the current route card auto-expands when the launcher opens, the mobile menu remains compact, the `Advanced` trigger label is unchanged, and the launcher metrics remain visible.

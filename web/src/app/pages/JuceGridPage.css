@@ -967,13 +967,24 @@
 .juce-grid-page__live-path-summary,
 .juce-grid-page__live-path-group {
   padding: 1rem;
+}
+
+.juce-grid-page__live-path-summary {
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: #000;
 }
 
-.juce-grid-page__live-path-summary.is-unavailable,
-.juce-grid-page__live-path-group.is-dim {
+.juce-grid-page__live-path-group {
+  border: none;
+  background: transparent;
+}
+
+.juce-grid-page__live-path-summary.is-unavailable {
   background: #000;
+}
+
+.juce-grid-page__live-path-group.is-dim {
+  background: transparent;
 }
 
 .juce-grid-page__live-path-summary-header,
@@ -1436,6 +1447,10 @@
   font-size: 0.875rem;
 }
 
+.juce-grid-page__flow-card-copy p .segmented-led {
+  max-width: 100%;
+}
+
 .juce-grid-page__flow-card-meta,
 .juce-grid-page__editor-tags {
   display: flex;
@@ -1464,6 +1479,10 @@
   cursor: pointer;
 }
 
+.juce-grid-page__flow-card-routing-summary .segmented-led {
+  vertical-align: middle;
+}
+
 .juce-grid-page__flow-card-routing-summary:hover,
 .juce-grid-page__flow-card-routing-summary:focus-visible {
   color: var(--cds-text-primary, var(--text));
@@ -1477,6 +1496,11 @@
 
 .juce-grid-page__flow-card-input {
   max-width: 5rem;
+}
+
+.juce-grid-page__flow-card-led-overlay {
+  width: 100%;
+  justify-content: flex-end;
 }
 
 .juce-grid-page__flow-card-action.cds--btn {

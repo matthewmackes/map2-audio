@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   type TouchEvent as ReactTouchEvent,
   type WheelEvent,
 } from 'react'
@@ -31,6 +32,7 @@ export interface NumericInputProps {
   showLabel?: boolean
   size?: 'small' | 'medium' | 'large' | 'responsive'
   valueFormatter?: (value: number) => string
+  displayOverlay?: ReactNode
 }
 
 interface TouchDragState {
@@ -90,6 +92,7 @@ export function NumericInput({
   showLabel = true,
   size = 'medium',
   valueFormatter,
+  displayOverlay,
 }: NumericInputProps) {
   const inputId = useId()
   const labelId = useId()
@@ -392,6 +395,7 @@ export function NumericInput({
           'numeric-input__control',
           disabled ? 'is-disabled' : '',
           isTouchDragging ? 'is-dragging' : '',
+          displayOverlay ? 'has-display-overlay' : '',
         ].filter(Boolean).join(' ')}
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
@@ -409,10 +413,18 @@ export function NumericInput({
             style={{ transform: `scaleX(${progress})` }}
           />
         </div>
+        {displayOverlay && !isFocused && (
+          <div className="numeric-input__display-overlay" aria-hidden="true">
+            {displayOverlay}
+          </div>
+        )}
         <input
           ref={inputRef}
           id={inputId}
-          className="numeric-input__field"
+          className={[
+            'numeric-input__field',
+            displayOverlay && !isFocused ? 'is-overlay-hidden' : '',
+          ].filter(Boolean).join(' ')}
           type="text"
           value={inputText}
           onChange={handleInputChange}

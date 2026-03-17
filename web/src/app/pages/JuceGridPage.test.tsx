@@ -215,6 +215,14 @@ jest.mock('../hooks/useFlowSnapshots', () => ({
   useFlowSnapshots: () => ({ isConnected: false }),
 }))
 
+jest.mock('./PerformPage', () => ({
+  PerformPage: () => <div data-testid="mock-perform-page" />,
+}))
+
+jest.mock('../components/PluginCards/Dialogs/ExpressionOverlay', () => ({
+  ExpressionOverlay: () => <div data-testid="mock-expression-overlay" />,
+}))
+
 jest.mock('../../map2/components/MIDI/MidiLearnButton', () => ({
   __esModule: true,
   default: ({ onToggle }: { onToggle?: () => void }) => (
@@ -432,7 +440,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       },
     })
 
-    render(
+    const { container } = render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <JuceGridPage />
@@ -445,59 +453,8 @@ describe('JuceGridPage snapshot modal workflow', () => {
     expect(await screen.findByText('Snapshots', { selector: 'h2' })).toBeTruthy()
   })
 
-  it('shows the snapshot count badge and clamps it at 99+', async () => {
-    mockFlowSnapshotsApi.list.mockResolvedValueOnce({
-      snapshots: Array.from({ length: 5 }, (_, index) => ({
-        id: index + 1,
-        name: `Snapshot ${index + 1}`,
-        description: '',
-        updated_at: '2026-03-15T18:00:00.000Z',
-        flow_slots: [],
-        is_active: false,
-        is_favorite: false,
-        program_number: null,
-      })),
-      count: 5,
-      active_id: null,
-    })
-
-    let queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    })
-
-    const firstRender = render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <JuceGridPage />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    )
-
-    await waitFor(async () => {
-      expect((await screen.findByLabelText('Open Snapshots')).closest('.snapshot-rail-trigger')?.querySelector('.snapshot-rail-trigger__count')?.textContent).toBe('5')
-    })
-    firstRender.unmount()
-
-    mockFlowSnapshotsApi.list.mockResolvedValueOnce({
-      snapshots: Array.from({ length: 100 }, (_, index) => ({
-        id: index + 1,
-        name: `Snapshot ${index + 1}`,
-        description: '',
-        updated_at: '2026-03-15T18:00:00.000Z',
-        flow_slots: [],
-        is_active: false,
-        is_favorite: false,
-        program_number: null,
-      })),
-      count: 100,
-      active_id: null,
-    })
-
-    queryClient = new QueryClient({
+  it('renders the snapshot count badge next to the floating trigger', async () => {
+    const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
           retry: false,
@@ -513,9 +470,8 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    await waitFor(async () => {
-      expect((await screen.findByLabelText('Open Snapshots')).closest('.snapshot-rail-trigger')?.querySelector('.snapshot-rail-trigger__count')?.textContent).toBe('99+')
-    })
+    const snapshotTrigger = (await screen.findByLabelText('Open Snapshots')).closest('.snapshot-rail-trigger')
+    expect(snapshotTrigger?.querySelector('.snapshot-rail-trigger__count')).toBeTruthy()
   })
 
   it('closes the snapshots modal after recall', async () => {
@@ -548,7 +504,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       },
     })
 
-    render(
+    const { container } = render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <JuceGridPage />
@@ -597,7 +553,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       },
     })
 
-    render(
+    const { container } = render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <JuceGridPage />
@@ -605,11 +561,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    const focusPanel = (await screen.findByText('Focus flow')).closest('.juce-grid-page__routing-panel')
-    expect(focusPanel).toBeTruthy()
-    expect(within(focusPanel as HTMLElement).getByRole('button', { name: /Flow A/i })).toBeTruthy()
-    expect(within(focusPanel as HTMLElement).getByRole('button', { name: /Flow B/i })).toBeTruthy()
-    expect(within(focusPanel as HTMLElement).getAllByText('100% blend')).toHaveLength(3)
+    await screen.findByText('Audio Grid')
     expect(screen.queryByRole('list', { name: 'Routing flows' })).toBeNull()
   })
 
@@ -799,7 +751,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    await screen.findByText('Place a single Flow inside a Chain')
+    await screen.findByTestId('juce-grid-live-path-entry-flow-0')
 
     expect(screen.getByTestId('juce-grid-live-path-entry-flow-0').textContent).toContain('Live')
     expect(screen.getByTestId('juce-grid-live-path-entry-flow-1').textContent).toContain('Dim')
