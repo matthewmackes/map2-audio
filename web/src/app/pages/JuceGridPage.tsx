@@ -42,6 +42,8 @@ import {
   WarningAlt,
   ArrowsHorizontal,
   Close,
+  Edit,
+  Network_3,
 } from '@carbon/icons-react'
 import {
   Accordion,
@@ -96,7 +98,9 @@ import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
 import { JuceGridChainManagementCard } from './JuceGridChainManagementCard'
-import { JuceGridClusterSummaryBar } from './JuceGridClusterPanels'
+import { ChainAssignmentModal } from './ChainAssignmentModal'
+import { RoutingTopologyModal } from './RoutingTopologyModal'
+import { AudioNodesModal } from './AudioNodesModal'
 import { JuceGridParameterEditor } from './JuceGridParameterEditor'
 import {
   JuceGridRoutingVisualizer,
@@ -585,6 +589,14 @@ export function JuceGridPage() {
   const [dragOverPluginUri, setDragOverPluginUri] = useState<string | null>(null)
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
   const [showPerformModal, setShowPerformModal] = useState(false)
+  const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
+  const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
+  // Chain assignment modal — flowId drives which flow is being edited
+  const [chainModalFlowId, setChainModalFlowId] = useState<string | null>(null)
+  // When rename is triggered from inside the chain assignment modal we need the
+  // specific chainId rather than currentChain (which may differ from the modal's
+  // pending selection while a different flow is focused).
+  const [renameChainForId, setRenameChainForId] = useState<number | null>(null)
   
   // Special settings for plugin filtering
   const { settings: specialSettings } = useSpecialSettings()
@@ -682,6 +694,22 @@ export function JuceGridPage() {
   }, [])
 
   const activeFlowChainId = flowSlots[activeFlowIndex]?.chainId ?? null
+
+  // Derived: the flow slot currently targeted by the chain assignment modal
+  const chainModalFlow = chainModalFlowId
+    ? flowSlots.find((s) => s.id === chainModalFlowId) ?? null
+    : null
+
+  // Auto-open chain assignment modal when a flow has no chain assigned.
+  // We target the first unassigned flow found (or the active flow if it's unassigned).
+  useEffect(() => {
+    const firstUnassigned = flowSlots.find((s) => s.chainId === null)
+    if (firstUnassigned && chainModalFlowId === null) {
+      setChainModalFlowId(firstUnassigned.id)
+    }
+  // Only re-run when flowSlots change — not when the modal opens/closes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowSlots])
 
   // ============================================================================
   // Queries
@@ -1892,6 +1920,7 @@ export function JuceGridPage() {
       markSnapshotsDirty()
       setShowRenameChainModal(false)
       setRenameChainName('')
+      setRenameChainForId(null)
       pushToast('Chain renamed', 'success')
     },
     onError: (error) => pushToast(`Failed to rename: ${error}`, 'error'),
@@ -2347,12 +2376,53 @@ export function JuceGridPage() {
 
   const submitRenameChain = useCallback(() => {
     const normalizedName = renameChainName.trim()
-    if (!currentChain || !normalizedName || normalizedName === currentChain.name) {
+    // Use renameChainForId when triggered from the chain assignment modal
+    const targetId = renameChainForId ?? currentChain?.id
+    if (!targetId || !normalizedName) {
       setShowRenameChainModal(false)
+      setRenameChainForId(null)
       return
     }
-    renameMutation.mutate({ chainId: currentChain.id, name: normalizedName })
-  }, [currentChain, renameChainName, renameMutation])
+    renameMutation.mutate({ chainId: targetId, name: normalizedName })
+  }, [currentChain, renameChainName, renameChainForId, renameMutation])
+
+  // Modal-context lifecycle handlers — receive chainId from the modal's pending selection
+  const handleModalToggleActive = useCallback((chainId: number) => {
+    const chain = chains.find((c) => c.id === chainId)
+    if (!chain) return
+    if (chain.is_active) {
+      deactivateMutation.mutate(chainId)
+    } else {
+      activateMutation.mutate(chainId)
+    }
+  }, [chains, activateMutation, deactivateMutation])
+
+  const handleModalDuplicate = useCallback((chainId: number) => {
+    const chain = chains.find((c) => c.id === chainId)
+    if (!chain) return
+    const newName = `${chain.name} Copy`
+    chainsApi.create(newName)
+      .then((newChain) => {
+        queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
+          if (!current) return current
+          const alreadyPresent = current.chains.some((c) => c.id === newChain.id)
+          if (alreadyPresent) return current
+          return { ...current, chains: [...current.chains, newChain], count: current.count + 1 }
+        })
+        queryClient.invalidateQueries({ queryKey: ['chains'] })
+        markSnapshotsDirty()
+        pushToast(`Chain "${newName}" created`, 'success')
+      })
+      .catch((error) => pushToast(`Failed to duplicate: ${error}`, 'error'))
+  }, [chains, queryClient, pushToast, markSnapshotsDirty])
+
+  const handleModalRename = useCallback((chainId: number) => {
+    const chain = chains.find((c) => c.id === chainId)
+    if (!chain) return
+    setRenameChainForId(chainId)
+    setRenameChainName(chain.name)
+    setShowRenameChainModal(true)
+  }, [chains])
 
   // Favorites handling
   const toggleFavorite = useCallback((uri: string) => {
@@ -2458,8 +2528,8 @@ export function JuceGridPage() {
       )}
       <Button
         hasIconOnly
-        size="md"
-        kind="secondary"
+        size="lg"
+        kind="ghost"
         renderIcon={Camera}
         iconDescription="Open Snapshots"
         aria-label="Open Snapshots"
@@ -2468,16 +2538,32 @@ export function JuceGridPage() {
         className="snapshot-rail-trigger__button"
         onClick={() => setSnapshotsModalOpen(true)}
       />
-      <span className="snapshot-rail-trigger__count">{snapshotCountLabel}</span>
+      <div className="snapshot-rail-trigger__label-group">
+        <span className="snapshot-rail-trigger__label">Snapshots</span>
+        <span className="snapshot-rail-trigger__count">{snapshotCountLabel}</span>
+      </div>
     </div>
   )
 
   const renderMidiTrigger = () => (
     <div className="snapshot-rail-trigger snapshot-floating-trigger snapshot-floating-trigger--midi">
+      {(midiLearnActive || midiLearnInProgress) && (
+        prefersReducedMotion ? (
+          <span className="snapshot-rail-trigger__pulse snapshot-rail-trigger__pulse--learn" aria-hidden />
+        ) : (
+          <motion.span
+            className="snapshot-rail-trigger__pulse snapshot-rail-trigger__pulse--learn"
+            aria-hidden
+            initial={{ scale: 0.9, opacity: 0.7 }}
+            animate={{ scale: [0.95, 1.3, 0.95], opacity: [0.9, 0.3, 0.9] }}
+            transition={{ repeat: Infinity, repeatType: 'loop', duration: 0.8 }}
+          />
+        )
+      )}
       <Button
         hasIconOnly
-        size="md"
-        kind="secondary"
+        size="lg"
+        kind="ghost"
         renderIcon={Music}
         iconDescription="Open MIDI"
         aria-label="Open MIDI"
@@ -2486,7 +2572,12 @@ export function JuceGridPage() {
         className="snapshot-rail-trigger__button"
         onClick={() => setMidiModalOpen(true)}
       />
-      <span className="snapshot-rail-trigger__count">{midiMappingCountLabel}</span>
+      <div className="snapshot-rail-trigger__label-group">
+        <span className="snapshot-rail-trigger__label">MIDI</span>
+        <span className="snapshot-rail-trigger__count">
+          {midiLearnActive || midiLearnInProgress ? 'Learn armed' : midiMappingCountLabel}
+        </span>
+      </div>
     </div>
   )
 
@@ -3073,118 +3164,6 @@ export function JuceGridPage() {
   // Render
   // ============================================================================
 
-  const renderRoutingSurface = (compact: boolean) => (
-    <>
-      <div className="juce-grid-page__routing-header">
-        <div className="juce-grid-page__routing-copy">
-          <strong>Routing topology</strong>
-          <p>Next, Choose how the Chain, or Multiple Chains are routed in reference to one another</p>
-        </div>
-        <div className="juce-grid-page__routing-meta">
-          <Tag type="blue">{activeRoutingMode.label}</Tag>
-          <Tag type="cool-gray">Focus {activeFlowLabel}</Tag>
-          {routing.mode === 'parameter_morph' && (
-            <Tag type="purple">Morph {Math.round(routing.morphProgress * 100)}%</Tag>
-          )}
-        </div>
-      </div>
-
-      <div className="juce-grid-page__routing-workspace">
-        <div className="juce-grid-page__routing-sidebar">
-          <div className="juce-grid-page__routing-panel-grid">
-            <Tile className="juce-grid-page__routing-panel">
-              <span className="juce-grid-page__routing-panel-label">Topology</span>
-              <p className="juce-grid-page__routing-panel-copy">{activeRoutingMode.summary}</p>
-              <div className="juce-grid-page__toolbar-buttons">
-                {ROUTING_MODE_OPTIONS.map((option) => (
-                  <Button
-                    key={option.id}
-                    size="sm"
-                    kind={routing.mode === option.id ? 'secondary' : 'ghost'}
-                    onClick={() => setRoutingMode(option.id)}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </Tile>
-
-            <Tile className="juce-grid-page__routing-panel">
-              <span className="juce-grid-page__routing-panel-label">Focus flow</span>
-              <p className="juce-grid-page__routing-panel-copy">Choose which flow stays primary while editing and routing.</p>
-              <div className="juce-grid-page__routing-focus-list">
-                {routingFocusButtons.map((flowButton, index) => (
-                  <Button
-                    key={flowButton.id}
-                    size="sm"
-                    kind={flowButton.active ? 'secondary' : 'ghost'}
-                    className="juce-grid-page__routing-focus-button"
-                    onClick={() => selectFlowIndex(index)}
-                  >
-                    <span className="juce-grid-page__routing-focus-button-copy">
-                      <span className="juce-grid-page__routing-focus-button-title">{flowButton.title}</span>
-                      <span className="juce-grid-page__routing-focus-button-caption">{flowButton.caption}</span>
-                    </span>
-                  </Button>
-                ))}
-              </div>
-            </Tile>
-
-            <Tile className="juce-grid-page__routing-panel">
-              <span className="juce-grid-page__routing-panel-label">Actions</span>
-              <p className="juce-grid-page__routing-panel-copy">Open port routing or assign the active flow to a cluster node.</p>
-              <div className="juce-grid-page__toolbar-buttons">
-                <Button size="sm" kind="ghost" onClick={() => setPortSelectorFlowIndex(activeFlowIndex)}>
-                  Route ports
-                </Button>
-                <Button
-                  size="sm"
-                  kind="ghost"
-                  onClick={() => activeFlow && openAssignmentDialog(activeFlow)}
-                  disabled={!activeFlow}
-                >
-                  Assign flow
-                </Button>
-              </div>
-            </Tile>
-
-            {routing.mode === 'parameter_morph' && (
-              <Tile className="juce-grid-page__routing-panel juce-grid-page__routing-panel--morph">
-                <span className="juce-grid-page__routing-panel-label">Morph amount</span>
-                <p className="juce-grid-page__routing-panel-copy">Set the crossfade position used by the routing morph state.</p>
-                <NumberInput
-                  label="Morph"
-                  value={routing.morphProgress * 100}
-                  min={0}
-                  max={100}
-                  step={1}
-                  unit="%"
-                  onChange={(value) => setMorphProgress(value / 100)}
-                  size="small"
-                  inline
-                />
-              </Tile>
-            )}
-          </div>
-        </div>
-
-        <div className="juce-grid-page__routing-visual">
-          <JuceGridRoutingVisualizer
-            mode={routing.mode}
-            flows={routingVisualizerFlows}
-            morphProgress={routing.morphProgress}
-            activeFlowId={routing.activeSlotId}
-            morphSourceId={routing.morphSourceSlotId}
-            morphTargetId={routing.morphTargetSlotId}
-            compact={compact || flowSlots.length > 4}
-            showFlowList={false}
-            onMarkerSelect={setRoutingInspectorId}
-          />
-        </div>
-      </div>
-    </>
-  )
-
   const renderLivePathFlowCard = (
     flowId: string,
     groupKind: LivePathGroupKind,
@@ -3340,6 +3319,20 @@ export function JuceGridPage() {
                   <span>{flowCardRoutingSummary.avbLabel}</span>
                 </button>
 
+                <Button
+                  type="button"
+                  hasIconOnly
+                  renderIcon={Edit}
+                  iconDescription={flowChain ? `Edit chain for flow ${flowLabel}` : `Assign chain to flow ${flowLabel}`}
+                  size="sm"
+                  kind={!flowChain ? 'primary' : 'ghost'}
+                  className="juce-grid-page__flow-card-action"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setChainModalFlowId(flow.id)
+                  }}
+                />
+
                 <div className="juce-grid-page__flow-card-input" onClick={(event) => event.stopPropagation()} title={`Dry/Wet: ${flow.dryWetMix}%`}>
                   <NumberInput
                     value={flow.dryWetMix}
@@ -3478,7 +3471,7 @@ export function JuceGridPage() {
       <div className="juce-grid-page__header-shell">
         <Layer className="juce-grid-page__thin-bar">
           <div className="juce-grid-page__thin-bar-brand">
-            <MapAudioGridIcon size={20} />
+            <MapAudioGridIcon size={38} />
             <span className="juce-grid-page__thin-bar-title">Audio Grid</span>
             <div className="juce-grid-page__hero-tags">
               <Tag type={currentChain?.is_active ? 'green' : 'red'}>
@@ -3489,6 +3482,9 @@ export function JuceGridPage() {
             </div>
           </div>
           <div className="juce-grid-page__hero-actions">
+            <Button size="sm" kind="ghost" renderIcon={Network_3} onClick={() => setShowAudioNodesModal(true)}>
+              Audio Nodes
+            </Button>
             <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
               Perform
             </Button>
@@ -3517,40 +3513,9 @@ export function JuceGridPage() {
       )}
 
       <div className="juce-grid-page__unified-block">
-        {/* Chains Grid - below title */}
-        <JuceGridChainManagementCard
-          selectedChainId={activeFlow?.chainId}
-          onChainSelect={(chainId) => {
-            if (activeFlow) {
-              updateFlow(activeFlow.id, { chainId })
-            }
-          }}
-          onSelectedChainRemoved={handleChainRemoved}
-          flowSlots={flowSlots}
-          focusedFlowLabel={activeFlowLabel}
-          onToggleSelectedChainActive={handleToggleChainActive}
-          onDuplicateChain={handleDuplicateChain}
-          onRenameChain={handleRenameChain}
-          pluginMeta={pluginMeta}
-          onPluginChipClick={(chainId, pluginUri) => {
-            // Select the chain into the active flow slot first
-            if (activeFlow) {
-              updateFlow(activeFlow.id, { chainId })
-            }
-            handlePluginSelect(pluginUri)
-          }}
-        />
-
         {/* Main content area */}
         <div className="juce-grid-page__workspace">
           <main className="juce-grid-page__main">
-          {!isCompactLayout && <JuceGridClusterSummaryBar />}
-
-          {/* Signal Routing Topology Diagram */}
-          <Layer className="juce-grid-page__routing-shell">
-            {renderRoutingSurface(false)}
-          </Layer>
-
           {/* Multi-flow signal grids */}
           <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
             {livePathLayout.groups.map((group, groupIndex) => (
@@ -3558,48 +3523,40 @@ export function JuceGridPage() {
                 key={group.id}
                 className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
               >
-                <div className="juce-grid-page__live-path-group-header">
-                  <div className="juce-grid-page__live-path-group-copy">
-                    <strong>{group.title}</strong>
-                    <p>
-                      {group.entryLabel && group.exitLabel
-                        ? `${group.entryLabel} to ${group.exitLabel}`
-                        : 'Current live routing context'}
-                    </p>
-                  </div>
-                  <div className="juce-grid-page__live-path-group-actions">
-                    {groupIndex === 0 && (
-                      <>
-                        <div className="juce-grid-page__live-path-summary-meta">
-                          <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
-                            {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
-                          </Tag>
-                          <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
-                          <Tag type="cool-gray">
-                            {flowSlots.length} {flowSlots.length === 1 ? 'flow' : 'flows'}
-                          </Tag>
-                        </div>
-                        <div className="juce-grid-page__live-path-summary-flow-actions">
-                          <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
-                            Add flow
-                          </Button>
-                          <Button
-                            size="sm"
-                            kind="danger--tertiary"
-                            onClick={() => setShowClearFlowsModal(true)}
-                            disabled={flowSlots.length <= 1}
-                          >
-                            Clear flows
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                    <div className="juce-grid-page__compact-tags">
-                      {group.entryLabel && <Tag type="cool-gray">{group.entryLabel}</Tag>}
-                      {group.exitLabel && <Tag type={group.dashed ? 'purple' : 'blue'}>{group.exitLabel}</Tag>}
+                {groupIndex === 0 && (
+                  <div className="juce-grid-page__live-path-group-header">
+                    <div className="juce-grid-page__live-path-summary-meta">
+                      <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
+                        {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
+                      </Tag>
+                      <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
+                      <Tag type="cool-gray">
+                        {flowSlots.length} {flowSlots.length === 1 ? 'flow' : 'flows'}
+                      </Tag>
+                    </div>
+                    <div className="juce-grid-page__live-path-summary-flow-actions">
+                      <Button
+                        size="sm"
+                        kind="tertiary"
+                        renderIcon={Flow}
+                        onClick={() => setShowRoutingTopologyModal(true)}
+                      >
+                        Configure routing
+                      </Button>
+                      <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
+                        Add flow
+                      </Button>
+                      <Button
+                        size="sm"
+                        kind="danger--tertiary"
+                        onClick={() => setShowClearFlowsModal(true)}
+                        disabled={flowSlots.length <= 1}
+                      >
+                        Clear flows
+                      </Button>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
                   {group.flowIds.map((flowId, groupIndex) => {
@@ -3696,7 +3653,6 @@ export function JuceGridPage() {
                   <p>Primary editing remains in the grid above. Use the other tabs for focused workflow panels.</p>
                 </div>
                 <div className="juce-grid-page__compact-stack">
-                  <JuceGridClusterSummaryBar />
                 </div>
               </Layer>
             )}
@@ -3727,8 +3683,28 @@ export function JuceGridPage() {
             )}
 
             {compactTab === 'routing' && (
-              <Layer className="juce-grid-page__compact-layer juce-grid-page__routing-shell juce-grid-page__routing-shell--compact">
-                {renderRoutingSurface(true)}
+              <Layer className="juce-grid-page__compact-layer">
+                <div className="juce-grid-page__compact-section-header">
+                  <h2>Routing topology</h2>
+                  <p>Configure how Chains and Flows are routed in reference to one another.</p>
+                </div>
+                <div className="juce-grid-page__toolbar-buttons">
+                  <Button
+                    size="sm"
+                    kind="tertiary"
+                    renderIcon={Flow}
+                    onClick={() => setShowRoutingTopologyModal(true)}
+                  >
+                    Configure routing
+                  </Button>
+                </div>
+                <div className="juce-grid-page__compact-tags" style={{ marginTop: '0.75rem' }}>
+                  <Tag type="blue">{activeRoutingMode.label}</Tag>
+                  <Tag type="cool-gray">Focus {activeFlowLabel}</Tag>
+                  {routing.mode === 'parameter_morph' && (
+                    <Tag type="purple">Morph {Math.round(routing.morphProgress * 100)}%</Tag>
+                  )}
+                </div>
               </Layer>
             )}
 
@@ -3789,17 +3765,19 @@ export function JuceGridPage() {
           open
           size="sm"
           modalHeading="Rename chain"
-          modalLabel={currentChain?.name || 'Current chain'}
+          modalLabel={currentChain?.name || chains.find((c) => c.id === renameChainForId)?.name || 'Current chain'}
           primaryButtonText={renameMutation.isPending ? 'Saving...' : 'Rename chain'}
           secondaryButtonText="Cancel"
-          primaryButtonDisabled={!currentChain || renameChainName.trim().length === 0 || renameMutation.isPending}
+          primaryButtonDisabled={(!currentChain && !renameChainForId) || renameChainName.trim().length === 0 || renameMutation.isPending}
           onRequestClose={() => {
             setShowRenameChainModal(false)
             setRenameChainName('')
+            setRenameChainForId(null)
           }}
           onSecondarySubmit={() => {
             setShowRenameChainModal(false)
             setRenameChainName('')
+            setRenameChainForId(null)
           }}
           onRequestSubmit={submitRenameChain}
           selectorPrimaryFocus="#juce-grid-rename-chain-name"
@@ -4529,6 +4507,64 @@ export function JuceGridPage() {
           <PerformPage onExit={() => setShowPerformModal(false)} />
         </motion.div>
       )}
+
+      {/* Audio Nodes Modal */}
+      <AudioNodesModal
+        open={showAudioNodesModal}
+        onClose={() => setShowAudioNodesModal(false)}
+      />
+
+      {/* Routing Topology Modal */}
+      <RoutingTopologyModal
+        open={showRoutingTopologyModal}
+        onClose={() => setShowRoutingTopologyModal(false)}
+        routingMode={routing.mode}
+        morphProgress={routing.morphProgress}
+        activeFlowIndex={activeFlowIndex}
+        flowSlots={flowSlots}
+        routingVisualizerFlows={routingVisualizerFlows}
+        activeSlotId={routing.activeSlotId}
+        morphSourceSlotId={routing.morphSourceSlotId}
+        morphTargetSlotId={routing.morphTargetSlotId}
+        routingFocusButtons={routingFocusButtons}
+        onSetRoutingMode={setRoutingMode}
+        onSelectFlowIndex={selectFlowIndex}
+        onSetMorphProgress={setMorphProgress}
+        onOpenPortRouting={(flowIndex) => {
+          setPortSelectorFlowIndex(flowIndex)
+        }}
+        onOpenAssignFlow={(flowId) => {
+          const flow = flowSlots.find((s) => s.id === flowId)
+          if (flow) openAssignmentDialog(flow)
+        }}
+        activeFlowId={routing.activeSlotId}
+      />
+
+      {/* Chain Assignment Modal — auto-opens for unassigned flows; manual via Edit button */}
+      <ChainAssignmentModal
+        open={chainModalFlowId !== null}
+        flowLabel={chainModalFlow?.label ?? ''}
+        currentChainId={chainModalFlow?.chainId ?? null}
+        flowSlots={flowSlots}
+        pluginMeta={pluginMeta}
+        onApply={(chainId) => {
+          if (chainModalFlowId) {
+            updateFlow(chainModalFlowId, { chainId })
+          }
+        }}
+        onClose={() => setChainModalFlowId(null)}
+        onSelectedChainRemoved={handleChainRemoved}
+        onPluginChipClick={(chainId, pluginUri) => {
+          if (chainModalFlowId) {
+            updateFlow(chainModalFlowId, { chainId })
+          }
+          setChainModalFlowId(null)
+          handlePluginSelect(pluginUri)
+        }}
+        onToggleActive={handleModalToggleActive}
+        onDuplicate={handleModalDuplicate}
+        onRename={handleModalRename}
+      />
     </div>
   )
 }

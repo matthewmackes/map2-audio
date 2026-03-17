@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, MenuItem, Select, TextField } from '@mui/material'
+import { Button, Select, SelectItem, Tag, TextInput } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -72,7 +72,7 @@ export function Midi2Panel() {
       return midiHubApi.translateMidi1ToUmp(message, nodeId)
     },
     onSuccess: (payload) => setUmpWords(payload.words.join(', ')),
-    onError: () => pushToast('MIDI1→UMP translation failed', 'error'),
+    onError: () => pushToast('MIDI 1.0 to UMP translation failed', 'error'),
   })
 
   const translateToMidi1 = useMutation({
@@ -88,60 +88,128 @@ export function Midi2Panel() {
       const hex = payload.message.map((byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ')
       setMidiHex(hex)
     },
-    onError: () => pushToast('UMP→MIDI1 translation failed', 'error'),
+    onError: () => pushToast('UMP to MIDI 1.0 translation failed', 'error'),
   })
 
   const effectiveStatus = useMemo(() => statusQuery.data, [statusQuery.data])
 
   return (
-    <div className="grid two" style={{ gap: 12 }}>
-      <div className="card" style={{ margin: 0 }}>
-        <h4 style={{ marginTop: 0 }}>MIDI 2.0 Status</h4>
-        <div className="stack" style={{ gap: 8 }}>
-          <div className="list-item">Enabled: <strong>{effectiveStatus?.enabled ? 'Yes' : 'No'}</strong></div>
-          <div className="list-item">Default Protocol: <strong>{effectiveStatus?.default_protocol ?? 'midi1'}</strong></div>
-          <div className="list-item">Discovered Devices: <strong>{effectiveStatus?.device_count ?? 0}</strong></div>
+    <div className="midi-hub-panel-grid--2">
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
+          <Tag type={effectiveStatus?.enabled ? 'green' : 'warm-gray'}>
+            {effectiveStatus?.enabled ? 'Enabled' : 'Disabled'}
+          </Tag>
+          <Tag type="cool-gray">{`Devices ${effectiveStatus?.device_count ?? 0}`}</Tag>
+        </div>
 
-          <Select size="small" value={enabled ? 'enabled' : 'disabled'} onChange={(event) => setEnabled(event.target.value === 'enabled')}>
-            <MenuItem value="disabled">Disabled</MenuItem>
-            <MenuItem value="enabled">Enabled</MenuItem>
+        <div className="midi-hub-stat-grid">
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">Default protocol</span>
+            <strong className="midi-hub-stat-tile__value">{effectiveStatus?.default_protocol ?? 'midi1'}</strong>
+          </div>
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">Discovered devices</span>
+            <strong className="midi-hub-stat-tile__value">{effectiveStatus?.device_count ?? 0}</strong>
+          </div>
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">Translation</span>
+            <strong className="midi-hub-stat-tile__value">{umpWords.trim() ? 'Ready' : 'Idle'}</strong>
+          </div>
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">MIDI-CI</span>
+            <strong className="midi-hub-stat-tile__value">Available</strong>
+          </div>
+        </div>
+
+        <div className="midi-hub-form-grid">
+          <Select
+            id="midi-hub-midi2-enabled"
+            labelText="Service state"
+            value={enabled ? 'enabled' : 'disabled'}
+            onChange={(event) => setEnabled(event.currentTarget.value === 'enabled')}
+          >
+            <SelectItem value="disabled" text="Disabled" />
+            <SelectItem value="enabled" text="Enabled" />
           </Select>
-          <Select size="small" value={protocol} onChange={(event) => setProtocol(event.target.value === 'midi2' ? 'midi2' : 'midi1')}>
-            <MenuItem value="midi1">MIDI 1.0</MenuItem>
-            <MenuItem value="midi2">MIDI 2.0</MenuItem>
+
+          <Select
+            id="midi-hub-midi2-protocol"
+            labelText="Default protocol"
+            value={protocol}
+            onChange={(event) => setProtocol(event.currentTarget.value === 'midi2' ? 'midi2' : 'midi1')}
+          >
+            <SelectItem value="midi1" text="MIDI 1.0" />
+            <SelectItem value="midi2" text="MIDI 2.0" />
           </Select>
-          <Button size="small" variant="contained" onClick={() => configureMutation.mutate()}>Apply</Button>
+        </div>
+
+        <div className="midi-hub-actions">
+          <Button size="sm" kind="primary" onClick={() => configureMutation.mutate()}>
+            Apply protocol
+          </Button>
+          <Button size="sm" kind="ghost" onClick={() => discoverMutation.mutate()}>
+            Send discovery
+          </Button>
         </div>
       </div>
 
-      <div className="card" style={{ margin: 0 }}>
-        <h4 style={{ marginTop: 0 }}>Device + Property Controls</h4>
-        <div className="stack" style={{ gap: 8 }}>
-          <TextField size="small" label="Device ID" value={deviceId} onChange={(event) => setDeviceId(event.target.value)} />
-          <div className="flex" style={{ gap: 8 }}>
-            <Button size="small" variant="outlined" onClick={() => discoverMutation.mutate()}>Discover</Button>
-            <TextField size="small" label="Profile ID" value={profileId} onChange={(event) => setProfileId(event.target.value)} />
-            <Button size="small" variant="outlined" onClick={() => profileMutation.mutate()}>Enable Profile</Button>
-          </div>
-          <div className="flex" style={{ gap: 8 }}>
-            <TextField size="small" label="Property Key" value={propertyKey} onChange={(event) => setPropertyKey(event.target.value)} />
-            <TextField size="small" label="Property Value" value={propertyValue} onChange={(event) => setPropertyValue(event.target.value)} />
-            <Button size="small" variant="outlined" onClick={() => propertyMutation.mutate()}>Set Property</Button>
-          </div>
-
-          <TextField size="small" label="MIDI 1 Hex" value={midiHex} onChange={(event) => setMidiHex(event.target.value)} />
-          <div className="flex" style={{ gap: 8 }}>
-            <Button size="small" variant="outlined" onClick={() => translateToUmp.mutate()}>MIDI1 → UMP</Button>
-            <Button size="small" variant="outlined" onClick={() => translateToMidi1.mutate()} disabled={!umpWords.trim()}>UMP → MIDI1</Button>
-          </div>
-          <TextField size="small" label="UMP Words" value={umpWords} onChange={(event) => setUmpWords(event.target.value)} multiline minRows={2} />
-
-          {devices.length ? (
-            <pre style={{ margin: 0, padding: 10, borderRadius: 8, background: '#0f172a', color: '#e2e8f0', maxHeight: 220, overflowY: 'auto' }}>
-              {JSON.stringify(devices, null, 2)}
-            </pre>
-          ) : null}
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-form-grid">
+          <TextInput
+            id="midi-hub-midi2-device-id"
+            labelText="Device ID"
+            value={deviceId}
+            onChange={(event) => setDeviceId(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-midi2-profile-id"
+            labelText="Profile ID"
+            value={profileId}
+            onChange={(event) => setProfileId(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-midi2-property-key"
+            labelText="Property key"
+            value={propertyKey}
+            onChange={(event) => setPropertyKey(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-midi2-property-value"
+            labelText="Property value"
+            value={propertyValue}
+            onChange={(event) => setPropertyValue(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-midi2-midi-hex"
+            labelText="MIDI 1.0 bytes"
+            value={midiHex}
+            onChange={(event) => setMidiHex(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-midi2-ump-words"
+            labelText="UMP words"
+            value={umpWords}
+            onChange={(event) => setUmpWords(event.currentTarget.value)}
+          />
         </div>
+
+        <div className="midi-hub-actions">
+          <Button size="sm" kind="secondary" onClick={() => profileMutation.mutate()}>
+            Enable profile
+          </Button>
+          <Button size="sm" kind="secondary" onClick={() => propertyMutation.mutate()}>
+            Set property
+          </Button>
+          <Button size="sm" kind="ghost" onClick={() => translateToUmp.mutate()}>
+            MIDI 1.0 to UMP
+          </Button>
+          <Button size="sm" kind="ghost" onClick={() => translateToMidi1.mutate()} disabled={!umpWords.trim()}>
+            UMP to MIDI 1.0
+          </Button>
+        </div>
+
+        {devices.length > 0 ? <pre className="midi-hub-code-block">{JSON.stringify(devices, null, 2)}</pre> : null}
       </div>
     </div>
   )

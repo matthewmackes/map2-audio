@@ -21,96 +21,82 @@ type MidiHubPanelMeta = {
   title: string
   family: string
   shortLabel: string
-  summary: string
   advanced?: boolean
 }
 
 export const MIDI_HUB_PANEL_META: Record<MidiHubPanelId, MidiHubPanelMeta> = {
   core: {
-    title: 'Core MIDI Control',
-    family: 'Controller & Engine',
-    shortLabel: 'Legacy core',
-    summary: 'Run the classic controller, command, device, activity, and preset workflows now housed inside MIDI Hub.',
+    title: 'Legacy MIDI Control',
+    family: 'Legacy Surface',
+    shortLabel: 'Legacy route',
+    advanced: true,
   },
   routing: {
     title: 'Routing Workspace',
-    family: 'Route & Transform',
-    shortLabel: 'Route core',
-    summary: 'Establish the live path and inspect the active topology.',
+    family: 'Signal Path',
+    shortLabel: 'Matrix and patchbay',
   },
   presets: {
-    title: 'Preset Publishing',
-    family: 'Automation & Management',
-    shortLabel: 'Recall store',
-    summary: 'Capture, compare, and publish stable working states.',
+    title: 'Presets and Program Change',
+    family: 'Show Control',
+    shortLabel: 'Recall and slots',
   },
   network: {
-    title: 'Network MIDI & OSC',
-    family: 'Discover & Connect',
-    shortLabel: 'Network bridge',
-    summary: 'Manage RTP, UDP, and OSC session edges.',
+    title: 'RTP-MIDI and OSC Bridge',
+    family: 'Network and Protocol',
+    shortLabel: 'Remote sessions',
   },
   filters: {
-    title: 'Filtering Strategy',
-    family: 'Route & Transform',
-    shortLabel: 'Message filter',
-    summary: 'Constrain traffic by channel, family, source, and port.',
+    title: 'Message Filtering',
+    family: 'Message Processing',
+    shortLabel: 'Filter design',
   },
   mapper: {
-    title: 'Mapper & Transformation Blueprint',
-    family: 'Route & Transform',
-    shortLabel: 'Transform lane',
-    summary: 'Stage source-to-target message conversion contracts.',
+    title: 'Message Mapping',
+    family: 'Message Processing',
+    shortLabel: 'Map translation',
   },
   scripts: {
     title: 'Script Engine',
-    family: 'Automation & Management',
-    shortLabel: 'Script hooks',
-    summary: 'Run event-driven custom logic with explicit control.',
+    family: 'Automation',
+    shortLabel: 'Python runtime',
     advanced: true,
   },
   macros: {
-    title: 'Macro Sequencing',
-    family: 'Automation & Management',
-    shortLabel: 'Macro scenes',
-    summary: 'Bundle repeatable cross-device actions into one trigger.',
+    title: 'Macros',
+    family: 'Automation',
+    shortLabel: 'Triggered actions',
   },
   scheduler: {
-    title: 'Scheduled Actions',
-    family: 'Automation & Management',
-    shortLabel: 'Scheduled events',
-    summary: 'Queue delayed or timed MIDI actions deterministically.',
+    title: 'Scheduled MIDI Events',
+    family: 'Automation',
+    shortLabel: 'Timed send',
     advanced: true,
   },
   clock: {
-    title: 'Clock & Sync',
-    family: 'Sync & Diagnostics',
-    shortLabel: 'Clock master',
-    summary: 'Choose the timing owner and validate transport stability.',
+    title: 'Clock and Transport',
+    family: 'Timing and Capture',
+    shortLabel: 'Clock source',
   },
   recorder: {
-    title: 'Capture & Replay',
-    family: 'Sync & Diagnostics',
-    shortLabel: 'Capture replay',
-    summary: 'Record and replay traffic for evidence and regression checks.',
+    title: 'Capture and Playback',
+    family: 'Timing and Capture',
+    shortLabel: 'Session recorder',
   },
   traffic: {
-    title: 'Traffic Monitor',
-    family: 'Sync & Diagnostics',
-    shortLabel: 'Message trace',
-    summary: 'Inspect live flow and isolate ingress, route, or destination faults.',
+    title: 'Event Monitor',
+    family: 'Signal Path',
+    shortLabel: 'Live events',
   },
   midi2: {
     title: 'MIDI 2.0 Workspace',
-    family: 'MIDI 2.0 & Labs',
-    shortLabel: 'UMP status',
-    summary: 'Check UMP posture, translation, and capability readiness.',
+    family: 'Network and Protocol',
+    shortLabel: 'UMP and MIDI-CI',
   },
   innovation: {
-    title: 'Innovation Surface',
-    family: 'MIDI 2.0 & Labs',
-    shortLabel: 'Lab surfaces',
-    summary: 'Exercise future-facing control and translation experiments.',
+    title: 'Advanced and Experimental',
+    family: 'Experimental',
+    shortLabel: 'AI and mesh',
     advanced: true,
   },
 }
@@ -133,7 +119,6 @@ export function MidiHubPanelShell({ panelId, children }: MidiHubPanelShellProps)
             {panel.advanced ? <Tag type="warm-gray">Advanced</Tag> : null}
           </div>
           <h3>{panel.title}</h3>
-          <p className="midi-hub-panel-shell__summary">{panel.summary}</p>
         </div>
       </header>
 

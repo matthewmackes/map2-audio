@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Music } from '@carbon/icons-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Accordion,
-  AccordionItem,
   Button,
+  ClickableTile,
   InlineNotification,
   Layer,
   Select,
@@ -14,49 +13,43 @@ import {
   Tabs,
   Tag,
 } from '@carbon/react'
-import { MidiRoutingMatrix } from '../components/MidiHub/MidiRoutingMatrix'
-import { MidiPatchbay } from '../components/MidiHub/MidiPatchbay'
-import { MidiTrafficMonitor } from '../components/MidiHub/MidiTrafficMonitor'
-import { MidiHubPresetManager } from '../components/MidiHub/MidiHubPresetManager'
-import { MidiScriptEditor } from '../components/MidiHub/MidiScriptEditor'
-import { MidiClockPanel } from '../components/MidiHub/MidiClockPanel'
-import { MidiNetworkPanel } from '../components/MidiHub/MidiNetworkPanel'
+import { midiHubApi } from '../../map2/api'
 import { Midi2Panel } from '../components/MidiHub/Midi2Panel'
-import { MidiMacroPanel } from '../components/MidiHub/MidiMacroPanel'
-import { MidiRecorderPanel } from '../components/MidiHub/MidiRecorderPanel'
-import { MidiSchedulerPanel } from '../components/MidiHub/MidiSchedulerPanel'
-import { MidiInnovationPanel } from '../components/MidiHub/MidiInnovationPanel'
+import { MidiClockPanel } from '../components/MidiHub/MidiClockPanel'
 import { MidiHubPanelShell } from '../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiHubNodeScopeProvider } from '../components/MidiHub/MidiHubNodeScope'
+import { MidiHubPresetManager } from '../components/MidiHub/MidiHubPresetManager'
 import {
   MidiHubFilterPlannerCard,
   MidiHubMapperPlannerCard,
   MidiHubQuickRouterCard,
   readPorts,
 } from '../components/MidiHub/MidiHubWorkbenchCards'
+import { MidiInnovationPanel } from '../components/MidiHub/MidiInnovationPanel'
+import { MidiMacroPanel } from '../components/MidiHub/MidiMacroPanel'
+import { MidiNetworkPanel } from '../components/MidiHub/MidiNetworkPanel'
+import { MidiPatchbay } from '../components/MidiHub/MidiPatchbay'
+import { MidiRecorderPanel } from '../components/MidiHub/MidiRecorderPanel'
+import { MidiRoutingMatrix } from '../components/MidiHub/MidiRoutingMatrix'
+import { MidiSchedulerPanel } from '../components/MidiHub/MidiSchedulerPanel'
+import { MidiScriptEditor } from '../components/MidiHub/MidiScriptEditor'
+import { MidiTrafficMonitor } from '../components/MidiHub/MidiTrafficMonitor'
 import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
 import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { useToasts } from '../components/Toasts'
-import { midiHubApi } from '../../map2/api'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
-import { MidiCoreControlCenter } from './MIDIPage'
 import './MidiHubPage.css'
 
-const ACTIVE_TAB_KEY = 'map2:midi-hub:active-tab:v2'
+type RoutingWorkspaceMode = 'matrix' | 'patchbay'
 
-type MidiHubTabId = 'core' | 'setup' | 'automation' | 'sync' | 'future'
-
-const TAB_ORDER: Array<{ id: MidiHubTabId; label: string }> = [
-  { id: 'core', label: 'Core Controls' },
-  { id: 'setup', label: 'Setup & Routing' },
-  { id: 'automation', label: 'Filters & Automation' },
-  { id: 'sync', label: 'Clock & Diagnostics' },
-  { id: 'future', label: 'MIDI 2.0 & Labs' },
-]
-
-const ABOUT_MIDI_HUB_COPY =
-  'MIDI Hub brings USB, DIN, BLE, Web MIDI, RTP-MIDI, OSC bridging, presets, clocking, capture, filtering, mapping, scripts, macros, and early MIDI 2.0 posture into one operator surface. Use Setup & Routing to prove ingress and egress, Filters & Automation to narrow or transform traffic deliberately, Clock & Diagnostics to validate sync and evidence, and MIDI 2.0 & Labs to inspect UMP readiness and future-facing workflows without disturbing the production route.'
+type WorkflowCard = {
+  id: string
+  eyebrow: string
+  title: string
+  detail: string
+  stat: string
+}
 
 function readRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object') return {}
@@ -68,9 +61,8 @@ function tagTone(isHealthy: boolean, active: 'green' | 'blue' = 'green'): 'green
 }
 
 export function MidiHubPage() {
-  const [mode, setMode] = useState<'matrix' | 'patchbay'>('matrix')
+  const [mode, setMode] = useState<RoutingWorkspaceMode>('matrix')
   const [selectedPresetId, setSelectedPresetId] = useState('')
-  const [activeTab, setActiveTab] = useState<MidiHubTabId>('setup')
   const { localNode, topology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.midiHub)
   const apiNodeId = viewedNodeId === localNode?.node_id ? null : viewedNodeId
   const scopeKey = apiNodeId ?? 'local'
@@ -114,17 +106,6 @@ export function MidiHubPage() {
     refetchInterval: 5000,
   })
 
-  useEffect(() => {
-    const storedTab = window.localStorage.getItem(ACTIVE_TAB_KEY)
-    if (storedTab && TAB_ORDER.some((tab) => tab.id === storedTab)) {
-      setActiveTab(storedTab as MidiHubTabId)
-    }
-  }, [])
-
-  useEffect(() => {
-    window.localStorage.setItem(ACTIVE_TAB_KEY, activeTab)
-  }, [activeTab])
-
   const quickRecallMutation = useMutation({
     mutationFn: async (presetId: string) => midiHubApi.recallPresetForNode(presetId, apiNodeId),
     onSuccess: () => {
@@ -136,10 +117,63 @@ export function MidiHubPage() {
 
   const statusRecord = useMemo(() => readRecord(statusQuery.data), [statusQuery.data])
   const ports = useMemo(() => readPorts(statusRecord.ports), [statusRecord])
+  const inputPorts = useMemo(
+    () => ports.filter((port) => port.direction === 'input' || port.direction === 'duplex'),
+    [ports],
+  )
+  const outputPorts = useMemo(
+    () => ports.filter((port) => port.direction === 'output' || port.direction === 'duplex'),
+    [ports],
+  )
   const routesCount = routesQuery.data?.routes?.length ?? 0
   const presetsCount = presetsQuery.data?.presets?.length ?? 0
   const sessionsCount = sessionsQuery.data?.sessions?.length ?? 0
   const midi2DeviceCount = midi2Query.data?.device_count ?? 0
+
+  const workflowCards = useMemo<WorkflowCard[]>(
+    () => [
+      {
+        id: 'midi-hub-routing-section',
+        eyebrow: 'Start',
+        title: 'Verify ports and build the active path',
+        detail: 'Use the routing workspace and live event monitor first.',
+        stat: `${inputPorts.length} in / ${outputPorts.length} out`,
+      },
+      {
+        id: 'midi-hub-show-section',
+        eyebrow: 'Show control',
+        title: 'Recall presets and manage program change targets',
+        detail: 'Keep repeatable states close to the signal path.',
+        stat: `${presetsCount} presets`,
+      },
+      {
+        id: 'midi-hub-network-section',
+        eyebrow: 'Network',
+        title: 'Add RTP-MIDI, OSC, and MIDI 2.0 endpoints',
+        detail: 'Bring remote devices and protocol services online.',
+        stat: `${sessionsCount} sessions`,
+      },
+      {
+        id: 'midi-hub-processing-section',
+        eyebrow: 'Processing',
+        title: 'Filter, map, script, macro, and schedule MIDI events',
+        detail: 'Deeper message processing lives after the working route.',
+        stat: `${routesCount} routes`,
+      },
+      {
+        id: 'midi-hub-experimental-section',
+        eyebrow: 'Advanced',
+        title: 'Inspect AI-assisted and mesh experiments',
+        detail: 'Keep exploratory control systems isolated at the end.',
+        stat: `${midi2DeviceCount} MIDI 2 devices`,
+      },
+    ],
+    [inputPorts.length, outputPorts.length, presetsCount, sessionsCount, routesCount, midi2DeviceCount],
+  )
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <MidiHubNodeScopeProvider nodeId={apiNodeId} scopeKey={scopeKey}>
@@ -147,54 +181,78 @@ export function MidiHubPage() {
         {localNode ? (
           <NodeContextBanner pageKey={NODE_PAGE_KEYS.midiHub} localNode={localNode} topology={topology} />
         ) : null}
-        <Layer className="midi-hub-hero" id="midi-hub-hero">
-        <div className="midi-hub-hero__grid">
-          <div className="midi-hub-hero__copy">
-            <h1>
-              <Music size={28} aria-hidden="true" />
-              MIDI Hub
-            </h1>
 
-            <div className="midi-hub-hero__tags">
-              <Tag type={tagTone(ports.length > 0)}>{`Ports ${ports.length}`}</Tag>
-              <Tag type={tagTone(routesCount > 0)}>{`Routes ${routesCount}`}</Tag>
-              <Tag type={tagTone(presetsCount > 0, 'blue')}>{`Presets ${presetsCount}`}</Tag>
-              <Tag type={tagTone(Boolean(clockQuery.data?.running))}>
-                {clockQuery.data?.running ? 'Clock live' : 'Clock idle'}
-              </Tag>
-              <Tag type={tagTone(sessionsCount > 0, 'blue')}>{`Sessions ${sessionsCount}`}</Tag>
-              <Tag type={tagTone(Boolean(midi2Query.data?.enabled) || midi2DeviceCount > 0, 'blue')}>
-                {`MIDI 2.0 devices ${midi2DeviceCount}`}
-              </Tag>
+        <Layer className="midi-hub-header-surface" id="midi-hub-hero">
+          <div className="midi-hub-header">
+            <div className="midi-hub-header__left">
+              <div className="midi-hub-header__icon" aria-hidden="true">
+                <Music size={32} />
+              </div>
+              <div className="midi-hub-header__copy">
+                <h1 className="midi-hub-header__title">MIDI Hub</h1>
+                <p className="midi-hub-header__subtitle">
+                  Carbon-first operator workspace for routing, monitoring, transport, presets, automation, network MIDI,
+                  and MIDI 2.0 on the selected node.
+                </p>
+                <div className="midi-hub-header__tags">
+                  <Tag type={tagTone(inputPorts.length > 0)}>{`Inputs ${inputPorts.length}`}</Tag>
+                  <Tag type={tagTone(outputPorts.length > 0)}>{`Outputs ${outputPorts.length}`}</Tag>
+                  <Tag type={tagTone(routesCount > 0)}>{`Routes ${routesCount}`}</Tag>
+                  <Tag type={tagTone(presetsCount > 0, 'blue')}>{`Presets ${presetsCount}`}</Tag>
+                  <Tag type={tagTone(Boolean(clockQuery.data?.running))}>
+                    {clockQuery.data?.running ? 'Clock running' : 'Clock stopped'}
+                  </Tag>
+                  <Tag type={tagTone(sessionsCount > 0, 'blue')}>{`RTP sessions ${sessionsCount}`}</Tag>
+                  <Tag type={tagTone(Boolean(midi2Query.data?.enabled) || midi2DeviceCount > 0, 'blue')}>
+                    {`MIDI 2 devices ${midi2DeviceCount}`}
+                  </Tag>
+                </div>
+              </div>
             </div>
 
+            <div className="midi-hub-header__actions">
+              <Select
+                id="midi-hub-preset-recall"
+                size="sm"
+                labelText="Preset recall"
+                value={selectedPresetId}
+                onChange={(event) => setSelectedPresetId(event.currentTarget.value)}
+              >
+                <SelectItem value="" text="Select a preset" />
+                {(presetsQuery.data?.presets ?? []).map((preset) => (
+                  <SelectItem key={preset.preset_id} value={preset.preset_id} text={preset.name} />
+                ))}
+              </Select>
+
+              <Button
+                size="sm"
+                kind="primary"
+                disabled={!selectedPresetId}
+                onClick={() => quickRecallMutation.mutate(selectedPresetId)}
+              >
+                Recall preset
+              </Button>
+            </div>
+          </div>
+
+          <div className="midi-hub-header__node-picker">
             <NodeContextPicker pageKey={NODE_PAGE_KEYS.midiHub} topology={topology} />
           </div>
 
-          <div className="midi-hub-hero__actions">
-            <Select
-              id="midi-hub-quick-recall"
-              size="sm"
-              labelText="Quick preset recall"
-              value={selectedPresetId}
-              onChange={(event) => setSelectedPresetId(event.currentTarget.value)}
-            >
-              <SelectItem value="" text="Quick preset recall" />
-              {(presetsQuery.data?.presets ?? []).map((preset) => (
-                <SelectItem key={preset.preset_id} value={preset.preset_id} text={preset.name} />
-              ))}
-            </Select>
-
-            <Button
-              size="sm"
-              kind="primary"
-              disabled={!selectedPresetId}
-              onClick={() => quickRecallMutation.mutate(selectedPresetId)}
-            >
-              Recall preset
-            </Button>
+          <div className="midi-hub-workflow-strip" aria-label="MIDI Hub workflow sections">
+            {workflowCards.map((card) => (
+              <ClickableTile
+                key={card.id}
+                className="midi-hub-workflow-tile"
+                onClick={() => scrollToSection(card.id)}
+              >
+                <span className="midi-hub-workflow-tile__eyebrow">{card.eyebrow}</span>
+                <strong>{card.title}</strong>
+                <span>{card.detail}</span>
+                <Tag type="cool-gray">{card.stat}</Tag>
+              </ClickableTile>
+            ))}
           </div>
-        </div>
         </Layer>
 
         {ports.length === 0 ? (
@@ -203,137 +261,157 @@ export function MidiHubPage() {
             lowContrast
             hideCloseButton
             title="No MIDI ports detected"
-            subtitle="Verify transport power, cable direction, browser permission, and session reachability before editing routes or publishing presets."
+            subtitle="Confirm transport power, cable direction, browser permissions, and network reachability before editing routes or recalling presets."
           />
         ) : null}
 
-        <Layer className="midi-hub-tabs-layer">
-          <Tabs
-            selectedIndex={Math.max(0, TAB_ORDER.findIndex((tab) => tab.id === activeTab))}
-            onChange={({ selectedIndex }) => setActiveTab(TAB_ORDER[selectedIndex]?.id ?? 'setup')}
-          >
-            <TabList aria-label="MIDI Hub workbench sections" contained>
-              {TAB_ORDER.map((tab) => (
-                <Tab key={tab.id}>{tab.label}</Tab>
-              ))}
-            </TabList>
-          </Tabs>
-        </Layer>
-
-        {activeTab === 'core' ? (
-          <div className="midi-hub-tab-panel">
-            <MidiHubPanelShell panelId="core">
-              <MidiCoreControlCenter embedded />
-            </MidiHubPanelShell>
+        <section className="midi-hub-page-band" id="midi-hub-routing-section">
+          <div className="midi-hub-page-band__header">
+            <div>
+              <h2>Signal path</h2>
+              <p>Build the active route first, then confirm live events before moving deeper into automation.</p>
+            </div>
+            <div className="midi-hub-page-band__tags">
+              <Tag type="green">Primary workflow</Tag>
+              <Tag type="cool-gray">Basic first</Tag>
+            </div>
           </div>
-        ) : null}
 
-        {activeTab === 'setup' ? (
-          <div className="midi-hub-tab-panel">
+          <div className="midi-hub-primary-grid">
             <MidiHubPanelShell panelId="routing">
-              <div className="midi-hub-routing-toolbar">
-                <div className="midi-hub-routing-toolbar__copy">
-                  <h4>{mode === 'matrix' ? 'Routing matrix' : 'Patchbay topology'}</h4>
+              <div className="midi-hub-routing-mode">
+                <div className="midi-hub-routing-mode__copy">
+                  <h4>{mode === 'matrix' ? 'Port matrix' : 'Patchbay graph'}</h4>
                   <p>
                     {mode === 'matrix'
-                      ? 'Use matrix mode to establish or correct the first deterministic route.'
-                      : 'Use patchbay mode to inspect fanout, merge behavior, and topology at a glance.'}
+                      ? 'Use the matrix to create, enable, or inspect source-to-destination routes.'
+                      : 'Use the patchbay to inspect topology, fan-out, and route density at a glance.'}
                   </p>
                 </div>
-
-                <div className="midi-hub-inline-button-row">
-                  <Button size="sm" kind={mode === 'matrix' ? 'primary' : 'tertiary'} onClick={() => setMode('matrix')}>
-                    Matrix
-                  </Button>
-                  <Button size="sm" kind={mode === 'patchbay' ? 'primary' : 'tertiary'} onClick={() => setMode('patchbay')}>
-                    Patchbay
-                  </Button>
-                </div>
+                <Tabs
+                  selectedIndex={mode === 'matrix' ? 0 : 1}
+                  onChange={({ selectedIndex }) => setMode(selectedIndex === 1 ? 'patchbay' : 'matrix')}
+                >
+                  <TabList aria-label="Routing workspace view mode" contained>
+                    <Tab>Port matrix</Tab>
+                    <Tab>Patchbay graph</Tab>
+                  </TabList>
+                </Tabs>
               </div>
 
               {mode === 'matrix' ? <MidiRoutingMatrix /> : <MidiPatchbay />}
               <MidiHubQuickRouterCard />
             </MidiHubPanelShell>
 
-            <div className="midi-hub-grid-two">
-              <MidiHubPanelShell panelId="network">
-                <MidiNetworkPanel />
-              </MidiHubPanelShell>
-
-              <MidiHubPanelShell panelId="presets">
-                <MidiHubPresetManager />
-              </MidiHubPanelShell>
-            </div>
-          </div>
-        ) : null}
-
-        {activeTab === 'automation' ? (
-          <div className="midi-hub-tab-panel">
-            <div className="midi-hub-grid-two">
-              <MidiHubPanelShell panelId="filters">
-                <MidiHubFilterPlannerCard />
-              </MidiHubPanelShell>
-
-              <MidiHubPanelShell panelId="mapper">
-                <MidiHubMapperPlannerCard />
-              </MidiHubPanelShell>
-            </div>
-
-            <div className="midi-hub-grid-two">
-              <MidiHubPanelShell panelId="scripts">
-                <MidiScriptEditor />
-              </MidiHubPanelShell>
-
-              <MidiHubPanelShell panelId="macros">
-                <MidiMacroPanel />
-              </MidiHubPanelShell>
-            </div>
-
-            <MidiHubPanelShell panelId="scheduler">
-              <MidiSchedulerPanel />
+            <MidiHubPanelShell panelId="traffic">
+              <MidiTrafficMonitor limit={500} height={440} />
             </MidiHubPanelShell>
           </div>
-        ) : null}
+        </section>
 
-        {activeTab === 'sync' ? (
-          <div className="midi-hub-tab-panel">
-            <div className="midi-hub-grid-two">
-              <MidiHubPanelShell panelId="clock">
-                <MidiClockPanel />
-              </MidiHubPanelShell>
-
-              <MidiHubPanelShell panelId="traffic">
-                <MidiTrafficMonitor />
-              </MidiHubPanelShell>
+        <section className="midi-hub-page-band" id="midi-hub-show-section">
+          <div className="midi-hub-page-band__header">
+            <div>
+              <h2>Show control</h2>
+              <p>Once the route is working, lock in repeatable recall, transport, and capture behavior.</p>
             </div>
+            <div className="midi-hub-page-band__tags">
+              <Tag type="blue">Presets</Tag>
+              <Tag type="green">Transport</Tag>
+            </div>
+          </div>
 
-            <MidiHubPanelShell panelId="recorder">
-              <MidiRecorderPanel />
+          <div className="midi-hub-grid-two">
+            <MidiHubPanelShell panelId="presets">
+              <MidiHubPresetManager />
+            </MidiHubPanelShell>
+
+            <MidiHubPanelShell panelId="clock">
+              <MidiClockPanel />
             </MidiHubPanelShell>
           </div>
-        ) : null}
 
-        {activeTab === 'future' ? (
-          <div className="midi-hub-tab-panel">
-            <div className="midi-hub-grid-two">
-              <MidiHubPanelShell panelId="midi2">
-                <Midi2Panel />
-              </MidiHubPanelShell>
+          <MidiHubPanelShell panelId="recorder">
+            <MidiRecorderPanel />
+          </MidiHubPanelShell>
+        </section>
 
-              <MidiHubPanelShell panelId="innovation">
-                <MidiInnovationPanel />
-              </MidiHubPanelShell>
+        <section className="midi-hub-page-band" id="midi-hub-network-section">
+          <div className="midi-hub-page-band__header">
+            <div>
+              <h2>Network and protocol</h2>
+              <p>Bring remote sessions, OSC control, and MIDI 2.0 services online after the local path is stable.</p>
+            </div>
+            <div className="midi-hub-page-band__tags">
+              <Tag type="blue">RTP-MIDI</Tag>
+              <Tag type="cool-gray">MIDI 2.0</Tag>
             </div>
           </div>
-        ) : null}
 
-        <Layer className="midi-hub-section">
-          <Accordion align="start">
-            <AccordionItem title="About MIDI Hub">
-              <p className="midi-hub-accordion-copy">{ABOUT_MIDI_HUB_COPY}</p>
-            </AccordionItem>
-          </Accordion>
-        </Layer>
+          <div className="midi-hub-grid-two">
+            <MidiHubPanelShell panelId="network">
+              <MidiNetworkPanel />
+            </MidiHubPanelShell>
+
+            <MidiHubPanelShell panelId="midi2">
+              <Midi2Panel />
+            </MidiHubPanelShell>
+          </div>
+        </section>
+
+        <section className="midi-hub-page-band" id="midi-hub-processing-section">
+          <div className="midi-hub-page-band__header">
+            <div>
+              <h2>Message processing and automation</h2>
+              <p>Apply filtering, mapping, scripting, macros, and scheduled events only after the signal path is verified.</p>
+            </div>
+            <div className="midi-hub-page-band__tags">
+              <Tag type="warm-gray">Advanced</Tag>
+              <Tag type="green">Automation</Tag>
+            </div>
+          </div>
+
+          <div className="midi-hub-grid-two">
+            <MidiHubPanelShell panelId="filters">
+              <MidiHubFilterPlannerCard />
+            </MidiHubPanelShell>
+
+            <MidiHubPanelShell panelId="mapper">
+              <MidiHubMapperPlannerCard />
+            </MidiHubPanelShell>
+          </div>
+
+          <div className="midi-hub-grid-two">
+            <MidiHubPanelShell panelId="scripts">
+              <MidiScriptEditor />
+            </MidiHubPanelShell>
+
+            <MidiHubPanelShell panelId="macros">
+              <MidiMacroPanel />
+            </MidiHubPanelShell>
+          </div>
+
+          <MidiHubPanelShell panelId="scheduler">
+            <MidiSchedulerPanel />
+          </MidiHubPanelShell>
+        </section>
+
+        <section className="midi-hub-page-band" id="midi-hub-experimental-section">
+          <div className="midi-hub-page-band__header">
+            <div>
+              <h2>Advanced and experimental</h2>
+              <p>Keep AI-assisted and mesh features isolated from the production signal path and show-state workflows.</p>
+            </div>
+            <div className="midi-hub-page-band__tags">
+              <Tag type="warm-gray">Advanced</Tag>
+              <Tag type="cool-gray">Experimental</Tag>
+            </div>
+          </div>
+
+          <MidiHubPanelShell panelId="innovation">
+            <MidiInnovationPanel />
+          </MidiHubPanelShell>
+        </section>
       </div>
     </MidiHubNodeScopeProvider>
   )

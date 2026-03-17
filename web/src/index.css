@@ -465,8 +465,8 @@ img {
 .advanced-menu-panel {
   position: absolute;
   right: 0;
-  top: calc(100% + 10px);
-  width: clamp(24rem, 64vw, 74rem);
+  top: calc(100% + var(--topbar-dropdown-offset));
+  width: var(--topbar-dropdown-width);
   max-height: min(82vh, 760px);
   display: flex;
   flex-direction: column;
@@ -8474,6 +8474,9 @@ a {
 }
 
 .topbar-pro {
+  --topbar-dropdown-width: clamp(24rem, 64vw, 74rem);
+  --topbar-dropdown-offset: 10px;
+  --topbar-shell-inset: calc(var(--space-5) * 1.2);
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: var(--space-4);
   font-family: var(--font-sans);
@@ -8555,11 +8558,20 @@ a {
   height: 19px;
 }
 
+.nav-tab-icon--audio-grid > svg {
+  width: 23.75px;
+  height: 23.75px;
+}
+
 .nav-tab-label,
 .nav-tab-advanced-label {
   font-size: calc(var(--type-label) * 1.2);
   letter-spacing: 0;
   text-transform: none;
+}
+
+.nav-tab-label--audio-grid {
+  font-size: calc(var(--type-label) * 1.5);
 }
 
 .nav-tab-advanced-caret {
@@ -9734,46 +9746,42 @@ textarea {
 /* ── Platform Nav Button ─────────────────────────────────────────────────── */
 
 .nav-tab-platform {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 10px;
-  height: 28px;
+  justify-content: center;
+  gap: calc(var(--space-3) * 1.2);
+  padding: 0 calc(var(--space-4) * 1.2);
   background: transparent;
-  border: 1px solid rgba(96, 165, 250, 0.28);
-  border-radius: 6px;
-  color: var(--cds-text-secondary, #9ca3af);
-  font-size: 12px;
+  border-color: rgba(96, 165, 250, 0.3);
+  color: #cbd5e1;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-  white-space: nowrap;
 }
 
 .nav-tab-platform:hover {
-  background: rgba(96, 165, 250, 0.10);
-  border-color: rgba(96, 165, 250, 0.55);
-  color: var(--cds-text-primary, #f3f4f6);
+  background: color-mix(in srgb, var(--interactive) 8%, var(--surface));
+  border-bottom-color: color-mix(in srgb, var(--interactive) 40%, transparent);
+  color: var(--text-primary);
 }
 
 .nav-tab-platform--active,
 .nav-tab-platform--active:hover {
-  background: rgba(96, 165, 250, 0.16);
-  border-color: rgba(96, 165, 250, 0.75);
-  color: #dbeafe;
+  background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
+  border-bottom-color: var(--interactive);
+  color: var(--text-primary);
 }
 
 .nav-tab-platform-label {
   line-height: 1;
+  font-size: calc(var(--type-label) * 1.2);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* ── Platform Modal Overlay ──────────────────────────────────────────────── */
 
 .platform-modal-overlay {
   position: fixed;
-  /* Sit just below the Carbon header (48px) */
-  top: 48px;
+  top: 58px;
   left: 0;
   right: 0;
   bottom: 0;
@@ -9782,8 +9790,8 @@ textarea {
   flex-direction: column;
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(2px);
-  /* Padding keeps the modal inset from all edges so the nav bar stays usable */
-  padding: 8px 8px 8px 8px;
+  padding: var(--topbar-dropdown-offset) var(--topbar-shell-inset) 8px;
+  align-items: center;
 }
 
 .platform-modal__body {
@@ -9797,6 +9805,23 @@ textarea {
   border: 1px solid rgba(96, 165, 250, 0.32);
   border-radius: 14px;
   overflow: hidden;
+}
+
+.platform-modal__body--compact {
+  width: min(100%, var(--topbar-dropdown-width));
+  max-width: var(--topbar-dropdown-width);
+  height: auto;
+  max-height: min(36rem, calc(100vh - 80px));
+  align-self: flex-start;
+  margin-top: 0;
+  margin-left: auto;
+}
+
+.platform-modal__body--expanded {
+  width: 100%;
+  max-width: 1400px;
+  height: 100%;
+  align-self: center;
 }
 
 .platform-modal__header {
@@ -9843,6 +9868,10 @@ textarea {
   overflow-x: hidden;
 }
 
+.platform-modal__scroll--compact {
+  flex: 0 1 auto;
+}
+
 /* Mobile platform button in hamburger menu */
 .nav-mobile-item--platform {
   width: 100%;
@@ -9858,11 +9887,18 @@ textarea {
 
 @media (max-width: 671px) {
   .platform-modal-overlay {
-    top: 48px;
+    top: 58px;
     padding: 4px;
   }
 
   .platform-modal__body {
     border-radius: 8px;
+  }
+
+  .platform-modal__body--compact {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    height: 100%;
   }
 }

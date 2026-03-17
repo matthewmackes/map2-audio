@@ -278,22 +278,23 @@
 
 
 /* ============================================================
-   HERO CARD OVERLAY — wireframe grid, bottom-right justified
+   HERO CARD OVERLAY — wireframe grid, left-of-center justified
    ============================================================ */
 
 /*
  * The overlay is NOT position:absolute — it is a normal flow child
  * of the hero flex column, so the hero grows around it.
- * Cards align to the bottom-right corner of the hero.
+ * Cards sit below the hero chrome and anchor left-of-center.
  */
 .hp-hero__card-overlay {
   position: relative;
   z-index: 3;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;       /* right-justify the section block */
+  align-items: flex-start;
   justify-content: flex-end;
-  padding: 0 var(--hp-grid-margin) var(--hp-grid-margin);
+  width: 100%;
+  padding: clamp(1.5rem, 4vw, 3rem) var(--hp-grid-margin) var(--hp-grid-margin);
   pointer-events: none;
 }
 
@@ -306,7 +307,8 @@
 /* Group heading suppressed — cards are self-labelled */
 .hp-hero__card-overlay .hp-group {
   padding-top: 0;
-  width: 100%;
+  width: min(100%, 78rem);
+  margin-inline: auto auto;
 }
 
 .hp-hero__card-overlay .hp-group__heading {
@@ -315,12 +317,12 @@
 
 /*
  * Card grid — Carbon $spacing-05 (1rem) gap for clear separation.
- * Width constrained to right portion of hero — approx ¾ of viewport.
+ * Width constrained so the block reads as left-centered instead of full-bleed.
  */
 .hp-hero__card-overlay .hp-card-grid {
   width: 100%;
-  max-width: 75%;
-  margin-inline-start: auto;   /* push the grid to the right */
+  max-width: min(72vw, 68rem);
+  margin-inline: 0 auto;
   gap: var(--hp-s-05);         /* Carbon $spacing-05 = 1rem */
   background: transparent;     /* remove the 1px gap fill */
 }
@@ -418,7 +420,7 @@
   border: 1px solid var(--hp-interactive);
   outline: none;
   text-align: left;
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   font-family: inherit;
   transition:
     background 70ms,
@@ -485,7 +487,7 @@
   height: 32px;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   opacity: 0.5;
   cursor: pointer;
   font-family: inherit;
@@ -499,7 +501,7 @@
 }
 
 .hp-card__pin-btn.is-pinned {
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   border-color: var(--hp-interactive);
   opacity: 1;
 }
@@ -513,7 +515,7 @@
 .hp-card__icon {
   width: 32px;
   height: 32px;
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   flex-shrink: 0;
   margin-bottom: var(--hp-s-05);
   opacity: 0.9;
@@ -530,7 +532,7 @@
   text-transform: uppercase;
   border: 1px solid var(--hp-interactive);
   background: transparent;
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   opacity: 0.7;
   margin-bottom: var(--hp-s-04);
   width: fit-content;
@@ -541,7 +543,7 @@
 .hp-card__maturity--beta,
 .hp-card__maturity--experimental,
 .hp-card__maturity--hardware-blocked {
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   border-color: var(--hp-interactive);
   background: transparent;
 }
@@ -549,20 +551,20 @@
 /* Card label */
 .hp-card__label {
   margin: 0 0 var(--hp-s-03);
-  font-size: var(--hp-heading-02);
+  font-size: calc(var(--hp-heading-02) * 1.15);
   font-weight: 600;
   line-height: 1.25;
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   padding-right: var(--hp-s-07); /* clear pin btn */
 }
 
 /* Card description */
 .hp-card__desc {
   margin: 0;
-  font-size: var(--hp-body-01);
+  font-size: calc(var(--hp-body-01) * 1.15);
   line-height: 1.43;
-  color: var(--hp-interactive);
-  opacity: 0.65;
+  color: var(--hp-text-on-color);
+  opacity: 0.9;
   flex: 1;
 }
 
@@ -583,9 +585,9 @@
   padding: 0 var(--hp-s-05);
   background: transparent;
   border: 1px solid var(--hp-interactive);
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   font-family: inherit;
-  font-size: var(--hp-body-01);
+  font-size: calc(var(--hp-body-01) * 1.15);
   font-weight: 600;
   cursor: pointer;
   transition: background 120ms;
@@ -608,10 +610,10 @@
   padding: 0 var(--hp-s-04);
   background: transparent;
   border: 1px solid var(--hp-interactive);
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   opacity: 0.55;
   font-family: inherit;
-  font-size: var(--hp-body-01);
+  font-size: calc(var(--hp-body-01) * 1.15);
   font-weight: 400;
   cursor: pointer;
   transition: opacity 120ms;
@@ -633,11 +635,11 @@
 }
 
 .hp-card__detail-heading {
-  font-size: var(--hp-label-01);
+  font-size: calc(var(--hp-label-01) * 1.15);
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   opacity: 0.7;
   margin-bottom: var(--hp-s-03);
 }
@@ -655,40 +657,40 @@
   display: flex;
   align-items: flex-start;
   gap: var(--hp-s-03);
-  font-size: var(--hp-body-01);
-  color: var(--hp-interactive);
-  opacity: 0.65;
+  font-size: calc(var(--hp-body-01) * 1.15);
+  color: var(--hp-text-on-color);
+  opacity: 0.9;
   line-height: 1.43;
 }
 
 .hp-card__detail-list li::before {
   content: '—';
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   opacity: 1;
   flex-shrink: 0;
   font-weight: 700;
 }
 
 .hp-card__detail-body {
-  font-size: var(--hp-body-01);
-  color: var(--hp-interactive);
-  opacity: 0.65;
+  font-size: calc(var(--hp-body-01) * 1.15);
+  color: var(--hp-text-on-color);
+  opacity: 0.9;
   line-height: 1.5;
   margin: 0;
 }
 
 .hp-card__best-for-label {
-  font-size: var(--hp-label-01);
+  font-size: calc(var(--hp-label-01) * 1.15);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   opacity: 0.6;
 }
 
 .hp-card__best-for-value {
-  font-size: var(--hp-body-01);
+  font-size: calc(var(--hp-body-01) * 1.15);
   font-weight: 600;
-  color: var(--hp-interactive);
+  color: var(--hp-text-on-color);
   margin-top: 2px;
 }
 

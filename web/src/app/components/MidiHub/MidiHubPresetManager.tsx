@@ -1,16 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
-  Select,
-  TextField,
-} from '@mui/material'
+import { Button, Select, SelectItem, Tag, TextInput } from '@carbon/react'
 import { midiHubApi, type MidiHubPresetSummary } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -34,7 +24,6 @@ export function MidiHubPresetManager() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
   const { nodeId, scopeKey } = useMidiHubNodeScope()
-  const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [leftPresetId, setLeftPresetId] = useState('')
@@ -74,19 +63,21 @@ export function MidiHubPresetManager() {
       ...presets.map((preset) => ({ value: preset.preset_id, label: `Preset: ${preset.name}` })),
       ...chainIds.map((id) => ({ value: `chain:${id}`, label: `Chain: ${id}` })),
     ],
-    [presets, chainIds]
+    [presets, chainIds],
   )
 
   const createMutation = useMutation({
     mutationFn: async () =>
-      midiHubApi.savePreset({
-        preset_id: `${slugFromName(name)}-${Date.now()}`,
-        name,
-        description,
-      }, nodeId),
+      midiHubApi.savePreset(
+        {
+          preset_id: `${slugFromName(name)}-${Date.now()}`,
+          name,
+          description,
+        },
+        nodeId,
+      ),
     onSuccess: () => {
       pushToast('Preset saved', 'success')
-      setCreateOpen(false)
       setName('')
       setDescription('')
       void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
@@ -142,26 +133,30 @@ export function MidiHubPresetManager() {
   const slotMutation = useMutation({
     mutationFn: async () => midiHubApi.setProgramSlot(parseProgramNumber(slotProgram), slotTarget, nodeId),
     onSuccess: () => {
-      pushToast('Program slot updated', 'success')
+      pushToast('Program change slot updated', 'success')
       void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
-    onError: () => pushToast('Program slot update failed', 'error'),
+    onError: () => pushToast('Program change slot update failed', 'error'),
   })
 
   const removeSlotMutation = useMutation({
     mutationFn: async (programNumber: number) => midiHubApi.deleteProgramSlot(programNumber, nodeId),
     onSuccess: () => {
-      pushToast('Program slot removed', 'info')
+      pushToast('Program change slot removed', 'info')
       void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })
     },
   })
 
   const runChainMutation = useMutation({
     mutationFn: async () =>
-      midiHubApi.runPresetChain(chainId, {
-        interval_ms: Math.max(25, Number.parseInt(chainInterval || '500', 10) || 500),
-        cycles: chainCycles.trim() ? Math.max(1, Number.parseInt(chainCycles, 10) || 1) : null,
-      }, nodeId),
+      midiHubApi.runPresetChain(
+        chainId,
+        {
+          interval_ms: Math.max(25, Number.parseInt(chainInterval || '500', 10) || 500),
+          cycles: chainCycles.trim() ? Math.max(1, Number.parseInt(chainCycles, 10) || 1) : null,
+        },
+        nodeId,
+      ),
     onSuccess: () => pushToast('Preset chain timer started', 'success'),
     onError: () => pushToast('Failed to run preset chain timer', 'error'),
   })
@@ -180,219 +175,207 @@ export function MidiHubPresetManager() {
   }, [slotsQuery.data?.slots])
 
   return (
-    <div className="stack" style={{ gap: 12 }}>
-      <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <div className="flex" style={{ gap: 8 }}>
-          <Chip size="small" label={`Presets: ${presets.length}`} />
-          {defaultPresetId ? <Chip size="small" color="success" label={`Default: ${defaultPresetId}`} /> : null}
-          <Chip size="small" label={`Slots: ${slotEntries.length}`} />
+    <div className="midi-hub-panel-grid--2">
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
+          <Tag type={presets.length > 0 ? 'green' : 'warm-gray'}>{`Presets ${presets.length}`}</Tag>
+          {defaultPresetId ? <Tag type="blue">{`Default ${defaultPresetId}`}</Tag> : null}
+          <Tag type="cool-gray">{`PC slots ${slotEntries.length}`}</Tag>
         </div>
-        <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <Button size="small" variant="outlined" onClick={() => void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })}>
+
+        <div className="midi-hub-form-grid">
+          <TextInput
+            id="midi-hub-preset-name"
+            labelText="Preset name"
+            value={name}
+            onChange={(event) => setName(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-preset-description"
+            labelText="Description"
+            value={description}
+            onChange={(event) => setDescription(event.currentTarget.value)}
+          />
+        </div>
+
+        <div className="midi-hub-actions">
+          <Button size="sm" kind="primary" disabled={!name.trim()} onClick={() => createMutation.mutate()}>
+            Save current state
+          </Button>
+          <Button size="sm" kind="ghost" onClick={() => void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })}>
             Refresh
           </Button>
-          <Button size="small" variant="contained" onClick={() => setCreateOpen(true)}>
-            Save Current
-          </Button>
         </div>
-      </div>
 
-      <div className="stack" style={{ gap: 8 }}>
-        {presets.map((preset: MidiHubPresetSummary) => (
-          <div key={preset.preset_id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-            <div className="stack" style={{ gap: 2 }}>
-              <div style={{ fontWeight: 700 }}>{preset.name}</div>
-              <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                <code>{preset.preset_id}</code> · {preset.description || 'No description'}
+        <div className="midi-hub-record-list">
+          {presets.length === 0 ? <div className="midi-hub-empty-state">No MIDI Hub presets saved.</div> : null}
+          {presets.map((preset: MidiHubPresetSummary) => (
+            <div key={preset.preset_id} className="midi-hub-record-row">
+              <div className="midi-hub-record-copy">
+                <strong>{preset.name}</strong>
+                <div className="midi-hub-record-meta">
+                  <code>{preset.preset_id}</code>
+                  {` · ${preset.description || 'No description'}`}
+                </div>
+              </div>
+              <div className="midi-hub-record-actions">
+                <Button size="sm" kind="primary" onClick={() => recallMutation.mutate(preset.preset_id)}>
+                  Recall
+                </Button>
+                <Button size="sm" kind="secondary" onClick={() => exportMutation.mutate(preset.preset_id)}>
+                  Export
+                </Button>
+                <Button
+                  size="sm"
+                  kind={defaultPresetId === preset.preset_id ? 'primary' : 'ghost'}
+                  onClick={() => defaultMutation.mutate(defaultPresetId === preset.preset_id ? null : preset.preset_id)}
+                >
+                  {defaultPresetId === preset.preset_id ? 'Default preset' : 'Make default'}
+                </Button>
+                <Button size="sm" kind="danger--tertiary" onClick={() => deleteMutation.mutate(preset.preset_id)}>
+                  Delete
+                </Button>
               </div>
             </div>
-            <div className="flex" style={{ gap: 6, flexWrap: 'wrap' }}>
-              <Button size="small" onClick={() => recallMutation.mutate(preset.preset_id)}>Recall</Button>
-              <Button size="small" onClick={() => exportMutation.mutate(preset.preset_id)}>Export</Button>
-              <Button
-                size="small"
-                variant={defaultPresetId === preset.preset_id ? 'contained' : 'outlined'}
-                onClick={() => defaultMutation.mutate(defaultPresetId === preset.preset_id ? null : preset.preset_id)}
-              >
-                Default
-              </Button>
-              <Button size="small" color="error" onClick={() => deleteMutation.mutate(preset.preset_id)}>Delete</Button>
-            </div>
-          </div>
-        ))}
-        {presets.length === 0 ? <div className="list-item">No MIDI Hub presets yet.</div> : null}
-      </div>
-
-      <div className="grid two" style={{ gap: 12 }}>
-        <div className="card" style={{ margin: 0 }}>
-          <h4 style={{ marginTop: 0 }}>Compare Presets</h4>
-          <div className="stack" style={{ gap: 8 }}>
-            <Select value={leftPresetId} size="small" onChange={(event) => setLeftPresetId(String(event.target.value))} displayEmpty>
-              <MenuItem value="">Left preset</MenuItem>
-              {presets.map((preset) => <MenuItem key={`left-${preset.preset_id}`} value={preset.preset_id}>{preset.name}</MenuItem>)}
-            </Select>
-            <Select value={rightPresetId} size="small" onChange={(event) => setRightPresetId(String(event.target.value))} displayEmpty>
-              <MenuItem value="">Right preset</MenuItem>
-              {presets.map((preset) => <MenuItem key={`right-${preset.preset_id}`} value={preset.preset_id}>{preset.name}</MenuItem>)}
-            </Select>
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={!leftPresetId || !rightPresetId}
-              onClick={() => compareMutation.mutate()}
-            >
-              Compare
-            </Button>
-            {compareResult ? (
-              <pre style={{ margin: 0, padding: 10, borderRadius: 8, background: '#0f172a', color: '#e2e8f0', overflowX: 'auto' }}>
-                {JSON.stringify(compareResult, null, 2)}
-              </pre>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="card" style={{ margin: 0 }}>
-          <h4 style={{ marginTop: 0 }}>Import Preset</h4>
-          <div className="stack" style={{ gap: 8 }}>
-            <TextField
-              size="small"
-              label="Preset file path"
-              value={importPath}
-              onChange={(event) => setImportPath(event.target.value)}
-              placeholder="~/.map2/midi_hub_presets/exports/<file>.json"
-            />
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={!importPath.trim()}
-              onClick={() => importMutation.mutate()}
-            >
-              Import
-            </Button>
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid two" style={{ gap: 12 }}>
-        <div className="card" style={{ margin: 0 }}>
-          <h4 style={{ marginTop: 0 }}>Program Change Slots</h4>
-          <div className="stack" style={{ gap: 8 }}>
-            <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <TextField
-                size="small"
-                label="Program"
-                value={slotProgram}
-                onChange={(event) => setSlotProgram(event.target.value)}
-                style={{ maxWidth: 120 }}
-              />
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-panel-grid--2">
+          <div className="midi-hub-mini-surface">
+            <div className="midi-hub-form-grid">
               <Select
-                value={slotTarget}
-                size="small"
-                displayEmpty
-                onChange={(event) => setSlotTarget(String(event.target.value))}
-                style={{ minWidth: 260 }}
+                id="midi-hub-compare-left"
+                labelText="Compare left"
+                value={leftPresetId}
+                onChange={(event) => setLeftPresetId(event.currentTarget.value)}
               >
-                <MenuItem value="">Select preset or chain</MenuItem>
-                {targetOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                <SelectItem value="" text="Select left preset" />
+                {presets.map((preset) => (
+                  <SelectItem key={`left-${preset.preset_id}`} value={preset.preset_id} text={preset.name} />
                 ))}
               </Select>
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={!slotTarget}
-                onClick={() => slotMutation.mutate()}
+              <Select
+                id="midi-hub-compare-right"
+                labelText="Compare right"
+                value={rightPresetId}
+                onChange={(event) => setRightPresetId(event.currentTarget.value)}
               >
-                Assign
+                <SelectItem value="" text="Select right preset" />
+                {presets.map((preset) => (
+                  <SelectItem key={`right-${preset.preset_id}`} value={preset.preset_id} text={preset.name} />
+                ))}
+              </Select>
+            </div>
+            <div className="midi-hub-actions">
+              <Button size="sm" kind="secondary" disabled={!leftPresetId || !rightPresetId} onClick={() => compareMutation.mutate()}>
+                Compare presets
               </Button>
             </div>
+            {compareResult ? <pre className="midi-hub-code-block">{JSON.stringify(compareResult, null, 2)}</pre> : null}
+          </div>
 
-            {slotEntries.length === 0 ? (
-              <div style={{ fontSize: 12, color: '#94a3b8' }}>No program slots mapped yet.</div>
-            ) : (
-              slotEntries.map((slot) => (
-                <div key={slot.program} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>PC {slot.program} → <code>{slot.target}</code></span>
-                  <Button size="small" color="error" onClick={() => removeSlotMutation.mutate(slot.program)}>
-                    Remove
-                  </Button>
-                </div>
-              ))
-            )}
+          <div className="midi-hub-mini-surface">
+            <TextInput
+              id="midi-hub-import-path"
+              labelText="Import preset file"
+              value={importPath}
+              onChange={(event) => setImportPath(event.currentTarget.value)}
+              placeholder="~/.map2/midi_hub_presets/exports/<file>.json"
+            />
+            <div className="midi-hub-actions">
+              <Button size="sm" kind="secondary" disabled={!importPath.trim()} onClick={() => importMutation.mutate()}>
+                Import preset
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="card" style={{ margin: 0 }}>
-          <h4 style={{ marginTop: 0 }}>Preset Chain Timer</h4>
-          <div className="stack" style={{ gap: 8 }}>
-            <Select value={chainId} size="small" displayEmpty onChange={(event) => setChainId(String(event.target.value))}>
-              <MenuItem value="">Select chain</MenuItem>
-              {chainIds.map((id) => (
-                <MenuItem key={id} value={id}>{id}</MenuItem>
-              ))}
-            </Select>
-            <div className="flex" style={{ gap: 8 }}>
-              <TextField
-                size="small"
-                label="Interval (ms)"
-                value={chainInterval}
-                onChange={(event) => setChainInterval(event.target.value)}
-                style={{ maxWidth: 160 }}
+        <div className="midi-hub-panel-grid--2">
+          <div className="midi-hub-mini-surface">
+            <div className="midi-hub-form-grid">
+              <TextInput
+                id="midi-hub-pc-program"
+                labelText="Program change number"
+                value={slotProgram}
+                onChange={(event) => setSlotProgram(event.currentTarget.value)}
               />
-              <TextField
-                size="small"
-                label="Cycles"
+              <Select
+                id="midi-hub-pc-target"
+                labelText="Program change target"
+                value={slotTarget}
+                onChange={(event) => setSlotTarget(event.currentTarget.value)}
+              >
+                <SelectItem value="" text="Select preset or chain" />
+                {targetOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value} text={option.label} />
+                ))}
+              </Select>
+            </div>
+            <div className="midi-hub-actions">
+              <Button size="sm" kind="secondary" disabled={!slotTarget} onClick={() => slotMutation.mutate()}>
+                Assign program change
+              </Button>
+            </div>
+            <div className="midi-hub-record-list">
+              {slotEntries.length === 0 ? <div className="midi-hub-empty-state">No program change slots mapped.</div> : null}
+              {slotEntries.map((slot) => (
+                <div key={slot.program} className="midi-hub-record-row">
+                  <div className="midi-hub-record-copy">
+                    <strong>{`PC ${slot.program}`}</strong>
+                    <div className="midi-hub-record-meta">
+                      <code>{slot.target}</code>
+                    </div>
+                  </div>
+                  <div className="midi-hub-record-actions">
+                    <Button size="sm" kind="danger--tertiary" onClick={() => removeSlotMutation.mutate(slot.program)}>
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="midi-hub-mini-surface">
+            <div className="midi-hub-form-grid">
+              <Select
+                id="midi-hub-chain-id"
+                labelText="Preset chain"
+                value={chainId}
+                onChange={(event) => setChainId(event.currentTarget.value)}
+              >
+                <SelectItem value="" text="Select chain" />
+                {chainIds.map((id) => (
+                  <SelectItem key={id} value={id} text={id} />
+                ))}
+              </Select>
+              <TextInput
+                id="midi-hub-chain-interval"
+                labelText="Interval (ms)"
+                value={chainInterval}
+                onChange={(event) => setChainInterval(event.currentTarget.value)}
+              />
+              <TextInput
+                id="midi-hub-chain-cycles"
+                labelText="Cycles"
                 value={chainCycles}
-                onChange={(event) => setChainCycles(event.target.value)}
-                placeholder="optional"
-                style={{ maxWidth: 140 }}
+                onChange={(event) => setChainCycles(event.currentTarget.value)}
+                placeholder="Optional"
               />
             </div>
-            <div className="flex" style={{ gap: 8 }}>
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={!chainId}
-                onClick={() => runChainMutation.mutate()}
-              >
-                Run
+            <div className="midi-hub-actions">
+              <Button size="sm" kind="secondary" disabled={!chainId} onClick={() => runChainMutation.mutate()}>
+                Run preset chain
               </Button>
-              <Button
-                size="small"
-                color="warning"
-                variant="outlined"
-                disabled={!chainId}
-                onClick={() => stopChainMutation.mutate()}
-              >
-                Stop
+              <Button size="sm" kind="danger--tertiary" disabled={!chainId} onClick={() => stopChainMutation.mutate()}>
+                Stop preset chain
               </Button>
             </div>
           </div>
         </div>
       </div>
-
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Save MIDI Hub Preset</DialogTitle>
-        <DialogContent>
-          <div className="stack" style={{ gap: 10, marginTop: 4 }}>
-            <TextField size="small" label="Name" value={name} onChange={(event) => setName(event.target.value)} />
-            <TextField
-              size="small"
-              label="Description"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              multiline
-              minRows={2}
-            />
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button variant="contained" disabled={!name.trim()} onClick={() => createMutation.mutate()}>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
     </div>
   )
 }

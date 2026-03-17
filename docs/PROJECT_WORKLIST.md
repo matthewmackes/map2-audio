@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-16 00:00 - Codex
+Last updated: 2026-03-17 11:46 - Codex
 
 ## Active Blockers Only
 
@@ -190,6 +190,87 @@ Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Protocol, templates, and collation tooling are complete in the archive.
   - Remaining blocker is external participant access and moderated study execution.
+
+ID: T202
+Status: [✓] Done
+Title: MIDI Hub full IBM Carbon and workflow refactor
+Description:
+- Goal / acceptance criteria: Fully refactor `/midi-hub` and its connected MIDI Hub surfaces into an advanced operator workspace that is Carbon-first end to end, uses industry-standard MIDI terminology, presents basic routing and validation workflows before deeper controls, increases spacing/readability in dense areas, removes touched MUI control patterns, and updates the supporting design/MIDI documentation to match the shipped information architecture and Carbon compliance posture.
+- Why it matters: The current MIDI Hub surface mixes Carbon and non-Carbon UI systems, carries inconsistent MIDI concepts, and exposes dense controls without a consistent operational workflow, which blocks the user's stated requirement for a total Carbon-compliant refactor.
+- Dependencies: Existing MIDI Hub backend APIs, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `docs/midi/MIDI_HUB_CONTENT_INVENTORY.md`
+- Estimated effort: High
+- Required outputs: Refactored `web/src/app/pages/MidiHubPage.tsx` route shell and connected MIDI Hub components, updated route-local Carbon styling/tests as needed, refreshed MIDI Hub design/content documentation, updated Carbon conformance notes/checklist evidence, and final validation notes.
+Subtasks:
+ID: T202-subA
+Status: [✓] Done
+Title: Audit MIDI Hub route structure and define Carbon-first advanced operator IA
+Description:
+- Goal / acceptance criteria: Inventory the current `/midi-hub` shell plus connected panels, normalize the target terminology and section model, and encode the new route structure in implementation notes/docs before broad UI edits begin.
+- Why it matters: A total refactor needs one source of truth for terminology, grouping, and workflow order.
+- Dependencies: T202
+- Estimated effort: Medium
+- Required outputs: Updated MIDI Hub documentation and implementation-ready IA decisions tied to the actual route/component files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 11:46 - Codex
+- Completion notes:
+  - Replaced the earlier guided-help redesign direction with an advanced-operator IA centered on sequential workflow bands: Signal path, Show control, Network and protocol, Message processing and automation, and Advanced and experimental.
+  - Normalized route-local terminology toward standard MIDI/operator concepts such as Port matrix, Patchbay graph, Event Monitor, Message Filtering, Message Mapping, Presets and Program Change, Clock and Transport, RTP-MIDI, and MIDI 2.
+  - Updated `docs/midi/MIDI_HUB_CONTENT_INVENTORY.md` and `docs/midi/MIDI_HUB_GUIDED_UX_REDESIGN_BRIEF.md` to match the implementation target and remove contextual-help assumptions that conflict with the user directive and Carbon standards.
+ID: T202-subB
+Status: [✓] Done
+Title: Replace MIDI Hub route shell and primary workflows with Carbon grid and progressive depth
+Description:
+- Goal / acceptance criteria: Rebuild the `/midi-hub` page shell so routing and validation are primary, deeper automation/diagnostics controls follow later in the page, and spacing/layering align to Carbon grid and tokens only.
+- Why it matters: Page composition is the main source of current workflow and density problems.
+- Dependencies: T202-subA
+- Estimated effort: High
+- Required outputs: Updated `MidiHubPage` structure/CSS and any route-shell tests needed.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 11:46 - Codex
+- Completion notes:
+  - Refactored `web/src/app/pages/MidiHubPage.tsx` from a tabbed shell into a sequential advanced workspace with a Carbon-style hero, workflow tiles, spaced section bands, and routing-first information architecture.
+  - Replaced dense route composition with tokenized Carbon spacing in `web/src/app/pages/MidiHubPage.css`, including new section grids, panel surfaces, empty states, record lists, route matrix helpers, and patchbay framing.
+  - Updated `web/src/app/pages/MidiHubPage.test.tsx` so the test surface matches the new simultaneous section model rather than the old tabbed navigation.
+ID: T202-subC
+Status: [✓] Done
+Title: Migrate connected MIDI Hub panels from mixed MUI/custom controls to Carbon patterns
+Description:
+- Goal / acceptance criteria: Refactor the touched routing, patchbay, traffic, preset, network, script, clock, recorder, macro, scheduler, MIDI 2.0, and related operator panels to Carbon controls/patterns with consistent spacing and semantics.
+- Why it matters: The route cannot be fully Carbon compliant while key child panels retain non-Carbon control systems and ad hoc dense layouts.
+- Dependencies: T202-subA
+- Estimated effort: High
+- Required outputs: Updated MIDI Hub component implementations and styles with no silent non-Carbon exceptions in touched surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 11:46 - Codex
+- Completion notes:
+  - Migrated touched MIDI Hub panels away from MUI/custom mixed controls toward Carbon components and Carbon-tokenized custom surfaces, including routing, patchbay, traffic monitor, preset management, network, clock, recorder, scheduler, scripts, macros, MIDI 2, innovation, and workbench cards.
+  - Removed route-local summary copy and contextual-help framing from `web/src/app/components/MidiHub/MidiHubHelpPrimitives.tsx` so panel headers now align with the advanced operator brief and Carbon route standards.
+  - Kept the custom SVG patchbay and route matrix where the workflow requires specialized visualization, but rebuilt the surrounding interaction model with Carbon actions, tags, modal/dialog patterns, and spacing tokens.
+ID: T202-subD
+Status: [✓] Done
+Title: Publish updated MIDI Hub and Carbon conformance documentation for the shipped refactor
+Description:
+- Goal / acceptance criteria: Update the relevant MIDI Hub inventory/brief and Carbon conformance artifacts so they accurately describe the delivered route structure, terminology, compliance status, validation evidence, and any explicit exceptions.
+- Why it matters: The user requested document updates and the repo requires current conformance evidence for UI changes.
+- Dependencies: T202-subB, T202-subC
+- Estimated effort: Medium
+- Required outputs: Updated docs under `docs/midi/` and `docs/design/` plus checklist evidence in final notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 11:46 - Codex
+- Completion notes:
+  - Updated `docs/design/CARBON_ROUTE_PATTERN_MAPPING.md` and `docs/design/CARBON_CONFORMANCE_MATRIX.md` so `/midi-hub` is recorded as a sequential operational workspace with the second-pass Carbon refactor noted in conformance tracking.
+  - Validated the shipped surface with `npm --prefix web run typecheck`, `npm --prefix web run test -- src/app/pages/MidiHubPage.test.tsx --runInBand`, and `npm --prefix web run build`.
+  - Reviewed repository licensing posture for the touched MAP2-owned UI/docs files and found no additional AGPL or third-party notice work required.
+Assigned to: Codex
+Last updated: 2026-03-17 11:46 - Codex
+- Completion notes:
+  - Delivered a full `/midi-hub` route refactor and updated the connected MIDI Hub component subtree under `web/src/app/components/MidiHub/` to a Carbon-first, advanced-operator surface with routing-first workflow order and normalized MIDI terminology.
+  - Scope note: the legacy `/midi` route in `web/src/app/pages/MIDIPage.tsx` was not refactored in this task because `/midi-hub` no longer depends on that embedded surface after the route-shell rewrite.
+  - Remaining MIDI program blockers stay in `T066`, `T102`, and related hardware-study tasks; `T202` closes the UI/doc refactor slice only.
 
 ## Latency And Evaluation
 

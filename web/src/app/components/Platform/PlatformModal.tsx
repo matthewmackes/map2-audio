@@ -79,6 +79,7 @@ const AboutPage       = lazy(() => import('../../pages/AboutPage').then(m => ({ 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 const PAGE_SIZES = [5, 10, 20]
+const PLATFORM_CONTROL_PANEL_ICON_SIZE = 45
 
 export type StandalonePanel = 'host-machine' | 'audio-engine' | 'about'
 
@@ -173,7 +174,7 @@ function ControlPanelGrid({
               onClick={() => onOpenLayer(layer.id)}
               aria-label={layer.label}
             >
-              <span className="platform-shell__cp-icon" aria-hidden><Icon size={32} /></span>
+              <span className="platform-shell__cp-icon" aria-hidden><Icon size={PLATFORM_CONTROL_PANEL_ICON_SIZE} /></span>
               <span className="platform-shell__cp-label">{layer.label}</span>
             </button>
           )
@@ -187,7 +188,7 @@ function ControlPanelGrid({
             onClick={() => onOpenStandalone(id)}
             aria-label={label}
           >
-            <span className="platform-shell__cp-icon" aria-hidden><Icon size={32} /></span>
+            <span className="platform-shell__cp-icon" aria-hidden><Icon size={PLATFORM_CONTROL_PANEL_ICON_SIZE} /></span>
             <span className="platform-shell__cp-label">{label}</span>
           </button>
         ))}
@@ -574,7 +575,7 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
   const activeId = showStandalone ? activePanel : (activeLayerId ?? null)
 
   return (
-    <div className="platform-modal__body">
+    <div className={`platform-modal__body${showGrid ? ' platform-modal__body--compact' : ' platform-modal__body--expanded'}`}>
       {/* Header row: title + close button */}
       <div className="platform-modal__header">
         <span className="platform-modal__header-title">Platform</span>
@@ -589,7 +590,7 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
       </div>
 
       {/* Scrollable content area */}
-      <div className="platform-modal__scroll">
+      <div className={`platform-modal__scroll${showGrid ? ' platform-modal__scroll--compact' : ''}`}>
         <div className="platform-shell-page">
           <div className="platform-shell__content">
             {showGrid ? (

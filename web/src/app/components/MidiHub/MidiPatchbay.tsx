@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Switch } from '@mui/material'
+import { Button, Checkbox, Tag } from '@carbon/react'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -15,11 +15,11 @@ type NodeInfo = {
 
 function routeColor(route: MidiHubRoute): string {
   const type = route.filter?.message_types?.[0] ?? 'default'
-  if (type === 'control_change') return '#3b82f6'
-  if (type === 'note_on' || type === 'note_off') return '#22c55e'
-  if (type === 'program_change') return '#a855f7'
-  if (type === 'sysex') return '#f97316'
-  return route.enabled ? '#ef4444' : '#94a3b8'
+  if (type === 'control_change') return 'var(--cds-link-primary)'
+  if (type === 'note_on' || type === 'note_off') return 'var(--cds-support-success)'
+  if (type === 'program_change') return 'var(--cds-support-info)'
+  if (type === 'sysex') return 'var(--cds-support-warning)'
+  return route.enabled ? 'var(--cds-support-error)' : 'var(--cds-border-strong-01)'
 }
 
 export function MidiPatchbay() {
@@ -103,15 +103,18 @@ export function MidiPatchbay() {
 
   const createRoute = useMutation({
     mutationFn: async (payload: { source: string; destination: string }) =>
-      midiHubApi.createRoute({
-        source_port: payload.source,
-        destination_ports: [payload.destination],
-        enabled: true,
-        priority: 100,
-        route_type: 'pass_through',
-        filter: { message_types: [], channels: [] },
-        transform_chain: [],
-      }, nodeId),
+      midiHubApi.createRoute(
+        {
+          source_port: payload.source,
+          destination_ports: [payload.destination],
+          enabled: true,
+          priority: 100,
+          route_type: 'pass_through',
+          filter: { message_types: [], channels: [] },
+          transform_chain: [],
+        },
+        nodeId,
+      ),
     onSuccess: () => {
       pushToast('Route created', 'success')
       setPendingSource(null)
@@ -172,6 +175,7 @@ export function MidiPatchbay() {
   }, [routeHeat])
 
   const handleNodeClick = (node: NodeInfo) => {
+    setSelectedNode(node)
     if (!pendingSource) {
       setPendingSource(node.id)
       return
@@ -184,56 +188,51 @@ export function MidiPatchbay() {
   }
 
   return (
-    <div className="stack" style={{ gap: 12 }}>
-      <Alert severity="info">
-        Patchbay creation flow: select source node, then destination node, then confirm a new link appears. Right-click any node for metadata.
-      </Alert>
-
-      <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-        <Chip size="small" label="Green line = note traffic" color="success" />
-        <Chip size="small" label="Blue line = CC traffic" color="info" />
-        <Chip size="small" label="Dashed line = disabled route" variant="outlined" />
-        <Chip size="small" label="Heatmap colors show traffic intensity" color={showHeatmap ? 'warning' : 'default'} />
-      </div>
-
-      <div className="flex" style={{ gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="flex" style={{ gap: 8 }}>
-          <Chip size="small" label={`Nodes: ${nodes.length}`} />
-          <Chip size="small" label={`Links: ${links.length}`} />
-          {pendingSource ? <Chip size="small" color="warning" label={`Source selected: ${pendingSource}`} /> : null}
+    <>
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
+          <Tag type="cool-gray">{`Nodes ${nodes.length}`}</Tag>
+          <Tag type={links.length > 0 ? 'green' : 'warm-gray'}>{`Links ${links.length}`}</Tag>
+          {pendingSource ? <Tag type="blue">{`Pending source ${pendingSource}`}</Tag> : null}
         </div>
-        <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <Button size="small" variant="outlined" onClick={() => setShowHeatmap((value) => !value)}>
-            Heatmap {showHeatmap ? 'On' : 'Off'}
-          </Button>
-          <Button size="small" variant="outlined" onClick={() => setShowAdvancedTools((value) => !value)}>
-            {showAdvancedTools ? 'Hide Advanced Tools' : 'Show Advanced Tools'}
-          </Button>
+
+        <div className="midi-hub-route-legend">
+          <Tag type="green">Note traffic</Tag>
+          <Tag type="blue">Control change</Tag>
+          <Tag type="magenta">System exclusive</Tag>
+          <Tag type="warm-gray">Disabled route</Tag>
+        </div>
+
+        <div className="midi-hub-actions">
+          <Checkbox
+            id="midi-hub-patchbay-heatmap"
+            labelText="Heatmap overlay"
+            checked={showHeatmap}
+            onChange={(_, data) => setShowHeatmap(data.checked)}
+          />
+          <Checkbox
+            id="midi-hub-patchbay-advanced"
+            labelText="Show zoom controls"
+            checked={showAdvancedTools}
+            onChange={(_, data) => setShowAdvancedTools(data.checked)}
+          />
           {showAdvancedTools ? (
             <>
-              <Button size="small" variant="outlined" onClick={() => setScale((value) => Math.max(0.6, value - 0.1))}>
-                -
+              <Button size="sm" kind="ghost" onClick={() => setScale((value) => Math.max(0.6, value - 0.1))}>
+                Zoom out
               </Button>
-              <Chip size="small" label={`Zoom ${(scale * 100).toFixed(0)}%`} />
-              <Button size="small" variant="outlined" onClick={() => setScale((value) => Math.min(2.0, value + 0.1))}>
-                +
+              <Button size="sm" kind="ghost" onClick={() => setScale((value) => Math.min(2, value + 0.1))}>
+                Zoom in
               </Button>
             </>
           ) : null}
         </div>
       </div>
 
-      <div
-        style={{
-          border: '1px solid rgba(148,163,184,0.2)',
-          borderRadius: 12,
-          overflow: 'hidden',
-          background: 'radial-gradient(circle at 10% 10%, rgba(30,41,59,0.65), rgba(2,6,23,0.95))',
-        }}
-      >
+      <div className="midi-hub-patchbay-shell">
         <svg
           viewBox="0 0 1040 680"
-          style={{ width: '100%', height: 520, cursor: dragStart ? 'grabbing' : 'grab' }}
+          className="midi-hub-patchbay-stage"
           onMouseDown={(event) => setDragStart({ x: event.clientX - offset.x, y: event.clientY - offset.y })}
           onMouseMove={(event) => {
             if (!dragStart) return
@@ -244,9 +243,11 @@ export function MidiPatchbay() {
         >
           <defs>
             <marker id="patchbayArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-              <polygon points="0,0 8,4 0,8" fill="#e11d48" />
+              <polygon points="0,0 8,4 0,8" fill="var(--cds-text-primary)" />
             </marker>
           </defs>
+
+          <rect x="0" y="0" width="1040" height="680" fill="var(--cds-layer-02)" />
 
           <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
             {links.map(({ route, source, destination }) => {
@@ -255,12 +256,12 @@ export function MidiPatchbay() {
               const normalized = maxHeat > 0 ? hits / maxHeat : 0
               const color = showHeatmap
                 ? normalized > 0.66
-                  ? '#ef4444'
+                  ? 'var(--cds-support-error)'
                   : normalized > 0.33
-                    ? '#f59e0b'
+                    ? 'var(--cds-support-warning)'
                     : normalized > 0
-                      ? '#22c55e'
-                      : '#334155'
+                      ? 'var(--cds-support-success)'
+                      : 'var(--cds-border-strong-01)'
                 : baselineColor
               const strokeWidth = route.enabled ? 2 + normalized * 4 : 1.5
               return (
@@ -287,22 +288,18 @@ export function MidiPatchbay() {
                     y={-24}
                     width={144}
                     height={48}
-                    rx={10}
-                    fill={isPendingSource ? 'rgba(234,179,8,0.3)' : 'rgba(15,23,42,0.88)'}
-                    stroke={isPendingSource ? '#eab308' : '#334155'}
+                    rx={4}
+                    fill={isPendingSource ? 'var(--cds-layer-selected-02, var(--cds-layer-selected))' : 'var(--cds-layer-01)'}
+                    stroke={isPendingSource ? 'var(--cds-border-interactive)' : 'var(--cds-border-strong-01)'}
                     strokeWidth={isPendingSource ? 2.2 : 1.4}
                     onClick={() => handleNodeClick(node)}
-                    onContextMenu={(event) => {
-                      event.preventDefault()
-                      setSelectedNode(node)
-                    }}
                     style={{ cursor: 'pointer' }}
                   />
                   <text
                     x={0}
                     y={4}
                     textAnchor="middle"
-                    fill="#e2e8f0"
+                    fill="var(--cds-text-primary)"
                     style={{ fontSize: 12, fontWeight: 700 }}
                   >
                     {node.name}
@@ -314,58 +311,47 @@ export function MidiPatchbay() {
         </svg>
       </div>
 
-      <Alert severity="warning">
-        Example: select keyboard input node, select synth output node, verify the link, then open Route Control and keep route enabled.
-      </Alert>
+      <div className="midi-hub-panel-grid--2">
+        <div className="midi-hub-mini-surface">
+          <div className="midi-hub-patchbay-sidecar">
+            <strong>Patchbay workflow</strong>
+            <p className="midi-hub-panel-note">
+              Select a source port first, then select a destination port. Click any existing route line to inspect or
+              disable it.
+            </p>
+            {selectedNode ? (
+              <>
+                <Tag type="cool-gray">{selectedNode.direction}</Tag>
+                <code>{selectedNode.id}</code>
+              </>
+            ) : (
+              <div className="midi-hub-empty-state">Select a node to inspect its port identity.</div>
+            )}
+          </div>
+        </div>
 
-      <Dialog open={Boolean(selectedRoute)} onClose={() => setSelectedRoute(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Route Control</DialogTitle>
-        <DialogContent>
+        <div className="midi-hub-mini-surface">
           {selectedRoute ? (
-            <div className="stack" style={{ gap: 10 }}>
-              <div><strong>Route:</strong> <code>{selectedRoute.route_id}</code></div>
-              <div><strong>Source:</strong> <code>{selectedRoute.source_port}</code></div>
-              <div><strong>Destinations:</strong> <code>{selectedRoute.destination_ports.join(', ')}</code></div>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={selectedRoute.enabled}
-                    onChange={() => {
-                      toggleRoute.mutate(selectedRoute)
-                      setSelectedRoute({ ...selectedRoute, enabled: !selectedRoute.enabled })
-                    }}
-                  />
-                }
-                label="Enabled"
-              />
+            <div className="midi-hub-patchbay-sidecar">
+              <strong>Selected route</strong>
+              <code>{selectedRoute.route_id}</code>
+              <div className="midi-hub-record-meta">
+                {selectedRoute.source_port} → {selectedRoute.destination_ports.join(', ')}
+              </div>
+              <div className="midi-hub-actions">
+                <Button size="sm" kind="secondary" onClick={() => toggleRoute.mutate(selectedRoute)}>
+                  {selectedRoute.enabled ? 'Disable route' : 'Enable route'}
+                </Button>
+                <Button size="sm" kind="danger--tertiary" onClick={() => deleteRoute.mutate(selectedRoute.route_id)}>
+                  Delete route
+                </Button>
+              </div>
             </div>
-          ) : null}
-        </DialogContent>
-        <DialogActions>
-          {selectedRoute ? (
-            <Button color="error" onClick={() => deleteRoute.mutate(selectedRoute.route_id)}>
-              Delete
-            </Button>
-          ) : null}
-          <Button onClick={() => setSelectedRoute(null)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={Boolean(selectedNode)} onClose={() => setSelectedNode(null)} fullWidth maxWidth="xs">
-        <DialogTitle>Node Info</DialogTitle>
-        <DialogContent>
-          {selectedNode ? (
-            <div className="stack" style={{ gap: 8 }}>
-              <div><strong>Port:</strong> <code>{selectedNode.id}</code></div>
-              <div><strong>Name:</strong> {selectedNode.name}</div>
-              <div><strong>Direction:</strong> {selectedNode.direction}</div>
-            </div>
-          ) : null}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedNode(null)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-    </div>
+          ) : (
+            <div className="midi-hub-empty-state">Select a route line to inspect or manage that connection.</div>
+          )}
+        </div>
+      </div>
+    </>
   )
 }

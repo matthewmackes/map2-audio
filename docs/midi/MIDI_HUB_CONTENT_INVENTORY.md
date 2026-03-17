@@ -1,69 +1,97 @@
-# MIDI Hub Content Inventory (T101-subA)
+# MIDI Hub Content Inventory (T202-subA)
 
-Date: 2026-03-10
+Date: 2026-03-17
 Owner: Codex
 Scope: `web/src/app/pages/MidiHubPage.tsx` and `web/src/app/components/MidiHub/*`
 
-## 1. Terminology Normalization Map
+## 1. Product Direction
 
-| Legacy wording | Normalized wording | Usage rule |
-|---|---|---|
-| Matrix/Patchbay toggle | Routing Workspace view mode | Always frame as one workspace with two views |
-| Quick recall | Preset Recall | Use explicit preset naming in operator copy |
-| Script run/trigger | Script execution action | Distinguish immediate run vs trigger payload |
-| Heatmap | Traffic intensity overlay | Clarify it is visualization-only, not route state |
-| Innovation Controls | Advanced & Experimental controls | Always show advanced label in headers/help |
-| Slots | Program-change slots | Include PC terminology where shown |
+The active `/midi-hub` route is now an advanced operator workspace, not a guided-learning surface.
 
-## 2. Panel Inventory and Guidance Requirements
+- IBM Carbon is the required UI system across the route shell and connected MIDI Hub panels.
+- The page is ordered by operational depth: establish signal path first, then show control, then network/protocol, then message processing, then experimental features.
+- Contextual help rails, tours, guided overlays, and tutorial-heavy framing are out of scope for the shipped route.
+- Short section framing is allowed; long explanatory copy is not.
 
-| Panel ID | Capability Family | Primary controls | Typical operator goal | Required guidance additions |
-|---|---|---|---|---|
-| `routing` | Setup & Connectivity | Matrix cells, patchbay links, route editor | Create first working route | Legend, step order, baseline example, filter/transform caution |
-| `presets` | Setup & Connectivity | Save, recall, compare, default, program slots | Recall known-good state quickly | Naming convention, rollback guidance, startup-default safety note |
-| `network` | Setup & Connectivity | Session create/delete, OSC controls | Add one remote MIDI peer | Host/port prerequisites, single-peer-first workflow, failure checks |
-| `scripts` | Control & Automation | Save script, run, trigger, stop, console | Implement custom event logic | Payload examples, safe test procedure, stop-on-error guidance |
-| `macros` | Control & Automation | Macro CRUD and trigger | Bundle cross-device actions | Action ordering guidance, trigger naming, rollback warning |
-| `scheduler` | Control & Automation | Delayed send, cancel, clear-finished | Deterministic timed actions | Message format examples, stale-entry cleanup notes |
-| `clock` | Control & Automation | BPM config, start/stop/tap | Synchronize tempo-dependent devices | One-clock-master rule, source mode explanation |
-| `recorder` | Capture & Analysis | Start/stop capture, playback, export | Capture reproducible MIDI behavior | Session naming pattern, export reminders |
-| `traffic` | Capture & Analysis | Pause, filter, sort, export, inspect row | Diagnose no-signal or unexpected messages | Triage order and filter strategy examples |
-| `midi2` | Advanced & Experimental | Discovery, profile/property, translation | Protocol validation | Advanced label, fallback guidance, scope limits |
-| `innovation` | Advanced & Experimental | Learn suggestions, mesh, shadow state | Prototype higher-order workflows | Advanced label, isolation warning, rollback-first guidance |
+## 2. Terminology Normalization Map
 
-## 3. First-Run vs Advanced Education Prioritization
+| Legacy wording | Shipped wording | Usage rule |
+| --- | --- | --- |
+| Matrix/Patchbay toggle | Routing workspace view | Present matrix and patchbay as one workspace with two views |
+| Quick recall | Preset recall | Use preset terminology consistently in the header and preset panel |
+| Traffic monitor | Event monitor | Use event terminology for live message inspection |
+| Filter blueprint | Message filter | Use MIDI message terminology, not planning jargon |
+| Mapper blueprint | Message map | Use mapping/translation language, not generic “blueprint” wording |
+| Innovation controls | Advanced and experimental | Always label these panels as advanced/experimental |
+| Slots | Program change slots | Use PC terminology where relevant |
 
-### First-run must-learn surfaces
-- Routing Workspace (`routing`)
-- Preset Manager (`presets`)
-- Traffic Monitor (`traffic`)
-- Clock Engine (`clock`) when tempo sync is required
+## 3. Route Information Architecture
 
-### Intermediate operational surfaces
-- Network MIDI + OSC (`network`)
-- Scheduler (`scheduler`)
-- Recorder (`recorder`)
+The page is organized into five ordered bands:
 
-### Advanced/experimental surfaces
-- MIDI 2.0 (`midi2`)
-- Innovation Controls (`innovation`)
+1. `Signal path`
+   - `Routing workspace`
+   - `Event monitor`
+   - `Quick routing`
+2. `Show control`
+   - `Presets and program change`
+   - `Clock and transport`
+   - `Capture and playback`
+3. `Network and protocol`
+   - `RTP-MIDI and OSC bridge`
+   - `MIDI 2.0 workspace`
+4. `Message processing and automation`
+   - `Message filtering`
+   - `Message mapping`
+   - `Script engine`
+   - `Macros`
+   - `Scheduled MIDI events`
+5. `Advanced and experimental`
+   - `AI-assisted mapping suggestions`
+   - `Mesh route publication`
+   - `Device shadow drift tools`
 
-## 4. Core User Goals Mapped to Panels
+## 4. Panel Inventory and Operational Role
+
+| Panel ID | Capability family | Primary controls | Operator role in shipped workflow |
+| --- | --- | --- | --- |
+| `routing` | Signal path | Matrix cells, patchbay links, route editor | Create and inspect the working route first |
+| `traffic` | Signal path | Search, sort, pause, export, event detail | Confirm ingress, route flow, and destination traffic |
+| `presets` | Show control | Save, recall, compare, default, program change, preset chain | Lock and recall known-good states |
+| `clock` | Show control | BPM, source mode, start/continue/stop, tap | Establish transport ownership after routing is proven |
+| `recorder` | Show control | Record, playback, export, delete | Capture and replay evidence after setup |
+| `network` | Network and protocol | Session create/delete, test send, OSC controls | Add remote peers after the local route is stable |
+| `midi2` | Network and protocol | Protocol enable, discovery, profile/property, translation | Inspect MIDI 2.0 posture and translation readiness |
+| `filters` | Message processing | Channel and message-family choices | Narrow traffic deliberately after baseline routing |
+| `mapper` | Message processing | Source/target range and curve mapping | Stage message translation logic |
+| `scripts` | Automation | Save, run, trigger, enable, stop, console | Execute advanced event-driven logic |
+| `macros` | Automation | Macro save, trigger, delete | Bundle repeated actions behind one trigger |
+| `scheduler` | Automation | Delayed send, cancel, clear-finished | Queue deterministic timed MIDI events |
+| `innovation` | Experimental | AI learn suggestions, mesh, shadow sync | Isolated advanced/experimental control surface |
+
+## 5. Carbon and Accessibility Implementation Notes
+
+- Route shell uses one Carbon-layered sequential page instead of route-level tab navigation.
+- Route and panel headers use concise titles plus Carbon `Tag` status framing only.
+- Touched MIDI Hub panels no longer import MUI/Ariakit/Phosphor controls.
+- Dense editors use Carbon `TextInput`, `TextArea`, `Select`, `Checkbox`, `Button`, `Tag`, `Table*`, and `Modal` primitives, plus Carbon tokenized custom SVG/table states where Carbon has no native equivalent.
+- The routing matrix remains a custom interaction surface, but it is now tokenized to Carbon and backed by semantic table structure and Carbon modal editing.
+- The patchbay remains a custom SVG topology view, but it now uses Carbon tokens and Carbon controls for state and actions.
+
+## 6. Validation Signals
 
 | Goal | Required panels | Validation signal |
-|---|---|---|
-| Connect new device and confirm signal | `routing`, `traffic` | Ports > 0, active route exists, traffic activity > 0 |
-| Save and recall stable show setup | `presets`, `routing` | Preset count > 0, recall succeeds |
-| Start tempo sync flow | `clock`, `traffic` | Clock running = true, timing traffic visible |
-| Add remote MIDI peer | `network`, `routing` | Network session count > 0, route references endpoint |
-| Troubleshoot no-signal | `routing`, `traffic`, `presets` | Port visibility + route state + ingress visibility + rollback path |
+| --- | --- | --- |
+| Connect a device and confirm signal | `routing`, `traffic` | Inputs and outputs visible, route exists, events visible |
+| Recall a stable show state | `presets`, `routing` | Recall succeeds and route remains present |
+| Start transport clock | `clock`, `traffic` | Clock running plus visible timing traffic |
+| Add a remote peer | `network`, `routing` | RTP session exists and route references the endpoint |
+| Troubleshoot no-signal | `routing`, `traffic`, `presets` | Ports visible, route state visible, ingress visible, rollback available |
 
-## 5. Content Debt Closed in T101 Implementation
+## 7. Drift Removed In T202
 
-- Added capability-family grouping at page level.
-- Added reusable panel metadata model for shared guidance.
-- Added inline hints + deep help drawer for all major panels.
-- Added first-run onboarding with replay support.
-- Added guided task flows with validation checks and pause/resume/cancel controls.
-- Added routing legends and progressive disclosure in matrix/patchbay surfaces.
-
+- Removed route-level tab-stack workflow in favor of ordered operator bands.
+- Removed guided-help assumptions from the route plan and content inventory.
+- Removed route-local MUI controls from touched MIDI Hub panels.
+- Replaced mixed terminology with MIDI-standard panel names and section labels.
+- Increased spacing and tokenized surfaces so dense tools share one Carbon visual system.

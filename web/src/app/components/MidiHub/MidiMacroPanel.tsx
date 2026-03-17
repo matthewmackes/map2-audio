@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, FormControlLabel, Switch, TextField } from '@mui/material'
+import { Button, Checkbox, Tag, TextInput } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
-import { NumberInput } from '../Controls/NumberInput'
+
+function clampMidiValue(value: string, max: number): number {
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed)) return 0
+  return Math.max(0, Math.min(max, parsed))
+}
 
 export function MidiMacroPanel() {
   const queryClient = useQueryClient()
@@ -12,9 +17,9 @@ export function MidiMacroPanel() {
   const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [macroId, setMacroId] = useState('macro_1')
   const [name, setName] = useState('Macro 1')
-  const [triggerCc, setTriggerCc] = useState(1)
+  const [triggerCc, setTriggerCc] = useState('1')
   const [destination, setDestination] = useState('dst')
-  const [value, setValue] = useState(100)
+  const [value, setValue] = useState('100')
   const [enabled, setEnabled] = useState(true)
 
   const macrosQuery = useQuery({
@@ -25,20 +30,23 @@ export function MidiMacroPanel() {
 
   const saveMacro = useMutation({
     mutationFn: async () =>
-      midiHubApi.upsertMacro({
-        macro_id: macroId.trim(),
-        name: name.trim() || macroId.trim(),
-        trigger: { message_type: 'control_change', cc: triggerCc },
-        actions: [
-          {
-            target: destination.trim() || 'dst',
-            action: 'send_midi',
-            delay_ms: 0,
-            params: { message: [0xb0, triggerCc, Math.max(0, Math.min(127, value))] },
-          },
-        ],
-        enabled,
-      }, nodeId),
+      midiHubApi.upsertMacro(
+        {
+          macro_id: macroId.trim(),
+          name: name.trim() || macroId.trim(),
+          trigger: { message_type: 'control_change', cc: clampMidiValue(triggerCc, 127) },
+          actions: [
+            {
+              target: destination.trim() || 'dst',
+              action: 'send_midi',
+              delay_ms: 0,
+              params: { message: [0xb0, clampMidiValue(triggerCc, 127), clampMidiValue(value, 127)] },
+            },
+          ],
+          enabled,
+        },
+        nodeId,
+      ),
     onSuccess: () => {
       pushToast('Macro saved', 'success')
       void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'macros'] })
@@ -62,69 +70,82 @@ export function MidiMacroPanel() {
   const macros = useMemo(() => macrosQuery.data?.macros ?? [], [macrosQuery.data?.macros])
 
   return (
-    <div className="stack" style={{ gap: 12 }}>
-      <div className="grid grid-3" style={{ gap: 10 }}>
-        <TextField label="Macro ID" size="small" value={macroId} onChange={(event) => setMacroId(event.target.value)} />
-        <TextField label="Name" size="small" value={name} onChange={(event) => setName(event.target.value)} />
-        <NumberInput
-          label="Trigger CC"
-          value={triggerCc}
-          min={0}
-          max={127}
-          step={1}
-          profile="integer"
-          onChange={(nextValue) => setTriggerCc(Math.max(0, Math.min(127, nextValue)))}
-          size="small"
-          fullWidth
-        />
-        <TextField
-          label="Destination Port"
-          size="small"
-          value={destination}
-          onChange={(event) => setDestination(event.target.value)}
-        />
-        <NumberInput
-          label="CC Value"
-          value={value}
-          min={0}
-          max={127}
-          step={1}
-          profile="integer"
-          onChange={(nextValue) => setValue(Math.max(0, Math.min(127, nextValue)))}
-          size="small"
-          fullWidth
-        />
-        <div className="flex" style={{ alignItems: 'center', gap: 8 }}>
-          <FormControlLabel
-            control={<Switch checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />}
-            label="Enabled"
+    <div className="midi-hub-panel-grid--2">
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
+          <Tag type={macros.length > 0 ? 'green' : 'warm-gray'}>{`Macros ${macros.length}`}</Tag>
+          <Tag type={enabled ? 'green' : 'warm-gray'}>{enabled ? 'Enabled' : 'Disabled'}</Tag>
+        </div>
+
+        <div className="midi-hub-form-grid">
+          <TextInput
+            id="midi-hub-macro-id"
+            labelText="Macro ID"
+            value={macroId}
+            onChange={(event) => setMacroId(event.currentTarget.value)}
           />
-          <Button variant="contained" size="small" onClick={() => saveMacro.mutate()} disabled={!macroId.trim()}>
-            Save Macro
+          <TextInput
+            id="midi-hub-macro-name"
+            labelText="Name"
+            value={name}
+            onChange={(event) => setName(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-macro-trigger-cc"
+            labelText="Trigger CC"
+            value={triggerCc}
+            onChange={(event) => setTriggerCc(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-macro-destination"
+            labelText="Destination port"
+            value={destination}
+            onChange={(event) => setDestination(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-macro-value"
+            labelText="CC value"
+            value={value}
+            onChange={(event) => setValue(event.currentTarget.value)}
+          />
+        </div>
+
+        <div className="midi-hub-actions">
+          <Checkbox
+            id="midi-hub-macro-enabled"
+            labelText="Enabled"
+            checked={enabled}
+            onChange={(_, data) => setEnabled(data.checked)}
+          />
+          <Button size="sm" kind="primary" onClick={() => saveMacro.mutate()} disabled={!macroId.trim()}>
+            Save macro
           </Button>
         </div>
       </div>
 
-      <div className="stack" style={{ gap: 8 }}>
-        {macros.length === 0 ? <p className="subtitle">No macros yet.</p> : null}
-        {macros.map((macro) => (
-          <div key={macro.macro_id} className="card" style={{ padding: 12 }}>
-            <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div>
-                <strong>{macro.name}</strong> <code>{macro.macro_id}</code>
-                <div className="subtitle">Actions: {macro.actions.length} | Enabled: {macro.enabled ? 'yes' : 'no'}</div>
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-record-list">
+          {macros.length === 0 ? <div className="midi-hub-empty-state">No macros saved.</div> : null}
+          {macros.map((macro) => (
+            <div key={macro.macro_id} className="midi-hub-record-row">
+              <div className="midi-hub-record-copy">
+                <strong>{macro.name}</strong>
+                <div className="midi-hub-record-meta">
+                  <code>{macro.macro_id}</code>
+                  {` · actions ${macro.actions.length} · ${macro.enabled ? 'enabled' : 'disabled'}`}
+                </div>
               </div>
-              <div className="flex" style={{ gap: 8 }}>
-                <Button size="small" variant="outlined" onClick={() => triggerMacro.mutate(macro.macro_id)}>
+              <div className="midi-hub-record-actions">
+                <Button size="sm" kind="secondary" onClick={() => triggerMacro.mutate(macro.macro_id)}>
                   Trigger
                 </Button>
-                <Button size="small" color="error" onClick={() => deleteMacro.mutate(macro.macro_id)}>
+                <Button size="sm" kind="danger--tertiary" onClick={() => deleteMacro.mutate(macro.macro_id)}>
                   Delete
                 </Button>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )

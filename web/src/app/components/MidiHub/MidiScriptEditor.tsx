@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, MenuItem, Select, TextField } from '@mui/material'
+import { Button, Select, SelectItem, Tag, TextArea, TextInput } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -16,6 +16,7 @@ export function MidiScriptEditor() {
   const { nodeId, scopeKey } = useMidiHubNodeScope()
 
   const [selectedScriptId, setSelectedScriptId] = useState('')
+  const [selectedExampleId, setSelectedExampleId] = useState('')
   const [scriptId, setScriptId] = useState('')
   const [scriptName, setScriptName] = useState('')
   const [scriptCode, setScriptCode] = useState('def main(event):\n    log.info("hello from MAP2")\n')
@@ -41,7 +42,7 @@ export function MidiScriptEditor() {
 
   const selectedScript = useMemo(
     () => (scriptsQuery.data?.scripts ?? []).find((script) => script.script_id === selectedScriptId) ?? null,
-    [scriptsQuery.data?.scripts, selectedScriptId]
+    [scriptsQuery.data?.scripts, selectedScriptId],
   )
 
   useEffect(() => {
@@ -60,12 +61,15 @@ export function MidiScriptEditor() {
 
   const upsertMutation = useMutation({
     mutationFn: async () =>
-      midiHubApi.upsertScript({
-        script_id: sanitizeScriptId(scriptId || scriptName),
-        name: scriptName || sanitizeScriptId(scriptId || 'midi-script'),
-        code: scriptCode,
-        enabled: true,
-      }, nodeId),
+      midiHubApi.upsertScript(
+        {
+          script_id: sanitizeScriptId(scriptId || scriptName),
+          name: scriptName || sanitizeScriptId(scriptId || 'midi-script'),
+          code: scriptCode,
+          enabled: true,
+        },
+        nodeId,
+      ),
     onSuccess: async (payload) => {
       pushToast('Script saved', 'success')
       setSelectedScriptId(payload.script.script_id)
@@ -132,112 +136,124 @@ export function MidiScriptEditor() {
   const applyExample = (scriptIdValue: string) => {
     const example = (examplesQuery.data?.examples ?? []).find((item) => item.script_id === scriptIdValue)
     if (!example) return
+    setSelectedExampleId(scriptIdValue)
     setScriptId(example.script_id)
     setScriptName(example.name)
     setScriptCode(example.code)
   }
 
   return (
-    <div className="grid two" style={{ gap: 12 }}>
-      <div className="card" style={{ margin: 0 }}>
-        <h4 style={{ marginTop: 0 }}>Scripts</h4>
-        <div className="stack" style={{ gap: 8 }}>
+    <div className="midi-hub-panel-grid--2">
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
+          <Tag type={(scriptsQuery.data?.scripts?.length ?? 0) > 0 ? 'green' : 'warm-gray'}>
+            {`Scripts ${scriptsQuery.data?.scripts?.length ?? 0}`}
+          </Tag>
+          {selectedScript ? <Tag type={selectedScript.enabled ? 'green' : 'warm-gray'}>{selectedScript.enabled ? 'Enabled' : 'Disabled'}</Tag> : null}
+        </div>
+
+        <div className="midi-hub-form-grid">
           <Select
-            size="small"
-            displayEmpty
+            id="midi-hub-script-select"
+            labelText="Saved scripts"
             value={selectedScriptId}
-            onChange={(event) => setSelectedScriptId(String(event.target.value))}
+            onChange={(event) => setSelectedScriptId(event.currentTarget.value)}
           >
-            <MenuItem value="">Select script</MenuItem>
+            <SelectItem value="" text="Select script" />
             {(scriptsQuery.data?.scripts ?? []).map((script) => (
-              <MenuItem key={script.script_id} value={script.script_id}>
-                {script.name} ({script.enabled ? 'enabled' : 'disabled'})
-              </MenuItem>
+              <SelectItem
+                key={script.script_id}
+                value={script.script_id}
+                text={`${script.name} (${script.enabled ? 'enabled' : 'disabled'})`}
+              />
             ))}
           </Select>
 
-          <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <Select size="small" displayEmpty value="" onChange={(event) => applyExample(String(event.target.value))}>
-              <MenuItem value="">Load example</MenuItem>
-              {(examplesQuery.data?.examples ?? []).map((example) => (
-                <MenuItem key={example.script_id} value={example.script_id}>
-                  {example.name}
-                </MenuItem>
-              ))}
-            </Select>
-            <Button size="small" variant="outlined" onClick={() => {
+          <Select
+            id="midi-hub-script-example"
+            labelText="Example scripts"
+            value={selectedExampleId}
+            onChange={(event) => applyExample(event.currentTarget.value)}
+          >
+            <SelectItem value="" text="Load example" />
+            {(examplesQuery.data?.examples ?? []).map((example) => (
+              <SelectItem key={example.script_id} value={example.script_id} text={example.name} />
+            ))}
+          </Select>
+
+          <TextInput
+            id="midi-hub-script-id"
+            labelText="Script ID"
+            value={scriptId}
+            onChange={(event) => setScriptId(event.currentTarget.value)}
+            placeholder="midi-script"
+          />
+
+          <TextInput
+            id="midi-hub-script-name"
+            labelText="Script name"
+            value={scriptName}
+            onChange={(event) => setScriptName(event.currentTarget.value)}
+            placeholder="MIDI Script"
+          />
+        </div>
+
+        <TextArea
+          id="midi-hub-script-event-json"
+          labelText="Test event JSON"
+          value={eventJson}
+          onChange={(event) => setEventJson(event.currentTarget.value)}
+          rows={4}
+        />
+
+        <div className="midi-hub-actions">
+          <Button
+            size="sm"
+            kind="ghost"
+            onClick={() => {
               setSelectedScriptId('')
+              setSelectedExampleId('')
               setScriptId('')
               setScriptName('')
               setScriptCode('def main(event):\n    log.info("hello from MAP2")\n')
-            }}>
-              New
-            </Button>
-          </div>
-
-          <TextField
-            size="small"
-            label="Script ID"
-            value={scriptId}
-            onChange={(event) => setScriptId(event.target.value)}
-            placeholder="midi-script"
-          />
-          <TextField
-            size="small"
-            label="Name"
-            value={scriptName}
-            onChange={(event) => setScriptName(event.target.value)}
-            placeholder="MIDI Script"
-          />
-          <TextField
-            size="small"
-            label="Event JSON"
-            value={eventJson}
-            onChange={(event) => setEventJson(event.target.value)}
-            multiline
-            minRows={2}
-          />
-
-          <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <Button size="small" variant="contained" disabled={!scriptCode.trim()} onClick={() => upsertMutation.mutate()}>
-              Save
-            </Button>
-            <Button size="small" variant="outlined" disabled={!selectedScriptId} onClick={() => runMutation.mutate()}>
-              Run
-            </Button>
-            <Button size="small" variant="outlined" disabled={!selectedScriptId} onClick={() => triggerMutation.mutate()}>
-              Trigger
-            </Button>
-            <Button size="small" variant="outlined" color="warning" disabled={!selectedScriptId} onClick={() => stopMutation.mutate()}>
-              Stop
-            </Button>
-            <Button size="small" variant="outlined" disabled={!selectedScriptId} onClick={() => toggleMutation.mutate()}>
-              {selectedScript?.enabled ? 'Disable' : 'Enable'}
-            </Button>
-            <Button size="small" color="error" disabled={!selectedScriptId} onClick={() => deleteMutation.mutate()}>
-              Delete
-            </Button>
-          </div>
+            }}
+          >
+            New script
+          </Button>
+          <Button size="sm" kind="primary" disabled={!scriptCode.trim()} onClick={() => upsertMutation.mutate()}>
+            Save
+          </Button>
+          <Button size="sm" kind="secondary" disabled={!selectedScriptId} onClick={() => runMutation.mutate()}>
+            Run
+          </Button>
+          <Button size="sm" kind="secondary" disabled={!selectedScriptId} onClick={() => triggerMutation.mutate()}>
+            Trigger
+          </Button>
+          <Button size="sm" kind="ghost" disabled={!selectedScriptId} onClick={() => toggleMutation.mutate()}>
+            {selectedScript?.enabled ? 'Disable' : 'Enable'}
+          </Button>
+          <Button size="sm" kind="danger--ghost" disabled={!selectedScriptId} onClick={() => stopMutation.mutate()}>
+            Stop timers
+          </Button>
+          <Button size="sm" kind="danger--tertiary" disabled={!selectedScriptId} onClick={() => deleteMutation.mutate()}>
+            Delete
+          </Button>
         </div>
       </div>
 
-      <div className="card" style={{ margin: 0 }}>
-        <h4 style={{ marginTop: 0 }}>Editor</h4>
-        <div className="stack" style={{ gap: 8 }}>
-          <TextField
-            size="small"
-            label="Python Script"
-            value={scriptCode}
-            onChange={(event) => setScriptCode(event.target.value)}
-            multiline
-            minRows={16}
-            maxRows={24}
-          />
-          <h4 style={{ margin: 0 }}>Console</h4>
-          <pre style={{ margin: 0, minHeight: 180, maxHeight: 260, overflowY: 'auto', padding: 10, borderRadius: 8, background: '#0f172a', color: '#e2e8f0' }}>
-            {(consoleQuery.data?.lines ?? []).join('\n') || 'No output yet.'}
-          </pre>
+      <div className="midi-hub-mini-surface">
+        <TextArea
+          id="midi-hub-script-code"
+          labelText="Python source"
+          value={scriptCode}
+          onChange={(event) => setScriptCode(event.currentTarget.value)}
+          rows={18}
+        />
+
+        <div className="midi-hub-toolbar">
+          <Tag type="cool-gray">Console</Tag>
         </div>
+        <pre className="midi-hub-code-block">{(consoleQuery.data?.lines ?? []).join('\n') || 'No output yet.'}</pre>
       </div>
     </div>
   )

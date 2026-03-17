@@ -11,7 +11,6 @@ import {
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
-import { NumberInput } from '../Controls/NumberInput'
 
 export type HubPort = {
   port_id: string
@@ -88,6 +87,33 @@ const defaultMapperState: MapperState = {
   invert: false,
   curve: 'Linear',
   keepOriginal: false,
+}
+
+interface NumericFieldProps {
+  id: string
+  label: string
+  value: number
+  min: number
+  max: number
+  onChange: (nextValue: number) => void
+}
+
+function NumericField({ id, label, value, min, max, onChange }: NumericFieldProps) {
+  return (
+    <TextInput
+      id={id}
+      labelText={label}
+      value={String(value)}
+      onChange={(event) => {
+        const parsed = Number.parseInt(event.currentTarget.value, 10)
+        if (Number.isNaN(parsed)) {
+          onChange(min)
+          return
+        }
+        onChange(Math.max(min, Math.min(max, parsed)))
+      }}
+    />
+  )
 }
 
 function createInitialMappers(): MapperState[] {
@@ -226,8 +252,8 @@ export function MidiHubQuickRouterCard() {
     <div className="midi-hub-workbench-card">
       <div className="midi-hub-workbench-card__header">
         <div>
-          <h4>Quick router</h4>
-          <p>Fast source-to-destination toggles for the first working path or a support rollback state.</p>
+          <h4>Quick routing</h4>
+          <p>Fast source-to-destination toggles for the first working path or a rollback state.</p>
         </div>
         <div className="midi-hub-workbench-card__actions">
           <Button size="sm" kind="tertiary" onClick={() => setRouterPortWindowOpen((value) => !value)}>
@@ -367,8 +393,8 @@ export function MidiHubFilterPlannerCard() {
     <div className="midi-hub-workbench-card">
       <div className="midi-hub-workbench-card__header">
         <div>
-          <h4>Filter blueprint</h4>
-          <p>Design what the destination should never see before you encode it in routes or scripts.</p>
+          <h4>Message filter</h4>
+          <p>Choose the channels and message families that should pass before you commit the route logic.</p>
         </div>
         <Button size="sm" kind="tertiary" renderIcon={Renew} onClick={() => {
           setFilterChannels([])
@@ -469,8 +495,8 @@ export function MidiHubMapperPlannerCard() {
     <div className="midi-hub-workbench-card">
       <div className="midi-hub-workbench-card__header">
         <div>
-          <h4>Mapper blueprint</h4>
-          <p>Stage source-to-target transforms before you commit them to a runtime script or device profile.</p>
+          <h4>Message map</h4>
+          <p>Stage source-to-target translation ranges before you commit them to scripts or device profiles.</p>
         </div>
         <div className="midi-hub-workbench-card__actions">
           <Button size="sm" kind="tertiary" onClick={resetSelectedMapper}>
@@ -529,58 +555,52 @@ export function MidiHubMapperPlannerCard() {
                 <SelectItem key={message} value={message} text={message} />
               ))}
             </Select>
-            <NumberInput
+            <NumericField
+              id="midi-hub-source-channel-min"
               label="Channel min"
-              size="small"
               value={mapper.sourceChannelMin}
               min={1}
               max={16}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ sourceChannelMin: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-source-channel-max"
               label="Channel max"
-              size="small"
               value={mapper.sourceChannelMax}
               min={1}
               max={16}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ sourceChannelMax: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-source-value1-min"
               label="Value 1 min"
-              size="small"
               value={mapper.sourceValue1Min}
               min={0}
               max={127}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ sourceValue1Min: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-source-value1-max"
               label="Value 1 max"
-              size="small"
               value={mapper.sourceValue1Max}
               min={0}
               max={127}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ sourceValue1Max: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-source-value2-min"
               label="Value 2 min"
-              size="small"
               value={mapper.sourceValue2Min}
               min={0}
               max={127}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ sourceValue2Min: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-source-value2-max"
               label="Value 2 max"
-              size="small"
               value={mapper.sourceValue2Max}
               min={0}
               max={127}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ sourceValue2Max: nextValue })}
             />
           </div>
@@ -600,58 +620,52 @@ export function MidiHubMapperPlannerCard() {
                 <SelectItem key={message} value={message} text={message} />
               ))}
             </Select>
-            <NumberInput
+            <NumericField
+              id="midi-hub-target-channel-min"
               label="Channel min"
-              size="small"
               value={mapper.targetChannelMin}
               min={1}
               max={16}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ targetChannelMin: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-target-channel-max"
               label="Channel max"
-              size="small"
               value={mapper.targetChannelMax}
               min={1}
               max={16}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ targetChannelMax: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-target-value1-min"
               label="Value 1 min"
-              size="small"
               value={mapper.targetValue1Min}
               min={0}
               max={127}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ targetValue1Min: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-target-value1-max"
               label="Value 1 max"
-              size="small"
               value={mapper.targetValue1Max}
               min={0}
               max={127}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ targetValue1Max: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-target-value2-min"
               label="Value 2 min"
-              size="small"
               value={mapper.targetValue2Min}
               min={0}
               max={127}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ targetValue2Min: nextValue })}
             />
-            <NumberInput
+            <NumericField
+              id="midi-hub-target-value2-max"
               label="Value 2 max"
-              size="small"
               value={mapper.targetValue2Max}
               min={0}
               max={127}
-              showBounds={false}
               onChange={(nextValue) => setMapper({ targetValue2Max: nextValue })}
             />
           </div>

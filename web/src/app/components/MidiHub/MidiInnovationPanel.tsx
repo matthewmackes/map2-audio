@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AILabel, AILabelContent } from '@carbon/react'
-import { Button, FormControlLabel, Switch, TextField } from '@mui/material'
+import { AILabel, AILabelContent, Button, Checkbox, Tag, TextInput } from '@carbon/react'
 import { midiHubApi, type MidiHubLearnSuggestion } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -34,20 +33,23 @@ export function MidiInnovationPanel() {
 
   const requestLearnSuggestions = useMutation({
     mutationFn: async () =>
-      midiHubApi.getLearnSuggestions({
-        parameter_id: parameterId.trim(),
-        chain_context: {
-          active_plugins: activePlugins
-            .split(',')
-            .map((value) => value.trim())
-            .filter(Boolean),
-          bypassed_plugins: bypassedPlugins
-            .split(',')
-            .map((value) => value.trim())
-            .filter(Boolean),
-          split_targets: ['A', 'B'],
+      midiHubApi.getLearnSuggestions(
+        {
+          parameter_id: parameterId.trim(),
+          chain_context: {
+            active_plugins: activePlugins
+              .split(',')
+              .map((value) => value.trim())
+              .filter(Boolean),
+            bypassed_plugins: bypassedPlugins
+              .split(',')
+              .map((value) => value.trim())
+              .filter(Boolean),
+            split_targets: ['A', 'B'],
+          },
         },
-      }, nodeId),
+        nodeId,
+      ),
     onSuccess: (payload) => {
       setLearnSuggestions(payload.suggestions)
       pushToast('Learn suggestions updated', 'success')
@@ -56,7 +58,8 @@ export function MidiInnovationPanel() {
   })
 
   const upsertMeshPeer = useMutation({
-    mutationFn: async () => midiHubApi.upsertMeshPeer({ peer_id: meshPeerId.trim(), base_url: meshBaseUrl.trim(), active: true }, nodeId),
+    mutationFn: async () =>
+      midiHubApi.upsertMeshPeer({ peer_id: meshPeerId.trim(), base_url: meshBaseUrl.trim(), active: true }, nodeId),
     onSuccess: () => {
       pushToast('Mesh peer saved', 'success')
       void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'mesh'] })
@@ -84,14 +87,18 @@ export function MidiInnovationPanel() {
 
   const upsertShadow = useMutation({
     mutationFn: async () =>
-      midiHubApi.upsertDeviceShadow(shadowDeviceId.trim(), {
-        expected_state: {
-          connected: true,
-          responding: true,
-          health: shadowHealth,
+      midiHubApi.upsertDeviceShadow(
+        shadowDeviceId.trim(),
+        {
+          expected_state: {
+            connected: true,
+            responding: true,
+            health: shadowHealth,
+          },
+          source: 'ui',
         },
-        source: 'ui',
-      }, nodeId),
+        nodeId,
+      ),
     onSuccess: (payload) => {
       pushToast(payload.drift_detected ? 'Shadow drift detected' : 'Shadow state saved', payload.drift_detected ? 'warn' : 'success')
       void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'shadow'] })
@@ -109,98 +116,124 @@ export function MidiInnovationPanel() {
   const driftCount = useMemo(() => Number(shadowQuery.data?.count ?? 0), [shadowQuery.data?.count])
 
   return (
-    <div className="stack" style={{ gap: 14 }}>
-      <div className="card" style={{ padding: 12 }}>
-        <div className="flex" style={{ justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-          <h4 style={{ marginTop: 0, marginBottom: 0 }}>AI-assisted MIDI learn and plugin splits</h4>
+    <div className="midi-hub-panel-grid--3">
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
           <AILabel kind="inline" size="mini" textLabel="AI">
             <AILabelContent>
-              Suggested CC mappings are generated from the active chain context and should be reviewed before applying.
+              Suggested control mappings are generated from the active chain context and should be reviewed before use.
             </AILabelContent>
           </AILabel>
+          <Tag type="cool-gray">{`Suggestions ${learnSuggestions.length}`}</Tag>
         </div>
-        <div className="grid grid-3" style={{ gap: 8 }}>
-          <TextField label="Parameter" size="small" value={parameterId} onChange={(event) => setParameterId(event.target.value)} />
-          <TextField
-            label="Active Plugins (csv)"
-            size="small"
+
+        <div className="midi-hub-form-grid">
+          <TextInput
+            id="midi-hub-innovation-parameter"
+            labelText="Parameter"
+            value={parameterId}
+            onChange={(event) => setParameterId(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-innovation-active"
+            labelText="Active plug-ins"
             value={activePlugins}
-            onChange={(event) => setActivePlugins(event.target.value)}
+            onChange={(event) => setActivePlugins(event.currentTarget.value)}
           />
-          <TextField
-            label="Bypassed Plugins (csv)"
-            size="small"
+          <TextInput
+            id="midi-hub-innovation-bypassed"
+            labelText="Bypassed plug-ins"
             value={bypassedPlugins}
-            onChange={(event) => setBypassedPlugins(event.target.value)}
+            onChange={(event) => setBypassedPlugins(event.currentTarget.value)}
           />
         </div>
-        <div className="flex" style={{ marginTop: 8, gap: 8, alignItems: 'center' }}>
-          <Button size="small" variant="contained" onClick={() => requestLearnSuggestions.mutate()}>
-            Suggest
+
+        <div className="midi-hub-actions">
+          <Button size="sm" kind="primary" onClick={() => requestLearnSuggestions.mutate()}>
+            Suggest mappings
           </Button>
-          <span className="subtitle">Suggestions: {learnSuggestions.length}</span>
         </div>
-        {learnSuggestions.length > 0 ? (
-          <div className="stack" style={{ marginTop: 8, gap: 6 }}>
-            {learnSuggestions.map((row, index) => (
-              <div key={`${row.cc_number}-${index}`} className="subtitle">
-                CC{row.cc_number} Ch{row.channel} ({Math.round(row.confidence * 100)}%) - {row.reason}
+
+        <div className="midi-hub-record-list">
+          {learnSuggestions.length === 0 ? <div className="midi-hub-empty-state">No AI suggestions generated.</div> : null}
+          {learnSuggestions.map((row, index) => (
+            <div key={`${row.cc_number}-${index}`} className="midi-hub-record-row">
+              <div className="midi-hub-record-copy">
+                <strong>{`CC ${row.cc_number} on channel ${row.channel}`}</strong>
+                <div className="midi-hub-record-meta">{`${Math.round(row.confidence * 100)}% confidence · ${row.reason}`}</div>
               </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="card" style={{ padding: 12 }}>
-        <h4 style={{ marginTop: 0 }}>Network MIDI Mesh</h4>
-        <div className="grid grid-3" style={{ gap: 8 }}>
-          <TextField label="Peer ID" size="small" value={meshPeerId} onChange={(event) => setMeshPeerId(event.target.value)} />
-          <TextField label="Peer Base URL" size="small" value={meshBaseUrl} onChange={(event) => setMeshBaseUrl(event.target.value)} />
-          <div className="flex" style={{ alignItems: 'center', gap: 8 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={meshForwardingEnabled}
-                  onChange={(event) => {
-                    const next = event.target.checked
-                    setMeshForwardingEnabled(next)
-                    toggleMeshForwarding.mutate(next)
-                  }}
-                />
-              }
-              label="Forward"
-            />
-            <Button size="small" variant="outlined" onClick={() => upsertMeshPeer.mutate()}>
-              Save Peer
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => publishRoutes.mutate()}>
-              Publish Routes
-            </Button>
-          </div>
+            </div>
+          ))}
         </div>
-        <div className="subtitle" style={{ marginTop: 8 }}>Peers: {peerCount}</div>
       </div>
 
-      <div className="card" style={{ padding: 12 }}>
-        <h4 style={{ marginTop: 0 }}>Device Shadow Sync + Drift</h4>
-        <div className="grid grid-3" style={{ gap: 8 }}>
-          <TextField
-            label="Device ID"
-            size="small"
-            value={shadowDeviceId}
-            onChange={(event) => setShadowDeviceId(event.target.value)}
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
+          <Tag type={peerCount > 0 ? 'green' : 'warm-gray'}>{`Peers ${peerCount}`}</Tag>
+        </div>
+
+        <div className="midi-hub-form-grid">
+          <TextInput
+            id="midi-hub-innovation-peer-id"
+            labelText="Peer ID"
+            value={meshPeerId}
+            onChange={(event) => setMeshPeerId(event.currentTarget.value)}
           />
-          <TextField label="Expected Health" size="small" value={shadowHealth} onChange={(event) => setShadowHealth(event.target.value)} />
-          <div className="flex" style={{ alignItems: 'center', gap: 8 }}>
-            <Button size="small" variant="contained" onClick={() => upsertShadow.mutate()}>
-              Sync Shadow
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => clearShadow.mutate()}>
-              Clear Drift
-            </Button>
-          </div>
+          <TextInput
+            id="midi-hub-innovation-peer-url"
+            labelText="Peer base URL"
+            value={meshBaseUrl}
+            onChange={(event) => setMeshBaseUrl(event.currentTarget.value)}
+          />
         </div>
-        <div className="subtitle" style={{ marginTop: 8 }}>Drift events: {driftCount}</div>
+
+        <div className="midi-hub-actions">
+          <Checkbox
+            id="midi-hub-innovation-forwarding"
+            labelText="Forward mesh traffic"
+            checked={meshForwardingEnabled}
+            onChange={(_, data) => {
+              setMeshForwardingEnabled(data.checked)
+              toggleMeshForwarding.mutate(data.checked)
+            }}
+          />
+          <Button size="sm" kind="secondary" onClick={() => upsertMeshPeer.mutate()}>
+            Save peer
+          </Button>
+          <Button size="sm" kind="ghost" onClick={() => publishRoutes.mutate()}>
+            Publish routes
+          </Button>
+        </div>
+      </div>
+
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
+          <Tag type={driftCount > 0 ? 'red' : 'cool-gray'}>{`Drift events ${driftCount}`}</Tag>
+        </div>
+
+        <div className="midi-hub-form-grid">
+          <TextInput
+            id="midi-hub-innovation-shadow-device"
+            labelText="Shadow device ID"
+            value={shadowDeviceId}
+            onChange={(event) => setShadowDeviceId(event.currentTarget.value)}
+          />
+          <TextInput
+            id="midi-hub-innovation-shadow-health"
+            labelText="Expected health"
+            value={shadowHealth}
+            onChange={(event) => setShadowHealth(event.currentTarget.value)}
+          />
+        </div>
+
+        <div className="midi-hub-actions">
+          <Button size="sm" kind="secondary" onClick={() => upsertShadow.mutate()}>
+            Sync shadow
+          </Button>
+          <Button size="sm" kind="danger--tertiary" onClick={() => clearShadow.mutate()}>
+            Clear drift
+          </Button>
+        </div>
       </div>
     </div>
   )

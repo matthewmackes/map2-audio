@@ -289,45 +289,43 @@ describe('MidiHubPage', () => {
 
     await screen.findByRole('heading', { name: 'MIDI Hub' })
     expect(screen.getByText('Routing Matrix Mock')).toBeTruthy()
+    expect(screen.getByText('Traffic Monitor Mock')).toBeTruthy()
     expect(screen.getByText('Quick Router Mock')).toBeTruthy()
+    expect(screen.getByText('Preset Manager Mock')).toBeTruthy()
+    expect(screen.getByText('Clock Panel Mock')).toBeTruthy()
+    expect(screen.getByText('Recorder Panel Mock')).toBeTruthy()
+    expect(screen.getByText('Network Panel Mock')).toBeTruthy()
+    expect(screen.getByText('MIDI 2 Panel Mock')).toBeTruthy()
+    expect(screen.getByText('Filter Planner Mock')).toBeTruthy()
+    expect(screen.getByText('Mapper Planner Mock')).toBeTruthy()
+    expect(screen.getByText('Script Editor Mock')).toBeTruthy()
+    expect(screen.getByText('Macro Panel Mock')).toBeTruthy()
+    expect(screen.getByText('Scheduler Panel Mock')).toBeTruthy()
+    expect(screen.getByText('Innovation Panel Mock')).toBeTruthy()
     expect(screen.queryByText(/wizard and guided flows/i)).toBeNull()
   })
 
   it('shows live status tags from the API', async () => {
     renderPage()
 
-    expect(await screen.findByText('Ports 2')).toBeTruthy()
+    expect(await screen.findByText('Inputs 1')).toBeTruthy()
+    expect(screen.getByText('Outputs 1')).toBeTruthy()
     expect(screen.getByText('Routes 1')).toBeTruthy()
     expect(screen.getByText('Presets 2')).toBeTruthy()
-    expect(screen.getByText('Clock live')).toBeTruthy()
-    expect(screen.getByText('Sessions 1')).toBeTruthy()
-    expect(screen.getByText('MIDI 2.0 devices 1')).toBeTruthy()
+    expect(screen.getByText('Clock running')).toBeTruthy()
+    expect(screen.getByText('RTP sessions 1')).toBeTruthy()
+    expect(screen.getByText('MIDI 2 devices 1')).toBeTruthy()
   })
 
-  it('switches through all four workbench tabs', async () => {
+  it('renders the advanced workflow sections without tab navigation', async () => {
     renderPage()
 
     await screen.findByText('Routing Matrix Mock')
-
-    fireEvent.click(screen.getByRole('tab', { name: /Filters & Automation/i }))
-    expect(await screen.findByText('Filter Planner Mock')).toBeTruthy()
-    expect(screen.getByText('Mapper Planner Mock')).toBeTruthy()
-    expect(screen.getByText('Script Editor Mock')).toBeTruthy()
-    expect(screen.getByText('Macro Panel Mock')).toBeTruthy()
-    expect(screen.getByText('Scheduler Panel Mock')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('tab', { name: /Clock & Diagnostics/i }))
-    expect(await screen.findByText('Clock Panel Mock')).toBeTruthy()
-    expect(screen.getByText('Traffic Monitor Mock')).toBeTruthy()
-    expect(screen.getByText('Recorder Panel Mock')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('tab', { name: /MIDI 2\.0 & Labs/i }))
-    expect(await screen.findByText('MIDI 2 Panel Mock')).toBeTruthy()
-    expect(screen.getByText('Innovation Panel Mock')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('tab', { name: /Setup & Routing/i }))
-    expect(await screen.findByText('Network Panel Mock')).toBeTruthy()
-    expect(screen.getByText('Preset Manager Mock')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Signal path' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Show control' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Network and protocol' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Message processing and automation' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Advanced and experimental' })).toBeTruthy()
   })
 
   it('recalls the selected preset from the header toolbar', async () => {
@@ -335,7 +333,7 @@ describe('MidiHubPage', () => {
 
     await screen.findByText('Presets 2')
 
-    fireEvent.change(screen.getByLabelText('Quick preset recall'), {
+    fireEvent.change(screen.getByLabelText('Preset recall'), {
       target: { value: 'baseline' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Recall preset' }))

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, MenuItem, Select, TextField } from '@mui/material'
+import { Button, Select, SelectItem, Tag, TextInput } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -32,14 +32,17 @@ export function MidiClockPanel() {
 
   const saveMutation = useMutation({
     mutationFn: async () =>
-      midiHubApi.updateClockConfig({
-        bpm: Math.max(20, Math.min(300, Number.parseFloat(bpm) || 120)),
-        source_mode: sourceMode,
-        output_ports: outputPorts
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean),
-      }, nodeId),
+      midiHubApi.updateClockConfig(
+        {
+          bpm: Math.max(20, Math.min(300, Number.parseFloat(bpm) || 120)),
+          source_mode: sourceMode,
+          output_ports: outputPorts
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean),
+        },
+        nodeId,
+      ),
     onSuccess: () => {
       pushToast('Clock settings updated', 'success')
       void invalidateClock()
@@ -82,52 +85,81 @@ export function MidiClockPanel() {
   const clock = clockQuery.data
 
   return (
-    <div className="grid two" style={{ gap: 12 }}>
-      <div className="card" style={{ margin: 0 }}>
-        <h4 style={{ marginTop: 0 }}>Clock Status</h4>
-        <div className="stack" style={{ gap: 8 }}>
-          <div className="list-item">Running: <strong>{clock?.running ? 'Yes' : 'No'}</strong></div>
-          <div className="list-item">Configured BPM: <strong>{clock?.bpm?.toFixed(2) ?? '120.00'}</strong></div>
-          <div className="list-item">Detected BPM: <strong>{clock?.detected_bpm ? clock.detected_bpm.toFixed(2) : 'N/A'}</strong></div>
-          <div className="list-item">Song Position: <strong>{clock?.song_position ?? 0}</strong></div>
-          <div className="list-item">Source Mode: <strong>{clock?.source_mode ?? 'internal'}</strong></div>
+    <div className="midi-hub-panel-grid--2">
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-toolbar">
+          <Tag type={clock?.running ? 'green' : 'warm-gray'}>
+            {clock?.running ? 'Running' : 'Stopped'}
+          </Tag>
+          <Tag type="cool-gray">{`Source ${clock?.source_mode ?? 'internal'}`}</Tag>
+        </div>
+
+        <div className="midi-hub-stat-grid">
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">Configured BPM</span>
+            <strong className="midi-hub-stat-tile__value">{clock?.bpm?.toFixed(2) ?? '120.00'}</strong>
+          </div>
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">Detected BPM</span>
+            <strong className="midi-hub-stat-tile__value">
+              {clock?.detected_bpm ? clock.detected_bpm.toFixed(2) : 'N/A'}
+            </strong>
+          </div>
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">Song position</span>
+            <strong className="midi-hub-stat-tile__value">{clock?.song_position ?? 0}</strong>
+          </div>
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">Outputs</span>
+            <strong className="midi-hub-stat-tile__value">{clock?.output_ports?.length ?? 0}</strong>
+          </div>
         </div>
       </div>
 
-      <div className="card" style={{ margin: 0 }}>
-        <h4 style={{ marginTop: 0 }}>Clock Controls</h4>
-        <div className="stack" style={{ gap: 8 }}>
-          <TextField
-            size="small"
-            label="BPM"
+      <div className="midi-hub-mini-surface">
+        <div className="midi-hub-form-grid">
+          <TextInput
+            id="midi-hub-clock-bpm"
+            labelText="BPM"
             value={bpm}
-            onChange={(event) => setBpm(event.target.value)}
-            style={{ maxWidth: 180 }}
-          />
-          <Select
-            size="small"
-            value={sourceMode}
-            onChange={(event) => setSourceMode(event.target.value === 'external' ? 'external' : 'internal')}
-            style={{ maxWidth: 220 }}
-          >
-            <MenuItem value="internal">Internal</MenuItem>
-            <MenuItem value="external">External</MenuItem>
-          </Select>
-          <TextField
-            size="small"
-            label="Output Ports (comma-separated)"
-            value={outputPorts}
-            onChange={(event) => setOutputPorts(event.target.value)}
-            placeholder="dst, monitor, looper"
+            onChange={(event) => setBpm(event.currentTarget.value)}
           />
 
-          <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <Button size="small" variant="contained" onClick={() => saveMutation.mutate()}>Save</Button>
-            <Button size="small" variant="outlined" onClick={() => tapMutation.mutate()}>Tap</Button>
-            <Button size="small" variant="outlined" color="success" onClick={() => startMutation.mutate()}>Start</Button>
-            <Button size="small" variant="outlined" color="warning" onClick={() => continueMutation.mutate()}>Continue</Button>
-            <Button size="small" variant="outlined" color="error" onClick={() => stopMutation.mutate()}>Stop</Button>
-          </div>
+          <Select
+            id="midi-hub-clock-source"
+            labelText="Clock source"
+            value={sourceMode}
+            onChange={(event) => setSourceMode(event.currentTarget.value === 'external' ? 'external' : 'internal')}
+          >
+            <SelectItem value="internal" text="Internal" />
+            <SelectItem value="external" text="External" />
+          </Select>
+
+          <TextInput
+            id="midi-hub-clock-outputs"
+            labelText="Output ports"
+            value={outputPorts}
+            onChange={(event) => setOutputPorts(event.currentTarget.value)}
+            placeholder="dst, monitor, looper"
+          />
+        </div>
+
+        <div className="midi-hub-actions">
+          <Button size="sm" kind="primary" onClick={() => saveMutation.mutate()}>
+            Apply clock
+          </Button>
+          <Button size="sm" kind="secondary" onClick={() => tapMutation.mutate()}>
+            Tap
+          </Button>
+          <Button size="sm" kind="ghost" onClick={() => startMutation.mutate()}>
+            Start
+          </Button>
+          <Button size="sm" kind="ghost" onClick={() => continueMutation.mutate()}>
+            Continue
+          </Button>
+          <Button size="sm" kind="danger--tertiary" onClick={() => stopMutation.mutate()}>
+            Stop
+          </Button>
         </div>
       </div>
     </div>

@@ -401,11 +401,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const renderNavItem = (item: TopNavItem) => {
     const Icon = item.icon
+    const isAudioGridTab = item.to === '/juce-grid'
     return (
       <NavLink
         key={item.to}
         to={item.to}
-        className={({ isActive }) => `nav-tab-item${item.iconOnly ? ' nav-tab-item--icon-only' : ''}${isActive ? ' nav-tab-item--active' : ''}`}
+        className={({ isActive }) => `nav-tab-item${item.iconOnly ? ' nav-tab-item--icon-only' : ''}${isAudioGridTab ? ' nav-tab-item--audio-grid' : ''}${isActive ? ' nav-tab-item--active' : ''}`}
         aria-label={item.label}
         title={`${item.description} • ${item.maturity}`}
         style={{ '--tab-color': item.color } as CSSProperties}
@@ -415,10 +416,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           setTopHardwareSubmenuOpen(false)
         }}
       >
-        <span className="nav-tab-icon">
-          <Icon size={16} aria-hidden />
+        <span className={`nav-tab-icon${isAudioGridTab ? ' nav-tab-icon--audio-grid' : ''}`}>
+          <Icon size={isAudioGridTab ? 20 : 16} aria-hidden />
         </span>
-        {!item.iconOnly && <span className="nav-tab-label">{item.label}</span>}
+        {!item.iconOnly && <span className={`nav-tab-label${isAudioGridTab ? ' nav-tab-label--audio-grid' : ''}`}>{item.label}</span>}
       </NavLink>
     )
   }
