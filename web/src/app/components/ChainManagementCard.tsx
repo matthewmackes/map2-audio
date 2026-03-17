@@ -23,6 +23,9 @@ import {
 import { chainsApi } from '../../map2/api'
 import { useToasts } from './Toasts'
 import type { Chain, ChainsResponse } from '../../map2/types'
+import { getPluginChipMeta } from '../utils/pluginChipMeta'
+
+const MAX_VISIBLE_CHIPS = 5
 
 interface FlowSlot {
   id: string
@@ -248,6 +251,31 @@ export function ChainManagementCard({
                         </div>
                       )
                     })()}
+
+                    {/* Plugin chip strip — display-only */}
+                    {chain.plugins.length > 0 && (
+                      <div className="chains-grid-cell-chips">
+                        {chain.plugins.slice(0, MAX_VISIBLE_CHIPS).map((plugin) => {
+                          const category = plugin.plugin_display_type || plugin.name
+                          const { label, tagType } = getPluginChipMeta(category, plugin.bypassed)
+                          // Map Carbon tag types to local CSS classes (no Carbon dep here)
+                          return (
+                            <span
+                              key={`${plugin.uri}-${plugin.position}`}
+                              className={`chains-grid-plugin-chip chains-grid-plugin-chip--${tagType}${plugin.bypassed ? ' is-bypassed' : ''}`}
+                              title={plugin.name || plugin.uri}
+                            >
+                              {label}
+                            </span>
+                          )
+                        })}
+                        {chain.plugins.length > MAX_VISIBLE_CHIPS && (
+                          <span className="chains-grid-plugin-chip chains-grid-plugin-chip--cool-gray">
+                            +{chain.plugins.length - MAX_VISIBLE_CHIPS}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {/* Bottom row: Stats + Actions */}
                     <div className="chains-grid-cell-bottom">

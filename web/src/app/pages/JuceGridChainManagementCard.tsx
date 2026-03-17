@@ -4,7 +4,8 @@ import { Add, Branch, Power, TrashCan } from '@carbon/icons-react'
 import { Button, InlineLoading, Layer, Modal, Tag, TextInput, Tile } from '@carbon/react'
 import { chainsApi } from '../../map2/api'
 import { useToasts } from '../components/Toasts'
-import type { Chain, ChainsResponse } from '../../map2/types'
+import type { Chain, ChainsResponse, Plugin } from '../../map2/types'
+import { getPluginChipMeta } from '../utils/pluginChipMeta'
 
 interface FlowSlotRef {
   id: string
@@ -12,6 +13,9 @@ interface FlowSlotRef {
   label: string
   color: string
 }
+
+/** Max plugin chips shown before +N overflow tag */
+const MAX_VISIBLE_CHIPS = 5
 
 interface JuceGridChainManagementCardProps {
   selectedChainId?: number | null
@@ -22,6 +26,10 @@ interface JuceGridChainManagementCardProps {
   onToggleSelectedChainActive: () => void
   onDuplicateChain: () => void
   onRenameChain: () => void
+  /** Plugin metadata lookup (URI → Plugin) passed from parent to avoid duplicate fetch */
+  pluginMeta?: Record<string, Plugin>
+  /** Called when a plugin chip is clicked — selects the chain and opens that plugin's editor */
+  onPluginChipClick?: (chainId: number, pluginUri: string) => void
 }
 
 export function JuceGridChainManagementCard({
@@ -33,6 +41,8 @@ export function JuceGridChainManagementCard({
   onToggleSelectedChainActive,
   onDuplicateChain,
   onRenameChain,
+  pluginMeta = {},
+  onPluginChipClick,
 }: JuceGridChainManagementCardProps) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
@@ -296,6 +306,38 @@ export function JuceGridChainManagementCard({
                             <span className="juce-grid-page__chain-empty-copy">Not assigned to a flow</span>
                           )}
                         </div>
+
+                        {/* Plugin chip strip */}
+                        {chain.plugins.length > 0 && (
+                          <div className="juce-grid-page__chain-tile-chips">
+                            {chain.plugins.slice(0, MAX_VISIBLE_CHIPS).map((plugin) => {
+                              const meta = pluginMeta[plugin.uri]
+                              const category = meta?.category || meta?.class_label || plugin.plugin_display_type
+                              const { label, tagType } = getPluginChipMeta(category, plugin.bypassed)
+                              return (
+                                <Tag
+                                  key={`${chain.id}-${plugin.uri}-${plugin.position}`}
+                                  type={tagType}
+                                  size="sm"
+                                  title={meta?.name || plugin.name || plugin.uri}
+                                  className={`juce-grid-page__chain-plugin-chip${plugin.bypassed ? ' is-bypassed' : ''}${onPluginChipClick ? ' is-clickable' : ''}`}
+                                  onClick={onPluginChipClick ? (e) => {
+                                    e.stopPropagation()
+                                    onChainSelect?.(chain.id)
+                                    onPluginChipClick(chain.id, plugin.uri)
+                                  } : undefined}
+                                >
+                                  {label}
+                                </Tag>
+                              )
+                            })}
+                            {chain.plugins.length > MAX_VISIBLE_CHIPS && (
+                              <Tag type="cool-gray" size="sm" className="juce-grid-page__chain-plugin-chip">
+                                +{chain.plugins.length - MAX_VISIBLE_CHIPS}
+                              </Tag>
+                            )}
+                          </div>
+                        )}
 
                         <div className="juce-grid-page__chain-tile-actions">
                           <Button

@@ -3526,6 +3526,14 @@ export function JuceGridPage() {
           onToggleSelectedChainActive={handleToggleChainActive}
           onDuplicateChain={handleDuplicateChain}
           onRenameChain={handleRenameChain}
+          pluginMeta={pluginMeta}
+          onPluginChipClick={(chainId, pluginUri) => {
+            // Select the chain into the active flow slot first
+            if (activeFlow) {
+              updateFlow(activeFlow.id, { chainId })
+            }
+            handlePluginSelect(pluginUri)
+          }}
         />
 
         {/* Main content area */}

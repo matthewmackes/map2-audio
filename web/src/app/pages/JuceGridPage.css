@@ -579,7 +579,7 @@
   gap: 0.875rem;
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer-hover, rgba(255,255,255,0.03));
+  background: #000;
   cursor: pointer;
   transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
@@ -600,8 +600,35 @@
 }
 
 .juce-grid-page__chain-tile.is-active {
-  background: color-mix(in srgb, var(--cds-support-success, #24a148) 10%, var(--cds-layer-hover, rgba(255,255,255,0.03)));
+  background: #000;
+  border-color: var(--interactive-active, #002d9c);
 }
+
+/* ── Plugin chip strip inside chain chooser tiles ──────────────────────────── */
+
+.juce-grid-page__chain-tile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  /* Carbon Tag sm height is ~1.25rem — let the row breathe naturally */
+}
+
+/* Bypassed chips get reduced opacity to signal they are inactive */
+.juce-grid-page__chain-plugin-chip.is-bypassed {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* Clickable chips get a pointer cursor and a subtle hover lift */
+.juce-grid-page__chain-plugin-chip.is-clickable {
+  cursor: pointer;
+}
+
+.juce-grid-page__chain-plugin-chip.is-clickable:hover {
+  filter: brightness(1.15);
+}
+
+/* ── Flow pill ─────────────────────────────────────────────────────────────── */
 
 .juce-grid-page__chain-flow-pill {
   display: inline-flex;
