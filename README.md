@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**761** Python | **1104** TypeScript | **282** C++/H | **118** Docs | **525** total commits | **0** stars | **0** forks | **0** open issues
+**761** Python | **1106** TypeScript | **282** C++/H | **118** Docs | **527** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,8 +169,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-17 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-17 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-16 |
 | [AVB + JUCE Availability and Channel Integration Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_JUCE_AVAILABILITY_INTEGRATION_PLAN_2026-02-22.md) | 2026-03-15 |
 | [MAP2 Mobile Responsive Audit & Implementation](https://github.com/matthewmackes/map2-audio/blob/master/docs/MOBILE_RESPONSIVE_PROMPT.md) | 2026-03-15 |
 | [MAP2 Audio Platform — Operations Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATIONS_GUIDE.md) | 2026-03-15 |
@@ -187,7 +187,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3b2a5877`](https://github.com/matthewmackes/map2-audio/commit/3b2a58771dd03235832b2dc4ea1cffca4d578d9c) | Finish advanced launcher refresh and JUCE grid polish | Map2 Audio | 2026-03-17 |
+| [`af539f85`](https://github.com/matthewmackes/map2-audio/commit/af539f8559a700e4a0b600c485746818ff13f31e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-17 |
 | [`8cad3bcf`](https://github.com/matthewmackes/map2-audio/commit/8cad3bcffa2f1011af0ef86dc9029400c58e67d7) | feat: refactor MIDI hub and JUCE grid workflows | Map2 Audio | 2026-03-17 |
 | [`cd5bac20`](https://github.com/matthewmackes/map2-audio/commit/cd5bac20acd190e966dab3302064b9e750762c20) | chore: sync 2026-03-17 | Map2 Audio | 2026-03-17 |
 | [`66782b61`](https://github.com/matthewmackes/map2-audio/commit/66782b61d04dfb69b61fb3430e098c4b9c33edae) | chore: update version and UI pages | Map2 Audio | 2026-03-17 |
 | [`dffba936`](https://github.com/matthewmackes/map2-audio/commit/dffba936da8c5fe8f4c6a23e5fcb17ee2651fa48) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-17 |
 | [`e1fc9fc5`](https://github.com/matthewmackes/map2-audio/commit/e1fc9fc50a56893945956518c6d2052ededf333e) | Add plugin chips to chain management views | Map2 Audio | 2026-03-17 |
 | [`205ac72e`](https://github.com/matthewmackes/map2-audio/commit/205ac72e30e67313865880fc0c4a2f37815d156e) | Update platform shell and home surfaces | Map2 Audio | 2026-03-16 |
-| [`2ee69f25`](https://github.com/matthewmackes/map2-audio/commit/2ee69f252ab41302dadf8f01eea6e6d630c853d2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-16 |
-| [`a3e24343`](https://github.com/matthewmackes/map2-audio/commit/a3e243431d0ff5b415c7baa3d0a4e05d56150f62) | Refine plugin workflows and numeric input surfaces | Map2 Audio | 2026-03-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
