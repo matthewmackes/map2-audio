@@ -6,11 +6,12 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { X, Sliders, FloppyDisk, Trash, WarningCircle } from '@phosphor-icons/react'
+import { X, Sliders, FloppyDisk, Trash, WarningCircle, ArrowsLeftRight } from '@phosphor-icons/react'
 import type { Plugin, PluginParameter, MIDIMappingV2, MIDICurveType } from '../../../../map2/types'
 import { midiApiV2 } from '../../../../map2/api'
 import { getDisplayPluginName } from '../../../../map2/displayNames'
 import { NumberInput } from '../../Controls/NumberInput'
+import { ExpressionOverlay } from './ExpressionOverlay'
 
 interface MidiMappingDialogProps {
   isOpen: boolean
@@ -50,6 +51,8 @@ export function MidiMappingDialog({
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showExpression, setShowExpression] = useState(false)
+  const [focusedRow, setFocusedRow] = useState<MappingRow | null>(null)
   const displayPluginName = useMemo(() => getDisplayPluginName(plugin.name, plugin.uri), [plugin.name, plugin.uri])
 
   // Track if we've already fetched for this dialog session
@@ -220,6 +223,26 @@ export function MidiMappingDialog({
     }
   }
 
+  // CC/channel pairs from mapped rows — passed into ExpressionOverlay for highlighting
+  const mappedCcPairs = useMemo(
+    () => mappings.filter((m) => m.cc !== null).map((m) => ({ cc: m.cc!, channel: m.channel })),
+    [mappings],
+  )
+
+  // The focused/first-mapped row drives pre-fill in ExpressionView
+  const expressionInitialCc = focusedRow?.cc ?? mappedCcPairs[0]?.cc ?? null
+  const expressionInitialChannel = focusedRow?.channel ?? mappedCcPairs[0]?.channel ?? null
+
+  // Re-fetch MIDI mappings after an expression assignment mutation
+  const handleExpressionMutated = useCallback(async () => {
+    try {
+      const response = await midiApiV2.getMappings({ plugin_uri: pluginUri })
+      initializeMappings(response.mappings)
+    } catch {
+      // Non-fatal — MIDI table stays as-is until next open
+    }
+  }, [pluginUri, initializeMappings])
+
   // Handle close with unsaved changes warning
   const handleClose = useCallback(() => {
     if (hasUnsavedChanges) {
@@ -258,6 +281,14 @@ export function MidiMappingDialog({
             <Sliders size={18} weight="duotone" />
             <span>MIDI Mappings - {displayPluginName}</span>
           </div>
+          <button
+            className="midi-mapping-expr-btn"
+            onClick={() => setShowExpression(true)}
+            title="Open Expression Mappings"
+          >
+            <ArrowsLeftRight size={14} weight="duotone" />
+            <span>Expression Mappings</span>
+          </button>
           <button
             className="midi-mapping-dialog-close"
             onClick={handleClose}
@@ -301,6 +332,8 @@ export function MidiMappingDialog({
                   <tr
                     key={row.paramIndex}
                     className={`${row.isDirty ? 'dirty' : ''} ${row.cc !== null ? 'mapped' : ''}`}
+                    onFocus={() => setFocusedRow(row)}
+                    onClick={() => setFocusedRow(row)}
                   >
                     <td className="col-param">
                       <span className="param-name">{row.paramName}</span>
@@ -400,6 +433,17 @@ export function MidiMappingDialog({
             </button>
           </div>
         </div>
+
+        {/* Expression Mappings takeover */}
+        {showExpression && (
+          <ExpressionOverlay
+            onBack={() => setShowExpression(false)}
+            highlightedCcPairs={mappedCcPairs}
+            initialCc={expressionInitialCc}
+            initialChannel={expressionInitialChannel}
+            onAssignmentMutated={handleExpressionMutated}
+          />
+        )}
       </div>
 
       <style>{`
@@ -424,15 +468,40 @@ export function MidiMappingDialog({
           display: flex;
           flex-direction: column;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+          position: relative;
         }
 
         .midi-mapping-dialog-header {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          gap: 10px;
           padding: 16px 20px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           background: rgba(0, 0, 0, 0.2);
+        }
+
+        .midi-mapping-expr-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 5px 10px;
+          border: 1px solid rgba(0, 157, 154, 0.35);
+          border-radius: 6px;
+          background: rgba(0, 157, 154, 0.1);
+          color: #009d9a;
+          font-family: 'IBM Plex Sans', sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          margin-left: auto;
+          white-space: nowrap;
+        }
+
+        .midi-mapping-expr-btn:hover {
+          background: rgba(0, 157, 154, 0.2);
+          border-color: rgba(0, 157, 154, 0.6);
+          color: #00c8c4;
         }
 
         .midi-mapping-dialog-title {

@@ -110,6 +110,24 @@ const CURVES: Array<{ id: Curve; label: string }> = [
   { id: 'custom', label: 'Custom' },
 ]
 
+export interface CcChannelPair {
+  cc: number
+  channel: number
+}
+
+export interface ExpressionViewProps {
+  /** CC/channel pairs from MIDI table rows with cc !== null — used for highlighting */
+  highlightedCcPairs?: CcChannelPair[]
+  /** Pre-fill CC when "New assignment" is clicked */
+  initialCc?: number | null
+  /** Pre-fill channel when "New assignment" is clicked */
+  initialChannel?: number | null
+  /** Called after any save or delete mutation succeeds */
+  onAssignmentMutated?: () => void
+  /** When true activates tab-based layout for constrained width (~700px) */
+  constrainedWidth?: boolean
+}
+
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0
   return Math.max(0, Math.min(1, value))
@@ -894,10 +912,12 @@ function AssignmentRow({
   assignment,
   selected,
   onSelect,
+  isHighlighted,
 }: {
   assignment: Assignment
   selected: boolean
   onSelect: () => void
+  isHighlighted?: boolean
 }) {
   return (
     <button
@@ -905,14 +925,16 @@ function AssignmentRow({
       style={{
         width: '100%',
         textAlign: 'left',
-        border: selected ? `1px solid ${C.blue}` : `1px solid ${C.border}`,
-        background: selected ? `${C.blue}1f` : C.panel,
+        border: selected ? `1px solid ${C.blue}` : isHighlighted ? `1px solid ${C.teal}` : `1px solid ${C.border}`,
+        background: selected ? `${C.blue}1f` : isHighlighted ? `${C.teal}0d` : C.panel,
         borderRadius: 4,
         padding: '8px 10px',
+        paddingLeft: isHighlighted && !selected ? 8 : 10,
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         cursor: 'pointer',
+        borderLeft: isHighlighted && !selected ? `3px solid ${C.teal}` : undefined,
       }}
     >
       <span style={{ color: C.teal, fontFamily: C.mono, fontSize: 11, minWidth: 38 }}>
@@ -933,21 +955,48 @@ function AssignmentRow({
           ch{assignment.channel || '*'} | {assignment.curve}
         </div>
       </div>
+      {isHighlighted && !selected && (
+        <span style={{
+          fontFamily: C.mono,
+          fontSize: 9,
+          color: C.teal,
+          background: `${C.teal}22`,
+          border: `1px solid ${C.teal}44`,
+          borderRadius: 3,
+          padding: '1px 4px',
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+          flexShrink: 0,
+        }}>
+          MIDI
+        </span>
+      )}
       <span style={{
         width: 8,
         height: 8,
         borderRadius: '50%',
         background: assignment.active ? C.green : C.panelAlt,
+        flexShrink: 0,
       }} />
     </button>
   )
 }
 
-export function ExpressionPage() {
+// Tab IDs for constrained layout
+type ConstrainedTab = 'assignments' | 'edit' | 'live'
+
+export function ExpressionView({
+  highlightedCcPairs,
+  initialCc,
+  initialChannel,
+  onAssignmentMutated,
+  constrainedWidth = false,
+}: ExpressionViewProps) {
   const queryClient = useQueryClient()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [creating, setCreating] = useState<boolean>(false)
   const [isMobile, setIsMobile] = useState<boolean>(() => window.innerWidth < 1024)
+  const [activeTab, setActiveTab] = useState<ConstrainedTab>('assignments')
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 1024)
@@ -971,6 +1020,48 @@ export function ExpressionPage() {
   const selected = assignments.find((a) => a.id === selectedId) || null
   const selectedParam = params.find((param) => param.id === selected?.param_id)
 
+  // Determine if an assignment's cc/channel matches the MIDI dialog's mapped pairs
+  const isHighlighted = useCallback((a: Assignment): boolean => {
+    if (!highlightedCcPairs || highlightedCcPairs.length === 0) return false
+    return highlightedCcPairs.some(
+      (p) =>
+        p.cc === a.cc &&
+        (p.channel === a.channel || p.channel === 0 || a.channel === 0),
+    )
+  }, [highlightedCcPairs])
+
+  // Auto-select the first highlighted assignment when overlay opens
+  const didAutoSelect = useRef(false)
+  useEffect(() => {
+    if (didAutoSelect.current || !highlightedCcPairs?.length || assignments.length === 0) return
+    const match = assignments.find((a) => isHighlighted(a))
+    if (match) {
+      setSelectedId(match.id)
+      setCreating(false)
+      if (constrainedWidth) setActiveTab('edit')
+      didAutoSelect.current = true
+    }
+  }, [assignments, highlightedCcPairs, isHighlighted, constrainedWidth])
+
+  // Seed for new assignment from the MIDI dialog's focused row
+  const newAssignmentSeed = useMemo((): Assignment | null => {
+    if (initialCc == null) return null
+    return {
+      id: '',
+      cc: initialCc,
+      channel: initialChannel ?? 0,
+      cc_min: 0,
+      cc_max: 127,
+      param_id: '',
+      param_label: '',
+      out_min: 0,
+      out_max: 1,
+      curve: 'linear',
+      active: true,
+      source: 'user',
+    }
+  }, [initialCc, initialChannel])
+
   const saveMutation = useMutation({
     mutationFn: (payload: Partial<Assignment>) => apiFetch<Assignment>('/v2/expression/assignments', {
       method: 'POST',
@@ -980,6 +1071,8 @@ export function ExpressionPage() {
       queryClient.invalidateQueries({ queryKey: ['expression-assignments'] })
       setSelectedId(saved.id)
       setCreating(false)
+      if (constrainedWidth) setActiveTab('assignments')
+      onAssignmentMutated?.()
     },
   })
 
@@ -991,6 +1084,8 @@ export function ExpressionPage() {
       queryClient.invalidateQueries({ queryKey: ['expression-assignments'] })
       setSelectedId(null)
       setCreating(false)
+      if (constrainedWidth) setActiveTab('assignments')
+      onAssignmentMutated?.()
     },
   })
 
@@ -1010,7 +1105,215 @@ export function ExpressionPage() {
 
   const userAssignments = assignments.filter((assignment) => assignment.source === 'user')
   const perfAssignments = assignments.filter((assignment) => assignment.source === 'performance_mode')
+  const highlightedCount = assignments.filter(isHighlighted).length
 
+  const handleNewAssignment = () => {
+    setCreating(true)
+    setSelectedId(null)
+    if (constrainedWidth) setActiveTab('edit')
+  }
+
+  const handleSelectAssignment = (id: string) => {
+    setSelectedId(id)
+    setCreating(false)
+    if (constrainedWidth) setActiveTab('edit')
+  }
+
+  const handleCancel = () => {
+    setCreating(false)
+    setSelectedId(null)
+    if (constrainedWidth) setActiveTab('assignments')
+  }
+
+  // --- Constrained tab layout ---
+  if (constrainedWidth) {
+    const tabStyle = (tab: ConstrainedTab): React.CSSProperties => ({
+      flex: 1,
+      padding: '8px 4px',
+      border: 'none',
+      borderBottom: activeTab === tab ? `2px solid ${C.blue}` : '2px solid transparent',
+      background: 'transparent',
+      color: activeTab === tab ? C.text : C.muted,
+      fontFamily: C.sans,
+      fontSize: 12,
+      fontWeight: activeTab === tab ? 600 : 400,
+      cursor: 'pointer',
+      transition: 'all 0.15s ease',
+    })
+
+    const assignmentsTabLabel = `Assignments${highlightedCount > 0 ? ` (${highlightedCount} MIDI)` : userAssignments.length + perfAssignments.length > 0 ? ` (${userAssignments.length + perfAssignments.length})` : ''}`
+
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        background: C.bg,
+        color: C.text,
+        fontFamily: C.sans,
+      }}>
+        {/* Tab bar */}
+        <div style={{
+          display: 'flex',
+          borderBottom: `1px solid ${C.border}`,
+          background: C.panelDark,
+          flexShrink: 0,
+        }}>
+          <button style={tabStyle('assignments')} onClick={() => setActiveTab('assignments')}>
+            {assignmentsTabLabel}
+          </button>
+          <button style={tabStyle('edit')} onClick={() => setActiveTab('edit')}>
+            {creating ? 'New' : selected ? 'Edit' : 'Edit'}
+          </button>
+          <button style={tabStyle('live')} onClick={() => setActiveTab('live')}>
+            Live Signal
+          </button>
+        </div>
+
+        {/* Assignments tab */}
+        {activeTab === 'assignments' && (
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: 14,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+          }}>
+            <button
+              onClick={handleNewAssignment}
+              style={{
+                background: C.blue,
+                border: 'none',
+                borderRadius: 4,
+                color: '#fff',
+                fontFamily: C.sans,
+                fontSize: 13,
+                fontWeight: 600,
+                padding: '8px 10px',
+                cursor: 'pointer',
+              }}
+            >
+              New assignment
+            </button>
+
+            {highlightedCount > 0 && (
+              <div style={{ color: C.teal, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: 6 }}>
+                Linked to this plugin
+              </div>
+            )}
+            {userAssignments.filter(isHighlighted).map((assignment) => (
+              <AssignmentRow
+                key={assignment.id}
+                assignment={assignment}
+                selected={selectedId === assignment.id}
+                onSelect={() => handleSelectAssignment(assignment.id)}
+                isHighlighted
+              />
+            ))}
+
+            {userAssignments.filter((a) => !isHighlighted(a)).length > 0 && (
+              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: highlightedCount > 0 ? 10 : 6 }}>
+                {highlightedCount > 0 ? 'Other assignments' : 'User assignments'}
+              </div>
+            )}
+            {userAssignments.filter((a) => !isHighlighted(a)).map((assignment) => (
+              <AssignmentRow
+                key={assignment.id}
+                assignment={assignment}
+                selected={selectedId === assignment.id}
+                onSelect={() => handleSelectAssignment(assignment.id)}
+                isHighlighted={false}
+              />
+            ))}
+
+            {perfAssignments.length > 0 && (
+              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: 10 }}>
+                Performance mode defaults
+              </div>
+            )}
+            {perfAssignments.map((assignment) => (
+              <AssignmentRow
+                key={assignment.id}
+                assignment={assignment}
+                selected={selectedId === assignment.id}
+                onSelect={() => handleSelectAssignment(assignment.id)}
+                isHighlighted={isHighlighted(assignment)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Edit tab */}
+        {activeTab === 'edit' && (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0 14px' }}>
+            {creating || selected ? (
+              <AssignmentForm
+                initial={creating ? (newAssignmentSeed ?? null) : selected}
+                params={params}
+                onSave={(payload) => saveMutation.mutate(payload)}
+                onCancel={handleCancel}
+                onDelete={(assignmentId) => {
+                  if (window.confirm('Delete this assignment?')) {
+                    deleteMutation.mutate(assignmentId)
+                  }
+                }}
+                onListenForCC={listenForCC}
+                onCancelListen={cancelListenForCC}
+              />
+            ) : (
+              <div style={{
+                height: '100%',
+                minHeight: 200,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: C.muted,
+                fontFamily: C.sans,
+                fontSize: 13,
+                textAlign: 'center',
+                flexDirection: 'column',
+                gap: 12,
+              }}>
+                <span>Select an assignment or create a new one.</span>
+                <button
+                  onClick={handleNewAssignment}
+                  style={{
+                    background: C.blue,
+                    border: 'none',
+                    borderRadius: 4,
+                    color: '#fff',
+                    fontFamily: C.sans,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: '6px 14px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  New assignment
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Live Signal tab */}
+        {activeTab === 'live' && (
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '14px 16px 0', color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' }}>
+              Live signal
+            </div>
+            <LiveDualGraphic
+              assignment={selected}
+              paramUnit={selectedParam?.unit || ''}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // --- Full-width layout (original) ---
   return (
     <div style={{
       display: 'flex',
@@ -1045,7 +1348,7 @@ export function ExpressionPage() {
           minHeight: isMobile ? 220 : 0,
         }}>
           <button
-            onClick={() => { setCreating(true); setSelectedId(null) }}
+            onClick={handleNewAssignment}
             style={{
               background: C.blue,
               border: 'none',
@@ -1061,17 +1364,33 @@ export function ExpressionPage() {
             New assignment
           </button>
 
-          {userAssignments.length > 0 && (
-            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: 6 }}>
-              User assignments
+          {highlightedCount > 0 && (
+            <div style={{ color: C.teal, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: 6 }}>
+              Linked to this plugin
             </div>
           )}
-          {userAssignments.map((assignment) => (
+          {userAssignments.filter(isHighlighted).map((assignment) => (
             <AssignmentRow
               key={assignment.id}
               assignment={assignment}
               selected={selectedId === assignment.id}
-              onSelect={() => { setSelectedId(assignment.id); setCreating(false) }}
+              onSelect={() => handleSelectAssignment(assignment.id)}
+              isHighlighted
+            />
+          ))}
+
+          {userAssignments.filter((a) => !isHighlighted(a)).length > 0 && (
+            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginTop: highlightedCount > 0 ? 10 : 6 }}>
+              {highlightedCount > 0 ? 'Other assignments' : 'User assignments'}
+            </div>
+          )}
+          {userAssignments.filter((a) => !isHighlighted(a)).map((assignment) => (
+            <AssignmentRow
+              key={assignment.id}
+              assignment={assignment}
+              selected={selectedId === assignment.id}
+              onSelect={() => handleSelectAssignment(assignment.id)}
+              isHighlighted={false}
             />
           ))}
 
@@ -1085,7 +1404,8 @@ export function ExpressionPage() {
               key={assignment.id}
               assignment={assignment}
               selected={selectedId === assignment.id}
-              onSelect={() => { setSelectedId(assignment.id); setCreating(false) }}
+              onSelect={() => handleSelectAssignment(assignment.id)}
+              isHighlighted={isHighlighted(assignment)}
             />
           ))}
         </div>
@@ -1097,10 +1417,10 @@ export function ExpressionPage() {
         }}>
           {creating || selected ? (
             <AssignmentForm
-              initial={creating ? null : selected}
+              initial={creating ? (newAssignmentSeed ?? null) : selected}
               params={params}
               onSave={(payload) => saveMutation.mutate(payload)}
-              onCancel={() => { setCreating(false); setSelectedId(null) }}
+              onCancel={handleCancel}
               onDelete={(assignmentId) => {
                 if (window.confirm('Delete this assignment?')) {
                   deleteMutation.mutate(assignmentId)
@@ -1143,6 +1463,10 @@ export function ExpressionPage() {
       </div>
     </div>
   )
+}
+
+export function ExpressionPage() {
+  return <ExpressionView />
 }
 
 export default ExpressionPage

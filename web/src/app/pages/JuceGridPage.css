@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1rem;
+  padding: 0.5rem 0.5rem 0;
 }
 
 .juce-grid-page__hero,
@@ -39,10 +39,9 @@
 }
 
 .juce-grid-page__unified-block {
-  margin: 0.25rem;
-  border: 1px solid var(--cds-border-subtle, var(--border));
+  margin: 0;
   border-radius: var(--cds-border-radius-large, 0.5rem);
-  background: var(--cds-background, var(--bg));
+  background: transparent;
   overflow: hidden;
 }
 
@@ -64,11 +63,7 @@
 .juce-grid-page__unified-block .juce-grid-page__cluster-summary-bar::after,
 .juce-grid-page__unified-block .juce-grid-page__routing-shell::after,
 .juce-grid-page__unified-block .juce-grid-page__slot-grid::after {
-  content: '';
-  display: block;
-  height: 1px;
-  background: var(--cds-border-subtle, var(--border));
-  margin: 1rem 1rem 0;
+  display: none;
 }
 
 .juce-grid-page__unified-block .juce-grid-page__editor-shell::after,
@@ -108,6 +103,14 @@
 .snapshot-rail-trigger__button {
   position: relative;
   z-index: 1;
+  color: var(--interactive-active);
+}
+
+.snapshot-rail-trigger__button svg {
+  color: var(--interactive-active);
+  fill: currentColor;
+  transform: translate(5%, -15%) scale(1.25);
+  transform-origin: center;
 }
 
 .snapshot-rail-trigger__count {
@@ -137,7 +140,7 @@
 .juce-grid-page__editor-shell,
 .juce-grid-page__palette-panel,
 .juce-grid-page__ops-shell {
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 .juce-grid-page__routing-shell {
@@ -208,8 +211,8 @@
 
 .juce-grid-page__routing-workspace {
   display: grid;
-  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
-  gap: 1rem;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: 0.75rem;
   align-items: start;
 }
 
@@ -237,9 +240,9 @@
 .juce-grid-page__routing-visual {
   display: flex;
   align-items: stretch;
-  padding: 1.25rem;
-  border: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-layer-hover, rgba(255, 255, 255, 0.03));
+  padding: 0;
+  border: none;
+  background: transparent;
   min-height: 100%;
   min-block-size: clamp(16rem, 34vw, 32rem);
 }
@@ -647,13 +650,12 @@
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  gap: 1.25rem;
+  gap: 1rem;
   flex: 1 1 auto;
   inline-size: 100%;
   min-inline-size: 0;
-  /* Panel background matches page surface — seamless */
-  background: var(--cds-background, #161616);
-  padding: 1rem 1.25rem;
+  background: transparent;
+  padding: 0.5rem 0;
 }
 
 .juce-grid-page__routing-svg {
@@ -833,7 +835,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 0 1rem 1rem;
+  padding: 0 0.5rem 0.5rem;
 }
 
 .juce-grid-page__live-path-summary,
@@ -1283,7 +1285,6 @@
   gap: 0.75rem;
   padding: 1rem;
   background: color-mix(in srgb, var(--flow-color, var(--cds-link-primary)) 7%, var(--cds-layer, var(--surface)));
-  border-bottom: 1px solid var(--cds-border-subtle, var(--border));
 }
 
 .juce-grid-page__flow-card-heading {
@@ -2614,7 +2615,6 @@
 
 .juce-grid-page__signal-level {
   padding-top: 0.2rem;
-  border-top: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 75%, transparent);
 }
 
 .juce-grid-page__signal-level-label-row {
@@ -2860,7 +2860,6 @@
 .juce-grid-page__parameter-editor-header {
   justify-content: space-between;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--cds-border-subtle, var(--border));
 }
 
 .juce-grid-page__parameter-editor-copy p {
@@ -3047,8 +3046,8 @@
   bottom: 3.5rem;
   left: 0;
   z-index: 95;
-  border-top: 1px solid var(--cds-border-subtle, var(--border));
-  background: var(--cds-background, #161616);
+  border-top: none;
+  background: transparent;
   animation: juce-grid-page-slide-in-up 120ms ease;
   max-height: min(55vh, 34rem);
   overflow-y: auto;
@@ -3069,11 +3068,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   margin-top: auto;
-  border-top: 1px solid #393939;
-  background: #161616;
-  color: #f4f4f4;
+  border-top: none;
+  background: transparent;
+  color: var(--cds-text-primary, #f4f4f4);
 }
 
 .juce-grid-page__status-chip {
@@ -3081,8 +3080,8 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.625rem;
-  border: 1px solid #525252;
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 70%, transparent);
+  background: color-mix(in srgb, var(--cds-background, #161616) 74%, transparent);
   color: inherit;
   font-size: 0.75rem;
 }
@@ -3202,7 +3201,7 @@
   .juce-grid-page__signal-rail-label-strip {
     justify-content: flex-start;
     border-right: none;
-    border-bottom: 1px solid var(--cds-border-subtle, var(--border));
+    border-bottom: none;
   }
 
   .juce-grid-page__automation-workspace {

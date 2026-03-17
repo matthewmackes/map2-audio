@@ -23,7 +23,6 @@ const HomePage              = lazy(() => import('./pages/HomePage').then(m => ({
 const PlatformShellPage     = lazy(() => import('./pages/PlatformShellPage').then(m => ({ default: m.PlatformShellPage })))
 const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => ({ default: m.ChainsPage })))
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
-const AboutPage             = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const LV2PluginsPage        = lazy(() => import('./pages/LV2PluginsPage').then(m => ({ default: m.LV2PluginsPage })))
 const LibraryPage           = lazy(() => import('./pages/LibraryPage').then(m => ({ default: m.LibraryPage })))
 const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').then(m => ({ default: m.AudioArtifactsPage })))
@@ -32,8 +31,6 @@ const JuceGridPage          = lazy(() => import('./pages/JuceGridPage').then(m =
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
 const HoToneJoGGPage        = lazy(() => import('./pages/HoToneJoGGPage').then(m => ({ default: m.HoToneJoGGPage })))
-const HostMachinePage       = lazy(() => import('./pages/HostMachinePage').then(m => ({ default: m.HostMachinePage })))
-const AudioEnginePage       = lazy(() => import('./pages/AudioEnginePage').then(m => ({ default: m.AudioEnginePage })))
 const MOTURMEPage           = lazy(() => import('./pages/MOTURMEPage'))
 const CPUPerformancePage    = lazy(() => import('./pages/CPUPerformancePage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
@@ -160,10 +157,10 @@ export function App() {
                             <Suspense fallback={<PageLoader />}>
                               <Routes>
                                 <Route path="/" element={<HomePage />} />
-                                <Route path="/platform" element={<PlatformShellPage />} />
+                                <Route path="/platform" element={<Navigate to="/" replace />} />
                                 <Route path="/chains" element={<ChainsPage />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
-                                <Route path="/about" element={<AboutPage />} />
+                                <Route path="/about" element={<Navigate to="/platform?panel=about" replace />} />
                                 <Route path="/plugins" element={<Navigate to="/audio-artifacts?category=lv2-plugins" replace />} />
                                 <Route path="/library" element={<Navigate to="/audio-artifacts" replace />} />
                                 <Route path="/audio-artifacts" element={<AudioArtifactsPage />} />
@@ -177,9 +174,9 @@ export function App() {
                                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
                                 <Route path="/motu-rme" element={<MOTURMEPage />} />
                                 <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
-                                <Route path="/host-machine" element={<HostMachinePage />} />
+                                <Route path="/host-machine" element={<Navigate to="/platform?panel=host-machine" replace />} />
                                 <Route path="/cpu-performance" element={<CPUPerformancePage />} />
-                                <Route path="/engine" element={<AudioEnginePage />} />
+                                <Route path="/engine" element={<Navigate to="/platform?panel=audio-engine" replace />} />
                                 <Route path="/metering" element={<MeteringPage />} />
                                 <Route path="/pipewire" element={<PipeWirePage />} />
                                 <Route path="/welcome" element={<WelcomePage />} />

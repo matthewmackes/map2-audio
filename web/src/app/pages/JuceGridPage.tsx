@@ -40,6 +40,8 @@ import {
   VolumeMute,
   VolumeUp,
   WarningAlt,
+  ArrowsHorizontal,
+  Close,
 } from '@carbon/icons-react'
 import {
   Accordion,
@@ -113,6 +115,8 @@ import {
   fingerprintSnapshotData,
 } from './juceGridSnapshots'
 import './JuceGridPage.css'
+import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'
+import type { CcChannelPair } from './ExpressionPage'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -607,6 +611,7 @@ export function JuceGridPage() {
   // Flow Snapshots Panel State
   const [snapshotsModalOpen, setSnapshotsModalOpen] = useState(false)
   const [midiModalOpen, setMidiModalOpen] = useState(false)
+  const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
@@ -2512,6 +2517,14 @@ export function JuceGridPage() {
             {midiMappings.length} shown
             {midiStatus?.mappings_count !== undefined ? ` / ${midiStatus.mappings_count} total` : ''}
           </Tag>
+          <Button
+            size="sm"
+            kind="ghost"
+            renderIcon={ArrowsHorizontal}
+            onClick={() => setShowExpressionOverlay(true)}
+          >
+            Expression Mappings
+          </Button>
           {options.closable && options.onClose && (
             <Button size="sm" kind="ghost" onClick={options.onClose}>
               Close
@@ -3842,17 +3855,35 @@ export function JuceGridPage() {
         applySnapshotData={applySnapshotState}
         onSnapshotSave={clearSnapshotsDirty}
       />
-      <Modal
-        open={midiModalOpen}
-        size="lg"
-        modalHeading="MIDI mappings"
-        modalLabel="Audio Grid"
-        passiveModal
-        onRequestClose={() => setMidiModalOpen(false)}
-        id="juce-grid-midi-modal"
-      >
-        {renderMidiMappingsWorkspace({ closable: false })}
-      </Modal>
+      {midiModalOpen && (
+        <div className="platform-modal-overlay" role="dialog" aria-modal="true" aria-label="Audio Grid MIDI mappings" id="juce-grid-midi-modal">
+          <div className="platform-modal__body" style={{ position: 'relative' }}>
+            <div className="platform-modal__header">
+              <span className="platform-modal__header-title">Audio Grid · MIDI Mappings</span>
+              <button
+                type="button"
+                className="platform-modal__close"
+                onClick={() => { setMidiModalOpen(false); setShowExpressionOverlay(false) }}
+                aria-label="Close MIDI mappings"
+              >
+                <Close size={20} aria-hidden />
+              </button>
+            </div>
+            <div className="platform-modal__scroll">
+              {renderMidiMappingsWorkspace({ closable: false })}
+            </div>
+            {showExpressionOverlay && (
+              <ExpressionOverlay
+                onBack={() => setShowExpressionOverlay(false)}
+                highlightedCcPairs={midiMappings.map((m): CcChannelPair => ({ cc: m.cc, channel: m.channel }))}
+                initialCc={midiMappings[0]?.cc ?? null}
+                initialChannel={midiMappings[0]?.channel ?? null}
+                onAssignmentMutated={() => {}}
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {routingInspectorContent && (
         <Modal

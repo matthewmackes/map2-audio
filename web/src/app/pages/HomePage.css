@@ -11,7 +11,7 @@
   --hp-layer-01:         #262626; /* $gray-90  */
   --hp-layer-02:         #393939; /* $gray-80  */
   --hp-layer-03:         #525252; /* $gray-70  */
-  --hp-grid-empty:       #000000;
+  --hp-grid-empty:       transparent;
   --hp-border-subtle:    #393939;
   --hp-border:           #525252;
   --hp-interactive:      #0f62fe; /* $blue-60  */

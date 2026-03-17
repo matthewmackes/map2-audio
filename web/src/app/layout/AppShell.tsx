@@ -1,8 +1,12 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { NavLink, useLocation, useSearchParams } from 'react-router-dom'
+import { useState, useRef, useEffect, useMemo, startTransition } from 'react'
 import { ChevronRight, Close, Menu, Pin, PinFilled, Settings } from '@carbon/icons-react'
 import { Accordion, AccordionItem, Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
+import { PlatformModalContent, isStandalonePanel } from '../components/Platform/PlatformModal'
+import type { StandalonePanel } from '../components/Platform/PlatformModal'
+import { isPlatformLayerId } from '../platform/model'
+import type { PlatformLayerId } from '../platform/model'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
 import { PasswordDialog } from '../components/PasswordDialog'
@@ -104,6 +108,7 @@ function maturityTagLabel(maturity: NavigationMaturityState): string {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
   const [advancedMenuOpen, setAdvancedMenuOpen] = useState(false)
@@ -113,6 +118,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [topHardwareSubmenuOpen, setTopHardwareSubmenuOpen] = useState(false)
   const mpx1MenuRef = useRef<HTMLDivElement>(null)
   const topHardwareMenuRef = useRef<HTMLDivElement>(null)
+  const [platformModalOpen, setPlatformModalOpen] = useState(false)
+
+  // Derive initial deep-link params from URL when modal opens
+  const platformLayerParam = searchParams.get('layer')
+  const platformPanelParam = searchParams.get('panel')
+  const initialLayer: PlatformLayerId | null = isPlatformLayerId(platformLayerParam) ? platformLayerParam : null
+  const initialPanel: StandalonePanel | null = isStandalonePanel(platformPanelParam) ? platformPanelParam : null
+
+  // Open modal automatically when URL carries a deep-link (e.g. /platform?panel=about redirect)
+  useEffect(() => {
+    if (initialLayer || initialPanel) {
+      setPlatformModalOpen(true)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     state: mpx1State,
@@ -175,7 +194,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const HomeIcon = homeTopNavItem.icon
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
-  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/platform' || location.pathname.startsWith('/platform/') || location.pathname === '/engine'
+  const isFullBleedRoute = location.pathname === '/'
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   useEffect(() => {
@@ -214,6 +233,38 @@ export function AppShell({ children }: { children: ReactNode }) {
       setTopHardwareSubmenuOpen(false)
     }
   }, [pinnedRouteSet])
+
+  const handlePlatformModalOpen = () => {
+    startTransition(() => {
+      setAdvancedMenuOpen(false)
+      setNavOpen(false)
+      setMpx1MenuOpen(false)
+      setTopHardwareSubmenuOpen(false)
+      setPlatformModalOpen(true)
+    })
+  }
+
+  const handlePlatformModalClose = () => {
+    setPlatformModalOpen(false)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete('layer')
+      next.delete('panel')
+      return next
+    }, { replace: true })
+  }
+
+  const handlePlatformNavigate = (params: { layer?: PlatformLayerId; panel?: StandalonePanel } | null) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete('layer')
+      next.delete('panel')
+      if (params?.layer) next.set('layer', params.layer)
+      if (params?.panel) next.set('panel', params.panel)
+      return next
+    }, { replace: true })
+  }
+
 
   const handleMenuToggle = () => {
     const nextOpen = !navOpen
@@ -661,6 +712,23 @@ export function AppShell({ children }: { children: ReactNode }) {
                 style={{ color: specialSettings?.enabled ? 'var(--cds-support-error)' : 'var(--cds-text-secondary)' }}
               />
             </button>
+            <button
+              type="button"
+              className={`nav-tab-item nav-tab-platform${platformModalOpen ? ' nav-tab-platform--active' : ''}`}
+              aria-label="Open Platform panel"
+              aria-haspopup="dialog"
+              aria-expanded={platformModalOpen}
+              onClick={() => {
+                if (platformModalOpen) {
+                  handlePlatformModalClose()
+                } else {
+                  handlePlatformModalOpen()
+                }
+              }}
+              title="Open Platform control panel"
+            >
+              <span className="nav-tab-platform-label">Platform</span>
+            </button>
           </HeaderNavigation>
 
           <HeaderMenuButton
@@ -675,6 +743,29 @@ export function AppShell({ children }: { children: ReactNode }) {
         {navOpen && (
           <div className="nav-mobile-menu" ref={navMenuRef}>
             <div className="nav-mobile-menu-content">
+              <section className="nav-mobile-advanced-group">
+                <div className="nav-mobile-group-label">Platform</div>
+                <div className="nav-mobile-group-grid">
+                  <div className="nav-mobile-item-wrap">
+                    <button
+                      type="button"
+                      className={`nav-mobile-item nav-mobile-item--platform${platformModalOpen ? ' active' : ''}`}
+                      onClick={() => {
+                        closeMobileNavigation()
+                        handlePlatformModalOpen()
+                      }}
+                    >
+                      <span className="nav-mobile-item-text">
+                        <span className="nav-mobile-item-heading">
+                          <span className="nav-mobile-item-label">Platform Stack</span>
+                          <Tag type="warm-gray" size="sm" className="nav-mobile-item-maturity">beta</Tag>
+                        </span>
+                        <span className="nav-mobile-item-desc">Open the unified platform control panel for node, AVB, MIDI cluster, API, and fleet operations.</span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </section>
               {homeNavigationSections.map((section) => (
                 <section key={`mobile-home-${section.title}`} className="nav-mobile-advanced-group">
                   <div className="nav-mobile-group-label">{section.title}</div>
@@ -687,6 +778,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
       </Header>
+
+      {/* Platform modal overlay — anchored below the nav bar */}
+      {platformModalOpen && (
+        <div className="platform-modal-overlay" role="dialog" aria-modal="true" aria-label="Platform control panel">
+          <PlatformModalContent
+            initialLayer={initialLayer}
+            initialPanel={initialPanel}
+            onNavigate={handlePlatformNavigate}
+            onClose={handlePlatformModalClose}
+          />
+        </div>
+      )}
+
       <NodeAlertBar />
       <PasswordDialog
         isOpen={showPasswordDialog}
