@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**761** Python | **1100** TypeScript | **282** C++/H | **118** Docs | **521** total commits | **0** stars | **0** forks | **0** open issues
+**761** Python | **1104** TypeScript | **282** C++/H | **118** Docs | **525** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,8 +169,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-17 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-16 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-16 |
 | [AVB + JUCE Availability and Channel Integration Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_JUCE_AVAILABILITY_INTEGRATION_PLAN_2026-02-22.md) | 2026-03-15 |
 | [MAP2 Mobile Responsive Audit & Implementation](https://github.com/matthewmackes/map2-audio/blob/master/docs/MOBILE_RESPONSIVE_PROMPT.md) | 2026-03-15 |
 | [MAP2 Audio Platform — Operations Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATIONS_GUIDE.md) | 2026-03-15 |
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8cad3bcf`](https://github.com/matthewmackes/map2-audio/commit/8cad3bcffa2f1011af0ef86dc9029400c58e67d7) | feat: refactor MIDI hub and JUCE grid workflows | Map2 Audio | 2026-03-17 |
+| [`cd5bac20`](https://github.com/matthewmackes/map2-audio/commit/cd5bac20acd190e966dab3302064b9e750762c20) | chore: sync 2026-03-17 | Map2 Audio | 2026-03-17 |
+| [`66782b61`](https://github.com/matthewmackes/map2-audio/commit/66782b61d04dfb69b61fb3430e098c4b9c33edae) | chore: update version and UI pages | Map2 Audio | 2026-03-17 |
+| [`dffba936`](https://github.com/matthewmackes/map2-audio/commit/dffba936da8c5fe8f4c6a23e5fcb17ee2651fa48) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-17 |
 | [`e1fc9fc5`](https://github.com/matthewmackes/map2-audio/commit/e1fc9fc50a56893945956518c6d2052ededf333e) | Add plugin chips to chain management views | Map2 Audio | 2026-03-17 |
 | [`205ac72e`](https://github.com/matthewmackes/map2-audio/commit/205ac72e30e67313865880fc0c4a2f37815d156e) | Update platform shell and home surfaces | Map2 Audio | 2026-03-16 |
 | [`2ee69f25`](https://github.com/matthewmackes/map2-audio/commit/2ee69f252ab41302dadf8f01eea6e6d630c853d2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-16 |
 | [`a3e24343`](https://github.com/matthewmackes/map2-audio/commit/a3e243431d0ff5b415c7baa3d0a4e05d56150f62) | Refine plugin workflows and numeric input surfaces | Map2 Audio | 2026-03-16 |
-| [`b2924268`](https://github.com/matthewmackes/map2-audio/commit/b2924268d5aeab4abc0f1d822250186fcc3a28da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-16 |
-| [`f9870300`](https://github.com/matthewmackes/map2-audio/commit/f98703004384b825664079cf2e3e8fbcf642ee01) | Refine host machine, Juce Grid, and home page layouts | Map2 Audio | 2026-03-16 |
-| [`d556d8ef`](https://github.com/matthewmackes/map2-audio/commit/d556d8efd84657336917b5c199fbc77fea02d372) | Refine JUCE Grid routing focus layout | Map2 Audio | 2026-03-16 |
-| [`5b92a50f`](https://github.com/matthewmackes/map2-audio/commit/5b92a50f7d94fe97f4124c341299ec6a50df4d5b) | Refine JUCE Grid routing summary | Map2 Audio | 2026-03-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
