@@ -558,6 +558,7 @@ export function JuceGridPage() {
 
   // Flow slots state (with migration support)
   const [flowSlots, setFlowSlots] = useState<FlowSlot[]>(initialPersistedState.flowSlots)
+  const flowCountLabel = `${flowSlots.length} ${flowSlots.length === 1 ? 'flow' : 'flows'}`
 
   // Routing state
   const [routing, setRouting] = useState<RoutingConfig>(initialPersistedState.routing)
@@ -3530,30 +3531,75 @@ export function JuceGridPage() {
       <LandscapePrompt componentId="juce-grid" />
       <div className="juce-grid-page__header-shell">
         <Layer className="juce-grid-page__thin-bar">
-          <div className="juce-grid-page__thin-bar-brand">
-            <MapAudioGridIcon size={38} />
-            <span className="juce-grid-page__thin-bar-title">Audio Grid</span>
-            <div className="juce-grid-page__hero-tags">
+          <div className="juce-grid-page__thin-bar-main">
+            <div className="juce-grid-page__thin-bar-brand">
+              <MapAudioGridIcon size={38} />
+              <span className="juce-grid-page__thin-bar-title">Audio Grid</span>
+            </div>
+            <div className="juce-grid-page__hero-tags" aria-label="Audio Grid status">
+              <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
+                {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
+              </Tag>
+              <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
+              <Tag type="gray">{flowCountLabel}</Tag>
               <Tag type={currentChain?.is_active ? 'green' : 'red'}>
                 {currentChain?.is_active ? 'Active chain' : 'Standby chain'}
               </Tag>
-              <Tag type="gray">{flowSlots.length} flows</Tag>
               {currentChain && <Tag type="cool-gray">{currentChain.name}</Tag>}
             </div>
           </div>
-          <div className="juce-grid-page__hero-actions">
-            <Button size="sm" kind="ghost" renderIcon={Book} onClick={() => openPlatformDocs()}>
-              Docs
-            </Button>
-            <Button size="sm" kind="ghost" renderIcon={Network_3} onClick={() => setShowAudioNodesModal(true)}>
-              Audio Nodes
-            </Button>
-            <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
-              Perform
-            </Button>
-            <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
-              Shortcuts
-            </Button>
+          <div className="juce-grid-page__masthead-actions">
+            <div className="juce-grid-page__masthead-primary-actions">
+              <Button
+                size="sm"
+                kind="tertiary"
+                renderIcon={Flow}
+                onClick={() => setShowRoutingTopologyModal(true)}
+              >
+                Configure routing
+              </Button>
+              <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
+                Add flow
+              </Button>
+              <Button
+                size="sm"
+                kind="danger--tertiary"
+                onClick={() => setShowClearFlowsModal(true)}
+                disabled={flowSlots.length <= 1}
+              >
+                Clear flows
+              </Button>
+              <Button size="sm" kind="primary" renderIcon={Music} onClick={() => setShowPerformModal(true)}>
+                Perform
+              </Button>
+            </div>
+            <div className="juce-grid-page__masthead-secondary-actions">
+              {!isCompactLayout && (
+                <>
+                  <Button size="sm" kind="ghost" renderIcon={Book} onClick={() => openPlatformDocs()}>
+                    Docs
+                  </Button>
+                  <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
+                    Shortcuts
+                  </Button>
+                  <Button size="sm" kind="ghost" renderIcon={Network_3} onClick={() => setShowAudioNodesModal(true)}>
+                    Audio Nodes
+                  </Button>
+                </>
+              )}
+              {isCompactLayout && (
+                <OverflowMenu
+                  ariaLabel="Audio Grid secondary actions"
+                  iconDescription="Audio Grid secondary actions"
+                  size="sm"
+                  flipped
+                >
+                  <OverflowMenuItem itemText="Docs" onClick={() => openPlatformDocs()} />
+                  <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
+                  <OverflowMenuItem itemText="Audio Nodes" onClick={() => setShowAudioNodesModal(true)} />
+                </OverflowMenu>
+              )}
+            </div>
           </div>
         </Layer>
       </div>
@@ -3589,34 +3635,7 @@ export function JuceGridPage() {
                 {groupIndex === 0 && (
                   <div className="juce-grid-page__live-path-group-header">
                     <div className="juce-grid-page__live-path-summary-meta">
-                      <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
-                        {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
-                      </Tag>
-                      <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
-                      <Tag type="cool-gray">
-                        {flowSlots.length} {flowSlots.length === 1 ? 'flow' : 'flows'}
-                      </Tag>
-                    </div>
-                    <div className="juce-grid-page__live-path-summary-flow-actions">
-                      <Button
-                        size="sm"
-                        kind="tertiary"
-                        renderIcon={Flow}
-                        onClick={() => setShowRoutingTopologyModal(true)}
-                      >
-                        Configure routing
-                      </Button>
-                      <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
-                        Add flow
-                      </Button>
-                      <Button
-                        size="sm"
-                        kind="danger--tertiary"
-                        onClick={() => setShowClearFlowsModal(true)}
-                        disabled={flowSlots.length <= 1}
-                      >
-                        Clear flows
-                      </Button>
+                      <p>Live flow graph</p>
                     </div>
                   </div>
                 )}

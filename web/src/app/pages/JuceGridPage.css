@@ -1018,11 +1018,14 @@
 .juce-grid-page__live-path-summary-flow-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
 }
 
 .juce-grid-page__live-path-summary-meta {
   justify-content: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .juce-grid-page__live-path-summary-flow-actions {
@@ -1521,12 +1524,20 @@
   padding: 0.5rem 1rem;
 }
 
+.juce-grid-page__thin-bar-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .juce-grid-page__thin-bar-brand {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
 }
 
 .juce-grid-page__thin-bar-title {
@@ -1600,9 +1611,40 @@
 .juce-grid-page__hero-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
   justify-content: flex-end;
   max-width: 28rem;
+}
+
+.juce-grid-page__masthead-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.juce-grid-page__masthead-primary-actions,
+.juce-grid-page__masthead-secondary-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__masthead-primary-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.juce-grid-page__masthead-secondary-actions {
+  flex: 0 0 auto;
+}
+
+.juce-grid-page__masthead-primary-actions .cds--btn,
+.juce-grid-page__masthead-secondary-actions .cds--btn {
+  min-width: 0;
 }
 
 .juce-grid-page__toolbar-label {
@@ -3336,6 +3378,29 @@
 }
 
 @media (max-width: 1184px) {
+  .juce-grid-page__thin-bar {
+    align-items: flex-start;
+  }
+
+  .juce-grid-page__thin-bar-main,
+  .juce-grid-page__masthead-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .juce-grid-page__masthead-primary-actions,
+  .juce-grid-page__masthead-secondary-actions {
+    width: 100%;
+  }
+
+  .juce-grid-page__masthead-primary-actions {
+    justify-content: flex-start;
+  }
+
+  .juce-grid-page__masthead-secondary-actions {
+    justify-content: flex-end;
+  }
+
   .juce-grid-page__hero {
     flex-direction: column;
   }
@@ -3530,6 +3595,20 @@
   .juce-grid-page__live-path-summary-flow-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .juce-grid-page__masthead-primary-actions {
+    width: 100%;
+  }
+
+  .juce-grid-page__masthead-primary-actions .cds--btn {
+    flex: 1 1 11rem;
+    justify-content: center;
+  }
+
+  .juce-grid-page__masthead-secondary-actions {
+    width: auto;
+    align-self: flex-end;
   }
 
   .juce-grid-page__port-grid,
