@@ -12,6 +12,7 @@ import {
 } from '@carbon/icons-react'
 import { Button, OverflowMenu, OverflowMenuItem, Tag, Tile } from '@carbon/react'
 import type { AudioRoutingSelectionBinding } from '../../map2/api'
+import { getPluginDescription } from '../data/pluginDescriptions'
 import { getCategoryConfig } from '../components/PluginCards/types'
 import { getEffectIcon } from '../components/icons/effectIcons'
 import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
@@ -89,8 +90,78 @@ const ROUTING_MODE_SHORT_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus
   sidechain: 'S/C',
 }
 
+const DESCRIPTION_FEATURE_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
+  { pattern: /\bstereo\b/i, label: 'Stereo' },
+  { pattern: /\bmono\b/i, label: 'Mono' },
+  { pattern: /\bmultiband\b/i, label: 'Multiband' },
+  { pattern: /\bsidechain\b/i, label: 'Sidechain' },
+  { pattern: /\btempo[-\s]?sync(?:ed)?\b/i, label: 'Tempo Sync' },
+  { pattern: /\bmodulat(?:ion|ed)\b/i, label: 'Modulation' },
+  { pattern: /\balgorithmic\b/i, label: 'Algorithmic' },
+  { pattern: /\bconvolution\b|\bimpulse\b/i, label: 'Convolution' },
+  { pattern: /\bparametric\b/i, label: 'Parametric' },
+  { pattern: /\bgraphic\b/i, label: 'Graphic EQ' },
+  { pattern: /\breal[-\s]?time\b/i, label: 'Real-Time' },
+  { pattern: /\banaly[sz]er\b/i, label: 'Analyzer' },
+  { pattern: /\bpitch\b/i, label: 'Pitch' },
+  { pattern: /\broom\b|\bhall\b|\bspatial\b|\bambience\b/i, label: 'Spatial' },
+  { pattern: /\bcompress(?:ion|or)?\b|\bdynamics\b/i, label: 'Dynamics' },
+  { pattern: /\banalog\b|\btape\b|\btube\b/i, label: 'Analog' },
+]
+
 function levelPercent(level: number | undefined) {
   return `${Math.max(0, Math.min(100, (level || 0) * 100))}%`
+}
+
+function pushUniqueFeature(features: string[], feature: string | null | undefined) {
+  if (!feature) {
+    return
+  }
+
+  if (!features.some((entry) => entry.toLowerCase() === feature.toLowerCase())) {
+    features.push(feature)
+  }
+}
+
+function getPortFeatureLabel(inputPorts: number, outputPorts: number) {
+  if (inputPorts >= 2 && outputPorts >= 2) {
+    return 'Stereo I/O'
+  }
+  if (inputPorts === 1 && outputPorts === 1) {
+    return 'Mono I/O'
+  }
+  if (inputPorts > 0 || outputPorts > 0) {
+    return `${inputPorts}/${outputPorts} I/O`
+  }
+  return null
+}
+
+function buildPluginFeatureList(
+  meta: Plugin | undefined,
+  plugin: Chain['plugins'][number],
+  displayName: string,
+  formatLabel: string,
+  inputPorts: number,
+  outputPorts: number,
+  hasSidechainSupport: boolean,
+) {
+  const features: string[] = []
+  const description = getPluginDescription(meta?.name || plugin.name || displayName)
+
+  for (const { pattern, label } of DESCRIPTION_FEATURE_PATTERNS) {
+    if (description && pattern.test(description)) {
+      pushUniqueFeature(features, label)
+    }
+  }
+
+  pushUniqueFeature(features, meta?.category || null)
+  pushUniqueFeature(features, getPortFeatureLabel(inputPorts, outputPorts))
+  pushUniqueFeature(features, hasSidechainSupport ? 'Sidechain' : null)
+  pushUniqueFeature(features, meta?.has_midi_input && meta?.has_midi_output ? 'MIDI I/O' : meta?.has_midi_input ? 'MIDI In' : meta?.has_midi_output ? 'MIDI Out' : null)
+  pushUniqueFeature(features, meta?.has_ui ? 'Editor UI' : null)
+  pushUniqueFeature(features, formatLabel || null)
+
+  return features.slice(0, 4)
 }
 
 function samplesToMs(samples: number, sampleRate: number) {
@@ -501,12 +572,15 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                 automationSummary?.recording ? 'transport recording' : automationSummary?.playing ? 'transport playing' : null,
               ].filter(Boolean).join(' · ')
               : 'No automation lanes'
-            const supportMeta = [
-              meta?.category || 'Utility',
+            const featureList = buildPluginFeatureList(
+              meta,
+              plugin,
+              displayName,
               formatLabel,
-              `${inputPorts} in / ${outputPorts} out`,
-              plugin.bypassed ? 'Bypassed' : null,
-            ].filter(Boolean)
+              inputPorts,
+              outputPorts,
+              hasSidechainSupport,
+            )
 
             return (
               <article
@@ -544,12 +618,10 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 
                 {/* ── Bottom info panel ── */}
                 <div className="juce-grid-page__signal-plugin-info">
-                  {/* Title row: drag handle + name + overflow */}
-                  <div className="juce-grid-page__signal-plugin-title-row">
+                  <div className="juce-grid-page__signal-plugin-toolbar">
                     <span className="juce-grid-page__signal-plugin-drag" aria-hidden>
                       <Draggable size={14} />
                     </span>
-                    <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
                     <div
                       className="juce-grid-page__signal-plugin-actions"
                       data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
@@ -579,12 +651,13 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                     </div>
                   </div>
 
-                  {/* Meta pills */}
-                  <div className="juce-grid-page__signal-plugin-pills">
-                    {supportMeta.map((item) => (
+                  <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
+
+                  <div className="juce-grid-page__signal-plugin-features" data-testid={`juce-grid-signal-plugin-features-${plugin.position}`}>
+                    {featureList.map((item) => (
                       <span
                         key={`${plugin.uri}:${item}`}
-                        className={`juce-grid-page__signal-plugin-pill ${item === (meta?.category || 'Utility') ? 'is-category' : ''}`}
+                        className={`juce-grid-page__signal-plugin-feature ${item === (meta?.category || 'Utility') ? 'is-category' : ''}`}
                       >
                         {item}
                       </span>
