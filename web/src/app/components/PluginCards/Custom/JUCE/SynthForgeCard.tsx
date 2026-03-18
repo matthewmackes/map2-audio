@@ -409,7 +409,7 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
           <section className="synthforge-panel">
             <div className="synthforge-panel-heading">
               <span>Library</span>
-              <strong>{soundfonts.length} visible</strong>
+              <strong>{libraryItems.length} visible</strong>
             </div>
             <div className="synthforge-status-strip">
               <span>Total library: <strong>{totalLibraryCount}</strong></span>
