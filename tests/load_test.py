@@ -59,6 +59,7 @@ TARGET_SOAK_SECONDS = _env_int("MAP2_LOCUST_SOAK_SECONDS", 300)
 REST_P95_THRESHOLD_MS = _env_float("MAP2_LOCUST_REST_P95_MS", 50.0)
 WS_P95_SPREAD_THRESHOLD_MS = _env_float("MAP2_LOCUST_WS_SPREAD_P95_MS", 5.0)
 MIDI_BURST_UPDATES = _env_int("MAP2_LOCUST_MIDI_BURST_UPDATES", 500)
+QUALIFICATION_RUN_ID = os.getenv("MAP2_LOAD_RUN_ID", f"locust-{int(time.time())}")
 
 
 def _percentile(values: list[float], p: float) -> float:
@@ -98,7 +99,7 @@ class MeterWebSocketSoak:
         parsed = urlparse(host or "http://localhost:8080")
         scheme = "wss" if parsed.scheme == "https" else "ws"
         netloc = parsed.netloc or parsed.path
-        ws_url = f"{scheme}://{netloc}/ws/v1"
+        ws_url = f"{scheme}://{netloc}/ws/v1?run_id={QUALIFICATION_RUN_ID}"
 
         self._running = True
         self._started_at = time.time()
@@ -165,7 +166,11 @@ class MeterWebSocketSoak:
         while self._running:
             ws = None
             try:
-                ws = ws_client.create_connection(ws_url, timeout=8.0)
+                ws = ws_client.create_connection(
+                    f"{ws_url}&client_label=locust-meter-{worker_id}",
+                    timeout=8.0,
+                    header=[f"X-MAP2-Run-ID: {QUALIFICATION_RUN_ID}"],
+                )
                 ws.settimeout(1.0)
                 ws.send(json.dumps({"action": "subscribe", "topic": "meters"}))
                 with self._lock:
@@ -220,6 +225,7 @@ class MAP2RealtimeUser(HttpUser):
     wait_time = between(0.05, 0.25)
 
     def on_start(self) -> None:
+        self.client.headers.update({"X-MAP2-Run-ID": QUALIFICATION_RUN_ID})
         self._chain_ids: list[int] = []
         self._loaded_plugin_uris: list[str] = []
         self._discovered_plugin_uris: list[str] = []
@@ -317,7 +323,10 @@ def _on_test_start(environment, **_kwargs):
         print("[load_test] websocket-client not installed; WS soak checks are disabled.")
         return
     WS_SOAK.start(environment.host)
-    print(f"[load_test] started WS soak with target={TARGET_WS_CLIENTS} clients")
+    print(
+        f"[load_test] started WS soak with target={TARGET_WS_CLIENTS} clients "
+        f"run_id={QUALIFICATION_RUN_ID}"
+    )
 
 
 @events.test_stop.add_listener
@@ -368,5 +377,6 @@ def _on_quitting(environment, **_kwargs):
         environment.process_exit_code = 0
         print(
             f"[load_test] PASS: REST p95={rest_p95:.2f}ms, "
-            f"WS target clients={TARGET_WS_CLIENTS}, soak={TARGET_SOAK_SECONDS}s"
+            f"WS target clients={TARGET_WS_CLIENTS}, soak={TARGET_SOAK_SECONDS}s, "
+            f"run_id={QUALIFICATION_RUN_ID}"
         )

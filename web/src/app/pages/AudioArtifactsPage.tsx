@@ -57,8 +57,6 @@ import { pluginsApi, irApi, namApi, soundfontApi } from '../../map2/api'
 import { ArtifactDownloadModal } from '../components/artifacts/ArtifactDownloadModal'
 import { useCluster } from '../contexts/ClusterContext'
 import { useNodePageContext } from '../hooks/useNodePageContext'
-import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
-import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { usePluginBrowser } from '../hooks/usePluginBrowser'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
@@ -978,11 +976,6 @@ export function AudioArtifactsPage() {
         ))}
       </div>
 
-      {/* Node context banner */}
-      {pageLocalNode ? (
-        <NodeContextBanner pageKey={NODE_PAGE_KEYS.lv2Plugins} localNode={pageLocalNode} topology={nodeTopology} />
-      ) : null}
-
       <Layer className="aap__surface">
         {/* Page header */}
         <div className="aap__header">
@@ -1037,9 +1030,6 @@ export function AudioArtifactsPage() {
             </Button>
           </div>
         </div>
-
-        {/* Node picker */}
-        <NodeContextPicker pageKey={NODE_PAGE_KEYS.lv2Plugins} topology={nodeTopology} />
 
         {/* Mobile category select */}
         <div className="aap__mobile-nav">

@@ -66,24 +66,8 @@ jest.mock('../components/Platform/PlatformModal', () => ({
   isStandalonePanel: () => false,
 }))
 
-jest.mock('../components/NodeAlerts/NodeAlertBar', () => ({
-  NodeAlertBar: () => null,
-}))
-
-jest.mock('../components/NodeAlerts/NodeAlertMonitor', () => ({
-  NodeAlertMonitor: () => null,
-}))
-
-jest.mock('../components/NodeAlerts/NodeAlertToast', () => ({
-  NodeAlertToast: () => null,
-}))
-
 jest.mock('../components/NodeNav/NodeNavBar', () => ({
   NodeNavBar: () => <div data-testid="node-nav-bar" />,
-}))
-
-jest.mock('../components/shared/NodeSelector', () => ({
-  NodeSelector: () => <div data-testid="cluster-node-selector">Node selector</div>,
 }))
 
 function renderInRouter(ui: React.ReactNode, initialEntries: string[] = ['/']) {

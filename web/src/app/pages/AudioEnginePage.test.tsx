@@ -38,13 +38,6 @@ jest.mock('../../map2/api', () => ({
 jest.mock('../components/AudioEngine/ClusterEngineGrid', () => ({
   ClusterEngineGrid: () => <div data-testid="cluster-engine-grid">Cluster Engine Grid Mock</div>,
 }))
-jest.mock('../components/NodeContextBanner/NodeContextBanner', () => ({
-  NodeContextBanner: () => <div data-testid="node-context-banner">Node Context Banner</div>,
-}))
-jest.mock('../components/NodeContextPicker/NodeContextPicker', () => ({
-  NodeContextPicker: () => <div data-testid="node-context-picker">Node Context Picker</div>,
-}))
-
 jest.mock('../components/Visualizations/SpectrumAnalyzer', () => ({
   SpectrumAnalyzer: () => <div>Spectrum Analyzer Mock</div>,
 }))

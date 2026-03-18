@@ -18,13 +18,6 @@ jest.mock('../contexts/ClusterContext', () => ({
 jest.mock('../hooks/usePluginBrowser', () => ({
   usePluginBrowser: (...args: unknown[]) => mockUsePluginBrowser(...args),
 }))
-jest.mock('../components/NodeContextBanner/NodeContextBanner', () => ({
-  NodeContextBanner: () => <div data-testid="node-context-banner">Node Context Banner</div>,
-}))
-jest.mock('../components/NodeContextPicker/NodeContextPicker', () => ({
-  NodeContextPicker: () => <div data-testid="node-context-picker">Node Context Picker</div>,
-}))
-
 jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: (...args: unknown[]) => mockUseNodePageContext(...args),
 }))

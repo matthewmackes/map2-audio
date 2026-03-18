@@ -12,14 +12,10 @@ import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
-import { NodeAlertBar } from '../components/NodeAlerts/NodeAlertBar'
-import { NodeAlertMonitor } from '../components/NodeAlerts/NodeAlertMonitor'
-import { NodeAlertToast } from '../components/NodeAlerts/NodeAlertToast'
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { Map2BrandMark } from '../components/branding/map2Branding'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
-import { NodeSelector } from '../components/shared/NodeSelector'
 import {
   advancedMenuItems,
   defaultPinnedRoutes,
@@ -824,8 +820,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}`}>
-      <NodeAlertMonitor />
-      <NodeAlertToast />
       {showMobileConnectionBanner && (
         <div className="mobile-connection-banner" role="status" aria-live="polite">
           <span className="mobile-connection-banner-dot" aria-hidden />
@@ -857,7 +851,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <HeaderGlobalBar className="nav-tabs-right-container">
           <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
             <NodeNavBar />
-            <NodeSelector />
             <div className="advanced-menu-root" ref={advancedMenuRef}>
               <button
                 type="button"
@@ -1043,7 +1036,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <NodeAlertBar />
       <PasswordDialog
         isOpen={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}

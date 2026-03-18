@@ -1034,6 +1034,10 @@ try:
         with _plugin_cache_lock:
             discovered_snapshot = list(_discovered_plugins)
         plugin_info = next((p for p in discovered_snapshot if p["uri"] == uri), None)
+        if plugin_info is None:
+            discovery = await discover_plugins(response=Response(), refresh=not _is_cache_valid())
+            discovered_snapshot = discovery.get("plugins", []) if isinstance(discovery, dict) else []
+            plugin_info = next((p for p in discovered_snapshot if p["uri"] == uri), None)
         if not plugin_info:
             raise HTTPException(status_code=404, detail="Plugin not found in discovered list")
 

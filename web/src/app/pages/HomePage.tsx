@@ -21,8 +21,6 @@ import {
   type HardwareInterfaceMenuItem,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
-import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
-import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { buildPlatformHref } from '../platform/model'
 import { isBlockedAdvancedMenuItem } from '../layout/advancedMenuState'
@@ -549,9 +547,6 @@ export function HomePage() {
 
   return (
     <div className="hp-root">
-      {localNode ? (
-        <NodeContextBanner pageKey={NODE_PAGE_KEYS.home} localNode={localNode} topology={topology} />
-      ) : null}
       {/* ══════════════════════════════════════════════════════════
           HERO — full-bleed neon grid artwork + scanline effects
           ══════════════════════════════════════════════════════════ */}
@@ -572,10 +567,6 @@ export function HomePage() {
 
         {/* Combined controls bar — context picker + node pills in one row */}
         <div className="hp-hero__controls" aria-label="Node context and cluster status">
-          <NodeContextPicker pageKey={NODE_PAGE_KEYS.home} topology={topology} />
-
-          <span className="hp-hero__controls-sep" aria-hidden="true" />
-
           {tilesLoading && (
             <>
               <span className="hp-hero__node hp-hero__node--skeleton" aria-hidden="true" />

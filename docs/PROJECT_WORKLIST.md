@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-18 - Codex (T210 SoundFont sampler refactor started for SynthForge review + implementation)
+Last updated: 2026-03-18 - Codex (T211–T219 Drum Machine professional platform epic added; T209 API reliability preflight + observability slices advanced; T210 still in progress)
 
 ## Active Blockers Only
 
@@ -652,7 +652,7 @@ Last updated: 2026-03-17 - Claude
 ## API Reliability
 
 ID: T209
-Status: [ ] Todo
+Status: [>] In Progress
 Title: API startup, restart, and load-reliability remediation program
 Description:
 - Goal / acceptance criteria: Eliminate the API failure modes observed in the 2026-03-07 qualification review by hardening startup/readiness behavior, restart sequencing, endpoint degradation paths, and observability so that the load qualification suite passes consistently without transient `404`, `500`, `503`, connection resets, or 8-second read/connect timeouts during warmup or steady-state runs.
@@ -679,7 +679,7 @@ Last updated: 2026-03-18 00:04 - Codex
   - Added focused tests in `tests/test_api_route_readiness.py` and updated affected route tests so the new startup contract is validated without regressing plugin residency behavior.
 
 ID: T209-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Stabilize restart sequencing and dependency ordering for backend and realtime services
 Description:
 - Goal / acceptance criteria: Trace service startup/restart ordering across the MAP2 backend stack and remove races that allow HTTP or websocket traffic before required subsystems are actually usable. Acceptance requires an explicit dependency/ordering map, any required code or service-unit changes, and restart validation showing API health, websocket readiness, and route availability are stable immediately after controlled service-stack restart.
@@ -689,10 +689,16 @@ Description:
 - Required outputs/deliverables: Restart dependency map, service sequencing fixes, controlled restart validation evidence, and updated operational notes if boot/service procedures change.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-17 23:10 - Codex
+Last updated: 2026-03-18 08:16 - Codex
+- Completion notes:
+  - Extended `app/services/service_orchestrator.py` with an explicit startup dependency map, per-level parallel startup visibility, traffic-gate service identification (`database`, `command_queue`, `websocket_manager`), and startup progress counts so restart ordering is queryable instead of implicit.
+  - Updated `app/routes/services.py` `/api/services/startup-order` to expose dependency levels, dependents, traffic-gate membership, and startup progress for controlled restart diagnostics.
+  - Tightened `app/routes/health.py` `/api/ready` to report both `ready` and `accepting_traffic`, with `accepting_traffic` gated on the restart-safe base services required for stable HTTP/WebSocket handling.
+  - Added `docs/API_RESTART_DEPENDENCY_MAP.md` to document the base restart dependency map and readiness contract used by the API.
+  - Validation: `pytest -q tests/test_health_routes.py tests/test_service_routes.py tests/test_api_route_readiness.py` -> pass. `python3 -m compileall ...` hit an existing `__pycache__` permission error under `app/services/`, so compile-only validation was not fully usable in this workspace.
 
 ID: T209-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Harden chain and plugin lifecycle endpoints against transient 404/500/503 failures
 Description:
 - Goal / acceptance criteria: Review the chain activation/deactivation, chain lookup, plugin load, and plugin unload flows that appeared in the transient smoke failures and make them resilient to restart-time and warmup-time races. Acceptance requires root-cause analysis for the observed `/api/plugins/unload` `404`, chain endpoint `500`/`503` responses, and connection resets; route or service fixes that return the correct status/payloads; and focused regression tests that exercise lifecycle calls during degraded states.
@@ -702,10 +708,15 @@ Description:
 - Required outputs/deliverables: Root-cause notes, backend fixes, targeted tests for chain/plugin lifecycle routes, and updated API contract documentation if any response semantics are formalized.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-17 23:10 - Codex
+Last updated: 2026-03-18 09:03 - Codex
+- Completion notes:
+  - Updated `app/routes/chains.py` so list, lookup, activate, and deactivate paths now return structured `503` readiness payloads for transient timeout/session failures when no usable cache exists, instead of leaking empty/deferred success responses during restart races.
+  - Added `raise_route_transient_unavailable()` in `app/services/api_readiness.py` so degraded lifecycle routes reuse the same retryable warmup contract and dependency detail as the explicit readiness gates.
+  - Hardened `app/routes/plugins.py` `load_plugin` to force a single discovery refresh before returning `404` when the in-memory plugin inventory is empty after restart, eliminating a common false-miss window.
+  - Validation: `pytest -q tests/test_api_route_readiness.py tests/test_plugins_residency.py` -> pass.
 
 ID: T209-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add correlated request, websocket, and dependency observability for qualification failures
 Description:
 - Goal / acceptance criteria: Extend logging/observability so every future load run can be correlated across HTTP requests, websocket sessions, dependency readiness, queue depth, and backend exceptions using a shared run or request context. Acceptance requires new or improved structured logs/metrics for timeout-prone areas, a documented artifact-capture path for qualification runs, and tests or smoke validation proving the data is emitted during failure and pass scenarios.
@@ -715,10 +726,16 @@ Description:
 - Required outputs/deliverables: Structured log/metric additions, qualification capture instructions or script updates, and evidence examples tying a run ID to backend-side events.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-17 23:10 - Codex
+Last updated: 2026-03-18 09:18 - Codex
+- Completion notes:
+  - Extended `app/services/api_observatory.py` and `app/routes/api_observatory.py` so observability events now carry `event_type` and `run_id`, and can be filtered per qualification run for both live traffic and stats views.
+  - Updated `app/middleware/traffic_capture.py` to capture qualification run IDs from request headers/query params and attach restart/dependency snapshots to tagged requests and server-side failures.
+  - Updated `app/services/websocket_manager.py`, `app/routes/websocket.py`, and `tests/load_test.py` so qualification runs now correlate normal WebSocket lifecycle events (`connect`, `subscribe`, `disconnect`, timeout/failure paths) with the same run ID used by HTTP traffic.
+  - Added operator documentation in `docs/API_QUALIFICATION_OBSERVABILITY.md` and regression coverage in `tests/test_api_observatory.py`.
+  - Validation: `pytest -q tests/test_api_observatory.py tests/test_api_route_readiness.py tests/test_plugins_residency.py` -> pass. `python3 -m py_compile ...` hit the existing `app/services/__pycache__` permission issue in this workspace.
 
 ID: T209-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Make load qualification gating restart-safe and preflight-aware
 Description:
 - Goal / acceptance criteria: Update the load-qualification workflow so it verifies environment prerequisites and service readiness before the expensive smoke/full runs begin. This includes preflight checks for file descriptor limits, API health, websocket readiness, chain/plugin route availability, and any other conditions learned from T050-T053. Acceptance requires workflow/runbook updates and automated preflight behavior that prevents collecting misleading full-run failures when the environment is not yet ready.
@@ -728,7 +745,12 @@ Description:
 - Required outputs/deliverables: Updated qualification runner or scripts, revised runbook/docs, preflight checks in automation, and evidence showing the gate blocks unsafe starts.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-17 23:10 - Codex
+Last updated: 2026-03-18 09:31 - Codex
+- Completion notes:
+  - Added `scripts/run_t209_api_load_qualification.py`, a deterministic preflight gate that checks open-file limits, `/api/ready`, startup-order completion, `websocket_manager` readiness, and the chain/plugin qualification routes before allowing any load command to execute.
+  - The runner now emits artifact-ready JSON/markdown summaries and blocks load execution with explicit `BLOCKED` status when readiness or restart-safety prerequisites are not met.
+  - Added focused regression coverage in `tests/test_t209_api_load_qualification.py` and documented the workflow in `docs/API_LOAD_QUALIFICATION_RUNBOOK.md`.
+  - Validation: `pytest -q tests/test_t209_api_load_qualification.py tests/test_api_observatory.py tests/test_api_route_readiness.py tests/test_plugins_residency.py` -> pass. `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile scripts/run_t209_api_load_qualification.py app/services/api_observatory.py app/middleware/traffic_capture.py app/services/websocket_manager.py app/routes/websocket.py app/routes/api_observatory.py tests/load_test.py` -> pass.
 
 ID: T209-subF
 Status: [ ] Todo
@@ -859,13 +881,14 @@ Description:
 - Required outputs: Updated `JUCE-GRID` effect-editor interaction, responsive modal styling, focused regression validation, and canonical worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 07:17 - Codex
+Last updated: 2026-03-18 08:08 - Codex
 - Completion notes:
   - Removed the inline desktop effect editor shell from `web/src/app/pages/JuceGridPage.tsx` and replaced it with a route-local modal driven by the existing selected-plugin flow.
   - Kept the current block-selection trigger unchanged while ensuring keyboard left/right plugin navigation also opens the effect modal and Escape closes the modal before clearing selection.
   - Added a responsive effect-modal shell in `web/src/app/pages/JuceGridPage.css` that hugs the editor content on larger screens, animates on open, dims the page with Carbon modal behavior, and expands to fullscreen on mobile.
   - Replaced the compact inline editor panel with a lightweight placeholder/reopen surface so the effect card now exists only inside the modal.
   - Refined the modal shell so all JUCE-GRID plugin/effect cards now open at the underlying window size captured at open time, with no extra modal header copy, metadata tags, or redundant close button above the card.
+  - Corrected the full-window effect modal sizing to anchor below the fixed global top bar by measuring the shell header at open time, so the editor no longer renders underneath the navigation chrome.
   - Recorded the standing JUCE-GRID plugin-modal rule in `.gemini/instructions.md` so future card/modal work preserves the same full-window, card-only presentation pattern.
   - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- JuceGridPage.test.tsx --runInBand --silent` -> pass, `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
 
@@ -887,3 +910,461 @@ Last updated: 2026-03-17 22:39 - Codex
   - Shifted watermark placement for visualization-heavy cards to an off-center decorative position while keeping non-visualization cards centered for a consistent desktop composition.
   - Removed the older duplicated hero/visualization icon treatment from the shared shell so the watermark language stays consistent.
   - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+
+## Drum Machine — Professional Platform (Epic)
+
+### Design Decisions (established 2026-03-18)
+
+- **SFZ engine**: Extend native SFZ parser to support drum-critical opcodes (group/off_by, seq_length/seq_position, lorand/hirand, sw_default/sw_last, transpose, tune, pan, gain); both native JUCE and Sfizz backends must be drum-capable
+- **Output routing**: Internal submix buses with per-bus EQ + Comp, summed to stereo master; no additional PipeWire ports — breakout via internal bus routing only
+- **Sequencer paradigm**: Roland TR-style 16-step LED grid with instrument rows, pattern chaining, fill/variation buttons
+- **Instruments per kit**: 16 pads / 16 instruments — maps 1:1 to SynthForge 16-part architecture
+- **Pattern length**: Variable 1–64 steps, 4/4 time signature only
+- **Per-instrument controls**: Volume + Pan + Tune + Mute/Solo only; all effects processing on submix buses
+- **Submix bus topology**: Fixed 8 buses — Kick, Snare, HiHat, Toms, Cymbals, Percussion, Overhead, Room; each bus has EQ + Comp; instruments assigned by role
+- **Pattern/song hierarchy**: 128 patterns per kit + Song mode arranger (ordered pattern chain with repeat counts per section, automatic playthrough)
+- **External trigger input**: MIDI-only consumer — standard MIDI note-on/off from any e-drum module or trigger interface; MAP2 provides velocity curves, note mapping, and zone assignment per pad
+- **UI standard**: Strict Carbon Design System conformance per `docs/design/CARBON_CONFORMANCE_STANDARD.md`; all new surfaces use `@carbon/react` components, Carbon tokens, IBM Plex typography, 2x grid, 8px spacing
+
+---
+
+ID: T211
+Status: [ ] Todo
+Title: Drum Machine C++ Sound Engine — DrumMachineProcessor
+Description:
+- Goal / acceptance criteria: Implement a dedicated `DrumMachineProcessor` C++ class in `juce-engine/Source/DrumMachine/` that provides a 16-instrument drum sound engine built on top of the SynthForge sampler architecture, with per-instrument controls, 8 fixed submix buses, and stereo master output.
+- Why it matters: The current drum machine has no audio engine — the entire backend is a stateless dict stub. This is the foundation that all other drum machine features depend on.
+- Dependencies: T212 (SFZ parser extension), SynthForge 16-part architecture
+- Estimated effort: High
+- Required outputs: Compiling C++ processor integrated into Map2AudioEngine, Python bindings, passing unit tests.
+Subtasks:
+  - [ ] T211-A: Create `DrumMachineProcessor` class in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp`
+    - Owns 16 `Part` instances (one per drum instrument/pad)
+    - Each Part configured with: volume (0.0–1.0), pan (-1.0–1.0), tune (semitones -24 to +24), mute (bool), solo (bool)
+    - Part-to-bus assignment: fixed mapping by instrument role (Pad 0→Kick bus, Pad 1→Snare bus, Pads 2-3→HiHat bus, Pads 4-6→Toms bus, Pads 7-9→Cymbals bus, Pads 10-12→Percussion bus, Pad 13→Overhead bus, Pads 14-15→Room bus)
+    - Default MIDI note mapping: GM drum map (C1=36 kick through D#3=51), user-remappable per pad
+    - Velocity curve per pad: Linear, Logarithmic, Exponential, S-Curve, Fixed (configurable)
+    - MIDI channel filtering: per-pad or global OMNI
+  - [ ] T211-B: Implement 8 fixed submix buses in `DrumMachineMixer` class
+    - Bus definitions: Kick (0), Snare (1), HiHat (2), Toms (3), Cymbals (4), Percussion (5), Overhead (6), Room (7)
+    - Each bus: stereo audio buffer, 3-band parametric EQ (low shelf, mid peak, high shelf), single-band compressor (threshold, ratio, attack, release, makeup gain)
+    - Bus output: per-bus level + pan + mute/solo
+    - Master bus: sum of all 8 submix buses → stereo output with master volume
+    - All bus processing must be RT-safe (pre-allocated buffers, no heap allocation in processBlock)
+  - [ ] T211-C: Integrate `DrumMachineProcessor` into `Map2AudioEngine`
+    - Add `drumMachine_` member to Map2AudioEngine (like `synthForge_`)
+    - Process in audioCallback: MIDI → DrumMachineProcessor → mix into main output buffer
+    - DrumMachineProcessor receives MIDI from the same ring buffer drain as SynthForge
+    - Enable/disable drum machine processing via atomic flag
+  - [ ] T211-D: Expose DrumMachineProcessor via PythonBindings.cpp
+    - Kit management: `load_drum_kit(sfz_path)`, `get_drum_kit_status()`
+    - Per-pad: `set_drum_pad_volume(pad, vol)`, `set_drum_pad_pan(pad, pan)`, `set_drum_pad_tune(pad, semitones)`, `set_drum_pad_mute(pad, bool)`, `set_drum_pad_solo(pad, bool)`
+    - Per-pad MIDI: `set_drum_pad_note(pad, midi_note)`, `set_drum_pad_velocity_curve(pad, curve_type)`, `set_drum_pad_midi_channel(pad, channel)`
+    - Per-bus: `set_drum_bus_eq(bus, low_gain, mid_gain, mid_freq, high_gain)`, `set_drum_bus_comp(bus, threshold, ratio, attack, release, makeup)`, `set_drum_bus_level(bus, level)`, `set_drum_bus_mute(bus, bool)`, `set_drum_bus_solo(bus, bool)`
+    - Master: `set_drum_master_volume(vol)`, `get_drum_metering()` (per-pad peak/RMS + per-bus peak/RMS + master peak/RMS)
+    - Transport: `drum_trigger_note(pad, velocity)` for software-triggered hits
+  - [ ] T211-E: Add CMakeLists.txt entries for DrumMachine source files; verify build with `cmake -B build && cmake --build build`
+Assigned to: Codex
+Last updated: 2026-03-18
+
+---
+
+ID: T212
+Status: [ ] Todo
+Title: Extend native SFZ parser for drum-critical opcodes
+Description:
+- Goal / acceptance criteria: Extend `SfzLoader` in `juce-engine/Source/SynthForge/Sampler/SfzLoader.h/cpp` to parse and apply drum-critical SFZ v2 opcodes so the native JUCE sampler backend is fully drum-capable without requiring Sfizz.
+- Why it matters: The native parser currently only supports sample, key range, velocity range, and basic envelope. Drum kits require choke groups, round-robin, random variation, and key switches for realistic playback (e.g., open/closed hihat choking, snare articulation switching, tom round-robin).
+- Dependencies: None (independent parser work)
+- Estimated effort: Medium
+- Required outputs: Extended SfzLoader, updated SfzRegionDefinition struct, JUCE SamplerVoice integration for new opcodes, unit tests.
+Subtasks:
+  - [ ] T212-A: Add choke group support — parse `group` (int) and `off_by` (int) opcodes; implement voice-stealing by group ID in native sampler (when a note in group N triggers, kill all active voices with `off_by=N`)
+  - [ ] T212-B: Add round-robin support — parse `seq_length` and `seq_position` opcodes; track per-key round-robin counter; cycle through seq_position regions on successive triggers
+  - [ ] T212-C: Add random variation support — parse `lorand` and `hirand` opcodes; generate random float 0.0–1.0 per note-on; select region where `lorand <= rand < hirand`
+  - [ ] T212-D: Add key switch support — parse `sw_default`, `sw_last`, `sw_lokey`, `sw_hikey` opcodes; track last key switch state; filter regions by active key switch
+  - [ ] T212-E: Add per-region tuning/gain/pan — parse `transpose` (semitones), `tune` (cents), `volume` (dB), `pan` (-100 to 100) opcodes; apply in native SamplerVoice rendering
+  - [ ] T212-F: Add filter opcodes — parse `cutoff`, `resonance`, `fil_type` (lpf_1p, lpf_2p, hpf_1p, hpf_2p); apply state-variable filter per voice
+  - [ ] T212-G: Unit tests for each new opcode family — test SFZ files with choke groups, round-robin sequences, random layers, key switches, tuning, and filters; verify correct region selection and voice behavior
+Assigned to: Codex
+Last updated: 2026-03-18
+
+---
+
+ID: T213
+Status: [ ] Todo
+Title: Drum Machine Pattern Sequencer Engine (C++ + Python)
+Description:
+- Goal / acceptance criteria: Implement a real-time drum pattern sequencer with 128 patterns per kit, variable length (1–64 steps at 16th-note resolution, 4/4 only), per-step velocity, transport control (play/stop/pause), and BPM-synced playback that triggers notes through DrumMachineProcessor.
+- Why it matters: The sequencer is the core interaction model for the TR-style drum machine. Without it, the drum machine is just a sample player.
+- Dependencies: T211 (DrumMachineProcessor must exist to receive triggered notes)
+- Estimated effort: High
+- Required outputs: C++ sequencer class, Python service layer, REST API endpoints, WebSocket real-time position broadcast, unit tests.
+Subtasks:
+  - [ ] T213-A: Create `DrumSequencer` C++ class in `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp`
+    - Pattern data structure: 128 patterns, each with configurable step count (1–64, default 16), 16 instrument tracks
+    - Per-step data: velocity (0–127, 0=off), accent (bool)
+    - Transport: play, stop, pause, tempo (BPM 40–300), swing amount (0–100%)
+    - Playback: sample-accurate step advancement using accumulated sample count vs. samples-per-step
+    - On each step: trigger `DrumMachineProcessor::triggerNote(pad, velocity)` for all active instruments at that step
+    - Current position tracking: pattern index, step index, bar count (for song mode)
+    - Tap tempo: accept timestamps, compute running average BPM (last 6 taps, discard >2s gaps)
+  - [ ] T213-B: Pattern editing API (C++ methods exposed via Python bindings)
+    - `set_step(pattern, instrument, step, velocity)`, `get_step(pattern, instrument, step)`
+    - `clear_pattern(pattern)`, `copy_pattern(src, dst)`, `get_pattern_data(pattern)` → full grid
+    - `set_pattern_length(pattern, steps)`, `get_pattern_length(pattern)`
+    - `set_swing(percent)`, `get_swing()`
+    - `set_accent_velocity(velocity)` — global accent level (default 127)
+  - [ ] T213-C: Song mode arranger
+    - Song data structure: ordered list of `{pattern_id, repeat_count}` entries, max 256 entries
+    - Song playback: advance through entries, repeat pattern N times, then next entry; loop or stop at end
+    - API: `add_song_entry(pattern_id, repeat_count, position)`, `remove_song_entry(position)`, `reorder_song_entries(order)`, `get_song()`, `clear_song()`
+    - `set_song_loop(bool)`, `get_song_loop()`
+  - [ ] T213-D: Python service layer — `app/services/drum_sequencer_service.py`
+    - Wraps C++ bindings with validation, error handling, state persistence
+    - Pattern save/load to `~/.map2/drums/patterns/` as JSON
+    - Kit + pattern bundle save/load (kit SFZ reference + all 128 patterns + song)
+    - Auto-save on transport stop
+  - [ ] T213-E: REST API endpoints — extend `app/routes/drums.py`
+    - `GET/POST /api/engine/drums/transport` — play/stop/pause/bpm/swing
+    - `GET/POST /api/engine/drums/pattern/{id}` — get/set full pattern grid
+    - `POST /api/engine/drums/pattern/{id}/step` — set individual step
+    - `GET/POST /api/engine/drums/song` — get/set song arrangement
+    - `GET /api/engine/drums/position` — current step/bar/pattern (also via WebSocket)
+  - [ ] T213-F: WebSocket real-time position — broadcast `{step, bar, pattern_id, is_playing}` at each step advance via existing WebSocket infrastructure for UI beat indicator sync
+  - [ ] T213-G: Fill and variation system
+    - Fill trigger: `trigger_fill()` — plays a fill pattern (last 1–2 beats of current pattern replaced with fill variation)
+    - Auto-fill: at quantization boundary (configurable 1–8 bars), automatically trigger fill before next pattern/section
+    - Variation: each pattern has Main + up to 10 variations (same step count, different velocities/instruments); `set_variation(pattern, variation_index)`
+    - Count-in: play N bars (0–4) of metronome clicks before pattern starts
+Assigned to: Codex
+Last updated: 2026-03-18
+
+---
+
+ID: T214
+Status: [ ] Todo
+Title: Drum Machine Kit Management — SFZ kit loading, factory kits, user kits
+Description:
+- Goal / acceptance criteria: Implement a complete drum kit management system that loads SFZ drum kits into DrumMachineProcessor, ships factory kits, and supports user kit import/creation. Each kit defines 16 instrument assignments with sample references, default MIDI mapping, and default bus routing.
+- Why it matters: Without kits, the drum machine has no sounds. The kit system bridges the SFZ sample engine to the 16-pad instrument model.
+- Dependencies: T211 (DrumMachineProcessor), T212 (extended SFZ parser)
+- Estimated effort: Medium
+- Required outputs: Kit schema, factory kit SFZ files, kit manager service, REST endpoints, unit tests.
+Subtasks:
+  - [ ] T214-A: Define drum kit schema — `data/drums/schemas/drum_kit.schema.json`
+    - Kit metadata: `kit_id`, `name`, `description`, `author`, `version`, `category` (acoustic, electronic, percussion, hybrid)
+    - 16 instrument slots: `instruments[0..15]` each with `name`, `sfz_path` (relative to kit root), `default_note` (MIDI), `bus_assignment` (0–7), `default_volume`, `default_pan`, `default_tune`
+    - Kit-level defaults: `default_bpm`, `default_swing`
+    - License field for attribution
+  - [ ] T214-B: Create factory drum kits (minimum 4 kits for launch)
+    - `Standard Rock` — acoustic rock kit (kick, snare, hats, 3 toms, crash, ride, 4 percussion, overhead, room fills)
+    - `Electronic 808` — classic TR-808 sounds (kick, snare, clap, hats, cowbell, clave, conga, maracas, toms, cymbal)
+    - `Electronic 909` — classic TR-909 sounds
+    - `Jazz Brush` — brush snare, kick, ride, hats, floor tom
+    - Each kit: multi-velocity SFZ with round-robin, proper choke groups (open/closed HH), GM-compatible note mapping
+    - SFZ files in `data/drums/factory_kits/{kit_id}/` with samples in `data/drums/factory_kits/{kit_id}/samples/`
+    - All samples must be CC0/public domain or purpose-recorded
+  - [ ] T214-C: Kit manager service — `app/services/drum_kit_service.py`
+    - Index factory kits from `data/drums/factory_kits/`
+    - Index user kits from `~/.map2/drums/user_kits/`
+    - Load kit into DrumMachineProcessor: parse kit JSON → load each instrument SFZ into corresponding Part → apply default MIDI mapping and bus routing
+    - Kit switching: unload current → load new (with crossfade or silence gap to prevent artifacts)
+    - User kit creation: copy factory kit → modify instrument assignments → save to user directory
+    - Kit import: accept .zip containing kit JSON + SFZ + samples; validate against schema; extract to user_kits
+  - [ ] T214-D: REST API endpoints — extend `app/routes/drums.py`
+    - `GET /api/engine/drums/kits` — list all kits (factory + user) with metadata
+    - `GET /api/engine/drums/kits/{kit_id}` — kit details including instrument assignments
+    - `POST /api/engine/drums/kits/load` — load kit into engine `{kit_id}`
+    - `GET /api/engine/drums/kits/active` — currently loaded kit
+    - `POST /api/engine/drums/kits/import` — import user kit .zip
+    - `POST /api/engine/drums/kits/create` — create new user kit from template
+    - `PATCH /api/engine/drums/kits/{kit_id}/instruments/{pad}` — modify instrument assignment
+  - [ ] T214-E: Sample sourcing — identify, download, and organize CC0 drum samples for factory kits; write SFZ mappings with velocity layers (minimum 3 velocity layers per instrument), round-robin (minimum 2 variations), and choke groups for hihats
+Assigned to: Codex
+Last updated: 2026-03-18
+
+---
+
+ID: T215
+Status: [ ] Todo
+Title: Drum Machine MIDI Input — velocity curves, note mapping, zone assignment
+Description:
+- Goal / acceptance criteria: Implement comprehensive MIDI input handling for the drum machine so any external e-drum module, MIDI controller, or trigger interface can play the drum machine with configurable velocity response, note-to-pad mapping, and multi-zone pad support.
+- Why it matters: External trigger support via MIDI is the primary hardware integration path. Velocity curves and note mapping make MAP2 compatible with any manufacturer's e-drum hardware without requiring trigger parameter proxying.
+- Dependencies: T211 (DrumMachineProcessor)
+- Estimated effort: Medium
+- Required outputs: MIDI mapping configuration, velocity curve engine, zone assignment, preset mappings for common hardware, REST endpoints, unit tests.
+Subtasks:
+  - [ ] T215-A: Per-pad MIDI note mapping engine
+    - Default: GM drum map (kick=36/C1, snare=38/D1, closed HH=42, open HH=46, etc.)
+    - User-configurable: any MIDI note (0–127) → any pad (0–15)
+    - Multi-note-to-one-pad: multiple MIDI notes can trigger the same pad (e.g., notes 36 and 35 both trigger kick pad)
+    - One-note-to-one-pad: each note maps to at most one pad (no fan-out)
+    - MIDI channel filter: global (OMNI or specific channel 1–16) or per-pad channel
+  - [ ] T215-B: Velocity curve engine
+    - 5 curve types per pad: Linear, Logarithmic (soft-touch emphasis), Exponential (hard-touch emphasis), S-Curve (compressed middle), Fixed (constant velocity regardless of input)
+    - Per-pad configurable: curve type + input floor (minimum velocity threshold) + output floor (minimum output velocity) + output ceiling (maximum output velocity)
+    - Velocity scaling: input velocity → curve transform → output velocity (0–127)
+    - Real-time preview: when adjusting curve, show input→output graph and last-hit velocity value
+  - [ ] T215-C: Zone assignment for multi-zone pads
+    - Zone concept: a single physical pad may send different MIDI notes for head/rim/edge strikes (e.g., Roland PD-140DS sends note 38 for head, 40 for rim, 37 for cross-stick)
+    - Zone mapping: define up to 3 zones per pad (Head, Rim, Edge), each zone maps a different MIDI note to the same pad but triggers a different SFZ articulation via key switch or velocity layer
+    - Common hardware presets: Roland (PD-140DS, CY-18DR, VH-14D note assignments), Yamaha (DTX pads), Alesis (Surge/Strike pads), ATV, 2Box
+  - [ ] T215-D: MIDI learn mode
+    - User hits a pad on their hardware → MAP2 captures the MIDI note number and channel → assigns it to the selected drum pad
+    - "Learn All" mode: user hits each pad in sequence (kick→snare→HH→...), MAP2 auto-advances to next pad after each hit
+    - Timeout: 10 seconds of inactivity exits learn mode
+  - [ ] T215-E: REST API + Python service
+    - `GET/POST /api/engine/drums/midi/mapping` — get/set full note-to-pad mapping
+    - `GET/POST /api/engine/drums/midi/velocity-curves` — get/set per-pad velocity curve config
+    - `GET/POST /api/engine/drums/midi/zones` — get/set zone assignments
+    - `POST /api/engine/drums/midi/learn/start` — enter MIDI learn mode
+    - `POST /api/engine/drums/midi/learn/stop` — exit MIDI learn mode
+    - `GET /api/engine/drums/midi/learn/status` — current learn state (active pad, last received note)
+    - `GET /api/engine/drums/midi/presets` — list hardware presets (Roland, Yamaha, Alesis, etc.)
+    - `POST /api/engine/drums/midi/presets/load` — apply a hardware preset mapping
+  - [ ] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
+Assigned to: Codex
+Last updated: 2026-03-18
+
+---
+
+ID: T216
+Status: [ ] Todo
+Title: Drum Machine Backend Service — state management, persistence, WebSocket integration
+Description:
+- Goal / acceptance criteria: Replace the current stateless dict stub in `app/routes/drums.py` with a proper service layer that manages drum machine state, persists configuration, integrates with the C++ engine via Python bindings, and provides real-time updates via WebSocket.
+- Why it matters: The current backend is a dead-end stub that stores state in a Python dict with no engine connection and no persistence. Every other drum machine task depends on a working service layer.
+- Dependencies: T211 (DrumMachineProcessor Python bindings)
+- Estimated effort: Medium
+- Required outputs: Refactored service, persistent state, WebSocket integration, updated REST endpoints.
+Subtasks:
+  - [ ] T216-A: Create `app/services/drum_machine_service.py`
+    - Singleton service initialized at app startup
+    - Manages: active kit, transport state, current pattern, sequencer position, mixer state (per-pad + per-bus + master)
+    - All state changes dispatch to C++ engine via Python bindings
+    - State persistence to `~/.map2/drums/state.json` on transport stop and on explicit save
+    - State restore on service startup (last active kit, last pattern, mixer settings)
+  - [ ] T216-B: Refactor `app/routes/drums.py` to delegate to service
+    - Remove in-memory `DRUM_MACHINE_STATE` dict
+    - All endpoints call `DrumMachineService` methods
+    - Add proper Pydantic request/response models for all endpoints
+    - Add input validation (BPM 40–300, volume 0–100, pattern 0–127, step 0–63, etc.)
+  - [ ] T216-C: WebSocket integration
+    - Broadcast transport state changes (play/stop/pause, BPM change) to connected clients
+    - Broadcast sequencer position (step, bar, pattern) at each step for UI beat sync
+    - Broadcast metering data (per-pad peak, per-bus peak, master peak) at 30 fps
+    - Use existing `WebSocketManager` infrastructure
+  - [ ] T216-D: Metering API
+    - `GET /api/engine/drums/metering` — snapshot of all levels (per-pad, per-bus, master)
+    - Also available via WebSocket subscription for real-time display
+    - Metering struct from C++ includes: peak + RMS per pad (16), peak + RMS per bus (8), peak + RMS master (1)
+Assigned to: Codex
+Last updated: 2026-03-18
+
+---
+
+ID: T217
+Status: [ ] Todo
+Title: Drum Machine UI — TR-Style Step Sequencer (Carbon Design)
+Description:
+- Goal / acceptance criteria: Build the primary drum machine UI as a full-page Carbon Design surface at `/drums` with a TR-style 16-step grid, instrument rows, transport controls, pattern/song management, and real-time metering. This replaces the current placeholder `DrumsPage.tsx` and `DrumMachineCard.tsx`.
+- Why it matters: The UI is the operator's primary interaction surface. It must match professional drum machine standards (TR-8S, Digitakt) while adhering strictly to Carbon Design conformance.
+- Dependencies: T213 (sequencer API), T214 (kit management API), T216 (backend service + WebSocket)
+- Estimated effort: Very High
+- Required outputs: Complete page implementation, plugin card, Carbon conformance checklist pass, responsive design, accessibility pass.
+Subtasks:
+  - [ ] T217-A: Page layout and navigation — `web/src/app/pages/DrumsPage.tsx` (full rewrite)
+    - Carbon `Grid` / `Row` / `Column` layout on 16-column structure
+    - Three mode tabs via Carbon `Tabs` component: Practice, Advanced, Backing Tracks
+    - Global transport bar (top): Play/Stop buttons (`Button` with `renderIcon`), BPM display (`NumberInput`), Tap Tempo (`Button`), Swing knob, pattern selector (`Dropdown`), master volume (`Slider`)
+    - Mode-specific content area below transport bar
+    - Footer status bar: active kit name, current pattern, playing/stopped badge, MIDI activity indicator
+    - Responsive: full grid on desktop (≥1056px), stacked on tablet (672–1055px), single-column on mobile (<672px)
+  - [ ] T217-B: TR-style step sequencer grid (Advanced mode primary view)
+    - 16 instrument rows × N step columns (N = pattern length, default 16, max 64)
+    - Each row: instrument name label (left), mute/solo toggle buttons, 16 step pads, per-instrument volume slider (right)
+    - Step pad states: off (empty, `$ui-01` background), active (filled, instrument accent color), accent (filled + bright border)
+    - Step pad interaction: click to toggle on/off, shift+click for accent, right-click for velocity edit (Carbon `NumberInput` popover, 1–127)
+    - Current step indicator: highlight column with `$interactive-01` border during playback, animate at tempo
+    - Scrollable horizontally if pattern length > 16 steps (with step page indicator)
+    - Carbon `StructuredList` or custom grid using Carbon tokens for cell sizing (40px × 40px step cells, 8px gap)
+    - Step pads must be keyboard-accessible: arrow keys navigate grid, Enter/Space toggles, Tab moves between rows
+  - [ ] T217-C: Instrument row controls
+    - Each of 16 rows shows: instrument name (editable via `TextInput` inline), pad color swatch, Mute (`Toggle`), Solo (`Toggle`), Volume (`Slider` 0–100), Pan (`Slider` -100 to +100), Tune (`Slider` -24 to +24 semitones)
+    - Instrument name reflects loaded kit instrument name (e.g., "Kick", "Snare", "Closed HH")
+    - Row highlight on MIDI input: flash row accent color when that instrument receives a MIDI trigger
+    - Row context menu: reassign MIDI note, change bus assignment, load different sample
+  - [ ] T217-D: Pattern management panel
+    - Pattern bank: 128 pattern slots displayed as Carbon `Tile` grid (8×16 or paginated)
+    - Active pattern highlighted with `$interactive-01` border
+    - Pattern operations: Copy (`Button`), Paste (`Button`), Clear (`Button` with `Modal` confirmation), Duplicate
+    - Pattern length control: `NumberInput` (1–64 steps)
+    - Variation selector: `Dropdown` (Main, Var 1–10)
+    - Fill trigger: `Button` with `Lightning` icon
+  - [ ] T217-E: Song mode arranger panel
+    - Vertical list of song entries: each entry shows pattern name/number + repeat count
+    - Carbon `OrderedList` or `StructuredList` with drag-to-reorder (or move up/down buttons for accessibility)
+    - Add entry: `Button` → `Modal` with pattern selector `Dropdown` + repeat count `NumberInput` (1–99)
+    - Remove entry: `Button` with `TrashCan` icon + confirmation
+    - Song transport: Play Song / Stop Song buttons, loop toggle
+    - Current position indicator: highlight active entry during song playback
+  - [ ] T217-F: Kit browser and mixer panel
+    - Kit browser: `Dropdown` for active kit selection + `Tile` grid showing available kits (factory + user) with name, category badge, instrument count
+    - Load kit: click tile → `Modal` confirmation (loading replaces current kit)
+    - Mixer view (toggled via Carbon `Toggle` or `ContentSwitcher`):
+      - 8 submix bus channel strips arranged horizontally
+      - Each strip: bus name label, EQ controls (3-band: low gain, mid gain + freq, high gain via `Slider`), compressor controls (threshold, ratio, attack, release, makeup via `Slider`), bus level `Slider`, mute/solo `Toggle`, peak meter bar (vertical, real-time via WebSocket)
+    - Master strip: master volume `Slider` + master peak meter
+  - [ ] T217-G: Practice mode panel
+    - Style selector: Carbon `Tile` grid of 8 built-in styles (rock_8, rock_16, shuffle_blues, funk_16, metal_doublekick, pop_4onfloor, jazz_swing, reggae_1drop) with icon + label
+    - Active style highlighted
+    - Count-in control: `NumberInput` (0–4 bars)
+    - Quantize control: `NumberInput` (1–8 bars)
+    - Variation control: `Slider` (0–10)
+    - Auto-fill toggle: `Toggle` with description text
+    - Practice pack browser: `Accordion` sections for factory packs and user packs, each showing arrangement list with name, BPM, feel, time signature
+    - Load arrangement: click → applies style, BPM, and section sequence to sequencer
+  - [ ] T217-H: Backing Tracks mode panel
+    - Track browser: `Search` + filterable `DataTable` of available tracks (name, genre, key, tempo, duration)
+    - Track player: play/pause/stop, seek bar (`Slider`), waveform overview (reuse platform visualization components or `canvas`), current time / total time display
+    - Tempo shift: `Slider` (-50% to +50%) — requires time-stretch engine integration (may be deferred)
+    - Pitch shift: `Slider` (-12 to +12 semitones) — requires pitch-shift engine integration (may be deferred)
+    - Loop controls: loop toggle, loop start/end markers on waveform
+    - Note: Audio playback engine for backing tracks is a separate dependency — this subtask covers UI only; if engine not ready, show "Coming soon" `InlineNotification` (warning type, not coaching)
+  - [ ] T217-I: Real-time metering and beat visualization
+    - Per-instrument hit indicator: step pad flashes on trigger (via WebSocket)
+    - Per-bus level meters: vertical bar meters on mixer strips, updated at 30fps via WebSocket
+    - Master level meter: stereo peak meter in transport bar
+    - Beat indicator: 4-dot display in transport bar synced to sequencer position via WebSocket (replace current interval-based animation with server-synced position)
+    - Tempo display: large BPM readout with tap tempo visual feedback
+  - [ ] T217-J: DrumMachineCard.tsx plugin card (full rewrite)
+    - Compact card version for embedding in pedalboard/JUCE Grid
+    - Uses `PluginCardShell` with `accentColor` based on active mode
+    - Compact transport: BPM display, Play/Stop, pattern name
+    - Compact step indicator: 16 dots showing active steps for current instrument
+    - Kit name in footer
+    - Mode switcher (Practice/Advanced/Backing) → navigates to full `/drums` page in that mode
+    - Metering: small per-bus level bars in visualization area
+    - MIDI mapping via `withMidiDialog` HOC (retain existing pattern)
+  - [ ] T217-K: MIDI configuration panel
+    - Accessible from Advanced mode via Carbon `Tab` or side panel
+    - Note mapping table: Carbon `DataTable` with 16 rows (pad 0–15), columns: Pad Name, MIDI Note (editable `NumberInput`), MIDI Channel (`Dropdown`), Velocity Curve (`Dropdown`), Zone Config
+    - Velocity curve editor: visual curve display (SVG/canvas, 128×128 grid), curve type selector, floor/ceiling sliders
+    - MIDI learn: "Learn" `Button` per row → enter learn mode → display "Hit a pad..." → capture note → auto-fill
+    - "Learn All" `Button` → sequential learn across all 16 pads
+    - Hardware preset loader: `Dropdown` (Roland, Yamaha, Alesis, etc.) → `Button` "Apply Preset"
+    - Zone configuration: per-pad expandable row showing Head/Rim/Edge zone note assignments
+  - [ ] T217-L: Accessibility and Carbon conformance
+    - Full keyboard navigation: Tab between sections, arrow keys within grids, Enter/Space to toggle steps
+    - ARIA roles: grid role for step sequencer, row/gridcell for steps, aria-pressed for active steps, aria-label for instruments
+    - Screen reader announcements: step state changes, transport state, pattern changes
+    - Focus management: focus trap in modals, skip links for major sections
+    - Color contrast: all step states meet WCAG 2.1 AA against `$ui-01` background
+    - Pass full `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`
+Assigned to: Codex
+Last updated: 2026-03-18
+
+---
+
+ID: T218
+Status: [ ] Todo
+Title: Drum Machine TypeScript types, API client, and React Query integration
+Description:
+- Goal / acceptance criteria: Define complete TypeScript interfaces for all drum machine data structures and implement the API client layer with React Query hooks for all drum machine endpoints.
+- Why it matters: Type-safe API integration is required before any UI component can consume drum machine data. This is a prerequisite for T217.
+- Dependencies: T216 (backend API must be defined; types can be written from spec before endpoints are live)
+- Estimated effort: Medium
+- Required outputs: Updated types.ts, updated api.ts, React Query hooks, unit tests for API client.
+Subtasks:
+  - [ ] T218-A: TypeScript interfaces in `web/src/map2/types.ts`
+    - `DrumMachineState` — extend existing interface with full transport, sequencer position, active pattern, active kit, mixer state
+    - `DrumKit` — kit_id, name, description, author, category, instruments[16]
+    - `DrumInstrument` — name, sfz_path, default_note, bus_assignment, volume, pan, tune, mute, solo
+    - `DrumPattern` — pattern_id, steps (16×64 grid of {velocity, accent}), length, variation
+    - `DrumSongEntry` — pattern_id, repeat_count
+    - `DrumSong` — entries[], loop
+    - `DrumBusMixer` — bus_id, name, eq (low_gain, mid_gain, mid_freq, high_gain), comp (threshold, ratio, attack, release, makeup), level, mute, solo
+    - `DrumMeeting` — per_pad_peak[16], per_pad_rms[16], per_bus_peak[8], per_bus_rms[8], master_peak, master_rms
+    - `DrumMidiMapping` — pad_id, midi_note, midi_channel, velocity_curve, zones[]
+    - `DrumVelocityCurve` — type (linear/log/exp/s-curve/fixed), input_floor, output_floor, output_ceiling
+    - `DrumZone` — zone_type (head/rim/edge), midi_note, articulation
+  - [ ] T218-B: API client in `web/src/map2/api.ts` — `drumsApi` object (extend existing)
+    - Transport: `getTransport()`, `setTransport(state)`, `tapTempo(timestamp)`
+    - Patterns: `getPattern(id)`, `setPattern(id, data)`, `setStep(pattern, instrument, step, velocity)`, `clearPattern(id)`, `copyPattern(src, dst)`
+    - Song: `getSong()`, `setSong(entries)`, `addSongEntry(entry)`, `removeSongEntry(position)`
+    - Kits: `getKits()`, `getKit(id)`, `loadKit(id)`, `getActiveKit()`, `importKit(file)`, `createKit(template)`
+    - Mixer: `getPadControls()`, `setPadControl(pad, params)`, `getBusMixer()`, `setBusMixer(bus, params)`, `getMasterVolume()`, `setMasterVolume(vol)`
+    - MIDI: `getMidiMapping()`, `setMidiMapping(mapping)`, `getVelocityCurves()`, `setVelocityCurve(pad, curve)`, `startMidiLearn()`, `stopMidiLearn()`, `getMidiLearnStatus()`, `getMidiPresets()`, `loadMidiPreset(preset)`
+    - Metering: `getMetering()` (HTTP fallback; primary source is WebSocket)
+  - [ ] T218-C: React Query hooks in `web/src/app/hooks/useDrumMachine.ts`
+    - `useDrumTransport()` — transport state with 500ms refetch (WebSocket primary, HTTP fallback)
+    - `useDrumPattern(patternId)` — pattern data with manual invalidation on edit
+    - `useDrumSong()` — song arrangement
+    - `useDrumKits()` — kit list (60s stale time)
+    - `useDrumActiveKit()` — currently loaded kit (manual invalidation on load)
+    - `useDrumMixer()` — pad + bus + master mixer state (1s refetch)
+    - `useDrumMetering()` — WebSocket subscription hook returning real-time levels at 30fps
+    - `useDrumMidiMapping()` — MIDI config (manual invalidation on change)
+    - `useDrumMidiLearn()` — learn mode status (500ms refetch while active)
+    - All mutations via `useMutation` with appropriate cache invalidation
+Assigned to: Codex
+Last updated: 2026-03-18
+
+---
+
+ID: T219
+Status: [ ] Todo
+Title: Drum Machine integration testing and qualification
+Description:
+- Goal / acceptance criteria: Comprehensive test coverage for the drum machine across all layers — C++ unit tests, Python service tests, API endpoint tests, frontend component tests, and end-to-end integration tests.
+- Why it matters: A professional drum machine must be rock-solid. Every layer needs test coverage before shipping.
+- Dependencies: T211–T218 (all drum machine implementation tasks)
+- Estimated effort: High
+- Required outputs: Test suites, CI integration, qualification evidence.
+Subtasks:
+  - [ ] T219-A: C++ unit tests for DrumMachineProcessor
+    - 16-pad triggering with correct bus routing
+    - Per-pad volume/pan/tune/mute/solo
+    - Per-bus EQ and compressor (verify frequency response, gain reduction)
+    - Master output level
+    - SFZ kit loading and instrument assignment
+    - Velocity curve transforms (all 5 types)
+    - RT-safety verification: no allocations in processBlock
+  - [ ] T219-B: C++ unit tests for DrumSequencer
+    - Pattern step set/get/clear/copy
+    - Transport play/stop/pause with sample-accurate step timing
+    - Variable pattern length (1–64 steps)
+    - Swing application
+    - Song mode playback with repeat counts
+    - Fill trigger timing
+    - Tap tempo BPM calculation
+  - [ ] T219-C: Python service tests — `tests/test_drum_machine.py`
+    - Kit loading and switching
+    - Pattern CRUD operations
+    - Song arrangement management
+    - State persistence (save/restore)
+    - MIDI mapping configuration
+    - Velocity curve configuration
+    - Input validation (out-of-range BPM, invalid pattern ID, etc.)
+  - [ ] T219-D: API endpoint tests — `tests/test_drum_routes.py`
+    - All REST endpoints: correct status codes, response schemas, error handling
+    - Pydantic model validation
+    - Concurrent access (multiple clients updating state)
+  - [ ] T219-E: Frontend component tests
+    - `DrumsPage.test.tsx` — renders all three modes, tab switching, transport controls
+    - `DrumMachineCard.test.tsx` — compact card rendering, mode display, metering
+    - Step grid interaction: click toggles step, shift+click sets accent, keyboard navigation
+    - Pattern management: copy, paste, clear
+    - Kit browser: load kit, display instruments
+    - Mixer: adjust bus EQ/comp, verify slider values
+    - MIDI config: note mapping table, learn mode UI
+  - [ ] T219-F: Integration test — full stack end-to-end
+    - Load kit → set pattern → play → verify audio output (non-silence) → stop
+    - MIDI input → verify correct pad triggers → verify metering response
+    - Pattern edit during playback → verify changes take effect at next step
+    - Song mode: play through multiple patterns with repeats → verify correct sequence
+    - Kit switch during playback → verify clean transition
+Assigned to: Codex
+Last updated: 2026-03-18

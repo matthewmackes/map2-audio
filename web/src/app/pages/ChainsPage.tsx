@@ -28,8 +28,6 @@ import {
 } from '@carbon/icons-react'
 import type { Chain, ChainsResponse } from '../../map2/types'
 import { chainsApi } from '../../map2/api'
-import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
-import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { useToasts } from '../components/Toasts'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { SidechainPanel } from '../components/Routing/SidechainPanel'
@@ -264,9 +262,6 @@ export function ChainsPage() {
 
     return (
       <div className="chains-page">
-        {pageLocalNode ? (
-          <NodeContextBanner pageKey={NODE_PAGE_KEYS.chains} localNode={pageLocalNode} topology={nodeTopology} />
-        ) : null}
         <Layer className="chains-page__hero">
           <div className="chains-page__header-row">
             <div className="chains-page__title-block">
@@ -282,8 +277,6 @@ export function ChainsPage() {
               </Button>
             </div>
           </div>
-
-          <NodeContextPicker pageKey={NODE_PAGE_KEYS.chains} topology={nodeTopology} />
 
           <div className="chains-page__scope-card chains-page__scope-card--all">
             <div className="chains-page__scope-label">Chain scope</div>
@@ -371,9 +364,6 @@ export function ChainsPage() {
 
   return (
     <div className="chains-page">
-      {pageLocalNode ? (
-        <NodeContextBanner pageKey={NODE_PAGE_KEYS.chains} localNode={pageLocalNode} topology={nodeTopology} />
-      ) : null}
       <Layer className="chains-page__hero">
         <div className="chains-page__header-row">
           <div className="chains-page__title-block">
@@ -402,8 +392,6 @@ export function ChainsPage() {
             </Button>
           </div>
         </div>
-
-        <NodeContextPicker pageKey={NODE_PAGE_KEYS.chains} topology={nodeTopology} />
 
         {isClusterMode ? (
           <div className={`chains-page__scope-card ${remoteSelected ? 'chains-page__scope-card--remote' : 'chains-page__scope-card--local'}`}>

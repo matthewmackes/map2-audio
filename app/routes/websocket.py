@@ -25,9 +25,22 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
     """
     # Generate unique client ID
     client_id = str(uuid.uuid4())
+    run_id = (websocket.query_params.get("run_id") or websocket.headers.get("x-map2-run-id") or "").strip()
+    client_label = (websocket.query_params.get("client_label") or "").strip()
 
     # Connect client
-    await ws_manager.connect(websocket, client_id)
+    await ws_manager.connect(
+        websocket,
+        client_id,
+        metadata={
+            "run_id": run_id,
+            "client_label": client_label,
+            "path": websocket.url.path,
+            "request_id": client_id,
+            "protocol_version": version,
+            "client_ip": websocket.client.host if websocket.client else "unknown",
+        },
+    )
 
     # Send welcome message
     await ws_manager.send_personal_message(
@@ -182,12 +195,12 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 )
 
     except WebSocketDisconnect:
-        ws_manager.disconnect(client_id)
+        ws_manager.disconnect(client_id, reason="disconnect")
         logger.info(f"Client {client_id} disconnected")
 
     except Exception as e:
         logger.error(f"WebSocket error for client {client_id}: {e}")
-        ws_manager.disconnect(client_id)
+        ws_manager.disconnect(client_id, reason="disconnect_error", error=str(e))
 
 
 @router.websocket("/ws")

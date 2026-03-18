@@ -15,6 +15,46 @@ from app.services.api_observatory import get_api_observatory_service
 from app.services.websocket_manager import ws_manager
 
 _BODY_SNIPPET_BYTES = 400  # enough for ~100 visible chars of JSON
+_RUN_ID_HEADERS = ("x-map2-run-id", "x-load-run-id", "x-request-run-id")
+
+
+def _extract_run_id(request: Request) -> str:
+    for header in _RUN_ID_HEADERS:
+        value = request.headers.get(header)
+        if value:
+            return value.strip()
+    query_value = request.query_params.get("run_id")
+    return query_value.strip() if query_value else ""
+
+
+def _dependency_snapshot() -> dict[str, object]:
+    try:
+        from app.services.service_orchestrator import get_orchestrator
+
+        status = get_orchestrator().get_all_status() or {}
+        orchestrator = status.get("orchestrator", {}) if isinstance(status, dict) else {}
+        services = status.get("services", {}) if isinstance(status, dict) else {}
+        startup_progress = status.get("startup_progress", {}) if isinstance(status, dict) else {}
+        traffic_gates = status.get("traffic_gate_services", []) if isinstance(status, dict) else []
+        return {
+            "orchestrator_running": bool(orchestrator.get("running")),
+            "startup_progress": startup_progress,
+            "traffic_gate_services": list(traffic_gates) if isinstance(traffic_gates, list) else [],
+            "service_states": {
+                name: {
+                    "state": service.get("state", "missing"),
+                    "healthy": (
+                        service.get("health", {}).get("healthy")
+                        if isinstance(service.get("health"), dict)
+                        else None
+                    ),
+                }
+                for name, service in services.items()
+                if isinstance(service, dict)
+            },
+        }
+    except Exception:
+        return {"orchestrator_running": False, "capture_error": True}
 
 
 def _utc_now_iso() -> str:
@@ -61,7 +101,10 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
         started = time.perf_counter()
         request_size = int(request.headers.get("content-length") or 0)
         request_id = getattr(request.state, "request_id", None) or str(uuid.uuid4())
+        run_id = _extract_run_id(request)
         request.state.request_id = request_id
+        if run_id:
+            request.state.run_id = run_id
 
         # Capture request body for mutations
         req_body_snippet: str | None = None
@@ -87,10 +130,12 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                     "response_size": 0,
                     "client_ip": request.client.host if request.client else "unknown",
                     "request_id": request_id,
+                    "run_id": run_id,
                     "meta": {
                         "error": "unhandled_exception",
                         "req_body": req_body_snippet,
                         "res_body": None,
+                        "dependency_snapshot": _dependency_snapshot() if run_id else None,
                     },
                 }
             )
@@ -139,10 +184,12 @@ class TrafficCaptureMiddleware(BaseHTTPMiddleware):
                 "response_size": response_size,
                 "client_ip": request.client.host if request.client else "unknown",
                 "request_id": request_id,
+                "run_id": run_id,
                 "meta": {
                     "query": dict(request.query_params),
                     "req_body": req_body_snippet,
                     "res_body": res_body_snippet,
+                    "dependency_snapshot": _dependency_snapshot() if (run_id or response.status_code >= 500) else None,
                 },
             }
         )

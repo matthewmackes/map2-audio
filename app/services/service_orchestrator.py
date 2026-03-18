@@ -97,6 +97,7 @@ class ServiceOrchestrator:
     """
 
     _instance: Optional['ServiceOrchestrator'] = None
+    _TRAFFIC_GATE_SERVICES = ("database", "command_queue", "websocket_manager")
 
     def __init__(self):
         self._services: Dict[str, ServiceStatus] = {}
@@ -769,6 +770,7 @@ class ServiceOrchestrator:
 
     def get_all_status(self) -> Dict[str, Any]:
         """Get status of all services."""
+        startup_map = self.get_startup_dependency_map()
         return {
             "orchestrator": {
                 "running": self._running,
@@ -780,6 +782,9 @@ class ServiceOrchestrator:
                 for name, status in self._services.items()
             },
             "startup_order": self._startup_order,
+            "dependency_levels": startup_map["dependency_levels"],
+            "traffic_gate_services": startup_map["traffic_gate_services"],
+            "startup_progress": startup_map["startup_progress"],
         }
 
     def get_service_status(self, name: str) -> Optional[Dict[str, Any]]:
@@ -821,6 +826,65 @@ class ServiceOrchestrator:
             summary[status.state.value] += 1
         return summary
 
+    def get_startup_dependency_map(self) -> Dict[str, Any]:
+        """Return the explicit startup dependency map used for restart diagnostics."""
+        service_levels: Dict[str, int] = {}
+        dependency_levels: List[Dict[str, Any]] = []
+
+        for index, level_services in enumerate(self._dependency_levels, start=1):
+            dependency_levels.append(
+                {
+                    "level": index,
+                    "services": list(level_services),
+                }
+            )
+            for name in level_services:
+                service_levels[name] = index
+
+        running_or_ready = {
+            ServiceState.RUNNING,
+            ServiceState.READY,
+        }
+        completed_services = sum(
+            1
+            for status in self._services.values()
+            if status.state in running_or_ready
+        )
+
+        return {
+            "traffic_gate_services": list(self._TRAFFIC_GATE_SERVICES),
+            "dependency_levels": dependency_levels,
+            "services": {
+                name: {
+                    "level": service_levels.get(name),
+                    "dependencies": list(status.definition.dependencies),
+                    "dependents": sorted(
+                        other_name
+                        for other_name, other_status in self._services.items()
+                        if name in other_status.definition.dependencies
+                    ),
+                    "priority": status.definition.priority.value,
+                    "is_optional": status.definition.is_optional,
+                    "is_critical_for_ready": status.definition.is_critical_for_ready,
+                    "gates_accepting_traffic": name in self._TRAFFIC_GATE_SERVICES,
+                }
+                for name, status in self._services.items()
+            },
+            "startup_progress": {
+                "completed_services": completed_services,
+                "total_services": len(self._services),
+                "completed_levels": sum(
+                    1
+                    for level_services in self._dependency_levels
+                    if all(
+                        self._services[name].state in running_or_ready
+                        for name in level_services
+                    )
+                ),
+                "total_levels": len(self._dependency_levels),
+            },
+        }
+
     # === READY STATE VALIDATION ===
 
     def is_ready(self) -> bool:
@@ -852,6 +916,8 @@ class ServiceOrchestrator:
         critical_services = {}
         all_critical_healthy = True
         issues = []
+        traffic_gate_services = {}
+        accepting_traffic = self._running
 
         for name, service in self._services.items():
             if service.definition.is_critical_for_ready:
@@ -875,14 +941,38 @@ class ServiceOrchestrator:
                     all_critical_healthy = False
                     issues.append(f"{service.definition.display_name} is unhealthy: {service.health.message}")
 
+        for name in self._TRAFFIC_GATE_SERVICES:
+            service = self._services.get(name)
+            if service is None:
+                accepting_traffic = False
+                issues.append(f"Traffic gate service '{name}' is missing from orchestrator registration")
+                continue
+
+            is_running = service.state in (ServiceState.RUNNING, ServiceState.READY)
+            traffic_gate_services[name] = {
+                "display_name": service.definition.display_name,
+                "state": service.state.value,
+                "running": is_running,
+                "dependencies": list(service.definition.dependencies),
+                "last_error": service.last_error,
+            }
+            if not is_running:
+                accepting_traffic = False
+                issues.append(f"Traffic gate service {service.definition.display_name} is not running (state: {service.state.value})")
+
         ready = self._running and all_critical_healthy
+        accepting_traffic = accepting_traffic and ready
+        startup_map = self.get_startup_dependency_map()
 
         return {
             "ready": ready,
+            "accepting_traffic": accepting_traffic,
             "orchestrator_running": self._running,
             "startup_time": self._startup_time.isoformat() if self._startup_time else None,
             "uptime_seconds": (datetime.now() - self._startup_time).total_seconds() if self._startup_time else 0,
             "critical_services": critical_services,
+            "traffic_gate_services": traffic_gate_services,
+            "dependency_levels": startup_map["dependency_levels"],
             "issues": issues,
             "summary": {
                 "total_critical": len(critical_services),

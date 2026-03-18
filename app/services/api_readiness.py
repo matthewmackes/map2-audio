@@ -82,6 +82,29 @@ def _raise_not_ready(
     )
 
 
+def raise_route_transient_unavailable(
+    route: str,
+    *,
+    reason: str,
+    issues: list[str],
+    required_services: Iterable[str] = (),
+) -> None:
+    from app.services.service_orchestrator import get_orchestrator
+
+    orchestrator = get_orchestrator()
+    status = orchestrator.get_all_status() or {}
+    services = status.get("services", {}) if isinstance(status, dict) else {}
+    orchestrator_running = _safe_bool(status.get("orchestrator", {}).get("running"), False)
+    _raise_not_ready(
+        route=route,
+        reason=reason,
+        issues=issues,
+        required_services=required_services,
+        services=services,
+        orchestrator_running=orchestrator_running,
+    )
+
+
 def ensure_chain_route_ready(route: str) -> None:
     from app.services.service_orchestrator import get_orchestrator
 

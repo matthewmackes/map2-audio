@@ -13,7 +13,7 @@ try:
     from fastapi import APIRouter, HTTPException, Query, Body, Request, Response
     from pydantic import BaseModel
     from typing import List
-    from app.services.api_readiness import ensure_chain_route_ready
+    from app.services.api_readiness import ensure_chain_route_ready, raise_route_transient_unavailable
     from app.services.chain_service import ChainService
     from app.services.event_publisher import event_publisher, EventType
 
@@ -57,6 +57,7 @@ try:
     _chain_details_refresh_locks_lock = threading.Lock()
     _chain_toggle_at: dict[int, float] = {}
     _chain_toggle_lock = threading.Lock()
+    _CHAIN_REQUIRED_SERVICES = ("database", "command_queue")
 
     def _normalize_deploy_plugins(plugins: List[dict]) -> List[dict]:
         """Normalize deploy payload plugins into DB-ready entries."""
@@ -216,6 +217,7 @@ try:
     @router.get("/")
     async def list_chains(request: Request, response: Response):
         """List all signal chains from database."""
+        route = "/api/chains/"
         ensure_chain_route_ready("/api/chains/")
         global _chain_list_cache, _chain_list_cache_etag, _chain_list_cache_at
         now = time.monotonic()
@@ -303,7 +305,12 @@ try:
                         response.headers["ETag"] = stale_etag
                         response.headers["X-Chain-Cache-Stale"] = "1"
                         return stale_payload
-                    return {"chains": [], "count": 0, "deferred": True}
+                    raise_route_transient_unavailable(
+                        route,
+                        reason="chain_list_temporarily_unavailable",
+                        issues=["Chain list query timed out or failed during backend warmup"],
+                        required_services=_CHAIN_REQUIRED_SERVICES,
+                    )
 
                 payload = {"chains": chains, "count": len(chains)}
                 etag = _chain_list_etag(payload)
@@ -406,7 +413,8 @@ try:
     @router.get("/{chain_id}")
     async def get_chain(chain_id: int):
         """Get signal chain details."""
-        ensure_chain_route_ready("/api/chains/{id}")
+        route = "/api/chains/{id}"
+        ensure_chain_route_ready(route)
         cached = _get_cached_chain_details(chain_id)
         if cached is not None:
             return cached
@@ -444,8 +452,12 @@ try:
                         if stale is not None:
                             stale["stale"] = True
                             return stale
-                        _set_cached_chain_details(chain_id, deferred_payload)
-                        return deferred_payload
+                        raise_route_transient_unavailable(
+                            route,
+                            reason="chain_lookup_temporarily_unavailable",
+                            issues=[f"Chain lookup for {chain_id} timed out during backend warmup"],
+                            required_services=_CHAIN_REQUIRED_SERVICES,
+                        )
                     except Exception:
                         try:
                             await session.rollback()
@@ -455,15 +467,23 @@ try:
                         if stale is not None:
                             stale["stale"] = True
                             return stale
-                        _set_cached_chain_details(chain_id, deferred_payload)
-                        return deferred_payload
+                        raise_route_transient_unavailable(
+                            route,
+                            reason="chain_lookup_temporarily_unavailable",
+                            issues=[f"Chain lookup for {chain_id} failed while dependencies were recovering"],
+                            required_services=_CHAIN_REQUIRED_SERVICES,
+                        )
             except Exception:
                 stale = _get_stale_chain_details(chain_id)
                 if stale is not None:
                     stale["stale"] = True
                     return stale
-                _set_cached_chain_details(chain_id, deferred_payload)
-                return deferred_payload
+                raise_route_transient_unavailable(
+                    route,
+                    reason="chain_lookup_temporarily_unavailable",
+                    issues=[f"Chain lookup for {chain_id} could not open a database session during restart"],
+                    required_services=_CHAIN_REQUIRED_SERVICES,
+                )
 
             if result is None:
                 raise HTTPException(status_code=404, detail="Chain not found")
@@ -654,7 +674,8 @@ try:
     @router.post("/{chain_id}/activate")
     async def activate_chain(chain_id: int):
         """Activate signal chain."""
-        ensure_chain_route_ready("/api/chains/{id}/activate")
+        route = "/api/chains/{id}/activate"
+        ensure_chain_route_ready(route)
         if not _allow_chain_toggle(chain_id):
             return {"status": "activate_throttled", "chain_id": chain_id, "deferred": True}
 
@@ -672,19 +693,34 @@ try:
                         await session.rollback()
                     except Exception:
                         pass
-                    return {"status": "activate_deferred", "chain_id": chain_id, "deferred": True}
+                    raise_route_transient_unavailable(
+                        route,
+                        reason="chain_activation_temporarily_unavailable",
+                        issues=[f"Chain activation for {chain_id} timed out while dependencies were settling"],
+                        required_services=_CHAIN_REQUIRED_SERVICES,
+                    )
                 except Exception:
                     try:
                         await session.rollback()
                     except Exception:
                         pass
-                    return {"status": "activate_deferred", "chain_id": chain_id, "deferred": True}
+                    raise_route_transient_unavailable(
+                        route,
+                        reason="chain_activation_temporarily_unavailable",
+                        issues=[f"Chain activation for {chain_id} failed during dependency recovery"],
+                        required_services=_CHAIN_REQUIRED_SERVICES,
+                    )
                 if not success:
                     raise HTTPException(status_code=404, detail="Chain not found")
         except HTTPException:
             raise
         except Exception:
-            return {"status": "activate_deferred", "chain_id": chain_id, "deferred": True}
+            raise_route_transient_unavailable(
+                route,
+                reason="chain_activation_temporarily_unavailable",
+                issues=[f"Chain activation for {chain_id} could not reach persistent state during restart"],
+                required_services=_CHAIN_REQUIRED_SERVICES,
+            )
 
         _refresh_chain_state_cache(chain_id, True)
         _schedule_chain_event("chain_updates", EventType.CHAIN_ACTIVATED, {"chain_id": chain_id})
@@ -694,7 +730,8 @@ try:
     @router.post("/{chain_id}/deactivate")
     async def deactivate_chain(chain_id: int):
         """Deactivate signal chain."""
-        ensure_chain_route_ready("/api/chains/{id}/deactivate")
+        route = "/api/chains/{id}/deactivate"
+        ensure_chain_route_ready(route)
         if not _allow_chain_toggle(chain_id):
             return {"status": "deactivate_throttled", "chain_id": chain_id, "deferred": True}
 
@@ -712,19 +749,34 @@ try:
                         await session.rollback()
                     except Exception:
                         pass
-                    return {"status": "deactivate_deferred", "chain_id": chain_id, "deferred": True}
+                    raise_route_transient_unavailable(
+                        route,
+                        reason="chain_deactivation_temporarily_unavailable",
+                        issues=[f"Chain deactivation for {chain_id} timed out while dependencies were settling"],
+                        required_services=_CHAIN_REQUIRED_SERVICES,
+                    )
                 except Exception:
                     try:
                         await session.rollback()
                     except Exception:
                         pass
-                    return {"status": "deactivate_deferred", "chain_id": chain_id, "deferred": True}
+                    raise_route_transient_unavailable(
+                        route,
+                        reason="chain_deactivation_temporarily_unavailable",
+                        issues=[f"Chain deactivation for {chain_id} failed during dependency recovery"],
+                        required_services=_CHAIN_REQUIRED_SERVICES,
+                    )
                 if not success:
                     raise HTTPException(status_code=404, detail="Chain not found")
         except HTTPException:
             raise
         except Exception:
-            return {"status": "deactivate_deferred", "chain_id": chain_id, "deferred": True}
+            raise_route_transient_unavailable(
+                route,
+                reason="chain_deactivation_temporarily_unavailable",
+                issues=[f"Chain deactivation for {chain_id} could not reach persistent state during restart"],
+                required_services=_CHAIN_REQUIRED_SERVICES,
+            )
 
         _refresh_chain_state_cache(chain_id, False)
         _schedule_chain_event("chain_updates", EventType.CHAIN_DEACTIVATED, {"chain_id": chain_id})

@@ -431,6 +431,17 @@ const handleChange = useCallback((v) => setState(v), [setState])
 // ✅ <Component onClick={handleClick} />
 ```
 
+**4. Snapshot-First Performance State**
+- For `JUCE-GRID` and similar Carbon performance editors, do not maintain parallel `scene` and `snapshot` concepts when both represent recallable rig state.
+- Use the snapshot system as the canonical data/model/UI surface, and fold scene-style behaviors into it instead of creating a second library, tab, or persistence path.
+- If product language still needs the word `scene`, treat it as a presentation alias or snapshot mode within the snapshot workflow, not a separate state store.
+- Keep operator-facing recall/compare/live-routing workflows unified so routing, chain state, and active rig context are inspected from one Carbon surface.
+
+**5. JUCE-GRID Plugin Modal Pattern**
+- For `JUCE-GRID` plugin/effect cards opened as modals, size the modal to the underlying window footprint at the moment it opens instead of hugging card content.
+- Do not add extra modal header chrome above the card itself: no injected label/title/meta row and no extra close button when the card content is already the editing surface.
+- Treat the plugin card as the canonical editor surface so modal wrappers stay visually neutral and consistent across all card types.
+
 ### Python Backend Patterns
 
 ```python

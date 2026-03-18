@@ -24,7 +24,9 @@ class SessionImportRequest(BaseModel):
 @router.get("/traffic")
 async def get_traffic(
     limit: int = Query(default=200, ge=1, le=5000),
+    event_type: Optional[str] = Query(default=None),
     method: Optional[str] = Query(default=None),
+    run_id: Optional[str] = Query(default=None),
     status_min: Optional[int] = Query(default=None, ge=100, le=599),
     status_max: Optional[int] = Query(default=None, ge=100, le=599),
     path_pattern: Optional[str] = Query(default=None),
@@ -34,7 +36,9 @@ async def get_traffic(
     service = get_api_observatory_service()
     events = service.list_traffic_events(
         limit=limit,
+        event_type=event_type,
         method=method,
+        run_id=run_id,
         status_min=status_min,
         status_max=status_max,
         path_pattern=path_pattern,
@@ -51,7 +55,9 @@ async def get_traffic(
 @router.get("/traffic/stats")
 async def get_traffic_stats(
     limit: int = Query(default=500, ge=1, le=5000),
+    event_type: Optional[str] = Query(default=None),
     method: Optional[str] = Query(default=None),
+    run_id: Optional[str] = Query(default=None),
     status_min: Optional[int] = Query(default=None, ge=100, le=599),
     status_max: Optional[int] = Query(default=None, ge=100, le=599),
     path_pattern: Optional[str] = Query(default=None),
@@ -59,7 +65,9 @@ async def get_traffic_stats(
     service = get_api_observatory_service()
     events = service.list_traffic_events(
         limit=limit,
+        event_type=event_type,
         method=method,
+        run_id=run_id,
         status_min=status_min,
         status_max=status_max,
         path_pattern=path_pattern,

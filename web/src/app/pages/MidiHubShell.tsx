@@ -28,8 +28,6 @@ import { MidiHubNodeScopeProvider } from '../components/MidiHub/MidiHubNodeScope
 import { MidiHubStatusBar } from '../components/MidiHub/MidiHubStatusBar'
 import { useMidiHubOverview } from '../components/MidiHub/useMidiHubOverview'
 import { MAP2_PRIMARY_LABEL, Map2BrandMark } from '../components/branding/map2Branding'
-import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
-import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './MidiHubShell.css'
@@ -69,8 +67,6 @@ export function MidiHubShell() {
   const prefersDark = useMediaQuery('(prefers-color-scheme: dark)')
   const [themePreference, setThemePreference] = useState<MidiHubThemePreference>(readThemePreference)
   const { routesCount, sessionsCount, activePresetName, clockQuery } = useMidiHubOverview(apiNodeId, scopeKey)
-  const hasMultipleNodes = (topology?.nodes?.length ?? 0) > 1
-
   useEffect(() => {
     window.localStorage.setItem(THEME_PREFERENCE_KEY, themePreference)
   }, [themePreference])
@@ -141,10 +137,6 @@ export function MidiHubShell() {
     <MidiHubNodeScopeProvider nodeId={apiNodeId} scopeKey={scopeKey}>
       <GlobalTheme theme={resolvedTheme}>
         <Theme as="div" theme={resolvedTheme} className="midi-hub-shell">
-          {localNode ? (
-            <NodeContextBanner pageKey={NODE_PAGE_KEYS.midiHub} localNode={localNode} topology={topology} />
-          ) : null}
-
           <div className="midi-hub-shell__frame">
             <aside className="midi-hub-shell__sidebar">
               <SideNav aria-label="MIDI Hub navigation" expanded isFixedNav={false} className="midi-hub-shell__sidenav">
@@ -167,13 +159,6 @@ export function MidiHubShell() {
                     </span>
                   </button>
                 </div>
-
-                {hasMultipleNodes ? (
-                  <div className="midi-hub-shell__node-picker">
-                    <span className="midi-hub-shell__control-label">Scope</span>
-                    <NodeContextPicker pageKey={NODE_PAGE_KEYS.midiHub} topology={topology} />
-                  </div>
-                ) : null}
 
                 <HeaderSideNavItems className="midi-hub-shell__section-label" aria-label="MIDI Hub sections">
                   Areas

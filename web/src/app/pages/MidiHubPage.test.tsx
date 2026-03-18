@@ -89,14 +89,6 @@ jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: () => mockNodePageContext,
 }))
 
-jest.mock('../components/NodeContextBanner/NodeContextBanner', () => ({
-  NodeContextBanner: () => <div data-testid="node-context-banner" />,
-}))
-
-jest.mock('../components/NodeContextPicker/NodeContextPicker', () => ({
-  NodeContextPicker: () => <div data-testid="node-context-picker" />,
-}))
-
 jest.mock('../components/MidiHub/MidiRoutingMatrix', () => ({
   MidiRoutingMatrix: () => <div>Routing Matrix Mock</div>,
 }))

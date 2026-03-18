@@ -394,6 +394,7 @@ async def get_startup_order() -> Dict[str, Any]:
     """
     orchestrator = get_orchestrator()
     status = orchestrator.get_all_status()
+    dependency_map = orchestrator.get_startup_dependency_map()
 
     order_with_details = []
     for i, name in enumerate(status["startup_order"]):
@@ -404,10 +405,16 @@ async def get_startup_order() -> Dict[str, Any]:
             "display_name": service.get("display_name", name),
             "priority": service.get("priority"),
             "dependencies": service.get("dependencies", []),
-            "is_optional": service.get("is_optional", False)
+            "is_optional": service.get("is_optional", False),
+            "level": dependency_map["services"].get(name, {}).get("level"),
+            "dependents": dependency_map["services"].get(name, {}).get("dependents", []),
+            "gates_accepting_traffic": dependency_map["services"].get(name, {}).get("gates_accepting_traffic", False),
         })
 
     return {
         "startup_order": order_with_details,
-        "shutdown_order": list(reversed([item["name"] for item in order_with_details]))
+        "shutdown_order": list(reversed([item["name"] for item in order_with_details])),
+        "dependency_levels": dependency_map["dependency_levels"],
+        "traffic_gate_services": dependency_map["traffic_gate_services"],
+        "startup_progress": dependency_map["startup_progress"],
     }

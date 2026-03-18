@@ -110,14 +110,6 @@ jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: () => mockNodePageContext,
 }))
 
-jest.mock('../components/NodeContextBanner/NodeContextBanner', () => ({
-  NodeContextBanner: () => <div data-testid="node-context-banner" />,
-}))
-
-jest.mock('../components/NodeContextPicker/NodeContextPicker', () => ({
-  NodeContextPicker: () => <div data-testid="node-context-picker" />,
-}))
-
 function LocationProbe() {
   const location = useLocation()
   return <div data-testid="location-probe">{location.pathname}</div>

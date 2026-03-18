@@ -149,3 +149,78 @@ def test_plugin_load_route_uses_readiness_guard(monkeypatch):
 
     assert excinfo.value.status_code == 503
     assert excinfo.value.detail["route"] == "/api/plugins/load"
+
+
+def test_chain_get_route_returns_structured_503_when_lookup_times_out_without_cache(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.service_orchestrator.get_orchestrator",
+        lambda: _FakeOrchestrator(_orchestrator_status()),
+    )
+
+    class _TimeoutSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def rollback(self):
+            return None
+
+    async def _timeout_get_chain(_chain_id):
+        raise asyncio.TimeoutError
+
+    class _FakeChainService:
+        def __init__(self, _session):
+            pass
+
+        get_chain = _timeout_get_chain
+
+    monkeypatch.setattr("app.database.get_session", lambda read_only=True: _TimeoutSession())
+    monkeypatch.setattr(chains_routes, "ChainService", _FakeChainService)
+    monkeypatch.setattr(chains_routes, "_get_cached_chain_details", lambda chain_id: None)
+    monkeypatch.setattr(chains_routes, "_get_stale_chain_details", lambda chain_id: None)
+
+    with pytest.raises(HTTPException) as excinfo:
+        asyncio.run(chains_routes.get_chain(7))
+
+    assert excinfo.value.status_code == 503
+    assert excinfo.value.detail["reason"] == "chain_lookup_temporarily_unavailable"
+    assert excinfo.value.detail["route"] == "/api/chains/{id}"
+
+
+def test_chain_activate_route_returns_structured_503_when_operation_times_out(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.service_orchestrator.get_orchestrator",
+        lambda: _FakeOrchestrator(_orchestrator_status()),
+    )
+
+    class _TimeoutSession:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def rollback(self):
+            return None
+
+    async def _timeout_activate_chain(_chain_id):
+        raise asyncio.TimeoutError
+
+    class _FakeChainService:
+        def __init__(self, _session):
+            pass
+
+        activate_chain = _timeout_activate_chain
+
+    monkeypatch.setattr("app.database.get_session", lambda: _TimeoutSession())
+    monkeypatch.setattr(chains_routes, "ChainService", _FakeChainService)
+    monkeypatch.setattr(chains_routes, "_allow_chain_toggle", lambda chain_id: True)
+
+    with pytest.raises(HTTPException) as excinfo:
+        asyncio.run(chains_routes.activate_chain(7))
+
+    assert excinfo.value.status_code == 503
+    assert excinfo.value.detail["reason"] == "chain_activation_temporarily_unavailable"
+    assert excinfo.value.detail["route"] == "/api/chains/{id}/activate"

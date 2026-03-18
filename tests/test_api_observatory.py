@@ -8,7 +8,9 @@ import app.services.api_observatory as observatory_service_module
 from app.middleware.traffic_capture import TrafficCaptureMiddleware
 from app.routes import api_observatory
 from app.routes import dev_proxy
+from app.routes import websocket as websocket_routes
 from app.services.api_observatory import ApiObservatoryService
+from app.services.websocket_manager import ws_manager
 
 
 def _build_test_app() -> FastAPI:
@@ -116,6 +118,26 @@ def test_traffic_capture_middleware_and_routes(monkeypatch):
 
     # Reset singleton state for deterministic assertions.
     monkeypatch.setattr(observatory_service_module, "_api_observatory_service", None)
+    monkeypatch.setattr(
+        "app.services.service_orchestrator.get_orchestrator",
+        lambda: type(
+            "_FakeOrchestrator",
+            (),
+            {
+                "get_all_status": lambda self: {
+                    "orchestrator": {"running": True},
+                    "services": {
+                        "database": {
+                            "state": "running",
+                            "health": {"healthy": True},
+                        }
+                    },
+                    "startup_progress": {"ready_services": 3, "total_services": 3},
+                    "traffic_gate_services": ["database"],
+                }
+            },
+        )(),
+    )
 
     app = FastAPI()
     app.add_middleware(TrafficCaptureMiddleware, enabled=True)
@@ -127,16 +149,49 @@ def test_traffic_capture_middleware_and_routes(monkeypatch):
     app.include_router(api_observatory.router)
 
     client = TestClient(app)
-    ping = client.get("/api/ping")
+    ping = client.get("/api/ping", headers={"X-MAP2-Run-ID": "qual-123"})
     assert ping.status_code == 200
 
-    traffic = client.get("/api/observatory/traffic")
+    traffic = client.get("/api/observatory/traffic", params={"run_id": "qual-123"})
     assert traffic.status_code == 200
     traffic_payload = traffic.json()
     assert traffic_payload["count"] >= 1
-    assert any(event["path"] == "/api/ping" for event in traffic_payload["events"])
+    matching_events = [event for event in traffic_payload["events"] if event["path"] == "/api/ping"]
+    assert matching_events
+    assert matching_events[-1]["run_id"] == "qual-123"
+    assert matching_events[-1]["meta"]["dependency_snapshot"]["orchestrator_running"] is True
 
-    stats = client.get("/api/observatory/traffic/stats")
+    stats = client.get("/api/observatory/traffic/stats", params={"run_id": "qual-123"})
     assert stats.status_code == 200
     stats_payload = stats.json()
     assert stats_payload["total_requests"] >= 1
+
+
+def test_websocket_events_are_captured_with_run_id(monkeypatch):
+    monkeypatch.setattr(observatory_service_module, "_api_observatory_service", None)
+    ws_manager.active_connections.clear()
+    ws_manager.subscriptions.clear()
+    ws_manager.connection_info.clear()
+
+    app = FastAPI()
+    app.include_router(websocket_routes.router)
+    app.include_router(api_observatory.router)
+
+    with TestClient(app) as client:
+        with client.websocket_connect("/ws/v1?run_id=ws-qual-1&client_label=locust-meter-1") as websocket:
+            welcome = websocket.receive_json()
+            assert welcome["type"] == "welcome"
+            websocket.send_json({"action": "subscribe", "topic": "meters"})
+            subscribed = websocket.receive_json()
+            assert subscribed["type"] == "subscribed"
+
+    traffic = client.get(
+        "/api/observatory/traffic",
+        params={"event_type": "websocket", "run_id": "ws-qual-1"},
+    )
+    assert traffic.status_code == 200
+    payload = traffic.json()
+    actions = [event["meta"]["action"] for event in payload["events"]]
+    assert "connect" in actions
+    assert "subscribe" in actions
+    assert "disconnect" in actions

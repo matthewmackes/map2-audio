@@ -4,8 +4,10 @@ import { Popover, PopoverContent } from '@carbon/react'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
+import { useNodeAlertMonitoring } from '../../hooks/useNodeAlertMonitoring'
 import { useNodePageContext } from '../../hooks/useNodePageContext'
 import { pageKeyFromPathname, getNodePresence } from '../../utils/nodeDisplay'
+import { NodeAlertToast } from '../NodeAlerts/NodeAlertToast'
 import { NodeMiniCard } from './NodeMiniCard'
 import { NodeNavChip } from './NodeNavChip'
 
@@ -14,6 +16,8 @@ export function NodeNavBar() {
   const [openNodeId, setOpenNodeId] = useState<string | null>(null)
   const pageKey = pageKeyFromPathname(location.pathname)
   const { topology, localNode, viewedNodeId, nodeTopologyQuery } = useNodePageContext(pageKey ?? 'global')
+
+  useNodeAlertMonitoring()
 
   const nodes = useMemo(() => {
     return [...(topology?.nodes ?? [])].sort((left, right) => {
@@ -77,7 +81,7 @@ export function NodeNavBar() {
           )
         })}
       </div>
+      <NodeAlertToast />
     </div>
   )
 }
-

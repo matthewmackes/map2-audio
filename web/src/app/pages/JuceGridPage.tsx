@@ -569,7 +569,7 @@ export function JuceGridPage() {
   // UI State
   const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(null)
   const [effectModalOpen, setEffectModalOpen] = useState(false)
-  const [effectModalFrame, setEffectModalFrame] = useState({ width: 0, height: 0 })
+  const [effectModalFrame, setEffectModalFrame] = useState({ width: 0, height: 0, topOffset: 0 })
   const [showPluginBrowser, setShowPluginBrowser] = useState(false)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
   const [showSavePresetModal, setShowSavePresetModal] = useState(false)
@@ -2140,9 +2140,12 @@ export function JuceGridPage() {
 
   // Plugin operations
   const openEffectModal = useCallback(() => {
+    const topbar = document.querySelector('.topbar-pro, .topbar') as HTMLElement | null
+    const topOffset = topbar ? Math.max(0, Math.round(topbar.getBoundingClientRect().bottom)) : 0
     setEffectModalFrame({
       width: window.innerWidth,
-      height: window.innerHeight,
+      height: Math.max(0, window.innerHeight - topOffset),
+      topOffset,
     })
     setEffectModalOpen(true)
   }, [])
@@ -3632,14 +3635,6 @@ export function JuceGridPage() {
                 key={group.id}
                 className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
               >
-                {groupIndex === 0 && (
-                  <div className="juce-grid-page__live-path-group-header">
-                    <div className="juce-grid-page__live-path-summary-meta">
-                      <p>Live flow graph</p>
-                    </div>
-                  </div>
-                )}
-
                 <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
                   {group.flowIds.map((flowId, groupIndex) => {
                     const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
@@ -3767,7 +3762,8 @@ export function JuceGridPage() {
           onRequestClose={handleCloseEffectModal}
           style={{
             '--juce-grid-effect-modal-width': `${Math.max(effectModalFrame.width, window.innerWidth)}px`,
-            '--juce-grid-effect-modal-height': `${Math.max(effectModalFrame.height, window.innerHeight)}px`,
+            '--juce-grid-effect-modal-height': `${Math.max(effectModalFrame.height, window.innerHeight - effectModalFrame.topOffset)}px`,
+            '--juce-grid-effect-modal-top': `${effectModalFrame.topOffset}px`,
           } as CSSProperties}
         >
           <div className="juce-grid-page__effect-modal-body">

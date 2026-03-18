@@ -95,3 +95,20 @@ async def test_unload_destroy_instance_bypasses_residency(monkeypatch):
     assert uri not in plugins_routes._loaded_plugins
     assert uri not in plugins_routes._resident_plugins
     assert plugins_routes._residency_stats["destroyed"] == 1
+
+
+@pytest.mark.asyncio
+async def test_load_plugin_refreshes_discovery_when_in_memory_cache_is_empty(monkeypatch):
+    uri = "map2://juce/dynamics/compressor"
+    monkeypatch.setattr(plugins_routes, "_discovered_plugins", [])
+    monkeypatch.setattr(plugins_routes, "_is_cache_valid", lambda: False)
+
+    async def _fake_discover_plugins(response, refresh=False):
+        return {"plugins": [_plugin(uri)], "count": 1, "cached": False}
+
+    monkeypatch.setattr(plugins_routes, "discover_plugins", _fake_discover_plugins)
+
+    payload = await plugins_routes.load_plugin(uri=uri)
+
+    assert payload["status"] == "loaded"
+    assert payload["plugin"]["uri"] == uri

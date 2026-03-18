@@ -73,8 +73,6 @@ import type {
 } from '../../map2/types'
 import { useCluster } from '../contexts/ClusterContext'
 import { ClusterEngineGrid } from '../components/AudioEngine/ClusterEngineGrid'
-import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
-import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { PageHeader } from '../components/PageHeader'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useViewedNodeStore } from '../stores/viewedNodeStore'
@@ -625,9 +623,6 @@ export function AudioEnginePage() {
 
   return (
     <div className="audio-engine-page">
-      {pageLocalNode ? (
-        <NodeContextBanner pageKey={NODE_PAGE_KEYS.audioEngine} localNode={pageLocalNode} topology={nodeTopology} />
-      ) : null}
       <Layer className="audio-engine-page__surface">
         <PageHeader
           title="Audio Engine"
@@ -665,8 +660,6 @@ export function AudioEnginePage() {
             </div>
           )}
         />
-
-        <NodeContextPicker pageKey={NODE_PAGE_KEYS.audioEngine} topology={nodeTopology} />
 
         <div className="audio-engine-page__header-band">
           {isClusterMode ? (

@@ -57,8 +57,73 @@ class WebSocketManager:
         self.send_timeout_seconds = send_timeout_seconds
         self.slow_client_disconnects = 0
         self.send_failures = 0
+
+    def _record_observability_event(
+        self,
+        client_id: str,
+        *,
+        action: str,
+        path: str = "/ws",
+        status: int = 200,
+        topic: Optional[str] = None,
+        error: Optional[str] = None,
+        extra_meta: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        try:
+            from app.services.api_observatory import get_api_observatory_service
+
+            info = self.connection_info.get(client_id, {})
+            subscriptions = info.get("subscriptions", set())
+            if not isinstance(subscriptions, set):
+                subscriptions = set(subscriptions or [])
+            connected_at = info.get("connected_at")
+            duration_ms = 0.0
+            if isinstance(connected_at, str):
+                try:
+                    started = datetime.fromisoformat(connected_at)
+                    duration_ms = max(
+                        0.0,
+                        (datetime.now() - started).total_seconds() * 1000.0,
+                    )
+                except ValueError:
+                    duration_ms = 0.0
+
+            meta = {
+                "action": action,
+                "client_id": client_id,
+                "topic": topic,
+                "client_label": info.get("client_label"),
+                "protocol_version": info.get("protocol_version"),
+                "subscriptions": sorted(subscriptions),
+                "active_connections": len(self.active_connections),
+                "topics": len(self.subscriptions),
+                "send_failures": self.send_failures,
+                "slow_client_disconnects": self.slow_client_disconnects,
+            }
+            if error:
+                meta["error"] = error
+            if extra_meta:
+                meta.update(extra_meta)
+
+            get_api_observatory_service().record_traffic_event(
+                {
+                    "event_type": "websocket",
+                    "method": "WS",
+                    "path": path,
+                    "status": status,
+                    "duration_ms": duration_ms,
+                    "request_size": 0,
+                    "response_size": 0,
+                    "client_ip": str(info.get("client_ip", "unknown")),
+                    "request_id": str(info.get("request_id", client_id)),
+                    "run_id": str(info.get("run_id", "")),
+                    "meta": meta,
+                }
+            )
+        except Exception:
+            pass
         
-    async def connect(self, websocket: WebSocket, client_id: str) -> None:
+    async def connect(self, websocket: WebSocket, client_id: str, metadata: Optional[Dict[str, Any]] = None) -> None:
         """
         Accept and register a new WebSocket connection
         
@@ -70,20 +135,43 @@ class WebSocketManager:
         
         async with self._lock:
             self.active_connections[client_id] = websocket
+            metadata = metadata or {}
             self.connection_info[client_id] = {
                 "connected_at": datetime.now().isoformat(),
-                "subscriptions": set()
+                "subscriptions": set(),
+                "run_id": metadata.get("run_id", ""),
+                "path": metadata.get("path", "/ws"),
+                "client_label": metadata.get("client_label"),
+                "request_id": metadata.get("request_id", client_id),
+                "protocol_version": metadata.get("protocol_version"),
+                "client_ip": metadata.get("client_ip", "unknown"),
             }
         
         logger.info(f"WebSocket client connected: {client_id}")
+        self._record_observability_event(
+            client_id,
+            action="connect",
+            path=str(metadata.get("path", "/ws")),
+            status=101,
+        )
         
-    def disconnect(self, client_id: str) -> None:
+    def disconnect(self, client_id: str, *, reason: str = "disconnect", error: Optional[str] = None) -> None:
         """
         Remove a client connection and clean up subscriptions
         
         Args:
             client_id: Client to disconnect
         """
+        info = self.connection_info.get(client_id, {})
+        path = str(info.get("path", "/ws"))
+        self._record_observability_event(
+            client_id,
+            action=reason,
+            path=path,
+            status=1000 if reason == "disconnect" else 1001,
+            error=error,
+        )
+
         # Remove from active connections
         if client_id in self.active_connections:
             del self.active_connections[client_id]
@@ -119,6 +207,14 @@ class WebSocketManager:
                 self.connection_info[client_id]["subscriptions"].add(topic)
         
         logger.debug(f"Client {client_id} subscribed to topic: {topic}")
+        path = str(self.connection_info.get(client_id, {}).get("path", "/ws"))
+        self._record_observability_event(
+            client_id,
+            action="subscribe",
+            path=path,
+            status=200,
+            topic=topic,
+        )
         
     async def unsubscribe(self, client_id: str, topic: str) -> None:
         """
@@ -138,6 +234,14 @@ class WebSocketManager:
                 self.connection_info[client_id]["subscriptions"].discard(topic)
         
         logger.debug(f"Client {client_id} unsubscribed from topic: {topic}")
+        path = str(self.connection_info.get(client_id, {}).get("path", "/ws"))
+        self._record_observability_event(
+            client_id,
+            action="unsubscribe",
+            path=path,
+            status=200,
+            topic=topic,
+        )
         
     async def send_personal_message(self, message: str, client_id: str) -> None:
         """
@@ -197,13 +301,29 @@ class WebSocketManager:
                         client_id,
                         self.send_timeout_seconds,
                     )
+                    self._record_observability_event(
+                        client_id,
+                        action="broadcast_timeout_error",
+                        path=str(self.connection_info.get(client_id, {}).get("path", "/ws")),
+                        status=504,
+                        topic=topic,
+                        error="send_timeout",
+                    )
                 else:
                     logger.error(f"Error broadcasting to {client_id}: {result}")
+                    self._record_observability_event(
+                        client_id,
+                        action="broadcast_error",
+                        path=str(self.connection_info.get(client_id, {}).get("path", "/ws")),
+                        status=500,
+                        topic=topic,
+                        error=str(result),
+                    )
                 disconnected_clients.append(client_id)
 
         # Clean up disconnected clients
         for client_id in disconnected_clients:
-            self.disconnect(client_id)
+            self.disconnect(client_id, reason="disconnect_error")
             
     async def broadcast_json(self, data: Dict[str, Any], topic: Optional[str] = None) -> None:
         """

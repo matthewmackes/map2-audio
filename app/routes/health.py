@@ -243,13 +243,15 @@ try:
             orchestrator = get_orchestrator()
             status = orchestrator.get_ready_status()
 
-            if status["ready"]:
+            if status["accepting_traffic"]:
                 return JSONResponse(
                     status_code=200,
                     content={
                         "ready": True,
+                        "accepting_traffic": True,
                         "uptime_seconds": status["uptime_seconds"],
                         "critical_services": status["summary"],
+                        "traffic_gate_services": status["traffic_gate_services"],
                     }
                 )
             else:
@@ -257,8 +259,11 @@ try:
                     status_code=503,
                     content={
                         "ready": False,
+                        "accepting_traffic": False,
                         "issues": status["issues"],
                         "critical_services": status["critical_services"],
+                        "traffic_gate_services": status["traffic_gate_services"],
+                        "dependency_levels": status["dependency_levels"],
                     }
                 )
         except Exception as e:

@@ -39,8 +39,7 @@
   padding: 0.6rem 0.8rem;
   border: 1px solid var(--cds-border-subtle, #525252);
   border-radius: 0.7rem;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer, #262626) 88%, white 12%) 0%, var(--cds-layer, #262626) 100%);
+  background: #000;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--numeric-input-accent, #0f62fe) 14%, transparent);
   transition:
     border-color 140ms ease,

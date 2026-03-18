@@ -13,8 +13,6 @@ import { useNavigate } from 'react-router-dom'
 import { CompressorCard, LimiterCard, GateCard } from '../components/Dynamics'
 import { EQCard } from '../components/EQ'
 import { MapAudioGridIcon } from '../components/icons/map'
-import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
-import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useCluster } from '../contexts/ClusterContext'
@@ -118,9 +116,6 @@ export function DSPPage() {
   if (allNodesSelected) {
     return (
       <div className="dsp-page">
-        {pageLocalNode ? (
-          <NodeContextBanner pageKey={NODE_PAGE_KEYS.dsp} localNode={pageLocalNode} topology={nodeTopology} />
-        ) : null}
         <PageHeader
           title="DSP · All Nodes"
           subtitle="Cluster-wide DSP budget, load, and processor inventory comparison"
@@ -136,8 +131,6 @@ export function DSPPage() {
             </button>
           }
         />
-
-        <NodeContextPicker pageKey={NODE_PAGE_KEYS.dsp} topology={nodeTopology} />
 
         <div className="cluster-banner">
           All Nodes mode compares DSP headroom and active processors across the cluster. Select a single node to edit live compressor, gate, limiter, and EQ parameters.
@@ -220,9 +213,6 @@ export function DSPPage() {
 
   return (
     <div className="dsp-page">
-      {pageLocalNode ? (
-        <NodeContextBanner pageKey={NODE_PAGE_KEYS.dsp} localNode={pageLocalNode} topology={nodeTopology} />
-      ) : null}
       <PageHeader
         title={remoteSelected ? `DSP · ${selectedNode?.hostname ?? viewedNodeId}` : 'Native DSP Processors'}
         subtitle={
@@ -254,8 +244,6 @@ export function DSPPage() {
           </button>
         }
       />
-
-      <NodeContextPicker pageKey={NODE_PAGE_KEYS.dsp} topology={nodeTopology} />
 
       {remoteSelected && (
         <div className="cluster-banner">

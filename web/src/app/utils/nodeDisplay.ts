@@ -108,6 +108,24 @@ export function buildNodeAlertMessage(node: NodeSummary): string {
   return 'Node health warning'
 }
 
+export function computeNodeHealthPercent(node: NodeSummary): number {
+  if (node.status === 'offline') return 0
+  let score = 100
+  if (!node.services.backend) score -= 30
+  if (!node.services.juce_engine) score -= 25
+  if (!node.services.pipewire) score -= 25
+  if (node.xrun_count > 0) score -= Math.min(20, node.xrun_count * 4)
+  if (node.cpu_percent > 80) score -= Math.round((node.cpu_percent - 80) * 1.5)
+  if (node.memory_percent > 85) score -= Math.round((node.memory_percent - 85) * 1.0)
+  return Math.max(0, Math.min(100, score))
+}
+
+export function getHealthPercentTone(percent: number): 'good' | 'warn' | 'critical' {
+  if (percent >= 80) return 'good'
+  if (percent >= 60) return 'warn'
+  return 'critical'
+}
+
 export function pageKeyFromPathname(pathname: string): string | null {
   if (pathname === '/') {
     return NODE_PAGE_KEYS.home

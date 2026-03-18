@@ -101,6 +101,26 @@
   color: var(--cds-text-secondary);
 }
 
+.node-nav-chip__health-pct {
+  font-size: 0.65rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
+.node-nav-chip__health-pct--good {
+  color: var(--cds-support-success);
+}
+
+.node-nav-chip__health-pct--warn {
+  color: var(--cds-support-warning);
+}
+
+.node-nav-chip__health-pct--critical {
+  color: var(--cds-support-error);
+}
+
 @keyframes node-nav-chip-critical {
   0%, 100% {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--cds-support-error) 32%, transparent);

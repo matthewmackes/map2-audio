@@ -58,6 +58,7 @@ class ApiObservatoryService:
         normalized = {
             "id": event.get("id") or str(uuid4()),
             "timestamp": event.get("timestamp") or _utc_now_iso(),
+            "event_type": str(event.get("event_type", "http")),
             "method": str(event.get("method", "GET")).upper(),
             "path": str(event.get("path", "/")),
             "status": int(event.get("status", 0)),
@@ -66,6 +67,7 @@ class ApiObservatoryService:
             "response_size": int(event.get("response_size", 0)),
             "client_ip": str(event.get("client_ip", "unknown")),
             "request_id": str(event.get("request_id", "")),
+            "run_id": str(event.get("run_id", "")),
             "node_id": str(event.get("node_id", "local")),
             "meta": event.get("meta") if isinstance(event.get("meta"), dict) else {},
         }
@@ -82,7 +84,9 @@ class ApiObservatoryService:
         self,
         *,
         limit: int = 200,
+        event_type: Optional[str] = None,
         method: Optional[str] = None,
+        run_id: Optional[str] = None,
         status_min: Optional[int] = None,
         status_max: Optional[int] = None,
         path_pattern: Optional[str] = None,
@@ -91,9 +95,20 @@ class ApiObservatoryService:
     ) -> list[dict[str, Any]]:
         items = list(self._events)
 
+        if event_type:
+            normalized_event_type = event_type.lower()
+            items = [
+                item
+                for item in items
+                if str(item.get("event_type", "http")).lower() == normalized_event_type
+            ]
+
         if method:
             normalized = method.upper()
             items = [item for item in items if item.get("method") == normalized]
+
+        if run_id:
+            items = [item for item in items if str(item.get("run_id", "")) == run_id]
 
         if status_min is not None:
             items = [item for item in items if int(item.get("status", 0)) >= status_min]
@@ -145,15 +160,49 @@ class ApiObservatoryService:
                 "top_slowest_endpoints": [],
                 "top_called_endpoints": [],
                 "response_size_by_endpoint": [],
+                "websocket_events": 0,
+                "websocket_disconnects": 0,
+                "websocket_errors": 0,
             }
 
-        durations = [float(row.get("duration_ms", 0.0)) for row in rows]
-        statuses = [int(row.get("status", 0)) for row in rows]
-        endpoint_counter = Counter(str(row.get("path", "")) for row in rows)
+        websocket_rows = [
+            row for row in rows if str(row.get("event_type", "http")).lower() == "websocket"
+        ]
+        http_rows = [
+            row for row in rows if str(row.get("event_type", "http")).lower() != "websocket"
+        ]
+
+        if not http_rows:
+            return {
+                "total_requests": 0,
+                "avg_response_ms": 0.0,
+                "p95_ms": 0.0,
+                "p99_ms": 0.0,
+                "error_rate_percent": 0.0,
+                "requests_per_second": 0.0,
+                "top_slowest_endpoints": [],
+                "top_called_endpoints": [],
+                "response_size_by_endpoint": [],
+                "websocket_events": len(websocket_rows),
+                "websocket_disconnects": sum(
+                    1
+                    for row in websocket_rows
+                    if str(row.get("meta", {}).get("action", "")).startswith("disconnect")
+                ),
+                "websocket_errors": sum(
+                    1
+                    for row in websocket_rows
+                    if str(row.get("meta", {}).get("action", "")).endswith("error")
+                ),
+            }
+
+        durations = [float(row.get("duration_ms", 0.0)) for row in http_rows]
+        statuses = [int(row.get("status", 0)) for row in http_rows]
+        endpoint_counter = Counter(str(row.get("path", "")) for row in http_rows)
 
         # Parse timestamps to estimate request rate.
         timestamps: list[datetime] = []
-        for row in rows:
+        for row in http_rows:
             raw = row.get("timestamp")
             if isinstance(raw, str):
                 try:
@@ -167,24 +216,24 @@ class ApiObservatoryService:
                 (timestamps[-1] - timestamps[0]).total_seconds(),
                 1e-3,
             )
-            rps = round(len(rows) / span_seconds, 2)
+            rps = round(len(http_rows) / span_seconds, 2)
         else:
-            rps = float(len(rows))
+            rps = float(len(http_rows))
 
         errors = [status for status in statuses if status >= 400]
 
-        slowest = sorted(rows, key=lambda row: float(row.get("duration_ms", 0.0)), reverse=True)[:10]
+        slowest = sorted(http_rows, key=lambda row: float(row.get("duration_ms", 0.0)), reverse=True)[:10]
         endpoint_sizes: dict[str, int] = {}
-        for row in rows:
+        for row in http_rows:
             path = str(row.get("path", ""))
             endpoint_sizes[path] = endpoint_sizes.get(path, 0) + int(row.get("response_size", 0))
 
         return {
-            "total_requests": len(rows),
+            "total_requests": len(http_rows),
             "avg_response_ms": round(mean(durations), 2),
             "p95_ms": _percentile(durations, 95),
             "p99_ms": _percentile(durations, 99),
-            "error_rate_percent": round((len(errors) / len(rows)) * 100.0, 2),
+            "error_rate_percent": round((len(errors) / len(http_rows)) * 100.0, 2),
             "requests_per_second": rps,
             "top_slowest_endpoints": [
                 {
@@ -203,6 +252,17 @@ class ApiObservatoryService:
                 {"path": path, "size_bytes": size}
                 for path, size in sorted(endpoint_sizes.items(), key=lambda item: item[1], reverse=True)[:20]
             ],
+            "websocket_events": len(websocket_rows),
+            "websocket_disconnects": sum(
+                1
+                for row in websocket_rows
+                if str(row.get("meta", {}).get("action", "")).startswith("disconnect")
+            ),
+            "websocket_errors": sum(
+                1
+                for row in websocket_rows
+                if str(row.get("meta", {}).get("action", "")).endswith("error")
+            ),
         }
 
     # ------------------------------------------------------------------
@@ -284,6 +344,7 @@ class ApiObservatoryService:
                         "id": str(uuid4()),
                         "timestamp": _utc_now_iso(),
                         "method": "GET",
+                        "event_type": "http",
                         "path": "/",
                         "status": 0,
                         "duration_ms": 0.0,
@@ -291,6 +352,7 @@ class ApiObservatoryService:
                         "response_size": 0,
                         "client_ip": "unknown",
                         "request_id": "",
+                        "run_id": "",
                         "node_id": "local",
                         "meta": {},
                     }
@@ -301,6 +363,7 @@ class ApiObservatoryService:
                 {
                     "id": str(event.get("id") or uuid4()),
                     "timestamp": str(event.get("timestamp") or _utc_now_iso()),
+                    "event_type": str(event.get("event_type", "http")),
                     "method": str(event.get("method", "GET")).upper(),
                     "path": str(event.get("path", "/")),
                     "status": int(event.get("status", 0)),
@@ -309,6 +372,7 @@ class ApiObservatoryService:
                     "response_size": int(event.get("response_size", 0)),
                     "client_ip": str(event.get("client_ip", "unknown")),
                     "request_id": str(event.get("request_id", "")),
+                    "run_id": str(event.get("run_id", "")),
                     "node_id": str(event.get("node_id", "local")),
                     "meta": event.get("meta") if isinstance(event.get("meta"), dict) else {},
                 }

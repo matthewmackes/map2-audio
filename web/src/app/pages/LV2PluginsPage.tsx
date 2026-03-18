@@ -44,8 +44,6 @@ import {
 } from '@carbon/icons-react'
 import { pluginsApi } from '../../map2/api'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
-import { NodeContextBanner } from '../components/NodeContextBanner/NodeContextBanner'
-import { NodeContextPicker } from '../components/NodeContextPicker/NodeContextPicker'
 import { PageHeader } from '../components/PageHeader'
 import { useCluster } from '../contexts/ClusterContext'
 import { useNodePageContext } from '../hooks/useNodePageContext'
@@ -347,9 +345,6 @@ export function LV2PluginsPage() {
 
   return (
     <section className="lv2-plugins-page">
-      {pageLocalNode ? (
-        <NodeContextBanner pageKey={NODE_PAGE_KEYS.lv2Plugins} localNode={pageLocalNode} topology={nodeTopology} />
-      ) : null}
       <Layer className="lv2-plugins-page__surface">
         <div className="stack">
           <PageHeader
@@ -388,8 +383,6 @@ export function LV2PluginsPage() {
               </div>
             )}
           />
-
-          <NodeContextPicker pageKey={NODE_PAGE_KEYS.lv2Plugins} topology={nodeTopology} />
 
           {isClusterMode ? (
             <Tile className="lv2-plugins-page__cluster-banner">

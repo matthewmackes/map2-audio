@@ -19,6 +19,50 @@ class _FakeOrchestrator:
         self.requested_services.append(name)
         return self._services.get(name)
 
+    def get_ready_status(self):
+        return {
+            "ready": True,
+            "accepting_traffic": True,
+            "uptime_seconds": 12.5,
+            "summary": {"total_critical": 1, "healthy": 1, "unhealthy": 0},
+            "critical_services": {
+                "database": {
+                    "display_name": "Database",
+                    "state": "running",
+                    "running": True,
+                    "healthy": True,
+                    "last_error": None,
+                    "health_message": "",
+                    "restart_count": 0,
+                }
+            },
+            "traffic_gate_services": {
+                "database": {
+                    "display_name": "Database",
+                    "state": "running",
+                    "running": True,
+                    "dependencies": [],
+                    "last_error": None,
+                },
+                "command_queue": {
+                    "display_name": "Command Queue",
+                    "state": "running",
+                    "running": True,
+                    "dependencies": ["database"],
+                    "last_error": None,
+                },
+                "websocket_manager": {
+                    "display_name": "WebSocket Manager",
+                    "state": "running",
+                    "running": True,
+                    "dependencies": [],
+                    "last_error": None,
+                },
+            },
+            "dependency_levels": [{"level": 1, "services": ["database", "websocket_manager"]}],
+            "issues": [],
+        }
+
 
 class _FakeMetricsCollector:
     def __init__(self) -> None:
@@ -176,3 +220,20 @@ def test_health_check_includes_midi_cluster_section(monkeypatch):
     assert payload["midi_cluster"]["connection_count"] == 2
     assert payload["midi_cluster"]["clock_status"] == "master"
     assert payload["midi_cluster"]["master_node_id"] == "node-a"
+
+
+def test_ready_check_returns_accepting_traffic_details(monkeypatch):
+    fake_orchestrator = _FakeOrchestrator()
+    monkeypatch.setattr(
+        "app.services.service_orchestrator.get_orchestrator",
+        lambda: fake_orchestrator,
+    )
+
+    response = asyncio.run(health_routes.ready_check())
+
+    assert response.status_code == 200
+    assert response.body
+    payload = response.body.decode("utf-8")
+    assert '"ready":true' in payload
+    assert '"accepting_traffic":true' in payload
+    assert '"traffic_gate_services"' in payload
