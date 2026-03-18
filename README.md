@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**761** Python | **1106** TypeScript | **282** C++/H | **118** Docs | **527** total commits | **0** stars | **0** forks | **0** open issues
+**762** Python | **1119** TypeScript | **282** C++/H | **118** Docs | **529** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`49cee37d`](https://github.com/matthewmackes/map2-audio/commit/49cee37db6e56301c14606c0834933fbe8a1c1dc) | Update web UI, icons, and docs | Map2 Audio | 2026-03-17 |
+| [`73321964`](https://github.com/matthewmackes/map2-audio/commit/73321964b1bc029ebb34164a331856ae4ade3524) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-17 |
 | [`3b2a5877`](https://github.com/matthewmackes/map2-audio/commit/3b2a58771dd03235832b2dc4ea1cffca4d578d9c) | Finish advanced launcher refresh and JUCE grid polish | Map2 Audio | 2026-03-17 |
 | [`af539f85`](https://github.com/matthewmackes/map2-audio/commit/af539f8559a700e4a0b600c485746818ff13f31e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-17 |
 | [`8cad3bcf`](https://github.com/matthewmackes/map2-audio/commit/8cad3bcffa2f1011af0ef86dc9029400c58e67d7) | feat: refactor MIDI hub and JUCE grid workflows | Map2 Audio | 2026-03-17 |
 | [`cd5bac20`](https://github.com/matthewmackes/map2-audio/commit/cd5bac20acd190e966dab3302064b9e750762c20) | chore: sync 2026-03-17 | Map2 Audio | 2026-03-17 |
 | [`66782b61`](https://github.com/matthewmackes/map2-audio/commit/66782b61d04dfb69b61fb3430e098c4b9c33edae) | chore: update version and UI pages | Map2 Audio | 2026-03-17 |
 | [`dffba936`](https://github.com/matthewmackes/map2-audio/commit/dffba936da8c5fe8f4c6a23e5fcb17ee2651fa48) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-17 |
-| [`e1fc9fc5`](https://github.com/matthewmackes/map2-audio/commit/e1fc9fc50a56893945956518c6d2052ededf333e) | Add plugin chips to chain management views | Map2 Audio | 2026-03-17 |
-| [`205ac72e`](https://github.com/matthewmackes/map2-audio/commit/205ac72e30e67313865880fc0c4a2f37815d156e) | Update platform shell and home surfaces | Map2 Audio | 2026-03-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
