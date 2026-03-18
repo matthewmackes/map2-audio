@@ -11,7 +11,7 @@ import {
   type SynthForgePartConfig,
   type SynthForgePerformanceConfig,
 } from '../../../../../map2/api'
-import type { SoundFont, SoundFontPreset } from '../../../../types/library'
+import type { SoundFont } from '../../../../types/library'
 import { useWebSocketConnection, useWebSocketTopic } from '../../../../../map2/hooks/useWebSocket'
 import './SynthForgeCard.css'
 
@@ -187,13 +187,23 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
 
   const partChannel = currentPart.midi_channel >= 1 && currentPart.midi_channel <= 16 ? currentPart.midi_channel : activePart + 1
 
-  const soundfonts = useMemo(() => {
+  const libraryItems = useMemo(() => {
     const all = (libraryQuery.data?.soundfonts ?? []) as SoundFont[]
     const lowered = search.trim().toLowerCase()
     return all
-      .filter((item) => item.format === 'sf2' || item.format === 'sf3')
       .filter((item) => !lowered || item.name.toLowerCase().includes(lowered) || item.library.toLowerCase().includes(lowered))
   }, [libraryQuery.data, search])
+  const totalLibraryCount = libraryQuery.data?.total ?? 0
+  const compatibleLibraryCount = useMemo(() => {
+    const all = (libraryQuery.data?.soundfonts ?? []) as SoundFont[]
+    return all.filter((item) => item.format === 'sf2' || item.format === 'sf3' || item.format === 'sfz').length
+  }, [libraryQuery.data])
+  const selectedItem = useMemo(
+    () => libraryItems.find((item) => item.path === selectedPath) ?? null,
+    [libraryItems, selectedPath]
+  )
+  const isSelectedSoundFont = selectedItem?.format === 'sf2' || selectedItem?.format === 'sf3'
+  const isSelectedSfz = selectedItem?.format === 'sfz'
 
   const presets = presetsQuery.data?.presets ?? []
   const banks = useMemo(() => Array.from(new Set(presets.map((preset) => preset.bank))).sort((a, b) => a - b), [presets])
@@ -206,18 +216,21 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
 
   useEffect(() => {
     const loadedPath = statusQuery.data?.soundfont_path ?? ''
+    const loadedSfzPath = statusQuery.data?.sfz_path ?? ''
     if (loadedPath) {
       setSelectedPath(loadedPath)
       setSelectedBank(statusQuery.data?.active_bank ?? 0)
       setSelectedProgram(statusQuery.data?.active_program ?? 0)
+    } else if (loadedSfzPath) {
+      setSelectedPath(loadedSfzPath)
     }
   }, [statusQuery.data])
 
   useEffect(() => {
-    if (!selectedPath && soundfonts.length > 0) {
-      setSelectedPath(soundfonts[0].path)
+    if (!selectedPath && libraryItems.length > 0) {
+      setSelectedPath(libraryItems[0].path)
     }
-  }, [selectedPath, soundfonts])
+  }, [selectedPath, libraryItems])
 
   useEffect(() => {
     if (banks.length > 0 && !banks.includes(selectedBank)) {
@@ -396,23 +409,30 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
           <section className="synthforge-panel">
             <div className="synthforge-panel-heading">
               <span>Library</span>
-              <strong>{soundfonts.length} SoundFonts</strong>
+              <strong>{soundfonts.length} visible</strong>
+            </div>
+            <div className="synthforge-status-strip">
+              <span>Total library: <strong>{totalLibraryCount}</strong></span>
+              <span>SF2/SF3 compatible: <strong>{compatibleLibraryCount}</strong></span>
+              <span>Modes: <strong>SF2/SF3 + SFZ</strong></span>
             </div>
             <input
               className="synthforge-search"
-              placeholder="Search piano, strings, library..."
+              placeholder="Search SoundFonts and SFZ instruments..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
             <div className="synthforge-library-list">
-              {soundfonts.map((item) => (
+              {libraryItems.map((item) => (
                 <button
                   key={item.path}
                   className={['synthforge-library-item', selectedPath === item.path ? 'is-selected' : ''].join(' ')}
                   onClick={() => setSelectedPath(item.path)}
                 >
                   <span className="title">{item.name}</span>
-                  <span className="meta">{item.library} • {item.format.toUpperCase()} • {item.preset_count ?? 0} presets</span>
+                  <span className="meta">
+                    {item.library} • {item.format.toUpperCase()} • {item.format === 'sfz' ? 'SFZ instrument' : `${item.preset_count ?? 0} presets`}
+                  </span>
                 </button>
               ))}
             </div>
@@ -420,8 +440,8 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
 
           <section className="synthforge-panel">
             <div className="synthforge-panel-heading">
-              <span>Preset Browser</span>
-              <strong>{statusQuery.data?.active_preset_name || 'Select a SoundFont'}</strong>
+              <span>{isSelectedSfz ? 'Instrument Load' : 'Preset Browser'}</span>
+              <strong>{statusQuery.data?.active_preset_name || selectedItem?.name || 'Select an instrument'}</strong>
             </div>
 
             <div className="synthforge-status-strip">
@@ -430,50 +450,75 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
               <span>Loaded: <strong>{statusQuery.data?.soundfont_format?.toUpperCase() || 'None'}</strong></span>
             </div>
 
-            <div className="synthforge-bank-program">
-              <label>
-                Bank
-                <select value={selectedBank} onChange={(event) => setSelectedBank(Number(event.target.value))} disabled={banks.length === 0}>
-                  {banks.map((bank) => <option key={bank} value={bank}>Bank {bank}</option>)}
-                </select>
-              </label>
-              <label>
-                Program
-                <select value={selectedProgram} onChange={(event) => setSelectedProgram(Number(event.target.value))} disabled={filteredPresets.length === 0}>
-                  {filteredPresets.map((preset) => <option key={`${preset.bank}:${preset.program}`} value={preset.program}>{preset.program} • {preset.name}</option>)}
-                </select>
-              </label>
-            </div>
+            {isSelectedSoundFont ? (
+              <>
+                <div className="synthforge-bank-program">
+                  <label>
+                    Bank
+                    <select value={selectedBank} onChange={(event) => setSelectedBank(Number(event.target.value))} disabled={banks.length === 0}>
+                      {banks.map((bank) => <option key={bank} value={bank}>Bank {bank}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    Program
+                    <select value={selectedProgram} onChange={(event) => setSelectedProgram(Number(event.target.value))} disabled={filteredPresets.length === 0}>
+                      {filteredPresets.map((preset) => <option key={`${preset.bank}:${preset.program}`} value={preset.program}>{preset.program} • {preset.name}</option>)}
+                    </select>
+                  </label>
+                </div>
 
-            <button
-              className="synthforge-primary"
-              disabled={!selectedPath || !selectedPreset || loadSoundFontMutation.isPending}
-              onClick={() => {
-                if (!selectedPreset) return
-                loadSoundFontMutation.mutate({
-                  partIndex: activePart,
-                  path: selectedPath,
-                  bank: selectedPreset.bank,
-                  program: selectedPreset.program,
-                  presetName: selectedPreset.name,
-                })
-              }}
-            >
-              Load {selectedPreset?.name || 'Preset'}
-            </button>
-
-            <div className="synthforge-preset-list">
-              {filteredPresets.map((preset) => (
                 <button
-                  key={`${preset.bank}:${preset.program}:${preset.name}`}
-                  className={['synthforge-preset-item', preset.program === selectedProgram ? 'is-selected' : ''].join(' ')}
-                  onClick={() => setSelectedProgram(preset.program)}
+                  className="synthforge-primary"
+                  disabled={!selectedPath || !selectedPreset || loadSoundFontMutation.isPending}
+                  onClick={() => {
+                    if (!selectedPreset) return
+                    loadSoundFontMutation.mutate({
+                      partIndex: activePart,
+                      path: selectedPath,
+                      bank: selectedPreset.bank,
+                      program: selectedPreset.program,
+                      presetName: selectedPreset.name,
+                    })
+                  }}
                 >
-                  <span>{preset.program.toString().padStart(3, '0')}</span>
-                  <strong>{preset.name}</strong>
+                  Load {selectedPreset?.name || 'Preset'}
                 </button>
-              ))}
-            </div>
+
+                <div className="synthforge-preset-list">
+                  {filteredPresets.map((preset) => (
+                    <button
+                      key={`${preset.bank}:${preset.program}:${preset.name}`}
+                      className={['synthforge-preset-item', preset.program === selectedProgram ? 'is-selected' : ''].join(' ')}
+                      onClick={() => setSelectedProgram(preset.program)}
+                    >
+                      <span>{preset.program.toString().padStart(3, '0')}</span>
+                      <strong>{preset.name}</strong>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : isSelectedSfz ? (
+              <>
+                <div className="synthforge-status-strip">
+                  <span>Format: <strong>SFZ</strong></span>
+                  <span>Load path: <strong>Existing SFZ sampler backend</strong></span>
+                </div>
+                <button
+                  className="synthforge-primary"
+                  disabled={!selectedPath || loadSoundFontMutation.isPending}
+                  onClick={() => {
+                    if (!selectedPath) return
+                    void synthforgeApi.loadSfz(activePart, selectedPath).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['synthforge', 'status', activePart] })
+                    })
+                  }}
+                >
+                  Load SFZ Instrument
+                </button>
+              </>
+            ) : (
+              <div className="synthforge-empty">Select a library item to load.</div>
+            )}
           </section>
 
           <section className="synthforge-panel">

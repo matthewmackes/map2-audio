@@ -768,7 +768,10 @@ Description:
 - Required outputs/deliverables: Code changes, tests/build notes, and handoff notes for any remaining FluidSynth packaging work.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 06:20 - Codex
+Last updated: 2026-03-18 07:10 - Codex
+- Progress notes:
+  - Follow-up compatibility slice started to reconcile SynthForge against the full internal library inventory by making the browser format-aware instead of SoundFont-only.
+  - Target behavior: one unified library browser that can route `.sf2/.sf3` through the SoundFont path and `.sfz` through the existing SFZ path while keeping the same keyboard/performance surface.
 Assigned to: Codex
 Last updated: 2026-03-18 06:20 - Codex
 
@@ -856,12 +859,14 @@ Description:
 - Required outputs: Updated `JUCE-GRID` effect-editor interaction, responsive modal styling, focused regression validation, and canonical worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-17 22:29 - Codex
+Last updated: 2026-03-18 07:17 - Codex
 - Completion notes:
   - Removed the inline desktop effect editor shell from `web/src/app/pages/JuceGridPage.tsx` and replaced it with a route-local modal driven by the existing selected-plugin flow.
   - Kept the current block-selection trigger unchanged while ensuring keyboard left/right plugin navigation also opens the effect modal and Escape closes the modal before clearing selection.
   - Added a responsive effect-modal shell in `web/src/app/pages/JuceGridPage.css` that hugs the editor content on larger screens, animates on open, dims the page with Carbon modal behavior, and expands to fullscreen on mobile.
   - Replaced the compact inline editor panel with a lightweight placeholder/reopen surface so the effect card now exists only inside the modal.
+  - Refined the modal shell so all JUCE-GRID plugin/effect cards now open at the underlying window size captured at open time, with no extra modal header copy, metadata tags, or redundant close button above the card.
+  - Recorded the standing JUCE-GRID plugin-modal rule in `.gemini/instructions.md` so future card/modal work preserves the same full-window, card-only presentation pattern.
   - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- JuceGridPage.test.tsx --runInBand --silent` -> pass, `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
 
 ID: T208
