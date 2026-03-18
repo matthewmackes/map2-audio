@@ -3,7 +3,7 @@
  */
 
 import type { ChainPlugin, Plugin } from '../../../map2/types'
-import { getIconForCategory } from './icons'
+import { getEffectIcon } from '../icons/effectIcons'
 import { getDisplayPluginName } from '../../../map2/displayNames'
 
 interface PluginTooltipContentProps {
@@ -42,7 +42,7 @@ function formatPorts(inPorts?: number, outPorts?: number): string {
  * Tooltip content component - renders the technical details
  */
 export function PluginTooltipContent({ plugin, meta }: PluginTooltipContentProps) {
-  const Icon = getIconForCategory(meta?.category || meta?.class_label)
+  const Icon = getEffectIcon(meta?.category || meta?.class_label)
   const name = getDisplayPluginName(meta?.name || plugin.name || plugin.uri.split('/').pop() || 'Unknown', plugin.uri)
   const category = meta?.category || meta?.class_label || 'Effect'
   const format = plugin.format || meta?.format || 'LV2'

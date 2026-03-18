@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 15, 2026 (explicit "ask questions" trigger preference)
+> **Last Updated**: March 18, 2026 (Carbon icon build-fix + typography rollout notes)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -973,6 +973,12 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Check `ps aux | grep "vite build"` before assuming server issue
 - **Lesson**: Always verify build completion before troubleshooting server
 
+**7. Carbon Icon Migration Build Breaks**
+- **Problem**: `tsc -b` passes during localized work, but full production build fails after icon migrations.
+- **Root Cause**: Swapping from Phosphor to Carbon can leave stale Phosphor-only props (`weight`) and non-existent Carbon export names such as `Gauge`, `Sliders`, or `DocumentDashed`, plus missing renamed imports like `Renew as SpinnerGap`.
+- **Fix**: Verify every migrated icon against `@carbon/icons-react` exports, remove unsupported `weight` props from Carbon components, and re-run `npm --prefix web run build`, not just `typecheck`.
+- **Lesson**: Treat icon-library migration as a build-level contract change, not a search-and-replace task.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1329,6 +1335,13 @@ Target: < 5 ms total
 
 ## Update Log
 
+### [2026-03-18] - Carbon Icon Build-Fix Validation
+- **Section**: Gotchas & Learned Fixes (#7), Build & Test Commands
+- **Change**: Documented the Carbon icon migration failure mode where stale Phosphor props and wrong Carbon export names only surface under full `npm --prefix web run build`.
+- **Reason**: The typography rollout uncovered production-build failures that were not typography regressions but stale icon migration debt.
+- **Impact**: Future icon migrations should validate against actual Carbon exports and run a full build before being treated as complete.
+- **Files**: `web/src/app/components/HostMachine/AudioNodeFeatures.tsx`, `web/src/app/components/PluginCards/Base/PluginCardShell.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx`, `web/src/app/components/PluginCards/Custom/LV2/WhammyCard.tsx`, `web/src/app/components/PluginCards/Dialogs/ExpressionOverlay.tsx`, `web/src/app/components/library/SFItemCard.tsx`, `web/src/app/pages/MIDIPage.tsx`, `web/src/app/components/Platform/PlatformModal.tsx`, `.github/copilot-instructions.md`
+
 ### [2026-03-15] - Explicit "Ask Questions" Trigger Preference
 - **Section**: User Preferences, 5-Question Clarification Protocol
 - **Change**: Added a user-preference note and an explicit protocol trigger that the phrases "ask questions", "ask me questions", and "ask 5 questions" must invoke the documented one-at-a-time clarification flow.
@@ -1560,5 +1573,5 @@ See `docs/PROJECT_WORKLIST.md` for full details. Build order: all at once. Tesir
 ---
 
 **For Questions**: Consult the documentation files listed in Additional Resources
-**Last Updated**: March 17, 2026
+**Last Updated**: March 18, 2026
 **Maintained by**: GitHub Copilot AI Assistants

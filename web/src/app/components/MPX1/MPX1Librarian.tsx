@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import {
-  ArrowsClockwise,
-  DownloadSimple,
-  FloppyDisk,
-  FileArrowDown,
-  FileArrowUp,
-  Lightning,
-  Star,
-} from '@phosphor-icons/react'
+  DocumentExport,
+  DocumentImport,
+  Flash,
+  Renew,
+  Save,
+  StarFilled,
+} from '@carbon/icons-react'
 
 import {
   mpx1Api,
@@ -293,7 +292,7 @@ export function MPX1Librarian() {
     return (
       <span className="mpx1-library__stars">
         {Array.from({ length: stars }).map((_, index) => (
-          <Star key={index} size={12} weight="fill" />
+          <StarFilled key={index} size={12} />
         ))}
       </span>
     )
@@ -339,19 +338,19 @@ export function MPX1Librarian() {
 
         <div className="mpx1-library__toolbar">
           <button type="button" onClick={() => void refreshLibrary()}>
-            <ArrowsClockwise size={14} weight="bold" /> Refresh
+            <Renew size={14} /> Refresh
           </button>
           <button type="button" onClick={() => void handleStartDump()}>
-            <Lightning size={14} weight="bold" /> Dump All
+            <Flash size={14} /> Dump All
           </button>
           <button type="button" onClick={handleExportSelected} disabled={selectedPrograms.size === 0}>
-            <FileArrowDown size={14} weight="bold" /> Export
+            <DocumentExport size={14} /> Export
           </button>
           <button type="button" onClick={handleImportClick}>
-            <FileArrowUp size={14} weight="bold" /> Import
+            <DocumentImport size={14} /> Import
           </button>
           <button type="button" onClick={() => dispatch({ type: 'undo' })}>
-            <FloppyDisk size={14} weight="bold" /> Undo
+            <Save size={14} /> Undo
           </button>
           <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(event) => void handleImportFile(event)} />
         </div>

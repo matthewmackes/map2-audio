@@ -6,7 +6,7 @@
  */
 
 import { useState, type ReactNode } from 'react'
-import { CaretDown, CaretRight } from '@phosphor-icons/react'
+import { ChevronDown, ChevronRight } from '@carbon/icons-react'
 import { getSectionIcon } from './sectionIcons'
 
 interface ParameterSectionProps {
@@ -66,7 +66,7 @@ export function ParameterSection({
           <div className="parameter-section-title">
             {collapsible && (
               <span className="parameter-section-chevron">
-                {isCollapsed ? <CaretRight size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />}
+                {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
               </span>
             )}
             {resolvedIcon && <span className="parameter-section-icon">{resolvedIcon}</span>}

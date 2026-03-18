@@ -2,7 +2,7 @@
  * Machine Specs Card - Hardware Specifications Display
  */
 
-import { Cpu, HardDrive, Lightning, FileText, IdentificationCard } from '@phosphor-icons/react'
+import { Activity as Cpu, DataBase as HardDrive, Document as FileText, Flash as Lightning, Identification } from '@carbon/icons-react'
 import type { HostMachineInfo } from '@/map2/types'
 
 interface MachineSpecsCardProps {
@@ -19,7 +19,7 @@ interface SpecSection {
 export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps) {
   const sections: SpecSection[] = [
     {
-      icon: <Cpu size={16} weight="duotone" />,
+      icon: <Cpu size={16} />,
       title: 'Processor',
       rows: [
         { label: 'Model', value: machineInfo.cpu_model },
@@ -34,7 +34,7 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       ],
     },
     {
-      icon: <HardDrive size={16} weight="duotone" />,
+      icon: <HardDrive size={16} />,
       title: 'Memory',
       rows: [
         { label: 'Total capacity', value: `${(machineInfo.total_memory_mb / 1024).toFixed(1)} GB` },
@@ -42,7 +42,7 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       ],
     },
     {
-      icon: <Lightning size={16} weight="duotone" />,
+      icon: <Lightning size={16} />,
       title: 'System',
       rows: [
         { label: 'Manufacturer', value: machineInfo.manufacturer },
@@ -53,7 +53,7 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       ],
     },
     {
-      icon: <FileText size={16} weight="duotone" />,
+      icon: <FileText size={16} />,
       title: 'BIOS & Firmware',
       rows: [
         { label: 'Version', value: machineInfo.bios_version },
@@ -61,7 +61,7 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       ],
     },
     {
-      icon: <IdentificationCard size={16} weight="duotone" />,
+      icon: <Identification size={16} />,
       title: 'Identification',
       rows: [
         { label: 'System UUID', value: machineInfo.system_uuid },

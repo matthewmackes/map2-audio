@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Pulse, WarningCircle, CheckCircle, Lightning } from '@phosphor-icons/react'
+import { Activity as Pulse, WarningAlt as WarningCircle, CheckmarkFilled as CheckCircle, Flash as Lightning } from '@carbon/icons-react'
 import { useMemo } from 'react'
 import { normalizeClusterNodes, getServiceStatusForNode } from './clusterData'
 
@@ -124,10 +124,10 @@ export function ServicesHealthTab() {
                                   : '#888',
                         }}
                       >
-                        {status === 'running' && <CheckCircle size={16} weight="duotone" style={{ display: 'inline' }} />}
-                        {status === 'degraded' && <WarningCircle size={16} weight="duotone" style={{ display: 'inline' }} />}
-                        {status === 'offline' && <WarningCircle size={16} weight="duotone" style={{ display: 'inline' }} />}
-                        {status === 'n/a' && <Lightning size={16} weight="duotone" style={{ display: 'inline', opacity: 0.3 }} />}
+                        {status === 'running' && <CheckCircle size={16} style={{ display: 'inline' }} />}
+                        {status === 'degraded' && <WarningCircle size={16} style={{ display: 'inline' }} />}
+                        {status === 'offline' && <WarningCircle size={16} style={{ display: 'inline' }} />}
+                        {status === 'n/a' && <Lightning size={16} style={{ display: 'inline', opacity: 0.3 }} />}
                         <div style={{ marginTop: 4, fontSize: 10 }}>
                           {status === 'n/a' ? 'N/A' : status}
                         </div>
@@ -152,7 +152,7 @@ export function ServicesHealthTab() {
         >
           {deploymentMode?.mode === 'ALL-IN-ONE' ? (
             <div>
-              <Pulse size={32} weight="duotone" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+              <Pulse size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
               <div>Single node deployment detected.</div>
               <div style={{ fontSize: 12, marginTop: 8 }}>Deploy multiple nodes to see service distribution.</div>
             </div>
@@ -175,16 +175,16 @@ export function ServicesHealthTab() {
         <div style={{ fontWeight: 600, marginBottom: 8, color: '#d0d0d0' }}>Legend</div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <CheckCircle size={14} weight="duotone" color="#00ff41" /> Running
+            <CheckCircle size={14} style={{ color: '#00ff41' }} /> Running
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <WarningCircle size={14} weight="duotone" color="#ffaa00" /> Degraded
+            <WarningCircle size={14} style={{ color: '#ffaa00' }} /> Degraded
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <WarningCircle size={14} weight="duotone" color="#ff3333" /> Offline
+            <WarningCircle size={14} style={{ color: '#ff3333' }} /> Offline
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Lightning size={14} weight="duotone" color="#888" style={{ opacity: 0.3 }} /> N/A
+            <Lightning size={14} style={{ color: '#888', opacity: 0.3 }} /> N/A
           </div>
         </div>
       </div>

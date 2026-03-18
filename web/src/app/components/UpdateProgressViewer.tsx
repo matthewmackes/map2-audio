@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ArrowsClockwise, Pause, Play, ArrowCounterClockwise, Warning, CheckCircle, XCircle } from '@phosphor-icons/react'
+import { CheckmarkFilled as CheckCircle, ErrorFilled as XCircle, Pause, Play, Renew as ArrowsClockwise, Reset as ArrowCounterClockwise, WarningAlt as Warning } from '@carbon/icons-react'
 
 interface UpdateStage {
   name: string
@@ -97,13 +97,13 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle size={16} weight="duotone" color="#00ff41" />
+        return <CheckCircle size={16} style={{ color: '#00ff41' }} />
       case 'failed':
-        return <XCircle size={16} weight="duotone" color="#ff3333" />
+        return <XCircle size={16} style={{ color: '#ff3333' }} />
       case 'running':
-        return <ArrowsClockwise size={16} weight="duotone" color="#2563eb" className="animate-spin" />
+        return <ArrowsClockwise size={16} style={{ color: '#2563eb' }} className="animate-spin" />
       default:
-        return <Pause size={16} weight="duotone" color="#6b7280" />
+        return <Pause size={16} style={{ color: '#6b7280' }} />
     }
   }
 
@@ -131,7 +131,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
           padding: 20,
         }}
       >
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>🔄 Cluster Update Progress Monitor</h2>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Cluster Update Progress Monitor</h2>
         <div style={{ marginTop: 8, fontSize: 13, color: '#9ca3af' }}>
           Update ID: {updateId || 'N/A'}
         </div>
@@ -206,14 +206,14 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
       {/* Controls */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <button className="btn btn-primary" onClick={() => window.location.reload()}>
-          <ArrowsClockwise size={16} weight="duotone" /> Refresh Now
+          <ArrowsClockwise size={16} /> Refresh Now
         </button>
         <button className="btn" onClick={() => setAutoRefresh(!autoRefresh)}>
-          {autoRefresh ? <Pause size={16} weight="bold" /> : <Play size={16} weight="bold" />}
+          {autoRefresh ? <Pause size={16} /> : <Play size={16} />}
           {autoRefresh ? 'Pause' : 'Resume'} Auto-Refresh
         </button>
         <button className="btn btn-error" onClick={handleRollback}>
-          <ArrowCounterClockwise size={16} weight="duotone" /> Rollback
+          <ArrowCounterClockwise size={16} /> Rollback
         </button>
       </div>
 
@@ -339,7 +339,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                   }}
                 >
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <Warning size={16} weight="duotone" color="#ff3333" style={{ marginTop: 2 }} />
+                    <Warning size={16} style={{ color: '#ff3333', marginTop: 2 }} />
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#ff3333', marginBottom: 4 }}>
                         ERROR
@@ -378,7 +378,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                   padding: '8px 0',
                   borderBottom: idx < logs.length - 1 ? '1px solid #1e293b' : 'none',
                   fontSize: 12,
-                  fontFamily: 'monospace',
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
                 <span style={{ color: '#6b7280' }}>[{log.time}]</span>{' '}

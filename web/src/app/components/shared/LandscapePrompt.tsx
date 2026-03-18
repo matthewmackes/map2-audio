@@ -114,7 +114,7 @@ export function LandscapePrompt({
 
         <div
           style={{
-            fontFamily: "'SFMono-Regular', 'JetBrains Mono', 'Roboto Mono', monospace",
+            fontFamily: 'var(--font-ui)',
             fontSize: '18px',
             fontWeight: 600,
             color: 'var(--text-primary)',

@@ -418,7 +418,7 @@ export const PluginCard = memo(function PluginCard({
               variant="caption"
               sx={{
                 display: 'block',
-                fontFamily: 'monospace',
+                fontFamily: 'var(--font-ui-tight)',
                 fontSize: '0.6rem',
                 bgcolor: 'action.hover',
                 p: 0.5,

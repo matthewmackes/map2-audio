@@ -11,7 +11,7 @@ import ReactFlow, {
   Position,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { WifiHigh, Database, WarningCircle, CheckCircle } from '@phosphor-icons/react'
+import { Wifi as WifiHigh, DataBase as Database, WarningAlt as WarningCircle, CheckmarkFilled as CheckCircle } from '@carbon/icons-react'
 
 interface ClusterNode {
   node_id?: string
@@ -93,11 +93,11 @@ function AudioNodeVisual({ data }: { data: TopologyNodeVisualData }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb' }}>{healthScore.toFixed(0)}%</div>
           {healthScore >= 80 ? (
-            <CheckCircle size={12} weight="duotone" color="#00ff41" />
+            <CheckCircle size={12} style={{ color: '#00ff41' }} />
           ) : healthScore >= 60 ? (
-            <WarningCircle size={12} weight="duotone" color="#ffaa00" />
+            <WarningCircle size={12} style={{ color: '#ffaa00' }} />
           ) : (
-            <WarningCircle size={12} weight="duotone" color="#ff3333" />
+            <WarningCircle size={12} style={{ color: '#ff3333' }} />
           )}
         </div>
       </div>
@@ -180,10 +180,10 @@ function ManagementNodeVisual({ data }: { data: TopologyNodeVisualData }) {
         <div style={{ fontSize: 10, color: '#a0a0a0', marginBottom: 6 }}>Services</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ fontSize: 9, color: '#d0d0d0', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Database size={10} weight="duotone" /> CMDB
+            <Database size={10} /> CMDB
           </div>
           <div style={{ fontSize: 9, color: '#d0d0d0', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <WifiHigh size={10} weight="duotone" /> Orchestrator
+            <WifiHigh size={10} /> Orchestrator
           </div>
         </div>
       </div>

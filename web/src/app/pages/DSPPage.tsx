@@ -8,7 +8,7 @@
 
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { WaveSine, CaretRight, ArrowsClockwise } from '@phosphor-icons/react'
+import { ChevronRight, Renew, Waveform } from '@carbon/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { CompressorCard, LimiterCard, GateCard } from '../components/Dynamics'
 import { EQCard } from '../components/EQ'
@@ -119,14 +119,14 @@ export function DSPPage() {
         <PageHeader
           title="DSP · All Nodes"
           subtitle="Cluster-wide DSP budget, load, and processor inventory comparison"
-          icon={<WaveSine size={32} weight="duotone" style={{ color: '#2563eb' }} />}
+          icon={<Waveform size={32} style={{ color: '#2563eb' }} />}
           actions={
             <button
               className="btn btn-secondary"
               onClick={() => clusterDspQuery.refetch()}
               style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              <ArrowsClockwise size={16} weight="duotone" />
+              <Renew size={16} />
               Refresh
             </button>
           }
@@ -220,7 +220,7 @@ export function DSPPage() {
             ? `Live JUCE DSP controls proxied to ${selectedNode?.hostname ?? viewedNodeId}.`
             : `Built-in JUCE audio engine controls with ${NATIVE_PLUGINS.length} processors available.`
         }
-        icon={<WaveSine size={32} weight="duotone" style={{ color: '#2563eb' }} />}
+        icon={<Waveform size={32} style={{ color: '#2563eb' }} />}
         actions={
           <button
             onClick={() => navigate('/juce-grid')}
@@ -355,7 +355,7 @@ export function DSPPage() {
                           Standalone
                         </span>
                       )}
-                      <CaretRight size={14} weight="bold" style={{ color: '#6b7280' }} />
+                      <ChevronRight size={14} style={{ color: '#6b7280' }} />
                     </div>
                   ))}
                 </div>

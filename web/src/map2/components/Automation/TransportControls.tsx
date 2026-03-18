@@ -198,7 +198,7 @@ const TransportControls = memo(({
         <Typography
           variant="caption"
           sx={{
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-ui-tight)',
             fontWeight: 600,
             fontSize: compact ? '0.7rem' : '0.85rem',
             color: isRecording ? 'error.main' : 'text.primary',
@@ -211,7 +211,7 @@ const TransportControls = memo(({
           variant="caption"
           color="text.secondary"
           sx={{
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-ui-tight)',
             fontSize: compact ? '0.65rem' : '0.75rem',
           }}
         >

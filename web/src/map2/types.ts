@@ -1351,6 +1351,7 @@ export interface DrumMachineState {
   pattern: number;
   variation: number;
   transport: boolean;
+  swing: number;
   active_pack: string | null;
   practice_style_id: string | null;
   practice_variation: number;
@@ -1359,12 +1360,55 @@ export interface DrumMachineState {
   practice_auto_fill: boolean;
 }
 
+export interface DrumMachineStateUpdate {
+  ui_mode?: 'practice' | 'advanced' | 'backing_tracks';
+  bpm?: number;
+  volume?: number;
+  pattern?: number;
+  variation?: number;
+  transport?: boolean;
+  swing?: number;
+  active_pack?: string | null;
+  practice_style_id?: string | null;
+  practice_variation?: number;
+  practice_change_quantization?: number;
+  practice_count_in_bars?: number;
+  practice_auto_fill?: boolean;
+}
+
 export interface DrumPack {
   pack_id: string;
   name: string;
   description: string;
   source: string;
   filename: string;
+}
+
+export interface DrumTransportState {
+  is_playing: boolean;
+  bpm: number;
+  pattern: number;
+  variation: number;
+  swing: number;
+}
+
+export interface DrumTransportUpdate {
+  is_playing?: boolean;
+  bpm?: number;
+  pattern?: number;
+  variation?: number;
+  swing?: number;
+}
+
+export interface DrumMetering {
+  per_pad_peak: number[];
+  per_pad_rms: number[];
+  per_bus_peak: number[];
+  per_bus_rms: number[];
+  master_peak_left: number;
+  master_peak_right: number;
+  master_rms_left: number;
+  master_rms_right: number;
 }
 
 // ==================== Sidechain Types ====================

@@ -8,7 +8,7 @@
  */
 
 import React, { useCallback, useMemo } from 'react'
-import { X } from '@phosphor-icons/react'
+import { Close } from '@carbon/icons-react'
 
 import type { MPX1RegistryParam, UseMPX1StateResult } from '../../../map2/mpx1Api'
 import { MPX1Knob } from './MPX1Knob'
@@ -276,7 +276,7 @@ export function MPX1FlowSidebar({
           onClick={onClose}
           aria-label="Close parameter editor"
         >
-          <X size={14} weight="bold" aria-hidden />
+          <Close size={14} aria-hidden />
         </button>
       </div>
 

@@ -13,7 +13,7 @@ import {
   Alert,
   IconButton,
 } from '@mui/material'
-import { Pulse, Info, TrendUp } from '@phosphor-icons/react'
+import { Activity, ChartLine, Information } from '@carbon/icons-react'
 import { audioApi } from '../../map2/api'
 import type { AudioHealth, JuceMetrics } from '../../map2/api'
 import type { AudioStatus } from '../../map2/types'
@@ -226,7 +226,7 @@ export default function MOTURMEPage() {
                 justifyContent: 'center',
                 animation: 'pulse 2s ease-in-out infinite',
               }}>
-                <Pulse size={32} weight="duotone" style={{ color: '#2563eb' }} />
+                <Activity size={32} style={{ color: '#2563eb' }} />
               </div>
               <Typography variant="caption" style={{ color: '#2563eb', marginTop: 8, display: 'block' }}>
                 ADAT Optical
@@ -269,7 +269,7 @@ export default function MOTURMEPage() {
               </Typography>
               <Tooltip title="Calculated from active channels × sample rate × bit depth. >75% increases dropout risk. Consider larger buffer size.">
                 <IconButton size="small">
-                  <Info size={16} weight="duotone" style={{ color: '#6b7280' }} />
+                  <Information size={16} style={{ color: '#6b7280' }} />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -303,7 +303,7 @@ export default function MOTURMEPage() {
               </Typography>
               <Tooltip title="Computer-side CPU/driver pressure. Based on buffer size, channel count, and sample rate. Lower buffer = higher load.">
                 <IconButton size="small">
-                  <Info size={16} weight="duotone" style={{ color: '#6b7280' }} />
+                  <Information size={16} style={{ color: '#6b7280' }} />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -398,7 +398,7 @@ export default function MOTURMEPage() {
       <Card style={{ background: '#111111', border: '1px solid rgba(255, 170, 0, 0.3)', marginBottom: 24 }}>
         <CardContent>
           <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
-            <TrendUp size={20} weight="duotone" style={{ marginRight: 8, verticalAlign: 'middle' }} />
+            <ChartLine size={20} style={{ marginRight: 8, verticalAlign: 'middle' }} />
             Latency & Audio Chain Analysis
           </Typography>
 
@@ -454,7 +454,7 @@ export default function MOTURMEPage() {
           </Box>
 
           {/* Educational Info */}
-          <Alert severity="info" icon={<Info size={20} weight="duotone" />} style={{ marginTop: 16, background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.3)' }}>
+          <Alert severity="info" icon={<Information size={20} />} style={{ marginTop: 16, background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.3)' }}>
             <Typography variant="body2" style={{ color: '#f3f4f6', fontSize: 12, lineHeight: 1.6 }}>
               <strong>ADAT Latency:</strong> Pure ADAT Lightpipe transmission ≈6-10 samples round-trip. RME ADI-8 QS converters add ≈20-24 samples. 
               Total ADAT path: ≈26-34 samples (≈0.54-0.71 ms @ 48kHz). ADAT transmission itself is negligible compared to converters or analog gear.
@@ -553,7 +553,7 @@ function SignalNode({ label, color, latency }: { label: string; color: string; l
         justifyContent: 'center',
         gap: 1,
       }}>
-        <Pulse size={24} weight="duotone" style={{ color }} />
+        <Activity size={24} style={{ color }} />
         <Typography variant="body2" style={{ color: '#f3f4f6', fontWeight: 600, fontSize: 12 }}>
           {label}
         </Typography>

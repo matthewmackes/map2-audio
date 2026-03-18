@@ -160,7 +160,7 @@ function GainReductionMeterComponent({
         .gr-meter-value {
           font-size: 10px;
           color: #ccc;
-          font-family: monospace;
+          font-family: var(--font-ui-tight);
           min-width: 50px;
           text-align: center;
         }

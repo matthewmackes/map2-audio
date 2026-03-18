@@ -5,7 +5,7 @@
  * Each chain gets its own panel with header controls and HorizontalSignalChain.
  */
 
-import { SpeakerHigh, SpeakerX, Disc, Trash } from '@phosphor-icons/react'
+import { Music, TrashCan, VolumeMute, VolumeUp } from '@carbon/icons-react'
 import type { Chain, ChainPlugin, Plugin } from '../../../map2/types'
 import { HorizontalSignalChain } from '../HorizontalSignalChain'
 
@@ -109,7 +109,7 @@ export function ChainPanel({
           onClick={(e) => { e.stopPropagation(); onMuteToggle(); }}
           title={slot.muted ? 'Unmute' : 'Mute'}
         >
-          {slot.muted ? <SpeakerX size={14} weight="duotone" /> : <SpeakerHigh size={14} weight="duotone" />}
+          {slot.muted ? <VolumeMute size={14} /> : <VolumeUp size={14} />}
           <span>M</span>
         </button>
 
@@ -119,7 +119,7 @@ export function ChainPanel({
           onClick={(e) => { e.stopPropagation(); onSoloToggle(); }}
           title={slot.solo ? 'Unsolo' : 'Solo'}
         >
-          <Disc size={14} weight="duotone" />
+          <Music size={14} />
           <span>S</span>
         </button>
       </div>
@@ -159,7 +159,7 @@ export function ChainPanel({
             title={`Delete flow ${slot.label}`}
             style={{ '--slot-color': slot.color } as React.CSSProperties}
           >
-            <Trash size={16} weight="duotone" />
+            <TrashCan size={16} />
           </button>
         )}
       </div>

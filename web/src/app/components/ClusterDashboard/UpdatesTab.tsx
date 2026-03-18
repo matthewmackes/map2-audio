@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowsClockwise, CloudArrowUp, CloudArrowDown, ShieldCheck, Warning } from '@phosphor-icons/react'
+import { Renew as ArrowsClockwise, Upload as CloudArrowUp, Download as CloudArrowDown, Security as ShieldCheck, WarningAlt as Warning } from '@carbon/icons-react'
 
 export function UpdatesTab() {
   const [nodeId, setNodeId] = useState('')
@@ -38,13 +38,13 @@ export function UpdatesTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <button className="btn" onClick={() => run('Triggering cluster update', () => post('/api/cluster/update/trigger', { target_version: 'latest', dry_run: false }))}>
-          <CloudArrowUp size={16} weight="duotone" /> Update All Nodes
+          <CloudArrowUp size={16} /> Update All Nodes
         </button>
         <button className="btn" onClick={() => run('Checking schedule', () => get('/api/cluster/update/schedule'))}>
-          <ArrowsClockwise size={16} weight="duotone" /> Check Schedule
+          <ArrowsClockwise size={16} /> Check Schedule
         </button>
         <button className="btn" onClick={() => run('Loading manifest', () => get('/api/cluster/update/manifest'))}>
-          <CloudArrowDown size={16} weight="duotone" /> View Manifest
+          <CloudArrowDown size={16} /> View Manifest
         </button>
       </div>
 
@@ -60,20 +60,20 @@ export function UpdatesTab() {
           onClick={() => run('Capturing manifest', () => post('/api/cluster/update/manifest/capture', { source_node_id: nodeId }))}
           disabled={!nodeId}
         >
-          <ShieldCheck size={16} weight="duotone" /> Capture Manifest
+          <ShieldCheck size={16} /> Capture Manifest
         </button>
         <button
           className="btn"
           onClick={() => run('Checking drift', () => get('/api/cluster/update/manifest/drift'))}
         >
-          <Warning size={16} weight="duotone" /> Check Drift
+          <Warning size={16} /> Check Drift
         </button>
         <button
           className="btn"
           onClick={() => run('Enforcing manifest', () => post('/api/cluster/update/manifest/enforce', { node_id: nodeId, dry_run: false }))}
           disabled={!nodeId}
         >
-          <ShieldCheck size={16} weight="duotone" /> Enforce Manifest
+          <ShieldCheck size={16} /> Enforce Manifest
         </button>
       </div>
 

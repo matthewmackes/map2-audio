@@ -231,7 +231,7 @@ function CompressorCardBase({
           marginTop: '8px',
           fontSize: '10px',
           color: '#666',
-          fontFamily: 'monospace',
+          fontFamily: 'var(--font-mono)',
         }}
       >
         <span>IN: {metering.inputLevel.toFixed(1)} dB</span>

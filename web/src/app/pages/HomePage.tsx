@@ -12,11 +12,11 @@ import {
 import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import {
+  allPinnableNavigationItems,
   homeNavigationTabSections,
   MAX_PINNED_NAV_ITEMS,
   navigationMaturityMeta,
   normalizePinnedRoutes,
-  pinnableNavigationItems,
   type AdvancedMenuItem,
   type HardwareInterfaceMenuItem,
   type ShellNavigationItem,
@@ -133,7 +133,7 @@ async function fetchJsonOrNull<T>(url: string, nodeId?: string | null): Promise<
 
 function resolvePinnedRoutes(routes: string[] | null | undefined): string[] {
   const requested = normalizePinnedRoutes(routes)
-  return pinnableNavigationItems
+  return allPinnableNavigationItems
     .filter((item) => item.to !== '/' && requested.includes(item.to))
     .map((item) => item.to)
     .slice(0, MAX_PINNED_NAV_ITEMS)
@@ -529,7 +529,7 @@ export function HomePage() {
     }
     if (!pinnedRouteSet.has(item.to) && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS) return
     const candidateSet = new Set([...pinnedRoutes, item.to])
-    const nextRoutes = pinnableNavigationItems
+    const nextRoutes = allPinnableNavigationItems
       .filter((c) => c.to !== '/' && candidateSet.has(c.to))
       .map((c) => c.to)
       .slice(0, MAX_PINNED_NAV_ITEMS)

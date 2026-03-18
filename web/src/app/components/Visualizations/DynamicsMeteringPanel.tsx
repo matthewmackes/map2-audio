@@ -60,7 +60,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
         }}>
           <span>GR</span>
           <span style={{
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-mono)',
             color: metering.gainReduction < -3 ? color : '#888'
           }}>
             {metering.gainReduction.toFixed(1)} dB
@@ -117,7 +117,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
               transition: 'width 0.05s ease-out'
             }} />
           </div>
-          <div style={{ fontSize: 9, fontFamily: 'monospace', color: '#666', marginTop: 1 }}>
+          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#666', marginTop: 1 }}>
             {formatDb(metering.inputLevel)}
           </div>
         </div>
@@ -136,7 +136,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
               transition: 'width 0.05s ease-out'
             }} />
           </div>
-          <div style={{ fontSize: 9, fontFamily: 'monospace', color: '#666', marginTop: 1 }}>
+          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#666', marginTop: 1 }}>
             {formatDb(metering.outputLevel)}
           </div>
         </div>

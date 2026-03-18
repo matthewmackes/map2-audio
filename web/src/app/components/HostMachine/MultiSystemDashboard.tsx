@@ -20,7 +20,7 @@ import {
   TextField,
   Button,
 } from '@mui/material'
-import { Trash, Plus, ArrowsClockwise, Warning } from '@phosphor-icons/react'
+import { Add as Plus, Renew as ArrowsClockwise, TrashCan as Trash, WarningAlt as Warning } from '@carbon/icons-react'
 import type { HealthAlert } from '@/app/hooks/useHealthMonitoring'
 import { NumberInput } from '../Controls/NumberInput'
 
@@ -173,9 +173,9 @@ export default function MultiSystemDashboard({
 
         <Box sx={{ display: 'flex', gap: 1 }}>
           <IconButton size="small" onClick={handleRefresh}>
-            <ArrowsClockwise size={18} weight="duotone" />
+            <ArrowsClockwise size={18} />
           </IconButton>
-          <Button size="small" startIcon={<Plus size={18} weight="bold" />} onClick={() => setAddDialogOpen(true)}>
+          <Button size="small" startIcon={<Plus size={18} />} onClick={() => setAddDialogOpen(true)}>
             Add System
           </Button>
         </Box>
@@ -271,10 +271,10 @@ export default function MultiSystemDashboard({
 
                   <IconButton
                     size="small"
-                    onClick={() => handleRemoveHost(host.id)}
-                    sx={{ color: '#ef4444' }}
-                  >
-                    <Trash size={16} weight="duotone" />
+                  onClick={() => handleRemoveHost(host.id)}
+                  sx={{ color: '#ef4444' }}
+                >
+                    <Trash size={16} />
                   </IconButton>
                 </Box>
 
@@ -284,7 +284,7 @@ export default function MultiSystemDashboard({
                     size="small"
                     label={host.status.toUpperCase()}
                     color={host.status === 'online' ? 'success' : 'error'}
-                    icon={host.status === 'offline' ? <Warning size={14} weight="duotone" /> : undefined}
+                    icon={host.status === 'offline' ? <Warning size={14} /> : undefined}
                   />
                 </Box>
 
@@ -381,7 +381,7 @@ export default function MultiSystemDashboard({
               }}
               onClick={() => setAddDialogOpen(true)}
             >
-              <Plus size={48} weight="bold" style={{ margin: '0 auto 16px', color: '#9ca3af' }} />
+              <Plus size={48} style={{ margin: '0 auto 16px', color: '#9ca3af' }} />
               <Typography sx={{ fontWeight: 600, mb: 1 }}>No Systems Added</Typography>
               <Typography sx={{ fontSize: 12, color: '#666' }}>
                 Click to add your first MAP2 system to the dashboard

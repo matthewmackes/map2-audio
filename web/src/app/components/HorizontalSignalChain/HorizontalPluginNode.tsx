@@ -3,9 +3,9 @@
  */
 
 import { useState, useRef, useCallback } from 'react'
-import { Power, Trash, Link } from '@phosphor-icons/react'
+import { Link, Power, TrashCan } from '@carbon/icons-react'
 import type { HorizontalPluginNodeProps } from './types'
-import { getIconForCategory } from './icons'
+import { getEffectIcon } from '../icons/effectIcons'
 import { getDisplayPluginName } from '../../../map2/displayNames'
 
 export function HorizontalPluginNode({
@@ -24,7 +24,7 @@ export function HorizontalPluginNode({
   const [isDragging, setIsDragging] = useState(false)
   const nodeRef = useRef<HTMLDivElement>(null)
 
-  const Icon = getIconForCategory(meta?.category || meta?.class_label)
+  const Icon = getEffectIcon(meta?.category || meta?.class_label)
   const name = getDisplayPluginName(meta?.name || plugin.name || plugin.uri.split('/').pop() || 'Unknown', plugin.uri)
 
   const handleDragStart = useCallback(
@@ -135,7 +135,7 @@ export function HorizontalPluginNode({
             : 'Click to configure sidechain input'
           }
         >
-          <Link size={10} weight="duotone" />
+          <Link size={10} />
           <span className="h-sidechain-label">SC</span>
         </button>
       )}
@@ -161,7 +161,7 @@ export function HorizontalPluginNode({
           onClick={handleBypassClick}
           title={plugin.bypassed ? 'Enable' : 'Bypass'}
         >
-          <Power size={12} weight="duotone" />
+          <Power size={12} />
         </button>
         {onDelete && (
           <button
@@ -169,7 +169,7 @@ export function HorizontalPluginNode({
             onClick={handleDeleteClick}
             title="Delete"
           >
-            <Trash size={12} weight="duotone" />
+            <TrashCan size={12} />
           </button>
         )}
       </div>

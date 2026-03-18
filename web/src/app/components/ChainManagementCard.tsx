@@ -11,15 +11,15 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Plus,
+  Add,
+  Checkmark,
+  Close,
+  Edit,
   Power,
-  Trash,
-  PencilSimple,
-  Check,
-  X,
-  SpinnerGap,
-  Stack,
-} from '@phosphor-icons/react'
+  Renew,
+  SplitScreen,
+  TrashCan,
+} from '@carbon/icons-react'
 import { chainsApi } from '../../map2/api'
 import { useToasts } from './Toasts'
 import type { Chain, ChainsResponse } from '../../map2/types'
@@ -165,7 +165,7 @@ export function ChainManagementCard({
     <div className="chains-grid-card">
       {/* Vertical title on the left */}
       <div className="chains-grid-title">
-        <Stack size={16} weight="duotone" />
+        <SplitScreen size={16} />
         <span>Chains</span>
       </div>
 
@@ -173,7 +173,7 @@ export function ChainManagementCard({
       <div className="chains-grid">
         {chainsQuery.isLoading ? (
           <div className="chains-grid-loading">
-            <SpinnerGap size={16} weight="duotone" className="spin" />
+            <Renew size={16} className="spin" />
           </div>
         ) : (
           <>
@@ -206,13 +206,13 @@ export function ChainManagementCard({
                         onClick={(e) => { e.stopPropagation(); handleRename(chain.id) }}
                         disabled={!editingName.trim() || renameMutation.isPending}
                       >
-                        {renameMutation.isPending ? <SpinnerGap size={12} weight="duotone" className="spin" /> : <Check size={12} weight="bold" />}
+                        {renameMutation.isPending ? <Renew size={12} className="spin" /> : <Checkmark size={12} />}
                       </button>
                       <button
                         className="chains-grid-btn"
                         onClick={(e) => { e.stopPropagation(); cancelEditing() }}
                       >
-                        <X size={12} weight="bold" />
+                        <Close size={12} />
                       </button>
                     </div>
                   </div>
@@ -227,7 +227,7 @@ export function ChainManagementCard({
                         disabled={isPending}
                         title={chain.is_active ? 'Deactivate' : 'Activate'}
                       >
-                        <Power size={12} weight="duotone" />
+                        <Power size={12} />
                       </button>
                       <span className="chains-grid-cell-name" title={chain.name}>
                         {chain.name}
@@ -294,7 +294,7 @@ export function ChainManagementCard({
                           disabled={isPending}
                           title="Rename"
                         >
-                          <PencilSimple size={11} weight="duotone" />
+                          <Edit size={11} />
                         </button>
                         <button
                           className="chains-grid-btn danger"
@@ -302,7 +302,7 @@ export function ChainManagementCard({
                           disabled={isPending}
                           title="Delete"
                         >
-                          <Trash size={11} weight="duotone" />
+                          <TrashCan size={11} />
                         </button>
                       </div>
                     </div>
@@ -336,7 +336,7 @@ export function ChainManagementCard({
                     onClick={handleCreate}
                     disabled={!newChainName.trim() || createMutation.isPending}
                   >
-                    {createMutation.isPending ? <SpinnerGap size={12} weight="duotone" className="spin" /> : <Check size={12} weight="bold" />}
+                    {createMutation.isPending ? <Renew size={12} className="spin" /> : <Checkmark size={12} />}
                   </button>
                   <button
                     className="chains-grid-btn"
@@ -345,7 +345,7 @@ export function ChainManagementCard({
                       setNewChainName('')
                     }}
                   >
-                    <X size={12} weight="bold" />
+                    <Close size={12} />
                   </button>
                 </div>
               </div>
@@ -355,7 +355,7 @@ export function ChainManagementCard({
                 onClick={() => setShowCreateInput(true)}
                 title="Create new chain"
               >
-                <Plus size={18} weight="bold" />
+                <Add size={18} />
               </button>
             )}
           </>

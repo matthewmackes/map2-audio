@@ -2,7 +2,7 @@
  * Health Monitor - Real-Time System Health Status
  */
 
-import { Thermometer, Wind, Lightning } from '@phosphor-icons/react'
+import { Flash as Lightning, TemperatureHot as Thermometer, Windy as Wind } from '@carbon/icons-react'
 import type { SystemHealthOverview } from '@/map2/types'
 
 interface HealthMonitorProps {
@@ -37,7 +37,7 @@ export default function HealthMonitor({ healthOverview }: HealthMonitorProps) {
       {/* ── Overall status ─────────────────────────────────────────── */}
       <div className="hm-section-card">
         <div className="hm-section-card__header">
-          <span className="hm-section-card__icon"><Lightning size={16} weight="duotone" /></span>
+          <span className="hm-section-card__icon"><Lightning size={16} /></span>
           <span className="hm-section-card__title">System Health</span>
         </div>
 
@@ -92,7 +92,7 @@ export default function HealthMonitor({ healthOverview }: HealthMonitorProps) {
       {/* ── CPU Temperature ────────────────────────────────────────── */}
       <div className="hm-section-card">
         <div className="hm-section-card__header">
-          <span className="hm-section-card__icon"><Thermometer size={16} weight="duotone" /></span>
+          <span className="hm-section-card__icon"><Thermometer size={16} /></span>
           <span className="hm-section-card__title">CPU Temperature</span>
         </div>
 
@@ -120,7 +120,7 @@ export default function HealthMonitor({ healthOverview }: HealthMonitorProps) {
       {healthOverview.fans && healthOverview.fans.length > 0 && (
         <div className="hm-section-card hm-section-card--wide">
           <div className="hm-section-card__header">
-            <span className="hm-section-card__icon"><Wind size={16} weight="duotone" /></span>
+            <span className="hm-section-card__icon"><Wind size={16} /></span>
             <span className="hm-section-card__title">Fan Status</span>
           </div>
           <div className="hm-fan-grid">

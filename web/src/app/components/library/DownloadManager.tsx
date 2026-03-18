@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DownloadSimple, X, Check, WarningCircle, SpinnerGap, CaretDown, CaretUp, ArrowCounterClockwise, ArrowsClockwise, MagnifyingGlass, Pause, Play } from '@phosphor-icons/react'
+import { CheckmarkFilled as Check, ChevronDown as CaretDown, ChevronUp as CaretUp, Close as X, Download as DownloadSimple, Pause, Play, Renew as ArrowsClockwise, Reset as ArrowCounterClockwise, Renew as SpinnerGap, Search as MagnifyingGlass, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
 import type { SourceProgress } from '../../types/library'
 
@@ -34,10 +34,10 @@ function getStateColor(state: SourceProgress['state']): string {
 
 function getStateIcon(state: SourceProgress['state']) {
   switch (state) {
-    case 'completed': return <Check size={12} weight="bold" />
-    case 'failed': return <WarningCircle size={12} weight="duotone" />
-    case 'downloading': return <SpinnerGap size={12} weight="duotone" className="spin" />
-    case 'discovering': return <MagnifyingGlass size={12} weight="duotone" />
+    case 'completed': return <Check size={12} />
+    case 'failed': return <WarningCircle size={12} />
+    case 'downloading': return <SpinnerGap size={12} className="spin" />
+    case 'discovering': return <MagnifyingGlass size={12} />
     default: return null
   }
 }
@@ -88,13 +88,13 @@ export function DownloadManager() {
       <div className="flex-between" style={{ marginBottom: 12 }}>
         <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
           {isDownloading ? (
-            <SpinnerGap size={20} weight="duotone" className="spin" style={{ color: 'var(--primary)' }} />
+            <SpinnerGap size={20} className="spin" style={{ color: 'var(--primary)' }} />
           ) : isPaused ? (
-            <WarningCircle size={20} weight="duotone" style={{ color: 'var(--warning)' }} />
+            <WarningCircle size={20} style={{ color: 'var(--warning)' }} />
           ) : hasFailedSources ? (
-            <WarningCircle size={20} weight="duotone" style={{ color: 'var(--warning)' }} />
+            <WarningCircle size={20} style={{ color: 'var(--warning)' }} />
           ) : (
-            <DownloadSimple size={20} weight="duotone" style={{ color: 'var(--success)' }} />
+            <DownloadSimple size={20} style={{ color: 'var(--success)' }} />
           )}
           <span style={{ fontWeight: 600 }}>
             {isDownloading ? (isPaused ? 'Download Paused' : 'Downloading IRs...') : hasFailedSources ? 'Download Complete (with errors)' : 'Download Complete'}
@@ -107,7 +107,7 @@ export function DownloadManager() {
               onClick={() => resetDownload()}
               title="Clear status"
             >
-              <ArrowCounterClockwise size={14} weight="duotone" />
+              <ArrowCounterClockwise size={14} />
             </button>
           )}
           {isDownloading && isPaused && (
@@ -119,12 +119,12 @@ export function DownloadManager() {
             >
               {isResuming ? (
                 <>
-                  <SpinnerGap size={14} weight="duotone" className="spin" />
+                  <SpinnerGap size={14} className="spin" />
                   Resuming...
                 </>
               ) : (
                 <>
-                  <Play size={14} weight="duotone" />
+                  <Play size={14} />
                   Resume
                 </>
               )}
@@ -139,12 +139,12 @@ export function DownloadManager() {
             >
               {isPausing ? (
                 <>
-                  <SpinnerGap size={14} weight="duotone" className="spin" />
+                  <SpinnerGap size={14} className="spin" />
                   Pausing...
                 </>
               ) : (
                 <>
-                  <Pause size={14} weight="duotone" />
+                  <Pause size={14} />
                   Pause
                 </>
               )}
@@ -159,12 +159,12 @@ export function DownloadManager() {
             >
               {isCancelling ? (
                 <>
-                  <SpinnerGap size={14} weight="duotone" className="spin" />
+                  <SpinnerGap size={14} className="spin" />
                   Cancelling...
                 </>
               ) : (
                 <>
-                  <X size={14} weight="bold" />
+                  <X size={14} />
                   Cancel
                 </>
               )}
@@ -203,7 +203,7 @@ export function DownloadManager() {
           <div className="stack" style={{ gap: 8 }}>
             <div className="flex" style={{ gap: 16, fontSize: 12, flexWrap: 'wrap' }}>
               <span style={{ color: 'var(--success)' }}>
-                <Check size={12} weight="bold" style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                <Check size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                 {stats.downloaded} downloaded
               </span>
               <span className="muted">
@@ -211,7 +211,7 @@ export function DownloadManager() {
               </span>
               {stats.failed > 0 && (
                 <span style={{ color: 'var(--danger)' }}>
-                  <WarningCircle size={12} weight="duotone" style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                  <WarningCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                   {stats.failed} failed
                 </span>
               )}
@@ -239,7 +239,7 @@ export function DownloadManager() {
                 <span style={{ fontSize: 12 }}>
                   Active Downloads ({fileTasks.filter(t => t.state === 'DOWNLOADING').length})
                 </span>
-                {showFiles ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />}
+                {showFiles ? <CaretUp size={14} /> : <CaretDown size={14} />}
               </button>
             )}
 
@@ -304,7 +304,7 @@ export function DownloadManager() {
             style={{ width: '100%', justifyContent: 'space-between' }}
           >
             <span>Source Details ({sources.length} sources)</span>
-            {showSources ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />}
+            {showSources ? <CaretUp size={14} /> : <CaretDown size={14} />}
           </button>
 
           {showSources && (
@@ -353,7 +353,7 @@ export function DownloadManager() {
                         title={`Retry ${source.name}`}
                         style={{ padding: 4 }}
                       >
-                        <ArrowsClockwise size={12} weight="duotone" />
+                        <ArrowsClockwise size={12} />
                       </button>
                     )}
                   </div>

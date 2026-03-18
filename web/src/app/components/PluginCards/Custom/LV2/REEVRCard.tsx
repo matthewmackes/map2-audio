@@ -12,7 +12,7 @@ import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
-import { CaretDown, CaretRight, Sparkle } from '@phosphor-icons/react'
+import { ChevronDown, ChevronRight, MagicWand } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
 import './REEVRCard.css'
 
@@ -157,7 +157,7 @@ export function REEVRCard({
 
       {/* Space indicator */}
       <div className="reevr-space-indicator">
-        <Sparkle size={12} weight="duotone" style={{ color: accentColor }} />
+        <MagicWand size={12} style={{ color: accentColor }} />
         <span>{getValue('size', 50).toFixed(0)}% Space</span>
       </div>
     </div>
@@ -296,7 +296,7 @@ export function REEVRCard({
       {/* Advanced Section (Collapsible) */}
       <div className="reevr-advanced-toggle">
         <button onClick={() => setShowAdvanced(!showAdvanced)}>
-          {showAdvanced ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
+          {showAdvanced ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <span>Advanced</span>
           <span className="reevr-advanced-indicator" style={{
             background: (getValue('modDepth', 0) > 0 || getValue('lowCut', 20) > 20 || getValue('highCut', 20000) < 20000) ? accentColor : '#333'

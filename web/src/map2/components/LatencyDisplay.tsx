@@ -81,7 +81,7 @@ export function LatencyBadge({ latencyMs, compact = false }: { latencyMs: number
         <Typography 
           variant="caption" 
           sx={{ 
-            fontFamily: 'monospace', 
+            fontFamily: 'var(--font-mono)', 
             fontSize: 10,
             color: `${color}.main`,
           }}
@@ -239,7 +239,7 @@ export default function LatencyDisplay({
             color={getLatencyColor(status.chainLatencyMs)}
             sx={{ 
               height: 20, 
-              '& .MuiChip-label': { px: 0.75, fontSize: 11, fontFamily: 'monospace' },
+              '& .MuiChip-label': { px: 0.75, fontSize: 11, fontFamily: 'var(--font-mono)' },
             }}
           />
         </Tooltip>

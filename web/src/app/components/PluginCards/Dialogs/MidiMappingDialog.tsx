@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { X, Sliders, FloppyDisk, Trash, WarningCircle, ArrowsLeftRight } from '@phosphor-icons/react'
+import { ArrowsHorizontal, Close, Save, SettingsAdjust, TrashCan, WarningAltFilled } from '@carbon/icons-react'
 import type { Plugin, PluginParameter, MIDIMappingV2, MIDICurveType } from '../../../../map2/types'
 import { midiApiV2 } from '../../../../map2/api'
 import { getDisplayPluginName } from '../../../../map2/displayNames'
@@ -278,7 +278,7 @@ export function MidiMappingDialog({
         {/* Header */}
         <div className="midi-mapping-dialog-header">
           <div className="midi-mapping-dialog-title">
-            <Sliders size={18} weight="duotone" />
+            <SettingsAdjust size={18} />
             <span>MIDI Mappings - {displayPluginName}</span>
           </div>
           <button
@@ -286,7 +286,7 @@ export function MidiMappingDialog({
             onClick={() => setShowExpression(true)}
             title="Open Expression Mappings"
           >
-            <ArrowsLeftRight size={14} weight="duotone" />
+            <ArrowsHorizontal size={14} />
             <span>Expression Mappings</span>
           </button>
           <button
@@ -294,14 +294,14 @@ export function MidiMappingDialog({
             onClick={handleClose}
             title="Close"
           >
-            <X size={18} weight="bold" />
+            <Close size={18} />
           </button>
         </div>
 
         {/* Error banner */}
         {error && (
           <div className="midi-mapping-dialog-error">
-            <WarningCircle size={14} weight="duotone" />
+            <WarningAltFilled size={14} />
             <span>{error}</span>
           </div>
         )}
@@ -397,7 +397,7 @@ export function MidiMappingDialog({
                           onClick={() => clearMapping(row.paramIndex)}
                           title="Clear mapping"
                         >
-                          <Trash size={14} weight="duotone" />
+                          <TrashCan size={14} />
                         </button>
                       )}
                     </td>
@@ -429,7 +429,7 @@ export function MidiMappingDialog({
               disabled={isSaving || !hasUnsavedChanges}
             >
               {isSaving ? 'Saving...' : 'Save'}
-              {!isSaving && <FloppyDisk size={14} weight="duotone" />}
+              {!isSaving && <Save size={14} />}
             </button>
           </div>
         </div>
@@ -489,7 +489,7 @@ export function MidiMappingDialog({
           border-radius: 6px;
           background: rgba(0, 157, 154, 0.1);
           color: #009d9a;
-          font-family: 'IBM Plex Sans', sans-serif;
+          font-family: var(--font-ui);
           font-size: 12px;
           font-weight: 500;
           cursor: pointer;

@@ -170,7 +170,7 @@ export function PluginIOBadge({
         gap: 0.25,
         fontSize: '0.6rem',
         fontWeight: 600,
-        fontFamily: 'monospace',
+        fontFamily: 'var(--font-ui-tight)',
         color,
         bgcolor: `${color}15`,
         px: 0.5,

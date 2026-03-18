@@ -51,7 +51,7 @@ export function TunerCard({
           fontSize: compact ? '67px' : '101px',
           fontWeight: 'bold',
           color: inTune ? accentColor : '#fff',
-          fontFamily: 'monospace',
+          fontFamily: 'var(--font-mono)',
           textShadow: inTune ? `0 0 20px ${accentColor}` : 'none',
           transition: 'all 0.2s',
         }}
@@ -142,7 +142,7 @@ export function TunerCard({
           gap: '24px',
           fontSize: '12px',
           color: '#666',
-          fontFamily: 'monospace',
+          fontFamily: 'var(--font-mono)',
         }}
       >
         <span>{frequency > 0 ? `${frequency.toFixed(1)} Hz` : '-- Hz'}</span>

@@ -1,0 +1,75 @@
+{
+  "family": "BlexMono Nerd Font",
+  "source_release": {
+    "vendor": "Nerd Fonts",
+    "release": "v3.4.0",
+    "published_at": "2025-04-24T18:23:06Z",
+    "asset": "IBMPlexMono.zip",
+    "asset_url": "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/IBMPlexMono.zip"
+  },
+  "strategy": {
+    "format": "woff2",
+    "subsets": {
+      "text": "U+0000-00FF,U+0100-017F,U+0180-024F,U+0259,U+1E00-1EFF,U+2000-206F,U+20A0-20CF,U+2100-214F,U+2190-21FF,U+2200-22FF,U+2300-23FF,U+2460-24FF,U+2500-259F,U+25A0-25FF,U+2600-26FF,U+2700-27BF,U+2B00-2BFF",
+      "glyph": "U+E0A0,U+E0B0-E0B3,U+E0B6-E0B7,U+EA6C,U+EA6D,U+EA76,U+EA78,U+EA80,U+EA83,U+EAB2,U+EAF1,U+EB03,U+EB14,U+EB15,U+EB2C,U+EB4E,U+EB50,U+EB51,U+EB83,U+EBA5-EBA7,U+EBB1,U+EBCE,U+EC19,U+EC1B,U+F017,U+F026-F028,U+F071,U+F0C1,U+F1EB,U+F233,U+F2DB,U+F418,U+F422,U+F437,U+F43A,U+F44C,U+F498,U+F529"
+    }
+  },
+  "files": [
+    {
+      "source": "BlexMonoNerdFont-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "text_subset": "blexmono-nerd-text-400-normal.woff2",
+      "glyph_subset": "blexmono-nerd-glyph-400-normal.woff2"
+    },
+    {
+      "source": "BlexMonoNerdFont-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "text_subset": "blexmono-nerd-text-400-italic.woff2",
+      "glyph_subset": "blexmono-nerd-glyph-400-italic.woff2"
+    },
+    {
+      "source": "BlexMonoNerdFont-Medium.ttf",
+      "weight": 500,
+      "style": "normal",
+      "text_subset": "blexmono-nerd-text-500-normal.woff2",
+      "glyph_subset": "blexmono-nerd-glyph-500-normal.woff2"
+    },
+    {
+      "source": "BlexMonoNerdFont-MediumItalic.ttf",
+      "weight": 500,
+      "style": "italic",
+      "text_subset": "blexmono-nerd-text-500-italic.woff2",
+      "glyph_subset": "blexmono-nerd-glyph-500-italic.woff2"
+    },
+    {
+      "source": "BlexMonoNerdFont-SemiBold.ttf",
+      "weight": 600,
+      "style": "normal",
+      "text_subset": "blexmono-nerd-text-600-normal.woff2",
+      "glyph_subset": "blexmono-nerd-glyph-600-normal.woff2"
+    },
+    {
+      "source": "BlexMonoNerdFont-SemiBoldItalic.ttf",
+      "weight": 600,
+      "style": "italic",
+      "text_subset": "blexmono-nerd-text-600-italic.woff2",
+      "glyph_subset": "blexmono-nerd-glyph-600-italic.woff2"
+    },
+    {
+      "source": "BlexMonoNerdFont-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "text_subset": "blexmono-nerd-text-700-normal.woff2",
+      "glyph_subset": "blexmono-nerd-glyph-700-normal.woff2"
+    },
+    {
+      "source": "BlexMonoNerdFont-BoldItalic.ttf",
+      "weight": 700,
+      "style": "italic",
+      "text_subset": "blexmono-nerd-text-700-italic.woff2",
+      "glyph_subset": "blexmono-nerd-glyph-700-italic.woff2"
+    }
+  ]
+}

@@ -347,7 +347,7 @@ export default function FeatureToolbar({
         </Tooltip>
 
         {(automation.recording || automation.playing) && !compact && (
-          <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+          <Typography variant="caption" sx={{ fontFamily: 'var(--font-ui-tight)' }}>
             {automation.currentTime.toFixed(1)}s
           </Typography>
         )}

@@ -1,4 +1,4 @@
-import { DownloadSimple, FileText, ChartBar, Funnel } from '@phosphor-icons/react'
+import { Download as DownloadSimple, Document as FileText, ChartLine as ChartBar, Filter as Funnel } from '@carbon/icons-react'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -372,7 +372,7 @@ export function ReportingTab() {
         }}
       >
         <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 12, color: '#d0d0d0' }}>
-          <Funnel size={14} weight="duotone" style={{ display: 'inline', marginRight: 6 }} />
+          <Funnel size={14} style={{ display: 'inline', marginRight: 6 }} />
           Time Range
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -445,7 +445,7 @@ export function ReportingTab() {
                 opacity: isExporting || report.disabled ? 0.6 : 1,
               }}
             >
-              <DownloadSimple size={14} weight="duotone" />
+              <DownloadSimple size={14} />
               {isExporting ? 'Exporting...' : report.disabled ? 'Unavailable' : `Export ${report.format}`}
             </button>
           </div>
@@ -461,7 +461,7 @@ export function ReportingTab() {
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: '#d0d0d0' }}>
-          <ChartBar size={16} weight="duotone" style={{ display: 'inline', marginRight: 6 }} />
+          <ChartBar size={16} style={{ display: 'inline', marginRight: 6 }} />
           Current Data Snapshot
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
@@ -493,7 +493,7 @@ export function ReportingTab() {
         }}
       >
         <div style={{ fontSize: 12, fontWeight: 600, color: '#2563eb', marginBottom: 8 }}>
-          <FileText size={14} weight="duotone" style={{ display: 'inline', marginRight: 6 }} />
+          <FileText size={14} style={{ display: 'inline', marginRight: 6 }} />
           Reporting Note
         </div>
         <div style={{ fontSize: 12, color: '#d0d0d0', lineHeight: 1.6 }}>

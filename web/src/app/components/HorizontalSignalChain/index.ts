@@ -14,6 +14,8 @@ export { HorizontalPluginNode } from './HorizontalPluginNode'
 export { HorizontalConnector } from './HorizontalConnector'
 export { SidechainConnector } from './SidechainConnector'
 export { PluginTooltipContent } from './PluginTooltip'
+export { getEffectIcon } from '../icons/effectIcons'
+// Legacy re-exports for backward compatibility
 export { getIconForCategory, getIconNameForCategory, FX_ICONS, CATEGORY_ICON_MAP } from './icons'
 export type {
   HorizontalSignalChainProps,

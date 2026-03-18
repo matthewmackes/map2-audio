@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-18 - Codex (T211–T219 Drum Machine professional platform epic added; T209 API reliability preflight + observability slices advanced; T210 still in progress)
+Last updated: 2026-03-18 - Codex (T216 drum backend service + T218 API/type foundation started; T211–T219 Drum Machine professional platform epic remains active; T210 still in progress; T205 icon cleanup queue decomposed)
 
 ## Active Blockers Only
 
@@ -841,16 +841,144 @@ Last updated: 2026-03-17 16:36 - Codex
 ## Icon System
 
 ID: T205
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Icon system overhaul — monotone Carbon-style SVG icons with DSP color taxonomy
 Description:
 - Goal: Replace all icons across the MAP2 GUI (main app + PiPedal legacy area) with a unified set of monotone, Carbon Design System-style SVG icons. Apply DSP-type color taxonomy to all categories.
 - Why it matters: Current icon system uses four libraries (Carbon, Phosphor, MUI, 63 custom PiPedal SVGs) with inconsistent styles and no systematic color-coding.
 - Design documentation complete — see docs/design/ for all reference material before starting implementation.
+- Current execution evidence: `docs/design/ICON_DOWNLOAD_LIST.md` now shows the previously unresolved 20-slot manual-sourcing list as closed with staged MAP-authored SVGs; `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` still reports 100 Phosphor files, 64 MUI-icon files, and 58 emoji/symbol UI markers across the active frontend until the next recount pass.
 - Estimated effort: High
-Subtasks: None yet — awaiting SVG assets
-Assigned to: Claude + User
-Last updated: 2026-03-17 - Claude
+Subtasks:
+ID: T205-subA
+Status: [✓] Done
+Title: Close the 20 unresolved icon asset slots and stage the approved SVG set
+Description:
+- Goal / acceptance criteria: Complete the remaining manual sourcing listed in `docs/design/ICON_DOWNLOAD_LIST.md`, normalize all approved SVGs into `web/src/app/components/icons/noun/**`, and record any permanent exceptions in the migration ledger.
+- Why it matters: The full migration cannot finish while core icon slots are still missing, because holdout pages and plugin cards would be forced to keep legacy libraries or generic fallbacks.
+- Dependencies: Existing `docs/design/ICON_DOWNLOAD_LIST.md`, `docs/design/ICON_DESCRIPTIONS.md`, and MAP-owned icon storage paths under `web/src/app/components/icons/`
+- Estimated effort: Medium
+- Required outputs: 20 sourced/normalized SVG files, naming/path validation, and updated design docs if any slot remains intentionally exceptional.
+Subtasks: None
+Assigned to: User + Codex
+Last updated: 2026-03-18 15:40 - Codex
+- Completion notes:
+  - Added the 20 previously unresolved icon slots as monotone SVG assets under `web/src/app/components/icons/noun/**`, covering the remaining `fx-*`, `pip-*`, and `map-dynamics` files referenced by `docs/design/ICON_DOWNLOAD_LIST.md`.
+  - Updated `web/src/app/components/icons/effectIcons.ts` to consume the staged noun assets for the newly closed effect categories instead of keeping those categories on legacy `HorizontalSignalChain` SVG sources.
+  - Updated `docs/design/ICON_DOWNLOAD_LIST.md` so the manual-sourcing section now records the staged completion state instead of leaving the slots open.
+  - Validation: `xmllint --noout web/src/app/components/icons/noun/**/*.svg` -> pass, `npm --prefix web run typecheck` -> pass.
+  - Residual risk: `npm --prefix web run build` still fails on pre-existing `PlatformLayerData` type errors in `web/src/app/components/Platform/PlatformModal.tsx`; no build regression attributable to the icon asset work was observed.
+
+ID: T205-subB
+Status: [>] In Progress
+Title: Retire plugin-card and shared app Phosphor holdouts in active `web/src/app/**` surfaces
+Description:
+- Goal / acceptance criteria: Replace the remaining Phosphor icon usage in active `web/src/app/**` plugin cards, host/cluster dashboards, and page headers with Carbon controls or MAP-owned category/domain icons, with no behavioral regressions.
+- Why it matters: These surfaces are active operator-facing UI and still carry the most visible mixed iconography in the modern app shell.
+- Dependencies: T205-subA for missing SVG coverage, `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` Groups D/E/F, and existing app-shell/icon ownership rules
+- Estimated effort: High
+- Required outputs: Updated app components with Phosphor removed from the targeted groups, focused UI regression checks, and ledger count reductions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 16:27 - Codex
+- Progress notes:
+  - Shared plugin-card shell controls in `web/src/app/components/PluginCards/Base/PluginCardShell.tsx` now use Carbon icons for preset actions, overflow menu, copy/reset actions, and MIDI mappings.
+  - Shared section chevrons in `web/src/app/components/PluginCards/Base/ParameterSection.tsx` now use Carbon `ChevronDown`/`ChevronRight`.
+  - `web/src/app/components/PluginCards/Dialogs/MidiMappingDialog.tsx` now uses Carbon icons for dialog close/save/warning/delete/routing controls.
+  - Additional plugin-card custom/dialog surfaces now moved off Phosphor for their shared controls: `web/src/app/components/PluginCards/Dialogs/ExpressionOverlay.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NativeDelayCard.tsx`, `web/src/app/components/PluginCards/Custom/LV2/REEVRCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/IntervalShifterCard.tsx`.
+  - Remaining plugin-card custom files were completed in the same migration wave: `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/BossXS1Card.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/EVHPitchShifterCard.tsx`, `web/src/app/components/PluginCards/Custom/LV2/OutotuneCard.tsx`, `web/src/app/components/PluginCards/Custom/LV2/WhammyCard.tsx`, `web/src/app/components/PluginCards/Custom/LV2/KeyboardSamplerCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx`, and `web/src/app/components/PluginCards/Custom/Airwindows/GlitchShifterCard.tsx`.
+  - Current repo state: `rg -n \"from '@phosphor-icons/react'\" web/src/app/components/PluginCards` now returns no matches, so the plugin-card ecosystem portion of `T205-subB` is complete; remaining scope is active app pages and non-plugin dashboard/header surfaces under `web/src/app/**`.
+  - Active page-level migrations also landed for `web/src/app/pages/DSPPage.tsx`, `web/src/app/pages/MeteringPage.tsx`, and `web/src/app/pages/HostMachinePage.tsx`, replacing their remaining Phosphor page/header controls with Carbon or MAP-owned icons.
+  - Additional active page migrations landed for `web/src/app/pages/MOTURMEPage.tsx`, `web/src/app/pages/CPUPerformancePage.tsx`, `web/src/app/pages/MPX1DiagView.tsx`, and `web/src/app/pages/HoToneJoGGPage.tsx`.
+  - Additional active page migrations landed for `web/src/app/pages/MPX1Page.tsx`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/MIDIPage.tsx`.
+  - Final active page migrations also landed for `web/src/app/pages/EdirolUA1000Page.tsx` and `web/src/app/pages/LCDPage.tsx`, replacing the remaining Phosphor page/header/control usages with Carbon or MAP-owned icons.
+  - Current repo state: `rg -n "from '@phosphor-icons/react'" web/src/app/pages` now returns no matches, so the active page portion of `T205-subB` is complete; remaining scope is non-page `web/src/app/**` dashboard/header surfaces still tracked by the migration ledger.
+  - Cluster dashboard holdouts were completed in one batch: `web/src/app/components/ClusterDashboard/ClusterEducationTab.tsx`, `UpdatesTab.tsx`, `TopologyGraph.tsx`, `LiveEventsTab.tsx`, `FlowManagementTab.tsx`, `ClusterOverviewTabEnhanced.tsx`, `ServicesHealthTab.tsx`, `ReportingTab.tsx`, `ClusterOverviewTab.tsx`, and `ClusterAdvancedOperationsTab.tsx` now use Carbon icons instead of Phosphor.
+  - Current repo state: `rg -n "from '@phosphor-icons/react'|weight=\"duotone\"|weight=\"bold\"|weight=\"light\"" web/src/app/components/ClusterDashboard` now returns no matches, so the cluster-dashboard portion of `T205-subB` is complete; next remaining active groups are host-machine, routing, loader, and other shared non-page `web/src/app/**` surfaces.
+  - Loader and routing holdouts were completed in a follow-on batch: `web/src/app/components/loaders/NAMLoaderCard.tsx`, `ReverbIRLoaderCard.tsx`, `CabinetIRLoaderCard.tsx`, `web/src/app/components/Routing/ParallelRoutingPanel.tsx`, `SidechainPanel.tsx`, and `EffectsLoopSummaryPanel.tsx` now use Carbon icons instead of Phosphor.
+  - Current repo state: `rg -n "from '@phosphor-icons/react'|weight=\"duotone\"|weight=\"bold\"|weight=\"light\"" web/src/app/components/loaders web/src/app/components/Routing` now returns no matches, so those component groups are complete; remaining active `T205-subB` scope is concentrated in host-machine and other shared `web/src/app/**` surfaces still tracked by the migration ledger.
+  - Host-machine holdouts were completed in another batch: `web/src/app/components/HostMachine/MultiSystemDashboard.tsx`, `PerformanceMetrics.tsx`, `BrandingPanel.tsx`, `AlertNotificationSettings.tsx`, `HealthMonitor.tsx`, `MetricsChartsEnhanced.tsx`, `AudioNodeFeatures.tsx`, `MachineSpecsCard.tsx`, `HealthAlarms.tsx`, and `DiskHealthCard.tsx` now use Carbon icons instead of Phosphor.
+  - Current repo state: `rg -n "from '@phosphor-icons/react'|weight=\"duotone\"|weight=\"bold\"|weight=\"light\"" web/src/app/components/HostMachine` now returns no matches, so that component group is complete; remaining active `T205-subB` scope is now the assorted shared `web/src/app/**` surfaces outside pages, plugin cards, cluster dashboard, loaders, routing, and host-machine.
+  - Library and upload holdouts were completed in the next shared batch: `web/src/app/components/library/NAMItemCard.tsx`, `IRItemCard.tsx`, `SFItemCard.tsx`, `LibraryPaths.tsx`, `DownloadManager.tsx`, `web/src/app/components/upload/UploadButton.tsx`, and `UnifiedUploadDialog.tsx` now use Carbon icons instead of Phosphor.
+  - Current repo state: `rg -n "from '@phosphor-icons/react'|weight=\"duotone\"|weight=\"bold\"|weight=\"light\"" web/src/app/components/library web/src/app/components/upload` now returns no matches, so those component groups are complete; remaining active `T205-subB` scope is narrowed to the specialized shared surfaces such as chain management, engine/status panels, MPX1, MIDI cluster, onboarding, visualization, and related utility components still tracked by the migration ledger.
+  - Status and observability holdouts were completed in the next pass: `web/src/app/components/PiPedalTestStatus.tsx`, `JUCEEngineTestStatus.tsx`, `RealtimeTestResults.tsx`, `UpdateProgressViewer.tsx`, `CPUStatusOverview.tsx`, `web/src/app/components/AudioEngine/ClusterEngineGrid.tsx`, and `web/src/app/components/Visualizations/AudioMeteringCard.tsx` now use Carbon icons instead of Phosphor.
+  - Current repo state: `rg -n "from '@phosphor-icons/react'|weight=\"duotone\"|weight=\"bold\"|weight=\"light\"" web/src/app/components/PiPedalTestStatus.tsx web/src/app/components/JUCEEngineTestStatus.tsx web/src/app/components/RealtimeTestResults.tsx web/src/app/components/UpdateProgressViewer.tsx web/src/app/components/CPUStatusOverview.tsx web/src/app/components/AudioEngine/ClusterEngineGrid.tsx web/src/app/components/Visualizations/AudioMeteringCard.tsx` now returns no matches, so that shared status/observability surface is complete; remaining active `T205-subB` scope is concentrated in MPX1, MIDI cluster, chain-management, onboarding, preset/browser, and a smaller set of shared utility components.
+  - The MPX1 cluster is now complete: `web/src/app/components/MPX1/MPX1StatusBar.tsx`, `MPX1ModMatrix.tsx`, `MPX1MidiMapper.tsx`, `MPX1FlowToolbar.tsx`, `MPX1FlowSidebar.tsx`, and `MPX1Librarian.tsx` now use Carbon icons instead of Phosphor.
+  - MIDI cluster and MIDI Commander holdouts were completed in the same wave: `web/src/app/components/MidiCluster/MidiClusterNodeCard.tsx`, `MidiClusterClockPanel.tsx`, and `web/src/app/components/MIDICommanderSetup.tsx` now use Carbon icons instead of Phosphor.
+  - Chain/routing and supporting utility holdouts were completed in the next wave: `web/src/app/components/ChainManagementCard.tsx`, `ChainPanel/ChainPanel.tsx`, `BottomRoutingPanel/BottomRoutingPanel.tsx`, `HorizontalSignalChain/HorizontalPluginNode.tsx`, `HorizontalSignalChain/SidechainConnector.tsx`, `OnboardingWizard.tsx`, and `NodeAudioPathView.tsx` now use Carbon icons instead of Phosphor.
+  - Current repo state: `rg -n "from '@phosphor-icons/react'" web/src/app/components` is now down to seven files: `snapshots/CommunitySnapshotBrowser.tsx`, `PresetsWindow.tsx`, `PluginTags/TagSelector.tsx`, `PluginBrowser/PluginBrowser.tsx`, `LV2PluginParameterEditor.tsx`, `SystemArchitectureFlow.tsx`, and `chains/ChainDeployModal.tsx`.
+  - Recommended remaining execution order inside `T205-subB`: snapshot/preset/browser/tag utility surfaces (`CommunitySnapshotBrowser.tsx`, `PresetsWindow.tsx`, `PluginTags/TagSelector.tsx`, `PluginBrowser.tsx`), then the heavier editor/architecture tail (`LV2PluginParameterEditor.tsx`, `SystemArchitectureFlow.tsx`, `chains/ChainDeployModal.tsx`).
+  - Focused validation: `npm --prefix web run typecheck` -> pass.
+
+ID: T205-subC
+Status: [ ] Todo
+Title: Migrate Tesira and AVB routing holdouts off MUI icons
+Description:
+- Goal / acceptance criteria: Replace remaining `@mui/icons-material` usage in the Tesira cluster and AVB routing cluster with Carbon status/action icons or MAP-owned identity icons, while preserving existing workflows and operator readability.
+- Why it matters: These clusters remain high-traffic operational surfaces and still depend on the older icon stack for controls, status, and table/grid affordances.
+- Dependencies: T205-subA where missing MAP-owned icons are required, `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` Groups B/C, and current Carbon shell/token conventions
+- Estimated effort: High
+- Required outputs: Updated Tesira/AVB components, no new MUI icon imports in touched files, and validation notes for affected flows.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 16:47 - Codex
+- Remaining changes:
+  - Enumerate the live Tesira and AVB routed/shared surfaces still importing `@mui/icons-material` and split them into restartable batches.
+  - Replace MUI status/action/table affordance icons with Carbon or MAP-owned icons while preserving existing operator workflows and visual density.
+  - Re-run import-count sweeps and record the post-migration reductions in the exception ledger/worklist notes.
+
+ID: T205-subD
+Status: [ ] Todo
+Title: Freeze and then clear legacy `web/src/map2/**` and `web/src/pipedal/**` icon debt
+Description:
+- Goal / acceptance criteria: Audit the remaining legacy icon debt in `web/src/map2/**` and `web/src/pipedal/**`, prevent any expansion of MUI/legacy icon usage, and execute an in-place replacement plan for the still-routed or still-shared surfaces.
+- Why it matters: This is the densest remaining legacy icon island and the largest contributor to the unresolved MUI/icon drift totals.
+- Dependencies: T205-subA, current route/import reality for legacy surfaces, and `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` Group A plus PiPedal-related holdouts referenced by T205
+- Estimated effort: High
+- Required outputs: Prioritized file list for still-active legacy surfaces, migrated replacements for the highest-value routed/shared files, and documented freeze guidance for any non-routed leftovers.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 16:47 - Codex
+- Remaining changes:
+  - Produce the explicit active/shared legacy file list for `web/src/map2/**` and `web/src/pipedal/**`, separating routed surfaces from dormant legacy debt.
+  - Add freeze guidance so no new legacy icon usage lands while migration is still in progress.
+  - Execute the highest-value replacements in still-routed/shared legacy files and reduce the MUI/legacy import counts accordingly.
+
+ID: T205-subE
+Status: [ ] Todo
+Title: Remove emoji and symbol glyphs used as UI icons across active frontend surfaces
+Description:
+- Goal / acceptance criteria: Replace emoji/symbol UI markers that act as status, device, or action icons with Carbon/MAP iconography plus text, leaving only legitimate textual content unchanged.
+- Why it matters: Emoji and symbol glyphs break the intended visual system and remain a tracked exit criterion in the icon migration ledger.
+- Dependencies: T205-subB, T205-subC, T205-subD where shared surfaces overlap, and `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md`
+- Estimated effort: Medium
+- Required outputs: Reduced emoji/symbol UI marker count in active surfaces, accessibility-safe replacements, and updated ledger totals.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 16:47 - Codex
+- Remaining changes:
+  - Audit active frontend surfaces for emoji/symbol glyphs acting as status, device, or action icons rather than textual content.
+  - Replace those markers with Carbon/MAP icons plus text where needed for clarity and accessibility.
+  - Recount the remaining emoji/symbol exceptions and record the reductions in the worklist/ledger.
+
+ID: T205-subF
+Status: [ ] Todo
+Title: Verify icon-migration exit criteria and retire legacy icon packages from active frontend paths
+Description:
+- Goal / acceptance criteria: Recount Phosphor, MUI, and emoji/symbol usage after migration waves, verify that active frontend paths satisfy the approved icon stack, and remove legacy icon packages/import paths where no longer needed.
+- Why it matters: The icon program is not complete until the repo-level holdout counts and package usage match the approved end state documented in design guidance.
+- Dependencies: T205-subB, T205-subC, T205-subD, T205-subE
+- Estimated effort: Medium
+- Required outputs: Updated exception ledger counts, package/import cleanup, and explicit completion notes against the icon exit condition.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 16:47 - Codex
+- Remaining changes:
+  - Recount active-frontend Phosphor, MUI, and emoji/symbol usage after the remaining migration waves.
+  - Remove or constrain legacy icon-package imports from active frontend paths once the final holdouts are cleared.
+  - Update `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` and close `T205` only when the documented exit criteria are satisfied.
+Assigned to: Claude + User + Codex
+Last updated: 2026-03-18 15:28 - Codex
 
 ID: T206
 Status: [✓] Done
@@ -1131,7 +1259,7 @@ Last updated: 2026-03-18
 ---
 
 ID: T216
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Drum Machine Backend Service — state management, persistence, WebSocket integration
 Description:
 - Goal / acceptance criteria: Replace the current stateless dict stub in `app/routes/drums.py` with a proper service layer that manages drum machine state, persists configuration, integrates with the C++ engine via Python bindings, and provides real-time updates via WebSocket.
@@ -1161,7 +1289,12 @@ Subtasks:
     - Also available via WebSocket subscription for real-time display
     - Metering struct from C++ includes: peak + RMS per pad (16), peak + RMS per bus (8), peak + RMS master (1)
 Assigned to: Codex
-Last updated: 2026-03-18
+Last updated: 2026-03-18 13:10 - Codex
+- Progress notes:
+  - Replaced the old in-route `DRUM_MACHINE_STATE` dict with `app/services/drum_machine_service.py`, a singleton service that owns typed state validation, atomic JSON persistence under `~/.map2/drums/state.json`, factory/generated pack indexing, transport projection, and metering snapshots.
+  - Rewrote `app/routes/drums.py` to use Pydantic request/response models and the new service while preserving the current `/api/engine/drums/state` and pack endpoints for the existing UI/card surfaces.
+  - Added foundational transport and metering endpoints: `GET/POST /api/engine/drums/transport` and `GET /api/engine/drums/metering`.
+  - Validation: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py` -> pass. `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/services/drum_machine_service.py app/routes/drums.py` -> pass.
 
 ---
 
@@ -1269,7 +1402,7 @@ Last updated: 2026-03-18
 ---
 
 ID: T218
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Drum Machine TypeScript types, API client, and React Query integration
 Description:
 - Goal / acceptance criteria: Define complete TypeScript interfaces for all drum machine data structures and implement the API client layer with React Query hooks for all drum machine endpoints.
@@ -1310,7 +1443,12 @@ Subtasks:
     - `useDrumMidiLearn()` — learn mode status (500ms refetch while active)
     - All mutations via `useMutation` with appropriate cache invalidation
 Assigned to: Codex
-Last updated: 2026-03-18
+Last updated: 2026-03-18 13:10 - Codex
+- Progress notes:
+  - Expanded `web/src/map2/types.ts` with typed drum state updates, transport, and metering interfaces so the frontend no longer needs to treat the drum backend as an untyped blob.
+  - Extended `web/src/map2/api.ts` with `getTransport()`, `setTransport()`, and `getMetering()` while tightening `updateState()` onto a dedicated `DrumMachineStateUpdate` contract.
+  - Added `web/src/app/hooks/useDrumMachine.ts` with initial React Query hooks for state, transport, pack lists, metering, and state/transport mutations.
+  - Validation: `npm --prefix web run typecheck` -> pass.
 
 ---
 
@@ -1368,3 +1506,157 @@ Subtasks:
     - Kit switch during playback → verify clean transition
 Assigned to: Codex
 Last updated: 2026-03-18
+
+---
+
+## Typography
+
+ID: T220
+Status: [>] In Progress
+Title: Adopt BlexMono Nerd Font as the default site typeface with governed Nerd Font glyph usage
+Description:
+- Goal / acceptance criteria: Replace the current site-wide default font stack with `BlexMono Nerd Font` for the active frontend, ship the font through a deterministic web-delivery strategy, and define explicit glyph-usage rules so the extended Nerd Font symbol set improves navigation, telemetry, and status readability without degrading accessibility or becoming decorative noise.
+- Why it matters: The current frontend still defaults to `IBM Plex Sans` and mixed mono fallbacks, so typography is inconsistent with the requested visual direction and there is no governance for safe, intentional use of extended Nerd Font glyphs.
+- Dependencies: Current frontend font tokens in `web/src/index.css`, any route-local overrides that should remain exempt, final licensing/distribution decision for bundling the font assets, and user direction on scope/risk tolerance for glyph density.
+- Estimated effort: High
+- Required outputs: Implemented default-font migration plan, updated font tokens/assets/load path, documented glyph playbook with approved usage categories and bans, targeted UI updates for the best glyph-driven surfaces, and validation notes for rendering/performance/accessibility.
+ - Progress notes:
+  - Pinned the upstream source to Nerd Fonts `v3.4.0` (`IBMPlexMono.zip`, published 2025-04-24) and imported the current `BlexMonoNerdFont-*` family from that release.
+  - Added a reproducible subsetting pipeline in `scripts/build_blexmono_nerd_webfonts.py` that produces repo-hosted `woff2` text and glyph subsets plus a source/version manifest under `web/public/fonts/blexmono-nerd/v3.4.0/`.
+  - Carried the upstream `LICENSE.txt` and `README.md` into the hosted font directory for provenance/compliance.
+ - Added the strict initial glyph/codepoint governance document at `docs/design/BLEXMONO_NERD_FONT_SPEC.md`.
+ - Wired the new family into the active root typography tokens and first authority points in `web/src/index.css`, plus the first route/style cleanup pass in `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/IntelFXMonitorView.css`, and `web/src/styles/responsive.module.css`.
+  - Current rollout state: `T220-subD` and `T220-subE` are complete, the tracked hard-coded old mono/sans declaration audit is now `0` files, and the remaining typography follow-up is `T220-subF` to stop production from emitting residual IBM Plex Sans assets.
+Subtasks:
+ID: T220-subA
+Status: [✓] Done
+Title: Audit current typography tokens, overrides, and delivery path
+Description:
+- Goal / acceptance criteria: Inventory the current font tokens, direct `font-family` overrides, Carbon token interactions, and any hard-coded mono/sans fallbacks that would conflict with a site-wide `BlexMono Nerd Font` rollout.
+- Why it matters: The migration should target the real authority points instead of only changing one root variable while leaving route-local typography fractured.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Concrete file list, token ownership map, and exemption candidates for specialty surfaces that should not inherit the new default blindly.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 16:58 - Codex
+- Decision notes:
+  - User direction confirmed on 2026-03-18: use `BlexMono Nerd Font` across all active frontend fonts rather than a limited-scope rollout.
+  - Delivery direction: self-host the font assets in MAP2 rather than depending on local OS installation.
+  - Visual direction: aggressive mono-first identity rather than a restrained mixed sans/mono system.
+  - Glyph direction: use the extended Nerd Font glyph language across all major surfaces, not just one UI cluster.
+  - Accessibility/risk note to resolve during implementation: user permits glyph-only usage, so the rollout must still define where glyph-only is safe versus where hidden labels/tooltips/ARIA text remain mandatory.
+  - Icon-system boundary confirmed on 2026-03-18: keep Carbon/MAP SVG icons as the primary icon system; use Nerd Font glyphs mainly for typography, badges, labels, dense status language, and compact affordances rather than replacing the SVG icon program.
+  - Performance direction: subset/self-host the font assets for web delivery instead of shipping the full font payload unbounded.
+  - Weight/style direction: host multiple weights/styles rather than enforcing a single minimal terminal-weight package.
+  - Scope direction: include legacy routed surfaces under `web/src/map2/**` and `web/src/pipedal/**`, not just `web/src/app/**`.
+  - Glyph-only direction refined on 2026-03-18: glyph-only UI should be used primarily for small/mobile interfaces and very tight layouts; larger layouts should still prefer stronger textual affordance even if glyph-led styling is aggressive.
+  - Action direction: glyph treatment may extend across action surfaces, but implementation still needs explicit mobile/desktop rules so primary actions do not become ambiguous on larger layouts.
+  - Asset-ingestion direction confirmed on 2026-03-18: import the font assets into the repo now rather than deferring to a later manual drop.
+  - Desktop labeling direction: desktop may keep text labels for actions when space allows, while tighter/mobile layouts may compress toward glyph-led controls.
+  - Heading direction: hierarchy should be built with pure `BlexMono Nerd Font` only, using weight/spacing/case rather than introducing a secondary display face.
+  - Legacy rollout direction: apply the typography program across both `web/src/map2/**` and `web/src/pipedal/**` rather than staging only one of those islands.
+  - Governance direction: document an explicit approved glyph/codepoint set and strict usage rules rather than loose examples-only guidance.
+  - Carbon-conformance direction confirmed on 2026-03-18: preserve Carbon typography and spacing standards where practical instead of turning the UI into an ungoverned terminal parody.
+  - Surface scope refined: inputs, tables, code/log views, navigation, and general interface text should all move onto the same BlexMono family rather than keeping major typography exceptions.
+  - Glyph-catalog direction refined: prefer broad approved Nerd Font coverage across the UI, except where an existing Carbon icon is clearly better for clarity or consistency.
+  - Fallback direction: ship with a deterministic fallback stack rather than treating any non-primary glyph fallback as a release blocker.
+  - Asset packaging direction: follow best practice by storing optimized web-ready font subsets plus source/version manifesting rather than keeping a random raw-asset dump without provenance.
+  - Webfont-format direction confirmed on 2026-03-18: use best-practice webfont packaging rather than mirroring the upstream distribution blindly.
+  - Governance-doc direction: implementation may choose the best documentation shape, but the glyph/font system must remain explicit and restart-safe.
+  - Mobile accessibility direction: glyph-only controls may rely on ARIA and visually hidden/accessible naming rather than requiring visible tooltip labels by default.
+  - Cleanup direction: normalize and fix the existing hard-coded `font-family` declarations correctly as part of the rollout rather than preserving avoidable drift.
+  - Token direction: introduce clearer global typography tokens while preserving Carbon-compatible aliases, instead of simply overloading the old names without structure.
+  - Rendering direction confirmed on 2026-03-18: include font-rendering polish such as smoothing and spacing adjustments as part of the rollout rather than treating this as a family swap only.
+  - Utility-layer direction: keep the approved glyph system governed by the written spec rather than introducing a separate glyph helper abstraction unless implementation later proves it necessary.
+  - Glyph-selection direction: follow best practice for standard-vs-Nerd-Font symbol choice instead of forcing one category everywhere.
+  - Labeling direction refined: do not inject glyph-prefixed naming patterns into route titles, launcher cards, or menu labels unless the glyph materially improves the UI.
+  - Authenticity direction: period-authentic emulated/device surfaces may retain local typography exceptions where the new global mono system would harm faithful presentation.
+ - Completion notes:
+  - Audited the primary typography authority points and confirmed the current default still flows through `web/src/index.css`, with additional hard-coded overrides in route CSS, component CSS, and inline style objects.
+  - Confirmed the first high-value override points in `web/src/index.css`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/IntelFXMonitorView.css`, and `web/src/styles/responsive.module.css`.
+  - Counted the remaining typography override tail at `60` unique frontend files still carrying explicit old mono/sans declarations that need normalization in follow-on passes.
+ID: T220-subB
+Status: [✓] Done
+Title: Define webfont sourcing, packaging, and fallback strategy for BlexMono Nerd Font
+Description:
+- Goal / acceptance criteria: Decide whether MAP2 will vendor the Nerd Font assets, subset them, or fetch them during build/release, then specify the fallback stack and loading behavior for fast, stable rendering.
+- Why it matters: Font choice is easy; production-safe delivery is the part that breaks builds, adds bloat, or causes FOIT/FOUT if left vague.
+- Dependencies: T220-subA, user decision on self-hosting versus external/manual install assumptions
+- Estimated effort: Medium
+- Required outputs: Delivery decision, asset location plan, fallback stack, preload/subset policy, and any follow-up licensing/compliance note.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 16:58 - Codex
+ - Completion notes:
+  - Pinned the webfont source to Nerd Fonts `v3.4.0` and imported the upstream `IBMPlexMono.zip` payload for build-time processing.
+  - Added `scripts/build_blexmono_nerd_webfonts.py` to produce optimized `woff2` subsets rather than shipping raw upstream files directly.
+  - Generated repo-hosted subsets, manifest, license, and source README under `web/public/fonts/blexmono-nerd/v3.4.0/`.
+ID: T220-subC
+Status: [✓] Done
+Title: Establish Nerd Font glyph governance and approved UI usage patterns
+Description:
+- Goal / acceptance criteria: Define where extended glyphs are allowed, where they are forbidden, and the pairing rules with text/icons for accessibility, searchability, and operator clarity.
+- Why it matters: “Excellent use” of the glyph set requires restraint and consistency; otherwise the UI becomes visually noisy and semantically brittle.
+- Dependencies: T220-subA
+- Estimated effort: Medium
+- Required outputs: Glyph playbook covering approved categories such as nav labels, topology/state markers, terminal/log views, compact telemetry, and decorative exclusions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 16:58 - Codex
+ - Completion notes:
+  - Added the strict allowlist-based glyph governance document at `docs/design/BLEXMONO_NERD_FONT_SPEC.md`.
+  - Recorded the initial approved Nerd Font PUA set, token policy, Carbon boundary, and authenticity exemptions for emulated device surfaces.
+ID: T220-subD
+Status: [✓] Done
+Title: Apply the new default font tokens and migrate the highest-value surfaces
+Description:
+- Goal / acceptance criteria: Implement the chosen font-delivery approach, update the root typography tokens, and revise the most valuable surfaces to use governed Nerd Font glyphs where they materially improve scanning and density.
+- Why it matters: The plan is only useful if the system default and the first wave of operator-facing surfaces actually ship together.
+- Dependencies: T220-subA, T220-subB, T220-subC
+- Estimated effort: High
+- Required outputs: Updated CSS/tokens/assets, targeted UI component changes, and documented exceptions for surfaces left on alternate families.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 17:20 - Codex
+ - Completion notes:
+  - Added `@font-face` wiring for the generated BlexMono text/glyph subsets in `web/src/index.css`.
+  - Introduced clearer global typography tokens (`--font-ui`, `--font-ui-tight`, `--font-display`, `--font-mono`) while preserving Carbon-compatible aliases.
+  - Switched the global body and heading family defaults to the new BlexMono-based token set and added rendering-polish defaults (`text-rendering`, ligature disable, smoothing preservation).
+  - Updated the first route/style overrides in `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/IntelFXMonitorView.css`, and `web/src/styles/responsive.module.css`.
+  - Follow-on cleanup pass updated additional shared surfaces and page-local typography constants in `web/src/app/pages/HomePage.css`, `PlatformInfoGuideSection.tsx`, `ExpressionPage.tsx`, `PerformPage.tsx`, `web/src/app/components/HostMachine/HostMachine.css`, `web/src/app/components/Displays/SegmentedLedText.css`, `web/src/app/components/PluginOutputPanel.css`, `web/src/app/pages/PipeWirePage.css`, `AudioEnginePage.css`, `LV2PluginsPage.css`, and `MidiHubPage.css`.
+  - Another cleanup pass updated shared and legacy readout surfaces in `web/src/app/components/shared/LandscapePrompt.tsx`, `ApiObservatory/primitives/JsonTreeViewer.tsx`, `ApiActivityOverlay/ApiActivityOverlay.css`, `ThemeChooserModal.css`, `CPUStatusOverview.tsx`, `UpdateProgressViewer.tsx`, `web/src/ErrorBoundary.tsx`, `Visualizations/ClusterMeteringStrip.tsx`, `web/src/pages/ClusterAdmin.tsx`, `web/src/map2/components/MIDIMapper.tsx`, `WWWPanel.tsx`, `PluginCpuIndicator.tsx`, and `LatencyDisplay.tsx`.
+  - A further meter/editor cleanup pass updated `web/src/app/components/AudioMeter.tsx`, `Visualizations/DynamicsMeteringPanel.tsx`, `Visualizations/VuMeterDisplay.tsx`, `TunerDisplay.tsx`, `MIDICommanderSetup.tsx`, and `LV2PluginParameterEditor.tsx`.
+  - Another plugin-card/readout cleanup pass updated `web/src/app/components/PluginCards/Visualizations/TunerDisplay.tsx`, `PluginCards/Custom/JUCE/DrumMachineCard.tsx`, `PluginCards/Custom/JUCE/NAMCard.tsx`, `PluginCards/Custom/TooB/TunerCard.tsx`, `PluginCards/Custom/JUCE/CompressorCard.tsx`, `PluginCards/Custom/JUCE/GateCard.tsx`, `PluginCards/Custom/JUCE/LimiterCard.tsx`, and the remaining mono readout in `MIDICommanderSetup.tsx`.
+  - Final cleanup pass normalized the residual hard-coded old mono/sans declarations in dynamics, EQ, plugin dialogs, Tesira AVB tables, metering pages, shared chooser surfaces, `web/src/map2/**`, `web/src/index.css`, and safe non-emulated LCD metadata/readout surfaces.
+  - Final audit state: the hard-coded old mono/sans declaration tail is down from `60` to `0` unique files across `web/src/app/**`, `web/src/map2/**`, and `web/src/pipedal/**` using the tracked ripgrep audit.
+ID: T220-subE
+Status: [✓] Done
+Title: Validate rendering, accessibility, and performance of the typography migration
+Description:
+- Goal / acceptance criteria: Verify that the new font renders reliably across the supported UI surfaces, does not regress readability/accessibility, and keeps font payload/performance within acceptable bounds.
+- Why it matters: Font migrations often fail on clipping, fallback gaps, glyph confusion, and asset-size regressions.
+- Dependencies: T220-subD
+- Estimated effort: Medium
+- Required outputs: Validation notes for typecheck/build, visual spot checks, accessibility observations, and any follow-up fixes or exemptions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 17:20 - Codex
+ - Completion notes:
+  - `npm --prefix web run typecheck` passes after the typography cleanup and the related Carbon icon/build-fix follow-up.
+  - `npm --prefix web run build` now passes end to end.
+  - Validation surfaced only non-blocking build warnings for large chunks and mixed dynamic/static imports; no typography-specific build failure remains.
+  - The hosted BlexMono webfont payload remains about `348K` total across the generated `woff2` subsets.
+  - Accessibility posture for the migration remains governed by `docs/design/BLEXMONO_NERD_FONT_SPEC.md`, with glyph-only usage still constrained to compact/mobile cases and Carbon/MAP SVG icons kept as the primary icon system.
+ID: T220-subF
+Status: [ ] Todo
+Title: Remove residual IBM Plex Sans webfont emission from the production build
+Description:
+- Goal / acceptance criteria: Audit and eliminate the remaining `ibm-plex-sans-*` webfont assets emitted by `npm --prefix web run build` so the production bundle aligns with the BlexMono-first typography rollout and avoids shipping unused legacy font payload.
+- Why it matters: The default font migration is implemented, but the current production bundle still emits legacy IBM Plex Sans assets, which adds unnecessary payload and weakens the final typography posture.
+- Dependencies: T220-subD, T220-subE
+- Estimated effort: Medium
+- Required outputs: Source of IBM Plex Sans asset emission identified, imports/tokens/build config corrected, and validation notes confirming the legacy font files are no longer emitted unless an explicit exemption is documented.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 17:20 - Codex

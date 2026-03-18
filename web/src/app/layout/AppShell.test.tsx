@@ -1,4 +1,5 @@
 import React from 'react'
+import '@testing-library/jest-dom'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AppShell } from './AppShell'
@@ -62,8 +63,9 @@ jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
 }))
 
 jest.mock('../components/Platform/PlatformModal', () => ({
-  PlatformModalContent: () => null,
-  isStandalonePanel: () => false,
+  PlatformModalContent: ({ initialLayer, initialPanel }: { initialLayer?: string | null; initialPanel?: string | null }) => (
+    <div data-testid="platform-modal-content">{initialLayer ?? initialPanel ?? 'root'}</div>
+  ),
 }))
 
 jest.mock('../components/NodeNav/NodeNavBar', () => ({
@@ -171,6 +173,20 @@ describe('AppShell navigation', () => {
 
     expect(container.querySelector('.mpx1-nav-root')).toBeTruthy()
     expect(screen.getAllByText('MPX1 Rack').length).toBeGreaterThan(0)
+  })
+
+  it('renders pinned platform deep links in the top nav and opens the requested panel target', () => {
+    mockSpecialSettings.pinnedRoutes = ['platform:layer:overview']
+
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
+
+    expect(screen.getByTestId('platform-modal-content')).toHaveTextContent('overview')
   })
 
   it('shows only remaining hardware-submenu items inside the Audio Interfaces submenu', () => {

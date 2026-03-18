@@ -180,7 +180,7 @@
 }
 
 .pipewire-page__mono {
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-mono));
 }
 
 .pipewire-page__cell-with-icon {
@@ -386,7 +386,7 @@
 .pipewire-page__setting-value {
   margin-top: var(--cds-spacing-02);
   color: var(--cds-text-primary);
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-mono));
   font-size: var(--cds-body-01-font-size, 0.875rem);
 }
 

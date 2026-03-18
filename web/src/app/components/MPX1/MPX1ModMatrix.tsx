@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { ArrowsClockwise } from '@phosphor-icons/react'
+import { Renew } from '@carbon/icons-react'
 
 import { useMPX1PageContext } from '../../pages/MPX1Page'
 import { NumberInput } from '../Controls/NumberInput'
@@ -158,7 +158,7 @@ export function MPX1ModMatrix() {
       <header className="mpx1-matrix__header">
         <div className="mpx1-matrix__title">Internal Mod Matrix</div>
         <button type="button" className="mpx1-matrix__reset" onClick={() => setCells({})}>
-          <ArrowsClockwise size={14} weight="bold" /> Clear Grid
+          <Renew size={14} /> Clear Grid
         </button>
       </header>
 

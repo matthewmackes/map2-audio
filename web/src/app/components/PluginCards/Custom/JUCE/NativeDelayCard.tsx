@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react'
-import { CaretDown, CaretRight, Link, LinkBreak } from '@phosphor-icons/react'
+import { ChevronDown, ChevronRight, Link, Unlink } from '@carbon/icons-react'
 import { useDelay, TEMPO_DIVISIONS, STEREO_MODES, MOD_WAVEFORMS, calculateDelayFromSync } from '../../../../hooks/useDelay'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
@@ -303,7 +303,7 @@ function NativeDelayCardBase({
           style={{ '--accent': accentColor } as React.CSSProperties}
           title={linkLR ? 'L/R Linked' : 'L/R Independent'}
         >
-          {linkLR ? <Link size={14} weight="duotone" /> : <LinkBreak size={14} weight="duotone" />}
+          {linkLR ? <Link size={14} /> : <Unlink size={14} />}
           <span>{linkLR ? 'LINKED' : 'UNLINK'}</span>
         </button>
       </div>
@@ -404,7 +404,7 @@ function NativeDelayCardBase({
           onClick={() => toggleSection('modulation')}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          {expandedSections.modulation ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
+          {expandedSections.modulation ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <span>MODULATION</span>
           {parameters.modDepth > 0 && <span className="delay-indicator active" />}
         </button>
@@ -457,7 +457,7 @@ function NativeDelayCardBase({
           onClick={() => toggleSection('filters')}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          {expandedSections.filters ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
+          {expandedSections.filters ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <span>FILTERS</span>
           {(parameters.lowCut > 20 || parameters.highCut < 12000 || parameters.diffusion > 0) && (
             <span className="delay-indicator active" />
@@ -521,7 +521,7 @@ function NativeDelayCardBase({
           onClick={() => toggleSection('ducking')}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          {expandedSections.ducking ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
+          {expandedSections.ducking ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <span>DUCKING</span>
           {parameters.duckAmount > 0 && <span className="delay-indicator active" />}
         </button>
@@ -588,7 +588,7 @@ function NativeDelayCardBase({
           onClick={() => toggleSection('multiTap')}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          {expandedSections.multiTap ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
+          {expandedSections.multiTap ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <span>MULTI-TAP</span>
           {(parameters.tap2Level > 0 || parameters.tap3Level > 0 || parameters.tap4Level > 0) && (
             <span className="delay-indicator active" />

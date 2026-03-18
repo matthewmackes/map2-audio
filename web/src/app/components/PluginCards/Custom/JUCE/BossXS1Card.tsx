@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { CaretDown, Sliders, MusicNotes, Path } from '@phosphor-icons/react'
+import { ChevronDown, Flow, Music, SettingsAdjust } from '@carbon/icons-react'
 import { useBossXS1, BOSS_XS1_PRESETS } from '../../../../hooks/useModulation'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { PluginCardShell } from '../../Base/PluginCardShell'
@@ -144,9 +144,9 @@ function BossXS1CardBase({
           onClick={() => setShowPresetBrowser(!showPresetBrowser)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <MusicNotes size={14} weight="duotone" />
+          <Music size={14} />
           <span className="boss-preset-name">{currentPreset.name}</span>
-          <CaretDown size={14} weight="bold" className={showPresetBrowser ? 'rotated' : ''} />
+          <ChevronDown size={14} className={showPresetBrowser ? 'rotated' : ''} />
         </button>
 
         {/* Preset Browser Dropdown */}
@@ -195,7 +195,7 @@ function BossXS1CardBase({
           onClick={() => setDetuneMode(false)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Sliders size={14} weight="duotone" />
+          <SettingsAdjust size={14} />
           <span>Shift</span>
         </button>
         <button
@@ -203,7 +203,7 @@ function BossXS1CardBase({
           onClick={() => setDetuneMode(true)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <MusicNotes size={14} weight="duotone" />
+          <Music size={14} />
           <span>Detune</span>
         </button>
       </div>
@@ -300,7 +300,7 @@ function BossXS1CardBase({
             onClick={() => setPedalEnabled(!parameters.pedalEnabled)}
             style={{ '--accent': accentColor } as React.CSSProperties}
           >
-            <Path size={16} weight="duotone" />
+            <Flow size={16} />
             <span>{parameters.pedalEnabled ? 'Enabled' : 'Disabled'}</span>
           </button>
 

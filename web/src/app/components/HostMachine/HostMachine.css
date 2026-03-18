@@ -302,7 +302,7 @@
 }
 
 .hm-mono {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 11px !important;
 }
 
@@ -422,7 +422,7 @@
 }
 
 .hm-cluster-table__hostname { font-weight: 600; }
-.hm-cluster-table__nodeid  { font-size: 11px; color: var(--text-tertiary); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+.hm-cluster-table__nodeid  { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 2px; }
 .hm-cluster-table__sub     { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
 
 /* ── Health status block ──────────────────────────────────────── */

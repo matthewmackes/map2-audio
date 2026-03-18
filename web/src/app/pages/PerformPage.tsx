@@ -40,8 +40,8 @@ const C = {
   red:       '#da1e28',
   teal:      '#009d9a',
   purple:    '#8a3ffc',
-  mono:      "'IBM Plex Mono', monospace",
-  sans:      "'IBM Plex Sans', sans-serif",
+  mono:      "var(--font-mono)",
+  sans:      "var(--font-ui)",
 } as const
 
 const API = import.meta.env.VITE_API_BASE as string || '/api'

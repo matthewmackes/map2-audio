@@ -2,7 +2,7 @@
  * Branding Panel - Manufacturer identity, product image, and quick links
  */
 
-import { ArrowSquareOut, SealCheck } from '@phosphor-icons/react'
+import { CheckmarkFilled as SealCheck, Launch as ArrowSquareOut } from '@carbon/icons-react'
 
 interface BrandingPanelProps {
   branding: {
@@ -65,7 +65,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
         )}
         {branding.sff_optimized && (
           <div className="hm-branding__sff">
-            <SealCheck size={14} weight="fill" />
+            <SealCheck size={14} />
             Small Form Factor — Audio Optimized
           </div>
         )}
@@ -77,7 +77,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
             className="hm-branding__support-link"
             style={{ color: branding.brand_color }}
           >
-            Official Support <ArrowSquareOut size={13} weight="duotone" />
+            Official Support <ArrowSquareOut size={13} />
           </a>
         )}
       </div>

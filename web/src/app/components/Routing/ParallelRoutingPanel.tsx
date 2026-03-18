@@ -1,4 +1,4 @@
-import { ArrowsClockwise, GitBranch, Plus, SpinnerGap, Trash, WarningCircle } from '@phosphor-icons/react'
+import { Add as Plus, Branch as GitBranch, Renew as ArrowsClockwise, Renew as SpinnerGap, TrashCan as Trash, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useParallel } from '../../hooks/useParallel'
 import { useToasts } from '../Toasts'
 import { NumberInput } from '../Controls/NumberInput'
@@ -41,7 +41,7 @@ export function ParallelRoutingPanel({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <GitBranch size={18} weight="duotone" style={{ color: '#818cf8' }} />
+          <GitBranch size={18} style={{ color: '#818cf8' }} />
           <strong>Parallel Routing</strong>
           <span className="pill muted">{groups.length} groups</span>
           {remoteLabel && <span className="pill success">Remote Control · {remoteLabel}</span>}
@@ -51,7 +51,7 @@ export function ParallelRoutingPanel({
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => refetch()}>
-            <ArrowsClockwise size={14} weight="duotone" />
+            <ArrowsClockwise size={14} />
           </button>
           <button
             className="btn btn-secondary btn-sm"
@@ -65,7 +65,7 @@ export function ParallelRoutingPanel({
               }
             }}
           >
-            {isCreating ? <SpinnerGap size={14} weight="duotone" className="spin" /> : <Plus size={14} weight="bold" />}
+            {isCreating ? <SpinnerGap size={14} className="spin" /> : <Plus size={14} />}
             New Group
           </button>
         </div>
@@ -73,7 +73,7 @@ export function ParallelRoutingPanel({
 
       {isLoading ? (
         <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-          <SpinnerGap size={16} weight="duotone" className="spin" />
+          <SpinnerGap size={16} className="spin" />
           <span className="muted">Loading parallel groups…</span>
         </div>
       ) : isError ? (
@@ -128,7 +128,7 @@ export function ParallelRoutingPanel({
                       }
                     }}
                   >
-                    <Trash size={14} weight="duotone" />
+                    <Trash size={14} />
                   </button>
                 </div>
               </div>
@@ -198,7 +198,7 @@ export function ParallelRoutingPanel({
             fontSize: 12,
           }}
         >
-          <WarningCircle size={16} weight="duotone" />
+          <WarningCircle size={16} />
           Remote branch edits may feel less responsive above 10 ms peer latency.
         </div>
       )}

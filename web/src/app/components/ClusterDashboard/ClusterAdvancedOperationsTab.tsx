@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowsClockwise, CheckCircle, Warning } from '@phosphor-icons/react'
+import { Renew as ArrowsClockwise, CheckmarkFilled as CheckCircle, WarningAlt as Warning } from '@carbon/icons-react'
 
 interface ResetPreviewResponse {
   status: string
@@ -111,7 +111,7 @@ export function ClusterAdvancedOperationsTab() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <Warning size={18} weight="duotone" color="#f59e0b" />
+          <Warning size={18} style={{ color: '#f59e0b' }} />
           <div style={{ fontWeight: 700, color: '#fbbf24' }}>Reset to Default, Rejoin</div>
         </div>
         <div style={{ fontSize: 13, color: '#e5e7eb', lineHeight: 1.5 }}>
@@ -133,7 +133,7 @@ export function ClusterAdvancedOperationsTab() {
             Reset Preview
           </div>
           <button className="btn btn-sm" onClick={loadPreview} disabled={loadingPreview}>
-            <ArrowsClockwise size={14} weight="duotone" />
+            <ArrowsClockwise size={14} />
             {loadingPreview ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
@@ -244,7 +244,7 @@ export function ClusterAdvancedOperationsTab() {
           </button>
           {result?.success && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#34d399' }}>
-              <CheckCircle size={14} weight="duotone" />
+              <CheckCircle size={14} />
               Completed
             </span>
           )}
@@ -277,4 +277,3 @@ export function ClusterAdvancedOperationsTab() {
     </div>
   )
 }
-

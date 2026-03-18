@@ -9,8 +9,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-// Note: Phosphor has no Drum icon — MusicNote used as closest match
-import { MusicNote, UploadSimple, FolderOpen, ArrowsClockwise, Play, Square, CaretDown } from '@phosphor-icons/react'
+import { FolderOpen, Music, Renew } from '@carbon/icons-react'
 import { PageHeader } from '../components/PageHeader'
 import { NumberInput } from '../components/Controls/NumberInput'
 import { drumsApi } from '../../map2/api'
@@ -82,7 +81,7 @@ export function DrumsPage() {
       <PageHeader
         title="Drum Machine"
         subtitle="Practice patterns, factory packs & user drum kits"
-        icon={<MusicNote size={32} weight="duotone" style={{ color: '#60a5fa' }} />}
+        icon={<Music size={32} style={{ color: '#60a5fa' }} />}
       />
 
       {/* Tabs */}
@@ -192,7 +191,7 @@ export function DrumsPage() {
 
           {!state && (
             <div style={{ color: '#6b7280', textAlign: 'center', padding: 40 }}>
-              <ArrowsClockwise size={24} weight="duotone" style={{ marginBottom: 8, opacity: 0.5 }} />
+              <Renew size={24} style={{ marginBottom: 8, opacity: 0.5 }} />
               <div>Loading drum machine state...</div>
             </div>
           )}
@@ -227,7 +226,7 @@ export function DrumsPage() {
           </div>
           {generatedPacks.length === 0 ? (
             <div style={{ color: '#6b7280', textAlign: 'center', padding: 40 }}>
-              <FolderOpen size={24} weight="duotone" style={{ marginBottom: 8, opacity: 0.5 }} />
+              <FolderOpen size={24} style={{ marginBottom: 8, opacity: 0.5 }} />
               <div>No user packs yet. Upload a drum pack JSON to get started.</div>
             </div>
           ) : (

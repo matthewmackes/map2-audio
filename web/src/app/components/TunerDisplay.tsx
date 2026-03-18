@@ -371,7 +371,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
         <span
           style={{
             fontSize: size.freqSize,
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-mono)',
             color: hasSignal ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.2)',
           }}
         >
@@ -393,7 +393,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
         <span
           style={{
             fontSize: size.freqSize,
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-mono)',
             color: hasSignal ? color : 'rgba(255, 255, 255, 0.2)',
             minWidth: 50,
             textAlign: 'right',

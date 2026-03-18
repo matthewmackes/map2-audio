@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowsClockwise, SpinnerGap, WaveSine, WarningCircle } from '@phosphor-icons/react'
+import { Renew as ArrowsClockwise, Renew as SpinnerGap, Waveform as WaveSine, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import type { Chain, EffectsLoop, LoopInsertion } from '../../../map2/types'
 import { effectsLoopsApi } from '../../../map2/api'
 import { useToasts } from '../Toasts'
@@ -83,7 +83,7 @@ export function EffectsLoopSummaryPanel({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <WaveSine size={18} weight="duotone" style={{ color: '#c084fc' }} />
+          <WaveSine size={18} style={{ color: '#c084fc' }} />
           <strong>Effects Loops</strong>
           <span className="pill muted">{loops.length} loops</span>
           {remoteLabel && <span className="pill success">Remote Control · {remoteLabel}</span>}
@@ -92,7 +92,7 @@ export function EffectsLoopSummaryPanel({
           )}
         </div>
         <button className="btn btn-ghost btn-sm" onClick={invalidate}>
-          <ArrowsClockwise size={14} weight="duotone" />
+          <ArrowsClockwise size={14} />
         </button>
       </div>
 
@@ -122,7 +122,7 @@ export function EffectsLoopSummaryPanel({
 
       {(loopsQuery.isLoading || insertionsQuery.isLoading) ? (
         <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-          <SpinnerGap size={16} weight="duotone" className="spin" />
+          <SpinnerGap size={16} className="spin" />
           <span className="muted">Loading loop state…</span>
         </div>
       ) : loopsQuery.isError ? (
@@ -227,7 +227,7 @@ export function EffectsLoopSummaryPanel({
             fontSize: 12,
           }}
         >
-          <WarningCircle size={16} weight="duotone" />
+          <WarningCircle size={16} />
           Remote loop control may respond more slowly above 10 ms peer latency.
         </div>
       )}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { CaretLeft, CaretRight, Lightning } from '@phosphor-icons/react'
+import { ChevronLeft, ChevronRight, Flash } from '@carbon/icons-react'
 
 import { formatMpx1ProgramNumber } from './programNumber'
 import { NumberInput } from '../Controls/NumberInput'
@@ -58,7 +58,7 @@ export function MPX1StatusBar({
           onClick={() => onProgramStep(-1)}
           aria-label="Previous program"
         >
-          <CaretLeft size={12} weight="bold" aria-hidden />
+          <ChevronLeft size={12} aria-hidden />
         </button>
         <span className="mpx1-statusbar__prog-number">{formatMpx1ProgramNumber(programNumber)}</span>
         <span className="mpx1-statusbar__prog-name" title={programName}>{programName}</span>
@@ -68,7 +68,7 @@ export function MPX1StatusBar({
           onClick={() => onProgramStep(1)}
           aria-label="Next program"
         >
-          <CaretRight size={12} weight="bold" aria-hidden />
+          <ChevronRight size={12} aria-hidden />
         </button>
       </div>
 
@@ -92,7 +92,7 @@ export function MPX1StatusBar({
       </div>
 
       <button type="button" className="mpx1-statusbar__tap" onClick={onTapTempo}>
-        <Lightning size={12} weight="bold" aria-hidden />
+        <Flash size={12} aria-hidden />
         TAP {tapTempoBpm ? `${Math.round(tapTempoBpm)} BPM` : 'BPM'}
       </button>
 

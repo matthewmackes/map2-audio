@@ -14,15 +14,15 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import {
-  MusicNote,
-  WaveSine,
-  Sparkle,
-  SpeakerHigh,
   ArrowUp,
   ArrowDown,
-  ArrowCounterClockwise,
-  Lightning,
-} from '@phosphor-icons/react'
+  Flash,
+  MagicWand,
+  Music,
+  Reset,
+  VolumeUp,
+  Waveform,
+} from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
 import './GlitchShifterCard.css'
 
@@ -188,11 +188,11 @@ export function GlitchShifterCard({
       <div className="glitch-pitch-display">
         <div className="glitch-shift-direction">
           {semitones > 0.5 ? (
-            <ArrowUp size={20} weight="duotone" style={{ color: accentColor }} />
+            <ArrowUp size={20} style={{ color: accentColor }} />
           ) : semitones < -0.5 ? (
-            <ArrowDown size={20} weight="duotone" style={{ color: accentColor }} />
+            <ArrowDown size={20} style={{ color: accentColor }} />
           ) : (
-            <ArrowCounterClockwise size={16} weight="duotone" style={{ color: '#6b7280' }} />
+            <Reset size={16} style={{ color: '#6b7280' }} />
           )}
         </div>
         <div className="glitch-shift-value">
@@ -214,7 +214,7 @@ export function GlitchShifterCard({
       {/* Feedback indicator */}
       {feedback > 0.1 && (
         <div className="glitch-feedback-indicator" style={{ opacity: feedback }}>
-          <Lightning size={14} weight="duotone" />
+          <Flash size={14} />
           <span>{Math.round(feedback * 100)}%</span>
         </div>
       )}
@@ -246,7 +246,7 @@ export function GlitchShifterCard({
       {/* Quick Interval Selection */}
       <div className="glitch-intervals">
         <div className="glitch-intervals-label">
-          <MusicNote size={12} weight="duotone" />
+          <Music size={12} />
           <span>Harmony Intervals</span>
         </div>
         <div className="glitch-interval-chips">
@@ -270,7 +270,7 @@ export function GlitchShifterCard({
       {/* Main Pitch Control */}
       <ParameterSection
         title="Pitch Shift"
-        icon={<WaveSine size={14} weight="duotone" />}
+        icon={<Waveform size={14} />}
         accentColor={accentColor}
       >
         <ParameterRow justify="center">
@@ -310,7 +310,7 @@ export function GlitchShifterCard({
       {/* Character Controls */}
       <ParameterSection
         title="Character"
-        icon={<Sparkle size={14} weight="duotone" />}
+        icon={<MagicWand size={14} />}
         accentColor={accentColor}
       >
         <ParameterRow>
@@ -349,7 +349,7 @@ export function GlitchShifterCard({
       {/* Output Mix */}
       <ParameterSection
         title="Mix"
-        icon={<SpeakerHigh size={14} weight="duotone" />}
+        icon={<VolumeUp size={14} />}
         accentColor={accentColor}
       >
         <ParameterRow justify="center">

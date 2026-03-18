@@ -491,7 +491,7 @@ export function EQCard({
         .eq-axis-label {
           fill: #666;
           font-size: 9px;
-          font-family: monospace;
+          font-family: var(--font-ui-tight);
         }
 
         .eq-band-number {
@@ -546,13 +546,13 @@ export function EQCard({
         .eq-band-chip-freq {
           font-size: 11px;
           color: #aaa;
-          font-family: monospace;
+          font-family: var(--font-ui-tight);
         }
 
         .eq-band-chip-gain {
           font-size: 10px;
           color: #666;
-          font-family: monospace;
+          font-family: var(--font-ui-tight);
         }
 
         .eq-band-enable {
@@ -692,7 +692,7 @@ export function EQCard({
 
         .param-knob-value {
           color: #fff;
-          font-family: monospace;
+          font-family: var(--font-ui-tight);
         }
 
         @media (max-width: 600px) {

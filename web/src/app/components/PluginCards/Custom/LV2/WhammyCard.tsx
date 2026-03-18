@@ -14,7 +14,7 @@ import { ParameterRow } from '../../Base/ParameterRow'
 import { NumberInput } from '../../../Controls/NumberInput'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { PitchDisplay } from '../../Visualizations/PitchDisplay'
-import { ArrowUp, ArrowDown, Link, LinkBreak } from '@phosphor-icons/react'
+import { ArrowDown, ArrowUp, Link, Unlink } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
 import './WhammyCard.css'
 
@@ -127,7 +127,7 @@ export function WhammyCard({
       {/* Pitch Display */}
       <div className="whammy-pitch-display">
         <div className={`whammy-shift-indicator ${currentShift > 0 ? 'up' : currentShift < 0 ? 'down' : ''}`}>
-          {currentShift > 0 ? <ArrowUp size={20} weight="duotone" /> : currentShift < 0 ? <ArrowDown size={20} weight="duotone" /> : null}
+          {currentShift > 0 ? <ArrowUp size={20} /> : currentShift < 0 ? <ArrowDown size={20} /> : null}
           <span className="whammy-shift-value">
             {currentShift >= 0 ? '+' : ''}{currentShift.toFixed(1)}
           </span>
@@ -152,7 +152,7 @@ export function WhammyCard({
           onClick={() => setIsHarmonyMode(false)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <LinkBreak size={12} weight="duotone" />
+          <Unlink size={12} />
           Whammy
         </button>
         <button
@@ -160,7 +160,7 @@ export function WhammyCard({
           onClick={() => setIsHarmonyMode(true)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Link size={12} weight="duotone" />
+          <Link size={12} />
           Harmony
         </button>
       </div>
@@ -175,7 +175,7 @@ export function WhammyCard({
               onClick={() => handleModeChange(index)}
               style={{ '--accent': accentColor } as React.CSSProperties}
             >
-              {mode.icon === 'up' ? <ArrowUp size={10} weight="duotone" /> : <ArrowDown size={10} weight="duotone" />}
+              {mode.icon === 'up' ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
               {mode.name}
             </button>
           ))}

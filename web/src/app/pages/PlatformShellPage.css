@@ -42,7 +42,23 @@
 
 /* ── Icon tile ───────────────────────────────────────────── */
 .platform-shell__cp-item {
+  position: relative;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: calc(5.5rem * var(--platform-menu-scale));
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  transition:
+    background 0.1s ease,
+    border-color 0.1s ease;
+}
+
+.platform-shell__cp-item-open {
+  display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
@@ -50,13 +66,10 @@
   min-height: calc(5.5rem * var(--platform-menu-scale));
   padding: calc(0.75rem * var(--platform-menu-scale)) calc(0.45rem * var(--platform-menu-scale)) calc(0.65rem * var(--platform-menu-scale));
   background: transparent;
-  border: 1px solid transparent;
+  border: 0;
   cursor: pointer;
   color: var(--cds-text-primary);
   width: 100%;
-  transition:
-    background 0.1s ease,
-    border-color 0.1s ease;
 }
 
 .platform-shell__cp-item:hover {
@@ -64,7 +77,8 @@
   border-color: var(--cds-border-subtle-01);
 }
 
-.platform-shell__cp-item:focus-visible {
+.platform-shell__cp-item-open:focus-visible,
+.platform-shell__cp-pin-btn:focus-visible {
   outline: 2px solid var(--cds-focus);
   outline-offset: -2px;
 }
@@ -72,6 +86,39 @@
 .platform-shell__cp-item.is-selected {
   background: var(--cds-layer-selected-01);
   border-color: var(--cds-border-strong-01);
+}
+
+.platform-shell__cp-pin-btn {
+  position: absolute;
+  top: calc(0.4rem * var(--platform-menu-scale));
+  right: calc(0.4rem * var(--platform-menu-scale));
+  z-index: 1;
+  min-height: 0;
+  padding: calc(0.18rem * var(--platform-menu-scale)) calc(0.34rem * var(--platform-menu-scale));
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, transparent);
+  color: var(--cds-text-secondary);
+  font-size: calc(0.5rem * var(--platform-menu-scale));
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.platform-shell__cp-pin-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--cds-link-primary) 52%, transparent);
+  color: var(--cds-text-primary);
+}
+
+.platform-shell__cp-pin-btn.is-pinned {
+  border-color: color-mix(in srgb, var(--cds-link-primary) 60%, transparent);
+  background: color-mix(in srgb, var(--cds-link-primary) 14%, var(--cds-layer-01));
+  color: var(--cds-text-primary);
+}
+
+.platform-shell__cp-pin-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .platform-shell__cp-icon {

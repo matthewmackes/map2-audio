@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { WarningCircle, CheckCircle, Info, Lightning } from '@phosphor-icons/react'
+import { WarningAlt as WarningCircle, Information as Info, Flash as Lightning } from '@carbon/icons-react'
 
 interface LCDEvent {
   event_id: string
@@ -92,11 +92,11 @@ export function LiveEventsTab() {
     switch (severity) {
       case 'critical':
       case 'error':
-        return <WarningCircle size={14} weight="duotone" />
+        return <WarningCircle size={14} />
       case 'warning':
-        return <Lightning size={14} weight="duotone" />
+        return <Lightning size={14} />
       default:
-        return <Info size={14} weight="duotone" />
+        return <Info size={14} />
     }
   }
 

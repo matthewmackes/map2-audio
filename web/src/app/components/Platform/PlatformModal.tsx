@@ -44,6 +44,9 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 
 import '../../pages/PlatformShellPage.css'
+import { MAX_PINNED_NAV_ITEMS, allPinnableNavigationItems } from '../../data/advancedMenuItems'
+import { platformPinnedItems, type PlatformPinnedNavItem, type StandalonePanel } from '../../data/platformMenuItems'
+import { useSpecialSettings } from '../../hooks/useSpecialSettings'
 import { MidiClusterNodeCard } from '../MidiCluster/MidiClusterNodeCard'
 import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
 import {
@@ -67,7 +70,6 @@ import {
   usePlatformActiveLayer,
   usePlatformAlerts,
   usePlatformAnimationState,
-  usePlatformLayerHealth,
   usePlatformSummaryMetrics,
   usePlatformView,
 } from '../../stores/platformStore'
@@ -81,12 +83,6 @@ const AboutPage       = lazy(() => import('../../pages/AboutPage').then(m => ({ 
 const PAGE_SIZES = [5, 10, 20]
 const PLATFORM_CONTROL_PANEL_ICON_SIZE = 45
 
-export type StandalonePanel = 'host-machine' | 'audio-engine' | 'about'
-
-export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
-  return value === 'host-machine' || value === 'audio-engine' || value === 'about'
-}
-
 const LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
   overview: ChartColumn,
   'single-node': Devices,
@@ -96,11 +92,7 @@ const LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
   'cluster-dashboard': DataBase,
 }
 
-const STANDALONE_ITEMS: Array<{ id: StandalonePanel; label: string; icon: CarbonIconType }> = [
-  { id: 'host-machine',  label: 'Host Machine',   icon: Screen },
-  { id: 'audio-engine',  label: 'Audio Engine',   icon: Terminal },
-  { id: 'about',         label: 'Platform Guide',  icon: Information },
-]
+const PLATFORM_CONTROL_PANEL_ITEMS = platformPinnedItems
 
 const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string; icon: CarbonIconType }> = {
   'host-machine': { label: 'Host Machine',   eyebrow: 'Hardware', icon: Screen },
@@ -152,46 +144,75 @@ function renderCellValue(headerKey: string, value: PlatformTableValue) {
 // ── Control Panel Grid ───────────────────────────────────────────────────────
 
 function ControlPanelGrid({
-  layers, activeId, onOpenLayer, onOpenStandalone,
+  activeId,
+  pinnedRouteSet,
+  onOpenLayer,
+  onOpenStandalone,
+  onTogglePin,
+  pinningDisabled,
 }: {
-  layers: PlatformLayerData[]
   activeId: string | null
+  pinnedRouteSet: Set<string>
   onOpenLayer: (id: PlatformLayerId) => void
   onOpenStandalone: (id: StandalonePanel) => void
+  onTogglePin: (item: PlatformPinnedNavItem, checked: boolean) => void
+  pinningDisabled: boolean
 }) {
   return (
     <div className="platform-shell__cp-panel" role="region" aria-label="Platform Control Panel">
       <h2 className="platform-shell__cp-title">Platform Control Panel</h2>
       <div className="platform-shell__cp-grid" role="list">
-        {layers.map((layer) => {
-          const Icon = LAYER_ICONS[layer.id]
+        {PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
+          const Icon = item.icon
+          const targetId = item.target.layer ?? item.target.panel ?? null
+          const isSelected = activeId === targetId
+          const isPinned = pinnedRouteSet.has(item.to)
+          const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
+          const pinDisabled = pinningDisabled || limitReached
+
           return (
-            <button
-              key={layer.id}
-              type="button"
+            <article
+              key={item.to}
               role="listitem"
-              className={`platform-shell__cp-item${activeId === layer.id ? ' is-selected' : ''}`}
-              onClick={() => onOpenLayer(layer.id)}
-              aria-label={layer.label}
+              className={`platform-shell__cp-item${isSelected ? ' is-selected' : ''}`}
             >
-              <span className="platform-shell__cp-icon" aria-hidden><Icon size={PLATFORM_CONTROL_PANEL_ICON_SIZE} /></span>
-              <span className="platform-shell__cp-label">{layer.label}</span>
-            </button>
+              <button
+                type="button"
+                className={`platform-shell__cp-pin-btn${isPinned ? ' is-pinned' : ''}`}
+                onClick={() => onTogglePin(item, !isPinned)}
+                aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                title={
+                  limitReached
+                    ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
+                    : isPinned
+                      ? 'Unpin from navigation bar'
+                      : 'Pin to navigation bar'
+                }
+                aria-pressed={isPinned}
+                disabled={pinDisabled}
+              >
+                {isPinned ? 'PINNED' : 'PIN'}
+              </button>
+              <button
+                type="button"
+                className="platform-shell__cp-item-open"
+                onClick={() => {
+                  if (item.target.layer) {
+                    onOpenLayer(item.target.layer)
+                    return
+                  }
+                  if (item.target.panel) {
+                    onOpenStandalone(item.target.panel)
+                  }
+                }}
+                aria-label={item.label}
+              >
+                <span className="platform-shell__cp-icon" aria-hidden><Icon size={PLATFORM_CONTROL_PANEL_ICON_SIZE} /></span>
+                <span className="platform-shell__cp-label">{item.label}</span>
+              </button>
+            </article>
           )
         })}
-        {STANDALONE_ITEMS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            role="listitem"
-            className={`platform-shell__cp-item${activeId === id ? ' is-selected' : ''}`}
-            onClick={() => onOpenStandalone(id)}
-            aria-label={label}
-          >
-            <span className="platform-shell__cp-icon" aria-hidden><Icon size={PLATFORM_CONTROL_PANEL_ICON_SIZE} /></span>
-            <span className="platform-shell__cp-label">{label}</span>
-          </button>
-        ))}
       </div>
     </div>
   )
@@ -504,10 +525,10 @@ export interface PlatformModalContentProps {
 }
 
 export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, onClose }: PlatformModalContentProps) {
+  const { settings: specialSettings, isLoading: specialSettingsLoading, updateSettings } = useSpecialSettings()
   const { layers, layerHealth: nextLayerHealth, summaryMetrics: nextSummaryMetrics, alerts: nextAlerts } = usePlatformShellData()
   const currentView = usePlatformView()
   const activeLayerId = usePlatformActiveLayer()
-  const layerHealth = usePlatformLayerHealth()
   const alerts = usePlatformAlerts()
   const animationState = usePlatformAnimationState()
   const { openLayer, closeLayer, clearAnimation, setAlerts, setLayerHealth, setSummaryMetrics, dismissAlert } = usePlatformActions()
@@ -515,6 +536,8 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
 
   // Track what "panel" (standalone) is open locally — not in the platform store
   const [activePanel, setActivePanel] = useState<StandalonePanel | null>(initialPanel ?? null)
+  const pinnedRoutes = useMemo(() => specialSettings?.pinnedRoutes ?? [], [specialSettings?.pinnedRoutes])
+  const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
 
   // Sync live data into store
   useEffect(() => {
@@ -550,6 +573,25 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
     if (!activeLayer) return alerts
     return alerts.filter((a) => a.layerId === activeLayer.id)
   }, [activeLayer, alerts])
+
+  const togglePinnedRoute = async (item: PlatformPinnedNavItem, checked: boolean) => {
+    if (!checked) {
+      await updateSettings({ pinnedRoutes: pinnedRoutes.filter((route) => route !== item.to) })
+      return
+    }
+
+    if (!pinnedRouteSet.has(item.to) && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS) {
+      return
+    }
+
+    const candidateSet = new Set([...pinnedRoutes, item.to])
+    const nextRoutes = allPinnableNavigationItems
+      .filter((candidate) => candidate.to !== '/' && candidateSet.has(candidate.to))
+      .map((candidate) => candidate.to)
+      .slice(0, MAX_PINNED_NAV_ITEMS)
+
+    await updateSettings({ pinnedRoutes: nextRoutes })
+  }
 
   const handleOpenLayer = (layerId: PlatformLayerId) => {
     setActivePanel(null)
@@ -595,10 +637,12 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
           <div className="platform-shell__content">
             {showGrid ? (
               <ControlPanelGrid
-                layers={layers}
                 activeId={activeId}
+                pinnedRouteSet={pinnedRouteSet}
                 onOpenLayer={handleOpenLayer}
                 onOpenStandalone={handleOpenStandalone}
+                onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
+                pinningDisabled={specialSettingsLoading}
               />
             ) : (
               <AnimatePresence mode="wait">

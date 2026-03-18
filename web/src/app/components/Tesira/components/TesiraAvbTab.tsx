@@ -84,7 +84,7 @@ export function TesiraAvbTab({ deviceId }: TesiraAvbTabProps) {
                   />
                 </TableCell>
                 <TableCell sx={{ fontSize: 11 }}>{s.channels}</TableCell>
-                <TableCell sx={{ fontSize: 10, fontFamily: 'monospace' }}>
+                <TableCell sx={{ fontSize: 10, fontFamily: 'var(--font-ui-tight)' }}>
                   {s.entity_id?.substring(0, 12)}…
                 </TableCell>
                 <TableCell>

@@ -30,7 +30,6 @@ export function NodeNavBar() {
   if (nodeTopologyQuery.isLoading && nodes.length === 0) {
     return (
       <div className="node-nav-bar">
-        <div className="node-nav-bar__divider" aria-hidden="true" />
         <div className="node-nav-bar__skeleton" />
       </div>
     )
@@ -39,7 +38,6 @@ export function NodeNavBar() {
   if (nodeTopologyQuery.isError || !localNode) {
     return (
       <div className="node-nav-bar">
-        <div className="node-nav-bar__divider" aria-hidden="true" />
         <span className="node-nav-bar__fallback">Node discovery unavailable</span>
       </div>
     )
@@ -47,7 +45,6 @@ export function NodeNavBar() {
 
   return (
     <div className="node-nav-bar">
-      <div className="node-nav-bar__divider" aria-hidden="true" />
       <div className="node-nav-bar__chips" aria-label="Node navigation status">
         {nodes.map((node) => {
           const presence = getNodePresence(node, viewedNodeId)

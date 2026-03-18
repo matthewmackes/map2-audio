@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { PencilSimple, Check, X, WarningCircle, SpinnerGap, CheckCircle, XCircle, Lightning, Pulse, Cpu, Clock, TrendUp } from '@phosphor-icons/react'
+import { Activity as Pulse, CheckmarkFilled as CheckCircle, CheckmarkFilled as Check, Edit as PencilSimple, ErrorFilled as XCircle, Flash as Lightning, Activity as Cpu, Time as Clock, ChartLine as TrendUp, Close as X, Renew as SpinnerGap, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 
 interface AudioActivity {
@@ -357,7 +357,7 @@ export function CPUStatusOverview() {
   if (configQuery.isLoading) {
     return (
       <div className="flex" style={{ padding: '12px 4px' }}>
-        <SpinnerGap className="spin" size={18} weight="duotone" /> Loading core configuration...
+        <SpinnerGap className="spin" size={18} /> Loading core configuration...
       </div>
     )
   }
@@ -388,7 +388,7 @@ export function CPUStatusOverview() {
         <div style={{ padding: 16, backgroundColor: '#1a1a2e', borderRadius: 10, border: '1px solid #2a2a4a' }}>
           <div className="flex-between" style={{ marginBottom: 14 }}>
             <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-              <Pulse size={18} weight="duotone" style={{ color: '#64b5f6' }} />
+              <Pulse size={18} style={{ color: '#64b5f6' }} />
               <span style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff' }}>JUCE Audio Engine Performance</span>
               {juceConnected && (
                 <span style={{ fontSize: 9, padding: '2px 6px', background: 'rgba(76,175,80,0.2)', border: '1px solid rgba(76,175,80,0.4)', borderRadius: 10, color: '#4caf50' }}>
@@ -398,7 +398,7 @@ export function CPUStatusOverview() {
             </div>
             {hasXruns && (
               <div className="flex" style={{ gap: 6, alignItems: 'center', padding: '4px 10px', background: 'rgba(255,82,82,0.15)', border: '1px solid rgba(255,82,82,0.4)', borderRadius: 6 }}>
-                <WarningCircle size={14} weight="duotone" style={{ color: '#ff5252' }} />
+                <WarningCircle size={14} style={{ color: '#ff5252' }} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: '#ff5252' }}>{juceMetrics.xrunCount} XRuns</span>
               </div>
             )}
@@ -409,7 +409,7 @@ export function CPUStatusOverview() {
             {/* Audio Callback CPU */}
             <div style={{ padding: 12, background: 'rgba(100,181,246,0.08)', borderRadius: 8, border: '1px solid rgba(100,181,246,0.2)' }}>
               <div className="flex" style={{ gap: 6, alignItems: 'center', marginBottom: 8 }}>
-                <Cpu size={14} weight="duotone" style={{ color: '#64b5f6' }} />
+                <Cpu size={14} style={{ color: '#64b5f6' }} />
                 <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', fontWeight: 500 }}>Audio CPU</span>
               </div>
               <div style={{ fontSize: 24, fontWeight: 700, color: juceStatus === 'critical' ? '#ff5252' : juceStatus === 'warning' ? '#ffa726' : '#4caf50' }}>
@@ -428,7 +428,7 @@ export function CPUStatusOverview() {
             {/* Peak CPU */}
             <div style={{ padding: 12, background: 'rgba(255,167,38,0.08)', borderRadius: 8, border: '1px solid rgba(255,167,38,0.2)' }}>
               <div className="flex" style={{ gap: 6, alignItems: 'center', marginBottom: 8 }}>
-                <TrendUp size={14} weight="duotone" style={{ color: '#ffa726' }} />
+                <TrendUp size={14} style={{ color: '#ffa726' }} />
                 <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', fontWeight: 500 }}>Peak</span>
               </div>
               <div style={{ fontSize: 24, fontWeight: 700, color: '#ffa726' }}>
@@ -442,7 +442,7 @@ export function CPUStatusOverview() {
             {/* Headroom */}
             <div style={{ padding: 12, background: 'rgba(76,175,80,0.08)', borderRadius: 8, border: '1px solid rgba(76,175,80,0.2)' }}>
               <div className="flex" style={{ gap: 6, alignItems: 'center', marginBottom: 8 }}>
-                <Pulse size={14} weight="duotone" style={{ color: '#4caf50' }} />
+                <Pulse size={14} style={{ color: '#4caf50' }} />
                 <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', fontWeight: 500 }}>Headroom</span>
               </div>
               <div style={{ fontSize: 24, fontWeight: 700, color: juceMetrics.headroomPercent < 20 ? '#ff5252' : juceMetrics.headroomPercent < 40 ? '#ffa726' : '#4caf50' }}>
@@ -456,7 +456,7 @@ export function CPUStatusOverview() {
             {/* Callback Timing */}
             <div style={{ padding: 12, background: 'rgba(171,71,188,0.08)', borderRadius: 8, border: '1px solid rgba(171,71,188,0.2)' }}>
               <div className="flex" style={{ gap: 6, alignItems: 'center', marginBottom: 8 }}>
-                <Clock size={14} weight="duotone" style={{ color: '#ab47bc' }} />
+                <Clock size={14} style={{ color: '#ab47bc' }} />
                 <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', fontWeight: 500 }}>Callback</span>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: '#ab47bc' }}>
@@ -487,7 +487,7 @@ export function CPUStatusOverview() {
                           transition: 'width 150ms ease'
                         }} />
                       </div>
-                      <span style={{ width: 45, textAlign: 'right', fontFamily: 'monospace', color: cpu > 30 ? '#ffa726' : '#6b7280' }}>
+                      <span style={{ width: 45, textAlign: 'right', fontFamily: 'var(--font-mono)', color: cpu > 30 ? '#ffa726' : '#6b7280' }}>
                         {cpu.toFixed(1)}%
                       </span>
                     </div>
@@ -530,14 +530,14 @@ export function CPUStatusOverview() {
                         onClick={handleSaveCore}
                         title="Save changes"
                       >
-                        <Check size={14} weight="bold" />
+                        <Check size={14} />
                       </button>
                       <button
                         className="btn btn-ghost btn-sm"
                         onClick={handleCancel}
                         title="Cancel"
                       >
-                        <X size={14} weight="bold" />
+                        <X size={14} />
                       </button>
                     </div>
                   </div>
@@ -610,7 +610,7 @@ export function CPUStatusOverview() {
                       onClick={() => handleEditCore(core.core_id)}
                       title="Edit"
                     >
-                      <PencilSimple size={14} weight="duotone" />
+                      <PencilSimple size={14} />
                     </button>
                   </div>
 
@@ -696,7 +696,7 @@ export function CPUStatusOverview() {
       {/* Alert Summary */}
       {alertCores.size > 0 && (
         <div className="flex" style={{ gap: 12, padding: 12, backgroundColor: 'rgba(255, 82, 82, 0.1)', borderRadius: 8, border: '1px solid #ff5252' }}>
-          <WarningCircle size={18} weight="duotone" style={{ color: '#ff5252', flexShrink: 0, marginTop: 2 }} />
+          <WarningCircle size={18} style={{ color: '#ff5252', flexShrink: 0, marginTop: 2 }} />
           <div style={{ fontSize: 12 }}>
             <strong style={{ color: '#ff5252' }}>High CPU Alert</strong>
             <p style={{ margin: '4px 0 0 0' }}>
@@ -709,7 +709,7 @@ export function CPUStatusOverview() {
       {/* Validation / Alerts */}
       {editingCoreId === null && configQuery.data.cores.some((c) => c.isolated && c.services.length === 0) && (
         <div className="flex" style={{ gap: 8, padding: 10, backgroundColor: 'rgba(255,193,7,0.1)', borderRadius: 8 }}>
-          <WarningCircle size={16} weight="duotone" style={{ color: 'var(--accent)', flexShrink: 0 }} />
+          <WarningCircle size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
           <span style={{ fontSize: 12 }}>
             Some isolated cores have no services assigned. Consider reassigning for optimal resource use.
           </span>
@@ -731,12 +731,12 @@ export function CPUStatusOverview() {
           >
             {isVerifying ? (
               <>
-                <SpinnerGap size={14} weight="duotone" style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} />
+                <SpinnerGap size={14} style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} />
                 Verifying...
               </>
             ) : (
               <>
-                <Lightning size={14} weight="duotone" style={{ marginRight: 6 }} />
+                <Lightning size={14} style={{ marginRight: 6 }} />
                 Verify Live Config
               </>
             )}
@@ -748,7 +748,7 @@ export function CPUStatusOverview() {
           <div style={{ marginTop: 12, padding: 12, backgroundColor: 'rgba(100,100,100,0.1)', borderRadius: 6, border: '1px solid rgba(100,100,100,0.2)' }}>
             {verificationResult.status === 'success' ? (
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <CheckCircle size={18} weight="duotone" style={{ color: '#4caf50', flexShrink: 0, marginTop: 1 }} />
+                <CheckCircle size={18} style={{ color: '#4caf50', flexShrink: 0, marginTop: 1 }} />
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#4caf50' }}>Configuration Verified</div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, lineHeight: 1.5 }}>
@@ -772,7 +772,7 @@ export function CPUStatusOverview() {
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <XCircle size={18} weight="duotone" style={{ color: '#ef5350', flexShrink: 0, marginTop: 1 }} />
+                <XCircle size={18} style={{ color: '#ef5350', flexShrink: 0, marginTop: 1 }} />
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#ef5350' }}>Configuration Mismatch</div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
@@ -806,7 +806,7 @@ export function CPUStatusOverview() {
             onClick={handleApplyChanges}
             disabled={applyMutation.isPending}
           >
-            {applyMutation.isPending ? <SpinnerGap className="spin" size={14} weight="duotone" /> : 'Apply Changes'}
+            {applyMutation.isPending ? <SpinnerGap className="spin" size={14} /> : 'Apply Changes'}
           </button>
           <button className="btn btn-ghost" onClick={() => setHasChanges(false)}>
             Discard

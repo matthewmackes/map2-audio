@@ -223,7 +223,7 @@ export function LimiterCard({
         .level-label {
           font-size: 10px;
           color: #666;
-          font-family: monospace;
+          font-family: var(--font-ui-tight);
         }
       `}</style>
     </div>

@@ -106,7 +106,7 @@
 }
 
 .plugin-output-panel__readout-value {
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-mono));
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   color: var(--cds-text-primary);
 }

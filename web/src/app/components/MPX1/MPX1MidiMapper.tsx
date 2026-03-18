@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ArrowsClockwise,
-  FloppyDisk,
+  Add,
+  Flash,
   Link,
-  Lightning,
-  Plus,
-  Trash,
-} from '@phosphor-icons/react'
+  Renew,
+  Save,
+  TrashCan,
+} from '@carbon/icons-react'
 
 import {
   mpx1Api,
@@ -318,20 +318,20 @@ export function MPX1MidiMapper() {
             ))}
           </select>
           <button type="button" onClick={() => void handleCreateMap()}>
-            <Plus size={14} weight="bold" /> New
+            <Add size={14} /> New
           </button>
           <button type="button" onClick={() => activeMap && void persistMap(activeMap, true)} disabled={!activeMap}>
-            <FloppyDisk size={14} weight="bold" /> Save
+            <Save size={14} /> Save
           </button>
           <button type="button" onClick={() => void handleDeleteActiveMap()} disabled={!activeMap}>
-            <Trash size={14} weight="bold" /> Delete
+            <TrashCan size={14} /> Delete
           </button>
           <button type="button" onClick={() => void refreshMidiMaps()}>
-            <ArrowsClockwise size={14} weight="bold" /> Refresh
+            <Renew size={14} /> Refresh
           </button>
         </div>
         <div className={`mpx1-midi-map__learn${learnTargetParamId ? ' is-active' : ''}`}>
-          <Lightning size={14} weight="bold" />
+          <Flash size={14} />
           {learnTargetParamId ? `LEARNING ${learnTargetParamId}` : 'LEARN IDLE'}
         </div>
       </header>
@@ -412,10 +412,10 @@ export function MPX1MidiMapper() {
 
           <div className="mpx1-midi-map__actions">
             <button type="button" onClick={() => void handleCreateMapping()}>
-              <Link size={14} weight="bold" /> Link Source to Target
+              <Link size={14} /> Link Source to Target
             </button>
             <button type="button" onClick={() => void handleLearn()} disabled={!selectedTargetParamId}>
-              <Lightning size={14} weight="bold" /> MIDI Learn
+              <Flash size={14} /> MIDI Learn
             </button>
           </div>
 
@@ -573,7 +573,7 @@ export function MPX1MidiMapper() {
                 </label>
               </div>
               <button type="button" className="mpx1-midi-map__danger" onClick={() => void handleDeleteMapping()}>
-                <Trash size={14} weight="bold" /> Remove Mapping
+                <TrashCan size={14} /> Remove Mapping
               </button>
             </div>
           )}

@@ -1,4 +1,4 @@
-import { CaretDown, CaretRight, Lightning } from '@phosphor-icons/react'
+import { ChevronDown as CaretDown, ChevronRight as CaretRight, Flash as Lightning } from '@carbon/icons-react'
 import { useState } from 'react'
 
 interface EducationSection {
@@ -26,7 +26,7 @@ export function ClusterEducationTab() {
     {
       id: 'what-is',
       title: 'What is a Cluster?',
-      icon: <Lightning size={20} weight="duotone" />,
+      icon: <Lightning size={20} />,
       description: 'Learn the basics of audio clustering',
       content: (
         <div style={{ lineHeight: 1.6, color: '#d0d0d0', fontSize: 13 }}>
@@ -50,7 +50,7 @@ export function ClusterEducationTab() {
     {
       id: 'deployment-modes',
       title: 'Deployment Modes',
-      icon: <Lightning size={20} weight="duotone" />,
+      icon: <Lightning size={20} />,
       description: 'Different ways to deploy the system',
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -102,7 +102,7 @@ export function ClusterEducationTab() {
     {
       id: 'node-roles',
       title: 'Node Roles',
-      icon: <Lightning size={20} weight="duotone" />,
+      icon: <Lightning size={20} />,
       description: 'Different types of nodes in a cluster',
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -132,7 +132,7 @@ export function ClusterEducationTab() {
     {
       id: 'data-flow',
       title: 'How Data Flows',
-      icon: <Lightning size={20} weight="duotone" />,
+      icon: <Lightning size={20} />,
       description: 'Data transmission between nodes',
       content: (
         <div style={{ lineHeight: 1.6, color: '#d0d0d0', fontSize: 13 }}>
@@ -163,7 +163,7 @@ export function ClusterEducationTab() {
     {
       id: 'redundancy',
       title: 'Redundancy & Failover',
-      icon: <Lightning size={20} weight="duotone" />,
+      icon: <Lightning size={20} />,
       description: 'How the cluster stays online',
       content: (
         <div style={{ lineHeight: 1.6, color: '#d0d0d0', fontSize: 13 }}>
@@ -237,7 +237,7 @@ export function ClusterEducationTab() {
               transition: 'color 0.2s',
             }}
           >
-            {expandedSections.has(section.id) ? <CaretDown size={18} weight="bold" /> : <CaretRight size={18} weight="bold" />}
+            {expandedSections.has(section.id) ? <CaretDown size={18} /> : <CaretRight size={18} />}
             <div style={{ fontSize: 16 }}>{section.icon}</div>
             <div style={{ flex: 1, textAlign: 'left' }}>
               {section.title}

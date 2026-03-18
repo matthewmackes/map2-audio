@@ -203,7 +203,7 @@ export function JsonTreeViewer({
           Collapse Root
         </button>
       </div>
-      <div style={{ maxHeight, overflow: 'auto', padding: 10, fontSize: 12, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+      <div style={{ maxHeight, overflow: 'auto', padding: 10, fontSize: 12, fontFamily: 'var(--font-mono)' }}>
         <JsonNode
           value={value}
           path="$"

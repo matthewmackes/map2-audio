@@ -748,7 +748,7 @@ export default function SettingsPanel() {
                     <ListItemText
                       primary={api.name}
                       secondary={api.endpoint}
-                      secondaryTypographyProps={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
+                      secondaryTypographyProps={{ fontFamily: 'var(--font-ui-tight)', fontSize: '0.75rem' }}
                     />
                     <ListItemSecondaryAction>
                       <Button

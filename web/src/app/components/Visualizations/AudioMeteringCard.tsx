@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CaretRight, Pulse, ChartBar, Clock, Broadcast } from '@phosphor-icons/react'
+import { Activity as Pulse, ChartLine as ChartBar, ChevronRight as CaretRight, Radio as Broadcast, Time as Clock } from '@carbon/icons-react'
 import { SpectrumAnalyzer } from './SpectrumAnalyzer'
 import { LoudnessMeter } from './LoudnessMeter'
 import { CPUMeterPanel } from './CPUMeterPanel'
@@ -53,7 +53,7 @@ export function AudioMeteringCard({
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Pulse size={18} weight="duotone" style={{ color: accentColor }} />
+            <Pulse size={18} style={{ color: accentColor }} />
           </div>
           <div>
             <span style={{
@@ -74,7 +74,6 @@ export function AudioMeteringCard({
         </div>
         <CaretRight
           size={18}
-          weight="bold"
           style={{
             color: accentColor,
             transform: showMetering ? 'rotate(90deg)' : 'rotate(0deg)',
@@ -102,11 +101,11 @@ export function AudioMeteringCard({
               flexWrap: 'wrap',
             }}>
               {[
-                { id: 'spectrum' as MeteringTab, label: 'Spectrum', icon: <ChartBar size={14} weight="duotone" /> },
-                { id: 'loudness' as MeteringTab, label: 'Loudness', icon: <Pulse size={14} weight="duotone" /> },
-                { id: 'cpu' as MeteringTab, label: 'CPU', icon: <Pulse size={14} weight="duotone" /> },
-                { id: 'latency' as MeteringTab, label: 'Latency', icon: <Clock size={14} weight="duotone" /> },
-                { id: 'phase' as MeteringTab, label: 'Phase', icon: <Broadcast size={14} weight="duotone" /> },
+                { id: 'spectrum' as MeteringTab, label: 'Spectrum', icon: <ChartBar size={14} /> },
+                { id: 'loudness' as MeteringTab, label: 'Loudness', icon: <Pulse size={14} /> },
+                { id: 'cpu' as MeteringTab, label: 'CPU', icon: <Pulse size={14} /> },
+                { id: 'latency' as MeteringTab, label: 'Latency', icon: <Clock size={14} /> },
+                { id: 'phase' as MeteringTab, label: 'Phase', icon: <Broadcast size={14} /> },
               ].map((tab) => (
                 <button
                   key={tab.id}

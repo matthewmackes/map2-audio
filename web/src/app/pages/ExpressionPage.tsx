@@ -21,8 +21,8 @@ const C = {
   green: '#24a148',
   amber: '#f1c21b',
   red: '#da1e28',
-  mono: "'IBM Plex Mono', monospace",
-  sans: "'IBM Plex Sans', sans-serif",
+  mono: "var(--font-mono)",
+  sans: "var(--font-ui)",
 } as const
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string || '/api')

@@ -123,7 +123,7 @@ export function PluginCpuBar({ cpuPercent, maxPercent = 100 }: { cpuPercent: num
             },
           }}
         />
-        <Typography variant="caption" sx={{ minWidth: 35, textAlign: 'right', fontFamily: 'monospace' }}>
+        <Typography variant="caption" sx={{ minWidth: 35, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
           {cpuPercent.toFixed(1)}%
         </Typography>
       </Box>
@@ -266,7 +266,7 @@ export default function PluginCpuIndicator({
                       <Typography variant="caption" noWrap sx={{ flex: 1 }}>
                         {sanitizeRestrictedDisplayText(plugin.name) || 'Processor'}
                       </Typography>
-                      <Typography variant="caption" sx={{ fontFamily: 'monospace', opacity: 0.7 }}>
+                      <Typography variant="caption" sx={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>
                         {plugin.avgTimeUs.toFixed(0)}µs
                       </Typography>
                     </Box>

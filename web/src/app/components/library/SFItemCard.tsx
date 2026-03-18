@@ -1,4 +1,4 @@
-import { FileDashed } from '@phosphor-icons/react'
+import { Document } from '@carbon/icons-react'
 import type { SoundFont } from '../../types/library'
 
 interface SFItemCardProps {
@@ -25,7 +25,7 @@ export function SFItemCard({ soundfont, availabilityLabel }: SFItemCardProps) {
     <div className="model-item">
       <div className="model-item-info">
         <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-          <FileDashed size={16} weight="duotone" style={{ color: 'var(--muted)' }} />
+          <Document size={16} style={{ color: 'var(--muted)' }} />
           <div className="model-item-name">{soundfont.name}</div>
         </div>
         <div className="model-item-meta">

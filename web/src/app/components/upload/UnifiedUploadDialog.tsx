@@ -2,19 +2,19 @@ import { useCallback, useMemo, useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  UploadSimple,
-  X,
-  Lightning,
-  SpeakerHigh,
-  WaveSine,
-  PuzzlePiece,
-  FileAudio,
-  CheckCircle,
-  WarningCircle,
-  SpinnerGap,
+  CheckmarkFilled as CheckCircle,
+  Close as X,
+  DocumentAudio as FileAudio,
   FolderOpen,
-  Trash,
-} from '@phosphor-icons/react'
+  MachineLearningModel as Lightning,
+  Renew as SpinnerGap,
+  TrashCan as Trash,
+  Upload as UploadSimple,
+  VolumeUp as SpeakerHigh,
+  WarningAlt as WarningCircle,
+  Waveform as WaveSine,
+  Watson as PuzzlePiece,
+} from '@carbon/icons-react'
 import { uploadApi } from '../../../map2/api'
 import { useToasts } from '../Toasts'
 import { useIsMobile } from '../../hooks/useIsMobile'
@@ -353,11 +353,11 @@ export function UnifiedUploadDialog({
         {/* Header */}
         <div className="flex-between" style={{ marginBottom: 12 }}>
           <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-            <UploadSimple size={22} weight="duotone" style={{ color: 'var(--primary)' }} />
+            <UploadSimple size={22} style={{ color: 'var(--primary)' }} />
             <h3 style={{ margin: 0 }}>Upload Audio Assets</h3>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} weight="bold" />
+            <X size={18} />
           </button>
         </div>
 
@@ -411,7 +411,7 @@ export function UnifiedUploadDialog({
             marginBottom: 16,
           }}
         >
-          <FolderOpen size={40} weight="duotone" style={{ color: 'var(--muted)', marginBottom: 12 }} />
+          <FolderOpen size={40} style={{ color: 'var(--muted)', marginBottom: 12 }} />
           <p style={{ margin: '0 0 8px', fontWeight: 500 }}>
             {isDragOver ? 'Drop files here...' : 'Drag & drop files here'}
           </p>
@@ -493,23 +493,23 @@ export function UnifiedUploadDialog({
 
                         {/* Status indicators */}
                         {file.status === 'success' && (
-                          <CheckCircle size={18} weight="duotone" style={{ color: 'var(--success)' }} />
+                          <CheckCircle size={18} style={{ color: 'var(--success)' }} />
                         )}
                         {file.status === 'error' && (
-                          <WarningCircle size={18} weight="duotone" style={{ color: 'var(--danger)' }} />
+                          <WarningCircle size={18} style={{ color: 'var(--danger)' }} />
                         )}
                         {file.status === 'uploading' && (
-                          <SpinnerGap size={18} weight="duotone" className="spin" style={{ color: 'var(--primary)' }} />
+                          <SpinnerGap size={18} className="spin" style={{ color: 'var(--primary)' }} />
                         )}
 
                         {/* Remove button */}
                         {file.status !== 'uploading' && (
                           <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => removeFile(file.id)}
-                            style={{ padding: 4 }}
-                          >
-                            <Trash size={14} weight="duotone" />
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => removeFile(file.id)}
+                          style={{ padding: 4 }}
+                        >
+                            <Trash size={14} />
                           </button>
                         )}
                       </div>
@@ -564,12 +564,12 @@ export function UnifiedUploadDialog({
               >
                 {stats.uploading > 0 ? (
                   <>
-                    <SpinnerGap size={16} weight="duotone" className="spin" />
+                    <SpinnerGap size={16} className="spin" />
                     Uploading...
                   </>
                 ) : (
                   <>
-                    <UploadSimple size={16} weight="duotone" />
+                    <UploadSimple size={16} />
                     Upload {stats.pending} file(s)
                   </>
                 )}

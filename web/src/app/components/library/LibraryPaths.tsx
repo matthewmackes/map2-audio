@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { FolderOpen, CaretDown, CaretUp, Copy, Check, HardDrive, MusicNote, SpeakerHigh, WaveSine, ArrowsClockwise } from '@phosphor-icons/react'
+import { CheckmarkFilled as Check, ChevronDown as CaretDown, ChevronUp as CaretUp, Copy, DataBase as HardDrive, FolderOpen, Music, Renew as ArrowsClockwise, VolumeUp as SpeakerHigh, Waveform as WaveSine } from '@carbon/icons-react'
 import { foldersApi } from '../../../map2/api'
 import type { DisplayPaths } from '../../../map2/api'
 
@@ -42,7 +42,7 @@ export function LibraryPaths() {
       label: 'NAM Models',
       path: pathsQuery.data.nam_models,
       displayPath: pathsQuery.data.nam_models_display,
-      icon: MusicNote,
+      icon: Music,
       description: 'Neural Amp Models (.nam files)',
     },
     {
@@ -86,7 +86,7 @@ export function LibraryPaths() {
         }}
       >
         <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-          <HardDrive size={20} weight="duotone" style={{ color: 'var(--secondary)' }} />
+          <HardDrive size={20} style={{ color: 'var(--secondary)' }} />
           <span style={{ fontWeight: 600, fontSize: 16 }}>Library Paths</span>
           <span className="badge" style={{ marginLeft: 8 }}>
             File Locations
@@ -101,9 +101,9 @@ export function LibraryPaths() {
             }}
             title="Refresh paths"
           >
-            <ArrowsClockwise size={14} weight="duotone" className={pathsQuery.isFetching ? 'spin' : ''} />
+            <ArrowsClockwise size={14} className={pathsQuery.isFetching ? 'spin' : ''} />
           </button>
-          {expanded ? <CaretUp size={20} weight="bold" /> : <CaretDown size={20} weight="bold" />}
+          {expanded ? <CaretUp size={20} /> : <CaretDown size={20} />}
         </div>
       </button>
 
@@ -170,12 +170,12 @@ export function LibraryPaths() {
                   >
                     {copiedPath === path ? (
                       <>
-                        <Check size={14} weight="bold" style={{ color: 'var(--success)' }} />
+                        <Check size={14} style={{ color: 'var(--success)' }} />
                         Copied
                       </>
                     ) : (
                       <>
-                        <Copy size={14} weight="duotone" />
+                        <Copy size={14} />
                         Copy
                       </>
                     )}

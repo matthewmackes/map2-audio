@@ -9,7 +9,7 @@
   gap: 0.05em;
   min-width: 0;
   white-space: nowrap;
-  font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 1em;
   font-variant-numeric: tabular-nums;
   line-height: 1;

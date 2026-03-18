@@ -26,20 +26,20 @@ import {
 } from '@mui/material'
 import { NumberInput } from '../../map2/components/NumberInput'
 import {
-  MusicNote,
-  GearSix,
-  Pulse,
-  FloppyDisk,
-  SpinnerGap,
-  Plus,
-  Trash,
-  PencilSimple,
-  Lightning,
-  ArrowsClockwise,
-  Broadcast,
-  SpeakerHigh,
-  GameController,
-} from '@phosphor-icons/react'
+  Activity,
+  Add,
+  Edit,
+  Flash,
+  GameConsole,
+  Music,
+  NetworkAdminControl,
+  Renew,
+  Renew as SpinnerGap,
+  Save,
+  SettingsAdjust,
+  TrashCan,
+  VolumeUp,
+} from '@carbon/icons-react'
 import { midiApiV2, chainsApi } from '../../map2/api'
 import type {
   MIDIMappingV2,
@@ -266,17 +266,17 @@ export function MidiCoreControlCenter({ embedded = false }: MidiCoreControlCente
           <PageHeader
             title="MIDI Control Center"
             subtitle="Professional MIDI operations for controller onboarding, automation logic, device orchestration, and show-safe recall."
-            icon={<MusicNote size={32} weight="duotone" style={{ color: '#3b82f6' }} />}
+            icon={<Music size={32} style={{ color: '#3b82f6' }} />}
             actions={
               <div className="midi-header-actions">
                 <Link className="btn btn-ghost" to="/midi-hub">
-                  <Broadcast size={16} weight="duotone" /> MIDI Hub
+                  <NetworkAdminControl size={16} /> MIDI Hub
                 </Link>
                 <button
                   className="btn btn-ghost"
                   onClick={refreshMidiViews}
                 >
-                  <ArrowsClockwise size={16} weight="duotone" /> Refresh All
+                  <Renew size={16} /> Refresh All
                 </button>
               </div>
             }
@@ -313,19 +313,19 @@ export function MidiCoreControlCenter({ embedded = false }: MidiCoreControlCente
 
             <div className="midi-overview__actions">
               <button className="btn btn-primary" onClick={() => setSelectedTab('controller')}>
-                <GameController size={16} weight="duotone" /> Configure Controllers
+                <GameConsole size={16} /> Configure Controllers
               </button>
               <button className="btn btn-ghost" onClick={() => setSelectedTab('mappings')}>
-                <MusicNote size={16} weight="duotone" /> Edit Mapping Layer
+                <Music size={16} /> Edit Mapping Layer
               </button>
               <button className="btn btn-ghost" onClick={() => setSelectedTab('commands')}>
-                <Lightning size={16} weight="duotone" /> Program Command Logic
+                <Flash size={16} /> Program Command Logic
               </button>
               <button className="btn btn-ghost" onClick={() => setSelectedTab('presets')}>
-                <FloppyDisk size={16} weight="duotone" /> Manage Presets
+                <Save size={16} /> Manage Presets
               </button>
               <Link className="btn btn-ghost" to="/midi-hub">
-                <Broadcast size={16} weight="duotone" /> Open Advanced MIDI Hub
+                <NetworkAdminControl size={16} /> Open Advanced MIDI Hub
               </Link>
             </div>
           </section>
@@ -341,7 +341,7 @@ export function MidiCoreControlCenter({ embedded = false }: MidiCoreControlCente
               </p>
             </div>
             <button className="btn btn-ghost" onClick={refreshMidiViews}>
-              <ArrowsClockwise size={16} weight="duotone" /> Refresh Core MIDI
+              <Renew size={16} /> Refresh Core MIDI
             </button>
           </div>
         </section>
@@ -457,25 +457,25 @@ export function MidiCoreControlCenter({ embedded = false }: MidiCoreControlCente
         <TabProvider defaultSelectedId="controller" selectedId={selectedTab} setSelectedId={(id) => setSelectedTab((id as MidiTabId) ?? 'controller')}>
           <TabList className="tab-list midi-tab-list" aria-label="MIDI sections">
             <Tab id="controller" className="tab">
-              <GameController size={16} weight="duotone" /> Controller Setup
+              <GameConsole size={16} /> Controller Setup
             </Tab>
             <Tab id="mappings" className="tab">
-              <MusicNote size={16} weight="duotone" /> CC Mappings
+              <Music size={16} /> CC Mappings
               <span className="midi-tab-count">{mappingsCount}</span>
             </Tab>
             <Tab id="commands" className="tab">
-              <Lightning size={16} weight="duotone" /> Commands
+              <Flash size={16} /> Commands
               <span className="midi-tab-count">{commandsCount}</span>
             </Tab>
             <Tab id="devices" className="tab">
-              <GearSix size={16} weight="duotone" /> Devices
+              <SettingsAdjust size={16} /> Devices
               <span className="midi-tab-count">{inputDevicesCount + outputDevicesCount}</span>
             </Tab>
             <Tab id="activity" className="tab">
-              <Pulse size={16} weight="duotone" /> Activity
+              <Activity size={16} /> Activity
             </Tab>
             <Tab id="presets" className="tab">
-              <FloppyDisk size={16} weight="duotone" /> Presets
+              <Save size={16} /> Presets
               <span className="midi-tab-count">{presets.length}</span>
             </Tab>
           </TabList>
@@ -567,7 +567,7 @@ function MappingsTab({
           <p className="subtitle">Map MIDI CC messages to plugin parameters.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setCreateDialogOpen(true)}>
-          <Plus size={16} weight="bold" /> Add Mapping
+          <Add size={16} /> Add Mapping
         </button>
       </div>
 
@@ -617,7 +617,7 @@ function MappingsTab({
                   <td style={{ textAlign: 'right' }}>
                     <Tooltip title="Edit">
                       <IconButton size="small" onClick={() => setEditMapping(mapping)}>
-                        <PencilSimple size={16} weight="duotone" />
+                        <Edit size={16} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
@@ -629,7 +629,7 @@ function MappingsTab({
                           }
                         }}
                       >
-                        <Trash size={16} weight="duotone" />
+                        <TrashCan size={16} />
                       </IconButton>
                     </Tooltip>
                   </td>
@@ -859,7 +859,7 @@ function MappingDialog({
           disabled={createMutation.isPending || updateMutation.isPending}
         >
           {createMutation.isPending || updateMutation.isPending ? (
-            <SpinnerGap className="spin" size={16} weight="bold" />
+            <SpinnerGap className="spin" size={16} />
           ) : isEdit ? (
             'Update'
           ) : (
@@ -902,7 +902,7 @@ function CommandsTab({
           <p className="subtitle">Trigger chain switching and actions via MIDI.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setCreateDialogOpen(true)}>
-          <Plus size={16} weight="bold" /> Add Command
+          <Add size={16} /> Add Command
         </button>
       </div>
 
@@ -955,7 +955,7 @@ function CommandsTab({
                           }
                         }}
                       >
-                        <Trash size={16} weight="duotone" />
+                        <TrashCan size={16} />
                       </IconButton>
                     </Tooltip>
                   </td>
@@ -1104,7 +1104,7 @@ function CommandDialog({
           variant="contained"
           disabled={createMutation.isPending}
         >
-          {createMutation.isPending ? <SpinnerGap className="spin" size={16} weight="bold" /> : 'Create'}
+          {createMutation.isPending ? <Renew className="spin" size={16} /> : 'Create'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -1169,7 +1169,7 @@ function DevicesTab({
           <p className="subtitle">Configure input and output MIDI devices.</p>
         </div>
         <button className="btn btn-ghost" onClick={onRefresh}>
-          <ArrowsClockwise size={16} weight="duotone" /> Scan
+          <Renew size={16} /> Scan
         </button>
       </div>
 
@@ -1177,7 +1177,7 @@ function DevicesTab({
         {/* Input Devices */}
         <div className="card" style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 12 }}>
-            <Broadcast size={16} weight="duotone" style={{ marginRight: 8 }} />
+            <NetworkAdminControl size={16} style={{ marginRight: 8 }} />
             Input Devices
           </h4>
           {devices?.current_input && (
@@ -1217,7 +1217,7 @@ function DevicesTab({
         {/* Output Devices */}
         <div className="card" style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 12 }}>
-            <SpeakerHigh size={16} weight="duotone" style={{ marginRight: 8 }} />
+            <VolumeUp size={16} style={{ marginRight: 8 }} />
             Output Devices
           </h4>
           {devices?.current_output && (
@@ -1406,7 +1406,7 @@ function PresetsTab({
           <p className="subtitle">Save and recall complete MIDI configurations.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setSaveDialogOpen(true)}>
-          <FloppyDisk size={16} weight="duotone" /> Save Current
+          <Save size={16} /> Save Current
         </button>
       </div>
 
@@ -1471,7 +1471,7 @@ function PresetsTab({
             variant="contained"
             disabled={savePreset.isPending || !presetName.trim()}
           >
-            {savePreset.isPending ? <SpinnerGap className="spin" size={16} weight="bold" /> : 'Save'}
+            {savePreset.isPending ? <Renew className="spin" size={16} /> : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

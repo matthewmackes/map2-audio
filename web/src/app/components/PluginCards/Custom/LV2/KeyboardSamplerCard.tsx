@@ -14,20 +14,20 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import {
-  MusicNote,
-  MagnifyingGlass,
+  ChevronDown,
+  ChevronRight,
+  Close,
+  DataBase,
+  DocumentAudio,
+  Download,
+  Filter,
   Folder,
   FolderOpen,
-  PianoKeys,
-  X,
-  DownloadSimple,
-  Star,
-  Funnel,
-  CaretDown,
-  CaretRight,
-  FileAudio,
-  HardDrive,
-} from '@phosphor-icons/react'
+  Keyboard,
+  Music,
+  Search,
+  StarFilled,
+} from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
 import api from '../../../../../map2/api'
 import './KeyboardSamplerCard.css'
@@ -178,7 +178,7 @@ export function KeyboardSamplerCard({
   const visualization = (
     <div className="sampler-visualization">
       <div className="sampler-current-sound">
-        <PianoKeys size={16} weight="duotone" style={{ color: accentColor }} />
+        <Keyboard size={16} style={{ color: accentColor }} />
         <div className="sampler-sound-info">
           <span className="sampler-sound-name">
             {currentSoundfont?.name || 'No sound loaded'}
@@ -194,7 +194,7 @@ export function KeyboardSamplerCard({
           onClick={() => setShowBrowser(true)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Folder size={14} weight="duotone" />
+          <Folder size={14} />
           Browse
         </button>
       </div>
@@ -289,11 +289,11 @@ export function KeyboardSamplerCard({
         {/* Footer with library info */}
         <div className="sampler-footer">
           <div className="sampler-footer-item">
-            <HardDrive size={10} weight="duotone" />
+            <DataBase size={10} />
             <span>{soundfontsData?.total || 0} sounds available</span>
           </div>
           <div className="sampler-footer-item">
-            <FileAudio size={10} weight="duotone" />
+            <DocumentAudio size={10} />
             <span>SFZ/SF2/SF3</span>
           </div>
         </div>
@@ -306,18 +306,18 @@ export function KeyboardSamplerCard({
             {/* Header */}
             <div className="sampler-browser-header">
               <div className="sampler-browser-title">
-                <MusicNote size={18} weight="duotone" style={{ color: accentColor }} />
+                <Music size={18} style={{ color: accentColor }} />
                 <span>Sound Library</span>
               </div>
               <button className="sampler-browser-close" onClick={() => setShowBrowser(false)}>
-                <X size={18} weight="bold" />
+                <Close size={18} />
               </button>
             </div>
 
             {/* Search & Filter Bar */}
             <div className="sampler-browser-toolbar">
               <div className="sampler-search-box">
-                <MagnifyingGlass size={14} weight="duotone" />
+                <Search size={14} />
                 <input
                   type="text"
                   placeholder="Search sounds..."
@@ -327,7 +327,7 @@ export function KeyboardSamplerCard({
               </div>
 
               <div className="sampler-category-select">
-                <Funnel size={14} weight="duotone" />
+                <Filter size={14} />
                 <select
                   value={selectedCategory || ''}
                   onChange={(e) => setSelectedCategory(e.target.value || null)}
@@ -354,16 +354,16 @@ export function KeyboardSamplerCard({
                       onClick={() => toggleLibrary(library)}
                     >
                       {expandedLibraries.has(library) ? (
-                        <FolderOpen size={14} weight="duotone" style={{ color: accentColor }} />
+                        <FolderOpen size={14} style={{ color: accentColor }} />
                       ) : (
-                        <Folder size={14} weight="duotone" />
+                        <Folder size={14} />
                       )}
                       <span>{library}</span>
                       <span className="sampler-library-count">{sounds.length}</span>
                       {expandedLibraries.has(library) ? (
-                        <CaretDown size={14} weight="bold" />
+                        <ChevronDown size={14} />
                       ) : (
-                        <CaretRight size={14} weight="bold" />
+                        <ChevronRight size={14} />
                       )}
                     </button>
 
@@ -376,7 +376,7 @@ export function KeyboardSamplerCard({
                             onClick={() => loadSoundfont.mutate(sf)}
                             style={{ '--accent': accentColor } as React.CSSProperties}
                           >
-                            <FileAudio size={14} weight="duotone" />
+                            <DocumentAudio size={14} />
                             <div className="sampler-sound-details">
                               <span className="sampler-sound-title">{sf.name}</span>
                               <span className="sampler-sound-info">
@@ -391,9 +391,9 @@ export function KeyboardSamplerCard({
                               }}
                             >
                               {sf.isFavorite ? (
-                                <Star size={14} weight="fill" color={accentColor} />
+                                <StarFilled size={14} style={{ color: accentColor }} />
                               ) : (
-                                <Star size={14} weight="duotone" />
+                                <StarFilled size={14} />
                               )}
                             </button>
                           </button>
@@ -414,7 +414,7 @@ export function KeyboardSamplerCard({
                   window.open('/library', '_blank')
                 }}
               >
-                <DownloadSimple size={14} weight="duotone" />
+                <Download size={14} />
                 Download More Sounds
               </button>
             </div>

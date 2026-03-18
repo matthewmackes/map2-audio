@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Lightning, WarningCircle } from '@phosphor-icons/react'
+import { MachineLearningModel as Lightning, WarningAlt as WarningCircle } from '@carbon/icons-react'
 import { namApi } from '../../../map2/api'
 import type { NAMStatus } from '../../../map2/types'
 import { NAMManagerDialog } from './NAMManagerDialog'
@@ -26,7 +26,7 @@ export function NAMLoaderCard({ onLoadNAM }: NAMLoaderCardProps) {
       <div className="loader-card nam">
         <div className="loader-card-header">
           <div className="loader-card-icon nam">
-            <Lightning size={22} weight="duotone" />
+            <Lightning size={22} />
           </div>
           <div className="loader-card-info">
             <h4 className="loader-card-title">NAM Loader</h4>
@@ -39,7 +39,7 @@ export function NAMLoaderCard({ onLoadNAM }: NAMLoaderCardProps) {
         <div className="loader-card-status">
           {!available ? (
             <span className="pill warn">
-              <WarningCircle size={14} weight="duotone" />
+              <WarningCircle size={14} />
               Unavailable
             </span>
           ) : activeModel ? (

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { GitBranch, WarningCircle } from '@phosphor-icons/react'
+import { Branch as GitBranch } from '@carbon/icons-react'
 
 export function FlowManagementTab() {
   const { data: flows } = useQuery({
@@ -49,7 +49,7 @@ export function FlowManagementTab() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: '#d0d0d0' }}>
-                    <GitBranch size={14} weight="duotone" style={{ display: 'inline', marginRight: 6 }} />
+                    <GitBranch size={14} style={{ display: 'inline', marginRight: 6 }} />
                     {flow.flow_id || `Flow ${idx + 1}`}
                   </div>
                   <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 4 }}>
@@ -115,7 +115,7 @@ export function FlowManagementTab() {
             color: '#a0a0a0',
           }}
         >
-          <GitBranch size={32} weight="duotone" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+          <GitBranch size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
           <div>No flows currently assigned</div>
           <div style={{ fontSize: 12, marginTop: 8 }}>
             Create flows in the Grid interface to see distributions here.

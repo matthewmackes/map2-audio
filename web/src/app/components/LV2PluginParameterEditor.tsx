@@ -262,7 +262,7 @@ function OutputMeter({
         </span>
         <span style={{
           fontSize: 11,
-          fontFamily: 'monospace',
+          fontFamily: 'var(--font-mono)',
           color: isGainReduction && value > 0 ? '#22c55e' : accentColor,
           fontWeight: 600,
         }}>
@@ -1310,7 +1310,7 @@ export function LV2PluginParameterEditor({
         background: 'rgba(0,0,0,0.2)',
         borderRadius: 8,
         fontSize: 10,
-        fontFamily: 'monospace',
+        fontFamily: 'var(--font-mono)',
         color: '#666',
         wordBreak: 'break-all',
       }}>

@@ -7,11 +7,12 @@
  */
 
 import { useState } from 'react'
-import { DesktopTower, ArrowsClockwise, Warning, CheckCircle } from '@phosphor-icons/react'
+import { CheckmarkFilled, Renew, WarningAltFilled } from '@carbon/icons-react'
 import '../components/HostMachine/HostMachine.css'
 import { PageHeader } from '../components/PageHeader'
 import { useToasts } from '../components/Toasts'
 import { useCluster } from '../contexts/ClusterContext'
+import { MapRackDeviceIcon } from '../components/icons/map'
 
 import {
   useHostMachinePageData,
@@ -74,10 +75,10 @@ export function HostMachinePage() {
         <PageHeader
           title={allNodesSelected ? 'Host Machine · All Nodes' : 'Host Machine'}
           subtitle="Hardware Information & Monitoring"
-          icon={<DesktopTower size={28} weight="duotone" style={{ color: 'var(--danger)' }} />}
+          icon={<MapRackDeviceIcon size={28} style={{ color: 'var(--danger)' }} />}
         />
         <div className="hm-inline-notification hm-inline-notification--error" style={{ marginTop: 24 }}>
-          <Warning size={16} weight="fill" />
+          <WarningAltFilled size={16} />
           <span>{error instanceof Error ? error.message : 'Failed to load host machine information. Please try again.'}</span>
         </div>
       </div>
@@ -93,16 +94,16 @@ export function HostMachinePage() {
           <PageHeader
             title="Host Machine · All Nodes"
             subtitle="Cluster-wide hardware comparison"
-            icon={<DesktopTower size={28} weight="duotone" style={{ color: 'var(--interactive)' }} />}
+            icon={<MapRackDeviceIcon size={28} style={{ color: 'var(--interactive)' }} />}
           />
           <button className="hm-btn hm-btn--ghost" onClick={handleManualRefresh}>
-            <ArrowsClockwise size={16} weight="duotone" />
+            <Renew size={16} />
             Refresh
           </button>
         </div>
 
         <div className="hm-inline-notification hm-inline-notification--info" style={{ marginBottom: 24 }}>
-          <CheckCircle size={16} weight="fill" />
+          <CheckmarkFilled size={16} />
           <span>Comparing hardware, disk, and health data across the cluster. Select a node for full detailed diagnostics.</span>
         </div>
 
@@ -182,7 +183,7 @@ export function HostMachinePage() {
         <PageHeader
           title={remoteSelected ? `Host Machine · ${selectedNode?.hostname ?? activeNodeId}` : 'Host Machine'}
           subtitle="Hardware Information & Real-Time Health Monitoring"
-          icon={<DesktopTower size={28} weight="duotone" style={{ color: brandingData.brand_color }} />}
+          icon={<MapRackDeviceIcon size={28} style={{ color: brandingData.brand_color }} />}
         />
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
@@ -194,7 +195,7 @@ export function HostMachinePage() {
             {autoRefresh ? 'Live' : 'Paused'}
           </button>
           <button className="hm-btn hm-btn--ghost" onClick={handleManualRefresh}>
-            <ArrowsClockwise size={16} weight="duotone" />
+            <Renew size={16} />
             Refresh
           </button>
         </div>
@@ -203,7 +204,7 @@ export function HostMachinePage() {
       {/* ── Remote notice ───────────────────────────────────────────── */}
       {remoteSelected && (
         <div className="hm-inline-notification hm-inline-notification--info" style={{ marginBottom: 24 }}>
-          <DesktopTower size={16} weight="duotone" />
+          <MapRackDeviceIcon size={16} />
           <span>
             Viewing remote node <strong>{selectedNode?.hostname ?? activeNodeId}</strong>
             {selectedNode?.latencyMs != null && ` · peer latency ${selectedNode.latencyMs.toFixed(1)} ms`}

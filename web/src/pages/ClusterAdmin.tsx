@@ -677,7 +677,7 @@ export default function ClusterAdmin() {
                   <Typography color="textSecondary" gutterBottom>
                     State Hash
                   </Typography>
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                  <Typography variant="body2" sx={{ fontFamily: 'var(--font-mono)' }}>
                     {consensusState?.state_hash?.substring(0, 12) || 'N/A'}
                   </Typography>
                 </CardContent>
@@ -714,7 +714,7 @@ export default function ClusterAdmin() {
                       <TableCell>{node.term}</TableCell>
                       <TableCell>{node.log_index}</TableCell>
                       <TableCell>{node.commit_index}</TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                      <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                         {node.state_hash?.substring(0, 12)}
                       </TableCell>
                     </TableRow>
@@ -810,7 +810,7 @@ export default function ClusterAdmin() {
                       </Box>
                     </TableCell>
                     <TableCell>{job.start_time ? formatTimestamp(job.start_time) : 'N/A'}</TableCell>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                    <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                       {job.snapshot_id || 'None'}
                     </TableCell>
                     <TableCell>
@@ -909,11 +909,11 @@ export default function ClusterAdmin() {
                 configDist.files.map((file) => (
                   <TableRow key={file.filename}>
                     <TableCell>{file.filename}</TableCell>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                    <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                       {file.version}
                     </TableCell>
                     <TableCell>{(file.size_bytes / 1024).toFixed(1)} KB</TableCell>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                    <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                       {file.checksum?.substring(0, 12)}
                     </TableCell>
                     <TableCell>{formatTimestamp(file.updated_at)}</TableCell>

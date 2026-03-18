@@ -13,6 +13,8 @@ import {
 import { Button, OverflowMenu, OverflowMenuItem, Tag, Tile } from '@carbon/react'
 import type { AudioRoutingSelectionBinding } from '../../map2/api'
 import { getCategoryConfig } from '../components/PluginCards/types'
+import { getEffectIcon } from '../components/icons/effectIcons'
+import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import type { Chain, Plugin } from '../../map2/types'
 import { getDisplayPluginName } from '../../map2/displayNames'
 
@@ -465,7 +467,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
             const meta = pluginMeta[plugin.uri]
             const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
             const categoryConfig = getCategoryConfig(meta?.category || 'Utility')
-            const CategoryIcon = categoryConfig.icon
+            const EffectIcon = getEffectIcon(meta?.category)
             const isSelected = plugin.uri === selectedPluginUri
             const isDropTarget = dragOverUri === plugin.uri && draggedUri !== plugin.uri
             const levels = pluginLevels[plugin.uri] || { in: 0, out: 0 }
@@ -535,107 +537,109 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                 }}
                 style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
               >
-                <div className="juce-grid-page__signal-plugin-card-top">
-                  <div className="juce-grid-page__signal-plugin-header">
+                {/* ── Hero icon ── */}
+                <div className="juce-grid-page__signal-plugin-hero" aria-hidden>
+                  <EffectIcon className="juce-grid-page__signal-plugin-hero-svg" />
+                </div>
+
+                {/* ── Bottom info panel ── */}
+                <div className="juce-grid-page__signal-plugin-info">
+                  {/* Title row: drag handle + name + overflow */}
+                  <div className="juce-grid-page__signal-plugin-title-row">
                     <span className="juce-grid-page__signal-plugin-drag" aria-hidden>
-                      <Draggable size={16} />
+                      <Draggable size={14} />
                     </span>
-                    <span className="juce-grid-page__signal-plugin-mark" aria-hidden>
-                      {CategoryIcon ? <CategoryIcon size={18} /> : <Meter size={18} />}
-                    </span>
-                    <span className="juce-grid-page__signal-plugin-copy">
-                      <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
-                      <span className="juce-grid-page__signal-plugin-support">
-                        {supportMeta.map((item) => (
-                          <span
-                            key={`${plugin.uri}:${item}`}
-                            className={`juce-grid-page__signal-plugin-support-item ${item === (meta?.category || 'Utility') ? 'is-category' : ''}`}
-                          >
-                            {item}
-                          </span>
-                        ))}
-                      </span>
-                    </span>
-                  </div>
-                  <div
-                    className="juce-grid-page__signal-plugin-actions"
-                    data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
-                    onClick={stopPluginCardEvent}
-                    onMouseDown={stopPluginCardEvent}
-                    onPointerDown={stopPluginCardEvent}
-                  >
-                    <OverflowMenu
-                      ariaLabel={`Actions for ${displayName}`}
-                      iconDescription={`Actions for ${displayName}`}
-                      size="sm"
-                      flipped
+                    <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
+                    <div
+                      className="juce-grid-page__signal-plugin-actions"
+                      data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
+                      onClick={stopPluginCardEvent}
+                      onMouseDown={stopPluginCardEvent}
+                      onPointerDown={stopPluginCardEvent}
                     >
-                      <OverflowMenuItem itemText="Inspect block" onClick={() => onPluginSelect(plugin.uri)} />
-                      <OverflowMenuItem
-                        itemText={plugin.bypassed ? 'Enable block' : 'Bypass block'}
-                        onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed)}
-                      />
-                      {onDeletePlugin && (
+                      <OverflowMenu
+                        ariaLabel={`Actions for ${displayName}`}
+                        iconDescription={`Actions for ${displayName}`}
+                        size="sm"
+                        flipped
+                      >
+                        <OverflowMenuItem itemText="Inspect block" onClick={() => onPluginSelect(plugin.uri)} />
                         <OverflowMenuItem
-                          itemText="Remove block"
-                          isDelete
-                          onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                          itemText={plugin.bypassed ? 'Enable block' : 'Bypass block'}
+                          onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed)}
                         />
-                      )}
-                    </OverflowMenu>
-                  </div>
-                </div>
-
-                <div
-                  className="juce-grid-page__signal-plugin-metrics"
-                  data-testid={`juce-grid-signal-plugin-metrics-${plugin.position}`}
-                >
-                  <div
-                    className={`juce-grid-page__signal-plugin-metric is-${cpuMetricTone(plugin.cpu_percent)}`}
-                    title={Number.isFinite(plugin.cpu_percent) ? `CPU load ${plugin.cpu_percent?.toFixed(1)}%` : 'CPU load unavailable'}
-                  >
-                    <span className="juce-grid-page__signal-plugin-metric-label">CPU</span>
-                    <span className="juce-grid-page__signal-plugin-metric-value">
-                      {Number.isFinite(plugin.cpu_percent) ? `${plugin.cpu_percent?.toFixed(1)}%` : '--'}
-                    </span>
-                  </div>
-                  <div
-                    className={`juce-grid-page__signal-plugin-metric is-${latencyMetricTone(plugin.latency_samples, sampleRate)}`}
-                    title={plugin.latency_samples ? `${plugin.latency_samples} samples @ ${sampleRate}Hz` : 'No added latency'}
-                  >
-                    <span className="juce-grid-page__signal-plugin-metric-label">Latency</span>
-                    <span className="juce-grid-page__signal-plugin-metric-value">{latencyLabel}</span>
-                  </div>
-                  <div
-                    className={`juce-grid-page__signal-plugin-metric is-${hasSidechainConnection ? 'active' : hasSidechainSupport ? 'ready' : 'neutral'}`}
-                    title={sidechainTitle}
-                  >
-                    <span className="juce-grid-page__signal-plugin-metric-label">Sidechain</span>
-                    <span className="juce-grid-page__signal-plugin-metric-value">{sidechainLabel}</span>
-                  </div>
-                  <div
-                    className={`juce-grid-page__signal-plugin-metric is-${armedLaneCount > 0 ? 'active' : automationLaneCount > 0 ? 'ready' : 'neutral'}`}
-                    title={automationTitle}
-                  >
-                    <span className="juce-grid-page__signal-plugin-metric-label">Automation</span>
-                    <span className="juce-grid-page__signal-plugin-metric-value">{automationLabel}</span>
-                  </div>
-                </div>
-
-                <div
-                  className="juce-grid-page__signal-levels"
-                  data-testid={`juce-grid-signal-plugin-levels-${plugin.position}`}
-                >
-                  <div className="juce-grid-page__signal-level">
-                    <div className="juce-grid-page__signal-level-label-row">
-                      <span>Input</span>
-                      <span>{Math.round((levels.in || 0) * 100)}%</span>
+                        {onDeletePlugin && (
+                          <OverflowMenuItem
+                            itemText="Remove block"
+                            isDelete
+                            onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                          />
+                        )}
+                      </OverflowMenu>
                     </div>
                   </div>
-                  <div className="juce-grid-page__signal-level">
-                    <div className="juce-grid-page__signal-level-label-row">
-                      <span>Output</span>
-                      <span>{Math.round((levels.out || 0) * 100)}%</span>
+
+                  {/* Meta pills */}
+                  <div className="juce-grid-page__signal-plugin-pills">
+                    {supportMeta.map((item) => (
+                      <span
+                        key={`${plugin.uri}:${item}`}
+                        className={`juce-grid-page__signal-plugin-pill ${item === (meta?.category || 'Utility') ? 'is-category' : ''}`}
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Metrics row */}
+                  <div
+                    className="juce-grid-page__signal-plugin-metrics"
+                    data-testid={`juce-grid-signal-plugin-metrics-${plugin.position}`}
+                  >
+                    <div
+                      className={`juce-grid-page__signal-plugin-metric is-${cpuMetricTone(plugin.cpu_percent)}`}
+                      title={Number.isFinite(plugin.cpu_percent) ? `CPU load ${plugin.cpu_percent?.toFixed(1)}%` : 'CPU load unavailable'}
+                    >
+                      <span className="juce-grid-page__signal-plugin-metric-label">CPU</span>
+                      <span className="juce-grid-page__signal-plugin-metric-value">
+                        {Number.isFinite(plugin.cpu_percent) ? `${plugin.cpu_percent?.toFixed(1)}%` : '--'}
+                      </span>
+                    </div>
+                    <div
+                      className={`juce-grid-page__signal-plugin-metric is-${latencyMetricTone(plugin.latency_samples, sampleRate)}`}
+                      title={plugin.latency_samples ? `${plugin.latency_samples} samples @ ${sampleRate}Hz` : 'No added latency'}
+                    >
+                      <span className="juce-grid-page__signal-plugin-metric-label">Lat</span>
+                      <span className="juce-grid-page__signal-plugin-metric-value">{latencyLabel}</span>
+                    </div>
+                    <div
+                      className={`juce-grid-page__signal-plugin-metric is-${hasSidechainConnection ? 'active' : hasSidechainSupport ? 'ready' : 'neutral'}`}
+                      title={sidechainTitle}
+                    >
+                      <span className="juce-grid-page__signal-plugin-metric-label">SC</span>
+                      <span className="juce-grid-page__signal-plugin-metric-value">{sidechainLabel}</span>
+                    </div>
+                    <div
+                      className={`juce-grid-page__signal-plugin-metric is-${armedLaneCount > 0 ? 'active' : automationLaneCount > 0 ? 'ready' : 'neutral'}`}
+                      title={automationTitle}
+                    >
+                      <span className="juce-grid-page__signal-plugin-metric-label">Auto</span>
+                      <span className="juce-grid-page__signal-plugin-metric-value">{automationLabel}</span>
+                    </div>
+                  </div>
+
+                  {/* Levels row — LED readout */}
+                  <div
+                    className="juce-grid-page__signal-levels"
+                    data-testid={`juce-grid-signal-plugin-levels-${plugin.position}`}
+                  >
+                    <div className="juce-grid-page__signal-level">
+                      <span className="juce-grid-page__signal-level-label">In</span>
+                      <SegmentedLedText value={`${Math.round((levels.in || 0) * 100)}%`} size="xs" color={categoryConfig.color} />
+                    </div>
+                    <div className="juce-grid-page__signal-level">
+                      <span className="juce-grid-page__signal-level-label">Out</span>
+                      <SegmentedLedText value={`${Math.round((levels.out || 0) * 100)}%`} size="xs" color={categoryConfig.color} />
                     </div>
                   </div>
                 </div>

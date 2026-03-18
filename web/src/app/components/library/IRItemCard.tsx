@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Check, SpinnerGap } from '@phosphor-icons/react'
+import { CheckmarkFilled as Check, Renew as SpinnerGap } from '@carbon/icons-react'
 import { irApi } from '../../../map2/api'
 
 interface IRItemCardProps {
@@ -67,7 +67,7 @@ export function IRItemCard({ ir, type, isActive, availabilityLabel }: IRItemCard
       <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
         {isActive ? (
           <span className="pill success" style={{ padding: '4px 8px' }}>
-            <Check size={12} weight="bold" /> Active
+            <Check size={12} /> Active
           </span>
         ) : (
           <button
@@ -76,7 +76,7 @@ export function IRItemCard({ ir, type, isActive, availabilityLabel }: IRItemCard
             disabled={loadMutation.isPending}
           >
             {loadMutation.isPending ? (
-              <SpinnerGap size={14} weight="duotone" className="spin" />
+              <SpinnerGap size={14} className="spin" />
             ) : (
               'Load'
             )}

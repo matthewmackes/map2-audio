@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Warning, CheckCircle, WarningCircle, Lightning, Broadcast, MusicNote, Cpu, SpeakerHigh, Link, Clock, Monitor } from '@phosphor-icons/react'
+import { CheckmarkFilled, Flash, Link, Music, Screen, Time, VolumeUp, Warning, WarningAlt } from '@carbon/icons-react'
 import { useQuery } from '@tanstack/react-query'
 
 interface Service {
@@ -43,30 +43,30 @@ interface NodeAudioPathViewProps {
 const getServiceIcon = (type: string) => {
   switch (type) {
     case 'pipewire':
-      return <Broadcast size={16} weight="duotone" />
+      return <Screen size={16} />
     case 'juce_engine':
-      return <MusicNote size={16} weight="duotone" />
+      return <Music size={16} />
     case 'alsa':
-      return <SpeakerHigh size={16} weight="duotone" />
+      return <VolumeUp size={16} />
     case 'latency_compensator':
-      return <Clock size={16} weight="duotone" />
+      return <Time size={16} />
     default:
-      return <Lightning size={16} weight="duotone" />
+      return <Flash size={16} />
   }
 }
 
 const getHealthColor = (health: string) => {
   switch (health) {
     case 'healthy':
-      return { bg: '#22c55e20', border: '#22c55e', text: '#22c55e', icon: CheckCircle }
+      return { bg: '#22c55e20', border: '#22c55e', text: '#22c55e', icon: CheckmarkFilled }
     case 'warning':
-      return { bg: '#ffa72620', border: '#ffa726', text: '#ffa726', icon: WarningCircle }
+      return { bg: '#ffa72620', border: '#ffa726', text: '#ffa726', icon: WarningAlt }
     case 'error':
       return { bg: '#ef444420', border: '#ef4444', text: '#ef4444', icon: Warning }
     case 'offline':
-      return { bg: '#66666620', border: '#888', text: '#888', icon: WarningCircle }
+      return { bg: '#66666620', border: '#888', text: '#888', icon: WarningAlt }
     default:
-      return { bg: '#44444420', border: '#555', text: '#555', icon: WarningCircle }
+      return { bg: '#44444420', border: '#555', text: '#555', icon: WarningAlt }
   }
 }
 

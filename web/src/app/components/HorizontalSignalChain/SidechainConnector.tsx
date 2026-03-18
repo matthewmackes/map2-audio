@@ -5,7 +5,7 @@
  * Shows the source chain/plugin and connection status
  */
 
-import { Link, LinkBreak } from '@phosphor-icons/react'
+import { Link, Unlink } from '@carbon/icons-react'
 
 export interface SidechainConnectorProps {
   /** The source of the sidechain signal */
@@ -40,13 +40,13 @@ export function SidechainConnector({
       <div className="h-sidechain-source">
         {isConnected ? (
           <>
-            <Link size={10} weight="duotone" />
+            <Link size={10} />
             {sourceChainLabel && (
               <span className="h-sidechain-source-label">{sourceChainLabel}</span>
             )}
           </>
         ) : (
-          <LinkBreak size={10} weight="duotone" />
+          <Unlink size={10} />
         )}
       </div>
 

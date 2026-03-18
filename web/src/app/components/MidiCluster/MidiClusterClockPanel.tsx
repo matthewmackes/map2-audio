@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material'
-import { ArrowClockwise, Gauge, Timer } from '@phosphor-icons/react'
+import { MeterAlt, Renew, Timer } from '@carbon/icons-react'
 
 import type { MidiClusterClock } from '../../../map2/api'
 import { useClusterClockActions } from '../../hooks/useMidiCluster'
@@ -34,7 +34,7 @@ export function MidiClusterClockPanel({ clock, nodes }: Props) {
   return (
     <Box sx={{ p: 2, border: '1px solid #1f2937', borderRadius: 2, background: '#0b1224' }}>
       <Stack direction="row" spacing={2} alignItems="center" mb={1}>
-        <Gauge size={18} color="#22c55e" />
+        <MeterAlt size={18} color="#22c55e" />
         <Typography variant="subtitle2" sx={{ color: '#e5e7eb' }}>Cluster Clock</Typography>
       </Stack>
       {clock ? (
@@ -79,7 +79,7 @@ export function MidiClusterClockPanel({ clock, nodes }: Props) {
             </Button>
             <Button
               variant="outlined"
-              startIcon={<ArrowClockwise size={16} /> as any}
+              startIcon={<Renew size={16} /> as any}
               onClick={() => forceSync.mutate()}
               disabled={forceSync.isPending}
             >

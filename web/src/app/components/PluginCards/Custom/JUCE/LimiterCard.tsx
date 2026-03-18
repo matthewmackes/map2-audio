@@ -57,7 +57,7 @@ function LimiterCardBase({
         width={24}
       />
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '45px', fontWeight: 'bold', color: accentColor, fontFamily: 'monospace' }}>
+        <div style={{ fontSize: '45px', fontWeight: 'bold', color: accentColor, fontFamily: 'var(--font-mono)' }}>
           {parameters.threshold.toFixed(1)}
         </div>
         <div style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>
@@ -124,7 +124,7 @@ function LimiterCardBase({
           marginTop: '8px',
           fontSize: '10px',
           color: '#666',
-          fontFamily: 'monospace',
+          fontFamily: 'var(--font-mono)',
         }}
       >
         <span>IN: {metering.inputLevel.toFixed(1)} dB</span>

@@ -442,7 +442,7 @@
 
 .tcm-slot-picker__hex {
   font-size: 0.75rem;
-  font-family: monospace;
+  font-family: var(--font-mono);
   color: var(--cds-text-secondary);
 }
 

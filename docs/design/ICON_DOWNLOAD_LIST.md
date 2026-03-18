@@ -1,6 +1,6 @@
 # MAP2 Icon Download List
 
-**140 icons found across Noun Project** | **20 need manual sourcing**
+**140 icons found across Noun Project** | **0 manual sourcing slots outstanding**
 
 ## Instructions
 
@@ -244,9 +244,9 @@
 
 ---
 
-## Not Found — Manual Sourcing Required
+## Previously Unresolved — Completed With MAP-Authored SVGs
 
-Search [thenounproject.com/browse/icons/](https://thenounproject.com/browse/icons/) for these. See [ICON_DESCRIPTIONS.md](ICON_DESCRIPTIONS.md) for exact visual specification.
+These slots were closed on 2026-03-18 with locally authored monotone SVG assets staged under `web/src/app/components/icons/noun/**`. See [ICON_DESCRIPTIONS.md](ICON_DESCRIPTIONS.md) for the canonical visual specification they now follow.
 
 | Slot ID | Category | Suggested Search |
 |---|---|---|

@@ -2,7 +2,7 @@
  * Audio Node Features - MAP2 Audio Optimization Highlights
  */
 
-import { Lightning, MusicNote, Wind, Gauge, TrendUp, Shield } from '@phosphor-icons/react'
+import { ChartLine as TrendUp, Flash as Lightning, Meter, Music, Security as Shield, Windy as Wind } from '@carbon/icons-react'
 import type { HostMachineInfo, SystemHealthOverview, BrandingAssets } from '@/map2/types'
 
 interface AudioFeaturesProps {
@@ -22,40 +22,40 @@ interface Feature {
 export default function AudioNodeFeatures({ machineInfo, healthOverview, branding }: AudioFeaturesProps) {
   const features: Feature[] = [
     {
-      icon: <Lightning size={18} weight="duotone" />,
+      icon: <Lightning size={18} />,
       title: 'Multi-Core Processing',
       description: `${machineInfo.cpu_threads} logical CPUs available for parallel DSP and plugin processing`,
       tone: machineInfo.cpu_cores >= 4 ? 'success' : machineInfo.cpu_cores >= 2 ? 'success' : 'warning',
       badge: machineInfo.cpu_cores >= 4 ? 'OPTIMAL' : undefined,
     },
     {
-      icon: <MusicNote size={18} weight="duotone" />,
+      icon: <Music size={18} />,
       title: 'Large Buffer Support',
       description: `${(machineInfo.total_memory_mb / 1024).toFixed(1)} GB RAM supports large buffer sizes for ultra-low latency monitoring`,
       tone: machineInfo.total_memory_mb >= 8192 ? 'success' : machineInfo.total_memory_mb >= 4096 ? 'success' : 'warning',
       badge: machineInfo.total_memory_mb >= 8192 ? 'OPTIMAL' : undefined,
     },
     {
-      icon: <Wind size={18} weight="duotone" />,
+      icon: <Wind size={18} />,
       title: 'Thermal Management',
       description: `${branding.sff_optimized ? 'SFF-optimized' : 'Compact'} design with efficient cooling for sustained real-time audio`,
       tone: healthOverview?.overall_health === 'excellent' ? 'success' : 'success',
     },
     {
-      icon: <Gauge size={18} weight="duotone" />,
+      icon: <Meter size={18} />,
       title: 'Real-Time Capable',
       description: 'CPU frequency scaling and RT scheduling support for predictable audio performance',
       tone: machineInfo.cpu_cores >= 4 ? 'success' : 'success',
       badge: machineInfo.cpu_cores >= 4 ? 'OPTIMAL' : undefined,
     },
     {
-      icon: <TrendUp size={18} weight="duotone" />,
+      icon: <TrendUp size={18} />,
       title: 'Live Performance Metrics',
       description: 'CPU, memory, temperature, and latency monitoring for audio optimization',
       tone: 'info',
     },
     {
-      icon: <Shield size={18} weight="duotone" />,
+      icon: <Shield size={18} />,
       title: 'Dedicated Audio Cores',
       description: 'Isolated CPU cores for JUCE engine, LV2 plugins, and DSP graph processing',
       tone: 'info',

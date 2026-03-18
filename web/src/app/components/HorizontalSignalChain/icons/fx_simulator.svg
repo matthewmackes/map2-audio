@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="1200pt" height="1200pt" version="1.1" viewBox="0 0 1200 1200" xmlns="http://www.w3.org/2000/svg">
- <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m69 46.999c0 0.82703-0.67196 1.5011-1.4907 1.5011h-65.019c-0.8229 0-1.4907-0.67093-1.4907-1.5011v-43.998c0-0.82703 0.67196-1.5011 1.4907-1.5011h65.019c0.8229 0 1.4907 0.67093 1.4907 1.5011z" fill="none" stroke="#000"/>
- <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m5.5001 48.5h1.0002v1.0002h-1.0002z" fill="none" stroke="#000"/>
- <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m63.5 48.5h1.0002v1.0002h-1.0002z" fill="none" stroke="#000"/>
+ <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m69 46.999c0 0.82703-0.67196 1.5011-1.4907 1.5011h-65.019c-0.8229 0-1.4907-0.67093-1.4907-1.5011v-43.998c0-0.82703 0.67196-1.5011 1.4907-1.5011h65.019c0.8229 0 1.4907 0.67093 1.4907 1.5011z" fill="none" stroke="currentColor"/>
+ <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m5.5001 48.5h1.0002v1.0002h-1.0002z" fill="none" stroke="currentColor"/>
+ <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m63.5 48.5h1.0002v1.0002h-1.0002z" fill="none" stroke="currentColor"/>
  <path d="m373.29 418.63h30.23v7.5586h-30.23z" fill-rule="evenodd"/>
  <path d="m547.1 418.63h30.23v7.5586h-30.23z" fill-rule="evenodd"/>
  <path d="m509.32 411.07h37.785v11.336h-37.785z" fill-rule="evenodd"/>
  <path d="m652.9 411.07h37.785v11.336h-37.785z" fill-rule="evenodd"/>
  <path d="m516.88 414.85h143.59v7.5586h-143.59z" fill-rule="evenodd"/>
- <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m3.25 3.7502h63.5v42.5h-63.5z" fill="none" stroke="#000" stroke-width=".5"/>
- <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m28 11.5 3.3335-4.0003-0.6668 3.2001 1.5528-1.4907 1.7807-1.7094-0.66679 3.2001 2.6667-1.9497v1.9497l1.9999-1.9497 0.66679 1.9497 3.3335-3.2001-1.3336 4.0003" fill="none" stroke="#000" stroke-width=".5"/>
+ <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m3.25 3.7502h63.5v42.5h-63.5z" fill="none" stroke="currentColor" stroke-width=".5"/>
+ <path transform="matrix(7.5571 0 0 7.5571 335.5 411.07)" d="m28 11.5 3.3335-4.0003-0.6668 3.2001 1.5528-1.4907 1.7807-1.7094-0.66679 3.2001 2.6667-1.9497v1.9497l1.9999-1.9497 0.66679 1.9497 3.3335-3.2001-1.3336 4.0003" fill="none" stroke="currentColor" stroke-width=".5"/>
 </svg>

@@ -1,13 +1,7 @@
 .node-nav-bar {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-}
-
-.node-nav-bar__divider {
-  width: 1px;
-  height: 1.75rem;
-  background: var(--cds-border-subtle-01);
+  gap: 0.4rem;
 }
 
 .node-nav-bar__chips {
@@ -140,4 +134,3 @@
     background-position: 8rem 0;
   }
 }
-

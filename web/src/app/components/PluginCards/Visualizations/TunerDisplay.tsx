@@ -210,7 +210,7 @@ export function TunerDisplay({
         fill={confidence > 0.3 ? accentColor : '#444'}
         fontSize="28"
         fontWeight="700"
-        fontFamily="'JetBrains Mono', monospace"
+        fontFamily="var(--font-mono)"
         textAnchor="middle"
         dominantBaseline="middle"
         filter={confidence > 0.3 ? 'url(#tuner-glow)' : undefined}
@@ -224,7 +224,7 @@ export function TunerDisplay({
         y={finalHeight - 12}
         fill="#555"
         fontSize="10"
-        fontFamily="'JetBrains Mono', monospace"
+        fontFamily="var(--font-mono)"
         textAnchor="middle"
       >
         {detectedPitch > 0 ? `${detectedPitch.toFixed(1)} Hz` : '-- Hz'}
@@ -237,7 +237,7 @@ export function TunerDisplay({
         fill={statusColor}
         fontSize="12"
         fontWeight="600"
-        fontFamily="'JetBrains Mono', monospace"
+        fontFamily="var(--font-mono)"
         textAnchor="end"
       >
         {cents >= 0 ? '+' : ''}{cents.toFixed(0)}¢

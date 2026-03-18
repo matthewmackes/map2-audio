@@ -27,18 +27,14 @@ import {
 } from '@mui/material'
 import { NumberInput } from '../../map2/components/NumberInput'
 import {
-  GearSix,
-  Lightning,
-  ArrowsClockwise,
-  Check,
-  Warning,
-  UploadSimple,
-  MusicNote,
-  Sliders,
-  DownloadSimple,
-  CaretRight,
-  CaretDown,
-} from '@phosphor-icons/react'
+  ChevronDown,
+  ChevronRight,
+  MeterAlt,
+  Music,
+  Renew,
+  Settings,
+  Upload,
+} from '@carbon/icons-react'
 import { midiApiV2 } from '../../map2/api'
 import type {
   MIDIDeviceProfile,
@@ -118,7 +114,7 @@ function ProfileCard({ profile, isActive, onApply, isApplying }: ProfileCardProp
         )}
         {profile.supports_firmware_update && (
           <Chip
-            icon={<UploadSimple size={12} weight="duotone" />}
+            icon={<Upload size={12} />}
             label="DFU"
             size="small"
             variant="outlined"
@@ -161,7 +157,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
           style={{
             background: '#111',
             color: '#0f0',
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-mono)',
             padding: '8px 24px',
             borderRadius: 4,
             display: 'inline-block',
@@ -247,7 +243,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
                 borderRadius: 4,
               }}
             >
-              <Sliders size={16} weight="duotone" style={{ marginBottom: 4 }} />
+              <MeterAlt size={16} style={{ marginBottom: 4 }} />
               <div style={{ fontSize: 12, fontWeight: 600 }}>{ep.pedal_id}</div>
               <div className="subtitle" style={{ fontSize: 10 }}>
                 CC {ep.cc_number} - {ep.label}
@@ -329,7 +325,7 @@ function ExpressionCalibrationPanel({
         onClick={() => setExpanded(!expanded)}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Sliders size={20} weight="duotone" />
+          <MeterAlt size={20} />
           <div>
             <h4 style={{ margin: 0 }}>{pedalId}</h4>
             <p className="subtitle" style={{ margin: 0 }}>{label}</p>
@@ -345,7 +341,7 @@ function ExpressionCalibrationPanel({
               </div>
             </div>
           )}
-          {expanded ? <CaretDown size={20} weight="bold" /> : <CaretRight size={20} weight="bold" />}
+          {expanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
         </div>
       </div>
 
@@ -468,7 +464,7 @@ function FirmwareUpdatePanel({ profileId }: FirmwareUpdatePanelProps) {
   return (
     <div className="card" style={{ padding: 16 }}>
       <h3 style={{ marginBottom: 16 }}>
-        <UploadSimple size={20} weight="duotone" style={{ marginRight: 8 }} />
+        <Upload size={20} style={{ marginRight: 8 }} />
         Firmware Update
       </h3>
 
@@ -521,7 +517,7 @@ function FirmwareUpdatePanel({ profileId }: FirmwareUpdatePanelProps) {
                 <Alert severity="success">
                   <AlertTitle>Device detected in DFU mode</AlertTitle>
                   {dfuStatus.devices_in_dfu_mode.map((d, i) => (
-                    <div key={i} style={{ fontFamily: 'monospace', fontSize: 12 }}>
+                    <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
                       {d.raw}
                     </div>
                   ))}
@@ -535,7 +531,7 @@ function FirmwareUpdatePanel({ profileId }: FirmwareUpdatePanelProps) {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <Button onClick={() => dfuStatusQuery.refetch()}>
-                <ArrowsClockwise size={16} weight="duotone" /> Refresh
+                <Renew size={16} /> Refresh
               </Button>
               <Button
                 variant="contained"
@@ -670,7 +666,7 @@ export function MIDICommanderSetup() {
           onClick={() => setSelectedSection('profiles')}
           size="small"
         >
-          <GearSix size={16} weight="duotone" style={{ marginRight: 4 }} /> Profiles
+          <Settings size={16} style={{ marginRight: 4 }} /> Profiles
         </Button>
         <Button
           variant={selectedSection === 'calibration' ? 'contained' : 'outlined'}
@@ -678,7 +674,7 @@ export function MIDICommanderSetup() {
           size="small"
           disabled={!activeProfile}
         >
-          <Sliders size={16} weight="duotone" style={{ marginRight: 4 }} /> Calibration
+          <MeterAlt size={16} style={{ marginRight: 4 }} /> Calibration
         </Button>
         <Button
           variant={selectedSection === 'firmware' ? 'contained' : 'outlined'}
@@ -686,7 +682,7 @@ export function MIDICommanderSetup() {
           size="small"
           disabled={!activeProfile?.supports_firmware_update}
         >
-          <UploadSimple size={16} weight="duotone" style={{ marginRight: 4 }} /> Firmware
+          <Upload size={16} style={{ marginRight: 4 }} /> Firmware
         </Button>
       </div>
 
@@ -716,7 +712,7 @@ export function MIDICommanderSetup() {
           {activeProfile && (
             <div className="card" style={{ padding: 16, marginTop: 16 }}>
               <h4 style={{ marginBottom: 16 }}>
-                <MusicNote size={18} weight="duotone" style={{ marginRight: 8 }} />
+                <Music size={18} style={{ marginRight: 8 }} />
                 {activeProfile.name} Layout
               </h4>
 

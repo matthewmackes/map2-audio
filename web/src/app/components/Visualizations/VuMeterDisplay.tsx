@@ -129,7 +129,7 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
       </div>
       <div style={{
         fontSize: 10,
-        fontFamily: 'monospace',
+        fontFamily: 'var(--font-mono)',
         color: Math.max(leftDb, rightDb) > 0 ? '#ef4444' : '#f2f6ff'
       }}>
         {formatDb(Math.max(leftDb, rightDb))} dB

@@ -109,7 +109,7 @@
 }
 
 .lv2-plugins-page__availability-node {
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-mono));
 }
 
 .lv2-plugins-page__uri {
@@ -118,7 +118,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-mono));
   color: var(--cds-text-secondary);
 }
 

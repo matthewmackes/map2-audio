@@ -1,15 +1,15 @@
 import React, { useCallback, useRef, useState } from 'react'
 import {
-  ArrowClockwise,
-  ArrowCounterClockwise,
-  ArrowsOut,
-  CaretLeft,
-  CaretRight,
-  Lightning,
-  MagnifyingGlassMinus,
-  MagnifyingGlassPlus,
+  ChevronLeft,
+  ChevronRight,
+  Flash,
+  Redo,
+  Undo,
   Power,
-} from '@phosphor-icons/react'
+  ZoomIn,
+  ZoomOut,
+  ZoomReset,
+} from '@carbon/icons-react'
 
 import type { UseMPX1StateResult } from '../../../map2/mpx1Api'
 import { formatMpx1ProgramName, formatMpx1ProgramNumber } from './programNumber'
@@ -116,7 +116,7 @@ export function MPX1FlowToolbar({
           aria-label="Previous program"
           title="Previous program"
         >
-          <CaretLeft size={12} weight="bold" aria-hidden />
+          <ChevronLeft size={12} aria-hidden />
         </button>
         <span className="mpx1-flow-toolbar__prog-num">
           {formatMpx1ProgramNumber(currentProgram)}
@@ -131,7 +131,7 @@ export function MPX1FlowToolbar({
           aria-label="Next program"
           title="Next program"
         >
-          <CaretRight size={12} weight="bold" aria-hidden />
+          <ChevronRight size={12} aria-hidden />
         </button>
       </div>
 
@@ -147,7 +147,7 @@ export function MPX1FlowToolbar({
           title="Undo (Ctrl+Z)"
           aria-label="Undo"
         >
-          <ArrowCounterClockwise size={14} aria-hidden />
+          <Undo size={14} aria-hidden />
         </button>
         <button
           type="button"
@@ -157,7 +157,7 @@ export function MPX1FlowToolbar({
           title="Redo (Ctrl+Y)"
           aria-label="Redo"
         >
-          <ArrowClockwise size={14} aria-hidden />
+          <Redo size={14} aria-hidden />
         </button>
       </div>
 
@@ -171,7 +171,7 @@ export function MPX1FlowToolbar({
         title="Tap Tempo"
         aria-label={tapBpm != null ? `Tap Tempo — ${tapBpm} BPM` : 'Tap Tempo'}
       >
-        <Lightning size={12} weight="bold" aria-hidden />
+        <Flash size={12} aria-hidden />
         TAP {tapBpm != null ? `${tapBpm}` : '–'} BPM
       </button>
 
@@ -208,7 +208,7 @@ export function MPX1FlowToolbar({
           title="Zoom out"
           aria-label="Zoom out"
         >
-          <MagnifyingGlassMinus size={13} aria-hidden />
+          <ZoomOut size={13} aria-hidden />
         </button>
         <span className="mpx1-flow-toolbar__zoom-level">
           {Math.round(zoom * 100)}%
@@ -220,7 +220,7 @@ export function MPX1FlowToolbar({
           title="Zoom in"
           aria-label="Zoom in"
         >
-          <MagnifyingGlassPlus size={13} aria-hidden />
+          <ZoomIn size={13} aria-hidden />
         </button>
         <button
           type="button"
@@ -229,7 +229,7 @@ export function MPX1FlowToolbar({
           title="Reset zoom (100%)"
           aria-label="Reset zoom"
         >
-          <ArrowsOut size={13} aria-hidden />
+          <ZoomReset size={13} aria-hidden />
         </button>
       </div>
     </div>

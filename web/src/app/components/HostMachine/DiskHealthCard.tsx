@@ -2,7 +2,7 @@
  * Disk Health Card - SMART Health Monitoring
  */
 
-import { HardDrive, CheckCircle, Warning, WarningCircle } from '@phosphor-icons/react'
+import { CheckmarkFilled as CheckCircle, DataBase as HardDrive, WarningAlt as Warning, WarningAltFilled as WarningCircle } from '@carbon/icons-react'
 import type { DiskHealthData } from '@/map2/types'
 
 interface DiskHealthCardProps {
@@ -27,10 +27,10 @@ function statusTone(status: 'passing' | 'warning' | 'failing' | 'unknown') {
 }
 
 function StatusIcon({ status }: { status: 'passing' | 'warning' | 'failing' | 'unknown' }) {
-  if (status === 'passing') return <CheckCircle size={14} weight="duotone" />
-  if (status === 'warning') return <WarningCircle size={14} weight="duotone" />
-  if (status === 'failing') return <Warning size={14} weight="duotone" />
-  return <HardDrive size={14} weight="duotone" />
+  if (status === 'passing') return <CheckCircle size={14} />
+  if (status === 'warning') return <WarningCircle size={14} />
+  if (status === 'failing') return <Warning size={14} />
+  return <HardDrive size={14} />
 }
 
 export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
@@ -54,7 +54,7 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
             <div className="hm-disk-card__header">
               <div>
                 <div className="hm-disk-card__name">
-                  <HardDrive size={16} weight="duotone" />
+                  <HardDrive size={16} />
                   {(disk.name || disk.device || 'Unknown').toUpperCase()}
                 </div>
                 {(disk.mount_point || disk.model) && (

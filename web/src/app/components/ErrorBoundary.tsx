@@ -70,7 +70,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <h2 style={{ margin: 0, color: '#fecaca', fontSize: 20 }}>{title}</h2>
           <p style={{ margin: '10px 0 0 0', color: '#cbd5e1', lineHeight: 1.5 }}>{message}</p>
           {this.state.errorMessage && (
-            <p style={{ margin: '8px 0 0 0', color: '#fca5a5', fontSize: 13, fontFamily: 'monospace' }}>
+            <p style={{ margin: '8px 0 0 0', color: '#fca5a5', fontSize: 13, fontFamily: 'var(--font-mono)' }}>
               {this.state.errorMessage}
             </p>
           )}

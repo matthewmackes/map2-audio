@@ -108,7 +108,7 @@ function NodeMeterColumn({
             {node.isLocal ? 'Local' : node.role}
           </span>
         </div>
-        <div style={{ marginTop: 4, fontSize: 10, color: '#64748b', fontFamily: 'JetBrains Mono, monospace' }}>
+        <div style={{ marginTop: 4, fontSize: 10, color: '#64748b', fontFamily: 'var(--font-ui-tight)' }}>
           {node.nodeId}
         </div>
       </div>
@@ -123,7 +123,7 @@ function NodeMeterColumn({
         <span>R</span>
       </div>
 
-      <div style={{ fontSize: 12, fontWeight: 700, color: peakColor, fontFamily: 'JetBrains Mono, monospace' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: peakColor, fontFamily: 'var(--font-mono)' }}>
         {isRunning ? `${outputPeak <= -60 ? '-∞' : outputPeak.toFixed(0)} dB` : 'idle'}
       </div>
 
@@ -137,7 +137,7 @@ function NodeMeterColumn({
           }}
         >
           <div style={{ fontSize: 9, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.8 }}>CPU</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: cpuColor, fontFamily: 'JetBrains Mono, monospace' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: cpuColor, fontFamily: 'var(--font-mono)' }}>
             {metrics.totalCpuPercent.toFixed(0)}%
           </div>
         </div>
@@ -150,7 +150,7 @@ function NodeMeterColumn({
           }}
         >
           <div style={{ fontSize: 9, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.8 }}>XRun</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: metrics.xrunCount > 0 ? '#ef4444' : '#22c55e', fontFamily: 'JetBrains Mono, monospace' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: metrics.xrunCount > 0 ? '#ef4444' : '#22c55e', fontFamily: 'var(--font-mono)' }}>
             {metrics.xrunCount}
           </div>
         </div>

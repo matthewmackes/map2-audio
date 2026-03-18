@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { ChartBar, CaretDown, CaretUp } from '@phosphor-icons/react'
+import { ChartBar, ChevronDown, ChevronUp } from '@carbon/icons-react'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
 import { CPUMeterPanel } from '../components/Visualizations/CPUMeterPanel'
@@ -137,7 +137,7 @@ export function MeteringPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-            <ChartBar size={36} weight="duotone" style={{ color: '#2563eb', marginRight: 8, flexShrink: 0 }} />
+            <ChartBar size={36} style={{ color: '#2563eb', marginRight: 8, flexShrink: 0 }} />
             <h1 style={{
               fontSize: 32,
               fontWeight: 800,
@@ -537,9 +537,9 @@ export function MeteringPage() {
             </span>
           </div>
           {showApiReference ? (
-            <CaretUp size={20} weight="bold" style={{ color: '#64748b' }} />
+            <ChevronUp size={20} style={{ color: '#64748b' }} />
           ) : (
-            <CaretDown size={20} weight="bold" style={{ color: '#64748b' }} />
+            <ChevronDown size={20} style={{ color: '#64748b' }} />
           )}
         </button>
 
@@ -567,7 +567,7 @@ export function MeteringPage() {
                 >
                   <div style={{
                     color: '#2563eb',
-                    fontFamily: 'monospace',
+                    fontFamily: 'var(--font-ui-tight)',
                     fontWeight: 600,
                     marginBottom: 4,
                     fontSize: 11,

@@ -5,7 +5,7 @@
  * Allows adding/removing chains and selecting routing modes.
  */
 
-import { Plus, Minus, Stack, ArrowRight, Shuffle, GitBranch } from '@phosphor-icons/react'
+import { Add, ArrowRight, FlowConnection, Shuffle, SplitScreen, Subtract } from '@carbon/icons-react'
 import type { ChainSlot } from '../ChainPanel'
 
 export type RoutingMode =
@@ -41,25 +41,25 @@ const ROUTING_MODES: { mode: RoutingMode; label: string; icon: React.ReactNode; 
   {
     mode: 'parallel_blend',
     label: 'Parallel',
-    icon: <Stack size={14} weight="duotone" />,
+    icon: <SplitScreen size={14} />,
     description: 'Mix all chains together',
   },
   {
     mode: 'series',
     label: 'Series',
-    icon: <ArrowRight size={14} weight="duotone" />,
+    icon: <ArrowRight size={14} />,
     description: 'Chain A → B → C',
   },
   {
     mode: 'ab_switch',
     label: 'A/B Switch',
-    icon: <Shuffle size={14} weight="duotone" />,
+    icon: <Shuffle size={14} />,
     description: 'Switch between chains',
   },
   {
     mode: 'sidechain',
     label: 'Sidechain',
-    icon: <GitBranch size={14} weight="duotone" />,
+    icon: <FlowConnection size={14} />,
     description: 'Plugin sidechain routing',
   },
 ]
@@ -85,7 +85,7 @@ export function BottomRoutingPanel({
           disabled={!canAddChain}
           title="Add chain"
         >
-          <Plus size={16} weight="bold" />
+          <Add size={16} />
         </button>
         <button
           className="btn btn-sm btn-ghost"
@@ -98,7 +98,7 @@ export function BottomRoutingPanel({
           disabled={!canRemoveChain}
           title="Remove last chain"
         >
-          <Minus size={16} weight="bold" />
+          <Subtract size={16} />
         </button>
         <span className="routing-chain-count">
           {chainSlots.length} chain{chainSlots.length !== 1 ? 's' : ''}

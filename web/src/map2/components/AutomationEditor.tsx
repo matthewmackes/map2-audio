@@ -370,7 +370,7 @@ export default function AutomationEditor() {
             </IconButton>
           </Grid>
           <Grid item xs>
-            <Typography variant="h5" sx={{ fontFamily: 'monospace' }}>
+            <Typography variant="h5" sx={{ fontFamily: 'var(--font-ui-tight)' }}>
               {formatTime(status?.current_time || 0)}
             </Typography>
           </Grid>

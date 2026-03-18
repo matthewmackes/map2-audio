@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { UploadSimple } from '@phosphor-icons/react'
+import { Upload } from '@carbon/icons-react'
 import { UnifiedUploadDialog, type AssetType } from './UnifiedUploadDialog'
 
 interface Props {
@@ -29,7 +29,7 @@ export function UploadButton({
         className={`btn btn-${variant} ${sizeClass} ${className}`}
         onClick={() => setDialogOpen(true)}
       >
-        <UploadSimple size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} weight="duotone" />
+        <Upload size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />
         {label}
       </button>
 

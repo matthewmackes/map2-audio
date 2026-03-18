@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Pulse, Cpu, Warning, Lightning } from '@phosphor-icons/react'
+import { Activity as Pulse, Activity as Cpu, Flash as Lightning } from '@carbon/icons-react'
 import { useCluster } from '../../contexts/ClusterContext'
 
 type ClusterAudioResponse = {
@@ -179,7 +179,7 @@ export function ClusterEngineGrid() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.muted }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <Cpu size={12} weight="duotone" /> CPU
+                    <Cpu size={12} /> CPU
                   </span>
                   <span style={{ color: cpu > 80 ? C.amber : C.text, fontFamily: 'var(--font-mono)' }}>{cpu.toFixed(1)}%</span>
                 </div>
@@ -226,10 +226,10 @@ export function ClusterEngineGrid() {
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: C.muted, fontSize: 11 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Pulse size={12} weight="duotone" /> Click for detailed node view
+                  <Pulse size={12} /> Click for detailed node view
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: card.tone.color }}>
-                  <Lightning size={12} weight="duotone" />
+                  <Lightning size={12} />
                   {card.tone.label}
                 </span>
               </div>

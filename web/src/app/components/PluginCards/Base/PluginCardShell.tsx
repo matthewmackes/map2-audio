@@ -9,21 +9,19 @@
 
 import { useState, useCallback, type ReactNode } from 'react'
 import {
-  Power,
-  FloppyDisk,
+  CopyFile,
   FolderOpen,
-  CaretDown,
-  DotsThreeVertical,
-  Copy,
-  ArrowCounterClockwise,
-  Sliders,
-} from '@phosphor-icons/react'
+  OverflowMenuVertical,
+  Reset,
+  Save,
+  SettingsAdjust,
+} from '@carbon/icons-react'
 import type { Plugin } from '../../../../map2/types'
-import { getCategoryConfig, getCategoryIcon } from '../types'
+import { getCategoryConfig } from '../types'
 import { BypassSwitch } from './BypassSwitch'
 import { getPluginDescription } from '../../../data/pluginDescriptions'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
-import { getIconForCategory, getIconNameForCategory } from '../../HorizontalSignalChain/icons'
+import { getEffectIcon } from '../../icons/effectIcons'
 import { useIsMobile } from '../../../hooks/useIsMobile'
 
 interface PluginCardShellProps {
@@ -73,10 +71,8 @@ export function PluginCardShell({
   const accentColor = providedAccent || catConfig.color
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
   const description = sanitizeRestrictedDisplayText(getPluginDescription(plugin.name) || '')
-  const CategoryIcon = getCategoryIcon(plugin.category)
-  const watermarkIconName = getIconNameForCategory(plugin.category)
-  const WatermarkIcon = getIconForCategory(plugin.category)
-  const hasWatermark = !compact && !isMobile && watermarkIconName !== 'fx_plugin'
+  const WatermarkIcon = getEffectIcon(plugin.category)
+  const hasWatermark = !compact && !isMobile
 
   const handleBypassToggle = useCallback(() => {
     onBypassToggle?.(!bypassed)
@@ -131,13 +127,6 @@ export function PluginCardShell({
               <div className="plugin-card-subtitle">
                 <span className="plugin-card-author">{sanitizeRestrictedDisplayText(plugin.author) || 'Unknown'}</span>
                 <span className="plugin-card-category" style={{ color: accentColor }}>
-                  {CategoryIcon && (
-                    <CategoryIcon
-                      size={10}
-                      color={accentColor}
-                      style={{ marginRight: '3px', display: 'inline-block', verticalAlign: 'middle' }}
-                    />
-                  )}
                   {plugin.category}
                 </span>
               </div>
@@ -154,7 +143,7 @@ export function PluginCardShell({
                   onClick={onLoadPreset}
                   title="Load Preset"
                 >
-                  <FolderOpen size={14} weight="duotone" />
+                  <FolderOpen size={14} />
                 </button>
               )}
               {onSavePreset && (
@@ -163,7 +152,7 @@ export function PluginCardShell({
                   onClick={onSavePreset}
                   title="Save Preset"
                 >
-                  <FloppyDisk size={14} weight="duotone" />
+                  <Save size={14} />
                 </button>
               )}
             </div>
@@ -176,23 +165,23 @@ export function PluginCardShell({
                 onClick={() => setShowMenu(!showMenu)}
                 title="More Options"
               >
-                <DotsThreeVertical size={14} weight="duotone" />
+                <OverflowMenuVertical size={14} />
               </button>
               {showMenu && (
                 <div className="plugin-card-menu">
                   {onOpenMidiMappings && (
                     <button onClick={() => { onOpenMidiMappings(); setShowMenu(false); }}>
-                      <Sliders size={12} weight="duotone" /> MIDI Mappings
+                      <SettingsAdjust size={12} /> MIDI Mappings
                     </button>
                   )}
                   {onCopyParams && (
                     <button onClick={() => { onCopyParams(); setShowMenu(false); }}>
-                      <Copy size={12} weight="duotone" /> Copy Parameters
+                      <CopyFile size={12} /> Copy Parameters
                     </button>
                   )}
                   {onResetParams && (
                     <button onClick={() => { onResetParams(); setShowMenu(false); }}>
-                      <ArrowCounterClockwise size={12} weight="duotone" /> Reset to Default
+                      <Reset size={12} /> Reset to Default
                     </button>
                   )}
                 </div>

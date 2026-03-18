@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowsClockwise, Lightning, Pulse } from '@phosphor-icons/react'
+import { Activity, Flash, Renew } from '@carbon/icons-react'
 
 import { mpx1Api, type MPX1Diagnostics, type MPX1MidiPorts } from '../../map2/mpx1Api'
 import { useMPX1PageContext } from './MPX1Page'
@@ -107,16 +107,16 @@ export function MPX1DiagView() {
     <div className="mpx1-diag">
       <header className="mpx1-diag__header">
         <button type="button" onClick={() => void refreshDiagnostics()}>
-          <ArrowsClockwise size={14} weight="bold" /> Refresh
+          <Renew size={14} /> Refresh
         </button>
         <button type="button" onClick={() => void handlePing()}>
-          <Pulse size={14} weight="bold" /> Ping
+          <Activity size={14} /> Ping
         </button>
         <button type="button" onClick={() => void handleReconnect()}>
-          <ArrowsClockwise size={14} weight="bold" /> Reconnect
+          <Renew size={14} /> Reconnect
         </button>
         <button type="button" onClick={() => void handleForceResync()}>
-          <Lightning size={14} weight="bold" /> Force Resync
+          <Flash size={14} /> Force Resync
         </button>
       </header>
 

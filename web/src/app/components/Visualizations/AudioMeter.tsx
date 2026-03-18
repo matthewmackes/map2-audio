@@ -172,7 +172,7 @@ export function AudioMeter({
             minWidth: compact ? 50 : 60,
             textAlign: 'right',
             fontWeight: value > 0 ? 600 : 400,
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-ui-tight)',
           }}>
             {value > -60 ? value.toFixed(1) : '-∞'} {unit}
           </div>
@@ -184,7 +184,7 @@ export function AudioMeter({
             color: peakHold > 0 ? '#ef4444' : '#888',
             minWidth: 70,
             textAlign: 'right',
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-ui-tight)',
           }}>
             pk: {peakHold > -60 ? peakHold.toFixed(1) : '-∞'} {unit}
           </div>

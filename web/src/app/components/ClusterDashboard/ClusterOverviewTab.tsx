@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { WarningCircle, CheckCircle, Lightning, Cpu, HardDrive, WifiHigh } from '@phosphor-icons/react'
+import { WarningAlt as WarningCircle, CheckmarkFilled as CheckCircle, Flash as Lightning, Activity as Cpu, DataBase as HardDrive, Wifi as WifiHigh } from '@carbon/icons-react'
 import { useMemo } from 'react'
 
 interface ClusterOverviewTabProps {
@@ -114,7 +114,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              {stats.healthScore >= 80 ? <CheckCircle size={20} weight="duotone" color={healthColor} /> : <WarningCircle size={20} weight="duotone" color={healthColor} />}
+              {stats.healthScore >= 80 ? <CheckCircle size={20} style={{ color: healthColor }} /> : <WarningCircle size={20} style={{ color: healthColor }} />}
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>
@@ -142,7 +142,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <WifiHigh size={20} weight="duotone" color="#2563eb" />
+              <WifiHigh size={20} style={{ color: '#2563eb' }} />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>
@@ -172,7 +172,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <Cpu size={20} weight="duotone" color="#ffa726" />
+              <Cpu size={20} style={{ color: '#ffa726' }} />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>{stats.totalCpu} cores available</div>
@@ -200,7 +200,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <HardDrive size={20} weight="duotone" color="#3b82f6" />
+              <HardDrive size={20} style={{ color: '#3b82f6' }} />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>{stats.totalMemory} GB available</div>
@@ -228,7 +228,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <Lightning size={20} weight="duotone" color="#22c55e" />
+              <Lightning size={20} style={{ color: '#22c55e' }} />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>Cluster audio load</div>
@@ -256,7 +256,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <WifiHigh size={20} weight="duotone" color="#fbbf24" />
+              <WifiHigh size={20} style={{ color: '#fbbf24' }} />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>Inter-node latency</div>

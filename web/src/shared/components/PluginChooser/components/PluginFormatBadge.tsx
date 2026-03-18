@@ -53,7 +53,7 @@ export function PluginFormatBadge({ format, size = 'small' }: PluginFormatBadgeP
           justifyContent: 'center',
           fontSize,
           fontWeight: 700,
-          fontFamily: 'monospace',
+          fontFamily: 'var(--font-ui-tight)',
           color,
           backgroundColor: bgColor,
           borderRadius: 0.5,

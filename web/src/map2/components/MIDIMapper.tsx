@@ -868,7 +868,7 @@ export default function MIDIMapper() {
                     <TableBody>
                       {monitorMessages.map((msg) => (
                         <TableRow key={msg.id} sx={{ '&:nth-of-type(odd)': { bgcolor: 'action.hover' } }}>
-                          <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                          <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                             {msg.timestamp}
                           </TableCell>
                           <TableCell>
@@ -879,8 +879,8 @@ export default function MIDIMapper() {
                             />
                           </TableCell>
                           <TableCell>{msg.channel}</TableCell>
-                          <TableCell sx={{ fontFamily: 'monospace' }}>{msg.data1}</TableCell>
-                          <TableCell sx={{ fontFamily: 'monospace' }}>{msg.data2 ?? '-'}</TableCell>
+                          <TableCell sx={{ fontFamily: 'var(--font-mono)' }}>{msg.data1}</TableCell>
+                          <TableCell sx={{ fontFamily: 'var(--font-mono)' }}>{msg.data2 ?? '-'}</TableCell>
                           <TableCell sx={{ fontSize: '0.75rem' }}>{msg.port}</TableCell>
                         </TableRow>
                       ))}

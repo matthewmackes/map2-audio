@@ -54,7 +54,7 @@ class ErrorBoundary extends Component<Props, State> {
               backgroundColor: '#2a2a2a',
               padding: '15px',
               borderRadius: '4px',
-              fontFamily: 'monospace',
+              fontFamily: 'var(--font-mono)',
               fontSize: '14px'
             }}>
               <p><strong>Error:</strong></p>

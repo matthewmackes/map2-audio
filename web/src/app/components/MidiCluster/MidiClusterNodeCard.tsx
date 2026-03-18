@@ -1,5 +1,5 @@
 import { Badge, Card, CardContent, Chip, Stack, Typography } from '@mui/material'
-import { WifiHigh, Power, PlugCharging } from '@phosphor-icons/react'
+import { Plug, Power, Wifi } from '@carbon/icons-react'
 
 import type { MidiClusterEndpoint, MidiClusterNode } from '../../../map2/api'
 
@@ -48,7 +48,7 @@ export function MidiClusterNodeCard({ node, connections, isLocal = false, onSele
             color={online ? 'success' : 'error'}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           >
-            <WifiHigh size={20} color={online ? '#22c55e' : '#ef4444'} />
+            <Wifi size={20} color={online ? '#22c55e' : '#ef4444'} />
           </Badge>
           <div style={{ flex: 1 }}>
             <Typography variant="subtitle2" sx={{ color: '#f8fafc', fontWeight: 700 }}>
@@ -61,7 +61,7 @@ export function MidiClusterNodeCard({ node, connections, isLocal = false, onSele
           <Chip
             size="small"
             label={`${connections.length} connections`}
-            icon={<PlugCharging size={14} /> as any}
+            icon={<Plug size={14} /> as any}
             sx={{ bgcolor: '#1e293b', color: '#e2e8f0' }}
           />
         </Stack>

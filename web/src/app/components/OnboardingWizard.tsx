@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CaretRight, Check, WarningCircle, DesktopTower, Graph, Shield, FileText } from '@phosphor-icons/react'
+import { BareMetalServer, Certificate, ChartNetwork, Checkmark, Document, Security, WarningAlt } from '@carbon/icons-react'
 import { NumberInput } from './Controls/NumberInput'
 
 interface WizardStep {
@@ -10,11 +10,11 @@ interface WizardStep {
 }
 
 const WIZARD_STEPS: WizardStep[] = [
-  { id: 1, title: 'Deployment Mode', icon: <DesktopTower size={20} weight="duotone" />, completed: false },
-  { id: 2, title: 'Node Discovery', icon: <Graph size={20} weight="duotone" />, completed: false },
-  { id: 3, title: 'Network Config', icon: <Graph size={20} weight="duotone" />, completed: false },
-  { id: 4, title: 'Certificate Setup', icon: <Shield size={20} weight="duotone" />, completed: false },
-  { id: 5, title: 'Review & Confirm', icon: <FileText size={20} weight="duotone" />, completed: false },
+  { id: 1, title: 'Deployment Mode', icon: <BareMetalServer size={20} />, completed: false },
+  { id: 2, title: 'Node Discovery', icon: <ChartNetwork size={20} />, completed: false },
+  { id: 3, title: 'Network Config', icon: <Security size={20} />, completed: false },
+  { id: 4, title: 'Certificate Setup', icon: <Certificate size={20} />, completed: false },
+  { id: 5, title: 'Review & Confirm', icon: <Document size={20} />, completed: false },
 ]
 
 export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
@@ -171,7 +171,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 color: currentStep >= step.id ? '#000' : '#666',
               }}
             >
-              {currentStep > step.id ? <Check size={16} weight="bold" /> : step.icon}
+              {currentStep > step.id ? <Checkmark size={16} /> : step.icon}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, color: '#888' }}>Step {step.id}</div>
@@ -193,7 +193,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
         >
           {errors.map((err, idx) => (
             <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-              <WarningCircle size={16} weight="duotone" color="#ff3333" />
+              <WarningAlt size={16} color="#ff3333" />
               <span style={{ color: '#ff3333' }}>{err}</span>
             </div>
           ))}

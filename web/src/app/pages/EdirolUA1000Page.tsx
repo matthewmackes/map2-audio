@@ -26,38 +26,34 @@ import {
 } from '@mui/material'
 import { NumberInput } from '../../map2/components/NumberInput'
 import {
-  Usb,
-  SpeakerHigh,
-  Microphone,
+  Activity,
+  Chemistry,
+  CheckmarkFilled,
+  DataBase,
+  Flash,
   Headphones,
-  GearSix,
-  Pulse,
-  ArrowsClockwise,
+  Information,
+  Meter,
+  Microphone,
+  Music,
+  NetworkAdminControl,
+  Notebook,
   Power,
-  Broadcast,
-  Clock,
-  MusicNote,
-  WaveSine,
-  WarningCircle,
-  CheckCircle,
-  XCircle,
-  Gauge,
-  Lightning,
-  Play,
-  Stop,
-  Warning,
-  Cpu,
-  Timer,
-  Wrench,
-  Flask,
-  ArrowCounterClockwise,
-  HardDrive,
-  Plug,
-  SpinnerGap,
-  Info,
-  ListChecks,
+  Renew,
+  Reset,
+  SettingsAdjust,
   ShoppingCart,
-} from '@phosphor-icons/react'
+  StopFilled,
+  Time,
+  Tools,
+  Usb,
+  VolumeUp,
+  WarningAlt,
+  WarningAltFilled,
+  Waveform,
+  ErrorFilled,
+  Play,
+} from '@carbon/icons-react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
@@ -270,7 +266,7 @@ export function EdirolUA1000Page() {
             ? `Hi-Speed USB 2.0 Audio Interface · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
             : 'Hi-Speed USB 2.0 Audio Interface - Routed via PipeWire to JUCE Audio Engine'
         }
-        icon={<Usb size={32} style={{ color: '#3b82f6' }} weight="duotone" />}
+        icon={<Usb size={32} style={{ color: '#3b82f6' }} />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
             {!isRunning ? (
@@ -279,7 +275,7 @@ export function EdirolUA1000Page() {
                 onClick={() => startAudio.mutate()}
                 disabled={startAudio.isPending}
               >
-                {startAudio.isPending ? <CircularProgress size={16} /> : <Play size={16} weight="duotone" />}
+                {startAudio.isPending ? <CircularProgress size={16} /> : <Play size={16} />}
                 Start Audio
               </button>
             ) : (
@@ -288,7 +284,7 @@ export function EdirolUA1000Page() {
                 onClick={() => stopAudio.mutate()}
                 disabled={stopAudio.isPending}
               >
-                {stopAudio.isPending ? <CircularProgress size={16} /> : <Stop size={16} weight="duotone" />}
+                {stopAudio.isPending ? <CircularProgress size={16} /> : <StopFilled size={16} />}
                 Stop
               </button>
             )}
@@ -297,13 +293,13 @@ export function EdirolUA1000Page() {
               onClick={() => restartAudio.mutate()}
               disabled={restartAudio.isPending || !isRunning}
             >
-              <ArrowsClockwise size={16} weight="duotone" /> Restart
+              <Renew size={16} /> Restart
             </button>
             <button
               className="btn btn-primary"
               onClick={() => setConfigDialogOpen(true)}
             >
-              <GearSix size={16} weight="duotone" /> Configure
+              <SettingsAdjust size={16} /> Configure
             </button>
           </div>
         }
@@ -349,12 +345,12 @@ export function EdirolUA1000Page() {
 
       {/* Health Alert */}
       {health?.status === 'critical' && (
-        <Alert severity="error" icon={<Warning weight="duotone" />}>
+        <Alert severity="error" icon={<WarningAlt />}>
           Audio engine is in critical state. {health.alerts?.join('. ')}
         </Alert>
       )}
       {health?.auto_muted && (
-        <Alert severity="warning" icon={<WarningCircle weight="duotone" />}>
+        <Alert severity="warning" icon={<WarningAltFilled />}>
           Audio has been auto-muted due to high xrun count. Check your buffer settings.
         </Alert>
       )}
@@ -578,25 +574,26 @@ export function EdirolUA1000Page() {
             style={{ gap: 4, display: 'flex', flexWrap: isMobile ? 'nowrap' : 'wrap' }}
           >
             <Tab id="engine" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
-              <Cpu size={18} weight="duotone" /> JUCE Engine
+              <Activity size={18} /> JUCE Engine
             </Tab>
             <Tab id="meters" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
-              <Pulse size={18} weight="duotone" /> Live Meters
+              <Meter size={18} /> Live Meters
             </Tab>
             <Tab id="analog" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
-              <SpeakerHigh size={18} weight="duotone" /> Analog I/O
+              <VolumeUp size={18} /> Analog I/O
             </Tab>
             <Tab id="digital" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
-              <WaveSine size={18} weight="duotone" /> Digital I/O
+              <Waveform size={18} /> Digital I/O
             </Tab>
             <Tab id="midi" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
-              <MusicNote size={18} weight="duotone" /> MIDI
+              <Music size={18} /> MIDI
             </Tab>
             <Tab id="health" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
-              <WarningCircle size={18} weight="duotone" /> Health
+              <WarningAltFilled size={18} />
+              {' '}Health
             </Tab>
             <Tab id="diagnostics" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
-              <Wrench size={18} weight="duotone" /> Diagnostics
+              <Tools size={18} /> Diagnostics
             </Tab>
           </TabList>
 
@@ -649,7 +646,7 @@ export function EdirolUA1000Page() {
           variant="contained"
           size="large"
           onClick={() => setShoppingDialogOpen(true)}
-          startIcon={<ShoppingCart size={20} weight="duotone" />}
+          startIcon={<ShoppingCart size={20} />}
           style={{
             background: 'linear-gradient(135deg, #3b82f6, #60a5fa)',
             padding: '12px 32px',
@@ -716,7 +713,7 @@ function JuceEngineTab({
         {/* Engine Info */}
         <div className="card" style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <Cpu size={20} style={{ color: status?.running ? '#22c55e' : '#ef4444' }} weight="duotone" />
+            <Activity size={20} style={{ color: status?.running ? '#22c55e' : '#ef4444' }} />
             <h4>Engine</h4>
           </div>
           <div className="stack" style={{ gap: 8 }}>
@@ -746,7 +743,7 @@ function JuceEngineTab({
         {/* Audio Device */}
         <div className="card" style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <Usb size={20} style={{ color: '#0066cc' }} weight="duotone" />
+            <Usb size={20} style={{ color: '#0066cc' }} />
             <h4>Audio Device</h4>
           </div>
           <div className="stack" style={{ gap: 8 }}>
@@ -782,7 +779,7 @@ function JuceEngineTab({
         {/* Performance */}
         <div className="card" style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <Gauge size={20} style={{ color: '#f59e0b' }} weight="duotone" />
+            <Meter size={20} style={{ color: '#f59e0b' }} />
             <h4>Performance</h4>
           </div>
           <div className="stack" style={{ gap: 8 }}>
@@ -1063,7 +1060,7 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
           </p>
         </div>
         <Chip
-          icon={wsConnected ? <CheckCircle size={14} weight="bold" /> : <XCircle size={14} weight="bold" />}
+          icon={wsConnected ? <CheckmarkFilled size={14} /> : <ErrorFilled size={14} />}
           label={wsConnected ? 'Live' : 'Offline'}
           color={wsConnected ? 'success' : 'default'}
           size="small"
@@ -1074,7 +1071,7 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
         {/* Input Meters */}
         <div className="card" style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 16, textAlign: 'center' }}>
-            <Microphone size={16} style={{ marginRight: 8 }} weight="duotone" />
+            <Microphone size={16} style={{ marginRight: 8 }} />
             Input Levels
           </h4>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 24 }}>
@@ -1086,7 +1083,7 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
         {/* Output Meters */}
         <div className="card" style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 16, textAlign: 'center' }}>
-            <SpeakerHigh size={16} style={{ marginRight: 8 }} weight="duotone" />
+            <VolumeUp size={16} style={{ marginRight: 8 }} />
             Output Levels
           </h4>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 24 }}>
@@ -1203,7 +1200,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
       {/* Front Panel Inputs 1-4 */}
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <Microphone size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <Microphone size={16} style={{ marginRight: 8 }} />
           Front Panel Inputs (XLR/TRS Combo)
         </h4>
         <div className="grid four">
@@ -1261,7 +1258,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
       {/* Outputs */}
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <SpeakerHigh size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <VolumeUp size={16} style={{ marginRight: 8 }} />
           Analog Outputs (TRS Balanced)
         </h4>
         <div className="grid four">
@@ -1295,7 +1292,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
       {/* Headphones */}
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <Headphones size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <Headphones size={16} style={{ marginRight: 8 }} />
           Headphones Output
         </h4>
         <div className="grid two">
@@ -1315,7 +1312,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
             </div>
           </div>
           <div className="flex" style={{ justifyContent: 'center', alignItems: 'center' }}>
-            <Headphones size={48} style={{ color: 'var(--accent)' }} weight="duotone" />
+            <Headphones size={48} style={{ color: 'var(--accent)' }} />
           </div>
         </div>
       </div>
@@ -1338,7 +1335,7 @@ function DigitalIOTab() {
       <div className="grid two">
         <div className="card" style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 16 }}>
-            <Broadcast size={16} style={{ marginRight: 8 }} weight="duotone" />
+            <NetworkAdminControl size={16} style={{ marginRight: 8 }} />
             S/PDIF (Coaxial & Optical)
           </h4>
           <div className="stack" style={{ gap: 12 }}>
@@ -1359,7 +1356,7 @@ function DigitalIOTab() {
 
         <div className="card" style={{ padding: 16 }}>
           <h4 style={{ marginBottom: 16 }}>
-            <WaveSine size={16} style={{ marginRight: 8 }} weight="duotone" />
+            <Waveform size={16} style={{ marginRight: 8 }} />
             ADAT Lightpipe
           </h4>
           <div className="stack" style={{ gap: 12 }}>
@@ -1381,7 +1378,7 @@ function DigitalIOTab() {
 
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <Clock size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <Time size={16} style={{ marginRight: 8 }} />
           Word Clock (BNC)
         </h4>
         <div className="grid two">
@@ -1414,7 +1411,7 @@ function MIDITab() {
       <div className="grid two">
         <div className="card" style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <MusicNote size={24} style={{ color: 'var(--accent)' }} weight="duotone" />
+            <Music size={24} style={{ color: 'var(--accent)' }} />
             <div>
               <h4>MIDI In</h4>
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>5-pin DIN</span>
@@ -1425,7 +1422,7 @@ function MIDITab() {
 
         <div className="card" style={{ padding: 16 }}>
           <div className="flex" style={{ alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <MusicNote size={24} style={{ color: 'var(--accent)' }} weight="duotone" />
+            <Music size={24} style={{ color: 'var(--accent)' }} />
             <div>
               <h4>MIDI Out</h4>
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>5-pin DIN</span>
@@ -1489,7 +1486,7 @@ function HealthTab({ health, xruns, nodeId }: { health?: AudioHealth; xruns?: Xr
       {/* XRun Statistics */}
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <Warning size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <WarningAlt size={16} style={{ marginRight: 8 }} />
           XRun Statistics
         </h4>
         <div className="grid four">
@@ -1539,7 +1536,7 @@ function HealthTab({ health, xruns, nodeId }: { health?: AudioHealth; xruns?: Xr
           <h4 style={{ marginBottom: 12 }}>Active Alerts</h4>
           <div className="stack" style={{ gap: 8 }}>
             {health.alerts.map((alert, i) => (
-              <Alert key={i} severity="warning" icon={<WarningCircle weight="duotone" size={16} />}>
+              <Alert key={i} severity="warning" icon={<WarningAltFilled size={16} />}>
                 {alert}
               </Alert>
             ))}
@@ -1644,7 +1641,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <ArrowCounterClockwise size={24} style={{ color: '#fff' }} weight="duotone" />
+            <Reset size={24} style={{ color: '#fff' }} />
           </div>
           <div style={{ flex: 1 }}>
             <h4 style={{ marginBottom: 8, color: '#fff' }}>UA-1000 Hardware Factory Reset</h4>
@@ -1667,7 +1664,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
       {/* Quick Actions */}
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <Wrench size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <Tools size={16} style={{ marginRight: 8 }} />
           Quick Actions
         </h4>
         <div className="grid four">
@@ -1675,7 +1672,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             variant="outlined"
             onClick={() => fullDiagnostic.mutate()}
             disabled={isRunningFullTest}
-            startIcon={isRunningFullTest ? <SpinnerGap className="spin" size={16} /> : <ListChecks size={16} weight="duotone" />}
+            startIcon={isRunningFullTest ? <Renew className="spin" size={16} /> : <Notebook size={16} />}
             fullWidth
           >
             {isRunningFullTest ? 'Running...' : 'Full Diagnostic'}
@@ -1684,7 +1681,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             variant="outlined"
             onClick={() => loopbackTest.mutate()}
             disabled={loopbackTest.isPending}
-            startIcon={loopbackTest.isPending ? <SpinnerGap className="spin" size={16} /> : <Plug size={16} weight="duotone" />}
+            startIcon={loopbackTest.isPending ? <Renew className="spin" size={16} /> : <Power size={16} />}
             fullWidth
           >
             Loopback Test
@@ -1693,7 +1690,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             variant="outlined"
             onClick={() => clearXruns.mutate()}
             disabled={clearXruns.isPending}
-            startIcon={<ArrowCounterClockwise size={16} weight="duotone" />}
+            startIcon={<Reset size={16} />}
             fullWidth
           >
             Clear XRuns
@@ -1703,7 +1700,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
             color="warning"
             onClick={() => resetAlsa.mutate()}
             disabled={resetAlsa.isPending}
-            startIcon={resetAlsa.isPending ? <SpinnerGap className="spin" size={16} /> : <HardDrive size={16} weight="duotone" />}
+            startIcon={resetAlsa.isPending ? <Renew className="spin" size={16} /> : <DataBase size={16} />}
             fullWidth
           >
             Reset ALSA
@@ -1714,7 +1711,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
       {/* Buffer Stability Tests */}
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <Flask size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <Chemistry size={16} style={{ marginRight: 8 }} />
           Buffer Stability Tests
         </h4>
         <p className="subtitle" style={{ marginBottom: 12 }}>
@@ -1738,7 +1735,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
       {/* ALSA Diagnostic Commands */}
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <HardDrive size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <DataBase size={16} style={{ marginRight: 8 }} />
           ALSA Diagnostics
         </h4>
         <p className="subtitle" style={{ marginBottom: 12 }}>
@@ -1779,7 +1776,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
         <div className="card" style={{ padding: 16 }}>
           <div className="flex-between" style={{ marginBottom: 16 }}>
             <h4>
-              <Pulse size={16} style={{ marginRight: 8 }} weight="duotone" />
+              <Meter size={16} style={{ marginRight: 8 }} />
               Test Results
             </h4>
             <Button size="small" onClick={() => setTestResults([])}>Clear</Button>
@@ -1797,9 +1794,9 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
                 <div className="flex-between">
                   <div className="flex" style={{ alignItems: 'center', gap: 8 }}>
                     {result.success ? (
-                      <CheckCircle size={16} style={{ color: '#22c55e' }} weight="bold" />
+                      <CheckmarkFilled size={16} style={{ color: '#22c55e' }} />
                     ) : (
-                      <XCircle size={16} style={{ color: '#ef4444' }} weight="bold" />
+                      <ErrorFilled size={16} style={{ color: '#ef4444' }} />
                     )}
                     <strong>{result.test_name}</strong>
                   </div>
@@ -1827,23 +1824,23 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
       {/* Troubleshooting Tips */}
       <div className="card" style={{ padding: 16 }}>
         <h4 style={{ marginBottom: 16 }}>
-          <Info size={16} style={{ marginRight: 8 }} weight="duotone" />
+          <Information size={16} style={{ marginRight: 8 }} />
           Troubleshooting Tips
         </h4>
         <div className="stack" style={{ gap: 12 }}>
-          <Alert severity="info" icon={<Info size={16} weight="duotone" />}>
+          <Alert severity="info" icon={<Information size={16} />}>
             <strong>XRuns / Buffer Underruns:</strong> Increase buffer size in Configure dialog. Try 512 or 1024 samples for stability.
           </Alert>
-          <Alert severity="info" icon={<Info size={16} weight="duotone" />}>
+          <Alert severity="info" icon={<Information size={16} />}>
             <strong>No Audio Output:</strong> Check that UA-1000 is selected as the audio device. Verify USB connection and try a different USB port.
           </Alert>
-          <Alert severity="info" icon={<Info size={16} weight="duotone" />}>
+          <Alert severity="info" icon={<Information size={16} />}>
             <strong>High Latency:</strong> Lower the buffer size (try 128 or 256 samples). Ensure USB 2.0 port is being used, not USB 1.1.
           </Alert>
-          <Alert severity="info" icon={<Info size={16} weight="duotone" />}>
+          <Alert severity="info" icon={<Information size={16} />}>
             <strong>Digital Sync Issues:</strong> If using S/PDIF or ADAT, ensure clock source matches the external device. Perform hardware factory reset if needed.
           </Alert>
-          <Alert severity="info" icon={<Info size={16} weight="duotone" />}>
+          <Alert severity="info" icon={<Information size={16} />}>
             <strong>Crackling/Pops:</strong> Disable USB power saving in Linux. Check with: <code style={{ fontSize: 11 }}>cat /sys/module/usbcore/parameters/autosuspend</code>
           </Alert>
         </div>
@@ -1946,7 +1943,7 @@ function ConfigDialog({
             </p>
           </div>
 
-          <Alert severity="info" icon={<WarningCircle weight="duotone" size={16} />}>
+          <Alert severity="info" icon={<WarningAltFilled size={16} />}>
             Changes will restart the audio engine. Active processing will be briefly interrupted.
           </Alert>
         </div>

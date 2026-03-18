@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowsLeftRight } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowsHorizontal } from '@carbon/icons-react'
 import { ExpressionView, type CcChannelPair } from '../../../pages/ExpressionPage'
 
 interface ExpressionOverlayProps {
@@ -20,11 +20,11 @@ export function ExpressionOverlay({
     <div className="expr-overlay">
       <div className="expr-overlay-header">
         <button className="expr-overlay-back" onClick={onBack}>
-          <ArrowLeft size={14} weight="bold" />
+          <ArrowLeft size={14} />
           <span>Back to MIDI Mappings</span>
         </button>
         <span className="expr-overlay-title">
-          <ArrowsLeftRight size={15} weight="duotone" />
+          <ArrowsHorizontal size={15} />
           Expression Mappings
         </span>
       </div>
@@ -68,7 +68,7 @@ export function ExpressionOverlay({
           border-radius: 6px;
           background: transparent;
           color: #9ca3af;
-          font-family: 'IBM Plex Sans', sans-serif;
+          font-family: var(--font-ui);
           font-size: 12px;
           cursor: pointer;
           transition: all 0.15s ease;
@@ -85,7 +85,7 @@ export function ExpressionOverlay({
           display: flex;
           align-items: center;
           gap: 7px;
-          font-family: 'IBM Plex Sans', sans-serif;
+          font-family: var(--font-ui);
           font-size: 14px;
           font-weight: 600;
           color: #f2f6ff;

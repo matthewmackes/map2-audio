@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { ArrowsClockwise } from '@phosphor-icons/react'
+import { Renew as ArrowsClockwise } from '@carbon/icons-react'
 import { useDiskHealth, useHealthOverview } from '@/app/hooks/useHostMachine'
 
 interface PerformanceMetricsProps {
@@ -107,7 +107,7 @@ export default function PerformanceMetrics({ autoRefresh, onAutoRefreshChange, n
             onClick={() => { healthQ.refetch(); diskQ.refetch() }}
             disabled={healthQ.isFetching || diskQ.isFetching}
           >
-            <ArrowsClockwise size={14} weight="duotone" className={healthQ.isFetching ? 'hm-spin' : ''} />
+            <ArrowsClockwise size={14} className={healthQ.isFetching ? 'hm-spin' : ''} />
             {healthQ.isFetching || diskQ.isFetching ? 'Refreshing…' : 'Force Refresh'}
           </button>
         </div>

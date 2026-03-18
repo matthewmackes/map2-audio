@@ -614,7 +614,7 @@ export default function AudioEngine() {
                           key={index}
                           variant="body2"
                           sx={{
-                            fontFamily: 'monospace',
+                            fontFamily: 'var(--font-ui-tight)',
                             fontSize: '0.75rem',
                             bgcolor: 'grey.900',
                             p: 0.5,

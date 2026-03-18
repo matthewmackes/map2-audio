@@ -363,7 +363,7 @@
 .midi-hub-code-block,
 .midi-hub-route-cell__meta,
 .midi-hub-patchbay-sidecar code {
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-mono));
 }
 
 .midi-hub-code-block {

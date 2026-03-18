@@ -352,7 +352,7 @@ const AudioMeterComponent: React.FC<AudioMeterProps> = ({
       {showValue && variant !== 'mini' && (
         <div
           style={{
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-mono)',
             fontSize: variant === 'compact' ? 10 : 12,
             fontWeight: 600,
             color: getLevelColor(peakDb),
@@ -534,7 +534,7 @@ const GainReductionMeterComponent: React.FC<GainReductionMeterProps> = ({
       {showValue && (
         <span
           style={{
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-mono)',
             fontSize: 10,
             fontWeight: 600,
             color: gainReduction > 6 ? '#f59e0b' : 'rgba(255, 255, 255, 0.6)',

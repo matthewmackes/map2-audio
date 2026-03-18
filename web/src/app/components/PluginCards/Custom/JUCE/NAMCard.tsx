@@ -172,7 +172,7 @@ function NAMCardBase({
             }}
           />
         </div>
-        <span style={{ fontSize: '9px', color: '#888', fontFamily: 'monospace' }}>
+        <span style={{ fontSize: '9px', color: '#888', fontFamily: 'var(--font-mono)' }}>
           {(status?.inputLevel ?? -60).toFixed(0)}
         </span>
       </div>
@@ -244,7 +244,7 @@ function NAMCardBase({
             }}
           />
         </div>
-        <span style={{ fontSize: '9px', color: '#888', fontFamily: 'monospace' }}>
+        <span style={{ fontSize: '9px', color: '#888', fontFamily: 'var(--font-mono)' }}>
           {(status?.outputLevel ?? -60).toFixed(0)}
         </span>
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowsClockwise, PianoKeys } from '@phosphor-icons/react'
+import { Keyboard, Renew } from '@carbon/icons-react'
 
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { NumberInput } from '../../../Controls/NumberInput'
@@ -401,7 +401,7 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
             }}
             title="Refresh SoundFont library and preset metadata"
           >
-            <ArrowsClockwise size={14} weight="duotone" />
+            <Renew size={14} />
           </button>
         </div>
 
@@ -578,7 +578,7 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
 
           <section className="synthforge-panel synthforge-keyboard-panel">
             <div className="synthforge-panel-heading">
-              <span className="synthforge-piano-title"><PianoKeys size={14} weight="duotone" /> Performance Piano</span>
+              <span className="synthforge-piano-title"><Keyboard size={14} /> Performance Piano</span>
               <strong>Velocity-sensitive</strong>
             </div>
             <p className="synthforge-keyboard-copy">

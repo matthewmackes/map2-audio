@@ -7,7 +7,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, LinkBreak, Plus, ArrowRight, WarningCircle, ArrowsClockwise } from '@phosphor-icons/react';
+import { Add as Plus, ArrowRight, Link, Renew as ArrowsClockwise, Unlink as LinkBreak, WarningAlt as WarningCircle } from '@carbon/icons-react';
 import { clusterScopeKey, withNodeQuery } from '../../utils/clusterTransport';
 
 // Sidechain connection type
@@ -165,7 +165,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
         marginBottom: 16,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Link size={18} weight="duotone" style={{ color: '#a855f7' }} />
+          <Link size={18} style={{ color: '#a855f7' }} />
           <span style={{
             fontSize: 14,
             fontWeight: 600,
@@ -226,7 +226,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
             transition: 'all 0.2s ease',
           }}
         >
-          <Plus size={12} weight="bold" />
+          <Plus size={12} />
           New
         </button>
       </div>
@@ -274,7 +274,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
               </select>
             </div>
 
-            <ArrowRight size={16} weight="duotone" style={{ color: '#6b7280', flexShrink: 0, marginTop: 16 }} />
+            <ArrowRight size={16} style={{ color: '#6b7280', flexShrink: 0, marginTop: 16 }} />
 
             {/* Destination plugin */}
             <div style={{ flex: 1 }}>
@@ -348,9 +348,9 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
             }}
           >
             {createMutation.isPending ? (
-              <ArrowsClockwise size={12} weight="duotone" className="animate-spin" style={{ marginRight: 6 }} />
+              <ArrowsClockwise size={12} className="animate-spin" style={{ marginRight: 6 }} />
             ) : (
-              <Link size={12} weight="duotone" style={{ marginRight: 6 }} />
+              <Link size={12} style={{ marginRight: 6 }} />
             )}
             Create Connection
           </button>
@@ -369,7 +369,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
             textAlign: 'center',
             color: '#666',
           }}>
-            <ArrowsClockwise size={18} weight="duotone" className="animate-spin" style={{ margin: '0 auto' }} />
+            <ArrowsClockwise size={18} className="animate-spin" style={{ margin: '0 auto' }} />
           </div>
         ) : connections.length === 0 ? (
           <div style={{
@@ -377,7 +377,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
             textAlign: 'center',
             color: '#666',
           }}>
-            <LinkBreak size={24} weight="duotone" style={{ margin: '0 auto 8px', opacity: 0.5 }} />
+            <LinkBreak size={24} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
             <div style={{ fontSize: 12 }}>No sidechain connections</div>
             <div style={{ fontSize: 11, marginTop: 4 }}>
               Click "New" to create a sidechain route
@@ -412,7 +412,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
               </div>
 
               {/* Arrow */}
-              <ArrowRight size={14} weight="duotone" style={{ color: conn.active ? '#a855f7' : '#6b7280', flexShrink: 0 }} />
+              <ArrowRight size={14} style={{ color: conn.active ? '#a855f7' : '#6b7280', flexShrink: 0 }} />
 
               {/* Destination */}
               <div style={{
@@ -446,7 +446,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                 }}
                 title={conn.active ? 'Disable' : 'Enable'}
               >
-                <Link size={12} weight="duotone" />
+                <Link size={12} />
               </button>
 
               {/* Delete button */}
@@ -467,7 +467,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                 }}
                 title="Delete connection"
               >
-                <LinkBreak size={12} weight="duotone" />
+                <LinkBreak size={12} />
               </button>
             </div>
           ))
@@ -488,7 +488,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           fontSize: 11,
           color: '#eab308',
         }}>
-          <WarningCircle size={14} weight="duotone" />
+          <WarningCircle size={14} />
           No plugins with sidechain inputs loaded
         </div>
       )}

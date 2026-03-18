@@ -3,8 +3,7 @@ import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router
 import { useState, useRef, useEffect, useMemo, startTransition } from 'react'
 import { ChevronDown, ChevronRight, ChevronUp, Close, Menu, Pin, PinFilled, Settings } from '@carbon/icons-react'
 import { Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
-import { PlatformModalContent, isStandalonePanel } from '../components/Platform/PlatformModal'
-import type { StandalonePanel } from '../components/Platform/PlatformModal'
+import { PlatformModalContent } from '../components/Platform/PlatformModal'
 import { isPlatformLayerId } from '../platform/model'
 import type { PlatformLayerId } from '../platform/model'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
@@ -17,19 +16,20 @@ import { Map2BrandMark } from '../components/branding/map2Branding'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
+  allPinnableNavigationItems,
   advancedMenuItems,
-  defaultPinnedRoutes,
   allRouteNavigationItems,
+  defaultPinnedRoutes,
   hardwareInterfaceMenuItems,
   homeNavigationItem,
   homeNavigationSections,
   MAX_PINNED_NAV_ITEMS,
   normalizePinnedRoutes,
-  pinnableNavigationItems,
   type HardwareInterfaceMenuItem,
   type NavigationMaturityState,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
+import { isStandalonePanel, type PlatformPinnedNavItem, type StandalonePanel } from '../data/platformMenuItems'
 import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { isBlockedAdvancedMenuItem } from './advancedMenuState'
@@ -45,11 +45,12 @@ interface TopNavItem {
   maturity: NavigationMaturityState
   gatedReason?: string
   deviceType?: string
-  kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
+  kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu' | 'platform-modal'
   iconOnly?: boolean
+  target?: PlatformPinnedNavItem['target']
 }
 
-type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem
+type PinnedMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem | PlatformPinnedNavItem
 
 type MobileMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem
 
@@ -80,9 +81,10 @@ function toTopNavItem(item: PinnedMenuItem): TopNavItem {
     description: item.description,
     color: item.color,
     maturity: item.maturity,
-    gatedReason: item.gatedReason,
-    deviceType: item.deviceType,
+    gatedReason: 'gatedReason' in item ? item.gatedReason : undefined,
+    deviceType: 'deviceType' in item ? item.deviceType : undefined,
     kind: item.kind,
+    target: 'target' in item ? item.target : undefined,
   }
 }
 
@@ -181,7 +183,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const requestedPinnedRouteSet = useMemo(() => new Set(requestedPinnedRoutes), [requestedPinnedRoutes])
 
   const pinnedRouteKeys = useMemo(
-    () => pinnableNavigationItems
+    () => allPinnableNavigationItems
       .filter((item) => item.to !== '/' && requestedPinnedRouteSet.has(item.to))
       .map((item) => item.to)
       .slice(0, MAX_PINNED_NAV_ITEMS),
@@ -196,7 +198,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   )
 
   const pinnedTopNavItems = useMemo<TopNavItem[]>(() => {
-    return pinnableNavigationItems
+    return allPinnableNavigationItems
       .filter((item) => item.to !== '/' && pinnedRouteSet.has(item.to))
       .map(toTopNavItem)
   }, [pinnedRouteSet])
@@ -382,7 +384,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       return
     }
 
-    const currentRoutes = pinnableNavigationItems
+    const currentRoutes = allPinnableNavigationItems
       .filter((candidate) => candidate.to !== '/' && pinnedRouteSet.has(candidate.to))
       .map((candidate) => candidate.to)
 
@@ -396,7 +398,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
 
     const candidateRoutes = new Set([...currentRoutes, item.to])
-    const nextRoutes = pinnableNavigationItems
+    const nextRoutes = allPinnableNavigationItems
       .filter((candidate) => candidate.to !== '/' && candidateRoutes.has(candidate.to))
       .map((candidate) => candidate.to)
       .slice(0, MAX_PINNED_NAV_ITEMS)
@@ -460,6 +462,48 @@ export function AppShell({ children }: { children: ReactNode }) {
         </span>
         {!item.iconOnly && <span className={`nav-tab-label${isAudioGridTab ? ' nav-tab-label--audio-grid' : ''}`}>{item.label}</span>}
       </NavLink>
+    )
+  }
+
+  const isPlatformTargetActive = (item: TopNavItem) => {
+    if (item.kind !== 'platform-modal' || !item.target || !platformModalOpen) {
+      return false
+    }
+
+    if (item.target.layer) {
+      return searchParams.get('layer') === item.target.layer
+    }
+
+    if (item.target.panel) {
+      return searchParams.get('panel') === item.target.panel
+    }
+
+    return false
+  }
+
+  const renderPlatformPinnedTrigger = (item: TopNavItem) => {
+    const Icon = item.icon
+    const isActive = isPlatformTargetActive(item)
+
+    return (
+      <button
+        key={item.to}
+        type="button"
+        className={`nav-tab-item${isActive ? ' nav-tab-item--menu-active' : ''}`}
+        aria-label={item.label}
+        title={`${item.description} • ${item.maturity}`}
+        style={{ '--tab-color': item.color } as CSSProperties}
+        onClick={() => {
+          closeTransientMenus()
+          handlePlatformModalOpen()
+          handlePlatformNavigate(item.target ?? null)
+        }}
+      >
+        <span className="nav-tab-icon">
+          <Icon size={16} aria-hidden />
+        </span>
+        <span className="nav-tab-label">{item.shortLabel ?? item.label}</span>
+      </button>
     )
   }
 
@@ -843,6 +887,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             }
             if (item.kind === 'hardware-submenu') {
               return renderHardwareSubmenuTrigger(item)
+            }
+            if (item.kind === 'platform-modal') {
+              return renderPlatformPinnedTrigger(item)
             }
             return renderNavItem(item)
           })}

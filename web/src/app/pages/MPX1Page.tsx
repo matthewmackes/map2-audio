@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Books, GitBranch, MusicNotes, Play, Pulse, Sliders, SquaresFour, Waveform } from '@phosphor-icons/react'
+import { Activity, Book, Branch, Categories, Music, Play, SettingsAdjust, Waveform } from '@carbon/icons-react'
 import { Alert, Button, CircularProgress } from '@mui/material'
 
 import { MPX1StatusBar } from '../components/MPX1/MPX1StatusBar'
@@ -22,14 +22,14 @@ interface SidebarSection {
 }
 
 const SIDEBAR_SECTIONS: SidebarSection[] = [
-  { id: 'panel', to: '/mpx1/panel', label: 'Panel', color: '#38bdf8', icon: SquaresFour },
-  { id: 'editor', to: '/mpx1/editor', label: 'Editor', color: '#f59e0b', icon: Sliders },
-  { id: 'midi-map', to: '/mpx1/midi-map', label: 'MIDI Mapper', color: '#ec4899', icon: MusicNotes },
+  { id: 'panel', to: '/mpx1/panel', label: 'Panel', color: '#38bdf8', icon: Categories },
+  { id: 'editor', to: '/mpx1/editor', label: 'Editor', color: '#f59e0b', icon: SettingsAdjust },
+  { id: 'midi-map', to: '/mpx1/midi-map', label: 'MIDI Mapper', color: '#ec4899', icon: Music },
   { id: 'matrix', to: '/mpx1/matrix', label: 'Mod Matrix', color: '#22c55e', icon: Waveform },
-  { id: 'library', to: '/mpx1/library', label: 'Library', color: '#a78bfa', icon: Books },
+  { id: 'library', to: '/mpx1/library', label: 'Library', color: '#a78bfa', icon: Book },
   { id: 'perform', to: '/mpx1/perform', label: 'Perform', color: '#f97316', icon: Play },
-  { id: 'diag', to: '/mpx1/diag', label: 'Diagnostics', color: '#14b8a6', icon: Pulse },
-  { id: 'flow', to: '/mpx1/flow', label: 'Signal Flow', color: '#818cf8', icon: GitBranch },
+  { id: 'diag', to: '/mpx1/diag', label: 'Diagnostics', color: '#14b8a6', icon: Activity },
+  { id: 'flow', to: '/mpx1/flow', label: 'Signal Flow', color: '#818cf8', icon: Branch },
 ]
 
 const DEFAULT_BYPASS_STATE: Record<BypassBlock, boolean> = {

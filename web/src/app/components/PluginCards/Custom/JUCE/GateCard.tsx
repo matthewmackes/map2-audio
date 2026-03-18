@@ -89,7 +89,7 @@ function GateCardBase({
 
       {/* Threshold Level Display */}
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
+        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-mono)' }}>
           {parameters.threshold.toFixed(0)}
         </div>
         <div style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>
@@ -182,7 +182,7 @@ function GateCardBase({
           marginTop: '8px',
           fontSize: '10px',
           color: '#666',
-          fontFamily: 'monospace',
+          fontFamily: 'var(--font-mono)',
         }}
       >
         <span>IN: {metering.inputLevel.toFixed(1)} dB</span>

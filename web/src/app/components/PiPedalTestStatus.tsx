@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, WarningCircle, XCircle, ArrowsClockwise, Pulse } from '@phosphor-icons/react'
+import { Activity as Pulse, CheckmarkFilled as CheckCircle, ErrorFilled as XCircle, Renew as ArrowsClockwise, WarningAlt as WarningCircle } from '@carbon/icons-react'
 
 interface PiPedalTestResult {
   timestamp: string
@@ -95,13 +95,13 @@ export function PiPedalTestStatus({ showDetails = true }: TestStatusProps) {
 
   const getStatusIcon = (status: string, score: number) => {
     if (status === 'excellent' || score >= 90) {
-      return <CheckCircle className="text-green-500" size={20} weight="duotone" />
+      return <CheckCircle className="text-green-500" size={20} />
     } else if (status === 'good' || score >= 75) {
-      return <CheckCircle className="text-blue-500" size={20} weight="duotone" />
+      return <CheckCircle className="text-blue-500" size={20} />
     } else if (status === 'fair' || score >= 50) {
-      return <WarningCircle className="text-yellow-500" size={20} weight="duotone" />
+      return <WarningCircle className="text-yellow-500" size={20} />
     } else {
-      return <XCircle className="text-red-500" size={20} weight="duotone" />
+      return <XCircle className="text-red-500" size={20} />
     }
   }
 
@@ -127,7 +127,7 @@ export function PiPedalTestStatus({ showDetails = true }: TestStatusProps) {
     return (
       <div className="card">
         <div className="flex items-center gap-3">
-          <Pulse className="animate-pulse" size={20} weight="duotone" />
+          <Pulse className="animate-pulse" size={20} />
           <span>Loading PipeDAL test results...</span>
         </div>
       </div>
@@ -139,7 +139,7 @@ export function PiPedalTestStatus({ showDetails = true }: TestStatusProps) {
       <div className="card">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <XCircle className="text-gray-400" size={20} weight="duotone" />
+            <XCircle className="text-gray-400" size={20} />
             <div>
               <h3 className="font-semibold">PipeDAL Engine Test</h3>
               <p className="text-sm text-gray-600">{error}</p>
@@ -152,7 +152,7 @@ export function PiPedalTestStatus({ showDetails = true }: TestStatusProps) {
           >
             {runningTest ? (
               <>
-                <ArrowsClockwise className="animate-spin" size={16} weight="duotone" />
+                <ArrowsClockwise className="animate-spin" size={16} />
                 Running...
               </>
             ) : (
@@ -181,12 +181,12 @@ export function PiPedalTestStatus({ showDetails = true }: TestStatusProps) {
         <button
           onClick={runNewTest}
           disabled={runningTest}
-          className="btn btn-ghost btn-sm"
-        >
-          {runningTest ? (
-            <ArrowsClockwise className="animate-spin" size={16} weight="duotone" />
+        className="btn btn-ghost btn-sm"
+      >
+        {runningTest ? (
+            <ArrowsClockwise className="animate-spin" size={16} />
           ) : (
-            <ArrowsClockwise size={16} weight="duotone" />
+            <ArrowsClockwise size={16} />
           )}
         </button>
       </div>
@@ -268,11 +268,11 @@ export function PiPedalTestStatus({ showDetails = true }: TestStatusProps) {
                     {category.passed_tests}/{category.total_tests}
                   </span>
                   {category.status === 'passed' ? (
-                    <CheckCircle className="text-green-500" size={16} weight="duotone" />
+                    <CheckCircle className="text-green-500" size={16} />
                   ) : category.status === 'partial' ? (
-                    <WarningCircle className="text-yellow-500" size={16} weight="duotone" />
+                    <WarningCircle className="text-yellow-500" size={16} />
                   ) : (
-                    <XCircle className="text-red-500" size={16} weight="duotone" />
+                    <XCircle className="text-red-500" size={16} />
                   )}
                 </div>
               </div>

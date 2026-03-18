@@ -1,4 +1,4 @@
-import { Headphones } from '@phosphor-icons/react'
+import { Headphones } from '@carbon/icons-react'
 import { Alert, Button, CircularProgress } from '@mui/material'
 import { PageHeader } from '../components/PageHeader'
 import { AudioInterfaceControl } from '../../map2/components/AudioInterfaceControl'
@@ -26,7 +26,7 @@ export function HoToneJoGGPage() {
             ? `USB Audio Interface Configuration & Monitoring · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
             : 'USB Audio Interface Configuration & Monitoring'
         }
-        icon={<Headphones size={32} weight="duotone" style={{ color: '#3b82f6' }} />}
+        icon={<Headphones size={32} style={{ color: '#3b82f6' }} />}
       />
 
       {isLoading ? (

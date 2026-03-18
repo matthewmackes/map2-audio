@@ -4366,8 +4366,18 @@ export const drumsApi = {
     fetchJson<import('./types').DrumMachineState>(`${API_BASE}/engine/drums/state`),
 
   /** Update drum machine state */
-  updateState: (state: Partial<import('./types').DrumMachineState>) =>
+  updateState: (state: import('./types').DrumMachineStateUpdate) =>
     fetchJson<{ status: string; state: import('./types').DrumMachineState }>(`${API_BASE}/engine/drums/state`, {
+      method: 'POST', body: JSON.stringify(state),
+    }),
+
+  /** Get transport state */
+  getTransport: () =>
+    fetchJson<import('./types').DrumTransportState>(`${API_BASE}/engine/drums/transport`),
+
+  /** Update transport state */
+  setTransport: (state: import('./types').DrumTransportUpdate) =>
+    fetchJson<import('./types').DrumTransportState>(`${API_BASE}/engine/drums/transport`, {
       method: 'POST', body: JSON.stringify(state),
     }),
 
@@ -4386,6 +4396,10 @@ export const drumsApi = {
   /** Get generated pack details */
   getGeneratedPackDetails: (packId: string) =>
     fetchJson<Record<string, unknown>>(`${API_BASE}/engine/drums/packs/generated/${packId}`),
+
+  /** Get a metering snapshot */
+  getMetering: () =>
+    fetchJson<import('./types').DrumMetering>(`${API_BASE}/engine/drums/metering`),
 };
 
 // ==================== Sidechain Routing ====================

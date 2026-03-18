@@ -421,7 +421,7 @@ export default function WWWPanel() {
                             />
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                            <Typography variant="body2" sx={{ fontFamily: 'var(--font-mono)' }}>
                               {endpoint.path}
                             </Typography>
                           </TableCell>
@@ -699,7 +699,7 @@ export default function WWWPanel() {
                         secondary={
                           wwwStatus?.api_key ? (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                              <Typography variant="body2" sx={{ fontFamily: 'var(--font-mono)' }}>
                                 {showApiKey ? wwwStatus.api_key : '••••••••••••••••'}
                               </Typography>
                               <IconButton size="small" onClick={() => setShowApiKey(!showApiKey)}>
@@ -818,7 +818,7 @@ export default function WWWPanel() {
               {accessLogs.length > 0 ? (
                 accessLogs.map((log, idx) => (
                   <TableRow key={idx}>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                    <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                       {new Date(log.timestamp).toLocaleString()}
                     </TableCell>
                     <TableCell>
@@ -833,7 +833,7 @@ export default function WWWPanel() {
                         }
                       />
                     </TableCell>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {log.path}
                     </TableCell>
                     <TableCell>
@@ -848,7 +848,7 @@ export default function WWWPanel() {
                       />
                     </TableCell>
                     <TableCell>{log.response_time?.toFixed(2) || '-'}ms</TableCell>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{log.client_ip}</TableCell>
+                    <TableCell sx={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{log.client_ip}</TableCell>
                   </TableRow>
                 ))
               ) : (

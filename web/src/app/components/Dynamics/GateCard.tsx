@@ -251,7 +251,7 @@ export function GateCard({
         .gate-attenuation {
           font-size: 11px;
           color: #888;
-          font-family: monospace;
+          font-family: var(--font-ui-tight);
         }
 
         .dynamics-knobs {
@@ -284,7 +284,7 @@ export function GateCard({
         .level-label {
           font-size: 10px;
           color: #666;
-          font-family: monospace;
+          font-family: var(--font-ui-tight);
         }
       `}</style>
     </div>

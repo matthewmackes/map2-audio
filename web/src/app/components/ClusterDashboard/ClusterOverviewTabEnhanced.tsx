@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { WarningCircle, CheckCircle, Lightning, WifiHigh, ArrowCounterClockwise } from '@phosphor-icons/react'
+import { WarningAlt as WarningCircle, CheckmarkFilled as CheckCircle, Flash as Lightning, Wifi as WifiHigh, Reset as ArrowCounterClockwise } from '@carbon/icons-react'
 import { useMemo, useState } from 'react'
 import { TopologyGraph } from './TopologyGraph'
 import { useClusterSimulation } from '../../hooks/useClusterSimulation'
@@ -422,7 +422,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 opacity: simulationScenario !== null ? 0.5 : 1,
               }}
             >
-              <Lightning size={14} weight="duotone" />
+              <Lightning size={14} />
               Simulate High Load
             </button>
 
@@ -449,7 +449,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 opacity: simulationScenario !== null ? 0.5 : 1,
               }}
             >
-              <WarningCircle size={14} weight="duotone" />
+              <WarningCircle size={14} />
               Degrade Node
             </button>
 
@@ -476,7 +476,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 opacity: simulationScenario !== null ? 0.5 : 1,
               }}
             >
-              <WifiHigh size={14} weight="duotone" />
+              <WifiHigh size={14} />
               Node Failure
             </button>
 
@@ -503,7 +503,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 opacity: simulationScenario !== null ? 0.5 : 1,
               }}
             >
-              <CheckCircle size={14} weight="duotone" />
+              <CheckCircle size={14} />
               Trigger Failover
             </button>
 
@@ -527,7 +527,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 gap: 6,
               }}
             >
-              <ArrowCounterClockwise size={14} weight="duotone" />
+              <ArrowCounterClockwise size={14} />
               Clear Scenario
             </button>
           </div>
