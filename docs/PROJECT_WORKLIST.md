@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-17 - Codex (T208 shared plugin-card watermark pass completed)
+Last updated: 2026-03-18 - Codex (T210 SoundFont sampler refactor started for SynthForge review + implementation)
 
 ## Active Blockers Only
 
@@ -648,6 +648,129 @@ Last updated: 2026-03-17 - Claude
 
 Assigned to: Claude
 Last updated: 2026-03-17 - Claude
+
+## API Reliability
+
+ID: T209
+Status: [ ] Todo
+Title: API startup, restart, and load-reliability remediation program
+Description:
+- Goal / acceptance criteria: Eliminate the API failure modes observed in the 2026-03-07 qualification review by hardening startup/readiness behavior, restart sequencing, endpoint degradation paths, and observability so that the load qualification suite passes consistently without transient `404`, `500`, `503`, connection resets, or 8-second read/connect timeouts during warmup or steady-state runs.
+- Why it matters: The reviewed artifacts show one failed qualification run with 379/400 HTTP failures and 9240 WebSocket drops plus several earlier smoke runs with transient route/server errors, which blocks confidence in API reliability during restart and qualification.
+- Dependencies: Existing load qualification artifacts under `docs/fit-for-purpose-evidence/20260307/`, backend service orchestration, API observability/logging stack, and final verification with `tests/load_test.py`
+- Estimated effort: High
+- Required outputs/deliverables: Implemented backend fixes, updated qualification/runbook logic, correlated observability artifacts, regression tests for startup/restart behavior, and a new evidence bundle showing repeatable pass under smoke and full qualification.
+Subtasks:
+ID: T209-subA
+Status: [>] In Progress
+Title: Convert startup and warmup states into explicit readiness gates
+Description:
+- Goal / acceptance criteria: Audit all load-tested API and websocket entry points and ensure they fail fast with structured readiness responses while dependencies are still warming up instead of hanging into client-side timeouts. Define concrete readiness checks for backend HTTP serving, chain inventory access, plugin inventory/discovery state, websocket broker availability, and any engine-backed audio routes. Acceptance requires a documented readiness matrix, implementation changes on affected routes/services, and automated tests proving warmup returns deterministic readiness errors instead of connection/read timeouts.
+- Why it matters: The failed T050 run shows broad timeout behavior across unrelated routes, which is consistent with requests arriving before the stack is fully ready.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs/deliverables: Readiness matrix, route/service updates, startup-state tests, and notes linking coverage to the affected endpoints from the failure review.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 00:04 - Codex
+- Progress notes:
+  - Added shared route-readiness helper logic in `app/services/api_readiness.py` to convert startup and warmup states into structured `503` responses with dependency detail and `Retry-After` guidance.
+  - Wired the readiness guards into the load-tested route families hit in the failure review: `/api/audio/status`, `/api/audio/latency`, `/api/audio/levels`, `/api/audio/levels/plugins`, `/api/chains/`, `/api/chains/{id}`, `/api/chains/{id}/activate`, `/api/chains/{id}/deactivate`, `/api/plugins/discover`, `/api/plugins/list`, `/api/plugins/load`, `/api/plugins/unload`, and `/api/plugins/batch/parameters`.
+  - Added focused tests in `tests/test_api_route_readiness.py` and updated affected route tests so the new startup contract is validated without regressing plugin residency behavior.
+
+ID: T209-subB
+Status: [ ] Todo
+Title: Stabilize restart sequencing and dependency ordering for backend and realtime services
+Description:
+- Goal / acceptance criteria: Trace service startup/restart ordering across the MAP2 backend stack and remove races that allow HTTP or websocket traffic before required subsystems are actually usable. Acceptance requires an explicit dependency/ordering map, any required code or service-unit changes, and restart validation showing API health, websocket readiness, and route availability are stable immediately after controlled service-stack restart.
+- Why it matters: Later post-restart evidence passed cleanly, which suggests the failure is likely tied to startup ordering or readiness races rather than a permanent logic bug.
+- Dependencies: T209-subA
+- Estimated effort: Medium
+- Required outputs/deliverables: Restart dependency map, service sequencing fixes, controlled restart validation evidence, and updated operational notes if boot/service procedures change.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 23:10 - Codex
+
+ID: T209-subC
+Status: [ ] Todo
+Title: Harden chain and plugin lifecycle endpoints against transient 404/500/503 failures
+Description:
+- Goal / acceptance criteria: Review the chain activation/deactivation, chain lookup, plugin load, and plugin unload flows that appeared in the transient smoke failures and make them resilient to restart-time and warmup-time races. Acceptance requires root-cause analysis for the observed `/api/plugins/unload` `404`, chain endpoint `500`/`503` responses, and connection resets; route or service fixes that return the correct status/payloads; and focused regression tests that exercise lifecycle calls during degraded states.
+- Why it matters: Even though the final qualification reruns passed, the transient lifecycle failures indicate brittle contract behavior around the most stateful API surfaces.
+- Dependencies: T209-subA, T209-subB
+- Estimated effort: High
+- Required outputs/deliverables: Root-cause notes, backend fixes, targeted tests for chain/plugin lifecycle routes, and updated API contract documentation if any response semantics are formalized.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 23:10 - Codex
+
+ID: T209-subD
+Status: [ ] Todo
+Title: Add correlated request, websocket, and dependency observability for qualification failures
+Description:
+- Goal / acceptance criteria: Extend logging/observability so every future load run can be correlated across HTTP requests, websocket sessions, dependency readiness, queue depth, and backend exceptions using a shared run or request context. Acceptance requires new or improved structured logs/metrics for timeout-prone areas, a documented artifact-capture path for qualification runs, and tests or smoke validation proving the data is emitted during failure and pass scenarios.
+- Why it matters: Current client-side artifacts show the symptoms clearly, but they do not isolate the server-side cause of timeouts and resets quickly enough for efficient remediation.
+- Dependencies: T209-subA
+- Estimated effort: Medium
+- Required outputs/deliverables: Structured log/metric additions, qualification capture instructions or script updates, and evidence examples tying a run ID to backend-side events.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 23:10 - Codex
+
+ID: T209-subE
+Status: [ ] Todo
+Title: Make load qualification gating restart-safe and preflight-aware
+Description:
+- Goal / acceptance criteria: Update the load-qualification workflow so it verifies environment prerequisites and service readiness before the expensive smoke/full runs begin. This includes preflight checks for file descriptor limits, API health, websocket readiness, chain/plugin route availability, and any other conditions learned from T050-T053. Acceptance requires workflow/runbook updates and automated preflight behavior that prevents collecting misleading full-run failures when the environment is not yet ready.
+- Why it matters: The failed run also carried an open-file-limit warning and appears to have started against an unhealthy or incompletely started stack; the qualification harness should catch those conditions first.
+- Dependencies: T209-subA, T209-subB, T209-subD
+- Estimated effort: Medium
+- Required outputs/deliverables: Updated qualification runner or scripts, revised runbook/docs, preflight checks in automation, and evidence showing the gate blocks unsafe starts.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 23:10 - Codex
+
+ID: T209-subF
+Status: [ ] Todo
+Title: Re-run smoke, full soak, and restart qualification to close the reliability program
+Description:
+- Goal / acceptance criteria: After the remediation work lands, execute the smoke, full 310-second qualification, and controlled restart qualification enough times to demonstrate the failures are gone and the pass is repeatable. Acceptance requires zero HTTP failures, zero websocket drops, acceptable latency gates, archived artifacts, and a short closure report comparing the fixed runs against the 2026-03-07 failure signatures.
+- Why it matters: This program is not complete until the observed failure patterns are demonstrably absent in fresh evidence.
+- Dependencies: T209-subB, T209-subC, T209-subD, T209-subE
+- Estimated effort: Medium
+- Required outputs/deliverables: New qualification artifact bundle under `docs/fit-for-purpose-evidence/`, closure summary, and final worklist update with pass/fail disposition.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 23:10 - Codex
+Assigned to: Codex
+Last updated: 2026-03-17 23:10 - Codex
+
+## SynthForge
+
+ID: T210
+Status: [>] In Progress
+Title: Refactor SynthForge into a SoundFont-first world-class sampler
+Description:
+- Goal / acceptance criteria: Review the existing `SynthForge` JUCE plugin plus `SynthForgeCard` UI, then refactor the instrument from the current subtractive/SFZ-oriented scaffold into a SoundFont-first sampler centered on hardware MIDI keyboards and the on-screen piano. Acceptance requires SoundFont 2 and 3 loading from the internal library, a preset browser built from parsed banks/programs, a redesigned on-screen piano with velocity interaction, real-time MIDI input handling aligned with JUCE MIDI pathways, and pro controls for master transpose, velocity curve, pitch-bend range, mono/poly mode, and legato. The implementation must expose a coherent backend/API/UI contract and preserve existing MAP2 integration points.
+- Why it matters: The current SynthForge surface and engine do not match the requested product direction. The user explicitly wants a commercial-grade sampler architecture, not an SFZ scaffold with synth controls.
+- Dependencies: Existing `juce-engine/Source/SynthForge/*`, `app/routes/synthforge.py`, `app/routes/soundfonts.py`, `app/services/juce_engine_service.py`, `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx`, and build-system support for a SoundFont engine backend.
+- Estimated effort: High
+- Required outputs/deliverables: Reviewed architecture notes, implemented backend/API changes for SoundFont browsing/loading and preset metadata, JUCE core refactor toward SoundFont playback controls, redesigned SynthForge card, focused automated validation, and explicit notes for any remaining gaps such as static FluidSynth vendoring/build integration if not fully closed in this slice.
+Subtasks:
+ID: T210-subA
+Status: [>] In Progress
+Title: Deliver the first integrated SoundFont sampler slice across backend, engine, and card
+Description:
+- Goal / acceptance criteria: Land the first end-to-end slice that replaces SFZ-first UX with SoundFont-first browsing/loading, exposes parsed preset metadata, and adds the required sampler performance controls in the engine/API/card. Acceptance requires code changes in the relevant backend, JUCE, and frontend files plus targeted validation.
+- Why it matters: This is the minimum coherent slice that converts SynthForge from a review item into a working sampler refactor.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs/deliverables: Code changes, tests/build notes, and handoff notes for any remaining FluidSynth packaging work.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 06:20 - Codex
+Assigned to: Codex
+Last updated: 2026-03-18 06:20 - Codex
 
 ## JUCE Grid UI Polish
 

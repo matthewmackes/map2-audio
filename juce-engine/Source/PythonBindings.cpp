@@ -263,6 +263,13 @@ py::dict synthForgeSampleLoadStatusToDict(const synthforge::SampleLoadStatus& st
     d["region_count"] = status.regionCount;
     d["loaded_sample_count"] = status.loadedSampleCount;
     d["sfz_path"] = status.sfzPath;
+    d["soundfont_path"] = status.soundfontPath;
+    d["soundfont_format"] = status.soundfontFormat;
+    d["active_bank"] = status.activeBank;
+    d["active_program"] = status.activeProgram;
+    d["active_preset_name"] = status.activePresetName;
+    d["engine"] = status.engine;
+    d["engine_available"] = status.engineAvailable;
     d["last_error"] = status.lastError;
 
     py::list warnings;
@@ -2706,6 +2713,9 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("load_synthforge_sfz", &Map2AudioEngine::loadSynthForgeSfz,
              py::arg("part_index"), py::arg("sfz_path"),
              "Load SFZ into a SynthForge part sampler")
+        .def("load_synthforge_soundfont", &Map2AudioEngine::loadSynthForgeSoundFont,
+             py::arg("part_index"), py::arg("soundfont_path"), py::arg("bank") = 0, py::arg("program") = 0, py::arg("preset_name") = "",
+             "Load SoundFont 2/3 metadata and select a preset for a SynthForge part")
         .def("get_synthforge_part_sample_status", [](const Map2AudioEngine& self, int partIndex) {
             return synthForgeSampleLoadStatusToDict(self.getSynthForgePartSampleStatus(partIndex));
         }, py::arg("part_index"), "Get SynthForge sampler load status for a part")

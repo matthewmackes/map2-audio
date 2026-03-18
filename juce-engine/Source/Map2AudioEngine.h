@@ -1225,6 +1225,7 @@ public:
     std::map<std::string, float> getSynthForgePartParameters(int partIndex) const;
     bool setSynthForgeParameter(int partIndex, const std::string& param, float value);
     bool loadSynthForgeSfz(int partIndex, const std::string& sfzPath);
+    bool loadSynthForgeSoundFont(int partIndex, const std::string& soundfontPath, int bank, int program, const std::string& presetName);
     synthforge::SampleLoadStatus getSynthForgePartSampleStatus(int partIndex) const;
     bool reloadSynthForgePartSfzIfChanged(int partIndex);
 

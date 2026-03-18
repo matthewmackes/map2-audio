@@ -454,28 +454,90 @@ async def get_resources(session: Session = Depends(get_session)):
 # ✅ if lilv_node is not None:
 ```
 
-### Node Display Standard
+### Node Display Standard — Unified Pill Directive
 
-- Frontend surfaces live in:
-  - `web/src/app/components/NodeNav/`
-  - `web/src/app/components/NodeGraph/`
-  - `web/src/app/components/NodeAlerts/`
-  - `web/src/app/components/NodeContextBanner/`
-  - `web/src/app/components/NodeContextPicker/`
-- Shared node contracts live in:
-  - `web/src/app/types/node.ts`
-  - `web/src/app/hooks/useNodeTopology.ts`
-- Per-page viewed-node state lives in `web/src/app/stores/viewedNodeStore.ts` and persists to localStorage key `map2_viewed_nodes`
-- Node alert state lives in `web/src/app/stores/nodeAlertStore.ts` and is intentionally in-memory only
-- Backend node-standard sources of truth live in:
-  - `app/routes/nodes.py`
-  - `app/services/node_discovery_service.py`
-  - `app/services/node_health_service.py`
+> **Established**: 2026-03-18 — All node identity, status, and scope UI is consolidated into the **NodeNavChip pill** in the global nav bar. No other node-identity UI is permitted on any page.
+
+#### Canonical Component
+
+The **sole** node-identity UI element is `NodeNavChip` rendered by `NodeNavBar` in the global nav bar (top-right, justified right). Each discovered node gets one pill. Local node sorts first, then peers alphabetically.
+
+**Pill anatomy** (all three elements required):
+1. **Status dot** — colored by `node.status` (`ok` = green, `warn` = amber, `critical`/`offline` = red)
+2. **Hostname** — truncated via `truncateNodeHostname()`, full name in tooltip
+3. **Health %** — numeric health score suffix (e.g., "96%")
+
+**Pill accent** — left border colored by presence:
+- Blue (`#0f62fe`) = LOCAL (the engine this browser is connected to)
+- Green (`#198038`) = VIEW (the node currently scoped for this page)
+- Gray (`#8d8d8d`) = PEER (discovered but not viewed)
+
+**Presence tag** — Carbon `Tag` inside the pill: `LOCAL` / `VIEW` / `PEER`
+
+#### Popover Interaction
+
+Clicking a pill opens a `Popover` with `NodeMiniCard`. The popover contains:
+- Node display name + hostname subtitle
+- Role label (Audio Node / Management Node / All-In-One)
+- Status tag (OK / WARN / CRITICAL / OFFLINE)
+- **"Set as page node"** button — calls `viewedNodeStore.setViewedNode(pageKey, nodeId)`
+- **"View details"** link — navigates to Platform single-node view, setting both page and platform viewed node
+- **Alert rows** (folded from removed `NodeAlertBar`) — if the node has health alerts, show dismissible alert rows below actions with severity tag. Alert state lives in `nodeAlertStore` (in-memory only)
+- **View context** — when viewing a remote node, show "Remote live view" subtitle; when local, show "Local studio view"
+
+#### Removed Components
+
+These components are **deprecated and must not be used** on any page:
+- `NodeContextBanner` — host/scope card (replaced by pill accent colors + popover context line)
+- `NodeContextPicker` — dropdown selector (replaced by pill popover "Set as page node")
+- `NodeAlertBar` / `NodeAlertToast` — alert notifications (folded into pill: amber/red dot pulse + popover alert rows)
+- Per-page "Viewing node:" text — removed (pill VIEW accent + presence tag communicates this)
+
+If any page currently renders these components, they must be removed and replaced with the pill-only pattern.
+
+#### Feature Migration Map
+
+| Removed Feature | Source | Pill Equivalent |
+|---|---|---|
+| Host vs. Scope distinction | `NodeContextBanner` | Pill accent: blue = host, green = viewed scope |
+| Node switching | `NodeContextPicker` | Popover "Set as page node" button |
+| Health alerts (count + severity) | `NodeAlertBar` | Amber/red pulse on status dot; alert rows in popover |
+| Alert dismiss | `NodeAlertBar` | Dismissible alert rows in popover |
+| Role display | `NodeContextBanner` | Subtitle in popover |
+| "Local/Remote view" label | `NodeContextBanner` | Context line in popover |
+| Network stats (X/Y online) | AVB `NodeSelector` | Optional `/N` suffix or popover footer |
+
+#### Source Files
+
+- Pill component: `web/src/app/components/NodeNav/NodeNavChip.tsx`
+- Nav bar container: `web/src/app/components/NodeNav/NodeNavBar.tsx`
+- Popover card: `web/src/app/components/NodeNav/NodeMiniCard.tsx`
+- Pill styles: `web/src/app/components/NodeNav/NodeNavChip.css`
+- Node types: `web/src/app/types/node.ts`
+- Display utilities: `web/src/app/utils/nodeDisplay.ts`
+- Topology hook: `web/src/app/hooks/useNodeTopology.ts`
+- Page context hook: `web/src/app/hooks/useNodePageContext.ts`
+- Viewed-node store: `web/src/app/stores/viewedNodeStore.ts` (persists to localStorage `map2_viewed_nodes`)
+- Alert store: `web/src/app/stores/nodeAlertStore.ts` (in-memory only)
+
+#### Backend Contracts
+
+- `app/routes/nodes.py` — node API routes
+- `app/services/node_discovery_service.py` — discovery
+- `app/services/node_health_service.py` — health metrics
 - Frontend must never call remote node IPs directly; use either:
   - `node_id` query scoping on existing APIs for middleware-proxied routes
   - `GET/POST/PATCH /api/node/{node_id}/proxy/{path}` for explicit per-node proxying
 - `HomePage` remote node scope uses the explicit `/api/node/{node_id}/proxy/...` path because `ClusterProxyMiddleware` excludes `/api/cluster/*`
 - `MidiHubPage` child panels inherit page scope through `MidiHubNodeScopeProvider`; queries must include the scope key in React Query cache keys to avoid local/remote collisions
+
+#### Rules
+
+1. **No node identity UI outside the global nav bar** — pages must not render their own node selectors, banners, or status badges
+2. **All node switching goes through the pill popover** — `viewedNodeStore.setViewedNode()` is the sole mechanism
+3. **Health alerts surface through the pill** — status dot color/animation is the primary indicator; details in popover
+4. **Pill is always visible** — it lives in the global nav bar, not inside any page layout
+5. **New node features go into the pill or its popover** — do not create parallel node UI surfaces
 
 ---
 

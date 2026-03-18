@@ -95,6 +95,13 @@ struct SampleLoadStatus {
     int regionCount = 0;
     int loadedSampleCount = 0;
     std::string sfzPath;
+    std::string soundfontPath;
+    std::string soundfontFormat;
+    int activeBank = 0;
+    int activeProgram = 0;
+    std::string activePresetName;
+    std::string engine = "native";
+    bool engineAvailable = false;
     std::string lastError;
     std::vector<std::string> warnings;
 };

@@ -77,6 +77,14 @@ class SfzLoadRequest(BaseModel):
     sfz_path: str = Field(..., min_length=1, max_length=4096)
 
 
+class SoundFontLoadRequest(BaseModel):
+    part_index: int = Field(..., ge=0, le=15)
+    soundfont_path: str = Field(..., min_length=1, max_length=4096)
+    bank: int = Field(0, ge=0, le=16384)
+    program: int = Field(0, ge=0, le=16384)
+    preset_name: str = Field("", max_length=256)
+
+
 class MidiNoteRequest(BaseModel):
     channel: int = Field(..., ge=1, le=16)
     note: int = Field(..., ge=0, le=127)
@@ -140,6 +148,14 @@ class FreezeRequest(BaseModel):
 class RenderRequest(BaseModel):
     output_path: str = Field(..., min_length=1, max_length=4096)
     duration_ms: int = Field(2000, ge=100, le=120000)
+
+
+class PerformanceConfigRequest(BaseModel):
+    master_transpose: int = Field(0, ge=-36, le=36)
+    velocity_curve: float = Field(0.0, ge=-1.0, le=1.0)
+    pitch_bend_range: int = Field(2, ge=1, le=48)
+    mono_mode: bool = False
+    legato: bool = False
 
 
 @router.get("/parts")
@@ -231,6 +247,46 @@ async def get_part_parameters(part_index: int) -> Dict[str, float]:
     return await engine.get_synthforge_part_parameters(part_index)
 
 
+@router.get("/parts/{part_index}/performance")
+async def get_part_performance(part_index: int) -> Dict[str, object]:
+    """Get SoundFont-first performance controls for a SynthForge part."""
+    _validate_part_index(part_index)
+    engine = get_audio_engine()
+    params = await engine.get_synthforge_part_parameters(part_index)
+    return {
+        "master_transpose": int(params.get("global.transpose", 0)),
+        "velocity_curve": float(params.get("performance.velocity_curve", 0.0)),
+        "pitch_bend_range": int(params.get("performance.pitch_bend_range", 2)),
+        "mono_mode": bool(params.get("performance.mono_mode", 0.0) >= 0.5),
+        "legato": bool(params.get("performance.legato", 0.0) >= 0.5),
+    }
+
+
+@router.post("/parts/{part_index}/performance")
+async def set_part_performance(part_index: int, request: PerformanceConfigRequest) -> Dict[str, object]:
+    """Set SoundFont-first performance controls for a SynthForge part."""
+    _validate_part_index(part_index)
+    engine = get_audio_engine()
+    updates = {
+        "global.transpose": float(request.master_transpose),
+        "performance.velocity_curve": float(request.velocity_curve),
+        "performance.pitch_bend_range": float(request.pitch_bend_range),
+        "performance.mono_mode": 1.0 if request.mono_mode else 0.0,
+        "performance.legato": 1.0 if request.legato else 0.0,
+    }
+
+    for param, value in updates.items():
+        success = await engine.set_synthforge_parameter(part_index, param, value)
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Failed to set performance parameter: {param}")
+
+    return {
+        "status": "ok",
+        "part_index": part_index,
+        "performance": await get_part_performance(part_index),
+    }
+
+
 @router.post("/parameters/{part_index}")
 async def set_part_parameter(part_index: int, request: ParameterUpdateRequest) -> Dict[str, object]:
     """Set a single SynthForge parameter on a part."""
@@ -259,6 +315,36 @@ async def load_part_sfz(request: SfzLoadRequest) -> Dict[str, object]:
     if not success:
         detail = status.get("last_error") or "Failed to load SFZ"
         raise HTTPException(status_code=400, detail=detail)
+
+    return {
+        "status": "ok",
+        "part_index": request.part_index,
+        "sample_status": status,
+    }
+
+
+@router.post("/soundfont/load")
+async def load_part_soundfont(request: SoundFontLoadRequest) -> Dict[str, object]:
+    """Load a SoundFont 2/3 file into a SynthForge part."""
+    _validate_part_index(request.part_index)
+
+    soundfont_path = request.soundfont_path.strip()
+    if not soundfont_path.lower().endswith((".sf2", ".sf3")):
+        raise HTTPException(status_code=400, detail="soundfont_path must point to a .sf2 or .sf3 file")
+
+    engine = get_audio_engine()
+    success = await engine.load_synthforge_soundfont(
+        request.part_index,
+        soundfont_path,
+        request.bank,
+        request.program,
+        request.preset_name,
+    )
+    status = await engine.get_synthforge_part_sample_status(request.part_index)
+
+    if not success:
+        detail = status.get("last_error") or "Failed to load SoundFont"
+        raise HTTPException(status_code=503, detail=detail)
 
     return {
         "status": "ok",

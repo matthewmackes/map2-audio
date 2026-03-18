@@ -169,6 +169,7 @@ def _get_hardware_plugins() -> List[Dict[str, Any]]:
 try:
     from fastapi import APIRouter, HTTPException, Query, Response, Body
     from pydantic import BaseModel
+    from app.services.api_readiness import ensure_plugin_route_ready
     from app.services import service_manager
     from app.services.event_publisher import event_publisher, EventType
 
@@ -781,6 +782,7 @@ try:
             Combined list of JUCE native processors and LV2 plugins.
             JUCE processors are listed first as they are the best-in-class options.
         """
+        ensure_plugin_route_ready("/api/plugins/discover")
         global _discovered_plugins, _cache_timestamp
 
         _set_plugins_cache_header(response, refresh)
@@ -957,6 +959,7 @@ try:
     @router.get("/list")
     async def list_plugins(response: Response):
         """List currently loaded plugins."""
+        ensure_plugin_route_ready("/api/plugins/list")
         response.headers["Cache-Control"] = "public, max-age=60"
         with _plugin_cache_lock:
             loaded_entries = list(_loaded_plugins.items())
@@ -1007,6 +1010,7 @@ try:
     @router.post("/load")
     async def load_plugin(uri: str):
         """Load a plugin by URI."""
+        ensure_plugin_route_ready("/api/plugins/load")
         global _loaded_plugins
 
         # In performance mode, reuse parked plugin instances to avoid churn.
@@ -1079,6 +1083,7 @@ try:
         ),
     ):
         """Unload a plugin."""
+        ensure_plugin_route_ready("/api/plugins/unload")
         global _loaded_plugins
 
         with _plugin_cache_lock:
@@ -1369,6 +1374,7 @@ try:
         Returns:
             Summary of applied updates and any errors
         """
+        ensure_plugin_route_ready("/api/plugins/batch/parameters")
         updates_raw = payload.get("updates")
         if not isinstance(updates_raw, list):
             raise HTTPException(status_code=400, detail="updates must be a list")

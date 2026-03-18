@@ -4012,6 +4012,15 @@ bool Map2AudioEngine::loadSynthForgeSfz(int partIndex, const std::string& sfzPat
     return synthForge_.loadPartSfz(partIndex, sfzPath);
 }
 
+bool Map2AudioEngine::loadSynthForgeSoundFont(
+    int partIndex,
+    const std::string& soundfontPath,
+    int bank,
+    int program,
+    const std::string& presetName) {
+    return synthForge_.loadPartSoundFont(partIndex, soundfontPath, bank, program, presetName);
+}
+
 synthforge::SampleLoadStatus Map2AudioEngine::getSynthForgePartSampleStatus(int partIndex) const {
     return synthForge_.getPartSampleStatus(partIndex);
 }

@@ -54,6 +54,13 @@ void SynthVoice::stopNote(float, bool allowTailOff) {
     clearCurrentNote();
 }
 
+void SynthVoice::pitchWheelMoved(int value) {
+    const float normalized = juce::jlimit(-1.0f, 1.0f, (static_cast<float>(value) - 8192.0f) / 8192.0f);
+    const float range = juce::jlimit(1.0f, 48.0f, parameters_.pitchBendRangeSemitones.load(std::memory_order_relaxed));
+    parameters_.pitchBendSemitones.store(normalized * range, std::memory_order_relaxed);
+    updateFrequency();
+}
+
 void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) {
     if (!isVoiceActive()) {
         return;
@@ -112,7 +119,9 @@ float SynthVoice::renderWave(int waveform, float phase) {
 
 void SynthVoice::updateFrequency() {
     const float coarse = parameters_.coarseSemitones.load(std::memory_order_relaxed);
-    const float midiNote = static_cast<float>(currentNote_) + coarse;
+    const float transpose = parameters_.masterTransposeSemitones.load(std::memory_order_relaxed);
+    const float bend = parameters_.pitchBendSemitones.load(std::memory_order_relaxed);
+    const float midiNote = static_cast<float>(currentNote_) + coarse + transpose + bend;
     const double hz = juce::MidiMessage::getMidiNoteInHertz(midiNote);
     phaseIncrement_ = static_cast<float>(hz / sampleRate_);
 }

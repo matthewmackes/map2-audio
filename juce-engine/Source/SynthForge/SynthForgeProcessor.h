@@ -35,6 +35,7 @@ public:
     std::map<std::string, float> getPartParameters(int partIndex) const;
     bool setPartParameter(int partIndex, const std::string& parameter, float value);
     bool loadPartSfz(int partIndex, const std::string& sfzPath);
+    bool loadPartSoundFont(int partIndex, const std::string& soundfontPath, int bank, int program, const std::string& presetName);
     SampleLoadStatus getPartSampleStatus(int partIndex) const;
     bool reloadPartSfzIfChanged(int partIndex);
 

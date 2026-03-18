@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 try:
     from fastapi import APIRouter, HTTPException, Query
     from typing import Dict, Any, Optional, List
+    from app.services.api_readiness import ensure_audio_route_ready
     from app.services.engine_runtime_facade import get_engine_service
 
     logger = logging.getLogger(__name__)
@@ -184,6 +185,7 @@ try:
     @router.get("/status")
     async def get_audio_status_route():
         """Get audio engine status from JUCE."""
+        ensure_audio_route_ready("/api/audio/status")
         global _audio_status_cache, _audio_status_cache_at
         service = get_engine_service()
         from app.services.audio_health_monitor import get_audio_health_monitor
@@ -605,6 +607,7 @@ try:
     @router.get("/latency")
     async def get_latency():
         """Get audio latency in milliseconds."""
+        ensure_audio_route_ready("/api/audio/latency")
         global _audio_latency_cache, _audio_latency_cache_at
         service = get_engine_service()
 
@@ -681,6 +684,7 @@ try:
     @router.get("/levels")
     async def get_levels():
         """Get current audio levels from JUCE VU meters."""
+        ensure_audio_route_ready("/api/audio/levels")
         global _audio_levels_cache, _audio_levels_cache_at
         service = get_engine_service()
 
@@ -767,6 +771,7 @@ try:
     @router.get("/levels/plugins")
     async def get_plugin_levels():
         """Get per-plugin VU levels from JUCE."""
+        ensure_audio_route_ready("/api/audio/levels/plugins")
         global _audio_plugin_levels_cache, _audio_plugin_levels_cache_at
         service = get_engine_service()
 

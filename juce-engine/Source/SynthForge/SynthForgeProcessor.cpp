@@ -115,6 +115,18 @@ bool SynthForgeProcessor::loadPartSfz(int partIndex, const std::string& sfzPath)
     return parts_[static_cast<size_t>(partIndex)].loadSfz(sfzPath);
 }
 
+bool SynthForgeProcessor::loadPartSoundFont(
+    int partIndex,
+    const std::string& soundfontPath,
+    int bank,
+    int program,
+    const std::string& presetName) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].loadSoundFont(soundfontPath, bank, program, presetName);
+}
+
 SampleLoadStatus SynthForgeProcessor::getPartSampleStatus(int partIndex) const {
     if (!isValidPartIndex(partIndex)) {
         SampleLoadStatus status;

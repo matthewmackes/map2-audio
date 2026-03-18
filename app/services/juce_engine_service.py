@@ -3064,6 +3064,21 @@ class JuceEngineService(Singleton):
             return False
         return bool(self._engine.load_synthforge_sfz(part_index, sfz_path))
 
+    async def load_synthforge_soundfont(
+        self,
+        part_index: int,
+        soundfont_path: str,
+        bank: int,
+        program: int,
+        preset_name: str = "",
+    ) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "load_synthforge_soundfont", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, soundfont_path, bank, program, preset_name))
+
     async def reload_synthforge_sfz_if_changed(self, part_index: int) -> bool:
         if not self._engine:
             return False
@@ -3081,6 +3096,13 @@ class JuceEngineService(Singleton):
                 "region_count": 0,
                 "loaded_sample_count": 0,
                 "sfz_path": "",
+                "soundfont_path": "",
+                "soundfont_format": "",
+                "active_bank": 0,
+                "active_program": 0,
+                "active_preset_name": "",
+                "engine": "none",
+                "engine_available": False,
                 "last_error": "Engine not initialized",
                 "warnings": [],
             }

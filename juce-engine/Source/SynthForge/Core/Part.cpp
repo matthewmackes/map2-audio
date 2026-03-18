@@ -61,6 +61,16 @@ void applyVoiceParameter(SynthVoiceParameters& params, const std::string& name, 
         return;
     }
 
+    if (name == "global.transpose") {
+        params.masterTransposeSemitones.store(clamp(value, -36.0f, 36.0f), std::memory_order_relaxed);
+        return;
+    }
+
+    if (name == "performance.pitch_bend_range") {
+        params.pitchBendRangeSemitones.store(clamp(value, 1.0f, 48.0f), std::memory_order_relaxed);
+        return;
+    }
+
     if (name == "filter1.cutoff") {
         if (value <= 1.0f) {
             const float normalized = clamp(value, 0.0f, 1.0f);
@@ -140,6 +150,11 @@ Part::Part(int partIndex) {
     setParameter("amp.decay", 120.0f);
     setParameter("amp.sustain", 0.8f);
     setParameter("amp.release", 250.0f);
+    setParameter("global.transpose", 0.0f);
+    setParameter("performance.velocity_curve", 0.0f);
+    setParameter("performance.pitch_bend_range", 2.0f);
+    setParameter("performance.mono_mode", 0.0f);
+    setParameter("performance.legato", 0.0f);
 
     hotReloadStatus_.enabled = false;
     hotReloadStatus_.intervalMs = hotReloadIntervalMs_.load(std::memory_order_relaxed);
@@ -401,6 +416,66 @@ bool Part::loadSfz(const std::string& sfzPath) {
 
     setSampleStatus(status);
     return success;
+}
+
+bool Part::loadSoundFont(const std::string& soundfontPath, int bank, int program, const std::string& presetName) {
+    SampleLoadStatus status = getSampleStatus();
+    status.partIndex = partIndex_.load(std::memory_order_relaxed);
+    status.sfzPath.clear();
+    status.soundfontPath = soundfontPath;
+    status.soundfontFormat.clear();
+    status.activeBank = std::max(0, bank);
+    status.activeProgram = std::max(0, program);
+    status.activePresetName = presetName;
+    status.engine = "fluidsynth";
+    status.engineAvailable = false;
+    status.lastError.clear();
+    status.warnings.clear();
+    status.loaded = false;
+    status.samplerMode = false;
+    status.regionCount = 0;
+    status.loadedSampleCount = 0;
+
+    if (soundfontPath.empty()) {
+        status.lastError = "SoundFont path must not be empty";
+        setSampleStatus(status);
+        return false;
+    }
+
+    const juce::File soundfontFile(juce::String::fromUTF8(soundfontPath.c_str()));
+    if (!soundfontFile.existsAsFile()) {
+        status.lastError = "SoundFont file does not exist: " + soundfontPath;
+        setSampleStatus(status);
+        return false;
+    }
+
+    const juce::String extension = soundfontFile.getFileExtension().toLowerCase();
+    if (extension != ".sf2" && extension != ".sf3") {
+        status.lastError = "Only .sf2 and .sf3 files are supported";
+        setSampleStatus(status);
+        return false;
+    }
+
+    status.soundfontFormat = extension.substring(1).toStdString();
+    status.activePresetName = presetName.empty() ? soundfontFile.getFileNameWithoutExtension().toStdString() : presetName;
+
+    {
+        std::lock_guard<std::mutex> fileGuard(sfzFileMutex_);
+        lastLoadedSoundFontFile_ = soundfontFile;
+    }
+
+#ifdef HAS_FLUIDSYNTH
+    status.loaded = true;
+    status.samplerMode = true;
+    status.engineAvailable = true;
+    status.lastError.clear();
+#else
+    status.lastError.clear();
+    status.warnings.push_back("SoundFont metadata loaded, but audio playback requires FluidSynth build support");
+#endif
+
+    setSampleStatus(status);
+    return true;
 }
 
 bool Part::loadSfzNative(const std::string& sfzPath, SampleLoadStatus& status) {

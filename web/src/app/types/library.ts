@@ -278,10 +278,13 @@ export interface SoundFont {
   name: string
   filename: string
   path: string
-  format: 'sf2' | 'sfz'
+  format: 'sf2' | 'sf3' | 'sfz'
   category: string
   library: string
   size: number
+  preset_count?: number
+  banks?: number[]
+  programs_preview?: SoundFontPreset[]
 }
 
 export interface SoundFontListResponse {
@@ -289,6 +292,21 @@ export interface SoundFontListResponse {
   total: number
   limit: number
   offset: number
+}
+
+export interface SoundFontPreset {
+  name: string
+  bank: number
+  program: number
+  library: number
+  genre: number
+  morphology: number
+}
+
+export interface SoundFontPresetResponse {
+  path: string
+  presets: SoundFontPreset[]
+  total: number
 }
 
 export interface SoundFontLibrary {

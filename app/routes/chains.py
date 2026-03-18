@@ -13,6 +13,7 @@ try:
     from fastapi import APIRouter, HTTPException, Query, Body, Request, Response
     from pydantic import BaseModel
     from typing import List
+    from app.services.api_readiness import ensure_chain_route_ready
     from app.services.chain_service import ChainService
     from app.services.event_publisher import event_publisher, EventType
 
@@ -215,6 +216,7 @@ try:
     @router.get("/")
     async def list_chains(request: Request, response: Response):
         """List all signal chains from database."""
+        ensure_chain_route_ready("/api/chains/")
         global _chain_list_cache, _chain_list_cache_etag, _chain_list_cache_at
         now = time.monotonic()
         with _chain_list_cache_lock:
@@ -404,6 +406,7 @@ try:
     @router.get("/{chain_id}")
     async def get_chain(chain_id: int):
         """Get signal chain details."""
+        ensure_chain_route_ready("/api/chains/{id}")
         cached = _get_cached_chain_details(chain_id)
         if cached is not None:
             return cached
@@ -651,6 +654,7 @@ try:
     @router.post("/{chain_id}/activate")
     async def activate_chain(chain_id: int):
         """Activate signal chain."""
+        ensure_chain_route_ready("/api/chains/{id}/activate")
         if not _allow_chain_toggle(chain_id):
             return {"status": "activate_throttled", "chain_id": chain_id, "deferred": True}
 
@@ -690,6 +694,7 @@ try:
     @router.post("/{chain_id}/deactivate")
     async def deactivate_chain(chain_id: int):
         """Deactivate signal chain."""
+        ensure_chain_route_ready("/api/chains/{id}/deactivate")
         if not _allow_chain_toggle(chain_id):
             return {"status": "deactivate_throttled", "chain_id": chain_id, "deferred": True}
 

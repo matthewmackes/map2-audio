@@ -93,12 +93,29 @@ class _DummySynthForgeService:
         }
 
     async def get_synthforge_part_parameters(self, part_index):
-        return {"part_index": float(part_index), "osc1.level": 0.5}
+        return {
+            "part_index": float(part_index),
+            "osc1.level": 0.5,
+            "global.transpose": 12.0,
+            "performance.velocity_curve": 0.25,
+            "performance.pitch_bend_range": 7.0,
+            "performance.mono_mode": 1.0,
+            "performance.legato": 0.0,
+        }
 
     async def set_synthforge_parameter(self, _part_index, _param, _value):
         return True
 
     async def load_synthforge_sfz(self, _part_index, _sfz_path):
+        return True
+
+    async def load_synthforge_soundfont(self, _part_index, soundfont_path, bank, program, preset_name):
+        self.soundfont_selection = {
+            "soundfont_path": soundfont_path,
+            "bank": bank,
+            "program": program,
+            "preset_name": preset_name,
+        }
         return True
 
     async def get_synthforge_part_sample_status(self, part_index):
@@ -109,6 +126,13 @@ class _DummySynthForgeService:
             "region_count": 4,
             "loaded_sample_count": 4,
             "sfz_path": "/tmp/test.sfz",
+            "soundfont_path": getattr(self, "soundfont_selection", {}).get("soundfont_path", "/tmp/test.sf2"),
+            "soundfont_format": "sf2",
+            "active_bank": getattr(self, "soundfont_selection", {}).get("bank", 0),
+            "active_program": getattr(self, "soundfont_selection", {}).get("program", 0),
+            "active_preset_name": getattr(self, "soundfont_selection", {}).get("preset_name", "Concert Grand"),
+            "engine": "fluidsynth",
+            "engine_available": True,
             "last_error": "",
             "warnings": [],
         }
@@ -337,6 +361,48 @@ def test_get_part_sfz_status(monkeypatch):
     payload = asyncio.run(synthforge_routes.get_part_sfz_status(3))
     assert payload["part_index"] == 3
     assert payload["loaded"] is True
+
+
+def test_soundfont_load_and_performance_routes(monkeypatch):
+    service = _DummySynthForgeService()
+    monkeypatch.setattr(
+        synthforge_routes,
+        "get_audio_engine",
+        lambda: service,
+    )
+
+    payload = asyncio.run(
+        synthforge_routes.load_part_soundfont(
+            synthforge_routes.SoundFontLoadRequest(
+                part_index=1,
+                soundfont_path="/tmp/grand.sf2",
+                bank=2,
+                program=5,
+                preset_name="Ballad Grand",
+            )
+        )
+    )
+    assert payload["sample_status"]["soundfont_path"] == "/tmp/grand.sf2"
+    assert payload["sample_status"]["active_bank"] == 2
+    assert payload["sample_status"]["active_program"] == 5
+
+    performance = asyncio.run(synthforge_routes.get_part_performance(1))
+    assert performance["master_transpose"] == 12
+    assert performance["mono_mode"] is True
+
+    updated = asyncio.run(
+        synthforge_routes.set_part_performance(
+            1,
+            synthforge_routes.PerformanceConfigRequest(
+                master_transpose=-12,
+                velocity_curve=-0.5,
+                pitch_bend_range=12,
+                mono_mode=False,
+                legato=True,
+            ),
+        )
+    )
+    assert updated["status"] == "ok"
 
 
 def test_inject_note_on_success(monkeypatch):

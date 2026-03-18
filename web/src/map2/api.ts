@@ -2659,19 +2659,24 @@ import type {
   SoundFontListResponse,
   SoundFontLibrariesResponse,
   SoundFontCategoriesResponse,
+  SoundFontPresetResponse,
   FileDownloadTask,
 } from '../app/types/library'
 
 export const soundfontApi = {
-  listSoundfonts: (params?: { limit?: number; offset?: number; category?: string; format?: string }, nodeId?: string | null) => {
+  listSoundfonts: (params?: { limit?: number; offset?: number; category?: string; format?: string; include_presets?: boolean }, nodeId?: string | null) => {
     const query = new URLSearchParams()
     if (params?.limit) query.set('limit', params.limit.toString())
     if (params?.offset) query.set('offset', params.offset.toString())
     if (params?.category) query.set('category', params.category)
     if (params?.format) query.set('format', params.format)
+    if (params?.include_presets) query.set('include_presets', 'true')
     const queryString = query.toString()
     return fetchJson<SoundFontListResponse>(appendNodeQuery(`${API_BASE}/soundfonts/${queryString ? `?${queryString}` : ''}`, nodeId))
   },
+
+  getPresets: (path: string) =>
+    fetchJson<SoundFontPresetResponse>(`${API_BASE}/soundfonts/presets/?path=${encodeURIComponent(path)}`),
 
   getLibraries: () =>
     fetchJson<SoundFontLibrariesResponse>(`${API_BASE}/soundfonts/libraries/`),
@@ -2761,8 +2766,23 @@ export interface SynthForgeSampleStatus {
   region_count: number
   loaded_sample_count: number
   sfz_path: string
+  soundfont_path: string
+  soundfont_format: string
+  active_bank: number
+  active_program: number
+  active_preset_name: string
+  engine: string
+  engine_available: boolean
   last_error: string
   warnings: string[]
+}
+
+export interface SynthForgePerformanceConfig {
+  master_transpose: number
+  velocity_curve: number
+  pitch_bend_range: number
+  mono_mode: boolean
+  legato: boolean
 }
 
 export interface SynthForgeStreamingConfig {
@@ -2874,10 +2894,25 @@ export const synthforgeApi = {
       { method: 'POST', body: JSON.stringify({ param, value }) }
     ),
 
+  getPerformance: (partIndex: number) =>
+    fetchJson<SynthForgePerformanceConfig>(`${API_BASE}/synthforge/parts/${partIndex}/performance`),
+
+  setPerformance: (partIndex: number, config: SynthForgePerformanceConfig) =>
+    fetchJson<{ status: string; part_index: number; performance: SynthForgePerformanceConfig }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/performance`,
+      { method: 'POST', body: JSON.stringify(config) }
+    ),
+
   loadSfz: (partIndex: number, sfzPath: string) =>
     fetchJson<{ status: string; part_index: number; sample_status: SynthForgeSampleStatus }>(
       `${API_BASE}/synthforge/sfz/load`,
       { method: 'POST', body: JSON.stringify({ part_index: partIndex, sfz_path: sfzPath }) }
+    ),
+
+  loadSoundFont: (partIndex: number, soundfontPath: string, bank: number = 0, program: number = 0, presetName: string = '') =>
+    fetchJson<{ status: string; part_index: number; sample_status: SynthForgeSampleStatus }>(
+      `${API_BASE}/synthforge/soundfont/load`,
+      { method: 'POST', body: JSON.stringify({ part_index: partIndex, soundfont_path: soundfontPath, bank, program, preset_name: presetName }) }
     ),
 
   getSfzStatus: (partIndex: number) =>

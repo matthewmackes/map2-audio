@@ -49,6 +49,7 @@ public:
     void processAudio(juce::AudioBuffer<float>& mixBuffer, const juce::MidiBuffer& midiBuffer, bool soloActive);
 
     bool loadSfz(const std::string& sfzPath);
+    bool loadSoundFont(const std::string& soundfontPath, int bank, int program, const std::string& presetName);
     SampleLoadStatus getSampleStatus() const;
     bool reloadSfzIfChanged();
 
@@ -169,6 +170,7 @@ private:
     mutable std::mutex sfzFileMutex_;
     juce::File lastLoadedSfzFile_;
     juce::Time lastLoadedSfzModifiedAt_;
+    juce::File lastLoadedSoundFontFile_;
 
     mutable std::mutex sampleStatusMutex_;
     SampleLoadStatus sampleStatus_;

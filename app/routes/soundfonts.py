@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel
 
 from app.services.soundfont_library.download_manager import get_sf_download_manager
+from app.services.soundfont_parser import attach_soundfont_summaries, parse_soundfont_presets
 from app.paths import StoragePaths
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,8 @@ async def list_soundfonts(
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
     category: Optional[str] = None,
-    format: Optional[str] = None
+    format: Optional[str] = None,
+    include_presets: bool = Query(False),
 ) -> Dict:
     """List installed SoundFont files.
 
@@ -105,6 +107,9 @@ async def list_soundfonts(
         total = len(soundfonts)
         soundfonts = soundfonts[offset:offset + limit]
 
+        if include_presets:
+            soundfonts = attach_soundfont_summaries(soundfonts)
+
         return {
             "soundfonts": soundfonts,
             "total": total,
@@ -115,6 +120,25 @@ async def list_soundfonts(
     except Exception as e:
         logger.error(f"Error listing soundfonts: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/presets/")
+async def get_soundfont_presets(path: str = Query(..., min_length=1, max_length=4096)) -> Dict:
+    """Parse bank/program presets from a SoundFont 2/3 file."""
+    try:
+        presets = parse_soundfont_presets(path)
+        return {
+            "path": path,
+            "presets": presets,
+            "total": len(presets),
+        }
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error(f"Error parsing soundfont presets for {path}: {exc}")
+        raise HTTPException(status_code=500, detail="Failed to parse SoundFont presets") from exc
 
 
 @router.get("/libraries/")

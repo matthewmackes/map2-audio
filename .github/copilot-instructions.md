@@ -795,6 +795,59 @@ const data: DataResponse = await fetchData()
 
 ---
 
+## Unified Node Pill Directive
+
+> **Established**: 2026-03-18 — All node identity, status, and scope UI is consolidated into the **NodeNavChip pill** in the global nav bar. No other node-identity UI is permitted on any page.
+
+### Canonical Component
+
+The **sole** node-identity UI element is `NodeNavChip` rendered by `NodeNavBar` in the global nav bar (top-right, justified right). Each discovered node gets one pill. Local node sorts first, then peers alphabetically.
+
+**Pill anatomy** (all three elements required):
+1. **Status dot** — colored by `node.status` (ok=green, warn=amber, critical/offline=red)
+2. **Hostname** — truncated via `truncateNodeHostname()`, full name in tooltip
+3. **Health %** — numeric health score suffix (e.g., "96%")
+
+**Pill accent** — left border colored by presence:
+- Blue (`#0f62fe`) = LOCAL (engine this browser is connected to)
+- Green (`#198038`) = VIEW (node currently scoped for this page)
+- Gray (`#8d8d8d`) = PEER (discovered but not viewed)
+
+### Popover Interaction
+
+Clicking a pill opens a `Popover` with `NodeMiniCard` containing:
+- Node display name + hostname + role label
+- Status tag + view context ("Local studio view" / "Remote live view")
+- "Set as page node" button — calls `viewedNodeStore.setViewedNode(pageKey, nodeId)`
+- "View details" link — navigates to Platform single-node view
+- Alert rows (if any) — dismissible, with severity tag
+
+### Deprecated Components (DO NOT USE)
+
+- `NodeContextBanner` — replaced by pill accent colors + popover context line
+- `NodeContextPicker` — replaced by pill popover "Set as page node"
+- `NodeAlertBar` / `NodeAlertToast` — folded into pill dot pulse + popover alert rows
+- Per-page "Viewing node:" text — pill VIEW accent communicates this
+
+### Rules
+
+1. **No node identity UI outside the global nav bar**
+2. **All node switching goes through the pill popover** via `viewedNodeStore`
+3. **Health alerts surface through the pill** — dot color/animation + popover details
+4. **Pill is always visible** in the global nav bar
+5. **New node features go into the pill or its popover** — no parallel node UI surfaces
+
+### Key Files
+
+- Pill: `web/src/app/components/NodeNav/NodeNavChip.tsx`
+- Nav bar: `web/src/app/components/NodeNav/NodeNavBar.tsx`
+- Popover card: `web/src/app/components/NodeNav/NodeMiniCard.tsx`
+- Types: `web/src/app/types/node.ts`
+- Display utils: `web/src/app/utils/nodeDisplay.ts`
+- Viewed-node store: `web/src/app/stores/viewedNodeStore.ts`
+
+---
+
 ## Golden Example Files
 
 These files represent best practices and architectural patterns to follow:

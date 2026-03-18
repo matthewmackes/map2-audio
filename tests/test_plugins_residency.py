@@ -6,6 +6,27 @@ import pytest
 from app.routes import plugins as plugins_routes
 
 
+class _FakeOrchestrator:
+    def get_all_status(self):
+        return {
+            "orchestrator": {"running": True},
+            "services": {
+                "database": {
+                    "state": "running",
+                    "health": {"healthy": True, "message": "Database responding", "metrics": {}},
+                },
+                "plugin_loader": {
+                    "state": "running",
+                    "health": {
+                        "healthy": True,
+                        "message": "ready",
+                        "metrics": {"plugin_count": 1, "scan_state": "ready"},
+                    },
+                },
+            },
+        }
+
+
 @pytest.fixture(autouse=True)
 async def _reset_plugin_residency_state(monkeypatch):
     monkeypatch.setattr(plugins_routes, "_discovered_plugins", [])
@@ -18,6 +39,10 @@ async def _reset_plugin_residency_state(monkeypatch):
     )
     monkeypatch.setattr(plugins_routes, "_ENABLE_ENGINE_PLUGIN_OPS", False)
     monkeypatch.setattr(plugins_routes, "_ENABLE_SYNC_ENGINE_PLUGIN_OPS", False)
+    monkeypatch.setattr(
+        "app.services.service_orchestrator.get_orchestrator",
+        lambda: _FakeOrchestrator(),
+    )
     yield
 
     worker = getattr(plugins_routes, "_engine_op_worker_task", None)

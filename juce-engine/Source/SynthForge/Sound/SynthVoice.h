@@ -22,6 +22,9 @@ struct SynthVoiceParameters {
     std::atomic<float> sustain{0.8f};        // 0..1
     std::atomic<float> releaseMs{250.0f};    // ms
     std::atomic<float> coarseSemitones{0.0f};
+    std::atomic<float> masterTransposeSemitones{0.0f};
+    std::atomic<float> pitchBendSemitones{0.0f};
+    std::atomic<float> pitchBendRangeSemitones{2.0f};
 };
 
 class SynthSound : public juce::SynthesiserSound {
@@ -37,7 +40,7 @@ public:
     bool canPlaySound(juce::SynthesiserSound* sound) override;
     void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound*, int currentPitchWheelPosition) override;
     void stopNote(float velocity, bool allowTailOff) override;
-    void pitchWheelMoved(int) override {}
+    void pitchWheelMoved(int value) override;
     void controllerMoved(int, int) override {}
     void renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override;
 
