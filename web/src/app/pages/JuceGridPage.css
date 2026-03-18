@@ -1983,12 +1983,21 @@
 }
 
 .juce-grid-page__effect-modal .cds--modal-container {
-  inline-size: fit-content;
-  max-inline-size: min(92vw, 64rem);
+  inline-size: min(var(--juce-grid-effect-modal-width, 100vw), 100vw);
+  max-inline-size: min(var(--juce-grid-effect-modal-width, 100vw), 100vw);
+  block-size: min(var(--juce-grid-effect-modal-height, 100dvh), 100dvh);
+  max-block-size: min(var(--juce-grid-effect-modal-height, 100dvh), 100dvh);
+}
+
+.juce-grid-page__effect-modal .cds--modal-header,
+.juce-grid-page__effect-modal .cds--modal-close {
+  display: none;
 }
 
 .juce-grid-page__effect-modal .cds--modal-content {
-  padding-bottom: 1rem;
+  padding: 0;
+  block-size: 100%;
+  max-block-size: 100%;
 }
 
 .juce-grid-page__effect-modal .cds--modal-content.cds--modal-scroll-content,
@@ -2000,20 +2009,10 @@
 .juce-grid-page__effect-modal-body {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  min-inline-size: min(80vw, 52rem);
-  max-inline-size: 100%;
-  max-block-size: min(80vh, 56rem);
+  inline-size: 100%;
+  block-size: 100%;
   overflow: auto;
   animation: juce-grid-effect-modal-enter 180ms ease;
-}
-
-.juce-grid-page__effect-modal-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
 }
 
 .juce-grid-page__effect-modal-placeholder {
@@ -3112,19 +3111,19 @@
 }
 
 .juce-grid-page__effect-modal--mobile .cds--modal-container {
-  inline-size: 100vw;
-  max-inline-size: 100vw;
-  min-block-size: 100dvh;
-  max-block-size: 100dvh;
+  inline-size: min(var(--juce-grid-effect-modal-width, 100vw), 100vw);
+  max-inline-size: min(var(--juce-grid-effect-modal-width, 100vw), 100vw);
+  block-size: min(var(--juce-grid-effect-modal-height, 100dvh), 100dvh);
+  max-block-size: min(var(--juce-grid-effect-modal-height, 100dvh), 100dvh);
 }
 
 .juce-grid-page__effect-modal--mobile .cds--modal-content {
-  max-block-size: calc(100dvh - 3rem);
+  max-block-size: 100%;
 }
 
 .juce-grid-page__effect-modal--mobile .juce-grid-page__effect-modal-body {
-  min-inline-size: 100%;
-  max-block-size: calc(100dvh - 6rem);
+  inline-size: 100%;
+  block-size: 100%;
 }
 
 .juce-grid-page__automation-workspace,
