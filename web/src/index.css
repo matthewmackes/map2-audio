@@ -8418,6 +8418,36 @@ a {
   background: var(--bg);
 }
 
+.app-shell:not(:has(.hp-root)) {
+  --platform-shell-bg: #161616;
+  --platform-shell-layer: rgba(22, 22, 22, 0.78);
+  --platform-shell-layer-strong: rgba(15, 23, 42, 0.84);
+  --platform-shell-border: rgba(69, 137, 255, 0.22);
+  --platform-shell-border-strong: rgba(166, 200, 255, 0.4);
+  --platform-shell-text: #f4f4f4;
+  --platform-shell-text-secondary: rgba(244, 244, 244, 0.76);
+  --platform-shell-accent: #0f62fe;
+  --platform-shell-accent-soft: #a6c8ff;
+  position: relative;
+  background:
+    radial-gradient(circle at top right, rgba(69, 137, 255, 0.12), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(15, 98, 254, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(8, 15, 32, 0.98) 0%, rgba(13, 20, 37, 0.96) 20%, rgba(22, 22, 22, 1) 100%);
+}
+
+.app-shell:not(:has(.hp-root))::before {
+  content: '';
+  position: fixed;
+  inset: 58px 0 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(166, 200, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 200, 255, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 100%);
+}
+
 .platform-brand-frame {
   position: relative;
   min-height: 100vh;
@@ -8796,6 +8826,8 @@ a {
 }
 
 .app-content {
+  position: relative;
+  z-index: 1;
   width: min(100%, 1584px);
   margin: 0 auto;
   padding: var(--space-6) var(--space-5) var(--space-9);
@@ -8806,23 +8838,95 @@ a {
   max-width: none;
 }
 
+.app-shell:not(:has(.hp-root)) .app-content:not(.app-content--full) {
+  padding-top: clamp(1.5rem, 2vw, 2.5rem);
+}
+
+.app-shell:not(:has(.hp-root)) .app-content:not(.app-content--full)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--platform-shell-border, rgba(69, 137, 255, 0.22));
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.3) 0%, rgba(22, 22, 22, 0.04) 14%, rgba(22, 22, 22, 0) 100%),
+    rgba(22, 22, 22, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(166, 200, 255, 0.08),
+    0 18px 48px rgba(2, 6, 23, 0.22);
+  pointer-events: none;
+}
+
+.app-shell:not(:has(.hp-root)) .app-content > * {
+  position: relative;
+  z-index: 1;
+}
+
 .page-header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  border: 1px solid var(--platform-shell-border, rgba(69, 137, 255, 0.22));
+  background:
+    radial-gradient(circle at top right, rgba(69, 137, 255, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.78) 0%, rgba(22, 22, 22, 0.82) 100%);
   margin-bottom: var(--space-6);
+  box-shadow:
+    inset 0 1px 0 rgba(166, 200, 255, 0.08),
+    0 18px 40px rgba(2, 6, 23, 0.22);
+}
+
+.page-header::before,
+.page-header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.page-header::before {
+  background-image:
+    linear-gradient(rgba(166, 200, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 200, 255, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.88), transparent 100%);
+}
+
+.page-header::after {
+  background: radial-gradient(ellipse 120% 90% at 50% 50%, rgba(22, 22, 22, 0) 12%, rgba(22, 22, 22, 0.28) 62%, rgba(22, 22, 22, 0.82) 100%);
+}
+
+.page-header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .page-header h1 {
-  font-size: var(--type-heading);
+  font-size: clamp(1.8rem, 3vw, 2.85rem);
+  line-height: 1.04;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: transparent;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      #d0e2ff 0px,
+      #d0e2ff 2px,
+      rgba(208, 226, 255, 0) 2px,
+      rgba(208, 226, 255, 0) 5px
+    );
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 14px rgba(69, 137, 255, 0.4));
 }
 
 .page-header p {
   margin: var(--space-2) 0 0;
-  color: var(--text-secondary);
+  max-width: 60ch;
+  color: var(--platform-shell-text-secondary, rgba(244, 244, 244, 0.76));
   font-size: var(--type-body);
 }
 
@@ -8847,7 +8951,19 @@ a {
 }
 
 .page-header__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   min-width: 0;
+}
+
+.page-header__copy::before {
+  content: 'Platform workspace';
+  color: #a6c8ff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .page-header__aside {
@@ -8866,8 +8982,8 @@ a {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid color-mix(in srgb, var(--interactive) 18%, var(--border));
-  background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+  border: 1px solid rgba(166, 200, 255, 0.22);
+  background: rgba(22, 22, 22, 0.42);
 }
 
 .page-header__brand-mark-wrap {
@@ -8890,14 +9006,31 @@ a {
 }
 
 .page-header__brand-primary {
-  color: var(--text-primary);
+  color: var(--platform-shell-text, #f4f4f4);
   font-size: var(--type-label);
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .page-header__brand-secondary {
-  color: var(--text-secondary);
+  color: var(--platform-shell-text-secondary, rgba(244, 244, 244, 0.76));
   font-size: var(--type-caption);
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    align-items: flex-start;
+  }
+
+  .page-header__main,
+  .page-header__aside {
+    width: 100%;
+  }
+
+  .page-header__aside {
+    align-items: flex-start;
+  }
 }
 
 .card,
@@ -9870,6 +10003,15 @@ textarea {
 
 .platform-modal__scroll--compact {
   flex: 0 1 auto;
+  overflow-y: hidden;
+}
+
+.platform-modal__scroll--compact .platform-shell-page {
+  min-height: auto;
+}
+
+.platform-modal__scroll--compact .platform-shell__content {
+  padding: calc(1.5rem * var(--platform-menu-scale)) calc(1.75rem * var(--platform-menu-scale));
 }
 
 /* Mobile platform button in hamburger menu */

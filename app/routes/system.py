@@ -30,6 +30,96 @@ _core_config_state: Dict[int, Dict[str, Any]] = {}
 _core_config_loaded = False
 _core_config_file = os.getenv("MAP2_CORE_CONFIG_FILE", "/tmp/map2_core_config_state.json")
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+_DOCS_ROOT = _REPO_ROOT / "docs"
+
+
+def _humanize_doc_token(token: str) -> str:
+    cleaned = re.sub(r"[_-]+", " ", token).strip()
+    return re.sub(r"\s+", " ", cleaned)
+
+
+def _derive_doc_category(relative_path: Path) -> str:
+    if len(relative_path.parts) > 1:
+        return _humanize_doc_token(relative_path.parts[0]).title()
+
+    stem = relative_path.stem.lower()
+    if "midi" in stem:
+        return "MIDI"
+    if "avb" in stem:
+        return "AVB"
+    if "tesira" in stem:
+        return "Tesira"
+    if any(token in stem for token in ("install", "deploy", "setup", "build", "rpm")):
+        return "Setup And Deployment"
+    if any(token in stem for token in ("latency", "rt", "performance", "xrun")):
+        return "Performance"
+    if any(token in stem for token in ("troubleshoot", "fix", "audit", "verify", "validation")):
+        return "Troubleshooting"
+    return "General"
+
+
+def _derive_doc_keywords(relative_path: Path, headings: List[str]) -> List[str]:
+    keywords = {_humanize_doc_token(relative_path.stem).lower()}
+    for part in relative_path.parts[:-1]:
+        keywords.add(_humanize_doc_token(part).lower())
+    for heading in headings[:5]:
+        keywords.update(token.lower() for token in re.findall(r"[A-Za-z0-9]{3,}", heading))
+    return sorted(keyword for keyword in keywords if keyword)
+
+
+def _summarize_doc_content(content: str) -> tuple[str | None, List[str]]:
+    title: str | None = None
+    headings: List[str] = []
+    first_paragraph: str | None = None
+
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("#"):
+            heading = line.lstrip("#").strip()
+            if heading:
+                headings.append(heading)
+                if title is None:
+                    title = heading
+            continue
+        if first_paragraph is None and not line.startswith(("```", "|", "- ", "* ", "1.", ">", "<")):
+            first_paragraph = re.sub(r"\s+", " ", line)
+
+    return first_paragraph, headings
+
+
+def _build_doc_record(relative_path: Path) -> Dict[str, Any]:
+    doc_path = (_DOCS_ROOT / relative_path).resolve()
+    content = doc_path.read_text(encoding="utf-8")
+    summary, headings = _summarize_doc_content(content)
+    title = headings[0] if headings else _humanize_doc_token(relative_path.stem).title()
+    category = _derive_doc_category(relative_path)
+    return {
+        "name": relative_path.as_posix(),
+        "title": title,
+        "summary": summary,
+        "category": category,
+        "headings": headings[:8],
+        "keywords": _derive_doc_keywords(relative_path, headings),
+    }
+
+
+def _resolve_doc_path(doc_name: str) -> Path:
+    if not doc_name:
+        raise HTTPException(status_code=400, detail="Document name is required")
+
+    candidate = (_DOCS_ROOT / doc_name).resolve()
+    try:
+        candidate.relative_to(_DOCS_ROOT.resolve())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid document name") from exc
+
+    if candidate.suffix.lower() != ".md":
+        raise HTTPException(status_code=400, detail="Only markdown files are allowed")
+    if not candidate.exists():
+        raise HTTPException(status_code=404, detail="Document not found")
+    return candidate
 
 
 def _get_available_activities() -> List[Dict[str, str]]:
@@ -1695,7 +1785,7 @@ async def toggle_rate_limiting(enabled: bool = True) -> Dict[str, Any]:
         }
 
 @router.get("/docs/list")
-async def list_docs() -> List[Dict[str, str]]:
+async def list_docs() -> List[Dict[str, Any]]:
     """
     Get a list of available documentation files.
 
@@ -1703,23 +1793,22 @@ async def list_docs() -> List[Dict[str, str]]:
         List of documentation files with names
     """
     try:
-        docs_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'docs')
-        
-        if not os.path.exists(docs_path):
+        if not _DOCS_ROOT.exists():
             return []
-        
-        docs = []
-        for filename in sorted(os.listdir(docs_path)):
-            if filename.endswith('.md'):
-                docs.append({'name': filename})
-        
+
+        docs: List[Dict[str, Any]] = []
+        for path in sorted(_DOCS_ROOT.rglob("*.md")):
+            if any(part.startswith(".") for part in path.relative_to(_DOCS_ROOT).parts):
+                continue
+            docs.append(_build_doc_record(path.relative_to(_DOCS_ROOT)))
+
         return docs
     except Exception as e:
         logger.error(f"Error listing docs: {e}")
         return []
 
 
-@router.get("/docs/{doc_name}")
+@router.get("/docs/{doc_name:path}")
 async def get_doc(doc_name: str) -> str:
     """
     Get the content of a specific documentation file.
@@ -1734,21 +1823,10 @@ async def get_doc(doc_name: str) -> str:
         HTTPException: If the file is not found or cannot be read
     """
     try:
-        # Security: prevent path traversal
-        if '..' in doc_name or '/' in doc_name or '\\' in doc_name:
-            raise HTTPException(status_code=400, detail="Invalid document name")
-        
-        docs_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'docs', doc_name)
-        
-        if not os.path.exists(docs_path):
-            raise HTTPException(status_code=404, detail="Document not found")
-        
-        if not docs_path.endswith('.md'):
-            raise HTTPException(status_code=400, detail="Only markdown files are allowed")
-        
-        with open(docs_path, 'r', encoding='utf-8') as f:
+        doc_path = _resolve_doc_path(doc_name)
+        with open(doc_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         return content
     except HTTPException:
         raise

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-17 - Claude
+Last updated: 2026-03-17 - Codex (T208 shared plugin-card watermark pass completed)
 
 ## Active Blockers Only
 
@@ -342,7 +342,7 @@ Last updated: 2026-03-16 00:00 - Codex
 ## MIDI Hub v2 — Show Control Platform Rewrite
 
 ID: T203
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MIDI Hub v2 — Full show control platform rewrite with sidebar navigation, Net3 feature parity, Tesira TTP integration, and enterprise OSC namespace
 Description:
 - Goal / acceptance criteria: Complete clean rewrite of the MIDI Hub from a monolithic scrolling page into a 7-area sidebar-navigated show control platform. Add Net3 Show Control Gateway feature parity (Event Lists, MSC command builder, virtual GPIO, MIDI Raw from cues, Learn Mode, String Interface). Add bidirectional Tesira TTP integration. Add hierarchical `/map2/*` OSC namespace. Add persistent bottom status bar, dark/light theming with system preference detection, scroll/panel state persistence across navigation, and deep-linkable routes. All surfaces must pass Carbon Conformance Standard and Carbon Contribution Review Checklist. Enterprise features must be identified and flagged throughout.
@@ -353,7 +353,7 @@ Description:
 Subtasks:
 
 ID: T203-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Navigation shell — persistent left sidebar, bottom status bar, theme system, route scaffolding
 Description:
 - Goal / acceptance criteria: Replace the monolithic `MidiHubPage.tsx` with a sidebar-navigated shell containing 7 service areas as separate routable pages. Implement persistent left sidebar following Carbon `SideNav` pattern (always visible, ~240px, status badges per area). Implement persistent bottom status bar showing: clock status + BPM, active preset name, active event list status + timecode position, route count, connected device count, system health. Implement dark/light theme toggle that follows system preference with manual override per Carbon theming guidance. All 7 areas must be deep-linkable routes under `/midi-hub/*`. Each area must preserve scroll position and panel expand/collapse state when navigating away and back (use Zustand store persisted to localStorage).
@@ -381,7 +381,14 @@ Description:
   - All 7 areas are lazy-loaded via `React.lazy()` for code splitting
 Subtasks: None
 Assigned to: Claude
-Last updated: 2026-03-17 - Claude
+Last updated: 2026-03-17 19:45 - Codex
+- Completion notes:
+  - Replaced the `/midi-hub` route with a nested shell in `web/src/app/App.tsx`: `/midi-hub` now redirects to `/midi-hub/connections`, legacy redirects `/midi` and `/midi-hub-2` now land on the connections area, and all seven routed areas are lazy-loaded child pages under `MidiHubShell`.
+  - Added `web/src/app/pages/MidiHubShell.tsx` and `web/src/app/pages/MidiHubShell.css` with a persistent Carbon `SideNav`, node context picker in the sidebar header, local theme override stored in `map2_theme_preference`, route badges, and a fixed bottom status bar.
+  - Added persisted navigation state in `web/src/app/stores/midiHubNavStore.ts` and routed area scaffolding in `web/src/app/pages/midi-hub/` so each area has its own deep-linkable page and restores scroll state when revisited.
+  - Added `web/src/app/components/MidiHub/MidiHubStatusBar.tsx` and `web/src/app/components/MidiHub/useMidiHubOverview.ts` so the shell can poll MIDI Hub status, routes, clock, presets, and sessions without duplicating query logic across pages.
+  - Converted `web/src/app/pages/MidiHubPage.tsx` into a compatibility redirect to the new shell entry path and updated `web/src/app/pages/MidiHubPage.test.tsx` to validate routed shell entry plus presets-area deep linking.
+  - Validation: `cd web && npm run typecheck` -> pass, `cd web && npm test -- MidiHubPage.test.tsx --runInBand --silent` -> pass, `cd web && npm run build` -> pass (existing Vite chunk-size and dynamic-import warnings only).
 
 ID: T203-subB
 Status: [ ] Todo
@@ -402,7 +409,7 @@ Description:
   - Tests: `MidiHubConnectionsPage.test.tsx` — renders, shows ports, matrix/patchbay tab switch, traffic data display, route creation modal opens
 Subtasks: None
 Assigned to: Claude
-Last updated: 2026-03-17 - Claude
+Last updated: 2026-03-17 17:02 - Codex
 
 ID: T203-subC
 Status: [ ] Todo
@@ -682,3 +689,73 @@ Last updated: 2026-03-17 16:36 - Codex
   - Added a co-located `AppShell.css` stylesheet so the Advanced Menu can carry the landing page's neon-grid/brand-mark treatment without relying on global shell dropdown styles.
   - Validation: `npm run typecheck` -> pass, `npm test -- AppShell.test.tsx --runInBand` -> pass, `npm run build` -> pass (existing Vite chunk-size warnings only).
   - Follow-up refinement completed: blocked and experimental routes now surface in a dedicated `Blocked / Lab` section, the current route card auto-expands when the launcher opens, the mobile menu remains compact, the `Advanced` trigger label is unchanged, and the launcher metrics remain visible.
+
+## Icon System
+
+ID: T205
+Status: [ ] Todo
+Title: Icon system overhaul — monotone Carbon-style SVG icons with DSP color taxonomy
+Description:
+- Goal: Replace all icons across the MAP2 GUI (main app + PiPedal legacy area) with a unified set of monotone, Carbon Design System-style SVG icons. Apply DSP-type color taxonomy to all categories.
+- Why it matters: Current icon system uses four libraries (Carbon, Phosphor, MUI, 63 custom PiPedal SVGs) with inconsistent styles and no systematic color-coding.
+- Design documentation complete — see docs/design/ for all reference material before starting implementation.
+- Estimated effort: High
+Subtasks: None yet — awaiting SVG assets
+Assigned to: Claude + User
+Last updated: 2026-03-17 - Claude
+
+ID: T206
+Status: [✓] Done
+Title: Platform Guide document library access upgrade and JUCE-GRID doc entry points
+Description:
+- Goal / acceptance criteria: Upgrade the Platform Guide document library so it supports topical grouping, richer metadata search, deep links to a selected document, recommended/recent document access, and direct launch points from `JUCE-GRID`.
+- Why it matters: The current embedded doc browser is a flat filename list behind the Platform Guide modal, which makes support and operator reference access slower than it needs to be.
+- Dependencies: Existing `/api/system/docs/*` routes, `web/src/app/pages/PlatformInfoGuideSection.tsx`, `web/src/app/pages/JuceGridPage.tsx`, and Platform Guide modal deep-link behavior
+- Estimated effort: Medium
+- Required outputs: Updated backend docs-list metadata endpoint, upgraded Platform Guide document-library UI, `JUCE-GRID` document entry points, focused frontend/backend tests, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 20:31 - Codex
+- Completion notes:
+  - Upgraded `app/routes/system.py` so the docs API now recurses through nested markdown files under `docs/`, returns metadata for title/summary/category/headings/keywords, and safely serves deep-linked nested document paths.
+  - Rebuilt `web/src/app/pages/PlatformInfoGuideSection.tsx` into a grouped document browser with metadata search, contextual recommendations, recent-doc recovery, persistent `doc` / `q` query-param deep links, and a richer empty state.
+  - Added direct `Docs` access from `web/src/app/pages/JuceGridPage.tsx` plus a docs shortcut from the keyboard-help modal, both opening the Platform Guide in `juce-grid` context.
+  - Validation: `pytest -q tests/test_system_docs_routes.py` -> pass, `npm --prefix web test -- PlatformInfoGuideSection.test.tsx AboutPage.test.tsx JuceGridPage.test.tsx --runInBand --silent` -> pass, `npm --prefix web run typecheck` -> pass.
+
+ID: T207
+Status: [✓] Done
+Title: JUCE-GRID effect editor card converted into an over-page modal
+Description:
+- Goal / acceptance criteria: Replace the inline `JUCE-GRID` effect editor card with a modal that opens over the page using the existing block-selection interaction, hugs the card content on larger viewports, dims the page background, includes an in-modal close button, animates in, and switches to fullscreen on mobile.
+- Why it matters: The inline editor consumed persistent layout space and broke focus; the requested modal keeps the grid visible underneath while giving effect editing a clearer dedicated surface.
+- Dependencies: Existing `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, `JuceGridParameterEditor`, and current block-selection behavior in the signal canvas
+- Estimated effort: Medium
+- Required outputs: Updated `JUCE-GRID` effect-editor interaction, responsive modal styling, focused regression validation, and canonical worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 22:29 - Codex
+- Completion notes:
+  - Removed the inline desktop effect editor shell from `web/src/app/pages/JuceGridPage.tsx` and replaced it with a route-local modal driven by the existing selected-plugin flow.
+  - Kept the current block-selection trigger unchanged while ensuring keyboard left/right plugin navigation also opens the effect modal and Escape closes the modal before clearing selection.
+  - Added a responsive effect-modal shell in `web/src/app/pages/JuceGridPage.css` that hugs the editor content on larger screens, animates on open, dims the page with Carbon modal behavior, and expands to fullscreen on mobile.
+  - Replaced the compact inline editor panel with a lightweight placeholder/reopen surface so the effect card now exists only inside the modal.
+  - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- JuceGridPage.test.tsx --runInBand --silent` -> pass, `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+
+ID: T208
+Status: [✓] Done
+Title: Shared plugin-card category watermark pass across all desktop cards
+Description:
+- Goal / acceptance criteria: Add a unified decorative watermark icon to all shared plugin cards using the existing category icon system, tint it by category color, keep it subtle behind card content, omit the watermark on mobile/compact cards, and avoid generic fallback watermarks when no clear category icon exists.
+- Why it matters: The plugin-card system needs a more consistent visual taxonomy and stronger category presence without adding noise to interaction-heavy controls.
+- Dependencies: T205 icon system direction, existing `PluginCardShell`, current category color/icon mappings, and shared card consumers across JUCE/LV2 plugin cards
+- Estimated effort: Medium
+- Required outputs: Shared shell implementation, responsive styling, omitted fallback handling, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-17 22:39 - Codex
+- Completion notes:
+  - Updated `web/src/app/components/PluginCards/Base/PluginCardShell.tsx` so shared plugin cards now render one decorative category watermark from the existing icon mapping behind the card surface.
+  - Kept the watermark category-tinted, low-opacity, non-interactive, and unified across cards while omitting it for mobile/compact renders and suppressing the generic fallback icon when no clear category exists.
+  - Shifted watermark placement for visualization-heavy cards to an off-center decorative position while keeping non-visualization cards centered for a consistent desktop composition.
+  - Removed the older duplicated hero/visualization icon treatment from the shared shell so the watermark language stays consistent.
+  - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).

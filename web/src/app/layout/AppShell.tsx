@@ -220,7 +220,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const HomeIcon = homeTopNavItem.icon
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
-  const isFullBleedRoute = location.pathname === '/'
+  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/juce-grid'
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   useEffect(() => {

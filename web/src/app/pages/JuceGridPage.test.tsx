@@ -276,9 +276,10 @@ jest.mock('./JuceGridRoutingVisualizer', () => ({
 }))
 
 jest.mock('./JuceGridSignalCanvas', () => ({
-  JuceGridSignalCanvas: ({ onAddPlugin }: { onAddPlugin?: () => void }) => (
+  JuceGridSignalCanvas: ({ onAddPlugin, onPluginSelect }: { onAddPlugin?: () => void; onPluginSelect?: (uri: string) => void }) => (
     <div data-testid="juce-grid-signal-canvas">
       <button type="button" onClick={onAddPlugin}>Add block</button>
+      <button type="button" onClick={() => onPluginSelect?.('map2://juce/modulation/chorus')}>Select block</button>
       Signal canvas
     </div>
   ),
@@ -426,6 +427,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     expect(await screen.findByLabelText('Open Snapshots')).toBeTruthy()
     expect(screen.getByLabelText('Open MIDI')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Docs' })).toBeTruthy()
     expect(container.querySelector('.juce-grid-page__state-rail')).toBeNull()
     expect(container.querySelector('.juce-grid-page__midi-rail-shell')).toBeNull()
     expect(container.querySelector('.snapshot-floating-trigger')).toBeTruthy()

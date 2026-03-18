@@ -1,8 +1,8 @@
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
-const mockPushToast = jest.fn()
 const mockNodePageContext = {
   localNode: {
     node_id: 'MANAGEMENT-NODE-1',
@@ -73,27 +73,16 @@ const mockMidiHubApi = {
     divider: 1,
     multiplier: 1,
     offset_ms: 0,
-    song_position: 0,
+    song_position: 32,
   })),
   listNetworkSessionsForNode: jest.fn(async () => ({
     count: 1,
     sessions: [{ session_id: 'session-1', name: 'Studio RTP' }],
   })),
-  getMidi2StatusForNode: jest.fn(async () => ({
-    enabled: true,
-    default_protocol: 'ump',
-    device_count: 1,
-    devices: [{ device_id: 'm2-1', name: 'UMP Bridge' }],
-  })),
-  recallPresetForNode: jest.fn(async () => ({ ok: true })),
 }
 
 jest.mock('../../map2/api', () => ({
   midiHubApi: mockMidiHubApi,
-}))
-
-jest.mock('../components/Toasts', () => ({
-  useToasts: () => ({ pushToast: mockPushToast }),
 }))
 
 jest.mock('../hooks/useNodePageContext', () => ({
@@ -156,6 +145,10 @@ jest.mock('../components/MidiHub/MidiInnovationPanel', () => ({
   MidiInnovationPanel: () => <div>Innovation Panel Mock</div>,
 }))
 
+jest.mock('../components/MidiHub/MidiHubHelpPrimitives', () => ({
+  MidiHubPanelShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
+
 jest.mock('../components/MidiHub/MidiHubWorkbenchCards', () => ({
   readPorts: (raw: unknown) => (Array.isArray(raw) ? raw : []),
   MidiHubQuickRouterCard: () => <div>Quick Router Mock</div>,
@@ -163,9 +156,13 @@ jest.mock('../components/MidiHub/MidiHubWorkbenchCards', () => ({
   MidiHubMapperPlannerCard: () => <div>Mapper Planner Mock</div>,
 }))
 
-const { MidiHubPage } = require('./MidiHubPage') as typeof import('./MidiHubPage')
+const { MidiHubShell } = require('./MidiHubShell') as typeof import('./MidiHubShell')
+const { MidiHubConnectionsPage } =
+  require('./midi-hub/MidiHubConnectionsPage') as typeof import('./midi-hub/MidiHubConnectionsPage')
+const { MidiHubPresetsPage } =
+  require('./midi-hub/MidiHubPresetsPage') as typeof import('./midi-hub/MidiHubPresetsPage')
 
-function renderPage() {
+function renderShell(initialEntry = '/midi-hub/connections') {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -176,47 +173,26 @@ function renderPage() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MidiHubPage />
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route path="/midi-hub/*" element={<MidiHubShell />}>
+            <Route path="connections" element={<MidiHubConnectionsPage />} />
+            <Route path="presets" element={<MidiHubPresetsPage />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
 
-describe('MidiHubPage', () => {
+describe('MidiHubShell', () => {
   beforeEach(() => {
-    mockPushToast.mockReset()
-    mockNodePageContext.localNode = {
-      node_id: 'MANAGEMENT-NODE-1',
-      hostname: 'MAP2-TESTBED',
-      display_label: null,
-      role: 'all_in_one',
-    }
-    mockNodePageContext.topology = {
-      nodes: [
-        {
-          node_id: 'MANAGEMENT-NODE-1',
-          hostname: 'MAP2-TESTBED',
-          display_label: null,
-          role: 'all_in_one',
-          status: 'ok',
-          cpu_percent: 10,
-          memory_percent: 20,
-          xrun_count: 0,
-          audio_latency_ms: 1.1,
-          services: { backend: true, juce_engine: true, pipewire: true },
-          last_seen: '2026-03-15T10:00:00Z',
-          is_local: true,
-          is_viewed: true,
-        },
-      ],
-      audio_edges: [],
-      network_edges: [],
-    }
-    mockNodePageContext.viewedNodeId = 'MANAGEMENT-NODE-1'
     Object.values(mockMidiHubApi).forEach((value) => {
       if (typeof value === 'function' && 'mockReset' in value) {
         ;(value as jest.Mock).mockReset()
       }
     })
+
     mockMidiHubApi.listPresetsForNode.mockResolvedValue({
       presets: [
         { preset_id: 'baseline', name: 'Baseline', description: 'Known good', created_at: 0, updated_at: 0, conditions: {} },
@@ -255,19 +231,13 @@ describe('MidiHubPage', () => {
       divider: 1,
       multiplier: 1,
       offset_ms: 0,
-      song_position: 0,
+      song_position: 32,
     })
     mockMidiHubApi.listNetworkSessionsForNode.mockResolvedValue({
       count: 1,
       sessions: [{ session_id: 'session-1', name: 'Studio RTP' }],
     })
-    mockMidiHubApi.getMidi2StatusForNode.mockResolvedValue({
-      enabled: true,
-      default_protocol: 'ump',
-      device_count: 1,
-      devices: [{ device_id: 'm2-1', name: 'UMP Bridge' }],
-    })
-    mockMidiHubApi.recallPresetForNode.mockResolvedValue({ ok: true })
+
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: jest.fn().mockImplementation((query: string) => ({
@@ -284,99 +254,22 @@ describe('MidiHubPage', () => {
     window.localStorage.clear()
   })
 
-  it('renders the cleaned MIDI Hub shell', async () => {
-    renderPage()
+  it('renders the routed shell and connections area', async () => {
+    renderShell()
 
-    await screen.findByRole('heading', { name: 'MIDI Hub' })
+    await screen.findByText('MIDI Hub')
+    expect(screen.getByRole('heading', { name: 'Connections' })).toBeTruthy()
     expect(screen.getByText('Routing Matrix Mock')).toBeTruthy()
     expect(screen.getByText('Traffic Monitor Mock')).toBeTruthy()
     expect(screen.getByText('Quick Router Mock')).toBeTruthy()
+  })
+
+  it('deep-links into the presets area', async () => {
+    renderShell('/midi-hub/presets')
+
+    await screen.findByText('Presets & Recall')
     expect(screen.getByText('Preset Manager Mock')).toBeTruthy()
     expect(screen.getByText('Clock Panel Mock')).toBeTruthy()
     expect(screen.getByText('Recorder Panel Mock')).toBeTruthy()
-    expect(screen.getByText('Network Panel Mock')).toBeTruthy()
-    expect(screen.getByText('MIDI 2 Panel Mock')).toBeTruthy()
-    expect(screen.getByText('Filter Planner Mock')).toBeTruthy()
-    expect(screen.getByText('Mapper Planner Mock')).toBeTruthy()
-    expect(screen.getByText('Script Editor Mock')).toBeTruthy()
-    expect(screen.getByText('Macro Panel Mock')).toBeTruthy()
-    expect(screen.getByText('Scheduler Panel Mock')).toBeTruthy()
-    expect(screen.getByText('Innovation Panel Mock')).toBeTruthy()
-    expect(screen.queryByText(/wizard and guided flows/i)).toBeNull()
-  })
-
-  it('shows live status tags from the API', async () => {
-    renderPage()
-
-    expect(await screen.findByText('Inputs 1')).toBeTruthy()
-    expect(screen.getByText('Outputs 1')).toBeTruthy()
-    expect(screen.getByText('Routes 1')).toBeTruthy()
-    expect(screen.getByText('Presets 2')).toBeTruthy()
-    expect(screen.getByText('Clock running')).toBeTruthy()
-    expect(screen.getByText('RTP sessions 1')).toBeTruthy()
-    expect(screen.getByText('MIDI 2 devices 1')).toBeTruthy()
-  })
-
-  it('renders the advanced workflow sections without tab navigation', async () => {
-    renderPage()
-
-    await screen.findByText('Routing Matrix Mock')
-    expect(screen.getByRole('heading', { name: 'Signal path' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Show control' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Network and protocol' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Message processing and automation' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Advanced and experimental' })).toBeTruthy()
-  })
-
-  it('recalls the selected preset from the header toolbar', async () => {
-    renderPage()
-
-    await screen.findByText('Presets 2')
-
-    fireEvent.change(screen.getByLabelText('Preset recall'), {
-      target: { value: 'baseline' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Recall preset' }))
-
-    await waitFor(() => {
-      expect(mockMidiHubApi.recallPresetForNode).toHaveBeenCalledWith('baseline', null)
-    })
-  })
-
-  it('scopes top-level MIDI Hub queries to the viewed remote node', async () => {
-    mockNodePageContext.topology = {
-      nodes: [
-        mockNodePageContext.topology.nodes[0],
-        {
-          node_id: 'AUDIO-NODE-2',
-          hostname: 'MAP2-STAGE-R',
-          display_label: 'Stage Right',
-          role: 'audio_node',
-          status: 'ok',
-          cpu_percent: 18,
-          memory_percent: 24,
-          xrun_count: 0,
-          audio_latency_ms: 1.7,
-          services: { backend: true, juce_engine: true, pipewire: true },
-          last_seen: '2026-03-15T10:00:00Z',
-          is_local: false,
-          is_viewed: true,
-        },
-      ],
-      audio_edges: [],
-      network_edges: [],
-    }
-    mockNodePageContext.viewedNodeId = 'AUDIO-NODE-2'
-
-    renderPage()
-
-    await screen.findByText('Presets 2')
-
-    expect(mockMidiHubApi.listPresetsForNode).toHaveBeenCalledWith('AUDIO-NODE-2')
-    expect(mockMidiHubApi.getStatusForNode).toHaveBeenCalledWith('AUDIO-NODE-2')
-    expect(mockMidiHubApi.getRoutesForNode).toHaveBeenCalledWith('AUDIO-NODE-2')
-    expect(mockMidiHubApi.getClockStatusForNode).toHaveBeenCalledWith('AUDIO-NODE-2')
-    expect(mockMidiHubApi.listNetworkSessionsForNode).toHaveBeenCalledWith('AUDIO-NODE-2')
-    expect(mockMidiHubApi.getMidi2StatusForNode).toHaveBeenCalledWith('AUDIO-NODE-2')
   })
 })

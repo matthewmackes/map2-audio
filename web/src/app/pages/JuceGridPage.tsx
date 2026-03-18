@@ -17,6 +17,7 @@ import { useState, useCallback, useMemo, useEffect, useRef, type KeyboardEvent a
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Add,
+  Book,
   Branch,
   Camera,
   ArrowDown,
@@ -66,6 +67,7 @@ import {
   Tile,
 } from '@carbon/react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getCategoryConfig } from '../grid/shared'
@@ -535,6 +537,7 @@ function loadInitialJuceGridState(): { flowSlots: FlowSlot[]; routing: RoutingCo
 // ============================================================================
 
 export function JuceGridPage() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
   const isMobile = useIsMobile()
@@ -564,6 +567,7 @@ export function JuceGridPage() {
 
   // UI State
   const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(null)
+  const [effectModalOpen, setEffectModalOpen] = useState(false)
   const [showPluginBrowser, setShowPluginBrowser] = useState(false)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
   const [showSavePresetModal, setShowSavePresetModal] = useState(false)
@@ -594,6 +598,17 @@ export function JuceGridPage() {
   const [showPerformModal, setShowPerformModal] = useState(false)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
+  const openPlatformDocs = useCallback((doc?: string) => {
+    const params = new URLSearchParams({
+      panel: 'about',
+      context: 'juce-grid',
+    })
+    if (doc) {
+      params.set('doc', doc)
+    }
+    navigate(`/platform?${params.toString()}`)
+  }, [navigate])
+
   // Chain assignment modal — flowId drives which flow is being edited
   const [chainModalFlowId, setChainModalFlowId] = useState<string | null>(null)
   // When rename is triggered from inside the chain assignment modal we need the
@@ -1159,6 +1174,12 @@ export function JuceGridPage() {
     }
     return meta || null
   }, [selectedPluginUri, pluginMeta, pluginsQuery.status, pluginsQuery.data?.plugins?.length])
+
+  useEffect(() => {
+    if (!selectedPlugin) {
+      setEffectModalOpen(false)
+    }
+  }, [selectedPlugin])
 
   const midiStatus = midiStatusQuery.data as MIDIStatus | undefined
   const midiLearnStatus = midiLearnStatusQuery.data
@@ -2118,10 +2139,15 @@ export function JuceGridPage() {
   // Plugin operations
   const handlePluginSelect = useCallback((uri: string) => {
     setSelectedPluginUri(uri)
+    setEffectModalOpen(true)
     if (isCompactLayout) {
       setCompactTab('editor')
     }
   }, [isCompactLayout])
+
+  const handleCloseEffectModal = useCallback(() => {
+    setEffectModalOpen(false)
+  }, [])
 
   const handleFlowSlotKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>, index: number) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -3131,6 +3157,7 @@ export function JuceGridPage() {
           newIdx = currentIdx >= plugins.length - 1 ? 0 : currentIdx + 1
         }
         setSelectedPluginUri(plugins[newIdx].uri)
+        setEffectModalOpen(true)
         return
       }
 
@@ -3147,6 +3174,7 @@ export function JuceGridPage() {
         else if (showPresetBrowser) setShowPresetBrowser(false)
         else if (showKeyboardHelp) setShowKeyboardHelp(false)
         else if (detailsPlugin) setDetailsPlugin(null)
+        else if (effectModalOpen) setEffectModalOpen(false)
         else if (selectedPluginUri) setSelectedPluginUri(null)
         return
       }
@@ -3159,7 +3187,7 @@ export function JuceGridPage() {
     bypassMutation, deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, showRenameChainModal, presetPendingDelete,
     showClearFlowsModal, snapshotsModalOpen, midiModalOpen, routingInspectorId, showPluginBrowser,
-    showPresetBrowser, showKeyboardHelp, detailsPlugin,
+    showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen,
     handleSavePreset, toggleFavorite, selectFlowIndex,
   ])
 
@@ -3505,6 +3533,9 @@ export function JuceGridPage() {
             </div>
           </div>
           <div className="juce-grid-page__hero-actions">
+            <Button size="sm" kind="ghost" renderIcon={Book} onClick={() => openPlatformDocs()}>
+              Docs
+            </Button>
             <Button size="sm" kind="ghost" renderIcon={Network_3} onClick={() => setShowAudioNodesModal(true)}>
               Audio Nodes
             </Button>
@@ -3619,49 +3650,6 @@ export function JuceGridPage() {
             ))}
           </section>
 
-          {!isCompactLayout && (
-            <Layer className="juce-grid-page__editor-shell">
-              <JuceGridParameterEditor
-                plugin={selectedPlugin}
-                meta={selectedPluginMeta}
-                onParameterChange={handleParameterChange}
-                onParameterChangeEnd={handleParameterChangeEnd}
-                onToggleBypass={handleToggleSelectedBypass}
-                onRefreshPlugins={handleRefreshPlugins}
-                isRefreshing={isRefreshingPlugins}
-              />
-
-              {selectedPlugin && selectedPluginMeta && (
-                <div className="juce-grid-page__editor-tags">
-                  {selectedPlugin.format && (
-                    <Tag type="blue">
-                      {selectedPlugin.format}
-                    </Tag>
-                  )}
-                  <Tag type="cool-gray">
-                    {selectedPluginMeta.in_ports}→{selectedPluginMeta.out_ports}
-                  </Tag>
-                  <Tag type="cool-gray">
-                    {selectedPluginMeta.parameters?.length || 0} params
-                  </Tag>
-                  {getPluginCpu(selectedPlugin.uri) > 0 && (
-                    <Tag type={getPluginCpu(selectedPlugin.uri) >= 50 ? 'red' : 'blue'}>
-                      CPU {getPluginCpu(selectedPlugin.uri).toFixed(1)}%
-                    </Tag>
-                  )}
-                  {selectedPlugin.latency_samples && selectedPlugin.latency_samples > 0 && (
-                    <Tag type="warm-gray">Latency {selectedPlugin.latency_samples}smp</Tag>
-                  )}
-                  {selectedPlugin.latency_compensated && (
-                    <Tag type="green">PDC</Tag>
-                  )}
-                  {selectedPlugin.sidechain_source && (
-                    <Tag type="purple">Sidechain</Tag>
-                  )}
-                </div>
-              )}
-            </Layer>
-          )}
           </main>
         </div>
       </div>
@@ -3684,24 +3672,23 @@ export function JuceGridPage() {
               <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
                   <h2>Editor</h2>
-                  <p>{selectedPlugin ? 'Selected block controls are ready.' : 'Select a block in the grid to open its editor.'}</p>
+                  <p>{selectedPlugin ? 'The selected block editor opens as a modal over the workspace.' : 'Select a block in the grid to open its editor.'}</p>
                 </div>
-                <JuceGridParameterEditor
-                  plugin={selectedPlugin}
-                  meta={selectedPluginMeta}
-                  onParameterChange={handleParameterChange}
-                  onParameterChangeEnd={handleParameterChangeEnd}
-                  onToggleBypass={handleToggleSelectedBypass}
-                  onRefreshPlugins={handleRefreshPlugins}
-                  isRefreshing={isRefreshingPlugins}
-                />
-                {selectedPlugin && selectedPluginMeta && (
-                  <div className="juce-grid-page__compact-tags">
-                    {selectedPlugin.format && <Tag type="blue">{selectedPlugin.format}</Tag>}
-                    <Tag type="cool-gray">{selectedPluginMeta.parameters?.length || 0} params</Tag>
-                    <Tag type="cool-gray">{selectedPluginMeta.in_ports}→{selectedPluginMeta.out_ports}</Tag>
+                <Tile className="juce-grid-page__effect-modal-placeholder">
+                  <div className="juce-grid-page__parameter-editor-copy">
+                    <strong>{selectedPlugin ? 'Selected block ready' : 'No block selected'}</strong>
+                    <p>
+                      {selectedPlugin
+                        ? 'Use the flow card selection to reopen the effect editor modal.'
+                        : 'Tap a processor in the grid to open the effect editor modal.'}
+                    </p>
                   </div>
-                )}
+                  {selectedPlugin && (
+                    <Button size="sm" kind="secondary" onClick={() => setEffectModalOpen(true)}>
+                      Reopen effect editor
+                    </Button>
+                  )}
+                </Tile>
               </Layer>
             )}
 
@@ -3741,6 +3728,70 @@ export function JuceGridPage() {
             )}
           </section>
         </div>
+      )}
+
+      {effectModalOpen && selectedPlugin && (
+        <Modal
+          open
+          passiveModal
+          size="sm"
+          className={`juce-grid-page__effect-modal ${isMobile ? 'juce-grid-page__effect-modal--mobile' : ''}`}
+          modalHeading={getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}
+          modalLabel="Effect editor"
+          onRequestClose={handleCloseEffectModal}
+        >
+          <div className="juce-grid-page__effect-modal-body">
+            <div className="juce-grid-page__effect-modal-header">
+              <div className="juce-grid-page__parameter-editor-copy">
+                <strong>{getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}</strong>
+                <p>Edit the selected block without leaving the current JUCE-GRID workspace.</p>
+              </div>
+              <Button size="sm" kind="ghost" renderIcon={Close} onClick={handleCloseEffectModal}>
+                Close
+              </Button>
+            </div>
+
+            {selectedPluginMeta && (
+              <div className="juce-grid-page__editor-tags">
+                {selectedPlugin.format && (
+                  <Tag type="blue">
+                    {selectedPlugin.format}
+                  </Tag>
+                )}
+                <Tag type="cool-gray">
+                  {selectedPluginMeta.in_ports}→{selectedPluginMeta.out_ports}
+                </Tag>
+                <Tag type="cool-gray">
+                  {selectedPluginMeta.parameters?.length || 0} params
+                </Tag>
+                {getPluginCpu(selectedPlugin.uri) > 0 && (
+                  <Tag type={getPluginCpu(selectedPlugin.uri) >= 50 ? 'red' : 'blue'}>
+                    CPU {getPluginCpu(selectedPlugin.uri).toFixed(1)}%
+                  </Tag>
+                )}
+                {selectedPlugin.latency_samples && selectedPlugin.latency_samples > 0 && (
+                  <Tag type="warm-gray">Latency {selectedPlugin.latency_samples}smp</Tag>
+                )}
+                {selectedPlugin.latency_compensated && (
+                  <Tag type="green">PDC</Tag>
+                )}
+                {selectedPlugin.sidechain_source && (
+                  <Tag type="purple">Sidechain</Tag>
+                )}
+              </div>
+            )}
+
+            <JuceGridParameterEditor
+              plugin={selectedPlugin}
+              meta={selectedPluginMeta}
+              onParameterChange={handleParameterChange}
+              onParameterChangeEnd={handleParameterChangeEnd}
+              onToggleBypass={handleToggleSelectedBypass}
+              onRefreshPlugins={handleRefreshPlugins}
+              isRefreshing={isRefreshingPlugins}
+            />
+          </div>
+        </Modal>
       )}
 
       <div className="juce-grid-page__floating-actions" aria-label="Audio Grid floating actions">
@@ -4351,8 +4402,13 @@ export function JuceGridPage() {
           size="md"
           modalHeading="Keyboard shortcuts"
           primaryButtonText="Close"
+          secondaryButtonText="Open docs"
           onRequestClose={() => setShowKeyboardHelp(false)}
           onRequestSubmit={() => setShowKeyboardHelp(false)}
+          onSecondarySubmit={() => {
+            setShowKeyboardHelp(false)
+            openPlatformDocs('QUICK_REFERENCE.md')
+          }}
         >
           <div className="juce-grid-page__shortcut-grid">
             {KEYBOARD_SHORTCUT_SECTIONS.map((section) => (

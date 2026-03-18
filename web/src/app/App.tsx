@@ -26,7 +26,14 @@ const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => 
 const LV2PluginsPage        = lazy(() => import('./pages/LV2PluginsPage').then(m => ({ default: m.LV2PluginsPage })))
 const LibraryPage           = lazy(() => import('./pages/LibraryPage').then(m => ({ default: m.LibraryPage })))
 const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').then(m => ({ default: m.AudioArtifactsPage })))
-const MidiHubPage           = lazy(() => import('./pages/MidiHubPage').then(m => ({ default: m.MidiHubPage })))
+const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
+const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
+const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
+const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
+const MidiHubEventsPage     = lazy(() => import('./pages/midi-hub/MidiHubEventsPage').then(m => ({ default: m.MidiHubEventsPage })))
+const MidiHubProcessingPage = lazy(() => import('./pages/midi-hub/MidiHubProcessingPage').then(m => ({ default: m.MidiHubProcessingPage })))
+const MidiHubNetworkPage    = lazy(() => import('./pages/midi-hub/MidiHubNetworkPage').then(m => ({ default: m.MidiHubNetworkPage })))
+const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage').then(m => ({ default: m.MidiHubLabPage })))
 const JuceGridPage          = lazy(() => import('./pages/JuceGridPage').then(m => ({ default: m.JuceGridPage })))
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
@@ -164,9 +171,19 @@ export function App() {
                                 <Route path="/plugins" element={<Navigate to="/audio-artifacts?category=lv2-plugins" replace />} />
                                 <Route path="/library" element={<Navigate to="/audio-artifacts" replace />} />
                                 <Route path="/audio-artifacts" element={<AudioArtifactsPage />} />
-                                <Route path="/midi" element={<Navigate to="/midi-hub" replace />} />
-                                <Route path="/midi-hub" element={<MidiHubPage />} />
-                                <Route path="/midi-hub-2" element={<Navigate to="/midi-hub" replace />} />
+                                <Route path="/midi" element={<Navigate to="/midi-hub/connections" replace />} />
+                                <Route path="/midi-hub-2" element={<Navigate to="/midi-hub/connections" replace />} />
+                                <Route path="/midi-hub" element={<Navigate to="/midi-hub/connections" replace />} />
+                                <Route path="/midi-hub/*" element={<MidiHubShell />}>
+                                  <Route index element={<Navigate to="connections" replace />} />
+                                  <Route path="connections" element={<MidiHubConnectionsPage />} />
+                                  <Route path="presets" element={<MidiHubPresetsPage />} />
+                                  <Route path="transport" element={<MidiHubTransportPage />} />
+                                  <Route path="events" element={<MidiHubEventsPage />} />
+                                  <Route path="processing" element={<MidiHubProcessingPage />} />
+                                  <Route path="network" element={<MidiHubNetworkPage />} />
+                                  <Route path="lab" element={<MidiHubLabPage />} />
+                                </Route>
                                 <Route path="/grid" element={<Navigate to="/juce-grid" replace />} />
                                 <Route path="/juce-grid" element={<JuceGridPage />} />
                                 <Route path="/grid-3d" element={<Navigate to="/juce-grid" replace />} />

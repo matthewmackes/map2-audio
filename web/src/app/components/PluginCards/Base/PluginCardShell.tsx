@@ -23,6 +23,8 @@ import { getCategoryConfig, getCategoryIcon } from '../types'
 import { BypassSwitch } from './BypassSwitch'
 import { getPluginDescription } from '../../../data/pluginDescriptions'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
+import { getIconForCategory, getIconNameForCategory } from '../../HorizontalSignalChain/icons'
+import { useIsMobile } from '../../../hooks/useIsMobile'
 
 interface PluginCardShellProps {
   plugin: Plugin
@@ -66,11 +68,15 @@ export function PluginCardShell({
   className = '',
 }: PluginCardShellProps) {
   const [showMenu, setShowMenu] = useState(false)
+  const isMobile = useIsMobile()
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
   const description = sanitizeRestrictedDisplayText(getPluginDescription(plugin.name) || '')
   const CategoryIcon = getCategoryIcon(plugin.category)
+  const watermarkIconName = getIconNameForCategory(plugin.category)
+  const WatermarkIcon = getIconForCategory(plugin.category)
+  const hasWatermark = !compact && !isMobile && watermarkIconName !== 'fx_plugin'
 
   const handleBypassToggle = useCallback(() => {
     onBypassToggle?.(!bypassed)
@@ -78,7 +84,7 @@ export function PluginCardShell({
 
   return (
     <div
-      className={`plugin-card-shell ${bypassed ? 'bypassed' : ''} ${compact ? 'compact' : ''} ${className}`}
+      className={`plugin-card-shell ${bypassed ? 'bypassed' : ''} ${compact ? 'compact' : ''} ${visualization ? 'has-visualization' : 'has-no-visualization'} ${hasWatermark ? 'has-watermark' : ''} ${className}`}
       style={{
         '--accent-color': accentColor,
         '--accent-bg': catConfig.bg,
@@ -94,6 +100,20 @@ export function PluginCardShell({
         containerName: 'plugin-card',
       } as React.CSSProperties}
     >
+      {hasWatermark && (
+        <div
+          className={`plugin-card-watermark ${visualization ? 'plugin-card-watermark--offset' : 'plugin-card-watermark--centered'}`}
+          aria-hidden="true"
+        >
+          <WatermarkIcon
+            style={{
+              color: accentColor,
+              fill: accentColor,
+            }}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="plugin-card-header">
         <div className="plugin-card-header-left">
@@ -191,8 +211,10 @@ export function PluginCardShell({
 
       {/* Visualization Section */}
       {visualization && (
-        <div className="plugin-card-visualization">
-          {visualization}
+        <div className="plugin-card-visualization" style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {visualization}
+          </div>
         </div>
       )}
 
@@ -223,6 +245,7 @@ export function PluginCardShell({
           border-radius: 12px;
           overflow: hidden;
           position: relative;
+          isolation: isolate;
           transition: all 0.2s ease;
         }
 
@@ -235,6 +258,40 @@ export function PluginCardShell({
           height: 2px;
           background: var(--accent-color);
           opacity: 0.8;
+        }
+
+        .plugin-card-watermark {
+          position: absolute;
+          inset: auto;
+          pointer-events: none;
+          z-index: 0;
+          opacity: 0.1;
+          color: var(--accent-color);
+          filter: saturate(0.8);
+        }
+
+        .plugin-card-watermark--centered {
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+
+        .plugin-card-watermark--offset {
+          top: 1.25rem;
+          right: 1rem;
+          transform: none;
+          opacity: 0.08;
+        }
+
+        .plugin-card-watermark svg {
+          display: block;
+          width: 11rem;
+          height: 11rem;
+        }
+
+        .plugin-card-watermark--offset svg {
+          width: 8.5rem;
+          height: 8.5rem;
         }
 
         .plugin-card-shell.bypassed {
@@ -256,6 +313,8 @@ export function PluginCardShell({
           padding: var(--header-padding);
           background: rgba(0, 0, 0, 0.2);
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          position: relative;
+          z-index: 1;
         }
 
         .compact .plugin-card-header {
@@ -391,12 +450,16 @@ export function PluginCardShell({
           background: rgba(0, 0, 0, 0.1);
           border-bottom: 1px solid rgba(255, 255, 255, 0.03);
           line-height: 1.4;
+          position: relative;
+          z-index: 1;
         }
 
         .plugin-card-visualization {
           padding: var(--card-padding);
           background: rgba(0, 0, 0, 0.15);
           border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+          position: relative;
+          z-index: 1;
         }
 
         .compact .plugin-card-visualization {
@@ -405,6 +468,8 @@ export function PluginCardShell({
 
         .plugin-card-content {
           padding: var(--card-padding);
+          position: relative;
+          z-index: 1;
         }
 
         .compact .plugin-card-content {
@@ -415,6 +480,8 @@ export function PluginCardShell({
           padding: 12px 16px;
           background: rgba(0, 0, 0, 0.2);
           border-top: 1px solid rgba(255, 255, 255, 0.05);
+          position: relative;
+          z-index: 1;
         }
 
         .compact .plugin-card-footer {
@@ -450,6 +517,11 @@ export function PluginCardShell({
           .plugin-card-title {
             font-size: calc(12px * var(--font-scale));
           }
+
+          .plugin-card-watermark svg {
+            width: 7rem;
+            height: 7rem;
+          }
         }
 
         /* sm: 400-600px - Compact */
@@ -462,6 +534,11 @@ export function PluginCardShell({
             --font-scale: 0.9;
             --viz-width-base: 336px;
             --viz-height-base: 119px;
+          }
+
+          .plugin-card-watermark svg {
+            width: 8rem;
+            height: 8rem;
           }
         }
 
