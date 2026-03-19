@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**773** Python | **1124** TypeScript | **285** C++/H | **122** Docs | **566** total commits | **1** stars | **0** forks | **0** open issues
+**773** Python | **1124** TypeScript | **288** C++/H | **122** Docs | **568** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1d005f64`](https://github.com/matthewmackes/map2-audio/commit/1d005f6456959426d8781f702110067a7ff92df6) | Add drum machine processor foundation | Map2 Audio | 2026-03-19 |
+| [`cbb79e97`](https://github.com/matthewmackes/map2-audio/commit/cbb79e97bc40cb0d6b2be96bb35bb47dd19ab022) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`2642727e`](https://github.com/matthewmackes/map2-audio/commit/2642727e812ee7e5958e58a7ca19abba62930e89) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`310fb396`](https://github.com/matthewmackes/map2-audio/commit/310fb39658f201c742c54e6b20d2208b9f9e058d) | Finish native SFZ opcode support | Map2 Audio | 2026-03-19 |
 | [`5cf0b66b`](https://github.com/matthewmackes/map2-audio/commit/5cf0b66b322c1e47dc0f96f16f0b2856ec12890c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`7a99c483`](https://github.com/matthewmackes/map2-audio/commit/7a99c483865098979af7bad586144363988cc9ed) | Add native SFZ tone controls | Map2 Audio | 2026-03-19 |
 | [`0e887405`](https://github.com/matthewmackes/map2-audio/commit/0e88740595bdf448824cb2905cc979b80a92d48c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`edfec30d`](https://github.com/matthewmackes/map2-audio/commit/edfec30d242792ee157ae9947ef415fd38b34fc7) | Add native SFZ key switch support | Map2 Audio | 2026-03-18 |
-| [`6b6c87c3`](https://github.com/matthewmackes/map2-audio/commit/6b6c87c3ba23e21b9ef87bd1f36c45a5d7e7d4c6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
-| [`41ca7bc3`](https://github.com/matthewmackes/map2-audio/commit/41ca7bc3e0c7a7fd723406c91df42976e770c125) | Add native SFZ random layer support | Map2 Audio | 2026-03-18 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
