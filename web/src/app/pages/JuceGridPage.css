@@ -2731,6 +2731,9 @@
 }
 
 .juce-grid-page__signal-path {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   justify-content: space-between;
 }
 
@@ -2747,6 +2750,67 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
   gap: 0.75rem;
+}
+
+.juce-grid-page__signal-plugin-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__signal-flow-bridge,
+.juce-grid-page__signal-flow-connector,
+.juce-grid-page__signal-flow-dots {
+  display: flex;
+  align-items: center;
+}
+
+.juce-grid-page__signal-flow-bridge,
+.juce-grid-page__signal-flow-connector {
+  gap: 0.5rem;
+  color: var(--cds-interactive, #0f62fe);
+}
+
+.juce-grid-page__signal-flow-bridge.is-dashed,
+.juce-grid-page__signal-flow-connector.is-dashed {
+  color: color-mix(in srgb, var(--cds-text-secondary, #8d8d8d) 70%, var(--cds-interactive, #0f62fe));
+}
+
+.juce-grid-page__signal-flow-line {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  block-size: 1px;
+  border-top: 1px solid currentColor;
+  opacity: 0.72;
+}
+
+.juce-grid-page__signal-flow-bridge.is-dashed .juce-grid-page__signal-flow-line,
+.juce-grid-page__signal-flow-connector.is-dashed .juce-grid-page__signal-flow-line {
+  border-top-style: dashed;
+  opacity: 0.52;
+}
+
+.juce-grid-page__signal-flow-dots {
+  justify-content: center;
+  gap: 0.22rem;
+  flex: 0 0 auto;
+}
+
+.juce-grid-page__signal-flow-dot {
+  inline-size: 0.35rem;
+  block-size: 0.35rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.9;
+}
+
+.juce-grid-page__signal-flow-bridge-label {
+  flex: 0 0 auto;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* ── Signal Plugin Card: Square Hero-Icon Layout ── */

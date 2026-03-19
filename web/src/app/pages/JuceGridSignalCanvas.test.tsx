@@ -200,4 +200,66 @@ describe('JuceGridSignalCanvas', () => {
     expect(handleInputPorts).toHaveBeenCalledTimes(1)
     expect(handleOutputPorts).toHaveBeenCalledTimes(1)
   })
+
+  it('renders flow bridges and three-dot connectors, dimming them when bypassed blocks are in the path', () => {
+    const chainedFlow: Chain = {
+      ...chain,
+      plugins: [
+        chain.plugins[0],
+        {
+          uri: 'plugin://chorus',
+          name: 'Studio Chorus',
+          position: 1,
+          bypassed: true,
+          parameters: {},
+          in_ports: 2,
+          out_ports: 2,
+        },
+      ],
+    }
+
+    const extendedMeta: Record<string, Plugin> = {
+      ...pluginMeta,
+      'plugin://chorus': {
+        uri: 'plugin://chorus',
+        name: 'Studio Chorus',
+        author: 'MAP2',
+        category: 'Modulation',
+        class_label: 'Modulation',
+        version: '1.0.0',
+        license: 'AGPL-3.0-only',
+        has_ui: false,
+        in_ports: 2,
+        out_ports: 2,
+        parameters: [],
+        format: 'VST3',
+      },
+    }
+
+    render(
+      <JuceGridSignalCanvas
+        chain={chainedFlow}
+        pluginMeta={extendedMeta}
+        selectedPluginUri={pluginUri}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        onAddPlugin={jest.fn()}
+        audioStatus={buildInputStatus()}
+        audioOutputStatus={buildOutputStatus()}
+        pluginLevels={{
+          [pluginUri]: { in: 0.31, out: 0.48 },
+          'plugin://chorus': { in: 0.21, out: 0.32 },
+        }}
+        showEndpoints
+      />,
+    )
+
+    expect(screen.getByTestId('juce-grid-signal-flow-bridge-input')).toBeTruthy()
+    expect(screen.getByTestId('juce-grid-signal-flow-bridge-output')).toBeTruthy()
+
+    const connector = screen.getByTestId('juce-grid-signal-flow-connector-0')
+    expect(connector.className).toContain('is-dashed')
+    expect(connector.querySelectorAll('.juce-grid-page__signal-flow-dot')).toHaveLength(3)
+  })
 })

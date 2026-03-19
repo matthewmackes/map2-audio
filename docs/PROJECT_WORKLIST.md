@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T223-subC JUCE Grid signal-flow visualization completed with 3-dot connectors, input/output bridges, and dashed bypass path treatment; T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -1995,7 +1995,7 @@ Last updated: 2026-03-19 - Codex
   - Preserved the existing category labels, metrics, and selected-state behavior while tightening the card-face visual hierarchy for the ongoing T223 grid rewrite.
 
 ID: T223-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Signal flow visualization — 3-dot connectors, flow lines, input/output
 Description:
 - 3-dot connectivity indicators between cards (Interactive Hover color, Carbon visibility standard)
@@ -2003,8 +2003,12 @@ Description:
 - Input/Output nodes outside signal chain showing full routing path
 - Bypassed card flow lines (dashed/reduced opacity)
 - Signal flow updates only after move confirmation
-Assigned to: Unassigned
-Last updated: 2026-03-19
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - Added explicit input/output bridge treatments plus in-row 3-dot signal connectors in `web/src/app/pages/JuceGridSignalCanvas.tsx` so the processing path is visible across the entire chain instead of only inside the endpoint rails.
+  - Applied Carbon-toned flow-line styling in `web/src/app/pages/JuceGridPage.css`, including dashed/reduced-opacity treatment whenever a bypassed block sits on the path.
+  - Extended `web/src/app/pages/JuceGridSignalCanvas.test.tsx` to verify the new bridge/connector markup and bypass-dimmed connector state alongside the existing endpoint summary coverage.
 
 ID: T223-subD
 Status: [✓] Done
