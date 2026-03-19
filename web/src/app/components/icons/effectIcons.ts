@@ -18,16 +18,18 @@ import FxAnalyzer from '../HorizontalSignalChain/icons/fx_analyzer.svg?react'
 import FxChorus from '../HorizontalSignalChain/icons/fx_chorus.svg?react'
 import FxCompressor from './noun/dynamics/fx-compressor.svg?react'
 import FxDelay from '../HorizontalSignalChain/icons/fx_delay.svg?react'
-import FxDistortion from '../HorizontalSignalChain/icons/fx_distortion.svg?react'
+import FxDistortion from './noun/distortion/fx-distortion.svg?react'
+import FxDrums from './noun/drums/fx-drums.svg?react'
 import FxEq from '../HorizontalSignalChain/icons/fx_eq.svg?react'
 import FxFilter from '../HorizontalSignalChain/icons/fx_filter.svg?react'
 import FxGate from '../HorizontalSignalChain/icons/fx_gate.svg?react'
 import FxLimiter from '../HorizontalSignalChain/icons/fx_limiter.svg?react'
 import FxMixer from '../HorizontalSignalChain/icons/fx_mixer.svg?react'
-import FxModulator from '../HorizontalSignalChain/icons/fx_modulator.svg?react'
+import FxModulator from './noun/modulation/fx-modulation.svg?react'
 import FxPhaser from '../HorizontalSignalChain/icons/fx_phaser.svg?react'
 import FxPitch from '../HorizontalSignalChain/icons/fx_pitch.svg?react'
 import FxPlugin from './noun/multi-effect/fx-plugin.svg?react'
+import FxRack from './noun/multi-effect/fx-rack.svg?react'
 import FxReverb from './noun/reverb/fx-reverb-category.svg?react'
 import FxSimulator from '../HorizontalSignalChain/icons/fx_simulator.svg?react'
 import FxUtility from './noun/utility/fx-utility.svg?react'
@@ -68,8 +70,8 @@ const EFFECT_ICON_MAP: Record<string, EffectIconComponent> = {
   'ultra harmonizer': FxPitch,
   'interval shifter': FxPitch,
   'graillon': FxPitch,
-  'drum machine': FxInstrument,
-  'drums': FxInstrument,
+  'drum machine': FxDrums,
+  drums: FxDrums,
   'cabinet ir': FxSimulator,
   'reverb ir': FxReverb,
   'synthforge': FxInstrument,
@@ -191,7 +193,10 @@ const EFFECT_ICON_MAP: Record<string, EffectIconComponent> = {
   'mpx-1': FxLexicon,
   mpx1: FxLexicon,
   hardware: FxLexicon,
-  'multi-effect': FxLexicon,
+  'multi-effect': FxRack,
+  multieffects: FxRack,
+  'multi effects': FxRack,
+  rack: FxRack,
 
   // Neural / ML
   nam: FxNam,
@@ -237,6 +242,7 @@ export {
   FxDelay,
   FxDial,
   FxDistortion,
+  FxDrums,
   FxEmpty,
   FxEq,
   FxError,
@@ -253,6 +259,7 @@ export {
   FxLr,
   FxMixer,
   FxModulator,
+  FxRack,
   FxNam,
   FxOscillator,
   FxParametricEq,

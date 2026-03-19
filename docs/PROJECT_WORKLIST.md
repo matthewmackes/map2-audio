@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -873,7 +873,7 @@ Last updated: 2026-03-17 16:36 - Codex
 ## Icon System
 
 ID: T205
-Status: [>] In Progress
+Status: [✓] Done
 Title: Icon system overhaul — monotone Carbon-style SVG icons with DSP color taxonomy
 Description:
 - Goal: Replace all icons across the MAP2 GUI (main app + PiPedal legacy area) with a unified set of monotone, Carbon Design System-style SVG icons. Apply DSP-type color taxonomy to all categories.
@@ -881,6 +881,10 @@ Description:
 - Design documentation complete — see docs/design/ for all reference material before starting implementation.
 - Current execution evidence: `docs/design/ICON_DOWNLOAD_LIST.md` now shows the previously unresolved 20-slot manual-sourcing list as closed with staged MAP-authored SVGs; `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` now records the post-sweep active-frontend state with `0` Phosphor files, `0` remaining MUI-icon files, and `0` tracked emoji/symbol UI-icon files across `web/src/app` + `web/src/map2`, with any remaining legacy icon-package debt now outside that active scope in `web/src/pipedal/**` and shared utility surfaces.
 - Estimated effort: High
+- Completion notes:
+  - Closed the remaining active-frontend asset/mapping tail by wiring the staged noun icons for distortion, drums, modulation, and multi-effect rack categories through `web/src/app/components/icons/effectIcons.ts`.
+  - Verified the active-frontend exit criteria directly: `rg -n "@phosphor-icons/react|@mui/icons-material" web/src/app web/src/map2 -g '*.tsx' -g '*.ts'` returns no matches, and the tracked emoji/symbol sweep across the same roots reports `TOTAL_FILES 0`.
+  - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass (existing chunk-size warnings only).
 Subtasks:
 ID: T205-subA
 Status: [✓] Done
