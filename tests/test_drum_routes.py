@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import drums as drum_routes
+from app.services.websocket_manager import ws_manager
 
 
 class _FakeDrumService:
@@ -22,6 +23,14 @@ class _FakeDrumService:
             "practice_change_quantization": 1,
             "practice_count_in_bars": 1,
             "practice_auto_fill": False,
+        }
+        self.position = {
+            "step": 0,
+            "bar": 1,
+            "beat": 1,
+            "pattern": 0,
+            "variation": 0,
+            "updated_at": None,
         }
 
     def get_state(self):
@@ -60,6 +69,9 @@ class _FakeDrumService:
             "master_rms_right": 0.0,
         }
 
+    def get_position(self):
+        return dict(self.position)
+
     def list_factory_packs(self):
         return [{"pack_id": "factory", "name": "Factory", "description": "", "source": "factory", "filename": "factory.json"}]
 
@@ -83,11 +95,22 @@ class _FakeDrumService:
             "pack_id": pack["pack_id"],
         }
 
+    async def publish_state_update(self):
+        await ws_manager.broadcast_json({"type": "drum_state", "data": self.get_state()}, topic="drums")
+
+    async def publish_transport_update(self):
+        await ws_manager.broadcast_json({"type": "drum_transport", "data": self.get_transport()}, topic="drums:transport")
+
+    async def publish_position_update(self):
+        await ws_manager.broadcast_json({"type": "drum_position", "data": self.get_position()}, topic="drums:position")
+
 
 def _client(monkeypatch):
     app = FastAPI()
     app.include_router(drum_routes.router)
-    monkeypatch.setattr(drum_routes, "_get_service", lambda: _FakeDrumService())
+    service = _FakeDrumService()
+    monkeypatch.setattr(drum_routes, "_get_service", lambda: service)
+    ws_manager.event_history.clear()
     return TestClient(app)
 
 
@@ -123,6 +146,25 @@ def test_drum_transport_route_updates_transport_projection(monkeypatch):
         "pattern": 0,
         "variation": 0,
         "swing": 12,
+    }
+    history = ws_manager.get_event_history("drums:transport")
+    assert history["events"][-1]["type"] == "drum_transport"
+    assert history["events"][-1]["data"]["bpm"] == 96
+
+
+def test_drum_position_route_returns_typed_position(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.get("/api/engine/drums/position")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "step": 0,
+        "bar": 1,
+        "beat": 1,
+        "pattern": 0,
+        "variation": 0,
+        "updated_at": None,
     }
 
 

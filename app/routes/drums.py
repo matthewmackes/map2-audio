@@ -18,6 +18,7 @@ from app.services.drum_machine_service import (
     DrumMachineStateUpdateModel,
     DrumMachineService,
     DrumMeteringModel,
+    DrumSequencerPositionModel,
     DrumTransportStateModel,
     DrumTransportUpdateModel,
     get_drum_machine_service,
@@ -47,8 +48,9 @@ def get_drum_machine_state() -> Dict[str, Any]:
 
 
 @router.post("/api/engine/drums/state", response_model=DrumStateResponse)
-def set_drum_machine_state(state: DrumMachineStateUpdateModel) -> DrumStateResponse:
+async def set_drum_machine_state(state: DrumMachineStateUpdateModel) -> DrumStateResponse:
     updated = _get_service().update_state(state.model_dump(exclude_unset=True))
+    await _get_service().publish_state_update()
     return DrumStateResponse(state=DrumMachineStateModel.model_validate(updated))
 
 
@@ -58,8 +60,16 @@ def get_drum_transport() -> Dict[str, Any]:
 
 
 @router.post("/api/engine/drums/transport", response_model=DrumTransportStateModel)
-def set_drum_transport(update: DrumTransportUpdateModel) -> Dict[str, Any]:
-    return _get_service().update_transport(update.model_dump(exclude_unset=True))
+async def set_drum_transport(update: DrumTransportUpdateModel) -> Dict[str, Any]:
+    updated = _get_service().update_transport(update.model_dump(exclude_unset=True))
+    await _get_service().publish_transport_update()
+    await _get_service().publish_position_update()
+    return updated
+
+
+@router.get("/api/engine/drums/position", response_model=DrumSequencerPositionModel)
+def get_drum_position() -> Dict[str, Any]:
+    return _get_service().get_position()
 
 
 @router.get("/api/engine/drums/metering", response_model=DrumMeteringModel)

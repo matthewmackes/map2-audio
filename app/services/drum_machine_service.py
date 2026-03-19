@@ -10,10 +10,12 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, ValidationError
 
+from app.services.juce_engine_service import get_audio_engine
 from app.services.user_content_manager import UserContentManager
 from app.utils.singleton import Singleton
 
@@ -84,6 +86,15 @@ class DrumMeteringModel(BaseModel):
     master_rms_right: float = 0.0
 
 
+class DrumSequencerPositionModel(BaseModel):
+    step: int = Field(0, ge=0, le=63)
+    bar: int = Field(1, ge=1)
+    beat: int = Field(1, ge=1, le=4)
+    pattern: int = Field(0, ge=0, le=127)
+    variation: int = Field(0, ge=0, le=10)
+    updated_at: Optional[str] = None
+
+
 class DrumPackSummaryModel(BaseModel):
     pack_id: str
     name: str
@@ -100,6 +111,11 @@ class DrumMachineService(Singleton):
         self._user_content_manager = UserContentManager(_GENERATED_PACKS_DIR)
         self._metering = DrumMeteringModel()
         self._state = self._load_state()
+        self._position = DrumSequencerPositionModel(
+            pattern=self._state.pattern,
+            variation=self._state.variation,
+        )
+        self._sync_static_state_to_engine()
 
     def _load_state(self) -> DrumMachineStateModel:
         if not self._state_path.exists():
@@ -124,6 +140,14 @@ class DrumMachineService(Singleton):
         current = self._state.model_dump()
         current.update({key: value for key, value in patch.items() if value is not None or key in patch})
         self._state = DrumMachineStateModel.model_validate(current)
+        self._position = DrumSequencerPositionModel.model_validate(
+            {
+                **self._position.model_dump(),
+                "pattern": self._state.pattern,
+                "variation": self._state.variation,
+            }
+        )
+        self._sync_state_patch_to_engine(patch)
         self._persist_state()
         return self.get_state()
 
@@ -149,10 +173,72 @@ class DrumMachineService(Singleton):
             if source in patch:
                 payload[target] = patch[source]
         self.update_state(payload)
+        if patch.get("is_playing") is False:
+            self._persist_state()
         return self.get_transport()
 
     def get_metering(self) -> Dict[str, Any]:
+        self._refresh_metering_from_engine()
         return self._metering.model_dump()
+
+    def update_metering(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        self._metering = DrumMeteringModel.model_validate(payload)
+        return self._metering.model_dump()
+
+    def get_position(self) -> Dict[str, Any]:
+        return self._position.model_dump()
+
+    def update_position(self, patch: Dict[str, Any]) -> Dict[str, Any]:
+        current = self._position.model_dump()
+        current.update({key: value for key, value in patch.items() if value is not None or key in patch})
+        current["pattern"] = self._state.pattern if "pattern" not in patch else current["pattern"]
+        current["variation"] = self._state.variation if "variation" not in patch else current["variation"]
+        current["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        self._position = DrumSequencerPositionModel.model_validate(current)
+        return self.get_position()
+
+    async def publish_state_update(self) -> None:
+        from app.services.websocket_manager import ws_manager
+
+        payload = {
+            "type": "drum_state",
+            "data": self.get_state(),
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        await ws_manager.broadcast_json(payload, topic="drums")
+
+    async def publish_transport_update(self) -> None:
+        from app.services.websocket_manager import ws_manager
+
+        payload = {
+            "type": "drum_transport",
+            "data": self.get_transport(),
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        await ws_manager.broadcast_json(payload, topic="drums:transport")
+        await ws_manager.broadcast_json(payload, topic="drums")
+
+    async def publish_position_update(self) -> None:
+        from app.services.websocket_manager import ws_manager
+
+        payload = {
+            "type": "drum_position",
+            "data": self.get_position(),
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        await ws_manager.broadcast_json(payload, topic="drums:position")
+        await ws_manager.broadcast_json(payload, topic="drums")
+
+    async def publish_metering_update(self) -> None:
+        from app.services.websocket_manager import ws_manager
+
+        payload = {
+            "type": "drum_metering",
+            "data": self._metering.model_dump(),
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        await ws_manager.broadcast_json(payload, topic="drums:metering")
+        await ws_manager.broadcast_json(payload, topic="drums")
 
     def _index_pack_file(self, pack_file: Path) -> Optional[DrumPackSummaryModel]:
         try:
@@ -207,6 +293,42 @@ class DrumMachineService(Singleton):
             "path": path,
             "pack_id": pack_id,
         }
+
+    def _engine(self) -> Any:
+        try:
+            return get_audio_engine().engine
+        except Exception:
+            return None
+
+    def _sync_static_state_to_engine(self) -> None:
+        self._sync_state_patch_to_engine({"volume": self._state.volume})
+        self._refresh_metering_from_engine()
+
+    def _sync_state_patch_to_engine(self, patch: Dict[str, Any]) -> None:
+        engine = self._engine()
+        if engine is None:
+            return
+
+        if "volume" in patch:
+            setter = getattr(engine, "set_drum_master_volume", None)
+            if callable(setter):
+                setter(float(self._state.volume) / 100.0)
+
+    def _refresh_metering_from_engine(self) -> None:
+        engine = self._engine()
+        if engine is None:
+            return
+
+        getter = getattr(engine, "get_drum_metering", None)
+        if not callable(getter):
+            return
+
+        try:
+            payload = getter()
+            if payload:
+                self._metering = DrumMeteringModel.model_validate(dict(payload))
+        except Exception:
+            return
 
 
 def get_drum_machine_service() -> DrumMachineService:
