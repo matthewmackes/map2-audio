@@ -1,5 +1,6 @@
 #include "SynthForge/Sampler/GroupedSampler.h"
 
+#include <cmath>
 #include <utility>
 
 namespace map2::synthforge {
@@ -25,7 +26,11 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
                                          int swDefault,
                                          int swLast,
                                          int swLoKey,
-                                         int swHiKey)
+                                         int swHiKey,
+                                         int transpose,
+                                         float tuneCents,
+                                         float volumeDb,
+                                         float pan)
     : juce::SamplerSound(name,
                          source,
                          midiNotes,
@@ -43,12 +48,111 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
       swDefault_(swDefault >= 0 ? juce::jlimit(0, 127, swDefault) : -1),
       swLast_(swLast >= 0 ? juce::jlimit(0, 127, swLast) : -1),
       swLoKey_(swLoKey >= 0 ? juce::jlimit(0, 127, swLoKey) : -1),
-      swHiKey_(swHiKey >= 0 ? juce::jlimit(0, 127, swHiKey) : -1) {
+      swHiKey_(swHiKey >= 0 ? juce::jlimit(0, 127, swHiKey) : -1),
+      transpose_(juce::jlimit(-127, 127, transpose)),
+      tuneCents_(juce::jlimit(-2400.0f, 2400.0f, tuneCents)),
+      volumeDb_(juce::jlimit(-96.0f, 24.0f, volumeDb)),
+      pan_(juce::jlimit(-100.0f, 100.0f, pan)),
+      sourceSampleRate_(source.sampleRate),
+      midiRootNote_(midiNoteForNormalPitch) {
     if (seqLength_ > 0 && seqPosition_ > seqLength_) {
         seqPosition_ = seqLength_;
     }
     if (swLoKey_ >= 0 && swHiKey_ >= 0 && swLoKey_ > swHiKey_) {
         std::swap(swLoKey_, swHiKey_);
+    }
+
+    envelopeParameters_.attack = static_cast<float>(attackTimeSecs);
+    envelopeParameters_.release = static_cast<float>(releaseTimeSecs);
+}
+
+bool GroupedSamplerVoice::canPlaySound(juce::SynthesiserSound* sound) {
+    return dynamic_cast<const GroupedSamplerSound*>(sound) != nullptr;
+}
+
+void GroupedSamplerVoice::startNote(int midiNoteNumber,
+                                    float velocity,
+                                    juce::SynthesiserSound* sound,
+                                    int /*pitchWheel*/) {
+    auto* groupedSound = dynamic_cast<const GroupedSamplerSound*>(sound);
+    if (groupedSound == nullptr) {
+        jassertfalse;
+        return;
+    }
+
+    const double tunedNote = static_cast<double>(midiNoteNumber)
+                           + static_cast<double>(groupedSound->getTranspose())
+                           + (static_cast<double>(groupedSound->getTuneCents()) / 100.0);
+    pitchRatio_ = std::pow(2.0, (tunedNote - static_cast<double>(groupedSound->getMidiRootNote())) / 12.0)
+                * groupedSound->getSourceSampleRate() / getSampleRate();
+    sourceSamplePosition_ = 0.0;
+
+    const float linearGain = std::pow(10.0f, groupedSound->getVolumeDb() / 20.0f) * velocity;
+    const float panNorm = (juce::jlimit(-100.0f, 100.0f, groupedSound->getPan()) + 100.0f) / 200.0f;
+    leftGain_ = std::cos(panNorm * juce::MathConstants<float>::halfPi) * linearGain;
+    rightGain_ = std::sin(panNorm * juce::MathConstants<float>::halfPi) * linearGain;
+
+    adsr_.setSampleRate(groupedSound->getSourceSampleRate());
+    adsr_.setParameters(groupedSound->getEnvelopeParameters());
+    adsr_.noteOn();
+}
+
+void GroupedSamplerVoice::stopNote(float /*velocity*/, bool allowTailOff) {
+    if (allowTailOff) {
+        adsr_.noteOff();
+        return;
+    }
+
+    clearCurrentNote();
+    adsr_.reset();
+}
+
+void GroupedSamplerVoice::pitchWheelMoved(int /*newValue*/) {}
+void GroupedSamplerVoice::controllerMoved(int /*controllerNumber*/, int /*newValue*/) {}
+
+void GroupedSamplerVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer,
+                                          int startSample,
+                                          int numSamples) {
+    auto* playingSound = dynamic_cast<GroupedSamplerSound*>(getCurrentlyPlayingSound().get());
+    if (playingSound == nullptr) {
+        return;
+    }
+
+    auto* data = playingSound->getAudioData();
+    if (data == nullptr) {
+        stopNote(0.0f, false);
+        return;
+    }
+
+    const float* const inL = data->getReadPointer(0);
+    const float* const inR = data->getNumChannels() > 1 ? data->getReadPointer(1) : nullptr;
+    float* outL = outputBuffer.getWritePointer(0, startSample);
+    float* outR = outputBuffer.getNumChannels() > 1 ? outputBuffer.getWritePointer(1, startSample) : nullptr;
+
+    while (--numSamples >= 0) {
+        const auto pos = static_cast<int>(sourceSamplePosition_);
+        const auto alpha = static_cast<float>(sourceSamplePosition_ - static_cast<double>(pos));
+        const auto invAlpha = 1.0f - alpha;
+
+        float left = (inL[pos] * invAlpha) + (inL[pos + 1] * alpha);
+        float right = inR != nullptr ? (inR[pos] * invAlpha) + (inR[pos + 1] * alpha) : left;
+
+        const auto envelopeValue = adsr_.getNextSample();
+        left *= leftGain_ * envelopeValue;
+        right *= rightGain_ * envelopeValue;
+
+        if (outR != nullptr) {
+            *outL++ += left;
+            *outR++ += right;
+        } else {
+            *outL++ += 0.5f * (left + right);
+        }
+
+        sourceSamplePosition_ += pitchRatio_;
+        if (sourceSamplePosition_ > data->getNumSamples() - 2) {
+            stopNote(0.0f, false);
+            break;
+        }
     }
 }
 

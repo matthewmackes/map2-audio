@@ -33,6 +33,10 @@ struct RegionBuilder {
     int swLast = -1;
     int swLoKey = -1;
     int swHiKey = -1;
+    int transpose = 0;
+    float tuneCents = 0.0f;
+    float volumeDb = 0.0f;
+    float pan = 0.0f;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };
@@ -292,6 +296,34 @@ void applyOpcode(RegionBuilder& target, const juce::String& opcode, const juce::
         return;
     }
 
+    if (opcode == "transpose") {
+        if (const auto parsed = parseIntStrict(value)) {
+            target.transpose = juce::jlimit(-127, 127, *parsed);
+        }
+        return;
+    }
+
+    if (opcode == "tune") {
+        if (const auto parsed = parseFloatStrict(value)) {
+            target.tuneCents = juce::jlimit(-2400.0f, 2400.0f, *parsed);
+        }
+        return;
+    }
+
+    if (opcode == "volume") {
+        if (const auto parsed = parseFloatStrict(value)) {
+            target.volumeDb = juce::jlimit(-96.0f, 24.0f, *parsed);
+        }
+        return;
+    }
+
+    if (opcode == "pan") {
+        if (const auto parsed = parseFloatStrict(value)) {
+            target.pan = juce::jlimit(-100.0f, 100.0f, *parsed);
+        }
+        return;
+    }
+
     if (opcode == "ampeg_attack") {
         if (const auto parsed = parseFloatStrict(value)) {
             target.attackSeconds = juce::jmax(0.0f, *parsed);
@@ -431,6 +463,10 @@ SfzDocument SfzLoader::load(const juce::File& sfzFile) {
         if (loadedRegion.swLoKey >= 0 && loadedRegion.swHiKey >= 0 && loadedRegion.swLoKey > loadedRegion.swHiKey) {
             std::swap(loadedRegion.swLoKey, loadedRegion.swHiKey);
         }
+        loadedRegion.transpose = juce::jlimit(-127, 127, region.transpose);
+        loadedRegion.tuneCents = juce::jlimit(-2400.0f, 2400.0f, region.tuneCents);
+        loadedRegion.volumeDb = juce::jlimit(-96.0f, 24.0f, region.volumeDb);
+        loadedRegion.pan = juce::jlimit(-100.0f, 100.0f, region.pan);
         loadedRegion.attackSeconds = juce::jmax(0.0f, region.attackSeconds);
         loadedRegion.releaseSeconds = juce::jmax(0.0f, region.releaseSeconds);
         doc.regions.push_back(loadedRegion);

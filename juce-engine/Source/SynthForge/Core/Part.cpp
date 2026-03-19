@@ -495,7 +495,7 @@ bool Part::loadSfzNative(const std::string& sfzPath, SampleLoadStatus& status) {
 
     auto samplerProgram = std::make_shared<SamplerProgram>();
     for (int i = 0; i < kVoicesPerPart; ++i) {
-        samplerProgram->synthesiser.addVoice(new juce::SamplerVoice());
+        samplerProgram->synthesiser.addVoice(new GroupedSamplerVoice());
     }
     samplerProgram->synthesiser.setCurrentPlaybackSampleRate(sampleRate_.load(std::memory_order_relaxed));
 
@@ -536,7 +536,11 @@ bool Part::loadSfzNative(const std::string& sfzPath, SampleLoadStatus& status) {
             region.swDefault,
             region.swLast,
             region.swLoKey,
-            region.swHiKey);
+            region.swHiKey,
+            region.transpose,
+            region.tuneCents,
+            region.volumeDb,
+            region.pan);
 
         samplerProgram->synthesiser.addSound(sound);
         ++loadedSounds;

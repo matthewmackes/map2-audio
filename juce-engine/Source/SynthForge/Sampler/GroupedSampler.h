@@ -26,7 +26,11 @@ public:
                         int swDefault,
                         int swLast,
                         int swLoKey,
-                        int swHiKey);
+                        int swHiKey,
+                        int transpose,
+                        float tuneCents,
+                        float volumeDb,
+                        float pan);
 
     int getChokeGroup() const noexcept { return chokeGroup_; }
     int getOffByGroup() const noexcept { return offByGroup_; }
@@ -35,6 +39,13 @@ public:
     float getLoRand() const noexcept { return loRand_; }
     float getHiRand() const noexcept { return hiRand_; }
     int getSwLast() const noexcept { return swLast_; }
+    int getTranspose() const noexcept { return transpose_; }
+    float getTuneCents() const noexcept { return tuneCents_; }
+    float getVolumeDb() const noexcept { return volumeDb_; }
+    float getPan() const noexcept { return pan_; }
+    double getSourceSampleRate() const noexcept { return sourceSampleRate_; }
+    int getMidiRootNote() const noexcept { return midiRootNote_; }
+    const juce::ADSR::Parameters& getEnvelopeParameters() const noexcept { return envelopeParameters_; }
     bool appliesToRoundRobin(int roundRobinCounter) const noexcept;
     bool appliesToRandomValue(float randomValue) const noexcept;
     bool isKeySwitchNote(int midiNoteNumber) const noexcept;
@@ -53,6 +64,31 @@ private:
     int swLast_ = -1;
     int swLoKey_ = -1;
     int swHiKey_ = -1;
+    int transpose_ = 0;
+    float tuneCents_ = 0.0f;
+    float volumeDb_ = 0.0f;
+    float pan_ = 0.0f;
+    double sourceSampleRate_ = 0.0;
+    int midiRootNote_ = 60;
+    juce::ADSR::Parameters envelopeParameters_{};
+};
+
+class GroupedSamplerVoice : public juce::SynthesiserVoice {
+public:
+    bool canPlaySound(juce::SynthesiserSound* sound) override;
+    void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound* sound, int pitchWheel) override;
+    void stopNote(float velocity, bool allowTailOff) override;
+    void pitchWheelMoved(int newValue) override;
+    void controllerMoved(int controllerNumber, int newValue) override;
+    void renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override;
+    using juce::SynthesiserVoice::renderNextBlock;
+
+private:
+    double pitchRatio_ = 0.0;
+    double sourceSamplePosition_ = 0.0;
+    float leftGain_ = 0.0f;
+    float rightGain_ = 0.0f;
+    juce::ADSR adsr_;
 };
 
 class GroupedSamplerSynthesiser : public juce::Synthesiser {

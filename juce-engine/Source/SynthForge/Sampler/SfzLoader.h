@@ -25,6 +25,10 @@ struct SfzRegionDefinition {
     int swLast = -1;
     int swLoKey = -1;
     int swHiKey = -1;
+    int transpose = 0;
+    float tuneCents = 0.0f;
+    float volumeDb = 0.0f;
+    float pan = 0.0f;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };
