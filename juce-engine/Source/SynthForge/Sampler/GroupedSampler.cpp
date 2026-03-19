@@ -12,7 +12,10 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
                                          int chokeGroup,
                                          int offByGroup,
                                          int seqLength,
-                                         int seqPosition)
+                                         int seqPosition,
+                                         float loRand,
+                                         float hiRand,
+                                         bool hasRandomRange)
     : juce::SamplerSound(name,
                          source,
                          midiNotes,
@@ -23,7 +26,10 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
       chokeGroup_(juce::jmax(0, chokeGroup)),
       offByGroup_(juce::jmax(0, offByGroup)),
       seqLength_(juce::jmax(0, seqLength)),
-      seqPosition_(juce::jmax(0, seqPosition)) {
+      seqPosition_(juce::jmax(0, seqPosition)),
+      loRand_(juce::jlimit(0.0f, 1.0f, juce::jmin(loRand, hiRand))),
+      hiRand_(juce::jlimit(0.0f, 1.0f, juce::jmax(loRand, hiRand))),
+      hasRandomRange_(hasRandomRange) {
     if (seqLength_ > 0 && seqPosition_ > seqLength_) {
         seqPosition_ = seqLength_;
     }
@@ -39,9 +45,19 @@ bool GroupedSamplerSound::appliesToRoundRobin(int roundRobinCounter) const noexc
     return sequencePosition == seqPosition_;
 }
 
+bool GroupedSamplerSound::appliesToRandomValue(float randomValue) const noexcept {
+    if (!hasRandomRange_) {
+        return true;
+    }
+
+    const float clamped = juce::jlimit(0.0f, 0.999999f, randomValue);
+    return clamped >= loRand_ && clamped < hiRand_;
+}
+
 void GroupedSamplerSynthesiser::noteOn(int midiChannel, int midiNoteNumber, float velocity) {
     const juce::ScopedLock sl(lock);
     const int roundRobinCounter = nextRoundRobinCounter(midiNoteNumber);
+    const float randomValue = nextRandomValue();
 
     for (auto* sound : sounds) {
         if (!sound->appliesToNote(midiNoteNumber) || !sound->appliesToChannel(midiChannel)) {
@@ -50,6 +66,9 @@ void GroupedSamplerSynthesiser::noteOn(int midiChannel, int midiNoteNumber, floa
 
         if (auto* groupedSound = dynamic_cast<GroupedSamplerSound*>(sound)) {
             if (!groupedSound->appliesToRoundRobin(roundRobinCounter)) {
+                continue;
+            }
+            if (!groupedSound->appliesToRandomValue(randomValue)) {
                 continue;
             }
             if (groupedSound->getOffByGroup() > 0) {
@@ -96,6 +115,20 @@ int GroupedSamplerSynthesiser::nextRoundRobinCounter(int midiNoteNumber) noexcep
     int& counter = roundRobinCounters_[static_cast<size_t>(noteIndex)];
     counter = juce::jmax(1, counter + 1);
     return counter;
+}
+
+void GroupedSamplerSynthesiser::setNextRandomValueForTesting(float randomValue) noexcept {
+    randomValueOverride_ = juce::jlimit(0.0f, 0.999999f, randomValue);
+}
+
+float GroupedSamplerSynthesiser::nextRandomValue() noexcept {
+    if (randomValueOverride_ >= 0.0f) {
+        const float value = randomValueOverride_;
+        randomValueOverride_ = -1.0f;
+        return value;
+    }
+
+    return juce::Random::getSystemRandom().nextFloat();
 }
 
 }  // namespace map2::synthforge

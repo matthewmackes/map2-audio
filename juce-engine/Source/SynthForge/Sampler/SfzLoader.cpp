@@ -26,6 +26,9 @@ struct RegionBuilder {
     int offBy = 0;
     int seqLength = 0;
     int seqPosition = 0;
+    float loRand = 0.0f;
+    float hiRand = 1.0f;
+    bool hasRandomRange = false;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };
@@ -249,6 +252,22 @@ void applyOpcode(RegionBuilder& target, const juce::String& opcode, const juce::
         return;
     }
 
+    if (opcode == "lorand") {
+        if (const auto parsed = parseFloatStrict(value)) {
+            target.loRand = juce::jlimit(0.0f, 1.0f, *parsed);
+            target.hasRandomRange = true;
+        }
+        return;
+    }
+
+    if (opcode == "hirand") {
+        if (const auto parsed = parseFloatStrict(value)) {
+            target.hiRand = juce::jlimit(0.0f, 1.0f, *parsed);
+            target.hasRandomRange = true;
+        }
+        return;
+    }
+
     if (opcode == "ampeg_attack") {
         if (const auto parsed = parseFloatStrict(value)) {
             target.attackSeconds = juce::jmax(0.0f, *parsed);
@@ -378,6 +397,9 @@ SfzDocument SfzLoader::load(const juce::File& sfzFile) {
         loadedRegion.offBy = juce::jmax(0, region.offBy);
         loadedRegion.seqLength = juce::jmax(0, region.seqLength);
         loadedRegion.seqPosition = juce::jmax(0, region.seqPosition);
+        loadedRegion.loRand = juce::jlimit(0.0f, 1.0f, juce::jmin(region.loRand, region.hiRand));
+        loadedRegion.hiRand = juce::jlimit(0.0f, 1.0f, juce::jmax(region.loRand, region.hiRand));
+        loadedRegion.hasRandomRange = region.hasRandomRange;
         loadedRegion.attackSeconds = juce::jmax(0.0f, region.attackSeconds);
         loadedRegion.releaseSeconds = juce::jmax(0.0f, region.releaseSeconds);
         doc.regions.push_back(loadedRegion);

@@ -1,3 +1,4 @@
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include "../Source/SynthForge/Sampler/GroupedSampler.h"
@@ -85,6 +86,23 @@ std::vector<int> activeSeqPositions(const GroupedSamplerSynthesiser& synth) {
     return positions;
 }
 
+std::vector<float> activeRandomLows(const GroupedSamplerSynthesiser& synth) {
+    std::vector<float> lows;
+    for (int i = 0; i < synth.getNumVoices(); ++i) {
+        auto* voice = synth.getVoice(i);
+        if (voice == nullptr || !voice->isVoiceActive()) {
+            continue;
+        }
+
+        auto currentSound = voice->getCurrentlyPlayingSound();
+        auto* groupedSound = dynamic_cast<GroupedSamplerSound*>(currentSound.get());
+        if (groupedSound != nullptr) {
+            lows.push_back(groupedSound->getLoRand());
+        }
+    }
+    return lows;
+}
+
 }  // namespace
 
 TEST_CASE("SfzLoader parses choke-group opcodes", "[synthforge][sfz][group]") {
@@ -147,8 +165,8 @@ TEST_CASE("GroupedSamplerSynthesiser chokes matching active group", "[synthforge
     juce::BigInteger openNotes;
     openNotes.setBit(46);
 
-    synth.addSound(new GroupedSamplerSound("closed", *closedReader, closedNotes, 42, 0.0, 0.01, 1.0, 1, 0, 0, 0));
-    synth.addSound(new GroupedSamplerSound("open", *openReader, openNotes, 46, 0.0, 0.01, 1.0, 2, 1, 0, 0));
+    synth.addSound(new GroupedSamplerSound("closed", *closedReader, closedNotes, 42, 0.0, 0.01, 1.0, 1, 0, 0, 0, 0.0f, 1.0f, false));
+    synth.addSound(new GroupedSamplerSound("open", *openReader, openNotes, 46, 0.0, 0.01, 1.0, 2, 1, 0, 0, 0.0f, 1.0f, false));
 
     synth.noteOn(1, 42, 1.0f);
     REQUIRE(countActiveVoicesWithGroup(synth, 1) == 1);
@@ -182,8 +200,8 @@ TEST_CASE("GroupedSamplerSynthesiser alternates round-robin regions per key",
     juce::BigInteger notes;
     notes.setBit(42);
 
-    synth.addSound(new GroupedSamplerSound("rr1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 1));
-    synth.addSound(new GroupedSamplerSound("rr2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 2));
+    synth.addSound(new GroupedSamplerSound("rr1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 1, 0.0f, 1.0f, false));
+    synth.addSound(new GroupedSamplerSound("rr2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 2, 0.0f, 1.0f, false));
 
     synth.noteOn(1, 42, 1.0f);
     REQUIRE(activeSeqPositions(synth) == std::vector<int>{1});
@@ -195,4 +213,58 @@ TEST_CASE("GroupedSamplerSynthesiser alternates round-robin regions per key",
 
     synth.noteOn(1, 42, 1.0f);
     REQUIRE(activeSeqPositions(synth) == std::vector<int>{1});
+}
+
+TEST_CASE("SfzLoader parses random range opcodes", "[synthforge][sfz][random]") {
+    ScopedTempDir tempDir;
+    REQUIRE(tempDir.dir.isDirectory());
+
+    makeTempWavFile(tempDir.dir, "hat.wav");
+
+    auto sfzFile = tempDir.dir.getChildFile("kit.sfz");
+    REQUIRE(sfzFile.replaceWithText(
+        "<region> sample=hat.wav key=42 lorand=0.25 hirand=0.75\n"));
+
+    const auto document = SfzLoader::load(sfzFile);
+    REQUIRE(document.ok());
+    REQUIRE(document.regions.size() == 1);
+    REQUIRE(document.regions.front().hasRandomRange);
+    REQUIRE(document.regions.front().loRand == Catch::Approx(0.25f));
+    REQUIRE(document.regions.front().hiRand == Catch::Approx(0.75f));
+}
+
+TEST_CASE("GroupedSamplerSynthesiser selects random layers from lorand and hirand",
+          "[synthforge][sfz][random]") {
+    ScopedTempDir tempDir;
+    REQUIRE(tempDir.dir.isDirectory());
+
+    auto firstFile = makeTempWavFile(tempDir.dir, "rand1.wav");
+    auto secondFile = makeTempWavFile(tempDir.dir, "rand2.wav");
+
+    juce::AudioFormatManager formats;
+    formats.registerBasicFormats();
+    auto firstReader = createReader(formats, firstFile);
+    auto secondReader = createReader(formats, secondFile);
+    REQUIRE(firstReader != nullptr);
+    REQUIRE(secondReader != nullptr);
+
+    GroupedSamplerSynthesiser synth;
+    synth.setCurrentPlaybackSampleRate(44100.0);
+    synth.addVoice(new juce::SamplerVoice());
+    synth.addVoice(new juce::SamplerVoice());
+
+    juce::BigInteger notes;
+    notes.setBit(42);
+
+    synth.addSound(new GroupedSamplerSound("rand1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 0, 0, 0.0f, 0.5f, true));
+    synth.addSound(new GroupedSamplerSound("rand2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 0, 0, 0.5f, 1.0f, true));
+
+    synth.setNextRandomValueForTesting(0.25f);
+    synth.noteOn(1, 42, 1.0f);
+    REQUIRE(activeRandomLows(synth) == std::vector<float>{0.0f});
+    synth.allNotesOff(1, false);
+
+    synth.setNextRandomValueForTesting(0.75f);
+    synth.noteOn(1, 42, 1.0f);
+    REQUIRE(activeRandomLows(synth) == std::vector<float>{0.5f});
 }

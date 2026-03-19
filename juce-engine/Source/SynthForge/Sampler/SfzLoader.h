@@ -18,6 +18,9 @@ struct SfzRegionDefinition {
     int offBy = 0;
     int seqLength = 0;
     int seqPosition = 0;
+    float loRand = 0.0f;
+    float hiRand = 1.0f;
+    bool hasRandomRange = false;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };
