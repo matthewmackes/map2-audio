@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**773** Python | **1138** TypeScript | **288** C++/H | **122** Docs | **571** total commits | **1** stars | **0** forks | **0** open issues
+**773** Python | **1138** TypeScript | **288** C++/H | **122** Docs | **573** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6aace8e1`](https://github.com/matthewmackes/map2-audio/commit/6aace8e1c29104af33b5ff5b416fe4bde963e64a) | Finish active frontend icon migration | Map2 Audio | 2026-03-19 |
+| [`14464605`](https://github.com/matthewmackes/map2-audio/commit/14464605fe4f3e5dbf201246e61e5e1afd9d7b02) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`0f72cb39`](https://github.com/matthewmackes/map2-audio/commit/0f72cb39c0ae3d2c7e027833429fe2a7d079183b) | Finish BlexMono typography rollout | Map2 Audio | 2026-03-19 |
 | [`13ec8368`](https://github.com/matthewmackes/map2-audio/commit/13ec8368dfec24706e8307401a210efd5a337d12) | Refactor effect cards into shared Carbon layouts | Map2 Audio | 2026-03-19 |
 | [`70bf30d4`](https://github.com/matthewmackes/map2-audio/commit/70bf30d47a7af65beaca426851248fc1c3d97f67) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`1d005f64`](https://github.com/matthewmackes/map2-audio/commit/1d005f6456959426d8781f702110067a7ff92df6) | Add drum machine processor foundation | Map2 Audio | 2026-03-19 |
 | [`cbb79e97`](https://github.com/matthewmackes/map2-audio/commit/cbb79e97bc40cb0d6b2be96bb35bb47dd19ab022) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`2642727e`](https://github.com/matthewmackes/map2-audio/commit/2642727e812ee7e5958e58a7ca19abba62930e89) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
-| [`310fb396`](https://github.com/matthewmackes/map2-audio/commit/310fb39658f201c742c54e6b20d2208b9f9e058d) | Finish native SFZ opcode support | Map2 Audio | 2026-03-19 |
-| [`5cf0b66b`](https://github.com/matthewmackes/map2-audio/commit/5cf0b66b322c1e47dc0f96f16f0b2856ec12890c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
