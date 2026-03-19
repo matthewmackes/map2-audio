@@ -125,12 +125,12 @@ export function generatePDFHTML(
   </style>
 </head>
 <body>
-  <h1>🖥️ Host Machine Monitoring Report</h1>
+  <h1>Host Machine Monitoring Report</h1>
   <p>Generated: ${new Date().toLocaleString()}</p>
   ${startDate ? `<p>Period: ${startDate.toLocaleDateString()} to ${endDate?.toLocaleDateString() || 'now'}</p>` : ''}
 
   ${includeMetrics && metricsStats ? `
-    <h2>📊 Metrics Summary</h2>
+    <h2>Metrics Summary</h2>
     <div class="stats-grid">
       <div class="stat-box">
         <div class="stat-label">Temperature (°C)</div>
@@ -152,7 +152,7 @@ export function generatePDFHTML(
       </div>
     </div>
 
-    <h2>📈 Detailed Metrics (Last 50)</h2>
+    <h2>Detailed Metrics (Last 50)</h2>
     <table>
       <thead>
         <tr>
@@ -176,7 +176,7 @@ export function generatePDFHTML(
   ` : ''}
 
   ${includeAlerts && filteredAlerts.length > 0 ? `
-    <h2>🚨 Alert History</h2>
+    <h2>Alert History</h2>
     <p>Total Alerts: ${filteredAlerts.length}</p>
     <table>
       <thead>
@@ -197,7 +197,7 @@ export function generatePDFHTML(
             <td>${a.severity}</td>
             <td>${a.value}</td>
             <td>${a.threshold}</td>
-            <td>${a.acknowledged ? '✅ Acknowledged' : '⏳ Pending'}</td>
+            <td>${a.acknowledged ? 'Acknowledged' : 'Pending'}</td>
           </tr>
         `).join('')}
       </tbody>

@@ -13,13 +13,13 @@ import {
 } from '@mui/material';
 import { NumberInput } from '../NumberInput';
 import {
-  PlayArrow as PlayIcon,
-  Stop as StopIcon,
-  FiberManualRecord as RecordIcon,
-  Repeat as LoopIcon,
-  SkipPrevious as RewindIcon,
-  FastForward as ForwardIcon,
-} from '@mui/icons-material';
+  PlayFilled,
+  RecordingFilledAlt,
+  Repeat,
+  SkipBack,
+  SkipForward,
+  StopFilled,
+} from '@carbon/icons-react';
 import { useTheme, alpha, keyframes } from '@mui/material/styles';
 
 // ============================================================================
@@ -103,7 +103,7 @@ const TransportControls = memo(({
   const theme = useTheme();
 
   const buttonSize = compact ? 'small' : 'medium';
-  const iconSize = compact ? 'small' : 'medium';
+  const iconSize = compact ? 16 : 20;
 
   return (
     <Stack
@@ -120,7 +120,7 @@ const TransportControls = memo(({
       {/* Rewind */}
       <Tooltip title="Rewind">
         <IconButton size={buttonSize} onClick={onRewind}>
-          <RewindIcon fontSize={iconSize} />
+          <SkipBack size={iconSize} />
         </IconButton>
       </Tooltip>
 
@@ -133,7 +133,7 @@ const TransportControls = memo(({
             color: !isPlaying && !isRecording ? 'text.disabled' : 'text.primary',
           }}
         >
-          <StopIcon fontSize={iconSize} />
+          <StopFilled size={iconSize} />
         </IconButton>
       </Tooltip>
 
@@ -147,7 +147,7 @@ const TransportControls = memo(({
             bgcolor: isPlaying ? alpha(theme.palette.success.main, 0.1) : 'transparent',
           }}
         >
-          <PlayIcon fontSize={iconSize} />
+          <PlayFilled size={iconSize} />
         </IconButton>
       </Tooltip>
 
@@ -162,14 +162,14 @@ const TransportControls = memo(({
             animation: isRecording ? `${recordPulse} 1s ease-in-out infinite` : 'none',
           }}
         >
-          <RecordIcon fontSize={iconSize} />
+          <RecordingFilledAlt size={iconSize} />
         </IconButton>
       </Tooltip>
 
       {/* Forward */}
       <Tooltip title="Forward">
         <IconButton size={buttonSize} onClick={onForward}>
-          <ForwardIcon fontSize={iconSize} />
+          <SkipForward size={iconSize} />
         </IconButton>
       </Tooltip>
 
@@ -186,7 +186,7 @@ const TransportControls = memo(({
             bgcolor: loopEnabled ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
           }}
         >
-          <LoopIcon fontSize={iconSize} />
+          <Repeat size={iconSize} />
         </IconButton>
       </Tooltip>
 

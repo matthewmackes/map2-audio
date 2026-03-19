@@ -30,21 +30,36 @@ import {
   InputAdornment,
 } from '@mui/material';
 import {
-  FolderOpen as SessionIcon,
-  Save as SaveIcon,
-  FileOpen as LoadIcon,
-  Add as NewIcon,
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon,
-  Search as SearchIcon,
-  FileDownload as ExportIcon,
-  FileUpload as ImportIcon,
-  MoreVert as MoreIcon,
-  Description as FileIcon,
-  AccessTime as TimeIcon,
-} from '@mui/icons-material';
+  Add,
+  Document,
+  Export,
+  FolderOpen,
+  OverflowMenuVertical,
+  RecentlyViewed,
+  Renew,
+  Save,
+  Search,
+  TrashCan,
+  Upload,
+} from '@carbon/icons-react';
 import { sessionsApi } from '../api';
 import type { SessionListItem, Session } from '../types';
+
+function Glyph({
+  icon: Icon,
+  size = 18,
+  color = 'inherit',
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -239,13 +254,13 @@ export default function SessionManager() {
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <SessionIcon sx={{ color: 'primary.main' }} />
+        <Glyph icon={FolderOpen} color="primary.main" />
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Sessions
         </Typography>
         <Chip label={`${sessions.length} saved`} size="small" variant="outlined" />
         <IconButton onClick={fetchSessions} disabled={loading} size="small">
-          <RefreshIcon />
+          <Renew size={18} />
         </IconButton>
       </Box>
 
@@ -270,7 +285,7 @@ export default function SessionManager() {
       <Box sx={{ p: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
         <Button
           variant="contained"
-          startIcon={<NewIcon />}
+          startIcon={<Add size={16} />}
           onClick={() => setCreateDialogOpen(true)}
           size="small"
         >
@@ -278,7 +293,7 @@ export default function SessionManager() {
         </Button>
         <Button
           variant="outlined"
-          startIcon={<SaveIcon />}
+          startIcon={<Save size={16} />}
           onClick={async () => {
             if (currentSession) {
               try {
@@ -296,7 +311,7 @@ export default function SessionManager() {
         </Button>
         <Button
           variant="outlined"
-          startIcon={<ExportIcon />}
+          startIcon={<Export size={16} />}
           onClick={handleExportSession}
           disabled={!currentSession}
           size="small"
@@ -329,7 +344,7 @@ export default function SessionManager() {
         />
         <Button
           variant="outlined"
-          startIcon={<ImportIcon />}
+          startIcon={<Upload size={16} />}
           onClick={() => fileInputRef.current?.click()}
           size="small"
         >
@@ -349,7 +364,7 @@ export default function SessionManager() {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                <Search size={16} />
               </InputAdornment>
             ),
           }}
@@ -373,7 +388,7 @@ export default function SessionManager() {
           </Box>
         ) : filteredSessions.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <SessionIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Glyph icon={FolderOpen} size={48} color="text.secondary" />
             <Typography color="text.secondary">No sessions found</Typography>
             <Typography variant="body2" color="text.secondary">
               Create a new session to get started
@@ -393,7 +408,7 @@ export default function SessionManager() {
                     selected={isCurrent}
                   >
                     <ListItemIcon>
-                      {isLoading ? <CircularProgress size={24} /> : <FileIcon />}
+                      {isLoading ? <CircularProgress size={24} /> : <Document size={20} />}
                     </ListItemIcon>
                     <ListItemText
                       primary={
@@ -410,7 +425,9 @@ export default function SessionManager() {
                             </Typography>
                           )}
                           <Typography variant="caption" display="block" color="text.secondary">
-                            <TimeIcon sx={{ fontSize: 12, mr: 0.5, verticalAlign: 'middle' }} />
+                            <Box component="span" sx={{ display: 'inline-flex', mr: 0.5, verticalAlign: 'middle' }}>
+                              <RecentlyViewed size={12} />
+                            </Box>
                             {formatDate(session.updated_at || session.created_at)}
                           </Typography>
                         </Box>
@@ -425,7 +442,7 @@ export default function SessionManager() {
                           setMenuAnchor(e.currentTarget);
                         }}
                       >
-                        <MoreIcon />
+                        <OverflowMenuVertical size={18} />
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItemButton>
@@ -450,13 +467,13 @@ export default function SessionManager() {
           disabled={currentSession?.metadata.name === selectedSession?.name}
         >
           <ListItemIcon>
-            <LoadIcon fontSize="small" />
+            <FolderOpen size={16} />
           </ListItemIcon>
           Load
         </MenuItem>
         <MenuItem onClick={handleExportSession}>
           <ListItemIcon>
-            <ExportIcon fontSize="small" />
+            <Export size={16} />
           </ListItemIcon>
           Export
         </MenuItem>
@@ -466,7 +483,7 @@ export default function SessionManager() {
           sx={{ color: 'error.main' }}
         >
           <ListItemIcon>
-            <DeleteIcon fontSize="small" color="error" />
+            <Glyph icon={TrashCan} size={16} color="error.main" />
           </ListItemIcon>
           Delete
         </MenuItem>

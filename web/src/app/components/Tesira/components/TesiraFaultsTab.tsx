@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { CheckmarkFilled, Renew, WarningAltFilled } from '@carbon/icons-react'
 import {
   Alert,
   Box,
@@ -12,9 +13,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import RefreshIcon from '@mui/icons-material/Refresh'
 import {
   Line,
   LineChart,
@@ -63,7 +61,7 @@ export function TesiraFaultsTab({ deviceId }: TesiraFaultsTabProps) {
             </Typography>
             <Button
               size="small"
-              startIcon={<RefreshIcon />}
+              startIcon={<Renew size={16} />}
               onClick={() => {
                 refetch().catch(() => undefined)
               }}
@@ -75,7 +73,7 @@ export function TesiraFaultsTab({ deviceId }: TesiraFaultsTabProps) {
 
           {faults.length === 0 ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.5 }}>
-              <CheckCircleIcon sx={{ color: 'success.main', fontSize: 18 }} />
+              <CheckmarkFilled size={18} style={{ color: 'var(--mui-palette-success-main, #2e7d32)' }} />
               <Typography variant="body2" color="success.main">No active faults</Typography>
             </Box>
           ) : (
@@ -83,7 +81,7 @@ export function TesiraFaultsTab({ deviceId }: TesiraFaultsTabProps) {
               {faults.map((fault, idx) => (
                 <ListItem key={`${idx}-${fault}`} divider sx={{ py: 0.5 }}>
                   <ListItemIcon sx={{ minWidth: 28 }}>
-                    <WarningAmberIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                    <WarningAltFilled size={16} style={{ color: 'var(--mui-palette-warning-main, #ed6c02)' }} />
                   </ListItemIcon>
                   <ListItemText
                     primary={fault}

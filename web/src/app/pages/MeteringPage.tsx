@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { ChartBar, ChevronDown, ChevronUp } from '@carbon/icons-react'
+import { ChartBar, ChevronDown, ChevronUp, Link, SettingsAdjust, Time, VolumeUp } from '@carbon/icons-react'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
 import { CPUMeterPanel } from '../components/Visualizations/CPUMeterPanel'
@@ -310,7 +310,7 @@ export function MeteringPage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              📊 Signal Levels
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChartBar size={16} /> Signal Levels</span>
             </div>
             <VuMeterDisplay showInput showOutput nodeId={detailNodeId} />
           </div>
@@ -333,7 +333,7 @@ export function MeteringPage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              📈 Loudness (LUFS)
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChartBar size={16} /> Loudness (LUFS)</span>
             </div>
             <LoudnessMeter
               targetLufs={-14}
@@ -388,7 +388,7 @@ export function MeteringPage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              ⚙️ Dynamics
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SettingsAdjust size={16} /> Dynamics</span>
             </div>
             <DynamicsMeteringPanel
               showCompressor
@@ -443,7 +443,7 @@ export function MeteringPage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              ⏱️ Latency Analysis
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Time size={16} /> Latency Analysis</span>
             </div>
             <LatencyDisplay
               showBreakdown
@@ -523,7 +523,7 @@ export function MeteringPage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              🔗 API Reference
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Link size={16} /> API Reference</span>
             </span>
             <span style={{
               fontSize: 11,

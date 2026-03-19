@@ -38,29 +38,44 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  ExpandMore as ExpandIcon,
-  GraphicEq as PluginIcon,
-  Info as InfoIcon,
-  Favorite as FavoriteIcon,
-  FavoriteBorder as FavoriteOutlineIcon,
-  Delete as DeleteIcon,
-  PlayArrow as LoadIcon,
-  MoreVert as MoreIcon,
-  Edit as EditIcon,
-  Refresh as RefreshIcon,
-  FilterList as FilterIcon,
-  Collections as PresetIcon,
-  GetApp as InstallIcon,
-  DeleteForever as UninstallIcon,
-  Extension as PackageIcon,
-  CheckCircle as InstalledIcon,
-  Error as ErrorIcon,
-} from '@mui/icons-material';
+  AppConnectivity,
+  CheckmarkFilled,
+  ChevronDown,
+  Download,
+  Edit,
+  Equalizer,
+  Favorite,
+  FavoriteFilled,
+  Filter,
+  FolderDetails,
+  Information,
+  OverflowMenuVertical,
+  PlayFilled,
+  Renew,
+  Search,
+  TrashCan,
+  WarningAlt,
+} from '@carbon/icons-react';
 import { pluginsApi, snapshotsApi, chainsApi, pluginPresetsApi } from '../api';
 import type { Plugin, Snapshot, SnapshotCategory } from '../types';
 import PluginPresetManager from './PluginPresetManager';
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../displayNames';
+
+function IconGlyph({
+  icon: Icon,
+  size = 18,
+  color = 'inherit',
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
 
 // Plugin Pack types
 interface PluginPack {
@@ -387,7 +402,7 @@ export default function PluginBrowser() {
               disabled={refreshing}
               color="primary"
             >
-              {refreshing ? <CircularProgress size={24} /> : <RefreshIcon />}
+              {refreshing ? <CircularProgress size={24} /> : <Renew size={20} />}
             </IconButton>
           </Tooltip>
         </Box>
@@ -407,8 +422,8 @@ export default function PluginBrowser() {
           onChange={(_, newValue) => setTabValue(newValue)}
           aria-label="plugin browser tabs"
         >
-          <Tab label={`Plugins (${plugins.length})`} icon={<PluginIcon />} iconPosition="start" />
-          <Tab label={`Presets (${presets.length})`} icon={<PresetIcon />} iconPosition="start" />
+          <Tab label={`Plugins (${plugins.length})`} icon={<Equalizer size={18} />} iconPosition="start" />
+          <Tab label={`Presets (${presets.length})`} icon={<FolderDetails size={18} />} iconPosition="start" />
         </Tabs>
       </Paper>
 
@@ -426,7 +441,7 @@ export default function PluginBrowser() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <Search size={16} />
                     </InputAdornment>
                   ),
                 }}
@@ -434,7 +449,7 @@ export default function PluginBrowser() {
 
               <Box>
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                  <FilterIcon fontSize="small" />
+                  <Filter size={16} />
                   <Typography variant="subtitle2">Category</Typography>
                 </Stack>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -470,13 +485,13 @@ export default function PluginBrowser() {
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Stack spacing={1}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PluginIcon color="primary" />
+                        <IconGlyph icon={Equalizer} color="primary.main" />
                         <Typography variant="h6" component="div" noWrap>
                           {getDisplayPluginName(plugin.name, plugin.uri)}
                         </Typography>
                         {pluginsWithFavorites.has(plugin.uri) && (
                           <Tooltip title="Has saved presets">
-                            <FavoriteIcon sx={{ color: 'error.main', fontSize: 18 }} />
+                            <IconGlyph icon={FavoriteFilled} size={18} color="error.main" />
                           </Tooltip>
                         )}
                       </Box>
@@ -561,7 +576,7 @@ export default function PluginBrowser() {
                     <Tooltip title="Manage parameter presets">
                       <Button
                         size="small"
-                        startIcon={<PresetIcon />}
+                        startIcon={<FolderDetails size={16} />}
                         onClick={() => {
                           setSelectedPluginForPreset(plugin);
                           setPresetManagerOpen(true);
@@ -573,9 +588,11 @@ export default function PluginBrowser() {
                       </Button>
                     </Tooltip>
                     <Accordion sx={{ width: '100%', flex: 1 }} elevation={0}>
-                      <AccordionSummary expandIcon={<ExpandIcon />}>
+                      <AccordionSummary expandIcon={<ChevronDown size={16} />}>
                         <Typography variant="caption">
-                          <InfoIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
+                          <Box component="span" sx={{ display: 'inline-flex', mr: 0.5, verticalAlign: 'middle' }}>
+                            <Information size={14} />
+                          </Box>
                           Details
                         </Typography>
                       </AccordionSummary>
@@ -653,7 +670,7 @@ export default function PluginBrowser() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <Search size={16} />
                     </InputAdornment>
                   ),
                 }}
@@ -661,7 +678,7 @@ export default function PluginBrowser() {
 
               <Box>
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                  <FilterIcon fontSize="small" />
+                  <Filter size={16} />
                   <Typography variant="subtitle2">Category</Typography>
                 </Stack>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -710,7 +727,7 @@ export default function PluginBrowser() {
 
               <Box>
                 <Chip
-                  icon={favoritesOnly ? <FavoriteIcon /> : <FavoriteOutlineIcon />}
+                  icon={favoritesOnly ? <FavoriteFilled size={14} /> : <Favorite size={14} />}
                   label="Favorites Only"
                   onClick={() => setFavoritesOnly(!favoritesOnly)}
                   color={favoritesOnly ? 'secondary' : 'default'}
@@ -742,9 +759,9 @@ export default function PluginBrowser() {
                               onClick={() => handleToggleFavorite(preset.id)}
                             >
                               {preset.is_favorite ? (
-                                <FavoriteIcon color="secondary" />
+                                <FavoriteFilled size={18} />
                               ) : (
-                                <FavoriteOutlineIcon />
+                                <Favorite size={18} />
                               )}
                             </IconButton>
                             <IconButton
@@ -754,7 +771,7 @@ export default function PluginBrowser() {
                                 setMenuAnchor(e.currentTarget);
                               }}
                             >
-                              <MoreIcon />
+                              <OverflowMenuVertical size={18} />
                             </IconButton>
                           </Box>
 
@@ -785,7 +802,7 @@ export default function PluginBrowser() {
                       <CardActions>
                         <Button
                           size="small"
-                          startIcon={<LoadIcon />}
+                          startIcon={<PlayFilled size={16} />}
                           onClick={() => handleLoadPreset(preset.id)}
                         >
                           Load
@@ -816,7 +833,7 @@ export default function PluginBrowser() {
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Stack direction="row" spacing={2} alignItems="center">
-            <PackageIcon color="primary" sx={{ fontSize: 28 }} />
+            <IconGlyph icon={AppConnectivity} size={28} color="primary.main" />
             <Box>
               <Typography variant="h6" sx={{ lineHeight: 1.2 }}>
                 Plugin Pack Manager
@@ -828,14 +845,14 @@ export default function PluginBrowser() {
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
             <Chip
-              icon={<InstalledIcon />}
+              icon={<CheckmarkFilled size={14} />}
               label={`${pluginPacks.filter(p => p.status === 'installed').length} of ${pluginPacks.length} installed`}
               color="success"
               variant="outlined"
             />
             <Button
               size="small"
-              startIcon={packsLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+              startIcon={packsLoading ? <CircularProgress size={16} /> : <Renew size={16} />}
               onClick={loadPluginPacks}
               disabled={packsLoading}
             >
@@ -845,7 +862,18 @@ export default function PluginBrowser() {
               size="small"
               variant={packsExpanded ? 'contained' : 'outlined'}
               onClick={() => setPacksExpanded(!packsExpanded)}
-              endIcon={<ExpandIcon sx={{ transform: packsExpanded ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />}
+              endIcon={
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-flex',
+                    transform: packsExpanded ? 'rotate(180deg)' : 'none',
+                    transition: '0.3s',
+                  }}
+                >
+                  <ChevronDown size={16} />
+                </Box>
+              }
             >
               {packsExpanded ? 'Collapse' : 'Expand'}
             </Button>
@@ -885,12 +913,12 @@ export default function PluginBrowser() {
                             </Typography>
                             {pack.status === 'installed' && (
                               <Tooltip title="Installed">
-                                <InstalledIcon color="success" fontSize="small" />
+                                <IconGlyph icon={CheckmarkFilled} size={16} color="success.main" />
                               </Tooltip>
                             )}
                             {pack.status === 'error' && (
                               <Tooltip title={pack.error_message || 'Error'}>
-                                <ErrorIcon color="error" fontSize="small" />
+                                <IconGlyph icon={WarningAlt} size={16} color="error.main" />
                               </Tooltip>
                             )}
                             {(pack.status === 'installing' || pack.status === 'uninstalling') && (
@@ -965,7 +993,7 @@ export default function PluginBrowser() {
                                 size="small"
                                 color="error"
                                 variant="outlined"
-                                startIcon={<UninstallIcon />}
+                                startIcon={<TrashCan size={16} />}
                                 onClick={() => handleUninstallPack(pack.id)}
                                 sx={{ flex: 1 }}
                               >
@@ -978,7 +1006,7 @@ export default function PluginBrowser() {
                             size="small"
                             color="primary"
                             variant="contained"
-                            startIcon={<InstallIcon />}
+                            startIcon={<Download size={16} />}
                             onClick={() => handleInstallPack(pack.id)}
                             fullWidth
                           >
@@ -1012,7 +1040,7 @@ export default function PluginBrowser() {
                   pack.status === 'installing' || pack.status === 'uninstalling'
                     ? <CircularProgress size={12} />
                     : pack.status === 'installed'
-                      ? <InstalledIcon />
+                      ? <CheckmarkFilled size={12} />
                       : undefined
                 }
                 onClick={() => setPacksExpanded(true)}
@@ -1030,11 +1058,11 @@ export default function PluginBrowser() {
         onClose={() => setMenuAnchor(null)}
       >
         <MenuItem onClick={() => selectedPreset && handleOpenEdit(selectedPreset)}>
-          <EditIcon sx={{ mr: 1 }} fontSize="small" />
+          <Edit size={16} style={{ marginRight: 8 }} />
           Edit
         </MenuItem>
         <MenuItem onClick={() => selectedPreset && handleDeletePreset(selectedPreset.id)}>
-          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
+          <TrashCan size={16} style={{ marginRight: 8 }} />
           Delete
         </MenuItem>
       </Menu>

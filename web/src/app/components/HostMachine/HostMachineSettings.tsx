@@ -5,10 +5,9 @@
  */
 
 import { useCallback } from 'react'
+import { Notification, Reset, Save, WarningAlt, WarningAltFilled } from '@carbon/icons-react'
 import { Box, Paper, Typography, Button, Grid, Switch, FormControlLabel, Divider, Alert } from '@mui/material'
 import { useHealthSettings, useWebSocketPreference } from '@/app/hooks/useLocalStorage'
-import RestartAltIcon from '@mui/icons-material/RestartAlt'
-import SaveIcon from '@mui/icons-material/Save'
 import { NumberInput } from '../Controls/NumberInput'
 
 export default function HostMachineSettings() {
@@ -58,8 +57,8 @@ export default function HostMachineSettings() {
             />
             <Typography sx={{ fontSize: 12, color: '#666' }}>{suffix}</Typography>
           </Box>
-          <Typography sx={{ fontSize: 11, color: '#f59e0b', fontWeight: 500, mt: 1 }}>
-            ⚠️ Alert when exceeded
+          <Typography sx={{ fontSize: 11, color: '#f59e0b', fontWeight: 500, mt: 1, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            <WarningAlt size={14} /> Alert when exceeded
           </Typography>
         </Grid>
         <Grid item xs={12} sm={6}>
@@ -80,8 +79,8 @@ export default function HostMachineSettings() {
             />
             <Typography sx={{ fontSize: 12, color: '#666' }}>{suffix}</Typography>
           </Box>
-          <Typography sx={{ fontSize: 11, color: '#ef4444', fontWeight: 500, mt: 1 }}>
-            🚨 Critical alert when exceeded
+          <Typography sx={{ fontSize: 11, color: '#ef4444', fontWeight: 500, mt: 1, display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+            <WarningAltFilled size={14} /> Critical alert when exceeded
           </Typography>
         </Grid>
       </Grid>
@@ -97,7 +96,7 @@ export default function HostMachineSettings() {
 
       {/* Temperature Settings */}
       {renderThresholdPair(
-        '🌡️ CPU Temperature',
+        'CPU Temperature',
         'tempWarning',
         'tempCritical',
         '°C'
@@ -105,7 +104,7 @@ export default function HostMachineSettings() {
 
       {/* CPU Usage Settings */}
       {renderThresholdPair(
-        '⚙️ CPU Usage',
+        'CPU Usage',
         'cpuWarning',
         'cpuCritical',
         '%'
@@ -113,7 +112,7 @@ export default function HostMachineSettings() {
 
       {/* Memory Usage Settings */}
       {renderThresholdPair(
-        '💾 Memory Usage',
+        'Memory Usage',
         'memWarning',
         'memCritical',
         '%'
@@ -121,7 +120,7 @@ export default function HostMachineSettings() {
 
       {/* Disk Usage Settings */}
       {renderThresholdPair(
-        '💿 Disk Usage',
+        'Disk Usage',
         'diskWarning',
         'diskCritical',
         '%'
@@ -132,7 +131,9 @@ export default function HostMachineSettings() {
       {/* WebSocket Settings */}
       <Paper sx={{ p: 3, mb: 2 }}>
         <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 2 }}>
-          📡 Monitoring Preferences
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+            <Notification size={16} /> Monitoring Preferences
+          </Box>
         </Typography>
         <FormControlLabel
           control={
@@ -146,10 +147,10 @@ export default function HostMachineSettings() {
               <Typography sx={{ fontWeight: 500 }}>
                 Real-time WebSocket Updates
               </Typography>
-              <Typography sx={{ fontSize: 12, color: '#666' }}>
+                <Typography sx={{ fontSize: 12, color: '#666' }}>
                 {webSocketEnabled
-                  ? '✅ WebSocket enabled - Instant updates with lower bandwidth'
-                  : '⏱️ Polling mode - Standard polling every 2-5 seconds'}
+                  ? 'WebSocket enabled - Instant updates with lower bandwidth'
+                  : 'Polling mode - Standard polling every 2-5 seconds'}
               </Typography>
             </Box>
           }
@@ -165,7 +166,7 @@ export default function HostMachineSettings() {
             <Button
               variant="contained"
               fullWidth
-              startIcon={<SaveIcon />}
+              startIcon={<Save size={16} />}
               onClick={handleSaveAll}
               sx={{
                 backgroundColor: '#10b981',
@@ -179,7 +180,7 @@ export default function HostMachineSettings() {
             <Button
               variant="outlined"
               fullWidth
-              startIcon={<RestartAltIcon />}
+              startIcon={<Reset size={16} />}
               onClick={resetToDefaults}
               sx={{
                 borderColor: '#6b7280',
@@ -196,7 +197,7 @@ export default function HostMachineSettings() {
       {/* Current Settings Summary */}
       <Paper sx={{ p: 3, backgroundColor: '#f9fafb' }}>
         <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 2 }}>
-          📋 Current Thresholds Summary
+          Current Thresholds Summary
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={6} sm={3}>

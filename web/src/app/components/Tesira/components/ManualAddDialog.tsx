@@ -9,14 +9,12 @@
  * until TTP is enabled in Tesira Software (Device Maintenance → Network Settings).
  */
 import React, { useState } from 'react'
+import { Add, ChevronDown, Close } from '@carbon/icons-react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Box, TextField, Alert, CircularProgress, Typography, IconButton,
   Collapse,
 } from '@mui/material'
-import CloseIcon from '@mui/icons-material/Close'
-import AddIcon from '@mui/icons-material/Add'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useAddDevice } from '../hooks/useTesiraApi'
 
@@ -88,7 +86,7 @@ export function ManualAddDialog({ open, onClose }: ManualAddDialogProps) {
         <Typography variant="h6" component="span">Add Tesira Device</Typography>
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" onClick={handleClose} disabled={addDevice.isPending}>
-          <CloseIcon fontSize="small" />
+          <Close size={16} />
         </IconButton>
       </DialogTitle>
 
@@ -123,13 +121,9 @@ export function ManualAddDialog({ open, onClose }: ManualAddDialogProps) {
             onClick={() => setShowAdvanced((v) => !v)}
             sx={{ fontSize: 11, color: 'text.secondary', p: 0, minWidth: 0 }}
             endIcon={
-              <ExpandMoreIcon
-                sx={{
-                  fontSize: 14,
-                  transition: 'transform 0.2s',
-                  transform: showAdvanced ? 'rotate(180deg)' : 'none',
-                }}
-              />
+              <Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: showAdvanced ? 'rotate(180deg)' : 'none' }}>
+                <ChevronDown size={14} />
+              </Box>
             }
           >
             Advanced
@@ -171,7 +165,7 @@ export function ManualAddDialog({ open, onClose }: ManualAddDialogProps) {
           startIcon={
             addDevice.isPending
               ? <CircularProgress size={14} sx={{ color: '#fff' }} />
-              : <AddIcon />
+              : <Add size={16} />
           }
           onClick={handleAdd}
           disabled={addDevice.isPending || success || !host.trim()}

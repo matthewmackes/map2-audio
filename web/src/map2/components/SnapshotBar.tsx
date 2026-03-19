@@ -23,15 +23,13 @@ import {
   Divider,
 } from '@mui/material';
 import {
-  Save as SaveIcon,
-  CameraAlt as SnapshotIcon,
-  Circle as FilledIcon,
-  RadioButtonUnchecked as EmptyIcon,
-  MoreVert as MoreIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  ContentCopy as CopyIcon,
-} from '@mui/icons-material';
+  Camera,
+  CircleFilled,
+  CircleOutline,
+  Edit,
+  Save,
+  TrashCan,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 interface Snapshot {
@@ -181,7 +179,9 @@ export default function SnapshotBar({
       }}
     >
       <Tooltip title="Quick Snapshots">
-        <SnapshotIcon sx={{ color: theme.palette.primary.main, mr: 0.5 }} />
+        <Box sx={{ color: 'primary.main', mr: 0.5, display: 'inline-flex' }}>
+          <Camera size={20} />
+        </Box>
       </Tooltip>
 
       {!compact && (
@@ -230,16 +230,18 @@ export default function SnapshotBar({
               }}
             >
               {snapshot.hasData ? (
-                <FilledIcon 
-                  sx={{ 
-                    fontSize: 12, 
-                    color: currentSnapshot === snapshot.id 
-                      ? theme.palette.primary.main 
-                      : theme.palette.success.main,
-                  }} 
-                />
+                <Box
+                  sx={{
+                    color: currentSnapshot === snapshot.id ? 'primary.main' : 'success.main',
+                    display: 'inline-flex',
+                  }}
+                >
+                  <CircleFilled size={12} />
+                </Box>
               ) : (
-                <EmptyIcon sx={{ fontSize: 12, opacity: 0.5 }} />
+                <Box sx={{ opacity: 0.5, display: 'inline-flex' }}>
+                  <CircleOutline size={12} />
+                </Box>
               )}
               <Typography variant="caption" sx={{ ml: 0.5 }}>
                 {snapshot.id + 1}
@@ -256,7 +258,7 @@ export default function SnapshotBar({
           disabled={loading}
           color="primary"
         >
-          <SaveIcon fontSize="small" />
+          <Save size={16} />
         </IconButton>
       </Tooltip>
 
@@ -267,20 +269,20 @@ export default function SnapshotBar({
         onClose={handleMenuClose}
       >
         <MenuItem onClick={() => handleLoadSnapshot(menuTargetId)}>
-          <SnapshotIcon fontSize="small" sx={{ mr: 1 }} />
+          <Camera size={16} style={{ marginRight: 8 }} />
           Load Snapshot
         </MenuItem>
         <MenuItem onClick={() => { handleMenuClose(); handleSaveClick(menuTargetId); }}>
-          <SaveIcon fontSize="small" sx={{ mr: 1 }} />
+          <Save size={16} style={{ marginRight: 8 }} />
           Save to Slot
         </MenuItem>
         <MenuItem onClick={handleRenameSnapshot}>
-          <EditIcon fontSize="small" sx={{ mr: 1 }} />
+          <Edit size={16} style={{ marginRight: 8 }} />
           Rename
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleDeleteSnapshot} sx={{ color: 'error.main' }}>
-          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+          <TrashCan size={16} style={{ marginRight: 8 }} />
           Clear Slot
         </MenuItem>
       </Menu>

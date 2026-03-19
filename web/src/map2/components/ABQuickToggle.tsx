@@ -24,14 +24,13 @@ import {
 } from '@mui/material';
 import { NumberInput } from './NumberInput';
 import {
-  SwapHoriz as SwapIcon,
-  ContentCopy as DuplicateIcon,
-  Link as LinkIcon,
-  LinkOff as UnlinkIcon,
-  VolumeUp as VolumeIcon,
-  CompareArrows as CompareIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
+  ArrowsHorizontal,
+  Copy,
+  Link,
+  Settings,
+  SplitScreen,
+  Unlink,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 interface Chain {
@@ -201,11 +200,14 @@ export default function ABQuickToggle({
       >
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-          <CompareIcon 
-            sx={{ 
-              color: localEnabled ? theme.palette.primary.main : theme.palette.action.active,
-            }} 
-          />
+          <Box
+            sx={{
+              color: localEnabled ? 'primary.main' : 'action.active',
+              display: 'inline-flex',
+            }}
+          >
+            <SplitScreen size={20} />
+          </Box>
           <Typography variant="subtitle2" sx={{ flex: 1, fontWeight: 600 }}>
             A/B Compare
           </Typography>
@@ -220,7 +222,7 @@ export default function ABQuickToggle({
           </Button>
           
           <IconButton size="small" onClick={() => setSettingsOpen(true)}>
-            <SettingsIcon fontSize="small" />
+            <Settings size={16} />
           </IconButton>
         </Box>
 
@@ -263,7 +265,7 @@ export default function ABQuickToggle({
               {/* Swap Button */}
               <Tooltip title="Swap A ↔ B">
                 <IconButton size="small" onClick={handleSwap}>
-                  <SwapIcon />
+                  <ArrowsHorizontal size={16} />
                 </IconButton>
               </Tooltip>
 
@@ -356,13 +358,13 @@ export default function ABQuickToggle({
                   onClick={() => onLink?.(!linked)}
                   color={linked ? 'primary' : 'default'}
                 >
-                  {linked ? <LinkIcon /> : <UnlinkIcon />}
+                  {linked ? <Link size={16} /> : <Unlink size={16} />}
                 </IconButton>
               </Tooltip>
 
               <Tooltip title="Duplicate Chain A to B">
                 <IconButton size="small" onClick={() => onDuplicate?.('A')}>
-                  <DuplicateIcon />
+                  <Copy size={16} />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -402,7 +404,7 @@ export function ABModeIndicator({ enabled, blend }: { enabled: boolean; blend?: 
   return (
     <Tooltip title={`A/B Mode: ${blend !== undefined ? `${blend < 50 ? 100 - blend : blend}% ${blend < 50 ? 'A' : 'B'}` : 'Active'}`}>
       <Chip
-        icon={<CompareIcon sx={{ fontSize: 14 }} />}
+        icon={<SplitScreen size={14} />}
         label="A/B"
         size="small"
         color="primary"

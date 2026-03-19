@@ -38,18 +38,17 @@ import {
 } from '@mui/material';
 import { NumberInput } from './NumberInput';
 import {
-  PlayArrow as PlayIcon,
-  Pause as PauseIcon,
-  Stop as StopIcon,
-  SkipPrevious as RewindIcon,
-  Timeline as AutomationIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Waves as LFOIcon,
-  Refresh as RefreshIcon,
-  Loop as LoopIcon,
-  Clear as ClearIcon,
-} from '@mui/icons-material';
+  Add,
+  ChartLine,
+  PauseFilled,
+  PlayFilled,
+  Renew,
+  Repeat,
+  SkipBack,
+  StopFilled,
+  TrashCan,
+  Waveform,
+} from '@carbon/icons-react';
 import { automationApi } from '../api';
 import type { AutomationStatus, AutomationLane, LFOConfig, CurveType, LFOWaveform } from '../types';
 
@@ -213,6 +212,22 @@ function AddPointDialog({ open, parameterId, onClose, onAdd }: AddPointDialogPro
   );
 }
 
+function ColoredGlyph({
+  icon: Icon,
+  color = 'inherit',
+  size = 18,
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  color?: string;
+  size?: number;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
+
 export default function AutomationEditor() {
   const [status, setStatus] = useState<AutomationStatus | null>(null);
   const [lanes, setLanes] = useState<string[]>([]);
@@ -333,7 +348,7 @@ export default function AutomationEditor() {
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <AutomationIcon sx={{ color: 'primary.main' }} />
+        <ColoredGlyph icon={ChartLine} color="primary.main" />
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Parameter Automation
         </Typography>
@@ -343,7 +358,7 @@ export default function AutomationEditor() {
           variant="outlined"
         />
         <IconButton onClick={fetchData} size="small">
-          <RefreshIcon />
+          <Renew size={18} />
         </IconButton>
       </Box>
 
@@ -354,19 +369,19 @@ export default function AutomationEditor() {
         <Grid container spacing={2} alignItems="center">
           <Grid item>
             <IconButton onClick={() => handlePlaybackControl('seek', 0)} disabled={!status}>
-              <RewindIcon />
+              <SkipBack size={20} />
             </IconButton>
             {status?.is_playing ? (
               <IconButton onClick={() => handlePlaybackControl('stop')} color="primary">
-                <PauseIcon />
+                <PauseFilled size={20} />
               </IconButton>
             ) : (
               <IconButton onClick={() => handlePlaybackControl('start')} color="primary">
-                <PlayIcon />
+                <PlayFilled size={20} />
               </IconButton>
             )}
             <IconButton onClick={() => handlePlaybackControl('stop')} disabled={!status?.is_playing}>
-              <StopIcon />
+              <StopFilled size={20} />
             </IconButton>
           </Grid>
           <Grid item xs>
@@ -382,13 +397,13 @@ export default function AutomationEditor() {
                   disabled
                 />
               }
-              label={<LoopIcon />}
+              label={<Repeat size={18} />}
             />
           </Grid>
           <Grid item>
             <Tooltip title="Clear All Automation">
               <IconButton onClick={handleClearAll} disabled={lanes.length === 0} color="error">
-                <ClearIcon />
+                <TrashCan size={18} />
               </IconButton>
             </Tooltip>
           </Grid>
@@ -437,13 +452,13 @@ export default function AutomationEditor() {
             <List dense>
               {lanes.map((lane) => (
                 <ListItem key={lane} disablePadding>
-                  <ListItemButton
-                    selected={selectedLane === lane}
-                    onClick={() => setSelectedLane(lane)}
-                  >
-                    <ListItemIcon>
-                      <AutomationIcon fontSize="small" />
-                    </ListItemIcon>
+                <ListItemButton
+                  selected={selectedLane === lane}
+                  onClick={() => setSelectedLane(lane)}
+                >
+                  <ListItemIcon>
+                    <ChartLine size={16} />
+                  </ListItemIcon>
                     <ListItemText
                       primary={lane}
                       primaryTypographyProps={{
@@ -460,7 +475,7 @@ export default function AutomationEditor() {
                           handleDeleteLane(lane);
                         }}
                       >
-                        <DeleteIcon fontSize="small" />
+                        <TrashCan size={16} />
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItemButton>
@@ -483,7 +498,7 @@ export default function AutomationEditor() {
                 />
                 <Box sx={{ flexGrow: 1 }} />
                 <Button
-                  startIcon={<LFOIcon />}
+                  startIcon={<Waveform size={16} />}
                   variant="outlined"
                   size="small"
                   onClick={() => setLfoDialogOpen(true)}
@@ -491,7 +506,7 @@ export default function AutomationEditor() {
                   LFO
                 </Button>
                 <Button
-                  startIcon={<AddIcon />}
+                  startIcon={<Add size={16} />}
                   variant="contained"
                   size="small"
                   onClick={() => setAddPointDialogOpen(true)}
@@ -527,7 +542,7 @@ export default function AutomationEditor() {
                                 )
                               }
                             >
-                              <DeleteIcon fontSize="small" />
+                              <TrashCan size={16} />
                             </IconButton>
                           </ListItemSecondaryAction>
                         </ListItem>
@@ -547,7 +562,7 @@ export default function AutomationEditor() {
                 height: '100%',
               }}
             >
-              <AutomationIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <ColoredGlyph icon={ChartLine} color="text.secondary" size={64} />
               <Typography color="text.secondary">
                 {lanes.length > 0
                   ? 'Select a lane to edit automation'

@@ -31,18 +31,16 @@ import {
   Alert,
 } from '@mui/material';
 import {
-  Save as SaveIcon,
-  Schedule as AutoSaveIcon,
-  CloudDone as SavedIcon,
-  CloudOff as UnsavedIcon,
-  History as HistoryIcon,
-  Restore as RestoreIcon,
-  FolderOpen as OpenIcon,
-  Add as NewIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckIcon,
-  MoreVert as MoreIcon,
-} from '@mui/icons-material';
+  Add,
+  Cloud,
+  CloudOffline,
+  FolderOpen,
+  OverflowMenuVertical,
+  Reset,
+  Save,
+  Time,
+  WarningFilled,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 interface SessionInfo {
@@ -236,9 +234,11 @@ export default function SessionStatusIndicator({
         >
           <Badge variant="dot" color="warning" invisible={!session.hasUnsavedChanges}>
             {session.hasUnsavedChanges ? (
-              <UnsavedIcon fontSize="small" />
+              <CloudOffline size={16} />
             ) : (
-              <SavedIcon fontSize="small" color="success" />
+              <Box sx={{ color: 'success.main', display: 'inline-flex' }}>
+                <Cloud size={16} />
+              </Box>
             )}
           </Badge>
         </IconButton>
@@ -264,9 +264,13 @@ export default function SessionStatusIndicator({
         <Tooltip title={session.hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {session.hasUnsavedChanges ? (
-              <UnsavedIcon sx={{ fontSize: 16, color: theme.palette.warning.main }} />
+              <Box sx={{ color: 'warning.main', display: 'inline-flex' }}>
+                <CloudOffline size={16} />
+              </Box>
             ) : (
-              <SavedIcon sx={{ fontSize: 16, color: theme.palette.success.main }} />
+              <Box sx={{ color: 'success.main', display: 'inline-flex' }}>
+                <Cloud size={16} />
+              </Box>
             )}
             <Typography 
               variant="body2" 
@@ -289,7 +293,7 @@ export default function SessionStatusIndicator({
         {session.autoSaveEnabled && (
           <Tooltip title={`Auto-save every ${session.autoSaveIntervalSec}s`}>
             <Chip
-              icon={<AutoSaveIcon sx={{ fontSize: 14 }} />}
+              icon={<Time size={14} />}
               label="Auto"
               size="small"
               color="success"
@@ -318,7 +322,7 @@ export default function SessionStatusIndicator({
               {saving ? (
                 <CircularProgress size={16} />
               ) : (
-                <SaveIcon fontSize="small" />
+                <Save size={16} />
               )}
             </IconButton>
           </span>
@@ -326,7 +330,7 @@ export default function SessionStatusIndicator({
 
         {/* More options */}
         <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)}>
-          <MoreIcon fontSize="small" />
+          <OverflowMenuVertical size={16} />
         </IconButton>
       </Paper>
 
@@ -337,20 +341,20 @@ export default function SessionStatusIndicator({
         onClose={() => setMenuAnchor(null)}
       >
         <MenuItem onClick={() => { setMenuAnchor(null); handleSave(); }}>
-          <SaveIcon fontSize="small" sx={{ mr: 1 }} />
+          <Save size={16} style={{ marginRight: 8 }} />
           Save
         </MenuItem>
         <MenuItem onClick={() => { setMenuAnchor(null); /* onSaveAs */ }}>
-          <SaveIcon fontSize="small" sx={{ mr: 1 }} />
+          <Save size={16} style={{ marginRight: 8 }} />
           Save As...
         </MenuItem>
         <Divider />
         <MenuItem onClick={() => { setMenuAnchor(null); setRecentDialogOpen(true); }}>
-          <HistoryIcon fontSize="small" sx={{ mr: 1 }} />
+          <Time size={16} style={{ marginRight: 8 }} />
           Recent Sessions
         </MenuItem>
         <MenuItem onClick={() => { setMenuAnchor(null); onNew?.(); }}>
-          <NewIcon fontSize="small" sx={{ mr: 1 }} />
+          <Add size={16} style={{ marginRight: 8 }} />
           New Session
         </MenuItem>
         <Divider />
@@ -372,7 +376,9 @@ export default function SessionStatusIndicator({
       {/* Recovery Dialog */}
       <Dialog open={recoveryDialogOpen} onClose={() => setRecoveryDialogOpen(false)}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <WarningIcon color="warning" />
+          <Box sx={{ color: 'warning.main', display: 'inline-flex' }}>
+            <WarningFilled size={20} />
+          </Box>
           Session Recovery Available
         </DialogTitle>
         <DialogContent>
@@ -392,7 +398,7 @@ export default function SessionStatusIndicator({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDismissRecovery}>Discard</Button>
-          <Button onClick={handleRecover} variant="contained" startIcon={<RestoreIcon />}>
+          <Button onClick={handleRecover} variant="contained" startIcon={<Reset size={16} />}>
             Recover Session
           </Button>
         </DialogActions>
@@ -415,7 +421,7 @@ export default function SessionStatusIndicator({
                 <ListItem key={rs.path} disablePadding>
                   <ListItemButton onClick={() => { setRecentDialogOpen(false); onOpen?.(rs.path); }}>
                     <ListItemIcon>
-                      <OpenIcon />
+                      <FolderOpen size={20} />
                     </ListItemIcon>
                     <ListItemText
                       primary={rs.name}

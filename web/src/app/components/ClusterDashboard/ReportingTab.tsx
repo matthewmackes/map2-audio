@@ -1,4 +1,4 @@
-import { Download as DownloadSimple, Document as FileText, ChartLine as ChartBar, Filter as Funnel } from '@carbon/icons-react'
+import { Download as DownloadSimple, Document as FileText, ChartLine as ChartBar, Filter as Funnel, Time, Activity, DataBase } from '@carbon/icons-react'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -40,7 +40,7 @@ function buildCsv(rows: string[][]): string {
 interface ReportEntry {
   title: string
   description: string
-  icon: string
+  icon: React.ReactNode
   format: 'CSV' | 'JSON' | 'HTML'
   action: () => void
   disabled?: boolean
@@ -295,7 +295,7 @@ export function ReportingTab() {
     {
       title: 'Cluster Health Report',
       description: 'HTML report summarizing node status and cluster health metrics',
-      icon: '📊',
+      icon: <ChartBar size={24} />,
       format: 'HTML',
       action: () => runExport(exportHealthHtml),
       disabled: nodes.length === 0,
@@ -304,7 +304,7 @@ export function ReportingTab() {
     {
       title: 'Metrics Export',
       description: 'CSV export of metrics in selected time range',
-      icon: '📈',
+      icon: <Activity size={24} />,
       format: 'CSV',
       action: () => runExport(exportMetricsCsv),
       disabled: filteredMetrics.length === 0,
@@ -313,7 +313,7 @@ export function ReportingTab() {
     {
       title: 'Event Log Archive',
       description: 'JSON export of cluster events within selected range',
-      icon: '📋',
+      icon: <DataBase size={24} />,
       format: 'JSON',
       action: () => runExport(exportEventsJson),
       disabled: filteredEvents.length === 0,
@@ -322,7 +322,7 @@ export function ReportingTab() {
     {
       title: 'Service Uptime Report',
       description: 'HTML snapshot of current node availability and health',
-      icon: '⏱️',
+      icon: <Time size={24} />,
       format: 'HTML',
       action: () => runExport(exportUptimeHtml),
       disabled: nodes.length === 0,

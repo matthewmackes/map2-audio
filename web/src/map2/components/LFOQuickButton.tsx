@@ -26,10 +26,9 @@ import {
 } from '@mui/material';
 import { NumberInput } from './NumberInput';
 import {
-  Waves as LFOIcon,
-  Close as CloseIcon,
-  PlayArrow as ActiveIcon,
-} from '@mui/icons-material';
+  Close,
+  Waveform,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 type LFOWaveform = 'sine' | 'triangle' | 'square' | 'saw_up' | 'saw_down' | 'random' | 'sample_hold' | 'pulse';
@@ -176,7 +175,7 @@ export default function LFOQuickButton({
             },
           }}
         >
-          <LFOIcon fontSize={size === 'small' ? 'small' : 'medium'} />
+          <Waveform size={size === 'small' ? 16 : 20} />
         </IconButton>
       </Tooltip>
 
@@ -194,11 +193,13 @@ export default function LFOQuickButton({
       <Dialog open={dialogOpen} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LFOIcon color="primary" />
+            <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+              <Waveform size={20} />
+            </Box>
             <Typography>LFO Modulation</Typography>
           </Box>
           <IconButton onClick={handleClose} size="small">
-            <CloseIcon />
+            <Close size={16} />
           </IconButton>
         </DialogTitle>
 
@@ -355,7 +356,9 @@ export function LFOIndicator({ active, waveform, rate }: { active: boolean; wave
           border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
         }}
       >
-        <LFOIcon sx={{ fontSize: 10, color: theme.palette.primary.main, mr: 0.25 }} />
+        <Box sx={{ color: 'primary.main', mr: 0.25, display: 'inline-flex' }}>
+          <Waveform size={10} />
+        </Box>
         <Typography variant="caption" sx={{ fontSize: 9, color: theme.palette.primary.main }}>
           LFO
         </Typography>

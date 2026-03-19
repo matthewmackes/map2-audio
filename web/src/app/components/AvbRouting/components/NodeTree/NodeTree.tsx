@@ -15,6 +15,17 @@
 
 import React, { useState } from 'react';
 import {
+  AddAlt,
+  ChevronDown,
+  ChevronRight,
+  Devices,
+  DotMark,
+  Pin,
+  PortInput,
+  PortOutput,
+  Router,
+} from '@carbon/icons-react';
+import {
   Box,
   Drawer,
   Paper,
@@ -32,14 +43,6 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-import InputIcon from '@mui/icons-material/Input';
-import OutputIcon from '@mui/icons-material/Output';
-import RouterIcon from '@mui/icons-material/Router';
-import PushPinIcon from '@mui/icons-material/PushPin';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useAvbDevices, useAvbStreams } from '../../hooks/useAvbApi';
 import { useNodes, useLocalNodeId } from '../../hooks/useNodeApi';
 import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
@@ -258,7 +261,7 @@ function NodeStatusBadge({ node, avbHealth }: { node: AvbNode; avbHealth: NodeAv
 
   return (
     <Tooltip title={tooltipLabel}>
-      <FiberManualRecordIcon sx={{ fontSize: 12, color, mr: 0.5 }} />
+      <DotMark size={14} style={{ color, marginRight: 4 }} />
     </Tooltip>
   );
 }
@@ -289,9 +292,9 @@ function EndpointItem({ endpoint, nodeColor, hostLabel }: EndpointItemProps) {
     >
       <ListItemIcon sx={{ minWidth: 32 }}>
         {isTalker ? (
-          <OutputIcon sx={{ fontSize: 16, color: nodeColor }} />
+          <PortOutput size={16} style={{ color: nodeColor }} />
         ) : (
-          <InputIcon sx={{ fontSize: 16, color: nodeColor }} />
+          <PortInput size={16} style={{ color: nodeColor }} />
         )}
       </ListItemIcon>
       <ListItemText
@@ -308,7 +311,11 @@ function EndpointItem({ endpoint, nodeColor, hostLabel }: EndpointItemProps) {
           component: 'div',
         }}
       />
-      {endpoint.pinned && <PushPinIcon sx={{ fontSize: 12, color: 'text.disabled' }} />}
+      {endpoint.pinned && (
+        <Box sx={{ color: 'text.disabled', display: 'inline-flex' }}>
+          <Pin size={12} />
+        </Box>
+      )}
     </ListItem>
   );
 }
@@ -349,9 +356,9 @@ function NodeTreeItem({
   const talkers = nodeEndpoints.filter((ep) => ep.direction === 'talker');
   const listeners = nodeEndpoints.filter((ep) => ep.direction === 'listener');
 
-  const deviceIcon = node.type === 'tesira'
-    ? null   // Tesira uses a neutral matrix-processor badge below
-    : node.type.startsWith('map2') ? '🎛️' : '🔌';
+  const DeviceIcon = node.type === 'tesira'
+    ? null
+    : node.type.startsWith('map2') ? Devices : Router;
 
   // Biamp brand red — used for Tesira node accent
   const BIAMP_RED = '#E31837';
@@ -392,9 +399,9 @@ function NodeTreeItem({
           sx={{ mr: 0.5, width: 24, height: 24 }}
         >
           {expanded ? (
-            <ExpandMoreIcon fontSize="small" />
+            <ChevronDown size={16} />
           ) : (
-            <ChevronRightIcon fontSize="small" />
+            <ChevronRight size={16} />
           )}
         </IconButton>
 
@@ -420,7 +427,7 @@ function NodeTreeItem({
               />
             </svg>
           ) : (
-            <span style={{ fontSize: 18 }}>{deviceIcon}</span>
+            DeviceIcon ? <DeviceIcon size={18} /> : null
           )}
           <NodeStatusBadge node={node} avbHealth={avbHealth} />
         </Box>
@@ -454,7 +461,7 @@ function NodeTreeItem({
             <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
               <Tooltip title={`${talkers.length} talkers`}>
                 <Chip
-                  icon={<OutputIcon sx={{ fontSize: 12 }} />}
+                  icon={<PortOutput size={12} />}
                   label={talkers.length}
                   size="small"
                   variant="outlined"
@@ -463,7 +470,7 @@ function NodeTreeItem({
               </Tooltip>
               <Tooltip title={`${listeners.length} listeners`}>
                 <Chip
-                  icon={<InputIcon sx={{ fontSize: 12 }} />}
+                  icon={<PortInput size={12} />}
                   label={listeners.length}
                   size="small"
                   variant="outlined"
@@ -472,7 +479,7 @@ function NodeTreeItem({
               </Tooltip>
               <Tooltip title={`${node.active_routes} active routes`}>
                 <Chip
-                  icon={<RouterIcon sx={{ fontSize: 12 }} />}
+                  icon={<Router size={12} />}
                   label={node.active_routes}
                   size="small"
                   variant="outlined"
@@ -701,7 +708,7 @@ export function NodeTree() {
         <Tooltip title="Add node manually (future)">
           <ListItemButton disabled sx={{ borderRadius: 1 }}>
             <ListItemIcon sx={{ minWidth: 32 }}>
-              <AddCircleOutlineIcon fontSize="small" />
+              <AddAlt size={16} />
             </ListItemIcon>
             <ListItemText
               primary="Add Node"

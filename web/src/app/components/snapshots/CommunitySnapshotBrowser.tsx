@@ -11,18 +11,18 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import {
-  MagnifyingGlass,
-  DownloadSimple,
+  ChevronLeft as CaretLeft,
+  ChevronRight as CaretRight,
+  Download as CloudArrowDown,
+  Download as DownloadSimple,
+  Renew as ArrowsClockwise,
+  Renew as SpinnerGap,
+  Search as MagnifyingGlass,
   Star,
-  UploadSimple,
-  Funnel,
-  CaretLeft,
-  CaretRight,
-  CloudArrowDown,
-  WarningCircle,
-  SpinnerGap,
-  ArrowsClockwise,
-} from '@phosphor-icons/react'
+  StarFilled,
+  Upload as UploadSimple,
+  WarningAlt as WarningCircle,
+} from '@carbon/icons-react'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 
 interface CommunitySnapshot {
@@ -210,7 +210,7 @@ export function CommunitySnapshotBrowser({
               color: 'var(--text-primary, #fff)',
             }}
           >
-            <ArrowsClockwise size={16} weight="duotone" className={loading ? 'animate-spin' : ''} />
+              <ArrowsClockwise size={16} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
           {onUploadClick && (
@@ -229,7 +229,7 @@ export function CommunitySnapshotBrowser({
                 fontWeight: 500,
               }}
             >
-              <UploadSimple size={16} weight="duotone" />
+              <UploadSimple size={16} />
               Upload
             </button>
           )}
@@ -249,7 +249,6 @@ export function CommunitySnapshotBrowser({
         <div style={{ flex: '1 1 200px', position: 'relative' }}>
           <MagnifyingGlass
             size={16}
-            weight="duotone"
             style={{
               position: 'absolute',
               left: '12px',
@@ -340,7 +339,7 @@ export function CommunitySnapshotBrowser({
             marginBottom: '16px',
           }}
         >
-          <WarningCircle size={18} weight="duotone" style={{ color: '#ef4444' }} />
+          <WarningCircle size={18} style={{ color: '#ef4444' }} />
           <span style={{ color: '#ef4444' }}>{error}</span>
         </div>
       )}
@@ -356,7 +355,7 @@ export function CommunitySnapshotBrowser({
             color: 'var(--text-secondary, #888)',
           }}
         >
-          <SpinnerGap size={24} weight="duotone" className="animate-spin" />
+          <SpinnerGap size={24} className="animate-spin" />
           <span style={{ marginLeft: '12px' }}>Loading snapshots...</span>
         </div>
       )}
@@ -421,7 +420,7 @@ export function CommunitySnapshotBrowser({
               color: 'var(--text-primary, #fff)',
             }}
           >
-            <CaretLeft size={18} weight="bold" />
+            <CaretLeft size={18} />
             Previous
           </button>
           <span style={{ color: 'var(--text-secondary, #888)' }}>
@@ -443,7 +442,7 @@ export function CommunitySnapshotBrowser({
             }}
           >
             Next
-            <CaretRight size={18} weight="bold" />
+            <CaretRight size={18} />
           </button>
         </div>
       )}
@@ -526,21 +525,31 @@ function SnapshotCard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <CloudArrowDown size={14} weight="duotone" />
+          <CloudArrowDown size={14} />
           {snapshot.downloads}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           {/* Rating stars */}
           {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              size={14}
-              weight={star <= (hoverRating || snapshot.rating) ? 'fill' : 'duotone'}
-              style={{ cursor: 'pointer', color: star <= (hoverRating || snapshot.rating) ? '#fbbf24' : '#666' }}
-              onMouseEnter={() => setHoverRating(star)}
-              onMouseLeave={() => setHoverRating(0)}
-              onClick={() => onRate(star)}
-            />
+            star <= (hoverRating || snapshot.rating) ? (
+              <StarFilled
+                key={star}
+                size={14}
+                style={{ cursor: 'pointer', color: '#fbbf24' }}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                onClick={() => onRate(star)}
+              />
+            ) : (
+              <Star
+                key={star}
+                size={14}
+                style={{ cursor: 'pointer', color: '#666' }}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                onClick={() => onRate(star)}
+              />
+            )
           ))}
           <span style={{ marginLeft: '4px' }}>({snapshot.rating_count})</span>
         </div>
@@ -564,7 +573,7 @@ function SnapshotCard({
           gap: '6px',
         }}
       >
-        <DownloadSimple size={16} weight="duotone" />
+        <DownloadSimple size={16} />
         Download
       </button>
     </div>

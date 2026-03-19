@@ -1,7 +1,6 @@
 import React from 'react'
+import { Connect, Unlink } from '@carbon/icons-react'
 import { Box, Typography, Chip, Button, Tooltip } from '@mui/material'
-import LinkIcon from '@mui/icons-material/Link'
-import LinkOffIcon from '@mui/icons-material/LinkOff'
 import type { TesiraDeviceDetail } from '../types'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useConnectDevice, useDisconnectDevice } from '../hooks/useTesiraApi'
@@ -77,7 +76,7 @@ export function TesiraDeviceHeader({ device }: TesiraDeviceHeaderProps) {
             size="small"
             variant="outlined"
             color="error"
-            startIcon={<LinkOffIcon />}
+            startIcon={<Unlink size={16} />}
             onClick={() => disconnect.mutate(device.device_id)}
             disabled={disconnect.isPending}
             sx={{ height: 28, fontSize: 11 }}
@@ -88,7 +87,7 @@ export function TesiraDeviceHeader({ device }: TesiraDeviceHeaderProps) {
           <Button
             size="small"
             variant="contained"
-            startIcon={<LinkIcon />}
+            startIcon={<Connect size={16} />}
             onClick={() => connect.mutate(device.device_id)}
             disabled={connect.isPending}
             sx={{ height: 28, fontSize: 11, bgcolor: BIAMP_RED, '&:hover': { bgcolor: '#b5122a' } }}

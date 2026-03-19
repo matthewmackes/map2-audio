@@ -18,12 +18,12 @@ import {
   Collapse,
 } from '@mui/material';
 import {
-  Speed as CpuIcon,
-  Warning as WarningIcon,
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
+  ChevronDown,
+  ChevronUp,
+  Flash,
+  Renew,
+  WarningFilled,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 import { sanitizeRestrictedDisplayText } from '../displayNames';
 
@@ -89,7 +89,7 @@ export function PluginCpuBadge({ cpuPercent, compact = false }: { cpuPercent: nu
 
   return (
     <Chip
-      icon={<CpuIcon sx={{ fontSize: 14 }} />}
+      icon={<Flash size={14} />}
       label={`${cpuPercent.toFixed(1)}%`}
       size="small"
       color={color}
@@ -219,12 +219,9 @@ export default function PluginCpuIndicator({
           }}
           onClick={() => setExpanded(!expanded)}
         >
-          <CpuIcon 
-            sx={{ 
-              color: getCpuColorHex(chain.totalCpuPercent, theme),
-              fontSize: 20,
-            }} 
-          />
+          <Box sx={{ color: getCpuColorHex(chain.totalCpuPercent, theme), display: 'inline-flex' }}>
+            <Flash size={20} />
+          </Box>
           
           {!compact && (
             <Typography variant="caption" sx={{ fontWeight: 600 }}>
@@ -238,16 +235,18 @@ export default function PluginCpuIndicator({
           
           {chain.totalCpuPercent > 70 && (
             <Tooltip title="High CPU usage - consider removing plugins">
-              <WarningIcon sx={{ color: theme.palette.warning.main, fontSize: 16 }} />
+              <Box sx={{ color: 'warning.main', display: 'inline-flex' }}>
+                <WarningFilled size={16} />
+              </Box>
             </Tooltip>
           )}
           
           <IconButton size="small" onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}>
-            {expanded ? <CollapseIcon fontSize="small" /> : <ExpandIcon fontSize="small" />}
+            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </IconButton>
           
           <IconButton size="small" onClick={(e) => { e.stopPropagation(); fetchStats(); onRefresh?.(); }}>
-            <RefreshIcon fontSize="small" />
+            <Renew size={16} />
           </IconButton>
         </Box>
       )}

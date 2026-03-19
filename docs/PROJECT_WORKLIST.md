@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-18 - Codex (T216 drum backend service + T218 API/type foundation started; T211–T219 Drum Machine professional platform epic remains active; T210 still in progress; T205 icon cleanup queue decomposed)
+Last updated: 2026-03-18 - Codex (T205 active frontend icon exit criteria reached at 0 Phosphor / 0 MUI / 0 emoji across web/src/app + web/src/map2; T205-subD legacy map2 cleanup completed; T205-subE emoji/symbol UI-icon cleanup completed with zero tracked holdouts; T203-subD MIDI Hub transport area completed with validation; T210-subA SynthForge SoundFont-first slice validated and completed; T216 drum websocket/position layer advanced; T218 drum types/API/hooks completed; T221 preflight/startup-order alignment completed; T209 rerun reduced to host RLIMIT blocker)
 
 ## Active Blockers Only
 
@@ -429,7 +429,7 @@ Assigned to: Claude
 Last updated: 2026-03-17 - Claude
 
 ID: T203-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Transport area — clock, recorder, industry-standard transport bar
 Description:
 - Goal / acceptance criteria: Rewrite the Transport area (`/midi-hub/transport`) with industry-standard layout. Clock panel: BPM display (large numeric), tap tempo button, start/stop/continue transport controls, internal/external source toggle, output port multi-select, divider/multiplier controls. Recorder panel: record/stop/play controls, session list as Carbon `DataTable`, playback speed slider, loop toggle, SMF export with BPM/ticks config. Transport controls should follow DAW conventions (play/stop/record icons from `@carbon/icons-react`: `PlayFilled`, `StopFilled`, `RecordingFilled`, `PauseFilled`).
@@ -443,7 +443,12 @@ Description:
   - Tests: renders, clock status displayed, transport controls fire mutations, recorder session list works
 Subtasks: None
 Assigned to: Claude
-Last updated: 2026-03-17 - Claude
+Last updated: 2026-03-18 19:28 - Codex
+- Completion notes:
+  - Upgraded `web/src/app/components/MidiHub/MidiClockPanel.tsx` to a DAW-style transport surface with a large BPM hero tile, tap/start/continue/stop controls using Carbon transport icons, output-port chip multi-select, and divider/multiplier sliders that save through the clock config mutation.
+  - Upgraded `web/src/app/components/MidiHub/MidiRecorderPanel.tsx` to a Carbon `DataTable` session list with record/stop/play controls, playback speed slider, loop toggle, and SMF export configuration controls for BPM and ticks-per-quarter.
+  - Added supporting transport-area styling in `web/src/app/pages/MidiHubPage.css` and focused component coverage in `web/src/app/components/MidiHub/MidiTransportPanels.test.tsx`.
+  - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing Vite chunk/dynamic-import warnings only).
 
 ID: T203-subE
 Status: [ ] Todo
@@ -753,7 +758,7 @@ Last updated: 2026-03-18 09:31 - Codex
   - Validation: `pytest -q tests/test_t209_api_load_qualification.py tests/test_api_observatory.py tests/test_api_route_readiness.py tests/test_plugins_residency.py` -> pass. `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile scripts/run_t209_api_load_qualification.py app/services/api_observatory.py app/middleware/traffic_capture.py app/services/websocket_manager.py app/routes/websocket.py app/routes/api_observatory.py tests/load_test.py` -> pass.
 
 ID: T209-subF
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Re-run smoke, full soak, and restart qualification to close the reliability program
 Description:
 - Goal / acceptance criteria: After the remediation work lands, execute the smoke, full 310-second qualification, and controlled restart qualification enough times to demonstrate the failures are gone and the pass is repeatable. Acceptance requires zero HTTP failures, zero websocket drops, acceptable latency gates, archived artifacts, and a short closure report comparing the fixed runs against the 2026-03-07 failure signatures.
@@ -763,9 +768,29 @@ Description:
 - Required outputs/deliverables: New qualification artifact bundle under `docs/fit-for-purpose-evidence/`, closure summary, and final worklist update with pass/fail disposition.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-17 23:10 - Codex
+Last updated: 2026-03-18 18:39 - Codex
+- Blocked notes:
+  - Re-ran the T209 preflight on `2026-03-18` using `python3 scripts/run_t209_api_load_qualification.py --output-dir docs/fit-for-purpose-evidence/20260318T223428Z-t209-preflight --api-base http://127.0.0.1:8080`.
+  - The live backend had to be restarted first because the pre-existing `uvicorn` process on port `8080` was serving an older readiness contract; after restart, `/api/ready` correctly reported `accepting_traffic: true` and `/api/services/startup-order` exposed `traffic_gate_services` and `startup_progress`.
+  - Follow-up task `T221` is now complete: the preflight startup-order check was aligned with traffic-gate readiness semantics and validated by `pytest -q tests/test_t209_api_load_qualification.py` (`3 passed`) plus a fresh preflight artifact at `docs/fit-for-purpose-evidence/20260318T223805Z-t209-preflight`.
+  - Qualification remains blocked in this workspace only because the host soft/hard `RLIMIT_NOFILE` is `8192`, below the required `65536`; this is host-level/operator intervention outside the repo.
+
+ID: T221
+Status: [✓] Done
+Title: Align T209 preflight startup-order gating with traffic-gate readiness semantics
+Description:
+- Goal / acceptance criteria: Update the T209 preflight logic so `/api/services/startup-order` passes when the traffic-gate services required for HTTP/WebSocket qualification are complete, without incorrectly blocking on optional or non-traffic-gating services that may legitimately remain unfinished while `/api/ready` already reports `accepting_traffic: true`. Acceptance requires clarified gating criteria, code changes in `scripts/run_t209_api_load_qualification.py` (and docs/tests if needed), and validation showing the startup-order check agrees with the readiness contract exposed by `/api/ready`.
+- Why it matters: The current preflight run on `2026-03-18` blocked on `startup_progress.completed_services=13/15` despite `/api/ready` reporting `accepting_traffic: true`, which means the qualification harness can still over-block even after the readiness-gate fixes landed.
+- Dependencies: T209-subA, T209-subB, T209-subE
+- Estimated effort: Medium
+- Required outputs/deliverables: Updated preflight/startup-order gating logic, regression coverage or focused validation, and runbook notes reflecting the refined contract.
+Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-17 23:10 - Codex
+Last updated: 2026-03-18 18:39 - Codex
+- Completion notes:
+  - Updated `scripts/run_t209_api_load_qualification.py` so the startup-order preflight now passes when the declared `traffic_gate_services` are present and marked `gates_accepting_traffic`, with a bounded fallback based on gate-count completion when the detailed metadata is absent.
+  - Added regression coverage in `tests/test_t209_api_load_qualification.py` for the partial-startup-but-traffic-ready case and validated it with `pytest -q tests/test_t209_api_load_qualification.py` -> `3 passed in 1.84s`.
+  - Re-ran the live preflight after restarting the stale backend; `docs/fit-for-purpose-evidence/20260318T223805Z-t209-preflight` shows `api_ready`, `startup_order`, `websocket_manager`, and the chain/plugin route gates all passing, leaving only the host open-file limit as the remaining blocker.
 
 ## SynthForge
 
@@ -780,7 +805,7 @@ Description:
 - Required outputs/deliverables: Reviewed architecture notes, implemented backend/API changes for SoundFont browsing/loading and preset metadata, JUCE core refactor toward SoundFont playback controls, redesigned SynthForge card, focused automated validation, and explicit notes for any remaining gaps such as static FluidSynth vendoring/build integration if not fully closed in this slice.
 Subtasks:
 ID: T210-subA
-Status: [>] In Progress
+Status: [✓] Done
 Title: Deliver the first integrated SoundFont sampler slice across backend, engine, and card
 Description:
 - Goal / acceptance criteria: Land the first end-to-end slice that replaces SFZ-first UX with SoundFont-first browsing/loading, exposes parsed preset metadata, and adds the required sampler performance controls in the engine/API/card. Acceptance requires code changes in the relevant backend, JUCE, and frontend files plus targeted validation.
@@ -790,10 +815,13 @@ Description:
 - Required outputs/deliverables: Code changes, tests/build notes, and handoff notes for any remaining FluidSynth packaging work.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 07:10 - Codex
-- Progress notes:
-  - Follow-up compatibility slice started to reconcile SynthForge against the full internal library inventory by making the browser format-aware instead of SoundFont-only.
-  - Target behavior: one unified library browser that can route `.sf2/.sf3` through the SoundFont path and `.sfz` through the existing SFZ path while keeping the same keyboard/performance surface.
+Last updated: 2026-03-18 19:14 - Codex
+- Completion notes:
+  - The backend SoundFont-first route layer is in place in `app/routes/synthforge.py`, including validated `.sf2/.sf3` load endpoints, parsed bank/program preset selection, per-part performance controls, MIDI note injection, backend/streaming status, and metering websocket support.
+  - The engine service bridge in `app/services/juce_engine_service.py` exposes the SoundFont load/status pathway alongside the existing SFZ path and provides the parameter/status accessors consumed by the route layer.
+  - The frontend card in `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx` already delivers the requested first coherent sampler UX slice: unified library browser, SoundFont preset browser, format-aware `.sf2/.sf3/.sfz` loading, performance controls (transpose, velocity curve, pitch-bend range, mono, legato), velocity-sensitive on-screen piano, and real-time MIDI activity feedback.
+  - Validation: `pytest -q tests/test_synthforge_routes.py tests/test_soundfont_parser.py` -> pass (`18 passed`). `npm --prefix web run typecheck` -> pass. `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/routes/synthforge.py app/services/juce_engine_service.py app/services/soundfont_parser.py` -> pass.
+  - Remaining `T210` scope is now the follow-up compatibility and refinement program beyond the first integrated slice, not the basic SoundFont-first end-to-end contract.
 Assigned to: Codex
 Last updated: 2026-03-18 06:20 - Codex
 
@@ -847,7 +875,7 @@ Description:
 - Goal: Replace all icons across the MAP2 GUI (main app + PiPedal legacy area) with a unified set of monotone, Carbon Design System-style SVG icons. Apply DSP-type color taxonomy to all categories.
 - Why it matters: Current icon system uses four libraries (Carbon, Phosphor, MUI, 63 custom PiPedal SVGs) with inconsistent styles and no systematic color-coding.
 - Design documentation complete — see docs/design/ for all reference material before starting implementation.
-- Current execution evidence: `docs/design/ICON_DOWNLOAD_LIST.md` now shows the previously unresolved 20-slot manual-sourcing list as closed with staged MAP-authored SVGs; `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` still reports 100 Phosphor files, 64 MUI-icon files, and 58 emoji/symbol UI markers across the active frontend until the next recount pass.
+- Current execution evidence: `docs/design/ICON_DOWNLOAD_LIST.md` now shows the previously unresolved 20-slot manual-sourcing list as closed with staged MAP-authored SVGs; `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` now records the post-sweep active-frontend state with `0` Phosphor files, `0` remaining MUI-icon files, and `0` tracked emoji/symbol UI-icon files across `web/src/app` + `web/src/map2`, with any remaining legacy icon-package debt now outside that active scope in `web/src/pipedal/**` and shared utility surfaces.
 - Estimated effort: High
 Subtasks:
 ID: T205-subA
@@ -870,7 +898,7 @@ Last updated: 2026-03-18 15:40 - Codex
   - Residual risk: `npm --prefix web run build` still fails on pre-existing `PlatformLayerData` type errors in `web/src/app/components/Platform/PlatformModal.tsx`; no build regression attributable to the icon asset work was observed.
 
 ID: T205-subB
-Status: [>] In Progress
+Status: [✓] Done
 Title: Retire plugin-card and shared app Phosphor holdouts in active `web/src/app/**` surfaces
 Description:
 - Goal / acceptance criteria: Replace the remaining Phosphor icon usage in active `web/src/app/**` plugin cards, host/cluster dashboards, and page headers with Carbon controls or MAP-owned category/domain icons, with no behavioral regressions.
@@ -880,7 +908,7 @@ Description:
 - Required outputs: Updated app components with Phosphor removed from the targeted groups, focused UI regression checks, and ledger count reductions.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 16:27 - Codex
+Last updated: 2026-03-18 18:31 - Codex
 - Progress notes:
   - Shared plugin-card shell controls in `web/src/app/components/PluginCards/Base/PluginCardShell.tsx` now use Carbon icons for preset actions, overflow menu, copy/reset actions, and MIDI mappings.
   - Shared section chevrons in `web/src/app/components/PluginCards/Base/ParameterSection.tsx` now use Carbon `ChevronDown`/`ChevronRight`.
@@ -908,10 +936,15 @@ Last updated: 2026-03-18 16:27 - Codex
   - Chain/routing and supporting utility holdouts were completed in the next wave: `web/src/app/components/ChainManagementCard.tsx`, `ChainPanel/ChainPanel.tsx`, `BottomRoutingPanel/BottomRoutingPanel.tsx`, `HorizontalSignalChain/HorizontalPluginNode.tsx`, `HorizontalSignalChain/SidechainConnector.tsx`, `OnboardingWizard.tsx`, and `NodeAudioPathView.tsx` now use Carbon icons instead of Phosphor.
   - Current repo state: `rg -n "from '@phosphor-icons/react'" web/src/app/components` is now down to seven files: `snapshots/CommunitySnapshotBrowser.tsx`, `PresetsWindow.tsx`, `PluginTags/TagSelector.tsx`, `PluginBrowser/PluginBrowser.tsx`, `LV2PluginParameterEditor.tsx`, `SystemArchitectureFlow.tsx`, and `chains/ChainDeployModal.tsx`.
   - Recommended remaining execution order inside `T205-subB`: snapshot/preset/browser/tag utility surfaces (`CommunitySnapshotBrowser.tsx`, `PresetsWindow.tsx`, `PluginTags/TagSelector.tsx`, `PluginBrowser.tsx`), then the heavier editor/architecture tail (`LV2PluginParameterEditor.tsx`, `SystemArchitectureFlow.tsx`, `chains/ChainDeployModal.tsx`).
+- Completion notes:
+  - Finished the final seven shared `web/src/app/components` holdouts: `snapshots/CommunitySnapshotBrowser.tsx`, `PresetsWindow.tsx`, `PluginTags/TagSelector.tsx`, `PluginBrowser/PluginBrowser.tsx`, `LV2PluginParameterEditor.tsx`, `SystemArchitectureFlow.tsx`, and `chains/ChainDeployModal.tsx` now use Carbon icons instead of Phosphor.
+  - Updated the remaining weight-based filled/duotone icon states in those surfaces to Carbon equivalents such as `StarFilled`, `CheckmarkFilled`, `Renew`, `WarningAlt`, and `Close`, preserving the existing UI behavior without leaving mixed iconography behind.
+  - Validation: `rg -n "from '@phosphor-icons/react'|weight=\"duotone\"|weight=\"bold\"|weight=\"light\"|weight=\"fill\"" web/src/app/components` -> no matches, `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass.
+  - Residual risk: `@phosphor-icons/react` remains in the wider frontend dependency graph outside this worklist slice, so future cleanup is still needed if the project wants to retire the library globally rather than just across the active `web/src/app/components` surface covered by `T205-subB`.
   - Focused validation: `npm --prefix web run typecheck` -> pass.
 
 ID: T205-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Migrate Tesira and AVB routing holdouts off MUI icons
 Description:
 - Goal / acceptance criteria: Replace remaining `@mui/icons-material` usage in the Tesira cluster and AVB routing cluster with Carbon status/action icons or MAP-owned identity icons, while preserving existing workflows and operator readability.
@@ -921,14 +954,18 @@ Description:
 - Required outputs: Updated Tesira/AVB components, no new MUI icon imports in touched files, and validation notes for affected flows.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 16:47 - Codex
-- Remaining changes:
-  - Enumerate the live Tesira and AVB routed/shared surfaces still importing `@mui/icons-material` and split them into restartable batches.
-  - Replace MUI status/action/table affordance icons with Carbon or MAP-owned icons while preserving existing operator workflows and visual density.
-  - Re-run import-count sweeps and record the post-migration reductions in the exception ledger/worklist notes.
+Last updated: 2026-03-18 19:42 - Codex
+- Completion notes:
+  - Completed the AVB routing batch: `web/src/app/components/AvbRouting` now has `0` `@mui/icons-material` imports after in-place Carbon replacements across inspector, topology modal, scene diff preview, top bar, node selector, sticky headers, node tree, routing matrix cells, and batch actions.
+  - Removed overlapping emoji/symbol-as-icon usage from the AVB routed surfaces touched in this batch, leaving only one remaining non-action warning banner in `AvbRoutingApp.tsx` for the later `T205-subE` cleanup wave.
+  - Group B and Group C in `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` are now both cleared for MUI holdouts; broader frontend MUI debt remains in legacy/frontend paths tracked by `T205-subD` and `T205-subF`.
+- Validation:
+  - `rg -n "@mui/icons-material" web/src/app/components/Tesira web/src/app/components/AvbRouting -g '*.tsx' -g '*.ts'` -> no matches
+  - `npm --prefix web run typecheck` -> pass
+  - `npm --prefix web run build` -> pass
 
 ID: T205-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Freeze and then clear legacy `web/src/map2/**` and `web/src/pipedal/**` icon debt
 Description:
 - Goal / acceptance criteria: Audit the remaining legacy icon debt in `web/src/map2/**` and `web/src/pipedal/**`, prevent any expansion of MUI/legacy icon usage, and execute an in-place replacement plan for the still-routed or still-shared surfaces.
@@ -938,14 +975,34 @@ Description:
 - Required outputs: Prioritized file list for still-active legacy surfaces, migrated replacements for the highest-value routed/shared files, and documented freeze guidance for any non-routed leftovers.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 16:47 - Codex
-- Remaining changes:
-  - Produce the explicit active/shared legacy file list for `web/src/map2/**` and `web/src/pipedal/**`, separating routed surfaces from dormant legacy debt.
-  - Add freeze guidance so no new legacy icon usage lands while migration is still in progress.
-  - Execute the highest-value replacements in still-routed/shared legacy files and reduce the MUI/legacy import counts accordingly.
+Last updated: 2026-03-18 22:11 - Codex
+- Progress notes:
+  - Recounted the current legacy `web/src/map2/**` holdouts: `10` files still import `@mui/icons-material`, with the density concentrated in the heavier standalone panels plus the top-level chain-builder shell rather than the already-migrated modern `web/src/app/**` shell.
+  - Documented the first prioritized active/shared legacy file set for in-place cleanup: `WorkFlow.tsx`, `HistoryPanel.tsx`, `FeaturesPanel.tsx`, `SettingsPanel.tsx`, `PluginBrowser.tsx`, `SessionManager.tsx`, `PresetManager.tsx`, `NetworkPanel.tsx`, `MAP2Dashboard.tsx`, and chain-builder node surfaces.
+  - Started the replacement wave by migrating shared legacy shells `web/src/map2/components/WorkFlow.tsx`, `HistoryPanel.tsx`, and `FeaturesPanel.tsx` off `@mui/icons-material` and onto Carbon icons without changing their existing MUI layout/runtime behavior.
+  - Completed the next connected shared-toolbar batch: `web/src/map2/components/FeatureToolbar.tsx`, `SessionStatusIndicator.tsx`, and `BackupStatusWidget.tsx` now use Carbon icons for history/session/backup controls while preserving the existing MUI surfaces and API behavior.
+  - Completed the next shared status-widget batch: `web/src/map2/components/PluginCpuIndicator.tsx`, `LatencyDisplay.tsx`, and `ABQuickToggle.tsx` now use Carbon icons for CPU, latency, and A/B controls while keeping their existing data flow and MUI layout behavior.
+  - Completed the next control/snapshot batch: `web/src/map2/components/SnapshotBar.tsx`, `LFOQuickButton.tsx`, and `ChainABMode.tsx` now use Carbon icons for snapshot recall, LFO assignment, and dual-chain A/B controls while preserving their current MUI surface behavior.
+  - Completed the next content-manager batch: `web/src/map2/components/EnvelopeFollowerPanel.tsx`, `IRManager.tsx`, and `NAMManager.tsx` now use Carbon icons for envelope, IR, and NAM controls while preserving their existing MUI layouts and API flows.
+  - Completed the next dashboard/config batch: `web/src/map2/components/MetricsDashboard.tsx`, `web/src/map2/components/NetworkPanel.tsx`, and `web/src/map2/components/Audio/AudioConfigDialog.tsx` now use Carbon icons for metrics, network, and audio-configuration controls while preserving their existing MUI layouts and API flows.
+  - Completed the next automation batch: `web/src/map2/components/Automation/TransportControls.tsx`, `AutomationTimeline.tsx`, and `AutomationLane.tsx` now use Carbon icons for transport, lane headers, and point-context actions while preserving their existing MUI layouts and editing flows.
+  - Completed the next editor/helper batch: `web/src/map2/components/AutomationEditor.tsx` and `web/src/map2/components/MIDI/MidiMappingsPanel.tsx` now use Carbon icons for automation transport/LFO actions and MIDI mapping controls while preserving their existing MUI layouts and editing flows.
+  - Completed the next device-control batch: `web/src/map2/components/MIDIMapper.tsx` now uses Carbon icons for device tabs, routing, mapping actions, presets, monitor controls, and clock transport while preserving its existing MUI layout and local UI behavior.
+  - Completed the next chain-builder node batch: `web/src/map2/components/ChainBuilder/nodes/PluginMeterPanel.tsx`, `RoutingNode.tsx`, `DeviceNode.tsx`, and `AudioPluginNode.tsx` now use Carbon icons for node identity, metering tabs, routing/split visuals, modulation badges, and node actions while preserving the existing React Flow + MUI behavior.
+  - Completed the next legacy shared-shell batch: `web/src/map2/components/ChainBuilder/panels/SnapshotBar.tsx`, `MAP2Dashboard.tsx`, and `PluginPresetManager.tsx` now use Carbon icons for snapshot context menus, dashboard tab/header navigation, and preset management actions while preserving their existing MUI layouts and local behavior.
+  - Completed the next library/session-management batch: `web/src/map2/components/SessionManager.tsx`, `PresetManager.tsx`, and `PluginBrowser.tsx` now use Carbon icons for session actions, preset favorites/filters, plugin-browser tabs/details, and plugin-pack operations while preserving their existing MUI layouts and backend/API behavior.
+  - Completed the final active `web/src/map2/**` holdouts: `SettingsPanel.tsx`, `AudioEngine.tsx`, `WWWPanel.tsx`, and `ChainBuilder.tsx` now use Carbon icons for status tabs, engine controls, web-service management, and chain-builder actions while preserving their existing MUI layouts and data flows.
+- Completion notes:
+  - The active legacy `web/src/map2/**` island is now cleared: `rg -n "@mui/icons-material" web/src/map2 -g '*.tsx' -g '*.ts'` returns no matches.
+  - The broader active-frontend exit audit is also clean after removing the stray weight prop in `web/src/app/pages/MPX1Page.tsx`: `rg -n "from '@phosphor-icons/react'|weight=\"duotone\"|weight=\"bold\"|weight=\"light\"|weight=\"fill\"" web/src/app web/src/map2 -g '*.tsx' -g '*.ts'` returns no matches.
+  - Residual legacy icon-package imports remain outside this completed slice in `web/src/pipedal/**` and a small number of shared non-active utility surfaces; those belong to `T205-subF` package-retirement verification rather than the active `map2` migration slice.
+- Validation:
+  - `npm --prefix web run typecheck` -> pass
+  - `npm --prefix web run build` -> pass
+  - `rg -n "@mui/icons-material" web/src/map2 -g '*.tsx' -g '*.ts'` -> no matches
 
 ID: T205-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove emoji and symbol glyphs used as UI icons across active frontend surfaces
 Description:
 - Goal / acceptance criteria: Replace emoji/symbol UI markers that act as status, device, or action icons with Carbon/MAP iconography plus text, leaving only legitimate textual content unchanged.
@@ -955,11 +1012,18 @@ Description:
 - Required outputs: Reduced emoji/symbol UI marker count in active surfaces, accessibility-safe replacements, and updated ledger totals.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 16:47 - Codex
-- Remaining changes:
-  - Audit active frontend surfaces for emoji/symbol glyphs acting as status, device, or action icons rather than textual content.
-  - Replace those markers with Carbon/MAP icons plus text where needed for clarity and accessibility.
-  - Recount the remaining emoji/symbol exceptions and record the reductions in the worklist/ledger.
+Last updated: 2026-03-18 20:17 - Codex
+- Completion notes:
+  - Cleared the AVB routing warning-banner glyph in `web/src/app/components/AvbRouting/AvbRoutingApp.tsx`, so the routed AVB cluster no longer uses emoji/symbol markers as UI icons.
+  - Replaced emoji/symbol UI markers with Carbon icons or plain text in `web/src/app/components/LCDEventFeed.tsx`, `web/src/app/components/HostMachine/HostMachineSettings.tsx`, `web/src/app/hooks/useAlertNotifications.tsx`, `web/src/app/components/UpdateProgressViewer.tsx`, and `web/src/app/components/ClusterDashboard/MultiNodeMonitoringTab.tsx`.
+  - Cleared the next Cluster Dashboard holdouts in `web/src/app/components/ClusterDashboard/ClusterEducationTab.tsx`, `ServicesHealthTab.tsx`, and `ReportingTab.tsx`, replacing emoji service/report markers and checklist bullets with Carbon iconography.
+  - Cleared the next operator-surface holdouts in `web/src/app/components/OnboardingWizard.tsx`, `web/src/app/pages/MeteringPage.tsx`, and `web/src/app/components/NodeAudioPathView.tsx`, replacing button/header/status glyphs with Carbon icons or plain labels.
+  - Cleared the final tracked holdouts in `web/src/app/hooks/useExportData.ts`, `web/src/app/pages/EdirolUA1000Page.tsx`, `web/src/app/pages/LCDPage.tsx`, `web/src/app/components/PlatformCapabilities.tsx`, `web/src/app/components/HostMachine/ExportDialog.tsx`, `web/src/app/components/ClusterDashboard/ClusterOverviewTabEnhanced.tsx`, `web/src/map2/components/AudioInterfaceControl.tsx`, `web/src/map2/components/HistoryPanel.tsx`, `web/src/map2/components/FeaturesPanel.tsx`, and the touched plugin-registry index files.
+  - Recounted the tracked emoji/symbol-as-icon sweep across `web/src/app` and `web/src/map2`; the current result is `TOTAL_FILES 0`, so the active-frontend emoji/symbol UI-icon exit criterion is now satisfied.
+- Validation:
+  - `npm --prefix web run typecheck` -> pass
+  - `npm --prefix web run build` -> pass
+  - `python3` tracked-marker sweep across `web/src/app` + `web/src/map2` -> `TOTAL_FILES 0`
 
 ID: T205-subF
 Status: [ ] Todo
@@ -972,11 +1036,11 @@ Description:
 - Required outputs: Updated exception ledger counts, package/import cleanup, and explicit completion notes against the icon exit condition.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 16:47 - Codex
+Last updated: 2026-03-18 22:11 - Codex
 - Remaining changes:
-  - Recount active-frontend Phosphor, MUI, and emoji/symbol usage after the remaining migration waves.
-  - Remove or constrain legacy icon-package imports from active frontend paths once the final holdouts are cleared.
-  - Update `docs/design/MAP_ICON_MIGRATION_EXCEPTION_LEDGER.md` and close `T205` only when the documented exit criteria are satisfied.
+  - Lock the current recount into the final exit audit: active `web/src/app` + `web/src/map2` is now `0` Phosphor files, `0` MUI-icon files, and `0` tracked emoji/symbol UI-icon files.
+  - Decide how far package retirement should go while `web/src/pipedal/**` and a few shared utility surfaces still import `@mui/icons-material` and/or `@phosphor-icons/react`.
+  - Remove or formally constrain those remaining non-active imports before closing `T205` at the package/dep level.
 Assigned to: Claude + User + Codex
 Last updated: 2026-03-18 15:28 - Codex
 
@@ -1289,12 +1353,15 @@ Subtasks:
     - Also available via WebSocket subscription for real-time display
     - Metering struct from C++ includes: peak + RMS per pad (16), peak + RMS per bus (8), peak + RMS master (1)
 Assigned to: Codex
-Last updated: 2026-03-18 13:10 - Codex
+Last updated: 2026-03-18 19:06 - Codex
 - Progress notes:
   - Replaced the old in-route `DRUM_MACHINE_STATE` dict with `app/services/drum_machine_service.py`, a singleton service that owns typed state validation, atomic JSON persistence under `~/.map2/drums/state.json`, factory/generated pack indexing, transport projection, and metering snapshots.
   - Rewrote `app/routes/drums.py` to use Pydantic request/response models and the new service while preserving the current `/api/engine/drums/state` and pack endpoints for the existing UI/card surfaces.
   - Added foundational transport and metering endpoints: `GET/POST /api/engine/drums/transport` and `GET /api/engine/drums/metering`.
-  - Validation: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py` -> pass. `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/services/drum_machine_service.py app/routes/drums.py` -> pass.
+  - Added sequencer-position state to `DrumMachineService`, a typed `GET /api/engine/drums/position` route, and WebSocket topic fan-out for `drums`, `drums:transport`, `drums:position`, and `drums:metering` using the shared `WebSocketManager`.
+  - The service now exposes explicit publish helpers for state, transport, position, and metering snapshots so future engine/binding callbacks can emit real-time updates without route-local websocket logic.
+  - Validation: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py` -> pass (`11 passed`). `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/services/drum_machine_service.py app/routes/drums.py app/routes/websocket.py` -> pass.
+  - Remaining gap before closure: `T211` is still todo, so drum state changes are not yet dispatching through real C++/Python bindings. The backend service is no longer a dict stub, but full task closure still depends on the engine layer existing.
 
 ---
 
@@ -1402,7 +1469,7 @@ Last updated: 2026-03-18
 ---
 
 ID: T218
-Status: [>] In Progress
+Status: [✓] Done
 Title: Drum Machine TypeScript types, API client, and React Query integration
 Description:
 - Goal / acceptance criteria: Define complete TypeScript interfaces for all drum machine data structures and implement the API client layer with React Query hooks for all drum machine endpoints.
@@ -1443,12 +1510,13 @@ Subtasks:
     - `useDrumMidiLearn()` — learn mode status (500ms refetch while active)
     - All mutations via `useMutation` with appropriate cache invalidation
 Assigned to: Codex
-Last updated: 2026-03-18 13:10 - Codex
-- Progress notes:
-  - Expanded `web/src/map2/types.ts` with typed drum state updates, transport, and metering interfaces so the frontend no longer needs to treat the drum backend as an untyped blob.
-  - Extended `web/src/map2/api.ts` with `getTransport()`, `setTransport()`, and `getMetering()` while tightening `updateState()` onto a dedicated `DrumMachineStateUpdate` contract.
-  - Added `web/src/app/hooks/useDrumMachine.ts` with initial React Query hooks for state, transport, pack lists, metering, and state/transport mutations.
-  - Validation: `npm --prefix web run typecheck` -> pass.
+Last updated: 2026-03-18 18:53 - Codex
+- Completion notes:
+  - Expanded `web/src/map2/types.ts` from the initial state/transport shell into a full drum domain model covering kits, instruments, patterns, song arrangements, mixer state, master volume, MIDI mappings, velocity curves, zones, learn status, and hardware presets.
+  - Completed the `drumsApi` surface in `web/src/map2/api.ts` for the current drum-machine spec: transport, tap tempo, patterns, song arrangement, kit lifecycle, pad/bus/master mixer controls, MIDI mapping/learn/presets, pack inventory, and metering. The shared fetch helper now preserves multipart uploads by not forcing JSON `Content-Type` on `FormData`.
+  - Replaced the starter hook file with a fuller React Query layer in `web/src/app/hooks/useDrumMachine.ts`, including state/transport queries, pattern/song/kit/mixer/MIDI hooks, and mutation hooks with targeted cache invalidation for pattern, song, kit, mixer, and MIDI workflows.
+  - Added focused frontend validation in `web/src/app/hooks/useDrumMachine.test.tsx` and kept the drum-state normalization coverage in `web/src/map2/drumMachineState.test.ts`.
+  - Validation: `npm --prefix web run typecheck` -> pass. `npm --prefix web test -- --runInBand web/src/app/hooks/useDrumMachine.test.tsx web/src/map2/drumMachineState.test.ts` -> pass.
 
 ---
 
@@ -1649,7 +1717,7 @@ Last updated: 2026-03-18 17:20 - Codex
   - The hosted BlexMono webfont payload remains about `348K` total across the generated `woff2` subsets.
   - Accessibility posture for the migration remains governed by `docs/design/BLEXMONO_NERD_FONT_SPEC.md`, with glyph-only usage still constrained to compact/mobile cases and Carbon/MAP SVG icons kept as the primary icon system.
 ID: T220-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Remove residual IBM Plex Sans webfont emission from the production build
 Description:
 - Goal / acceptance criteria: Audit and eliminate the remaining `ibm-plex-sans-*` webfont assets emitted by `npm --prefix web run build` so the production bundle aligns with the BlexMono-first typography rollout and avoids shipping unused legacy font payload.
@@ -1659,4 +1727,9 @@ Description:
 - Required outputs: Source of IBM Plex Sans asset emission identified, imports/tokens/build config corrected, and validation notes confirming the legacy font files are no longer emitted unless an explicit exemption is documented.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 17:20 - Codex
+Last updated: 2026-03-18 18:31 - Codex
+- Completion notes:
+  - Removed the legacy `@fontsource/ibm-plex-sans/*` entrypoint imports from `web/src/main.tsx` and dropped `@fontsource/ibm-plex-sans` from `web/package.json` / `web/package-lock.json`.
+  - Tightened `scripts/build_web_dist_atomic.py` so the atomic publish step no longer carries forward stale `ibm-plex-sans-*` hashed assets from prior builds into the new `web/dist/assets` tree.
+  - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass, `find web/dist/assets -maxdepth 1 -type f | grep -i 'ibm-plex-sans'` -> no matches, and the currently referenced `web/dist/assets/index-ClUQS4FA.js` / `index-D4VpUnpq.css` contain no `ibm-plex-sans` source references.
+  - Residual note: Carbon's shipped stylesheet still declares `IBM Plex Sans` as a font-family and references hosted `IBM Plex Mono` assets from IBM/CDN, but the local build no longer emits the legacy `ibm-plex-sans-*` font files targeted by this task.

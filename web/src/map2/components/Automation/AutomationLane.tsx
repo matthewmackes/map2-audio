@@ -17,12 +17,12 @@ import {
   ListItemText,
 } from '@mui/material';
 import {
-  Delete as DeleteIcon,
-  Visibility as ShowIcon,
-  VisibilityOff as HideIcon,
-  FiberManualRecord as RecordIcon,
-  Timeline as CurveIcon,
-} from '@mui/icons-material';
+  ChartLine,
+  RecordingFilledAlt,
+  TrashCan,
+  View,
+  ViewOff,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 import { sanitizeRestrictedDisplayText } from '../../displayNames';
 
@@ -137,6 +137,22 @@ function getCurveColor(curve: CurveType): string {
     case 'step': return '#f44336';
     default: return '#2196f3';
   }
+}
+
+function ColoredGlyph({
+  icon: Icon,
+  color = 'inherit',
+  size = 16,
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  color?: string;
+  size?: number;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
 }
 
 // ============================================================================
@@ -368,21 +384,21 @@ const AutomationLane = memo(({
                 bgcolor: armed ? alpha(theme.palette.error.main, 0.1) : 'transparent',
               }}
             >
-              <RecordIcon sx={{ fontSize: 14 }} />
+              <RecordingFilledAlt size={14} />
             </IconButton>
           </Tooltip>
 
           {/* Enable/Disable */}
           <Tooltip title={enabled ? 'Disable Lane' : 'Enable Lane'}>
             <IconButton size="small" onClick={onToggleEnabled}>
-              {enabled ? <ShowIcon sx={{ fontSize: 14 }} /> : <HideIcon sx={{ fontSize: 14 }} />}
+              {enabled ? <View size={14} /> : <ViewOff size={14} />}
             </IconButton>
           </Tooltip>
 
           {/* Delete */}
           <Tooltip title="Delete Lane">
             <IconButton size="small" onClick={onDelete} color="error">
-              <DeleteIcon sx={{ fontSize: 14 }} />
+              <TrashCan size={14} />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -410,27 +426,27 @@ const AutomationLane = memo(({
         anchorPosition={contextMenu ? { top: contextMenu.y, left: contextMenu.x } : undefined}
       >
         <MenuItem onClick={() => { onChangeCurve(contextMenu!.pointId, 'linear'); setContextMenu(null); }}>
-          <ListItemIcon><CurveIcon sx={{ color: getCurveColor('linear') }} /></ListItemIcon>
+          <ListItemIcon><ColoredGlyph icon={ChartLine} color={getCurveColor('linear')} /></ListItemIcon>
           <ListItemText>Linear</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { onChangeCurve(contextMenu!.pointId, 'exponential'); setContextMenu(null); }}>
-          <ListItemIcon><CurveIcon sx={{ color: getCurveColor('exponential') }} /></ListItemIcon>
+          <ListItemIcon><ColoredGlyph icon={ChartLine} color={getCurveColor('exponential')} /></ListItemIcon>
           <ListItemText>Exponential</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { onChangeCurve(contextMenu!.pointId, 'logarithmic'); setContextMenu(null); }}>
-          <ListItemIcon><CurveIcon sx={{ color: getCurveColor('logarithmic') }} /></ListItemIcon>
+          <ListItemIcon><ColoredGlyph icon={ChartLine} color={getCurveColor('logarithmic')} /></ListItemIcon>
           <ListItemText>Logarithmic</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { onChangeCurve(contextMenu!.pointId, 's_curve'); setContextMenu(null); }}>
-          <ListItemIcon><CurveIcon sx={{ color: getCurveColor('s_curve') }} /></ListItemIcon>
+          <ListItemIcon><ColoredGlyph icon={ChartLine} color={getCurveColor('s_curve')} /></ListItemIcon>
           <ListItemText>S-Curve</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { onChangeCurve(contextMenu!.pointId, 'step'); setContextMenu(null); }}>
-          <ListItemIcon><CurveIcon sx={{ color: getCurveColor('step') }} /></ListItemIcon>
+          <ListItemIcon><ColoredGlyph icon={ChartLine} color={getCurveColor('step')} /></ListItemIcon>
           <ListItemText>Step</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { onDeletePoint(contextMenu!.pointId); setContextMenu(null); }}>
-          <ListItemIcon><DeleteIcon color="error" /></ListItemIcon>
+          <ListItemIcon><ColoredGlyph icon={TrashCan} color="error.main" /></ListItemIcon>
           <ListItemText>Delete Point</ListItemText>
         </MenuItem>
       </Menu>

@@ -28,16 +28,16 @@ import {
   DialogContentText,
 } from '@mui/material';
 import {
-  History as HistoryIcon,
-  Undo as UndoIcon,
-  Redo as RedoIcon,
-  Clear as ClearIcon,
-  Refresh as RefreshIcon,
-  Restore as RestoreIcon,
-  Check as CurrentIcon,
-  RadioButtonUnchecked as PastIcon,
-  CameraAlt as SnapshotIcon,
-} from '@mui/icons-material';
+  Camera,
+  CheckmarkFilled,
+  Renew,
+  Redo,
+  Time,
+  TrashCan,
+  Undo,
+  Reset,
+  CircleOutline,
+} from '@carbon/icons-react';
 import { historyApi } from '../api';
 import type { HistoryStatus, HistoryEntry } from '../types';
 
@@ -53,21 +53,21 @@ function formatTimestamp(timestamp: string): string {
 function getActionIcon(type: string) {
   switch (type) {
     case 'parameter_change':
-      return '🎛️';
+      return 'Parameter';
     case 'plugin_add':
-      return '➕';
+      return 'Add';
     case 'plugin_remove':
-      return '➖';
+      return 'Remove';
     case 'chain_create':
-      return '📋';
+      return 'Chain';
     case 'chain_delete':
-      return '🗑️';
+      return 'Delete';
     case 'preset_load':
-      return '📂';
+      return 'Preset';
     case 'bypass_toggle':
-      return '🔇';
+      return 'Bypass';
     default:
-      return '📝';
+      return 'Edit';
   }
 }
 
@@ -200,7 +200,9 @@ export default function HistoryPanel() {
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <HistoryIcon sx={{ color: 'primary.main' }} />
+        <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+          <Time size={20} />
+        </Box>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           History
         </Typography>
@@ -210,7 +212,7 @@ export default function HistoryPanel() {
           variant="outlined"
         />
         <IconButton onClick={fetchData} disabled={loading} size="small">
-          <RefreshIcon />
+          <Renew size={16} />
         </IconButton>
       </Box>
 
@@ -224,7 +226,7 @@ export default function HistoryPanel() {
               <Button
                 onClick={handleUndo}
                 disabled={!status?.can_undo || processing}
-                startIcon={<UndoIcon />}
+                startIcon={<Undo size={16} />}
               >
                 Undo
               </Button>
@@ -235,7 +237,7 @@ export default function HistoryPanel() {
               <Button
                 onClick={handleRedo}
                 disabled={!status?.can_redo || processing}
-                startIcon={<RedoIcon />}
+                startIcon={<Redo size={16} />}
               >
                 Redo
               </Button>
@@ -249,7 +251,7 @@ export default function HistoryPanel() {
               color="error"
               onClick={() => setClearDialogOpen(true)}
               disabled={(status?.undo_stack_size || 0) === 0 || processing}
-              startIcon={<ClearIcon />}
+              startIcon={<TrashCan size={16} />}
             >
               Clear
             </Button>
@@ -292,7 +294,9 @@ export default function HistoryPanel() {
           </Box>
         ) : history.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <HistoryIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Box sx={{ color: 'text.secondary', display: 'inline-flex', mb: 2 }}>
+              <Time size={48} />
+            </Box>
             <Typography color="text.secondary">No history yet</Typography>
             <Typography variant="body2" color="text.secondary">
               Actions you perform will appear here
@@ -308,9 +312,13 @@ export default function HistoryPanel() {
                   <ListItemButton disabled>
                     <ListItemIcon sx={{ minWidth: 40 }}>
                       {isFirst ? (
-                        <CurrentIcon color="primary" fontSize="small" />
+                        <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+                          <CheckmarkFilled size={16} />
+                        </Box>
                       ) : (
-                        <PastIcon color="disabled" fontSize="small" />
+                        <Box sx={{ color: 'text.disabled', display: 'inline-flex' }}>
+                          <CircleOutline size={16} />
+                        </Box>
                       )}
                     </ListItemIcon>
                     <ListItemText
@@ -345,7 +353,7 @@ export default function HistoryPanel() {
           <Divider />
           <Box sx={{ p: 2 }}>
             <Typography variant="subtitle2" gutterBottom>
-              <SnapshotIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle' }} />
+              <Camera size={16} style={{ marginRight: 4, verticalAlign: 'middle' }} />
               Snapshots ({snapshots.length})
             </Typography>
             <List dense disablePadding>
@@ -353,7 +361,7 @@ export default function HistoryPanel() {
                 <ListItem key={index} disablePadding>
                   <ListItemButton onClick={() => handleRestoreSnapshot(index)} disabled={processing}>
                     <ListItemIcon sx={{ minWidth: 32 }}>
-                      <RestoreIcon fontSize="small" />
+                      <Reset size={16} />
                     </ListItemIcon>
                     <ListItemText primary={`Snapshot ${index + 1}`} />
                   </ListItemButton>

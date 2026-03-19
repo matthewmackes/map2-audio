@@ -3,7 +3,7 @@
 // Comprehensive network management for Fedora-based systems
 // ============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ComponentType } from 'react';
 import {
   Box,
   Typography,
@@ -48,41 +48,30 @@ import {
   LinearProgress,
 } from '@mui/material';
 import {
-  Refresh as RefreshIcon,
-  CheckCircle as OkIcon,
-  Error as ErrorIcon,
-  Warning as WarningIcon,
-  Lan as EthernetIcon,
-  Wifi as WifiIcon,
-  WifiOff as WifiOffIcon,
-  Router as RouterIcon,
-  Public as PublicIcon,
-  Lock as LockIcon,
-  LockOpen as LockOpenIcon,
-  SignalWifi4Bar as Signal4Icon,
-  SignalWifi3Bar as Signal3Icon,
-  SignalWifi2Bar as Signal2Icon,
-  SignalWifi1Bar as Signal1Icon,
-  SignalWifi0Bar as Signal0Icon,
-  NetworkCheck as NetworkCheckIcon,
-  Settings as SettingsIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  ExpandMore as ExpandIcon,
-  Dns as DnsIcon,
-  Speed as SpeedIcon,
-  Link as LinkIcon,
-  LinkOff as LinkOffIcon,
-  Cloud as CloudIcon,
-  CloudOff as CloudOffIcon,
-  VpnKey as VpnIcon,
-  Security as SecurityIcon,
-  WifiFind as ScanIcon,
-  Shield as FirewallIcon,
-} from '@mui/icons-material';
+  CheckmarkFilled,
+  ChevronDown,
+  Cloud,
+  CloudOffline,
+  ConnectionSignal,
+  Earth,
+  Edit,
+  ErrorFilled,
+  Firewall,
+  Information,
+  Link,
+  Locked,
+  NetworkPublic,
+  Renew,
+  Router,
+  Scan,
+  Security,
+  ServerDns,
+  Settings,
+  SignalStrength,
+  Unlocked,
+  Wifi,
+  WifiOff,
+} from '@carbon/icons-react';
 import { networkApi } from '../api';
 import type {
   NetworkStatus,
@@ -101,6 +90,20 @@ interface TabPanelProps {
   value: number;
 }
 
+interface CarbonGlyphProps {
+  icon: ComponentType<{ size?: number }>;
+  color?: string;
+  size?: number;
+}
+
+function CarbonGlyph({ icon: Icon, color = 'inherit', size = 20 }: CarbonGlyphProps) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
+
 function TabPanel({ children, value, index }: TabPanelProps) {
   return (
     <div role="tabpanel" hidden={value !== index}>
@@ -110,18 +113,18 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 }
 
 function getSignalIcon(strength: number) {
-  if (strength >= 80) return <Signal4Icon color="success" />;
-  if (strength >= 60) return <Signal3Icon color="success" />;
-  if (strength >= 40) return <Signal2Icon color="warning" />;
-  if (strength >= 20) return <Signal1Icon color="warning" />;
-  return <Signal0Icon color="error" />;
+  if (strength >= 80) return <CarbonGlyph icon={SignalStrength} color="success.main" />;
+  if (strength >= 60) return <CarbonGlyph icon={SignalStrength} color="success.light" />;
+  if (strength >= 40) return <CarbonGlyph icon={SignalStrength} color="warning.main" />;
+  if (strength >= 20) return <CarbonGlyph icon={SignalStrength} color="warning.light" />;
+  return <CarbonGlyph icon={SignalStrength} color="error.main" />;
 }
 
 function getSecurityIcon(security: string) {
   if (security === 'open' || security === 'none') {
-    return <LockOpenIcon color="warning" />;
+    return <CarbonGlyph icon={Unlocked} color="warning.main" />;
   }
-  return <LockIcon color="success" />;
+  return <CarbonGlyph icon={Locked} color="success.main" />;
 }
 
 export default function NetworkPanel() {
@@ -293,17 +296,17 @@ export default function NetworkPanel() {
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <RouterIcon color="primary" />
+        <CarbonGlyph icon={Router} color="primary.main" />
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Network Configuration
         </Typography>
         {networkStatus?.internet_connected ? (
-          <Chip icon={<CloudIcon />} label="Internet Connected" color="success" size="small" />
+          <Chip icon={<CarbonGlyph icon={Cloud} size={16} />} label="Internet Connected" color="success" size="small" />
         ) : (
-          <Chip icon={<CloudOffIcon />} label="No Internet" color="error" size="small" />
+          <Chip icon={<CarbonGlyph icon={CloudOffline} size={16} />} label="No Internet" color="error" size="small" />
         )}
         <IconButton onClick={fetchNetworkStatus} disabled={loading} size="small">
-          <RefreshIcon />
+          <Renew size={18} />
         </IconButton>
       </Box>
 
@@ -311,10 +314,10 @@ export default function NetworkPanel() {
 
       {/* Tabs */}
       <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} variant="fullWidth">
-        <Tab icon={<EthernetIcon />} label="Ethernet" />
-        <Tab icon={<WifiIcon />} label="WiFi" />
-        <Tab icon={<PublicIcon />} label="IP & DNS" />
-        <Tab icon={<SecurityIcon />} label="Services" />
+        <Tab icon={<ConnectionSignal size={18} />} label="Ethernet" />
+        <Tab icon={<Wifi size={18} />} label="WiFi" />
+        <Tab icon={<Earth size={18} />} label="IP & DNS" />
+        <Tab icon={<Security size={18} />} label="Services" />
       </Tabs>
 
       {/* Alerts */}
@@ -341,12 +344,12 @@ export default function NetworkPanel() {
                 <Card variant="outlined">
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                      <EthernetIcon color={eth.connected ? 'success' : 'disabled'} />
+                      <CarbonGlyph icon={ConnectionSignal} color={eth.connected ? 'success.main' : 'text.disabled'} />
                       <Typography variant="h6" sx={{ flexGrow: 1 }}>
                         {eth.name}
                       </Typography>
                       <Chip
-                        icon={eth.connected ? <LinkIcon /> : <LinkOffIcon />}
+                        icon={eth.connected ? <CarbonGlyph icon={Link} size={16} /> : <CarbonGlyph icon={ConnectionSignal} size={16} color="text.disabled" />}
                         label={eth.connected ? 'Connected' : 'Disconnected'}
                         color={eth.connected ? 'success' : 'default'}
                         size="small"
@@ -389,7 +392,7 @@ export default function NetworkPanel() {
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                       size="small"
-                      startIcon={<SettingsIcon />}
+                      startIcon={<Settings size={16} />}
                       onClick={() => setIpDialog({
                         open: true,
                         interface: eth.name,
@@ -421,7 +424,11 @@ export default function NetworkPanel() {
             <Card variant="outlined" sx={{ mb: 2 }} key={wifi.name}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  {wifi.connected ? <WifiIcon color="success" /> : <WifiOffIcon color="disabled" />}
+                  {wifi.connected ? (
+                    <CarbonGlyph icon={Wifi} color="success.main" />
+                  ) : (
+                    <CarbonGlyph icon={WifiOff} color="text.disabled" />
+                  )}
                   <Typography variant="h6" sx={{ flexGrow: 1 }}>
                     {wifi.name} - {wifi.ssid || 'Not Connected'}
                   </Typography>
@@ -460,7 +467,7 @@ export default function NetworkPanel() {
                   <Button
                     size="small"
                     color="warning"
-                    startIcon={<WifiOffIcon />}
+                    startIcon={<WifiOff size={16} />}
                     onClick={() => handleDisconnectWifi(wifi.name)}
                     disabled={loading}
                   >
@@ -473,13 +480,13 @@ export default function NetworkPanel() {
 
           {/* Available Networks */}
           <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandIcon />}>
+            <AccordionSummary expandIcon={<ChevronDown size={18} />}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                <ScanIcon />
+                <Scan size={18} />
                 <Typography sx={{ flexGrow: 1 }}>Available Networks</Typography>
                 <Button
                   size="small"
-                  startIcon={scanning ? <CircularProgress size={16} /> : <RefreshIcon />}
+                  startIcon={scanning ? <CircularProgress size={16} /> : <Renew size={16} />}
                   onClick={scanWifiNetworks}
                   disabled={scanning}
                 >
@@ -534,7 +541,7 @@ export default function NetworkPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <DnsIcon color="primary" />
+                    <CarbonGlyph icon={ServerDns} color="primary.main" />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       DNS Servers
                     </Typography>
@@ -554,7 +561,7 @@ export default function NetworkPanel() {
                 <CardActions>
                   <Button
                     size="small"
-                    startIcon={<EditIcon />}
+                    startIcon={<Edit size={16} />}
                     onClick={() => setDnsDialog({
                       open: true,
                       servers: networkStatus?.dns_servers || ['8.8.8.8', '8.8.4.4']
@@ -571,7 +578,7 @@ export default function NetworkPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <NetworkCheckIcon color="primary" />
+                    <CarbonGlyph icon={NetworkPublic} color="primary.main" />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       System Identity
                     </Typography>
@@ -588,7 +595,7 @@ export default function NetworkPanel() {
                 <CardActions>
                   <Button
                     size="small"
-                    startIcon={<EditIcon />}
+                    startIcon={<Edit size={16} />}
                     onClick={() => setHostnameDialog({
                       open: true,
                       hostname: networkStatus?.hostname || ''
@@ -603,9 +610,9 @@ export default function NetworkPanel() {
             {/* Routing Table */}
             <Grid item xs={12}>
               <Accordion>
-                <AccordionSummary expandIcon={<ExpandIcon />}>
+                <AccordionSummary expandIcon={<ChevronDown size={18} />}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <RouterIcon />
+                    <Router size={18} />
                     <Typography>Routing Table</Typography>
                   </Box>
                 </AccordionSummary>
@@ -648,12 +655,12 @@ export default function NetworkPanel() {
                 <Card variant="outlined">
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      {service.name === 'firewalld' ? <FirewallIcon /> : <SettingsIcon />}
+                      {service.name === 'firewalld' ? <Firewall size={18} /> : <Settings size={18} />}
                       <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
                         {service.display_name || service.name}
                       </Typography>
                       <Chip
-                        icon={service.running ? <OkIcon /> : <ErrorIcon />}
+                        icon={service.running ? <CarbonGlyph icon={CheckmarkFilled} size={16} /> : <CarbonGlyph icon={ErrorFilled} size={16} />}
                         label={service.running ? 'Running' : 'Stopped'}
                         color={service.running ? 'success' : 'default'}
                         size="small"
@@ -725,9 +732,9 @@ export default function NetworkPanel() {
             {networkStatus?.firewall_zones && networkStatus.firewall_zones.length > 0 && (
               <Grid item xs={12}>
                 <Accordion>
-                  <AccordionSummary expandIcon={<ExpandIcon />}>
+                  <AccordionSummary expandIcon={<ChevronDown size={18} />}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <FirewallIcon />
+                      <Firewall size={18} />
                       <Typography>Firewall Zones</Typography>
                     </Box>
                   </AccordionSummary>

@@ -1,11 +1,9 @@
 import React, { useState, useCallback } from 'react'
+import { Close, Renew, WifiOff } from '@carbon/icons-react'
 import {
   Box, Tabs, Tab, Typography, CircularProgress, Alert,
   Paper, Button, Collapse,
 } from '@mui/material'
-import WifiOffIcon from '@mui/icons-material/WifiOff'
-import SyncIcon from '@mui/icons-material/Sync'
-import CloseIcon from '@mui/icons-material/Close'
 import { useTesiraDevice, useReconnectDevice } from '../hooks/useTesiraApi'
 import { useTesiraDeviceState } from '../hooks/useTesiraWebSocket'
 import { useTesiraContext } from '../context/TesiraContext'
@@ -159,7 +157,9 @@ function OfflineBanner({ deviceId }: { deviceId: string }) {
           gap: 1.25,
         }}
       >
-        <WifiOffIcon sx={{ fontSize: 18, color: 'warning.main', flexShrink: 0, mt: 0.25 }} />
+        <Box sx={{ display: 'flex', color: 'warning.main', flexShrink: 0, mt: 0.25 }}>
+          <WifiOff size={18} />
+        </Box>
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="caption" fontWeight={700} color="warning.main" display="block">
@@ -185,7 +185,7 @@ function OfflineBanner({ deviceId }: { deviceId: string }) {
             startIcon={
               reconnect.isPending
                 ? <CircularProgress size={12} color="inherit" />
-                : <SyncIcon sx={{ fontSize: 14 }} />
+                : <Renew size={14} />
             }
             disabled={reconnect.isPending}
             onClick={handleTryNow}
@@ -200,7 +200,7 @@ function OfflineBanner({ deviceId }: { deviceId: string }) {
             sx={{ fontSize: 11, py: 0.25, px: 0.75, minWidth: 0, color: 'text.disabled' }}
             onClick={() => setDismissed(true)}
           >
-            <CloseIcon sx={{ fontSize: 14 }} />
+            <Close size={14} />
           </Button>
         </Box>
       </Paper>

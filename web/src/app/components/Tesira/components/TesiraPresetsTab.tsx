@@ -1,12 +1,10 @@
 import React, { useState } from 'react'
+import { Add, PlayFilled, TrashCan } from '@carbon/icons-react'
 import {
   Box, Typography, List, ListItem, ListItemText, ListItemSecondaryAction,
   Button, Divider, TextField, IconButton, Tooltip, CircularProgress,
   Table, TableHead, TableRow, TableCell, TableBody, Alert,
 } from '@mui/material'
-import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import AddIcon from '@mui/icons-material/Add'
-import DeleteIcon from '@mui/icons-material/Delete'
 import {
   useTesiraPresets, useRecallPreset,
   usePresetInterlockRules, useAddInterlockRule, useDeleteInterlockRule,
@@ -75,7 +73,7 @@ export function TesiraPresetsTab({ deviceId }: TesiraPresetsTabProps) {
                     onClick={() => recallPreset.mutate({ deviceId, presetIndex: p.index })}
                     disabled={recallPreset.isPending}
                   >
-                    <PlayArrowIcon sx={{ fontSize: 16 }} />
+                    <PlayFilled size={16} />
                   </IconButton>
                 </Tooltip>
               </ListItemSecondaryAction>
@@ -121,7 +119,7 @@ export function TesiraPresetsTab({ deviceId }: TesiraPresetsTabProps) {
                   <TableCell sx={{ fontSize: 12 }}>{r.tesira_preset_index}</TableCell>
                   <TableCell>
                     <IconButton size="small" onClick={() => deleteRule.mutate(r.id)}>
-                      <DeleteIcon sx={{ fontSize: 14 }} />
+                      <TrashCan size={14} />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -159,7 +157,7 @@ export function TesiraPresetsTab({ deviceId }: TesiraPresetsTabProps) {
         <Button
           size="small"
           variant="outlined"
-          startIcon={<AddIcon />}
+          startIcon={<Add size={16} />}
           onClick={handleAddRule}
           disabled={!newMap2Id || !newPresetIdx || addRule.isPending}
         >

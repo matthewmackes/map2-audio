@@ -394,7 +394,7 @@ export function PlatformCapabilities() {
 
             {/* REST API Engine */}
             <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#64b5f6', textTransform: 'uppercase', marginBottom: 4 }}>🌐 REST API Engine</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64b5f6', textTransform: 'uppercase', marginBottom: 4 }}>REST API Engine</div>
               <div style={{ padding: 8, background: '#64b5f615', borderRadius: 4, border: '1px solid #64b5f6' }}>
                 <div style={{ fontSize: 9, color: '#9ca3af', marginBottom: 2 }}>Available Endpoints</div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#64b5f6' }}>{apiCount || '120'}+</div>
@@ -404,11 +404,11 @@ export function PlatformCapabilities() {
 
             {/* Web Services & WebSocket */}
             <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#81c784', textTransform: 'uppercase', marginBottom: 4 }}>⚡ Real-time Services</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#81c784', textTransform: 'uppercase', marginBottom: 4 }}>Real-time Services</div>
               <div className="stack" style={{ gap: 5, fontSize: 10 }}>
-                <div>📡 <strong>WebSocket Server</strong> - Live updates</div>
-                <div>🔗 <strong>Network Streaming</strong> - Remote audio control</div>
-                <div>🔄 <strong>Service Discovery</strong> - Auto registration</div>
+                <div><strong>WebSocket Server</strong> - Live updates</div>
+                <div><strong>Network Streaming</strong> - Remote audio control</div>
+                <div><strong>Service Discovery</strong> - Auto registration</div>
               </div>
             </div>
           </div>

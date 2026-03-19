@@ -1,7 +1,7 @@
 /**
  * Custom Plugin Cards
  *
- * ⚠️  DO NOT add eager `export *` re-exports here.
+ * Do not add eager `export *` re-exports here.
  *
  * All custom cards are lazy-loaded via the plugin registry in registry.ts.
  * Each card is only downloaded when the user opens that specific plugin.

@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Close } from '@carbon/icons-react';
 import {
   Box,
   Paper,
@@ -21,9 +22,6 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import CloseIcon from '@mui/icons-material/Close';
-import LockIcon from '@mui/icons-material/Lock';
-import LockOpenIcon from '@mui/icons-material/LockOpen';
 import { useRoutingState } from '../../context/RoutingContext';
 import { useAvbDevices, useAvbStreams, useAvdeccEntities } from '../../hooks/useAvbApi';
 import type { AvbDiscoveredDevice, AvbStreamPayload } from '../../types';

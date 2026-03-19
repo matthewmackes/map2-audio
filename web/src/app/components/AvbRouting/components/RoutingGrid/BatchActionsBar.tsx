@@ -14,6 +14,7 @@
  */
 
 import React, { useState } from 'react';
+import { Checkmark, Close, Link, Unlink, WarningFilled } from '@carbon/icons-react';
 import {
   Box,
   Button,
@@ -27,11 +28,6 @@ import {
   DialogActions,
   CircularProgress,
 } from '@mui/material';
-import LinkIcon from '@mui/icons-material/Link';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
-import CloseIcon from '@mui/icons-material/Close';
-import CheckIcon from '@mui/icons-material/Check';
-import WarningIcon from '@mui/icons-material/Warning';
 
 interface BatchActionsBarProps {
   /**
@@ -133,7 +129,7 @@ export function BatchActionsBar({
             borderRadius: 1,
           }}
         >
-          <CheckIcon sx={{ fontSize: 20 }} />
+          <Checkmark size={20} />
           <Typography variant="body2" fontWeight={600}>
             {selectedCount} selected
           </Typography>
@@ -156,7 +152,7 @@ export function BatchActionsBar({
               variant="contained"
               color="success"
               size="medium"
-              startIcon={isLoading ? <CircularProgress size={16} /> : <LinkIcon />}
+              startIcon={isLoading ? <CircularProgress size={16} /> : <Link size={16} />}
               onClick={() => setConfirmDialog('connect')}
               disabled={isLoading}
             >
@@ -170,7 +166,7 @@ export function BatchActionsBar({
               variant="contained"
               color="error"
               size="medium"
-              startIcon={isLoading ? <CircularProgress size={16} /> : <LinkOffIcon />}
+              startIcon={isLoading ? <CircularProgress size={16} /> : <Unlink size={16} />}
               onClick={() => setConfirmDialog('disconnect')}
               disabled={isLoading}
             >
@@ -196,7 +192,7 @@ export function BatchActionsBar({
             disabled={isLoading}
             sx={{ color: 'text.secondary' }}
           >
-            <CloseIcon />
+            <Close size={16} />
           </IconButton>
         </Tooltip>
       </Box>
@@ -209,7 +205,9 @@ export function BatchActionsBar({
         fullWidth
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <LinkIcon color="success" />
+          <Box component="span" sx={{ display: 'inline-flex', color: 'success.main' }}>
+            <Link size={16} />
+          </Box>
           Connect All Selected?
         </DialogTitle>
         <DialogContent>
@@ -220,7 +218,7 @@ export function BatchActionsBar({
                 <br />
                 <br />
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'warning.main' }}>
-                  <WarningIcon fontSize="small" />
+                  <WarningFilled size={16} />
                   <Typography variant="body2" color="warning.main">
                     Large batch operation - this may take a few moments.
                   </Typography>
@@ -247,7 +245,9 @@ export function BatchActionsBar({
         fullWidth
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <LinkOffIcon color="error" />
+          <Box component="span" sx={{ display: 'inline-flex', color: 'error.main' }}>
+            <Unlink size={16} />
+          </Box>
           Disconnect All Selected?
         </DialogTitle>
         <DialogContent>
@@ -258,7 +258,7 @@ export function BatchActionsBar({
                 <br />
                 <br />
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'warning.main' }}>
-                  <WarningIcon fontSize="small" />
+                  <WarningFilled size={16} />
                   <Typography variant="body2" color="warning.main">
                     Large batch operation - this may take a few moments.
                   </Typography>

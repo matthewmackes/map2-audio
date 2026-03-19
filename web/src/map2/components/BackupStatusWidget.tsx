@@ -30,17 +30,17 @@ import {
   Alert,
 } from '@mui/material';
 import {
-  Backup as BackupIcon,
-  Restore as RestoreIcon,
-  Delete as DeleteIcon,
-  CheckCircle as SuccessIcon,
-  Error as ErrorIcon,
-  Schedule as ScheduleIcon,
-  CloudDone as CloudIcon,
-  MoreVert as MoreIcon,
-  Refresh as RefreshIcon,
-  Storage as SizeIcon,
-} from '@mui/icons-material';
+  Cloud,
+  OverflowMenuVertical,
+  Renew,
+  Reset,
+  Save,
+  StoragePool,
+  Time,
+  TrashCan,
+  WarningFilled,
+  CheckmarkFilled,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 interface BackupInfo {
@@ -230,7 +230,14 @@ export default function BackupStatusWidget({
           {creating ? (
             <CircularProgress size={16} />
           ) : (
-            <BackupIcon fontSize="small" color={status.backupCount > 0 ? 'success' : 'action'} />
+            <Box
+              sx={{
+                color: status.backupCount > 0 ? 'success.main' : 'action.active',
+                display: 'inline-flex',
+              }}
+            >
+              <Save size={16} />
+            </Box>
           )}
         </IconButton>
       </Tooltip>
@@ -252,12 +259,14 @@ export default function BackupStatusWidget({
         }}
       >
         <Tooltip title="Backup System">
-          <BackupIcon 
-            sx={{ 
-              fontSize: 20, 
-              color: status.backupCount > 0 ? theme.palette.success.main : theme.palette.action.active,
-            }} 
-          />
+          <Box
+            sx={{
+              color: status.backupCount > 0 ? 'success.main' : 'action.active',
+              display: 'inline-flex',
+            }}
+          >
+            <Save size={20} />
+          </Box>
         </Tooltip>
 
         {/* Backup count */}
@@ -296,7 +305,7 @@ export default function BackupStatusWidget({
               {creating ? (
                 <CircularProgress size={16} />
               ) : (
-                <BackupIcon fontSize="small" />
+                <Save size={16} />
               )}
             </IconButton>
           </span>
@@ -304,7 +313,7 @@ export default function BackupStatusWidget({
 
         {/* More options */}
         <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)}>
-          <MoreIcon fontSize="small" />
+          <OverflowMenuVertical size={16} />
         </IconButton>
       </Paper>
 
@@ -315,20 +324,20 @@ export default function BackupStatusWidget({
         onClose={() => setMenuAnchor(null)}
       >
         <MenuItem onClick={() => { setMenuAnchor(null); handleCreateBackup(); }}>
-          <BackupIcon fontSize="small" sx={{ mr: 1 }} />
+          <Save size={16} style={{ marginRight: 8 }} />
           Create Backup Now
         </MenuItem>
         <MenuItem onClick={() => { setMenuAnchor(null); fetchBackups(); setListDialogOpen(true); }}>
-          <RestoreIcon fontSize="small" sx={{ mr: 1 }} />
+          <Reset size={16} style={{ marginRight: 8 }} />
           Restore from Backup
         </MenuItem>
         <Divider />
         <MenuItem disabled>
-          <ScheduleIcon fontSize="small" sx={{ mr: 1 }} />
+          <Time size={16} style={{ marginRight: 8 }} />
           Auto-backup: {status.autoBackupEnabled ? 'On' : 'Off'}
         </MenuItem>
         <MenuItem disabled>
-          <SizeIcon fontSize="small" sx={{ mr: 1 }} />
+          <StoragePool size={16} style={{ marginRight: 8 }} />
           Max backups: {status.maxBackups}
         </MenuItem>
       </Menu>
@@ -342,11 +351,13 @@ export default function BackupStatusWidget({
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BackupIcon color="primary" />
+            <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+              <Save size={20} />
+            </Box>
             Backups
           </Box>
           <IconButton size="small" onClick={fetchBackups}>
-            <RefreshIcon />
+            <Renew size={16} />
           </IconButton>
         </DialogTitle>
         <DialogContent>
@@ -361,9 +372,13 @@ export default function BackupStatusWidget({
                   <ListItemButton onClick={() => openRestoreDialog(backup)}>
                     <ListItemIcon>
                       {backup.valid ? (
-                        <SuccessIcon color="success" />
+                        <Box sx={{ color: 'success.main', display: 'inline-flex' }}>
+                          <CheckmarkFilled size={20} />
+                        </Box>
                       ) : (
-                        <ErrorIcon color="error" />
+                        <Box sx={{ color: 'error.main', display: 'inline-flex' }}>
+                          <WarningFilled size={20} />
+                        </Box>
                       )}
                     </ListItemIcon>
                     <ListItemText
@@ -385,7 +400,7 @@ export default function BackupStatusWidget({
                         size="small"
                         onClick={(e) => { e.stopPropagation(); handleDeleteBackup(backup.id); }}
                       >
-                        <DeleteIcon fontSize="small" />
+                        <TrashCan size={16} />
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItemButton>
@@ -405,7 +420,9 @@ export default function BackupStatusWidget({
       {/* Restore Confirmation Dialog */}
       <Dialog open={restoreDialogOpen} onClose={() => setRestoreDialogOpen(false)}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <RestoreIcon color="warning" />
+          <Box sx={{ color: 'warning.main', display: 'inline-flex' }}>
+            <Reset size={20} />
+          </Box>
           Restore Backup
         </DialogTitle>
         <DialogContent>
@@ -438,7 +455,7 @@ export default function BackupStatusWidget({
             variant="contained" 
             color="warning"
             disabled={restoring}
-            startIcon={restoring ? <CircularProgress size={16} /> : <RestoreIcon />}
+            startIcon={restoring ? <CircularProgress size={16} /> : <Reset size={16} />}
           >
             Restore
           </Button>

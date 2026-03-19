@@ -7,14 +7,13 @@ import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Card, CardContent, Typography, Box, Stack, LinearProgress } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
-import CallSplitIcon from '@mui/icons-material/CallSplit';
-import MergeIcon from '@mui/icons-material/Merge';
+import { DirectionFork, FlowConnection } from '@carbon/icons-react';
 import { RoutingNodeData } from './RoutingNodeTypes';
 
 const RoutingNode = memo(({ data }: NodeProps<RoutingNodeData>) => {
   const theme = useTheme();
   const isSplit = data.kind === 'split';
-  const Icon = isSplit ? CallSplitIcon : MergeIcon;
+  const Icon = isSplit ? DirectionFork : FlowConnection;
 
   // Calculate blend percentages for display
   const blendA = data.blendPosition !== undefined ? 100 - data.blendPosition : 50;
@@ -82,12 +81,16 @@ const RoutingNode = memo(({ data }: NodeProps<RoutingNodeData>) => {
         <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
           {/* Header */}
           <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-            <Icon
+            <Box
               sx={{
                 color: isSplit ? 'info.main' : 'warning.main',
+                display: 'inline-flex',
+                alignItems: 'center',
                 transform: isSplit ? 'rotate(90deg)' : 'rotate(-90deg)',
               }}
-            />
+            >
+              <Icon size={18} />
+            </Box>
             <Typography variant="body2" fontWeight="bold">
               {isSplit ? 'Split' : 'Blend'}
             </Typography>

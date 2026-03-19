@@ -20,21 +20,19 @@ import {
   Chip,
 } from '@mui/material';
 import {
-  Close as CloseIcon,
-  Dashboard as DashboardIcon,
-  GraphicEq as IRIcon,
-  Psychology as NAMIcon,
-  Speed as MetricsIcon,
-  Settings as SettingsIcon,
-  AccountTree as ChainIcon,
-  Extension as PluginIcon,
-  Piano as MidiIcon,
-  VolumeUp as AudioIcon,
-  WorkHistory as WorkFlowIcon,
-  Router as NetworkIcon,
-  Language as WWWIcon,
-  Widgets as FeaturesIcon,
-} from '@mui/icons-material';
+  AppConnectivity,
+  Close,
+  Dashboard,
+  Earth,
+  Equalizer,
+  FlowConnection,
+  MachineLearningModel,
+  Music,
+  Router,
+  Settings,
+  VolumeUp,
+  WorkflowAutomation,
+} from '@carbon/icons-react';
 
 import IRManager from './IRManager';
 import NAMManager from './NAMManager';
@@ -195,17 +193,17 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
   const avbChipTitle = avbStatus.reason || (avbStatus.interfaceName ? `Interface ${avbStatus.interfaceName}` : 'AVB interface not configured');
 
   const tabs = [
-    { label: 'Quick Access', icon: <FeaturesIcon />, component: <FeaturesPanel /> },
-    { label: 'Audio', icon: <AudioIcon />, component: <AudioEngine /> },
-    { label: 'Chains', icon: <ChainIcon />, component: <ChainBuilder /> },
-    { label: 'Plugins', icon: <PluginIcon />, component: <PluginBrowser /> },
-    { label: 'MIDI', icon: <MidiIcon />, component: <MIDIMapper /> },
-    { label: 'Cabinets/IR', icon: <IRIcon />, component: <IRManager /> },
-    { label: 'NAM Models', icon: <NAMIcon />, component: <NAMManager /> },
-    { label: 'WorkFlow', icon: <WorkFlowIcon />, component: <WorkFlow /> },
-    { label: 'Settings', icon: <SettingsIcon />, component: <SettingsPanel /> },
-    { label: 'NETWORK', icon: <NetworkIcon />, component: <NetworkPanel /> },
-    { label: 'WWW', icon: <WWWIcon />, component: <WWWPanel /> },
+    { label: 'Quick Access', icon: <AppConnectivity size={18} />, component: <FeaturesPanel /> },
+    { label: 'Audio', icon: <VolumeUp size={18} />, component: <AudioEngine /> },
+    { label: 'Chains', icon: <FlowConnection size={18} />, component: <ChainBuilder /> },
+    { label: 'Plugins', icon: <AppConnectivity size={18} />, component: <PluginBrowser /> },
+    { label: 'MIDI', icon: <Music size={18} />, component: <MIDIMapper /> },
+    { label: 'Cabinets/IR', icon: <Equalizer size={18} />, component: <IRManager /> },
+    { label: 'NAM Models', icon: <MachineLearningModel size={18} />, component: <NAMManager /> },
+    { label: 'WorkFlow', icon: <WorkflowAutomation size={18} />, component: <WorkFlow /> },
+    { label: 'Settings', icon: <Settings size={18} />, component: <SettingsPanel /> },
+    { label: 'NETWORK', icon: <Router size={18} />, component: <NetworkPanel /> },
+    { label: 'WWW', icon: <Earth size={18} />, component: <WWWPanel /> },
   ];
 
   return (
@@ -225,7 +223,9 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
       {/* Header */}
       <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper' }}>
         <Toolbar>
-          <DashboardIcon sx={{ mr: 2, color: 'primary.main' }} />
+          <Box component="span" sx={{ mr: 2, color: 'primary.main', display: 'inline-flex', lineHeight: 0 }}>
+            <Dashboard size={24} />
+          </Box>
           <Typography
             variant="h6"
             sx={{
@@ -248,7 +248,7 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
           />
           {onClose && (
             <IconButton onClick={onClose} color="inherit">
-              <CloseIcon />
+              <Close size={20} />
             </IconButton>
           )}
         </Toolbar>

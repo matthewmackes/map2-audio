@@ -25,15 +25,10 @@ import {
 } from '@mui/material';
 import { NumberInput } from './NumberInput';
 import {
-  GraphicEq as EnvelopeIcon,
-  PlayArrow as ActiveIcon,
-  Stop as StopIcon,
-  Refresh as RefreshIcon,
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
-  Settings as SettingsIcon,
-  VolumeUp as VolumeIcon,
-} from '@mui/icons-material';
+  ChartLine,
+  ChevronDown,
+  ChevronUp,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 interface EnvelopeConfig {
@@ -160,7 +155,7 @@ export default function EnvelopeFollowerPanel({
             bgcolor: active ? alpha(theme.palette.secondary.main, 0.1) : undefined,
           }}
         >
-          <EnvelopeIcon fontSize="small" />
+          <ChartLine size={16} />
         </IconButton>
       </Tooltip>
     );
@@ -186,12 +181,14 @@ export default function EnvelopeFollowerPanel({
         }}
         onClick={() => setExpanded(!expanded)}
       >
-        <EnvelopeIcon 
-          sx={{ 
-            color: active ? theme.palette.secondary.main : theme.palette.action.active,
-            fontSize: 20,
-          }} 
-        />
+        <Box
+          sx={{
+            color: active ? 'secondary.main' : 'action.active',
+            display: 'inline-flex',
+          }}
+        >
+          <ChartLine size={20} />
+        </Box>
         
         <Typography variant="subtitle2" sx={{ flex: 1 }}>
           Envelope Follower
@@ -226,7 +223,7 @@ export default function EnvelopeFollowerPanel({
         )}
 
         <IconButton size="small">
-          {expanded ? <CollapseIcon fontSize="small" /> : <ExpandIcon fontSize="small" />}
+          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </IconButton>
       </Box>
 
@@ -381,7 +378,9 @@ export function EnvelopeIndicator({
           gap: 0.5,
         }}
       >
-        <EnvelopeIcon sx={{ fontSize: 10, color: theme.palette.secondary.main }} />
+        <Box sx={{ color: 'secondary.main', display: 'inline-flex' }}>
+          <ChartLine size={10} />
+        </Box>
         <Box
           sx={{
             width: 20,

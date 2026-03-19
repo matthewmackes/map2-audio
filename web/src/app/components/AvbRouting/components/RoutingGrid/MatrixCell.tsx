@@ -18,11 +18,8 @@
  */
 
 import React from 'react';
+import { CheckmarkFilled, ErrorFilled, Link, Locked } from '@carbon/icons-react';
 import { Box, CircularProgress, Tooltip } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import LockIcon from '@mui/icons-material/Lock';
-import LinkIcon from '@mui/icons-material/Link';
 import { useRouting } from '../../context/RoutingContext';
 import { useAvbStreams } from '../../hooks/useAvbApi';
 import { getRouteStreams } from '../../utils/avbRouteStreams';
@@ -84,7 +81,7 @@ export function MatrixCell({
     <div>
       <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
         {talker.device_name} → {listener.device_name}
-        {isCrossNode && ' 🔗'}
+        {isCrossNode && ' Cross-node'}
       </div>
       <div>State: {route.state}</div>
       {isCrossNode && (
@@ -98,7 +95,7 @@ export function MatrixCell({
       {route.error_message && (
         <div style={{ color: '#ff6b6b' }}>Error: {route.error_message}</div>
       )}
-      {isLocked && <div style={{ color: '#ffd43b' }}>🔒 Locked</div>}
+      {isLocked && <div style={{ color: '#ffd43b' }}>Locked</div>}
       {route.srp_reservation_id && (
         <div style={{ fontSize: '0.85em', opacity: 0.8 }}>
           SRP: {route.srp_reservation_id.slice(0, 8)}...
@@ -129,7 +126,7 @@ export function MatrixCell({
       <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
         {talker.device_name} → {listener.device_name}
       </div>
-      <div style={{ color: '#ffd43b' }}>⚠️ Warnings:</div>
+      <div style={{ color: '#ffd43b' }}>Warnings:</div>
       {talker.sample_rate !== listener.sample_rate && (
         <div>Sample rate mismatch: {talker.sample_rate}Hz ≠ {listener.sample_rate}Hz</div>
       )}
@@ -216,33 +213,21 @@ export function MatrixCell({
       >
         {/* Connection indicator */}
         {isConnecting && <CircularProgress size={20} sx={{ color: 'white' }} />}
-        {isConnected && <CheckCircleIcon sx={{ fontSize: 24, color: 'white' }} />}
-        {isError && <ErrorIcon sx={{ fontSize: 24, color: 'white' }} />}
+        {isConnected && <CheckmarkFilled size={24} style={{ color: 'white' }} />}
+        {isError && <ErrorFilled size={24} style={{ color: 'white' }} />}
 
         {/* Cross-node indicator (overlay top-left) */}
         {isCrossNode && (isConnected || isConnecting) && (
-          <LinkIcon
-            sx={{
-              position: 'absolute',
-              top: 2,
-              left: 2,
-              fontSize: 12,
-              color: 'rgba(255, 255, 255, 0.9)',
-            }}
-          />
+          <Box sx={{ position: 'absolute', top: 2, left: 2, color: 'rgba(255, 255, 255, 0.9)' }}>
+            <Link size={12} />
+          </Box>
         )}
 
         {/* Lock indicator (overlay top-right) */}
         {isLocked && (
-          <LockIcon
-            sx={{
-              position: 'absolute',
-              top: 2,
-              right: 2,
-              fontSize: 14,
-              color: 'rgba(255, 255, 255, 0.7)',
-            }}
-          />
+          <Box sx={{ position: 'absolute', top: 2, right: 2, color: 'rgba(255, 255, 255, 0.7)' }}>
+            <Locked size={14} />
+          </Box>
         )}
 
         {/* Warning indicator (overlay) */}

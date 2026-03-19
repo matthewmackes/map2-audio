@@ -272,7 +272,7 @@ export function MPX1Page() {
                 className={({ isActive }) => `mpx1-shell__sidebar-btn${isActive ? ' is-active active' : ''}`}
                 style={{ '--section-accent': section.color } as React.CSSProperties}
               >
-                <SectionIcon size={18} weight="duotone" aria-hidden />
+                <SectionIcon size={18} aria-hidden />
               </NavLink>
             )
           })}

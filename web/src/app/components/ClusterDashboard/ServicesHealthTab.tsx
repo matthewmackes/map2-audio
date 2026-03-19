@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Activity as Pulse, WarningAlt as WarningCircle, CheckmarkFilled as CheckCircle, Flash as Lightning } from '@carbon/icons-react'
+import { Activity as Pulse, WarningAlt as WarningCircle, CheckmarkFilled as CheckCircle, Flash as Lightning, DataBase, SettingsAdjust, VolumeUp } from '@carbon/icons-react'
 import { useMemo } from 'react'
 import { normalizeClusterNodes, getServiceStatusForNode } from './clusterData'
 
@@ -24,12 +24,12 @@ export function ServicesHealthTab() {
   })
 
   const services = [
-    { name: 'juce_engine', label: '🎵 Audio Engine', runOn: ['AUDIO-NODE', 'ALL-IN-ONE'] },
-    { name: 'audio_io', label: '🔊 Audio I/O', runOn: ['AUDIO-NODE', 'ALL-IN-ONE'] },
+    { name: 'juce_engine', label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><VolumeUp size={14} /> Audio Engine</span>, runOn: ['AUDIO-NODE', 'ALL-IN-ONE'] },
+    { name: 'audio_io', label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><VolumeUp size={14} /> Audio I/O</span>, runOn: ['AUDIO-NODE', 'ALL-IN-ONE'] },
     { name: 'mdns_discovery', label: '🌐 mDNS Discovery', runOn: ['ALL'] },
-    { name: 'api_server', label: '⚙️ API Server', runOn: ['ALL'] },
+    { name: 'api_server', label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><SettingsAdjust size={14} /> API Server</span>, runOn: ['ALL'] },
     { name: 'web_ui', label: '💻 Web Interface', runOn: ['MANAGEMENT-NODE', 'CONTROL-NODE', 'ALL-IN-ONE'] },
-    { name: 'database', label: '💾 Database', runOn: ['ALL'] },
+    { name: 'database', label: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><DataBase size={14} /> Database</span>, runOn: ['ALL'] },
     { name: 'lcd_manager', label: '📱 LCD Manager', runOn: ['AUDIO-NODE', 'ALL-IN-ONE'] },
   ]
 

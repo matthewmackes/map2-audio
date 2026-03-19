@@ -30,25 +30,25 @@ import {
   Grid,
 } from '@mui/material';
 import {
-  MusicVideo as NAMIcon,
-  PlayArrow as LoadIcon,
-  Check as ActiveIcon,
-  Refresh as RefreshIcon,
-  Info as InfoIcon,
-  Memory as ModelIcon,
-  Bolt as AmpIcon,
-} from '@mui/icons-material';
+  CheckmarkFilled,
+  DataBase,
+  Flash,
+  Information,
+  Music,
+  PlayFilled,
+  Renew,
+} from '@carbon/icons-react';
 import { namApi } from '../api';
 import type { NAMModel, NAMStatus } from '../types';
 
 function getModelTypeIcon(type: string) {
   switch (type.toLowerCase()) {
     case 'amp':
-      return <AmpIcon />;
+      return <Flash size={20} />;
     case 'pedal':
-      return <NAMIcon />;
+      return <Music size={20} />;
     default:
-      return <ModelIcon />;
+      return <DataBase size={20} />;
   }
 }
 
@@ -133,15 +133,17 @@ export default function NAMManager() {
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <NAMIcon sx={{ color: 'primary.main' }} />
+        <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+          <Music size={20} />
+        </Box>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Neural Amp Modeler
         </Typography>
         <IconButton onClick={() => setInfoDialogOpen(true)} size="small">
-          <InfoIcon />
+          <Information size={16} />
         </IconButton>
         <IconButton onClick={fetchData} disabled={loading} size="small">
-          <RefreshIcon />
+          <Renew size={16} />
         </IconButton>
       </Box>
 
@@ -162,7 +164,7 @@ export default function NAMManager() {
               </Grid>
               <Grid item>
                 <Chip
-                  icon={<ModelIcon />}
+                  icon={<DataBase size={14} />}
                   label={`${models.length} models`}
                   size="small"
                   variant="outlined"
@@ -188,7 +190,9 @@ export default function NAMManager() {
           </Box>
         ) : models.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
-            <NAMIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Box sx={{ color: 'text.secondary', mb: 2, display: 'inline-flex' }}>
+              <Music size={48} />
+            </Box>
             <Typography color="text.secondary">No NAM models found</Typography>
             <Typography variant="body2" color="text.secondary">
               Add .nam model files to the NAM models directory
@@ -221,7 +225,9 @@ export default function NAMManager() {
                           {isLoading ? (
                             <CircularProgress size={24} />
                           ) : isActive ? (
-                            <ActiveIcon color="success" />
+                            <Box sx={{ color: 'success.main', display: 'inline-flex' }}>
+                              <CheckmarkFilled size={20} />
+                            </Box>
                           ) : (
                             getModelTypeIcon(model.type)
                           )}
@@ -243,7 +249,7 @@ export default function NAMManager() {
                                 disabled={!!loadingModel}
                                 size="small"
                               >
-                                <LoadIcon />
+                                <PlayFilled size={16} />
                               </IconButton>
                             </Tooltip>
                           )}

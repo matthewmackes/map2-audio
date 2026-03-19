@@ -28,13 +28,13 @@ import {
 } from '@mui/material';
 import { NumberInput } from '../NumberInput';
 import {
-  Settings as SettingsIcon,
-  Speed as PerformanceIcon,
-  HighQuality as QualityIcon,
-  Headphones as HeadphonesIcon,
-  Refresh as RefreshIcon,
-  Warning as WarningIcon,
-} from '@mui/icons-material';
+  AudioConsole,
+  Headphones,
+  Renew,
+  Settings,
+  TrainSpeed,
+  WarningAltFilled,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 // ============================================================================
@@ -90,10 +90,12 @@ const BUFFER_PRESETS = {
   safe: { size: 512, label: 'Safe', description: '~10.7ms @ 48kHz - Very stable' },
 };
 
+type AudioConfigIcon = (typeof Settings | typeof TrainSpeed | typeof Headphones);
+
 const CONVOLUTION_MODES = {
-  zero_latency: { label: 'Zero Latency', description: 'Lowest latency, higher CPU', icon: PerformanceIcon },
-  low_latency: { label: 'Low Latency', description: 'Balanced latency and CPU', icon: HeadphonesIcon },
-  high_quality: { label: 'High Quality', description: 'Best quality, some latency', icon: QualityIcon },
+  zero_latency: { label: 'Zero Latency', description: 'Lowest latency, higher CPU', icon: TrainSpeed as AudioConfigIcon },
+  low_latency: { label: 'Low Latency', description: 'Balanced latency and CPU', icon: Headphones as AudioConfigIcon },
+  high_quality: { label: 'High Quality', description: 'Best quality, some latency', icon: AudioConsole as AudioConfigIcon },
 };
 
 // ============================================================================
@@ -137,7 +139,7 @@ const DeviceSelector = memo(({ devices, selectedId, onChange, onRefresh, isLoadi
             {devices.map((device) => (
               <MenuItem key={device.id} value={device.id}>
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
-                  <HeadphonesIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Headphones size={16} />
                   <Typography variant="body2">{device.name}</Typography>
                   {device.isDefault && (
                     <Chip label="Default" size="small" sx={{ height: 18, fontSize: '0.65rem' }} />
@@ -153,7 +155,7 @@ const DeviceSelector = memo(({ devices, selectedId, onChange, onRefresh, isLoadi
         {onRefresh && (
           <Tooltip title="Refresh device list">
             <IconButton onClick={onRefresh} disabled={isLoading} size="small">
-              {isLoading ? <CircularProgress size={18} /> : <RefreshIcon />}
+              {isLoading ? <CircularProgress size={18} /> : <Renew size={18} />}
             </IconButton>
           </Tooltip>
         )}
@@ -287,7 +289,7 @@ const AudioConfigDialog = memo(({
     >
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <SettingsIcon />
+          <Settings size={20} />
           <Typography variant="h6">Audio Configuration</Typography>
         </Stack>
       </DialogTitle>
@@ -296,7 +298,7 @@ const AudioConfigDialog = memo(({
         <Stack spacing={3}>
           {/* Warning if audio is running */}
           {isAudioRunning && (
-            <Alert severity="warning" icon={<WarningIcon />}>
+            <Alert severity="warning" icon={<WarningAltFilled size={18} />}>
               Audio is currently running. Changes will restart the audio engine.
             </Alert>
           )}
@@ -417,7 +419,7 @@ const AudioConfigDialog = memo(({
                 return (
                   <ToggleButton key={mode} value={mode}>
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <IconComponent sx={{ fontSize: 16 }} />
+                      <IconComponent size={16} />
                       <Typography variant="caption">{info.label}</Typography>
                     </Stack>
                   </ToggleButton>

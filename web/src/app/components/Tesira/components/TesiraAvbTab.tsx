@@ -1,9 +1,9 @@
 import React from 'react'
+import { Launch } from '@carbon/icons-react'
 import {
   Box, Typography, Table, TableHead, TableRow, TableCell, TableBody,
   Chip, Button, Tooltip,
 } from '@mui/material'
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import { Link as RouterLink } from 'react-router-dom'
 import { useTesiraAvbStreams, useTesiraPTP } from '../hooks/useTesiraApi'
 
@@ -101,7 +101,7 @@ export function TesiraAvbTab({ deviceId }: TesiraAvbTabProps) {
                       size="small"
                       component={RouterLink}
                       to={`/avb-routing?focusTesiraDevice=${encodeURIComponent(deviceId)}&focusEntity=${encodeURIComponent(String(s.entity_id || ''))}`}
-                      endIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
+                      endIcon={<Launch size={12} />}
                       sx={{ fontSize: 10, minWidth: 0, p: 0.5 }}
                     >
                       Route

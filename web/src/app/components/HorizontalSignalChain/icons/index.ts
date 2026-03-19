@@ -7,7 +7,7 @@
 import type { FxIconName } from '../types'
 
 // Import all SVG icons as React components
-import FxAmplifier from './fx_amplifier.svg?react'
+import FxAmplifier from '../../icons/noun/amplifier/fx-amplifier.svg?react'
 import FxAnalyzer from './fx_analyzer.svg?react'
 import FxChorus from './fx_chorus.svg?react'
 import FxCompressor from './fx_compressor.svg?react'
@@ -38,7 +38,7 @@ import FxParametricEq from './fx_parametric_eq.svg?react'
 import FxPhaser from './fx_phaser.svg?react'
 import FxPitch from './fx_pitch.svg?react'
 import FxPlugin from './fx_plugin.svg?react'
-import FxReverb from './fx_reverb.svg?react'
+import FxReverb from '../../icons/noun/reverb/fx-reverb-category.svg?react'
 import FxSimulator from './fx_simulator.svg?react'
 import FxSpatial from './fx_spatial.svg?react'
 import FxSpectral from './fx_spectral.svg?react'

@@ -7,8 +7,7 @@ import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Card, CardContent, Typography, Chip, Stack, Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import RadioIcon from '@mui/icons-material/SettingsInputAntenna';
-import SpeakerIcon from '@mui/icons-material/Speaker';
+import { Plug, VolumeUp } from '@carbon/icons-react';
 import { DeviceNodeData } from './DeviceNodeTypes';
 
 function formatSampleRate(sr: number): string {
@@ -18,7 +17,7 @@ function formatSampleRate(sr: number): string {
 const DeviceNode = memo(({ data }: NodeProps<DeviceNodeData>) => {
   const theme = useTheme();
   const isInput = data.kind === 'input';
-  const Icon = isInput ? RadioIcon : SpeakerIcon;
+  const Icon = isInput ? Plug : VolumeUp;
   const accentColor = isInput ? theme.palette.info.main : theme.palette.success.main;
   const isRunning = data.isRunning ?? true;
   const chainActive = data.chainActive ?? true;
@@ -54,7 +53,9 @@ const DeviceNode = memo(({ data }: NodeProps<DeviceNodeData>) => {
       >
         <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
           <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
-            <Icon sx={{ color: accentColor, fontSize: 18 }} />
+            <Box sx={{ color: accentColor, display: 'inline-flex', alignItems: 'center' }}>
+              <Icon size={18} />
+            </Box>
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Typography variant="body2" fontWeight="bold" noWrap>
                 {data.name || (isInput ? 'Input' : 'Output')}

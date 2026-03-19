@@ -7,6 +7,18 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Bookmark,
+  Checkmark,
+  Close,
+  Compare,
+  Filter,
+  Redo,
+  Search,
+  Security,
+  TreeViewAlt,
+  Undo,
+} from '@carbon/icons-react';
+import {
   AppBar,
   Toolbar,
   Typography,
@@ -30,16 +42,6 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useTheme } from '@mui/material/styles';
-import SearchIcon from '@mui/icons-material/Search';
-import UndoIcon from '@mui/icons-material/Undo';
-import RedoIcon from '@mui/icons-material/Redo';
-import SecurityIcon from '@mui/icons-material/Security';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
 import {
   useAvbDevices,
@@ -2128,7 +2130,7 @@ export function TopBar() {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
+                <Search size={16} />
               </InputAdornment>
             ),
           }}
@@ -2162,7 +2164,7 @@ export function TopBar() {
             variant="outlined"
           />
           <Chip
-            icon={<FilterListIcon />}
+            icon={<Filter size={16} />}
             label={activeFilterCount > 0 ? `${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'}` : 'No filters'}
             size="small"
             color={activeFilterCount > 0 ? 'primary' : 'default'}
@@ -2356,7 +2358,7 @@ export function TopBar() {
           <Button
             size="small"
             variant="outlined"
-            startIcon={<FilterListIcon />}
+            startIcon={<Filter size={16} />}
             onClick={handleFiltersOpen}
             data-testid="topbar-filters-button"
           >
@@ -2369,7 +2371,7 @@ export function TopBar() {
           <Button
             size="small"
             variant="outlined"
-            startIcon={<BookmarkIcon />}
+            startIcon={<Bookmark size={16} />}
             onClick={handleScenesOpen}
             data-testid="topbar-scenes-button"
           >
@@ -2382,7 +2384,7 @@ export function TopBar() {
           <Button
             size="small"
             variant="outlined"
-            startIcon={<CompareArrowsIcon />}
+            startIcon={<Compare size={16} />}
             onClick={handleSceneDiffOpen}
             data-testid="topbar-scene-diff-button"
           >
@@ -2394,7 +2396,7 @@ export function TopBar() {
         {state.safePatchMode ? (
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             <Chip
-              icon={<SecurityIcon />}
+              icon={<Security size={16} />}
               label={`Safe Patch (${pendingCount} pending)`}
               color="warning"
               size="small"
@@ -2403,7 +2405,7 @@ export function TopBar() {
               size="small"
               variant="contained"
               color="success"
-              startIcon={<CheckIcon />}
+              startIcon={<Checkmark size={16} />}
               onClick={handleApplySafeChanges}
               disabled={pendingCount === 0 || batchPatchMutation.isPending}
             >
@@ -2413,7 +2415,7 @@ export function TopBar() {
               size="small"
               variant="outlined"
               color="error"
-              startIcon={<CloseIcon />}
+              startIcon={<Close size={16} />}
               onClick={handleDiscardSafeChanges}
             >
               Discard
@@ -2424,7 +2426,7 @@ export function TopBar() {
             <Button
               size="small"
               variant="outlined"
-              startIcon={<SecurityIcon />}
+              startIcon={<Security size={16} />}
               onClick={handleSafePatchToggle}
             >
               Safe Patch
@@ -2437,7 +2439,7 @@ export function TopBar() {
           <Button
             size="small"
             variant="outlined"
-            startIcon={<AccountTreeIcon />}
+            startIcon={<TreeViewAlt size={16} />}
             onClick={() => setTopologyModalOpen(true)}
           >
             Topology
@@ -2453,7 +2455,7 @@ export function TopBar() {
                 onClick={handleUndo}
                 disabled={!canUndo}
               >
-                <UndoIcon fontSize="small" />
+                <Undo size={16} />
               </IconButton>
             </span>
           </Tooltip>
@@ -2464,7 +2466,7 @@ export function TopBar() {
                 onClick={handleRedo}
                 disabled={!canRedo}
               >
-                <RedoIcon fontSize="small" />
+                <Redo size={16} />
               </IconButton>
             </span>
           </Tooltip>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
+import { Add, Renew } from '@carbon/icons-react'
 import { Box, Typography, CircularProgress, Alert, Button, Tooltip, IconButton } from '@mui/material'
-import RefreshIcon from '@mui/icons-material/Refresh'
-import AddIcon from '@mui/icons-material/Add'
 import { useNavigate } from 'react-router-dom'
 import { useTesiraDevices } from '../hooks/useTesiraApi'
 import { useTesiraContext } from '../context/TesiraContext'
@@ -29,7 +28,7 @@ export function TesiraFleetPanel() {
       <Alert
         severity="error"
         action={
-          <Button size="small" startIcon={<RefreshIcon />} onClick={() => refetch()}>
+          <Button size="small" startIcon={<Renew size={16} />} onClick={() => refetch()}>
             Retry
           </Button>
         }
@@ -50,12 +49,12 @@ export function TesiraFleetPanel() {
           <Box sx={{ display: 'flex', gap: 0.25 }}>
             <Tooltip title="Add device by IP address">
               <IconButton size="small" onClick={() => setManualAddOpen(true)} sx={{ p: 0.25 }}>
-                <AddIcon sx={{ fontSize: 14 }} />
+                <Add size={14} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Refresh fleet">
               <IconButton size="small" onClick={() => refetch()} sx={{ p: 0.25 }}>
-                <RefreshIcon sx={{ fontSize: 14 }} />
+                <Renew size={14} />
               </IconButton>
             </Tooltip>
           </Box>

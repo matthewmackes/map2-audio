@@ -1,7 +1,7 @@
 /**
  * Airwindows Plugin Cards
  *
- * ⚠️  All cards are lazy-loaded via registry.ts — do NOT add eager exports.
+ * All cards are lazy-loaded via registry.ts — do not add eager exports.
  * See Custom/index.ts for documentation.
  */
 

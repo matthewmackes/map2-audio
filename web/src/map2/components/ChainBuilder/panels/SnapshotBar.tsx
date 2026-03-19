@@ -22,11 +22,11 @@ import {
   Button,
 } from '@mui/material';
 import {
-  Save as SaveIcon,
-  Delete as DeleteIcon,
-  Edit as RenameIcon,
-  CompareArrows as CompareIcon,
-} from '@mui/icons-material';
+  Compare,
+  Edit,
+  Save,
+  TrashCan,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 // ============================================================================
@@ -241,26 +241,28 @@ const SnapshotButton = memo(({
         onClose={handleCloseMenu}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <MenuItem onClick={handleSave}>
-          <ListItemIcon>
-            <SaveIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>
-            {snapshot.hasData ? 'Overwrite' : 'Save'}
-          </ListItemText>
-        </MenuItem>
+              >
+                <MenuItem onClick={handleSave}>
+                  <ListItemIcon>
+            <Save size={16} />
+                  </ListItemIcon>
+                  <ListItemText>
+                    {snapshot.hasData ? 'Overwrite' : 'Save'}
+                  </ListItemText>
+                </MenuItem>
         {snapshot.hasData && (
           <>
             <MenuItem onClick={handleRename}>
               <ListItemIcon>
-                <RenameIcon fontSize="small" />
+                <Edit size={16} />
               </ListItemIcon>
               <ListItemText>Rename</ListItemText>
             </MenuItem>
             <MenuItem onClick={handleClear}>
               <ListItemIcon>
-                <DeleteIcon fontSize="small" color="error" />
+                <Box component="span" sx={{ color: 'error.main', display: 'inline-flex', lineHeight: 0 }}>
+                  <TrashCan size={16} />
+                </Box>
               </ListItemIcon>
               <ListItemText>Clear</ListItemText>
             </MenuItem>
@@ -372,7 +374,7 @@ const SnapshotBar = memo(({
                 bgcolor: isABModeActive ? alpha(theme.palette.secondary.main, 0.15) : 'transparent',
               }}
             >
-              <CompareIcon fontSize={compact ? 'small' : 'medium'} />
+              <Compare size={compact ? 16 : 20} />
             </IconButton>
           </Tooltip>
         </>

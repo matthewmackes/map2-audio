@@ -15,6 +15,15 @@
 
 import React from 'react';
 import {
+  CheckmarkFilled,
+  Devices,
+  ErrorFilled,
+  Network_4,
+  OverflowMenuVertical,
+  Router,
+  WarningFilled,
+} from '@carbon/icons-react';
+import {
   Box,
   Tabs,
   Tab,
@@ -27,14 +36,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
-import DevicesIcon from '@mui/icons-material/Devices';
-import RouterIcon from '@mui/icons-material/Router';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import WarningIcon from '@mui/icons-material/Warning';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { useNodes, useLocalNodeId } from '../../hooks/useNodeApi';
 import { useRouting } from '../../context/RoutingContext';
 import type { AvbNode, NodeStatus } from '../../types';
@@ -61,12 +62,12 @@ function handleKeyboardActivation(
  */
 function getStatusIcon(status: NodeStatus, ptpSynced: boolean) {
   if (status === 'offline') {
-    return <ErrorIcon fontSize="small" sx={{ color: '#f44336' }} />;
+    return <ErrorFilled size={16} style={{ color: '#f44336' }} />;
   }
   if (status === 'degraded' || !ptpSynced) {
-    return <WarningIcon fontSize="small" sx={{ color: '#ff9800' }} />;
+    return <WarningFilled size={16} style={{ color: '#ff9800' }} />;
   }
-  return <CheckCircleIcon fontSize="small" sx={{ color: '#4caf50' }} />;
+  return <CheckmarkFilled size={16} style={{ color: '#4caf50' }} />;
 }
 
 /**
@@ -74,12 +75,12 @@ function getStatusIcon(status: NodeStatus, ptpSynced: boolean) {
  */
 function getDeviceIcon(node: AvbNode) {
   if (node.type === 'map2_local' || node.type === 'map2_remote') {
-    return '🎛️';
+    return Devices;
   }
   if (node.type === 'avdecc') {
-    return '🔌';
+    return Router;
   }
-  return '❓';
+  return Network_4;
 }
 
 /**
@@ -118,6 +119,7 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
 
   const ptpSynced = node.ptp?.state === 'master' || node.ptp?.state === 'slave';
   const totalEndpoints = node.talker_count + node.listener_count;
+  const DeviceIcon = getDeviceIcon(node);
 
   return (
     <>
@@ -161,7 +163,7 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
               }}
             >
               {/* Device icon */}
-              <span style={{ fontSize: 16 }}>{getDeviceIcon(node)}</span>
+              <DeviceIcon size={16} />
 
               {/* Status indicator */}
               {getStatusIcon(node.status, ptpSynced)}
@@ -239,7 +241,7 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
                   '&:hover': { opacity: 1, bgcolor: 'action.hover' },
                 }}
               >
-                <MoreVertIcon sx={{ fontSize: 14 }} />
+                <OverflowMenuVertical size={14} />
               </Box>
             </Box>
           }
@@ -380,7 +382,7 @@ export function NodeSelector() {
             },
           }}
         >
-          <NetworkCheckIcon fontSize="small" />
+          <Network_4 size={16} />
         </IconButton>
       </Tooltip>
 
@@ -398,7 +400,7 @@ export function NodeSelector() {
             },
           }}
         >
-          <DoneAllIcon fontSize="small" />
+          <CheckmarkFilled size={16} />
         </IconButton>
       </Tooltip>
 
@@ -425,7 +427,7 @@ export function NodeSelector() {
         <Tab
           label={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <DevicesIcon fontSize="small" />
+              <Devices size={16} />
               <span style={{ fontSize: 13 }}>All Nodes</span>
               <Chip
                 label={visibleNodes.length}
@@ -494,7 +496,7 @@ export function NodeSelector() {
           height: isCompact ? 0 : 'auto',
         }}
       >
-        <RouterIcon fontSize="small" />
+        <Router size={16} />
         <span>
           {visibleNodes.filter((n) => n.status === 'online').length} / {nodes.length} online
         </span>

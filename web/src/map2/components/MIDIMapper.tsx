@@ -48,28 +48,23 @@ import {
 } from '@mui/material';
 import { NumberInput } from './NumberInput';
 import {
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Refresh as RefreshIcon,
-  RadioButtonChecked as LearnIcon,
-  Usb as MidiIcon,
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
-  AccountTree as RoutingIcon,
-  FilterList as FilterIcon,
-  SwapHoriz as MappingIcon,
-  Collections as PresetIcon,
-  Monitor as MonitorIcon,
-  Schedule as ClockIcon,
-  Save as SaveIcon,
-  Upload as UploadIcon,
-  Download as DownloadIcon,
-  Clear as ClearIcon,
-  Input as InputIcon,
-  Output as OutputIcon,
-  ArrowForward as ArrowIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
+  Add,
+  ChartLine,
+  CheckmarkFilled,
+  DataBase,
+  Download,
+  Music,
+  MusicAdd,
+  NetworkPublic,
+  RadioButtonChecked,
+  Renew,
+  Restart,
+  Settings,
+  StopFilled,
+  Timer,
+  TrashCan,
+  Upload,
+} from '@carbon/icons-react';
 import { midiApi, pluginsApi } from '../api';
 import type { MIDIMapping, MIDIDevice, Plugin } from '../types';
 import { getDisplayPluginName } from '../displayNames';
@@ -93,6 +88,22 @@ function TabPanel(props: TabPanelProps) {
     >
       {value === index && <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>{children}</Box>}
     </div>
+  );
+}
+
+function ColoredGlyph({
+  icon: Icon,
+  color = 'inherit',
+  size = 18,
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  color?: string;
+  size?: number;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
   );
 }
 
@@ -394,13 +405,13 @@ export default function MIDIMapper() {
             },
           }}
         >
-          <Tab icon={<MidiIcon />} iconPosition="start" label="Devices" />
-          <Tab icon={<RoutingIcon />} iconPosition="start" label="Routing" />
-          <Tab icon={<FilterIcon />} iconPosition="start" label="Filters" />
-          <Tab icon={<MappingIcon />} iconPosition="start" label="CC Mapping" />
-          <Tab icon={<PresetIcon />} iconPosition="start" label="Presets" />
-          <Tab icon={<MonitorIcon />} iconPosition="start" label="Monitor" />
-          <Tab icon={<ClockIcon />} iconPosition="start" label="Clock" />
+          <Tab icon={<Music size={18} />} iconPosition="start" label="Devices" />
+          <Tab icon={<NetworkPublic size={18} />} iconPosition="start" label="Routing" />
+          <Tab icon={<Settings size={18} />} iconPosition="start" label="Filters" />
+          <Tab icon={<ChartLine size={18} />} iconPosition="start" label="CC Mapping" />
+          <Tab icon={<DataBase size={18} />} iconPosition="start" label="Presets" />
+          <Tab icon={<RadioButtonChecked size={18} />} iconPosition="start" label="Monitor" />
+          <Tab icon={<Timer size={18} />} iconPosition="start" label="Clock" />
         </Tabs>
       </Paper>
 
@@ -418,7 +429,7 @@ export default function MIDIMapper() {
           />
           <Button
             variant={midiStarted ? 'outlined' : 'contained'}
-            startIcon={midiStarted ? <StopIcon /> : <StartIcon />}
+            startIcon={midiStarted ? <StopFilled size={16} /> : <CheckmarkFilled size={16} />}
             onClick={midiStarted ? handleStopMidi : handleStartMidi}
             color={midiStarted ? 'error' : 'success'}
             size="small"
@@ -426,7 +437,7 @@ export default function MIDIMapper() {
             {midiStarted ? 'Stop' : 'Start'}
           </Button>
           <IconButton onClick={loadData} size="small">
-            <RefreshIcon />
+            <Renew size={18} />
           </IconButton>
         </Box>
 
@@ -466,7 +477,7 @@ export default function MIDIMapper() {
                 <Card variant="outlined">
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                      <InputIcon color="primary" />
+                      <ColoredGlyph icon={MusicAdd} color="primary.main" />
                       <Typography variant="subtitle1" fontWeight="bold">
                         Input Devices ({devices.inputs.length})
                       </Typography>
@@ -476,7 +487,7 @@ export default function MIDIMapper() {
                         devices.inputs.map((device) => (
                           <Chip
                             key={device.id}
-                            icon={<MidiIcon />}
+                            icon={<Music size={16} />}
                             label={device.name}
                             color={device.connected ? 'success' : 'default'}
                             variant={device.connected ? 'filled' : 'outlined'}
@@ -494,7 +505,7 @@ export default function MIDIMapper() {
                 <Card variant="outlined">
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                      <OutputIcon color="primary" />
+                      <ColoredGlyph icon={NetworkPublic} color="primary.main" />
                       <Typography variant="subtitle1" fontWeight="bold">
                         Output Devices ({devices.outputs.length})
                       </Typography>
@@ -504,7 +515,7 @@ export default function MIDIMapper() {
                         devices.outputs.map((device) => (
                           <Chip
                             key={device.id}
-                            icon={<MidiIcon />}
+                            icon={<Music size={16} />}
                             label={device.name}
                             color={device.connected ? 'success' : 'default'}
                             variant={device.connected ? 'filled' : 'outlined'}
@@ -522,7 +533,7 @@ export default function MIDIMapper() {
                 <Card variant="outlined">
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                      <SettingsIcon color="primary" />
+                      <ColoredGlyph icon={Settings} color="primary.main" />
                       <Typography variant="subtitle1" fontWeight="bold">
                         Device Settings
                       </Typography>
@@ -547,7 +558,7 @@ export default function MIDIMapper() {
               <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                 <Button
                   variant="contained"
-                  startIcon={<AddIcon />}
+                  startIcon={<Add size={16} />}
                   onClick={() => setRouteDialogOpen(true)}
                   disabled={!midiStarted}
                 >
@@ -564,9 +575,9 @@ export default function MIDIMapper() {
                           onChange={() => handleToggleRoute(route.id)}
                           size="small"
                         />
-                        <Chip icon={<InputIcon />} label={route.inputPort} size="small" />
-                        <ArrowIcon color="action" />
-                        <Chip icon={<OutputIcon />} label={route.outputPort} size="small" color="primary" />
+                        <Chip icon={<MusicAdd size={16} />} label={route.inputPort} size="small" />
+                        <ColoredGlyph icon={NetworkPublic} color="text.secondary" size={16} />
+                        <Chip icon={<Music size={16} />} label={route.outputPort} size="small" color="primary" />
                         <Chip
                           label={route.channel === 'all' ? 'All Channels' : `CH ${route.channel}`}
                           size="small"
@@ -574,7 +585,7 @@ export default function MIDIMapper() {
                         />
                         <Box sx={{ flexGrow: 1 }} />
                         <IconButton size="small" color="error" onClick={() => handleDeleteRoute(route.id)}>
-                          <DeleteIcon />
+                          <TrashCan size={16} />
                         </IconButton>
                       </CardContent>
                     </Card>
@@ -699,7 +710,7 @@ export default function MIDIMapper() {
               <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                 <Button
                   variant="contained"
-                  startIcon={<AddIcon />}
+                  startIcon={<Add size={16} />}
                   onClick={() => setAddDialogOpen(true)}
                   disabled={!midiStarted}
                 >
@@ -745,7 +756,7 @@ export default function MIDIMapper() {
                                   size="small"
                                   onClick={() => handleStartLearn(mapping.target_uri, mapping.param_index)}
                                 >
-                                  <LearnIcon />
+                                  <RadioButtonChecked size={16} />
                                 </IconButton>
                               </Tooltip>
                               <Tooltip title="Delete">
@@ -754,7 +765,7 @@ export default function MIDIMapper() {
                                   onClick={() => handleDeleteMapping(mapping.id)}
                                   color="error"
                                 >
-                                  <DeleteIcon />
+                                  <TrashCan size={16} />
                                 </IconButton>
                               </Tooltip>
                             </TableCell>
@@ -782,15 +793,15 @@ export default function MIDIMapper() {
               <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', gap: 1 }}>
                 <Button
                   variant="contained"
-                  startIcon={<SaveIcon />}
+                  startIcon={<DataBase size={16} />}
                   onClick={() => setPresetDialogOpen(true)}
                 >
                   Save Current
                 </Button>
-                <Button variant="outlined" startIcon={<UploadIcon />}>
+                <Button variant="outlined" startIcon={<Upload size={16} />}>
                   Import
                 </Button>
-                <Button variant="outlined" startIcon={<DownloadIcon />}>
+                <Button variant="outlined" startIcon={<Download size={16} />}>
                   Export
                 </Button>
               </Box>
@@ -815,7 +826,7 @@ export default function MIDIMapper() {
                           Load
                         </Button>
                         <IconButton size="small" color="error" onClick={() => handleDeletePreset(preset.id)}>
-                          <DeleteIcon />
+                          <TrashCan size={16} />
                         </IconButton>
                       </CardContent>
                     </Card>
@@ -831,7 +842,7 @@ export default function MIDIMapper() {
               <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Button
                   variant={monitorActive ? 'outlined' : 'contained'}
-                  startIcon={monitorActive ? <StopIcon /> : <StartIcon />}
+                  startIcon={monitorActive ? <StopFilled size={16} /> : <CheckmarkFilled size={16} />}
                   onClick={() => setMonitorActive(!monitorActive)}
                   color={monitorActive ? 'error' : 'success'}
                   disabled={!midiStarted}
@@ -840,7 +851,7 @@ export default function MIDIMapper() {
                 </Button>
                 <Button
                   variant="outlined"
-                  startIcon={<ClearIcon />}
+                  startIcon={<TrashCan size={16} />}
                   onClick={() => setMonitorMessages([])}
                   disabled={monitorMessages.length === 0}
                 >
@@ -954,7 +965,7 @@ export default function MIDIMapper() {
                       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                         <Button
                           variant={clockConfig.running ? 'outlined' : 'contained'}
-                          startIcon={clockConfig.running ? <StopIcon /> : <StartIcon />}
+                          startIcon={clockConfig.running ? <StopFilled size={16} /> : <CheckmarkFilled size={16} />}
                           onClick={() => setClockConfig(prev => ({ ...prev, running: !prev.running }))}
                           color={clockConfig.running ? 'error' : 'success'}
                           disabled={!midiStarted}

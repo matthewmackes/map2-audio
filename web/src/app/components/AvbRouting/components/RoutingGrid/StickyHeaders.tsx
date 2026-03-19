@@ -13,8 +13,8 @@
  */
 
 import React from 'react';
+import { Devices, DotMark, Pin, Router } from '@carbon/icons-react';
 import { Box, Typography, Chip, Tooltip, Stack } from '@mui/material';
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { useRouting } from '../../context/RoutingContext';
 import type { Endpoint } from '../../types';
 
@@ -139,7 +139,7 @@ function TalkerHeader({
   height: number;
   nodeColor: string;
 }) {
-  const deviceIcon = talker.device_type === 'map2' ? '🎛️' : '🔌';
+  const DeviceIcon = talker.device_type === 'map2' ? Devices : Router;
   const statusColor = talker.available ? '#4caf50' : '#f44336';
 
   return (
@@ -152,7 +152,7 @@ function TalkerHeader({
           <div>{talker.channels}ch @ {talker.sample_rate / 1000}kHz</div>
           <div>Format: {talker.format}</div>
           {talker.mac_address && <div>MAC: {talker.mac_address}</div>}
-          <div>Status: {talker.available ? '🟢 Available' : '🔴 Offline'}</div>
+          <div>Status: {talker.available ? 'Available' : 'Offline'}</div>
           {talker.tags.length > 0 && <div>Tags: {talker.tags.join(', ')}</div>}
         </div>
       }
@@ -181,8 +181,8 @@ function TalkerHeader({
       >
         {/* Device icon + status */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <span style={{ fontSize: 14 }}>{deviceIcon}</span>
-          <FiberManualRecordIcon sx={{ fontSize: 8, color: statusColor }} />
+          <DeviceIcon size={14} />
+          <DotMark size={12} style={{ color: statusColor }} />
         </Box>
 
         {/* Device name (vertical text) */}
@@ -204,7 +204,7 @@ function TalkerHeader({
 
         {/* Pinned indicator */}
         {talker.pinned && (
-          <span style={{ fontSize: 10 }}>📌</span>
+          <Pin size={10} />
         )}
       </Box>
     </Tooltip>
@@ -225,7 +225,7 @@ function ListenerHeader({
   height: number;
   nodeColor: string;
 }) {
-  const deviceIcon = listener.device_type === 'map2' ? '🎛️' : '🔌';
+  const DeviceIcon = listener.device_type === 'map2' ? Devices : Router;
   const statusColor = listener.available ? '#4caf50' : '#f44336';
 
   return (
@@ -238,7 +238,7 @@ function ListenerHeader({
           <div>{listener.channels}ch @ {listener.sample_rate / 1000}kHz</div>
           <div>Format: {listener.format}</div>
           {listener.mac_address && <div>MAC: {listener.mac_address}</div>}
-          <div>Status: {listener.available ? '🟢 Available' : '🔴 Offline'}</div>
+          <div>Status: {listener.available ? 'Available' : 'Offline'}</div>
           {listener.tags.length > 0 && <div>Tags: {listener.tags.join(', ')}</div>}
         </div>
       }
@@ -265,8 +265,8 @@ function ListenerHeader({
       >
         {/* Device icon + status */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
-          <span style={{ fontSize: 14 }}>{deviceIcon}</span>
-          <FiberManualRecordIcon sx={{ fontSize: 8, color: statusColor }} />
+          <DeviceIcon size={14} />
+          <DotMark size={12} style={{ color: statusColor }} />
         </Box>
 
         {/* Device name */}
@@ -286,7 +286,7 @@ function ListenerHeader({
 
         {/* Pinned indicator */}
         {listener.pinned && (
-          <span style={{ fontSize: 12 }}>📌</span>
+          <Pin size={12} />
         )}
       </Box>
     </Tooltip>

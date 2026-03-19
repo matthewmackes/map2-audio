@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, ShareNetwork, SpinnerGap, WarningCircle, X, XCircle } from '@phosphor-icons/react'
+import {
+  CheckmarkFilled as CheckCircle,
+  Close as X,
+  ErrorFilled as XCircle,
+  Renew as SpinnerGap,
+  Share,
+  WarningAlt as WarningCircle,
+} from '@carbon/icons-react'
 import type { Chain } from '../../../map2/types'
 import { useCluster } from '../../contexts/ClusterContext'
 import { useToasts } from '../Toasts'
@@ -176,7 +183,7 @@ export function ChainDeployModal({
             </p>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose} disabled={deployMutation.isPending}>
-            <X size={16} weight="bold" />
+            <X size={16} />
           </button>
         </div>
 
@@ -238,11 +245,11 @@ export function ChainDeployModal({
                     <td>
                       {missingPlugins.length === 0 ? (
                         <span className="pill success">
-                          <CheckCircle size={14} weight="duotone" /> Ready
+                          <CheckCircle size={14} /> Ready
                         </span>
                       ) : (
                         <span className="pill warn" title={missingPlugins.join(', ')}>
-                          <XCircle size={14} weight="duotone" /> Missing {missingPlugins.length} plugin{missingPlugins.length === 1 ? '' : 's'}
+                          <XCircle size={14} /> Missing {missingPlugins.length} plugin{missingPlugins.length === 1 ? '' : 's'}
                         </span>
                       )}
                     </td>
@@ -274,7 +281,7 @@ export function ChainDeployModal({
 
         {pluginCatalogQuery.isLoading && (
           <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 16 }}>
-            <SpinnerGap size={16} weight="duotone" className="spin" />
+            <SpinnerGap size={16} className="spin" />
             <span className="muted">Checking cluster plugin coverage…</span>
           </div>
         )}
@@ -293,7 +300,7 @@ export function ChainDeployModal({
               alignItems: 'center',
             }}
           >
-            <WarningCircle size={18} weight="duotone" />
+            <WarningCircle size={18} />
             <span>Plugin coverage check failed. Built-in plugins can still deploy, but peer plugin mismatches may block activation on the target.</span>
           </div>
         )}
@@ -313,12 +320,12 @@ export function ChainDeployModal({
             >
               {deployMutation.isPending ? (
                 <>
-                  <SpinnerGap size={14} weight="duotone" className="spin" />
+                  <SpinnerGap size={14} className="spin" />
                   Deploying…
                 </>
               ) : (
                 <>
-                  <ShareNetwork size={14} weight="duotone" />
+                  <Share size={14} />
                   Deploy Chain
                 </>
               )}

@@ -22,7 +22,7 @@ import {
   Stack,
   Alert,
 } from '@mui/material'
-import DownloadIcon from '@mui/icons-material/Download'
+import { ChartLine, Download, WarningAltFilled } from '@carbon/icons-react'
 import type { HistoricalMetric } from '@/app/hooks/useHealthMonitoring'
 import type { StoredAlert } from '@/app/hooks/useLocalStorage'
 import { useExportData } from '@/app/hooks/useExportData'
@@ -138,7 +138,7 @@ export default function ExportDialog({ open, onClose, metrics, alerts }: ExportD
               label={
                 <Box>
                   <Typography sx={{ fontWeight: 500 }}>
-                    📊 Metrics ({metrics.length} records)
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChartLine size={14} /> Metrics ({metrics.length} records)</span>
                   </Typography>
                   <Typography sx={{ fontSize: 12, color: '#666' }}>
                     Temperature, CPU, Memory historical data
@@ -156,7 +156,7 @@ export default function ExportDialog({ open, onClose, metrics, alerts }: ExportD
               label={
                 <Box>
                   <Typography sx={{ fontWeight: 500 }}>
-                    🚨 Alerts ({alerts.length} records)
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WarningAltFilled size={14} /> Alerts ({alerts.length} records)</span>
                   </Typography>
                   <Typography sx={{ fontSize: 12, color: '#666' }}>
                     Alert history with timestamps and severity
@@ -243,7 +243,7 @@ export default function ExportDialog({ open, onClose, metrics, alerts }: ExportD
         <Button
           onClick={handleExport}
           variant="contained"
-          startIcon={<DownloadIcon />}
+        startIcon={<Download size={16} />}
           disabled={!isValid || isExporting}
           sx={{
             backgroundColor: '#10b981',

@@ -14,10 +14,10 @@ import {
   Chip,
 } from '@mui/material';
 import {
-  VolumeUp as VuIcon,
-  Equalizer as SpectrumIcon,
-  Info as InfoIcon,
-} from '@mui/icons-material';
+  Equalizer,
+  Information,
+  VolumeUp,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 // ============================================================================
@@ -389,19 +389,19 @@ const PluginMeterPanel = memo(({
         }}
       >
         <Tab
-          icon={<VuIcon sx={{ fontSize: 14 }} />}
+          icon={<VolumeUp size={14} />}
           iconPosition="start"
           label="VU"
           sx={{ minHeight: 28 }}
         />
         <Tab
-          icon={<SpectrumIcon sx={{ fontSize: 14 }} />}
+          icon={<Equalizer size={14} />}
           iconPosition="start"
           label="FFT"
           sx={{ minHeight: 28 }}
         />
         <Tab
-          icon={<InfoIcon sx={{ fontSize: 14 }} />}
+          icon={<Information size={14} />}
           iconPosition="start"
           label="Info"
           sx={{ minHeight: 28 }}

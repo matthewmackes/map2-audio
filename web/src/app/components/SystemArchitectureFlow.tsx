@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react'
-import { Pulse, WarningCircle, CheckCircle, Database, Broadcast, DesktopTower, Lightning, FlowArrow, Cpu, HardDrive, Gauge, Waveform, type Icon } from '@phosphor-icons/react'
+import {
+  Activity as Cpu,
+  Activity as Pulse,
+  CheckmarkFilled as CheckCircle,
+  DataBase as Database,
+  DataBase as HardDrive,
+  Flash as Lightning,
+  FlowConnection as FlowArrow,
+  MeterAlt as Gauge,
+  Radio as Broadcast,
+  ServerDns as DesktopTower,
+  WarningAlt as WarningCircle,
+  Waveform,
+} from '@carbon/icons-react'
+import type { CarbonIconType } from '@carbon/icons-react'
 
 interface ComponentDetails {
   description: string
@@ -313,7 +327,7 @@ export function SystemArchitectureFlow() {
   }
 
   const renderHealthBlock = (
-    icon: Icon,
+    icon: CarbonIconType,
     label: string,
     healthInfo: { 
       status: 'healthy' | 'warning' | 'critical'
@@ -352,10 +366,10 @@ export function SystemArchitectureFlow() {
       >
         <div className="flex" style={{ gap: 8, alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div className="flex" style={{ gap: 6, alignItems: 'center' }}>
-            <IconComponent size={18} style={{ color: color.text, flexShrink: 0 }} weight="duotone" />
+            <IconComponent size={18} style={{ color: color.text, flexShrink: 0 }} />
             <strong style={{ fontSize: 12, color: color.text }}>{label}</strong>
           </div>
-          <StatusIcon size={14} style={{ color: color.text, flexShrink: 0 }} weight="duotone" />
+          <StatusIcon size={14} style={{ color: color.text, flexShrink: 0 }} />
         </div>
 
         <div style={{ fontSize: 10, color: '#aaa', lineHeight: 1.4 }}>{healthInfo.message}</div>
@@ -457,7 +471,7 @@ export function SystemArchitectureFlow() {
     <div className="card system-architecture-flow">
       <div style={{ marginBottom: 16 }}>
         <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 8 }}>
-          <FlowArrow size={22} weight="duotone" style={{ color: '#64b5f6' }} />
+          <FlowArrow size={22} style={{ color: '#64b5f6' }} />
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>System Architecture & Health</h3>
         </div>
         <p style={{ margin: 0, fontSize: 12, color: '#aaa', lineHeight: 1.5 }}>
@@ -610,17 +624,17 @@ export function SystemArchitectureFlow() {
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Cpu size={14} weight="duotone" style={{ color: '#64b5f6' }} />
+              <Cpu size={14} style={{ color: '#64b5f6' }} />
               <span style={{ fontSize: 10, color: '#888' }}>System CPU:</span>
               <span style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{perfData.cpu_percent.toFixed(1)}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <HardDrive size={14} weight="duotone" style={{ color: '#81c784' }} />
+              <HardDrive size={14} style={{ color: '#81c784' }} />
               <span style={{ fontSize: 10, color: '#888' }}>Memory:</span>
               <span style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{perfData.memory_percent.toFixed(1)}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Gauge size={14} weight="duotone" style={{ color: pluginPerf.gpu_device ? '#ab47bc' : '#888' }} />
+              <Gauge size={14} style={{ color: pluginPerf.gpu_device ? '#ab47bc' : '#888' }} />
               <span style={{ fontSize: 10, color: '#888' }}>GPU:</span>
               <span style={{ fontSize: 11, color: pluginPerf.gpu_device ? '#ab47bc' : '#666', fontWeight: 500 }}>
                 {pluginPerf.gpu_device || 'CPU Only'}

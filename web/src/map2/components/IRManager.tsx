@@ -30,15 +30,15 @@ import {
   LinearProgress,
 } from '@mui/material';
 import {
-  Speaker as CabinetIcon,
-  Waves as ReverbIcon,
-  PlayArrow as LoadIcon,
-  CloudUpload as UploadIcon,
-  Check as ActiveIcon,
-  Refresh as RefreshIcon,
-  Info as InfoIcon,
-  MusicNote as AudioIcon,
-} from '@mui/icons-material';
+  CheckmarkFilled,
+  Information,
+  Music,
+  PlayFilled,
+  Renew,
+  Upload,
+  VolumeUp,
+  Waveform,
+} from '@carbon/icons-react';
 import { irApi } from '../api';
 import type { IRFile, IRStatus } from '../types';
 
@@ -75,7 +75,9 @@ function IRList({ irs, activeIR, onLoad, loading, loadingIR }: IRListProps) {
   if (irs.length === 0) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
-        <AudioIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+        <Box sx={{ color: 'text.secondary', mb: 2, display: 'inline-flex' }}>
+          <Music size={48} />
+        </Box>
         <Typography color="text.secondary">No impulse responses found</Typography>
         <Typography variant="body2" color="text.secondary">
           Upload WAV files to get started
@@ -101,9 +103,13 @@ function IRList({ irs, activeIR, onLoad, loading, loadingIR }: IRListProps) {
                 {isLoading ? (
                   <CircularProgress size={24} />
                 ) : isActive ? (
-                  <ActiveIcon color="success" />
+                  <Box sx={{ color: 'success.main', display: 'inline-flex' }}>
+                    <CheckmarkFilled size={20} />
+                  </Box>
                 ) : (
-                  <AudioIcon color="action" />
+                  <Box sx={{ color: 'action.active', display: 'inline-flex' }}>
+                    <Music size={20} />
+                  </Box>
                 )}
               </ListItemIcon>
               <ListItemText
@@ -125,7 +131,7 @@ function IRList({ irs, activeIR, onLoad, loading, loadingIR }: IRListProps) {
                       disabled={loading}
                       size="small"
                     >
-                      <LoadIcon />
+                      <PlayFilled size={16} />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -254,10 +260,10 @@ export default function IRManager() {
           Impulse Responses
         </Typography>
         <IconButton onClick={() => setInfoDialogOpen(true)} size="small">
-          <InfoIcon />
+          <Information size={16} />
         </IconButton>
         <IconButton onClick={fetchData} disabled={loading} size="small">
-          <RefreshIcon />
+          <Renew size={16} />
         </IconButton>
       </Box>
 
@@ -284,13 +290,13 @@ export default function IRManager() {
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} variant="fullWidth">
           <Tab
-            icon={<CabinetIcon />}
+            icon={<VolumeUp size={20} />}
             label={`Cabinets (${cabinets.length})`}
             id="ir-tab-0"
             aria-controls="ir-tabpanel-0"
           />
           <Tab
-            icon={<ReverbIcon />}
+            icon={<Waveform size={20} />}
             label={`Reverbs (${reverbs.length})`}
             id="ir-tab-1"
             aria-controls="ir-tabpanel-1"
@@ -318,7 +324,7 @@ export default function IRManager() {
                 />
                 <Button
                   variant="outlined"
-                  startIcon={<UploadIcon />}
+                  startIcon={<Upload size={16} />}
                   onClick={() => cabinetInputRef.current?.click()}
                   disabled={uploading}
                   fullWidth
@@ -347,7 +353,7 @@ export default function IRManager() {
                 />
                 <Button
                   variant="outlined"
-                  startIcon={<UploadIcon />}
+                  startIcon={<Upload size={16} />}
                   onClick={() => reverbInputRef.current?.click()}
                   disabled={uploading}
                   fullWidth

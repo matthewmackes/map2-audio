@@ -19,6 +19,7 @@ import {
 } from '@carbon/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { drumsApi } from '@/map2/api'
+import { normalizeDrumMachineState } from '@/map2/drumMachineState'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
@@ -380,10 +381,11 @@ function DrumMachineCardBase({
   const factoryPacks = (factoryPacksQuery.data ?? []) as DrumPack[]
   const generatedPacks = (generatedPacksQuery.data ?? []) as DrumPack[]
 
-  const currentMode = state?.ui_mode ?? 'practice'
+  const resolvedState = normalizeDrumMachineState(state)
+  const currentMode = resolvedState.ui_mode
   const modeColor = MODE_CONFIG[currentMode]?.color ?? accentColor
-  const isPlaying = state?.transport ?? false
-  const bpm = state?.bpm ?? 120
+  const isPlaying = resolvedState.transport
+  const bpm = resolvedState.bpm
 
   // ── Beat animation ──
   useEffect(() => {
@@ -451,7 +453,7 @@ function DrumMachineCardBase({
     <div style={S.footer}>
       <span>
         <Music size={10} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-        {state?.active_pack ? `Pack: ${state.active_pack}` : 'No pack loaded'}
+        {resolvedState.active_pack ? `Pack: ${resolvedState.active_pack}` : 'No pack loaded'}
       </span>
       <span style={S.footerBadge(modeColor)}>
         {isPlaying ? '● PLAYING' : '○ STOPPED'}
@@ -499,7 +501,7 @@ function DrumMachineCardBase({
             accentColor={modeColor} size="medium"
           />
           <ParameterKnob
-            label="Volume" value={state.volume} min={0} max={100} step={1}
+            label="Volume" value={resolvedState.volume} min={0} max={100} step={1}
             defaultValue={80} unit="%"
             onChange={v => drumsApi.updateState({ volume: v })}
             accentColor={modeColor} size="medium"
@@ -508,11 +510,11 @@ function DrumMachineCardBase({
       </ParameterSection>
 
       {/* Mode-Specific Content */}
-      {currentMode === 'practice' && <PracticeModePanel state={state} />}
+      {currentMode === 'practice' && <PracticeModePanel state={resolvedState} />}
       {currentMode === 'advanced' && (
-        <AdvancedModePanel state={state} factoryPacks={factoryPacks} generatedPacks={generatedPacks} />
+        <AdvancedModePanel state={resolvedState} factoryPacks={factoryPacks} generatedPacks={generatedPacks} />
       )}
-      {currentMode === 'backing_tracks' && <BackingTracksModePanel state={state} />}
+      {currentMode === 'backing_tracks' && <BackingTracksModePanel state={resolvedState} />}
     </PluginCardShell>
   )
 }

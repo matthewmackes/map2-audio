@@ -16,11 +16,12 @@ import {
   Divider,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
-  Add as AddIcon,
-  Timeline as TimelineIcon,
-} from '@mui/icons-material';
+  Add,
+  ChartLine,
+  ChevronDown,
+  ChevronUp,
+  CircleFilled,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 import TransportControls, { TransportControlsProps } from './TransportControls';
@@ -154,7 +155,9 @@ const AutomationTimeline = memo(({
         onClick={() => setCollapsed(!collapsed)}
       >
         <Stack direction="row" alignItems="center" spacing={1}>
-          <TimelineIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+          <Box sx={{ color: 'primary.main', display: 'inline-flex', alignItems: 'center' }}>
+            <ChartLine size={20} />
+          </Box>
           <Typography variant="subtitle2" fontWeight={600}>
             Automation
           </Typography>
@@ -164,14 +167,19 @@ const AutomationTimeline = memo(({
             </Typography>
           )}
           {isRecording && (
-            <Typography variant="caption" color="error.main" fontWeight={600}>
-              ● REC
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Box sx={{ color: 'error.main', display: 'inline-flex', alignItems: 'center' }}>
+                <CircleFilled size={10} />
+              </Box>
+              <Typography variant="caption" color="error.main" fontWeight={600}>
+                REC
+              </Typography>
+            </Stack>
           )}
         </Stack>
 
         <IconButton size="small">
-          {collapsed ? <ExpandIcon /> : <CollapseIcon />}
+          {collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
         </IconButton>
       </Stack>
 
@@ -228,7 +236,7 @@ const AutomationTimeline = memo(({
                 <Button
                   variant="outlined"
                   size="small"
-                  startIcon={<AddIcon />}
+                  startIcon={<Add size={16} />}
                   onClick={onAddLane}
                 >
                   Add Automation Lane
@@ -265,7 +273,7 @@ const AutomationTimeline = memo(({
                 <Button
                   variant="text"
                   size="small"
-                  startIcon={<AddIcon />}
+                  startIcon={<Add size={16} />}
                   onClick={onAddLane}
                   sx={{ alignSelf: 'flex-start' }}
                 >

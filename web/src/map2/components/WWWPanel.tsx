@@ -50,41 +50,33 @@ import {
 } from '@mui/material';
 import { NumberInput } from './NumberInput';
 import {
-  Refresh as RefreshIcon,
-  CheckCircle as OkIcon,
-  Error as ErrorIcon,
-  Warning as WarningIcon,
-  Language as WebIcon,
-  Api as ApiIcon,
-  Storage as StorageIcon,
-  Security as SecurityIcon,
-  Settings as SettingsIcon,
-  Speed as SpeedIcon,
-  Memory as MemoryIcon,
-  Schedule as ScheduleIcon,
-  Public as PublicIcon,
-  Lock as LockIcon,
-  VpnKey as KeyIcon,
-  Code as CodeIcon,
-  Terminal as TerminalIcon,
-  Cable as WebSocketIcon,
-  Dns as DnsIcon,
-  ExpandMore as ExpandIcon,
-  ContentCopy as CopyIcon,
-  OpenInNew as OpenIcon,
-  RestartAlt as RestartIcon,
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
-  Visibility as ViewIcon,
-  VisibilityOff as HideIcon,
-  FileCopy as LogIcon,
-  Download as DownloadIcon,
-  CloudUpload as UploadIcon,
-  CloudQueue as CloudIcon,
-  Http as HttpIcon,
-  Https as HttpsIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+  CheckmarkFilled,
+  ChevronDown,
+  Cloud,
+  CloudUpload,
+  Code,
+  ConnectionSignal,
+  Copy,
+  DataBase,
+  Delete,
+  Download,
+  Globe,
+  Http,
+  Information,
+  Launch,
+  Locked,
+  Password,
+  Renew,
+  Restart,
+  Security,
+  Settings,
+  Terminal,
+  View,
+  ViewOff,
+  WarningAlt,
+  ChartLine,
+  Document,
+} from '@carbon/icons-react';
 import { wwwApi, healthApi } from '../api';
 import type {
   WWWStatus,
@@ -96,6 +88,22 @@ import type {
   APIEndpoint,
   WebSocketStats,
 } from '../types';
+
+function Glyph({
+  icon: Icon,
+  size = 18,
+  color = 'inherit',
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -224,20 +232,20 @@ export default function WWWPanel() {
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <WebIcon color="primary" />
+        <Glyph icon={Globe} color="primary.main" />
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Web Services Configuration
         </Typography>
         {wwwStatus?.backend_running ? (
-          <Chip icon={<OkIcon />} label="API Online" color="success" size="small" />
+          <Chip icon={<CheckmarkFilled size={14} />} label="API Online" color="success" size="small" />
         ) : (
-          <Chip icon={<ErrorIcon />} label="API Offline" color="error" size="small" />
+          <Chip icon={<WarningAlt size={14} />} label="API Offline" color="error" size="small" />
         )}
         {wwwStatus?.frontend_running && (
-          <Chip icon={<OkIcon />} label="Web UI Online" color="success" size="small" />
+          <Chip icon={<CheckmarkFilled size={14} />} label="Web UI Online" color="success" size="small" />
         )}
         <IconButton onClick={fetchWWWStatus} disabled={loading} size="small">
-          <RefreshIcon />
+          <Renew size={18} />
         </IconButton>
       </Box>
 
@@ -245,10 +253,10 @@ export default function WWWPanel() {
 
       {/* Tabs */}
       <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} variant="fullWidth">
-        <Tab icon={<ApiIcon />} label="API Server" />
-        <Tab icon={<WebIcon />} label="Web Server" />
-        <Tab icon={<SecurityIcon />} label="Security" />
-        <Tab icon={<LogIcon />} label="Logs" />
+        <Tab icon={<Code size={18} />} label="API Server" />
+        <Tab icon={<Globe size={18} />} label="Web Server" />
+        <Tab icon={<Security size={18} />} label="Security" />
+        <Tab icon={<Document size={18} />} label="Logs" />
       </Tabs>
 
       {/* Alerts */}
@@ -275,7 +283,7 @@ export default function WWWPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <ApiIcon color={wwwStatus?.backend_running ? 'success' : 'error'} />
+                    <Glyph icon={Code} color={wwwStatus?.backend_running ? 'success.main' : 'error.main'} />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       FastAPI Backend
                     </Typography>
@@ -304,7 +312,7 @@ export default function WWWPanel() {
                         secondary={
                           <Button
                             size="small"
-                            startIcon={<OpenIcon />}
+                            startIcon={<Launch size={16} />}
                             onClick={() => window.open(`http://${window.location.hostname}:8080/docs`, '_blank')}
                           >
                             Open Swagger UI
@@ -317,7 +325,7 @@ export default function WWWPanel() {
                 <CardActions>
                   <Button
                     size="small"
-                    startIcon={<RestartIcon />}
+                    startIcon={<Restart size={16} />}
                     onClick={() => handleRestartService('backend')}
                     disabled={loading}
                   >
@@ -325,7 +333,7 @@ export default function WWWPanel() {
                   </Button>
                   <Button
                     size="small"
-                    startIcon={<SettingsIcon />}
+                    startIcon={<Settings size={16} />}
                     onClick={() => setConfigDialog({
                       open: true,
                       type: 'backend',
@@ -348,7 +356,7 @@ export default function WWWPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <WebSocketIcon color="primary" />
+                    <Glyph icon={ConnectionSignal} color="primary.main" />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       WebSocket Server
                     </Typography>
@@ -388,9 +396,9 @@ export default function WWWPanel() {
             {/* API Endpoints */}
             <Grid item xs={12}>
               <Accordion defaultExpanded>
-                <AccordionSummary expandIcon={<ExpandIcon />}>
+                <AccordionSummary expandIcon={<ChevronDown size={16} />}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CodeIcon />
+                    <Code size={18} />
                     <Typography>API Endpoints ({apiEndpoints.length})</Typography>
                   </Box>
                 </AccordionSummary>
@@ -446,7 +454,7 @@ export default function WWWPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <WebIcon color={wwwStatus?.frontend_running ? 'success' : 'warning'} />
+                    <Glyph icon={Globe} color={wwwStatus?.frontend_running ? 'success.main' : 'warning.main'} />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       Web Frontend
                     </Typography>
@@ -472,7 +480,7 @@ export default function WWWPanel() {
                         secondary={
                           <Button
                             size="small"
-                            startIcon={<OpenIcon />}
+                            startIcon={<Launch size={16} />}
                             onClick={() => window.open(`http://${window.location.hostname}:${wwwStatus?.frontend_port || 3000}`, '_blank')}
                           >
                             Open Web UI
@@ -485,7 +493,7 @@ export default function WWWPanel() {
                 <CardActions>
                   <Button
                     size="small"
-                    startIcon={<RestartIcon />}
+                    startIcon={<Restart size={16} />}
                     onClick={() => handleRestartService('frontend')}
                     disabled={loading}
                   >
@@ -500,7 +508,7 @@ export default function WWWPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <SpeedIcon color="primary" />
+                    <Glyph icon={ChartLine} color="primary.main" />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       Performance
                     </Typography>
@@ -551,24 +559,24 @@ export default function WWWPanel() {
             {/* Static Files */}
             <Grid item xs={12}>
               <Accordion>
-                <AccordionSummary expandIcon={<ExpandIcon />}>
+                <AccordionSummary expandIcon={<ChevronDown size={16} />}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <StorageIcon />
+                    <DataBase size={18} />
                     <Typography>Static Files & Assets</Typography>
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails>
                   <List dense>
                     <ListItem>
-                      <ListItemIcon><StorageIcon /></ListItemIcon>
+                      <ListItemIcon><DataBase size={18} /></ListItemIcon>
                       <ListItemText primary="Web Root" secondary={wwwStatus?.web_root || '/web/dist'} />
                     </ListItem>
                     <ListItem>
-                      <ListItemIcon><UploadIcon /></ListItemIcon>
+                      <ListItemIcon><CloudUpload size={18} /></ListItemIcon>
                       <ListItemText primary="Upload Directory" secondary={wwwStatus?.upload_dir || '/tmp/map2-uploads'} />
                     </ListItem>
                     <ListItem>
-                      <ListItemIcon><StorageIcon /></ListItemIcon>
+                      <ListItemIcon><DataBase size={18} /></ListItemIcon>
                       <ListItemText primary="Max Upload Size" secondary={`${wwwStatus?.max_upload_size || 512} MB`} />
                     </ListItem>
                   </List>
@@ -586,7 +594,7 @@ export default function WWWPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <PublicIcon color="primary" />
+                    <Glyph icon={Globe} color="primary.main" />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       CORS Settings
                     </Typography>
@@ -617,7 +625,7 @@ export default function WWWPanel() {
                 <CardActions>
                   <Button
                     size="small"
-                    startIcon={<SettingsIcon />}
+                    startIcon={<Settings size={16} />}
                     onClick={() => setConfigDialog({
                       open: true,
                       type: 'cors',
@@ -639,7 +647,7 @@ export default function WWWPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    {wwwStatus?.ssl_enabled ? <HttpsIcon color="success" /> : <HttpIcon color="warning" />}
+                    {wwwStatus?.ssl_enabled ? <Glyph icon={Locked} color="success.main" /> : <Glyph icon={Http} color="warning.main" />}
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       SSL/TLS
                     </Typography>
@@ -682,7 +690,7 @@ export default function WWWPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <KeyIcon color="primary" />
+                    <Glyph icon={Password} color="primary.main" />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       API Keys
                     </Typography>
@@ -703,10 +711,10 @@ export default function WWWPanel() {
                                 {showApiKey ? wwwStatus.api_key : '••••••••••••••••'}
                               </Typography>
                               <IconButton size="small" onClick={() => setShowApiKey(!showApiKey)}>
-                                {showApiKey ? <HideIcon /> : <ViewIcon />}
+                                {showApiKey ? <ViewOff size={16} /> : <View size={16} />}
                               </IconButton>
                               <IconButton size="small" onClick={() => copyToClipboard(wwwStatus.api_key!)}>
-                                <CopyIcon />
+                                <Copy size={16} />
                               </IconButton>
                             </Box>
                           ) : 'Not configured'
@@ -718,7 +726,7 @@ export default function WWWPanel() {
                 <CardActions>
                   <Button
                     size="small"
-                    startIcon={<KeyIcon />}
+                    startIcon={<Password size={16} />}
                     onClick={handleGenerateApiKey}
                     disabled={loading}
                   >
@@ -733,7 +741,7 @@ export default function WWWPanel() {
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <SpeedIcon color="primary" />
+                    <Glyph icon={ChartLine} color="primary.main" />
                     <Typography variant="h6" sx={{ flexGrow: 1 }}>
                       Rate Limiting
                     </Typography>
@@ -771,7 +779,7 @@ export default function WWWPanel() {
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
                 size="small"
-                startIcon={<RefreshIcon />}
+                startIcon={<Renew size={16} />}
                 onClick={fetchWWWStatus}
                 disabled={loading}
               >
@@ -780,7 +788,7 @@ export default function WWWPanel() {
               <Button
                 size="small"
                 color="warning"
-                startIcon={<DeleteIcon />}
+                startIcon={<Delete size={16} />}
                 onClick={handleClearLogs}
                 disabled={loading}
               >
@@ -788,7 +796,7 @@ export default function WWWPanel() {
               </Button>
               <Button
                 size="small"
-                startIcon={<DownloadIcon />}
+                startIcon={<Download size={16} />}
                 onClick={() => {
                   const blob = new Blob([JSON.stringify(accessLogs, null, 2)], { type: 'application/json' });
                   const url = URL.createObjectURL(blob);

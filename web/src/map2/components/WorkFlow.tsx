@@ -9,13 +9,12 @@ import {
   Paper,
   Tabs,
   Tab,
-  Typography,
 } from '@mui/material';
 import {
-  Timeline as AutomationIcon,
-  History as HistoryIcon,
-  FolderOpen as SessionIcon,
-} from '@mui/icons-material';
+  Flow,
+  Time,
+  Folder,
+} from '@carbon/icons-react';
 
 import AutomationEditor from './AutomationEditor';
 import HistoryPanel from './HistoryPanel';
@@ -83,19 +82,19 @@ export default function WorkFlow() {
           }}
         >
           <Tab
-            icon={<AutomationIcon />}
+            icon={<Flow size={20} />}
             label="Automation"
             {...a11yProps(0)}
             iconPosition="start"
           />
           <Tab
-            icon={<HistoryIcon />}
+            icon={<Time size={20} />}
             label="History"
             {...a11yProps(1)}
             iconPosition="start"
           />
           <Tab
-            icon={<SessionIcon />}
+            icon={<Folder size={20} />}
             label="Sessions"
             {...a11yProps(2)}
             iconPosition="start"

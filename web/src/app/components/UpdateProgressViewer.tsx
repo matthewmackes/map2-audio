@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckmarkFilled as CheckCircle, ErrorFilled as XCircle, Pause, Play, Renew as ArrowsClockwise, Reset as ArrowCounterClockwise, WarningAlt as Warning } from '@carbon/icons-react'
+import { CheckmarkFilled as CheckCircle, ErrorFilled as XCircle, Information, Pause, Play, Renew as ArrowsClockwise, Reset as ArrowCounterClockwise, WarningAlt as Warning } from '@carbon/icons-react'
 
 interface UpdateStage {
   name: string
@@ -110,13 +110,13 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
   const getStageIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return '✅'
+        return <CheckCircle size={16} style={{ color: '#00ff41' }} />
       case 'failed':
-        return '❌'
+        return <XCircle size={16} style={{ color: '#ff3333' }} />
       case 'running':
-        return '⏳'
+        return <ArrowsClockwise size={16} style={{ color: '#2563eb' }} className="animate-spin" />
       default:
-        return '⏸️'
+        return <Pause size={16} style={{ color: '#6b7280' }} />
     }
   }
 
@@ -293,7 +293,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                       border: '1px solid #1e293b',
                     }}
                   >
-                    <span style={{ fontSize: 16 }}>{getStageIcon(stage.status)}</span>
+                    <span style={{ fontSize: 16, display: 'inline-flex' }}>{getStageIcon(stage.status)}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{stage.name}</div>
                       <div
@@ -394,13 +394,10 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                         : '#2563eb',
                   }}
                 >
-                  {log.severity === 'error'
-                    ? '❌'
-                    : log.severity === 'warning'
-                    ? '⚠️'
-                    : log.severity === 'success'
-                    ? '✅'
-                    : 'ℹ️'}
+                  {log.severity === 'error' && <XCircle size={14} />}
+                  {log.severity === 'warning' && <Warning size={14} />}
+                  {log.severity === 'success' && <CheckCircle size={14} />}
+                  {log.severity !== 'error' && log.severity !== 'warning' && log.severity !== 'success' && <Information size={14} />}
                 </span>{' '}
                 <span>{log.message}</span>
               </div>

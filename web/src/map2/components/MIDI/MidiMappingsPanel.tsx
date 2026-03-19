@@ -36,12 +36,12 @@ import {
 } from '@mui/material';
 import { NumberInput } from '../NumberInput';
 import {
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Piano as MidiIcon,
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
-} from '@mui/icons-material';
+  ChevronDown,
+  ChevronUp,
+  Edit,
+  Music,
+  TrashCan,
+} from '@carbon/icons-react';
 import { useTheme, alpha, keyframes } from '@mui/material/styles';
 import { sanitizeRestrictedDisplayText } from '../../displayNames';
 
@@ -95,6 +95,22 @@ const flashAnimation = keyframes`
   }
 `;
 
+function ColoredGlyph({
+  icon: Icon,
+  color = 'inherit',
+  size = 18,
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  color?: string;
+  size?: number;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
+
 // ============================================================================
 // Edit Dialog Component
 // ============================================================================
@@ -135,7 +151,7 @@ const EditDialog = memo(({ open, mapping, onClose, onSave }: EditDialogProps) =>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
           {/* Mapping info */}
-          <Alert severity="info" icon={<MidiIcon />}>
+          <Alert severity="info" icon={<Music size={18} />}>
             CC {mapping.cc} (Ch {mapping.channel === 0 ? 'Omni' : mapping.channel}) → {mapping.paramName}
           </Alert>
 
@@ -267,7 +283,7 @@ const MidiMappingsPanel = memo(({
         onClick={() => collapsible && setCollapsed(!collapsed)}
       >
         <Stack direction="row" alignItems="center" spacing={1}>
-          <MidiIcon sx={{ fontSize: 18, color: 'secondary.main' }} />
+          <ColoredGlyph icon={Music} color="secondary.main" />
           <Typography variant="subtitle2" fontWeight={600}>
             MIDI Mappings
           </Typography>
@@ -280,7 +296,7 @@ const MidiMappingsPanel = memo(({
         </Stack>
         {collapsible && (
           <IconButton size="small">
-            {collapsed ? <ExpandIcon /> : <CollapseIcon />}
+            {collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
           </IconButton>
         )}
       </Stack>
@@ -363,7 +379,7 @@ const MidiMappingsPanel = memo(({
                             size="small"
                             onClick={() => handleEdit(mapping)}
                           >
-                            <EditIcon fontSize="small" />
+                            <Edit size={16} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Delete">
@@ -372,7 +388,7 @@ const MidiMappingsPanel = memo(({
                             color="error"
                             onClick={() => handleDelete(mapping.id)}
                           >
-                            <DeleteIcon fontSize="small" />
+                            <TrashCan size={16} />
                           </IconButton>
                         </Tooltip>
                       </Stack>

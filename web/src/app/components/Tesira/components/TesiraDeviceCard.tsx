@@ -1,11 +1,8 @@
 import React, { useState, useCallback } from 'react'
+import { Renew, WarningAltFilled, Wifi, WifiOff } from '@carbon/icons-react'
 import {
   Card, CardActionArea, CardContent, Box, Typography, Chip, Tooltip,
 } from '@mui/material'
-import WifiIcon from '@mui/icons-material/Wifi'
-import WifiOffIcon from '@mui/icons-material/WifiOff'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import SyncIcon from '@mui/icons-material/Sync'
 import type { TesiraDeviceSummary } from '../types'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useTesiraDeviceState } from '../hooks/useTesiraWebSocket'
@@ -67,24 +64,26 @@ export function TesiraDeviceCard({ device, selected, onSelect }: TesiraDeviceCar
 
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
               {device.connected ? (
-                <WifiIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                <Wifi size={14} style={{ color: 'var(--mui-palette-success-main, #2e7d32)' }} />
               ) : reconnecting ? (
                 <Tooltip title={nextRetryS != null ? `Retrying in ${nextRetryS}s` : 'Reconnecting…'}>
-                  <SyncIcon
+                  <Box
                     sx={{
-                      fontSize: 14,
+                      display: 'flex',
                       color: 'warning.main',
                       animation: 'spin 1.5s linear infinite',
                       '@keyframes spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } },
                     }}
-                  />
+                  >
+                    <Renew size={14} />
+                  </Box>
                 </Tooltip>
               ) : (
-                <WifiOffIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                <WifiOff size={14} style={{ color: 'var(--mui-palette-error-main, #d32f2f)' }} />
               )}
               {device.fault_count > 0 && (
                 <Tooltip title={`${device.fault_count} fault(s)`}>
-                  <WarningAmberIcon sx={{ fontSize: 14, color: 'warning.main' }} />
+                  <WarningAltFilled size={14} style={{ color: 'var(--mui-palette-warning-main, #ed6c02)' }} />
                 </Tooltip>
               )}
             </Box>

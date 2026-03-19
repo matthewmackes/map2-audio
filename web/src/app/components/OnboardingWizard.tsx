@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BareMetalServer, Certificate, ChartNetwork, Checkmark, Document, Security, WarningAlt } from '@carbon/icons-react'
+import { ArrowLeft, ArrowRight, BareMetalServer, Certificate, ChartNetwork, Checkmark, CheckmarkFilled, Close, Document, Link, Locked, Renew, Search, Security, WarningAlt } from '@carbon/icons-react'
 import { NumberInput } from './Controls/NumberInput'
 
 interface WizardStep {
@@ -256,7 +256,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>📖 Mode Details:</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>Mode Details:</div>
               <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
                 • <strong>ALL-IN-ONE:</strong> Fastest setup, no network required, limited scalability
                 <br />
@@ -275,11 +275,11 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <button className="btn btn-primary" onClick={handleAutoDiscover}>
-                🔍 Auto-Discover
+                <Search size={14} style={{ marginRight: 6 }} /> Auto-Discover
               </button>
               <button className="btn">➕ Add Manually</button>
               <button className="btn" onClick={handleAutoDiscover}>
-                🔄 Refresh
+                <Renew size={14} style={{ marginRight: 6 }} /> Refresh
               </button>
             </div>
 
@@ -300,8 +300,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 </div>
               ) : (
                 <div>
-                  <div style={{ marginBottom: 12, color: '#00ff41' }}>
-                    ✅ Found {discoveredNodes.length} node(s):
+                  <div style={{ marginBottom: 12, color: '#00ff41', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CheckmarkFilled size={14} /> Found {discoveredNodes.length} node(s):
                   </div>
                   {discoveredNodes.map((node, idx) => (
                     <div
@@ -335,7 +335,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
-                📖 Discovery Methods:
+                Discovery Methods:
               </div>
               <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
                 • <strong>Auto-Discovery:</strong> mDNS/DNS-SD scan for MAP2 nodes on local network
@@ -460,7 +460,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
-                📖 Configuration Tips:
+                Configuration Tips:
               </div>
               <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
                 • <strong>Cluster Name:</strong> Unique identifier for your cluster
@@ -484,9 +484,9 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
-                { value: 'self-signed', label: '🔧 Auto-generate self-signed certificates' },
+                { value: 'self-signed', label: 'Auto-generate self-signed certificates' },
                 { value: 'existing-ca', label: '📜 Use existing certificate authority' },
-                { value: 'skip', label: '⏭️  Skip (insecure - not recommended)' },
+                { value: 'skip', label: 'Skip (insecure - not recommended)' },
               ].map(mode => (
                 <label
                   key={mode.value}
@@ -521,7 +521,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
-                📖 Certificate Options:
+                Certificate Options:
               </div>
               <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
                 • <strong>Self-signed:</strong> Quick setup, browser warnings, good for testing
@@ -548,46 +548,46 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               }}
             >
               <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: '#2563eb' }}>
-                📋 Configuration Summary:
+                Configuration Summary:
               </div>
 
               <div style={{ display: 'grid', gap: 12, fontSize: 13, lineHeight: 1.8 }}>
                 <div>
-                  <span style={{ color: '#888' }}>🌐 Deployment Mode:</span>{' '}
+                  <span style={{ color: '#888' }}>Deployment Mode:</span>{' '}
                   <strong>{wizardData.deployment_mode || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>🖥️  Cluster Name:</span>{' '}
+                  <span style={{ color: '#888' }}>Cluster Name:</span>{' '}
                   <strong>{wizardData.cluster_name || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>📍 Management IP:</span>{' '}
+                  <span style={{ color: '#888' }}>Management IP:</span>{' '}
                   <strong>{wizardData.management_ip || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>🔌 Network Interface:</span>{' '}
+                  <span style={{ color: '#888' }}>Network Interface:</span>{' '}
                   <strong>{wizardData.network_interface || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>🔢 API Port:</span>{' '}
+                  <span style={{ color: '#888' }}>API Port:</span>{' '}
                   <strong>{wizardData.api_port || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>🔍 mDNS Enabled:</span>{' '}
+                  <span style={{ color: '#888' }}>mDNS Enabled:</span>{' '}
                   <strong>{wizardData.enable_mdns ? 'Yes' : 'No'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>🔒 TLS Enabled:</span>{' '}
+                  <span style={{ color: '#888' }}>TLS Enabled:</span>{' '}
                   <strong>{wizardData.enable_tls ? 'Yes' : 'No'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>📜 Certificate Mode:</span>{' '}
+                  <span style={{ color: '#888' }}>Certificate Mode:</span>{' '}
                   <strong>{certMode}</strong>
                 </div>
 
                 <div style={{ marginTop: 8 }}>
                   <span style={{ color: '#888' }}>
-                    🖥️  Discovered Nodes ({wizardData.discovered_nodes?.length || 0}):
+                    Discovered Nodes ({wizardData.discovered_nodes?.length || 0}):
                   </span>
                   <div style={{ marginLeft: 16, marginTop: 8 }}>
                     {(wizardData.discovered_nodes || []).map((node: any, idx: number) => (
@@ -609,7 +609,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#ffaa00' }}>
-                ⚠️  Important:
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WarningAlt size={14} /> Important:</span>
               </div>
               <div style={{ fontSize: 12, color: '#ffaa00', lineHeight: 1.6 }}>
                 • Review all settings carefully before proceeding
@@ -631,21 +631,21 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
           disabled={currentStep === 1}
           style={{ opacity: currentStep === 1 ? 0.4 : 1 }}
         >
-          ⬅️  Back
+          <ArrowLeft size={14} style={{ marginRight: 6 }} /> Back
         </button>
 
         {currentStep < 5 ? (
           <button className="btn btn-primary" onClick={handleNext}>
-            Next ➡️
+            Next <ArrowRight size={14} style={{ marginLeft: 6 }} />
           </button>
         ) : (
           <button className="btn btn-success" onClick={handleFinish}>
-            ✅ Finish Setup
+            <CheckmarkFilled size={14} style={{ marginRight: 6 }} /> Finish Setup
           </button>
         )}
 
         <button className="btn btn-error" onClick={() => onComplete && onComplete()}>
-          ❌ Cancel
+          <Close size={14} style={{ marginRight: 6 }} /> Cancel
         </button>
       </div>
     </div>

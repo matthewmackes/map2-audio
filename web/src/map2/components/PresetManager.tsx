@@ -29,16 +29,16 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  Favorite as FavoriteIcon,
-  FavoriteBorder as FavoriteOutlineIcon,
-  Delete as DeleteIcon,
-  PlayArrow as LoadIcon,
-  MoreVert as MoreIcon,
-  Edit as EditIcon,
-  Refresh as RefreshIcon,
-  FilterList as FilterIcon,
-} from '@mui/icons-material';
+  Edit,
+  Favorite,
+  FavoriteFilled,
+  Filter,
+  OverflowMenuVertical,
+  PlayFilled,
+  Renew,
+  Search,
+  TrashCan,
+} from '@carbon/icons-react';
 import { snapshotsApi, chainsApi } from '../api';
 import type { Snapshot, SnapshotCategory } from '../types';
 
@@ -170,7 +170,7 @@ export default function PresetManager() {
           Preset Manager
         </Typography>
         <IconButton onClick={loadData}>
-          <RefreshIcon />
+          <Renew size={18} />
         </IconButton>
       </Box>
 
@@ -192,7 +192,7 @@ export default function PresetManager() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon />
+                  <Search size={16} />
                 </InputAdornment>
               ),
             }}
@@ -200,7 +200,7 @@ export default function PresetManager() {
 
           <Box>
             <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-              <FilterIcon fontSize="small" />
+              <Filter size={16} />
               <Typography variant="subtitle2">Category</Typography>
             </Stack>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -249,7 +249,7 @@ export default function PresetManager() {
 
           <Box>
             <Chip
-              icon={favoritesOnly ? <FavoriteIcon /> : <FavoriteOutlineIcon />}
+              icon={favoritesOnly ? <FavoriteFilled size={14} /> : <Favorite size={14} />}
               label="Favorites Only"
               onClick={() => setFavoritesOnly(!favoritesOnly)}
               color={favoritesOnly ? 'secondary' : 'default'}
@@ -281,9 +281,9 @@ export default function PresetManager() {
                           onClick={() => handleToggleFavorite(preset.id)}
                         >
                           {preset.is_favorite ? (
-                            <FavoriteIcon color="secondary" />
+                            <FavoriteFilled size={18} />
                           ) : (
-                            <FavoriteOutlineIcon />
+                            <Favorite size={18} />
                           )}
                         </IconButton>
                         <IconButton
@@ -293,7 +293,7 @@ export default function PresetManager() {
                             setMenuAnchor(e.currentTarget);
                           }}
                         >
-                          <MoreIcon />
+                          <OverflowMenuVertical size={18} />
                         </IconButton>
                       </Box>
 
@@ -324,7 +324,7 @@ export default function PresetManager() {
                   <CardActions>
                     <Button
                       size="small"
-                      startIcon={<LoadIcon />}
+                      startIcon={<PlayFilled size={16} />}
                       onClick={() => handleLoadPreset(preset.id)}
                     >
                       Load
@@ -348,11 +348,11 @@ export default function PresetManager() {
         onClose={() => setMenuAnchor(null)}
       >
         <MenuItem onClick={() => selectedPreset && handleOpenEdit(selectedPreset)}>
-          <EditIcon sx={{ mr: 1 }} fontSize="small" />
+          <Edit size={16} style={{ marginRight: 8 }} />
           Edit
         </MenuItem>
         <MenuItem onClick={() => selectedPreset && handleDeletePreset(selectedPreset.id)}>
-          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
+          <TrashCan size={16} style={{ marginRight: 8 }} />
           Delete
         </MenuItem>
       </Menu>

@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { presetManager, type Preset } from '../services/presetManager'
-import { Trash, PencilSimple, DownloadSimple, UploadSimple, MagnifyingGlass, X } from '@phosphor-icons/react'
+import {
+  Close as X,
+  Download as DownloadSimple,
+  Edit as PencilSimple,
+  Search as MagnifyingGlass,
+  TrashCan as Trash,
+  Upload as UploadSimple,
+} from '@carbon/icons-react'
 
 interface PresetsWindowProps {
   isOpen: boolean
@@ -134,10 +141,13 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
               border: 'none',
               color: '#6b7280',
               cursor: 'pointer',
-              fontSize: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 4,
             }}
           >
-            ×
+            <X size={18} />
           </button>
         </div>
 
@@ -164,7 +174,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                 fontSize: 12,
               }}
             />
-            <MagnifyingGlass size={16} weight="duotone" style={{ position: 'absolute', left: 10, top: 12, color: '#6b7280' }} />
+            <MagnifyingGlass size={16} style={{ position: 'absolute', left: 10, top: 12, color: '#6b7280' }} />
           </div>
           <button
             onClick={handleExport}
@@ -183,7 +193,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
               gap: 6,
             }}
           >
-            <DownloadSimple size={14} weight="duotone" /> Export
+            <DownloadSimple size={14} /> Export
           </button>
           <button
             onClick={handleImport}
@@ -202,7 +212,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
               gap: 6,
             }}
           >
-            <UploadSimple size={14} weight="duotone" /> Import
+            <UploadSimple size={14} /> Import
           </button>
         </div>
 
@@ -304,7 +314,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                         padding: 4,
                       }}
                     >
-                      <PencilSimple size={14} weight="duotone" />
+                      <PencilSimple size={14} />
                     </button>
                     <button
                       onClick={(e) => {
@@ -320,7 +330,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                         padding: 4,
                       }}
                     >
-                      <Trash size={14} weight="duotone" />
+                      <Trash size={14} />
                     </button>
                   </div>
                 </div>

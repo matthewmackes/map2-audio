@@ -13,7 +13,7 @@
 import type { FC, SVGProps } from 'react'
 
 // ── SVG icon components (Vite ?react loader) ──────────────────────────
-import FxAmplifier from '../HorizontalSignalChain/icons/fx_amplifier.svg?react'
+import FxAmplifier from './noun/amplifier/fx-amplifier.svg?react'
 import FxAnalyzer from '../HorizontalSignalChain/icons/fx_analyzer.svg?react'
 import FxChorus from '../HorizontalSignalChain/icons/fx_chorus.svg?react'
 import FxCompressor from './noun/dynamics/fx-compressor.svg?react'
@@ -25,11 +25,11 @@ import FxGate from '../HorizontalSignalChain/icons/fx_gate.svg?react'
 import FxLimiter from '../HorizontalSignalChain/icons/fx_limiter.svg?react'
 import FxMixer from '../HorizontalSignalChain/icons/fx_mixer.svg?react'
 import FxModulator from '../HorizontalSignalChain/icons/fx_modulator.svg?react'
-import FxPhaser from './noun/modulation/fx-phaser.svg?react'
-import FxPitch from './noun/pitch/fx-pitch.svg?react'
+import FxPhaser from '../HorizontalSignalChain/icons/fx_phaser.svg?react'
+import FxPitch from '../HorizontalSignalChain/icons/fx_pitch.svg?react'
 import FxPlugin from './noun/multi-effect/fx-plugin.svg?react'
-import FxReverb from './noun/reverb/fx-reverb.svg?react'
-import FxSimulator from './noun/cabinet/fx-simulator.svg?react'
+import FxReverb from './noun/reverb/fx-reverb-category.svg?react'
+import FxSimulator from '../HorizontalSignalChain/icons/fx_simulator.svg?react'
 import FxUtility from './noun/utility/fx-utility.svg?react'
 
 // Also keep these PiPedal originals that have no branding replacement
@@ -60,6 +60,20 @@ export type EffectIconComponent = FC<SVGProps<SVGSVGElement>>
 // ── Canonical category → icon mapping ─────────────────────────────────
 // Keys are lowercase for case-insensitive matching.
 const EFFECT_ICON_MAP: Record<string, EffectIconComponent> = {
+  // Product / processor-specific overrides
+  'lexi love': FxReverb,
+  'pcm 70': FxReverb,
+  'tweed bassman': FxAmplifier,
+  bassman: FxAmplifier,
+  'ultra harmonizer': FxPitch,
+  'interval shifter': FxPitch,
+  'graillon': FxPitch,
+  'drum machine': FxInstrument,
+  'drums': FxInstrument,
+  'cabinet ir': FxSimulator,
+  'reverb ir': FxReverb,
+  'synthforge': FxInstrument,
+
   // Distortion family
   distortion: FxDistortion,
   amplifier: FxAmplifier,

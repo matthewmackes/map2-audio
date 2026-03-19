@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react'
+import { Activity, Close, DataBase, TemperatureHot, WarningAltFilled } from '@carbon/icons-react'
 
 export type AlertSeverity = 'warning' | 'critical'
 export type AlertType = 'temperature' | 'cpu' | 'memory' | 'disk'
@@ -55,19 +56,19 @@ export function useAlertNotifications() {
 
     const messages: Record<AlertType, { title: string; message: string }> = {
       temperature: {
-        title: '🌡️ Temperature Warning',
+        title: 'Temperature Warning',
         message: `CPU temperature at ${value}${unit} (threshold: ${threshold}${unit})`,
       },
       cpu: {
-        title: '⚙️ CPU Usage Alert',
+        title: 'CPU Usage Alert',
         message: `CPU usage at ${value}${unit} (threshold: ${threshold}${unit})`,
       },
       memory: {
-        title: '💾 Memory Alert',
+        title: 'Memory Alert',
         message: `Memory usage at ${value}${unit} (threshold: ${threshold}${unit})`,
       },
       disk: {
-        title: '💿 Disk Space Alert',
+        title: 'Disk Space Alert',
         message: `Disk usage at ${value}${unit} (threshold: ${threshold}${unit})`,
       },
     }
@@ -171,7 +172,6 @@ export function useAlertNotifications() {
       try {
         new Notification(title, {
           body: message,
-          icon: severity === 'critical' ? '🚨' : '⚠️',
           badge: '/img/logo.png',
           tag: `alert_${type}`,
           requireInteraction: severity === 'critical',
@@ -245,12 +245,12 @@ export function useAlertNotifications() {
    */
   const getTypeIcon = useCallback((type: AlertType): string => {
     const icons: Record<AlertType, string> = {
-      temperature: '🌡️',
-      cpu: '⚙️',
-      memory: '💾',
-      disk: '💿',
+      temperature: 'temperature',
+      cpu: 'cpu',
+      memory: 'memory',
+      disk: 'disk',
     }
-    return icons[type] || '⚠️'
+    return icons[type] || 'alert'
   }, [])
 
   return {
@@ -271,7 +271,6 @@ export function useAlertNotifications() {
  * React component for displaying alert notifications
  */
 import { Box, Paper, Typography, IconButton, Collapse } from '@mui/material'
-import CloseIcon from '@mui/icons-material/Close'
 
 export interface AlertNotificationsProps {
   notifications: AlertNotification[]
@@ -282,14 +281,14 @@ export function AlertNotificationsContainer({ notifications, onDismiss }: AlertN
   const getSeverityColor = (severity: AlertSeverity) =>
     severity === 'critical' ? '#ef4444' : '#f59e0b'
 
-  const getTypeEmoji = (type: AlertType) => {
-    const emojis: Record<AlertType, string> = {
-      temperature: '🌡️',
-      cpu: '⚙️',
-      memory: '💾',
-      disk: '💿',
+  const getTypeIconNode = (type: AlertType) => {
+    const icons: Record<AlertType, React.ReactNode> = {
+      temperature: <TemperatureHot size={16} />,
+      cpu: <Activity size={16} />,
+      memory: <DataBase size={16} />,
+      disk: <DataBase size={16} />,
     }
-    return emojis[type]
+    return icons[type] || <WarningAltFilled size={16} />
   }
 
   return (
@@ -330,7 +329,9 @@ export function AlertNotificationsContainer({ notifications, onDismiss }: AlertN
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 700, fontSize: 14, mb: 0.5 }}>
-                {getTypeEmoji(notification.type)} {notification.title}
+                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                  {getTypeIconNode(notification.type)} {notification.title}
+                </Box>
               </Typography>
               <Typography sx={{ fontSize: 12, opacity: 0.95 }}>
                 {notification.message}
@@ -345,7 +346,7 @@ export function AlertNotificationsContainer({ notifications, onDismiss }: AlertN
                 ml: 1,
               }}
             >
-              <CloseIcon fontSize="small" />
+              <Close size={16} />
             </IconButton>
           </Box>
         </Paper>

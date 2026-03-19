@@ -252,8 +252,8 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
           <div style={{ fontSize: 10, color: '#aaa', marginTop: 4 }}>
             {audioPath.latency.total_ms <= 10 && '✓ Excellent (< 10ms)'}
             {audioPath.latency.total_ms > 10 && audioPath.latency.total_ms <= 20 && '✓ Good (10-20ms)'}
-            {audioPath.latency.total_ms > 20 && audioPath.latency.total_ms <= 50 && '⚠️ Acceptable (20-50ms)'}
-            {audioPath.latency.total_ms > 50 && '❌ High (> 50ms)'}
+            {audioPath.latency.total_ms > 20 && audioPath.latency.total_ms <= 50 && 'Acceptable (20-50ms)'}
+            {audioPath.latency.total_ms > 50 && 'High (> 50ms)'}
           </div>
         </div>
       </div>
@@ -276,7 +276,7 @@ export function NodeAudioPathView({ nodeId, showCluster = false }: NodeAudioPath
       {/* Alerts */}
       {audioPath.alerts && audioPath.alerts.length > 0 && (
         <div className="card" style={{ padding: 16, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444' }}>
-          <h4 style={{ marginBottom: 12, color: '#ef4444' }}>⚠️ Alerts</h4>
+          <h4 style={{ marginBottom: 12, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }}><WarningAlt size={16} /> Alerts</h4>
           <ul style={{ fontSize: 12, color: '#ddd', margin: 0, paddingLeft: 20 }}>
             {audioPath.alerts.map((alert, i) => (
               <li key={i} style={{ marginBottom: 4 }}>{alert}</li>

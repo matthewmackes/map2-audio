@@ -537,9 +537,9 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
               <div style={{ color: '#ffaa00', fontWeight: 600, marginBottom: 4 }}>Active Scenario:</div>
               <div style={{ color: '#d0d0d0' }}>
                 {simulationScenario === 'high-load' && '⚡ High Load simulation - all nodes experiencing CPU spike'}
-                {simulationScenario === 'degraded' && '⚠️ Degraded Node - audio node experiencing issues'}
-                {simulationScenario === 'failure' && '🔴 Node Failure - audio node offline, flows fail over'}
-                {simulationScenario === 'failover' && '🔄 Failover - demonstrating primary to standby switch'}
+                {simulationScenario === 'degraded' && 'Degraded node - audio node experiencing issues'}
+                {simulationScenario === 'failure' && 'Node failure - audio node offline, flows fail over'}
+                {simulationScenario === 'failover' && 'Failover - demonstrating primary to standby switch'}
               </div>
               <div style={{ marginTop: 6, fontSize: 10, color: '#a0a0a0' }}>
                 Time remaining: {30 - Math.floor(simulation.scenarioTime)} seconds

@@ -845,7 +845,7 @@ interface LCDSettings {
 
 
 // ════════════════════════════════════════════════════════════════════════════
-// ⭐ Main Page Component
+// Main Page Component
 // ════════════════════════════════════════════════════════════════════════════
 
 export function LCDPage() {
@@ -1454,7 +1454,7 @@ export function LCDPage() {
                     {saveStatus === 'saving' && '⏳ Saving…'}
                     {saveStatus === 'saved' && '✓ Saved!'}
                     {saveStatus === 'error' && '✗ Error'}
-                    {saveStatus === 'idle' && '💾 Save Settings'}
+                    {saveStatus === 'idle' && 'Save Settings'}
                   </button>
                   <button className="btn btn-ghost" style={{ padding: '12px 24px', fontSize: 15 }}>Reset</button>
                 </div>

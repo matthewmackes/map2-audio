@@ -350,7 +350,7 @@ CURRENT STATUS
       {/* Header */}
       <div className="audio-interface-header">
         <h2 className="audio-interface-title">
-          <span className="audio-interface-icon">🎛️</span>
+          <span className="audio-interface-icon">I/O</span>
           Audio Interface
         </h2>
         <div className={`status-badge ${isConnected ? 'connected' : 'disconnected'}`}>
@@ -376,7 +376,7 @@ CURRENT STATUS
                 }}
               />
             ) : (
-              <span className="fallback-icon">🎛️</span>
+              <span className="fallback-icon">I/O</span>
             )}
           </div>
 
@@ -490,22 +490,22 @@ CURRENT STATUS
               onClick={handleApplyConfig}
               disabled={!configDirty || isApplyingConfig}
             >
-              {isApplyingConfig ? '⏳ Applying...' : '💾 Apply Settings'}
+              {isApplyingConfig ? 'Applying...' : 'Apply Settings'}
             </button>
           </div>
 
           <div className="audio-button-row">
             <button className="audio-control-btn" onClick={handleRestart}>
-              🔄 Restart
+              Restart
             </button>
             <button className="audio-control-btn" onClick={handleTest}>
-              🧪 Test
+              Test
             </button>
           </div>
 
           <div className="audio-button-row">
             <button className="audio-control-btn secondary" onClick={handleMoreInfo}>
-              ℹ️ Device Info
+              Device Info
             </button>
           </div>
         </div>

@@ -10,6 +10,18 @@
 
 import { useMemo } from 'react'
 import {
+  Activity,
+  ChartLine,
+  CheckmarkFilled,
+  ErrorFilled,
+  Information,
+  Network_4,
+  Pause,
+  ServerProxy,
+  VolumeUp,
+  WarningAlt,
+} from '@carbon/icons-react'
+import {
   Table,
   TableBody,
   TableCell,
@@ -57,13 +69,13 @@ export function MultiNodeMonitoringTab() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'online':
-        return '✅'
+        return <CheckmarkFilled size={16} />
       case 'offline':
-        return '⏸️'
+        return <Pause size={16} />
       case 'error':
-        return '❌'
+        return <ErrorFilled size={16} />
       default:
-        return '❓'
+        return <Information size={16} />
     }
   }
 
@@ -84,7 +96,11 @@ export function MultiNodeMonitoringTab() {
     if (!enabled) return <Chip label="DISABLED" size="small" sx={{ backgroundColor: '#6b7280', color: '#fff' }} />
 
     const color = status === 'active' ? '#10b981' : status === 'error' ? '#ef4444' : '#f59e0b'
-    const icon = status === 'active' ? '✓' : status === 'error' ? '✗' : '⚠'
+    const icon = status === 'active'
+      ? <CheckmarkFilled size={14} />
+      : status === 'error'
+        ? <ErrorFilled size={14} />
+        : <WarningAlt size={14} />
 
     return <Chip icon={<span>{icon}</span>} label={status?.toUpperCase()} size="small" sx={{ backgroundColor: color, color: '#fff' }} />
   }
@@ -94,7 +110,7 @@ export function MultiNodeMonitoringTab() {
       <Box sx={{ maxWidth: '1400px', mx: 'auto', p: 3 }}>
         <Paper sx={{ p: 6, textAlign: 'center', color: '#9ca3af', backgroundColor: '#f9fafb' }}>
           <Typography sx={{ fontSize: 24, fontWeight: 600, mb: 3, color: '#374151' }}>
-            🖥️ Multi-Node Monitoring
+            Multi-Node Monitoring
           </Typography>
           <Typography sx={{ fontSize: 16, mb: 2 }}>
             No nodes are currently being monitored
@@ -116,7 +132,9 @@ export function MultiNodeMonitoringTab() {
       {/* Cluster-Wide Statistics */}
       <Paper sx={{ p: 3, backgroundColor: '#f9fafb' }}>
         <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 3, color: '#374151' }}>
-          📊 Cluster-Wide Statistics
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+            <ChartLine size={20} /> Cluster-Wide Statistics
+          </Box>
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={6} sm={4} md={3}>
@@ -205,7 +223,9 @@ export function MultiNodeMonitoringTab() {
       {/* Detailed System Cards */}
       <Box>
         <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: '#374151' }}>
-          🖥️ Node Details
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+            <ServerProxy size={20} /> Node Details
+          </Box>
         </Typography>
         <Grid container spacing={3}>
           {systems.map((system) => (
@@ -234,7 +254,9 @@ export function MultiNodeMonitoringTab() {
                   {/* Audio Engine Section */}
                   <Box sx={{ mb: 3 }}>
                     <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 1.5, color: '#6366f1' }}>
-                      🎵 JUCE Audio Engine
+                      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                        <VolumeUp size={16} /> JUCE Audio Engine
+                      </Box>
                     </Typography>
                     {system.audioEngine ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -305,7 +327,9 @@ export function MultiNodeMonitoringTab() {
                   {/* Cluster Services Section */}
                   <Box sx={{ mb: 3 }}>
                     <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 1.5, color: '#f59e0b' }}>
-                      🔗 Cluster Services
+                      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                        <Network_4 size={16} /> Cluster Services
+                      </Box>
                     </Typography>
                     {system.clusterServices ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -375,7 +399,7 @@ export function MultiNodeMonitoringTab() {
                             <Typography sx={{ fontSize: 12, color: '#6b7280' }}>PTP Sync</Typography>
                           </Tooltip>
                           <Chip
-                            icon={<span>{system.avbNetwork.ptpSynced ? '✓' : '✗'}</span>}
+                            icon={system.avbNetwork.ptpSynced ? <CheckmarkFilled size={14} /> : <ErrorFilled size={14} />}
                             label={system.avbNetwork.ptpSynced ? 'SYNCED' : 'NOT SYNCED'}
                             size="small"
                             sx={{
@@ -529,9 +553,11 @@ export function MultiNodeMonitoringTab() {
       {/* Comparison Tables */}
       {comparisons.length > 0 && (
         <Box>
-          <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: '#374151' }}>
-            📊 Metric Comparisons
-          </Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: '#374151' }}>
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+              <ChartLine size={20} /> Metric Comparisons
+            </Box>
+        </Typography>
           <Grid container spacing={2}>
             {comparisons.map((comparison) => (
               <Grid item xs={12} md={6} key={comparison.metric}>

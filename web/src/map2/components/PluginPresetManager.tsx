@@ -32,17 +32,16 @@ import {
   Grid,
 } from '@mui/material';
 import {
-  Save as SaveIcon,
-  Delete as DeleteIcon,
-  Favorite as FavoriteIcon,
-  FavoriteBorder as FavoriteOutlineIcon,
-  MoreVert as MoreIcon,
-  Edit as EditIcon,
-  Settings as SettingsIcon,
-  Download as DownloadIcon,
-  Star as StarIcon,
-  History as HistoryIcon,
-} from '@mui/icons-material';
+  Favorite,
+  FavoriteFilled,
+  OverflowMenuVertical,
+  RecentlyViewed,
+  Save,
+  Settings,
+  Star,
+  StarFilled,
+  TrashCan,
+} from '@carbon/icons-react';
 import { pluginPresetsApi } from '../api';
 import { sanitizeRestrictedDisplayText } from '../displayNames';
 
@@ -262,13 +261,13 @@ export default function PluginPresetManager({
       {/* Header with Save Button */}
       <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
         <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SettingsIcon />
+          <Settings size={20} />
           Presets for {displayPluginName}
         </Typography>
         <Tooltip title="Save current parameters as a preset">
           <Button
             variant="contained"
-            startIcon={<SaveIcon />}
+            startIcon={<Save size={16} />}
             onClick={() => setSaveDialogOpen(true)}
             size="small"
           >
@@ -326,12 +325,16 @@ export default function PluginPresetManager({
                     <Stack direction="row" spacing={0}>
                       {preset.is_default && (
                         <Tooltip title="Default preset">
-                          <StarIcon sx={{ color: 'warning.main', mt: 1 }} />
+                          <Box component="span" sx={{ color: 'warning.main', mt: 1, display: 'inline-flex', lineHeight: 0 }}>
+                            <StarFilled size={16} />
+                          </Box>
                         </Tooltip>
                       )}
                       {preset.is_favorite && (
                         <Tooltip title="Favorite">
-                          <FavoriteIcon sx={{ color: 'error.main', mt: 1 }} />
+                          <Box component="span" sx={{ color: 'error.main', mt: 1, display: 'inline-flex', lineHeight: 0 }}>
+                            <FavoriteFilled size={16} />
+                          </Box>
                         </Tooltip>
                       )}
                       <IconButton
@@ -339,7 +342,7 @@ export default function PluginPresetManager({
                         onClick={handleOpenMenu}
                         onMouseEnter={() => setSelectedPreset(preset)}
                       >
-                        <MoreIcon />
+                        <OverflowMenuVertical size={18} />
                       </IconButton>
                     </Stack>
                   }
@@ -358,7 +361,7 @@ export default function PluginPresetManager({
                           <span>{preset.name}</span>
                           {preset.is_default && (
                             <Chip
-                              icon={<StarIcon />}
+                              icon={<StarFilled size={14} />}
                               label="Default"
                               size="small"
                               variant="outlined"
@@ -366,7 +369,7 @@ export default function PluginPresetManager({
                           )}
                           {preset.usage_count > 0 && (
                             <Chip
-                              icon={<HistoryIcon />}
+                              icon={<RecentlyViewed size={14} />}
                               label={`Used ${preset.usage_count}x`}
                               size="small"
                               variant="filled"
@@ -411,12 +414,12 @@ export default function PluginPresetManager({
             >
               {selectedPreset.is_favorite ? (
                 <>
-                  <FavoriteOutlineIcon sx={{ mr: 1 }} />
+                  <Favorite size={16} style={{ marginRight: 8 }} />
                   Remove Favorite
                 </>
               ) : (
                 <>
-                  <FavoriteIcon sx={{ mr: 1 }} />
+                  <FavoriteFilled size={16} style={{ marginRight: 8 }} />
                   Add to Favorites
                 </>
               )}
@@ -428,12 +431,12 @@ export default function PluginPresetManager({
             >
               {selectedPreset.is_default ? (
                 <>
-                  <StarIcon sx={{ mr: 1 }} />
+                  <Star size={16} style={{ marginRight: 8 }} />
                   Unset as Default
                 </>
               ) : (
                 <>
-                  <StarIcon sx={{ mr: 1 }} />
+                  <StarFilled size={16} style={{ marginRight: 8 }} />
                   Set as Default
                 </>
               )}
@@ -445,7 +448,7 @@ export default function PluginPresetManager({
               }}
               sx={{ color: 'error.main' }}
             >
-              <DeleteIcon sx={{ mr: 1 }} />
+              <TrashCan size={16} style={{ marginRight: 8 }} />
               Delete
             </MenuItem>
           </>

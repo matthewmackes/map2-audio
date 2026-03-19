@@ -32,23 +32,20 @@ import {
   Badge,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  PlayArrow as ActivateIcon,
-  Stop as DeactivateIcon,
-  Save as SaveIcon,
-  Refresh as RefreshIcon,
-  DragIndicator as DragIcon,
-  Settings as SettingsIcon,
-  Close as CloseIcon,
-  Undo as UndoIcon,
-  Redo as RedoIcon,
-  FiberManualRecord as RecordIcon,
-  CameraAlt as SnapshotIcon,
-  MusicNote as MidiIcon,
-  Tune as AudioConfigIcon,
-  Timeline as AutomationIcon,
-} from '@mui/icons-material';
+  Add,
+  ChartLine,
+  Close,
+  Delete,
+  Music,
+  PlayFilled,
+  Redo,
+  Renew,
+  Save,
+  Settings,
+  SettingsAdjust,
+  StopFilled,
+  Undo,
+} from '@carbon/icons-react';
 import { chainsApi, pluginsApi, usbApi, historyApi, audioApi, automationApi } from '../api';
 import { useChainUpdates, useMeterData } from '../hooks/useWebSocket';
 import type { Chain, Plugin, PluginParameter } from '../types';
@@ -83,6 +80,22 @@ import { LatencyOverlay, SnapshotBar as EnhancedSnapshotBar } from './ChainBuild
 import { AudioConfigDialog } from './Audio';
 import { MidiLearnButton, MidiMappingsPanel } from './MIDI';
 import { AutomationTimeline } from './Automation';
+
+function Glyph({
+  icon: Icon,
+  size = 18,
+  color = 'inherit',
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
 
 // Old grid visualization components removed - now using React Flow
 
@@ -1094,14 +1107,14 @@ export default function ChainBuilder() {
             <Tooltip title={historyState.nextUndo ? `Undo: ${historyState.nextUndo}` : 'Undo'}>
               <span>
                 <IconButton size="small" onClick={handleUndo} disabled={!historyState.canUndo}>
-                  <UndoIcon fontSize="small" />
+                  <Undo size={16} />
                 </IconButton>
               </span>
             </Tooltip>
             <Tooltip title={historyState.nextRedo ? `Redo: ${historyState.nextRedo}` : 'Redo'}>
               <span>
                 <IconButton size="small" onClick={handleRedo} disabled={!historyState.canRedo}>
-                  <RedoIcon fontSize="small" />
+                  <Redo size={16} />
                 </IconButton>
               </span>
             </Tooltip>
@@ -1127,7 +1140,7 @@ export default function ChainBuilder() {
               size="small"
               onClick={() => setAudioConfigDialogOpen(true)}
             >
-              <AudioConfigIcon fontSize="small" />
+              <SettingsAdjust size={16} />
             </IconButton>
           </Tooltip>
 
@@ -1139,7 +1152,7 @@ export default function ChainBuilder() {
                 color: automationTimelineExpanded ? 'primary.main' : 'inherit',
               }}
             >
-              <AutomationIcon fontSize="small" />
+              <ChartLine size={16} />
             </IconButton>
           </Tooltip>
 
@@ -1168,7 +1181,7 @@ export default function ChainBuilder() {
             Signal Chain Builder
           </Typography>
           <IconButton onClick={loadData}>
-            <RefreshIcon />
+            <Renew size={18} />
           </IconButton>
         </Box>
       </Paper>
@@ -1279,7 +1292,7 @@ export default function ChainBuilder() {
                         }}
                         color={hasActiveChain && !chain.is_active ? 'warning' : 'default'}
                       >
-                        {chain.is_active ? <DeactivateIcon /> : <ActivateIcon />}
+                        {chain.is_active ? <StopFilled size={18} /> : <PlayFilled size={18} />}
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
@@ -1291,7 +1304,7 @@ export default function ChainBuilder() {
                           handleDeleteChain(chain.id);
                         }}
                       >
-                        <DeleteIcon />
+                        <Delete size={18} />
                       </IconButton>
                     </Tooltip>
                   </ListItemSecondaryAction>
@@ -1320,7 +1333,7 @@ export default function ChainBuilder() {
                     {selectedChain.name}
                   </Typography>
                   <Button
-                    startIcon={<SaveIcon />}
+                    startIcon={<Save size={16} />}
                     onClick={() => setSavePresetDialogOpen(true)}
                     size="small"
                   >
@@ -1328,7 +1341,7 @@ export default function ChainBuilder() {
                   </Button>
                   <Button
                     variant="contained"
-                    startIcon={<AddIcon />}
+                    startIcon={<Add size={16} />}
                     onClick={() => setAddPluginDialogOpen(true)}
                     size="small"
                   >
@@ -1605,12 +1618,12 @@ export default function ChainBuilder() {
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <SettingsIcon color="primary" />
+              <Glyph icon={Settings} color="primary.main" />
               <Typography variant="h6" sx={{ flexGrow: 1 }}>
                 Parameters
               </Typography>
               <IconButton onClick={() => setParametersPanelOpen(false)} size="small">
-                <CloseIcon />
+                <Close size={18} />
               </IconButton>
             </Box>
 
@@ -1807,12 +1820,12 @@ export default function ChainBuilder() {
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MidiIcon color="primary" />
+            <Glyph icon={Music} color="primary.main" />
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               MIDI Mappings
             </Typography>
             <IconButton onClick={() => setMidiMappingsPanelOpen(false)} size="small">
-              <CloseIcon />
+              <Close size={18} />
             </IconButton>
           </Box>
           <Box sx={{ flexGrow: 1, overflow: 'auto' }}>

@@ -7,7 +7,16 @@
 
 import { useState, useMemo } from 'react'
 import { usePluginTags, usePluginMetadata } from '../../hooks/usePluginTags'
-import { Star, Eye, EyeSlash, X, CaretDown, CaretUp, Check } from '@phosphor-icons/react'
+import {
+  Checkmark as Check,
+  ChevronDown as CaretDown,
+  ChevronUp as CaretUp,
+  Close as X,
+  Star,
+  StarFilled,
+  View as Eye,
+  ViewOff as EyeSlash,
+} from '@carbon/icons-react'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 
 interface TagSelectorProps {
@@ -126,7 +135,7 @@ export function TagSelector({
           <h3>{displayPluginName}</h3>
           {onClose && (
             <button className="close-btn" onClick={onClose} title="Close">
-              <X size={18} weight="bold" />
+              <X size={18} />
             </button>
           )}
         </div>
@@ -139,7 +148,7 @@ export function TagSelector({
             disabled={isUpdating}
             title={metadata?.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
           >
-            {metadata?.is_favorite ? <Star size={16} weight="fill" /> : <Star size={16} weight="duotone" />}
+            {metadata?.is_favorite ? <StarFilled size={16} /> : <Star size={16} />}
             <span>Favorite</span>
           </button>
           <button
@@ -148,7 +157,7 @@ export function TagSelector({
             disabled={isUpdating}
             title={metadata?.is_hidden ? 'Show plugin' : 'Hide plugin'}
           >
-            {metadata?.is_hidden ? <EyeSlash size={16} weight="duotone" /> : <Eye size={16} weight="duotone" />}
+            {metadata?.is_hidden ? <EyeSlash size={16} /> : <Eye size={16} />}
             <span>Hidden</span>
           </button>
         </div>
@@ -171,7 +180,7 @@ export function TagSelector({
                 onClick={() => toggleTag(tag)}
               >
                 {tag}
-                <X size={12} weight="bold" />
+                <X size={12} />
               </span>
             ))}
           </div>
@@ -188,7 +197,7 @@ export function TagSelector({
         />
         {searchQuery && (
           <button className="clear-search" onClick={() => setSearchQuery('')}>
-            <X size={14} weight="bold" />
+            <X size={14} />
           </button>
         )}
       </div>
@@ -205,9 +214,9 @@ export function TagSelector({
               <span className="category-name">{categoryLabels[category] || category}</span>
               <span className="category-count">{tags.length}</span>
               {expandedCategories.has(category) ? (
-                <CaretUp size={14} weight="bold" />
+                <CaretUp size={14} />
               ) : (
-                <CaretDown size={14} weight="bold" />
+                <CaretDown size={14} />
               )}
             </button>
 
@@ -225,7 +234,7 @@ export function TagSelector({
                         '--tag-color': categoryColors[category]
                       } as React.CSSProperties}
                     >
-                      {isSelected && <Check size={12} weight="bold" />}
+                      {isSelected && <Check size={12} />}
                       {tag}
                     </button>
                   )

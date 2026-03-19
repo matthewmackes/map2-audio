@@ -20,14 +20,14 @@ import {
   Divider,
 } from '@mui/material';
 import {
-  Timer as LatencyIcon,
-  Speed as CompensateIcon,
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as EnabledIcon,
-  Cancel as DisabledIcon,
-} from '@mui/icons-material';
+  CheckmarkFilled,
+  ChevronDown,
+  ChevronUp,
+  CloseFilled,
+  Flash,
+  Renew,
+  Timer,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 import { sanitizeRestrictedDisplayText } from '../displayNames';
 
@@ -94,7 +94,7 @@ export function LatencyBadge({ latencyMs, compact = false }: { latencyMs: number
 
   return (
     <Chip
-      icon={<LatencyIcon sx={{ fontSize: 14 }} />}
+      icon={<Timer size={14} />}
       label={formatLatency(latencyMs)}
       size="small"
       color={color}
@@ -181,7 +181,7 @@ export default function LatencyDisplay({
             <Typography variant="caption">
               {plugin.latencySamples} samples @ 48kHz
             </Typography>
-            <Typography variant="caption" display="block">
+          <Typography variant="caption" display="block">
               {plugin.compensated ? '✓ Compensated' : '✗ Not compensated'}
             </Typography>
           </Box>
@@ -190,7 +190,9 @@ export default function LatencyDisplay({
         <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
           <LatencyBadge latencyMs={plugin.latencyMs} compact={compact} />
           {plugin.compensated && (
-            <CompensateIcon sx={{ fontSize: 12, color: theme.palette.success.main }} />
+            <Box sx={{ color: 'success.main', display: 'inline-flex' }}>
+              <Flash size={12} />
+            </Box>
           )}
         </Box>
       </Tooltip>
@@ -219,12 +221,9 @@ export default function LatencyDisplay({
         }}
         onClick={() => setExpanded(!expanded)}
       >
-        <LatencyIcon 
-          sx={{ 
-            color: theme.palette.primary.main,
-            fontSize: 20,
-          }} 
-        />
+        <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+          <Timer size={20} />
+        </Box>
         
         {!compact && (
           <Typography variant="caption" sx={{ fontWeight: 600 }}>
@@ -255,9 +254,13 @@ export default function LatencyDisplay({
                 sx={{ transform: 'scale(0.8)' }}
               />
               {status.enabled ? (
-                <EnabledIcon sx={{ fontSize: 14, color: theme.palette.success.main }} />
+                <Box sx={{ color: 'success.main', display: 'inline-flex' }}>
+                  <CheckmarkFilled size={14} />
+                </Box>
               ) : (
-                <DisabledIcon sx={{ fontSize: 14, color: theme.palette.text.disabled }} />
+                <Box sx={{ color: 'text.disabled', display: 'inline-flex' }}>
+                  <CloseFilled size={14} />
+                </Box>
               )}
             </Box>
           </Tooltip>
@@ -266,11 +269,11 @@ export default function LatencyDisplay({
         <Box sx={{ flex: 1 }} />
 
         <IconButton size="small" onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}>
-          {expanded ? <CollapseIcon fontSize="small" /> : <ExpandIcon fontSize="small" />}
+          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </IconButton>
 
         <IconButton size="small" onClick={(e) => { e.stopPropagation(); fetchStatus(); }}>
-          <RefreshIcon fontSize="small" />
+          <Renew size={16} />
         </IconButton>
       </Box>
 
@@ -297,7 +300,7 @@ export default function LatencyDisplay({
                         </Typography>
                         {plugin.compensated && (
                           <Chip
-                            label="✓"
+                            label="OK"
                             size="small"
                             color="success"
                             sx={{ height: 16, '& .MuiChip-label': { px: 0.5, fontSize: 10 } }}

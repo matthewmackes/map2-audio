@@ -40,33 +40,30 @@ import {
   Tabs,
 } from '@mui/material';
 import {
-  Settings as SettingsIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as OkIcon,
-  Error as ErrorIcon,
-  Warning as WarningIcon,
-  Info as InfoIcon,
-  RestartAlt as RestartIcon,
-  Computer as SystemIcon,
-  Storage as StorageIcon,
-  Memory as MemoryIcon,
-  Speed as CpuIcon,
-  GraphicEq as AudioIcon,
-  Piano as MidiIcon,
-  Waves as IRIcon,
-  MusicVideo as NAMIcon,
-  Timeline as AutomationIcon,
-  History as HistoryIcon,
-  Folder as SessionIcon,
-  ExpandMore as ExpandIcon,
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
-  Security as SecurityIcon,
-  Palette as ThemeIcon,
-  Code as ApiIcon,
-  BugReport as DebugIcon,
-  Cable as WebSocketIcon,
-} from '@mui/icons-material';
+  ChartLine,
+  CheckmarkFilled,
+  ChevronDown,
+  Code,
+  ColorPalette,
+  ConnectionSignal,
+  DataBase,
+  Debug,
+  Equalizer,
+  Folder,
+  Information,
+  Music,
+  PlayFilled,
+  RecentlyViewed,
+  Renew,
+  Restart,
+  Security,
+  Settings,
+  StopFilled,
+  Time,
+  WarningAlt,
+  Waveform,
+  Laptop,
+} from '@carbon/icons-react';
 import {
   audioApi,
   midiApi,
@@ -88,6 +85,22 @@ import type {
   SystemMetrics,
 } from '../types';
 import { useWebSocketStatus, useWebSocketQuery } from '../hooks/useWebSocket';
+
+function Glyph({
+  icon: Icon,
+  size = 18,
+  color = 'inherit',
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
 
 interface ServiceStatus {
   name: string;
@@ -120,13 +133,13 @@ function getStatusColor(status: string): 'success' | 'error' | 'warning' | 'defa
 function getStatusIcon(status: string) {
   switch (status) {
     case 'running':
-      return <OkIcon color="success" />;
+      return <Glyph icon={CheckmarkFilled} color="success.main" />;
     case 'stopped':
-      return <StopIcon color="disabled" />;
+      return <Glyph icon={StopFilled} color="text.disabled" />;
     case 'error':
-      return <ErrorIcon color="error" />;
+      return <Glyph icon={WarningAlt} color="error.main" />;
     default:
-      return <WarningIcon color="warning" />;
+      return <Glyph icon={WarningAlt} color="warning.main" />;
   }
 }
 
@@ -273,7 +286,7 @@ export default function SettingsPanel() {
   const services: ServiceStatus[] = [
     {
       name: 'FastAPI Backend',
-      icon: <ApiIcon />,
+      icon: <Code size={18} />,
       status: apiHealth ? 'running' : apiHealth === false ? 'error' : 'unknown',
       message: apiHealth ? 'API responding normally' : 'API not responding',
       details: {
@@ -283,7 +296,7 @@ export default function SettingsPanel() {
       actions: [
         {
           label: 'Restart',
-          icon: <RestartIcon />,
+          icon: <Restart size={16} />,
           onClick: handleRestartBackend,
           color: 'primary',
         },
@@ -291,7 +304,7 @@ export default function SettingsPanel() {
     },
     {
       name: 'WebSocket Service',
-      icon: <WebSocketIcon />,
+      icon: <ConnectionSignal size={18} />,
       status: wsStatus === 'connected' ? 'running' : wsStatus === 'error' ? 'error' : wsStatus === 'reconnecting' ? 'unknown' : 'stopped',
       message: wsStatus === 'connected'
         ? 'Real-time updates active'
@@ -313,7 +326,7 @@ export default function SettingsPanel() {
     },
     {
       name: 'Audio Engine',
-      icon: <AudioIcon />,
+      icon: <Equalizer size={18} />,
       status: audioStatus?.running ? 'running' : audioStatus?.available ? 'stopped' : 'error',
       message: audioStatus?.running
         ? `${audioStatus.sample_rate}Hz / ${audioStatus.buffer_size} samples`
@@ -330,7 +343,7 @@ export default function SettingsPanel() {
       actions: [
         {
           label: audioStatus?.running ? 'Stop' : 'Start',
-          icon: audioStatus?.running ? <StopIcon /> : <StartIcon />,
+          icon: audioStatus?.running ? <StopFilled size={16} /> : <PlayFilled size={16} />,
           onClick: async () => {
             try {
               if (audioStatus?.running) {
@@ -349,13 +362,13 @@ export default function SettingsPanel() {
     },
     {
       name: 'MIDI Engine',
-      icon: <MidiIcon />,
+      icon: <Music size={18} />,
       status: 'running', // Assume running if API is accessible
       message: 'MIDI service active',
       actions: [
         {
           label: 'Restart',
-          icon: <RestartIcon />,
+          icon: <Restart size={16} />,
           onClick: async () => {
             try {
               await midiApi.stop();
@@ -369,7 +382,7 @@ export default function SettingsPanel() {
     },
     {
       name: 'IR Processor',
-      icon: <IRIcon />,
+      icon: <Waveform size={18} />,
       status: irStatus?.available ? 'running' : 'error',
       message: irStatus?.available
         ? `Cabinet: ${irStatus.loaded_cabinet || 'None'} | Reverb: ${irStatus.loaded_reverb || 'None'}`
@@ -377,7 +390,7 @@ export default function SettingsPanel() {
     },
     {
       name: 'Neural Amp Modeler',
-      icon: <NAMIcon />,
+      icon: <Debug size={18} />,
       status: namStatus?.available ? 'running' : 'stopped',
       message: namStatus?.available
         ? `Active: ${namStatus.activeModel || 'None'}`
@@ -385,19 +398,19 @@ export default function SettingsPanel() {
     },
     {
       name: 'Automation Engine',
-      icon: <AutomationIcon />,
+      icon: <ChartLine size={18} />,
       status: 'running',
       message: 'Timeline automation active',
     },
     {
       name: 'Command History',
-      icon: <HistoryIcon />,
+      icon: <RecentlyViewed size={18} />,
       status: 'running',
       message: `${historyStatus?.undo_stack_size || 0} undos / ${historyStatus?.redo_stack_size || 0} redos`,
       actions: [
         {
           label: 'Clear History',
-          icon: <StopIcon />,
+          icon: <StopFilled size={16} />,
           onClick: async () => {
             try {
               await historyApi.clear();
@@ -412,7 +425,7 @@ export default function SettingsPanel() {
     },
     {
       name: 'Session Manager',
-      icon: <SessionIcon />,
+      icon: <Folder size={18} />,
       status: 'running',
       message: `${sessionCount} saved sessions`,
     },
@@ -430,12 +443,12 @@ export default function SettingsPanel() {
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <SettingsIcon sx={{ color: 'primary.main' }} />
+        <Glyph icon={Settings} color="primary.main" />
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Settings & System Status
         </Typography>
         <IconButton onClick={fetchAllStatus} disabled={loading} size="small">
-          <RefreshIcon />
+          <Renew size={18} />
         </IconButton>
       </Box>
 
@@ -443,10 +456,10 @@ export default function SettingsPanel() {
 
       {/* Tabs */}
       <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} variant="fullWidth">
-        <Tab icon={<SystemIcon />} label="Services" />
-        <Tab icon={<SecurityIcon />} label="System" />
-        <Tab icon={<ThemeIcon />} label="Appearance" />
-        <Tab icon={<DebugIcon />} label="Debug" />
+        <Tab icon={<Laptop size={18} />} label="Services" />
+        <Tab icon={<Security size={18} />} label="System" />
+        <Tab icon={<ColorPalette size={18} />} label="Appearance" />
+        <Tab icon={<Debug size={18} />} label="Debug" />
       </Tabs>
 
       {/* Error Alert */}
@@ -524,7 +537,7 @@ export default function SettingsPanel() {
                 <Grid container spacing={2}>
                   <Grid item xs={6} sm={3}>
                     <Box sx={{ textAlign: 'center' }}>
-                      <CpuIcon color="primary" />
+                      <Glyph icon={ChartLine} color="primary.main" />
                       <Typography variant="h6">{metrics.cpu_percent.toFixed(1)}%</Typography>
                       <Typography variant="caption" color="text.secondary">
                         CPU Usage
@@ -533,7 +546,7 @@ export default function SettingsPanel() {
                   </Grid>
                   <Grid item xs={6} sm={3}>
                     <Box sx={{ textAlign: 'center' }}>
-                      <MemoryIcon color="secondary" />
+                      <Glyph icon={DataBase} color="secondary.main" />
                       <Typography variant="h6">{metrics.memory_percent.toFixed(1)}%</Typography>
                       <Typography variant="caption" color="text.secondary">
                         Memory
@@ -542,7 +555,7 @@ export default function SettingsPanel() {
                   </Grid>
                   <Grid item xs={6} sm={3}>
                     <Box sx={{ textAlign: 'center' }}>
-                      <StorageIcon color="action" />
+                      <Glyph icon={DataBase} color="text.secondary" />
                       <Typography variant="h6">{metrics.disk_percent.toFixed(1)}%</Typography>
                       <Typography variant="caption" color="text.secondary">
                         Disk
@@ -551,7 +564,7 @@ export default function SettingsPanel() {
                   </Grid>
                   <Grid item xs={6} sm={3}>
                     <Box sx={{ textAlign: 'center' }}>
-                      <AudioIcon color="success" />
+                      <Glyph icon={Equalizer} color="success.main" />
                       <Typography variant="h6">{metrics.audio_latency_ms.toFixed(1)}ms</Typography>
                       <Typography variant="caption" color="text.secondary">
                         Latency
@@ -566,9 +579,9 @@ export default function SettingsPanel() {
           {/* Real-time Audio Status */}
           {realtimeStatus && (
             <Accordion defaultExpanded>
-              <AccordionSummary expandIcon={<ExpandIcon />}>
+              <AccordionSummary expandIcon={<ChevronDown size={16} />}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                  <SecurityIcon />
+                  <Security size={18} />
                   <Typography>Real-Time Audio Configuration</Typography>
                   <Box sx={{ flexGrow: 1 }} />
                   <Chip
@@ -587,20 +600,20 @@ export default function SettingsPanel() {
               <AccordionDetails>
                 <Grid container spacing={1} sx={{ mb: 2 }}>
                   <Grid item>
-                    <Chip icon={<OkIcon />} label={`${realtimeStatus.summary.passed} Passed`} color="success" size="small" />
+                    <Chip icon={<CheckmarkFilled size={14} />} label={`${realtimeStatus.summary.passed} Passed`} color="success" size="small" />
                   </Grid>
                   <Grid item>
-                    <Chip icon={<WarningIcon />} label={`${realtimeStatus.summary.warnings} Warnings`} color="warning" size="small" />
+                    <Chip icon={<WarningAlt size={14} />} label={`${realtimeStatus.summary.warnings} Warnings`} color="warning" size="small" />
                   </Grid>
                   <Grid item>
-                    <Chip icon={<ErrorIcon />} label={`${realtimeStatus.summary.failed} Failed`} color="error" size="small" />
+                    <Chip icon={<WarningAlt size={14} />} label={`${realtimeStatus.summary.failed} Failed`} color="error" size="small" />
                   </Grid>
                 </Grid>
                 <List dense>
                   {realtimeStatus.checks.map((check, idx) => (
                     <ListItem key={idx}>
                       <ListItemIcon>
-                        {check.ok ? <OkIcon color="success" /> : <ErrorIcon color="error" />}
+                        {check.ok ? <Glyph icon={CheckmarkFilled} color="success.main" /> : <Glyph icon={WarningAlt} color="error.main" />}
                       </ListItemIcon>
                       <ListItemText
                         primary={check.name}
@@ -610,7 +623,7 @@ export default function SettingsPanel() {
                         <ListItemSecondaryAction>
                           <Tooltip title={check.fix}>
                             <IconButton size="small">
-                              <InfoIcon />
+                              <Information size={16} />
                             </IconButton>
                           </Tooltip>
                         </ListItemSecondaryAction>
@@ -625,9 +638,9 @@ export default function SettingsPanel() {
           {/* Branding Status */}
           {brandingStatus && (
             <Accordion>
-              <AccordionSummary expandIcon={<ExpandIcon />}>
+              <AccordionSummary expandIcon={<ChevronDown size={16} />}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ThemeIcon />
+                  <ColorPalette size={18} />
                   <Typography>MAP2 Branding</Typography>
                 </Box>
               </AccordionSummary>
@@ -636,7 +649,7 @@ export default function SettingsPanel() {
                   {brandingStatus.checks.map((check, idx) => (
                     <ListItem key={idx}>
                       <ListItemIcon>
-                        {check.installed ? <OkIcon color="success" /> : <ErrorIcon color="error" />}
+                        {check.installed ? <Glyph icon={CheckmarkFilled} color="success.main" /> : <Glyph icon={WarningAlt} color="error.main" />}
                       </ListItemIcon>
                       <ListItemText
                         primary={check.name}
@@ -647,7 +660,7 @@ export default function SettingsPanel() {
                 </List>
                 <Button
                   variant="outlined"
-                  startIcon={<RestartIcon />}
+                  startIcon={<Restart size={16} />}
                   onClick={handleReinstallBranding}
                   disabled={!brandingStatus.source_available}
                   sx={{ mt: 1 }}
@@ -668,7 +681,7 @@ export default function SettingsPanel() {
                 <Grid item>
                   <Button
                     variant="outlined"
-                    startIcon={<RestartIcon />}
+                    startIcon={<Restart size={16} />}
                     onClick={handleRestartBackend}
                   >
                     Restart Backend
@@ -678,7 +691,7 @@ export default function SettingsPanel() {
                   <Button
                     variant="outlined"
                     color="error"
-                    startIcon={<RestartIcon />}
+                    startIcon={<Restart size={16} />}
                     onClick={handleRestartSystem}
                   >
                     Restart System
@@ -743,7 +756,7 @@ export default function SettingsPanel() {
                 ].map((api) => (
                   <ListItem key={api.name}>
                     <ListItemIcon>
-                      <ApiIcon fontSize="small" />
+                      <Code size={16} />
                     </ListItemIcon>
                     <ListItemText
                       primary={api.name}
@@ -775,7 +788,7 @@ export default function SettingsPanel() {
               </Typography>
               <Button
                 variant="outlined"
-                startIcon={<ApiIcon />}
+                startIcon={<Code size={16} />}
                 href="/docs"
                 target="_blank"
               >

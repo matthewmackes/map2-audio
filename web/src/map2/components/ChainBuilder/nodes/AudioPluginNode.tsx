@@ -19,19 +19,19 @@ import {
 } from '@mui/material';
 import { NumberInput } from '../../NumberInput';
 import {
-  PowerSettingsNew as PowerIcon,
-  Delete as DeleteIcon,
-  Settings as SettingsIcon,
-  DragIndicator as DragIcon,
-  Speed as CpuIcon,
-  Waves as LfoIcon,
-  GraphicEq as EnvelopeIcon,
-  Timer as LatencyIcon,
-  Timeline as AutomationIcon,
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
-  CallSplit as SidechainIcon,
-} from '@mui/icons-material';
+  ChartLine,
+  ChevronDown,
+  ChevronUp,
+  DirectionFork,
+  Draggable,
+  Equalizer,
+  Meter,
+  Power,
+  Settings,
+  Timer,
+  TrashCan,
+  Waveform,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 import { AudioPluginNodeData, getSidechainHandleId } from './AudioPluginNodeTypes';
 import { getDisplayPluginName } from '../../../displayNames';
@@ -62,6 +62,16 @@ function formatLatency(samples: number, sampleRate: number = 48000): string {
     return `${samples} smp`;
   }
   return `${ms.toFixed(1)}ms`;
+}
+
+function ChipGlyph({
+  icon: Icon,
+  size = 12,
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  size?: number;
+}) {
+  return <Icon size={size} />;
 }
 
 const AudioPluginNode = memo(
@@ -223,9 +233,9 @@ const AudioPluginNode = memo(
 
             {/* Header */}
             <Stack direction="row" spacing={0.5} alignItems="flex-start" mb={compact ? 0.5 : 1}>
-              <DragIcon
-                sx={{ fontSize: 16, color: 'text.disabled', mt: 0.5 }}
-              />
+              <Box sx={{ color: 'text.disabled', mt: 0.5, display: 'inline-flex', alignItems: 'center' }}>
+                <Draggable size={16} />
+              </Box>
               <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Typography
                   variant="subtitle2"
@@ -266,7 +276,9 @@ const AudioPluginNode = memo(
               {/* Sidechain indicator if has sidechain buses */}
               {sidechainBuses && sidechainBuses > 0 && (
                 <Tooltip title={`${sidechainBuses} sidechain input${sidechainBuses > 1 ? 's' : ''}`}>
-                  <SidechainIcon sx={{ fontSize: 14, color: 'secondary.main' }} />
+                  <Box sx={{ fontSize: 14, color: 'secondary.main', display: 'inline-flex', alignItems: 'center' }}>
+                    <DirectionFork size={14} />
+                  </Box>
                 </Tooltip>
               )}
             </Stack>
@@ -292,7 +304,7 @@ const AudioPluginNode = memo(
               {latencyInfo && (
                 <Tooltip title={`Latency: ${latencyInfo.samples} samples (${latencyInfo.ms.toFixed(2)}ms)`}>
                   <Chip
-                    icon={<LatencyIcon sx={{ fontSize: 12 }} />}
+                    icon={<ChipGlyph icon={Timer} />}
                     label={latencyInfo.display}
                     size="small"
                     color={latencyInfo.color}
@@ -306,7 +318,7 @@ const AudioPluginNode = memo(
               {data.cpuPercent !== undefined && (
                 <Tooltip title={`CPU: ${data.cpuPercent.toFixed(1)}%`}>
                   <Chip
-                    icon={<CpuIcon sx={{ fontSize: 12 }} />}
+                    icon={<ChipGlyph icon={Meter} />}
                     label={`${data.cpuPercent.toFixed(0)}%`}
                     size="small"
                     color={data.cpuPercent > 50 ? 'error' : data.cpuPercent > 25 ? 'warning' : 'default'}
@@ -323,7 +335,7 @@ const AudioPluginNode = memo(
               {data.hasLfo && (
                 <Tooltip title="LFO modulation active">
                   <Chip
-                    icon={<LfoIcon sx={{ fontSize: 12 }} />}
+                    icon={<ChipGlyph icon={Waveform} />}
                     label="LFO"
                     size="small"
                     color="secondary"
@@ -336,7 +348,7 @@ const AudioPluginNode = memo(
               {data.hasEnvelope && (
                 <Tooltip title="Envelope follower active">
                   <Chip
-                    icon={<EnvelopeIcon sx={{ fontSize: 12 }} />}
+                    icon={<ChipGlyph icon={Equalizer} />}
                     label="ENV"
                     size="small"
                     color="warning"
@@ -349,7 +361,7 @@ const AudioPluginNode = memo(
               {data.hasAutomation && (
                 <Tooltip title="Automation recorded">
                   <Chip
-                    icon={<AutomationIcon sx={{ fontSize: 12 }} />}
+                    icon={<ChipGlyph icon={ChartLine} />}
                     label="AUTO"
                     size="small"
                     color="primary"
@@ -409,7 +421,7 @@ const AudioPluginNode = memo(
                     }}
                     sx={{ color: meterPanelExpanded ? 'primary.main' : 'text.secondary' }}
                   >
-                    {meterPanelExpanded ? <CollapseIcon fontSize="small" /> : <ExpandIcon fontSize="small" />}
+                    {meterPanelExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </IconButton>
                 </Tooltip>
               )}
@@ -421,10 +433,9 @@ const AudioPluginNode = memo(
                   data.onToggleBypass();
                 }}
               >
-                <PowerIcon
-                  fontSize="small"
-                  color={isBypassed ? 'disabled' : 'primary'}
-                />
+                <Box sx={{ color: isBypassed ? 'text.disabled' : 'primary.main', display: 'inline-flex', alignItems: 'center' }}>
+                  <Power size={16} />
+                </Box>
               </IconButton>
               <IconButton
                 size="small"
@@ -433,7 +444,7 @@ const AudioPluginNode = memo(
                   data.onOpenParameters();
                 }}
               >
-                <SettingsIcon fontSize="small" />
+                <Settings size={16} />
               </IconButton>
               <IconButton
                 size="small"
@@ -451,7 +462,7 @@ const AudioPluginNode = memo(
                   },
                 }}
               >
-                <DeleteIcon fontSize="small" />
+                <TrashCan size={16} />
               </IconButton>
             </Stack>
           </CardContent>

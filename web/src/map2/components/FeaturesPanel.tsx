@@ -16,10 +16,14 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
-  Dashboard as FeaturesIcon,
-} from '@mui/icons-material';
+  ArrowsHorizontal,
+  Camera,
+  ChevronDown,
+  ChevronUp,
+  Dashboard,
+  Document,
+  Flash,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 // Import all feature components
@@ -125,7 +129,9 @@ export default function FeaturesPanel({
     >
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <FeaturesIcon color="primary" />
+        <Box sx={{ color: 'primary.main', display: 'inline-flex' }}>
+          <Dashboard size={20} />
+        </Box>
         <Typography variant="h6" sx={{ flex: 1 }}>
           Quick Access
         </Typography>
@@ -146,10 +152,11 @@ export default function FeaturesPanel({
               onClick={() => toggleSection('toolbar')}
             >
               <Typography variant="subtitle2" sx={{ flex: 1 }}>
-                📝 Undo/Redo & Automation
+                <Document size={16} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} />
+                Undo/Redo & Automation
               </Typography>
               <IconButton size="small">
-                {expandedSections.toolbar ? <CollapseIcon /> : <ExpandIcon />}
+                {expandedSections.toolbar ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </IconButton>
             </Box>
             <Collapse in={expandedSections.toolbar}>
@@ -169,10 +176,11 @@ export default function FeaturesPanel({
               onClick={() => toggleSection('snapshots')}
             >
               <Typography variant="subtitle2" sx={{ flex: 1 }}>
-                📸 Quick Snapshots
+                <Camera size={16} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} />
+                Quick Snapshots
               </Typography>
               <IconButton size="small">
-                {expandedSections.snapshots ? <CollapseIcon /> : <ExpandIcon />}
+                {expandedSections.snapshots ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </IconButton>
             </Box>
             <Collapse in={expandedSections.snapshots}>
@@ -192,10 +200,11 @@ export default function FeaturesPanel({
               onClick={() => toggleSection('abMode')}
             >
               <Typography variant="subtitle2" sx={{ flex: 1 }}>
-                🔀 A/B Compare
+                <ArrowsHorizontal size={16} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} />
+                A/B Compare
               </Typography>
               <IconButton size="small">
-                {expandedSections.abMode ? <CollapseIcon /> : <ExpandIcon />}
+                {expandedSections.abMode ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </IconButton>
             </Box>
             <Collapse in={expandedSections.abMode}>
@@ -228,10 +237,10 @@ export default function FeaturesPanel({
               onClick={() => toggleSection('session')}
             >
               <Typography variant="subtitle2" sx={{ flex: 1 }}>
-                💾 Session & Backup
+                Session & Backup
               </Typography>
               <IconButton size="small">
-                {expandedSections.session ? <CollapseIcon /> : <ExpandIcon />}
+                {expandedSections.session ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </IconButton>
             </Box>
             <Collapse in={expandedSections.session}>
@@ -254,10 +263,11 @@ export default function FeaturesPanel({
               onClick={() => toggleSection('performance')}
             >
               <Typography variant="subtitle2" sx={{ flex: 1 }}>
-                ⚡ Performance
+                <Flash size={16} style={{ marginRight: 6, verticalAlign: 'text-bottom' }} />
+                Performance
               </Typography>
               <IconButton size="small">
-                {expandedSections.performance ? <CollapseIcon /> : <ExpandIcon />}
+                {expandedSections.performance ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </IconButton>
             </Box>
             <Collapse in={expandedSections.performance}>

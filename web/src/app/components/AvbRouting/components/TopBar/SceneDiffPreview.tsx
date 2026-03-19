@@ -7,11 +7,8 @@
  */
 
 import React from 'react';
+import { AddAlt, Compare, Draggable, Subtract } from '@carbon/icons-react';
 import { Box, Button, Chip, Typography } from '@mui/material';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
 import { useRouting } from '../../context/RoutingContext';
 
 function renderAddRouteLabel(route: {
@@ -89,7 +86,7 @@ export function SceneDiffPreview() {
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        <CompareArrowsIcon fontSize="small" />
+        <Compare size={16} />
         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
           Scene Diff Preview
         </Typography>
@@ -106,7 +103,7 @@ export function SceneDiffPreview() {
         </Typography>
         <Chip
           size="small"
-          icon={<AddIcon />}
+          icon={<AddAlt size={16} />}
           color="success"
           variant="outlined"
           label={`${preview.to_add.length} add`}
@@ -114,7 +111,7 @@ export function SceneDiffPreview() {
         />
         <Chip
           size="small"
-          icon={<RemoveIcon />}
+          icon={<Subtract size={16} />}
           color="error"
           variant="outlined"
           label={`${preview.to_remove.length} remove`}
@@ -122,7 +119,7 @@ export function SceneDiffPreview() {
         />
         <Chip
           size="small"
-          icon={<DragHandleIcon />}
+          icon={<Draggable size={16} />}
           variant="outlined"
           label={`${preview.unchanged.length} unchanged`}
           data-testid="scene-diff-preview-unchanged-count"

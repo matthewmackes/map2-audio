@@ -24,17 +24,16 @@ import {
   ListItemText,
 } from '@mui/material';
 import {
-  Speed as CpuIcon,
-  Memory as MemoryIcon,
-  Timer as LatencyIcon,
-  Warning as XrunIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as OkIcon,
-  Error as ErrorIcon,
-  Info as InfoIcon,
-  GraphicEq as AudioIcon,
-  Schedule as UptimeIcon,
-} from '@mui/icons-material';
+  AudioConsole,
+  ChartLine,
+  CheckmarkFilled,
+  DataBase,
+  ErrorFilled,
+  Information,
+  Renew,
+  Timer,
+  WarningAltFilled,
+} from '@carbon/icons-react';
 import { metricsApi, systemApi } from '../api';
 import type { SystemMetrics, MetricsSummary, RealtimeStatus, JackMetrics } from '../types';
 
@@ -114,6 +113,20 @@ function MetricCard({ icon, title, value, unit, subtext, color = 'primary', prog
   );
 }
 
+interface CarbonGlyphProps {
+  icon: React.ComponentType<{ size?: number }>;
+  color?: string;
+  size?: number;
+}
+
+function CarbonGlyph({ icon: Icon, color = 'inherit', size = 20 }: CarbonGlyphProps) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
+
 export default function MetricsDashboard() {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [summary, setSummary] = useState<MetricsSummary | null>(null);
@@ -170,7 +183,7 @@ export default function MetricsDashboard() {
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <AudioIcon sx={{ color: 'primary.main' }} />
+        <CarbonGlyph icon={AudioConsole} color="primary.main" />
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           System Metrics
         </Typography>
@@ -182,7 +195,7 @@ export default function MetricsDashboard() {
           />
         )}
         <IconButton onClick={fetchData} size="small">
-          <RefreshIcon />
+          <Renew size={18} />
         </IconButton>
       </Box>
 
@@ -201,7 +214,7 @@ export default function MetricsDashboard() {
           {/* CPU */}
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              icon={<CpuIcon />}
+              icon={<CarbonGlyph icon={ChartLine} />}
               title="CPU Usage"
               value={metrics?.cpu_percent !== undefined ? metrics.cpu_percent.toFixed(1) : '0'}
               unit="%"
@@ -220,7 +233,7 @@ export default function MetricsDashboard() {
           {/* Memory */}
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              icon={<MemoryIcon />}
+              icon={<CarbonGlyph icon={DataBase} />}
               title="Memory Usage"
               value={metrics?.memory_percent !== undefined ? metrics.memory_percent.toFixed(1) : '0'}
               unit="%"
@@ -243,7 +256,7 @@ export default function MetricsDashboard() {
           {/* Audio Latency */}
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              icon={<LatencyIcon />}
+              icon={<CarbonGlyph icon={Timer} />}
               title="Audio Latency"
               value={
                 metrics?.audio_latency_ms !== undefined
@@ -271,7 +284,7 @@ export default function MetricsDashboard() {
           {/* XRuns */}
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              icon={<XrunIcon />}
+              icon={<CarbonGlyph icon={WarningAltFilled} />}
               title="Audio Xruns"
               value={metrics?.audio_xruns || 0}
               color={(metrics?.audio_xruns || 0) > 0 ? 'error' : 'success'}
@@ -286,7 +299,7 @@ export default function MetricsDashboard() {
           {/* Uptime */}
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              icon={<UptimeIcon />}
+              icon={<CarbonGlyph icon={Timer} />}
               title="Uptime"
               value={formatUptime(metrics?.uptime_seconds || 0)}
               color="primary"
@@ -296,7 +309,7 @@ export default function MetricsDashboard() {
           {/* Disk */}
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              icon={<InfoIcon />}
+              icon={<CarbonGlyph icon={Information} />}
               title="Disk Usage"
               value={metrics?.disk_percent !== undefined ? metrics.disk_percent.toFixed(1) : '0'}
               unit="%"
@@ -317,7 +330,7 @@ export default function MetricsDashboard() {
                 <Grid container spacing={1}>
                   <Grid item>
                     <Chip
-                      icon={<OkIcon />}
+                      icon={<CarbonGlyph icon={CheckmarkFilled} size={16} />}
                       label={`${realtimeStatus.summary.passed} Passed`}
                       color="success"
                       size="small"
@@ -325,7 +338,7 @@ export default function MetricsDashboard() {
                   </Grid>
                   <Grid item>
                     <Chip
-                      icon={<InfoIcon />}
+                      icon={<CarbonGlyph icon={Information} size={16} />}
                       label={`${realtimeStatus.summary.warnings} Warnings`}
                       color="warning"
                       size="small"
@@ -333,7 +346,7 @@ export default function MetricsDashboard() {
                   </Grid>
                   <Grid item>
                     <Chip
-                      icon={<ErrorIcon />}
+                      icon={<CarbonGlyph icon={ErrorFilled} size={16} />}
                       label={`${realtimeStatus.summary.failed} Failed`}
                       color="error"
                       size="small"
@@ -346,7 +359,11 @@ export default function MetricsDashboard() {
                 {realtimeStatus.checks.slice(0, 8).map((check) => (
                   <ListItem key={check.name}>
                     <ListItemIcon>
-                      {check.ok ? <OkIcon color="success" /> : <ErrorIcon color="error" />}
+                      {check.ok ? (
+                        <CarbonGlyph icon={CheckmarkFilled} color="success.main" />
+                      ) : (
+                        <CarbonGlyph icon={ErrorFilled} color="error.main" />
+                      )}
                     </ListItemIcon>
                     <ListItemText
                       primary={check.name}
@@ -358,7 +375,7 @@ export default function MetricsDashboard() {
                     {!check.ok && check.fix && (
                       <Tooltip title={check.fix}>
                         <IconButton size="small">
-                          <InfoIcon fontSize="small" />
+                          <Information size={14} />
                         </IconButton>
                       </Tooltip>
                     )}

@@ -28,24 +28,39 @@ import {
   ListItemText,
 } from '@mui/material';
 import {
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
-  Refresh as RefreshIcon,
-  VolumeUp as VolumeIcon,
-  Speed as PerformanceIcon,
-  Memory as MemoryIcon,
-  Timer as LatencyIcon,
-  Warning as XrunIcon,
-  CheckCircle as OkIcon,
-  Error as ErrorIcon,
-  Info as InfoIcon,
-  Schedule as UptimeIcon,
-  GraphicEq as AudioIcon,
-} from '@mui/icons-material';
+  ChartLine,
+  CheckmarkFilled,
+  DataBase,
+  Equalizer,
+  Information,
+  PlayFilled,
+  Renew,
+  StopFilled,
+  Time,
+  Timer,
+  VolumeUp,
+  WarningAlt,
+} from '@carbon/icons-react';
 import { audioApi, metricsApi, systemApi } from '../api';
 import { useMeterData } from '../hooks/useWebSocket';
 import type { AudioStatus, AudioLevels, PluginLevels, SystemMetrics, MetricsSummary, RealtimeStatus, JackMetrics } from '../types';
 import { sanitizeRestrictedDisplayText } from '../displayNames';
+
+function Glyph({
+  icon: Icon,
+  size = 18,
+  color = 'inherit',
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Box component="span" sx={{ color, display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+      <Icon size={size} />
+    </Box>
+  );
+}
 
 function LevelMeter({ label, level, color = 'primary' }: { label: string; level: number; color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' }) {
   const dbValue = 20 * Math.log10(Math.max(level, 0.00001));
@@ -272,14 +287,14 @@ export default function AudioEngine() {
         )}
         <Button
           variant={status?.running ? 'outlined' : 'contained'}
-          startIcon={status?.running ? <StopIcon /> : <StartIcon />}
+          startIcon={status?.running ? <StopFilled size={16} /> : <PlayFilled size={16} />}
           onClick={status?.running ? handleStop : handleStart}
           color={status?.running ? 'error' : 'success'}
         >
           {status?.running ? 'Stop' : 'Start'}
         </Button>
         <IconButton onClick={handleRefresh}>
-          <RefreshIcon />
+          <Renew size={18} />
         </IconButton>
       </Box>
 
@@ -297,8 +312,8 @@ export default function AudioEngine() {
           onChange={(_, newValue) => setTabValue(newValue)}
           aria-label="audio and metrics tabs"
         >
-          <Tab label="Audio Engine" icon={<VolumeIcon />} iconPosition="start" />
-          <Tab label="System Metrics" icon={<PerformanceIcon />} iconPosition="start" />
+          <Tab label="Audio Engine" icon={<VolumeUp size={18} />} iconPosition="start" />
+          <Tab label="System Metrics" icon={<ChartLine size={18} />} iconPosition="start" />
         </Tabs>
       </Paper>
 
@@ -312,7 +327,7 @@ export default function AudioEngine() {
                 <CardContent>
                   <Stack spacing={2}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PerformanceIcon color="primary" />
+                      <Glyph icon={ChartLine} color="primary.main" />
                       <Typography variant="h6">Engine Status</Typography>
                     </Box>
 
@@ -365,7 +380,7 @@ export default function AudioEngine() {
                 <CardContent>
                   <Stack spacing={2}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <VolumeIcon color="primary" />
+                      <Glyph icon={VolumeUp} color="primary.main" />
                       <Typography variant="h6">Audio Levels</Typography>
                     </Box>
 
@@ -438,7 +453,7 @@ export default function AudioEngine() {
             {/* CPU */}
             <Grid item xs={12} sm={6} md={3}>
               <MetricCard
-                icon={<PerformanceIcon />}
+                icon={<ChartLine size={18} />}
                 title="CPU Usage"
                 value={metrics?.cpu_percent !== undefined ? metrics.cpu_percent.toFixed(1) : '0'}
                 unit="%"
@@ -457,7 +472,7 @@ export default function AudioEngine() {
             {/* Memory */}
             <Grid item xs={12} sm={6} md={3}>
               <MetricCard
-                icon={<MemoryIcon />}
+                icon={<DataBase size={18} />}
                 title="Memory Usage"
                 value={metrics?.memory_percent !== undefined ? metrics.memory_percent.toFixed(1) : '0'}
                 unit="%"
@@ -480,7 +495,7 @@ export default function AudioEngine() {
             {/* Audio Latency */}
             <Grid item xs={12} sm={6} md={3}>
               <MetricCard
-                icon={<LatencyIcon />}
+                icon={<Timer size={18} />}
                 title="Audio Latency"
                 value={
                   metrics?.audio_latency_ms !== undefined
@@ -508,7 +523,7 @@ export default function AudioEngine() {
             {/* XRuns */}
             <Grid item xs={12} sm={6} md={3}>
               <MetricCard
-                icon={<XrunIcon />}
+                icon={<WarningAlt size={18} />}
                 title="Audio Xruns"
                 value={metrics?.audio_xruns || 0}
                 color={(metrics?.audio_xruns || 0) > 0 ? 'error' : 'success'}
@@ -523,7 +538,7 @@ export default function AudioEngine() {
             {/* Uptime */}
             <Grid item xs={12} sm={6} md={3}>
               <MetricCard
-                icon={<UptimeIcon />}
+                icon={<Time size={18} />}
                 title="Uptime"
                 value={formatUptime(metrics?.uptime_seconds || 0)}
                 color="primary"
@@ -533,7 +548,7 @@ export default function AudioEngine() {
             {/* Disk */}
             <Grid item xs={12} sm={6} md={3}>
               <MetricCard
-                icon={<InfoIcon />}
+                icon={<Information size={18} />}
                 title="Disk Usage"
                 value={metrics?.disk_percent !== undefined ? metrics.disk_percent.toFixed(1) : '0'}
                 unit="%"
@@ -554,7 +569,7 @@ export default function AudioEngine() {
                   <Grid container spacing={1}>
                     <Grid item>
                       <Chip
-                        icon={<OkIcon />}
+                        icon={<CheckmarkFilled size={14} />}
                         label={`${realtimeStatus.summary.passed} Passed`}
                         color="success"
                         size="small"
@@ -562,7 +577,7 @@ export default function AudioEngine() {
                     </Grid>
                     <Grid item>
                       <Chip
-                        icon={<InfoIcon />}
+                        icon={<Information size={14} />}
                         label={`${realtimeStatus.summary.warnings} Warnings`}
                         color="warning"
                         size="small"
@@ -570,7 +585,7 @@ export default function AudioEngine() {
                     </Grid>
                     <Grid item>
                       <Chip
-                        icon={<ErrorIcon />}
+                        icon={<WarningAlt size={14} />}
                         label={`${realtimeStatus.summary.failed} Failed`}
                         color="error"
                         size="small"
@@ -583,7 +598,7 @@ export default function AudioEngine() {
                   {realtimeStatus.checks.slice(0, 8).map((check) => (
                     <ListItem key={check.name}>
                       <ListItemIcon>
-                        {check.ok ? <OkIcon color="success" /> : <ErrorIcon color="error" />}
+                        {check.ok ? <Glyph icon={CheckmarkFilled} color="success.main" /> : <Glyph icon={WarningAlt} color="error.main" />}
                       </ListItemIcon>
                       <ListItemText
                         primary={check.name}
@@ -595,7 +610,7 @@ export default function AudioEngine() {
                       {!check.ok && check.fix && (
                         <Tooltip title={check.fix}>
                           <IconButton size="small">
-                            <InfoIcon fontSize="small" />
+                            <Information size={14} />
                           </IconButton>
                         </Tooltip>
                       )}

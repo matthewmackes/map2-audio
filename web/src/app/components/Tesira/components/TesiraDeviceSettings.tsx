@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { PlayFilled, TrashCan } from '@carbon/icons-react'
 import {
   Alert,
   Box,
@@ -15,8 +16,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import DeleteIcon from '@mui/icons-material/Delete'
-import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { TesiraFirmwareTab } from './TesiraFirmwareTab'
 import {
   useCaptureTesiraScene,
@@ -215,7 +214,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
                       <Button
                         size="small"
                         variant="outlined"
-                        startIcon={<PlayArrowIcon />}
+                        startIcon={<PlayFilled size={16} />}
                         disabled={recallScene.isPending}
                         onClick={() => {
                           recallScene.mutate({ deviceId, sceneId: scene.scene_id })
@@ -227,7 +226,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
                         size="small"
                         color="error"
                         variant="outlined"
-                        startIcon={<DeleteIcon />}
+                        startIcon={<TrashCan size={16} />}
                         disabled={deleteScene.isPending}
                         onClick={() => {
                           deleteScene.mutate({ deviceId, sceneId: scene.scene_id })

@@ -13,16 +13,13 @@
  *   - WebSocket push via useTesiraDiscoveryEvents (live device-found events)
  */
 import React, { useState, useCallback, useEffect } from 'react'
+import { CheckmarkFilled, Close, ErrorOutline, Search } from '@carbon/icons-react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Box, Typography, Chip, CircularProgress,
   TextField, Divider, Alert, LinearProgress, Tooltip,
   IconButton,
 } from '@mui/material'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
-import SearchIcon from '@mui/icons-material/Search'
-import CloseIcon from '@mui/icons-material/Close'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import {
   useStartDiscovery,
@@ -142,7 +139,7 @@ function DeviceCard({
         )}
         {adopted && (
           <Tooltip title={ttpEnabled ? 'Adopted' : 'Added to fleet'}>
-            <CheckCircleIcon sx={{ color: 'success.light', fontSize: 18 }} />
+            <CheckmarkFilled size={18} style={{ color: 'var(--mui-palette-success-light, #66bb6a)' }} />
           </Tooltip>
         )}
       </Box>
@@ -264,7 +261,7 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
         <Box sx={{ flex: 1 }} />
         {isScanning && <ScanAnimation />}
         <IconButton size="small" onClick={handleClose} disabled={isScanning}>
-          <CloseIcon fontSize="small" />
+          <Close size={16} />
         </IconButton>
       </DialogTitle>
 
@@ -325,7 +322,9 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
         {/* No results after scan */}
         {hasScanned && !isScanning && devices.length === 0 && !scanError && (
           <Box sx={{ textAlign: 'center', py: 3, color: 'text.secondary' }}>
-            <ErrorOutlineIcon sx={{ fontSize: 40, mb: 1, opacity: 0.4 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1, opacity: 0.4 }}>
+              <ErrorOutline size={40} />
+            </Box>
             <Typography variant="body2">
               No Tesira units found. Check that units are on the same L2 segment
               and advertising via mDNS, or verify TTP port 23 is reachable.
@@ -337,7 +336,7 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
       <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
         <Button
           variant="outlined"
-          startIcon={<SearchIcon />}
+          startIcon={<Search size={16} />}
           onClick={handleScan}
           disabled={isScanning}
           sx={{ borderColor: BIAMP_RED, color: BIAMP_RED, '&:hover': { borderColor: '#c01530', bgcolor: 'rgba(227,24,55,0.04)' } }}

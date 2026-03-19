@@ -1,17 +1,19 @@
 import React, { useState } from 'react'
 import {
+  CheckmarkOutline,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Launch,
+  Power,
+  Renew,
+  WarningAlt,
+} from '@carbon/icons-react'
+import {
   Box, Typography, Table, TableHead, TableRow, TableCell, TableBody,
   Chip, Button, CircularProgress, Alert, Divider, Paper, Tooltip,
   Collapse, IconButton, Stack, Link,
 } from '@mui/material'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew'
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
-import DownloadIcon from '@mui/icons-material/Download'
-import RefreshIcon from '@mui/icons-material/Refresh'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { useTesiraDevices, useFirmwareLatest, useDeviceFirmware, useRebootDevice } from '../hooks/useTesiraApi'
 import type { TesiraFirmwareStatus } from '../types'
 
@@ -40,7 +42,7 @@ export function TesiraFirmwareTab({ deviceId }: TesiraFirmwareTabProps) {
               onClick={() => refetchLatest()}
               disabled={latestLoading}
             >
-              {latestLoading ? <CircularProgress size={14} /> : <RefreshIcon sx={{ fontSize: 16 }} />}
+              {latestLoading ? <CircularProgress size={14} /> : <Renew size={16} />}
             </IconButton>
           </span>
         </Tooltip>
@@ -157,7 +159,7 @@ function FirmwareStatusChip({ fw }: { fw: TesiraFirmwareStatus }) {
   if (fw.update_available) {
     return (
       <Chip
-        icon={<WarningAmberIcon sx={{ fontSize: 11, ml: '4px !important' }} />}
+        icon={<WarningAlt size={11} />}
         label="Update available"
         size="small"
         color="warning"
@@ -167,7 +169,7 @@ function FirmwareStatusChip({ fw }: { fw: TesiraFirmwareStatus }) {
   }
   return (
     <Chip
-      icon={<CheckCircleOutlineIcon sx={{ fontSize: 11, ml: '4px !important' }} />}
+      icon={<CheckmarkOutline size={11} />}
       label="Up to date"
       size="small"
       color="success"
@@ -230,7 +232,7 @@ function DeviceDetail({
         </Box>
         {fw.update_available && (
           <Chip
-            icon={<WarningAmberIcon sx={{ fontSize: 13, ml: '4px !important' }} />}
+            icon={<WarningAlt size={13} />}
             label="Update available"
             size="small"
             color="warning"
@@ -238,7 +240,7 @@ function DeviceDetail({
         )}
         {fw.connected && !fw.update_available && fw.current_version && (
           <Chip
-            icon={<CheckCircleOutlineIcon sx={{ fontSize: 13, ml: '4px !important' }} />}
+            icon={<CheckmarkOutline size={13} />}
             label="Up to date"
             size="small"
             color="success"
@@ -255,7 +257,7 @@ function DeviceDetail({
               size="small"
               variant="outlined"
               color="error"
-              startIcon={reboot.isPending ? <CircularProgress size={14} color="inherit" /> : <PowerSettingsNewIcon />}
+              startIcon={reboot.isPending ? <CircularProgress size={14} color="inherit" /> : <Power size={16} />}
               disabled={!fw.connected || reboot.isPending}
               onClick={handleReboot}
               sx={{ fontSize: 12 }}
@@ -269,8 +271,8 @@ function DeviceDetail({
           <Button
             size="small"
             variant="outlined"
-            startIcon={<DownloadIcon />}
-            endIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
+            startIcon={<Download size={16} />}
+            endIcon={<Launch size={12} />}
             href={latestFirmware.download_url}
             target="_blank"
             rel="noopener noreferrer"
@@ -284,7 +286,7 @@ function DeviceDetail({
           <Button
             size="small"
             variant="text"
-            endIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
+            endIcon={<Launch size={12} />}
             href={latestFirmware.update_path_url}
             target="_blank"
             rel="noopener noreferrer"
@@ -311,7 +313,7 @@ function DeviceDetail({
           size="small"
           variant="text"
           sx={{ fontSize: 11, color: 'text.secondary', p: 0, textTransform: 'none' }}
-          endIcon={guideOpen ? <ExpandLessIcon sx={{ fontSize: 14 }} /> : <ExpandMoreIcon sx={{ fontSize: 14 }} />}
+          endIcon={guideOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           onClick={() => setGuideOpen((v) => !v)}
         >
           How to update firmware

@@ -1,9 +1,8 @@
 import React, { useState, useCallback, useRef } from 'react'
+import { VolumeUp } from '@carbon/icons-react'
 import {
   Box, Typography, Slider, IconButton, Tooltip, TextField, MenuItem,
 } from '@mui/material'
-import VolumeUpIcon from '@mui/icons-material/VolumeUp'
-import VolumeOffIcon from '@mui/icons-material/VolumeOff'
 import { useTesiraDevice } from '../hooks/useTesiraApi'
 import { useSetLevel, useSetMute } from '../hooks/useTesiraApi'
 import { useTesiraMeters } from '../hooks/useTesiraWebSocket'
@@ -116,7 +115,7 @@ export function TesiraLevelsTab({ deviceId }: TesiraLevelsTabProps) {
                 onClick={() => setMute.mutate({ deviceId, tag: selectedTag, channel: ch, muted: true })}
                 sx={{ p: 0.25 }}
               >
-                <VolumeUpIcon sx={{ fontSize: 14 }} />
+                <VolumeUp size={14} />
               </IconButton>
 
               <Typography variant="caption" sx={{ fontSize: 10 }}>

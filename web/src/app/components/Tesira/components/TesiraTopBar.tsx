@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
+import { NetworkTimeProtocol, Search } from '@carbon/icons-react'
 import { Box, Typography, Chip, Tooltip, Button } from '@mui/material'
-import SyncIcon from '@mui/icons-material/Sync'
-import SearchIcon from '@mui/icons-material/Search'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useTesiraDevices, useDiscoveryStatus } from '../hooks/useTesiraApi'
 import { DiscoveryDialog } from './DiscoveryDialog'
@@ -50,7 +49,7 @@ export function TesiraTopBar() {
           {anyMaster && (
             <Tooltip title="A Tesira unit is PTP Master — MAP2 ptp4l will be demoted to SLAVE">
               <Chip
-                icon={<SyncIcon sx={{ fontSize: 12 }} />}
+                icon={<NetworkTimeProtocol size={12} />}
                 label="PTP Slaved"
                 size="small"
                 variant="outlined"
@@ -66,7 +65,7 @@ export function TesiraTopBar() {
               startIcon={
                 isScanning
                   ? <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: BIAMP_RED, animation: 'tesiraTopPulse 1s ease-in-out infinite', '@keyframes tesiraTopPulse': { '0%,100%': { opacity: 0.4 }, '50%': { opacity: 1 } } }} />
-                  : <SearchIcon sx={{ fontSize: 14 }} />
+                  : <Search size={14} />
               }
               onClick={() => setDiscoveryOpen(true)}
               sx={{

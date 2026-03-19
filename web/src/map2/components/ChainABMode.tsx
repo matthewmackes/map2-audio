@@ -22,14 +22,13 @@ import {
 } from '@mui/material';
 import { NumberInput } from './NumberInput';
 import {
-  SwapHoriz as SwapIcon,
-  ContentCopy as DuplicateIcon,
-  Link as LinkIcon,
-  VolumeUp as VolumeIcon,
-  PlayArrow as PlayIcon,
-  Pause as PauseIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
+  ArrowsHorizontal,
+  Copy,
+  Link,
+  Settings,
+  SplitScreen,
+  VolumeUp,
+} from '@carbon/icons-react';
 import { useTheme } from '@mui/material/styles';
 import type { Chain } from '../types';
 
@@ -176,12 +175,12 @@ export default function ChainABMode({
                   color={isLinked ? 'primary' : 'default'}
                   sx={{ border: isLinked ? `1px solid ${theme.palette.primary.main}` : 'none' }}
                 >
-                  <LinkIcon />
+                  <Link size={16} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Swap A and B">
                 <IconButton size="small" onClick={handleSwap} disabled={!selectedChainIdA || !selectedChainIdB}>
-                  <SwapIcon />
+                  <ArrowsHorizontal size={16} />
                 </IconButton>
               </Tooltip>
             </Stack>
@@ -223,7 +222,7 @@ export default function ChainABMode({
                     <Button
                       size="small"
                       variant="outlined"
-                      startIcon={<DuplicateIcon />}
+                      startIcon={<Copy size={16} />}
                       onClick={() => {
                         setDuplicateSource('A');
                         setDuplicateDialogOpen(true);
@@ -251,7 +250,7 @@ export default function ChainABMode({
               gap: 2,
               px: 1,
             }}>
-              <VolumeIcon />
+              <VolumeUp size={20} />
               <Box sx={{ width: '100%', textAlign: 'center' }}>
                 <NumberInput
                   label="Blend"
@@ -298,7 +297,7 @@ export default function ChainABMode({
                     <Button
                       size="small"
                       variant="outlined"
-                      startIcon={<DuplicateIcon />}
+                      startIcon={<Copy size={16} />}
                       onClick={() => {
                         setDuplicateSource('B');
                         setDuplicateDialogOpen(true);

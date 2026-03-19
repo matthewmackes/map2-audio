@@ -1,4 +1,4 @@
-import { ChevronDown as CaretDown, ChevronRight as CaretRight, Flash as Lightning } from '@carbon/icons-react'
+import { CheckmarkFilled, ChartLine, ChevronDown as CaretDown, ChevronRight as CaretRight, Flash as Lightning, Screen, VolumeUp, Workspace } from '@carbon/icons-react'
 import { useState } from 'react'
 
 interface EducationSection {
@@ -35,10 +35,10 @@ export function ClusterEducationTab() {
             processing on a single machine, you can distribute the load across multiple nodes, enabling:
           </p>
           <ul style={{ marginTop: 12, marginLeft: 20 }}>
-            <li>✅ <strong>Higher processing capacity</strong> - More plugins running simultaneously</li>
-            <li>✅ <strong>Redundancy</strong> - Flows continue if a node fails</li>
-            <li>✅ <strong>Better organization</strong> - Dedicated audio nodes + management node</li>
-            <li>✅ <strong>Remote control</strong> - Manage cluster from any device on network</li>
+            <li><CheckmarkFilled size={14} style={{ display: 'inline', marginRight: 6 }} /> <strong>Higher processing capacity</strong> - More plugins running simultaneously</li>
+            <li><CheckmarkFilled size={14} style={{ display: 'inline', marginRight: 6 }} /> <strong>Redundancy</strong> - Flows continue if a node fails</li>
+            <li><CheckmarkFilled size={14} style={{ display: 'inline', marginRight: 6 }} /> <strong>Better organization</strong> - Dedicated audio nodes + management node</li>
+            <li><CheckmarkFilled size={14} style={{ display: 'inline', marginRight: 6 }} /> <strong>Remote control</strong> - Manage cluster from any device on network</li>
           </ul>
           <p style={{ marginTop: 12 }}>
             Think of it like a studio: one machine handles recording/audio (AUDIO-NODE), while another handles monitoring
@@ -57,25 +57,25 @@ export function ClusterEducationTab() {
           {[
             {
               name: 'ALL-IN-ONE',
-              emoji: '🖥️',
+              icon: <Workspace size={16} />,
               description: 'Everything on one machine',
               use: 'Laptop, desktop, development',
             },
             {
               name: 'AUDIO-NODE',
-              emoji: '🎵',
+              icon: <VolumeUp size={16} />,
               description: 'Dedicated audio processor',
               use: 'Server with audio gear',
             },
             {
               name: 'CONTROL-NODE',
-              emoji: '🎚️',
+              icon: <Lightning size={16} />,
               description: 'UI and management',
               use: 'Remote control machine',
             },
             {
               name: 'FRONTEND-ONLY',
-              emoji: '📱',
+              icon: <Screen size={16} />,
               description: 'Thin client UI',
               use: 'Tablet, minimal device',
             },
@@ -90,7 +90,7 @@ export function ClusterEducationTab() {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-                {mode.emoji} {mode.name}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{mode.icon} {mode.name}</span>
               </div>
               <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 6 }}>{mode.description}</div>
               <div style={{ fontSize: 11, color: '#888', fontStyle: 'italic' }}>Best for: {mode.use}</div>
@@ -107,7 +107,7 @@ export function ClusterEducationTab() {
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ background: 'rgba(0, 255, 65, 0.1)', border: '1px solid #00ff41', borderRadius: 8, padding: '12px 16px' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#00ff41', marginBottom: 4 }}>🎵 Audio Node</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#00ff41', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}><VolumeUp size={16} /> Audio Node</div>
             <div style={{ fontSize: 12, color: '#d0d0d0', lineHeight: 1.5 }}>
               Handles real-time audio processing. Runs plugins, manages audio I/O, reports metrics to management node.
             </div>
@@ -151,7 +151,7 @@ export function ClusterEducationTab() {
               </div>
             </div>
             <div style={{ background: 'rgba(255, 170, 0, 0.1)', padding: '10px 12px', borderRadius: 6 }}>
-              <strong>📊 Metrics</strong>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChartLine size={16} /><strong>Metrics</strong></span>
               <div style={{ color: '#a0a0a0', fontSize: 12, marginTop: 4 }}>
                 REST API (30s intervals). Health scores, CPU, memory, DSP load, network latency.
               </div>
@@ -185,7 +185,7 @@ export function ClusterEducationTab() {
               fontSize: 12,
             }}
           >
-            <strong style={{ color: '#00ff41' }}>✅ Result:</strong> Zero downtime for critical paths. Audio continues
+            <span style={{ color: '#00ff41', display: 'inline-flex', alignItems: 'center', gap: 6 }}><CheckmarkFilled size={14} /><strong>Result:</strong></span> Zero downtime for critical paths. Audio continues
             even if hardware fails.
           </div>
         </div>
@@ -203,7 +203,7 @@ export function ClusterEducationTab() {
           padding: '20px',
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 600, color: '#2563eb', marginBottom: 8 }}>📚 Cluster Learning Guide</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#2563eb', marginBottom: 8 }}>Cluster Learning Guide</div>
         <div style={{ fontSize: 13, color: '#d0d0d0', lineHeight: 1.6 }}>
           Learn how the MAP2 cluster works, from basic concepts to advanced topics. Expand each section to dive deeper.
         </div>

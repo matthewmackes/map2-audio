@@ -20,20 +20,16 @@ import {
   Button,
 } from '@mui/material';
 import {
-  Undo as UndoIcon,
-  Redo as RedoIcon,
-  FiberManualRecord as RecordIcon,
-  PlayArrow as PlayIcon,
-  Stop as StopIcon,
-  Save as SaveIcon,
-  Backup as BackupIcon,
-  History as HistoryIcon,
-  CloudDone as CloudDoneIcon,
-  CloudOff as CloudOffIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckIcon,
-  Schedule as ScheduleIcon,
-} from '@mui/icons-material';
+  CircleFilled,
+  Cloud,
+  CloudOffline,
+  Redo,
+  Save,
+  Time,
+  PlayFilled,
+  StopFilled,
+  Undo,
+} from '@carbon/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
 
 interface HistoryStatus {
@@ -285,7 +281,7 @@ export default function FeatureToolbar({
               disabled={!history.canUndo || processing}
             >
               <Badge badgeContent={history.undoStackSize} color="primary" max={99}>
-                <UndoIcon fontSize="small" />
+                <Undo size={16} />
               </Badge>
             </IconButton>
           </span>
@@ -299,7 +295,7 @@ export default function FeatureToolbar({
               disabled={!history.canRedo || processing}
             >
               <Badge badgeContent={history.redoStackSize} color="secondary" max={99}>
-                <RedoIcon fontSize="small" />
+                <Redo size={16} />
               </Badge>
             </IconButton>
           </span>
@@ -310,7 +306,7 @@ export default function FeatureToolbar({
             size="small"
             onClick={(e) => setHistoryMenuAnchor(e.currentTarget)}
           >
-            <HistoryIcon fontSize="small" />
+            <Time size={16} />
           </IconButton>
         </Tooltip>
       </Box>
@@ -332,7 +328,7 @@ export default function FeatureToolbar({
               },
             }}
           >
-            <RecordIcon fontSize="small" />
+            <CircleFilled size={12} />
           </IconButton>
         </Tooltip>
 
@@ -342,7 +338,7 @@ export default function FeatureToolbar({
             onClick={handlePlayToggle}
             color={automation.playing ? 'primary' : 'default'}
           >
-            {automation.playing ? <StopIcon fontSize="small" /> : <PlayIcon fontSize="small" />}
+            {automation.playing ? <StopFilled size={16} /> : <PlayFilled size={16} />}
           </IconButton>
         </Tooltip>
 
@@ -385,14 +381,14 @@ export default function FeatureToolbar({
               color="warning"
               invisible={!session.hasUnsavedChanges}
             >
-              <SaveIcon fontSize="small" />
+              <Save size={16} />
             </Badge>
           </IconButton>
         </Tooltip>
 
         {!compact && session.autoSaveEnabled && (
           <Chip
-            icon={<ScheduleIcon sx={{ fontSize: 14 }} />}
+            icon={<Time size={14} />}
             label="Auto"
             size="small"
             variant="outlined"
@@ -426,7 +422,7 @@ export default function FeatureToolbar({
             disabled={processing}
           >
             <Badge badgeContent={backup.backupCount} color="success" max={99}>
-              <BackupIcon fontSize="small" />
+              <Cloud size={16} />
             </Badge>
           </IconButton>
         </Tooltip>
@@ -450,11 +446,11 @@ export default function FeatureToolbar({
         </MenuItem>
         <Divider />
         <MenuItem onClick={() => { setHistoryMenuAnchor(null); handleUndo(); }} disabled={!history.canUndo}>
-          <UndoIcon fontSize="small" sx={{ mr: 1 }} />
+          <Undo size={16} style={{ marginRight: 8 }} />
           Undo {history.undoDescription}
         </MenuItem>
         <MenuItem onClick={() => { setHistoryMenuAnchor(null); handleRedo(); }} disabled={!history.canRedo}>
-          <RedoIcon fontSize="small" sx={{ mr: 1 }} />
+          <Redo size={16} style={{ marginRight: 8 }} />
           Redo {history.redoDescription}
         </MenuItem>
       </Menu>

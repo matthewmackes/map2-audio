@@ -14,6 +14,7 @@
  */
 
 import React, { useMemo, useCallback, useState } from 'react';
+import { Close, FitToScreen } from '@carbon/icons-react';
 import {
   Dialog,
   DialogTitle,
@@ -28,8 +29,6 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import FitScreenIcon from '@mui/icons-material/FitScreen';
 import ReactFlow, {
   Node,
   Edge,
@@ -154,7 +153,7 @@ function AvbNodeComponent({ data }: { data: AvbNode & { selected: boolean } }) {
       {/* PTP Sync Info */}
       {data.ptp && (data.ptp.state === 'master' || data.ptp.state === 'slave') && (
         <Typography variant="caption" color="success.main" display="block" sx={{ mt: 0.5 }}>
-          ⏱ {data.ptp.offset_ns}ns offset
+          PTP {data.ptp.offset_ns}ns offset
         </Typography>
       )}
 
@@ -327,7 +326,7 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
             </Stack>
           </Box>
           <IconButton onClick={onClose} size="small">
-            <CloseIcon />
+            <Close size={16} />
           </IconButton>
         </Stack>
       </DialogTitle>
@@ -367,7 +366,7 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
                     }}
                     size="small"
                   >
-                    <FitScreenIcon />
+                    <FitToScreen size={16} />
                   </IconButton>
                 </Tooltip>
               </Panel>

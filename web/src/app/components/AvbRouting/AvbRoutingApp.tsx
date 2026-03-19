@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+import { WarningAltFilled } from '@carbon/icons-react';
 import { Box, CircularProgress, Alert, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -146,8 +147,9 @@ function AvbRoutingAppInner() {
             px: 2,
           }}
         >
+          <WarningAltFilled size={16} />
           <Typography variant="body2" fontWeight="bold">
-            ⚠️ SAFE PATCH MODE ACTIVE
+            Safe patch mode active
           </Typography>
           <Typography variant="body2">
             ({Object.keys(state.pendingRoutes).length} pending changes)
