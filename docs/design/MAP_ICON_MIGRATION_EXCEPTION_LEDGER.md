@@ -32,7 +32,8 @@ This wave also removed:
 Latest active-scope audit:
 
 - `web/src/app`, `web/src/map2`, `web/src/shared`, `web/src/components`, and `web/src/pages` are now clear of `@mui/icons-material` and `@phosphor-icons/react` imports.
-- The only remaining legacy icon-package holdouts are in `web/src/pipedal/**`, which are tracked separately under `T205-subF-subB`.
+- The only remaining legacy icon-package holdouts are in frozen legacy `web/src/pipedal/**`: `46` files still import `@mui/icons-material`.
+- `@phosphor-icons/react` now has `0` remaining source imports under `web/src`.
 
 ## Exception groups
 
@@ -199,6 +200,35 @@ Reason:
 Latest note:
 
 - Active frontend page-level Phosphor holdouts were cleared on 2026-03-18 alongside the emoji/symbol UI-icon sweep; the remaining exception scope is now legacy MUI package debt concentrated in `web/src/map2/**`.
+
+### Group G: Frozen legacy `web/src/pipedal/**`
+
+Status: explicit legacy freeze in place
+
+- 46 files still on `@mui/icons-material`
+- 0 files on `@phosphor-icons/react`
+
+Reason:
+
+- this is a legacy PiPedal-derived UI island with older dialog, drawer, and transport patterns that has not yet been brought into the active Carbon-first frontend architecture
+
+Approved target:
+
+- no expansion of legacy icon-package usage beyond the current frozen file set
+- defer broad migration until a dedicated PiPedal modernization pass is scheduled
+
+Representative files:
+
+- `web/src/pipedal/FilePropertyDialog.tsx`
+- `web/src/pipedal/BankDialog.tsx`
+- `web/src/pipedal/AppThemed.tsx`
+- `web/src/pipedal/PerformanceView.tsx`
+- `web/src/pipedal/LoadPluginDialog.tsx`
+
+Latest note:
+
+- Recounted the PiPedal legacy island on 2026-03-18: `46` files still import `@mui/icons-material`, with the heaviest holdouts concentrated in file-property management, bank/preset dialogs, the top-level themed shell, performance view, load-plugin flows, and older transport/dialog controls.
+- The repo-wide active-source audit at the same time found `0` remaining `@phosphor-icons/react` imports under `web/src`, so PiPedal now accounts for the entire residual legacy icon-package footprint.
 
 ## Migration rule for every exception
 

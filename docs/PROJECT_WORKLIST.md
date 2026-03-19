@@ -1026,7 +1026,7 @@ Last updated: 2026-03-18 20:17 - Codex
   - `python3` tracked-marker sweep across `web/src/app` + `web/src/map2` -> `TOTAL_FILES 0`
 
 ID: T205-subF
-Status: [>] In Progress
+Status: [✓] Done
 Title: Verify icon-migration exit criteria and retire legacy icon packages from active frontend paths
 Description:
 - Goal / acceptance criteria: Recount Phosphor, MUI, and emoji/symbol usage after migration waves, verify that active frontend paths satisfy the approved icon stack, and remove legacy icon packages/import paths where no longer needed.
@@ -1052,7 +1052,7 @@ Last updated: 2026-03-18 22:23 - Codex
   - Migrated the remaining standalone shared utility/admin surfaces `web/src/components/BackupRestoreWizard.tsx` and `web/src/pages/ClusterAdmin.tsx` off `@mui/icons-material`, leaving the targeted `web/src/shared/**`, `web/src/components/**`, and `web/src/pages/**` paths clear of legacy icon-package imports.
   - The targeted shared-surface audit is now clean: `rg -n "@mui/icons-material|@phosphor-icons/react" web/src/shared web/src/components web/src/pages -g '*.tsx' -g '*.ts'` returns no matches.
 ID: T205-subF-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Migrate or formally freeze remaining PiPedal legacy icon-package imports
 Description:
 - Goal / acceptance criteria: Reduce or explicitly constrain the remaining legacy icon-package imports under `web/src/pipedal/**` so package retention is documented honestly and bounded.
@@ -1062,12 +1062,18 @@ Description:
 - Required outputs: Reduced `web/src/pipedal/**` import count, documented freeze/exception posture for any leftover debt, and updated ledger/worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 22:23 - Codex
-- Remaining changes:
-  - Lock the current recount into the final exit audit: active `web/src/app` + `web/src/map2` is now `0` Phosphor files, `0` MUI-icon files, and `0` tracked emoji/symbol UI-icon files.
-  - Complete `T205-subF-subB` so the remaining PiPedal legacy icon debt is either migrated or explicitly frozen and bounded.
+Last updated: 2026-03-18 22:29 - Codex
+- Completion notes:
+  - Recounted the remaining PiPedal legacy icon-package island exactly: `46` files under `web/src/pipedal/**` still import `@mui/icons-material`, with the heaviest holdouts in `FilePropertyDialog.tsx`, `BankDialog.tsx`, `AppThemed.tsx`, `PerformanceView.tsx`, `LoadPluginDialog.tsx`, and `ToobPlayerControl.tsx`.
+  - Verified that no `@phosphor-icons/react` imports remain anywhere under `web/src`, so the residual legacy icon-package footprint is now bounded to `@mui/icons-material` in the frozen PiPedal island only.
+  - Formally froze the remaining `web/src/pipedal/**` MUI icon usage as a legacy exception group in the icon ledger instead of claiming migration work that has not been performed.
 Assigned to: Claude + User + Codex
-Last updated: 2026-03-18 22:23 - Codex
+Last updated: 2026-03-18 22:29 - Codex
+- Completion notes:
+  - Verified the active frontend exit condition across `web/src/app`, `web/src/map2`, `web/src/shared`, `web/src/components`, and `web/src/pages`: `0` Phosphor imports, `0` MUI icon imports, and `0` tracked emoji/symbol UI-icon files remain in those active paths.
+  - Completed the shared-utility migration slice `T205-subF-subA`, clearing the remaining active shared operator surfaces off legacy icon packages.
+  - Completed `T205-subF-subB` by formally freezing the residual PiPedal MUI icon debt as a measured exception group rather than leaving the status ambiguous.
+  - The remaining legacy icon dependency posture is now explicit: `@mui/icons-material` is retained only because `46` frozen `web/src/pipedal/**` files still import it; `@phosphor-icons/react` has no remaining source imports under `web/src`.
 
 ID: T206
 Status: [✓] Done
