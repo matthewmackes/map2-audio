@@ -667,7 +667,7 @@ Description:
 - Required outputs/deliverables: Implemented backend fixes, updated qualification/runbook logic, correlated observability artifacts, regression tests for startup/restart behavior, and a new evidence bundle showing repeatable pass under smoke and full qualification.
 Subtasks:
 ID: T209-subA
-Status: [>] In Progress
+Status: [✓] Done
 Title: Convert startup and warmup states into explicit readiness gates
 Description:
 - Goal / acceptance criteria: Audit all load-tested API and websocket entry points and ensure they fail fast with structured readiness responses while dependencies are still warming up instead of hanging into client-side timeouts. Define concrete readiness checks for backend HTTP serving, chain inventory access, plugin inventory/discovery state, websocket broker availability, and any engine-backed audio routes. Acceptance requires a documented readiness matrix, implementation changes on affected routes/services, and automated tests proving warmup returns deterministic readiness errors instead of connection/read timeouts.
@@ -677,11 +677,12 @@ Description:
 - Required outputs/deliverables: Readiness matrix, route/service updates, startup-state tests, and notes linking coverage to the affected endpoints from the failure review.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 00:04 - Codex
-- Progress notes:
+Last updated: 2026-03-18 22:34 - Codex
+- Completion notes:
   - Added shared route-readiness helper logic in `app/services/api_readiness.py` to convert startup and warmup states into structured `503` responses with dependency detail and `Retry-After` guidance.
   - Wired the readiness guards into the load-tested route families hit in the failure review: `/api/audio/status`, `/api/audio/latency`, `/api/audio/levels`, `/api/audio/levels/plugins`, `/api/chains/`, `/api/chains/{id}`, `/api/chains/{id}/activate`, `/api/chains/{id}/deactivate`, `/api/plugins/discover`, `/api/plugins/list`, `/api/plugins/load`, `/api/plugins/unload`, and `/api/plugins/batch/parameters`.
   - Added focused tests in `tests/test_api_route_readiness.py` and updated affected route tests so the new startup contract is validated without regressing plugin residency behavior.
+  - Added the explicit readiness matrix in `docs/API_ROUTE_READINESS_MATRIX.md`, linking each guarded route family to its required services, readiness reason, and regression coverage so the startup-state contract is documented rather than implicit.
 
 ID: T209-subB
 Status: [✓] Done
