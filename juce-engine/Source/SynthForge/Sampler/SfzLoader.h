@@ -7,6 +7,14 @@
 
 namespace map2::synthforge {
 
+enum class GroupedSamplerFilterType {
+    None,
+    LowPass1P,
+    LowPass2P,
+    HighPass1P,
+    HighPass2P,
+};
+
 struct SfzRegionDefinition {
     juce::File sampleFile;
     int loKey = 0;
@@ -29,6 +37,9 @@ struct SfzRegionDefinition {
     float tuneCents = 0.0f;
     float volumeDb = 0.0f;
     float pan = 0.0f;
+    float cutoffHz = 20000.0f;
+    float resonance = 0.707f;
+    GroupedSamplerFilterType filterType = GroupedSamplerFilterType::None;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };

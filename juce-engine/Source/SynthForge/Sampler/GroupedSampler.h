@@ -1,6 +1,9 @@
 #pragma once
 
+#include "SynthForge/Sampler/SfzLoader.h"
+
 #include <juce_audio_basics/juce_audio_basics.h>
+#include <juce_dsp/juce_dsp.h>
 #include <juce_audio_formats/juce_audio_formats.h>
 
 #include <array>
@@ -30,7 +33,10 @@ public:
                         int transpose,
                         float tuneCents,
                         float volumeDb,
-                        float pan);
+                        float pan,
+                        float cutoffHz,
+                        float resonance,
+                        GroupedSamplerFilterType filterType);
 
     int getChokeGroup() const noexcept { return chokeGroup_; }
     int getOffByGroup() const noexcept { return offByGroup_; }
@@ -43,6 +49,9 @@ public:
     float getTuneCents() const noexcept { return tuneCents_; }
     float getVolumeDb() const noexcept { return volumeDb_; }
     float getPan() const noexcept { return pan_; }
+    float getCutoffHz() const noexcept { return cutoffHz_; }
+    float getResonance() const noexcept { return resonance_; }
+    GroupedSamplerFilterType getFilterType() const noexcept { return filterType_; }
     double getSourceSampleRate() const noexcept { return sourceSampleRate_; }
     int getMidiRootNote() const noexcept { return midiRootNote_; }
     const juce::ADSR::Parameters& getEnvelopeParameters() const noexcept { return envelopeParameters_; }
@@ -68,6 +77,9 @@ private:
     float tuneCents_ = 0.0f;
     float volumeDb_ = 0.0f;
     float pan_ = 0.0f;
+    float cutoffHz_ = 20000.0f;
+    float resonance_ = 0.707f;
+    GroupedSamplerFilterType filterType_ = GroupedSamplerFilterType::None;
     double sourceSampleRate_ = 0.0;
     int midiRootNote_ = 60;
     juce::ADSR::Parameters envelopeParameters_{};
@@ -84,11 +96,23 @@ public:
     using juce::SynthesiserVoice::renderNextBlock;
 
 private:
+    using Filter = juce::dsp::StateVariableTPTFilter<float>;
+    static void configureFilter(Filter& filter,
+                                GroupedSamplerFilterType type,
+                                double sampleRate,
+                                float cutoffHz,
+                                float resonance);
+
     double pitchRatio_ = 0.0;
     double sourceSamplePosition_ = 0.0;
     float leftGain_ = 0.0f;
     float rightGain_ = 0.0f;
     juce::ADSR adsr_;
+    GroupedSamplerFilterType filterType_ = GroupedSamplerFilterType::None;
+    Filter leftFilterA_;
+    Filter rightFilterA_;
+    Filter leftFilterB_;
+    Filter rightFilterB_;
 };
 
 class GroupedSamplerSynthesiser : public juce::Synthesiser {

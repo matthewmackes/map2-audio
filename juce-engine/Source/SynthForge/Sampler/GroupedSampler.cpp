@@ -30,7 +30,10 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
                                          int transpose,
                                          float tuneCents,
                                          float volumeDb,
-                                         float pan)
+                                         float pan,
+                                         float cutoffHz,
+                                         float resonance,
+                                         GroupedSamplerFilterType filterType)
     : juce::SamplerSound(name,
                          source,
                          midiNotes,
@@ -53,6 +56,9 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
       tuneCents_(juce::jlimit(-2400.0f, 2400.0f, tuneCents)),
       volumeDb_(juce::jlimit(-96.0f, 24.0f, volumeDb)),
       pan_(juce::jlimit(-100.0f, 100.0f, pan)),
+      cutoffHz_(juce::jlimit(20.0f, 20000.0f, cutoffHz)),
+      resonance_(juce::jlimit(0.1f, 4.0f, resonance)),
+      filterType_(filterType),
       sourceSampleRate_(source.sampleRate),
       midiRootNote_(midiNoteForNormalPitch) {
     if (seqLength_ > 0 && seqPosition_ > seqLength_) {
@@ -64,6 +70,20 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
 
     envelopeParameters_.attack = static_cast<float>(attackTimeSecs);
     envelopeParameters_.release = static_cast<float>(releaseTimeSecs);
+}
+
+void GroupedSamplerVoice::configureFilter(Filter& filter,
+                                          GroupedSamplerFilterType type,
+                                          double sampleRate,
+                                          float cutoffHz,
+                                          float resonance) {
+    filter.prepare({sampleRate, 1, 1});
+    filter.reset();
+    filter.setType((type == GroupedSamplerFilterType::HighPass1P || type == GroupedSamplerFilterType::HighPass2P)
+                       ? Filter::Type::highpass
+                       : Filter::Type::lowpass);
+    filter.setCutoffFrequency(juce::jlimit(20.0f, 20000.0f, cutoffHz));
+    filter.setResonance(juce::jlimit(0.1f, 4.0f, resonance));
 }
 
 bool GroupedSamplerVoice::canPlaySound(juce::SynthesiserSound* sound) {
@@ -95,6 +115,12 @@ void GroupedSamplerVoice::startNote(int midiNoteNumber,
     adsr_.setSampleRate(groupedSound->getSourceSampleRate());
     adsr_.setParameters(groupedSound->getEnvelopeParameters());
     adsr_.noteOn();
+
+    filterType_ = groupedSound->getFilterType();
+    configureFilter(leftFilterA_, filterType_, getSampleRate(), groupedSound->getCutoffHz(), groupedSound->getResonance());
+    configureFilter(rightFilterA_, filterType_, getSampleRate(), groupedSound->getCutoffHz(), groupedSound->getResonance());
+    configureFilter(leftFilterB_, filterType_, getSampleRate(), groupedSound->getCutoffHz(), groupedSound->getResonance());
+    configureFilter(rightFilterB_, filterType_, getSampleRate(), groupedSound->getCutoffHz(), groupedSound->getResonance());
 }
 
 void GroupedSamplerVoice::stopNote(float /*velocity*/, bool allowTailOff) {
@@ -140,6 +166,17 @@ void GroupedSamplerVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer
         const auto envelopeValue = adsr_.getNextSample();
         left *= leftGain_ * envelopeValue;
         right *= rightGain_ * envelopeValue;
+
+        if (filterType_ != GroupedSamplerFilterType::None) {
+            left = leftFilterA_.processSample(0, left);
+            right = rightFilterA_.processSample(0, right);
+
+            if (filterType_ == GroupedSamplerFilterType::LowPass2P
+                || filterType_ == GroupedSamplerFilterType::HighPass2P) {
+                left = leftFilterB_.processSample(0, left);
+                right = rightFilterB_.processSample(0, right);
+            }
+        }
 
         if (outR != nullptr) {
             *outL++ += left;

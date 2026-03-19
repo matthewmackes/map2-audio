@@ -37,6 +37,9 @@ struct RegionBuilder {
     float tuneCents = 0.0f;
     float volumeDb = 0.0f;
     float pan = 0.0f;
+    float cutoffHz = 20000.0f;
+    float resonance = 0.707f;
+    GroupedSamplerFilterType filterType = GroupedSamplerFilterType::None;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };
@@ -324,6 +327,34 @@ void applyOpcode(RegionBuilder& target, const juce::String& opcode, const juce::
         return;
     }
 
+    if (opcode == "cutoff") {
+        if (const auto parsed = parseFloatStrict(value)) {
+            target.cutoffHz = juce::jlimit(20.0f, 20000.0f, *parsed);
+        }
+        return;
+    }
+
+    if (opcode == "resonance") {
+        if (const auto parsed = parseFloatStrict(value)) {
+            target.resonance = juce::jlimit(0.1f, 4.0f, *parsed);
+        }
+        return;
+    }
+
+    if (opcode == "fil_type") {
+        const auto normalized = value.trim().toLowerCase();
+        if (normalized == "lpf_1p") {
+            target.filterType = GroupedSamplerFilterType::LowPass1P;
+        } else if (normalized == "lpf_2p") {
+            target.filterType = GroupedSamplerFilterType::LowPass2P;
+        } else if (normalized == "hpf_1p") {
+            target.filterType = GroupedSamplerFilterType::HighPass1P;
+        } else if (normalized == "hpf_2p") {
+            target.filterType = GroupedSamplerFilterType::HighPass2P;
+        }
+        return;
+    }
+
     if (opcode == "ampeg_attack") {
         if (const auto parsed = parseFloatStrict(value)) {
             target.attackSeconds = juce::jmax(0.0f, *parsed);
@@ -467,6 +498,9 @@ SfzDocument SfzLoader::load(const juce::File& sfzFile) {
         loadedRegion.tuneCents = juce::jlimit(-2400.0f, 2400.0f, region.tuneCents);
         loadedRegion.volumeDb = juce::jlimit(-96.0f, 24.0f, region.volumeDb);
         loadedRegion.pan = juce::jlimit(-100.0f, 100.0f, region.pan);
+        loadedRegion.cutoffHz = juce::jlimit(20.0f, 20000.0f, region.cutoffHz);
+        loadedRegion.resonance = juce::jlimit(0.1f, 4.0f, region.resonance);
+        loadedRegion.filterType = region.filterType;
         loadedRegion.attackSeconds = juce::jmax(0.0f, region.attackSeconds);
         loadedRegion.releaseSeconds = juce::jmax(0.0f, region.releaseSeconds);
         doc.regions.push_back(loadedRegion);

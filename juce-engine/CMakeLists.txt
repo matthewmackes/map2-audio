@@ -732,6 +732,7 @@ if(BUILD_SYNTHFORGE_TESTS)
         juce::juce_audio_basics
         juce::juce_audio_formats
         juce::juce_core
+        juce::juce_dsp
     )
     add_test(NAME synthforge_tests COMMAND synthforge_tests)
 endif()

@@ -540,7 +540,10 @@ bool Part::loadSfzNative(const std::string& sfzPath, SampleLoadStatus& status) {
             region.transpose,
             region.tuneCents,
             region.volumeDb,
-            region.pan);
+            region.pan,
+            region.cutoffHz,
+            region.resonance,
+            region.filterType);
 
         samplerProgram->synthesiser.addSound(sound);
         ++loadedSounds;
