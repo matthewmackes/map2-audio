@@ -29,6 +29,10 @@ struct RegionBuilder {
     float loRand = 0.0f;
     float hiRand = 1.0f;
     bool hasRandomRange = false;
+    int swDefault = -1;
+    int swLast = -1;
+    int swLoKey = -1;
+    int swHiKey = -1;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };
@@ -268,6 +272,26 @@ void applyOpcode(RegionBuilder& target, const juce::String& opcode, const juce::
         return;
     }
 
+    if (opcode == "sw_default") {
+        target.swDefault = parseMidiNote(value, target.swDefault >= 0 ? target.swDefault : 0);
+        return;
+    }
+
+    if (opcode == "sw_last") {
+        target.swLast = parseMidiNote(value, target.swLast >= 0 ? target.swLast : 0);
+        return;
+    }
+
+    if (opcode == "sw_lokey") {
+        target.swLoKey = parseMidiNote(value, target.swLoKey >= 0 ? target.swLoKey : 0);
+        return;
+    }
+
+    if (opcode == "sw_hikey") {
+        target.swHiKey = parseMidiNote(value, target.swHiKey >= 0 ? target.swHiKey : 127);
+        return;
+    }
+
     if (opcode == "ampeg_attack") {
         if (const auto parsed = parseFloatStrict(value)) {
             target.attackSeconds = juce::jmax(0.0f, *parsed);
@@ -400,6 +424,13 @@ SfzDocument SfzLoader::load(const juce::File& sfzFile) {
         loadedRegion.loRand = juce::jlimit(0.0f, 1.0f, juce::jmin(region.loRand, region.hiRand));
         loadedRegion.hiRand = juce::jlimit(0.0f, 1.0f, juce::jmax(region.loRand, region.hiRand));
         loadedRegion.hasRandomRange = region.hasRandomRange;
+        loadedRegion.swDefault = region.swDefault >= 0 ? juce::jlimit(0, 127, region.swDefault) : -1;
+        loadedRegion.swLast = region.swLast >= 0 ? juce::jlimit(0, 127, region.swLast) : -1;
+        loadedRegion.swLoKey = region.swLoKey >= 0 ? juce::jlimit(0, 127, region.swLoKey) : -1;
+        loadedRegion.swHiKey = region.swHiKey >= 0 ? juce::jlimit(0, 127, region.swHiKey) : -1;
+        if (loadedRegion.swLoKey >= 0 && loadedRegion.swHiKey >= 0 && loadedRegion.swLoKey > loadedRegion.swHiKey) {
+            std::swap(loadedRegion.swLoKey, loadedRegion.swHiKey);
+        }
         loadedRegion.attackSeconds = juce::jmax(0.0f, region.attackSeconds);
         loadedRegion.releaseSeconds = juce::jmax(0.0f, region.releaseSeconds);
         doc.regions.push_back(loadedRegion);

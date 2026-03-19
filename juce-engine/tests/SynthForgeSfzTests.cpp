@@ -103,6 +103,23 @@ std::vector<float> activeRandomLows(const GroupedSamplerSynthesiser& synth) {
     return lows;
 }
 
+std::vector<int> activeKeySwitchTargets(const GroupedSamplerSynthesiser& synth) {
+    std::vector<int> switches;
+    for (int i = 0; i < synth.getNumVoices(); ++i) {
+        auto* voice = synth.getVoice(i);
+        if (voice == nullptr || !voice->isVoiceActive()) {
+            continue;
+        }
+
+        auto currentSound = voice->getCurrentlyPlayingSound();
+        auto* groupedSound = dynamic_cast<GroupedSamplerSound*>(currentSound.get());
+        if (groupedSound != nullptr) {
+            switches.push_back(groupedSound->getSwLast());
+        }
+    }
+    return switches;
+}
+
 }  // namespace
 
 TEST_CASE("SfzLoader parses choke-group opcodes", "[synthforge][sfz][group]") {
@@ -165,8 +182,8 @@ TEST_CASE("GroupedSamplerSynthesiser chokes matching active group", "[synthforge
     juce::BigInteger openNotes;
     openNotes.setBit(46);
 
-    synth.addSound(new GroupedSamplerSound("closed", *closedReader, closedNotes, 42, 0.0, 0.01, 1.0, 1, 0, 0, 0, 0.0f, 1.0f, false));
-    synth.addSound(new GroupedSamplerSound("open", *openReader, openNotes, 46, 0.0, 0.01, 1.0, 2, 1, 0, 0, 0.0f, 1.0f, false));
+    synth.addSound(new GroupedSamplerSound("closed", *closedReader, closedNotes, 42, 0.0, 0.01, 1.0, 1, 0, 0, 0, 0.0f, 1.0f, false, -1, -1, -1, -1));
+    synth.addSound(new GroupedSamplerSound("open", *openReader, openNotes, 46, 0.0, 0.01, 1.0, 2, 1, 0, 0, 0.0f, 1.0f, false, -1, -1, -1, -1));
 
     synth.noteOn(1, 42, 1.0f);
     REQUIRE(countActiveVoicesWithGroup(synth, 1) == 1);
@@ -200,8 +217,8 @@ TEST_CASE("GroupedSamplerSynthesiser alternates round-robin regions per key",
     juce::BigInteger notes;
     notes.setBit(42);
 
-    synth.addSound(new GroupedSamplerSound("rr1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 1, 0.0f, 1.0f, false));
-    synth.addSound(new GroupedSamplerSound("rr2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 2, 0.0f, 1.0f, false));
+    synth.addSound(new GroupedSamplerSound("rr1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 1, 0.0f, 1.0f, false, -1, -1, -1, -1));
+    synth.addSound(new GroupedSamplerSound("rr2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 2, 0.0f, 1.0f, false, -1, -1, -1, -1));
 
     synth.noteOn(1, 42, 1.0f);
     REQUIRE(activeSeqPositions(synth) == std::vector<int>{1});
@@ -256,8 +273,8 @@ TEST_CASE("GroupedSamplerSynthesiser selects random layers from lorand and hiran
     juce::BigInteger notes;
     notes.setBit(42);
 
-    synth.addSound(new GroupedSamplerSound("rand1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 0, 0, 0.0f, 0.5f, true));
-    synth.addSound(new GroupedSamplerSound("rand2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 0, 0, 0.5f, 1.0f, true));
+    synth.addSound(new GroupedSamplerSound("rand1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 0, 0, 0.0f, 0.5f, true, -1, -1, -1, -1));
+    synth.addSound(new GroupedSamplerSound("rand2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 0, 0, 0.5f, 1.0f, true, -1, -1, -1, -1));
 
     synth.setNextRandomValueForTesting(0.25f);
     synth.noteOn(1, 42, 1.0f);
@@ -267,4 +284,60 @@ TEST_CASE("GroupedSamplerSynthesiser selects random layers from lorand and hiran
     synth.setNextRandomValueForTesting(0.75f);
     synth.noteOn(1, 42, 1.0f);
     REQUIRE(activeRandomLows(synth) == std::vector<float>{0.5f});
+}
+
+TEST_CASE("SfzLoader parses key switch opcodes", "[synthforge][sfz][keyswitch]") {
+    ScopedTempDir tempDir;
+    REQUIRE(tempDir.dir.isDirectory());
+
+    makeTempWavFile(tempDir.dir, "hat.wav");
+
+    auto sfzFile = tempDir.dir.getChildFile("kit.sfz");
+    REQUIRE(sfzFile.replaceWithText(
+        "<region> sample=hat.wav key=42 sw_default=c1 sw_last=d1 sw_lokey=c1 sw_hikey=d1\n"));
+
+    const auto document = SfzLoader::load(sfzFile);
+    REQUIRE(document.ok());
+    REQUIRE(document.regions.size() == 1);
+    REQUIRE(document.regions.front().swDefault == 24);
+    REQUIRE(document.regions.front().swLast == 26);
+    REQUIRE(document.regions.front().swLoKey == 24);
+    REQUIRE(document.regions.front().swHiKey == 26);
+}
+
+TEST_CASE("GroupedSamplerSynthesiser selects regions by last key switch",
+          "[synthforge][sfz][keyswitch]") {
+    ScopedTempDir tempDir;
+    REQUIRE(tempDir.dir.isDirectory());
+
+    auto firstFile = makeTempWavFile(tempDir.dir, "ks1.wav");
+    auto secondFile = makeTempWavFile(tempDir.dir, "ks2.wav");
+
+    juce::AudioFormatManager formats;
+    formats.registerBasicFormats();
+    auto firstReader = createReader(formats, firstFile);
+    auto secondReader = createReader(formats, secondFile);
+    REQUIRE(firstReader != nullptr);
+    REQUIRE(secondReader != nullptr);
+
+    GroupedSamplerSynthesiser synth;
+    synth.setCurrentPlaybackSampleRate(44100.0);
+    synth.addVoice(new juce::SamplerVoice());
+    synth.addVoice(new juce::SamplerVoice());
+
+    juce::BigInteger notes;
+    notes.setBit(42);
+
+    synth.addSound(new GroupedSamplerSound("ks1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 0, 0, 0.0f, 1.0f, false, 24, 24, 24, 26));
+    synth.addSound(new GroupedSamplerSound("ks2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 0, 0, 0.0f, 1.0f, false, 24, 26, 24, 26));
+
+    synth.noteOn(1, 42, 1.0f);
+    REQUIRE(activeKeySwitchTargets(synth) == std::vector<int>{24});
+    synth.allNotesOff(1, false);
+
+    synth.noteOn(1, 26, 1.0f);
+    REQUIRE(activeKeySwitchTargets(synth).empty());
+
+    synth.noteOn(1, 42, 1.0f);
+    REQUIRE(activeKeySwitchTargets(synth) == std::vector<int>{26});
 }

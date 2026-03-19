@@ -1,6 +1,12 @@
 #include "SynthForge/Sampler/GroupedSampler.h"
 
+#include <utility>
+
 namespace map2::synthforge {
+
+GroupedSamplerSynthesiser::GroupedSamplerSynthesiser() {
+    activeKeySwitches_.fill(-1);
+}
 
 GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
                                          juce::AudioFormatReader& source,
@@ -15,7 +21,11 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
                                          int seqPosition,
                                          float loRand,
                                          float hiRand,
-                                         bool hasRandomRange)
+                                         bool hasRandomRange,
+                                         int swDefault,
+                                         int swLast,
+                                         int swLoKey,
+                                         int swHiKey)
     : juce::SamplerSound(name,
                          source,
                          midiNotes,
@@ -29,9 +39,16 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
       seqPosition_(juce::jmax(0, seqPosition)),
       loRand_(juce::jlimit(0.0f, 1.0f, juce::jmin(loRand, hiRand))),
       hiRand_(juce::jlimit(0.0f, 1.0f, juce::jmax(loRand, hiRand))),
-      hasRandomRange_(hasRandomRange) {
+      hasRandomRange_(hasRandomRange),
+      swDefault_(swDefault >= 0 ? juce::jlimit(0, 127, swDefault) : -1),
+      swLast_(swLast >= 0 ? juce::jlimit(0, 127, swLast) : -1),
+      swLoKey_(swLoKey >= 0 ? juce::jlimit(0, 127, swLoKey) : -1),
+      swHiKey_(swHiKey >= 0 ? juce::jlimit(0, 127, swHiKey) : -1) {
     if (seqLength_ > 0 && seqPosition_ > seqLength_) {
         seqPosition_ = seqLength_;
+    }
+    if (swLoKey_ >= 0 && swHiKey_ >= 0 && swLoKey_ > swHiKey_) {
+        std::swap(swLoKey_, swHiKey_);
     }
 }
 
@@ -54,8 +71,48 @@ bool GroupedSamplerSound::appliesToRandomValue(float randomValue) const noexcept
     return clamped >= loRand_ && clamped < hiRand_;
 }
 
+bool GroupedSamplerSound::isKeySwitchNote(int midiNoteNumber) const noexcept {
+    if (swLoKey_ < 0 || swHiKey_ < 0) {
+        return false;
+    }
+
+    return midiNoteNumber >= swLoKey_ && midiNoteNumber <= swHiKey_;
+}
+
+bool GroupedSamplerSound::matchesKeySwitch(int activeKeySwitch) const noexcept {
+    if (swLast_ < 0) {
+        return true;
+    }
+
+    return activeKeySwitch >= 0 && activeKeySwitch == swLast_;
+}
+
+int GroupedSamplerSound::resolveDefaultKeySwitch() const noexcept {
+    return swDefault_;
+}
+
 void GroupedSamplerSynthesiser::noteOn(int midiChannel, int midiNoteNumber, float velocity) {
     const juce::ScopedLock sl(lock);
+
+    bool handledKeySwitch = false;
+    for (auto* sound : sounds) {
+        if (!sound->appliesToChannel(midiChannel)) {
+            continue;
+        }
+
+        auto* groupedSound = dynamic_cast<GroupedSamplerSound*>(sound);
+        if (groupedSound == nullptr || !groupedSound->isKeySwitchNote(midiNoteNumber)) {
+            continue;
+        }
+
+        activeKeySwitches_[static_cast<size_t>(channelIndex(midiChannel))] = midiNoteNumber;
+        handledKeySwitch = true;
+    }
+
+    if (handledKeySwitch) {
+        return;
+    }
+
     const int roundRobinCounter = nextRoundRobinCounter(midiNoteNumber);
     const float randomValue = nextRandomValue();
 
@@ -65,6 +122,9 @@ void GroupedSamplerSynthesiser::noteOn(int midiChannel, int midiNoteNumber, floa
         }
 
         if (auto* groupedSound = dynamic_cast<GroupedSamplerSound*>(sound)) {
+            if (!groupedSound->matchesKeySwitch(currentKeySwitchForChannel(midiChannel, groupedSound))) {
+                continue;
+            }
             if (!groupedSound->appliesToRoundRobin(roundRobinCounter)) {
                 continue;
             }
@@ -129,6 +189,20 @@ float GroupedSamplerSynthesiser::nextRandomValue() noexcept {
     }
 
     return juce::Random::getSystemRandom().nextFloat();
+}
+
+int GroupedSamplerSynthesiser::channelIndex(int midiChannel) const noexcept {
+    return juce::jlimit(0, 16, midiChannel);
+}
+
+int GroupedSamplerSynthesiser::currentKeySwitchForChannel(int midiChannel,
+                                                          const GroupedSamplerSound* sound) const noexcept {
+    const int active = activeKeySwitches_[static_cast<size_t>(channelIndex(midiChannel))];
+    if (active >= 0) {
+        return active;
+    }
+
+    return sound != nullptr ? sound->resolveDefaultKeySwitch() : -1;
 }
 
 }  // namespace map2::synthforge
