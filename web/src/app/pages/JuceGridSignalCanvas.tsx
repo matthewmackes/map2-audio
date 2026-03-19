@@ -164,6 +164,26 @@ function buildPluginFeatureList(
   return features.slice(0, 4)
 }
 
+function getSignalCardEffectIcon(meta: Plugin | undefined, plugin: Chain['plugins'][number]) {
+  const iconHints = [
+    meta?.name,
+    meta?.category,
+    meta?.class_label,
+    plugin.plugin_display_type,
+    plugin.name,
+    plugin.uri,
+  ].filter((value): value is string => Boolean(value && value.trim()))
+
+  for (const hint of iconHints) {
+    const icon = getEffectIcon(hint)
+    if (icon) {
+      return icon
+    }
+  }
+
+  return getEffectIcon('plugin')
+}
+
 function samplesToMs(samples: number, sampleRate: number) {
   return (samples / sampleRate) * 1000
 }
@@ -538,7 +558,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
             const meta = pluginMeta[plugin.uri]
             const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
             const categoryConfig = getCategoryConfig(meta?.category || 'Utility')
-            const EffectIcon = getEffectIcon(meta?.category)
+            const EffectIcon = getSignalCardEffectIcon(meta, plugin)
             const isSelected = plugin.uri === selectedPluginUri
             const isDropTarget = dragOverUri === plugin.uri && draggedUri !== plugin.uri
             const levels = pluginLevels[plugin.uri] || { in: 0, out: 0 }

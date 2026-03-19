@@ -2648,6 +2648,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   aspect-ratio: 1;
   width: 100%;
   border: 1px solid var(--cds-border-subtle, var(--border));
@@ -2702,19 +2703,19 @@
 /* ── Hero icon area: fills top portion, centered ── */
 
 .juce-grid-page__signal-plugin-hero {
-  flex: 7 1 0%;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  min-height: 0;
+  padding: 0.75rem 0.5rem 0.35rem;
+  min-height: 7rem;
   overflow: hidden;
 }
 
 .juce-grid-page__signal-plugin-hero-svg {
   display: block;
-  width: 80%;
-  height: 80%;
+  width: min(72%, 7.5rem);
+  height: min(72%, 7.5rem);
   color: var(--juce-grid-signal-accent);
   fill: var(--juce-grid-signal-accent);
   opacity: 0.85;
@@ -2728,15 +2729,15 @@
 /* ── Bottom info panel ── */
 
 .juce-grid-page__signal-plugin-info {
-  flex: 3 0 0%;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 0.35rem;
   padding: 0.45rem 0.55rem 0.5rem;
   background: rgba(255, 255, 255, 0.025);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  min-height: 0;
+  min-height: 7rem;
   overflow: hidden;
 }
 
@@ -2772,6 +2773,7 @@
   letter-spacing: 0.015em;
   line-height: 1.1;
   min-width: 0;
+  text-shadow: 0 0 0.35rem color-mix(in srgb, var(--juce-grid-signal-accent) 18%, transparent);
 }
 
 .juce-grid-page__signal-plugin-actions {

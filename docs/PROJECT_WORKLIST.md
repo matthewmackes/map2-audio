@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -1892,7 +1892,7 @@ Last updated: 2026-03-19 - Codex
 ## JUCE Grid — Axe-FX Edit / GarageBand Redesign
 
 ID: T223
-Status: [ ] Todo
+Status: [>] In Progress
 Title: JUCE Grid Page — Axe-FX Edit desktop + GarageBand iPad redesign
 Description:
 - Goal / acceptance criteria: Full replacement and refactor of JuceGridPage and JuceGridSignalCanvas into an Axe-FX Edit–style effect block grid with GarageBand-informed iPad experience and Carbon Design System compliance.
@@ -1979,7 +1979,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-19
 
 ID: T223-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Effect grid card face — hero image, name, category, bypass, glyphs
 Description:
 - Standardized card face layout: fixed top portion (hero image), fixed bottom portion (name/category/bypass)
@@ -1988,7 +1988,11 @@ Description:
 - Carbon standard selected state
 - Glyph usage throughout
 Assigned to: Unassigned
-Last updated: 2026-03-19
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - Rebalanced the signal-card face in `web/src/app/pages/JuceGridPage.css` so the hero zone and bottom info band now use a fixed, standardized Axe-FX-style composition with consistent minimum heights, icon sizing, and bottom-detail spacing.
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` to resolve card hero glyphs from richer plugin metadata hints (`name`, `category`, `class_label`, display type, plugin name, URI) before falling back, which improves real effect-family icon selection without changing route color semantics.
+  - Preserved the existing category labels, metrics, and selected-state behavior while tightening the card-face visual hierarchy for the ongoing T223 grid rewrite.
 
 ID: T223-subC
 Status: [ ] Todo
