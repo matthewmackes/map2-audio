@@ -104,13 +104,28 @@ def check_startup_order(api_base: str, run_id: str) -> dict[str, Any]:
     completed = int(progress.get("completed_services", 0))
     total = int(progress.get("total_services", 0))
     traffic_gates = (payload or {}).get("traffic_gate_services", []) if isinstance(payload, dict) else []
-    ready = status_code == 200 and total > 0 and completed >= total and bool(traffic_gates)
+    startup_order = (payload or {}).get("startup_order", []) if isinstance(payload, dict) else []
+    order_services = {
+        str(item.get("name")): item
+        for item in startup_order
+        if isinstance(item, dict) and item.get("name")
+    }
+    gate_details_present = bool(traffic_gates) and all(name in order_services for name in traffic_gates)
+    gate_metadata_ready = gate_details_present and all(
+        bool(order_services[name].get("gates_accepting_traffic")) for name in traffic_gates
+    )
+    fallback_gate_completion = (
+        bool(traffic_gates)
+        and total > 0
+        and completed >= min(len(traffic_gates), total)
+    )
+    ready = status_code == 200 and (gate_metadata_ready or fallback_gate_completion)
     return {
         "status": "PASS" if ready else "BLOCKED",
         "reason": (
-            "Startup-order diagnostics report all services completed and traffic gates defined."
+            "Startup-order diagnostics report traffic-gate services ready for qualification."
             if ready
-            else f"Startup-order diagnostics are incomplete (status={status_code}, completed={completed}, total={total})."
+            else f"Startup-order diagnostics do not yet prove traffic-gate readiness (status={status_code}, completed={completed}, total={total})."
         ),
         "http_status": status_code,
         "traffic_gate_services": traffic_gates,

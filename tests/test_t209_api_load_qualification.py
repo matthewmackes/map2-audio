@@ -131,3 +131,55 @@ def test_t209_preflight_blocks_when_readiness_is_not_accepting_traffic(tmp_path:
     assert summary["checks"]["api_ready"]["status"] == "BLOCKED"
     assert summary["load_command"]["executed"] is False
     assert summary["load_command"]["reason"] == "Preflight blocked load execution."
+
+
+def test_t209_preflight_accepts_partial_startup_when_traffic_gates_are_ready(tmp_path: Path) -> None:
+    server, thread = _serve(
+        {
+            "/api/ready": (200, {"ready": True, "accepting_traffic": True}),
+            "/api/services/startup-order": (
+                200,
+                {
+                    "startup_order": [
+                        {"name": "database", "gates_accepting_traffic": True},
+                        {"name": "command_queue", "gates_accepting_traffic": True},
+                        {"name": "websocket_manager", "gates_accepting_traffic": True},
+                        {"name": "juce_engine", "gates_accepting_traffic": False},
+                    ],
+                    "traffic_gate_services": ["database", "command_queue", "websocket_manager"],
+                    "startup_progress": {"completed_services": 13, "total_services": 15},
+                },
+            ),
+            "/api/services/status/websocket_manager": (
+                200,
+                {"state": "running", "health": {"healthy": True}},
+            ),
+            "/api/chains/": (200, {"chains": [], "count": 0}),
+            "/api/plugins/discover": (200, {"plugins": [], "count": 0}),
+        }
+    )
+    try:
+        output_dir = tmp_path / "out"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--output-dir",
+                str(output_dir),
+                "--api-base",
+                f"http://127.0.0.1:{server.server_port}",
+                "--min-open-files",
+                "1",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    finally:
+        server.shutdown()
+        thread.join(timeout=2)
+
+    assert result.returncode == 0
+    summary = json.loads((output_dir / "t209-api-load-preflight.json").read_text(encoding="utf-8"))
+    assert summary["overall_status"] == "PASS"
+    assert summary["checks"]["startup_order"]["status"] == "PASS"
