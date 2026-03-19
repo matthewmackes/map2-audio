@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**773** Python | **1142** TypeScript | **288** C++/H | **122** Docs | **582** total commits | **1** stars | **0** forks | **0** open issues
+**773** Python | **1142** TypeScript | **288** C++/H | **122** Docs | **584** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`30807a1f`](https://github.com/matthewmackes/map2-audio/commit/30807a1f4a6a4b8c7426376c33428ae3891362aa) | Block JUCE Grid on narrow mobile viewports | Map2 Audio | 2026-03-19 |
+| [`4b66994d`](https://github.com/matthewmackes/map2-audio/commit/4b66994d4c81763e8c03b75cacc98e2dc8ade6a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`0a67a368`](https://github.com/matthewmackes/map2-audio/commit/0a67a3685f2962a12e38af8823e8d75d9e534efc) | Persist JUCE Grid selection state | Map2 Audio | 2026-03-19 |
 | [`d5283942`](https://github.com/matthewmackes/map2-audio/commit/d5283942a87e3a535b5052212f2de53e5df173f3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`8228c89f`](https://github.com/matthewmackes/map2-audio/commit/8228c89fb80b1fa5f10030deb4a54d9b970a4666) | Complete T223 signal-card face refresh | Map2 Audio | 2026-03-19 |
 | [`4a3667e6`](https://github.com/matthewmackes/map2-audio/commit/4a3667e6538ce70e7d724568b2984fbaf713d4b1) | Harden T209 startup-order preflight gate | Map2 Audio | 2026-03-19 |
 | [`e83414bb`](https://github.com/matthewmackes/map2-audio/commit/e83414bb09795d7fa4994c8e4f2eeeffa19793b7) | Add MIDI Hub shell and transport workspace | Map2 Audio | 2026-03-19 |
 | [`2397b71c`](https://github.com/matthewmackes/map2-audio/commit/2397b71c4e145a36c093b19b16cd3225de037e24) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
-| [`d0c3a92e`](https://github.com/matthewmackes/map2-audio/commit/d0c3a92e8908f67cd4be030e69a67781e886e6cc) | Add drum machine API types and hooks | Map2 Audio | 2026-03-19 |
-| [`6b31d970`](https://github.com/matthewmackes/map2-audio/commit/6b31d97031efcbc02eba8b03b4a771b42ca51725) | Finish drum backend service integration | Map2 Audio | 2026-03-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
