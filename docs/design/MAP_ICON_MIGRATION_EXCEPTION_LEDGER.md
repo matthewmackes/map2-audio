@@ -29,6 +29,11 @@ This wave also removed:
 | MUI icons | 0 |
 | Emoji / symbol glyphs | 0 |
 
+Latest active-scope audit:
+
+- `web/src/app`, `web/src/map2`, `web/src/shared`, `web/src/components`, and `web/src/pages` are now clear of `@mui/icons-material` and `@phosphor-icons/react` imports.
+- The only remaining legacy icon-package holdouts are in `web/src/pipedal/**`, which are tracked separately under `T205-subF-subB`.
+
 ## Exception groups
 
 ### Group A: Legacy `web/src/map2/**`

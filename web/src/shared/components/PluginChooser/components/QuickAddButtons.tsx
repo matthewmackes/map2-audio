@@ -4,11 +4,7 @@
 // ============================================================================
 
 import { Box, Button, Stack, Tooltip, Typography } from '@mui/material'
-import {
-  MusicNote as NAMIcon,
-  Speaker as CabinetIcon,
-  Waves as ReverbIcon,
-} from '@mui/icons-material'
+import { MachineLearningModel, VolumeUp, Waveform } from '@carbon/icons-react'
 
 interface QuickAddButtonsProps {
   onAddNAM?: () => void
@@ -45,7 +41,7 @@ export function QuickAddButtons({
           <Button
             variant="contained"
             size="small"
-            startIcon={<NAMIcon />}
+            startIcon={<MachineLearningModel size={18} />}
             onClick={onAddNAM}
             sx={{
               textTransform: 'none',
@@ -61,7 +57,7 @@ export function QuickAddButtons({
           <Button
             variant="contained"
             size="small"
-            startIcon={<CabinetIcon />}
+            startIcon={<VolumeUp size={18} />}
             onClick={onAddCabinetIR}
             sx={{
               textTransform: 'none',
@@ -77,7 +73,7 @@ export function QuickAddButtons({
           <Button
             variant="contained"
             size="small"
-            startIcon={<ReverbIcon />}
+            startIcon={<Waveform size={18} />}
             onClick={onAddReverbIR}
             sx={{
               textTransform: 'none',

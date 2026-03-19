@@ -18,13 +18,13 @@ import {
   Tooltip,
 } from '@mui/material'
 import {
-  Close as CloseIcon,
-  Star as StarIcon,
-  StarBorder as StarBorderIcon,
-  Add as AddIcon,
-  OpenInNew as OpenInNewIcon,
-  Tune as TuneIcon,
-} from '@mui/icons-material'
+  Add,
+  Close,
+  Favorite,
+  FavoriteFilled,
+  Launch,
+  SettingsAdjust,
+} from '@carbon/icons-react'
 import { usePluginChooser } from '../PluginChooserContext'
 import PluginFormatBadge from './PluginFormatBadge'
 import PluginIOIndicator from './PluginIOIndicator'
@@ -81,7 +81,7 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
         >
           <Typography variant="subtitle2">Plugin Details</Typography>
           <IconButton size="small" onClick={handleClose}>
-            <CloseIcon sx={{ fontSize: 18 }} />
+            <Close size={18} />
           </IconButton>
         </Box>
 
@@ -129,7 +129,7 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
       >
         <Typography variant="subtitle2">Plugin Details</Typography>
         <IconButton size="small" onClick={handleClose}>
-          <CloseIcon sx={{ fontSize: 18 }} />
+          <Close size={18} />
         </IconButton>
       </Box>
 
@@ -165,7 +165,7 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
                 }}
               >
                 by {selectedPlugin.authorName}
-                <OpenInNewIcon sx={{ fontSize: 12 }} />
+                <Launch size={12} />
               </Link>
             ) : (
               <Typography variant="body2" color="text.secondary">
@@ -184,9 +184,9 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
             }}
           >
             {selectedPlugin.isFavorite ? (
-              <StarIcon sx={{ fontSize: 24 }} />
+              <FavoriteFilled size={24} />
             ) : (
-              <StarBorderIcon sx={{ fontSize: 24 }} />
+              <Favorite size={24} />
             )}
           </IconButton>
         </Stack>
@@ -267,7 +267,7 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
         {/* Parameters */}
         <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
           <Stack direction="row" alignItems="center" spacing={0.5}>
-            <TuneIcon sx={{ fontSize: 14 }} />
+            <SettingsAdjust size={14} />
             <span>Parameters ({selectedPlugin.parameterCount})</span>
           </Stack>
         </Typography>
@@ -324,7 +324,7 @@ export function PluginPreviewPanel({ onAdd, onClose }: PluginPreviewPanelProps) 
         <Button
           fullWidth
           variant="contained"
-          startIcon={<AddIcon />}
+          startIcon={<Add size={16} />}
           onClick={handleAdd}
           size="large"
         >

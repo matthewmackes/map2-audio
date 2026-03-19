@@ -50,15 +50,15 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Refresh as RefreshIcon,
+  Calendar as EventIcon,
   CloudDownload as BackupIcon,
-  Upload as RestoreIcon,
-  Update as UpdateIcon,
+  DataBase as StorageIcon,
+  Network_3 as TopologyIcon,
+  Renew as RefreshIcon,
   Settings as ConfigIcon,
-  Timeline as TopologyIcon,
-  Event as EventIcon,
-  Storage as StorageIcon,
-} from '@mui/icons-material';
+  Upload as RestoreIcon,
+  WarningAlt as UpdateIcon,
+} from '@carbon/icons-react';
 
 // ============================================================================
 // Types

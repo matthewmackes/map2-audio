@@ -40,11 +40,11 @@ import {
   DialogActions,
 } from '@mui/material';
 import {
-  CheckCircle as CheckIcon,
-  Warning as WarningIcon,
+  CheckmarkFilled as CheckIcon,
   CloudDownload as BackupIcon,
-  Restore as RestoreIcon,
-} from '@mui/icons-material';
+  Upload as RestoreIcon,
+  WarningAlt as WarningIcon,
+} from '@carbon/icons-react';
 
 // ============================================================================
 // Types

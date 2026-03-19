@@ -1026,7 +1026,7 @@ Last updated: 2026-03-18 20:17 - Codex
   - `python3` tracked-marker sweep across `web/src/app` + `web/src/map2` -> `TOTAL_FILES 0`
 
 ID: T205-subF
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Verify icon-migration exit criteria and retire legacy icon packages from active frontend paths
 Description:
 - Goal / acceptance criteria: Recount Phosphor, MUI, and emoji/symbol usage after migration waves, verify that active frontend paths satisfy the approved icon stack, and remove legacy icon packages/import paths where no longer needed.
@@ -1034,15 +1034,40 @@ Description:
 - Dependencies: T205-subB, T205-subC, T205-subD, T205-subE
 - Estimated effort: Medium
 - Required outputs: Updated exception ledger counts, package/import cleanup, and explicit completion notes against the icon exit condition.
+Subtasks:
+ID: T205-subF-subA
+Status: [✓] Done
+Title: Migrate shared utility surfaces still importing legacy icon packages
+Description:
+- Goal / acceptance criteria: Replace the remaining `@mui/icons-material` / `@phosphor-icons/react` imports in shared active utility surfaces under `web/src/shared/**`, `web/src/components/**`, and `web/src/pages/**`.
+- Why it matters: These are still live operator-facing or shared surfaces, so leaving them on legacy icon packages blocks a truthful active-frontend package-retirement audit.
+- Dependencies: T205-subD, T205-subE
+- Estimated effort: Medium
+- Required outputs: Updated shared utility components/routes, zero legacy icon-package imports in the targeted shared surfaces, and validation notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-18 22:11 - Codex
+Last updated: 2026-03-18 22:23 - Codex
+- Completion notes:
+  - Migrated the full shared `PluginChooser` operator surface off legacy icon packages: `web/src/shared/components/PluginChooser/PluginChooser.tsx`, `components/PluginChooserHeader.tsx`, `components/QuickAddButtons.tsx`, `components/CategorySidebar.tsx`, `components/PluginPreviewPanel.tsx`, and `components/PluginCard.tsx` now use Carbon icons while preserving the existing MUI layout/runtime behavior.
+  - Migrated the remaining standalone shared utility/admin surfaces `web/src/components/BackupRestoreWizard.tsx` and `web/src/pages/ClusterAdmin.tsx` off `@mui/icons-material`, leaving the targeted `web/src/shared/**`, `web/src/components/**`, and `web/src/pages/**` paths clear of legacy icon-package imports.
+  - The targeted shared-surface audit is now clean: `rg -n "@mui/icons-material|@phosphor-icons/react" web/src/shared web/src/components web/src/pages -g '*.tsx' -g '*.ts'` returns no matches.
+ID: T205-subF-subB
+Status: [ ] Todo
+Title: Migrate or formally freeze remaining PiPedal legacy icon-package imports
+Description:
+- Goal / acceptance criteria: Reduce or explicitly constrain the remaining legacy icon-package imports under `web/src/pipedal/**` so package retention is documented honestly and bounded.
+- Why it matters: The broad repo-level icon exit and dependency-retirement story remains incomplete while the PiPedal legacy island still imports the old icon stack.
+- Dependencies: T205-subF-subA
+- Estimated effort: High
+- Required outputs: Reduced `web/src/pipedal/**` import count, documented freeze/exception posture for any leftover debt, and updated ledger/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-18 22:23 - Codex
 - Remaining changes:
   - Lock the current recount into the final exit audit: active `web/src/app` + `web/src/map2` is now `0` Phosphor files, `0` MUI-icon files, and `0` tracked emoji/symbol UI-icon files.
-  - Decide how far package retirement should go while `web/src/pipedal/**` and a few shared utility surfaces still import `@mui/icons-material` and/or `@phosphor-icons/react`.
-  - Remove or formally constrain those remaining non-active imports before closing `T205` at the package/dep level.
+  - Complete `T205-subF-subB` so the remaining PiPedal legacy icon debt is either migrated or explicitly frozen and bounded.
 Assigned to: Claude + User + Codex
-Last updated: 2026-03-18 15:28 - Codex
+Last updated: 2026-03-18 22:23 - Codex
 
 ID: T206
 Status: [✓] Done

@@ -15,7 +15,7 @@ import {
   useMediaQuery,
 } from '@mui/material'
 import { TransitionProps } from '@mui/material/transitions'
-import { Close as CloseIcon } from '@mui/icons-material'
+import { Close } from '@carbon/icons-react'
 import { PluginChooserProvider, usePluginChooser } from './PluginChooserContext'
 import { PluginChooserProps, UnifiedPlugin, ChooserMode } from './types'
 import PluginChooserHeader from './components/PluginChooserHeader'
@@ -201,7 +201,7 @@ function PluginChooserInner({
                 zIndex: 1,
               }}
             >
-              <CloseIcon />
+              <Close size={20} />
             </IconButton>
           )}
           {content}

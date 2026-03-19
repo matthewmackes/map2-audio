@@ -19,25 +19,23 @@ import {
   Chip,
   Stack,
   Typography,
-  Autocomplete,
 } from '@mui/material'
 import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  GridView as GridViewIcon,
-  ViewList as ListViewIcon,
-  TableRows as TableViewIcon,
-  Sort as SortIcon,
-  ArrowUpward as AscIcon,
-  ArrowDownward as DescIcon,
-  SortByAlpha as SortNameIcon,
-  Person as SortAuthorIcon,
-  Category as SortCategoryIcon,
-  History as SortRecentIcon,
-  TrendingUp as SortFrequencyIcon,
-  Tune as SortParamsIcon,
-  Info as InfoIcon,
-} from '@mui/icons-material'
+  ArrowDown,
+  ArrowUp,
+  CaretSort,
+  CategoryAdd,
+  ChartLine,
+  Close,
+  Grid,
+  Information,
+  List,
+  RecentlyViewed,
+  Search,
+  SettingsAdjust,
+  SortingAToZ,
+  UserFavorite,
+} from '@carbon/icons-react'
 import { usePluginChooser } from '../PluginChooserContext'
 import { ViewMode, SortBy } from '../types'
 
@@ -48,12 +46,12 @@ interface PluginChooserHeaderProps {
 }
 
 const SORT_OPTIONS: { value: SortBy; label: string; icon: React.ReactNode }[] = [
-  { value: 'name', label: 'Name', icon: <SortNameIcon fontSize="small" /> },
-  { value: 'author', label: 'Author', icon: <SortAuthorIcon fontSize="small" /> },
-  { value: 'category', label: 'Category', icon: <SortCategoryIcon fontSize="small" /> },
-  { value: 'recent', label: 'Recently Used', icon: <SortRecentIcon fontSize="small" /> },
-  { value: 'frequency', label: 'Most Used', icon: <SortFrequencyIcon fontSize="small" /> },
-  { value: 'params', label: 'Parameters', icon: <SortParamsIcon fontSize="small" /> },
+  { value: 'name', label: 'Name', icon: <SortingAToZ size={16} /> },
+  { value: 'author', label: 'Author', icon: <UserFavorite size={16} /> },
+  { value: 'category', label: 'Category', icon: <CategoryAdd size={16} /> },
+  { value: 'recent', label: 'Recently Used', icon: <RecentlyViewed size={16} /> },
+  { value: 'frequency', label: 'Most Used', icon: <ChartLine size={16} /> },
+  { value: 'params', label: 'Parameters', icon: <SettingsAdjust size={16} /> },
 ]
 
 export function PluginChooserHeader({
@@ -158,13 +156,13 @@ export function PluginChooserHeader({
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                <Search size={20} />
               </InputAdornment>
             ),
             endAdornment: state.searchQuery && (
               <InputAdornment position="end">
                 <IconButton size="small" onClick={handleClearSearch}>
-                  <ClearIcon sx={{ fontSize: 16 }} />
+                  <Close size={16} />
                 </IconButton>
               </InputAdornment>
             ),
@@ -182,12 +180,12 @@ export function PluginChooserHeader({
         >
           <ToggleButton value="grid">
             <Tooltip title="Grid view">
-              <GridViewIcon sx={{ fontSize: 18 }} />
+              <Grid size={18} />
             </Tooltip>
           </ToggleButton>
           <ToggleButton value="list">
             <Tooltip title="List view">
-              <ListViewIcon sx={{ fontSize: 18 }} />
+              <List size={18} />
             </Tooltip>
           </ToggleButton>
         </ToggleButtonGroup>
@@ -195,11 +193,11 @@ export function PluginChooserHeader({
         {/* Sort button */}
         <Tooltip title="Sort">
           <IconButton size="small" onClick={handleSortClick}>
-            <SortIcon sx={{ fontSize: 20 }} />
+            <CaretSort size={20} />
             {state.sortDirection === 'desc' ? (
-              <DescIcon sx={{ fontSize: 12, ml: -0.5 }} />
+              <ArrowDown size={12} style={{ marginLeft: -2 }} />
             ) : (
-              <AscIcon sx={{ fontSize: 12, ml: -0.5 }} />
+              <ArrowUp size={12} style={{ marginLeft: -2 }} />
             )}
           </IconButton>
         </Tooltip>
@@ -220,9 +218,9 @@ export function PluginChooserHeader({
               <ListItemText>{option.label}</ListItemText>
               {state.sortBy === option.value && (
                 state.sortDirection === 'desc' ? (
-                  <DescIcon sx={{ fontSize: 16, ml: 1 }} />
+                  <ArrowDown size={16} style={{ marginLeft: 8 }} />
                 ) : (
-                  <AscIcon sx={{ fontSize: 16, ml: 1 }} />
+                  <ArrowUp size={16} style={{ marginLeft: 8 }} />
                 )
               )}
             </MenuItem>
@@ -237,7 +235,7 @@ export function PluginChooserHeader({
               onClick={onTogglePreviewPanel || togglePreviewPanel}
               color={state.previewPanelOpen ? 'primary' : 'default'}
             >
-              <InfoIcon sx={{ fontSize: 20 }} />
+              <Information size={20} />
             </IconButton>
           </Tooltip>
         )}

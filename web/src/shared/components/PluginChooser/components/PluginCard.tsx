@@ -20,16 +20,16 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import {
-  Star as StarIcon,
-  StarBorder as StarBorderIcon,
-  Add as AddIcon,
-  DragIndicator as DragIcon,
-  Tune as TuneIcon,
-  OpenInNew as OpenInNewIcon,
-  ExpandMore as ExpandMoreIcon,
-  ContentCopy as CopyIcon,
-  Info as InfoIcon,
-} from '@mui/icons-material'
+  Add,
+  ChevronDown,
+  Copy,
+  Draggable,
+  Favorite,
+  FavoriteFilled,
+  Information,
+  Launch,
+  SettingsAdjust,
+} from '@carbon/icons-react'
 import { UnifiedPlugin } from '../types'
 import PluginFormatBadge from './PluginFormatBadge'
 import { PluginIOBadge } from './PluginIOIndicator'
@@ -143,14 +143,17 @@ export const PluginCard = memo(function PluginCard({
         <Stack direction="row" spacing={1} alignItems="flex-start" mb={1}>
           {/* Drag indicator */}
           {draggable && (
-            <DragIcon
+            <Box
+              component="span"
               sx={{
-                fontSize: 16,
                 color: 'text.disabled',
                 mt: 0.25,
                 flexShrink: 0,
+                display: 'inline-flex',
               }}
-            />
+            >
+              <Draggable size={16} />
+            </Box>
           )}
 
           {/* Plugin icon */}
@@ -194,7 +197,7 @@ export const PluginCard = memo(function PluginCard({
                 }}
               >
                 {displayAuthor}
-                <OpenInNewIcon sx={{ fontSize: 10 }} />
+                <Launch size={10} />
               </Link>
             ) : (
               <Typography variant="caption" color="text.secondary" noWrap>
@@ -214,9 +217,9 @@ export const PluginCard = memo(function PluginCard({
           }}
         >
             {plugin.isFavorite ? (
-              <StarIcon sx={{ fontSize: 18 }} />
+              <FavoriteFilled size={18} />
             ) : (
-              <StarBorderIcon sx={{ fontSize: 18 }} />
+              <Favorite size={18} />
             )}
           </IconButton>
         </Stack>
@@ -241,7 +244,7 @@ export const PluginCard = memo(function PluginCard({
         {/* I/O and features badges */}
         <Stack direction="row" spacing={0.5} alignItems="center" mb={1} flexWrap="wrap" gap={0.5}>
           <Chip
-            icon={<TuneIcon sx={{ fontSize: '0.7rem !important' }} />}
+            icon={<SettingsAdjust size={12} />}
             label={isHardware ? 'MPX1 Panel' : `${plugin.parameterCount} params`}
             size="small"
             sx={{
@@ -319,15 +322,18 @@ export const PluginCard = memo(function PluginCard({
         <Button
           size="small"
           onClick={handleExpandClick}
-          startIcon={<InfoIcon sx={{ fontSize: 14 }} />}
+          startIcon={<Information size={14} />}
           endIcon={
-            <ExpandMoreIcon
+            <Box
+              component="span"
               sx={{
-                fontSize: 14,
+                display: 'inline-flex',
                 transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.2s',
               }}
-            />
+            >
+              <ChevronDown size={14} />
+            </Box>
           }
           sx={{
             textTransform: 'none',
@@ -410,7 +416,7 @@ export const PluginCard = memo(function PluginCard({
               </Typography>
               <Tooltip title="Copy URI" arrow>
                 <IconButton size="small" onClick={handleCopyUri} sx={{ p: 0.25 }}>
-                  <CopyIcon sx={{ fontSize: 12 }} />
+                  <Copy size={12} />
                 </IconButton>
               </Tooltip>
             </Stack>
@@ -485,7 +491,7 @@ export const PluginCard = memo(function PluginCard({
             <Button
               variant="contained"
               size="small"
-              startIcon={<AddIcon sx={{ fontSize: 14 }} />}
+              startIcon={<Add size={14} />}
               onClick={handleAddClick}
               sx={{
                 textTransform: 'none',
@@ -558,7 +564,9 @@ function CompactPluginCard({
       }}
     >
       {draggable && (
-        <DragIcon sx={{ fontSize: 14, color: 'text.disabled', flexShrink: 0 }} />
+        <Box component="span" sx={{ color: 'text.disabled', flexShrink: 0, display: 'inline-flex' }}>
+          <Draggable size={14} />
+        </Box>
       )}
 
       {isHardware ? (
@@ -595,7 +603,7 @@ function CompactPluginCard({
       <Chip
         label={isHardware ? 'MPX1' : `${plugin.parameterCount}`}
         size="small"
-        icon={<TuneIcon sx={{ fontSize: '0.65rem !important' }} />}
+        icon={<SettingsAdjust size={12} />}
         sx={{
           height: 18,
           fontSize: '0.6rem',
@@ -620,9 +628,9 @@ function CompactPluginCard({
         sx={{ p: 0.25, color: plugin.isFavorite ? 'warning.main' : 'text.disabled' }}
       >
         {plugin.isFavorite ? (
-          <StarIcon sx={{ fontSize: 16 }} />
+          <FavoriteFilled size={16} />
         ) : (
-          <StarBorderIcon sx={{ fontSize: 16 }} />
+          <Favorite size={16} />
         )}
       </IconButton>
 
@@ -639,7 +647,7 @@ function CompactPluginCard({
           '&:hover': { bgcolor: 'primary.dark' },
         }}
       >
-        <AddIcon sx={{ fontSize: 16 }} />
+        <Add size={16} />
       </IconButton>
     </Box>
   )

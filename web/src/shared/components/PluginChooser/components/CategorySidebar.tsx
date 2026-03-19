@@ -24,16 +24,16 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import {
-  ExpandLess,
-  ExpandMore,
-  Star as StarIcon,
-  History as HistoryIcon,
-  Folder as FolderIcon,
-  FolderOpen as FolderOpenIcon,
-  CreateNewFolder as CreateNewFolderIcon,
-  Delete as DeleteIcon,
-  ChevronLeft as ChevronLeftIcon,
-} from '@mui/icons-material'
+  ChevronDown,
+  ChevronLeft,
+  ChevronUp,
+  FavoriteFilled,
+  Folder,
+  FolderAdd,
+  FolderOpen,
+  RecentlyViewed,
+  TrashCan,
+} from '@carbon/icons-react'
 import { usePluginChooser } from '../PluginChooserContext'
 import { buildCategoryTree } from '../utils/pluginFilters'
 import { CategoryNode, PluginFolder } from '../types'
@@ -159,12 +159,16 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
           </Typography>
         )}
         <IconButton size="small" onClick={onCollapse}>
-          <ChevronLeftIcon
+          <Box
+            component="span"
             sx={{
+              display: 'inline-flex',
               transform: state.sidebarCollapsed ? 'rotate(180deg)' : 'none',
               transition: 'transform 0.2s',
             }}
-          />
+          >
+            <ChevronLeft size={16} />
+          </Box>
         </IconButton>
       </Box>
 
@@ -214,7 +218,7 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
               max={99}
               sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', height: 14, minWidth: 14 } }}
             >
-              <StarIcon sx={{ fontSize: 18, color: state.showFavoritesOnly ? 'warning.main' : 'text.secondary' }} />
+              <FavoriteFilled size={18} />
             </Badge>
           </ListItemIcon>
           {!state.sidebarCollapsed && (
@@ -238,7 +242,7 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
               max={99}
               sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', height: 14, minWidth: 14 } }}
             >
-              <HistoryIcon sx={{ fontSize: 18 }} />
+              <RecentlyViewed size={18} />
             </Badge>
           </ListItemIcon>
           {!state.sidebarCollapsed && (
@@ -347,9 +351,9 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
             >
               <ListItemIcon sx={{ minWidth: 32 }}>
                 {state.selectedFolder === folder.id ? (
-                  <FolderOpenIcon sx={{ fontSize: 18 }} />
+                  <FolderOpen size={18} />
                 ) : (
-                  <FolderIcon sx={{ fontSize: 18 }} />
+                  <Folder size={18} />
                 )}
               </ListItemIcon>
               <ListItemText
@@ -364,7 +368,7 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
                 onClick={(e) => handleDeleteFolder(folder.id, e)}
                 sx={{ p: 0.25 }}
               >
-                <DeleteIcon sx={{ fontSize: 14 }} />
+                <TrashCan size={14} />
               </IconButton>
             </ListItemButton>
           ))}
@@ -376,7 +380,7 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
             sx={{ py: 0.5, minHeight: 36, color: 'text.secondary' }}
           >
             <ListItemIcon sx={{ minWidth: 32 }}>
-              <CreateNewFolderIcon sx={{ fontSize: 18 }} />
+              <FolderAdd size={18} />
             </ListItemIcon>
             <ListItemText
               primary="New Folder"
