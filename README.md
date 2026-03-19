@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**773** Python | **1143** TypeScript | **288** C++/H | **122** Docs | **594** total commits | **1** stars | **0** forks | **0** open issues
+**773** Python | **1145** TypeScript | **288** C++/H | **122** Docs | **596** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`40cc8a66`](https://github.com/matthewmackes/map2-audio/commit/40cc8a669e873a937de0fcaa510d502a69e72de3) | Complete T203-subB connections area rewrite | Map2 Audio | 2026-03-19 |
+| [`f38cf1d5`](https://github.com/matthewmackes/map2-audio/commit/f38cf1d5a8f7acfe1e7c50bc93c753d6a24519e6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`fa73713e`](https://github.com/matthewmackes/map2-audio/commit/fa73713e98984bc3126f5bf9dc631584c93e7881) | Add JUCE Grid parameter audit coverage | Map2 Audio | 2026-03-19 |
 | [`2e07194a`](https://github.com/matthewmackes/map2-audio/commit/2e07194af76ffda3f4e2d382d5947e4a51ec57e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`df47c102`](https://github.com/matthewmackes/map2-audio/commit/df47c1025a92b4a3e1adb47a17d756042ca21897) | Complete JUCE Grid iPad interaction pass | Map2 Audio | 2026-03-19 |
 | [`fa68ac26`](https://github.com/matthewmackes/map2-audio/commit/fa68ac261f44d44360bb675c8c862b02291288f3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`ea2f40b8`](https://github.com/matthewmackes/map2-audio/commit/ea2f40b8c1c010d094e7ec8afded628cfdefaa86) | Add JUCE Grid select-and-move controls | Map2 Audio | 2026-03-19 |
 | [`d80ffaa4`](https://github.com/matthewmackes/map2-audio/commit/d80ffaa4ef63bf87f303f61b1431a37c8d7d84a1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
-| [`daff8b70`](https://github.com/matthewmackes/map2-audio/commit/daff8b70d31c084eb187cfcbe510145ea7218653) | Add JUCE Grid signal flow connectors | Map2 Audio | 2026-03-19 |
-| [`7e0ec19e`](https://github.com/matthewmackes/map2-audio/commit/7e0ec19e18c271b084bce23ebb1521f8d2f04739) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
