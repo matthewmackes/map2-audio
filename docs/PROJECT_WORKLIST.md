@@ -1207,14 +1207,14 @@ Description:
 - Required outputs: Extended SfzLoader, updated SfzRegionDefinition struct, JUCE SamplerVoice integration for new opcodes, unit tests.
 Subtasks:
   - [✓] T212-A: Add choke group support — parse `group` (int) and `off_by` (int) opcodes; implement voice-stealing by group ID in native sampler (when a note in group N triggers, kill all active voices with `off_by=N`)
-  - [ ] T212-B: Add round-robin support — parse `seq_length` and `seq_position` opcodes; track per-key round-robin counter; cycle through seq_position regions on successive triggers
+  - [✓] T212-B: Add round-robin support — parse `seq_length` and `seq_position` opcodes; track per-key round-robin counter; cycle through seq_position regions on successive triggers
   - [ ] T212-C: Add random variation support — parse `lorand` and `hirand` opcodes; generate random float 0.0–1.0 per note-on; select region where `lorand <= rand < hirand`
   - [ ] T212-D: Add key switch support — parse `sw_default`, `sw_last`, `sw_lokey`, `sw_hikey` opcodes; track last key switch state; filter regions by active key switch
   - [ ] T212-E: Add per-region tuning/gain/pan — parse `transpose` (semitones), `tune` (cents), `volume` (dB), `pan` (-100 to 100) opcodes; apply in native SamplerVoice rendering
   - [ ] T212-F: Add filter opcodes — parse `cutoff`, `resonance`, `fil_type` (lpf_1p, lpf_2p, hpf_1p, hpf_2p); apply state-variable filter per voice
   - [ ] T212-G: Unit tests for each new opcode family — test SFZ files with choke groups, round-robin sequences, random layers, key switches, tuning, and filters; verify correct region selection and voice behavior
 Assigned to: Codex
-Last updated: 2026-03-18 23:27 - Codex
+Last updated: 2026-03-18 23:39 - Codex
 
 ---
 

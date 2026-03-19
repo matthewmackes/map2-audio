@@ -6,6 +6,8 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_core/juce_core.h>
 
+#include <vector>
+
 using namespace map2::synthforge;
 
 namespace {
@@ -66,6 +68,23 @@ int countActiveVoicesWithGroup(const GroupedSamplerSynthesiser& synth, int group
     return count;
 }
 
+std::vector<int> activeSeqPositions(const GroupedSamplerSynthesiser& synth) {
+    std::vector<int> positions;
+    for (int i = 0; i < synth.getNumVoices(); ++i) {
+        auto* voice = synth.getVoice(i);
+        if (voice == nullptr || !voice->isVoiceActive()) {
+            continue;
+        }
+
+        auto currentSound = voice->getCurrentlyPlayingSound();
+        auto* groupedSound = dynamic_cast<GroupedSamplerSound*>(currentSound.get());
+        if (groupedSound != nullptr) {
+            positions.push_back(groupedSound->getSeqPosition());
+        }
+    }
+    return positions;
+}
+
 }  // namespace
 
 TEST_CASE("SfzLoader parses choke-group opcodes", "[synthforge][sfz][group]") {
@@ -85,6 +104,23 @@ TEST_CASE("SfzLoader parses choke-group opcodes", "[synthforge][sfz][group]") {
     REQUIRE(document.regions.size() == 1);
     REQUIRE(document.regions.front().group == 3);
     REQUIRE(document.regions.front().offBy == 9);
+}
+
+TEST_CASE("SfzLoader parses round-robin opcodes", "[synthforge][sfz][round-robin]") {
+    ScopedTempDir tempDir;
+    REQUIRE(tempDir.dir.isDirectory());
+
+    makeTempWavFile(tempDir.dir, "hat.wav");
+
+    auto sfzFile = tempDir.dir.getChildFile("kit.sfz");
+    REQUIRE(sfzFile.replaceWithText(
+        "<region> sample=hat.wav key=42 seq_length=4 seq_position=3\n"));
+
+    const auto document = SfzLoader::load(sfzFile);
+    REQUIRE(document.ok());
+    REQUIRE(document.regions.size() == 1);
+    REQUIRE(document.regions.front().seqLength == 4);
+    REQUIRE(document.regions.front().seqPosition == 3);
 }
 
 TEST_CASE("GroupedSamplerSynthesiser chokes matching active group", "[synthforge][sfz][group]") {
@@ -111,8 +147,8 @@ TEST_CASE("GroupedSamplerSynthesiser chokes matching active group", "[synthforge
     juce::BigInteger openNotes;
     openNotes.setBit(46);
 
-    synth.addSound(new GroupedSamplerSound("closed", *closedReader, closedNotes, 42, 0.0, 0.01, 1.0, 1, 0));
-    synth.addSound(new GroupedSamplerSound("open", *openReader, openNotes, 46, 0.0, 0.01, 1.0, 2, 1));
+    synth.addSound(new GroupedSamplerSound("closed", *closedReader, closedNotes, 42, 0.0, 0.01, 1.0, 1, 0, 0, 0));
+    synth.addSound(new GroupedSamplerSound("open", *openReader, openNotes, 46, 0.0, 0.01, 1.0, 2, 1, 0, 0));
 
     synth.noteOn(1, 42, 1.0f);
     REQUIRE(countActiveVoicesWithGroup(synth, 1) == 1);
@@ -121,4 +157,42 @@ TEST_CASE("GroupedSamplerSynthesiser chokes matching active group", "[synthforge
     synth.noteOn(1, 46, 1.0f);
     REQUIRE(countActiveVoicesWithGroup(synth, 1) == 0);
     REQUIRE(countActiveVoicesWithGroup(synth, 2) == 1);
+}
+
+TEST_CASE("GroupedSamplerSynthesiser alternates round-robin regions per key",
+          "[synthforge][sfz][round-robin]") {
+    ScopedTempDir tempDir;
+    REQUIRE(tempDir.dir.isDirectory());
+
+    auto firstFile = makeTempWavFile(tempDir.dir, "rr1.wav");
+    auto secondFile = makeTempWavFile(tempDir.dir, "rr2.wav");
+
+    juce::AudioFormatManager formats;
+    formats.registerBasicFormats();
+    auto firstReader = createReader(formats, firstFile);
+    auto secondReader = createReader(formats, secondFile);
+    REQUIRE(firstReader != nullptr);
+    REQUIRE(secondReader != nullptr);
+
+    GroupedSamplerSynthesiser synth;
+    synth.setCurrentPlaybackSampleRate(44100.0);
+    synth.addVoice(new juce::SamplerVoice());
+    synth.addVoice(new juce::SamplerVoice());
+
+    juce::BigInteger notes;
+    notes.setBit(42);
+
+    synth.addSound(new GroupedSamplerSound("rr1", *firstReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 1));
+    synth.addSound(new GroupedSamplerSound("rr2", *secondReader, notes, 42, 0.0, 0.0, 1.0, 0, 0, 2, 2));
+
+    synth.noteOn(1, 42, 1.0f);
+    REQUIRE(activeSeqPositions(synth) == std::vector<int>{1});
+    synth.allNotesOff(1, false);
+
+    synth.noteOn(1, 42, 1.0f);
+    REQUIRE(activeSeqPositions(synth) == std::vector<int>{2});
+    synth.allNotesOff(1, false);
+
+    synth.noteOn(1, 42, 1.0f);
+    REQUIRE(activeSeqPositions(synth) == std::vector<int>{1});
 }

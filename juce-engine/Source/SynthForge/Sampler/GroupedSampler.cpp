@@ -10,7 +10,9 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
                                          double releaseTimeSecs,
                                          double maxSampleLengthSeconds,
                                          int chokeGroup,
-                                         int offByGroup)
+                                         int offByGroup,
+                                         int seqLength,
+                                         int seqPosition)
     : juce::SamplerSound(name,
                          source,
                          midiNotes,
@@ -19,10 +21,27 @@ GroupedSamplerSound::GroupedSamplerSound(const juce::String& name,
                          releaseTimeSecs,
                          maxSampleLengthSeconds),
       chokeGroup_(juce::jmax(0, chokeGroup)),
-      offByGroup_(juce::jmax(0, offByGroup)) {}
+      offByGroup_(juce::jmax(0, offByGroup)),
+      seqLength_(juce::jmax(0, seqLength)),
+      seqPosition_(juce::jmax(0, seqPosition)) {
+    if (seqLength_ > 0 && seqPosition_ > seqLength_) {
+        seqPosition_ = seqLength_;
+    }
+}
+
+bool GroupedSamplerSound::appliesToRoundRobin(int roundRobinCounter) const noexcept {
+    if (seqLength_ <= 0 || seqPosition_ <= 0) {
+        return true;
+    }
+
+    const int normalizedCounter = juce::jmax(1, roundRobinCounter);
+    const int sequencePosition = ((normalizedCounter - 1) % seqLength_) + 1;
+    return sequencePosition == seqPosition_;
+}
 
 void GroupedSamplerSynthesiser::noteOn(int midiChannel, int midiNoteNumber, float velocity) {
     const juce::ScopedLock sl(lock);
+    const int roundRobinCounter = nextRoundRobinCounter(midiNoteNumber);
 
     for (auto* sound : sounds) {
         if (!sound->appliesToNote(midiNoteNumber) || !sound->appliesToChannel(midiChannel)) {
@@ -30,6 +49,9 @@ void GroupedSamplerSynthesiser::noteOn(int midiChannel, int midiNoteNumber, floa
         }
 
         if (auto* groupedSound = dynamic_cast<GroupedSamplerSound*>(sound)) {
+            if (!groupedSound->appliesToRoundRobin(roundRobinCounter)) {
+                continue;
+            }
             if (groupedSound->getOffByGroup() > 0) {
                 chokeVoicesForGroup(midiChannel, groupedSound->getOffByGroup());
             }
@@ -67,6 +89,13 @@ void GroupedSamplerSynthesiser::chokeVoicesForGroup(int midiChannel, int chokeGr
 
         stopVoice(voice, 0.0f, false);
     }
+}
+
+int GroupedSamplerSynthesiser::nextRoundRobinCounter(int midiNoteNumber) noexcept {
+    const int noteIndex = juce::jlimit(0, 127, midiNoteNumber);
+    int& counter = roundRobinCounters_[static_cast<size_t>(noteIndex)];
+    counter = juce::jmax(1, counter + 1);
+    return counter;
 }
 
 }  // namespace map2::synthforge

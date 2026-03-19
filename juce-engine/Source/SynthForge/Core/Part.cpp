@@ -527,7 +527,9 @@ bool Part::loadSfzNative(const std::string& sfzPath, SampleLoadStatus& status) {
             std::max(0.0f, region.releaseSeconds),
             600.0,
             region.group,
-            region.offBy);
+            region.offBy,
+            region.seqLength,
+            region.seqPosition);
 
         samplerProgram->synthesiser.addSound(sound);
         ++loadedSounds;
