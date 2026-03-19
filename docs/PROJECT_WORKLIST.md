@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -2061,7 +2061,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-19
 
 ID: T223-subH
-Status: [ ] Todo
+Status: [✓] Done
 Title: Mobile block screen + viewport detection
 Description:
 - Detect viewport < 768px or mobile touch device
@@ -2069,7 +2069,11 @@ Description:
 - Message: "This experience requires an iPad or larger display"
 - Suggest rotation if tablet in portrait detected below threshold
 Assigned to: Unassigned
-Last updated: 2026-03-19
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - Added an explicit viewport gate in `web/src/app/pages/JuceGridPage.tsx` that blocks the JUCE Grid experience on sub-768 mobile layouts before the main workspace renders.
+  - Added a dedicated black-screen fallback in `web/src/app/pages/JuceGridPage.css` with a centered Audio Grid hero icon and the required iPad-or-larger message.
+  - Added touch-capable rotation/Split View guidance plus focused regression coverage in `web/src/app/pages/JuceGridPage.test.tsx` so the blocked-state contract is verified alongside the normal desktop route behavior.
 
 ID: T223-subI
 Status: [ ] Todo

@@ -19,6 +19,7 @@ const mockFetchQuery = jest.fn()
 const mockSetQueryData = jest.fn()
 const mockCancelQueries = jest.fn(async () => undefined)
 const mockGetQueryData = jest.fn()
+const mockUseIsMobile = jest.fn(() => false)
 let mockLivePathLayout: any = {
   status: 'unavailable',
   activeFlowIds: [],
@@ -173,7 +174,7 @@ jest.mock('../hooks/useSpecialSettings', () => ({
 }))
 
 jest.mock('../hooks/useIsMobile', () => ({
-  useIsMobile: () => false,
+  useIsMobile: () => mockUseIsMobile(),
 }))
 
 jest.mock('../grid/shared', () => ({
@@ -317,6 +318,8 @@ describe('JuceGridPage snapshot modal workflow', () => {
       }),
     })
     mockSideNav.mockClear()
+    mockUseIsMobile.mockReset()
+    mockUseIsMobile.mockReturnValue(false)
     mockInvalidateQueries.mockReset()
     mockFetchQuery.mockReset()
     mockSetQueryData.mockReset()
@@ -689,6 +692,35 @@ describe('JuceGridPage snapshot modal workflow', () => {
     await waitFor(() => {
       expect(window.scrollTo).toHaveBeenCalledWith({ top: 144, behavior: 'auto' })
     })
+  })
+
+  it('shows the mobile block screen below the supported viewport width', async () => {
+    mockUseIsMobile.mockReturnValue(true)
+    Object.defineProperty(window, 'ontouchstart', {
+      configurable: true,
+      writable: true,
+      value: true,
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(screen.getByText('This experience requires an iPad or larger display')).toBeTruthy()
+    expect(screen.getByText('Rotate your tablet or exit Split View, then reopen Audio Grid.')).toBeTruthy()
+    expect(screen.queryByText('Audio Grid')).toBeNull()
   })
 
   it('keeps flow controls inside the lead live-path group and removes the legacy top toolbar card', async () => {

@@ -143,6 +143,16 @@ function isTabletViewport(): boolean {
   return window.innerWidth > 768 && window.innerWidth <= 1184
 }
 
+function isTouchCapableViewport(): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const navigatorTouchPoints = typeof navigator !== 'undefined' ? navigator.maxTouchPoints || 0 : 0
+  const ontouchstartSupported = 'ontouchstart' in window
+  return navigatorTouchPoints > 0 || ontouchstartSupported
+}
+
 function isTextEntryTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
     return false
@@ -578,6 +588,8 @@ export function JuceGridPage() {
   }, [])
 
   const isCompactLayout = isMobile || isTablet
+  const showViewportBlockScreen = isMobile
+  const showViewportRotateHint = showViewportBlockScreen && isTouchCapableViewport()
 
   const initialPersistedStateRef = useRef<ReturnType<typeof loadInitialJuceGridState> | null>(null)
   const initialPersistedState = initialPersistedStateRef.current
@@ -3594,6 +3606,18 @@ export function JuceGridPage() {
             </span>
           )}
         </div>
+      </div>
+    )
+  }
+
+  if (showViewportBlockScreen) {
+    return (
+      <div className="juce-grid-page__viewport-block" role="alert" aria-live="polite">
+        <MapAudioGridIcon size={120} />
+        <strong>This experience requires an iPad or larger display</strong>
+        {showViewportRotateHint && (
+          <p>Rotate your tablet or exit Split View, then reopen Audio Grid.</p>
+        )}
       </div>
     )
   }
