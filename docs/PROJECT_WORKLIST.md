@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -2033,14 +2033,18 @@ Assigned to: Unassigned
 Last updated: 2026-03-19
 
 ID: T223-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add effect slot + state persistence
 Description:
 - Single empty "add effect" slot at end of chain (Axe-FX Edit style, "+" glyph)
 - Navigates to existing effects browser on click
 - localStorage persistence: selected card, panel state, scroll position
 Assigned to: Unassigned
-Last updated: 2026-03-19
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - Kept the dedicated terminal add slot in `web/src/app/pages/JuceGridSignalCanvas.tsx` and aligned its operator-facing copy/ARIA to the worklist language (`Add effect`) while preserving the existing browser handoff.
+  - Added route-local persistence in `web/src/app/pages/JuceGridPage.tsx` for the selected plugin URI, effect-editor open state, and workspace scroll position so the grid restores the last inspected block between sessions.
+  - Added focused coverage in `web/src/app/pages/JuceGridPage.test.tsx` to prove the persisted block/editor state and scroll restore path rehydrate correctly from `localStorage`.
 
 ID: T223-subG
 Status: [ ] Todo

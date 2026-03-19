@@ -391,6 +391,11 @@ describe('JuceGridPage snapshot modal workflow', () => {
       writable: true,
       value: 1440,
     })
+    Object.defineProperty(window, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: jest.fn(),
+    })
     class ResizeObserverMock {
       observe() {}
       unobserve() {}
@@ -619,6 +624,70 @@ describe('JuceGridPage snapshot modal workflow', () => {
         seriesOrder: ['flow-0', 'flow-1', 'flow-2'],
       })
       expect(localStorage.getItem('map2_juce_grid_active_v2')).toBe('2')
+    })
+  })
+
+  it('restores the selected block, editor-open state, and scroll position from localStorage', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#2563eb', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 1, label: 'B', color: '#60a5fa', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+    localStorage.setItem('map2_juce_grid_selected_plugin_uri', 'map2://juce/modulation/chorus')
+    localStorage.setItem('map2_juce_grid_effect_modal_open', 'true')
+    localStorage.setItem('map2_juce_grid_scroll_top', '144')
+
+    mockChainsApi.list.mockResolvedValue({
+      chains: [
+        {
+          id: 1,
+          name: 'Song 1',
+          is_active: true,
+          plugins: [
+            {
+              uri: 'map2://juce/modulation/chorus',
+              name: 'Alpha Chorus',
+              position: 0,
+              bypassed: false,
+              parameters: {},
+            },
+          ],
+        },
+      ],
+      active_chain_id: 1,
+    })
+
+    mockPluginsApi.discover.mockResolvedValue({
+      plugins: [
+        {
+          uri: 'map2://juce/modulation/chorus',
+          name: 'Alpha Chorus',
+          category: 'Modulation',
+          parameters: [],
+        },
+      ],
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByTestId('juce-grid-parameter-editor')).toBeTruthy()
+
+    await waitFor(() => {
+      expect(window.scrollTo).toHaveBeenCalledWith({ top: 144, behavior: 'auto' })
     })
   })
 

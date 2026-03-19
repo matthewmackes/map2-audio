@@ -429,6 +429,10 @@ const KEYBOARD_SHORTCUT_SECTIONS: Array<{
   },
 ]
 
+const JUCE_GRID_SELECTED_PLUGIN_KEY = 'map2_juce_grid_selected_plugin_uri'
+const JUCE_GRID_EFFECT_MODAL_OPEN_KEY = 'map2_juce_grid_effect_modal_open'
+const JUCE_GRID_SCROLL_TOP_KEY = 'map2_juce_grid_scroll_top'
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -532,6 +536,29 @@ function loadInitialJuceGridState(): { flowSlots: FlowSlot[]; routing: RoutingCo
   )
 }
 
+function loadInitialPluginPersistence(): {
+  selectedPluginUri: string | null
+  effectModalOpen: boolean
+  scrollTop: number
+} {
+  try {
+    const selectedPluginUri = localStorage.getItem(JUCE_GRID_SELECTED_PLUGIN_KEY)
+    const effectModalOpen = localStorage.getItem(JUCE_GRID_EFFECT_MODAL_OPEN_KEY) === 'true'
+    const rawScrollTop = Number.parseFloat(localStorage.getItem(JUCE_GRID_SCROLL_TOP_KEY) ?? '0')
+    return {
+      selectedPluginUri: selectedPluginUri || null,
+      effectModalOpen,
+      scrollTop: Number.isFinite(rawScrollTop) ? Math.max(0, rawScrollTop) : 0,
+    }
+  } catch {
+    return {
+      selectedPluginUri: null,
+      effectModalOpen: false,
+      scrollTop: 0,
+    }
+  }
+}
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -555,6 +582,9 @@ export function JuceGridPage() {
   const initialPersistedStateRef = useRef<ReturnType<typeof loadInitialJuceGridState> | null>(null)
   const initialPersistedState = initialPersistedStateRef.current
     ?? (initialPersistedStateRef.current = loadInitialJuceGridState())
+  const initialPluginPersistenceRef = useRef<ReturnType<typeof loadInitialPluginPersistence> | null>(null)
+  const initialPluginPersistence = initialPluginPersistenceRef.current
+    ?? (initialPluginPersistenceRef.current = loadInitialPluginPersistence())
 
   // Flow slots state (with migration support)
   const [flowSlots, setFlowSlots] = useState<FlowSlot[]>(initialPersistedState.flowSlots)
@@ -567,8 +597,8 @@ export function JuceGridPage() {
   const [activeFlowIndex, setActiveFlowIndex] = useState(initialPersistedState.activeFlowIndex)
 
   // UI State
-  const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(null)
-  const [effectModalOpen, setEffectModalOpen] = useState(false)
+  const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(initialPluginPersistence.selectedPluginUri)
+  const [effectModalOpen, setEffectModalOpen] = useState(initialPluginPersistence.effectModalOpen)
   const [effectModalFrame, setEffectModalFrame] = useState({ width: 0, height: 0, topOffset: 0 })
   const [showPluginBrowser, setShowPluginBrowser] = useState(false)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
@@ -698,6 +728,42 @@ export function JuceGridPage() {
   useEffect(() => {
     localStorage.setItem('map2_juce_grid_active_v2', String(activeFlowIndex))
   }, [activeFlowIndex])
+
+  useEffect(() => {
+    try {
+      if (selectedPluginUri) {
+        localStorage.setItem(JUCE_GRID_SELECTED_PLUGIN_KEY, selectedPluginUri)
+      } else {
+        localStorage.removeItem(JUCE_GRID_SELECTED_PLUGIN_KEY)
+      }
+    } catch {}
+  }, [selectedPluginUri])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(JUCE_GRID_EFFECT_MODAL_OPEN_KEY, effectModalOpen ? 'true' : 'false')
+    } catch {}
+  }, [effectModalOpen])
+
+  useEffect(() => {
+    const persistScrollPosition = () => {
+      try {
+        localStorage.setItem(JUCE_GRID_SCROLL_TOP_KEY, String(window.scrollY || window.pageYOffset || 0))
+      } catch {}
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      if ((initialPluginPersistence.scrollTop || 0) > 0) {
+        window.scrollTo({ top: initialPluginPersistence.scrollTop, behavior: 'auto' })
+      }
+    })
+
+    window.addEventListener('scroll', persistScrollPosition, { passive: true })
+    return () => {
+      window.cancelAnimationFrame(rafId)
+      window.removeEventListener('scroll', persistScrollPosition)
+    }
+  }, [initialPluginPersistence.scrollTop])
 
   const markSnapshotsDirty = useCallback(() => {
     setSnapshotsDirty(true)
@@ -1178,10 +1244,13 @@ export function JuceGridPage() {
   }, [selectedPluginUri, pluginMeta, pluginsQuery.status, pluginsQuery.data?.plugins?.length])
 
   useEffect(() => {
+    if (selectedPluginUri && chainsQuery.isPending) {
+      return
+    }
     if (!selectedPlugin) {
       setEffectModalOpen(false)
     }
-  }, [selectedPlugin])
+  }, [chainsQuery.isPending, selectedPlugin, selectedPluginUri])
 
   const midiStatus = midiStatusQuery.data as MIDIStatus | undefined
   const midiLearnStatus = midiLearnStatusQuery.data

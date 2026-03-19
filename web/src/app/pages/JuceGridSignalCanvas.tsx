@@ -745,9 +745,10 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
               type="button"
               className="juce-grid-page__signal-plugin-add"
               onClick={onAddPlugin}
+              aria-label="Add effect"
             >
               <Add size={20} />
-              <span>Add block</span>
+              <span>Add effect</span>
             </button>
           )}
         </div>
