@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**773** Python | **1124** TypeScript | **282** C++/H | **121** Docs | **549** total commits | **1** stars | **0** forks | **0** open issues
+**773** Python | **1124** TypeScript | **282** C++/H | **122** Docs | **551** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -172,9 +172,9 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [API Load Qualification Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_LOAD_QUALIFICATION_RUNBOOK.md) | 2026-03-18 |
 | [API Qualification Observability](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_QUALIFICATION_OBSERVABILITY.md) | 2026-03-18 |
 | [API Restart Dependency Map](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_RESTART_DEPENDENCY_MAP.md) | 2026-03-18 |
+| [API Route Readiness Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_ROUTE_READINESS_MATRIX.md) | 2026-03-18 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-18 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-18 |
-| [AVB + JUCE Availability and Channel Integration Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_JUCE_AVAILABILITY_INTEGRATION_PLAN_2026-02-22.md) | 2026-03-15 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a3d87e25`](https://github.com/matthewmackes/map2-audio/commit/a3d87e255f06e0c8f001db8c962a7efbdd6b480c) | Document API readiness matrix | Map2 Audio | 2026-03-18 |
+| [`5be4bee5`](https://github.com/matthewmackes/map2-audio/commit/5be4bee56af9cb26c22f5f23e8198086b35a5694) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`1d0644b1`](https://github.com/matthewmackes/map2-audio/commit/1d0644b14543e3f5d4caf69798c05c6ccd55dc11) | Freeze pipedal icon exception scope | Map2 Audio | 2026-03-18 |
 | [`1a9b69fd`](https://github.com/matthewmackes/map2-audio/commit/1a9b69fd7e0eddc00cc5dee5dd65d657ba9caf00) | Migrate shared utility icon surfaces | Map2 Audio | 2026-03-18 |
 | [`4dd96122`](https://github.com/matthewmackes/map2-audio/commit/4dd96122714fd6d667a32c9a253be74925004c61) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`c4d18f2d`](https://github.com/matthewmackes/map2-audio/commit/c4d18f2d506b88b34a0cb7fac7138047e42852f8) | Complete active frontend icon migration | Map2 Audio | 2026-03-18 |
 | [`7ce28b17`](https://github.com/matthewmackes/map2-audio/commit/7ce28b17373dc55c1c026a4792a9c6ce05e5250e) | Update deployed web build metadata | Map2 Audio | 2026-03-18 |
 | [`8eaca3fd`](https://github.com/matthewmackes/map2-audio/commit/8eaca3fdb81653529dc27259d779cb6e4ff95d25) | Refine JUCE Grid signal flow cards | Map2 Audio | 2026-03-18 |
-| [`d40def0a`](https://github.com/matthewmackes/map2-audio/commit/d40def0a44f5e01c1dae0d3c5dde3ac056f67b79) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-18 |
-| [`0fcc1351`](https://github.com/matthewmackes/map2-audio/commit/0fcc1351b3bc0f44faec81e7153666ce682253ac) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-18 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
