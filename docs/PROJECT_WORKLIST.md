@@ -1165,7 +1165,7 @@ Description:
 - Estimated effort: High
 - Required outputs: Compiling C++ processor integrated into Map2AudioEngine, Python bindings, passing unit tests.
 Subtasks:
-  - [ ] T211-A: Create `DrumMachineProcessor` class in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp`
+  - [✓] T211-A: Create `DrumMachineProcessor` class in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp`
     - Owns 16 `Part` instances (one per drum instrument/pad)
     - Each Part configured with: volume (0.0–1.0), pan (-1.0–1.0), tune (semitones -24 to +24), mute (bool), solo (bool)
     - Part-to-bus assignment: fixed mapping by instrument role (Pad 0→Kick bus, Pad 1→Snare bus, Pads 2-3→HiHat bus, Pads 4-6→Toms bus, Pads 7-9→Cymbals bus, Pads 10-12→Percussion bus, Pad 13→Overhead bus, Pads 14-15→Room bus)
@@ -1190,9 +1190,9 @@ Subtasks:
     - Per-bus: `set_drum_bus_eq(bus, low_gain, mid_gain, mid_freq, high_gain)`, `set_drum_bus_comp(bus, threshold, ratio, attack, release, makeup)`, `set_drum_bus_level(bus, level)`, `set_drum_bus_mute(bus, bool)`, `set_drum_bus_solo(bus, bool)`
     - Master: `set_drum_master_volume(vol)`, `get_drum_metering()` (per-pad peak/RMS + per-bus peak/RMS + master peak/RMS)
     - Transport: `drum_trigger_note(pad, velocity)` for software-triggered hits
-  - [ ] T211-E: Add CMakeLists.txt entries for DrumMachine source files; verify build with `cmake -B build && cmake --build build`
+  - [✓] T211-E: Add CMakeLists.txt entries for DrumMachine source files; verify build with `cmake -B build && cmake --build build`
 Assigned to: Codex
-Last updated: 2026-03-18
+Last updated: 2026-03-19 00:29 - Codex
 
 ---
 
