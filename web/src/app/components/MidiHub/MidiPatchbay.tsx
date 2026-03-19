@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Checkbox, Tag } from '@carbon/react'
+import { Button, InlineNotification, Layer, Tag, Toggle } from '@carbon/react'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { readPorts } from './MidiHubWorkbenchCards'
 
 type NodeInfo = {
   id: string
@@ -33,7 +34,6 @@ export function MidiPatchbay() {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null)
   const [showHeatmap, setShowHeatmap] = useState(true)
-  const [showAdvancedTools, setShowAdvancedTools] = useState(false)
 
   const statusQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'status'],
@@ -59,44 +59,39 @@ export function MidiPatchbay() {
     refetchInterval: 1000,
   })
 
-  const ports = useMemo(() => {
-    const rows = (statusQuery.data?.ports as Array<Record<string, unknown>> | undefined) ?? []
-    return rows.map((row) => ({
-      id: String(row.port_id ?? ''),
-      name: String(row.name ?? row.port_id ?? ''),
-      direction: String(row.direction ?? 'duplex'),
-    }))
-  }, [statusQuery.data?.ports])
+  const ports = useMemo(
+    () => readPorts((statusQuery.data as Record<string, unknown> | undefined)?.ports),
+    [statusQuery.data],
+  )
 
   const nodes = useMemo(() => {
-    const topologyNodes = (topologyQuery.data?.nodes as string[] | undefined) ?? ports.map((row) => row.id)
-    const byId = new Map(ports.map((row) => [row.id, row]))
+    const topologyNodes = (topologyQuery.data?.nodes as string[] | undefined) ?? ports.map((row) => row.port_id)
+    const byId = new Map(ports.map((row) => [row.port_id, row]))
     const sources = topologyNodes.filter((id) => {
-      const port = byId.get(id)
-      const direction = port?.direction ?? 'duplex'
+      const direction = byId.get(id)?.direction ?? 'duplex'
       return direction === 'input' || direction === 'duplex'
     })
     const destinations = topologyNodes.filter((id) => {
-      const port = byId.get(id)
-      const direction = port?.direction ?? 'duplex'
+      const direction = byId.get(id)?.direction ?? 'duplex'
       return direction === 'output' || direction === 'duplex'
     })
 
-    const sourceNodes = sources.map((id, index) => ({
-      id,
-      name: byId.get(id)?.name ?? id,
-      direction: byId.get(id)?.direction ?? 'duplex',
-      x: 180,
-      y: 110 + index * 90,
-    }))
-    const destinationNodes = destinations.map((id, index) => ({
-      id,
-      name: byId.get(id)?.name ?? id,
-      direction: byId.get(id)?.direction ?? 'duplex',
-      x: 860,
-      y: 110 + index * 90,
-    }))
-    return [...sourceNodes, ...destinationNodes]
+    return [
+      ...sources.map((id, index) => ({
+        id,
+        name: byId.get(id)?.name ?? id,
+        direction: byId.get(id)?.direction ?? 'duplex',
+        x: 180,
+        y: 110 + index * 90,
+      })),
+      ...destinations.map((id, index) => ({
+        id,
+        name: byId.get(id)?.name ?? id,
+        direction: byId.get(id)?.direction ?? 'duplex',
+        x: 860,
+        y: 110 + index * 90,
+      })),
+    ]
   }, [ports, topologyQuery.data?.nodes])
 
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
@@ -157,22 +152,15 @@ export function MidiPatchbay() {
   }, [routesQuery.data?.routes, nodeById])
 
   const routeHeat = useMemo(() => {
-    const rows = trafficQuery.data?.records ?? []
     const counts = new Map<string, number>()
-    for (const row of rows) {
+    for (const row of trafficQuery.data?.records ?? []) {
       if (!row.route_id) continue
       counts.set(row.route_id, (counts.get(row.route_id) ?? 0) + 1)
     }
     return counts
   }, [trafficQuery.data?.records])
 
-  const maxHeat = useMemo(() => {
-    let max = 0
-    for (const value of routeHeat.values()) {
-      if (value > max) max = value
-    }
-    return max
-  }, [routeHeat])
+  const maxHeat = useMemo(() => Math.max(0, ...routeHeat.values()), [routeHeat])
 
   const handleNodeClick = (node: NodeInfo) => {
     setSelectedNode(node)
@@ -188,51 +176,42 @@ export function MidiPatchbay() {
   }
 
   return (
-    <>
-      <div className="midi-hub-mini-surface">
-        <div className="midi-hub-toolbar">
-          <Tag type="cool-gray">{`Nodes ${nodes.length}`}</Tag>
-          <Tag type={links.length > 0 ? 'green' : 'warm-gray'}>{`Links ${links.length}`}</Tag>
-          {pendingSource ? <Tag type="blue">{`Pending source ${pendingSource}`}</Tag> : null}
-        </div>
-
-        <div className="midi-hub-route-legend">
-          <Tag type="green">Note traffic</Tag>
-          <Tag type="blue">Control change</Tag>
-          <Tag type="magenta">System exclusive</Tag>
-          <Tag type="warm-gray">Disabled route</Tag>
-        </div>
-
-        <div className="midi-hub-actions">
-          <Checkbox
-            id="midi-hub-patchbay-heatmap"
-            labelText="Heatmap overlay"
-            checked={showHeatmap}
-            onChange={(_, data) => setShowHeatmap(data.checked)}
-          />
-          <Checkbox
-            id="midi-hub-patchbay-advanced"
-            labelText="Show zoom controls"
-            checked={showAdvancedTools}
-            onChange={(_, data) => setShowAdvancedTools(data.checked)}
-          />
-          {showAdvancedTools ? (
-            <>
-              <Button size="sm" kind="ghost" onClick={() => setScale((value) => Math.max(0.6, value - 0.1))}>
-                Zoom out
-              </Button>
-              <Button size="sm" kind="ghost" onClick={() => setScale((value) => Math.min(2, value + 0.1))}>
-                Zoom in
-              </Button>
-            </>
-          ) : null}
-        </div>
+    <div className="midi-hub-connections-stack">
+      <div className="midi-hub-connections-toolbar">
+        <Tag type="cool-gray">{`Nodes ${nodes.length}`}</Tag>
+        <Tag type={links.length > 0 ? 'green' : 'warm-gray'}>{`Links ${links.length}`}</Tag>
+        {pendingSource ? <Tag type="blue">{`Pending source ${pendingSource}`}</Tag> : null}
+        <Toggle
+          id="midi-hub-patchbay-heatmap"
+          size="sm"
+          labelText="Heatmap overlay"
+          labelA="Off"
+          labelB="On"
+          toggled={showHeatmap}
+          onToggle={setShowHeatmap}
+        />
+        <Button size="sm" kind="ghost" onClick={() => setScale((value) => Math.max(0.6, value - 0.1))}>
+          Zoom out
+        </Button>
+        <Button size="sm" kind="ghost" onClick={() => setScale((value) => Math.min(2, value + 0.1))}>
+          Zoom in
+        </Button>
       </div>
 
-      <div className="midi-hub-patchbay-shell">
+      {nodes.length === 0 ? (
+        <InlineNotification
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="No patchbay topology available"
+          subtitle="Visible MIDI ports are required before the graph can render."
+        />
+      ) : null}
+
+      <Layer className="midi-hub-connections-patchbay">
         <svg
           viewBox="0 0 1040 680"
-          className="midi-hub-patchbay-stage"
+          className="midi-hub-connections-patchbay__stage"
           onMouseDown={(event) => setDragStart({ x: event.clientX - offset.x, y: event.clientY - offset.y })}
           onMouseMove={(event) => {
             if (!dragStart) return
@@ -263,14 +242,13 @@ export function MidiPatchbay() {
                       ? 'var(--cds-support-success)'
                       : 'var(--cds-border-strong-01)'
                 : baselineColor
-              const strokeWidth = route.enabled ? 2 + normalized * 4 : 1.5
               return (
                 <path
                   key={`${route.route_id}-${destination.id}`}
                   d={`M ${source.x + 72} ${source.y} C ${source.x + 260} ${source.y}, ${destination.x - 260} ${destination.y}, ${destination.x - 72} ${destination.y}`}
                   fill="none"
                   stroke={color}
-                  strokeWidth={strokeWidth}
+                  strokeWidth={route.enabled ? 2 + normalized * 4 : 1.5}
                   strokeDasharray={route.enabled ? '0' : '6 4'}
                   markerEnd="url(#patchbayArrow)"
                   style={{ cursor: 'pointer' }}
@@ -309,36 +287,29 @@ export function MidiPatchbay() {
             })}
           </g>
         </svg>
-      </div>
+      </Layer>
 
-      <div className="midi-hub-panel-grid--2">
-        <div className="midi-hub-mini-surface">
-          <div className="midi-hub-patchbay-sidecar">
-            <strong>Patchbay workflow</strong>
-            <p className="midi-hub-panel-note">
-              Select a source port first, then select a destination port. Click any existing route line to inspect or
-              disable it.
-            </p>
-            {selectedNode ? (
-              <>
-                <Tag type="cool-gray">{selectedNode.direction}</Tag>
-                <code>{selectedNode.id}</code>
-              </>
-            ) : (
-              <div className="midi-hub-empty-state">Select a node to inspect its port identity.</div>
-            )}
-          </div>
-        </div>
+      <div className="midi-hub-connections-detail-grid">
+        <Layer className="midi-hub-connections-detail-card">
+          <strong>Patchbay workflow</strong>
+          <p>Select a source node first, then a destination node. Click a route line to inspect or disable it.</p>
+          {selectedNode ? (
+            <div className="midi-hub-connections-detail-meta">
+              <Tag type="cool-gray">{selectedNode.direction}</Tag>
+              <code>{selectedNode.id}</code>
+            </div>
+          ) : (
+            <p>Select a node to inspect its port identity.</p>
+          )}
+        </Layer>
 
-        <div className="midi-hub-mini-surface">
+        <Layer className="midi-hub-connections-detail-card">
           {selectedRoute ? (
-            <div className="midi-hub-patchbay-sidecar">
+            <>
               <strong>Selected route</strong>
               <code>{selectedRoute.route_id}</code>
-              <div className="midi-hub-record-meta">
-                {selectedRoute.source_port} → {selectedRoute.destination_ports.join(', ')}
-              </div>
-              <div className="midi-hub-actions">
+              <p>{selectedRoute.source_port} to {selectedRoute.destination_ports.join(', ')}</p>
+              <div className="midi-hub-connections-toolbar">
                 <Button size="sm" kind="secondary" onClick={() => toggleRoute.mutate(selectedRoute)}>
                   {selectedRoute.enabled ? 'Disable route' : 'Enable route'}
                 </Button>
@@ -346,12 +317,12 @@ export function MidiPatchbay() {
                   Delete route
                 </Button>
               </div>
-            </div>
+            </>
           ) : (
-            <div className="midi-hub-empty-state">Select a route line to inspect or manage that connection.</div>
+            <p>Select a route line to inspect or manage that connection.</p>
           )}
-        </div>
+        </Layer>
       </div>
-    </>
+    </div>
   )
 }

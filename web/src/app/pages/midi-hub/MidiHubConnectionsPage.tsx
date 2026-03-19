@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { InlineNotification, Tab, TabList, Tabs, Tag } from '@carbon/react'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiPatchbay } from '../../components/MidiHub/MidiPatchbay'
+import { MidiHubQuickRouter } from '../../components/MidiHub/MidiHubQuickRouter'
 import { MidiRoutingMatrix } from '../../components/MidiHub/MidiRoutingMatrix'
 import { MidiTrafficMonitor } from '../../components/MidiHub/MidiTrafficMonitor'
-import { MidiHubQuickRouterCard } from '../../components/MidiHub/MidiHubWorkbenchCards'
 import { useMidiHubOverview } from '../../components/MidiHub/useMidiHubOverview'
 import { useMidiHubNodeScope } from '../../components/MidiHub/MidiHubNodeScope'
 import { MidiHubAreaLayout } from './MidiHubAreaLayout'
+import './MidiHubConnectionsPage.css'
 
 type RoutingWorkspaceMode = 'matrix' | 'patchbay'
 
@@ -36,11 +37,11 @@ export function MidiHubConnectionsPage() {
         />
       ) : null}
 
-      <section className="midi-hub-page-band">
-        <div className="midi-hub-primary-grid">
+      <section className="midi-hub-connections-band">
+        <div className="midi-hub-connections-page">
           <MidiHubPanelShell panelId="routing">
-            <div className="midi-hub-routing-mode">
-              <div className="midi-hub-routing-mode__copy">
+            <div className="midi-hub-connections-page__workspace-header">
+              <div className="midi-hub-connections-page__workspace-copy">
                 <h4>{mode === 'matrix' ? 'Port matrix' : 'Patchbay graph'}</h4>
                 <p>
                   {mode === 'matrix'
@@ -60,11 +61,11 @@ export function MidiHubConnectionsPage() {
             </div>
 
             {mode === 'matrix' ? <MidiRoutingMatrix /> : <MidiPatchbay />}
-            <MidiHubQuickRouterCard />
+            <MidiHubQuickRouter />
           </MidiHubPanelShell>
 
           <MidiHubPanelShell panelId="traffic">
-            <div className="midi-hub-area-page__panel-heading">
+            <div className="midi-hub-connections-page__panel-heading">
               <h3>Traffic monitor</h3>
               <Tag type="cool-gray">Local only</Tag>
             </div>

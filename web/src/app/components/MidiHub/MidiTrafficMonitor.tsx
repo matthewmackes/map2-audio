@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Button,
-  Checkbox,
-  Modal,
-  Search,
-  Select,
-  SelectItem,
+  ComposedModal,
+  DataTable,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Table,
   TableBody,
   TableCell,
@@ -14,13 +14,36 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  TableToolbarSearch,
   Tag,
+  Toggle,
 } from '@carbon/react'
 import { midiHubApi, type MidiHubTrafficRow } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
 type SortKey = 'timestamp' | 'type' | 'source' | 'destination' | 'node'
+
+type TrafficTableRow = {
+  id: string
+  timestamp: string
+  type: string
+  source: string
+  destination: string
+  node: string
+  bytes: string
+}
+
+const HEADERS = [
+  { key: 'timestamp', header: 'Timestamp' },
+  { key: 'type', header: 'Type' },
+  { key: 'source', header: 'Source' },
+  { key: 'destination', header: 'Destination' },
+  { key: 'node', header: 'Node' },
+  { key: 'bytes', header: 'Bytes' },
+] as const
 
 function messageTypeOf(row: MidiHubTrafficRow): string {
   return String(row.decoded?.message_type ?? 'unknown').toLowerCase()
@@ -60,13 +83,12 @@ export function MidiTrafficMonitor({
   const { pushToast } = useToasts()
   const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [paused, setPaused] = useState(false)
-  const [search, setSearch] = useState('')
-  const [regexMode, setRegexMode] = useState(false)
+  const [searchValue, setSearchValue] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('timestamp')
   const [sortAsc, setSortAsc] = useState(false)
   const [selected, setSelected] = useState<MidiHubTrafficRow | null>(null)
   const [lastExportPath, setLastExportPath] = useState<string | null>(null)
-  const [nodeFilter, setNodeFilter] = useState<string>('all')
+  const deferredSearch = useDeferredValue(searchValue)
 
   const trafficQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'traffic', limit],
@@ -82,23 +104,17 @@ export function MidiTrafficMonitor({
 
   const filteredRows = useMemo(() => {
     const rows = [...(trafficQuery.data?.records ?? [])]
-    if (nodeFilter !== 'all') {
-      rows.splice(0, rows.length, ...rows.filter((row) => row.origin_node_id === nodeFilter))
-    }
-    if (search.trim()) {
-      const term = search.trim()
-      const predicate = (row: MidiHubTrafficRow) => {
-        const blob = `${row.raw_hex} ${row.source_port} ${row.destination_port} ${row.route_id ?? ''} ${messageTypeOf(row)}`
-        if (regexMode) {
-          try {
-            return new RegExp(term, 'i').test(blob)
-          } catch {
-            return false
-          }
-        }
-        return blob.toLowerCase().includes(term.toLowerCase())
-      }
-      rows.splice(0, rows.length, ...rows.filter(predicate))
+    const needle = deferredSearch.trim().toLowerCase()
+    if (needle) {
+      rows.splice(
+        0,
+        rows.length,
+        ...rows.filter((row) =>
+          `${row.raw_hex} ${row.source_port} ${row.destination_port} ${row.route_id ?? ''} ${messageTypeOf(row)}`
+            .toLowerCase()
+            .includes(needle),
+        ),
+      )
     }
 
     rows.sort((a, b) => {
@@ -110,192 +126,165 @@ export function MidiTrafficMonitor({
       return a.destination_port.localeCompare(b.destination_port) * direction
     })
     return rows
-  }, [trafficQuery.data?.records, search, regexMode, sortKey, sortAsc, nodeFilter])
+  }, [deferredSearch, sortAsc, sortKey, trafficQuery.data?.records])
 
-  const nodeOptions = useMemo(() => {
-    const ids = new Set<string>()
-    for (const row of trafficQuery.data?.records ?? []) {
-      if (row.origin_node_id) ids.add(row.origin_node_id)
-    }
-    return Array.from(ids)
-  }, [trafficQuery.data?.records])
+  const tableRows = useMemo<TrafficTableRow[]>(
+    () =>
+      filteredRows.slice(0, 500).map((row) => ({
+        id: `${row.timestamp_ns}-${row.raw_hex}-${row.source_port}-${row.destination_port}`,
+        timestamp: formatTimestampNs(row.timestamp_ns),
+        type: messageTypeOf(row),
+        source: row.source_port,
+        destination: row.destination_port,
+        node: row.origin_node_id ?? 'local',
+        bytes: row.raw_hex,
+      })),
+    [filteredRows],
+  )
 
-  const renderedRows = useMemo(() => filteredRows.slice(0, 500), [filteredRows])
-
+  const selectedById = useMemo(() => new Map(filteredRows.map((row) => [`${row.timestamp_ns}-${row.raw_hex}-${row.source_port}-${row.destination_port}`, row])), [filteredRows])
   const messageRate = Number((statsQuery.data as { messages_per_second?: number } | undefined)?.messages_per_second ?? 0)
   const capturedTotal = Number((trafficQuery.data as { captured_total?: number } | undefined)?.captured_total ?? 0)
   const visibleCount = Number((trafficQuery.data as { count?: number } | undefined)?.count ?? 0)
 
   return (
     <>
-      <div className="midi-hub-mini-surface">
-        <div className="midi-hub-toolbar">
-          <Tag type={paused ? 'warm-gray' : 'green'}>{paused ? 'Paused' : 'Streaming'}</Tag>
-          <Tag type="cool-gray">{`${messageRate.toFixed(1)} msg/s`}</Tag>
-          <Tag type="cool-gray">{`Visible ${visibleCount}`}</Tag>
-          <Tag type="cool-gray">{`Captured ${capturedTotal}`}</Tag>
-          {lastExportPath ? <Tag type="blue">Export ready</Tag> : null}
-        </div>
-
-        <div className="midi-hub-form-grid">
-          <Search
-            id="midi-hub-traffic-search"
-            size="lg"
-            labelText="Search MIDI events"
-            closeButtonLabelText="Clear search"
-            placeholder="Search by bytes, route, source, or destination"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-
-          <Select
-            id="midi-hub-traffic-node-filter"
-            labelText="Origin node"
-            value={nodeFilter}
-            onChange={(event) => setNodeFilter(event.currentTarget.value)}
-          >
-            <SelectItem value="all" text="All nodes" />
-            {nodeOptions.map((id) => (
-              <SelectItem key={id} value={id} text={id} />
-            ))}
-          </Select>
-
-          <Select
-            id="midi-hub-traffic-sort"
-            labelText="Sort"
-            value={sortKey}
-            onChange={(event) => setSortKey(event.currentTarget.value as SortKey)}
-          >
-            <SelectItem value="timestamp" text="Timestamp" />
-            <SelectItem value="type" text="Type" />
-            <SelectItem value="source" text="Source" />
-            <SelectItem value="destination" text="Destination" />
-            <SelectItem value="node" text="Node" />
-          </Select>
-        </div>
-
-        <div className="midi-hub-actions">
-          <Checkbox
-            id="midi-hub-traffic-regex"
-            labelText="Regex"
-            checked={regexMode}
-            onChange={(_, data) => setRegexMode(data.checked)}
-          />
-          <Checkbox
-            id="midi-hub-traffic-ascending"
-            labelText="Ascending"
-            checked={sortAsc}
-            onChange={(_, data) => setSortAsc(data.checked)}
-          />
-          <Button size="sm" kind={paused ? 'secondary' : 'ghost'} onClick={() => setPaused((value) => !value)}>
-            {paused ? 'Resume monitor' : 'Pause monitor'}
-          </Button>
-          <Button
-            size="sm"
-            kind="ghost"
-            onClick={async () => {
-              await midiHubApi.clearTraffic(nodeId)
-              pushToast('Traffic buffer cleared', 'info')
-              await trafficQuery.refetch()
-            }}
-          >
-            Clear buffer
-          </Button>
-          <Button
-            size="sm"
-            kind="secondary"
-            onClick={async () => {
-              const result = await midiHubApi.exportTraffic('csv', 10000, nodeId)
-              setLastExportPath(result.path)
-              pushToast(`Traffic exported (${result.count} rows)`, 'success')
-            }}
-          >
-            Export CSV
-          </Button>
-        </div>
+      <div className="midi-hub-connections-toolbar">
+        <Tag type={paused ? 'warm-gray' : 'green'}>{paused ? 'Paused' : 'Streaming'}</Tag>
+        <Tag type="cool-gray">{`${messageRate.toFixed(1)} msg/s`}</Tag>
+        <Tag type="cool-gray">{`Visible ${visibleCount}`}</Tag>
+        <Tag type="cool-gray">{`Captured ${capturedTotal}`}</Tag>
+        {lastExportPath ? <Tag type="blue">Export ready</Tag> : null}
       </div>
 
-      <div className="midi-hub-table-wrap" style={{ maxHeight: height, overflowY: 'auto' }}>
-        <TableContainer>
-          <Table size="sm" className="midi-hub-table">
-            <TableHead>
-              <TableRow>
-                <TableHeader>Timestamp</TableHeader>
-                <TableHeader>Type</TableHeader>
-                <TableHeader>Source</TableHeader>
-                <TableHeader>Destination</TableHeader>
-                <TableHeader>Node</TableHeader>
-                <TableHeader>Bytes</TableHeader>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {renderedRows.map((row) => (
-                <TableRow
-                  key={`${row.timestamp_ns}-${row.raw_hex}-${row.source_port}-${row.destination_port}`}
-                  onClick={() => setSelected(row)}
-                  style={{ cursor: 'pointer' }}
+      <DataTable rows={tableRows} headers={[...HEADERS]} isSortable useZebraStyles>
+        {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+          <TableContainer
+            {...getTableContainerProps()}
+            title="Traffic monitor"
+            description="Search, pause, and export the local event stream without leaving the connections area."
+            className="midi-hub-connections-table"
+          >
+            <TableToolbar {...getToolbarProps()}>
+              <TableToolbarContent className="midi-hub-connections-toolbar">
+                <TableToolbarSearch
+                  persistent
+                  value={searchValue}
+                  onChange={(_event, value) => setSearchValue(value ?? '')}
+                />
+                <Button size="sm" kind={sortKey === 'timestamp' ? 'secondary' : 'ghost'} onClick={() => setSortKey('timestamp')}>
+                  Time
+                </Button>
+                <Button size="sm" kind={sortKey === 'type' ? 'secondary' : 'ghost'} onClick={() => setSortKey('type')}>
+                  Type
+                </Button>
+                <Button size="sm" kind={sortKey === 'source' ? 'secondary' : 'ghost'} onClick={() => setSortKey('source')}>
+                  Source
+                </Button>
+                <Button size="sm" kind={sortKey === 'destination' ? 'secondary' : 'ghost'} onClick={() => setSortKey('destination')}>
+                  Destination
+                </Button>
+                <Button size="sm" kind={sortKey === 'node' ? 'secondary' : 'ghost'} onClick={() => setSortKey('node')}>
+                  Node
+                </Button>
+                <Toggle
+                  id="midi-hub-traffic-paused"
+                  size="sm"
+                  labelText="Pause stream"
+                  labelA="Live"
+                  labelB="Paused"
+                  toggled={paused}
+                  onToggle={setPaused}
+                />
+                <Toggle
+                  id="midi-hub-traffic-ascending"
+                  size="sm"
+                  labelText="Ascending"
+                  labelA="Desc"
+                  labelB="Asc"
+                  toggled={sortAsc}
+                  onToggle={setSortAsc}
+                />
+                <Button
+                  size="sm"
+                  kind="ghost"
+                  onClick={async () => {
+                    await midiHubApi.clearTraffic(nodeId)
+                    pushToast('Traffic buffer cleared', 'info')
+                    await trafficQuery.refetch()
+                  }}
                 >
-                  <TableCell>
-                    <code>{formatTimestampNs(row.timestamp_ns)}</code>
-                  </TableCell>
-                  <TableCell>
-                    <Tag type={tagTypeOf(row)}>{messageTypeOf(row)}</Tag>
-                  </TableCell>
-                  <TableCell>
-                    <code>{row.source_port}</code>
-                  </TableCell>
-                  <TableCell>
-                    <code>{row.destination_port}</code>
-                  </TableCell>
-                  <TableCell>
-                    <code>{row.origin_node_id ?? 'local'}</code>
-                  </TableCell>
-                  <TableCell>
-                    <code>{row.raw_hex}</code>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </div>
-
-      {filteredRows.length > renderedRows.length ? (
-        <div className="midi-hub-panel-note">{`Showing ${renderedRows.length} of ${filteredRows.length} filtered rows.`}</div>
-      ) : null}
-
-      <Modal
-        open={Boolean(selected)}
-        size="lg"
-        modalHeading="MIDI event detail"
-        primaryButtonText="Close"
-        onRequestClose={() => setSelected(null)}
-        onRequestSubmit={() => setSelected(null)}
-      >
-        {selected ? (
-          <div className="midi-hub-modal-grid">
-            <div className="midi-hub-stat-grid">
-              <div className="midi-hub-stat-tile">
-                <span className="midi-hub-stat-tile__label">Timestamp</span>
-                <strong className="midi-hub-stat-tile__value">{formatTimestampNs(selected.timestamp_ns)}</strong>
-              </div>
-              <div className="midi-hub-stat-tile">
-                <span className="midi-hub-stat-tile__label">Type</span>
-                <strong className="midi-hub-stat-tile__value">{messageTypeOf(selected)}</strong>
-              </div>
-              <div className="midi-hub-stat-tile">
-                <span className="midi-hub-stat-tile__label">Source</span>
-                <strong className="midi-hub-stat-tile__value">{selected.source_port}</strong>
-              </div>
-              <div className="midi-hub-stat-tile">
-                <span className="midi-hub-stat-tile__label">Destination</span>
-                <strong className="midi-hub-stat-tile__value">{selected.destination_port}</strong>
-              </div>
+                  Clear buffer
+                </Button>
+                <Button
+                  size="sm"
+                  kind="secondary"
+                  onClick={async () => {
+                    const result = await midiHubApi.exportTraffic('csv', 10000, nodeId)
+                    setLastExportPath(result.path)
+                    pushToast(`Traffic exported (${result.count} rows)`, 'success')
+                  }}
+                >
+                  Export CSV
+                </Button>
+              </TableToolbarContent>
+            </TableToolbar>
+            <div style={{ maxHeight: height, overflowY: 'auto' }}>
+              <Table {...getTableProps()} aria-label="MIDI traffic monitor">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _key, ...headerProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...headerProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => {
+                    const { key: _key, ...rowProps } = getRowProps({ row })
+                    const source = selectedById.get(row.id)
+                    return (
+                      <TableRow
+                        key={row.id}
+                        {...rowProps}
+                        onClick={() => setSelected(source ?? null)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {row.cells.map((cell) => {
+                          if (cell.info.header === 'type' && source) {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type={tagTypeOf(source)}>{String(cell.value)}</Tag>
+                              </TableCell>
+                            )
+                          }
+                          return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                        })}
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
             </div>
-            <pre className="midi-hub-code-block">{JSON.stringify(selected, null, 2)}</pre>
-          </div>
-        ) : null}
-      </Modal>
+          </TableContainer>
+        )}
+      </DataTable>
+
+      <ComposedModal open={Boolean(selected)} size="lg" onClose={() => setSelected(null)}>
+        <ModalHeader title="MIDI event detail" />
+        <ModalBody>
+          {selected ? <pre className="midi-hub-connections-code-block">{JSON.stringify(selected, null, 2)}</pre> : null}
+        </ModalBody>
+        <ModalFooter>
+          <Button kind="primary" onClick={() => setSelected(null)}>
+            Close
+          </Button>
+        </ModalFooter>
+      </ComposedModal>
     </>
   )
 }

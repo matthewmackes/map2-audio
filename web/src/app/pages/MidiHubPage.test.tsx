@@ -143,9 +143,12 @@ jest.mock('../components/MidiHub/MidiHubHelpPrimitives', () => ({
 
 jest.mock('../components/MidiHub/MidiHubWorkbenchCards', () => ({
   readPorts: (raw: unknown) => (Array.isArray(raw) ? raw : []),
-  MidiHubQuickRouterCard: () => <div>Quick Router Mock</div>,
   MidiHubFilterPlannerCard: () => <div>Filter Planner Mock</div>,
   MidiHubMapperPlannerCard: () => <div>Mapper Planner Mock</div>,
+}))
+
+jest.mock('../components/MidiHub/MidiHubQuickRouter', () => ({
+  MidiHubQuickRouter: () => <div>Quick Router Mock</div>,
 }))
 
 const { MidiHubShell } = require('./MidiHubShell') as typeof import('./MidiHubShell')

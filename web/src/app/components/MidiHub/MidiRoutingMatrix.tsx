@@ -1,9 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
   Checkbox,
-  Modal,
+  ComposedModal,
+  DataTable,
+  InlineNotification,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Select,
   SelectItem,
   Table,
@@ -13,6 +18,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  TableToolbarSearch,
   Tag,
   TextArea,
   TextInput,
@@ -20,12 +28,34 @@ import {
 import { midiHubApi, type MidiHubRoute, type MidiHubRouteRequest } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { readPorts } from './MidiHubWorkbenchCards'
 
 type MatrixSelection = {
   sourcePort: string
   destinationPort: string
   route?: MidiHubRoute
 }
+
+type MatrixRow = {
+  id: string
+  source: string
+  sourceKind: string
+  destination: string
+  destinationKind: string
+  state: string
+  routeType: string
+  priority: string
+  detail: string
+}
+
+const HEADERS = [
+  { key: 'source', header: 'Source' },
+  { key: 'destination', header: 'Destination' },
+  { key: 'state', header: 'State' },
+  { key: 'routeType', header: 'Mode' },
+  { key: 'priority', header: 'Priority' },
+  { key: 'detail', header: 'Detail' },
+] as const
 
 function parseCsvList(value: string): string[] {
   return value
@@ -65,6 +95,7 @@ export function MidiRoutingMatrix() {
   const { pushToast } = useToasts()
   const { nodeId, scopeKey } = useMidiHubNodeScope()
   const [selection, setSelection] = useState<MatrixSelection | null>(null)
+  const [searchValue, setSearchValue] = useState('')
   const [enabled, setEnabled] = useState(true)
   const [priority, setPriority] = useState('100')
   const [routeType, setRouteType] = useState('pass_through')
@@ -72,6 +103,7 @@ export function MidiRoutingMatrix() {
   const [channelsCsv, setChannelsCsv] = useState('')
   const [transformJson, setTransformJson] = useState('[]')
   const [showAdvancedEditor, setShowAdvancedEditor] = useState(false)
+  const deferredSearch = useDeferredValue(searchValue)
 
   const statusQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'status'],
@@ -87,18 +119,50 @@ export function MidiRoutingMatrix() {
 
   const routeMap = useMemo(() => buildRouteMap(routesQuery.data?.routes ?? []), [routesQuery.data?.routes])
 
-  const ports = useMemo(() => {
-    const rows = (statusQuery.data?.ports as Array<Record<string, unknown>> | undefined) ?? []
-    return rows.map((row) => ({
-      port_id: String(row.port_id ?? ''),
-      name: String(row.name ?? row.port_id ?? ''),
-      direction: String(row.direction ?? 'duplex'),
-      kind: String(row.kind ?? 'virtual'),
-    }))
-  }, [statusQuery.data?.ports])
+  const ports = useMemo(
+    () => readPorts((statusQuery.data as Record<string, unknown> | undefined)?.ports),
+    [statusQuery.data],
+  )
 
   const sources = ports.filter((port) => port.direction === 'input' || port.direction === 'duplex')
   const destinations = ports.filter((port) => port.direction === 'output' || port.direction === 'duplex')
+
+  const rows = useMemo<MatrixRow[]>(() => {
+    return sources.flatMap((source) =>
+      destinations.map((destination) => {
+        const route = routeMap.get(`${source.port_id}__${destination.port_id}`)
+        const advanced = hasAdvancedRouteState(route)
+        return {
+          id: `${source.port_id}__${destination.port_id}`,
+          source: source.name,
+          sourceKind: source.kind,
+          destination: destination.name,
+          destinationKind: destination.kind,
+          state: route ? (route.enabled ? 'Active' : 'Disabled') : 'Available',
+          routeType: route ? route.route_type : 'create',
+          priority: String(route?.priority ?? 100),
+          detail: route
+            ? advanced
+              ? 'Advanced filter or transform'
+              : 'Pass-through'
+            : `${source.name} to ${destination.name}`,
+        }
+      }),
+    )
+  }, [destinations, routeMap, sources])
+
+  const rowsById = useMemo(() => new Map(rows.map((row) => [row.id, row])), [rows])
+
+  const filteredRows = useMemo(() => {
+    const needle = deferredSearch.trim().toLowerCase()
+    if (!needle) return rows
+    return rows.filter((row) =>
+      [row.source, row.sourceKind, row.destination, row.destinationKind, row.state, row.routeType, row.detail]
+        .join(' ')
+        .toLowerCase()
+        .includes(needle),
+    )
+  }, [deferredSearch, rows])
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -170,192 +234,228 @@ export function MidiRoutingMatrix() {
 
   return (
     <>
-      <div className="midi-hub-mini-surface">
-        <div className="midi-hub-toolbar">
-          <Tag type="cool-gray">{`Sources ${sources.length}`}</Tag>
-          <Tag type="cool-gray">{`Destinations ${destinations.length}`}</Tag>
-          <Tag type={routesQuery.data?.routes?.length ? 'green' : 'warm-gray'}>
-            {`Routes ${routesQuery.data?.routes?.length ?? 0}`}
-          </Tag>
-        </div>
-
-        <div className="midi-hub-route-legend">
-          <Tag type="green">Active route</Tag>
-          <Tag type="warm-gray">Disabled route</Tag>
-          <Tag type="blue">Advanced route</Tag>
-          <Tag type="cool-gray">No route</Tag>
-        </div>
-
-        <div className="midi-hub-panel-note">
-          Build a pass-through route first. Add filters, route priority, or transform chains only after the source and
-          destination are already proven in the event monitor.
-        </div>
-
-        <div className="midi-hub-actions">
-          <Button size="sm" kind="ghost" onClick={() => void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })}>
-            Refresh matrix
-          </Button>
-        </div>
+      <div className="midi-hub-connections-toolbar">
+        <Tag type="cool-gray">{`Sources ${sources.length}`}</Tag>
+        <Tag type="cool-gray">{`Destinations ${destinations.length}`}</Tag>
+        <Tag type={routesQuery.data?.routes?.length ? 'green' : 'warm-gray'}>
+          {`Routes ${routesQuery.data?.routes?.length ?? 0}`}
+        </Tag>
       </div>
 
-      <div className="midi-hub-route-matrix-wrap">
-        <TableContainer>
-          <Table size="sm" className="midi-hub-route-matrix">
-            <TableHead>
-              <TableRow>
-                <TableHeader>Source</TableHeader>
-                {destinations.map((destination) => (
-                  <TableHeader key={destination.port_id}>
-                    <div className="midi-hub-route-header">
-                      <strong>{destination.name}</strong>
-                      <span className="midi-hub-route-header-meta">{destination.kind}</span>
-                    </div>
-                  </TableHeader>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sources.map((source) => (
-                <TableRow key={source.port_id}>
-                  <TableCell>
-                    <div className="midi-hub-route-source">
-                      <strong>{source.name}</strong>
-                      <span className="midi-hub-route-source-meta">{source.kind}</span>
-                    </div>
-                  </TableCell>
-                  {destinations.map((destination) => {
-                    const route = routeMap.get(`${source.port_id}__${destination.port_id}`)
-                    const hasAdvancedState = hasAdvancedRouteState(route)
+      {rows.length === 0 ? (
+        <InlineNotification
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="No route matrix available"
+          subtitle="Connect at least one input and one output to build source-to-destination routes."
+        />
+      ) : (
+        <DataTable rows={filteredRows} headers={[...HEADERS]} isSortable useZebraStyles>
+          {({ rows: renderedRows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+            <TableContainer
+              {...getTableContainerProps()}
+              title="Port matrix"
+              description="Build the active path first, then add filters or transforms only where they are required."
+              className="midi-hub-connections-table"
+            >
+              <TableToolbar {...getToolbarProps()}>
+                <TableToolbarContent>
+                  <TableToolbarSearch
+                    persistent
+                    value={searchValue}
+                    onChange={(_event, value) => setSearchValue(value ?? '')}
+                  />
+                  <Button
+                    size="sm"
+                    kind="ghost"
+                    onClick={() => void queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey] })}
+                  >
+                    Refresh matrix
+                  </Button>
+                </TableToolbarContent>
+              </TableToolbar>
+              <Table {...getTableProps()} aria-label="MIDI routing matrix">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _key, ...headerProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...headerProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                    <TableHeader>Action</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {renderedRows.map((row) => {
+                    const { key: _key, ...rowProps } = getRowProps({ row })
+                    const [sourcePort, destinationPort] = row.id.split('__')
+                    const route = routeMap.get(row.id)
+                    const advanced = hasAdvancedRouteState(route)
                     return (
-                      <TableCell key={destination.port_id}>
-                        <button
-                          type="button"
-                          className={[
-                            'midi-hub-route-cell',
-                            route ? (route.enabled ? 'midi-hub-route-cell--active' : 'midi-hub-route-cell--disabled') : '',
-                            hasAdvancedState ? 'midi-hub-route-cell--advanced' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                          onClick={() => openEditor(source.port_id, destination.port_id)}
-                        >
-                          <strong>{route ? (route.enabled ? 'Active' : 'Disabled') : 'Create route'}</strong>
-                          <span className="midi-hub-route-cell__meta">
-                            {route
-                              ? hasAdvancedState
-                                ? `${route.route_type} · advanced`
-                                : 'Pass-through'
-                              : `${source.name} to ${destination.name}`}
-                          </span>
-                        </button>
-                      </TableCell>
+                      <TableRow key={row.id} {...rowProps}>
+                        {row.cells.map((cell) => {
+                          const sourceRow = rowsById.get(row.id)
+                          if (cell.info.header === 'source') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <div className="midi-hub-connections-cell-copy">
+                                  <strong>{String(cell.value)}</strong>
+                                  <span>{sourceRow?.sourceKind}</span>
+                                </div>
+                              </TableCell>
+                            )
+                          }
+                          if (cell.info.header === 'destination') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <div className="midi-hub-connections-cell-copy">
+                                  <strong>{String(cell.value)}</strong>
+                                  <span>{sourceRow?.destinationKind}</span>
+                                </div>
+                              </TableCell>
+                            )
+                          }
+                          if (cell.info.header === 'state') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type={route ? (route.enabled ? 'green' : 'warm-gray') : 'cool-gray'}>
+                                  {String(cell.value)}
+                                </Tag>
+                              </TableCell>
+                            )
+                          }
+                          if (cell.info.header === 'routeType') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type={advanced ? 'blue' : 'cool-gray'}>{String(cell.value)}</Tag>
+                              </TableCell>
+                            )
+                          }
+                          return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                        })}
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            kind={route ? 'secondary' : 'primary'}
+                            onClick={() => openEditor(sourcePort, destinationPort)}
+                          >
+                            {route ? 'Edit route' : 'Create route'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DataTable>
+      )}
 
-      <Modal
+      <ComposedModal
         open={Boolean(selection)}
         size="lg"
-        modalHeading={selection?.route ? 'Edit route' : 'Create route'}
-        primaryButtonText="Save route"
-        onRequestClose={() => setSelection(null)}
-        onRequestSubmit={() => {
-          void saveMutation.mutate()
-        }}
+        onClose={() => setSelection(null)}
       >
-        {selection ? (
-          <div className="midi-hub-modal-grid">
-            <div className="midi-hub-toolbar">
-              <Tag type="cool-gray">{selection.sourcePort}</Tag>
-              <Tag type="blue">{selection.destinationPort}</Tag>
-              {selection.route ? <Tag type={selection.route.enabled ? 'green' : 'warm-gray'}>{selection.route.enabled ? 'Enabled' : 'Disabled'}</Tag> : null}
-            </div>
-
-            <div className="midi-hub-form-grid">
-              <Select
-                id="midi-hub-route-type"
-                labelText="Route type"
-                value={routeType}
-                onChange={(event) => setRouteType(event.currentTarget.value)}
-              >
-                <SelectItem value="pass_through" text="Pass-through" />
-                <SelectItem value="filter" text="Filter" />
-                <SelectItem value="transform" text="Transform" />
-              </Select>
-
-              <TextInput
-                id="midi-hub-route-priority"
-                labelText="Route priority"
-                value={priority}
-                onChange={(event) => setPriority(event.currentTarget.value)}
-              />
-            </div>
-
-            <div className="midi-hub-actions">
-              <Checkbox
-                id="midi-hub-route-enabled"
-                labelText="Route enabled"
-                checked={enabled}
-                onChange={(_, data) => setEnabled(data.checked)}
-              />
-              <Checkbox
-                id="midi-hub-route-advanced"
-                labelText="Show advanced fields"
-                checked={showAdvancedEditor}
-                onChange={(_, data) => setShowAdvancedEditor(data.checked)}
-              />
-            </div>
-
-            {showAdvancedEditor ? (
-              <>
-                <div className="midi-hub-form-grid">
-                  <TextInput
-                    id="midi-hub-route-message-types"
-                    labelText="Message types"
-                    value={messageTypesCsv}
-                    onChange={(event) => setMessageTypesCsv(event.currentTarget.value)}
-                    placeholder="note_on, control_change"
-                  />
-                  <TextInput
-                    id="midi-hub-route-channels"
-                    labelText="Channels"
-                    value={channelsCsv}
-                    onChange={(event) => setChannelsCsv(event.currentTarget.value)}
-                    placeholder="1, 2, 10"
-                  />
-                </div>
-
-                <TextArea
-                  id="midi-hub-route-transforms"
-                  labelText="Transform chain JSON"
-                  value={transformJson}
-                  onChange={(event) => setTransformJson(event.currentTarget.value)}
-                  rows={8}
-                />
-              </>
-            ) : null}
-
-            {selection.route?.route_id ? (
-              <div className="midi-hub-actions">
-                <Button
-                  size="sm"
-                  kind="danger--tertiary"
-                  onClick={() => {
-                    void deleteMutation.mutate(selection.route!.route_id)
-                  }}
-                >
-                  Delete route
-                </Button>
+        <ModalHeader title={selection?.route ? 'Edit route' : 'Create route'} />
+        <ModalBody>
+          {selection ? (
+            <div className="midi-hub-connections-modal">
+              <div className="midi-hub-connections-toolbar">
+                <Tag type="cool-gray">{selection.sourcePort}</Tag>
+                <Tag type="blue">{selection.destinationPort}</Tag>
+                {selection.route ? (
+                  <Tag type={selection.route.enabled ? 'green' : 'warm-gray'}>
+                    {selection.route.enabled ? 'Enabled' : 'Disabled'}
+                  </Tag>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-        ) : null}
-      </Modal>
+
+              <div className="midi-hub-connections-form-grid">
+                <Select
+                  id="midi-hub-route-type"
+                  labelText="Route type"
+                  value={routeType}
+                  onChange={(event) => setRouteType(event.currentTarget.value)}
+                >
+                  <SelectItem value="pass_through" text="Pass-through" />
+                  <SelectItem value="filter" text="Filter" />
+                  <SelectItem value="transform" text="Transform" />
+                </Select>
+
+                <TextInput
+                  id="midi-hub-route-priority"
+                  labelText="Route priority"
+                  value={priority}
+                  onChange={(event) => setPriority(event.currentTarget.value)}
+                />
+              </div>
+
+              <div className="midi-hub-connections-toolbar">
+                <Checkbox
+                  id="midi-hub-route-enabled"
+                  labelText="Route enabled"
+                  checked={enabled}
+                  onChange={(_, data) => setEnabled(data.checked)}
+                />
+                <Checkbox
+                  id="midi-hub-route-advanced"
+                  labelText="Show advanced fields"
+                  checked={showAdvancedEditor}
+                  onChange={(_, data) => setShowAdvancedEditor(data.checked)}
+                />
+              </div>
+
+              {showAdvancedEditor ? (
+                <>
+                  <div className="midi-hub-connections-form-grid">
+                    <TextInput
+                      id="midi-hub-route-message-types"
+                      labelText="Message types"
+                      value={messageTypesCsv}
+                      onChange={(event) => setMessageTypesCsv(event.currentTarget.value)}
+                      placeholder="note_on, control_change"
+                    />
+                    <TextInput
+                      id="midi-hub-route-channels"
+                      labelText="Channels"
+                      value={channelsCsv}
+                      onChange={(event) => setChannelsCsv(event.currentTarget.value)}
+                      placeholder="1, 2, 10"
+                    />
+                  </div>
+
+                  <TextArea
+                    id="midi-hub-route-transforms"
+                    labelText="Transform chain JSON"
+                    value={transformJson}
+                    onChange={(event) => setTransformJson(event.currentTarget.value)}
+                    rows={8}
+                  />
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </ModalBody>
+        <ModalFooter>
+          {selection?.route?.route_id ? (
+            <Button kind="danger--tertiary" onClick={() => void deleteMutation.mutate(selection.route.route_id)}>
+              Delete route
+            </Button>
+          ) : (
+            <Button kind="secondary" onClick={() => setSelection(null)}>
+              Cancel
+            </Button>
+          )}
+          <Button kind="primary" onClick={() => void saveMutation.mutate()}>
+            Save route
+          </Button>
+        </ModalFooter>
+      </ComposedModal>
     </>
   )
 }

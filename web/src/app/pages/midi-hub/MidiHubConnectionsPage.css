@@ -1,0 +1,158 @@
+.midi-hub-connections-band {
+  display: grid;
+  gap: var(--cds-spacing-05);
+}
+
+.midi-hub-connections-page {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 0.9fr);
+}
+
+.midi-hub-connections-page__workspace-header,
+.midi-hub-connections-page__panel-heading,
+.midi-hub-connections-surface__header,
+.midi-hub-connections-toolbar,
+.midi-hub-connections-form-grid,
+.midi-hub-connections-detail-grid,
+.midi-hub-connections-toggle-grid,
+.midi-hub-connections-stack {
+  display: grid;
+  gap: var(--cds-spacing-05);
+}
+
+.midi-hub-connections-page__workspace-header,
+.midi-hub-connections-page__panel-heading,
+.midi-hub-connections-surface__header {
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.midi-hub-connections-page__workspace-copy h4,
+.midi-hub-connections-page__panel-heading h3,
+.midi-hub-connections-surface__header h4 {
+  margin: 0 0 var(--cds-spacing-03);
+}
+
+.midi-hub-connections-page__workspace-copy p,
+.midi-hub-connections-surface__header p,
+.midi-hub-connections-detail-card p {
+  margin: 0;
+  color: var(--cds-text-secondary);
+}
+
+.midi-hub-connections-toolbar {
+  align-items: center;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  justify-content: start;
+}
+
+.midi-hub-connections-table .cds--table-container {
+  background: transparent;
+}
+
+.midi-hub-connections-cell-copy {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.midi-hub-connections-cell-copy span,
+.midi-hub-connections-toggle-card__copy span,
+.midi-hub-connections-detail-meta code {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
+.midi-hub-connections-modal,
+.midi-hub-connections-form-grid {
+  display: grid;
+  gap: var(--cds-spacing-05);
+}
+
+.midi-hub-connections-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-hub-connections-surface,
+.midi-hub-connections-toggle-card,
+.midi-hub-connections-detail-card,
+.midi-hub-connections-patchbay {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  padding: var(--cds-spacing-05);
+  background: var(--cds-layer-01);
+}
+
+.midi-hub-connections-toggle-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-hub-connections-toggle-card {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.midi-hub-connections-toggle-card__copy {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.midi-hub-connections-patchbay {
+  overflow: hidden;
+}
+
+.midi-hub-connections-patchbay__stage {
+  width: 100%;
+  min-height: 42rem;
+}
+
+.midi-hub-connections-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-hub-connections-detail-card code,
+.midi-hub-connections-code-block {
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+}
+
+.midi-hub-connections-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  align-items: center;
+}
+
+.midi-hub-connections-code-block {
+  margin: 0;
+  padding: var(--cds-spacing-05);
+  background: var(--cds-layer-01);
+  color: var(--cds-text-primary);
+  overflow: auto;
+}
+
+@media (max-width: 1056px) {
+  .midi-hub-connections-page {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .midi-hub-connections-page__workspace-header,
+  .midi-hub-connections-page__panel-heading,
+  .midi-hub-connections-surface__header,
+  .midi-hub-connections-form-grid,
+  .midi-hub-connections-detail-grid,
+  .midi-hub-connections-toggle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .midi-hub-connections-toolbar {
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+  }
+
+  .midi-hub-connections-patchbay__stage {
+    min-height: 28rem;
+  }
+}
