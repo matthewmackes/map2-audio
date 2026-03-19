@@ -88,6 +88,7 @@ import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useFlowSnapshots } from '../hooks/useFlowSnapshots'
+import { getEffectIcon } from '../components/icons/effectIcons'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { NumberInput } from '../components/Controls/NumberInput'
@@ -200,6 +201,26 @@ function fallbackPluginLabel(pluginUri: string | null): string {
 
   const tail = pluginUri.split('/').pop()
   return tail ? tail.replace(/[-_]+/g, ' ') : pluginUri
+}
+
+function getSelectedPluginHeroIcon(meta: Plugin | null, plugin: Chain['plugins'][number] | null) {
+  const iconHints = [
+    meta?.name,
+    meta?.category,
+    meta?.class_label,
+    plugin?.plugin_display_type,
+    plugin?.name,
+    plugin?.uri,
+  ].filter((value): value is string => Boolean(value && value.trim()))
+
+  for (const hint of iconHints) {
+    const icon = getEffectIcon(hint)
+    if (icon) {
+      return icon
+    }
+  }
+
+  return getEffectIcon('plugin')
 }
 
 function getAudioRouteLabels(
@@ -611,7 +632,6 @@ export function JuceGridPage() {
   // UI State
   const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(initialPluginPersistence.selectedPluginUri)
   const [effectModalOpen, setEffectModalOpen] = useState(initialPluginPersistence.effectModalOpen)
-  const [effectModalFrame, setEffectModalFrame] = useState({ width: 0, height: 0, topOffset: 0 })
   const [showPluginBrowser, setShowPluginBrowser] = useState(false)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
   const [showSavePresetModal, setShowSavePresetModal] = useState(false)
@@ -690,6 +710,7 @@ export function JuceGridPage() {
   const [showExpressionOverlay, setShowExpressionOverlay] = useState(false)
   const [snapshotsDirty, setSnapshotsDirty] = useState(false)
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
+  const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
@@ -2221,27 +2242,40 @@ export function JuceGridPage() {
 
   // Plugin operations
   const openEffectModal = useCallback(() => {
-    const topbar = document.querySelector('.topbar-pro, .topbar') as HTMLElement | null
-    const topOffset = topbar ? Math.max(0, Math.round(topbar.getBoundingClientRect().bottom)) : 0
-    setEffectModalFrame({
-      width: window.innerWidth,
-      height: Math.max(0, window.innerHeight - topOffset),
-      topOffset,
-    })
     setEffectModalOpen(true)
   }, [])
 
   const handlePluginSelect = useCallback((uri: string) => {
+    if (selectedPluginUri === uri && effectModalOpen) {
+      setEffectModalOpen(false)
+      return
+    }
+
     setSelectedPluginUri(uri)
     openEffectModal()
     if (isCompactLayout) {
       setCompactTab('editor')
     }
-  }, [isCompactLayout, openEffectModal])
+  }, [effectModalOpen, isCompactLayout, openEffectModal, selectedPluginUri])
 
   const handleCloseEffectModal = useCallback(() => {
     setEffectModalOpen(false)
   }, [])
+
+  useEffect(() => {
+    if (!effectModalOpen) {
+      return
+    }
+
+    const panel = bottomEditorRef.current
+    if (!panel || typeof panel.scrollIntoView !== 'function') {
+      return
+    }
+
+    requestAnimationFrame(() => {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+  }, [effectModalOpen])
 
   const handleFlowSlotKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>, index: number) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -3610,6 +3644,8 @@ export function JuceGridPage() {
     )
   }
 
+  const SelectedPluginHeroIcon = getSelectedPluginHeroIcon(selectedPluginMeta, selectedPlugin)
+
   if (showViewportBlockScreen) {
     return (
       <div className="juce-grid-page__viewport-block" role="alert" aria-live="polite">
@@ -3788,20 +3824,20 @@ export function JuceGridPage() {
               <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
                   <h2>Editor</h2>
-                  <p>{selectedPlugin ? 'The selected block editor opens as a modal over the workspace.' : 'Select a block in the grid to open its editor.'}</p>
+                  <p>{selectedPlugin ? 'The selected block editor opens in the bottom panel below the workspace.' : 'Select a block in the grid to open its editor.'}</p>
                 </div>
                 <Tile className="juce-grid-page__effect-modal-placeholder">
                   <div className="juce-grid-page__parameter-editor-copy">
                     <strong>{selectedPlugin ? 'Selected block ready' : 'No block selected'}</strong>
                     <p>
                       {selectedPlugin
-                        ? 'Use the flow card selection to reopen the effect editor modal.'
-                        : 'Tap a processor in the grid to open the effect editor modal.'}
+                        ? 'Use the flow card selection to reopen the bottom editor panel.'
+                        : 'Tap a processor in the grid to open the bottom editor panel.'}
                     </p>
                   </div>
                   {selectedPlugin && (
                     <Button size="sm" kind="secondary" onClick={openEffectModal}>
-                      Reopen effect editor
+                      Reopen editor panel
                     </Button>
                   )}
                 </Tile>
@@ -3847,30 +3883,57 @@ export function JuceGridPage() {
       )}
 
       {effectModalOpen && selectedPlugin && (
-        <Modal
-          open
-          passiveModal
-          size="sm"
-          className={`juce-grid-page__effect-modal ${isMobile ? 'juce-grid-page__effect-modal--mobile' : ''}`}
-          onRequestClose={handleCloseEffectModal}
-          style={{
-            '--juce-grid-effect-modal-width': `${Math.max(effectModalFrame.width, window.innerWidth)}px`,
-            '--juce-grid-effect-modal-height': `${Math.max(effectModalFrame.height, window.innerHeight - effectModalFrame.topOffset)}px`,
-            '--juce-grid-effect-modal-top': `${effectModalFrame.topOffset}px`,
-          } as CSSProperties}
+        <section
+          ref={bottomEditorRef}
+          className="juce-grid-page__bottom-editor-shell"
+          aria-label="Block parameter editor"
         >
-          <div className="juce-grid-page__effect-modal-body">
-            <JuceGridParameterEditor
-              plugin={selectedPlugin}
-              meta={selectedPluginMeta}
-              onParameterChange={handleParameterChange}
-              onParameterChangeEnd={handleParameterChangeEnd}
-              onToggleBypass={handleToggleSelectedBypass}
-              onRefreshPlugins={handleRefreshPlugins}
-              isRefreshing={isRefreshingPlugins}
-            />
-          </div>
-        </Modal>
+          <Layer className="juce-grid-page__bottom-editor-panel">
+            <div className="juce-grid-page__bottom-editor-header">
+              <div className="juce-grid-page__bottom-editor-identity">
+                <div
+                  className={`juce-grid-page__bottom-editor-icon ${selectedPlugin.bypassed ? 'is-bypassed' : ''}`}
+                  aria-hidden
+                  style={{ '--juce-grid-editor-accent': getCategoryConfig(selectedPluginMeta?.category || 'Utility').color } as CSSProperties}
+                >
+                  <SelectedPluginHeroIcon width={32} height={32} />
+                </div>
+                <div className="juce-grid-page__bottom-editor-copy">
+                  <div className="juce-grid-page__bottom-editor-tags">
+                    {selectedPluginMeta?.category && <Tag type="cool-gray">{selectedPluginMeta.category}</Tag>}
+                    {selectedPluginMeta?.format && <Tag type="blue">{selectedPluginMeta.format}</Tag>}
+                    <Tag type={selectedPlugin.bypassed ? 'red' : 'green'}>{selectedPlugin.bypassed ? 'Bypassed' : 'Active'}</Tag>
+                  </div>
+                  <strong>{getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri)}</strong>
+                  <p>
+                    {selectedPluginMeta?.parameters?.length ?? 0} parameter{(selectedPluginMeta?.parameters?.length ?? 0) === 1 ? '' : 's'}
+                    {' '}organized in always-visible Carbon groups.
+                  </p>
+                </div>
+              </div>
+              <div className="juce-grid-page__bottom-editor-actions">
+                <Button size="sm" kind={selectedPlugin.bypassed ? 'ghost' : 'secondary'} onClick={handleToggleSelectedBypass}>
+                  {selectedPlugin.bypassed ? 'Enable block' : 'Bypass block'}
+                </Button>
+                <Button size="sm" kind="ghost" renderIcon={Close} onClick={handleCloseEffectModal}>
+                  Close editor
+                </Button>
+              </div>
+            </div>
+
+            <div className="juce-grid-page__bottom-editor-body">
+              <JuceGridParameterEditor
+                plugin={selectedPlugin}
+                meta={selectedPluginMeta}
+                onParameterChange={handleParameterChange}
+                onParameterChangeEnd={handleParameterChangeEnd}
+                onToggleBypass={handleToggleSelectedBypass}
+                onRefreshPlugins={handleRefreshPlugins}
+                isRefreshing={isRefreshingPlugins}
+              />
+            </div>
+          </Layer>
+        </section>
       )}
 
       <div className="juce-grid-page__floating-actions" aria-label="Audio Grid floating actions">

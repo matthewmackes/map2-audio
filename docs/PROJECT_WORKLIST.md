@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -2007,7 +2007,7 @@ Assigned to: Unassigned
 Last updated: 2026-03-19
 
 ID: T223-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Bottom parameter panel — standardized editor with slide animation
 Description:
 - Slide-up/down animation on open/close
@@ -2017,8 +2017,12 @@ Description:
 - Grouped parameters from existing metadata (all groups visible, no scroll)
 - Panel header with hero icon, name, category, bypass toggle
 - Effect parameter cards grow in height as needed
-Assigned to: Unassigned
-Last updated: 2026-03-19
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - Replaced the prior JUCE Grid modal editor in `web/src/app/pages/JuceGridPage.tsx` with an inline bottom panel that slides up beneath the workspace, toggles closed on same-card selection, and preserves the existing selected-block persistence path.
+  - Added a standardized editor surface in `web/src/app/pages/JuceGridParameterEditor.tsx` that groups parameters with the existing Carbon plugin-card grouping heuristics and renders one Carbon control system across blocks using `NumberInput` plus `Dropdown` for discrete/toggled controls.
+  - Added bottom-panel and grouped-control styling in `web/src/app/pages/JuceGridPage.css` plus regression coverage in `web/src/app/pages/JuceGridPage.test.tsx` for the new open/close panel interaction.
 
 ID: T223-subE
 Status: [ ] Todo

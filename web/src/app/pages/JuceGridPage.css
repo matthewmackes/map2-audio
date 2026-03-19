@@ -1730,6 +1730,86 @@
   padding: 0 0.75rem;
 }
 
+.juce-grid-page__bottom-editor-shell {
+  padding: 0 0.75rem 5.5rem;
+}
+
+.juce-grid-page__bottom-editor-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: #000;
+  animation: juce-grid-page-slide-in-up 160ms ease;
+}
+
+.juce-grid-page__bottom-editor-header,
+.juce-grid-page__bottom-editor-identity,
+.juce-grid-page__bottom-editor-actions,
+.juce-grid-page__bottom-editor-tags,
+.juce-grid-page__bottom-editor-copy {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__bottom-editor-header,
+.juce-grid-page__bottom-editor-identity {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.juce-grid-page__bottom-editor-identity {
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.juce-grid-page__bottom-editor-actions,
+.juce-grid-page__bottom-editor-tags {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.juce-grid-page__bottom-editor-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.juce-grid-page__bottom-editor-copy strong {
+  font-size: 1.125rem;
+}
+
+.juce-grid-page__bottom-editor-copy p {
+  margin: 0;
+  color: #c6c6c6;
+  font-size: 0.875rem;
+}
+
+.juce-grid-page__bottom-editor-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 4rem;
+  inline-size: 4rem;
+  block-size: 4rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--juce-grid-editor-accent, var(--cds-link-primary)) 45%, transparent);
+  background: color-mix(in srgb, var(--juce-grid-editor-accent, var(--cds-link-primary)) 14%, #161616);
+  color: var(--juce-grid-editor-accent, var(--cds-link-primary));
+}
+
+.juce-grid-page__bottom-editor-icon.is-bypassed {
+  filter: grayscale(1);
+  opacity: 0.68;
+}
+
+.juce-grid-page__bottom-editor-body {
+  display: flex;
+  flex-direction: column;
+}
+
 .juce-grid-page__compact-audio-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3153,6 +3233,12 @@
   --juce-grid-parameter-accent: var(--cds-link-primary);
 }
 
+.juce-grid-page__parameter-editor-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .juce-grid-page__parameter-editor-header,
 .juce-grid-page__parameter-editor-actions,
 .juce-grid-page__parameter-editor-meta,
@@ -3218,6 +3304,69 @@
   gap: 1.25rem;
   container-type: inline-size;
   container-name: juce-grid-parameter-editor;
+}
+
+.juce-grid-page__parameter-group-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--juce-grid-parameter-accent) 24%, var(--cds-border-subtle, var(--border)));
+  background: color-mix(in srgb, var(--juce-grid-parameter-accent) 5%, var(--cds-layer, rgba(255, 255, 255, 0.02)));
+}
+
+.juce-grid-page__parameter-group-header,
+.juce-grid-page__parameter-control,
+.juce-grid-page__parameter-control-copy {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.juce-grid-page__parameter-group-header {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.juce-grid-page__parameter-group-header p,
+.juce-grid-page__parameter-control-copy span {
+  margin: 0;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 0.75rem;
+}
+
+.juce-grid-page__parameter-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.875rem;
+}
+
+.juce-grid-page__parameter-control {
+  flex-direction: column;
+  padding: 0.875rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, rgba(255, 255, 255, 0.03));
+}
+
+.juce-grid-page__parameter-control-copy {
+  min-width: 0;
+  flex-direction: column;
+}
+
+.juce-grid-page__parameter-control-copy strong {
+  font-size: 0.875rem;
+}
+
+.juce-grid-page__parameter-control .cds--list-box,
+.juce-grid-page__parameter-control-input {
+  inline-size: 100%;
+}
+
+.juce-grid-page__parameter-control .cds--list-box__field {
+  min-block-size: 3rem;
+}
+
+.juce-grid-page__parameter-control-loading {
+  min-block-size: 1.25rem;
 }
 
 .juce-grid-page__parameter-editor-toggle.cds--btn {
@@ -3613,6 +3762,11 @@
     padding-right: 0.75rem;
   }
 
+  .juce-grid-page__bottom-editor-shell {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
   .juce-grid-page__compact-audio-grid {
     grid-template-columns: 1fr;
   }
@@ -3643,6 +3797,9 @@
   .juce-grid-page__chain-tile-header,
   .juce-grid-page__chain-tile-tags,
   .juce-grid-page__chain-tile-actions,
+  .juce-grid-page__bottom-editor-header,
+  .juce-grid-page__bottom-editor-identity,
+  .juce-grid-page__bottom-editor-actions,
   .juce-grid-page__cluster-card-header,
   .juce-grid-page__cluster-card-tags,
   .juce-grid-page__cluster-metric-row,
