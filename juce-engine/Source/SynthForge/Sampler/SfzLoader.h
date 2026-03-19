@@ -14,6 +14,8 @@ struct SfzRegionDefinition {
     int rootKey = 60;
     int loVelocity = 0;
     int hiVelocity = 127;
+    int group = 0;
+    int offBy = 0;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };

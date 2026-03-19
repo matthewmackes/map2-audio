@@ -518,14 +518,16 @@ bool Part::loadSfzNative(const std::string& sfzPath, SampleLoadStatus& status) {
             notes.setBit(note);
         }
 
-        auto* sound = new juce::SamplerSound(
+        auto* sound = new GroupedSamplerSound(
             region.sampleFile.getFileNameWithoutExtension(),
             *reader,
             notes,
             region.rootKey,
             std::max(0.0f, region.attackSeconds),
             std::max(0.0f, region.releaseSeconds),
-            600.0);
+            600.0,
+            region.group,
+            region.offBy);
 
         samplerProgram->synthesiser.addSound(sound);
         ++loadedSounds;

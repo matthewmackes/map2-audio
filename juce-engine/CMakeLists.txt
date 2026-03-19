@@ -291,6 +291,7 @@ set(SOURCES
     Source/SynthForge/Core/Part.cpp
     Source/SynthForge/Core/VoiceAllocator.cpp
     Source/SynthForge/Core/MidiRouter.cpp
+    Source/SynthForge/Sampler/GroupedSampler.cpp
     Source/SynthForge/Sampler/SfzLoader.cpp
     Source/SynthForge/Sound/SynthVoice.cpp
 
@@ -633,6 +634,7 @@ install(TARGETS map2_audio_engine
 # ========================================
 include(CTest)
 option(BUILD_AVB_TESTS "Build AVB/Catch2 unit tests" OFF)
+option(BUILD_SYNTHFORGE_TESTS "Build SynthForge/Catch2 unit tests" OFF)
 
 if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
     set(AVTP_TEST_SOURCES
@@ -701,6 +703,37 @@ if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
             COMMENT "Running AVB Catch2 tests (AVTP suite)"
         )
     endif()
+endif()
+
+if(BUILD_SYNTHFORGE_TESTS)
+    FetchContent_Declare(
+        catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.5.2
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(catch2)
+
+    add_executable(synthforge_tests
+        tests/SynthForgeSfzTests.cpp
+        Source/SynthForge/Sampler/GroupedSampler.cpp
+        Source/SynthForge/Sampler/SfzLoader.cpp
+    )
+    target_compile_definitions(synthforge_tests PRIVATE
+        JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+    target_include_directories(synthforge_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source
+    )
+    target_link_libraries(synthforge_tests PRIVATE
+        Catch2::Catch2WithMain
+        juce::juce_audio_basics
+        juce::juce_audio_formats
+        juce::juce_core
+    )
+    add_test(NAME synthforge_tests COMMAND synthforge_tests)
 endif()
 
 # ========================================

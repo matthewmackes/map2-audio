@@ -22,6 +22,8 @@ struct RegionBuilder {
     int rootKey = 60;
     int loVelocity = 0;
     int hiVelocity = 127;
+    int group = 0;
+    int offBy = 0;
     float attackSeconds = 0.0f;
     float releaseSeconds = 0.05f;
 };
@@ -217,6 +219,20 @@ void applyOpcode(RegionBuilder& target, const juce::String& opcode, const juce::
         return;
     }
 
+    if (opcode == "group") {
+        if (const auto parsed = parseIntStrict(value)) {
+            target.group = juce::jmax(0, *parsed);
+        }
+        return;
+    }
+
+    if (opcode == "off_by") {
+        if (const auto parsed = parseIntStrict(value)) {
+            target.offBy = juce::jmax(0, *parsed);
+        }
+        return;
+    }
+
     if (opcode == "ampeg_attack") {
         if (const auto parsed = parseFloatStrict(value)) {
             target.attackSeconds = juce::jmax(0.0f, *parsed);
@@ -342,6 +358,8 @@ SfzDocument SfzLoader::load(const juce::File& sfzFile) {
         loadedRegion.rootKey = juce::jlimit(0, 127, region.rootKey);
         loadedRegion.loVelocity = juce::jlimit(0, 127, juce::jmin(region.loVelocity, region.hiVelocity));
         loadedRegion.hiVelocity = juce::jlimit(0, 127, juce::jmax(region.loVelocity, region.hiVelocity));
+        loadedRegion.group = juce::jmax(0, region.group);
+        loadedRegion.offBy = juce::jmax(0, region.offBy);
         loadedRegion.attackSeconds = juce::jmax(0.0f, region.attackSeconds);
         loadedRegion.releaseSeconds = juce::jmax(0.0f, region.releaseSeconds);
         doc.regions.push_back(loadedRegion);

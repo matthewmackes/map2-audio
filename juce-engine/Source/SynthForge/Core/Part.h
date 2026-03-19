@@ -7,6 +7,7 @@
 
 #include "SynthForge/Common/Types.h"
 #include "SynthForge/Core/VoiceAllocator.h"
+#include "SynthForge/Sampler/GroupedSampler.h"
 #include "SynthForge/Sampler/SfzLoader.h"
 #include "SynthForge/Sound/SynthVoice.h"
 
@@ -89,7 +90,7 @@ public:
 
 private:
     struct SamplerProgram {
-        juce::Synthesiser synthesiser;
+        GroupedSamplerSynthesiser synthesiser;
         int regionCount = 0;
         int loadedSampleCount = 0;
     };
