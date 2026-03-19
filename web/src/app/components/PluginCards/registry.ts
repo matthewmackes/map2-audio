@@ -125,7 +125,7 @@ export function getPluginCardConfig(
 
   // 3. Use category template
   const template = categoryToTemplate(category)
-  if (TEMPLATE_REGISTRY.has(template)) {
+  if (TEMPLATE_REGISTRY.has(template) || TEMPLATE_LOADER_REGISTRY.has(template)) {
     return { template }
   }
 

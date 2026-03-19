@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T223-subG JUCE Grid iPad interaction pass completed with touch-select contextual actions, smart-control parameter editing, 44pt touch targets, and swipe-down editor dismiss handling; T223-subE JUCE Grid select-and-move reorder workflow completed with bottom-editor move controls, keyboard arrow repositioning, and signal-canvas reorder preview states; T223-subC JUCE Grid signal-flow visualization completed with 3-dot connectors, input/output bridges, and dashed bypass path treatment; T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T223-subI JUCE Grid verification audit completed with deployment-backed bottom-editor coverage for 35 shipped grid plugins, fallback-template registry fix for lazy template resolution, clean typecheck, clean targeted JUCE Grid test suites, and clean production build; T223-subG JUCE Grid iPad interaction pass completed with touch-select contextual actions, smart-control parameter editing, 44pt touch targets, and swipe-down editor dismiss handling; T223-subE JUCE Grid select-and-move reorder workflow completed with bottom-editor move controls, keyboard arrow repositioning, and signal-canvas reorder preview states; T223-subC JUCE Grid signal-flow visualization completed with 3-dot connectors, input/output bridges, and dashed bypass path treatment; T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -2094,15 +2094,17 @@ Last updated: 2026-03-19 - Codex
   - Added touch-capable rotation/Split View guidance plus focused regression coverage in `web/src/app/pages/JuceGridPage.test.tsx` so the blocked-state contract is verified alongside the normal desktop route behavior.
 
 ID: T223-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build verification + card parameter audit
 Description:
 - Verify every card's parameters display correctly in standardized bottom panel
 - Ensure all 47 cards + 8 templates work with the new grid layout
 - tsc clean, npm run build clean, all tests pass
 - Adjust card/panel sizing if any card's parameters don't fit
-Assigned to: Unassigned
-Last updated: 2026-03-19
-
-Assigned to: Unassigned
-Last updated: 2026-03-19
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - Added `web/src/app/pages/JuceGridParameterAudit.test.tsx` to audit the shipped JUCE Grid plugin inventory against the standardized bottom editor using the deployment catalogs in `app/deployment/juce_processors.json` and `app/deployment/default_lv2_effects.json`, covering all 35 shipped grid plugins with actual metadata-backed renders.
+  - Added router-level audit coverage for the registered custom-card set and the eight fallback template categories so template-backed processors are validated alongside exact custom card registrations.
+  - Fixed `web/src/app/components/PluginCards/registry.ts` so lazy template registrations participate in `getPluginCardConfig()` lookups; before this, fallback templates registered through `registerTemplateLazy()` were invisible to the config lookup path.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx`, and `npm --prefix web run build`; no additional card sizing fixes were required from the audited deployment inventory.
