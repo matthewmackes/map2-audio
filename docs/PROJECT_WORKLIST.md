@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T223-subC JUCE Grid signal-flow visualization completed with 3-dot connectors, input/output bridges, and dashed bypass path treatment; T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T223-subE JUCE Grid select-and-move reorder workflow completed with bottom-editor move controls, keyboard arrow repositioning, and signal-canvas reorder preview states; T223-subC JUCE Grid signal-flow visualization completed with 3-dot connectors, input/output bridges, and dashed bypass path treatment; T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -2029,7 +2029,7 @@ Last updated: 2026-03-19 - Codex
   - Added bottom-panel and grouped-control styling in `web/src/app/pages/JuceGridPage.css` plus regression coverage in `web/src/app/pages/JuceGridPage.test.tsx` for the new open/close panel interaction.
 
 ID: T223-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Select-and-Move reorder system (desktop + iPad)
 Description:
 - Desktop: click to select, arrow keys to reposition (snake-aware wrapping)
@@ -2037,8 +2037,13 @@ Description:
 - iPad: tap-select with on-screen move controls (Apple best practice)
 - Hardware keyboard support on iPad (auto-detect, enable arrow keys)
 - Signal flow updates after move confirmed
-Assigned to: Unassigned
-Last updated: 2026-03-19
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - Added bottom-editor `Move left` and `Move right` controls in `web/src/app/pages/JuceGridPage.tsx`, wired to the existing chain reorder mutation so the selected block can be repositioned without leaving the editor context.
+  - Reworked the page-level arrow-key handling in `web/src/app/pages/JuceGridPage.tsx` so desktop and hardware-keyboard iPad flows move the selected plugin through the chain, including first-select behavior when no block is active.
+  - Passed reorder preview state through `web/src/app/pages/JuceGridPage.tsx` into `web/src/app/pages/JuceGridSignalCanvas.tsx`, then added preview/target treatment in `web/src/app/pages/JuceGridPage.css` for in-canvas move feedback.
+  - Added regression coverage in `web/src/app/pages/JuceGridPage.test.tsx` for bottom-editor move controls and keyboard-triggered leftward reorder requests.
 
 ID: T223-subF
 Status: [✓] Done

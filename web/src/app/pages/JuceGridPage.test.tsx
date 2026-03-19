@@ -781,6 +781,113 @@ describe('JuceGridPage snapshot modal workflow', () => {
     })
   })
 
+  it('moves the selected block left from the bottom editor controls and keyboard arrows', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#2563eb', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 1, label: 'B', color: '#60a5fa', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      flowStates: {
+        'flow-0': { activeAudio: true, dimmed: false, sidechainKey: false },
+      },
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'group-0',
+          kind: 'series',
+          tone: 'active',
+          dashed: false,
+          flowIds: ['flow-0'],
+        },
+      ],
+    }
+
+    mockChainsApi.list.mockResolvedValue({
+      chains: [
+        {
+          id: 1,
+          name: 'Song 1',
+          is_active: true,
+          plugins: [
+            {
+              uri: 'map2://juce/dynamics/compressor',
+              name: 'Studio Compressor',
+              position: 0,
+              bypassed: false,
+              parameters: {},
+            },
+            {
+              uri: 'map2://juce/modulation/chorus',
+              name: 'Alpha Chorus',
+              position: 1,
+              bypassed: false,
+              parameters: {},
+            },
+          ],
+        },
+      ],
+      active_chain_id: 1,
+    })
+
+    mockPluginsApi.discover.mockResolvedValue({
+      plugins: [
+        {
+          uri: 'map2://juce/dynamics/compressor',
+          name: 'Studio Compressor',
+          category: 'Dynamics',
+          parameters: [],
+        },
+        {
+          uri: 'map2://juce/modulation/chorus',
+          name: 'Alpha Chorus',
+          category: 'Modulation',
+          parameters: [],
+        },
+      ],
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const selectButtons = await screen.findAllByRole('button', { name: 'Select block' })
+    fireEvent.click(selectButtons[0])
+
+    const moveLeftButton = await screen.findByRole('button', { name: 'Move left' })
+    fireEvent.click(moveLeftButton)
+
+    await waitFor(() => {
+      expect(mockChainsApi.reorderPlugins).toHaveBeenCalledWith(1, [
+        'map2://juce/modulation/chorus',
+        'map2://juce/dynamics/compressor',
+      ])
+    })
+
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+
+    await waitFor(() => {
+      expect(mockChainsApi.reorderPlugins).toHaveBeenCalledTimes(2)
+    })
+  })
+
   it('shows the mobile block screen below the supported viewport width', async () => {
     mockUseIsMobile.mockReturnValue(true)
     Object.defineProperty(window, 'ontouchstart', {

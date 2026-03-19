@@ -40,6 +40,9 @@ export interface JuceGridSignalCanvasProps {
   chain: Chain | null
   pluginMeta: Record<string, Plugin>
   selectedPluginUri: string | null
+  reorderPreviewUri?: string | null
+  reorderTargetUri?: string | null
+  reorderPreviewDirection?: 'left' | 'right' | null
   onPluginSelect: (uri: string) => void
   onToggleBypass: (uri: string, bypassed: boolean) => void
   onDeletePlugin?: (uri: string, position: number) => void
@@ -386,6 +389,9 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   chain,
   pluginMeta,
   selectedPluginUri,
+  reorderPreviewUri = null,
+  reorderTargetUri = null,
+  reorderPreviewDirection = null,
   onPluginSelect,
   onToggleBypass,
   onDeletePlugin,
@@ -625,7 +631,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
             return (
               <div key={`${plugin.uri}:${plugin.position}`} className="juce-grid-page__signal-plugin-slot">
                 <article
-                  className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''}`}
+                  className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''} ${reorderPreviewUri === plugin.uri ? `is-reorder-preview is-reorder-preview-${reorderPreviewDirection}` : ''} ${reorderTargetUri === plugin.uri ? 'is-reorder-target' : ''}`}
                   data-testid={`juce-grid-signal-plugin-card-${plugin.position}`}
                   aria-label={`${displayName}${plugin.bypassed ? ' bypassed' : ''}`}
                   aria-pressed={isSelected}

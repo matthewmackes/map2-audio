@@ -20,6 +20,7 @@ import {
   Book,
   Branch,
   Camera,
+  ArrowLeft,
   ArrowDown,
   ArrowRight,
   ChevronLeft,
@@ -340,12 +341,19 @@ type CompactTabId =
   | 'presets'
 
 type JuceGridMidiScope = 'all' | 'active-chain' | 'selected-plugin'
+type ReorderDirection = 'left' | 'right'
 type MidiRangeDraft = {
   min: string
   max: string
   sourceMin: string
   sourceMax: string
 }
+
+type ReorderPreviewState = {
+  pluginUri: string
+  targetUri: string
+  direction: ReorderDirection
+} | null
 
 // ============================================================================
 // Constants
@@ -658,6 +666,7 @@ export function JuceGridPage() {
   const [wetDryMixes, setWetDryMixes] = useState<Record<string, number>>({})
   const [draggedPluginUri, setDraggedPluginUri] = useState<string | null>(null)
   const [dragOverPluginUri, setDragOverPluginUri] = useState<string | null>(null)
+  const [reorderPreview, setReorderPreview] = useState<ReorderPreviewState>(null)
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
   const [showPerformModal, setShowPerformModal] = useState(false)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
@@ -1847,6 +1856,9 @@ export function JuceGridPage() {
       markSnapshotsDirty()
     },
     onError: (error) => pushToast(`Failed to reorder: ${error}`, 'error'),
+    onSettled: () => {
+      setReorderPreview(null)
+    },
   })
 
   const bypassMutation = useMutation({
@@ -2298,6 +2310,38 @@ export function JuceGridPage() {
     if (!currentChain) return
     reorderMutation.mutate({ chainId: currentChain.id, pluginUris })
   }, [currentChain, reorderMutation])
+
+  const moveSelectedPlugin = useCallback((direction: ReorderDirection) => {
+    if (!currentChain || !selectedPluginUri) {
+      return
+    }
+
+    const plugins = [...currentChain.plugins]
+    const currentIndex = plugins.findIndex((plugin) => plugin.uri === selectedPluginUri)
+    if (currentIndex < 0) {
+      return
+    }
+
+    const delta = direction === 'left' ? -1 : 1
+    const targetIndex = currentIndex + delta
+    if (targetIndex < 0 || targetIndex >= plugins.length) {
+      return
+    }
+
+    const targetPlugin = plugins[targetIndex]
+    const [movedPlugin] = plugins.splice(currentIndex, 1)
+    plugins.splice(targetIndex, 0, movedPlugin)
+
+    setReorderPreview({
+      pluginUri: movedPlugin.uri,
+      targetUri: targetPlugin.uri,
+      direction,
+    })
+    reorderMutation.mutate({
+      chainId: currentChain.id,
+      pluginUris: plugins.map((plugin) => plugin.uri),
+    })
+  }, [currentChain, reorderMutation, selectedPluginUri])
 
   const handleAddPlugin = useCallback(() => {
     setShowPluginBrowser(true)
@@ -3268,24 +3312,20 @@ export function JuceGridPage() {
         return
       }
 
-      // Left/Right = Navigate plugins
+      // Left/Right = Move selected plugin through the signal chain
       if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && currentChain) {
         e.preventDefault()
-        const plugins = currentChain.plugins
-        if (plugins.length === 0) return
-
-        const currentIdx = selectedPluginUri
-          ? plugins.findIndex(p => p.uri === selectedPluginUri)
-          : -1
-
-        let newIdx: number
-        if (e.key === 'ArrowLeft') {
-          newIdx = currentIdx <= 0 ? plugins.length - 1 : currentIdx - 1
-        } else {
-          newIdx = currentIdx >= plugins.length - 1 ? 0 : currentIdx + 1
+        if (!selectedPluginUri) {
+          const fallbackIndex = e.key === 'ArrowLeft' ? currentChain.plugins.length - 1 : 0
+          const fallbackPlugin = currentChain.plugins[fallbackIndex]
+          if (fallbackPlugin) {
+            setSelectedPluginUri(fallbackPlugin.uri)
+            openEffectModal()
+          }
+          return
         }
-        setSelectedPluginUri(plugins[newIdx].uri)
-        openEffectModal()
+
+        moveSelectedPlugin(e.key === 'ArrowLeft' ? 'left' : 'right')
         return
       }
 
@@ -3316,7 +3356,7 @@ export function JuceGridPage() {
     flowSlots, showSavePresetModal, showRenameChainModal, presetPendingDelete,
     showClearFlowsModal, snapshotsModalOpen, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen,
-    handleSavePreset, toggleFavorite, selectFlowIndex, openEffectModal,
+    handleSavePreset, toggleFavorite, selectFlowIndex, openEffectModal, moveSelectedPlugin,
   ])
 
   // ============================================================================
@@ -3592,6 +3632,9 @@ export function JuceGridPage() {
                 chain={flowChain || null}
                 pluginMeta={pluginMeta}
                 selectedPluginUri={isActive ? selectedPluginUri : null}
+                reorderPreviewUri={isActive ? reorderPreview?.pluginUri ?? null : null}
+                reorderTargetUri={isActive ? reorderPreview?.targetUri ?? null : null}
+                reorderPreviewDirection={isActive ? reorderPreview?.direction ?? null : null}
                 onPluginSelect={(uri) => {
                   selectFlowIndex(index)
                   handlePluginSelect(uri)
@@ -3645,6 +3688,13 @@ export function JuceGridPage() {
   }
 
   const SelectedPluginHeroIcon = getSelectedPluginHeroIcon(selectedPluginMeta, selectedPlugin)
+  const selectedPluginIndex = selectedPlugin && currentChain
+    ? currentChain.plugins.findIndex((plugin) => plugin.uri === selectedPlugin.uri)
+    : -1
+  const canMoveSelectedPluginLeft = selectedPluginIndex > 0
+  const canMoveSelectedPluginRight = selectedPluginIndex >= 0 && currentChain
+    ? selectedPluginIndex < currentChain.plugins.length - 1
+    : false
 
   if (showViewportBlockScreen) {
     return (
@@ -3912,6 +3962,24 @@ export function JuceGridPage() {
                 </div>
               </div>
               <div className="juce-grid-page__bottom-editor-actions">
+                <Button
+                  size="sm"
+                  kind="ghost"
+                  renderIcon={ArrowLeft}
+                  onClick={() => moveSelectedPlugin('left')}
+                  disabled={!canMoveSelectedPluginLeft || reorderMutation.isPending}
+                >
+                  Move left
+                </Button>
+                <Button
+                  size="sm"
+                  kind="ghost"
+                  renderIcon={ArrowRight}
+                  onClick={() => moveSelectedPlugin('right')}
+                  disabled={!canMoveSelectedPluginRight || reorderMutation.isPending}
+                >
+                  Move right
+                </Button>
                 <Button size="sm" kind={selectedPlugin.bypassed ? 'ghost' : 'secondary'} onClick={handleToggleSelectedBypass}>
                   {selectedPlugin.bypassed ? 'Enable block' : 'Bypass block'}
                 </Button>
