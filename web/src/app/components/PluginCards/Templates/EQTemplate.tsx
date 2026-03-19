@@ -1,21 +1,19 @@
 /**
- * EQTemplate Component
+ * EQTemplate — Carbon-compliant fallback for unknown EQ plugins
  *
- * Template for EQ plugins with frequency response visualization.
- * Adapts to any number of bands from plugin parameters.
+ * Wraps EQCategoryLayout, detecting bands from parameter names.
  */
 
-import { useMemo, useCallback, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import type { PluginCardProps } from '../types'
 import { getCategoryConfig } from '../types'
-import { PluginCardShell } from '../Base/PluginCardShell'
-import { ParameterSection } from '../Base/ParameterSection'
-import { ParameterRow } from '../Base/ParameterRow'
+import { EQCategoryLayout, type EQBandConfig } from '../Layouts/EQCategoryLayout'
+import type { AdvancedSection } from '../Base/CarbonCardShell'
+import { CarbonParameterSection } from '../Base/CarbonParameterSection'
 import { ParameterKnob } from '../../Controls/ParameterKnob'
-import { EQCurveDisplay, type EQBandData } from '../Visualizations/EQCurveDisplay'
+import type { ParamSlot } from '../Layouts/DynamicsCategoryLayout'
 import type { PluginParameter } from '../../../../map2/types'
 
-// Parameter patterns for EQ detection
 const FREQ_PATTERNS = ['freq', 'frequency', 'hz', 'fc', 'cutoff']
 const GAIN_PATTERNS = ['gain', 'level', 'db', 'boost', 'cut']
 const Q_PATTERNS = ['q', 'bw', 'bandwidth', 'resonance', 'width']
@@ -23,6 +21,31 @@ const LOW_PATTERNS = ['low', 'bass', 'lf']
 const MID_PATTERNS = ['mid', 'middle', 'mf']
 const HIGH_PATTERNS = ['high', 'treble', 'hf']
 const MASTER_PATTERNS = ['master', 'output', 'out', 'volume', 'level']
+
+function matchesPatterns(p: PluginParameter, patterns: string[]): boolean {
+  return patterns.some(pat =>
+    p.name.toLowerCase().includes(pat) || p.symbol.toLowerCase().includes(pat)
+  )
+}
+
+function toParamSlot(
+  param: PluginParameter,
+  parameterValues: Record<number, number>,
+  onParameterChange: (i: number, v: number) => void,
+  overrides?: Partial<ParamSlot>,
+): ParamSlot {
+  return {
+    label: overrides?.label ?? param.name,
+    value: parameterValues[param.index] ?? param.default,
+    min: param.min,
+    max: param.max,
+    defaultValue: param.default,
+    unit: overrides?.unit,
+    onChange: (v: number) => onParameterChange(param.index, v),
+    isLogarithmic: overrides?.isLogarithmic ?? param.is_log,
+    valueFormatter: overrides?.valueFormatter,
+  }
+}
 
 interface DetectedBand {
   name: string
@@ -32,109 +55,62 @@ interface DetectedBand {
   estimatedFreq: number
 }
 
-function detectEQBands(parameters: PluginParameter[]): DetectedBand[] {
+function detectEQBands(params: PluginParameter[]): DetectedBand[] {
   const bands: DetectedBand[] = []
 
-  // Check for simple 3-band EQ (Low/Mid/High)
-  const lowGain = parameters.find(p =>
-    LOW_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)) &&
-    GAIN_PATTERNS.some(pat => p.name.toLowerCase().includes(pat) || p.symbol.toLowerCase().includes(pat))
+  // Simple 3-band
+  const lowGain = params.find(p =>
+    matchesPatterns(p, LOW_PATTERNS) && matchesPatterns(p, GAIN_PATTERNS)
   )
-  const midGain = parameters.find(p =>
-    MID_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)) &&
-    GAIN_PATTERNS.some(pat => p.name.toLowerCase().includes(pat) || p.symbol.toLowerCase().includes(pat))
+  const midGain = params.find(p =>
+    matchesPatterns(p, MID_PATTERNS) && matchesPatterns(p, GAIN_PATTERNS)
   )
-  const highGain = parameters.find(p =>
-    HIGH_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)) &&
-    GAIN_PATTERNS.some(pat => p.name.toLowerCase().includes(pat) || p.symbol.toLowerCase().includes(pat))
+  const highGain = params.find(p =>
+    matchesPatterns(p, HIGH_PATTERNS) && matchesPatterns(p, GAIN_PATTERNS)
   )
 
   if (lowGain) {
-    const lowFreq = parameters.find(p =>
-      LOW_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)) &&
-      FREQ_PATTERNS.some(pat => p.name.toLowerCase().includes(pat))
+    const lowFreq = params.find(p =>
+      matchesPatterns(p, LOW_PATTERNS) && matchesPatterns(p, FREQ_PATTERNS)
     )
     bands.push({ name: 'Low', gainParam: lowGain, freqParam: lowFreq, estimatedFreq: 200 })
   }
-
   if (midGain) {
-    const midFreq = parameters.find(p =>
-      MID_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)) &&
-      FREQ_PATTERNS.some(pat => p.name.toLowerCase().includes(pat))
+    const midFreq = params.find(p =>
+      matchesPatterns(p, MID_PATTERNS) && matchesPatterns(p, FREQ_PATTERNS)
     )
     bands.push({ name: 'Mid', gainParam: midGain, freqParam: midFreq, estimatedFreq: 1000 })
   }
-
   if (highGain) {
-    const highFreq = parameters.find(p =>
-      HIGH_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)) &&
-      FREQ_PATTERNS.some(pat => p.name.toLowerCase().includes(pat))
+    const highFreq = params.find(p =>
+      matchesPatterns(p, HIGH_PATTERNS) && matchesPatterns(p, FREQ_PATTERNS)
     )
     bands.push({ name: 'High', gainParam: highGain, freqParam: highFreq, estimatedFreq: 4000 })
   }
 
-  // If no 3-band detected, look for numbered bands
+  // Numbered bands fallback
   if (bands.length === 0) {
-    // Look for patterns like "Band 1 Freq", "EQ1 Gain", etc.
-    const numberedParams = parameters.filter(p =>
+    const numberedParams = params.filter(p =>
       /\d+/.test(p.name) &&
-      (FREQ_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)) ||
-       GAIN_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)))
+      (matchesPatterns(p, FREQ_PATTERNS) || matchesPatterns(p, GAIN_PATTERNS))
     )
-
     const bandNumbers = new Set<number>()
     numberedParams.forEach(p => {
       const match = p.name.match(/(\d+)/)
       if (match) bandNumbers.add(parseInt(match[1]))
     })
-
     bandNumbers.forEach(num => {
-      const freqParam = parameters.find(p =>
-        p.name.includes(`${num}`) &&
-        FREQ_PATTERNS.some(pat => p.name.toLowerCase().includes(pat))
-      )
-      const gainParam = parameters.find(p =>
-        p.name.includes(`${num}`) &&
-        GAIN_PATTERNS.some(pat => p.name.toLowerCase().includes(pat))
-      )
-      const qParam = parameters.find(p =>
-        p.name.includes(`${num}`) &&
-        Q_PATTERNS.some(pat => p.name.toLowerCase().includes(pat))
-      )
-
-      if (gainParam || freqParam) {
-        const defaultFreq = freqParam ? freqParam.default : 200 * Math.pow(3, num - 1)
+      const freqP = params.find(p => p.name.includes(`${num}`) && matchesPatterns(p, FREQ_PATTERNS))
+      const gainP = params.find(p => p.name.includes(`${num}`) && matchesPatterns(p, GAIN_PATTERNS))
+      const qP = params.find(p => p.name.includes(`${num}`) && matchesPatterns(p, Q_PATTERNS))
+      if (gainP || freqP) {
         bands.push({
           name: `Band ${num}`,
-          freqParam,
-          gainParam,
-          qParam,
-          estimatedFreq: defaultFreq
+          freqParam: freqP, gainParam: gainP, qParam: qP,
+          estimatedFreq: freqP?.default ?? 200 * Math.pow(3, num - 1),
         })
       }
     })
-  }
-
-  // If still nothing, look for any frequency/gain pairs
-  if (bands.length === 0) {
-    const freqParams = parameters.filter(p =>
-      FREQ_PATTERNS.some(pat => p.name.toLowerCase().includes(pat) || p.symbol.toLowerCase().includes(pat))
-    )
-    const gainParams = parameters.filter(p =>
-      GAIN_PATTERNS.some(pat => p.name.toLowerCase().includes(pat)) &&
-      !MASTER_PATTERNS.some(pat => p.name.toLowerCase().includes(pat))
-    )
-
-    // Match by position or just use gains
-    const numBands = Math.max(freqParams.length, gainParams.length)
-    for (let i = 0; i < numBands; i++) {
-      bands.push({
-        name: `Band ${i + 1}`,
-        freqParam: freqParams[i],
-        gainParam: gainParams[i],
-        estimatedFreq: freqParams[i]?.default || 200 * Math.pow(3, i)
-      })
-    }
   }
 
   return bands.sort((a, b) => a.estimatedFreq - b.estimatedFreq)
@@ -144,251 +120,100 @@ export function EQTemplate({
   plugin,
   parameterValues,
   onParameterChange,
-  onParameterChangeEnd,
   accentColor: providedAccent,
-  disabled = false,
   compact = false,
 }: PluginCardProps) {
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
+  const params = plugin.parameters || []
 
-  const [selectedBand, setSelectedBand] = useState<number | null>(null)
+  const detectedBands = useMemo(() => detectEQBands(params), [params])
 
-  // Detect EQ bands from parameters
-  const detectedBands = useMemo(() =>
-    detectEQBands(plugin.parameters || []),
-    [plugin.parameters]
-  )
+  const masterParam = params.find(p => matchesPatterns(p, MASTER_PATTERNS))
 
-  // Find master/output parameter
-  const masterParam = (plugin.parameters || []).find(p =>
-    MASTER_PATTERNS.some(pat => p.name.toLowerCase().includes(pat))
-  )
-
-  // Get used parameter indices
-  const usedParamIndices = new Set<number>()
-  detectedBands.forEach(band => {
-    if (band.freqParam) usedParamIndices.add(band.freqParam.index)
-    if (band.gainParam) usedParamIndices.add(band.gainParam.index)
-    if (band.qParam) usedParamIndices.add(band.qParam.index)
+  const usedIndices = new Set<number>()
+  detectedBands.forEach(b => {
+    if (b.freqParam) usedIndices.add(b.freqParam.index)
+    if (b.gainParam) usedIndices.add(b.gainParam.index)
+    if (b.qParam) usedIndices.add(b.qParam.index)
   })
-  if (masterParam) usedParamIndices.add(masterParam.index)
+  if (masterParam) usedIndices.add(masterParam.index)
+  const otherParams = params.filter(p => !usedIndices.has(p.index))
 
-  const otherParams = (plugin.parameters || []).filter(p => !usedParamIndices.has(p.index))
-
-  // Build EQ band data for visualization
-  const eqBandData: EQBandData[] = useMemo(() => {
-    return detectedBands.map(band => {
-      const freq = band.freqParam
-        ? (parameterValues[band.freqParam.index] ?? band.freqParam.default)
-        : band.estimatedFreq
-      const gain = band.gainParam
-        ? (parameterValues[band.gainParam.index] ?? band.gainParam.default)
-        : 0
-      const q = band.qParam
-        ? (parameterValues[band.qParam.index] ?? band.qParam.default)
-        : 1
-
-      return { frequency: freq, gain, q, type: 'peak' as const, enabled: true }
-    })
-  }, [detectedBands, parameterValues])
-
-  // Parameter change handler
-  const handleChange = useCallback((index: number) => (value: number) => {
-    onParameterChange(index, value)
-  }, [onParameterChange])
-
-  // Value formatters
-  const formatFreq = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`
+  const formatFreq = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`)
   const formatDb = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`
   const formatQ = (v: number) => v.toFixed(2)
 
-  // Visualization
-  const visualization = detectedBands.length > 0 ? (
-    <EQCurveDisplay
-      bands={eqBandData}
-      outputGain={masterParam ? (parameterValues[masterParam.index] ?? masterParam.default) : 0}
-      width={compact ? 260 : 320}
-      height={compact ? 90 : 120}
-      accentColor={accentColor}
-      interactive={true}
-      selectedBand={selectedBand}
-      onBandSelect={setSelectedBand}
-    />
-  ) : null
+  // Build EQBandConfig[] for the layout
+  const [enabledBands, setEnabledBands] = useState<Record<number, boolean>>(() =>
+    Object.fromEntries(detectedBands.map((_, i) => [i, true]))
+  )
+
+  const bandConfigs: EQBandConfig[] = useMemo(() =>
+    detectedBands.map((band, i) => ({
+      id: band.name,
+      enabled: enabledBands[i] ?? true,
+      onToggleEnabled: () => setEnabledBands(prev => ({ ...prev, [i]: !prev[i] })),
+      frequency: band.freqParam
+        ? toParamSlot(band.freqParam, parameterValues, onParameterChange, {
+            label: 'Freq', unit: 'Hz', isLogarithmic: true, valueFormatter: formatFreq,
+          })
+        : { label: 'Freq', value: band.estimatedFreq, min: 20, max: 20000, defaultValue: band.estimatedFreq, unit: 'Hz', onChange: () => {} },
+      gain: band.gainParam
+        ? toParamSlot(band.gainParam, parameterValues, onParameterChange, {
+            label: 'Gain', unit: 'dB', valueFormatter: formatDb,
+          })
+        : { label: 'Gain', value: 0, min: -12, max: 12, defaultValue: 0, unit: 'dB', onChange: () => {} },
+      q: band.qParam
+        ? toParamSlot(band.qParam, parameterValues, onParameterChange, {
+            label: 'Q', isLogarithmic: true, valueFormatter: formatQ,
+          })
+        : { label: 'Q', value: 1, min: 0.1, max: 10, defaultValue: 1, onChange: () => {} },
+    })),
+    [detectedBands, enabledBands, parameterValues, onParameterChange]
+  )
+
+  const advancedSections: AdvancedSection[] = useMemo(() => {
+    if (otherParams.length === 0) return []
+    return [{
+      id: 'other',
+      title: 'More',
+      children: (
+        <CarbonParameterSection>
+          {otherParams.map(p => (
+            <ParameterKnob
+              key={p.index}
+              label={p.name}
+              value={parameterValues[p.index] ?? p.default}
+              min={p.min}
+              max={p.max}
+              defaultValue={p.default}
+              onChange={(v) => onParameterChange(p.index, v)}
+              accentColor={accentColor}
+              isLogarithmic={p.is_log}
+              size="small"
+            />
+          ))}
+        </CarbonParameterSection>
+      ),
+    }]
+  }, [otherParams, parameterValues, onParameterChange, accentColor])
 
   return (
-    <PluginCardShell
+    <EQCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
-      bypassed={plugin.bypassed}
-      visualization={visualization}
       compact={compact}
-    >
-      <div className="eq-parameters">
-        {/* Band Controls */}
-        {detectedBands.length > 0 && (
-          <ParameterSection title="Bands" accentColor={accentColor}>
-            <div className="eq-bands-grid">
-              {detectedBands.map((band, index) => (
-                <div
-                  key={index}
-                  className={`eq-band-control ${selectedBand === index ? 'selected' : ''}`}
-                  onClick={() => setSelectedBand(selectedBand === index ? null : index)}
-                >
-                  <div className="eq-band-label">{band.name}</div>
-                  <ParameterRow gap={8}>
-                    {band.freqParam && (
-                      <ParameterKnob
-                        label="Freq"
-                        value={parameterValues[band.freqParam.index] ?? band.freqParam.default}
-                        min={band.freqParam.min}
-                        max={band.freqParam.max}
-                        defaultValue={band.freqParam.default}
-                        unit="Hz"
-                        onChange={handleChange(band.freqParam.index)}
-                        onChangeEnd={onParameterChangeEnd}
-                        accentColor={accentColor}
-                        disabled={disabled}
-                        isLogarithmic={band.freqParam.is_log || band.freqParam.max > 1000}
-                        valueFormatter={formatFreq}
-                        size="small"
-                      />
-                    )}
-                    {band.gainParam && (
-                      <ParameterKnob
-                        label="Gain"
-                        value={parameterValues[band.gainParam.index] ?? band.gainParam.default}
-                        min={band.gainParam.min}
-                        max={band.gainParam.max}
-                        defaultValue={band.gainParam.default}
-                        unit="dB"
-                        onChange={handleChange(band.gainParam.index)}
-                        onChangeEnd={onParameterChangeEnd}
-                        accentColor={accentColor}
-                        disabled={disabled}
-                        valueFormatter={formatDb}
-                        size="small"
-                      />
-                    )}
-                    {band.qParam && (
-                      <ParameterKnob
-                        label="Q"
-                        value={parameterValues[band.qParam.index] ?? band.qParam.default}
-                        min={band.qParam.min}
-                        max={band.qParam.max}
-                        defaultValue={band.qParam.default}
-                        onChange={handleChange(band.qParam.index)}
-                        onChangeEnd={onParameterChangeEnd}
-                        accentColor={accentColor}
-                        disabled={disabled}
-                        isLogarithmic
-                        valueFormatter={formatQ}
-                        size="small"
-                      />
-                    )}
-                  </ParameterRow>
-                </div>
-              ))}
-            </div>
-          </ParameterSection>
-        )}
-
-        {/* Master Output */}
-        {masterParam && (
-          <ParameterSection title="Output" accentColor={accentColor}>
-            <ParameterRow justify="center">
-              <ParameterKnob
-                label="Master"
-                value={parameterValues[masterParam.index] ?? masterParam.default}
-                min={masterParam.min}
-                max={masterParam.max}
-                defaultValue={masterParam.default}
-                unit="dB"
-                onChange={handleChange(masterParam.index)}
-                onChangeEnd={onParameterChangeEnd}
-                accentColor={accentColor}
-                disabled={disabled}
-                valueFormatter={formatDb}
-                size={compact ? 'small' : 'medium'}
-              />
-            </ParameterRow>
-          </ParameterSection>
-        )}
-
-        {/* Other Parameters */}
-        {otherParams.length > 0 && (
-          <ParameterSection title="More" accentColor={accentColor} collapsible defaultCollapsed>
-            <ParameterRow>
-              {otherParams.map(param => (
-                <ParameterKnob
-                  key={param.index}
-                  label={param.name}
-                  value={parameterValues[param.index] ?? param.default}
-                  min={param.min}
-                  max={param.max}
-                  defaultValue={param.default}
-                  onChange={handleChange(param.index)}
-                  onChangeEnd={onParameterChangeEnd}
-                  accentColor={accentColor}
-                  disabled={disabled}
-                  isLogarithmic={param.is_log}
-                  size="small"
-                />
-              ))}
-            </ParameterRow>
-          </ParameterSection>
-        )}
-      </div>
-
-      <style>{`
-        .eq-parameters {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .eq-bands-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-          gap: 12px;
-        }
-
-        .eq-band-control {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          padding: 8px;
-          background: rgba(0, 0, 0, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .eq-band-control:hover {
-          background: rgba(0, 0, 0, 0.3);
-        }
-
-        .eq-band-control.selected {
-          border-color: ${accentColor}60;
-          background: ${accentColor}10;
-        }
-
-        .eq-band-label {
-          font-size: 10px;
-          font-weight: 600;
-          color: #888;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .eq-band-control.selected .eq-band-label {
-          color: ${accentColor};
-        }
-      `}</style>
-    </PluginCardShell>
+      bypassed={plugin.bypassed}
+      bands={bandConfigs}
+      outputGain={masterParam
+        ? toParamSlot(masterParam, parameterValues, onParameterChange, {
+            label: 'Master', unit: 'dB', valueFormatter: formatDb,
+          })
+        : undefined
+      }
+      advancedSections={advancedSections}
+    />
   )
 }
 

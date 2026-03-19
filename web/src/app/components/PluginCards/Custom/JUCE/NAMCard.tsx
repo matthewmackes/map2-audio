@@ -16,11 +16,9 @@
 
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
+import { AmplifierCategoryLayout, type ParamSlot } from '../../Layouts/AmplifierCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import type { PluginCardProps } from '../../types'
 
 // Plugin URI for MIDI mappings
@@ -251,69 +249,87 @@ function NAMCardBase({
     </div>
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={status?.bypass ?? false}
-      onBypassToggle={() => setBypass(!status?.bypass)}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={visualization}
-      compact={compact}
-    >
-      {/* Gain Controls */}
-      <ParameterSection title="Levels" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Input"
-            value={status?.inputGain ?? 0}
-            min={-12}
-            max={12}
-            defaultValue={0}
-            step={0.1}
-            unit="dB"
-            onChange={setInputGain}
-            valueFormatter={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`}
-            accentColor={accentColor}
-            size="medium"
-          />
-          <ParameterKnob
-            label="Output"
-            value={status?.outputGain ?? 0}
-            min={-12}
-            max={12}
-            defaultValue={0}
-            step={0.1}
-            unit="dB"
-            onChange={setOutputGain}
-            valueFormatter={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
+  // Map parameters to AmplifierCategoryLayout slots
+  const inputGainSlot: ParamSlot = {
+    label: 'Input',
+    value: status?.inputGain ?? 0,
+    min: -12,
+    max: 12,
+    defaultValue: 0,
+    step: 0.1,
+    unit: 'dB',
+    onChange: setInputGain,
+    valueFormatter: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`,
+  }
 
-      {/* Options */}
-      <ParameterSection title="Options" accentColor={accentColor}>
-        <ParameterRow justify="center">
+  const outputGainSlot: ParamSlot = {
+    label: 'Output',
+    value: status?.outputGain ?? 0,
+    min: -12,
+    max: 12,
+    defaultValue: 0,
+    step: 0.1,
+    unit: 'dB',
+    onChange: setOutputGain,
+    valueFormatter: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`,
+  }
+
+  // Model browser in advanced sections
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'model-browser',
+      title: 'Model Browser',
+      defaultOpen: true,
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button
+            onClick={() => setShowBrowser(true)}
+            className="carbon-toggle-btn active"
+            style={{ background: accentColor, borderColor: accentColor }}
+          >
+            Browse Models ({models.length})
+          </button>
+          {status?.activeModel && (
+            <div style={{ fontSize: '11px', color: '#c6c6c6' }}>
+              Active: <strong>{status.activeModel}</strong>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'options',
+      title: 'Options',
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <button
+            className={`carbon-toggle-btn ${status?.normalize ? 'active' : ''}`}
             onClick={() => setNormalize(!status?.normalize)}
-            style={{
-              padding: '8px 16px',
-              background: status?.normalize ? accentColor : '#333',
-              border: `1px solid ${status?.normalize ? accentColor : '#555'}`,
-              borderRadius: '4px',
-              color: status?.normalize ? '#000' : '#888',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-            }}
+            style={status?.normalize ? { background: accentColor, borderColor: accentColor } : undefined}
           >
             Normalize Output
           </button>
-        </ParameterRow>
-      </ParameterSection>
+        </div>
+      ),
+    },
+  ]
+
+  return (
+    <>
+      <AmplifierCategoryLayout
+        plugin={plugin}
+        accentColor={accentColor}
+        compact={compact}
+        bypassed={status?.bypass ?? false}
+        onBypassToggle={() => setBypass(!status?.bypass)}
+        onOpenMidiMappings={onOpenMidiMappings}
+        visualization={visualization}
+        inputGain={inputGainSlot}
+        outputGain={outputGainSlot}
+        inputLevel={status?.inputLevel ?? 0}
+        outputLevel={status?.outputLevel ?? 0}
+        advancedSections={advancedSections}
+      />
 
       {/* Browser Modal */}
       {showBrowser && (
@@ -418,7 +434,7 @@ function NAMCardBase({
           </div>
         </div>
       )}
-    </PluginCardShell>
+    </>
   )
 }
 

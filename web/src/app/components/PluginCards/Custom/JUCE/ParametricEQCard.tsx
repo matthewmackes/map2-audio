@@ -1,32 +1,23 @@
 /**
- * ParametricEQCard - 8-band parametric EQ from JUCE FilterProcessor
+ * ParametricEQCard - Carbon-compliant JUCE 8-band Parametric EQ
  *
- * Per-band parameters:
- * - type: FilterType (Peak, LowShelf, HighShelf, LowPass, HighPass, BandPass, Notch, AllPass)
- * - frequency: Hz (20 - 20000)
- * - gain: dB (-24 to +24)
- * - q: Q factor (0.1 to 10)
- * - enabled: boolean
- *
- * Global:
- * - outputGain: dB (-12 to +12)
- * - bypass: boolean
+ * Uses EQCategoryLayout for AXE-FX Edit structural parity.
+ * All parameters exposed: 8 bands (freq, gain, Q, type, enabled) + output gain.
  */
 
 import { useFilters, type FilterType } from '../../../../hooks/useFilters'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { EQCategoryLayout, type EQBandConfig } from '../../Layouts/EQCategoryLayout'
 import { EQCurveDisplay } from '../../Visualizations/EQCurveDisplay'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 
-// Plugin URI for MIDI mappings
 const EQ_URI = 'map2://juce/eq/parametric'
 
-// Parameter definitions for MIDI mapping dialog
-// Output gain + per-band frequency, gain, Q (8 bands × 3 params = 24 + 1 = 25 params)
+const PARAM = {
+  OUTPUT_GAIN: 0,
+  // Bands: index 1..24 (band * 3 + offset)
+} as const
+
 const EQ_PARAMS: PluginParamDef[] = [
   { index: 0, name: 'Output Gain', symbol: 'outputGain' },
   // Band 1
@@ -90,7 +81,6 @@ function ParametricEQCardBase({
     bands,
     outputGain,
     bypass,
-    frequencyResponse,
     setBandFrequency,
     setBandGain,
     setBandQ,
@@ -98,7 +88,6 @@ function ParametricEQCardBase({
     setBandEnabled,
     setOutputGain,
     setBypass,
-    isLoading,
   } = useFilters()
 
   const visualization = (
@@ -117,169 +106,68 @@ function ParametricEQCardBase({
     />
   )
 
+  const eqBands: EQBandConfig[] = bands.map((band, index) => {
+    const baseIndex = index * 3 + 1
+    return {
+      id: `${index + 1}`,
+      enabled: band.enabled,
+      onToggleEnabled: () => setBandEnabled(index, !band.enabled),
+      frequency: {
+        label: 'Freq',
+        value: band.frequency,
+        min: 20, max: 20000, defaultValue: 1000, step: 1,
+        onChange: (v: number) => setBandFrequency(index, v),
+        isLogarithmic: true,
+        valueFormatter: (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`),
+        midi: { pluginUri: EQ_URI, paramIndex: baseIndex },
+      },
+      gain: {
+        label: 'Gain',
+        value: band.gain,
+        min: -24, max: 24, defaultValue: 0, step: 0.1,
+        unit: 'dB',
+        onChange: (v: number) => setBandGain(index, v),
+        valueFormatter: (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`,
+        midi: { pluginUri: EQ_URI, paramIndex: baseIndex + 1 },
+      },
+      q: {
+        label: 'Q',
+        value: band.q,
+        min: 0.1, max: 10, defaultValue: 1, step: 0.01,
+        onChange: (v: number) => setBandQ(index, v),
+        isLogarithmic: true,
+        midi: { pluginUri: EQ_URI, paramIndex: baseIndex + 2 },
+      },
+      type: {
+        value: band.type,
+        options: FILTER_TYPES,
+        onChange: (v: string) => setBandType(index, v as FilterType),
+      },
+    }
+  })
+
   return (
-    <PluginCardShell
+    <EQCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
+      compact={compact}
       bypassed={bypass}
       onBypassToggle={() => setBypass(!bypass)}
       onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
-      compact={compact}
-    >
-      {/* Band Controls - Scrollable container for 8 bands */}
-      <ParameterSection title="Bands" accentColor={accentColor}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: compact ? 'repeat(4, 1fr)' : 'repeat(8, 1fr)',
-            gap: '8px',
-            padding: '4px',
-          }}
-        >
-          {bands.map((band, index) => (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '8px 4px',
-                background: band.enabled ? '#1a1a1a' : '#111',
-                borderRadius: '6px',
-                border: `1px solid ${band.enabled ? accentColor + '40' : '#333'}`,
-                opacity: band.enabled ? 1 : 0.5,
-                transition: 'all 0.2s',
-              }}
-            >
-              {/* Band Header */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  width: '100%',
-                  marginBottom: '8px',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    color: band.enabled ? accentColor : '#666',
-                  }}
-                >
-                  {index + 1}
-                </span>
-                <button
-                  onClick={() => setBandEnabled(index, !band.enabled)}
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: band.enabled ? accentColor : '#444',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                />
-              </div>
-
-              {/* Frequency Knob */}
-              <ParameterKnob
-                label="Freq"
-                value={band.frequency}
-                min={20}
-                max={20000}
-                onChange={(v) => setBandFrequency(index, v)}
-                isLogarithmic
-                valueFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`)}
-                size="small"
-                accentColor={accentColor}
-                disabled={!band.enabled}
-              />
-
-              {/* Gain Knob */}
-              <ParameterKnob
-                label="Gain"
-                value={band.gain}
-                min={-24}
-                max={24}
-                defaultValue={0}
-                onChange={(v) => setBandGain(index, v)}
-                valueFormatter={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`}
-                unit="dB"
-                size="small"
-                accentColor={accentColor}
-                disabled={!band.enabled}
-              />
-
-              {/* Q Knob */}
-              <ParameterKnob
-                label="Q"
-                value={band.q}
-                min={0.1}
-                max={10}
-                defaultValue={1}
-                onChange={(v) => setBandQ(index, v)}
-                isLogarithmic
-                size="small"
-                accentColor={accentColor}
-                disabled={!band.enabled}
-              />
-
-              {/* Filter Type Select */}
-              <select
-                value={band.type}
-                onChange={(e) => setBandType(index, e.target.value as FilterType)}
-                disabled={!band.enabled}
-                style={{
-                  width: '100%',
-                  marginTop: '4px',
-                  padding: '4px 2px',
-                  fontSize: '9px',
-                  background: '#222',
-                  border: '1px solid #444',
-                  borderRadius: '3px',
-                  color: band.enabled ? '#fff' : '#666',
-                  cursor: band.enabled ? 'pointer' : 'default',
-                }}
-              >
-                {FILTER_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {FILTER_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
-      </ParameterSection>
-
-      {/* Output Section */}
-      <ParameterSection title="Output" accentColor={accentColor}>
-        <ParameterRow justify="center">
-          <ParameterKnob
-            label="Output Gain"
-            value={outputGain}
-            min={-12}
-            max={12}
-            defaultValue={0}
-            step={0.1}
-            unit="dB"
-            onChange={setOutputGain}
-            valueFormatter={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-    </PluginCardShell>
+      bands={eqBands}
+      outputGain={{
+        label: 'Output Gain',
+        value: outputGain,
+        min: -12, max: 12, defaultValue: 0, step: 0.1,
+        unit: 'dB',
+        onChange: setOutputGain,
+        valueFormatter: (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`,
+        midi: { pluginUri: EQ_URI, paramIndex: PARAM.OUTPUT_GAIN },
+      }}
+    />
   )
 }
 
-// Export base component for testing
 export { ParametricEQCardBase as ParametricEQCard }
-
-// Export wrapped component with MIDI dialog
 export default withMidiDialog(ParametricEQCardBase, EQ_URI, EQ_PARAMS)

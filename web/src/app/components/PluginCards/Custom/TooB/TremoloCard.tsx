@@ -1,22 +1,14 @@
 /**
  * TremoloCard - TooB Tremolo
  *
- * Classic amplitude modulation tremolo effect.
- *
- * Parameters:
- * - rate: LFO rate
- * - depth: Modulation depth
- * - waveform: LFO waveform shape
+ * Uses ModulationCategoryLayout for Carbon-compliant structure.
+ * Parameters: rate, depth, waveform.
  */
 
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ModulationCategoryLayout } from '../../Layouts/ModulationCategoryLayout'
 import { LFOWaveform } from '../../Visualizations/LFOWaveform'
 import type { PluginCardProps } from '../../types'
 
-// Parameter indices for Tremolo
 const PARAM_MAP = {
   rate: 0,
   depth: 1,
@@ -25,7 +17,7 @@ const PARAM_MAP = {
 
 const WAVEFORM_OPTIONS = ['sine', 'triangle', 'square', 'saw'] as const
 
-export function TremoloCard({
+function TremoloCardBase({
   plugin,
   parameterValues,
   onParameterChange,
@@ -54,76 +46,30 @@ export function TremoloCard({
   )
 
   return (
-    <PluginCardShell
+    <ModulationCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
+      compact={compact}
       bypassed={plugin.bypassed}
       visualization={visualization}
-      compact={compact}
-    >
-      {/* Tremolo Controls */}
-      <ParameterSection title="Tremolo" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Rate"
-            value={getValue('rate', 4)}
-            min={0.5}
-            max={20}
-            defaultValue={4}
-            step={0.1}
-            unit="Hz"
-            onChange={(v) => setValue('rate', v)}
-            isLogarithmic
-            accentColor={accentColor}
-            size="large"
-          />
-          <ParameterKnob
-            label="Depth"
-            value={getValue('depth', 50)}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => setValue('depth', v)}
-            accentColor={accentColor}
-            size="large"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Waveform Selection */}
-      <ParameterSection title="Waveform" accentColor={accentColor}>
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            justifyContent: 'center',
-            padding: '8px 0',
-          }}
-        >
-          {WAVEFORM_OPTIONS.map((wf, idx) => (
-            <button
-              key={wf}
-              onClick={() => setValue('waveform', idx)}
-              style={{
-                padding: '8px 12px',
-                background: waveformIndex === idx ? accentColor : '#333',
-                border: `1px solid ${waveformIndex === idx ? accentColor : '#555'}`,
-                borderRadius: '4px',
-                color: waveformIndex === idx ? '#000' : '#888',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-              }}
-            >
-              {wf}
-            </button>
-          ))}
-        </div>
-      </ParameterSection>
-    </PluginCardShell>
+      rate={{
+        label: 'Rate', value: getValue('rate', 4),
+        min: 0.5, max: 20, defaultValue: 4, step: 0.1, unit: 'Hz',
+        onChange: (v) => setValue('rate', v), isLogarithmic: true,
+      }}
+      depth={{
+        label: 'Depth', value: getValue('depth', 50),
+        min: 0, max: 100, defaultValue: 50, unit: '%',
+        onChange: (v) => setValue('depth', v),
+      }}
+      waveform={{
+        value: waveformName,
+        options: [...WAVEFORM_OPTIONS],
+        onChange: (v) => setValue('waveform', WAVEFORM_OPTIONS.indexOf(v as typeof WAVEFORM_OPTIONS[number])),
+      }}
+    />
   )
 }
 
-export default TremoloCard
+export { TremoloCardBase as TremoloCard }
+export default TremoloCardBase

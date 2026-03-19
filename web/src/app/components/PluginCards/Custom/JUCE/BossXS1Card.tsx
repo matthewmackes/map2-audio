@@ -6,18 +6,16 @@
  */
 
 import { useState, useCallback } from 'react'
-import { ChevronDown, Flow, Music, SettingsAdjust } from '@carbon/icons-react'
+import { Flow, Music, SettingsAdjust } from '@carbon/icons-react'
 import { useBossXS1, BOSS_XS1_PRESETS } from '../../../../hooks/useModulation'
-import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
+import { PitchCategoryLayout, type ParamSlot } from '../../Layouts/PitchCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { NumberInput } from '../../../Controls/NumberInput'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import { formatSemitones, formatPitch, formatDetune, formatShift } from '../../utils/formatters'
 import { dbToNormalized } from '../../utils/metering'
-import './BossXS1Card.css'
 
 // Plugin URI for MIDI mappings
 const BOSS_XS1_URI = 'map2://juce/pitch/boss-xs1'
@@ -121,179 +119,66 @@ function BossXS1CardBase({
     </div>
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={parameters.bypass}
-      onBypassToggle={() => setBypass(!parameters.bypass)}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={visualization}
-      compact={compact}
-      customHeader={
-        <div className="boss-card-header">
-          <span className="boss-card-title">POLY XS-1</span>
-          <span className="boss-subtitle">Polyphonic Pitch Shifter</span>
-        </div>
-      }
-    >
-      {/* Preset Selector */}
-      <div className="boss-preset-section">
-        <button
-          className="boss-preset-button"
-          onClick={() => setShowPresetBrowser(!showPresetBrowser)}
-          style={{ '--accent': accentColor } as React.CSSProperties}
-        >
-          <Music size={14} />
-          <span className="boss-preset-name">{currentPreset.name}</span>
-          <ChevronDown size={14} className={showPresetBrowser ? 'rotated' : ''} />
-        </button>
+  // ParamSlots - conditional on mode
+  const semitonesSlot: ParamSlot | undefined = !parameters.detuneMode ? {
+    label: 'Shift',
+    value: parameters.shiftAmount,
+    min: -7,
+    max: 7,
+    defaultValue: 0,
+    unit: 'st',
+    onChange: setShiftAmount,
+    valueFormatter: formatShift,
+  } : undefined
 
-        {/* Preset Browser Dropdown */}
-        {showPresetBrowser && (
-          <div className="boss-preset-browser">
-            {/* Manual */}
-            <button
-              className={`boss-preset-item ${parameters.preset === 0 ? 'active' : ''}`}
-              onClick={() => { setPreset(0); setShowPresetBrowser(false) }}
-            >
-              <span className="boss-preset-item-name">Manual</span>
-              <span className="boss-preset-item-desc">Custom settings</span>
-            </button>
+  const detuneSlot: ParamSlot | undefined = parameters.detuneMode ? {
+    label: 'Detune',
+    value: parameters.detuneAmount,
+    min: -20,
+    max: 20,
+    defaultValue: 20,
+    unit: 'c',
+    onChange: setDetuneAmount,
+    valueFormatter: formatDetune,
+  } : undefined
 
-            {/* Categorized presets */}
-            {Object.entries(PRESET_CATEGORIES).map(([catKey, category]) => (
-              <div key={catKey}>
-                <div className="boss-category-header">
-                  <span>{category.label}</span>
-                </div>
-                {category.presets.map((presetId) => {
-                  const presetIndex = presets.findIndex(p => p.id === presetId)
-                  const preset = presets[presetIndex]
-                  if (!preset) return null
-                  return (
-                    <button
-                      key={presetId}
-                      className={`boss-preset-item ${parameters.preset === presetIndex ? 'active' : ''}`}
-                      onClick={() => { setPreset(presetIndex); setShowPresetBrowser(false) }}
-                      style={{ '--accent': accentColor } as React.CSSProperties}
-                    >
-                      <span className="boss-preset-item-name">{preset.name}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+  const glideSlot: ParamSlot = {
+    label: 'Glide',
+    value: parameters.glide,
+    min: 0,
+    max: 100,
+    defaultValue: 0,
+    unit: 'ms',
+    onChange: setGlide,
+  }
 
-      {/* Mode Toggle */}
-      <div className="boss-mode-toggle">
-        <button
-          className={`boss-mode-btn ${!parameters.detuneMode ? 'active' : ''}`}
-          onClick={() => setDetuneMode(false)}
-          style={{ '--accent': accentColor } as React.CSSProperties}
-        >
-          <SettingsAdjust size={14} />
-          <span>Shift</span>
-        </button>
-        <button
-          className={`boss-mode-btn ${parameters.detuneMode ? 'active' : ''}`}
-          onClick={() => setDetuneMode(true)}
-          style={{ '--accent': accentColor } as React.CSSProperties}
-        >
-          <Music size={14} />
-          <span>Detune</span>
-        </button>
-      </div>
+  const feedbackSlot: ParamSlot = {
+    label: 'Feedback',
+    value: parameters.feedback * 100,
+    min: 0,
+    max: 70,
+    defaultValue: 0,
+    unit: '%',
+    onChange: (v: number) => setFeedback(v / 100),
+  }
 
-      {/* Pitch Controls */}
-      <ParameterSection title={parameters.detuneMode ? 'Detune' : 'Pitch Shift'} accentColor={accentColor}>
-        <ParameterRow>
-          {parameters.detuneMode ? (
-            <ParameterKnob
-              label="Detune"
-              value={parameters.detuneAmount}
-              min={-20}
-              max={20}
-              defaultValue={20}
-              unit="c"
-              onChange={setDetuneAmount}
-              valueFormatter={formatDetune}
-              accentColor={accentColor}
-              size="large"
-            />
-          ) : (
-            <ParameterKnob
-              label="Shift"
-              value={parameters.shiftAmount}
-              min={-7}
-              max={7}
-              defaultValue={0}
-              unit="st"
-              onChange={setShiftAmount}
-              valueFormatter={formatShift}
-              accentColor={accentColor}
-              size="large"
-            />
-          )}
-          <ParameterKnob
-            label="Balance"
-            value={parameters.balance}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={setBalance}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
+  const mixSlot: ParamSlot = {
+    label: 'Balance',
+    value: parameters.balance,
+    min: 0,
+    max: 100,
+    defaultValue: 50,
+    unit: '%',
+    onChange: setBalance,
+  }
 
-        {/* Quick shift buttons */}
-        {!parameters.detuneMode && (
-          <div className="boss-quick-shifts">
-            <button onClick={() => setShiftAmount(-2)} title="Drop D">-2</button>
-            <button onClick={() => setShiftAmount(-1)} title="Half step down">-1</button>
-            <button onClick={() => setShiftAmount(0)} title="No shift">0</button>
-            <button onClick={() => setShiftAmount(2)} title="Capo 2">+2</button>
-            <button onClick={() => setShiftAmount(5)} title="Capo 5">+5</button>
-            <button onClick={() => setShiftAmount(7)} title="Fifth">+7</button>
-          </div>
-        )}
-      </ParameterSection>
-
-      {/* Advanced Controls */}
-      <ParameterSection title="Advanced" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Glide"
-            value={parameters.glide}
-            min={0}
-            max={100}
-            defaultValue={0}
-            unit="ms"
-            onChange={setGlide}
-            accentColor={accentColor}
-            size="small"
-          />
-          <ParameterKnob
-            label="Feedback"
-            value={parameters.feedback * 100}
-            min={0}
-            max={70}
-            defaultValue={0}
-            unit="%"
-            onChange={(v) => setFeedback(v / 100)}
-            accentColor={accentColor}
-            size="small"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Expression Pedal */}
-      <ParameterSection title="Expression Pedal" accentColor={accentColor}>
+  // Expression pedal in advanced section
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'expression-pedal',
+      title: 'Expression Pedal',
+      defaultOpen: false,
+      children: (
         <div className="boss-pedal-section">
           <button
             className={`boss-pedal-toggle ${parameters.pedalEnabled ? 'active' : ''}`}
@@ -354,19 +239,115 @@ function BossXS1CardBase({
             </div>
           )}
         </div>
-      </ParameterSection>
+      ),
+    },
+  ]
 
-      {/* Footer */}
-      <div className="boss-footer">
-        <div className="boss-metering">
-          <span>IN: {metering.inputLevel.toFixed(1)} dB</span>
-          <span>OUT: {metering.outputLevel.toFixed(1)} dB</span>
-        </div>
-        <div className="boss-source-note">
-          Polyphonic Pitch Shifter
-        </div>
+  // Quick shift preset buttons
+  const presetsNode = (
+    <>
+      {/* Mode Toggle */}
+      <div className="boss-mode-toggle">
+        <button
+          className={`boss-mode-btn ${!parameters.detuneMode ? 'active' : ''}`}
+          onClick={() => setDetuneMode(false)}
+          style={{ '--accent': accentColor } as React.CSSProperties}
+        >
+          <SettingsAdjust size={14} />
+          <span>Shift</span>
+        </button>
+        <button
+          className={`boss-mode-btn ${parameters.detuneMode ? 'active' : ''}`}
+          onClick={() => setDetuneMode(true)}
+          style={{ '--accent': accentColor } as React.CSSProperties}
+        >
+          <Music size={14} />
+          <span>Detune</span>
+        </button>
       </div>
-    </PluginCardShell>
+
+      {/* Quick shift buttons */}
+      {!parameters.detuneMode && (
+        <div className="carbon-preset-row">
+          <button className="carbon-preset-btn" onClick={() => setShiftAmount(-2)} title="Drop D">-2</button>
+          <button className="carbon-preset-btn" onClick={() => setShiftAmount(-1)} title="Half step down">-1</button>
+          <button className="carbon-preset-btn" onClick={() => setShiftAmount(0)} title="No shift">0</button>
+          <button className="carbon-preset-btn" onClick={() => setShiftAmount(2)} title="Capo 2">+2</button>
+          <button className="carbon-preset-btn" onClick={() => setShiftAmount(5)} title="Capo 5">+5</button>
+          <button className="carbon-preset-btn" onClick={() => setShiftAmount(7)} title="Fifth">+7</button>
+        </div>
+      )}
+
+      {/* Categorized preset browser */}
+      <div className="boss-preset-section">
+        <button
+          className="boss-preset-button"
+          onClick={() => setShowPresetBrowser(!showPresetBrowser)}
+          style={{ '--accent': accentColor } as React.CSSProperties}
+        >
+          <Music size={14} />
+          <span className="boss-preset-name">{currentPreset.name}</span>
+        </button>
+
+        {showPresetBrowser && (
+          <div className="boss-preset-browser">
+            {/* Manual */}
+            <button
+              className={`boss-preset-item ${parameters.preset === 0 ? 'active' : ''}`}
+              onClick={() => { setPreset(0); setShowPresetBrowser(false) }}
+            >
+              <span className="boss-preset-item-name">Manual</span>
+              <span className="boss-preset-item-desc">Custom settings</span>
+            </button>
+
+            {/* Categorized presets */}
+            {Object.entries(PRESET_CATEGORIES).map(([catKey, category]) => (
+              <div key={catKey}>
+                <div className="boss-category-header">
+                  <span>{category.label}</span>
+                </div>
+                {category.presets.map((presetId) => {
+                  const presetIndex = presets.findIndex(p => p.id === presetId)
+                  const preset = presets[presetIndex]
+                  if (!preset) return null
+                  return (
+                    <button
+                      key={presetId}
+                      className={`boss-preset-item ${parameters.preset === presetIndex ? 'active' : ''}`}
+                      onClick={() => { setPreset(presetIndex); setShowPresetBrowser(false) }}
+                      style={{ '--accent': accentColor } as React.CSSProperties}
+                    >
+                      <span className="boss-preset-item-name">{preset.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  )
+
+  return (
+    <PitchCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={parameters.bypass}
+      onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={visualization}
+      semitones={semitonesSlot}
+      detune={detuneSlot}
+      glide={glideSlot}
+      feedback={feedbackSlot}
+      mix={mixSlot}
+      inputLevel={metering.inputLevel}
+      outputLevel={metering.outputLevel}
+      advancedSections={advancedSections}
+      presets={presetsNode}
+    />
   )
 }
 

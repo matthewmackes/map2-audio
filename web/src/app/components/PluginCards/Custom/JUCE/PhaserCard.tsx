@@ -1,20 +1,20 @@
 /**
- * PhaserCard - Custom card for JUCE 6-Stage Phaser Processor
+ * PhaserCard - Carbon-compliant JUCE 6-Stage Phaser Processor
  *
+ * Uses ModulationCategoryLayout for AXE-FX Edit structural parity.
  * Classic phaser with sweeping notch filters.
  */
 
 import { usePhaser } from '../../../../hooks/useModulation'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { ModulationCategoryLayout } from '../../Layouts/ModulationCategoryLayout'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
-import './PhaserCard.css'
+import { formatPercentage, formatRate } from '../../utils/formatters'
 
 // Plugin URI for MIDI mappings
 const PHASER_URI = 'map2://juce/modulation/phaser'
+
+const PARAM = { RATE: 0, DEPTH: 1, CENTRE_FREQ: 2, FEEDBACK: 3, MIX: 4 } as const
 
 // Parameter definitions for MIDI mapping dialog
 const PHASER_PARAMS: PluginParamDef[] = [
@@ -44,14 +44,12 @@ function PhaserCardBase({
     setFeedback,
     setMix,
     setBypass,
-    isConnected,
   } = usePhaser()
 
   // Phaser notch visualization
   const phaserVisualization = (
-    <div className="phaser-visualization">
-      <svg viewBox="0 0 200 60" className="phaser-sweep">
-        {/* Frequency response with moving notches */}
+    <div style={{ width: '100%', textAlign: 'center' }}>
+      <svg viewBox="0 0 200 60" style={{ width: '100%', maxWidth: 280, height: 60 }}>
         <defs>
           <linearGradient id="phaserGradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={accentColor} stopOpacity="0.8" />
@@ -110,120 +108,64 @@ function PhaserCardBase({
         </text>
       </svg>
 
-      <div className="phaser-meters">
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 10, color: '#a8a8a8' }}>
         <span>6-Stage All-Pass</span>
-        <span>Rate: {parameters.rate.toFixed(2)} Hz</span>
+        <span>Rate: {formatRate(parameters.rate)}</span>
       </div>
     </div>
   )
 
   return (
-    <PluginCardShell
+    <ModulationCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
+      compact={compact}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
       onOpenMidiMappings={onOpenMidiMappings}
       visualization={phaserVisualization}
-      compact={compact}
-      customHeader={
-        <div className="phaser-card-header">
-          <span className="phaser-card-title">6-STAGE PHASER</span>
+      rate={{
+        label: 'Rate', value: parameters.rate,
+        min: 0.05, max: 5, defaultValue: 0.5, unit: 'Hz',
+        onChange: setRate, isLogarithmic: true,
+        midi: { pluginUri: PHASER_URI, paramIndex: PARAM.RATE },
+      }}
+      depth={{
+        label: 'Depth', value: parameters.depth * 100,
+        min: 0, max: 100, defaultValue: 50, unit: '%',
+        onChange: (v) => setDepth(v / 100),
+        midi: { pluginUri: PHASER_URI, paramIndex: PARAM.DEPTH },
+      }}
+      centreDelay={{
+        label: 'Centre', value: parameters.centreFrequency,
+        min: 100, max: 10000, defaultValue: 1000, unit: 'Hz',
+        onChange: setCentreFrequency, isLogarithmic: true,
+        valueFormatter: (v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`,
+        midi: { pluginUri: PHASER_URI, paramIndex: PARAM.CENTRE_FREQ },
+      }}
+      feedback={{
+        label: 'Feedback', value: parameters.feedback * 100,
+        min: -100, max: 100, defaultValue: 50, unit: '%',
+        onChange: (v) => setFeedback(v / 100),
+        midi: { pluginUri: PHASER_URI, paramIndex: PARAM.FEEDBACK },
+      }}
+      mix={{
+        label: 'Mix', value: parameters.mix * 100,
+        min: 0, max: 100, defaultValue: 50, unit: '%',
+        onChange: (v) => setMix(v / 100),
+        midi: { pluginUri: PHASER_URI, paramIndex: PARAM.MIX },
+      }}
+      inputLevel={metering.inputLevel}
+      outputLevel={metering.outputLevel}
+      presets={
+        <div className="carbon-preset-row">
+          <button className="carbon-preset-btn" onClick={() => { setRate(0.3); setDepth(0.5); setCentreFrequency(800); setFeedback(0.5); setMix(0.5) }}>Classic</button>
+          <button className="carbon-preset-btn" onClick={() => { setRate(0.1); setDepth(0.8); setCentreFrequency(600); setFeedback(0.7); setMix(0.6) }}>Slow Sweep</button>
+          <button className="carbon-preset-btn" onClick={() => { setRate(2); setDepth(0.6); setCentreFrequency(1500); setFeedback(0.6); setMix(0.7) }}>Fast Jet</button>
+          <button className="carbon-preset-btn" onClick={() => { setRate(0.5); setDepth(1.0); setCentreFrequency(400); setFeedback(0.9); setMix(0.5) }}>Deep Space</button>
         </div>
       }
-    >
-      {/* Modulation Controls */}
-      <ParameterSection title="Modulation" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Rate"
-            value={parameters.rate}
-            min={0.05}
-            max={5}
-            defaultValue={0.5}
-            unit="Hz"
-            onChange={setRate}
-            isLogarithmic
-            accentColor={accentColor}
-            size="medium"
-          />
-          <ParameterKnob
-            label="Depth"
-            value={parameters.depth * 100}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => setDepth(v / 100)}
-            accentColor={accentColor}
-            size="medium"
-          />
-          <ParameterKnob
-            label="Centre"
-            value={parameters.centreFrequency}
-            min={100}
-            max={10000}
-            defaultValue={1000}
-            unit="Hz"
-            onChange={setCentreFrequency}
-            isLogarithmic
-            valueFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Output Controls */}
-      <ParameterSection title="Output" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Feedback"
-            value={parameters.feedback * 100}
-            min={-100}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => setFeedback(v / 100)}
-            accentColor={accentColor}
-            size="small"
-          />
-          <ParameterKnob
-            label="Mix"
-            value={parameters.mix * 100}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => setMix(v / 100)}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Preset Quick Buttons */}
-      <div className="phaser-presets">
-        <button onClick={() => { setRate(0.3); setDepth(0.5); setCentreFrequency(800); setFeedback(0.5); setMix(0.5); }}>
-          Classic
-        </button>
-        <button onClick={() => { setRate(0.1); setDepth(0.8); setCentreFrequency(600); setFeedback(0.7); setMix(0.6); }}>
-          Slow Sweep
-        </button>
-        <button onClick={() => { setRate(2); setDepth(0.6); setCentreFrequency(1500); setFeedback(0.6); setMix(0.7); }}>
-          Fast Jet
-        </button>
-        <button onClick={() => { setRate(0.5); setDepth(1.0); setCentreFrequency(400); setFeedback(0.9); setMix(0.5); }}>
-          Deep Space
-        </button>
-      </div>
-
-      {/* Footer */}
-      <div className="phaser-footer">
-        <span>IN: {metering.inputLevel.toFixed(1)} dB</span>
-        <span>OUT: {metering.outputLevel.toFixed(1)} dB</span>
-      </div>
-    </PluginCardShell>
+    />
   )
 }
 

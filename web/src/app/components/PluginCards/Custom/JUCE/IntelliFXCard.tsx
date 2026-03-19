@@ -1,19 +1,20 @@
 /**
- * IntelliFXCard - Custom card for JUCE IntelliFX 8-Voice Chorus Processor
+ * IntelliFXCard - Carbon-compliant JUCE IntelliFX 8-Voice Chorus Processor
  *
+ * Uses ModulationCategoryLayout for AXE-FX Edit structural parity.
  * Rocktron IntelliFX-style multi-voice chorus with independent control of 8 voices.
  * Each voice has pan, level, delay, depth, and rate parameters.
  * Includes HUSH noise reduction and voice mixing controls.
+ * Per-voice controls are in Carbon Accordion advancedSections.
  */
 
 import { useState } from 'react'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
+import { ModulationCategoryLayout, type ParamSlot } from '../../Layouts/ModulationCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
+import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
-import './IntelliFXCard.css'
 
 // Plugin URI for MIDI mappings
 const INTELLIFX_URI = 'map2://juce/modulation/intellifx'
@@ -93,8 +94,6 @@ function IntelliFXCardBase({
   compact = false,
   onOpenMidiMappings,
 }: IntelliFXCardProps) {
-  const [expandedVoice, setExpandedVoice] = useState<number | null>(null)
-  const [showAdvanced, setShowAdvanced] = useState(!compact)
   const [showPresets, setShowPresets] = useState(true)
 
   const getValue = (index: number, defaultVal: number) =>
@@ -109,52 +108,46 @@ function IntelliFXCardBase({
   const setVoiceValue = (voiceIdx: number, param: keyof typeof VOICE_PARAMS[0], value: number) =>
     setValue(VOICE_PARAMS[voiceIdx][param], value)
 
-  // Multi-voice visualization - Hidden to avoid cluttering the UI
+  const presetIdx = Math.round(getValue(GLOBAL_PARAMS.preset, 0))
+  const presetName = PRESET_NAMES[presetIdx] || 'Custom'
+
+  // Multi-voice visualization
   const voiceVisualization = (
-    <div className="intellifx-visualization" style={{ display: 'none' }}>
-      <div className="intellifx-voices-grid">
+    <div style={{ width: '100%', textAlign: 'center' }}>
+      <svg viewBox="0 0 200 60" style={{ width: '100%', maxWidth: 280, height: 60 }}>
         {Array.from({ length: 8 }).map((_, i) => {
           const level = getVoiceValue(i, 'level')
           const pan = getVoiceValue(i, 'pan')
           const depth = getVoiceValue(i, 'depth')
-          const rate = getVoiceValue(i, 'rate')
 
-          // Normalize values for visualization
-          const levelNorm = (level + 60) / 72 // -60 to +12 dB range
-          const panNorm = (pan + 100) / 200 // -100 to +100 range
+          const levelNorm = (level + 60) / 72
+          const panNorm = (pan + 100) / 200
           const depthNorm = depth / 100
+          const cx = 12 + panNorm * 176
+          const cy = 30
 
           return (
-            <div
-              key={i}
-              className="voice-indicator"
-              style={{
-                opacity: Math.max(0.3, levelNorm),
-                transform: `translateX(${panNorm * 30 - 15}px)`,
-              }}
-              title={`Voice ${i + 1}: Level ${level.toFixed(0)}dB, Pan ${pan.toFixed(0)}%, Depth ${depth.toFixed(0)}%, Rate ${rate.toFixed(0)}`}
-            >
-              <svg viewBox="0 0 40 60" className="voice-dot">
-                <circle
-                  cx="20"
-                  cy="20"
-                  r={10 + depthNorm * 8}
-                  fill={accentColor}
-                  opacity={0.7 + depthNorm * 0.3}
-                />
-                <circle
-                  cx="20"
-                  cy="20"
-                  r={5}
-                  fill={accentColor}
-                  opacity={1}
-                />
-              </svg>
-            </div>
+            <g key={i}>
+              <circle
+                cx={cx}
+                cy={cy}
+                r={4 + depthNorm * 6}
+                fill={accentColor}
+                opacity={Math.max(0.2, levelNorm * 0.7)}
+              />
+              <circle
+                cx={cx}
+                cy={cy}
+                r={2}
+                fill={accentColor}
+                opacity={1}
+              />
+            </g>
           )
         })}
-      </div>
-      <div className="intellifx-mixer-info">
+        <line x1="0" y1="30" x2="200" y2="30" stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 10, color: '#a8a8a8' }}>
         <span>Chorus: {getValue(GLOBAL_PARAMS.chorus_level, 0).toFixed(0)}dB</span>
         <span>Direct: {getValue(GLOBAL_PARAMS.direct_level_l, 0).toFixed(0)}dB</span>
         <span>Regen: {getValue(GLOBAL_PARAMS.regen_l, 30).toFixed(0)}%</span>
@@ -162,17 +155,19 @@ function IntelliFXCardBase({
     </div>
   )
 
-  const presetIdx = Math.round(getValue(GLOBAL_PARAMS.preset, 0))
-  const presetName = PRESET_NAMES[presetIdx] || 'Custom'
-
-  // Preset browser component
-  const presetBrowser = showPresets && (
-    <div className="intellifx-preset-browser">
-      <div className="intellifx-preset-browser-header">
-        <h3 style={{ color: accentColor }}>Presets</h3>
-        <button onClick={() => setShowPresets(false)} className="intellifx-close-btn">✕</button>
+  // Preset browser as ReactNode for presets prop
+  const presetBrowser = showPresets ? (
+    <div style={{ padding: '0 12px 8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ color: accentColor, fontSize: 11, fontWeight: 600 }}>Presets</span>
+        <button
+          onClick={() => setShowPresets(false)}
+          style={{ background: 'none', border: 'none', color: '#a8a8a8', cursor: 'pointer', fontSize: 12 }}
+        >
+          x
+        </button>
       </div>
-      <div className="intellifx-preset-list">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
         {PRESET_NAMES.map((name, idx) => (
           <button
             key={idx}
@@ -180,51 +175,31 @@ function IntelliFXCardBase({
               setValue(GLOBAL_PARAMS.preset, idx)
               setShowPresets(false)
             }}
-            className={`intellifx-preset-item ${presetIdx === idx ? 'active' : ''}`}
-            style={{
-              borderLeftColor: presetIdx === idx ? accentColor : 'transparent',
-              backgroundColor: presetIdx === idx ? `${accentColor}15` : 'transparent',
-            }}
+            className={`carbon-preset-btn ${presetIdx === idx ? 'active' : ''}`}
+            style={presetIdx === idx ? { background: accentColor, borderColor: accentColor } : undefined}
           >
-            <span className="intellifx-preset-number">{idx + 1}</span>
-            <span className="intellifx-preset-label">{name}</span>
-            {presetIdx === idx && <span style={{ color: accentColor }}>✓</span>}
+            {name}
           </button>
         ))}
       </div>
     </div>
+  ) : (
+    <div style={{ padding: '0 12px 4px' }}>
+      <button
+        className="carbon-preset-btn"
+        onClick={() => setShowPresets(true)}
+        style={{ borderColor: accentColor, color: accentColor }}
+      >
+        {presetName} &#x25BC;
+      </button>
+    </div>
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={getValue(GLOBAL_PARAMS.hush_enabled + 4, 0) === 0} // Adjust if bypass is at a different index
-      onBypassToggle={() => {
-        // Toggle bypass - adjust index based on actual parameter location
-      }}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={voiceVisualization}
-      compact={compact}
-      customHeader={
-        <div className="intellifx-card-header">
-          <span className="intellifx-card-title">INTELLIFX 8-VOICE</span>
-          <button
-            className="intellifx-preset-selector"
-            onClick={() => setShowPresets(!showPresets)}
-            style={{ borderColor: accentColor, color: accentColor }}
-          >
-            <span className="intellifx-preset-name">{presetName}</span>
-            <span className="intellifx-preset-arrow">▼</span>
-          </button>
-        </div>
-      }
-    >
-      {presetBrowser}
-
-      {/* Global Mixer Controls - Compact Layout */}
-      <ParameterSection title="Master" accentColor={accentColor}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+  // Master mixer as extraContent (above the accordion voices)
+  const masterMixer = (
+    <>
+      <CarbonParameterSection title="Master" accentColor={accentColor}>
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Chorus"
             value={getValue(GLOBAL_PARAMS.chorus_level, 0)}
@@ -235,6 +210,7 @@ function IntelliFXCardBase({
             accentColor={accentColor}
             size="small"
             unit="dB"
+            midi={{ pluginUri: INTELLIFX_URI, paramIndex: GLOBAL_PARAMS.chorus_level }}
           />
           <ParameterKnob
             label="Dir L"
@@ -246,6 +222,7 @@ function IntelliFXCardBase({
             accentColor={accentColor}
             size="small"
             unit="dB"
+            midi={{ pluginUri: INTELLIFX_URI, paramIndex: GLOBAL_PARAMS.direct_level_l }}
           />
           <ParameterKnob
             label="Dir R"
@@ -257,6 +234,7 @@ function IntelliFXCardBase({
             accentColor={accentColor}
             size="small"
             unit="dB"
+            midi={{ pluginUri: INTELLIFX_URI, paramIndex: GLOBAL_PARAMS.direct_level_r }}
           />
           <ParameterKnob
             label="Reg L"
@@ -268,6 +246,7 @@ function IntelliFXCardBase({
             accentColor={accentColor}
             size="small"
             unit="%"
+            midi={{ pluginUri: INTELLIFX_URI, paramIndex: GLOBAL_PARAMS.regen_l }}
           />
           <ParameterKnob
             label="Reg R"
@@ -279,13 +258,13 @@ function IntelliFXCardBase({
             accentColor={accentColor}
             size="small"
             unit="%"
+            midi={{ pluginUri: INTELLIFX_URI, paramIndex: GLOBAL_PARAMS.regen_r }}
           />
         </div>
-      </ParameterSection>
+      </CarbonParameterSection>
 
-      {/* HUSH Noise Reduction - Compact */}
-      <ParameterSection title="HUSH" accentColor={accentColor}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+      <CarbonParameterSection title="HUSH" accentColor={accentColor}>
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Threshold"
             value={getValue(GLOBAL_PARAMS.hush_threshold, -40)}
@@ -296,6 +275,7 @@ function IntelliFXCardBase({
             accentColor={accentColor}
             size="small"
             unit="dB"
+            midi={{ pluginUri: INTELLIFX_URI, paramIndex: GLOBAL_PARAMS.hush_threshold }}
           />
           <ParameterKnob
             label="Release"
@@ -308,88 +288,93 @@ function IntelliFXCardBase({
             size="small"
             unit="ms"
             isLogarithmic={true}
+            midi={{ pluginUri: INTELLIFX_URI, paramIndex: GLOBAL_PARAMS.hush_release }}
           />
         </div>
-      </ParameterSection>
+      </CarbonParameterSection>
+    </>
+  )
 
-      {/* Voice Controls - More Compact Layout */}
-      <div className="intellifx-voices-container">
-        {Array.from({ length: 8 }).map((_, voiceIdx) => (
-          <div key={voiceIdx} className="voice-section">
-            <button
-              className="voice-header"
-              onClick={() => setExpandedVoice(expandedVoice === voiceIdx ? null : voiceIdx)}
-              style={{ borderColor: accentColor }}
-            >
-              <span className="voice-number">V{voiceIdx + 1}</span>
-              <span className="voice-level">
-                {getVoiceValue(voiceIdx, 'level').toFixed(0)}dB @ {getVoiceValue(voiceIdx, 'pan').toFixed(0)}%
-              </span>
-              <span className="expand-icon">{expandedVoice === voiceIdx ? '−' : '+'}</span>
-            </button>
-
-            {(expandedVoice === voiceIdx || !compact) && (
-              <div className="voice-controls-grid">
-                <ParameterKnob
-                  label="Level"
-                  value={getVoiceValue(voiceIdx, 'level')}
-                  min={-60}
-                  max={12}
-                  defaultValue={-6}
-                  onChange={(v) => setVoiceValue(voiceIdx, 'level', v)}
-                  accentColor={accentColor}
-                  size="small"
-                  unit="dB"
-                />
-                <ParameterKnob
-                  label="Pan"
-                  value={getVoiceValue(voiceIdx, 'pan')}
-                  min={-100}
-                  max={100}
-                  defaultValue={0}
-                  onChange={(v) => setVoiceValue(voiceIdx, 'pan', v)}
-                  accentColor={accentColor}
-                  size="small"
-                  unit="%"
-                />
-                <ParameterKnob
-                  label="Delay"
-                  value={getVoiceValue(voiceIdx, 'delay')}
-                  min={0}
-                  max={200}
-                  defaultValue={10 + voiceIdx * 5}
-                  onChange={(v) => setVoiceValue(voiceIdx, 'delay', v)}
-                  accentColor={accentColor}
-                  size="small"
-                  unit="ms"
-                />
-                <ParameterKnob
-                  label="Depth"
-                  value={getVoiceValue(voiceIdx, 'depth')}
-                  min={0}
-                  max={100}
-                  defaultValue={25}
-                  onChange={(v) => setVoiceValue(voiceIdx, 'depth', v)}
-                  accentColor={accentColor}
-                  size="small"
-                  unit="%"
-                />
-                <ParameterKnob
-                  label="Rate"
-                  value={getVoiceValue(voiceIdx, 'rate')}
-                  min={0}
-                  max={254}
-                  defaultValue={40 + voiceIdx * 5}
-                  onChange={(v) => setVoiceValue(voiceIdx, 'rate', v)}
-                  accentColor={accentColor}
-                  size="small"
-                />
-              </div>
-            )}
-          </div>
-        ))}
+  // Build 8-voice advanced sections for Carbon Accordion
+  const voiceSections: AdvancedSection[] = Array.from({ length: 8 }, (_, voiceIdx) => ({
+    id: `voice-${voiceIdx + 1}`,
+    title: `Voice ${voiceIdx + 1} — ${getVoiceValue(voiceIdx, 'level').toFixed(0)}dB @ ${getVoiceValue(voiceIdx, 'pan').toFixed(0)}%`,
+    defaultOpen: voiceIdx === 0,
+    children: (
+      <div className="carbon-param-row">
+        <ParameterKnob
+          label="Level"
+          value={getVoiceValue(voiceIdx, 'level')}
+          min={-60}
+          max={12}
+          defaultValue={-6}
+          onChange={(v) => setVoiceValue(voiceIdx, 'level', v)}
+          accentColor={accentColor}
+          size="small"
+          unit="dB"
+        />
+        <ParameterKnob
+          label="Pan"
+          value={getVoiceValue(voiceIdx, 'pan')}
+          min={-100}
+          max={100}
+          defaultValue={0}
+          onChange={(v) => setVoiceValue(voiceIdx, 'pan', v)}
+          accentColor={accentColor}
+          size="small"
+          unit="%"
+        />
+        <ParameterKnob
+          label="Delay"
+          value={getVoiceValue(voiceIdx, 'delay')}
+          min={0}
+          max={200}
+          defaultValue={10 + voiceIdx * 5}
+          onChange={(v) => setVoiceValue(voiceIdx, 'delay', v)}
+          accentColor={accentColor}
+          size="small"
+          unit="ms"
+        />
+        <ParameterKnob
+          label="Depth"
+          value={getVoiceValue(voiceIdx, 'depth')}
+          min={0}
+          max={100}
+          defaultValue={25}
+          onChange={(v) => setVoiceValue(voiceIdx, 'depth', v)}
+          accentColor={accentColor}
+          size="small"
+          unit="%"
+        />
+        <ParameterKnob
+          label="Rate"
+          value={getVoiceValue(voiceIdx, 'rate')}
+          min={0}
+          max={254}
+          defaultValue={40 + voiceIdx * 5}
+          onChange={(v) => setVoiceValue(voiceIdx, 'rate', v)}
+          accentColor={accentColor}
+          size="small"
+        />
       </div>
-    </PluginCardShell>
+    ),
+  }))
+
+  return (
+    <ModulationCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={getValue(GLOBAL_PARAMS.hush_enabled + 4, 0) === 0}
+      onBypassToggle={() => {
+        // Toggle bypass - adjust index based on actual parameter location
+      }}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={voiceVisualization}
+      advancedSections={voiceSections}
+      presets={presetBrowser}
+      extraContent={masterMixer}
+    />
   )
 }
 

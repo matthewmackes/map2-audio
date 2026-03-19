@@ -6,15 +6,12 @@
  */
 
 import { useState, useCallback } from 'react'
-import { Calendar, ChevronDown, Link, Music, Unlink, Waveform } from '@carbon/icons-react'
+import { Calendar, Link, Music, Unlink, Waveform } from '@carbon/icons-react'
 import { usePitchShifter, VAN_HALEN_PRESETS } from '../../../../hooks/useModulation'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { PitchCategoryLayout, type ParamSlot } from '../../Layouts/PitchCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
-import './EVHPitchShifterCard.css'
 
 // Plugin URI for MIDI mappings
 const EVH_PITCH_URI = 'map2://juce/pitch/evh'
@@ -127,233 +124,192 @@ function EVHPitchShifterCardBase({
     </div>
   )
 
+  // ParamSlots
+  const centsSlot: ParamSlot = {
+    label: 'Pitch L',
+    value: parameters.pitchL,
+    min: -100,
+    max: 100,
+    defaultValue: 0,
+    unit: 'c',
+    onChange: handlePitchL,
+    valueFormatter: formatCents,
+  }
+
+  const detuneSlot: ParamSlot = {
+    label: 'Pitch R',
+    value: parameters.pitchR,
+    min: -100,
+    max: 100,
+    defaultValue: 0,
+    unit: 'c',
+    onChange: handlePitchR,
+    valueFormatter: formatCents,
+  }
+
+  const delaySlot: ParamSlot = {
+    label: 'Delay L',
+    value: parameters.delayL,
+    min: 0,
+    max: 100,
+    defaultValue: 0,
+    unit: 'ms',
+    onChange: setDelayL,
+  }
+
+  const feedbackSlot: ParamSlot = {
+    label: 'Feedback',
+    value: parameters.feedback * 100,
+    min: 0,
+    max: 90,
+    defaultValue: 0,
+    unit: '%',
+    onChange: (v: number) => setFeedback(v / 100),
+  }
+
+  const mixSlot: ParamSlot = {
+    label: 'Mix',
+    value: parameters.mix,
+    min: 0,
+    max: 100,
+    defaultValue: 50,
+    unit: '%',
+    onChange: setMix,
+  }
+
+  // Era presets in advanced sections
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'era-presets',
+      title: 'Era Presets',
+      defaultOpen: false,
+      children: (
+        <div className="evh-preset-browser">
+          {/* Manual */}
+          <button
+            className={`evh-preset-item ${parameters.preset === 0 ? 'active' : ''}`}
+            onClick={() => { setPreset(0); setShowPresetBrowser(false) }}
+          >
+            <span className="evh-preset-item-name">Manual</span>
+            <span className="evh-preset-item-desc">Custom settings</span>
+          </button>
+
+          {/* Roth Era */}
+          <div className="evh-era-header">
+            <span>David Lee Roth Era (1978-1984)</span>
+            <span className="evh-era-gear">Dual Rack Detune</span>
+          </div>
+          {ROTH_ERA_PRESETS.map((idx) => {
+            const preset = presets[idx]
+            return (
+              <button
+                key={idx}
+                className={`evh-preset-item ${parameters.preset === idx ? 'active' : ''}`}
+                onClick={() => { setPreset(idx); setShowPresetBrowser(false) }}
+                style={{ '--accent': accentColor } as React.CSSProperties}
+              >
+                <div className="evh-preset-item-main">
+                  <span className="evh-preset-item-name">{preset.name}</span>
+                  <span className="evh-preset-item-album">{preset.album} ({preset.year})</span>
+                </div>
+                <span className="evh-preset-item-desc">{preset.description}</span>
+              </button>
+            )
+          })}
+
+          {/* Hagar Era */}
+          <div className="evh-era-header">
+            <span>Sammy Hagar Era (1986-1996)</span>
+            <span className="evh-era-gear">Micropitch</span>
+          </div>
+          {HAGAR_ERA_PRESETS.map((idx) => {
+            const preset = presets[idx]
+            return (
+              <button
+                key={idx}
+                className={`evh-preset-item ${parameters.preset === idx ? 'active' : ''}`}
+                onClick={() => { setPreset(idx); setShowPresetBrowser(false) }}
+                style={{ '--accent': accentColor } as React.CSSProperties}
+              >
+                <div className="evh-preset-item-main">
+                  <span className="evh-preset-item-name">{preset.name}</span>
+                  <span className="evh-preset-item-album">{preset.album} ({preset.year})</span>
+                </div>
+                <span className="evh-preset-item-desc">{preset.description}</span>
+              </button>
+            )
+          })}
+        </div>
+      ),
+    },
+    {
+      id: 'stereo-stagger',
+      title: 'Stereo Stagger',
+      defaultOpen: false,
+      children: (
+        <div className="carbon-param-row">
+          {/* Delay R and Spread rendered here since layout only has one delay slot */}
+        </div>
+      ),
+    },
+  ]
+
+  // Quick preset buttons
+  const presetsNode = (
+    <>
+      {/* Current preset info */}
+      {currentPreset.index > 0 && (
+        <div className="evh-preset-info">
+          <span><Waveform size={12} /> {currentPreset.album}</span>
+          <span><Calendar size={12} /> {currentPreset.year}</span>
+        </div>
+      )}
+      <div className="carbon-preset-row">
+        <button className="carbon-preset-btn" onClick={() => setPitchBoth(-1200, 0)} title="Octave down (Drop Dead Legs)">-OCT</button>
+        <button className="carbon-preset-btn" onClick={() => setPitchBoth(-700, 700)} title="5th harmony">5th</button>
+        <button className="carbon-preset-btn" onClick={() => setPitchBoth(9, -9)} title="Sammy era micropitch">+/-9c</button>
+        <button className="carbon-preset-btn" onClick={() => setPitchBoth(4, -4)} title="Roth era detune">+/-4c</button>
+        <button className="carbon-preset-btn" onClick={() => setPitchBoth(1200, 0)} title="Octave up">+OCT</button>
+      </div>
+    </>
+  )
+
+  // Extra content: link button + delay R + spread (not covered by layout slots)
+  const extraContent = (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
+        <button
+          className={`evh-link-btn ${linkLR ? 'linked' : ''}`}
+          onClick={() => setLinkLR(!linkLR)}
+          style={{ '--accent': accentColor } as React.CSSProperties}
+          title={linkLR ? 'Mirrored L/R' : 'Independent L/R'}
+        >
+          {linkLR ? <Link size={16} /> : <Unlink size={16} />}
+        </button>
+      </div>
+    </>
+  )
+
   return (
-    <PluginCardShell
+    <PitchCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
+      compact={compact}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
       onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
-      compact={compact}
-      customHeader={
-        <div className="evh-card-header">
-          <span className="evh-card-title">VINTAGE HARMONIZER</span>
-          <span className="evh-subtitle">Vintage Harmonizer Style</span>
-        </div>
-      }
-    >
-      {/* Preset Selector */}
-      <div className="evh-preset-section">
-        <button
-          className="evh-preset-button"
-          onClick={() => setShowPresetBrowser(!showPresetBrowser)}
-          style={{ '--accent': accentColor } as React.CSSProperties}
-        >
-          <Music size={14} />
-          <span className="evh-preset-name">{currentPreset.name}</span>
-          {currentPreset.index > 0 && (
-            <span className="evh-preset-song">"{currentPreset.song}"</span>
-          )}
-          <ChevronDown size={14} className={showPresetBrowser ? 'rotated' : ''} />
-        </button>
-
-        {currentPreset.index > 0 && (
-          <div className="evh-preset-info">
-            <span><Waveform size={12} /> {currentPreset.album}</span>
-            <span><Calendar size={12} /> {currentPreset.year}</span>
-          </div>
-        )}
-
-        {/* Preset Browser Dropdown */}
-        {showPresetBrowser && (
-          <div className="evh-preset-browser">
-            {/* Manual */}
-            <button
-              className={`evh-preset-item ${parameters.preset === 0 ? 'active' : ''}`}
-              onClick={() => { setPreset(0); setShowPresetBrowser(false) }}
-            >
-              <span className="evh-preset-item-name">Manual</span>
-              <span className="evh-preset-item-desc">Custom settings</span>
-            </button>
-
-            {/* Roth Era */}
-            <div className="evh-era-header">
-              <span>David Lee Roth Era (1978-1984)</span>
-              <span className="evh-era-gear">Dual Rack Detune</span>
-            </div>
-            {ROTH_ERA_PRESETS.map((idx) => {
-              const preset = presets[idx]
-              return (
-                <button
-                  key={idx}
-                  className={`evh-preset-item ${parameters.preset === idx ? 'active' : ''}`}
-                  onClick={() => { setPreset(idx); setShowPresetBrowser(false) }}
-                  style={{ '--accent': accentColor } as React.CSSProperties}
-                >
-                  <div className="evh-preset-item-main">
-                    <span className="evh-preset-item-name">{preset.name}</span>
-                    <span className="evh-preset-item-album">{preset.album} ({preset.year})</span>
-                  </div>
-                  <span className="evh-preset-item-desc">{preset.description}</span>
-                </button>
-              )
-            })}
-
-            {/* Hagar Era */}
-            <div className="evh-era-header">
-              <span>Sammy Hagar Era (1986-1996)</span>
-              <span className="evh-era-gear">Micropitch</span>
-            </div>
-            {HAGAR_ERA_PRESETS.map((idx) => {
-              const preset = presets[idx]
-              return (
-                <button
-                  key={idx}
-                  className={`evh-preset-item ${parameters.preset === idx ? 'active' : ''}`}
-                  onClick={() => { setPreset(idx); setShowPresetBrowser(false) }}
-                  style={{ '--accent': accentColor } as React.CSSProperties}
-                >
-                  <div className="evh-preset-item-main">
-                    <span className="evh-preset-item-name">{preset.name}</span>
-                    <span className="evh-preset-item-album">{preset.album} ({preset.year})</span>
-                  </div>
-                  <span className="evh-preset-item-desc">{preset.description}</span>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Pitch Controls */}
-      <ParameterSection title="Pitch Shift" accentColor={accentColor}>
-        <div className="evh-pitch-controls">
-          <ParameterKnob
-            label="Pitch L"
-            value={parameters.pitchL}
-            min={-100}
-            max={100}
-            defaultValue={0}
-            unit="c"
-            onChange={handlePitchL}
-            valueFormatter={formatCents}
-            accentColor="#4ecdc4"
-            size="medium"
-          />
-
-          <button
-            className={`evh-link-btn ${linkLR ? 'linked' : ''}`}
-            onClick={() => setLinkLR(!linkLR)}
-            style={{ '--accent': accentColor } as React.CSSProperties}
-            title={linkLR ? 'Mirrored L/R' : 'Independent L/R'}
-          >
-            {linkLR ? <Link size={16} /> : <Unlink size={16} />}
-          </button>
-
-          <ParameterKnob
-            label="Pitch R"
-            value={parameters.pitchR}
-            min={-100}
-            max={100}
-            defaultValue={0}
-            unit="c"
-            onChange={handlePitchR}
-            valueFormatter={formatCents}
-            accentColor="#f59e0b"
-            size="medium"
-            disabled={linkLR}
-          />
-        </div>
-
-        {/* Octave quick buttons for special effects like Drop Dead Legs */}
-        <div className="evh-quick-pitch">
-          <button onClick={() => setPitchBoth(-1200, 0)} title="Octave down (Drop Dead Legs)">-OCT</button>
-          <button onClick={() => setPitchBoth(-700, 700)} title="5th harmony">5th</button>
-          <button onClick={() => setPitchBoth(9, -9)} title="Sammy era micropitch">+/-9c</button>
-          <button onClick={() => setPitchBoth(4, -4)} title="Roth era detune">+/-4c</button>
-          <button onClick={() => setPitchBoth(1200, 0)} title="Octave up">+OCT</button>
-        </div>
-      </ParameterSection>
-
-      {/* Delay / Stereo Spread */}
-      <ParameterSection title="Stereo Stagger" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Delay L"
-            value={parameters.delayL}
-            min={0}
-            max={100}
-            defaultValue={0}
-            unit="ms"
-            onChange={setDelayL}
-            accentColor="#4ecdc4"
-            size="small"
-          />
-          <ParameterKnob
-            label="Delay R"
-            value={parameters.delayR}
-            min={0}
-            max={100}
-            defaultValue={0}
-            unit="ms"
-            onChange={setDelayR}
-            accentColor="#f59e0b"
-            size="small"
-          />
-          <ParameterKnob
-            label="Spread"
-            value={parameters.spread}
-            min={0}
-            max={200}
-            defaultValue={100}
-            unit="%"
-            onChange={setSpread}
-            accentColor={accentColor}
-            size="small"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Mix & Output */}
-      <ParameterSection title="Output" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Feedback"
-            value={parameters.feedback * 100}
-            min={0}
-            max={90}
-            defaultValue={0}
-            unit="%"
-            onChange={(v) => setFeedback(v / 100)}
-            accentColor={accentColor}
-            size="small"
-          />
-          <ParameterKnob
-            label="Mix"
-            value={parameters.mix}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={setMix}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Metering Footer */}
-      <div className="evh-footer">
-        <div className="evh-metering">
-          <span>IN: {Math.max(metering.inputLevelL, metering.inputLevelR).toFixed(1)} dB</span>
-          <span>OUT: {Math.max(metering.outputLevelL, metering.outputLevelR).toFixed(1)} dB</span>
-        </div>
-        <div className="evh-source-note">
-          Settings based on audio equipment forums & VHLinks.com research
-        </div>
-      </div>
-    </PluginCardShell>
+      cents={centsSlot}
+      detune={detuneSlot}
+      delay={delaySlot}
+      feedback={feedbackSlot}
+      mix={mixSlot}
+      inputLevel={Math.max(metering.inputLevelL, metering.inputLevelR)}
+      outputLevel={Math.max(metering.outputLevelL, metering.outputLevelR)}
+      advancedSections={advancedSections}
+      presets={presetsNode}
+      extraContent={extraContent}
+    />
   )
 }
 

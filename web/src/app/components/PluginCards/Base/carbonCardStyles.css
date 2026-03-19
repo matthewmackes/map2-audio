@@ -1,0 +1,443 @@
+/**
+ * Carbon-Compliant Card Styles
+ *
+ * Shared styles for all Carbon-refactored plugin cards.
+ * Provides category-specific fixed dimensions, standardized spacing,
+ * Carbon accordion overrides, and metering footer styles.
+ */
+
+/* ==================== Category Card Dimensions ==================== */
+
+:root {
+  --carbon-card-width: 420px;
+  --carbon-card-radius: 4px;
+
+  /* Category heights */
+  --carbon-card-height-dynamics: 520px;
+  --carbon-card-height-modulation: 480px;
+  --carbon-card-height-delay: 520px;
+  --carbon-card-height-reverb: 500px;
+  --carbon-card-height-pitch: 480px;
+  --carbon-card-height-amplifier: 560px;
+  --carbon-card-height-multieffect: 560px;
+  --carbon-card-height-eq: 500px;
+  --carbon-card-height-convolution: 420px;
+  --carbon-card-height-instrument: 560px;
+  --carbon-card-height-utility: 400px;
+
+  /* Spacing tokens (Carbon-aligned) */
+  --carbon-spacing-02: 4px;
+  --carbon-spacing-03: 8px;
+  --carbon-spacing-04: 12px;
+  --carbon-spacing-05: 16px;
+  --carbon-spacing-06: 24px;
+  --carbon-spacing-07: 32px;
+}
+
+/* ==================== Card Shell ==================== */
+
+.carbon-card {
+  width: var(--carbon-card-width);
+  min-height: var(--category-card-height, 480px);
+  max-height: var(--category-card-height, 480px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #161616;
+  border: 1px solid #393939;
+  border-radius: var(--carbon-card-radius);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  isolation: isolate;
+  color: #f4f4f4;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  container-type: inline-size;
+  container-name: carbon-card;
+}
+
+.carbon-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-color, #0f62fe);
+  z-index: 1;
+}
+
+.carbon-card.bypassed {
+  opacity: 0.5;
+}
+
+.carbon-card.bypassed::before {
+  background: #525252;
+}
+
+/* Scrollbar */
+.carbon-card::-webkit-scrollbar {
+  width: 4px;
+}
+
+.carbon-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.carbon-card::-webkit-scrollbar-thumb {
+  background: #525252;
+  border-radius: 2px;
+}
+
+.carbon-card::-webkit-scrollbar-thumb:hover {
+  background: #6f6f6f;
+}
+
+/* ==================== Card Header ==================== */
+
+.carbon-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--carbon-spacing-04) var(--carbon-spacing-05);
+  background: #262626;
+  border-bottom: 1px solid #393939;
+  flex-shrink: 0;
+  min-height: 48px;
+  z-index: 2;
+}
+
+.carbon-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--carbon-spacing-03);
+  min-width: 0;
+  flex: 1;
+}
+
+.carbon-card-header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.carbon-card-header-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f4f4f4;
+  letter-spacing: 0.16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.carbon-card-header-subtitle {
+  font-size: 12px;
+  color: #a8a8a8;
+  letter-spacing: 0.32px;
+}
+
+.carbon-card-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--carbon-spacing-02);
+  flex-shrink: 0;
+}
+
+/* ==================== Visualization Area ==================== */
+
+.carbon-card-visualization {
+  padding: var(--carbon-spacing-05);
+  background: #1a1a1a;
+  border-bottom: 1px solid #393939;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 120px;
+}
+
+/* ==================== Content Area ==================== */
+
+.carbon-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--carbon-spacing-03);
+  padding: var(--carbon-spacing-05);
+  min-height: 0;
+}
+
+/* ==================== Parameter Section ==================== */
+
+.carbon-param-section {
+  background: #1a1a1a;
+  border: 1px solid #393939;
+  border-radius: var(--carbon-card-radius);
+  overflow: hidden;
+}
+
+.carbon-param-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--carbon-spacing-03);
+  padding: var(--carbon-spacing-03) var(--carbon-spacing-04);
+  background: #262626;
+  border-bottom: 1px solid #333333;
+}
+
+.carbon-param-section-icon {
+  display: flex;
+  align-items: center;
+  color: var(--accent-color, #0f62fe);
+  flex-shrink: 0;
+}
+
+.carbon-param-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c6c6c6;
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
+}
+
+.carbon-param-section-body {
+  padding: var(--carbon-spacing-04);
+}
+
+/* ==================== Parameter Row ==================== */
+
+.carbon-param-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: var(--carbon-spacing-05);
+  flex-wrap: wrap;
+}
+
+/* ==================== Parameter Grid ==================== */
+
+.carbon-param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: var(--carbon-spacing-04);
+  width: 100%;
+}
+
+.carbon-param-grid > * {
+  display: flex;
+  justify-content: center;
+}
+
+/* ==================== Carbon Accordion Overrides ==================== */
+
+.carbon-card .cds--accordion {
+  border: none;
+  background: transparent;
+}
+
+.carbon-card .cds--accordion__item {
+  border-top: 1px solid #333333;
+  border-bottom: none;
+}
+
+.carbon-card .cds--accordion__item:first-child {
+  border-top: none;
+}
+
+.carbon-card .cds--accordion__heading {
+  padding: var(--carbon-spacing-03) var(--carbon-spacing-04);
+  min-height: 32px;
+  color: #c6c6c6;
+  background: #1a1a1a;
+}
+
+.carbon-card .cds--accordion__heading:hover {
+  background: #262626;
+}
+
+.carbon-card .cds--accordion__title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
+  color: #c6c6c6;
+}
+
+.carbon-card .cds--accordion__arrow {
+  fill: var(--accent-color, #0f62fe);
+}
+
+.carbon-card .cds--accordion__content {
+  padding: var(--carbon-spacing-04);
+  background: #1a1a1a;
+}
+
+/* ==================== Carbon Toggle Overrides (Bypass) ==================== */
+
+.carbon-card .cds--toggle {
+  margin: 0;
+}
+
+.carbon-card .cds--toggle__switch {
+  margin: 0;
+}
+
+.carbon-card .cds--toggle-input:checked + .cds--toggle__switch::before {
+  background-color: var(--accent-color, #0f62fe);
+}
+
+/* ==================== Carbon Tag Overrides ==================== */
+
+.carbon-card .cds--tag {
+  font-size: 10px;
+  letter-spacing: 0.32px;
+  min-height: 18px;
+  padding: 0 6px;
+}
+
+/* ==================== Carbon OverflowMenu Overrides ==================== */
+
+.carbon-card .cds--overflow-menu {
+  width: 32px;
+  height: 32px;
+}
+
+.carbon-card .cds--overflow-menu__icon {
+  fill: #a8a8a8;
+}
+
+.carbon-card .cds--overflow-menu:hover .cds--overflow-menu__icon {
+  fill: #f4f4f4;
+}
+
+/* ==================== Metering Footer ==================== */
+
+.carbon-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--carbon-spacing-03) var(--carbon-spacing-05);
+  background: #262626;
+  border-top: 1px solid #393939;
+  flex-shrink: 0;
+  min-height: 32px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #6f6f6f;
+}
+
+.carbon-card-footer-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--carbon-spacing-02);
+}
+
+.carbon-card-footer-meter-label {
+  color: #a8a8a8;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.32px;
+}
+
+.carbon-card-footer-meter-value {
+  color: #c6c6c6;
+  min-width: 48px;
+  text-align: right;
+}
+
+.carbon-card-footer-meter-value.clipping {
+  color: #fa4d56;
+  font-weight: 600;
+}
+
+.carbon-card-footer-meter-value.gain-reduction {
+  color: #f1c21b;
+}
+
+/* ==================== Preset Buttons ==================== */
+
+.carbon-preset-row {
+  display: flex;
+  gap: var(--carbon-spacing-02);
+  flex-wrap: wrap;
+  padding: var(--carbon-spacing-03) 0;
+}
+
+.carbon-preset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border: 1px solid #525252;
+  border-radius: var(--carbon-card-radius);
+  background: transparent;
+  color: #c6c6c6;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.carbon-preset-btn:hover {
+  background: #353535;
+  border-color: #6f6f6f;
+  color: #f4f4f4;
+}
+
+.carbon-preset-btn.active {
+  background: var(--accent-color, #0f62fe);
+  border-color: var(--accent-color, #0f62fe);
+  color: #161616;
+  font-weight: 600;
+}
+
+/* ==================== Toggle Button (for boolean params) ==================== */
+
+.carbon-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border: 1px solid #525252;
+  border-radius: var(--carbon-card-radius);
+  background: transparent;
+  color: #a8a8a8;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.carbon-toggle-btn:hover {
+  background: #353535;
+  color: #f4f4f4;
+}
+
+.carbon-toggle-btn.active {
+  background: var(--accent-color, #0f62fe);
+  border-color: var(--accent-color, #0f62fe);
+  color: #161616;
+}
+
+/* ==================== Container Query Breakpoints ==================== */
+
+@container carbon-card (max-width: 360px) {
+  .carbon-card-content {
+    padding: var(--carbon-spacing-03);
+  }
+
+  .carbon-param-section-body {
+    padding: var(--carbon-spacing-03);
+  }
+
+  .carbon-param-row {
+    gap: var(--carbon-spacing-03);
+  }
+}

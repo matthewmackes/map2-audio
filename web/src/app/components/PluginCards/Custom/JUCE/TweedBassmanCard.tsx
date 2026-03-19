@@ -22,12 +22,9 @@ import {
   CABINET_IRS,
 } from '../../../../hooks/useTweedBassman'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { AmplifierCategoryLayout, type ParamSlot } from '../../Layouts/AmplifierCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import type { PluginCardProps } from '../../types'
-import './TweedBassmanCard.css'
 
 // Plugin URI for MIDI mappings
 const BASSMAN_URI = 'map2://juce/amp/tweedbassman'
@@ -325,181 +322,158 @@ function TweedBassmanCardBase({
     </div>
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={parameters.bypass}
-      onBypassToggle={() => setBypass(!parameters.bypass)}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={schematicVisualization}
-      compact={compact}
-      customHeader={
-        <div className="bassman-card-header">
-          <span className="bassman-card-title">FENDER BASSMAN</span>
-          <span className="bassman-card-subtitle">5F6-A TWEED &bull; FULL MOD SUITE</span>
+  // Map parameters to AmplifierCategoryLayout slots
+  const inputGain: ParamSlot = {
+    label: 'NORMAL',
+    value: parameters.normalVolume,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setNormalVolume,
+    midi: { pluginUri: BASSMAN_URI, paramIndex: PARAM.NORMAL_VOLUME },
+  }
+
+  const bassSlot: ParamSlot = {
+    label: 'BASS',
+    value: parameters.bass,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setBass,
+    midi: { pluginUri: BASSMAN_URI, paramIndex: PARAM.BASS },
+  }
+
+  const midSlot: ParamSlot = {
+    label: 'MID',
+    value: parameters.mid,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setMid,
+    midi: { pluginUri: BASSMAN_URI, paramIndex: PARAM.MID },
+  }
+
+  const trebleSlot: ParamSlot = {
+    label: 'TREBLE',
+    value: parameters.treble,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setTreble,
+    midi: { pluginUri: BASSMAN_URI, paramIndex: PARAM.TREBLE },
+  }
+
+  const presenceSlot: ParamSlot = {
+    label: 'PRESENCE',
+    value: parameters.presence,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setPresence,
+    midi: { pluginUri: BASSMAN_URI, paramIndex: PARAM.PRESENCE },
+  }
+
+  const masterVolumeSlot: ParamSlot = {
+    label: 'MASTER',
+    value: parameters.masterVolume,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setMasterVolume,
+    midi: { pluginUri: BASSMAN_URI, paramIndex: PARAM.MASTER_VOLUME },
+  }
+
+  const outputGainSlot: ParamSlot = {
+    label: 'OUTPUT',
+    value: parameters.outputLevel,
+    min: -24,
+    max: 6,
+    defaultValue: 0,
+    step: 0.5,
+    unit: 'dB',
+    onChange: setOutputLevel,
+    valueFormatter: (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)} dB`,
+    midi: { pluginUri: BASSMAN_URI, paramIndex: PARAM.OUTPUT_LEVEL },
+  }
+
+  // Channel selector mapped to layout's channel prop
+  const channelProp = {
+    value: CHANNEL_MODES[parameters.channelMode],
+    options: CHANNEL_MODES,
+    onChange: (v: string) => setChannelMode(CHANNEL_MODES.indexOf(v)),
+  }
+
+  // Bright cap toggle mapped to layout's bright prop
+  const brightProp = {
+    enabled: parameters.brightCap,
+    onToggle: () => setBrightCap(!parameters.brightCap),
+  }
+
+  // Bright Volume as extra input knob in advanced
+  const brightVolumeSlot: ParamSlot = {
+    label: 'BRIGHT VOL',
+    value: parameters.brightVolume,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setBrightVolume,
+    midi: { pluginUri: BASSMAN_URI, paramIndex: PARAM.BRIGHT_VOLUME },
+  }
+
+  // Circuit Mods advanced section
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'bright-volume',
+      title: 'Bright Channel Volume',
+      children: (
+        <div className="carbon-param-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '80px' }}>Bright Vol</label>
+            <input
+              type="range"
+              min={0}
+              max={10}
+              step={0.1}
+              value={brightVolumeSlot.value}
+              onChange={(e) => brightVolumeSlot.onChange(parseFloat(e.target.value))}
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontSize: '11px', color: '#888', minWidth: '30px' }}>{brightVolumeSlot.value.toFixed(1)}</span>
+          </div>
         </div>
-      }
-    >
-      {/* Preset Selector */}
-      <div className="bassman-preset-section">
-        <select
-          className="bassman-preset-select"
-          value={currentPreset.id}
-          onChange={(e) => setPreset(e.target.value)}
-        >
-          {presets.map((preset) => (
-            <option key={preset.id} value={preset.id}>
-              {preset.name}
-            </option>
-          ))}
-        </select>
-        {currentPreset.description && (
-          <div className="bassman-preset-info">{currentPreset.description}</div>
-        )}
-      </div>
-
-      {/* CHANNEL Section */}
-      <ParameterSection title="Channel" accentColor={accentColor}>
-        <ParameterRow justify="center">
-          <select
-            className="bassman-combo"
-            value={parameters.channelMode}
-            onChange={(e) => setChannelMode(parseInt(e.target.value))}
-          >
-            {CHANNEL_MODES.map((mode, i) => (
-              <option key={i} value={i}>{mode}</option>
-            ))}
-          </select>
+      ),
+    },
+    {
+      id: 'tone-mods',
+      title: 'Tone Mods',
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button
-            className={`bassman-toggle ${parameters.brightCap ? 'active' : ''}`}
-            onClick={() => setBrightCap(!parameters.brightCap)}
-          >
-            BRIGHT CAP
-          </button>
-        </ParameterRow>
-        <ParameterRow>
-          <ParameterKnob
-            label="NORMAL"
-            value={parameters.normalVolume}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setNormalVolume}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: BASSMAN_URI, paramIndex: PARAM.NORMAL_VOLUME }}
-          />
-          <ParameterKnob
-            label="BRIGHT"
-            value={parameters.brightVolume}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setBrightVolume}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: BASSMAN_URI, paramIndex: PARAM.BRIGHT_VOLUME }}
-          />
-          <ParameterKnob
-            label="MASTER"
-            value={parameters.masterVolume}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setMasterVolume}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: BASSMAN_URI, paramIndex: PARAM.MASTER_VOLUME }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* TONE Section */}
-      <ParameterSection title="Tone Stack" accentColor={TONE_COLOR}>
-        <ParameterRow>
-          <ParameterKnob
-            label="TREBLE"
-            value={parameters.treble}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setTreble}
-            accentColor={TONE_COLOR}
-            size="medium"
-            midi={{ pluginUri: BASSMAN_URI, paramIndex: PARAM.TREBLE }}
-          />
-          <ParameterKnob
-            label="MID"
-            value={parameters.mid}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setMid}
-            accentColor={TONE_COLOR}
-            size="medium"
-            midi={{ pluginUri: BASSMAN_URI, paramIndex: PARAM.MID }}
-          />
-          <ParameterKnob
-            label="BASS"
-            value={parameters.bass}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setBass}
-            accentColor={TONE_COLOR}
-            size="medium"
-            midi={{ pluginUri: BASSMAN_URI, paramIndex: PARAM.BASS }}
-          />
-        </ParameterRow>
-        <ParameterRow justify="center">
-          <button
-            className={`bassman-toggle ${parameters.rawSwitch ? 'active' : ''}`}
+            className={`carbon-toggle-btn ${parameters.rawSwitch ? 'active' : ''}`}
             onClick={() => setRawSwitch(!parameters.rawSwitch)}
+            style={parameters.rawSwitch ? { background: accentColor, borderColor: accentColor } : undefined}
           >
-            RAW
+            RAW (Bypass Tone Stack)
           </button>
-          <ParameterKnob
-            label="PRESENCE"
-            value={parameters.presence}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setPresence}
-            accentColor={POWER_COLOR}
-            size="small"
-            midi={{ pluginUri: BASSMAN_URI, paramIndex: PARAM.PRESENCE }}
-          />
-          <ParameterKnob
-            label="OUTPUT"
-            value={parameters.outputLevel}
-            min={-24}
-            max={6}
-            defaultValue={0}
-            step={0.5}
-            onChange={setOutputLevel}
-            valueFormatter={(v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)} dB`}
-            accentColor={POWER_COLOR}
-            size="small"
-            midi={{ pluginUri: BASSMAN_URI, paramIndex: PARAM.OUTPUT_LEVEL }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* MODS Panel */}
-      <ParameterSection title="Circuit Mods" accentColor={POWER_COLOR}>
-        <div className="bassman-mods-panel">
-          <div className="bassman-mod-item">
-            <span className="bassman-mod-label">V1 Tube</span>
+        </div>
+      ),
+    },
+    {
+      id: 'circuit-mods',
+      title: 'Circuit Mods',
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>V1 Tube</label>
             <select
-              className="bassman-combo"
+              className="carbon-select"
               value={parameters.v1TubeType}
               onChange={(e) => setV1TubeType(parseInt(e.target.value))}
             >
@@ -508,10 +482,10 @@ function TweedBassmanCardBase({
               ))}
             </select>
           </div>
-          <div className="bassman-mod-item">
-            <span className="bassman-mod-label">Power Tubes</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Power Tubes</label>
             <select
-              className="bassman-combo"
+              className="carbon-select"
               value={parameters.powerTubeType}
               onChange={(e) => setPowerTubeType(parseInt(e.target.value))}
             >
@@ -520,10 +494,10 @@ function TweedBassmanCardBase({
               ))}
             </select>
           </div>
-          <div className="bassman-mod-item">
-            <span className="bassman-mod-label">Cathode Bias</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Cathode Bias</label>
             <select
-              className="bassman-combo"
+              className="carbon-select"
               value={parameters.cathodeBias}
               onChange={(e) => setCathodeBias(parseInt(e.target.value))}
             >
@@ -532,10 +506,10 @@ function TweedBassmanCardBase({
               ))}
             </select>
           </div>
-          <div className="bassman-mod-item">
-            <span className="bassman-mod-label">Rectifier</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Rectifier</label>
             <select
-              className="bassman-combo"
+              className="carbon-select"
               value={parameters.rectifierType}
               onChange={(e) => setRectifierType(parseInt(e.target.value))}
             >
@@ -544,10 +518,10 @@ function TweedBassmanCardBase({
               ))}
             </select>
           </div>
-          <div className="bassman-mod-item">
-            <span className="bassman-mod-label">NFB Mode</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>NFB Mode</label>
             <select
-              className="bassman-combo"
+              className="carbon-select"
               value={parameters.nfbMode}
               onChange={(e) => setNFBMode(parseInt(e.target.value))}
             >
@@ -556,10 +530,10 @@ function TweedBassmanCardBase({
               ))}
             </select>
           </div>
-          <div className="bassman-mod-item">
-            <span className="bassman-mod-label">Bias Mode</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Bias Mode</label>
             <select
-              className="bassman-combo"
+              className="carbon-select"
               value={parameters.biasMode}
               onChange={(e) => setBiasMode(parseInt(e.target.value))}
             >
@@ -568,68 +542,132 @@ function TweedBassmanCardBase({
               ))}
             </select>
           </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+            <button
+              className={`carbon-toggle-btn ${parameters.cathodeBypass ? 'active' : ''}`}
+              onClick={() => setCathodeBypass(!parameters.cathodeBypass)}
+              style={parameters.cathodeBypass ? { background: accentColor, borderColor: accentColor } : undefined}
+            >
+              Cathode Bypass
+            </button>
+          </div>
         </div>
-        <ParameterRow justify="center">
+      ),
+    },
+    {
+      id: 'cabinet',
+      title: 'Cabinet',
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button
-            className={`bassman-toggle ${parameters.cathodeBypass ? 'active' : ''}`}
-            onClick={() => setCathodeBypass(!parameters.cathodeBypass)}
-          >
-            CATH BYPASS
-          </button>
-          <button
-            className={`bassman-toggle ${parameters.cabinetEnabled ? 'active' : ''}`}
+            className={`carbon-toggle-btn ${parameters.cabinetEnabled ? 'active' : ''}`}
             onClick={() => setCabinetEnabled(!parameters.cabinetEnabled)}
+            style={parameters.cabinetEnabled ? { background: accentColor, borderColor: accentColor } : undefined}
           >
-            CABINET
+            Cabinet Enabled
           </button>
           {parameters.cabinetEnabled && (
-            <select
-              className="bassman-combo"
-              value={parameters.cabinetIR}
-              onChange={(e) => setCabinetIR(parseInt(e.target.value))}
-            >
-              {CABINET_IRS.map((ir, i) => (
-                <option key={i} value={i}>{ir}</option>
-              ))}
-            </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Cabinet IR</label>
+              <select
+                className="carbon-select"
+                value={parameters.cabinetIR}
+                onChange={(e) => setCabinetIR(parseInt(e.target.value))}
+              >
+                {CABINET_IRS.map((ir, i) => (
+                  <option key={i} value={i}>{ir}</option>
+                ))}
+              </select>
+            </div>
           )}
-        </ParameterRow>
-      </ParameterSection>
+        </div>
+      ),
+    },
+  ]
 
-      {/* Quick Preset Buttons */}
-      <div className="bassman-quick-presets">
+  // Presets as ReactNode
+  const presetsNode = (
+    <>
+      <div className="carbon-preset-row">
+        <select
+          className="carbon-select"
+          value={currentPreset.id}
+          onChange={(e) => setPreset(e.target.value)}
+          style={{ width: '100%' }}
+        >
+          {presets.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      {currentPreset.description && (
+        <div style={{ fontSize: '11px', color: '#888', padding: '0 8px 4px', fontStyle: 'italic' }}>
+          {currentPreset.description}
+        </div>
+      )}
+      <div className="carbon-preset-row">
         {TWEED_BASSMAN_PRESETS.slice(1, 8).map((preset) => (
           <button
             key={preset.id}
+            className={`carbon-preset-btn ${currentPreset.id === preset.id ? 'active' : ''}`}
             onClick={() => setPreset(preset.id)}
-            className={currentPreset.id === preset.id ? 'active' : ''}
             title={preset.description}
+            style={currentPreset.id === preset.id ? { background: accentColor, borderColor: accentColor } : undefined}
           >
             {preset.name}
           </button>
         ))}
       </div>
-      <div className="bassman-quick-presets">
+      <div className="carbon-preset-row">
         {TWEED_BASSMAN_PRESETS.slice(8).map((preset) => (
           <button
             key={preset.id}
+            className={`carbon-preset-btn ${currentPreset.id === preset.id ? 'active' : ''}`}
             onClick={() => setPreset(preset.id)}
-            className={currentPreset.id === preset.id ? 'active' : ''}
             title={preset.description}
+            style={currentPreset.id === preset.id ? { background: accentColor, borderColor: accentColor } : undefined}
           >
             {preset.name}
           </button>
         ))}
       </div>
+    </>
+  )
 
-      {/* Footer with metering */}
-      <div className="bassman-footer">
-        <span className="bassman-meter">IN: {metering.inputLevel.toFixed(1)}</span>
-        <span className="bassman-sag">SAG: {(metering.supplySag * 100).toFixed(0)}%</span>
-        <span className="bassman-meter">OUT: {metering.outputLevel.toFixed(1)}</span>
-        <span className="bassman-cpu">CPU: {metering.cpuLoad.toFixed(0)}%</span>
-      </div>
-    </PluginCardShell>
+  // Footer with sag/CPU info as extra content
+  const extraContent = (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', fontSize: '10px', color: '#888' }}>
+      <span>SAG: {(metering.supplySag * 100).toFixed(0)}%</span>
+      <span>CPU: {metering.cpuLoad.toFixed(0)}%</span>
+    </div>
+  )
+
+  return (
+    <AmplifierCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={parameters.bypass}
+      onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={schematicVisualization}
+      inputGain={inputGain}
+      channel={channelProp}
+      bright={brightProp}
+      bass={bassSlot}
+      mid={midSlot}
+      treble={trebleSlot}
+      presence={presenceSlot}
+      masterVolume={masterVolumeSlot}
+      outputGain={outputGainSlot}
+      inputLevel={metering.inputLevel}
+      outputLevel={metering.outputLevel}
+      advancedSections={advancedSections}
+      presets={presetsNode}
+      extraContent={extraContent}
+    />
   )
 }
 

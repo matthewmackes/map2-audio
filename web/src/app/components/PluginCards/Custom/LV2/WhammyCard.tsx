@@ -1,33 +1,26 @@
 /**
- * WhammyCard - dm-Whammy Pitch Shifter
+ * WhammyCard - dm-Whammy Pitch Shifter (Carbon-compliant)
  *
- * DigiTech Whammy inspired pitch shifter interface with expression pedal,
- * interval selection, and octave controls.
+ * DigiTech Whammy inspired pitch shifter using PitchCategoryLayout.
  *
  * LV2 URI: http://drobilla.net/plugins/mda/dm-Whammy
  */
 
 import { useState, useMemo } from 'react'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
+import { PitchCategoryLayout, type ParamSlot } from '../../Layouts/PitchCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { NumberInput } from '../../../Controls/NumberInput'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
-import { PitchDisplay } from '../../Visualizations/PitchDisplay'
 import { ArrowDown, ArrowUp, Link, Unlink } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
-import './WhammyCard.css'
 
-// Parameter indices
 const PARAM_MAP = {
-  pitch: 0,        // Pitch shift amount
-  mix: 1,          // Dry/Wet mix
-  mode: 2,         // Whammy mode
-  detune: 3,       // Fine detune
-  formant: 4,      // Formant preservation
+  pitch: 0,
+  mix: 1,
+  mode: 2,
+  detune: 3,
+  formant: 4,
 }
 
-// Whammy modes inspired by DigiTech
 const WHAMMY_MODES = [
   { name: '2nd Up', semitones: 2, icon: 'up' },
   { name: '2nd Down', semitones: -2, icon: 'down' },
@@ -43,7 +36,6 @@ const WHAMMY_MODES = [
   { name: 'Deep', semitones: -24, icon: 'down' },
 ]
 
-// Harmony modes
 const HARMONY_MODES = [
   { name: 'Unison', interval1: 0, interval2: 0 },
   { name: '3rd', interval1: 4, interval2: 4 },
@@ -57,13 +49,12 @@ export function WhammyCard({
   plugin,
   parameterValues,
   onParameterChange,
-  realtimeData,
-  accentColor = '#ef4444', // Red for Whammy
+  accentColor = '#ef4444',
   compact = false,
 }: PluginCardProps) {
-  const [selectedMode, setSelectedMode] = useState(6) // Oct Up
+  const [selectedMode, setSelectedMode] = useState(6)
   const [isHarmonyMode, setIsHarmonyMode] = useState(false)
-  const [pedalPosition, setPedalPosition] = useState(100) // 0-100%
+  const [pedalPosition, setPedalPosition] = useState(100)
 
   const getValue = (key: keyof typeof PARAM_MAP, defaultVal: number) =>
     parameterValues[PARAM_MAP[key]] ?? defaultVal
@@ -71,13 +62,11 @@ export function WhammyCard({
   const setValue = (key: keyof typeof PARAM_MAP, value: number) =>
     onParameterChange(PARAM_MAP[key], value)
 
-  // Calculate current pitch shift based on pedal position
   const currentShift = useMemo(() => {
     const mode = WHAMMY_MODES[selectedMode]
     return (mode.semitones * pedalPosition) / 100
   }, [selectedMode, pedalPosition])
 
-  // Handle pedal position change
   const handlePedalChange = (position: number) => {
     setPedalPosition(position)
     const mode = WHAMMY_MODES[selectedMode]
@@ -85,7 +74,6 @@ export function WhammyCard({
     setValue('pitch', pitchValue)
   }
 
-  // Handle mode change
   const handleModeChange = (modeIndex: number) => {
     setSelectedMode(modeIndex)
     const mode = WHAMMY_MODES[modeIndex]
@@ -94,174 +82,131 @@ export function WhammyCard({
     setValue('mode', modeIndex)
   }
 
-  // Visualization
   const visualization = (
-    <div className="whammy-visualization">
-      {/* Pedal Display */}
-      <div className="whammy-pedal-container">
-        <div className="whammy-pedal-label">
-          <span>HEEL</span>
-          <span>TOE</span>
-        </div>
-        <div className="whammy-pedal-track">
+    <div style={{ padding: '12px 0', textAlign: 'center' }}>
+      {/* Pedal display */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <div style={{ flex: 1, maxWidth: 200 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#6b7280', marginBottom: 4 }}>
+            <span>HEEL</span>
+            <span>TOE</span>
+          </div>
           <NumberInput
             value={pedalPosition}
-            min={0}
-            max={100}
-            step={1}
-            defaultValue={100}
-            profile="integer"
-            unit="%"
+            min={0} max={100} step={1} defaultValue={100}
+            profile="integer" unit="%"
             onChange={handlePedalChange}
-            size="small"
-            showLabel={false}
+            size="small" showLabel={false}
             accentColor={accentColor}
-            className="whammy-pedal-slider"
           />
         </div>
-        <div className="whammy-pedal-value">
-          {pedalPosition.toFixed(0)}%
-        </div>
-      </div>
-
-      {/* Pitch Display */}
-      <div className="whammy-pitch-display">
-        <div className={`whammy-shift-indicator ${currentShift > 0 ? 'up' : currentShift < 0 ? 'down' : ''}`}>
-          {currentShift > 0 ? <ArrowUp size={20} /> : currentShift < 0 ? <ArrowDown size={20} /> : null}
-          <span className="whammy-shift-value">
-            {currentShift >= 0 ? '+' : ''}{currentShift.toFixed(1)}
-          </span>
-          <span className="whammy-shift-unit">semitones</span>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {currentShift > 0 ? <ArrowUp size={20} style={{ color: accentColor }} /> : currentShift < 0 ? <ArrowDown size={20} style={{ color: accentColor }} /> : null}
+            <span style={{ fontSize: 24, fontWeight: 800, color: accentColor, fontFamily: 'var(--font-mono)' }}>
+              {currentShift >= 0 ? '+' : ''}{currentShift.toFixed(1)}
+            </span>
+          </div>
+          <span style={{ fontSize: 10, color: '#6b7280' }}>semitones</span>
         </div>
       </div>
     </div>
   )
 
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'modes',
+      title: isHarmonyMode ? 'Harmony Modes' : 'Whammy Modes',
+      defaultOpen: true,
+      children: (
+        <div>
+          {/* Mode Toggle */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+            <button
+              className={`carbon-preset-btn ${!isHarmonyMode ? 'carbon-preset-btn--active' : ''}`}
+              onClick={() => setIsHarmonyMode(false)}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            >
+              <Unlink size={12} /> Whammy
+            </button>
+            <button
+              className={`carbon-preset-btn ${isHarmonyMode ? 'carbon-preset-btn--active' : ''}`}
+              onClick={() => setIsHarmonyMode(true)}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            >
+              <Link size={12} /> Harmony
+            </button>
+          </div>
+
+          {/* Mode chips */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {(isHarmonyMode ? HARMONY_MODES : WHAMMY_MODES).map((mode, index) => (
+              <button
+                key={mode.name}
+                className={`carbon-preset-btn ${selectedMode === index ? 'carbon-preset-btn--active' : ''}`}
+                onClick={() => isHarmonyMode ? setSelectedMode(index) : handleModeChange(index)}
+                style={{ fontSize: 10 }}
+              >
+                {'icon' in mode && (mode.icon === 'up' ? <ArrowUp size={10} /> : <ArrowDown size={10} />)}
+                {mode.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Current mode info */}
+          <div style={{ marginTop: 8, fontSize: 10, color: '#6b7280', textAlign: 'center' }}>
+            Mode: <span style={{ color: accentColor }}>
+              {isHarmonyMode ? HARMONY_MODES[selectedMode]?.name : WHAMMY_MODES[selectedMode]?.name}
+            </span>
+            {' | '}
+            {isHarmonyMode
+              ? `\u00b1${Math.abs(HARMONY_MODES[selectedMode]?.interval1 || 0)} st`
+              : `0 \u2192 ${WHAMMY_MODES[selectedMode]?.semitones > 0 ? '+' : ''}${WHAMMY_MODES[selectedMode]?.semitones} st`
+            }
+          </div>
+        </div>
+      ),
+    },
+  ]
+
+  const semitones: ParamSlot = {
+    label: 'Pedal', value: pedalPosition,
+    min: 0, max: 100, defaultValue: 100, unit: '%',
+    onChange: handlePedalChange,
+  }
+
+  const detune: ParamSlot = {
+    label: 'Detune', value: getValue('detune', 0),
+    min: -100, max: 100, defaultValue: 0, unit: '\u00a2',
+    onChange: (v) => setValue('detune', v),
+    valueFormatter: (v) => (v >= 0 ? '+' : '') + v.toFixed(0),
+  }
+
+  const glide: ParamSlot = {
+    label: 'Formant', value: getValue('formant', 50),
+    min: 0, max: 100, defaultValue: 50, unit: '%',
+    onChange: (v) => setValue('formant', v),
+  }
+
+  const mix: ParamSlot = {
+    label: 'Mix', value: getValue('mix', 100),
+    min: 0, max: 100, defaultValue: 100, unit: '%',
+    onChange: (v) => setValue('mix', v),
+  }
+
   return (
-    <PluginCardShell
+    <PitchCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
+      compact={compact}
       bypassed={plugin.bypassed}
       visualization={visualization}
-      compact={compact}
-    >
-      {/* Mode Toggle */}
-      <div className="whammy-mode-toggle">
-        <button
-          className={`whammy-mode-btn ${!isHarmonyMode ? 'active' : ''}`}
-          onClick={() => setIsHarmonyMode(false)}
-          style={{ '--accent': accentColor } as React.CSSProperties}
-        >
-          <Unlink size={12} />
-          Whammy
-        </button>
-        <button
-          className={`whammy-mode-btn ${isHarmonyMode ? 'active' : ''}`}
-          onClick={() => setIsHarmonyMode(true)}
-          style={{ '--accent': accentColor } as React.CSSProperties}
-        >
-          <Link size={12} />
-          Harmony
-        </button>
-      </div>
-
-      {/* Whammy Mode Selection */}
-      {!isHarmonyMode && (
-        <div className="whammy-modes">
-          {WHAMMY_MODES.map((mode, index) => (
-            <button
-              key={mode.name}
-              className={`whammy-mode-chip ${selectedMode === index ? 'active' : ''}`}
-              onClick={() => handleModeChange(index)}
-              style={{ '--accent': accentColor } as React.CSSProperties}
-            >
-              {mode.icon === 'up' ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
-              {mode.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Harmony Mode Selection */}
-      {isHarmonyMode && (
-        <div className="whammy-modes harmony">
-          {HARMONY_MODES.map((mode, index) => (
-            <button
-              key={mode.name}
-              className={`whammy-mode-chip ${selectedMode === index ? 'active' : ''}`}
-              onClick={() => setSelectedMode(index)}
-              style={{ '--accent': accentColor } as React.CSSProperties}
-            >
-              {mode.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Fine Controls */}
-      <ParameterSection title="Fine Tune" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Detune"
-            value={getValue('detune', 0)}
-            min={-100}
-            max={100}
-            defaultValue={0}
-            unit="¢"
-            onChange={(v) => setValue('detune', v)}
-            accentColor="#6b7280"
-            size="medium"
-            valueFormatter={(v) => (v >= 0 ? '+' : '') + v.toFixed(0)}
-          />
-          <ParameterKnob
-            label="Formant"
-            value={getValue('formant', 50)}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => setValue('formant', v)}
-            accentColor="#f59e0b"
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Mix */}
-      <ParameterSection title="Output" accentColor={accentColor}>
-        <ParameterRow justify="center">
-          <ParameterKnob
-            label="Mix"
-            value={getValue('mix', 100)}
-            min={0}
-            max={100}
-            defaultValue={100}
-            unit="%"
-            onChange={(v) => setValue('mix', v)}
-            accentColor={accentColor}
-            size="large"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Current Mode Info */}
-      <div className="whammy-footer">
-        <div className="whammy-current-mode">
-          <span className="whammy-mode-label">Mode:</span>
-          <span className="whammy-mode-name" style={{ color: accentColor }}>
-            {isHarmonyMode ? HARMONY_MODES[selectedMode]?.name : WHAMMY_MODES[selectedMode]?.name}
-          </span>
-        </div>
-        <div className="whammy-range">
-          <span>
-            {isHarmonyMode
-              ? `±${Math.abs(HARMONY_MODES[selectedMode]?.interval1 || 0)} st`
-              : `0 → ${WHAMMY_MODES[selectedMode]?.semitones > 0 ? '+' : ''}${WHAMMY_MODES[selectedMode]?.semitones} st`
-            }
-          </span>
-        </div>
-      </div>
-    </PluginCardShell>
+      semitones={semitones}
+      detune={detune}
+      glide={glide}
+      mix={mix}
+      advancedSections={advancedSections}
+    />
   )
 }
 

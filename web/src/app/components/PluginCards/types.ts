@@ -246,6 +246,28 @@ export const CATEGORY_COLORS: Record<string, CategoryColorConfig> = {
   'Multi-Effect': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', gradient: 'linear-gradient(135deg, #ec489920 0%, #ec489905 100%)' },
 }
 
+/** Fixed card heights per category (px) — AXE-FX Edit structural parity */
+export const CATEGORY_CARD_DIMENSIONS: Record<string, number> = {
+  'Compressor': 520,
+  'Dynamics': 520,
+  'Limiter': 520,
+  'Gate': 520,
+  'Modulation': 480,
+  'Delay': 520,
+  'Reverb': 500,
+  'Pitch': 480,
+  'Distortion': 560,
+  'Amplifier': 560,
+  'Multi-Effect': 560,
+  'EQ': 500,
+  'Filter': 500,
+  'Cabinet': 420,
+  'Simulator': 560,
+  'Generator': 560,
+  'Instrument': 560,
+  'Utility': 400,
+}
+
 /** Get color configuration for a category */
 export function getCategoryConfig(category: string): CategoryColorConfig {
   return CATEGORY_COLORS[category] || {

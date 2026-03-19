@@ -16,15 +16,11 @@
 
 import { usePeavey5150, PEAVEY5150_PRESETS } from '../../../../hooks/usePeavey5150'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { AmplifierCategoryLayout, type ParamSlot } from '../../Layouts/AmplifierCategoryLayout'
 import type { PluginCardProps } from '../../types'
 import { TubeGlowGradient, VerticalMeterGradient } from '../../components/SVGGradients'
 import { TubeBank } from '../../components/Visualizations/TubeGlowCircle'
 import { MeterBar } from '../../components/Visualizations/MeterBar'
-import './Peavey5150Card.css'
 
 // Plugin URI for MIDI mappings
 const PEAVEY5150_URI = 'map2://juce/amp/peavey5150'
@@ -105,7 +101,7 @@ function Peavey5150CardBase({
         <TubeBank
           positions={[30, 60, 90, 120, 150]}
           cy={25}
-          intensities={[30, 60, 90, 120, 150].map((_, i) => 
+          intensities={[30, 60, 90, 120, 150].map((_, i) =>
             Math.min(1, (parameters.preGain / 10) * (1 + i * 0.15))
           )}
           baseRadius={7}
@@ -158,28 +154,110 @@ function Peavey5150CardBase({
     </div>
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={parameters.bypass}
-      onBypassToggle={() => setBypass(!parameters.bypass)}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={ampVisualization}
-      compact={compact}
-      customHeader={
-        <div className="peavey5150-card-header">
-          <span className="peavey5150-card-title">HIGH GAIN</span>
-          <span className="peavey5150-card-subtitle">BLOCK LETTER AMP</span>
-        </div>
-      }
-    >
-      {/* Preset Selector */}
-      <div className="peavey5150-preset-section">
+  // Map parameters to AmplifierCategoryLayout slots
+  const inputGainSlot: ParamSlot = {
+    label: 'PRE',
+    value: parameters.preGain,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setPreGain,
+    midi: { pluginUri: PEAVEY5150_URI, paramIndex: PARAM.PRE_GAIN },
+  }
+
+  const bassSlot: ParamSlot = {
+    label: 'LOW',
+    value: parameters.low,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setLow,
+    midi: { pluginUri: PEAVEY5150_URI, paramIndex: PARAM.LOW },
+  }
+
+  const midSlot: ParamSlot = {
+    label: 'MID',
+    value: parameters.mid,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setMid,
+    midi: { pluginUri: PEAVEY5150_URI, paramIndex: PARAM.MID },
+  }
+
+  const trebleSlot: ParamSlot = {
+    label: 'HIGH',
+    value: parameters.high,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setHigh,
+    midi: { pluginUri: PEAVEY5150_URI, paramIndex: PARAM.HIGH },
+  }
+
+  const presenceSlot: ParamSlot = {
+    label: 'PRES',
+    value: parameters.presence,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setPresence,
+    midi: { pluginUri: PEAVEY5150_URI, paramIndex: PARAM.PRESENCE },
+  }
+
+  const resonanceSlot: ParamSlot = {
+    label: 'RES',
+    value: parameters.resonance,
+    min: 0,
+    max: 10,
+    defaultValue: 5,
+    step: 0.1,
+    onChange: setResonance,
+    midi: { pluginUri: PEAVEY5150_URI, paramIndex: PARAM.RESONANCE },
+  }
+
+  const biasSlot: ParamSlot = {
+    label: 'BIAS',
+    value: parameters.bias,
+    min: 0,
+    max: 10,
+    defaultValue: 3,
+    step: 0.1,
+    onChange: setBias,
+    valueFormatter: (v: number) => v < 3 ? 'COLD' : v > 7 ? 'HOT' : v.toFixed(1),
+    midi: { pluginUri: PEAVEY5150_URI, paramIndex: PARAM.BIAS },
+  }
+
+  const masterVolumeSlot: ParamSlot = {
+    label: 'POST',
+    value: parameters.postGain,
+    min: 0,
+    max: 10,
+    defaultValue: 3,
+    step: 0.1,
+    onChange: setPostGain,
+    midi: { pluginUri: PEAVEY5150_URI, paramIndex: PARAM.POST_GAIN },
+  }
+
+  const brightProp = {
+    enabled: parameters.bright,
+    onToggle: () => setBright(!parameters.bright),
+  }
+
+  // Presets as ReactNode
+  const presetsNode = (
+    <>
+      <div className="carbon-preset-row">
         <select
-          className="peavey5150-preset-select"
+          className="carbon-select"
           value={currentPreset.id}
           onChange={(e) => setPreset(e.target.value)}
+          style={{ width: '100%' }}
         >
           {presets.map((preset) => (
             <option key={preset.id} value={preset.id}>
@@ -187,155 +265,58 @@ function Peavey5150CardBase({
             </option>
           ))}
         </select>
-        {currentPreset.description && (
-          <div className="peavey5150-preset-info">{currentPreset.description}</div>
-        )}
       </div>
-
-      {/* PREAMP Section */}
-      <ParameterSection title="Preamp" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="PRE"
-            value={parameters.preGain}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setPreGain}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: PEAVEY5150_URI, paramIndex: PARAM.PRE_GAIN }}
-          />
-          <ParameterKnob
-            label="POST"
-            value={parameters.postGain}
-            min={0}
-            max={10}
-            defaultValue={3}
-            step={0.1}
-            onChange={setPostGain}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: PEAVEY5150_URI, paramIndex: PARAM.POST_GAIN }}
-          />
-        </ParameterRow>
-        <ParameterRow justify="center">
-          <button
-            className={`peavey5150-bright-btn ${parameters.bright ? 'active' : ''}`}
-            onClick={() => setBright(!parameters.bright)}
-          >
-            BRIGHT
-          </button>
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* TONE Section */}
-      <ParameterSection title="Tone" accentColor="#4ecdc4">
-        <ParameterRow>
-          <ParameterKnob
-            label="LOW"
-            value={parameters.low}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setLow}
-            accentColor="#4ecdc4"
-            size="medium"
-            midi={{ pluginUri: PEAVEY5150_URI, paramIndex: PARAM.LOW }}
-          />
-          <ParameterKnob
-            label="MID"
-            value={parameters.mid}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setMid}
-            accentColor="#4ecdc4"
-            size="medium"
-            midi={{ pluginUri: PEAVEY5150_URI, paramIndex: PARAM.MID }}
-          />
-          <ParameterKnob
-            label="HIGH"
-            value={parameters.high}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setHigh}
-            accentColor="#4ecdc4"
-            size="medium"
-            midi={{ pluginUri: PEAVEY5150_URI, paramIndex: PARAM.HIGH }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* POWER Section */}
-      <ParameterSection title="Power" accentColor="#ff6b6b">
-        <ParameterRow>
-          <ParameterKnob
-            label="PRES"
-            value={parameters.presence}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setPresence}
-            accentColor="#ff6b6b"
-            size="medium"
-            midi={{ pluginUri: PEAVEY5150_URI, paramIndex: PARAM.PRESENCE }}
-          />
-          <ParameterKnob
-            label="RES"
-            value={parameters.resonance}
-            min={0}
-            max={10}
-            defaultValue={5}
-            step={0.1}
-            onChange={setResonance}
-            accentColor="#ff6b6b"
-            size="medium"
-            midi={{ pluginUri: PEAVEY5150_URI, paramIndex: PARAM.RESONANCE }}
-          />
-          <ParameterKnob
-            label="BIAS"
-            value={parameters.bias}
-            min={0}
-            max={10}
-            defaultValue={3}
-            step={0.1}
-            onChange={setBias}
-            valueFormatter={(v: number) => v < 3 ? 'COLD' : v > 7 ? 'HOT' : v.toFixed(1)}
-            accentColor="#ff6b6b"
-            size="small"
-            midi={{ pluginUri: PEAVEY5150_URI, paramIndex: PARAM.BIAS }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Quick Preset Buttons */}
-      <div className="peavey5150-quick-presets">
+      {currentPreset.description && (
+        <div style={{ fontSize: '11px', color: '#888', padding: '0 8px 4px', fontStyle: 'italic' }}>
+          {currentPreset.description}
+        </div>
+      )}
+      <div className="carbon-preset-row">
         {PEAVEY5150_PRESETS.slice(1).map((preset) => (
           <button
             key={preset.id}
+            className={`carbon-preset-btn ${currentPreset.id === preset.id ? 'active' : ''}`}
             onClick={() => setPreset(preset.id)}
-            className={currentPreset.id === preset.id ? 'active' : ''}
+            style={currentPreset.id === preset.id ? { background: accentColor, borderColor: accentColor } : undefined}
           >
             {preset.name}
           </button>
         ))}
       </div>
+    </>
+  )
 
-      {/* Footer with metering */}
-      <div className="peavey5150-footer">
-        <span className="peavey5150-meter">IN: {metering.inputLevel.toFixed(1)}</span>
-        <span className="peavey5150-sag">SAG: {(metering.supplySag * 100).toFixed(0)}%</span>
-        <span className="peavey5150-meter">OUT: {metering.outputLevel.toFixed(1)}</span>
-        <span className="peavey5150-cpu">CPU: {metering.cpuLoad.toFixed(0)}%</span>
-      </div>
-    </PluginCardShell>
+  // Footer with sag/CPU info as extra content
+  const extraContent = (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', fontSize: '10px', color: '#888' }}>
+      <span>SAG: {(metering.supplySag * 100).toFixed(0)}%</span>
+      <span>CPU: {metering.cpuLoad.toFixed(0)}%</span>
+    </div>
+  )
+
+  return (
+    <AmplifierCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={parameters.bypass}
+      onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={ampVisualization}
+      inputGain={inputGainSlot}
+      bright={brightProp}
+      bass={bassSlot}
+      mid={midSlot}
+      treble={trebleSlot}
+      presence={presenceSlot}
+      resonance={resonanceSlot}
+      bias={biasSlot}
+      masterVolume={masterVolumeSlot}
+      inputLevel={metering.inputLevel}
+      outputLevel={metering.outputLevel}
+      presets={presetsNode}
+      extraContent={extraContent}
+    />
   )
 }
 

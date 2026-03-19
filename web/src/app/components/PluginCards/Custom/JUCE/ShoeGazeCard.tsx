@@ -7,15 +7,13 @@
 
 import { useShoeGaze, SHOEGAZE_PRESETS } from '../../../../hooks/useShoeGaze'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
+import { MultiEffectCategoryLayout, type ParamSlot } from '../../Layouts/MultiEffectCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
+import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
 import { formatSemitones } from '../../utils/formatters'
-import { dbToVerticalBar } from '../../utils/metering'
-import { ReverbTailGradient, ShimmerGradient } from '../../components/SVGGradients'
-import './ShoeGazeCard.css'
+
 
 // Plugin URI for MIDI mappings
 const SHOEGAZE_URI = 'map2://juce/multieffect/shoegaze'
@@ -94,6 +92,41 @@ function ShoeGazeCardBase({
     setPreset,
     isConnected,
   } = useShoeGaze()
+
+  // Primary controls as ParamSlot objects
+  const atmosphereSlot: ParamSlot = {
+    label: 'Atmos',
+    value: parameters.atmosphere,
+    min: 0,
+    max: 100,
+    defaultValue: 50,
+    unit: '%',
+    onChange: setAtmosphere,
+    midi: { pluginUri: SHOEGAZE_URI, paramIndex: PARAM.ATMOSPHERE },
+  }
+
+  const decaySlot: ParamSlot = {
+    label: 'Decay',
+    value: parameters.decay,
+    min: 0.5,
+    max: 30,
+    defaultValue: 4,
+    unit: 's',
+    onChange: setDecay,
+    isLogarithmic: true,
+    midi: { pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DECAY },
+  }
+
+  const mixSlot: ParamSlot = {
+    label: 'Mix',
+    value: parameters.mix,
+    min: 0,
+    max: 100,
+    defaultValue: 50,
+    unit: '%',
+    onChange: setMix,
+    midi: { pluginUri: SHOEGAZE_URI, paramIndex: PARAM.MIX },
+  }
 
   // Dreamy visualization with shimmer particles and reverb waves
   const dreamyVisualization = (
@@ -191,87 +224,35 @@ function ShoeGazeCardBase({
     </div>
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={parameters.bypass}
-      onBypassToggle={() => setBypass(!parameters.bypass)}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={dreamyVisualization}
-      compact={compact}
-      customHeader={
-        <div className="shoegaze-card-header">
-          <span className="shoegaze-card-title">SHOEGAZE</span>
-          <span className="shoegaze-card-subtitle">Multi-Effect</span>
-        </div>
-      }
-    >
-      {/* Preset Selector */}
-      <div className="shoegaze-preset-section">
-        <select
-          className="shoegaze-preset-select"
-          value={currentPreset.id}
-          onChange={(e) => setPreset(e.target.value)}
-          style={{ borderColor: accentColor }}
-        >
-          {presets.map((preset) => (
-            <option key={preset.id} value={preset.id}>
-              {preset.name} {preset.artist ? `- ${preset.artist}` : ''}
-            </option>
-          ))}
-        </select>
-        {currentPreset.description && (
-          <div className="shoegaze-preset-info">{currentPreset.description}</div>
-        )}
-      </div>
+  // Preset selector
+  const presetSelector = (
+    <div className="shoegaze-preset-section">
+      <select
+        className="shoegaze-preset-select"
+        value={currentPreset.id}
+        onChange={(e) => setPreset(e.target.value)}
+        style={{ borderColor: accentColor }}
+      >
+        {presets.map((preset) => (
+          <option key={preset.id} value={preset.id}>
+            {preset.name} {preset.artist ? `- ${preset.artist}` : ''}
+          </option>
+        ))}
+      </select>
+      {currentPreset.description && (
+        <div className="shoegaze-preset-info">{currentPreset.description}</div>
+      )}
+    </div>
+  )
 
-      {/* Main Controls - Atmosphere & Character */}
-      <ParameterSection title="Atmosphere" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Atmos"
-            value={parameters.atmosphere}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={setAtmosphere}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.ATMOSPHERE }}
-          />
-          <ParameterKnob
-            label="Decay"
-            value={parameters.decay}
-            min={0.5}
-            max={30}
-            defaultValue={4}
-            unit="s"
-            onChange={setDecay}
-            isLogarithmic
-            accentColor={accentColor}
-            size="medium"
-            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DECAY }}
-          />
-          <ParameterKnob
-            label="Mix"
-            value={parameters.mix}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={setMix}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.MIX }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Shimmer Section */}
-      <ParameterSection title="Shimmer" accentColor="#9b59b6">
-        <ParameterRow>
+  // Advanced sections for per-module controls
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'shimmer',
+      title: 'Shimmer',
+      defaultOpen: true,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Amount"
             value={parameters.shimmer}
@@ -281,7 +262,7 @@ function ShoeGazeCardBase({
             unit="%"
             onChange={setShimmer}
             accentColor="#9b59b6"
-            size="medium"
+            size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.SHIMMER }}
           />
           <ParameterKnob
@@ -294,15 +275,18 @@ function ShoeGazeCardBase({
             valueFormatter={(v: number) => formatSemitones(Math.round(v))}
             onChange={(v) => setShimmerPitch(Math.round(v))}
             accentColor="#9b59b6"
-            size="medium"
+            size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.SHIMMER_PITCH }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Modulation Section */}
-      <ParameterSection title="Modulation" accentColor="#3498db">
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'modulation',
+      title: 'Modulation',
+      defaultOpen: false,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Depth"
             value={parameters.modulation}
@@ -312,7 +296,7 @@ function ShoeGazeCardBase({
             unit="%"
             onChange={setModulation}
             accentColor="#3498db"
-            size="medium"
+            size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.MODULATION }}
           />
           <ParameterKnob
@@ -325,15 +309,18 @@ function ShoeGazeCardBase({
             onChange={setModRate}
             isLogarithmic
             accentColor="#3498db"
-            size="medium"
+            size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.MOD_RATE }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Delay Section */}
-      <ParameterSection title="Delay" accentColor="#1abc9c">
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'delay',
+      title: 'Delay',
+      defaultOpen: false,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Time"
             value={parameters.delayTime}
@@ -343,7 +330,7 @@ function ShoeGazeCardBase({
             unit="ms"
             onChange={setDelayTime}
             accentColor="#1abc9c"
-            size="small"
+            size={compact ? 'small' : 'small'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DELAY_TIME }}
           />
           <ParameterKnob
@@ -370,12 +357,15 @@ function ShoeGazeCardBase({
             size="small"
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DELAY_MOD }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Tone Section */}
-      <ParameterSection title="Tone" accentColor="#e67e22">
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'tone',
+      title: 'Tone',
+      defaultOpen: false,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Drive"
             value={parameters.drive}
@@ -415,12 +405,15 @@ function ShoeGazeCardBase({
             size="small"
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.HIGH_CUT }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Output Section */}
-      <ParameterSection title="Output" accentColor={accentColor}>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'output',
+      title: 'Output',
+      defaultOpen: false,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Width"
             value={parameters.stereoWidth}
@@ -445,9 +438,14 @@ function ShoeGazeCardBase({
             size="small"
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DUCKING }}
           />
-        </ParameterRow>
-      </ParameterSection>
+        </div>
+      ),
+    },
+  ]
 
+  // Extra content: quick presets + footer
+  const extraContent = (
+    <>
       {/* Quick Preset Buttons */}
       <div className="shoegaze-quick-presets">
         {SHOEGAZE_PRESETS.slice(1, 5).map((preset) => (
@@ -471,7 +469,27 @@ function ShoeGazeCardBase({
         <span className="shoegaze-meter">OUT: {metering.outputLevel.toFixed(1)} dB</span>
         <span className="shoegaze-cpu">CPU: {metering.cpuLoad.toFixed(0)}%</span>
       </div>
-    </PluginCardShell>
+    </>
+  )
+
+  return (
+    <MultiEffectCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={parameters.bypass}
+      onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={dreamyVisualization}
+      inputGain={atmosphereSlot}
+      outputGain={decaySlot}
+      mix={mixSlot}
+      inputLevel={metering.inputLevel}
+      outputLevel={metering.outputLevel}
+      advancedSections={advancedSections}
+      presets={presetSelector}
+      extraContent={extraContent}
+    />
   )
 }
 

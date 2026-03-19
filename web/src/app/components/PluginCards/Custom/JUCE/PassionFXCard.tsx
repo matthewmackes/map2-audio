@@ -10,12 +10,11 @@
 
 import { usePassionFX, PASSIONFX_PRESETS } from '../../../../hooks/usePassionFX'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
+import { MultiEffectCategoryLayout, type ParamSlot } from '../../Layouts/MultiEffectCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
-import './PassionFXCard.css'
+
 
 // Plugin URI for MIDI mappings
 const PASSIONFX_URI = 'map2://juce/multieffect/passionfx'
@@ -281,6 +280,18 @@ function PassionFXCardBase({
     trem: setTremEnabled,
   }
 
+  // Primary mix control as ParamSlot
+  const mixSlot: ParamSlot = {
+    label: 'Mix',
+    value: parameters.mix,
+    min: 0,
+    max: 100,
+    defaultValue: 100,
+    unit: '%',
+    onChange: setMix,
+    midi: { pluginUri: PASSIONFX_URI, paramIndex: PARAM.MIX },
+  }
+
   // Signal chain visualization
   const signalChainVisualization = (
     <div className="passionfx-visualization">
@@ -314,65 +325,34 @@ function PassionFXCardBase({
     </div>
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={parameters.bypass}
-      onBypassToggle={() => setBypass(!parameters.bypass)}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={signalChainVisualization}
-      compact={compact}
-      customHeader={
-        <div className="passionfx-card-header">
-          <span className="passionfx-card-title">PASSION FX</span>
-          <span className="passionfx-card-subtitle">Multi-Effect Processor</span>
-        </div>
-      }
-    >
-      {/* Preset Selector */}
-      <div className="passionfx-preset-section">
-        <select
-          className="passionfx-preset-select"
-          value={currentPreset.id}
-          onChange={(e) => setPreset(e.target.value)}
-          style={{ borderColor: accentColor }}
-        >
-          {presets.map((preset) => (
-            <option key={preset.id} value={preset.id}>
-              {preset.name} {preset.track ? `- ${preset.track}` : ''}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Master Mix */}
-      <ParameterSection title="Master" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Mix"
-            value={parameters.mix}
-            min={0}
-            max={100}
-            defaultValue={100}
-            unit="%"
-            onChange={setMix}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.MIX }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Gate - BOSS */}
-      <ParameterSection
-        title="Gate"
-        accentColor="#4caf50"
-        collapsible
-        defaultCollapsed={!parameters.gateEnabled}
+  // Preset selector
+  const presetSelector = (
+    <div className="passionfx-preset-section">
+      <select
+        className="passionfx-preset-select"
+        value={currentPreset.id}
+        onChange={(e) => setPreset(e.target.value)}
+        style={{ borderColor: accentColor }}
       >
-        <div className="passionfx-section-mfr">CLASSIC</div>
-        <ParameterRow>
+        {presets.map((preset) => (
+          <option key={preset.id} value={preset.id}>
+            {preset.name} {preset.track ? `- ${preset.track}` : ''}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+
+  const knobSize = compact ? 'small' : 'small'
+
+  // Signal chain modules as advanced accordion sections
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'gate',
+      title: 'Gate (Classic)',
+      defaultOpen: parameters.gateEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Threshold"
             value={parameters.gateThreshold}
@@ -382,66 +362,62 @@ function PassionFXCardBase({
             unit="dB"
             onChange={setGateThreshold}
             accentColor="#4caf50"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.GATE_THRESHOLD }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Compressor - UREI */}
-      <ParameterSection
-        title="Compressor"
-        accentColor="#66bb6a"
-        collapsible
-        defaultCollapsed={!parameters.compEnabled}
-      >
-        <div className="passionfx-section-mfr">UREI</div>
-        <ParameterRow>
-          <ParameterKnob
-            label="Thresh"
-            value={parameters.compThreshold}
-            min={-60}
-            max={0}
-            defaultValue={-20}
-            unit="dB"
-            onChange={setCompThreshold}
-            accentColor="#66bb6a"
-            size="small"
-            midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_THRESHOLD }}
-          />
-          <ParameterKnob
-            label="Ratio"
-            value={parameters.compRatio}
-            min={1}
-            max={20}
-            defaultValue={4}
-            unit=":1"
-            onChange={setCompRatio}
-            accentColor="#66bb6a"
-            size="small"
-            midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_RATIO }}
-          />
-        </ParameterRow>
-        <div className="passionfx-toggle-row">
-          <button
-            className={`passionfx-toggle-btn ${parameters.compGlassy ? 'active' : ''}`}
-            onClick={() => setCompGlassy(!parameters.compGlassy)}
-            style={{ '--toggle-color': '#66bb6a' } as React.CSSProperties}
-          >
-            Glassy
-          </button>
         </div>
-      </ParameterSection>
-
-      {/* Wah - Cry Baby */}
-      <ParameterSection
-        title="Wah"
-        accentColor="#81c784"
-        collapsible
-        defaultCollapsed={!parameters.wahEnabled}
-      >
-        <div className="passionfx-section-mfr">Cry Baby</div>
-        <ParameterRow>
+      ),
+    },
+    {
+      id: 'comp',
+      title: 'Compressor (UREI)',
+      defaultOpen: parameters.compEnabled,
+      children: (
+        <>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Thresh"
+              value={parameters.compThreshold}
+              min={-60}
+              max={0}
+              defaultValue={-20}
+              unit="dB"
+              onChange={setCompThreshold}
+              accentColor="#66bb6a"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_THRESHOLD }}
+            />
+            <ParameterKnob
+              label="Ratio"
+              value={parameters.compRatio}
+              min={1}
+              max={20}
+              defaultValue={4}
+              unit=":1"
+              onChange={setCompRatio}
+              accentColor="#66bb6a"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_RATIO }}
+            />
+          </div>
+          <div className="passionfx-toggle-row">
+            <button
+              className={`passionfx-toggle-btn ${parameters.compGlassy ? 'active' : ''}`}
+              onClick={() => setCompGlassy(!parameters.compGlassy)}
+              style={{ '--toggle-color': '#66bb6a' } as React.CSSProperties}
+            >
+              Glassy
+            </button>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'wah',
+      title: 'Wah (Cry Baby)',
+      defaultOpen: parameters.wahEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Position"
             value={parameters.wahPosition}
@@ -451,7 +427,7 @@ function PassionFXCardBase({
             unit="%"
             onChange={setWahPosition}
             accentColor="#81c784"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.WAH_POSITION }}
           />
           <ParameterKnob
@@ -463,21 +439,18 @@ function PassionFXCardBase({
             unit=""
             onChange={setWahQ}
             accentColor="#81c784"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.WAH_Q }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Phaser - MXR */}
-      <ParameterSection
-        title="Phaser"
-        accentColor="#a5d6a7"
-        collapsible
-        defaultCollapsed={!parameters.phaserEnabled}
-      >
-        <div className="passionfx-section-mfr">MXR</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'phaser',
+      title: 'Phaser (MXR)',
+      defaultOpen: parameters.phaserEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Rate"
             value={parameters.phaserRate}
@@ -488,7 +461,7 @@ function PassionFXCardBase({
             onChange={setPhaserRate}
             isLogarithmic
             accentColor="#a5d6a7"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PHASER_RATE }}
           />
           <ParameterKnob
@@ -500,21 +473,18 @@ function PassionFXCardBase({
             unit="%"
             onChange={setPhaserDepth}
             accentColor="#a5d6a7"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PHASER_DEPTH }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Chorus - TC */}
-      <ParameterSection
-        title="Chorus"
-        accentColor="#00e676"
-        collapsible
-        defaultCollapsed={!parameters.chorusEnabled}
-      >
-        <div className="passionfx-section-mfr">TC</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'chorus',
+      title: 'Chorus (TC)',
+      defaultOpen: parameters.chorusEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Rate"
             value={parameters.chorusRate}
@@ -525,7 +495,7 @@ function PassionFXCardBase({
             onChange={setChorusRate}
             isLogarithmic
             accentColor="#00e676"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.CHORUS_RATE }}
           />
           <ParameterKnob
@@ -537,7 +507,7 @@ function PassionFXCardBase({
             unit="%"
             onChange={setChorusDepth}
             accentColor="#00e676"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.CHORUS_DEPTH }}
           />
           <ParameterKnob
@@ -549,21 +519,18 @@ function PassionFXCardBase({
             unit="%"
             onChange={setChorusMix}
             accentColor="#00e676"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.CHORUS_MIX }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Pitch Shifter - DigiTech */}
-      <ParameterSection
-        title="Pitch Shifter"
-        accentColor="#69f0ae"
-        collapsible
-        defaultCollapsed={!parameters.pitchEnabled}
-      >
-        <div className="passionfx-section-mfr">DigiTech</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'pitch',
+      title: 'Pitch Shifter (DigiTech)',
+      defaultOpen: parameters.pitchEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Semi"
             value={parameters.pitchSemitones}
@@ -574,7 +541,7 @@ function PassionFXCardBase({
             valueFormatter={(v: number) => pitchLabel(Math.round(v))}
             onChange={(v) => setPitchSemitones(Math.round(v))}
             accentColor="#69f0ae"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PITCH_SEMITONES }}
           />
           <ParameterKnob
@@ -586,21 +553,18 @@ function PassionFXCardBase({
             unit="%"
             onChange={setPitchMix}
             accentColor="#69f0ae"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PITCH_MIX }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Harmonizer - Eventide */}
-      <ParameterSection
-        title="Harmonizer"
-        accentColor="#00c853"
-        collapsible
-        defaultCollapsed={!parameters.harmEnabled}
-      >
-        <div className="passionfx-section-mfr">STUDIO</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'harm',
+      title: 'Harmonizer (Studio)',
+      defaultOpen: parameters.harmEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Voice 1"
             value={parameters.harmVoice1Interval}
@@ -611,7 +575,7 @@ function PassionFXCardBase({
             valueFormatter={(v: number) => intervalLabel(Math.round(v))}
             onChange={(v) => setHarmVoice1Interval(Math.round(v))}
             accentColor="#00c853"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.HARM_VOICE1 }}
           />
           <ParameterKnob
@@ -624,7 +588,7 @@ function PassionFXCardBase({
             valueFormatter={(v: number) => intervalLabel(Math.round(v))}
             onChange={(v) => setHarmVoice2Interval(Math.round(v))}
             accentColor="#00c853"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.HARM_VOICE2 }}
           />
           <ParameterKnob
@@ -636,21 +600,18 @@ function PassionFXCardBase({
             unit="c"
             onChange={setHarmDetuneCents}
             accentColor="#00c853"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.HARM_DETUNE }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Delay - TC 2290 */}
-      <ParameterSection
-        title="Delay"
-        accentColor="#00bfa5"
-        collapsible
-        defaultCollapsed={!parameters.delayEnabled}
-      >
-        <div className="passionfx-section-mfr">TC 2290</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'delay',
+      title: 'Delay (TC 2290)',
+      defaultOpen: parameters.delayEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Time L"
             value={parameters.delayTimeL}
@@ -660,7 +621,7 @@ function PassionFXCardBase({
             unit="ms"
             onChange={setDelayTimeL}
             accentColor="#00bfa5"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_TIME_L }}
           />
           <ParameterKnob
@@ -672,7 +633,7 @@ function PassionFXCardBase({
             unit="%"
             onChange={setDelayFeedback}
             accentColor="#00bfa5"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_FEEDBACK }}
           />
           <ParameterKnob
@@ -684,21 +645,18 @@ function PassionFXCardBase({
             unit="%"
             onChange={setDelayMix}
             accentColor="#00bfa5"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_MIX }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Reverb - Lexicon */}
-      <ParameterSection
-        title="Reverb"
-        accentColor="#1de9b6"
-        collapsible
-        defaultCollapsed={!parameters.reverbEnabled}
-      >
-        <div className="passionfx-section-mfr">RACK</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'reverb',
+      title: 'Reverb (Rack)',
+      defaultOpen: parameters.reverbEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Decay"
             value={parameters.reverbDecay}
@@ -709,7 +667,7 @@ function PassionFXCardBase({
             onChange={setReverbDecay}
             isLogarithmic
             accentColor="#1de9b6"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.REVERB_DECAY }}
           />
           <ParameterKnob
@@ -721,7 +679,7 @@ function PassionFXCardBase({
             unit="%"
             onChange={setReverbShimmerAmount}
             accentColor="#1de9b6"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.REVERB_SHIMMER }}
           />
           <ParameterKnob
@@ -733,21 +691,18 @@ function PassionFXCardBase({
             unit="%"
             onChange={setReverbMix}
             accentColor="#1de9b6"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.REVERB_MIX }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* EQ - API */}
-      <ParameterSection
-        title="EQ"
-        accentColor="#64ffda"
-        collapsible
-        defaultCollapsed={!parameters.eqEnabled}
-      >
-        <div className="passionfx-section-mfr">API</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'eq',
+      title: 'EQ (API)',
+      defaultOpen: parameters.eqEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Low"
             value={parameters.eqLowGain}
@@ -757,7 +712,7 @@ function PassionFXCardBase({
             unit="dB"
             onChange={setEqLowGain}
             accentColor="#64ffda"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EQ_LOW }}
           />
           <ParameterKnob
@@ -769,7 +724,7 @@ function PassionFXCardBase({
             unit="dB"
             onChange={setEqMidGain}
             accentColor="#64ffda"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EQ_MID }}
           />
           <ParameterKnob
@@ -781,21 +736,18 @@ function PassionFXCardBase({
             unit="dB"
             onChange={setEqHighGain}
             accentColor="#64ffda"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EQ_HIGH }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Exciter - Aphex */}
-      <ParameterSection
-        title="Exciter"
-        accentColor="#a7ffeb"
-        collapsible
-        defaultCollapsed={!parameters.exciterEnabled}
-      >
-        <div className="passionfx-section-mfr">Aphex</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'exciter',
+      title: 'Exciter (Aphex)',
+      defaultOpen: parameters.exciterEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Warmth"
             value={parameters.exciterWarmth}
@@ -805,7 +757,7 @@ function PassionFXCardBase({
             unit="%"
             onChange={setExciterWarmth}
             accentColor="#a7ffeb"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EXCITER_WARMTH }}
           />
           <ParameterKnob
@@ -817,7 +769,7 @@ function PassionFXCardBase({
             unit="%"
             onChange={setExciterPresence}
             accentColor="#a7ffeb"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EXCITER_PRESENCE }}
           />
           <ParameterKnob
@@ -829,21 +781,18 @@ function PassionFXCardBase({
             unit="%"
             onChange={setExciterAir}
             accentColor="#a7ffeb"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EXCITER_AIR }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Tremolo - Fender */}
-      <ParameterSection
-        title="Tremolo"
-        accentColor="#b9f6ca"
-        collapsible
-        defaultCollapsed={!parameters.tremEnabled}
-      >
-        <div className="passionfx-section-mfr">Fender</div>
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'trem',
+      title: 'Tremolo (Fender)',
+      defaultOpen: parameters.tremEnabled,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Rate"
             value={parameters.tremRate}
@@ -854,7 +803,7 @@ function PassionFXCardBase({
             onChange={setTremRate}
             isLogarithmic
             accentColor="#b9f6ca"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.TREM_RATE }}
           />
           <ParameterKnob
@@ -866,52 +815,72 @@ function PassionFXCardBase({
             unit="%"
             onChange={setTremDepth}
             accentColor="#b9f6ca"
-            size="small"
+            size={knobSize}
             midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.TREM_DEPTH }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Footer with metering */}
-      <div className="passionfx-footer">
-        <div className="passionfx-meter-group">
-          <div className="passionfx-meter-item">
-            <span className="passionfx-meter-label">IN</span>
-            <div className="passionfx-meter-bar-track">
-              <div
-                className="passionfx-meter-bar-fill"
-                style={{
-                  width: `${Math.max(0, Math.min(100, (metering.inputLevel + 60) * (100 / 60)))}%`,
-                  background: metering.inputLevel > -6 ? '#ff5252' : accentColor,
-                }}
-              />
-            </div>
-            <span className="passionfx-meter-value">{metering.inputLevel.toFixed(1)}</span>
-          </div>
-          <div className="passionfx-meter-item">
-            <span className="passionfx-meter-label">OUT</span>
-            <div className="passionfx-meter-bar-track">
-              <div
-                className="passionfx-meter-bar-fill"
-                style={{
-                  width: `${Math.max(0, Math.min(100, (metering.outputLevel + 60) * (100 / 60)))}%`,
-                  background: metering.outputLevel > -6 ? '#ff5252' : accentColor,
-                }}
-              />
-            </div>
-            <span className="passionfx-meter-value">{metering.outputLevel.toFixed(1)}</span>
-          </div>
         </div>
-        <div className="passionfx-meter-extras">
-          <span className="passionfx-meter-badge">
-            GR: {metering.compGainReduction.toFixed(1)} dB
-          </span>
-          <span className="passionfx-meter-badge">
-            GATE: {metering.gateGain.toFixed(1)} dB
-          </span>
+      ),
+    },
+  ]
+
+  // Extra content: footer with metering
+  const extraContent = (
+    <div className="passionfx-footer">
+      <div className="passionfx-meter-group">
+        <div className="passionfx-meter-item">
+          <span className="passionfx-meter-label">IN</span>
+          <div className="passionfx-meter-bar-track">
+            <div
+              className="passionfx-meter-bar-fill"
+              style={{
+                width: `${Math.max(0, Math.min(100, (metering.inputLevel + 60) * (100 / 60)))}%`,
+                background: metering.inputLevel > -6 ? '#ff5252' : accentColor,
+              }}
+            />
+          </div>
+          <span className="passionfx-meter-value">{metering.inputLevel.toFixed(1)}</span>
+        </div>
+        <div className="passionfx-meter-item">
+          <span className="passionfx-meter-label">OUT</span>
+          <div className="passionfx-meter-bar-track">
+            <div
+              className="passionfx-meter-bar-fill"
+              style={{
+                width: `${Math.max(0, Math.min(100, (metering.outputLevel + 60) * (100 / 60)))}%`,
+                background: metering.outputLevel > -6 ? '#ff5252' : accentColor,
+              }}
+            />
+          </div>
+          <span className="passionfx-meter-value">{metering.outputLevel.toFixed(1)}</span>
         </div>
       </div>
-    </PluginCardShell>
+      <div className="passionfx-meter-extras">
+        <span className="passionfx-meter-badge">
+          GR: {metering.compGainReduction.toFixed(1)} dB
+        </span>
+        <span className="passionfx-meter-badge">
+          GATE: {metering.gateGain.toFixed(1)} dB
+        </span>
+      </div>
+    </div>
+  )
+
+  return (
+    <MultiEffectCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={parameters.bypass}
+      onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={signalChainVisualization}
+      mix={mixSlot}
+      inputLevel={metering.inputLevel}
+      outputLevel={metering.outputLevel}
+      advancedSections={advancedSections}
+      presets={presetSelector}
+      extraContent={extraContent}
+    />
   )
 }
 

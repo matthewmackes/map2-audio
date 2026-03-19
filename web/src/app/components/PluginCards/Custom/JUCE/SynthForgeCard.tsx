@@ -1,9 +1,19 @@
+/**
+ * SynthForgeCard - Carbon-compliant JUCE SoundFont Sampler
+ *
+ * Uses InstrumentCategoryLayout for AXE-FX Edit structural parity.
+ * Performance knobs (transpose, velocity curve, PB range, level) in layout performance slots.
+ * Library browser, preset browser, keyboard, and part config in advancedSections.
+ * Full MIDI mapping support via withMidiDialog.
+ */
+
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Keyboard, Renew } from '@carbon/icons-react'
+import { Keyboard, Renew, Settings, MusicAdd, Catalog } from '@carbon/icons-react'
 
-import { PluginCardShell } from '../../Base/PluginCardShell'
+import { InstrumentCategoryLayout, type ParamSlot } from '../../Layouts/InstrumentCategoryLayout'
 import { NumberInput } from '../../../Controls/NumberInput'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import {
   soundfontApi,
@@ -13,7 +23,24 @@ import {
 } from '../../../../../map2/api'
 import type { SoundFont } from '../../../../types/library'
 import { useWebSocketConnection, useWebSocketTopic } from '../../../../../map2/hooks/useWebSocket'
-import './SynthForgeCard.css'
+
+// ── Constants ──────────────────────────────────────────────
+
+const SYNTHFORGE_URI = 'map2://juce/synthforge'
+
+const PARAM = {
+  TRANSPOSE: 0,
+  VELOCITY_CURVE: 1,
+  PITCH_BEND_RANGE: 2,
+  LEVEL: 3,
+} as const
+
+const SYNTHFORGE_PARAMS: PluginParamDef[] = [
+  { index: PARAM.TRANSPOSE, name: 'Transpose', symbol: 'masterTranspose' },
+  { index: PARAM.VELOCITY_CURVE, name: 'Velocity Curve', symbol: 'velocityCurve' },
+  { index: PARAM.PITCH_BEND_RANGE, name: 'PB Range', symbol: 'pitchBendRange' },
+  { index: PARAM.LEVEL, name: 'Level', symbol: 'level' },
+]
 
 type NoteSource = 'external' | 'on-screen' | 'qwerty'
 type MidiEventType = 'note_on' | 'note_off'
@@ -97,7 +124,132 @@ function NumericField(props: {
   )
 }
 
-export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = false }: PluginCardProps) {
+// ── Inline styles for keyboard and sub-panels ──────────────
+
+const S = {
+  panelHeading: {
+    display: 'flex', justifyContent: 'space-between', gap: '0.75rem',
+    alignItems: 'baseline', marginBottom: 8,
+  } as CSSProperties,
+  headingLabel: {
+    fontSize: '0.76rem', textTransform: 'uppercase' as const,
+    letterSpacing: '0.11em', color: '#7dd3fc',
+  } as CSSProperties,
+  headingValue: { fontSize: '0.95rem', fontWeight: 700, color: '#ecfeff' } as CSSProperties,
+  statusStrip: {
+    display: 'flex', flexWrap: 'wrap' as const, gap: '0.75rem',
+    color: 'rgba(220,252,231,0.72)', fontSize: '0.85rem', marginBottom: 8,
+  } as CSSProperties,
+  select: {
+    minHeight: '2.6rem', border: '1px solid rgba(165,243,252,0.18)',
+    borderRadius: 12, padding: '0.7rem 0.85rem',
+    background: 'rgba(2,6,23,0.58)', color: '#ecfeff', width: '100%',
+  } as CSSProperties,
+  searchInput: {
+    minHeight: '2.6rem', border: '1px solid rgba(165,243,252,0.18)',
+    borderRadius: 12, padding: '0.7rem 0.85rem',
+    background: 'rgba(2,6,23,0.58)', color: '#ecfeff', width: '100%', marginBottom: 8,
+  } as CSSProperties,
+  libraryList: {
+    display: 'grid', gap: '0.55rem', maxHeight: '19rem', overflow: 'auto',
+  } as CSSProperties,
+  libraryItem: (selected: boolean) => ({
+    display: 'grid', gap: '0.2rem', padding: '0.75rem 0.85rem', textAlign: 'left' as const,
+    border: '1px solid ' + (selected ? 'rgba(153,246,228,0.6)' : 'rgba(103,232,249,0.2)'),
+    borderRadius: 14, cursor: 'pointer',
+    background: selected
+      ? 'linear-gradient(180deg, rgba(17,94,89,0.92), rgba(15,118,110,0.68))'
+      : 'rgba(15,23,42,0.8)',
+    color: '#ecfeff', transition: 'all 140ms ease',
+  } as CSSProperties),
+  primaryBtn: (disabled: boolean) => ({
+    minHeight: '2.9rem', fontWeight: 700, width: '100%', marginTop: 8,
+    border: '1px solid rgba(103,232,249,0.2)', borderRadius: 14,
+    background: disabled ? 'rgba(15,23,42,0.4)' : 'rgba(15,23,42,0.8)',
+    color: disabled ? 'rgba(220,252,231,0.4)' : '#ecfeff',
+    cursor: disabled ? 'default' : 'pointer',
+  } as CSSProperties),
+  toggleRow: { display: 'flex', flexWrap: 'wrap' as const, gap: '0.6rem', marginTop: 8 } as CSSProperties,
+  toggleBtn: (active: boolean) => ({
+    minWidth: '6rem', minHeight: '2.5rem',
+    border: '1px solid ' + (active ? 'rgba(153,246,228,0.6)' : 'rgba(103,232,249,0.2)'),
+    borderRadius: 14, cursor: 'pointer',
+    background: active
+      ? 'linear-gradient(180deg, rgba(17,94,89,0.92), rgba(15,118,110,0.68))'
+      : 'rgba(15,23,42,0.8)',
+    color: '#ecfeff',
+  } as CSSProperties),
+  controlsGrid: {
+    display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: '0.75rem',
+  } as CSSProperties,
+  keyboard: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(61, minmax(1.1rem, 1fr))',
+    gap: '0.14rem', alignItems: 'end', overflow: 'auto',
+  } as CSSProperties,
+  whiteKey: (active: boolean, accent: string) => ({
+    position: 'relative' as const, minHeight: '8rem',
+    borderRadius: '0 0 10px 10px',
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'linear-gradient(180deg, #f8fafc, #dbeafe)',
+    color: 'rgba(0,0,0,0.76)', cursor: 'pointer',
+    boxShadow: active ? `inset 0 0 0 2px ${accent}, 0 0 18px rgba(56,214,196,0.28)` : 'none',
+  } as CSSProperties),
+  blackKey: (active: boolean, accent: string) => ({
+    position: 'relative' as const, minHeight: '5.6rem',
+    borderRadius: '0 0 10px 10px',
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'linear-gradient(180deg, #1e293b, #020617)',
+    color: 'rgba(226,232,240,0.92)', cursor: 'pointer',
+    boxShadow: active ? `inset 0 0 0 2px ${accent}, 0 0 18px rgba(56,214,196,0.28)` : 'none',
+  } as CSSProperties),
+  keyLabel: {
+    position: 'absolute' as const, bottom: '0.35rem', left: '0.25rem', fontSize: '0.62rem',
+  } as CSSProperties,
+  activeNotes: { display: 'flex', flexWrap: 'wrap' as const, gap: '0.5rem', marginTop: 8 } as CSSProperties,
+  noteChip: {
+    display: 'inline-flex', gap: '0.45rem', alignItems: 'center',
+    borderRadius: 999, padding: '0.4rem 0.7rem',
+    background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(125,211,252,0.16)',
+    fontSize: '0.82rem', color: '#ecfeff',
+  } as CSSProperties,
+  eventList: {
+    display: 'grid', gap: '0.55rem', maxHeight: '19rem', overflow: 'auto', marginTop: 8,
+  } as CSSProperties,
+  event: (type: MidiEventType) => ({
+    display: 'inline-flex', gap: '0.45rem', alignItems: 'center',
+    borderRadius: 999, padding: '0.4rem 0.7rem',
+    background: 'rgba(15,23,42,0.9)',
+    border: '1px solid ' + (type === 'note_on' ? 'rgba(45,212,191,0.5)' : 'rgba(251,191,36,0.35)'),
+    fontSize: '0.82rem', color: '#ecfeff',
+  } as CSSProperties),
+  empty: { color: 'rgba(220,252,231,0.72)', fontSize: '0.85rem' } as CSSProperties,
+  footerStatus: {
+    display: 'flex', flexWrap: 'wrap' as const, gap: '0.6rem',
+    padding: '0.8rem 0', fontSize: '0.84rem',
+  } as CSSProperties,
+  labelGrid: {
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: 8,
+  } as CSSProperties,
+  label: {
+    display: 'grid', gap: '0.35rem', fontSize: '0.78rem',
+    textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+    color: 'rgba(220,252,231,0.72)',
+  } as CSSProperties,
+}
+
+// ── Main Component ─────────────────────────────────────────
+
+interface SynthForgeCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function SynthForgeCardBase({
+  plugin,
+  accentColor = '#38d6c4',
+  compact = false,
+  onOpenMidiMappings,
+}: SynthForgeCardProps) {
   useWebSocketConnection()
   const queryClient = useQueryClient()
 
@@ -190,8 +342,7 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
   const libraryItems = useMemo(() => {
     const all = (libraryQuery.data?.soundfonts ?? []) as SoundFont[]
     const lowered = search.trim().toLowerCase()
-    return all
-      .filter((item) => !lowered || item.name.toLowerCase().includes(lowered) || item.library.toLowerCase().includes(lowered))
+    return all.filter((item) => !lowered || item.name.toLowerCase().includes(lowered) || item.library.toLowerCase().includes(lowered))
   }, [libraryQuery.data, search])
   const totalLibraryCount = libraryQuery.data?.total ?? 0
   const compatibleLibraryCount = useMemo(() => {
@@ -347,304 +498,307 @@ export function SynthForgeCard({ plugin, accentColor = '#38d6c4', compact = fals
   const activeVelocityByNote = new Map<number, number>()
   Object.values(activeNotes).forEach((entry) => activeVelocityByNote.set(entry.note, Math.max(activeVelocityByNote.get(entry.note) ?? 0, entry.velocity)))
 
+  // ── Visualization (hero stats) ──
+  const visualization = (
+    <div style={{
+      padding: 16, background: 'linear-gradient(135deg, #0a0a14 0%, #0f1424 100%)',
+      borderRadius: 10, border: '1px solid #1e293b',
+    }}>
+      <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7dd3fc', marginBottom: 6 }}>
+        SoundFont Sampler
+      </div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: '#ecfeff', marginBottom: 8 }}>SynthForge</div>
+      <div style={{ display: 'flex', gap: 16, fontSize: 13, color: 'rgba(220,252,231,0.72)' }}>
+        <span><strong style={{ color: '#ecfeff' }}>{activeVoiceCount}</strong> voices</span>
+        <span><strong style={{ color: '#ecfeff' }}>{partVoiceCount}</strong> part</span>
+        <span><strong style={{ color: '#ecfeff' }}>CH {partChannel}</strong> input</span>
+      </div>
+    </div>
+  )
+
+  // ── Performance params ──
+  const performanceParams: ParamSlot[] = [
+    {
+      label: 'Transpose',
+      value: performanceDraft.master_transpose,
+      min: -36, max: 36, step: 1, defaultValue: 0,
+      unit: 'st',
+      onChange: v => setPerformanceDraft(prev => ({ ...prev, master_transpose: v })),
+      midi: { pluginUri: SYNTHFORGE_URI, paramIndex: PARAM.TRANSPOSE },
+    },
+    {
+      label: 'Vel Curve',
+      value: performanceDraft.velocity_curve,
+      min: -1, max: 1, step: 0.05, defaultValue: 0,
+      onChange: v => setPerformanceDraft(prev => ({ ...prev, velocity_curve: v })),
+      midi: { pluginUri: SYNTHFORGE_URI, paramIndex: PARAM.VELOCITY_CURVE },
+    },
+    {
+      label: 'PB Range',
+      value: performanceDraft.pitch_bend_range,
+      min: 1, max: 48, step: 1, defaultValue: 2,
+      unit: 'st',
+      onChange: v => setPerformanceDraft(prev => ({ ...prev, pitch_bend_range: v })),
+      midi: { pluginUri: SYNTHFORGE_URI, paramIndex: PARAM.PITCH_BEND_RANGE },
+    },
+    {
+      label: 'Level',
+      value: currentPart.level,
+      min: 0, max: 1, step: 0.01, defaultValue: 1,
+      onChange: v => updatePartConfig({ level: v }),
+      midi: { pluginUri: SYNTHFORGE_URI, paramIndex: PARAM.LEVEL },
+    },
+  ]
+
+  // ── Transport (part selector + apply) ──
+  const transportContent = (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={S.label}>
+        <span>Part</span>
+        <select style={S.select} value={activePart} onChange={(e) => setActivePart(Number(e.target.value))}>
+          {Array.from({ length: 16 }, (_, i) => <option key={i} value={i}>Part {i + 1}</option>)}
+        </select>
+      </div>
+      <div style={S.label}>
+        <span>MIDI</span>
+        <select style={S.select} value={currentPart.midi_channel} onChange={(e) => updatePartConfig({ midi_channel: Number(e.target.value) })}>
+          <option value={0}>OMNI</option>
+          {Array.from({ length: 16 }, (_, i) => <option key={i + 1} value={i + 1}>Channel {i + 1}</option>)}
+        </select>
+      </div>
+      <div style={S.label}>
+        <span>Output</span>
+        <select style={S.select} value={currentPart.output_bus} onChange={(e) => updatePartConfig({ output_bus: e.target.value })}>
+          {OUTPUT_BUSES.map((bus) => <option key={bus} value={bus}>{bus}</option>)}
+        </select>
+      </div>
+      <div style={S.toggleRow}>
+        <button style={S.toggleBtn(performanceDraft.mono_mode)} onClick={() => setPerformanceDraft(prev => ({ ...prev, mono_mode: !prev.mono_mode }))}>Mono</button>
+        <button style={S.toggleBtn(performanceDraft.legato)} onClick={() => setPerformanceDraft(prev => ({ ...prev, legato: !prev.legato }))}>Legato</button>
+        <button style={S.toggleBtn(currentPart.mute)} onClick={() => updatePartConfig({ mute: !currentPart.mute })}>Mute</button>
+        <button style={S.toggleBtn(currentPart.solo)} onClick={() => updatePartConfig({ solo: !currentPart.solo })}>Solo</button>
+      </div>
+      <button
+        style={S.primaryBtn(setPerformanceMutation.isPending)}
+        disabled={setPerformanceMutation.isPending}
+        onClick={() => setPerformanceMutation.mutate({ partIndex: activePart, config: performanceDraft })}
+      >
+        Apply Performance
+      </button>
+    </div>
+  )
+
+  // ── Advanced sections ──
+
+  // Library browser
+  const librarySection = (
+    <div>
+      <div style={S.statusStrip}>
+        <span>Total library: <strong>{totalLibraryCount}</strong></span>
+        <span>SF2/SF3 compatible: <strong>{compatibleLibraryCount}</strong></span>
+        <span>Modes: <strong>SF2/SF3 + SFZ</strong></span>
+      </div>
+      <input
+        style={S.searchInput}
+        placeholder="Search SoundFonts and SFZ instruments..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <div style={S.libraryList}>
+        {libraryItems.map((item) => (
+          <button
+            key={item.path}
+            style={S.libraryItem(selectedPath === item.path)}
+            onClick={() => setSelectedPath(item.path)}
+          >
+            <span style={{ fontWeight: 700 }}>{item.name}</span>
+            <span style={{ color: 'rgba(220,252,231,0.72)', fontSize: '0.8rem' }}>
+              {item.library} / {item.format.toUpperCase()} / {item.format === 'sfz' ? 'SFZ instrument' : `${item.preset_count ?? 0} presets`}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
+  // Preset browser
+  const presetSection = (
+    <div>
+      <div style={S.statusStrip}>
+        <span>Engine: <strong>{statusQuery.data?.engine || 'none'}</strong></span>
+        <span>Playback: <strong>{statusQuery.data?.engine_available ? 'Ready' : 'Unavailable'}</strong></span>
+        <span>Loaded: <strong>{statusQuery.data?.soundfont_format?.toUpperCase() || 'None'}</strong></span>
+      </div>
+
+      {isSelectedSoundFont ? (
+        <>
+          <div style={S.labelGrid}>
+            <div style={S.label}>
+              <span>Bank</span>
+              <select style={S.select} value={selectedBank} onChange={(e) => setSelectedBank(Number(e.target.value))} disabled={banks.length === 0}>
+                {banks.map((bank) => <option key={bank} value={bank}>Bank {bank}</option>)}
+              </select>
+            </div>
+            <div style={S.label}>
+              <span>Program</span>
+              <select style={S.select} value={selectedProgram} onChange={(e) => setSelectedProgram(Number(e.target.value))} disabled={filteredPresets.length === 0}>
+                {filteredPresets.map((preset) => <option key={`${preset.bank}:${preset.program}`} value={preset.program}>{preset.program} / {preset.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <button
+            style={S.primaryBtn(!selectedPath || !selectedPreset || loadSoundFontMutation.isPending)}
+            disabled={!selectedPath || !selectedPreset || loadSoundFontMutation.isPending}
+            onClick={() => {
+              if (!selectedPreset) return
+              loadSoundFontMutation.mutate({
+                partIndex: activePart,
+                path: selectedPath,
+                bank: selectedPreset.bank,
+                program: selectedPreset.program,
+                presetName: selectedPreset.name,
+              })
+            }}
+          >
+            Load {selectedPreset?.name || 'Preset'}
+          </button>
+          <div style={{ ...S.libraryList, marginTop: 8 }}>
+            {filteredPresets.map((preset) => (
+              <button
+                key={`${preset.bank}:${preset.program}:${preset.name}`}
+                style={S.libraryItem(preset.program === selectedProgram)}
+                onClick={() => setSelectedProgram(preset.program)}
+              >
+                <span>{preset.program.toString().padStart(3, '0')}</span>
+                <strong>{preset.name}</strong>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : isSelectedSfz ? (
+        <>
+          <div style={S.statusStrip}>
+            <span>Format: <strong>SFZ</strong></span>
+            <span>Load path: <strong>Existing SFZ sampler backend</strong></span>
+          </div>
+          <button
+            style={S.primaryBtn(!selectedPath || loadSoundFontMutation.isPending)}
+            disabled={!selectedPath || loadSoundFontMutation.isPending}
+            onClick={() => {
+              if (!selectedPath) return
+              void synthforgeApi.loadSfz(activePart, selectedPath).then(() => {
+                queryClient.invalidateQueries({ queryKey: ['synthforge', 'status', activePart] })
+              })
+            }}
+          >
+            Load SFZ Instrument
+          </button>
+        </>
+      ) : (
+        <div style={S.empty}>Select a library item to load.</div>
+      )}
+    </div>
+  )
+
+  // Keyboard
+  const keyboardSection = (
+    <div>
+      <p style={{ margin: '0 0 8px', color: 'rgba(220,252,231,0.72)' }}>
+        Click keys higher for stronger velocity. Hardware MIDI and injected note activity mirror here in real time.
+      </p>
+      <div style={S.keyboard}>
+        {keyboardNotes.map((note) => {
+          const velocity = activeVelocityByNote.get(note) ?? 0
+          const black = isBlackNote(note)
+          return (
+            <button
+              key={note}
+              style={black ? S.blackKey(velocity > 0, accentColor) : S.whiteKey(velocity > 0, accentColor)}
+              onPointerDown={handlePointerDown(note)}
+              onPointerUp={() => handlePointerUp(note)}
+              onPointerLeave={() => handlePointerUp(note)}
+              onPointerCancel={() => handlePointerUp(note)}
+              title={`${noteLabel(note)} (${note})`}
+            >
+              <span style={S.keyLabel}>{noteLabel(note)}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <div style={S.activeNotes}>
+        {Object.values(activeNotes).map((item) => (
+          <div key={`${item.channel}:${item.note}`} style={S.noteChip}>
+            <strong>{noteLabel(item.note)}</strong>
+            <span>CH {item.channel}</span>
+            <span>VEL {item.velocity}</span>
+            <span>{item.source}</span>
+          </div>
+        ))}
+        {Object.keys(activeNotes).length === 0 && <div style={S.empty}>No active notes</div>}
+      </div>
+
+      <div style={S.eventList}>
+        {noteEvents.map((event) => (
+          <div key={event.id} style={S.event(event.type)}>
+            <strong>{event.type === 'note_on' ? 'ON' : 'OFF'}</strong>
+            <span>{noteLabel(event.note)}</span>
+            <span>CH {event.channel}</span>
+            <span>VEL {event.velocity}</span>
+            <span>{event.source}</span>
+          </div>
+        ))}
+      </div>
+
+      {(statusQuery.data?.last_error || (statusQuery.data?.warnings?.length ?? 0) > 0 || noteApiError) && (
+        <div style={S.footerStatus}>
+          {statusQuery.data?.last_error ? <span style={{ color: '#fca5a5' }}>{statusQuery.data.last_error}</span> : null}
+          {statusQuery.data?.warnings?.map((warning: string) => <span key={warning} style={{ color: '#fde68a' }}>{warning}</span>)}
+          {noteApiError ? <span style={{ color: '#fde68a' }}>{noteApiError}</span> : null}
+        </div>
+      )}
+    </div>
+  )
+
+  const advancedSections = [
+    {
+      id: 'library',
+      title: `Library (${libraryItems.length} visible)`,
+      icon: <Catalog size={14} />,
+      children: librarySection,
+      defaultOpen: true,
+    },
+    {
+      id: 'presets',
+      title: `Presets — ${statusQuery.data?.active_preset_name || selectedItem?.name || 'Select instrument'}`,
+      icon: <MusicAdd size={14} />,
+      children: presetSection,
+      defaultOpen: true,
+    },
+    {
+      id: 'keyboard',
+      title: 'Performance Piano',
+      icon: <Keyboard size={14} />,
+      children: keyboardSection,
+      defaultOpen: false,
+    },
+  ]
+
   return (
-    <PluginCardShell
+    <InstrumentCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
       compact={compact}
-      showBypass={false}
-      showPresetControls={false}
-      showMoreMenu={false}
-      className="synthforge-shell"
-    >
-      <div className="synthforge-card">
-        <div className="synthforge-hero">
-          <div>
-            <span className="synthforge-kicker">SoundFont Sampler</span>
-            <h3>SynthForge</h3>
-            <p>
-              SoundFont 2/3 browsing, bank/program recall, velocity-first piano control, and hardware MIDI workflow.
-            </p>
-          </div>
-          <div className="synthforge-hero-stats">
-            <span><strong>{activeVoiceCount}</strong> voices</span>
-            <span><strong>{partVoiceCount}</strong> part</span>
-            <span><strong>CH {partChannel}</strong> input</span>
-          </div>
-        </div>
-
-        <div className="synthforge-toolbar">
-          <label>
-            Part
-            <select value={activePart} onChange={(event) => setActivePart(Number(event.target.value))}>
-              {Array.from({ length: 16 }, (_, index) => <option key={index} value={index}>Part {index + 1}</option>)}
-            </select>
-          </label>
-          <label>
-            MIDI
-            <select value={currentPart.midi_channel} onChange={(event) => updatePartConfig({ midi_channel: Number(event.target.value) })}>
-              <option value={0}>OMNI</option>
-              {Array.from({ length: 16 }, (_, index) => <option key={index + 1} value={index + 1}>Channel {index + 1}</option>)}
-            </select>
-          </label>
-          <label>
-            Output
-            <select value={currentPart.output_bus} onChange={(event) => updatePartConfig({ output_bus: event.target.value })}>
-              {OUTPUT_BUSES.map((bus) => <option key={bus} value={bus}>{bus}</option>)}
-            </select>
-          </label>
-          <button
-            className="synthforge-refresh"
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['soundfonts', 'synthforge', 'sampler-library'] })
-              if (selectedPath) queryClient.invalidateQueries({ queryKey: ['soundfonts', 'presets', selectedPath] })
-            }}
-            title="Refresh SoundFont library and preset metadata"
-          >
-            <Renew size={14} />
-          </button>
-        </div>
-
-        <div className="synthforge-grid">
-          <section className="synthforge-panel">
-            <div className="synthforge-panel-heading">
-              <span>Library</span>
-              <strong>{libraryItems.length} visible</strong>
-            </div>
-            <div className="synthforge-status-strip">
-              <span>Total library: <strong>{totalLibraryCount}</strong></span>
-              <span>SF2/SF3 compatible: <strong>{compatibleLibraryCount}</strong></span>
-              <span>Modes: <strong>SF2/SF3 + SFZ</strong></span>
-            </div>
-            <input
-              className="synthforge-search"
-              placeholder="Search SoundFonts and SFZ instruments..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <div className="synthforge-library-list">
-              {libraryItems.map((item) => (
-                <button
-                  key={item.path}
-                  className={['synthforge-library-item', selectedPath === item.path ? 'is-selected' : ''].join(' ')}
-                  onClick={() => setSelectedPath(item.path)}
-                >
-                  <span className="title">{item.name}</span>
-                  <span className="meta">
-                    {item.library} • {item.format.toUpperCase()} • {item.format === 'sfz' ? 'SFZ instrument' : `${item.preset_count ?? 0} presets`}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="synthforge-panel">
-            <div className="synthforge-panel-heading">
-              <span>{isSelectedSfz ? 'Instrument Load' : 'Preset Browser'}</span>
-              <strong>{statusQuery.data?.active_preset_name || selectedItem?.name || 'Select an instrument'}</strong>
-            </div>
-
-            <div className="synthforge-status-strip">
-              <span>Engine: <strong>{statusQuery.data?.engine || 'none'}</strong></span>
-              <span>Playback: <strong>{statusQuery.data?.engine_available ? 'Ready' : 'Unavailable'}</strong></span>
-              <span>Loaded: <strong>{statusQuery.data?.soundfont_format?.toUpperCase() || 'None'}</strong></span>
-            </div>
-
-            {isSelectedSoundFont ? (
-              <>
-                <div className="synthforge-bank-program">
-                  <label>
-                    Bank
-                    <select value={selectedBank} onChange={(event) => setSelectedBank(Number(event.target.value))} disabled={banks.length === 0}>
-                      {banks.map((bank) => <option key={bank} value={bank}>Bank {bank}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    Program
-                    <select value={selectedProgram} onChange={(event) => setSelectedProgram(Number(event.target.value))} disabled={filteredPresets.length === 0}>
-                      {filteredPresets.map((preset) => <option key={`${preset.bank}:${preset.program}`} value={preset.program}>{preset.program} • {preset.name}</option>)}
-                    </select>
-                  </label>
-                </div>
-
-                <button
-                  className="synthforge-primary"
-                  disabled={!selectedPath || !selectedPreset || loadSoundFontMutation.isPending}
-                  onClick={() => {
-                    if (!selectedPreset) return
-                    loadSoundFontMutation.mutate({
-                      partIndex: activePart,
-                      path: selectedPath,
-                      bank: selectedPreset.bank,
-                      program: selectedPreset.program,
-                      presetName: selectedPreset.name,
-                    })
-                  }}
-                >
-                  Load {selectedPreset?.name || 'Preset'}
-                </button>
-
-                <div className="synthforge-preset-list">
-                  {filteredPresets.map((preset) => (
-                    <button
-                      key={`${preset.bank}:${preset.program}:${preset.name}`}
-                      className={['synthforge-preset-item', preset.program === selectedProgram ? 'is-selected' : ''].join(' ')}
-                      onClick={() => setSelectedProgram(preset.program)}
-                    >
-                      <span>{preset.program.toString().padStart(3, '0')}</span>
-                      <strong>{preset.name}</strong>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : isSelectedSfz ? (
-              <>
-                <div className="synthforge-status-strip">
-                  <span>Format: <strong>SFZ</strong></span>
-                  <span>Load path: <strong>Existing SFZ sampler backend</strong></span>
-                </div>
-                <button
-                  className="synthforge-primary"
-                  disabled={!selectedPath || loadSoundFontMutation.isPending}
-                  onClick={() => {
-                    if (!selectedPath) return
-                    void synthforgeApi.loadSfz(activePart, selectedPath).then(() => {
-                      queryClient.invalidateQueries({ queryKey: ['synthforge', 'status', activePart] })
-                    })
-                  }}
-                >
-                  Load SFZ Instrument
-                </button>
-              </>
-            ) : (
-              <div className="synthforge-empty">Select a library item to load.</div>
-            )}
-          </section>
-
-          <section className="synthforge-panel">
-            <div className="synthforge-panel-heading">
-              <span>Performance</span>
-              <strong>MIDI-first controls</strong>
-            </div>
-
-            <div className="synthforge-controls-grid">
-              <NumericField
-                label="Transpose"
-                value={performanceDraft.master_transpose}
-                min={-36}
-                max={36}
-                onChange={(value) => setPerformanceDraft((prev) => ({ ...prev, master_transpose: value }))}
-              />
-              <NumericField
-                label="Velocity Curve"
-                value={performanceDraft.velocity_curve}
-                min={-1}
-                max={1}
-                step={0.05}
-                onChange={(value) => setPerformanceDraft((prev) => ({ ...prev, velocity_curve: value }))}
-              />
-              <NumericField
-                label="PB Range"
-                value={performanceDraft.pitch_bend_range}
-                min={1}
-                max={48}
-                onChange={(value) => setPerformanceDraft((prev) => ({ ...prev, pitch_bend_range: value }))}
-              />
-              <NumericField
-                label="Level"
-                value={currentPart.level}
-                min={0}
-                max={1}
-                step={0.01}
-                onChange={(value) => updatePartConfig({ level: value })}
-              />
-            </div>
-
-            <div className="synthforge-toggle-row">
-              <button className={performanceDraft.mono_mode ? 'is-active' : ''} onClick={() => setPerformanceDraft((prev) => ({ ...prev, mono_mode: !prev.mono_mode }))}>Mono</button>
-              <button className={performanceDraft.legato ? 'is-active' : ''} onClick={() => setPerformanceDraft((prev) => ({ ...prev, legato: !prev.legato }))}>Legato</button>
-              <button className={currentPart.mute ? 'is-active' : ''} onClick={() => updatePartConfig({ mute: !currentPart.mute })}>Mute</button>
-              <button className={currentPart.solo ? 'is-active' : ''} onClick={() => updatePartConfig({ solo: !currentPart.solo })}>Solo</button>
-            </div>
-
-            <button
-              className="synthforge-primary"
-              onClick={() => setPerformanceMutation.mutate({ partIndex: activePart, config: performanceDraft })}
-              disabled={setPerformanceMutation.isPending}
-            >
-              Apply Performance
-            </button>
-          </section>
-
-          <section className="synthforge-panel synthforge-keyboard-panel">
-            <div className="synthforge-panel-heading">
-              <span className="synthforge-piano-title"><Keyboard size={14} /> Performance Piano</span>
-              <strong>Velocity-sensitive</strong>
-            </div>
-            <p className="synthforge-keyboard-copy">
-              Click keys higher for stronger velocity. Hardware MIDI and injected note activity mirror here in real time.
-            </p>
-            <div className="synthforge-keyboard">
-              {keyboardNotes.map((note) => {
-                const velocity = activeVelocityByNote.get(note) ?? 0
-                const style = { '--key-accent': accentColor } as CSSProperties
-                return (
-                  <button
-                    key={note}
-                    className={[
-                      'synthforge-key',
-                      isBlackNote(note) ? 'is-black' : 'is-white',
-                      velocity > 0 ? 'is-active' : '',
-                    ].join(' ')}
-                    style={style}
-                    onPointerDown={handlePointerDown(note)}
-                    onPointerUp={() => handlePointerUp(note)}
-                    onPointerLeave={() => handlePointerUp(note)}
-                    onPointerCancel={() => handlePointerUp(note)}
-                    title={`${noteLabel(note)} (${note})`}
-                  >
-                    <span>{noteLabel(note)}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="synthforge-active-notes">
-              {Object.values(activeNotes).map((item) => (
-                <div key={`${item.channel}:${item.note}`} className="synthforge-note-chip">
-                  <strong>{noteLabel(item.note)}</strong>
-                  <span>CH {item.channel}</span>
-                  <span>VEL {item.velocity}</span>
-                  <span>{item.source}</span>
-                </div>
-              ))}
-              {Object.keys(activeNotes).length === 0 && <div className="synthforge-empty">No active notes</div>}
-            </div>
-
-            <div className="synthforge-event-list">
-              {noteEvents.map((event) => (
-                <div key={event.id} className={`synthforge-event ${event.type}`}>
-                  <strong>{event.type === 'note_on' ? 'ON' : 'OFF'}</strong>
-                  <span>{noteLabel(event.note)}</span>
-                  <span>CH {event.channel}</span>
-                  <span>VEL {event.velocity}</span>
-                  <span>{event.source}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {(statusQuery.data?.last_error || (statusQuery.data?.warnings?.length ?? 0) > 0 || noteApiError) && (
-          <div className="synthforge-footer-status">
-            {statusQuery.data?.last_error ? <span className="is-error">{statusQuery.data.last_error}</span> : null}
-            {statusQuery.data?.warnings?.map((warning) => <span key={warning} className="is-warn">{warning}</span>)}
-            {noteApiError ? <span className="is-warn">{noteApiError}</span> : null}
-          </div>
-        )}
-      </div>
-    </PluginCardShell>
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={visualization}
+      transport={transportContent}
+      performanceParams={performanceParams}
+      advancedSections={advancedSections}
+    />
   )
 }
 
-export default SynthForgeCard
+// ── Exports ────────────────────────────────────────────────
+
+export { SynthForgeCardBase as SynthForgeCard }
+export default withMidiDialog(SynthForgeCardBase, SYNTHFORGE_URI, SYNTHFORGE_PARAMS)

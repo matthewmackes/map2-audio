@@ -13,12 +13,10 @@
 import { useState, useEffect } from 'react'
 import { useH9 } from '../../../../hooks/useH9'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { MultiEffectCategoryLayout, type ParamSlot } from '../../Layouts/MultiEffectCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import type { PluginCardProps } from '../../types'
-import './EventideH9Card.css'
+
 
 // Plugin URI for MIDI mappings
 const H9_URI = 'map2://juce/effects/eventide-h9'
@@ -57,6 +55,41 @@ function EventideH9CardBase({
 
   const currentAlgorithmName = algorithms[currentAlgorithmIndex]?.name || 'Unknown'
 
+  // Primary controls as ParamSlot objects
+  const inputGainSlot: ParamSlot = {
+    label: 'Input Gain',
+    value: parameters.inputGain,
+    min: -12,
+    max: 12,
+    defaultValue: 0,
+    unit: 'dB',
+    onChange: setInputGain,
+    midi: { pluginUri: H9_URI, paramIndex: 1 },
+  }
+
+  const outputGainSlot: ParamSlot = {
+    label: 'Output Gain',
+    value: parameters.outputGain,
+    min: -12,
+    max: 12,
+    defaultValue: 0,
+    unit: 'dB',
+    onChange: setOutputGain,
+    midi: { pluginUri: H9_URI, paramIndex: 2 },
+  }
+
+  const mixSlot: ParamSlot = {
+    label: 'Dry/Wet Mix',
+    value: parameters.mix,
+    min: 0,
+    max: 1,
+    defaultValue: 0.5,
+    unit: '%',
+    valueFormatter: (v) => `${Math.round(v * 100)}`,
+    onChange: setMix,
+    midi: { pluginUri: H9_URI, paramIndex: 3 },
+  }
+
   // 7-Segment LED Display visualization
   const ledDisplay = (
     <div className="h9-led-container">
@@ -94,88 +127,13 @@ function EventideH9CardBase({
     </div>
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={parameters.bypass}
-      onBypassToggle={() => setBypass(!parameters.bypass)}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={ledDisplay}
-      compact={compact}
-      customHeader={
-        <div className="h9-card-header">
-          <span className="h9-card-title">MULTI-EFFECT</span>
-          <span className="h9-card-subtitle">Multi-Effect Processor</span>
-        </div>
-      }
-    >
-      {/* Algorithm Selector - 5x2 Grid */}
-      <div className="h9-algorithm-section">
-        <div className="h9-section-label">ALGORITHM SELECT</div>
-        <div className="h9-algorithm-grid">
-          {algorithms.map((alg) => (
-            <button
-              key={alg.index}
-              className={`h9-algorithm-btn ${currentAlgorithmIndex === alg.index ? 'active' : ''}`}
-              onClick={() => handleAlgorithmChange(alg.index)}
-              title={alg.description}
-            >
-              <span className="h9-algo-number">{alg.index}</span>
-              <span className="h9-algo-name">{alg.name}</span>
-            </button>
-          ))}
-        </div>
-        <div className="h9-algorithm-description">
-          {algorithms[currentAlgorithmIndex]?.description}
-        </div>
-      </div>
-
-      {/* Main Controls Section */}
-      <ParameterSection title="Level & Mix" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Input Gain"
-            value={parameters.inputGain}
-            min={-12}
-            max={12}
-            defaultValue={0}
-            unit="dB"
-            onChange={setInputGain}
-            accentColor="#ff6644"
-            size="large"
-            midi={{ pluginUri: H9_URI, paramIndex: 1 }}
-          />
-          <ParameterKnob
-            label="Output Gain"
-            value={parameters.outputGain}
-            min={-12}
-            max={12}
-            defaultValue={0}
-            unit="dB"
-            onChange={setOutputGain}
-            accentColor="#ff8855"
-            size="large"
-            midi={{ pluginUri: H9_URI, paramIndex: 2 }}
-          />
-          <ParameterKnob
-            label="Dry/Wet Mix"
-            value={parameters.mix}
-            min={0}
-            max={1}
-            defaultValue={0.5}
-            unit="%"
-            valueFormatter={(v) => `${Math.round(v * 100)}`}
-            onChange={setMix}
-            accentColor="#00ff00"
-            size="large"
-            midi={{ pluginUri: H9_URI, paramIndex: 3 }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Algorithm Information */}
-      <div className="h9-info-section">
+  // Algorithm info as an advanced section
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'algorithm-info',
+      title: `Algorithm Info: ${currentAlgorithmName}`,
+      defaultOpen: true,
+      children: (
         <div className="h9-info-box">
           <h4>Current Algorithm: {currentAlgorithmName}</h4>
           <p>{algorithms[currentAlgorithmIndex]?.description}</p>
@@ -194,8 +152,30 @@ function EventideH9CardBase({
             </div>
           </div>
         </div>
-      </div>
-    </PluginCardShell>
+      ),
+    },
+  ]
+
+  return (
+    <MultiEffectCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={parameters.bypass}
+      onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={ledDisplay}
+      algorithms={algorithms.map(alg => ({ index: alg.index, name: alg.name, description: alg.description }))}
+      currentAlgorithm={currentAlgorithmIndex}
+      onAlgorithmChange={handleAlgorithmChange}
+      inputGain={inputGainSlot}
+      outputGain={outputGainSlot}
+      mix={mixSlot}
+      inputLevel={Math.max(metering.inputLevelL, metering.inputLevelR)}
+      outputLevel={Math.max(metering.outputLevelL, metering.outputLevelR)}
+      clipping={metering.clipping}
+      advancedSections={advancedSections}
+    />
   )
 }
 

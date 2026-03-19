@@ -1,23 +1,17 @@
 /**
  * PhaserCard - TooB Phaser
  *
- * Multi-stage phaser effect.
- *
- * Parameters:
- * - rate: LFO rate
- * - depth: Modulation depth
- * - feedback: Resonance amount
- * - stages: Number of all-pass filter stages
+ * Uses ModulationCategoryLayout for Carbon-compliant structure.
+ * Parameters: rate, depth, feedback, stages, mix.
  */
 
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { Hashtag } from '@carbon/icons-react'
+import { ModulationCategoryLayout } from '../../Layouts/ModulationCategoryLayout'
 import { LFOWaveform } from '../../Visualizations/LFOWaveform'
+import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 
-// Parameter indices for Phaser
 const PARAM_MAP = {
   rate: 0,
   depth: 1,
@@ -26,7 +20,7 @@ const PARAM_MAP = {
   mix: 4,
 }
 
-export function PhaserCard({
+function PhaserCardBase({
   plugin,
   parameterValues,
   onParameterChange,
@@ -51,91 +45,58 @@ export function PhaserCard({
     />
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={plugin.bypassed}
-      visualization={visualization}
-      compact={compact}
-    >
-      {/* Modulation Section */}
-      <ParameterSection title="Modulation" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Rate"
-            value={getValue('rate', 0.5)}
-            min={0.05}
-            max={10}
-            defaultValue={0.5}
-            step={0.05}
-            unit="Hz"
-            onChange={(v) => setValue('rate', v)}
-            isLogarithmic
-            accentColor={accentColor}
-            size="medium"
-          />
-          <ParameterKnob
-            label="Depth"
-            value={getValue('depth', 70)}
-            min={0}
-            max={100}
-            defaultValue={70}
-            unit="%"
-            onChange={(v) => setValue('depth', v)}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Character Section */}
-      <ParameterSection title="Character" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Feedback"
-            value={getValue('feedback', 50)}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => setValue('feedback', v)}
-            accentColor={accentColor}
-            size="medium"
-          />
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'stages',
+      title: 'Stages',
+      icon: <Hashtag size={14} />,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
             label="Stages"
             value={getValue('stages', 4)}
-            min={2}
-            max={12}
-            defaultValue={4}
-            step={2}
+            min={2} max={12} defaultValue={4} step={2}
             onChange={(v) => setValue('stages', v)}
             valueFormatter={(v) => v.toFixed(0)}
             accentColor={accentColor}
-            size="medium"
+            size="small"
           />
-        </ParameterRow>
-      </ParameterSection>
+        </div>
+      ),
+    },
+  ]
 
-      {/* Mix Section */}
-      <ParameterSection title="Mix" accentColor={accentColor}>
-        <ParameterRow justify="center">
-          <ParameterKnob
-            label="Mix"
-            value={getValue('mix', 50)}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => setValue('mix', v)}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-    </PluginCardShell>
+  return (
+    <ModulationCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={plugin.bypassed}
+      visualization={visualization}
+      rate={{
+        label: 'Rate', value: getValue('rate', 0.5),
+        min: 0.05, max: 10, defaultValue: 0.5, step: 0.05, unit: 'Hz',
+        onChange: (v) => setValue('rate', v), isLogarithmic: true,
+      }}
+      depth={{
+        label: 'Depth', value: getValue('depth', 70),
+        min: 0, max: 100, defaultValue: 70, unit: '%',
+        onChange: (v) => setValue('depth', v),
+      }}
+      feedback={{
+        label: 'Feedback', value: getValue('feedback', 50),
+        min: 0, max: 100, defaultValue: 50, unit: '%',
+        onChange: (v) => setValue('feedback', v),
+      }}
+      mix={{
+        label: 'Mix', value: getValue('mix', 50),
+        min: 0, max: 100, defaultValue: 50, unit: '%',
+        onChange: (v) => setValue('mix', v),
+      }}
+      advancedSections={advancedSections}
+    />
   )
 }
 
-export default PhaserCard
+export { PhaserCardBase as PhaserCard }
+export default PhaserCardBase

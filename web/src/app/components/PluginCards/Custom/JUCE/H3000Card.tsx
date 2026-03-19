@@ -1,41 +1,37 @@
-/**
- * H3000Card - Ultra-Harmonizer Card
- *
- * Features iconic blue VFD-style display, 10 algorithm preset buttons,
- * and retro rack unit styling capturing the legendary harmonizer sound
- */
-
 import { useH3000, H3000_ALGORITHMS } from '../../../../hooks/useH3000'
+import { PitchCategoryLayout } from '../../Layouts/PitchCategoryLayout'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
-import { formatPitch, formatFrequency, formatFreq } from '../../utils/formatters'
+import { formatPitch, formatFreq } from '../../utils/formatters'
 import { VFDPitchDisplay } from '../../components/Visualizations/LCDDisplay'
-import './H3000Card.css'
+import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
+import { Activity, SettingsAdjust, VolumeUpFilled } from '@carbon/icons-react'
 
-// Plugin URI for MIDI mappings
 const H3000_URI = 'map2://juce/pitch/h3000'
 
-// Parameter definitions for MIDI mapping dialog
+const PARAM = {
+  ALGORITHM: 0, PITCH_L: 1, PITCH_R: 2, DELAY_L: 3, DELAY_R: 4,
+  FEEDBACK: 5, CROSS_FEEDBACK: 6, MOD_DEPTH: 7, MOD_RATE: 8,
+  LOW_CUT: 9, HIGH_CUT: 10, MIX: 11, LEVEL_L: 12, LEVEL_R: 13, GLIDE: 14,
+} as const
+
 const H3000_PARAMS: PluginParamDef[] = [
-  { index: 0, name: 'Algorithm', symbol: 'algorithm' },
-  { index: 1, name: 'Pitch L', symbol: 'pitchL' },
-  { index: 2, name: 'Pitch R', symbol: 'pitchR' },
-  { index: 3, name: 'Delay L', symbol: 'delayL' },
-  { index: 4, name: 'Delay R', symbol: 'delayR' },
-  { index: 5, name: 'Feedback', symbol: 'feedback' },
-  { index: 6, name: 'Cross Feedback', symbol: 'crossFeedback' },
-  { index: 7, name: 'Mod Depth', symbol: 'modDepth' },
-  { index: 8, name: 'Mod Rate', symbol: 'modRate' },
-  { index: 9, name: 'Low Cut', symbol: 'lowCut' },
-  { index: 10, name: 'High Cut', symbol: 'highCut' },
-  { index: 11, name: 'Mix', symbol: 'mix' },
-  { index: 12, name: 'Level L', symbol: 'levelL' },
-  { index: 13, name: 'Level R', symbol: 'levelR' },
-  { index: 14, name: 'Glide', symbol: 'glide' },
+  { index: PARAM.ALGORITHM, name: 'Algorithm', symbol: 'algorithm' },
+  { index: PARAM.PITCH_L, name: 'Pitch L', symbol: 'pitchL' },
+  { index: PARAM.PITCH_R, name: 'Pitch R', symbol: 'pitchR' },
+  { index: PARAM.DELAY_L, name: 'Delay L', symbol: 'delayL' },
+  { index: PARAM.DELAY_R, name: 'Delay R', symbol: 'delayR' },
+  { index: PARAM.FEEDBACK, name: 'Feedback', symbol: 'feedback' },
+  { index: PARAM.CROSS_FEEDBACK, name: 'Cross Feedback', symbol: 'crossFeedback' },
+  { index: PARAM.MOD_DEPTH, name: 'Mod Depth', symbol: 'modDepth' },
+  { index: PARAM.MOD_RATE, name: 'Mod Rate', symbol: 'modRate' },
+  { index: PARAM.LOW_CUT, name: 'Low Cut', symbol: 'lowCut' },
+  { index: PARAM.HIGH_CUT, name: 'High Cut', symbol: 'highCut' },
+  { index: PARAM.MIX, name: 'Mix', symbol: 'mix' },
+  { index: PARAM.LEVEL_L, name: 'Level L', symbol: 'levelL' },
+  { index: PARAM.LEVEL_R, name: 'Level R', symbol: 'levelR' },
+  { index: PARAM.GLIDE, name: 'Glide', symbol: 'glide' },
 ]
 
 interface H3000CardProps extends PluginCardProps {
@@ -44,7 +40,7 @@ interface H3000CardProps extends PluginCardProps {
 
 function H3000CardBase({
   plugin,
-  accentColor = '#00aaff', // VFD blue
+  accentColor = '#00aaff',
   compact = false,
   onOpenMidiMappings,
 }: H3000CardProps) {
@@ -72,7 +68,6 @@ function H3000CardBase({
     isConnected,
   } = useH3000()
 
-  // VFD-style Display visualization using shared component
   const vfdVisualization = (
     <VFDPitchDisplay
       algorithmName={currentAlgorithm.name}
@@ -83,30 +78,18 @@ function H3000CardBase({
     />
   )
 
-  return (
-    <PluginCardShell
-      plugin={plugin}
-      accentColor={accentColor}
-      bypassed={parameters.bypass}
-      onBypassToggle={() => setBypass(!parameters.bypass)}
-      onOpenMidiMappings={onOpenMidiMappings}
-      visualization={vfdVisualization}
-      compact={compact}
-      customHeader={
-        <div className="h3000-card-header">
-          <span className="h3000-card-title">ULTRA PITCH</span>
-          <span className="h3000-card-subtitle">Ultra-Harmonizer</span>
-        </div>
-      }
-    >
-      {/* Algorithm Selector Grid - 5x2 layout */}
-      <div className="h3000-algorithm-section">
-        <div className="h3000-section-label">ALGORITHM</div>
-        <div className="h3000-algorithm-grid">
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'algorithm',
+      title: 'Algorithm',
+      icon: <SettingsAdjust size={16} />,
+      defaultOpen: true,
+      children: (
+        <div className="carbon-preset-row" style={{ flexWrap: 'wrap' }}>
           {algorithms.map((alg) => (
             <button
               key={alg.index}
-              className={`h3000-algorithm-btn ${parameters.algorithm === alg.index ? 'active' : ''}`}
+              className={`carbon-preset-btn ${parameters.algorithm === alg.index ? 'carbon-preset-btn--active' : ''}`}
               onClick={() => setAlgorithm(alg.index)}
               title={alg.description}
             >
@@ -114,204 +97,147 @@ function H3000CardBase({
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Pitch Shift Controls - Left and Right */}
-      <ParameterSection title="Pitch Shift" accentColor={accentColor}>
-        <ParameterRow>
+      ),
+    },
+    {
+      id: 'delay',
+      title: 'Delay',
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
-            label="Pitch L"
-            value={parameters.pitchL}
-            min={-2400}
-            max={2400}
-            defaultValue={0}
-            unit="c"
-            valueFormatter={formatPitch}
-            onChange={setPitchL}
-            accentColor="#ff6600"
-            size="large"
-            midi={{ pluginUri: H3000_URI, paramIndex: 1 }}
+            label="Delay L" value={parameters.delayL}
+            min={0} max={1000} defaultValue={15} unit="ms"
+            onChange={setDelayL} accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.DELAY_L }}
           />
           <ParameterKnob
-            label="Pitch R"
-            value={parameters.pitchR}
-            min={-2400}
-            max={2400}
-            defaultValue={0}
-            unit="c"
-            valueFormatter={formatPitch}
-            onChange={setPitchR}
-            accentColor="#ff9900"
-            size="large"
-            midi={{ pluginUri: H3000_URI, paramIndex: 2 }}
+            label="Delay R" value={parameters.delayR}
+            min={0} max={1000} defaultValue={20} unit="ms"
+            onChange={setDelayR} accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.DELAY_R }}
           />
           <ParameterKnob
-            label="Glide"
-            value={parameters.glide}
-            min={0}
-            max={1000}
-            defaultValue={0}
-            unit="ms"
-            onChange={setGlide}
-            accentColor="#ffcc00"
-            size="medium"
-            midi={{ pluginUri: H3000_URI, paramIndex: 14 }}
+            label="X-Feed" value={parameters.crossFeedback}
+            min={0} max={100} defaultValue={0} unit="%"
+            onChange={setCrossFeedback} accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.CROSS_FEEDBACK }}
           />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Delay Section */}
-      <ParameterSection title="Delay" accentColor="#00ccff">
-        <ParameterRow>
+        </div>
+      ),
+    },
+    {
+      id: 'modulation',
+      title: 'Modulation',
+      icon: <Activity size={16} />,
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
-            label="Delay L"
-            value={parameters.delayL}
-            min={0}
-            max={1000}
-            defaultValue={15}
-            unit="ms"
-            onChange={setDelayL}
-            accentColor="#00ccff"
-            size="small"
-            midi={{ pluginUri: H3000_URI, paramIndex: 3 }}
+            label="Depth" value={parameters.modDepth}
+            min={0} max={100} defaultValue={0} unit="%"
+            onChange={setModDepth} accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.MOD_DEPTH }}
           />
           <ParameterKnob
-            label="Delay R"
-            value={parameters.delayR}
-            min={0}
-            max={1000}
-            defaultValue={20}
-            unit="ms"
-            onChange={setDelayR}
-            accentColor="#00ccff"
-            size="small"
-            midi={{ pluginUri: H3000_URI, paramIndex: 4 }}
+            label="Rate" value={parameters.modRate}
+            min={0.1} max={10} defaultValue={0.5} unit="Hz"
+            onChange={setModRate} isLogarithmic accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.MOD_RATE }}
           />
+        </div>
+      ),
+    },
+    {
+      id: 'filter',
+      title: 'Filter',
+      children: (
+        <div className="carbon-param-row">
           <ParameterKnob
-            label="Feedback"
-            value={parameters.feedback}
-            min={0}
-            max={100}
-            defaultValue={0}
-            unit="%"
-            onChange={setFeedback}
-            accentColor="#00aacc"
-            size="small"
-            midi={{ pluginUri: H3000_URI, paramIndex: 5 }}
-          />
-          <ParameterKnob
-            label="X-Feed"
-            value={parameters.crossFeedback}
-            min={0}
-            max={100}
-            defaultValue={0}
-            unit="%"
-            onChange={setCrossFeedback}
-            accentColor="#0088aa"
-            size="small"
-            midi={{ pluginUri: H3000_URI, paramIndex: 6 }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Modulation Section */}
-      <ParameterSection title="Modulation" accentColor="#aa66ff">
-        <ParameterRow>
-          <ParameterKnob
-            label="Depth"
-            value={parameters.modDepth}
-            min={0}
-            max={100}
-            defaultValue={0}
-            unit="%"
-            onChange={setModDepth}
-            accentColor="#aa66ff"
-            size="small"
-            midi={{ pluginUri: H3000_URI, paramIndex: 7 }}
-          />
-          <ParameterKnob
-            label="Rate"
-            value={parameters.modRate}
-            min={0.1}
-            max={10}
-            defaultValue={0.5}
-            unit="Hz"
-            onChange={setModRate}
-            isLogarithmic
-            accentColor="#aa66ff"
-            size="small"
-            midi={{ pluginUri: H3000_URI, paramIndex: 8 }}
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Filter & Output Section */}
-      <ParameterSection title="Output" accentColor="#66ccff">
-        <ParameterRow>
-          <ParameterKnob
-            label="Low Cut"
-            value={parameters.lowCut}
-            min={20}
-            max={500}
-            defaultValue={80}
-            unit=""
+            label="Low Cut" value={parameters.lowCut}
+            min={20} max={500} defaultValue={80} unit=""
             valueFormatter={formatFreq}
-            onChange={setLowCut}
-            isLogarithmic
-            accentColor="#66ccff"
-            size="small"
-            midi={{ pluginUri: H3000_URI, paramIndex: 9 }}
+            onChange={setLowCut} isLogarithmic accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.LOW_CUT }}
           />
           <ParameterKnob
-            label="High Cut"
-            value={parameters.highCut}
-            min={2000}
-            max={20000}
-            defaultValue={12000}
-            unit=""
+            label="High Cut" value={parameters.highCut}
+            min={2000} max={20000} defaultValue={12000} unit=""
             valueFormatter={formatFreq}
-            onChange={setHighCut}
-            isLogarithmic
-            accentColor="#66ccff"
-            size="small"
-            midi={{ pluginUri: H3000_URI, paramIndex: 10 }}
+            onChange={setHighCut} isLogarithmic accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.HIGH_CUT }}
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'levels',
+      title: 'Levels',
+      icon: <VolumeUpFilled size={16} />,
+      children: (
+        <div className="carbon-param-row">
+          <ParameterKnob
+            label="Level L" value={parameters.levelL}
+            min={0} max={100} defaultValue={100} unit="%"
+            onChange={setLevelL} accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.LEVEL_L }}
           />
           <ParameterKnob
-            label="Mix"
-            value={parameters.mix}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={setMix}
-            accentColor={accentColor}
-            size="large"
-            midi={{ pluginUri: H3000_URI, paramIndex: 11 }}
+            label="Level R" value={parameters.levelR}
+            min={0} max={100} defaultValue={100} unit="%"
+            onChange={setLevelR} accentColor={accentColor} size="small"
+            midi={{ pluginUri: H3000_URI, paramIndex: PARAM.LEVEL_R }}
           />
-        </ParameterRow>
-      </ParameterSection>
+        </div>
+      ),
+    },
+  ]
 
-      {/* Footer with metering */}
-      <div className="h3000-footer">
-        <div className="h3000-meter">
-          <span className="h3000-meter-label">IN</span>
-          <span className="h3000-meter-value">{metering.inputLevelL.toFixed(1)} dB</span>
-        </div>
-        <div className="h3000-meter">
-          <span className="h3000-meter-label">OUT</span>
-          <span className="h3000-meter-value">{metering.outputLevelL.toFixed(1)} dB</span>
-        </div>
-        <div className="h3000-meter">
-          <span className="h3000-meter-label">PITCH</span>
-          <span className="h3000-meter-value">{formatPitch(metering.pitchLActual)}</span>
-        </div>
-      </div>
-    </PluginCardShell>
+  return (
+    <PitchCategoryLayout
+      plugin={plugin}
+      accentColor={accentColor}
+      compact={compact}
+      bypassed={parameters.bypass}
+      onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={vfdVisualization}
+      semitones={{
+        label: 'Pitch L', value: parameters.pitchL,
+        min: -2400, max: 2400, defaultValue: 0, unit: 'c',
+        valueFormatter: formatPitch,
+        onChange: setPitchL,
+        midi: { pluginUri: H3000_URI, paramIndex: PARAM.PITCH_L },
+      }}
+      cents={{
+        label: 'Pitch R', value: parameters.pitchR,
+        min: -2400, max: 2400, defaultValue: 0, unit: 'c',
+        valueFormatter: formatPitch,
+        onChange: setPitchR,
+        midi: { pluginUri: H3000_URI, paramIndex: PARAM.PITCH_R },
+      }}
+      glide={{
+        label: 'Glide', value: parameters.glide,
+        min: 0, max: 1000, defaultValue: 0, unit: 'ms',
+        onChange: setGlide,
+        midi: { pluginUri: H3000_URI, paramIndex: PARAM.GLIDE },
+      }}
+      feedback={{
+        label: 'Feedback', value: parameters.feedback,
+        min: 0, max: 100, defaultValue: 0, unit: '%',
+        onChange: setFeedback,
+        midi: { pluginUri: H3000_URI, paramIndex: PARAM.FEEDBACK },
+      }}
+      mix={{
+        label: 'Mix', value: parameters.mix,
+        min: 0, max: 100, defaultValue: 50, unit: '%',
+        onChange: setMix,
+        midi: { pluginUri: H3000_URI, paramIndex: PARAM.MIX },
+      }}
+      inputLevel={metering.inputLevelL}
+      outputLevel={metering.outputLevelL}
+      advancedSections={advancedSections}
+    />
   )
 }
 
-// Export base component for testing
 export { H3000CardBase as H3000Card }
-
-// Export wrapped component with MIDI dialog
 export default withMidiDialog(H3000CardBase, H3000_URI, H3000_PARAMS)

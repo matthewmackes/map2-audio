@@ -1,0 +1,151 @@
+/**
+ * ConvolutionCategoryLayout — AXE-FX Edit structural parity for IR/convolution effects
+ *
+ * Standard layout: IR Display + Browser → Mix → Accordion(Advanced) → Footer
+ * Used by: CabinetIRCard, ReverbIRCard
+ */
+
+import type { ReactNode } from 'react'
+import type { Plugin } from '../../../../map2/types'
+import { CarbonCardShell, type AdvancedSection } from '../Base/CarbonCardShell'
+import { CarbonParameterSection } from '../Base/CarbonParameterSection'
+import { CarbonMeteringFooter } from '../Base/CarbonMeteringFooter'
+import { ParameterKnob } from '../../Controls/ParameterKnob'
+import { FolderOpen, ChevronLeft, ChevronRight } from '@carbon/icons-react'
+import type { ParamSlot } from './DynamicsCategoryLayout'
+
+export { type ParamSlot }
+
+export interface ConvolutionCategoryLayoutProps {
+  plugin: Plugin
+  accentColor?: string
+  compact?: boolean
+  bypassed?: boolean
+  onBypassToggle?: (bypassed: boolean) => void
+  onOpenMidiMappings?: () => void
+
+  visualization?: ReactNode
+
+  /* IR info */
+  irName?: string
+  onBrowseIR?: () => void
+  onPrevIR?: () => void
+  onNextIR?: () => void
+
+  /* Mix */
+  mix?: ParamSlot
+
+  /* Metering */
+  inputLevel?: number
+  outputLevel?: number
+
+  advancedSections?: AdvancedSection[]
+  extraContent?: ReactNode
+}
+
+export function ConvolutionCategoryLayout({
+  plugin,
+  accentColor = '#f97316',
+  compact = false,
+  bypassed = false,
+  onBypassToggle,
+  onOpenMidiMappings,
+  visualization,
+  irName,
+  onBrowseIR,
+  onPrevIR,
+  onNextIR,
+  mix,
+  inputLevel = 0,
+  outputLevel = 0,
+  advancedSections,
+  extraContent,
+}: ConvolutionCategoryLayoutProps) {
+  const renderKnob = (slot: ParamSlot | undefined) => {
+    if (!slot) return null
+    return (
+      <ParameterKnob
+        label={slot.label}
+        value={slot.value}
+        min={slot.min}
+        max={slot.max}
+        defaultValue={slot.defaultValue}
+        step={slot.step}
+        unit={slot.unit}
+        onChange={slot.onChange}
+        accentColor={accentColor}
+        size={compact ? 'small' : 'medium'}
+        midi={slot.midi}
+      />
+    )
+  }
+
+  const footer = (
+    <CarbonMeteringFooter inputLevel={inputLevel} outputLevel={outputLevel} />
+  )
+
+  return (
+    <CarbonCardShell
+      plugin={plugin}
+      accentColor={accentColor}
+      bypassed={bypassed}
+      onBypassToggle={onBypassToggle}
+      onOpenMidiMappings={onOpenMidiMappings}
+      visualization={visualization}
+      advancedSections={advancedSections}
+      footer={footer}
+      compact={compact}
+      cardHeight={420}
+    >
+      {/* IR Browser Section */}
+      <CarbonParameterSection title="Impulse Response" accentColor={accentColor}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {onPrevIR && (
+            <button className="carbon-card-icon-btn" onClick={onPrevIR} title="Previous IR">
+              <ChevronLeft size={16} />
+            </button>
+          )}
+          <div style={{
+            flex: 1,
+            padding: '8px 12px',
+            background: '#262626',
+            border: '1px solid #393939',
+            borderRadius: 4,
+            fontSize: 12,
+            color: '#f4f4f4',
+            textAlign: 'center',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {irName || 'No IR loaded'}
+          </div>
+          {onNextIR && (
+            <button className="carbon-card-icon-btn" onClick={onNextIR} title="Next IR">
+              <ChevronRight size={16} />
+            </button>
+          )}
+          {onBrowseIR && (
+            <button className="carbon-toggle-btn" onClick={onBrowseIR}>
+              <FolderOpen size={14} style={{ marginRight: 4 }} />
+              Browse
+            </button>
+          )}
+        </div>
+      </CarbonParameterSection>
+
+      {/* Mix */}
+      {mix && (
+        <CarbonParameterSection title="Mix" accentColor={accentColor}>
+          <div className="carbon-param-row">
+            {renderKnob(mix)}
+          </div>
+        </CarbonParameterSection>
+      )}
+
+      {extraContent}
+    </CarbonCardShell>
+  )
+}
+
+export default ConvolutionCategoryLayout

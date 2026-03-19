@@ -6,20 +6,17 @@
  */
 
 import { useState, useCallback } from 'react'
-import { ChevronDown, ChevronUp, Flash, Link, Unlink } from '@carbon/icons-react'
+import { ChevronDown, ChevronUp, Link, Unlink } from '@carbon/icons-react'
 import {
   useIntervalShifter,
   MUSICAL_INTERVALS,
   INTERVAL_PRESETS,
   type IntervalPreset,
 } from '../../../../hooks/useModulation'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
-import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { PitchCategoryLayout, type ParamSlot } from '../../Layouts/PitchCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
-import './IntervalShifterCard.css'
 
 // Plugin URI for MIDI mappings
 const INTERVAL_SHIFTER_URI = 'map2://juce/pitch/interval'
@@ -92,237 +89,241 @@ function IntervalShifterCardBase({
   }
 
   // Piano keyboard visualization showing shift amount
-  const renderPianoVisualization = () => {
-    const shiftL = parameters.semitonesL
-    const shiftR = parameters.semitonesR
-
-    return (
-      <div className="interval-visualization">
-        <div className="interval-display">
-          {/* Left channel */}
-          <div className="interval-channel">
-            <span className="interval-label">L</span>
-            <div className="interval-value" style={{ '--accent': '#4ecdc4' } as React.CSSProperties}>
-              <span className="interval-semitones">{formatSemitones(shiftL)}</span>
-              <span className="interval-name">{getIntervalName(shiftL)}</span>
-            </div>
-          </div>
-
-          {/* Visual shift indicator */}
-          <div className="interval-arrow-display">
-            <div
-              className="interval-arrow"
-              style={{
-                '--shift': Math.max(-1, Math.min(1, shiftL / 12)),
-                '--color': shiftL >= 0 ? '#10b981' : '#ef4444',
-              } as React.CSSProperties}
-            >
-              {shiftL !== 0 && (
-                shiftL > 0 ? <ChevronUp size={20} /> : <ChevronDown size={20} />
-              )}
-            </div>
-            <div
-              className="interval-arrow"
-              style={{
-                '--shift': Math.max(-1, Math.min(1, shiftR / 12)),
-                '--color': shiftR >= 0 ? '#10b981' : '#ef4444',
-              } as React.CSSProperties}
-            >
-              {shiftR !== 0 && (
-                shiftR > 0 ? <ChevronUp size={20} /> : <ChevronDown size={20} />
-              )}
-            </div>
-          </div>
-
-          {/* Right channel */}
-          <div className="interval-channel">
-            <span className="interval-label">R</span>
-            <div className="interval-value" style={{ '--accent': '#f59e0b' } as React.CSSProperties}>
-              <span className="interval-semitones">{formatSemitones(shiftR)}</span>
-              <span className="interval-name">{getIntervalName(shiftR)}</span>
-            </div>
+  const visualization = (
+    <div className="interval-visualization">
+      <div className="interval-display">
+        {/* Left channel */}
+        <div className="interval-channel">
+          <span className="interval-label">L</span>
+          <div className="interval-value" style={{ '--accent': '#4ecdc4' } as React.CSSProperties}>
+            <span className="interval-semitones">{formatSemitones(parameters.semitonesL)}</span>
+            <span className="interval-name">{getIntervalName(parameters.semitonesL)}</span>
           </div>
         </div>
 
-        {/* Mini piano keyboard showing shift */}
-        <div className="interval-piano">
-          {[...Array(25)].map((_, i) => {
-            const noteIndex = i % 12
-            const isBlack = PIANO_KEYS[noteIndex] === 1
-            const isRoot = i === 12 // Middle C as reference
-            const isShiftedL = i === 12 + shiftL
-            const isShiftedR = i === 12 + shiftR
+        {/* Visual shift indicator */}
+        <div className="interval-arrow-display">
+          <div
+            className="interval-arrow"
+            style={{
+              '--shift': Math.max(-1, Math.min(1, parameters.semitonesL / 12)),
+              '--color': parameters.semitonesL >= 0 ? '#10b981' : '#ef4444',
+            } as React.CSSProperties}
+          >
+            {parameters.semitonesL !== 0 && (
+              parameters.semitonesL > 0 ? <ChevronUp size={20} /> : <ChevronDown size={20} />
+            )}
+          </div>
+          <div
+            className="interval-arrow"
+            style={{
+              '--shift': Math.max(-1, Math.min(1, parameters.semitonesR / 12)),
+              '--color': parameters.semitonesR >= 0 ? '#10b981' : '#ef4444',
+            } as React.CSSProperties}
+          >
+            {parameters.semitonesR !== 0 && (
+              parameters.semitonesR > 0 ? <ChevronUp size={20} /> : <ChevronDown size={20} />
+            )}
+          </div>
+        </div>
 
-            return (
-              <div
-                key={i}
-                className={`piano-key ${isBlack ? 'black' : 'white'} ${isRoot ? 'root' : ''} ${isShiftedL ? 'shifted-l' : ''} ${isShiftedR ? 'shifted-r' : ''}`}
-              />
-            )
-          })}
+        {/* Right channel */}
+        <div className="interval-channel">
+          <span className="interval-label">R</span>
+          <div className="interval-value" style={{ '--accent': '#f59e0b' } as React.CSSProperties}>
+            <span className="interval-semitones">{formatSemitones(parameters.semitonesR)}</span>
+            <span className="interval-name">{getIntervalName(parameters.semitonesR)}</span>
+          </div>
         </div>
       </div>
-    )
+
+      {/* Mini piano keyboard showing shift */}
+      <div className="interval-piano">
+        {[...Array(25)].map((_, i) => {
+          const noteIndex = i % 12
+          const isBlack = PIANO_KEYS[noteIndex] === 1
+          const isRoot = i === 12 // Middle C as reference
+          const isShiftedL = i === 12 + parameters.semitonesL
+          const isShiftedR = i === 12 + parameters.semitonesR
+
+          return (
+            <div
+              key={i}
+              className={`piano-key ${isBlack ? 'black' : 'white'} ${isRoot ? 'root' : ''} ${isShiftedL ? 'shifted-l' : ''} ${isShiftedR ? 'shifted-r' : ''}`}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  // ParamSlots
+  const semitonesSlot: ParamSlot = {
+    label: 'Semitones L',
+    value: parameters.semitonesL,
+    min: -24,
+    max: 24,
+    defaultValue: 0,
+    step: 1,
+    unit: 'st',
+    onChange: (v: number) => {
+      if (linkLR) setSemitonesBoth(v, v)
+      else setSemitonesL(v)
+    },
+    valueFormatter: (v: number) => formatSemitones(v),
   }
 
+  const intervalSlot: ParamSlot = {
+    label: 'Semitones R',
+    value: parameters.semitonesR,
+    min: -24,
+    max: 24,
+    defaultValue: 0,
+    step: 1,
+    unit: 'st',
+    onChange: (v: number) => {
+      if (linkLR) setSemitonesBoth(v, v)
+      else setSemitonesR(v)
+    },
+    valueFormatter: (v: number) => formatSemitones(v),
+  }
+
+  const mixSlot: ParamSlot = {
+    label: 'Mix',
+    value: parameters.mix,
+    min: 0,
+    max: 100,
+    defaultValue: 50,
+    unit: '%',
+    onChange: setMix,
+  }
+
+  // Piano keyboard in advanced sections
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'keyboard',
+      title: 'Piano Keyboard & Controls',
+      defaultOpen: true,
+      children: (
+        <>
+          {/* Semitone Stepper Controls */}
+          <div className="interval-controls">
+            {/* Left Channel */}
+            <div className="interval-stepper">
+              <span className="stepper-label">Left</span>
+              <div className="stepper-buttons">
+                <button onClick={() => handleSemitonesL(-12)} title="-Octave">-12</button>
+                <button onClick={() => handleSemitonesL(-2)} title="-Full Step" className="step-btn">-2</button>
+                <button onClick={() => handleSemitonesL(-1)} title="-Semitone">-1</button>
+                <span className="stepper-value">{formatSemitones(parameters.semitonesL)}</span>
+                <button onClick={() => handleSemitonesL(1)} title="+Semitone">+1</button>
+                <button onClick={() => handleSemitonesL(2)} title="+Full Step" className="step-btn">+2</button>
+                <button onClick={() => handleSemitonesL(12)} title="+Octave">+12</button>
+              </div>
+              <span className="stepper-interval">{getIntervalName(parameters.semitonesL)}</span>
+            </div>
+
+            {/* Link Button */}
+            <button
+              className={`interval-link-btn ${linkLR ? 'linked' : ''}`}
+              onClick={() => setLinkLR(!linkLR)}
+              style={{ '--accent': accentColor } as React.CSSProperties}
+              title={linkLR ? 'Linked L/R' : 'Independent L/R'}
+            >
+              {linkLR ? <Link size={16} /> : <Unlink size={16} />}
+            </button>
+
+            {/* Right Channel */}
+            <div className="interval-stepper">
+              <span className="stepper-label">Right</span>
+              <div className="stepper-buttons">
+                <button
+                  onClick={() => handleSemitonesR(-12)}
+                  title="-Octave"
+                  disabled={linkLR}
+                >-12</button>
+                <button
+                  onClick={() => handleSemitonesR(-2)}
+                  title="-Full Step"
+                  disabled={linkLR}
+                  className="step-btn"
+                >-2</button>
+                <button
+                  onClick={() => handleSemitonesR(-1)}
+                  title="-Semitone"
+                  disabled={linkLR}
+                >-1</button>
+                <span className="stepper-value">{formatSemitones(parameters.semitonesR)}</span>
+                <button
+                  onClick={() => handleSemitonesR(1)}
+                  title="+Semitone"
+                  disabled={linkLR}
+                >+1</button>
+                <button
+                  onClick={() => handleSemitonesR(2)}
+                  title="+Full Step"
+                  disabled={linkLR}
+                  className="step-btn"
+                >+2</button>
+                <button
+                  onClick={() => handleSemitonesR(12)}
+                  title="+Octave"
+                  disabled={linkLR}
+                >+12</button>
+              </div>
+              <span className="stepper-interval">{getIntervalName(parameters.semitonesR)}</span>
+            </div>
+          </div>
+
+          {/* Quick interval buttons */}
+          <div className="interval-quick-buttons">
+            <button onClick={() => handleSetBoth(-12)} className={parameters.semitonesL === -12 ? 'active' : ''}>-Oct</button>
+            <button onClick={() => handleSetBoth(-7)} className={parameters.semitonesL === -7 ? 'active' : ''}>-5th</button>
+            <button onClick={() => handleSetBoth(-5)} className={parameters.semitonesL === -5 ? 'active' : ''}>-4th</button>
+            <button onClick={() => handleSetBoth(0)} className={parameters.semitonesL === 0 ? 'active' : ''}>0</button>
+            <button onClick={() => handleSetBoth(3)} className={parameters.semitonesL === 3 ? 'active' : ''}>m3</button>
+            <button onClick={() => handleSetBoth(4)} className={parameters.semitonesL === 4 ? 'active' : ''}>M3</button>
+            <button onClick={() => handleSetBoth(5)} className={parameters.semitonesL === 5 ? 'active' : ''}>4th</button>
+            <button onClick={() => handleSetBoth(7)} className={parameters.semitonesL === 7 ? 'active' : ''}>5th</button>
+            <button onClick={() => handleSetBoth(12)} className={parameters.semitonesL === 12 ? 'active' : ''}>Oct</button>
+          </div>
+        </>
+      ),
+    },
+  ]
+
+  // Quick presets
+  const presetsNode = (
+    <div className="carbon-preset-row">
+      {presets.map((preset, idx) => (
+        <button
+          key={idx}
+          className="carbon-preset-btn"
+          onClick={() => applyPreset(preset)}
+        >
+          {preset.name}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
-    <PluginCardShell
+    <PitchCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
+      compact={compact}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
       onOpenMidiMappings={onOpenMidiMappings}
-      visualization={renderPianoVisualization()}
-      compact={compact}
-      customHeader={
-        <div className="interval-card-header">
-          <span className="interval-card-title">INTERVAL SHIFTER</span>
-          <span className="interval-subtitle">Musical Pitch Shift</span>
-        </div>
-      }
-    >
-      {/* Quick Presets */}
-      <div className="interval-presets-section">
-        <button
-          className="interval-presets-toggle"
-          onClick={() => setShowPresets(!showPresets)}
-          style={{ '--accent': accentColor } as React.CSSProperties}
-        >
-          <Flash size={14} />
-          <span>Quick Presets</span>
-          <ChevronDown size={14} className={showPresets ? 'rotated' : ''} />
-        </button>
-
-        {showPresets && (
-          <div className="interval-presets-dropdown">
-            {presets.map((preset, idx) => (
-              <button
-                key={idx}
-                className="interval-preset-btn"
-                onClick={() => { applyPreset(preset); setShowPresets(false) }}
-                style={{ '--accent': accentColor } as React.CSSProperties}
-              >
-                <span className="preset-name">{preset.name}</span>
-                <span className="preset-desc">{preset.description}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Semitone Controls */}
-      <ParameterSection title="Interval Shift" accentColor={accentColor}>
-        <div className="interval-controls">
-          {/* Left Channel */}
-          <div className="interval-stepper">
-            <span className="stepper-label">Left</span>
-            <div className="stepper-buttons">
-              <button onClick={() => handleSemitonesL(-12)} title="-Octave">-12</button>
-              <button onClick={() => handleSemitonesL(-2)} title="-Full Step" className="step-btn">-2</button>
-              <button onClick={() => handleSemitonesL(-1)} title="-Semitone">-1</button>
-              <span className="stepper-value">{formatSemitones(parameters.semitonesL)}</span>
-              <button onClick={() => handleSemitonesL(1)} title="+Semitone">+1</button>
-              <button onClick={() => handleSemitonesL(2)} title="+Full Step" className="step-btn">+2</button>
-              <button onClick={() => handleSemitonesL(12)} title="+Octave">+12</button>
-            </div>
-            <span className="stepper-interval">{getIntervalName(parameters.semitonesL)}</span>
-          </div>
-
-          {/* Link Button */}
-          <button
-            className={`interval-link-btn ${linkLR ? 'linked' : ''}`}
-            onClick={() => setLinkLR(!linkLR)}
-            style={{ '--accent': accentColor } as React.CSSProperties}
-            title={linkLR ? 'Linked L/R' : 'Independent L/R'}
-          >
-            {linkLR ? <Link size={16} /> : <Unlink size={16} />}
-          </button>
-
-          {/* Right Channel */}
-          <div className="interval-stepper">
-            <span className="stepper-label">Right</span>
-            <div className="stepper-buttons">
-              <button
-                onClick={() => handleSemitonesR(-12)}
-                title="-Octave"
-                disabled={linkLR}
-              >-12</button>
-              <button
-                onClick={() => handleSemitonesR(-2)}
-                title="-Full Step"
-                disabled={linkLR}
-                className="step-btn"
-              >-2</button>
-              <button
-                onClick={() => handleSemitonesR(-1)}
-                title="-Semitone"
-                disabled={linkLR}
-              >-1</button>
-              <span className="stepper-value">{formatSemitones(parameters.semitonesR)}</span>
-              <button
-                onClick={() => handleSemitonesR(1)}
-                title="+Semitone"
-                disabled={linkLR}
-              >+1</button>
-              <button
-                onClick={() => handleSemitonesR(2)}
-                title="+Full Step"
-                disabled={linkLR}
-                className="step-btn"
-              >+2</button>
-              <button
-                onClick={() => handleSemitonesR(12)}
-                title="+Octave"
-                disabled={linkLR}
-              >+12</button>
-            </div>
-            <span className="stepper-interval">{getIntervalName(parameters.semitonesR)}</span>
-          </div>
-        </div>
-
-        {/* Quick interval buttons */}
-        <div className="interval-quick-buttons">
-          <button onClick={() => handleSetBoth(-12)} className={parameters.semitonesL === -12 ? 'active' : ''}>-Oct</button>
-          <button onClick={() => handleSetBoth(-7)} className={parameters.semitonesL === -7 ? 'active' : ''}>-5th</button>
-          <button onClick={() => handleSetBoth(-5)} className={parameters.semitonesL === -5 ? 'active' : ''}>-4th</button>
-          <button onClick={() => handleSetBoth(0)} className={parameters.semitonesL === 0 ? 'active' : ''}>0</button>
-          <button onClick={() => handleSetBoth(3)} className={parameters.semitonesL === 3 ? 'active' : ''}>m3</button>
-          <button onClick={() => handleSetBoth(4)} className={parameters.semitonesL === 4 ? 'active' : ''}>M3</button>
-          <button onClick={() => handleSetBoth(5)} className={parameters.semitonesL === 5 ? 'active' : ''}>4th</button>
-          <button onClick={() => handleSetBoth(7)} className={parameters.semitonesL === 7 ? 'active' : ''}>5th</button>
-          <button onClick={() => handleSetBoth(12)} className={parameters.semitonesL === 12 ? 'active' : ''}>Oct</button>
-        </div>
-      </ParameterSection>
-
-      {/* Mix Control */}
-      <ParameterSection title="Output" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Mix"
-            value={parameters.mix}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={setMix}
-            accentColor={accentColor}
-            size="large"
-          />
-        </ParameterRow>
-        <div className="interval-mix-labels">
-          <span>Dry</span>
-          <span>Wet</span>
-        </div>
-      </ParameterSection>
-
-      {/* Footer */}
-      <div className="interval-footer">
-        <div className="interval-metering">
-          <span>IN: {Math.max(metering.inputLevelL, metering.inputLevelR).toFixed(1)} dB</span>
-          <span>OUT: {Math.max(metering.outputLevelL, metering.outputLevelR).toFixed(1)} dB</span>
-        </div>
-      </div>
-    </PluginCardShell>
+      visualization={visualization}
+      semitones={semitonesSlot}
+      interval={intervalSlot}
+      mix={mixSlot}
+      inputLevel={Math.max(metering.inputLevelL, metering.inputLevelR)}
+      outputLevel={Math.max(metering.outputLevelL, metering.outputLevelR)}
+      advancedSections={advancedSections}
+      presets={presetsNode}
+    />
   )
 }
 

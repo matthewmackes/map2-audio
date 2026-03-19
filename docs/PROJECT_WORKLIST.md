@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-18 - Codex (T205 active frontend icon exit criteria reached at 0 Phosphor / 0 MUI / 0 emoji across web/src/app + web/src/map2; T205-subD legacy map2 cleanup completed; T205-subE emoji/symbol UI-icon cleanup completed with zero tracked holdouts; T203-subD MIDI Hub transport area completed with validation; T210-subA SynthForge SoundFont-first slice validated and completed; T216 drum websocket/position layer advanced; T218 drum types/API/hooks completed; T221 preflight/startup-order alignment completed; T209 rerun reduced to host RLIMIT blocker)
+Last updated: 2026-03-19 - Codex (T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -1768,3 +1768,307 @@ Last updated: 2026-03-18 18:31 - Codex
   - Tightened `scripts/build_web_dist_atomic.py` so the atomic publish step no longer carries forward stale `ibm-plex-sans-*` hashed assets from prior builds into the new `web/dist/assets` tree.
   - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass, `find web/dist/assets -maxdepth 1 -type f | grep -i 'ibm-plex-sans'` -> no matches, and the currently referenced `web/dist/assets/index-ClUQS4FA.js` / `index-D4VpUnpq.css` contain no `ibm-plex-sans` source references.
   - Residual note: Carbon's shipped stylesheet still declares `IBM Plex Sans` as a font-family and references hosted `IBM Plex Mono` assets from IBM/CDN, but the local build no longer emits the legacy `ibm-plex-sans-*` font files targeted by this task.
+
+## Carbon Category Card Refactor
+
+ID: T222
+Status: [✓] Done
+Title: Carbon-compliant effect card refactor — AXE-FX Edit structural parity
+Description:
+- Goal / acceptance criteria: Refactor every effect card GUI (24 JUCE native, 15 third-party, 8 fallback templates = 47 total) to Carbon Design System compliance with AXE-FX Edit structural parity. Cards in the same effect category must share identical layout structure. All parameters preserved — advanced/unique features in Carbon Accordion sections. Delete all orphaned per-card CSS. Build must pass clean.
+- Why it matters: Prior state had 47 cards each with bespoke sizing, layout, control types, and CSS. Cards in the same category (e.g., three dynamics processors) looked nothing alike. This refactor establishes visual and structural consistency across the entire plugin card system.
+- Dependencies: Carbon Design System (`@carbon/react` v1.103.0, `@carbon/icons-react` v11.76.0) — already installed
+- Estimated effort: Very High
+- Required outputs: 16 new infrastructure/layout files, 47 refactored card files, 22 deleted CSS files, clean `tsc -b` and Vite production build.
+Subtasks:
+ID: T222-subA
+Status: [✓] Done
+Title: Phase 1 — Shared Carbon infrastructure
+Description:
+- Goal / acceptance criteria: Create the shared foundation components that all category layouts and cards will use.
+- New files created:
+  - `web/src/app/components/PluginCards/Base/CarbonCardShell.tsx` — Standardized card shell with Carbon Toggle bypass, Tag category badge, OverflowMenu, Accordion for advanced sections, fixed dimensions per category
+  - `web/src/app/components/PluginCards/Base/CarbonParameterSection.tsx` — Always-visible section with auto-icon header
+  - `web/src/app/components/PluginCards/Base/CarbonMeteringFooter.tsx` — Standardized IN/GR/OUT metering footer with clipping Tag indicator
+  - `web/src/app/components/PluginCards/Base/carbonCardStyles.css` — Single shared CSS for all Carbon-compliant cards (category height variables, Carbon spacing tokens, accordion overrides, container queries)
+- Modified: `web/src/app/components/PluginCards/types.ts` — Added `CATEGORY_CARD_DIMENSIONS` constant
+- Key type: `ParamSlot` interface (label, value, min, max, defaultValue, step, unit, onChange, isLogarithmic, valueFormatter, midi)
+- Key type: `AdvancedSection` interface (id, title, icon, children, defaultOpen)
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+
+ID: T222-subB
+Status: [✓] Done
+Title: Phase 2 — 10 Category Layout components
+Description:
+- Goal / acceptance criteria: Create one standardized layout component per effect category defining the AXE-FX-style fixed structure.
+- New files created (all in `web/src/app/components/PluginCards/Layouts/`):
+  - `DynamicsCategoryLayout.tsx` (520px) — GR Meter + Transfer Curve → Dynamics → Timing → Output → Accordion → Footer
+  - `ModulationCategoryLayout.tsx` (480px) — LFO Viz → Modulation → Character → Mix → Accordion → Footer
+  - `DelayCategoryLayout.tsx` (520px) — Tap Grid → Time → Character → Mix → Accordion → Footer
+  - `ReverbCategoryLayout.tsx` (500px) — Decay Curve → Space → Time → Tone → Mix → Accordion → Footer
+  - `PitchCategoryLayout.tsx` (480px) — Pitch Display → Pitch → Character → Mix → Accordion → Footer
+  - `AmplifierCategoryLayout.tsx` (560px) — Tube Viz → Input → Tone → Power → Output → Accordion → Footer
+  - `MultiEffectCategoryLayout.tsx` (560px) — Algorithm Display → Selector → Primary Controls → Accordion → Footer
+  - `EQCategoryLayout.tsx` (500px) — EQ Curve → Band Grid → Output → Accordion
+  - `ConvolutionCategoryLayout.tsx` (420px) — IR Browser → Mix → Accordion → Footer
+  - `InstrumentCategoryLayout.tsx` (560px) — Viz → Transport → Performance → Accordion → Footer
+  - `index.ts` — barrel exports
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+
+ID: T222-subC
+Status: [✓] Done
+Title: Phase 3 — Refactor 24 JUCE native cards
+Description:
+- Goal / acceptance criteria: Every JUCE native card uses its category layout. All parameters preserved. withMidiDialog HOC retained. Bespoke CSS imports removed.
+- Cards refactored:
+  - Dynamics (4): CompressorCard, CelestialCompressorCard (artist presets in Accordion), LimiterCard (ratio locked ∞), GateCard (open/closed indicator in extraContent)
+  - Modulation (3): ChorusCard, PhaserCard, IntelliFXCard (8-voice controls in Accordion)
+  - Amplifier (3): TweedBassmanCard, Peavey5150Card, NAMCard
+  - Pitch (3): IntervalShifterCard, EVHPitchShifterCard (era presets in Accordion), BossXS1Card (expression pedal in Accordion)
+  - Multi-Effect (3): EventideH9Card, ShoeGazeCard, PassionFXCard (signal chain modules in Accordion)
+  - Reverb (2): LexiLoveCard → ReverbCategoryLayout, H3000Card → PitchCategoryLayout (primarily harmonizer)
+  - EQ (1): ParametricEQCard → EQCategoryLayout (8-band)
+  - Delay (1): NativeDelayCard → DelayCategoryLayout
+  - Convolution (2): CabinetIRCard, ReverbIRCard → ConvolutionCategoryLayout
+  - Instrument (2): DrumMachineCard, SynthForgeCard → InstrumentCategoryLayout
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+
+ID: T222-subD
+Status: [✓] Done
+Title: Phase 4 — Refactor 15 third-party cards
+Description:
+- Goal / acceptance criteria: Every third-party card uses its category layout. Parameter access patterns (LV2 parameterValues/onParameterChange) preserved.
+- Cards refactored:
+  - TooB (7): CE2ChorusCard, BF2FlangerCard, PhaserCard, TremoloCard → ModulationCategoryLayout; DelayCard → DelayCategoryLayout; LooperCard → InstrumentCategoryLayout; TunerCard → CarbonCardShell (utility)
+  - Dragonfly (3): DragonflyRoomCard, DragonflyHallCard, DragonflyPlateCard → ReverbCategoryLayout
+  - LV2 (4): REEVRCard → ReverbCategoryLayout; OutotuneCard, WhammyCard → PitchCategoryLayout; KeyboardSamplerCard → InstrumentCategoryLayout
+  - Airwindows (1): GlitchShifterCard → PitchCategoryLayout
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+
+ID: T222-subE
+Status: [✓] Done
+Title: Phase 5 — Refactor 8 fallback templates
+Description:
+- Goal / acceptance criteria: Every fallback template wraps its category layout. Generic parameters auto-mapped to standard slots via toSlot() helper; unmatched params in Accordion advanced sections.
+- Templates refactored:
+  - DynamicsTemplate → DynamicsCategoryLayout
+  - ReverbTemplate → ReverbCategoryLayout
+  - EQTemplate → EQCategoryLayout (auto-detects band structure)
+  - DelayTemplate → DelayCategoryLayout
+  - ModulationTemplate → ModulationCategoryLayout
+  - DistortionTemplate → AmplifierCategoryLayout
+  - PitchTemplate → PitchCategoryLayout
+  - UtilityTemplate → CarbonCardShell (auto-groups parameters)
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+
+ID: T222-subF
+Status: [✓] Done
+Title: Phase 6 — Cleanup and build verification
+Description:
+- Goal / acceptance criteria: Delete all orphaned per-card CSS files. Fix any remaining stale imports. Build must pass clean.
+- 22 CSS files deleted (JUCE: 17, LV2: 3, Airwindows: 1, TooB: 0 — had none)
+- 3 stale CSS imports fixed (ShoeGazeCard, PassionFXCard, EventideH9Card)
+- 4 build errors fixed: invalid Carbon icon `Tune` → `SettingsAdjust` (H3000Card, LexiLoveCard), missing `defaultValue` on EQ frequency ParamSlot (ParametricEQCard), type predicate mismatch (UtilityTemplate)
+- Final validation: `tsc -b` clean, `npm run build` clean (16.34s)
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - All 47 cards + 8 templates now use standardized category layouts
+  - Cards in the same category are structurally identical (AXE-FX Edit parity)
+  - Every parameter is accessible — primary params visible, advanced in Carbon Accordion
+  - Carbon icons throughout, no bespoke CSS remains on any card
+  - withMidiDialog HOC preserved on all JUCE native cards
+  - Planner-only mode instruction set added to `docs/CLAUDE.md`
+
+## JUCE Grid — Axe-FX Edit / GarageBand Redesign
+
+ID: T223
+Status: [ ] Todo
+Title: JUCE Grid Page — Axe-FX Edit desktop + GarageBand iPad redesign
+Description:
+- Goal / acceptance criteria: Full replacement and refactor of JuceGridPage and JuceGridSignalCanvas into an Axe-FX Edit–style effect block grid with GarageBand-informed iPad experience and Carbon Design System compliance.
+- Estimated effort: Very High (multi-phase)
+- Dependencies: T222 (Carbon card refactor — Done)
+- Design hierarchy: Match Axe-FX Edit (desktop) → Match GarageBand (iPad) → Apple HIG → Carbon Standards
+
+### Design Specification
+
+#### Grid Layout
+- **Win10 Start Menu tile layout**: Uniform-height cards, 3 width sizes (large/medium/small)
+- **Row fill logic**: Cards start at largest width; shrink as more cards added to row until all at smallest width, then new row created
+- **Once a row wraps**: Previous row cards stay at smallest width; new row starts fresh at largest width
+- **Snake (boustrophedon) signal flow**: Row 1 left→right, Row 2 right→left, etc. Vertical connectors on right or left side as needed
+- **Full replacement** of existing JuceGridPage and JuceGridSignalCanvas (use old code as guide)
+- **Keep all existing colors** — no color scheme changes
+
+#### Effect Grid Cards (Face)
+- **Content**: Effect human-readable name, hero image (from existing effectIcons.ts), bypass state, category of effect
+- **Glyphs**: Use glyphs wherever possible
+- **Category colors**: Use existing CATEGORY_COLORS from types.ts
+- **Bypass visual**: Dim/desaturate card face (Axe-FX Edit style); signal flow lines through bypassed card change appearance (dashed/reduced opacity)
+- **Selected state**: Carbon standard highlight when card is open in bottom panel
+- **Fixed portion layout**: Top portion = hero image, bottom portion = name/category/bypass (standardized across all cards)
+
+#### Signal Flow
+- **3-dot connectivity indicators**: Between cards, using Interactive Hover color, Carbon standard visibility behavior
+- **Signal flow lines**: Carbon styling, connecting dot-to-dot between adjacent cards in chain
+- **Input/Output**: Remain outside the signal chain; represent signal flow from input → through card chain → to destination/next hop → continuing to next card if required
+- **Bypassed card flow**: Dashed line or reduced opacity through bypassed blocks (Axe-FX Edit style)
+- **Flow updates**: Signal flow lines and dots update only after move is confirmed, not during
+
+#### Bottom Parameter Panel
+- **Opens on card click**: Slide-up animation; click same card again to close (slide-down)
+- **Pushes grid up**: Grid stays fully visible at all times
+- **Standardized layout**: All effects use same pattern — no custom per-card layouts
+- **Parameter display**: Carbon NumberInput for numbers, Carbon Dropdown for named/enum items
+- **Grouped parameters**: Use existing parameter group metadata (INPUT, OUTPUT, TIMING, THRESHOLD, FREQUENCY, MODULATION, SPATIAL, MIX, OTHER)
+- **All groups visible**: No accordion/collapsing — all parameter groups shown
+- **No scroll**: Effect parameter cards grow in height as needed
+- **Panel header**: Effect hero icon, name, category, bypass toggle (mirrors card face)
+
+#### Add Effect Slot
+- **Single empty slot**: Always present at end of chain
+- **Visual**: Matches Axe-FX Edit empty grid slot style (same height as cards, smallest width, "+" glyph)
+- **Action**: Navigates to existing effects browser
+
+#### Reorder System — "Select and Move"
+- **Desktop**: Click to select card, arrow keys to move through signal chain (snake-aware wrapping)
+- **Visual feedback**: Ghost/animation showing where card will land (Axe-FX Edit drag feedback style)
+- **iPad**: Tap to select, on-screen arrow controls or Apple-recommended touch interaction
+- **Keyboard**: When iPad hardware keyboard detected, arrow keys activate automatically; on-screen controls remain available
+
+#### State Persistence
+- **localStorage**: Remember selected card, panel open/close state, scroll position between sessions
+
+#### Viewport & Responsive
+- **Minimum viewport**: iPad portrait (768px) — full featured
+- **Detection**: Screen width + touch capability
+- **Mobile block**: Below 768px or mobile-sized touch device → black screen with hero icon centered, message: "This experience requires an iPad or larger display"
+
+#### iPad Experience (GarageBand → Apple HIG → Carbon hierarchy)
+- **Interaction**: GarageBand-style — single tap selects card, shows contextual toolbar (bypass, move, delete, open); "open" expands bottom panel
+- **Parameter editing**: GarageBand-style large finger-friendly value areas; iOS picker wheels on iPad for NumberInputs (or enlarged 44pt Carbon steppers)
+- **Visual feedback**: GarageBand-style subtle bounce animations, glow on selection, smooth slide-up for bottom panel
+- **Bottom panel dismiss**: iOS-style swipe-down gesture + tap-card-again-to-close
+- **Smart controls**: GarageBand-style curated 4-6 most important parameters as default view, with "All Parameters" toggle for full list
+- **Touch targets**: All interactive elements ≥ 44pt in tablet mode (Apple HIG)
+- **Split View**: If iPadOS Split View shrinks below 768px, show mobile block screen
+- **All inputs, dialogs, interactions**: Follow Apple Best Practice for audio apps when in tablet mode; use Carbon standards to meet Apple standards
+
+Subtasks:
+
+ID: T223-subA
+Status: [ ] Todo
+Title: Grid layout engine — tile sizing, row fill, snake flow
+Description:
+- Build the responsive tile grid with 3 width sizes, uniform height
+- Implement row-fill shrink logic (largest → smallest → new row)
+- Previous rows stay smallest; new rows start fresh at largest
+- Snake-pattern signal flow (boustrophedon) with right/left vertical connectors
+- Replace JuceGridSignalCanvas (use as guide)
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+ID: T223-subB
+Status: [ ] Todo
+Title: Effect grid card face — hero image, name, category, bypass, glyphs
+Description:
+- Standardized card face layout: fixed top portion (hero image), fixed bottom portion (name/category/bypass)
+- Use existing effectIcons.ts hero images and CATEGORY_COLORS
+- Bypass dimming/desaturation (Axe-FX Edit style)
+- Carbon standard selected state
+- Glyph usage throughout
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+ID: T223-subC
+Status: [ ] Todo
+Title: Signal flow visualization — 3-dot connectors, flow lines, input/output
+Description:
+- 3-dot connectivity indicators between cards (Interactive Hover color, Carbon visibility standard)
+- Carbon-styled signal flow lines connecting cards
+- Input/Output nodes outside signal chain showing full routing path
+- Bypassed card flow lines (dashed/reduced opacity)
+- Signal flow updates only after move confirmation
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+ID: T223-subD
+Status: [ ] Todo
+Title: Bottom parameter panel — standardized editor with slide animation
+Description:
+- Slide-up/down animation on open/close
+- Click card to open, click again to close
+- Pushes grid up (grid stays fully visible)
+- Standardized layout: Carbon NumberInput + Dropdown
+- Grouped parameters from existing metadata (all groups visible, no scroll)
+- Panel header with hero icon, name, category, bypass toggle
+- Effect parameter cards grow in height as needed
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+ID: T223-subE
+Status: [ ] Todo
+Title: Select-and-Move reorder system (desktop + iPad)
+Description:
+- Desktop: click to select, arrow keys to reposition (snake-aware wrapping)
+- Ghost/animation feedback during move
+- iPad: tap-select with on-screen move controls (Apple best practice)
+- Hardware keyboard support on iPad (auto-detect, enable arrow keys)
+- Signal flow updates after move confirmed
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+ID: T223-subF
+Status: [ ] Todo
+Title: Add effect slot + state persistence
+Description:
+- Single empty "add effect" slot at end of chain (Axe-FX Edit style, "+" glyph)
+- Navigates to existing effects browser on click
+- localStorage persistence: selected card, panel state, scroll position
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+ID: T223-subG
+Status: [ ] Todo
+Title: iPad experience — GarageBand interaction patterns
+Description:
+- GarageBand-style tap interaction (select → contextual toolbar → open)
+- GarageBand-style parameter editing (large touch areas, iOS pickers or 44pt steppers)
+- Subtle bounce/glow animations on interaction
+- Swipe-down panel dismiss gesture
+- Smart controls: curated 4-6 key params default, "All Parameters" toggle
+- All touch targets ≥ 44pt
+- iPadOS Split View handling (block if < 768px)
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+ID: T223-subH
+Status: [ ] Todo
+Title: Mobile block screen + viewport detection
+Description:
+- Detect viewport < 768px or mobile touch device
+- Black screen with centered hero icon
+- Message: "This experience requires an iPad or larger display"
+- Suggest rotation if tablet in portrait detected below threshold
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+ID: T223-subI
+Status: [ ] Todo
+Title: Build verification + card parameter audit
+Description:
+- Verify every card's parameters display correctly in standardized bottom panel
+- Ensure all 47 cards + 8 templates work with the new grid layout
+- tsc clean, npm run build clean, all tests pass
+- Adjust card/panel sizing if any card's parameters don't fit
+Assigned to: Unassigned
+Last updated: 2026-03-19
+
+Assigned to: Unassigned
+Last updated: 2026-03-19

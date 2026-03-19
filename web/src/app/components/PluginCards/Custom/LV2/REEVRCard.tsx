@@ -1,22 +1,18 @@
 /**
- * REEVRCard - REEV-R Reverb
+ * REEVRCard - REEV-R Reverb (Carbon-compliant)
  *
- * FabFilter Pro-R inspired reverb interface with visual decay curve,
- * space visualization, and intuitive parameter layout.
+ * FabFilter Pro-R inspired reverb using ReverbCategoryLayout.
  *
  * LV2 URI: https://github.com/clearly-broken-software/REEV-R
  */
 
 import { useState, useMemo } from 'react'
-import { PluginCardShell } from '../../Base/PluginCardShell'
-import { ParameterSection } from '../../Base/ParameterSection'
-import { ParameterRow } from '../../Base/ParameterRow'
+import { ReverbCategoryLayout, type ParamSlot } from '../../Layouts/ReverbCategoryLayout'
+import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
-import { ChevronDown, ChevronRight, MagicWand } from '@carbon/icons-react'
+import { Activity, MagicWand } from '@carbon/icons-react'
 import type { PluginCardProps } from '../../types'
-import './REEVRCard.css'
 
-// REEV-R parameter indices (may need adjustment based on actual plugin)
 const PARAM_MAP = {
   dryLevel: 0,
   wetLevel: 1,
@@ -33,7 +29,6 @@ const PARAM_MAP = {
   lateLevel: 12,
 }
 
-// Space presets inspired by FabFilter Pro-R
 const SPACE_PRESETS = [
   { name: 'Small Room', size: 20, decay: 0.8, damping: 60 },
   { name: 'Medium Room', size: 40, decay: 1.5, damping: 50 },
@@ -47,10 +42,9 @@ export function REEVRCard({
   plugin,
   parameterValues,
   onParameterChange,
-  accentColor = '#8b5cf6', // Purple for reverb
+  accentColor = '#8b5cf6',
   compact = false,
 }: PluginCardProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
 
   const getValue = (key: keyof typeof PARAM_MAP, defaultVal: number) =>
@@ -59,7 +53,14 @@ export function REEVRCard({
   const setValue = (key: keyof typeof PARAM_MAP, value: number) =>
     onParameterChange(PARAM_MAP[key], value)
 
-  // Calculate decay curve points for visualization
+  const applyPreset = (preset: typeof SPACE_PRESETS[0]) => {
+    setValue('size', preset.size)
+    setValue('decay', preset.decay)
+    setValue('damping', preset.damping)
+    setSelectedPreset(preset.name)
+  }
+
+  // Decay curve visualization
   const decayCurve = useMemo(() => {
     const decay = getValue('decay', 2.0)
     const damping = getValue('damping', 50)
@@ -70,20 +71,16 @@ export function REEVRCard({
     const width = 260
     const height = 80
 
-    // Predelay (flat line at 0)
     const predelayX = (predelay / 200) * width * 0.2
     points.push({ x: 0, y: height })
     points.push({ x: predelayX, y: height })
 
-    // Early reflections burst
     const earlyHeight = (earlyLevel / 100) * height * 0.9
     points.push({ x: predelayX + 5, y: height - earlyHeight * 0.7 })
     points.push({ x: predelayX + 15, y: height - earlyHeight })
     points.push({ x: predelayX + 25, y: height - earlyHeight * 0.6 })
 
-    // Decay curve (exponential)
     const decayStart = predelayX + 30
-    const decayTime = decay * 40 // Scale for visualization
     for (let i = 0; i <= 20; i++) {
       const t = i / 20
       const x = decayStart + t * (width - decayStart - 10)
@@ -95,18 +92,9 @@ export function REEVRCard({
     return points
   }, [getValue])
 
-  // Apply preset
-  const applyPreset = (preset: typeof SPACE_PRESETS[0]) => {
-    setValue('size', preset.size)
-    setValue('decay', preset.decay)
-    setValue('damping', preset.damping)
-    setSelectedPreset(preset.name)
-  }
-
-  // Visualization component
   const visualization = (
-    <div className="reevr-visualization">
-      <svg width="364" height="112" viewBox="0 0 260 80" className="reevr-decay-curve">
+    <div style={{ padding: '8px 0' }}>
+      <svg width="364" height="112" viewBox="0 0 260 80" style={{ display: 'block', margin: '0 auto' }}>
         <defs>
           <linearGradient id="reevr-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={accentColor} stopOpacity="0.6" />
@@ -120,281 +108,165 @@ export function REEVRCard({
             </feMerge>
           </filter>
         </defs>
-
-        {/* Grid lines */}
         {[0.25, 0.5, 0.75].map((y) => (
-          <line
-            key={y}
-            x1="0"
-            y1={y * 80}
-            x2="260"
-            y2={y * 80}
-            stroke="#222"
-            strokeWidth="1"
-          />
+          <line key={y} x1="0" y1={y * 80} x2="260" y2={y * 80} stroke="#222" strokeWidth="1" />
         ))}
-
-        {/* Decay curve fill */}
         <path
           d={`M ${decayCurve.map((p) => `${p.x},${p.y}`).join(' L ')} L 260,80 L 0,80 Z`}
           fill="url(#reevr-gradient)"
         />
-
-        {/* Decay curve line */}
         <path
           d={`M ${decayCurve.map((p) => `${p.x},${p.y}`).join(' L ')}`}
-          fill="none"
-          stroke={accentColor}
-          strokeWidth="2"
-          filter="url(#reevr-glow)"
+          fill="none" stroke={accentColor} strokeWidth="2" filter="url(#reevr-glow)"
         />
-
-        {/* Time markers */}
         <text x="5" y="75" fill="#444" fontSize="8">0ms</text>
         <text x="125" y="75" fill="#444" fontSize="8">{(getValue('decay', 2) / 2).toFixed(1)}s</text>
         <text x="245" y="75" fill="#444" fontSize="8">{getValue('decay', 2).toFixed(1)}s</text>
       </svg>
-
-      {/* Space indicator */}
-      <div className="reevr-space-indicator">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginTop: 4 }}>
         <MagicWand size={12} style={{ color: accentColor }} />
-        <span>{getValue('size', 50).toFixed(0)}% Space</span>
+        <span style={{ fontSize: 11, color: '#9ca3af' }}>{getValue('size', 50).toFixed(0)}% Space</span>
       </div>
     </div>
   )
 
+  const presets = (
+    <div className="carbon-preset-row">
+      {SPACE_PRESETS.map((preset) => (
+        <button
+          key={preset.name}
+          className={`carbon-preset-btn ${selectedPreset === preset.name ? 'carbon-preset-btn--active' : ''}`}
+          onClick={() => applyPreset(preset)}
+        >
+          {preset.name}
+        </button>
+      ))}
+    </div>
+  )
+
+  const advancedSections: AdvancedSection[] = [
+    {
+      id: 'modulation',
+      title: 'Modulation',
+      icon: <Activity size={16} />,
+      children: (
+        <div className="carbon-param-row">
+          <ParameterKnob
+            label="Rate" value={getValue('modRate', 0.5)}
+            min={0.1} max={5} defaultValue={0.5} unit="Hz"
+            onChange={(v) => setValue('modRate', v)}
+            isLogarithmic valueFormatter={(v) => v.toFixed(2)}
+            accentColor={accentColor} size="small"
+          />
+          <ParameterKnob
+            label="Depth" value={getValue('modDepth', 0)}
+            min={0} max={100} defaultValue={0} unit="%"
+            onChange={(v) => setValue('modDepth', v)}
+            accentColor={accentColor} size="small"
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'early-late',
+      title: 'Early/Late Balance',
+      children: (
+        <div className="carbon-param-row">
+          <ParameterKnob
+            label="Early" value={getValue('earlyLevel', 80)}
+            min={0} max={100} defaultValue={80} unit="%"
+            onChange={(v) => setValue('earlyLevel', v)}
+            accentColor="#6b7280" size="small"
+          />
+          <ParameterKnob
+            label="Late" value={getValue('lateLevel', 100)}
+            min={0} max={100} defaultValue={100} unit="%"
+            onChange={(v) => setValue('lateLevel', v)}
+            accentColor={accentColor} size="small"
+          />
+        </div>
+      ),
+    },
+  ]
+
+  const size: ParamSlot = {
+    label: 'Size', value: getValue('size', 50),
+    min: 0, max: 100, defaultValue: 50, unit: '%',
+    onChange: (v) => { setValue('size', v); setSelectedPreset(null) },
+  }
+
+  const width: ParamSlot = {
+    label: 'Width', value: getValue('width', 100),
+    min: 0, max: 200, defaultValue: 100, unit: '%',
+    onChange: (v) => setValue('width', v),
+  }
+
+  const diffusion: ParamSlot = {
+    label: 'Damping', value: getValue('damping', 50),
+    min: 0, max: 100, defaultValue: 50, unit: '%',
+    onChange: (v) => { setValue('damping', v); setSelectedPreset(null) },
+  }
+
+  const preDelay: ParamSlot = {
+    label: 'Pre-Delay', value: getValue('predelay', 20),
+    min: 0, max: 200, defaultValue: 20, unit: 'ms',
+    onChange: (v) => setValue('predelay', v),
+  }
+
+  const decay: ParamSlot = {
+    label: 'Decay', value: getValue('decay', 2.0),
+    min: 0.1, max: 10, defaultValue: 2.0, unit: 's',
+    onChange: (v) => { setValue('decay', v); setSelectedPreset(null) },
+    isLogarithmic: true, valueFormatter: (v) => v.toFixed(1),
+  }
+
+  const damping: ParamSlot = {
+    label: 'Lo Cut', value: getValue('lowCut', 20),
+    min: 20, max: 1000, defaultValue: 20, unit: '',
+    onChange: (v) => setValue('lowCut', v),
+    isLogarithmic: true,
+    valueFormatter: (v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0) + ' Hz',
+  }
+
+  const highCut: ParamSlot = {
+    label: 'Hi Cut', value: getValue('highCut', 20000),
+    min: 1000, max: 20000, defaultValue: 20000, unit: '',
+    onChange: (v) => setValue('highCut', v),
+    isLogarithmic: true,
+    valueFormatter: (v) => `${(v / 1000).toFixed(1)}k Hz`,
+  }
+
+  const dryLevel: ParamSlot = {
+    label: 'Dry', value: getValue('dryLevel', 100),
+    min: 0, max: 100, defaultValue: 100, unit: '%',
+    onChange: (v) => setValue('dryLevel', v),
+  }
+
+  const wetLevel: ParamSlot = {
+    label: 'Wet', value: getValue('wetLevel', 30),
+    min: 0, max: 100, defaultValue: 30, unit: '%',
+    onChange: (v) => setValue('wetLevel', v),
+  }
+
   return (
-    <PluginCardShell
+    <ReverbCategoryLayout
       plugin={plugin}
       accentColor={accentColor}
+      compact={compact}
       bypassed={plugin.bypassed}
       visualization={visualization}
-      compact={compact}
-    >
-      {/* Space Presets */}
-      <div className="reevr-presets">
-        {SPACE_PRESETS.map((preset) => (
-          <button
-            key={preset.name}
-            className={`reevr-preset-chip ${selectedPreset === preset.name ? 'active' : ''}`}
-            onClick={() => applyPreset(preset)}
-            style={{
-              '--accent': accentColor,
-            } as React.CSSProperties}
-          >
-            {preset.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Main Controls */}
-      <ParameterSection title="Space" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Size"
-            value={getValue('size', 50)}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => {
-              setValue('size', v)
-              setSelectedPreset(null)
-            }}
-            accentColor={accentColor}
-            size="large"
-          />
-          <ParameterKnob
-            label="Decay"
-            value={getValue('decay', 2.0)}
-            min={0.1}
-            max={10}
-            defaultValue={2.0}
-            unit="s"
-            onChange={(v) => {
-              setValue('decay', v)
-              setSelectedPreset(null)
-            }}
-            isLogarithmic
-            valueFormatter={(v) => v.toFixed(1)}
-            accentColor={accentColor}
-            size="large"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Character */}
-      <ParameterSection title="Character" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Pre-Delay"
-            value={getValue('predelay', 20)}
-            min={0}
-            max={200}
-            defaultValue={20}
-            unit="ms"
-            onChange={(v) => setValue('predelay', v)}
-            accentColor={accentColor}
-            size="medium"
-          />
-          <ParameterKnob
-            label="Damping"
-            value={getValue('damping', 50)}
-            min={0}
-            max={100}
-            defaultValue={50}
-            unit="%"
-            onChange={(v) => {
-              setValue('damping', v)
-              setSelectedPreset(null)
-            }}
-            accentColor={accentColor}
-            size="medium"
-          />
-          <ParameterKnob
-            label="Width"
-            value={getValue('width', 100)}
-            min={0}
-            max={200}
-            defaultValue={100}
-            unit="%"
-            onChange={(v) => setValue('width', v)}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Mix */}
-      <ParameterSection title="Mix" accentColor={accentColor}>
-        <ParameterRow>
-          <ParameterKnob
-            label="Dry"
-            value={getValue('dryLevel', 100)}
-            min={0}
-            max={100}
-            defaultValue={100}
-            unit="%"
-            onChange={(v) => setValue('dryLevel', v)}
-            accentColor="#888"
-            size="medium"
-          />
-          <ParameterKnob
-            label="Wet"
-            value={getValue('wetLevel', 30)}
-            min={0}
-            max={100}
-            defaultValue={30}
-            unit="%"
-            onChange={(v) => setValue('wetLevel', v)}
-            accentColor={accentColor}
-            size="medium"
-          />
-        </ParameterRow>
-      </ParameterSection>
-
-      {/* Advanced Section (Collapsible) */}
-      <div className="reevr-advanced-toggle">
-        <button onClick={() => setShowAdvanced(!showAdvanced)}>
-          {showAdvanced ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          <span>Advanced</span>
-          <span className="reevr-advanced-indicator" style={{
-            background: (getValue('modDepth', 0) > 0 || getValue('lowCut', 20) > 20 || getValue('highCut', 20000) < 20000) ? accentColor : '#333'
-          }} />
-        </button>
-      </div>
-
-      {showAdvanced && (
-        <>
-          <ParameterSection title="Modulation" accentColor={accentColor}>
-            <ParameterRow>
-              <ParameterKnob
-                label="Rate"
-                value={getValue('modRate', 0.5)}
-                min={0.1}
-                max={5}
-                defaultValue={0.5}
-                unit="Hz"
-                onChange={(v) => setValue('modRate', v)}
-                isLogarithmic
-                valueFormatter={(v) => v.toFixed(2)}
-                accentColor={accentColor}
-                size="small"
-              />
-              <ParameterKnob
-                label="Depth"
-                value={getValue('modDepth', 0)}
-                min={0}
-                max={100}
-                defaultValue={0}
-                unit="%"
-                onChange={(v) => setValue('modDepth', v)}
-                accentColor={accentColor}
-                size="small"
-              />
-            </ParameterRow>
-          </ParameterSection>
-
-          <ParameterSection title="EQ" accentColor={accentColor}>
-            <ParameterRow>
-              <ParameterKnob
-                label="Low Cut"
-                value={getValue('lowCut', 20)}
-                min={20}
-                max={1000}
-                defaultValue={20}
-                unit="Hz"
-                onChange={(v) => setValue('lowCut', v)}
-                isLogarithmic
-                valueFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v.toFixed(0)}
-                accentColor={accentColor}
-                size="small"
-              />
-              <ParameterKnob
-                label="High Cut"
-                value={getValue('highCut', 20000)}
-                min={1000}
-                max={20000}
-                defaultValue={20000}
-                unit="Hz"
-                onChange={(v) => setValue('highCut', v)}
-                isLogarithmic
-                valueFormatter={(v) => `${(v/1000).toFixed(1)}k`}
-                accentColor={accentColor}
-                size="small"
-              />
-            </ParameterRow>
-          </ParameterSection>
-
-          <ParameterSection title="Early/Late Balance" accentColor={accentColor}>
-            <ParameterRow>
-              <ParameterKnob
-                label="Early"
-                value={getValue('earlyLevel', 80)}
-                min={0}
-                max={100}
-                defaultValue={80}
-                unit="%"
-                onChange={(v) => setValue('earlyLevel', v)}
-                accentColor="#6b7280"
-                size="small"
-              />
-              <ParameterKnob
-                label="Late"
-                value={getValue('lateLevel', 100)}
-                min={0}
-                max={100}
-                defaultValue={100}
-                unit="%"
-                onChange={(v) => setValue('lateLevel', v)}
-                accentColor={accentColor}
-                size="small"
-              />
-            </ParameterRow>
-          </ParameterSection>
-        </>
-      )}
-    </PluginCardShell>
+      size={size}
+      width={width}
+      diffusion={diffusion}
+      preDelay={preDelay}
+      decay={decay}
+      damping={damping}
+      highCut={highCut}
+      dryLevel={dryLevel}
+      wetLevel={wetLevel}
+      advancedSections={advancedSections}
+      presets={presets}
+    />
   )
 }
 
