@@ -1376,12 +1376,37 @@ export interface DrumMachineStateUpdate {
   practice_auto_fill?: boolean;
 }
 
+export type DrumVelocityCurveType = 'linear' | 'log' | 'exp' | 's-curve' | 'fixed';
+export type DrumZoneType = 'head' | 'rim' | 'edge';
+
 export interface DrumPack {
   pack_id: string;
   name: string;
   description: string;
   source: string;
   filename: string;
+}
+
+export interface DrumInstrument {
+  pad_id: number;
+  name: string;
+  sfz_path: string;
+  default_note: number;
+  bus_assignment: number;
+  volume: number;
+  pan: number;
+  tune: number;
+  mute: boolean;
+  solo: boolean;
+}
+
+export interface DrumKit {
+  kit_id: string;
+  name: string;
+  description: string;
+  author: string;
+  category: string;
+  instruments: DrumInstrument[];
 }
 
 export interface DrumTransportState {
@@ -1400,6 +1425,85 @@ export interface DrumTransportUpdate {
   swing?: number;
 }
 
+export interface DrumPatternStep {
+  active: boolean;
+  velocity: number;
+  accent: boolean;
+}
+
+export interface DrumPattern {
+  pattern_id: number;
+  steps: DrumPatternStep[][];
+  length: number;
+  variation: number;
+}
+
+export interface DrumSongEntry {
+  pattern_id: number;
+  repeat_count: number;
+}
+
+export interface DrumSong {
+  entries: DrumSongEntry[];
+  loop: boolean;
+}
+
+export interface DrumEqState {
+  low_gain: number;
+  mid_gain: number;
+  mid_freq: number;
+  high_gain: number;
+}
+
+export interface DrumCompressorState {
+  threshold: number;
+  ratio: number;
+  attack: number;
+  release: number;
+  makeup: number;
+}
+
+export interface DrumBusMixer {
+  bus_id: number;
+  name: string;
+  eq: DrumEqState;
+  comp: DrumCompressorState;
+  level: number;
+  mute: boolean;
+  solo: boolean;
+}
+
+export interface DrumPadControlUpdate {
+  volume?: number;
+  pan?: number;
+  tune?: number;
+  mute?: boolean;
+  solo?: boolean;
+  bus_assignment?: number;
+}
+
+export interface DrumPadControl extends DrumPadControlUpdate {
+  pad_id: number;
+  volume: number;
+  pan: number;
+  tune: number;
+  mute: boolean;
+  solo: boolean;
+  bus_assignment: number;
+}
+
+export interface DrumBusMixerUpdate {
+  eq?: Partial<DrumEqState>;
+  comp?: Partial<DrumCompressorState>;
+  level?: number;
+  mute?: boolean;
+  solo?: boolean;
+}
+
+export interface DrumMasterVolumeState {
+  volume: number;
+}
+
 export interface DrumMetering {
   per_pad_peak: number[];
   per_pad_rms: number[];
@@ -1409,6 +1513,41 @@ export interface DrumMetering {
   master_peak_right: number;
   master_rms_left: number;
   master_rms_right: number;
+}
+
+export interface DrumZone {
+  zone_type: DrumZoneType;
+  midi_note: number;
+  articulation: string;
+}
+
+export interface DrumVelocityCurve {
+  type: DrumVelocityCurveType;
+  input_floor: number;
+  output_floor: number;
+  output_ceiling: number;
+}
+
+export interface DrumMidiMapping {
+  pad_id: number;
+  midi_note: number;
+  midi_channel: number;
+  velocity_curve: DrumVelocityCurve;
+  zones: DrumZone[];
+}
+
+export interface DrumMidiLearnStatus {
+  active: boolean;
+  active_pad_id: number | null;
+  last_received_note: number | null;
+  last_received_channel: number | null;
+}
+
+export interface DrumMidiPreset {
+  preset_id: string;
+  name: string;
+  manufacturer: string;
+  description: string;
 }
 
 // ==================== Sidechain Types ====================

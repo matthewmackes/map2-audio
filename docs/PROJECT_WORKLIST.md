@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -1517,7 +1517,7 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Updated types.ts, updated api.ts, React Query hooks, unit tests for API client.
 Subtasks:
-  - [ ] T218-A: TypeScript interfaces in `web/src/map2/types.ts`
+  - [✓] T218-A: TypeScript interfaces in `web/src/map2/types.ts`
     - `DrumMachineState` — extend existing interface with full transport, sequencer position, active pattern, active kit, mixer state
     - `DrumKit` — kit_id, name, description, author, category, instruments[16]
     - `DrumInstrument` — name, sfz_path, default_note, bus_assignment, volume, pan, tune, mute, solo
@@ -1529,7 +1529,7 @@ Subtasks:
     - `DrumMidiMapping` — pad_id, midi_note, midi_channel, velocity_curve, zones[]
     - `DrumVelocityCurve` — type (linear/log/exp/s-curve/fixed), input_floor, output_floor, output_ceiling
     - `DrumZone` — zone_type (head/rim/edge), midi_note, articulation
-  - [ ] T218-B: API client in `web/src/map2/api.ts` — `drumsApi` object (extend existing)
+  - [✓] T218-B: API client in `web/src/map2/api.ts` — `drumsApi` object (extend existing)
     - Transport: `getTransport()`, `setTransport(state)`, `tapTempo(timestamp)`
     - Patterns: `getPattern(id)`, `setPattern(id, data)`, `setStep(pattern, instrument, step, velocity)`, `clearPattern(id)`, `copyPattern(src, dst)`
     - Song: `getSong()`, `setSong(entries)`, `addSongEntry(entry)`, `removeSongEntry(position)`
@@ -1537,7 +1537,7 @@ Subtasks:
     - Mixer: `getPadControls()`, `setPadControl(pad, params)`, `getBusMixer()`, `setBusMixer(bus, params)`, `getMasterVolume()`, `setMasterVolume(vol)`
     - MIDI: `getMidiMapping()`, `setMidiMapping(mapping)`, `getVelocityCurves()`, `setVelocityCurve(pad, curve)`, `startMidiLearn()`, `stopMidiLearn()`, `getMidiLearnStatus()`, `getMidiPresets()`, `loadMidiPreset(preset)`
     - Metering: `getMetering()` (HTTP fallback; primary source is WebSocket)
-  - [ ] T218-C: React Query hooks in `web/src/app/hooks/useDrumMachine.ts`
+  - [✓] T218-C: React Query hooks in `web/src/app/hooks/useDrumMachine.ts`
     - `useDrumTransport()` — transport state with 500ms refetch (WebSocket primary, HTTP fallback)
     - `useDrumPattern(patternId)` — pattern data with manual invalidation on edit
     - `useDrumSong()` — song arrangement
