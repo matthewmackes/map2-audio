@@ -14,8 +14,7 @@
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(69, 137, 255, 0.18);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.72) 0%, rgba(22, 22, 22, 0.82) 100%);
+  background: var(--cds-layer, #262626);
   box-shadow:
     inset 0 1px 0 rgba(166, 200, 255, 0.08),
     0 18px 40px rgba(2, 6, 23, 0.18);
@@ -26,16 +25,7 @@
 .midi-hub-panel-shell::before,
 .midi-hub-workbench-card::before,
 .midi-hub-mini-surface::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at top right, rgba(69, 137, 255, 0.12), transparent 32%),
-    linear-gradient(rgba(166, 200, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(166, 200, 255, 0.04) 1px, transparent 1px);
-  background-size: auto, 26px 26px, 26px 26px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.92), transparent 100%);
+  content: none;
 }
 
 .midi-hub-header-surface > *,
@@ -175,8 +165,7 @@
   gap: var(--cds-spacing-03);
   min-height: 11rem;
   border: 1px solid rgba(166, 200, 255, 0.16);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.52) 0%, rgba(22, 22, 22, 0.48) 100%);
+  background: var(--cds-layer-02, #393939);
   color: var(--cds-text-primary);
 }
 
@@ -287,8 +276,14 @@
   gap: var(--cds-spacing-02);
   padding: var(--cds-spacing-05);
   border: 1px solid rgba(166, 200, 255, 0.16);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(22, 22, 22, 0.42) 100%);
+  background: var(--cds-layer-02, #393939);
+}
+
+.midi-hub-stat-tile--hero {
+  grid-column: span 2;
+  min-height: 100%;
+  justify-content: center;
+  background: var(--cds-layer-accent, var(--cds-layer-02, #393939));
 }
 
 .midi-hub-stat-tile__label {
@@ -304,9 +299,78 @@
   font-weight: 600;
 }
 
+.midi-hub-stat-tile--hero .midi-hub-stat-tile__value {
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1;
+}
+
+.midi-hub-stat-tile__subvalue {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}
+
 .midi-hub-stat-tile__hint {
   color: var(--cds-text-secondary);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}
+
+.midi-hub-actions--transport {
+  align-items: center;
+}
+
+.midi-hub-port-picker {
+  display: grid;
+  gap: var(--cds-spacing-03);
+}
+
+.midi-hub-port-picker__label {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.midi-hub-port-picker__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+}
+
+.midi-hub-port-chip {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 11rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid rgba(166, 200, 255, 0.18);
+  border-radius: 0.75rem;
+  background: var(--cds-layer-02, #393939);
+  color: var(--cds-text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease, background-color 120ms ease;
+}
+
+.midi-hub-port-chip:hover,
+.midi-hub-port-chip:focus-visible {
+  border-color: var(--cds-border-interactive);
+  transform: translateY(-1px);
+}
+
+.midi-hub-port-chip strong {
+  font-size: var(--cds-body-compact-02-font-size, 0.875rem);
+}
+
+.midi-hub-port-chip span {
+  color: var(--cds-text-secondary);
+  font-family: var(--cds-code-01-font-family, var(--font-mono));
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
+.midi-hub-port-chip--active {
+  border-color: color-mix(in srgb, var(--cds-support-info) 70%, white 10%);
+  background: var(--cds-layer-selected-02, var(--cds-layer-selected, #525252));
+  box-shadow: inset 0 0 0 1px rgba(120, 169, 255, 0.2);
 }
 
 .midi-hub-record-list {
@@ -322,8 +386,7 @@
   align-items: start;
   padding: var(--cds-spacing-05);
   border: 1px solid rgba(166, 200, 255, 0.16);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(22, 22, 22, 0.44) 100%);
+  background: var(--cds-layer-02, #393939);
 }
 
 .midi-hub-record-copy {
@@ -350,8 +413,7 @@
 .midi-hub-table-wrap {
   overflow-x: auto;
   border: 1px solid rgba(166, 200, 255, 0.16);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.44) 0%, rgba(22, 22, 22, 0.48) 100%);
+  background: var(--cds-layer-02, #393939);
 }
 
 .midi-hub-table-wrap .cds--data-table-container,
@@ -371,8 +433,7 @@
   padding: var(--cds-spacing-05);
   overflow: auto;
   border: 1px solid rgba(166, 200, 255, 0.16);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(22, 22, 22, 0.56) 100%);
+  background: var(--cds-layer-02, #393939);
   color: var(--cds-text-primary);
   font-size: var(--cds-code-01-font-size, 0.75rem);
   line-height: 1.5;
@@ -399,8 +460,7 @@
   align-items: center;
   padding: var(--cds-spacing-04);
   border: 1px solid rgba(166, 200, 255, 0.16);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(22, 22, 22, 0.4) 100%);
+  background: var(--cds-layer-02, #393939);
 }
 
 .midi-hub-router-checkbox__meta {
@@ -413,8 +473,7 @@
   min-height: 2.5rem;
   padding: 0.625rem 0.875rem;
   border: 1px solid rgba(166, 200, 255, 0.18);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(22, 22, 22, 0.44) 100%);
+  background: var(--cds-layer-02, #393939);
   color: var(--cds-text-primary);
   cursor: pointer;
   transition: border-color 120ms ease, background-color 120ms ease, transform 120ms ease;

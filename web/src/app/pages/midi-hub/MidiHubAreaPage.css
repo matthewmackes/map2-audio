@@ -11,25 +11,14 @@
   padding: clamp(1.2rem, 2vw, 1.75rem);
   border: 1px solid rgba(120, 169, 255, 0.2);
   border-radius: 1.25rem;
-  background:
-    radial-gradient(circle at top left, rgba(111, 210, 255, 0.12), transparent 22%),
-    radial-gradient(circle at top right, rgba(69, 137, 255, 0.16), transparent 32%),
-    linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(12, 23, 44, 0.92) 56%, rgba(22, 22, 22, 0.9) 100%);
+  background: var(--cds-layer, #262626);
   box-shadow:
     inset 0 1px 0 rgba(166, 200, 255, 0.08),
     0 18px 40px rgba(2, 6, 23, 0.22);
 }
 
 .midi-hub-area-page__hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(166, 200, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(166, 200, 255, 0.05) 1px, transparent 1px);
-  background-size: 24px 24px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.92), transparent 100%);
+  content: none;
 }
 
 .midi-hub-area-page__hero-grid {
@@ -89,9 +78,7 @@
   height: clamp(5.75rem, 8vw, 7rem);
   border: 1px solid rgba(166, 200, 255, 0.16);
   border-radius: 1.25rem;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(166, 200, 255, 0.18), transparent 48%),
-    rgba(8, 15, 32, 0.78);
+  background: var(--cds-layer-02, #393939);
   box-shadow:
     inset 0 1px 0 rgba(208, 226, 255, 0.14),
     0 14px 26px rgba(0, 0, 0, 0.18);
@@ -124,8 +111,7 @@
   overflow: hidden;
   padding: 1.25rem;
   border: 1px solid rgba(166, 200, 255, 0.16);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.52) 0%, rgba(22, 22, 22, 0.5) 100%);
+  background: var(--cds-layer, #262626);
 }
 
 .midi-hub-area-page__placeholder p {

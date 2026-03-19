@@ -249,7 +249,7 @@ describe('MidiHubShell', () => {
   it('renders the routed shell and connections area', async () => {
     renderShell()
 
-    await screen.findByText('MIDI Hub')
+    expect(await screen.findByLabelText('MIDI Hub navigation')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Connections' })).toBeTruthy()
     expect(screen.getByText('Routing Matrix Mock')).toBeTruthy()
     expect(screen.getByText('Traffic Monitor Mock')).toBeTruthy()

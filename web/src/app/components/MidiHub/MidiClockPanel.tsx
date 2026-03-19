@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Select, SelectItem, Tag, TextInput } from '@carbon/react'
+import { PauseFilled, PlayFilled, PlayOutlineFilled, Touch_1 } from '@carbon/icons-react'
+import { Button, Select, SelectItem, Slider, Tag, TextInput } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
+import { useMidiHubOverview } from './useMidiHubOverview'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
@@ -9,6 +11,7 @@ export function MidiClockPanel() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
   const { nodeId, scopeKey } = useMidiHubNodeScope()
+  const { outputPorts: availableOutputPorts } = useMidiHubOverview(nodeId, scopeKey)
 
   const clockQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'clock'],
@@ -18,14 +21,18 @@ export function MidiClockPanel() {
 
   const [bpm, setBpm] = useState('120.0')
   const [sourceMode, setSourceMode] = useState<'internal' | 'external'>('internal')
-  const [outputPorts, setOutputPorts] = useState('')
+  const [outputPorts, setOutputPorts] = useState<string[]>([])
+  const [divider, setDivider] = useState(1)
+  const [multiplier, setMultiplier] = useState(1)
 
   useEffect(() => {
     const data = clockQuery.data
     if (!data) return
     setBpm(String(data.bpm))
     setSourceMode(data.source_mode === 'external' ? 'external' : 'internal')
-    setOutputPorts((data.output_ports ?? []).join(', '))
+    setOutputPorts(data.output_ports ?? [])
+    setDivider(data.divider ?? 1)
+    setMultiplier(data.multiplier ?? 1)
   }, [clockQuery.data])
 
   const invalidateClock = () => queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'clock'] })
@@ -36,10 +43,9 @@ export function MidiClockPanel() {
         {
           bpm: Math.max(20, Math.min(300, Number.parseFloat(bpm) || 120)),
           source_mode: sourceMode,
-          output_ports: outputPorts
-            .split(',')
-            .map((value) => value.trim())
-            .filter(Boolean),
+          output_ports: outputPorts,
+          divider,
+          multiplier,
         },
         nodeId,
       ),
@@ -83,6 +89,13 @@ export function MidiClockPanel() {
   })
 
   const clock = clockQuery.data
+  const detectedBpm = clock?.detected_bpm ? clock.detected_bpm.toFixed(2) : 'N/A'
+
+  const toggleOutputPort = (portId: string) => {
+    setOutputPorts((previous) =>
+      previous.includes(portId) ? previous.filter((value) => value !== portId) : [...previous, portId],
+    )
+  }
 
   return (
     <div className="midi-hub-panel-grid--2">
@@ -95,24 +108,42 @@ export function MidiClockPanel() {
         </div>
 
         <div className="midi-hub-stat-grid">
-          <div className="midi-hub-stat-tile">
-            <span className="midi-hub-stat-tile__label">Configured BPM</span>
+          <div className="midi-hub-stat-tile midi-hub-stat-tile--hero">
+            <span className="midi-hub-stat-tile__label">Transport BPM</span>
             <strong className="midi-hub-stat-tile__value">{clock?.bpm?.toFixed(2) ?? '120.00'}</strong>
+            <span className="midi-hub-stat-tile__subvalue">{`Detected ${detectedBpm}`}</span>
           </div>
           <div className="midi-hub-stat-tile">
-            <span className="midi-hub-stat-tile__label">Detected BPM</span>
-            <strong className="midi-hub-stat-tile__value">
-              {clock?.detected_bpm ? clock.detected_bpm.toFixed(2) : 'N/A'}
-            </strong>
+            <span className="midi-hub-stat-tile__label">Divider</span>
+            <strong className="midi-hub-stat-tile__value">{clock?.divider ?? 1}</strong>
           </div>
           <div className="midi-hub-stat-tile">
-            <span className="midi-hub-stat-tile__label">Song position</span>
-            <strong className="midi-hub-stat-tile__value">{clock?.song_position ?? 0}</strong>
+            <span className="midi-hub-stat-tile__label">Multiplier</span>
+            <strong className="midi-hub-stat-tile__value">{clock?.multiplier ?? 1}</strong>
           </div>
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">Outputs</span>
             <strong className="midi-hub-stat-tile__value">{clock?.output_ports?.length ?? 0}</strong>
           </div>
+          <div className="midi-hub-stat-tile">
+            <span className="midi-hub-stat-tile__label">Song position</span>
+            <strong className="midi-hub-stat-tile__value">{clock?.song_position ?? 0}</strong>
+          </div>
+        </div>
+
+        <div className="midi-hub-actions midi-hub-actions--transport">
+          <Button size="sm" kind="primary" renderIcon={PlayFilled} onClick={() => startMutation.mutate()}>
+            Start
+          </Button>
+          <Button size="sm" kind="secondary" renderIcon={PlayOutlineFilled} onClick={() => continueMutation.mutate()}>
+            Continue
+          </Button>
+          <Button size="sm" kind="danger--tertiary" renderIcon={PauseFilled} onClick={() => stopMutation.mutate()}>
+            Stop
+          </Button>
+          <Button size="sm" kind="ghost" renderIcon={Touch_1} onClick={() => tapMutation.mutate()}>
+            Tap tempo
+          </Button>
         </div>
       </div>
 
@@ -135,31 +166,62 @@ export function MidiClockPanel() {
             <SelectItem value="external" text="External" />
           </Select>
 
-          <TextInput
-            id="midi-hub-clock-outputs"
-            labelText="Output ports"
-            value={outputPorts}
-            onChange={(event) => setOutputPorts(event.currentTarget.value)}
-            placeholder="dst, monitor, looper"
+          <Slider
+            id="midi-hub-clock-divider"
+            labelText="Clock divider"
+            min={1}
+            max={16}
+            step={1}
+            value={divider}
+            hideTextInput={false}
+            onChange={({ value }) => setDivider(Number(value ?? 1))}
           />
+
+          <Slider
+            id="midi-hub-clock-multiplier"
+            labelText="Clock multiplier"
+            min={1}
+            max={8}
+            step={1}
+            value={multiplier}
+            hideTextInput={false}
+            onChange={({ value }) => setMultiplier(Number(value ?? 1))}
+          />
+
+          <div className="midi-hub-port-picker">
+            <span className="midi-hub-port-picker__label">Output ports</span>
+            <div className="midi-hub-port-picker__chips">
+              {availableOutputPorts.map((port) => {
+                const active = outputPorts.includes(port.port_id)
+                return (
+                  <button
+                    key={port.port_id}
+                    type="button"
+                    className={[
+                      'midi-hub-port-chip',
+                      active ? 'midi-hub-port-chip--active' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={() => toggleOutputPort(port.port_id)}
+                  >
+                    <strong>{port.name}</strong>
+                    <span>{port.port_id}</span>
+                  </button>
+                )
+              })}
+              {availableOutputPorts.length === 0 ? (
+                <div className="midi-hub-empty-state">No output ports available.</div>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         <div className="midi-hub-actions">
           <Button size="sm" kind="primary" onClick={() => saveMutation.mutate()}>
             Apply clock
           </Button>
-          <Button size="sm" kind="secondary" onClick={() => tapMutation.mutate()}>
-            Tap
-          </Button>
-          <Button size="sm" kind="ghost" onClick={() => startMutation.mutate()}>
-            Start
-          </Button>
-          <Button size="sm" kind="ghost" onClick={() => continueMutation.mutate()}>
-            Continue
-          </Button>
-          <Button size="sm" kind="danger--tertiary" onClick={() => stopMutation.mutate()}>
-            Stop
-          </Button>
+          <Tag type="cool-gray">{`${outputPorts.length} selected`}</Tag>
         </div>
       </div>
     </div>

@@ -1,7 +1,23 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Checkbox, Tag, TextInput } from '@carbon/react'
+import { PlayFilled, RecordingFilled, StopFilled } from '@carbon/icons-react'
+import {
+  Button,
+  Checkbox,
+  DataTable,
+  Slider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+  TextInput,
+} from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
+import { NumberInput } from '../Controls/NumberInput'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
@@ -13,6 +29,9 @@ export function MidiRecorderPanel() {
   const [sessionName, setSessionName] = useState('Take 1')
   const [destinationOverride, setDestinationOverride] = useState('dst')
   const [loopPlayback, setLoopPlayback] = useState(false)
+  const [playbackSpeed, setPlaybackSpeed] = useState(1)
+  const [exportBpm, setExportBpm] = useState(120)
+  const [ticksPerQuarter, setTicksPerQuarter] = useState(480)
 
   const sessionsQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'recorder', 'sessions'],
@@ -44,7 +63,7 @@ export function MidiRecorderPanel() {
         {
           destination_override: destinationOverride.trim() || undefined,
           loop: loopPlayback,
-          speed: 1,
+          speed: playbackSpeed,
         },
         nodeId,
       ),
@@ -58,7 +77,15 @@ export function MidiRecorderPanel() {
   })
 
   const exportRecording = useMutation({
-    mutationFn: async (id: string) => midiHubApi.exportRecording(id, undefined, nodeId),
+    mutationFn: async (id: string) =>
+      midiHubApi.exportRecording(
+        id,
+        {
+          bpm: exportBpm,
+          ticks_per_quarter: ticksPerQuarter,
+        },
+        nodeId,
+      ),
     onSuccess: (payload) => pushToast(`SMF exported: ${payload.path}`, 'success'),
     onError: () => pushToast('Export failed', 'error'),
   })
@@ -72,6 +99,23 @@ export function MidiRecorderPanel() {
   })
 
   const sessions = useMemo(() => sessionsQuery.data?.sessions ?? [], [sessionsQuery.data?.sessions])
+  const rows = useMemo(
+    () =>
+      sessions.map((session) => ({
+        id: session.session_id,
+        session_id: session.session_id,
+        name: session.name,
+        events: String(session.event_count),
+        created: session.created_at ? new Date(session.created_at * 1000).toLocaleString() : 'N/A',
+      })),
+    [sessions],
+  )
+  const headers = [
+    { key: 'name', header: 'Session' },
+    { key: 'session_id', header: 'ID' },
+    { key: 'events', header: 'Events' },
+    { key: 'created', header: 'Created' },
+  ]
 
   return (
     <div className="midi-hub-panel-grid--2">
@@ -100,6 +144,43 @@ export function MidiRecorderPanel() {
             value={destinationOverride}
             onChange={(event) => setDestinationOverride(event.currentTarget.value)}
           />
+          <Slider
+            id="midi-hub-recorder-playback-speed"
+            labelText="Playback speed"
+            min={0.25}
+            max={2}
+            step={0.05}
+            value={playbackSpeed}
+            minLabel="0.25x"
+            maxLabel="2.0x"
+            hideTextInput={false}
+            formatLabel={(value) => `${Number(value).toFixed(2)}x`}
+            onChange={({ value }) => setPlaybackSpeed(Number(value ?? 1))}
+          />
+          <NumberInput
+            label="Export BPM"
+            value={exportBpm}
+            min={20}
+            max={300}
+            step={1}
+            defaultValue={120}
+            onChange={setExportBpm}
+            size="small"
+            fullWidth
+            accentColor="var(--interactive)"
+          />
+          <NumberInput
+            label="Export ticks/quarter"
+            value={ticksPerQuarter}
+            min={24}
+            max={1920}
+            step={24}
+            defaultValue={480}
+            onChange={setTicksPerQuarter}
+            size="small"
+            fullWidth
+            accentColor="var(--interactive)"
+          />
         </div>
 
         <div className="midi-hub-actions">
@@ -109,44 +190,81 @@ export function MidiRecorderPanel() {
             checked={loopPlayback}
             onChange={(_, data) => setLoopPlayback(data.checked)}
           />
-          <Button size="sm" kind="primary" onClick={() => startRecording.mutate()} disabled={!sessionId.trim()}>
+          <Button
+            size="sm"
+            kind="primary"
+            renderIcon={RecordingFilled}
+            onClick={() => startRecording.mutate()}
+            disabled={!sessionId.trim()}
+          >
             Start recording
           </Button>
-          <Button size="sm" kind="danger--tertiary" onClick={() => stopRecording.mutate()}>
+          <Button size="sm" kind="danger--tertiary" renderIcon={StopFilled} onClick={() => stopRecording.mutate()}>
             Stop recording
           </Button>
         </div>
       </div>
 
       <div className="midi-hub-mini-surface">
-        <div className="midi-hub-record-list">
-          {sessions.length === 0 ? <div className="midi-hub-empty-state">No recordings saved.</div> : null}
-          {sessions.map((session) => (
-            <div key={session.session_id} className="midi-hub-record-row">
-              <div className="midi-hub-record-copy">
-                <strong>{session.name}</strong>
-                <div className="midi-hub-record-meta">
-                  <code>{session.session_id}</code>
-                  {` · events ${session.event_count}`}
-                </div>
-              </div>
-              <div className="midi-hub-record-actions">
-                <Button size="sm" kind="secondary" onClick={() => playback.mutate(session.session_id)}>
-                  Play
-                </Button>
-                <Button size="sm" kind="ghost" onClick={() => stopPlayback.mutate(session.session_id)}>
-                  Stop
-                </Button>
-                <Button size="sm" kind="ghost" onClick={() => exportRecording.mutate(session.session_id)}>
-                  Export SMF
-                </Button>
-                <Button size="sm" kind="danger--tertiary" onClick={() => deleteRecording.mutate(session.session_id)}>
-                  Delete
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <DataTable rows={rows} headers={headers}>
+          {({ rows, headers, getHeaderProps, getRowProps }) => (
+            <TableContainer title="Recording sessions">
+              <Table size="sm" useZebraStyles>
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const headerProps = getHeaderProps({ header })
+                      const { key, ...rest } = headerProps
+                      return (
+                        <TableHeader key={key ?? header.key} {...rest}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={headers.length + 1}>
+                        <div className="midi-hub-empty-state">No recordings saved.</div>
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                  {rows.map((row) => {
+                    const sessionId = String(row.id)
+                    const rowProps = getRowProps({ row })
+                    const { key, ...rest } = rowProps
+                    return (
+                      <TableRow key={key ?? row.id} {...rest}>
+                        {row.cells.map((cell) => (
+                          <TableCell key={cell.id}>{cell.value}</TableCell>
+                        ))}
+                        <TableCell>
+                          <div className="midi-hub-record-actions">
+                            <Button size="sm" kind="secondary" renderIcon={PlayFilled} onClick={() => playback.mutate(sessionId)}>
+                              Play
+                            </Button>
+                            <Button size="sm" kind="ghost" renderIcon={StopFilled} onClick={() => stopPlayback.mutate(sessionId)}>
+                              Stop
+                            </Button>
+                            <Button size="sm" kind="ghost" onClick={() => exportRecording.mutate(sessionId)}>
+                              Export SMF
+                            </Button>
+                            <Button size="sm" kind="danger--tertiary" onClick={() => deleteRecording.mutate(sessionId)}>
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DataTable>
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
   Activity,
   ArrowsHorizontal,
@@ -6,15 +6,11 @@ import {
   ConnectionSignal,
   DataStructured,
   IbmWatsonMachineLearning,
-  Moon,
   Music,
-  Sun,
   WarningAltFilled,
 } from '@carbon/icons-react'
 import {
-  Button,
   GlobalTheme,
-  HeaderSideNavItems,
   SideNav,
   SideNavItems,
   SideNavLink,
@@ -25,14 +21,10 @@ import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import type { ComponentType } from 'react'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { MidiHubNodeScopeProvider } from '../components/MidiHub/MidiHubNodeScope'
-import { MidiHubStatusBar } from '../components/MidiHub/MidiHubStatusBar'
 import { useMidiHubOverview } from '../components/MidiHub/useMidiHubOverview'
-import { MAP2_PRIMARY_LABEL, Map2BrandMark } from '../components/branding/map2Branding'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './MidiHubShell.css'
-
-type MidiHubThemePreference = 'system' | 'light' | 'dark'
 
 type MidiHubNavItem = {
   key: string
@@ -43,39 +35,15 @@ type MidiHubNavItem = {
   accent?: 'green' | 'blue' | 'warm-gray'
 }
 
-const THEME_PREFERENCE_KEY = 'map2_theme_preference'
-const THEME_LABELS: Record<MidiHubThemePreference, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-}
-
-function readThemePreference(): MidiHubThemePreference {
-  if (typeof window === 'undefined') {
-    return 'system'
-  }
-  const stored = window.localStorage.getItem(THEME_PREFERENCE_KEY)
-  return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system'
-}
-
 export function MidiHubShell() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { localNode, topology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.midiHub)
+  const { localNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.midiHub)
   const apiNodeId = viewedNodeId === localNode?.node_id ? null : viewedNodeId
   const scopeKey = apiNodeId ?? 'local'
   const prefersDark = useMediaQuery('(prefers-color-scheme: dark)')
-  const [themePreference, setThemePreference] = useState<MidiHubThemePreference>(readThemePreference)
   const { routesCount, sessionsCount, activePresetName, clockQuery } = useMidiHubOverview(apiNodeId, scopeKey)
-  useEffect(() => {
-    window.localStorage.setItem(THEME_PREFERENCE_KEY, themePreference)
-  }, [themePreference])
-
-  const resolvedTheme = themePreference === 'system'
-    ? (prefersDark ? 'g100' : 'white')
-    : themePreference === 'dark'
-      ? 'g100'
-      : 'white'
+  const resolvedTheme = prefersDark ? 'g100' : 'white'
 
   const navItems = useMemo<MidiHubNavItem[]>(() => [
     {
@@ -140,30 +108,6 @@ export function MidiHubShell() {
           <div className="midi-hub-shell__frame">
             <aside className="midi-hub-shell__sidebar">
               <SideNav aria-label="MIDI Hub navigation" expanded isFixedNav={false} className="midi-hub-shell__sidenav">
-                <div className="midi-hub-shell__brand">
-                  <button
-                    type="button"
-                    className="midi-hub-shell__brand-link"
-                    onClick={() => navigate('/midi-hub/connections')}
-                    aria-label="Open MIDI Hub connections"
-                  >
-                    <span className="midi-hub-shell__brand-mark-wrap" aria-hidden="true">
-                      <Map2BrandMark className="midi-hub-shell__brand-mark" />
-                    </span>
-                    <span className="midi-hub-shell__brand-copy">
-                      <span className="midi-hub-shell__brand-kicker">{MAP2_PRIMARY_LABEL} studio control</span>
-                      <span className="midi-hub-shell__brand-title">MIDI Hub</span>
-                      <span className="midi-hub-shell__brand-body">
-                        Routing, recall, transport, and protocol services tuned for studio operation.
-                      </span>
-                    </span>
-                  </button>
-                </div>
-
-                <HeaderSideNavItems className="midi-hub-shell__section-label" aria-label="MIDI Hub sections">
-                  Areas
-                </HeaderSideNavItems>
-
                 <SideNavItems>
                   {navItems.map((item) => {
                     const isActive = location.pathname === item.to
@@ -197,37 +141,6 @@ export function MidiHubShell() {
                 </SideNavItems>
 
                 <div className="midi-hub-shell__sidebar-footer">
-                  <div className="midi-hub-shell__theme-row">
-                    <span>Theme</span>
-                    <div className="midi-hub-shell__theme-controls">
-                      <Button
-                        kind={themePreference === 'system' ? 'primary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setThemePreference('system')}
-                      >
-                        {THEME_LABELS.system}
-                      </Button>
-                      <Button
-                        kind={themePreference === 'light' ? 'primary' : 'ghost'}
-                        size="sm"
-                        renderIcon={Sun}
-                        iconDescription="Use light theme"
-                        onClick={() => setThemePreference('light')}
-                      >
-                        {THEME_LABELS.light}
-                      </Button>
-                      <Button
-                        kind={themePreference === 'dark' ? 'primary' : 'ghost'}
-                        size="sm"
-                        renderIcon={Moon}
-                        iconDescription="Use dark theme"
-                        onClick={() => setThemePreference('dark')}
-                      >
-                        {THEME_LABELS.dark}
-                      </Button>
-                    </div>
-                  </div>
-
                   <div className="midi-hub-shell__status-cards">
                     <div className="midi-hub-shell__status-card">
                       <span>Active preset</span>
@@ -255,8 +168,6 @@ export function MidiHubShell() {
               <Outlet />
             </main>
           </div>
-
-          <MidiHubStatusBar apiNodeId={apiNodeId} scopeKey={scopeKey} />
         </Theme>
       </GlobalTheme>
     </MidiHubNodeScopeProvider>
