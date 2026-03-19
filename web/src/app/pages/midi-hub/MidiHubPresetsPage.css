@@ -1,0 +1,57 @@
+.midi-hub-presets-band,
+.midi-hub-presets-manager,
+.midi-hub-presets-section {
+  display: grid;
+  gap: var(--cds-spacing-05);
+}
+
+.midi-hub-presets-layout {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
+}
+
+.midi-hub-presets-summary,
+.midi-hub-presets-toolbar,
+.midi-hub-presets-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  align-items: center;
+}
+
+.midi-hub-presets-form-grid {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-hub-presets-table .cds--table-container {
+  background: transparent;
+}
+
+.midi-hub-presets-import {
+  display: grid;
+  gap: var(--cds-spacing-04);
+}
+
+.midi-hub-presets-code-block {
+  margin: 0;
+  padding: var(--cds-spacing-05);
+  background: var(--cds-layer-01);
+  color: var(--cds-text-primary);
+  overflow: auto;
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+}
+
+@media (max-width: 1056px) {
+  .midi-hub-presets-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .midi-hub-presets-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

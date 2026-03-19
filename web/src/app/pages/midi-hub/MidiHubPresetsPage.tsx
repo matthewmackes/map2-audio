@@ -3,6 +3,7 @@ import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitive
 import { MidiHubPresetManager } from '../../components/MidiHub/MidiHubPresetManager'
 import { MidiRecorderPanel } from '../../components/MidiHub/MidiRecorderPanel'
 import { MidiHubAreaLayout } from './MidiHubAreaLayout'
+import './MidiHubPresetsPage.css'
 
 export function MidiHubPresetsPage() {
   return (
@@ -15,8 +16,8 @@ export function MidiHubPresetsPage() {
         { label: 'Capture', type: 'green' },
       ]}
     >
-      <section className="midi-hub-page-band">
-        <div className="midi-hub-grid-two">
+      <section className="midi-hub-presets-band">
+        <div className="midi-hub-presets-layout">
           <MidiHubPanelShell panelId="presets">
             <MidiHubPresetManager />
           </MidiHubPanelShell>
