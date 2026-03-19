@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**773** Python | **1124** TypeScript | **285** C++/H | **122** Docs | **555** total commits | **1** stars | **0** forks | **0** open issues
+**773** Python | **1124** TypeScript | **285** C++/H | **122** Docs | **557** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`91cd2e59`](https://github.com/matthewmackes/map2-audio/commit/91cd2e5977b775b1b3180f14e6941ff71c53cbed) | Add native SFZ round robin support | Map2 Audio | 2026-03-18 |
+| [`b6be1e4b`](https://github.com/matthewmackes/map2-audio/commit/b6be1e4b85f74f5d21826a6fb442099f147c1387) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`2839eeb8`](https://github.com/matthewmackes/map2-audio/commit/2839eeb8d710fa60197263fe4d37ad17161a7bfe) | Add native SFZ choke group support | Map2 Audio | 2026-03-18 |
 | [`31f65f61`](https://github.com/matthewmackes/map2-audio/commit/31f65f61b819b9d45d1f39502da66a0eff87f3c3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`6457a135`](https://github.com/matthewmackes/map2-audio/commit/6457a13509188f9781792cd1ec5e9a5914a34a86) | Close SynthForge sampler refactor task | Map2 Audio | 2026-03-18 |
 | [`442eb93b`](https://github.com/matthewmackes/map2-audio/commit/442eb93be5483397bacf929ce6825e0029d124e9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`a3d87e25`](https://github.com/matthewmackes/map2-audio/commit/a3d87e255f06e0c8f001db8c962a7efbdd6b480c) | Document API readiness matrix | Map2 Audio | 2026-03-18 |
 | [`5be4bee5`](https://github.com/matthewmackes/map2-audio/commit/5be4bee56af9cb26c22f5f23e8198086b35a5694) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
-| [`1d0644b1`](https://github.com/matthewmackes/map2-audio/commit/1d0644b14543e3f5d4caf69798c05c6ccd55dc11) | Freeze pipedal icon exception scope | Map2 Audio | 2026-03-18 |
-| [`1a9b69fd`](https://github.com/matthewmackes/map2-audio/commit/1a9b69fd7e0eddc00cc5dee5dd65d657ba9caf00) | Migrate shared utility icon surfaces | Map2 Audio | 2026-03-18 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
