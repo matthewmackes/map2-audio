@@ -796,7 +796,7 @@ Last updated: 2026-03-18 18:39 - Codex
 ## SynthForge
 
 ID: T210
-Status: [>] In Progress
+Status: [✓] Done
 Title: Refactor SynthForge into a SoundFont-first world-class sampler
 Description:
 - Goal / acceptance criteria: Review the existing `SynthForge` JUCE plugin plus `SynthForgeCard` UI, then refactor the instrument from the current subtractive/SFZ-oriented scaffold into a SoundFont-first sampler centered on hardware MIDI keyboards and the on-screen piano. Acceptance requires SoundFont 2 and 3 loading from the internal library, a preset browser built from parsed banks/programs, a redesigned on-screen piano with velocity interaction, real-time MIDI input handling aligned with JUCE MIDI pathways, and pro controls for master transpose, velocity curve, pitch-bend range, mono/poly mode, and legato. The implementation must expose a coherent backend/API/UI contract and preserve existing MAP2 integration points.
@@ -824,7 +824,10 @@ Last updated: 2026-03-18 19:14 - Codex
   - Validation: `pytest -q tests/test_synthforge_routes.py tests/test_soundfont_parser.py` -> pass (`18 passed`). `npm --prefix web run typecheck` -> pass. `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/routes/synthforge.py app/services/juce_engine_service.py app/services/soundfont_parser.py` -> pass.
   - Remaining `T210` scope is now the follow-up compatibility and refinement program beyond the first integrated slice, not the basic SoundFont-first end-to-end contract.
 Assigned to: Codex
-Last updated: 2026-03-18 06:20 - Codex
+Last updated: 2026-03-18 22:40 - Codex
+- Completion notes:
+  - Delivered the SoundFont-first SynthForge sampler contract through `T210-subA`: validated `.sf2/.sf3` loading, parsed bank/program preset metadata, preset-aware backend routes, performance controls, velocity-sensitive on-screen piano, and real-time MIDI activity feedback are all in place across the route layer, engine bridge, and card UI.
+  - The remaining notes previously attached to `T210` described follow-up compatibility and refinement opportunities, not missing acceptance criteria for the requested SoundFont-first sampler direction.
 
 ## JUCE Grid UI Polish
 
