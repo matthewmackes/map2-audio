@@ -22,6 +22,7 @@ WEB_DIR = ROOT_DIR / "web"
 LIVE_DIST = WEB_DIR / "dist"
 TS_BIN = WEB_DIR / "node_modules" / ".bin" / "tsc"
 VITE_BIN = WEB_DIR / "node_modules" / ".bin" / "vite"
+STALE_ASSET_PREFIXES = ("ibm-plex-sans-",)
 
 
 def remove_path(path: Path) -> None:
@@ -49,6 +50,8 @@ def merge_existing_assets(live_dist: Path, staged_dist: Path) -> None:
 
     staged_assets.mkdir(parents=True, exist_ok=True)
     for source in live_assets.iterdir():
+        if source.name.startswith(STALE_ASSET_PREFIXES):
+            continue
         target = staged_assets / source.name
         if target.exists():
             continue

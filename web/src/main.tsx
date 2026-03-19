@@ -1,8 +1,5 @@
 import { createRoot } from 'react-dom/client'
 import '@carbon/styles/css/styles.css'
-import '@fontsource/ibm-plex-sans/400.css'
-import '@fontsource/ibm-plex-sans/500.css'
-import '@fontsource/ibm-plex-sans/600.css'
 import './index.css'
 import './styles/mobile.css'
 import ErrorBoundary from './ErrorBoundary'

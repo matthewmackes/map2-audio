@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -1615,7 +1615,7 @@ Last updated: 2026-03-18
 ## Typography
 
 ID: T220
-Status: [>] In Progress
+Status: [✓] Done
 Title: Adopt BlexMono Nerd Font as the default site typeface with governed Nerd Font glyph usage
 Description:
 - Goal / acceptance criteria: Replace the current site-wide default font stack with `BlexMono Nerd Font` for the active frontend, ship the font through a deterministic web-delivery strategy, and define explicit glyph-usage rules so the extended Nerd Font symbol set improves navigation, telemetry, and status readability without degrading accessibility or becoming decorative noise.
@@ -1623,13 +1623,13 @@ Description:
 - Dependencies: Current frontend font tokens in `web/src/index.css`, any route-local overrides that should remain exempt, final licensing/distribution decision for bundling the font assets, and user direction on scope/risk tolerance for glyph density.
 - Estimated effort: High
 - Required outputs: Implemented default-font migration plan, updated font tokens/assets/load path, documented glyph playbook with approved usage categories and bans, targeted UI updates for the best glyph-driven surfaces, and validation notes for rendering/performance/accessibility.
- - Progress notes:
+- Completion notes:
   - Pinned the upstream source to Nerd Fonts `v3.4.0` (`IBMPlexMono.zip`, published 2025-04-24) and imported the current `BlexMonoNerdFont-*` family from that release.
   - Added a reproducible subsetting pipeline in `scripts/build_blexmono_nerd_webfonts.py` that produces repo-hosted `woff2` text and glyph subsets plus a source/version manifest under `web/public/fonts/blexmono-nerd/v3.4.0/`.
   - Carried the upstream `LICENSE.txt` and `README.md` into the hosted font directory for provenance/compliance.
- - Added the strict initial glyph/codepoint governance document at `docs/design/BLEXMONO_NERD_FONT_SPEC.md`.
- - Wired the new family into the active root typography tokens and first authority points in `web/src/index.css`, plus the first route/style cleanup pass in `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/IntelFXMonitorView.css`, and `web/src/styles/responsive.module.css`.
-  - Current rollout state: `T220-subD` and `T220-subE` are complete, the tracked hard-coded old mono/sans declaration audit is now `0` files, and the remaining typography follow-up is `T220-subF` to stop production from emitting residual IBM Plex Sans assets.
+  - Added the strict initial glyph/codepoint governance document at `docs/design/BLEXMONO_NERD_FONT_SPEC.md`.
+  - Wired the new family into the active root typography tokens and first authority points in `web/src/index.css`, plus the first route/style cleanup pass in `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/IntelFXMonitorView.css`, and `web/src/styles/responsive.module.css`.
+  - Closed the final production follow-up by removing local `ibm-plex-sans-*` asset emission from the web build while preserving the documented Carbon/CDN residual note.
 Subtasks:
 ID: T220-subA
 Status: [✓] Done
