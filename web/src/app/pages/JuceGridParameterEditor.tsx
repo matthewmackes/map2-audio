@@ -1,4 +1,4 @@
-import { useCallback, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { Dropdown, Button, InlineLoading, Tag, Tile } from '@carbon/react'
 import { Launch, Renew, SettingsAdjust, WarningAlt } from '@carbon/icons-react'
 import { NumberInput } from '../components/Controls/NumberInput'
@@ -18,6 +18,7 @@ export interface JuceGridParameterEditorProps {
   useClassicMode?: boolean
   onRefreshPlugins?: () => void
   isRefreshing?: boolean
+  touchMode?: boolean
 }
 
 const HARDWARE_ACCENT = '#c8a951'
@@ -33,6 +34,28 @@ const GROUP_TITLES: Record<StandardGroup, string> = {
   MIX: 'Mix',
   OTHER: 'Other',
 }
+
+const SMART_CONTROL_HINTS = [
+  'mix',
+  'blend',
+  'level',
+  'gain',
+  'drive',
+  'amount',
+  'depth',
+  'rate',
+  'time',
+  'delay',
+  'feedback',
+  'tone',
+  'color',
+  'cutoff',
+  'freq',
+  'threshold',
+  'ratio',
+  'attack',
+  'release',
+]
 
 interface DropdownOption {
   id: string
@@ -107,6 +130,31 @@ function formatParameterReadout(parameter: PluginParameter, value: number): stri
   return value.toFixed(2)
 }
 
+function getSmartControlScore(parameter: PluginParameter): number {
+  const token = `${parameter.name} ${parameter.symbol}`.toLowerCase()
+  let score = 0
+
+  SMART_CONTROL_HINTS.forEach((hint, index) => {
+    if (token.includes(hint)) {
+      score += 24 - index
+    }
+  })
+
+  if (parameter.is_toggled) {
+    score += 10
+  }
+
+  if (shouldUseDropdown(parameter)) {
+    score += 6
+  }
+
+  if (parameter.min === 0 && parameter.max === 1) {
+    score += 5
+  }
+
+  return score
+}
+
 export function JuceGridParameterEditor({
   plugin,
   meta,
@@ -115,8 +163,10 @@ export function JuceGridParameterEditor({
   onToggleBypass,
   onRefreshPlugins,
   isRefreshing = false,
+  touchMode = false,
 }: JuceGridParameterEditorProps) {
   const [editingParams, setEditingParams] = useState<Set<string>>(new Set())
+  const [showAllParameters, setShowAllParameters] = useState(!touchMode)
 
   const handleParameterChange = useCallback((symbol: string, value: number) => {
     setEditingParams((previous) => new Set(previous).add(symbol))
@@ -139,6 +189,10 @@ export function JuceGridParameterEditor({
     handleParameterChange(symbol, value)
     handleParameterChangeEnd(symbol)
   }, [handleParameterChange, handleParameterChangeEnd])
+
+  useEffect(() => {
+    setShowAllParameters(!touchMode)
+  }, [plugin?.uri, touchMode])
 
   if (!plugin) {
     return (
@@ -182,7 +236,7 @@ export function JuceGridParameterEditor({
   if (isHardware) {
     return (
       <div
-        className="juce-grid-page__parameter-editor"
+        className={`juce-grid-page__parameter-editor ${touchMode ? 'is-touch-mode' : ''}`}
         data-testid="juce-grid-parameter-editor"
         style={{ '--juce-grid-parameter-accent': accentColor } as CSSProperties}
       >
@@ -222,6 +276,12 @@ export function JuceGridParameterEditor({
   }
 
   const parameters = meta.parameters || []
+  const smartControlSymbols = new Set(
+    [...parameters]
+      .sort((a, b) => getSmartControlScore(b) - getSmartControlScore(a) || a.index - b.index)
+      .slice(0, Math.min(6, parameters.length))
+      .map((parameter) => parameter.symbol),
+  )
   const parameterGroups = generateParameterGroups(parameters)
   const groupedParameters = parameterGroups.map((group) => {
     const normalizedTitle = (group.id || '').toUpperCase()
@@ -233,14 +293,52 @@ export function JuceGridParameterEditor({
         .map((index) => parameters.find((parameter) => parameter.index === index))
         .filter((parameter): parameter is PluginParameter => Boolean(parameter)),
     }
-  }).filter((group) => group.parameters.length > 0)
+  }).map((group) => ({
+    ...group,
+    parameters: touchMode && !showAllParameters
+      ? group.parameters.filter((parameter) => smartControlSymbols.has(parameter.symbol))
+      : group.parameters,
+  })).filter((group) => group.parameters.length > 0)
 
   return (
     <div
-      className="juce-grid-page__parameter-editor"
+      className={`juce-grid-page__parameter-editor ${touchMode ? 'is-touch-mode' : ''}`}
       data-testid="juce-grid-parameter-editor"
       style={{ '--juce-grid-parameter-accent': accentColor } as CSSProperties}
     >
+      {touchMode && parameters.length > 0 && (
+        <div className="juce-grid-page__parameter-editor-header">
+          <div className="juce-grid-page__parameter-editor-copy">
+            <strong>{showAllParameters ? 'All parameters' : 'Smart controls'}</strong>
+            <p>
+              {showAllParameters
+                ? 'Full parameter access for the selected block.'
+                : 'A curated touch-first set of the most important controls.'}
+            </p>
+          </div>
+          <div className="juce-grid-page__parameter-editor-toggle-row">
+            <Button
+              size="sm"
+              kind={showAllParameters ? 'ghost' : 'primary'}
+              className="juce-grid-page__parameter-editor-toggle"
+              onClick={() => setShowAllParameters(false)}
+              disabled={!showAllParameters}
+            >
+              Smart controls
+            </Button>
+            <Button
+              size="sm"
+              kind={showAllParameters ? 'primary' : 'ghost'}
+              className="juce-grid-page__parameter-editor-toggle"
+              onClick={() => setShowAllParameters(true)}
+              disabled={showAllParameters}
+            >
+              All parameters
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="juce-grid-page__parameter-editor-groups">
         {groupedParameters.map((group) => (
           <section key={group.id} className="juce-grid-page__parameter-group-card" aria-label={`${group.title} parameters`}>

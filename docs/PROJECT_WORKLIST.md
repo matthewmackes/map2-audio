@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T223-subE JUCE Grid select-and-move reorder workflow completed with bottom-editor move controls, keyboard arrow repositioning, and signal-canvas reorder preview states; T223-subC JUCE Grid signal-flow visualization completed with 3-dot connectors, input/output bridges, and dashed bypass path treatment; T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-19 - Codex (T223-subG JUCE Grid iPad interaction pass completed with touch-select contextual actions, smart-control parameter editing, 44pt touch targets, and swipe-down editor dismiss handling; T223-subE JUCE Grid select-and-move reorder workflow completed with bottom-editor move controls, keyboard arrow repositioning, and signal-canvas reorder preview states; T223-subC JUCE Grid signal-flow visualization completed with 3-dot connectors, input/output bridges, and dashed bypass path treatment; T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
 
 ## Active Blockers Only
 
@@ -2060,7 +2060,7 @@ Last updated: 2026-03-19 - Codex
   - Added focused coverage in `web/src/app/pages/JuceGridPage.test.tsx` to prove the persisted block/editor state and scroll restore path rehydrate correctly from `localStorage`.
 
 ID: T223-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: iPad experience — GarageBand interaction patterns
 Description:
 - GarageBand-style tap interaction (select → contextual toolbar → open)
@@ -2070,8 +2070,13 @@ Description:
 - Smart controls: curated 4-6 key params default, "All Parameters" toggle
 - All touch targets ≥ 44pt
 - iPadOS Split View handling (block if < 768px)
-Assigned to: Unassigned
-Last updated: 2026-03-19
+Assigned to: Codex
+Last updated: 2026-03-19 - Codex
+- Completion notes:
+  - Added a tablet-touch interaction mode in `web/src/app/pages/JuceGridPage.tsx` so iPad-sized touch layouts tap-select a block first, then expose a contextual action row with editor, move, bypass, and remove actions before opening the editor.
+  - Added swipe-down dismiss handling plus touch-specific editor copy in `web/src/app/pages/JuceGridPage.tsx`, keeping the existing hardware-keyboard arrow-key path available for iPad keyboards.
+  - Added smart-control scoring and a touch-mode parameter surface in `web/src/app/pages/JuceGridParameterEditor.tsx` so touch layouts default to a curated control subset while preserving full grouped parameter access for non-touch layouts.
+  - Added GarageBand-style glow/bounce feedback and 44pt minimum touch target treatment in `web/src/app/pages/JuceGridPage.css`, plus a focused iPad interaction regression in `web/src/app/pages/JuceGridPage.test.tsx`.
 
 ID: T223-subH
 Status: [✓] Done

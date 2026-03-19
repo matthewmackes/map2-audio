@@ -13,7 +13,7 @@
  * - Audio configuration
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type TouchEvent as ReactTouchEvent } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Add,
@@ -608,17 +608,22 @@ export function JuceGridPage() {
   const { pushToast } = useToasts()
   const isMobile = useIsMobile()
   const [isTablet, setIsTablet] = useState<boolean>(() => isTabletViewport())
+  const [isTouchCapable, setIsTouchCapable] = useState<boolean>(() => isTouchCapableViewport())
   const [compactTab, setCompactTab] = useState<CompactTabId>('grid')
 
   useEffect(() => {
-    const handleResize = () => setIsTablet(isTabletViewport())
+    const handleResize = () => {
+      setIsTablet(isTabletViewport())
+      setIsTouchCapable(isTouchCapableViewport())
+    }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const isCompactLayout = isMobile || isTablet
+  const isTabletTouchLayout = isTablet && isTouchCapable && !isMobile
   const showViewportBlockScreen = isMobile
-  const showViewportRotateHint = showViewportBlockScreen && isTouchCapableViewport()
+  const showViewportRotateHint = showViewportBlockScreen && isTouchCapable
 
   const initialPersistedStateRef = useRef<ReturnType<typeof loadInitialJuceGridState> | null>(null)
   const initialPersistedState = initialPersistedStateRef.current
@@ -667,6 +672,7 @@ export function JuceGridPage() {
   const [draggedPluginUri, setDraggedPluginUri] = useState<string | null>(null)
   const [dragOverPluginUri, setDragOverPluginUri] = useState<string | null>(null)
   const [reorderPreview, setReorderPreview] = useState<ReorderPreviewState>(null)
+  const bottomEditorTouchStartYRef = useRef<number | null>(null)
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
   const [showPerformModal, setShowPerformModal] = useState(false)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
@@ -2264,15 +2270,45 @@ export function JuceGridPage() {
     }
 
     setSelectedPluginUri(uri)
+    if (isTabletTouchLayout && selectedPluginUri !== uri) {
+      return
+    }
+
     openEffectModal()
     if (isCompactLayout) {
       setCompactTab('editor')
     }
-  }, [effectModalOpen, isCompactLayout, openEffectModal, selectedPluginUri])
+  }, [effectModalOpen, isCompactLayout, isTabletTouchLayout, openEffectModal, selectedPluginUri])
 
   const handleCloseEffectModal = useCallback(() => {
     setEffectModalOpen(false)
   }, [])
+
+  const handleBottomEditorTouchStart = useCallback((event: ReactTouchEvent<HTMLElement>) => {
+    if (!isTabletTouchLayout) {
+      return
+    }
+
+    bottomEditorTouchStartYRef.current = event.changedTouches[0]?.clientY ?? null
+  }, [isTabletTouchLayout])
+
+  const handleBottomEditorTouchEnd = useCallback((event: ReactTouchEvent<HTMLElement>) => {
+    if (!isTabletTouchLayout) {
+      return
+    }
+
+    const startY = bottomEditorTouchStartYRef.current
+    const endY = event.changedTouches[0]?.clientY ?? null
+    bottomEditorTouchStartYRef.current = null
+
+    if (startY === null || endY === null) {
+      return
+    }
+
+    if (endY - startY >= 72) {
+      handleCloseEffectModal()
+    }
+  }, [handleCloseEffectModal, isTabletTouchLayout])
 
   useEffect(() => {
     if (!effectModalOpen) {
@@ -3661,6 +3697,63 @@ export function JuceGridPage() {
                 pluginLevels={pluginLevels}
                 automationSummary={signalAutomationSummary}
               />
+
+              {isActive && isTabletTouchLayout && selectedPlugin && (
+                <div className="juce-grid-page__touch-toolbar" aria-label="Selected block touch actions">
+                  <div className="juce-grid-page__touch-toolbar-copy">
+                    <span className="juce-grid-page__toolbar-label">Selected block</span>
+                    <strong>{getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri)}</strong>
+                  </div>
+                  <div className="juce-grid-page__touch-toolbar-actions">
+                    <Button
+                      size="sm"
+                      kind={effectModalOpen ? 'secondary' : 'primary'}
+                      renderIcon={Edit}
+                      onClick={() => {
+                        openEffectModal()
+                        setCompactTab('editor')
+                      }}
+                      disabled={effectModalOpen}
+                    >
+                      Open editor
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      renderIcon={ArrowLeft}
+                      onClick={() => moveSelectedPlugin('left')}
+                      disabled={!canMoveSelectedPluginLeft || reorderMutation.isPending}
+                    >
+                      Move left
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      renderIcon={ArrowRight}
+                      onClick={() => moveSelectedPlugin('right')}
+                      disabled={!canMoveSelectedPluginRight || reorderMutation.isPending}
+                    >
+                      Move right
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind={selectedPlugin.bypassed ? 'ghost' : 'secondary'}
+                      onClick={handleToggleSelectedBypass}
+                    >
+                      {selectedPlugin.bypassed ? 'Enable block' : 'Bypass block'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      kind="danger--tertiary"
+                      renderIcon={TrashCan}
+                      onClick={() => handleDeletePlugin(selectedPlugin.uri, selectedPlugin.position)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      Remove block
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </article>
@@ -3935,10 +4028,15 @@ export function JuceGridPage() {
       {effectModalOpen && selectedPlugin && (
         <section
           ref={bottomEditorRef}
-          className="juce-grid-page__bottom-editor-shell"
+          className={`juce-grid-page__bottom-editor-shell ${isTabletTouchLayout ? 'is-touch-mode' : ''}`}
           aria-label="Block parameter editor"
+          onTouchStart={handleBottomEditorTouchStart}
+          onTouchEnd={handleBottomEditorTouchEnd}
+          onTouchCancel={() => {
+            bottomEditorTouchStartYRef.current = null
+          }}
         >
-          <Layer className="juce-grid-page__bottom-editor-panel">
+          <Layer className={`juce-grid-page__bottom-editor-panel ${isTabletTouchLayout ? 'is-touch-mode' : ''}`}>
             <div className="juce-grid-page__bottom-editor-header">
               <div className="juce-grid-page__bottom-editor-identity">
                 <div
@@ -3957,7 +4055,10 @@ export function JuceGridPage() {
                   <strong>{getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri)}</strong>
                   <p>
                     {selectedPluginMeta?.parameters?.length ?? 0} parameter{(selectedPluginMeta?.parameters?.length ?? 0) === 1 ? '' : 's'}
-                    {' '}organized in always-visible Carbon groups.
+                    {' '}
+                    {isTabletTouchLayout
+                      ? 'with swipe-down dismiss and touch-first smart controls.'
+                      : 'organized in always-visible Carbon groups.'}
                   </p>
                 </div>
               </div>
@@ -3998,6 +4099,7 @@ export function JuceGridPage() {
                 onToggleBypass={handleToggleSelectedBypass}
                 onRefreshPlugins={handleRefreshPlugins}
                 isRefreshing={isRefreshingPlugins}
+                touchMode={isTabletTouchLayout}
               />
             </div>
           </Layer>

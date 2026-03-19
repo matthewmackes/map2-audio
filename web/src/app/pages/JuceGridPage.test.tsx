@@ -414,6 +414,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
   afterEach(() => {
     delete (globalThis as { ResizeObserver?: unknown }).ResizeObserver
     delete (globalThis as { fetch?: typeof fetch }).fetch
+    delete (window as Window & { ontouchstart?: unknown }).ontouchstart
   })
 
   it('renders floating snapshot and MIDI triggers without either side rail', async () => {
@@ -887,6 +888,121 @@ describe('JuceGridPage snapshot modal workflow', () => {
       expect(mockChainsApi.reorderPlugins).toHaveBeenCalledTimes(2)
     })
   })
+
+  it('uses the iPad touch toolbar flow', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    })
+    Object.defineProperty(window.navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 5,
+    })
+    Object.defineProperty(window, 'ontouchstart', {
+      configurable: true,
+      writable: true,
+      value: true,
+    })
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#2563eb', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 1, label: 'B', color: '#60a5fa', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      flowStates: {
+        'flow-0': { activeAudio: true, dimmed: false, sidechainKey: false },
+      },
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'group-0',
+          kind: 'series',
+          tone: 'active',
+          dashed: false,
+          flowIds: ['flow-0'],
+        },
+      ],
+    }
+
+    mockChainsApi.list.mockResolvedValue({
+      chains: [
+        {
+          id: 1,
+          name: 'Song 1',
+          is_active: true,
+          plugins: [
+            {
+              uri: 'map2://juce/modulation/chorus',
+              name: 'Alpha Chorus',
+              position: 0,
+              bypassed: false,
+              parameters: {
+                mix: 50,
+                depth: 0.6,
+                rate: 1.2,
+                delay_time: 20,
+                feedback: 25,
+                tone: 0.4,
+                misc: 0.2,
+              },
+            },
+          ],
+        },
+      ],
+      active_chain_id: 1,
+    })
+
+    mockPluginsApi.discover.mockResolvedValue({
+      plugins: [
+        {
+          uri: 'map2://juce/modulation/chorus',
+          name: 'Alpha Chorus',
+          category: 'Modulation',
+          parameters: [
+            { index: 0, name: 'Mix', symbol: 'mix', min: 0, max: 100, default: 50, is_toggled: false, is_log: false },
+            { index: 1, name: 'Depth', symbol: 'depth', min: 0, max: 1, default: 0.5, is_toggled: false, is_log: false },
+            { index: 2, name: 'Rate', symbol: 'rate', min: 0.1, max: 5, default: 1, is_toggled: false, is_log: false },
+            { index: 3, name: 'Delay Time', symbol: 'delay_time', min: 1, max: 50, default: 20, is_toggled: false, is_log: false },
+            { index: 4, name: 'Feedback', symbol: 'feedback', min: 0, max: 100, default: 25, is_toggled: false, is_log: false },
+            { index: 5, name: 'Tone', symbol: 'tone', min: 0, max: 1, default: 0.4, is_toggled: false, is_log: false },
+            { index: 6, name: 'Misc', symbol: 'misc', min: 0, max: 1, default: 0.2, is_toggled: false, is_log: false },
+          ],
+        },
+      ],
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const selectButton = (await screen.findAllByRole('button', { name: 'Select block' }))[0]
+    fireEvent.click(selectButton)
+
+    expect(screen.queryByLabelText('Block parameter editor')).toBeNull()
+    expect(await screen.findByLabelText('Selected block touch actions')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open editor' }))
+
+    await screen.findByLabelText('Block parameter editor')
+  }, 15000)
 
   it('shows the mobile block screen below the supported viewport width', async () => {
     mockUseIsMobile.mockReturnValue(true)

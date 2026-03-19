@@ -1734,6 +1734,10 @@
   padding: 0 0.75rem 5.5rem;
 }
 
+.juce-grid-page__bottom-editor-shell.is-touch-mode {
+  padding-bottom: 6.5rem;
+}
+
 .juce-grid-page__bottom-editor-panel {
   display: flex;
   flex-direction: column;
@@ -1742,6 +1746,11 @@
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: #000;
   animation: juce-grid-page-slide-in-up 160ms ease;
+}
+
+.juce-grid-page__bottom-editor-panel.is-touch-mode {
+  border-radius: 1rem 1rem 0 0;
+  box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.36);
 }
 
 .juce-grid-page__bottom-editor-header,
@@ -1808,6 +1817,44 @@
 .juce-grid-page__bottom-editor-body {
   display: flex;
   flex-direction: column;
+}
+
+.juce-grid-page__touch-toolbar,
+.juce-grid-page__touch-toolbar-copy,
+.juce-grid-page__touch-toolbar-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.juce-grid-page__touch-toolbar {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 70%, var(--cds-link-primary, #0f62fe));
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 12%, rgba(255, 255, 255, 0.02)), transparent 50%),
+    color-mix(in srgb, var(--cds-layer, var(--surface)) 88%, #040404);
+}
+
+.juce-grid-page__touch-toolbar-copy {
+  flex: 1 1 12rem;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.juce-grid-page__touch-toolbar-copy strong {
+  font-size: 1rem;
+}
+
+.juce-grid-page__touch-toolbar-actions {
+  flex: 999 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.juce-grid-page__touch-toolbar-actions .cds--btn,
+.juce-grid-page__bottom-editor-panel.is-touch-mode .cds--btn {
+  min-block-size: 2.75rem;
 }
 
 .juce-grid-page__compact-audio-grid {
@@ -2849,6 +2896,27 @@
     0 0.5rem 1.5rem color-mix(in srgb, var(--juce-grid-signal-accent) 10%, transparent);
 }
 
+@media (pointer: coarse) and (min-width: 768px) {
+  .juce-grid-page__signal-plugin-card {
+    min-block-size: 17rem;
+  }
+
+  .juce-grid-page__signal-plugin-card.is-selected {
+    animation: juce-grid-page-touch-bounce 220ms ease;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 60%, transparent),
+      0 0 24px color-mix(in srgb, var(--juce-grid-signal-accent) 28%, transparent),
+      0 18px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .juce-grid-page__signal-plugin-actions .cds--overflow-menu,
+  .juce-grid-page__signal-plugin-add,
+  .juce-grid-page__touch-toolbar-actions .cds--btn,
+  .juce-grid-page__bottom-editor-actions .cds--btn {
+    min-block-size: 2.75rem;
+  }
+}
+
 .juce-grid-page__signal-plugin-card.is-bypassed {
   background: #000000;
 }
@@ -3316,6 +3384,10 @@
   --juce-grid-parameter-accent: var(--cds-link-primary);
 }
 
+.juce-grid-page__parameter-editor.is-touch-mode {
+  gap: 1rem;
+}
+
 .juce-grid-page__parameter-editor-groups {
   display: flex;
   flex-direction: column;
@@ -3456,8 +3528,45 @@
   border-color: color-mix(in srgb, var(--juce-grid-parameter-accent) 35%, var(--cds-border-subtle, var(--border)));
 }
 
+.juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-editor-toggle.cds--btn,
+.juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-control .cds--list-box__field,
+.juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-control-input,
+.juce-grid-page__parameter-editor.is-touch-mode .cds--btn {
+  min-height: 2.75rem;
+}
+
+.juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-group-card {
+  border-radius: 1rem;
+}
+
+.juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-control {
+  padding: 1rem;
+}
+
+.juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-control-copy strong {
+  font-size: 1rem;
+}
+
+.juce-grid-page__parameter-editor.is-touch-mode .juce-grid-page__parameter-control-copy span {
+  font-size: 0.875rem;
+}
+
 .juce-grid-page__parameter-editor--card {
   min-height: 12rem;
+}
+
+@keyframes juce-grid-page-touch-bounce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  45% {
+    transform: translateY(-6px) scale(1.01);
+  }
+
+  100% {
+    transform: translateY(-4px) scale(1);
+  }
 }
 
 @container juce-grid-parameter-editor (max-width: 400px) {
