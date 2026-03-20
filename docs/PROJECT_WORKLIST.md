@@ -1388,7 +1388,7 @@ Subtasks:
     - Kit switching: unload current → load new (with crossfade or silence gap to prevent artifacts)
     - User kit creation: copy factory kit → modify instrument assignments → save to user directory
     - Kit import: accept .zip containing kit JSON + SFZ + samples; validate against schema; extract to user_kits
-  - [ ] T214-D: REST API endpoints — extend `app/routes/drums.py`
+  - [✓] T214-D: REST API endpoints — extend `app/routes/drums.py`
     - `GET /api/engine/drums/kits` — list all kits (factory + user) with metadata
     - `GET /api/engine/drums/kits/{kit_id}` — kit details including instrument assignments
     - `POST /api/engine/drums/kits/load` — load kit into engine `{kit_id}`
@@ -1398,7 +1398,7 @@ Subtasks:
     - `PATCH /api/engine/drums/kits/{kit_id}/instruments/{pad}` — modify instrument assignment
   - [ ] T214-E: Sample sourcing — identify, download, and organize CC0 drum samples for factory kits; write SFZ mappings with velocity layers (minimum 3 velocity layers per instrument), round-robin (minimum 2 variations), and choke groups for hihats
 Assigned to: Codex
-Last updated: 2026-03-20 07:50 - Codex
+Last updated: 2026-03-20 07:59 - Codex
 - Progress notes:
   - Completed `T214-A` by adding `data/drums/schemas/drum_kit.schema.json`, a draft 2020-12 schema for 16-slot drum kits with constrained metadata, relative `.sfz` instrument paths, per-pad default note/bus/volume/pan/tune fields, kit-level BPM and swing defaults, and explicit category/license validation.
   - Validation: `python3` JSON parse + schema shape smoke test against a synthetic 16-instrument kit document -> pass.
@@ -1408,6 +1408,8 @@ Last updated: 2026-03-20 07:50 - Codex
   - Completed `T214-C` by adding `app/services/drum_kit_service.py`, a singleton kit manager that indexes factory and user kits, validates manifests and referenced SFZ/sample assets, loads per-pad SFZ assignments into the drum engine, applies per-pad note/volume/pan/tune/bus defaults, persists the active kit selection, copies factory kits into user space, and imports user kit `.zip` archives with traversal-safe extraction.
   - Extended the drum engine bindings with per-pad SFZ loading and bus assignment support via `juce-engine/Source/PythonBindings.cpp`, backed by a new `setPadBus(...)` helper in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp`.
   - Validation: `pytest -q tests/test_drum_kit_service.py tests/test_drum_machine_service.py tests/test_drum_routes.py` -> `21 passed`; `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/services/drum_kit_service.py app/services/drum_machine_service.py app/routes/drums.py tests/test_drum_kit_service.py tests/test_drum_machine_service.py tests/test_drum_routes.py` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
+  - Completed `T214-D` by extending `app/routes/drums.py` with typed kit-management endpoints for listing kits, reading kit details, loading a kit, reading the active kit, importing a user kit archive, creating a user kit from a template, and patching an individual user-kit instrument assignment.
+  - Validation: `pytest -q tests/test_drum_routes.py tests/test_drum_kit_service.py tests/test_drum_machine_service.py` -> `26 passed`; `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/routes/drums.py app/services/drum_kit_service.py app/services/drum_machine_service.py tests/test_drum_routes.py tests/test_drum_kit_service.py tests/test_drum_machine_service.py` -> pass.
 
 ---
 

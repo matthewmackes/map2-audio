@@ -203,6 +203,35 @@ class DrumKitService(Singleton):
         self._write_kit_manifest(destination_root, updated_manifest)
         return self.get_kit(new_kit_id)
 
+    def update_kit_instrument(self, kit_id: str, pad_index: int, patch: Dict[str, Any]) -> Dict[str, Any]:
+        if pad_index < 0 or pad_index >= 16:
+            raise IndexError("pad must be in range 0..15")
+
+        source, kit_root = self._resolve_kit_path(kit_id)
+        if source != "user":
+            raise PermissionError("Only user kits can be modified")
+
+        manifest = self._read_kit_manifest(kit_root)
+        updated_instrument = DrumKitInstrumentModel.model_validate(
+            {
+                **manifest.instruments[pad_index].model_dump(),
+                **patch,
+            }
+        )
+        updated_instruments = list(manifest.instruments)
+        updated_instruments[pad_index] = updated_instrument
+        updated_manifest = manifest.model_copy(update={"instruments": updated_instruments})
+        self._validate_kit_files(kit_root, updated_manifest)
+        self._write_kit_manifest(kit_root, updated_manifest)
+
+        if self._active_kit is not None and self._active_kit.kit_id == kit_id:
+            engine = self._engine()
+            if engine is not None:
+                self._call_engine(engine, "load_drum_pad_sfz", pad_index, str(kit_root / updated_instrument.sfz_path))
+                self._apply_instrument_to_engine(engine, pad_index, updated_instrument)
+
+        return self.get_kit(kit_id)
+
     def import_user_kit_archive(self, archive_bytes: bytes, filename: str = "kit.zip") -> Dict[str, Any]:
         if not archive_bytes:
             raise ValueError("Kit archive is empty")

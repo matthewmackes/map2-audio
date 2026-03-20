@@ -11,7 +11,14 @@ import json
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from app.services.drum_kit_service import (
+    DrumKitModel,
+    DrumKitService,
+    DrumKitSummaryModel,
+    get_drum_kit_service,
+)
 
 from app.services.drum_sequencer_service import (
     DrumPatternModel,
@@ -61,12 +68,52 @@ class DrumSongUpdateModel(BaseModel):
     song_loop: bool = False
 
 
+class DrumKitLoadRequest(BaseModel):
+    kit_id: str
+
+
+class DrumKitCreateRequest(BaseModel):
+    template_kit_id: str
+    new_kit_id: str
+    name: str | None = None
+    description: str | None = None
+    author: str | None = None
+
+
+class DrumKitLoadResponse(BaseModel):
+    status: str
+    loaded_pad_count: int
+    kit: DrumKitModel
+    engine_status: Dict[str, Any]
+
+
+class DrumKitMutationResponse(BaseModel):
+    status: str = "ok"
+    kit: DrumKitModel
+    source: str
+    root_path: str
+
+
+class DrumKitInstrumentPatchModel(BaseModel):
+    name: str | None = None
+    sfz_path: str | None = None
+    default_note: int | None = Field(default=None, ge=0, le=127)
+    bus_assignment: int | None = Field(default=None, ge=0, le=7)
+    default_volume: float | None = Field(default=None, ge=0.0, le=1.0)
+    default_pan: float | None = Field(default=None, ge=-1.0, le=1.0)
+    default_tune: float | None = Field(default=None, ge=-24.0, le=24.0)
+
+
 def _get_service() -> DrumMachineService:
     return get_drum_machine_service()
 
 
 def _get_sequencer_service() -> DrumSequencerService:
     return get_drum_sequencer_service()
+
+
+def _get_kit_service() -> DrumKitService:
+    return get_drum_kit_service()
 
 
 @router.get("/api/engine/drums/state", response_model=DrumMachineStateModel)
@@ -154,6 +201,80 @@ def set_drum_song(update: DrumSongUpdateModel) -> DrumSongUpdateResponse:
 @router.get("/api/engine/drums/metering", response_model=DrumMeteringModel)
 def get_drum_metering() -> Dict[str, Any]:
     return _get_service().get_metering()
+
+
+@router.get("/api/engine/drums/kits", response_model=List[DrumKitSummaryModel])
+def list_drum_kits() -> List[Dict[str, Any]]:
+    return _get_kit_service().list_kits()
+
+
+@router.get("/api/engine/drums/kits/active")
+def get_active_drum_kit() -> Dict[str, Any] | None:
+    return _get_kit_service().get_active_kit()
+
+
+@router.get("/api/engine/drums/kits/{kit_id}", response_model=DrumKitModel)
+def get_drum_kit(kit_id: str) -> Dict[str, Any]:
+    try:
+        return _get_kit_service().get_kit(kit_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Kit not found")
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/kits/load", response_model=DrumKitLoadResponse)
+def load_drum_kit(request: DrumKitLoadRequest) -> Dict[str, Any]:
+    try:
+        return _get_kit_service().load_kit(request.kit_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Kit not found")
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/kits/create", response_model=DrumKitMutationResponse)
+def create_drum_kit(request: DrumKitCreateRequest) -> Dict[str, Any]:
+    try:
+        created = _get_kit_service().create_user_kit(
+            request.template_kit_id,
+            request.new_kit_id,
+            name=request.name,
+            description=request.description,
+            author=request.author,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Template kit not found")
+    except FileExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"status": "ok", "kit": created, "source": created["source"], "root_path": created["root_path"]}
+
+
+@router.post("/api/engine/drums/kits/import", response_model=DrumKitMutationResponse)
+async def import_drum_kit(file: UploadFile = File(...)) -> Dict[str, Any]:
+    try:
+        imported = _get_kit_service().import_user_kit_archive(await file.read(), filename=file.filename or "kit.zip")
+    except FileExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"status": "ok", "kit": imported, "source": imported["source"], "root_path": imported["root_path"]}
+
+
+@router.patch("/api/engine/drums/kits/{kit_id}/instruments/{pad}", response_model=DrumKitModel)
+def patch_drum_kit_instrument(kit_id: str, pad: int, patch: DrumKitInstrumentPatchModel) -> Dict[str, Any]:
+    try:
+        return _get_kit_service().update_kit_instrument(kit_id, pad, patch.model_dump(exclude_unset=True))
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Kit not found")
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except IndexError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/api/engine/drums/packs/factory")

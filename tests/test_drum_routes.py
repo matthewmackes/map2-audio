@@ -153,12 +153,122 @@ class _FakeDrumService:
         }
 
 
+class _FakeDrumKitService:
+    def __init__(self):
+        self.kits = {
+            "factory_kit": self._kit_payload("factory_kit", "Factory Kit", "factory"),
+            "user_kit": self._kit_payload("user_kit", "User Kit", "user"),
+        }
+        self.active_kit_id = None
+
+    def list_kits(self):
+        return [
+            {
+                "kit_id": kit["kit_id"],
+                "name": kit["name"],
+                "description": kit["description"],
+                "author": kit["author"],
+                "version": kit["version"],
+                "category": kit["category"],
+                "license": kit["license"],
+                "source": kit["source"],
+                "root_path": kit["root_path"],
+            }
+            for kit in self.kits.values()
+        ]
+
+    def get_kit(self, kit_id):
+        if kit_id not in self.kits:
+            raise FileNotFoundError(kit_id)
+        return dict(self.kits[kit_id])
+
+    def get_active_kit(self):
+        if self.active_kit_id is None:
+            return None
+        payload = dict(self.kits[self.active_kit_id])
+        payload["active"] = True
+        return payload
+
+    def load_kit(self, kit_id):
+        if kit_id not in self.kits:
+            raise FileNotFoundError(kit_id)
+        self.active_kit_id = kit_id
+        return {
+            "status": "ok",
+            "loaded_pad_count": 16,
+            "kit": dict(self.kits[kit_id]),
+            "engine_status": {f"pad_{index}": {"loaded": True} for index in range(16)},
+        }
+
+    def create_user_kit(self, template_kit_id, new_kit_id, name=None, description=None, author=None):
+        if template_kit_id not in self.kits:
+            raise FileNotFoundError(template_kit_id)
+        created = dict(self.kits[template_kit_id])
+        created.update(
+            {
+                "kit_id": new_kit_id,
+                "name": name or created["name"],
+                "description": description if description is not None else created["description"],
+                "author": author if author is not None else created["author"],
+                "source": "user",
+                "root_path": f"/kits/{new_kit_id}",
+            }
+        )
+        self.kits[new_kit_id] = created
+        return dict(created)
+
+    def import_user_kit_archive(self, _archive_bytes, filename="kit.zip"):
+        imported = self._kit_payload("imported_kit", "Imported Kit", "user")
+        self.kits["imported_kit"] = imported
+        return dict(imported)
+
+    def update_kit_instrument(self, kit_id, pad, patch):
+        if kit_id not in self.kits:
+            raise FileNotFoundError(kit_id)
+        if self.kits[kit_id]["source"] != "user":
+            raise PermissionError("Only user kits can be modified")
+        if pad < 0 or pad >= 16:
+            raise IndexError("pad must be in range 0..15")
+        self.kits[kit_id]["instruments"][pad].update(patch)
+        return dict(self.kits[kit_id])
+
+    @staticmethod
+    def _kit_payload(kit_id, name, source):
+        return {
+            "kit_id": kit_id,
+            "name": name,
+            "description": f"{name} description",
+            "author": "MAP2",
+            "version": 1,
+            "category": "acoustic" if source == "factory" else "hybrid",
+            "license": "CC0-1.0",
+            "default_bpm": 120,
+            "default_swing": 10,
+            "source": source,
+            "root_path": f"/kits/{kit_id}",
+            "instruments": [
+                {
+                    "name": f"Pad {index + 1}",
+                    "sfz_path": f"pad_{index}.sfz",
+                    "default_note": 36 + index,
+                    "bus_assignment": index % 8,
+                    "default_volume": 0.8,
+                    "default_pan": 0.0,
+                    "default_tune": 0.0,
+                }
+                for index in range(16)
+            ],
+        }
+
+
 def _client(monkeypatch):
     app = FastAPI()
     app.include_router(drum_routes.router)
     service = _FakeDrumService()
+    kit_service = _FakeDrumKitService()
     monkeypatch.setattr(drum_routes, "_get_service", lambda: service)
     monkeypatch.setattr(drum_routes, "_get_sequencer_service", lambda: service)
+    monkeypatch.setattr(drum_routes, "_get_kit_service", lambda: kit_service)
     ws_manager.event_history.clear()
     return TestClient(app)
 
@@ -304,3 +414,79 @@ def test_drum_pack_upload_accepts_valid_json(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["pack_id"] == "user-pack"
+
+
+def test_drum_kits_route_lists_factory_and_user_metadata(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.get("/api/engine/drums/kits")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert {entry["kit_id"] for entry in payload} == {"factory_kit", "user_kit"}
+
+
+def test_drum_kit_routes_get_load_and_read_active(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.get("/api/engine/drums/kits/factory_kit")
+    assert response.status_code == 200
+    assert response.json()["kit_id"] == "factory_kit"
+
+    load_response = client.post("/api/engine/drums/kits/load", json={"kit_id": "factory_kit"})
+    assert load_response.status_code == 200
+    assert load_response.json()["loaded_pad_count"] == 16
+
+    active_response = client.get("/api/engine/drums/kits/active")
+    assert active_response.status_code == 200
+    assert active_response.json()["kit_id"] == "factory_kit"
+    assert active_response.json()["active"] is True
+
+
+def test_drum_kit_create_and_import_routes(monkeypatch):
+    client = _client(monkeypatch)
+
+    create_response = client.post(
+        "/api/engine/drums/kits/create",
+        json={
+            "template_kit_id": "factory_kit",
+            "new_kit_id": "custom_kit",
+            "name": "Custom Kit",
+            "author": "Tester",
+        },
+    )
+    assert create_response.status_code == 200
+    assert create_response.json()["kit"]["kit_id"] == "custom_kit"
+    assert create_response.json()["source"] == "user"
+
+    import_response = client.post(
+        "/api/engine/drums/kits/import",
+        files={"file": ("kit.zip", b"fake-zip-content", "application/zip")},
+    )
+    assert import_response.status_code == 200
+    assert import_response.json()["kit"]["kit_id"] == "imported_kit"
+
+
+def test_drum_kit_instrument_patch_route_updates_user_kit(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.patch(
+        "/api/engine/drums/kits/user_kit/instruments/3",
+        json={"default_note": 72, "default_pan": -0.25},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["instruments"][3]["default_note"] == 72
+    assert payload["instruments"][3]["default_pan"] == -0.25
+
+
+def test_drum_kit_instrument_patch_route_rejects_factory_edits(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.patch(
+        "/api/engine/drums/kits/factory_kit/instruments/1",
+        json={"default_note": 99},
+    )
+
+    assert response.status_code == 403
