@@ -28,6 +28,7 @@ _DEFAULT_STATE_PATH = Path(os.environ.get("MAP2_DRUMS_STATE_PATH", _DEFAULT_DRUM
 _FACTORY_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_FACTORY_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "factory_packs"))
 _GENERATED_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_GENERATED_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "generated"))
 _POSITION_POLL_INTERVAL_SECONDS = float(os.environ.get("MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS", "0.05"))
+_DEFAULT_DRUM_NOTES = [36, 38, 42, 46, 41, 43, 45, 49, 51, 57, 39, 37, 56, 47, 50, 48]
 
 
 class DrumMachineStateModel(BaseModel):
@@ -108,6 +109,63 @@ class DrumPackSummaryModel(BaseModel):
     filename: str
 
 
+class DrumMidiPadMappingModel(BaseModel):
+    pad: int = Field(..., ge=0, le=15)
+    notes: List[int] = Field(default_factory=list)
+    midi_channel: int = Field(0, ge=0, le=16)
+
+
+class DrumMidiMappingModel(BaseModel):
+    global_midi_channel: int = Field(0, ge=0, le=16)
+    pads: List[DrumMidiPadMappingModel] = Field(default_factory=list)
+
+
+class DrumPadVelocityCurveModel(BaseModel):
+    pad: int = Field(..., ge=0, le=15)
+    curve_type: int = Field(0, ge=0, le=4)
+    fixed_velocity: float = Field(1.0, ge=0.0, le=1.0)
+    input_floor: float = Field(0.0, ge=0.0, le=1.0)
+    output_floor: float = Field(0.0, ge=0.0, le=1.0)
+    output_ceiling: float = Field(1.0, ge=0.0, le=1.0)
+    preview: List[float] = Field(default_factory=list)
+    last_velocity: float = Field(0.0, ge=0.0, le=1.0)
+
+
+class DrumMidiVelocityCurvesModel(BaseModel):
+    pads: List[DrumPadVelocityCurveModel] = Field(default_factory=list)
+
+
+class DrumPadZoneModel(BaseModel):
+    kind: int = Field(..., ge=0, le=2)
+    trigger_note: int = Field(..., ge=0, le=127)
+    key_switch_note: int = Field(-1, ge=-1, le=127)
+    velocity_scale: float = Field(1.0, ge=0.0, le=2.0)
+    enabled: bool = True
+
+
+class DrumPadZonesModel(BaseModel):
+    pad: int = Field(..., ge=0, le=15)
+    zones: List[DrumPadZoneModel] = Field(default_factory=list)
+
+
+class DrumMidiZonesModel(BaseModel):
+    pads: List[DrumPadZonesModel] = Field(default_factory=list)
+
+
+class DrumMidiLearnStateModel(BaseModel):
+    active: bool = False
+    learn_all: bool = False
+    active_pad_index: int = -1
+    next_pad_index: int = -1
+    last_received_note: int = -1
+    last_received_channel: int = -1
+    timeout_seconds: int = Field(10, ge=1)
+
+
+class DrumMidiPresetListModel(BaseModel):
+    presets: List[str] = Field(default_factory=list)
+
+
 class DrumMachineService(Singleton):
     def __init__(self) -> None:
         super().__init__()
@@ -123,6 +181,21 @@ class DrumMachineService(Singleton):
         )
         self._position_poll_task: Optional[asyncio.Task] = None
         self._event_loop: Optional[asyncio.AbstractEventLoop] = None
+        self._global_midi_channel = 0
+        self._pad_midi_notes = {index: [note] for index, note in enumerate(_DEFAULT_DRUM_NOTES)}
+        self._pad_midi_channels = {index: 0 for index in range(16)}
+        self._velocity_curves = {
+            index: {
+                "curve_type": 0,
+                "fixed_velocity": 1.0,
+                "input_floor": 0.0,
+                "output_floor": 0.0,
+                "output_ceiling": 1.0,
+            }
+            for index in range(16)
+        }
+        self._pad_zones = {index: [] for index in range(16)}
+        self._midi_learn_state = DrumMidiLearnStateModel()
         self._sync_static_state_to_engine()
 
     def _load_state(self) -> DrumMachineStateModel:
@@ -311,6 +384,222 @@ class DrumMachineService(Singleton):
             "status": "ok",
             "path": path,
             "pack_id": pack_id,
+        }
+
+    def get_midi_mapping(self) -> Dict[str, Any]:
+        engine = self._engine()
+        getter = getattr(engine, "get_drum_global_midi_channel", None) if engine is not None else None
+        if callable(getter):
+            try:
+                self._global_midi_channel = int(getter())
+            except Exception:
+                pass
+
+        get_notes = getattr(engine, "get_drum_pad_notes", None) if engine is not None else None
+        for pad in range(16):
+            if callable(get_notes):
+                try:
+                    self._pad_midi_notes[pad] = [int(note) for note in list(get_notes(pad))]
+                except Exception:
+                    pass
+
+        return DrumMidiMappingModel(
+            global_midi_channel=self._global_midi_channel,
+            pads=[
+                DrumMidiPadMappingModel(
+                    pad=pad,
+                    notes=list(self._pad_midi_notes[pad]),
+                    midi_channel=self._pad_midi_channels[pad],
+                )
+                for pad in range(16)
+            ],
+        ).model_dump()
+
+    def update_midi_mapping(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        engine = self._engine()
+        if "global_midi_channel" in payload:
+            self._global_midi_channel = int(payload["global_midi_channel"])
+            setter = getattr(engine, "set_drum_global_midi_channel", None) if engine is not None else None
+            if callable(setter):
+                setter(self._global_midi_channel)
+
+        for pad_payload in payload.get("pads", []):
+            pad = int(pad_payload["pad"])
+            notes = [int(note) for note in pad_payload.get("notes", [])]
+            midi_channel = int(pad_payload.get("midi_channel", self._pad_midi_channels[pad]))
+            previous_notes = list(self._pad_midi_notes.get(pad, []))
+            self._pad_midi_notes[pad] = notes or [self._pad_midi_notes.get(pad, [_DEFAULT_DRUM_NOTES[pad]])[0]]
+            self._pad_midi_channels[pad] = midi_channel
+
+            if engine is not None:
+                set_note = getattr(engine, "set_drum_pad_note", None)
+                add_note = getattr(engine, "add_drum_pad_note", None)
+                remove_note = getattr(engine, "remove_drum_pad_note", None)
+                set_channel = getattr(engine, "set_drum_pad_midi_channel", None)
+                if callable(set_note) and self._pad_midi_notes[pad]:
+                    set_note(pad, self._pad_midi_notes[pad][0])
+                if callable(remove_note):
+                    for note in previous_notes[1:]:
+                        if note not in self._pad_midi_notes[pad]:
+                            remove_note(pad, note)
+                if callable(add_note):
+                    for note in self._pad_midi_notes[pad][1:]:
+                        add_note(pad, note)
+                if callable(set_channel):
+                    set_channel(pad, midi_channel)
+
+        return self.get_midi_mapping()
+
+    def get_velocity_curves(self) -> Dict[str, Any]:
+        engine = self._engine()
+        get_preview = getattr(engine, "get_drum_pad_velocity_curve_preview", None) if engine is not None else None
+        get_last_velocity = getattr(engine, "get_drum_pad_last_velocity", None) if engine is not None else None
+        pads: List[DrumPadVelocityCurveModel] = []
+        for pad in range(16):
+            config = dict(self._velocity_curves[pad])
+            preview = []
+            if callable(get_preview):
+                try:
+                    preview = [float(value) for value in list(get_preview(pad))]
+                except Exception:
+                    preview = []
+            last_velocity = 0.0
+            if callable(get_last_velocity):
+                try:
+                    last_velocity = float(get_last_velocity(pad))
+                except Exception:
+                    last_velocity = 0.0
+            pads.append(DrumPadVelocityCurveModel(pad=pad, preview=preview, last_velocity=last_velocity, **config))
+        return DrumMidiVelocityCurvesModel(pads=pads).model_dump()
+
+    def update_velocity_curves(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        engine = self._engine()
+        setter = getattr(engine, "set_drum_pad_velocity_curve", None) if engine is not None else None
+        for pad_payload in payload.get("pads", []):
+            pad = int(pad_payload["pad"])
+            self._velocity_curves[pad] = {
+                "curve_type": int(pad_payload.get("curve_type", 0)),
+                "fixed_velocity": float(pad_payload.get("fixed_velocity", 1.0)),
+                "input_floor": float(pad_payload.get("input_floor", 0.0)),
+                "output_floor": float(pad_payload.get("output_floor", 0.0)),
+                "output_ceiling": float(pad_payload.get("output_ceiling", 1.0)),
+            }
+            if callable(setter):
+                setter(
+                    pad,
+                    self._velocity_curves[pad]["curve_type"],
+                    self._velocity_curves[pad]["fixed_velocity"],
+                    self._velocity_curves[pad]["input_floor"],
+                    self._velocity_curves[pad]["output_floor"],
+                    self._velocity_curves[pad]["output_ceiling"],
+                )
+        return self.get_velocity_curves()
+
+    def get_midi_zones(self) -> Dict[str, Any]:
+        engine = self._engine()
+        getter = getattr(engine, "get_drum_pad_zones", None) if engine is not None else None
+        pads: List[DrumPadZonesModel] = []
+        for pad in range(16):
+            zones = self._pad_zones[pad]
+            if callable(getter):
+                try:
+                    zones = [dict(zone) for zone in list(getter(pad))]
+                    self._pad_zones[pad] = zones
+                except Exception:
+                    pass
+            pads.append(
+                DrumPadZonesModel(
+                    pad=pad,
+                    zones=[DrumPadZoneModel.model_validate(zone) for zone in zones],
+                )
+            )
+        return DrumMidiZonesModel(pads=pads).model_dump()
+
+    def update_midi_zones(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        engine = self._engine()
+        set_zone = getattr(engine, "set_drum_pad_zone", None) if engine is not None else None
+        clear_zone = getattr(engine, "clear_drum_pad_zone", None) if engine is not None else None
+        for pad_payload in payload.get("pads", []):
+            pad = int(pad_payload["pad"])
+            zones = [DrumPadZoneModel.model_validate(zone).model_dump() for zone in pad_payload.get("zones", [])]
+            self._pad_zones[pad] = zones
+            if callable(clear_zone):
+                for kind in range(3):
+                    clear_zone(pad, kind)
+            if callable(set_zone):
+                for zone in zones:
+                    if zone["enabled"]:
+                        set_zone(
+                            pad,
+                            zone["kind"],
+                            zone["trigger_note"],
+                            zone["key_switch_note"],
+                            zone["velocity_scale"],
+                        )
+        return self.get_midi_zones()
+
+    def start_midi_learn(self, pad: int, learn_all: bool = False, timeout_seconds: int = 10) -> Dict[str, Any]:
+        engine = self._engine()
+        starter = getattr(engine, "start_drum_midi_learn", None) if engine is not None else None
+        started = True
+        if callable(starter):
+            started = bool(starter(pad, learn_all, timeout_seconds))
+        if not started:
+            raise ValueError("Unable to start drum MIDI learn mode")
+        self._midi_learn_state = DrumMidiLearnStateModel(
+            active=True,
+            learn_all=learn_all,
+            active_pad_index=pad,
+            next_pad_index=pad,
+            timeout_seconds=timeout_seconds,
+        )
+        return self.get_midi_learn_state()
+
+    def stop_midi_learn(self) -> Dict[str, Any]:
+        engine = self._engine()
+        stopper = getattr(engine, "stop_drum_midi_learn", None) if engine is not None else None
+        if callable(stopper):
+            stopper()
+        self._midi_learn_state.active = False
+        self._midi_learn_state.learn_all = False
+        self._midi_learn_state.active_pad_index = -1
+        self._midi_learn_state.next_pad_index = -1
+        return self.get_midi_learn_state()
+
+    def get_midi_learn_state(self) -> Dict[str, Any]:
+        engine = self._engine()
+        getter = getattr(engine, "get_drum_midi_learn_state", None) if engine is not None else None
+        if callable(getter):
+            try:
+                self._midi_learn_state = DrumMidiLearnStateModel.model_validate(dict(getter()))
+            except Exception:
+                pass
+        return self._midi_learn_state.model_dump()
+
+    def get_midi_presets(self) -> Dict[str, Any]:
+        engine = self._engine()
+        getter = getattr(engine, "get_drum_midi_presets", None) if engine is not None else None
+        presets: List[str] = []
+        if callable(getter):
+            try:
+                presets = [str(preset) for preset in list(getter())]
+            except Exception:
+                presets = []
+        return DrumMidiPresetListModel(presets=presets).model_dump()
+
+    def load_midi_preset(self, preset_name: str) -> Dict[str, Any]:
+        engine = self._engine()
+        loader = getattr(engine, "apply_drum_midi_preset", None) if engine is not None else None
+        applied = True
+        if callable(loader):
+            applied = bool(loader(preset_name))
+        if not applied:
+            raise ValueError(f"Unknown drum MIDI preset: {preset_name}")
+        return {
+            "status": "ok",
+            "preset_name": preset_name,
+            "mapping": self.get_midi_mapping(),
+            "zones": self.get_midi_zones(),
         }
 
     def _engine(self) -> Any:

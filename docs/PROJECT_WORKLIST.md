@@ -1445,7 +1445,7 @@ Subtasks:
     - User hits a pad on their hardware → MAP2 captures the MIDI note number and channel → assigns it to the selected drum pad
     - "Learn All" mode: user hits each pad in sequence (kick→snare→HH→...), MAP2 auto-advances to next pad after each hit
     - Timeout: 10 seconds of inactivity exits learn mode
-  - [ ] T215-E: REST API + Python service
+  - [✓] T215-E: REST API + Python service
     - `GET/POST /api/engine/drums/midi/mapping` — get/set full note-to-pad mapping
     - `GET/POST /api/engine/drums/midi/velocity-curves` — get/set per-pad velocity curve config
     - `GET/POST /api/engine/drums/midi/zones` — get/set zone assignments
@@ -1456,7 +1456,7 @@ Subtasks:
     - `POST /api/engine/drums/midi/presets/load` — apply a hardware preset mapping
   - [ ] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
 Assigned to: Codex
-Last updated: 2026-03-20 09:08 - Codex
+Last updated: 2026-03-20 09:20 - Codex
 - Progress notes:
   - Completed `T215-A` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by replacing the single-note pad trigger assumption with a real note-to-pad mapping table, allowing multiple MIDI notes to target one pad while guaranteeing that any individual note maps to at most one pad.
   - Added global drum MIDI channel filtering alongside the existing per-pad channel filter, and extended the pybind surface in `juce-engine/Source/PythonBindings.cpp` with `add_drum_pad_note`, `remove_drum_pad_note`, `get_drum_pad_notes`, `set_drum_global_midi_channel`, and `get_drum_global_midi_channel`.
@@ -1474,6 +1474,10 @@ Last updated: 2026-03-20 09:08 - Codex
   - Extended `juce-engine/Source/PythonBindings.cpp` with `start_drum_midi_learn`, `stop_drum_midi_learn`, and `get_drum_midi_learn_state` so the upcoming REST/service slice can drive learn mode and inspect the active pad plus last-seen MIDI note/channel directly from the engine.
   - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for single-pad note/channel capture, learn-all progression across pads, and timeout expiry after inactivity.
   - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"` -> pass (`94 assertions in 13 test cases`); `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
+  - Completed `T215-E` in `app/services/drum_machine_service.py` and `app/routes/drums.py` by adding typed REST/service support for full MIDI note mapping, per-pad velocity curve configuration, multi-zone assignments, MIDI learn start/stop/status, preset enumeration, and preset loading on top of the existing engine bindings.
+  - Added service-side typed models and engine-sync shims for global MIDI channel state, per-pad note/channel lists, bounded velocity curves with preview/last-hit telemetry, zone snapshots, learn-state reporting, and preset application so later persistence work can reuse one canonical Python representation.
+  - Added route and service coverage in `tests/test_drum_routes.py` and `tests/test_drum_machine_service.py` for the new `/api/engine/drums/midi/*` contract, including mapping writes, curve updates, zone updates, learn mode state transitions, and preset list/load behavior.
+  - Validation: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py` -> `28 passed`; `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/services/drum_machine_service.py app/routes/drums.py tests/test_drum_machine_service.py tests/test_drum_routes.py` -> pass.
 
 ---
 

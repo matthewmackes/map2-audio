@@ -27,6 +27,11 @@ from app.services.drum_sequencer_service import (
     get_drum_sequencer_service,
 )
 from app.services.drum_machine_service import (
+    DrumMidiLearnStateModel,
+    DrumMidiMappingModel,
+    DrumMidiPresetListModel,
+    DrumMidiVelocityCurvesModel,
+    DrumMidiZonesModel,
     DrumMachineStateModel,
     DrumMachineStateUpdateModel,
     DrumMachineService,
@@ -102,6 +107,16 @@ class DrumKitInstrumentPatchModel(BaseModel):
     default_volume: float | None = Field(default=None, ge=0.0, le=1.0)
     default_pan: float | None = Field(default=None, ge=-1.0, le=1.0)
     default_tune: float | None = Field(default=None, ge=-24.0, le=24.0)
+
+
+class DrumMidiLearnStartRequest(BaseModel):
+    pad: int = Field(..., ge=0, le=15)
+    learn_all: bool = False
+    timeout_seconds: int = Field(10, ge=1, le=60)
+
+
+class DrumMidiPresetLoadRequest(BaseModel):
+    preset_name: str
 
 
 def _get_service() -> DrumMachineService:
@@ -201,6 +216,67 @@ def set_drum_song(update: DrumSongUpdateModel) -> DrumSongUpdateResponse:
 @router.get("/api/engine/drums/metering", response_model=DrumMeteringModel)
 def get_drum_metering() -> Dict[str, Any]:
     return _get_service().get_metering()
+
+
+@router.get("/api/engine/drums/midi/mapping", response_model=DrumMidiMappingModel)
+def get_drum_midi_mapping() -> Dict[str, Any]:
+    return _get_service().get_midi_mapping()
+
+
+@router.post("/api/engine/drums/midi/mapping", response_model=DrumMidiMappingModel)
+def set_drum_midi_mapping(payload: DrumMidiMappingModel) -> Dict[str, Any]:
+    return _get_service().update_midi_mapping(payload.model_dump())
+
+
+@router.get("/api/engine/drums/midi/velocity-curves", response_model=DrumMidiVelocityCurvesModel)
+def get_drum_midi_velocity_curves() -> Dict[str, Any]:
+    return _get_service().get_velocity_curves()
+
+
+@router.post("/api/engine/drums/midi/velocity-curves", response_model=DrumMidiVelocityCurvesModel)
+def set_drum_midi_velocity_curves(payload: DrumMidiVelocityCurvesModel) -> Dict[str, Any]:
+    return _get_service().update_velocity_curves(payload.model_dump())
+
+
+@router.get("/api/engine/drums/midi/zones", response_model=DrumMidiZonesModel)
+def get_drum_midi_zones() -> Dict[str, Any]:
+    return _get_service().get_midi_zones()
+
+
+@router.post("/api/engine/drums/midi/zones", response_model=DrumMidiZonesModel)
+def set_drum_midi_zones(payload: DrumMidiZonesModel) -> Dict[str, Any]:
+    return _get_service().update_midi_zones(payload.model_dump())
+
+
+@router.post("/api/engine/drums/midi/learn/start", response_model=DrumMidiLearnStateModel)
+def start_drum_midi_learn(payload: DrumMidiLearnStartRequest) -> Dict[str, Any]:
+    try:
+        return _get_service().start_midi_learn(payload.pad, payload.learn_all, payload.timeout_seconds)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/midi/learn/stop", response_model=DrumMidiLearnStateModel)
+def stop_drum_midi_learn() -> Dict[str, Any]:
+    return _get_service().stop_midi_learn()
+
+
+@router.get("/api/engine/drums/midi/learn/status", response_model=DrumMidiLearnStateModel)
+def get_drum_midi_learn_status() -> Dict[str, Any]:
+    return _get_service().get_midi_learn_state()
+
+
+@router.get("/api/engine/drums/midi/presets", response_model=DrumMidiPresetListModel)
+def get_drum_midi_presets() -> Dict[str, Any]:
+    return _get_service().get_midi_presets()
+
+
+@router.post("/api/engine/drums/midi/presets/load")
+def load_drum_midi_preset(payload: DrumMidiPresetLoadRequest) -> Dict[str, Any]:
+    try:
+        return _get_service().load_midi_preset(payload.preset_name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/api/engine/drums/kits", response_model=List[DrumKitSummaryModel])

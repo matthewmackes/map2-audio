@@ -14,6 +14,30 @@ class _FakeDrumEngine:
         self.bpm_calls = []
         self.pattern_calls = []
         self.swing_calls = []
+        self.global_midi_channel = 0
+        self.global_midi_channel_calls = []
+        self.pad_notes = {pad: [36 + pad] for pad in range(16)}
+        self.pad_note_calls = []
+        self.pad_add_note_calls = []
+        self.pad_remove_note_calls = []
+        self.pad_midi_channel_calls = []
+        self.velocity_curve_calls = []
+        self.pad_zones = {pad: [] for pad in range(16)}
+        self.pad_zone_calls = []
+        self.clear_zone_calls = []
+        self.learn_state = {
+            "active": False,
+            "learn_all": False,
+            "active_pad_index": -1,
+            "next_pad_index": -1,
+            "last_received_note": -1,
+            "last_received_channel": -1,
+            "timeout_seconds": 10,
+        }
+        self.learn_start_calls = []
+        self.learn_stop_calls = 0
+        self.midi_presets = ["Roland PD-140DS / CY-18DR / VH-14D", "Yamaha DTX Multi-Zone"]
+        self.loaded_presets = []
         self.metering = {
             "per_pad_peak": [0.0] * 16,
             "per_pad_rms": [0.0] * 16,
@@ -54,6 +78,110 @@ class _FakeDrumEngine:
 
     def set_drum_swing(self, swing):
         self.swing_calls.append(swing)
+        return True
+
+    def set_drum_global_midi_channel(self, value):
+        self.global_midi_channel = value
+        self.global_midi_channel_calls.append(value)
+        return True
+
+    def get_drum_global_midi_channel(self):
+        return self.global_midi_channel
+
+    def set_drum_pad_note(self, pad, midi_note):
+        self.pad_notes[pad] = [midi_note]
+        self.pad_note_calls.append((pad, midi_note))
+        return True
+
+    def add_drum_pad_note(self, pad, midi_note):
+        self.pad_notes.setdefault(pad, [])
+        if midi_note not in self.pad_notes[pad]:
+            self.pad_notes[pad].append(midi_note)
+        self.pad_add_note_calls.append((pad, midi_note))
+        return True
+
+    def remove_drum_pad_note(self, pad, midi_note):
+        if midi_note in self.pad_notes.get(pad, []):
+            self.pad_notes[pad].remove(midi_note)
+        self.pad_remove_note_calls.append((pad, midi_note))
+        return True
+
+    def get_drum_pad_notes(self, pad):
+        return list(self.pad_notes.get(pad, []))
+
+    def set_drum_pad_midi_channel(self, pad, channel):
+        self.pad_midi_channel_calls.append((pad, channel))
+        return True
+
+    def set_drum_pad_velocity_curve(self, pad, curve_type, fixed_velocity, input_floor, output_floor, output_ceiling):
+        self.velocity_curve_calls.append((pad, curve_type, fixed_velocity, input_floor, output_floor, output_ceiling))
+        return True
+
+    def get_drum_pad_velocity_curve_preview(self, _pad):
+        return [round(index / 127.0, 6) for index in range(128)]
+
+    def get_drum_pad_last_velocity(self, _pad):
+        return 0.42
+
+    def set_drum_pad_zone(self, pad, kind, trigger_note, key_switch_note, velocity_scale):
+        self.pad_zones.setdefault(pad, [])
+        self.pad_zones[pad] = [zone for zone in self.pad_zones[pad] if zone["kind"] != kind]
+        self.pad_zones[pad].append(
+            {
+                "kind": kind,
+                "trigger_note": trigger_note,
+                "key_switch_note": key_switch_note,
+                "velocity_scale": velocity_scale,
+                "enabled": True,
+            }
+        )
+        self.pad_zone_calls.append((pad, kind, trigger_note, key_switch_note, velocity_scale))
+        return True
+
+    def clear_drum_pad_zone(self, pad, kind):
+        self.pad_zones.setdefault(pad, [])
+        self.pad_zones[pad] = [zone for zone in self.pad_zones[pad] if zone["kind"] != kind]
+        self.clear_zone_calls.append((pad, kind))
+        return True
+
+    def get_drum_pad_zones(self, pad):
+        return list(self.pad_zones.get(pad, []))
+
+    def start_drum_midi_learn(self, pad, learn_all, timeout_seconds):
+        self.learn_state = {
+            "active": True,
+            "learn_all": learn_all,
+            "active_pad_index": pad,
+            "next_pad_index": pad,
+            "last_received_note": -1,
+            "last_received_channel": -1,
+            "timeout_seconds": timeout_seconds,
+        }
+        self.learn_start_calls.append((pad, learn_all, timeout_seconds))
+        return True
+
+    def stop_drum_midi_learn(self):
+        self.learn_state["active"] = False
+        self.learn_state["learn_all"] = False
+        self.learn_state["active_pad_index"] = -1
+        self.learn_state["next_pad_index"] = -1
+        self.learn_stop_calls += 1
+        return True
+
+    def get_drum_midi_learn_state(self):
+        return dict(self.learn_state)
+
+    def get_drum_midi_presets(self):
+        return list(self.midi_presets)
+
+    def apply_drum_midi_preset(self, preset_name):
+        if preset_name not in self.midi_presets:
+            return False
+        self.loaded_presets.append(preset_name)
+        self.pad_zones[1] = [
+            {"kind": 0, "trigger_note": 38, "key_switch_note": -1, "velocity_scale": 1.0, "enabled": True},
+            {"kind": 1, "trigger_note": 40, "key_switch_note": 36, "velocity_scale": 0.92, "enabled": True},
+        ]
         return True
 
     def get_drum_metering(self):
@@ -252,3 +380,72 @@ async def test_drum_machine_service_polls_engine_position_and_broadcasts_updates
 
     service.update_transport({"is_playing": False})
     await asyncio.sleep(0)
+
+
+def test_drum_machine_service_round_trips_midi_mapping_and_velocity_curves(tmp_path, monkeypatch):
+    service, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    mapping = service.update_midi_mapping(
+        {
+            "global_midi_channel": 9,
+            "pads": [
+                {"pad": 0, "notes": [36, 35], "midi_channel": 10},
+                {"pad": 1, "notes": [38, 40], "midi_channel": 11},
+            ],
+        }
+    )
+    curves = service.update_velocity_curves(
+        {
+            "pads": [
+                {
+                    "pad": 0,
+                    "curve_type": 2,
+                    "fixed_velocity": 0.7,
+                    "input_floor": 0.1,
+                    "output_floor": 0.2,
+                    "output_ceiling": 0.9,
+                }
+            ]
+        }
+    )
+
+    assert mapping["global_midi_channel"] == 9
+    assert mapping["pads"][0]["notes"] == [36, 35]
+    assert fake_engine.global_midi_channel_calls[-1] == 9
+    assert fake_engine.pad_add_note_calls[-1] == (1, 40)
+    assert curves["pads"][0]["curve_type"] == 2
+    assert len(curves["pads"][0]["preview"]) == 128
+    assert curves["pads"][0]["last_velocity"] == pytest.approx(0.42)
+
+
+def test_drum_machine_service_round_trips_zones_learn_and_presets(tmp_path, monkeypatch):
+    service, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    zones = service.update_midi_zones(
+        {
+            "pads": [
+                {
+                    "pad": 1,
+                    "zones": [
+                        {"kind": 0, "trigger_note": 38, "key_switch_note": -1, "velocity_scale": 1.0, "enabled": True},
+                        {"kind": 1, "trigger_note": 40, "key_switch_note": 36, "velocity_scale": 0.92, "enabled": True},
+                    ],
+                }
+            ]
+        }
+    )
+    learn = service.start_midi_learn(3, True, 12)
+    stopped = service.stop_midi_learn()
+    presets = service.get_midi_presets()
+    loaded = service.load_midi_preset("Roland PD-140DS / CY-18DR / VH-14D")
+
+    assert zones["pads"][1]["zones"][1]["trigger_note"] == 40
+    assert fake_engine.pad_zone_calls[-1] == (1, 1, 40, 36, 0.92)
+    assert learn["active"] is True
+    assert learn["learn_all"] is True
+    assert fake_engine.learn_start_calls[-1] == (3, True, 12)
+    assert stopped["active"] is False
+    assert fake_engine.learn_stop_calls == 1
+    assert presets["presets"][0] == "Roland PD-140DS / CY-18DR / VH-14D"
+    assert loaded["status"] == "ok"
+    assert fake_engine.loaded_presets[-1] == "Roland PD-140DS / CY-18DR / VH-14D"

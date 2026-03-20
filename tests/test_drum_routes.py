@@ -37,6 +37,36 @@ class _FakeDrumService:
         self.song = []
         self.song_loop = False
         self.patterns = {}
+        self.midi_mapping = {
+            "global_midi_channel": 0,
+            "pads": [{"pad": pad, "notes": [36 + pad], "midi_channel": 0} for pad in range(16)],
+        }
+        self.velocity_curves = {
+            "pads": [
+                {
+                    "pad": pad,
+                    "curve_type": 0,
+                    "fixed_velocity": 1.0,
+                    "input_floor": 0.0,
+                    "output_floor": 0.0,
+                    "output_ceiling": 1.0,
+                    "preview": [0.0] * 128,
+                    "last_velocity": 0.0,
+                }
+                for pad in range(16)
+            ]
+        }
+        self.zones = {"pads": [{"pad": pad, "zones": []} for pad in range(16)]}
+        self.learn_state = {
+            "active": False,
+            "learn_all": False,
+            "active_pad_index": -1,
+            "next_pad_index": -1,
+            "last_received_note": -1,
+            "last_received_channel": -1,
+            "timeout_seconds": 10,
+        }
+        self.presets = ["Roland PD-140DS / CY-18DR / VH-14D", "Yamaha DTX Multi-Zone"]
 
     def get_state(self):
         return dict(self.state)
@@ -76,6 +106,71 @@ class _FakeDrumService:
 
     def get_position(self):
         return dict(self.position)
+
+    def get_midi_mapping(self):
+        return json.loads(json.dumps(self.midi_mapping))
+
+    def update_midi_mapping(self, payload):
+        if "global_midi_channel" in payload:
+            self.midi_mapping["global_midi_channel"] = payload["global_midi_channel"]
+        for pad in payload.get("pads", []):
+            self.midi_mapping["pads"][pad["pad"]] = pad
+        return self.get_midi_mapping()
+
+    def get_velocity_curves(self):
+        return json.loads(json.dumps(self.velocity_curves))
+
+    def update_velocity_curves(self, payload):
+        for pad in payload.get("pads", []):
+            self.velocity_curves["pads"][pad["pad"]].update(pad)
+        return self.get_velocity_curves()
+
+    def get_midi_zones(self):
+        return json.loads(json.dumps(self.zones))
+
+    def update_midi_zones(self, payload):
+        for pad in payload.get("pads", []):
+            self.zones["pads"][pad["pad"]] = pad
+        return self.get_midi_zones()
+
+    def start_midi_learn(self, pad, learn_all=False, timeout_seconds=10):
+        self.learn_state = {
+            "active": True,
+            "learn_all": learn_all,
+            "active_pad_index": pad,
+            "next_pad_index": pad,
+            "last_received_note": -1,
+            "last_received_channel": -1,
+            "timeout_seconds": timeout_seconds,
+        }
+        return dict(self.learn_state)
+
+    def stop_midi_learn(self):
+        self.learn_state["active"] = False
+        self.learn_state["learn_all"] = False
+        self.learn_state["active_pad_index"] = -1
+        self.learn_state["next_pad_index"] = -1
+        return dict(self.learn_state)
+
+    def get_midi_learn_state(self):
+        return dict(self.learn_state)
+
+    def get_midi_presets(self):
+        return {"presets": list(self.presets)}
+
+    def load_midi_preset(self, preset_name):
+        if preset_name not in self.presets:
+            raise ValueError(f"Unknown drum MIDI preset: {preset_name}")
+        self.zones["pads"][1] = {
+            "pad": 1,
+            "zones": [{"kind": 1, "trigger_note": 40, "key_switch_note": 36, "velocity_scale": 0.92, "enabled": True}],
+        }
+        return {
+            "status": "ok",
+            "preset_name": preset_name,
+            "mapping": self.get_midi_mapping(),
+            "zones": self.get_midi_zones(),
+        }
 
     def get_pattern(self, pattern_id):
         return self.patterns.get(pattern_id, self._default_pattern(pattern_id))
@@ -327,6 +422,107 @@ def test_drum_position_route_returns_typed_position(monkeypatch):
         "is_playing": False,
         "updated_at": None,
     }
+
+
+def test_drum_midi_mapping_routes_round_trip_mapping(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/midi/mapping",
+        json={
+            "global_midi_channel": 10,
+            "pads": [
+                {"pad": 0, "notes": [36, 35], "midi_channel": 9},
+                {"pad": 1, "notes": [38, 40], "midi_channel": 10},
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["global_midi_channel"] == 10
+    assert payload["pads"][0]["notes"] == [36, 35]
+    assert payload["pads"][1]["midi_channel"] == 10
+
+
+def test_drum_midi_velocity_curve_routes_round_trip_payload(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/midi/velocity-curves",
+        json={
+            "pads": [
+                {
+                    "pad": 0,
+                    "curve_type": 2,
+                    "fixed_velocity": 0.7,
+                    "input_floor": 0.1,
+                    "output_floor": 0.2,
+                    "output_ceiling": 0.9,
+                    "preview": [0.0] * 128,
+                    "last_velocity": 0.5,
+                }
+            ]
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["pads"][0]["curve_type"] == 2
+    assert payload["pads"][0]["output_ceiling"] == 0.9
+
+
+def test_drum_midi_zone_routes_round_trip_payload(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/midi/zones",
+        json={
+            "pads": [
+                {
+                    "pad": 1,
+                    "zones": [
+                        {"kind": 0, "trigger_note": 38, "key_switch_note": -1, "velocity_scale": 1.0, "enabled": True},
+                        {"kind": 1, "trigger_note": 40, "key_switch_note": 36, "velocity_scale": 0.92, "enabled": True},
+                    ],
+                }
+            ]
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["pads"][1]["zones"][1]["trigger_note"] == 40
+
+
+def test_drum_midi_learn_routes_start_status_and_stop(monkeypatch):
+    client = _client(monkeypatch)
+
+    start = client.post("/api/engine/drums/midi/learn/start", json={"pad": 3, "learn_all": True, "timeout_seconds": 12})
+    assert start.status_code == 200
+    assert start.json()["active"] is True
+    assert start.json()["active_pad_index"] == 3
+
+    status = client.get("/api/engine/drums/midi/learn/status")
+    assert status.status_code == 200
+    assert status.json()["learn_all"] is True
+
+    stop = client.post("/api/engine/drums/midi/learn/stop")
+    assert stop.status_code == 200
+    assert stop.json()["active"] is False
+
+
+def test_drum_midi_preset_routes_list_and_load(monkeypatch):
+    client = _client(monkeypatch)
+
+    presets = client.get("/api/engine/drums/midi/presets")
+    assert presets.status_code == 200
+    assert presets.json()["presets"][0] == "Roland PD-140DS / CY-18DR / VH-14D"
+
+    load = client.post("/api/engine/drums/midi/presets/load", json={"preset_name": "Roland PD-140DS / CY-18DR / VH-14D"})
+    assert load.status_code == 200
+    assert load.json()["status"] == "ok"
+    assert load.json()["zones"]["pads"][1]["zones"][0]["trigger_note"] == 40
 
 
 def test_drum_pattern_routes_round_trip_pattern_payload(monkeypatch):
