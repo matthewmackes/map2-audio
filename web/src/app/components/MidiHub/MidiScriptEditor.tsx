@@ -1,6 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Select, SelectItem, Tag, TextArea, TextInput } from '@carbon/react'
+import {
+  Button,
+  DataTable,
+  Layer,
+  Select,
+  SelectItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  Tag,
+  TextArea,
+  TextInput,
+} from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -22,10 +40,13 @@ export function MidiScriptEditor() {
   const [scriptCode, setScriptCode] = useState('def main(event):\n    log.info("hello from MAP2")\n')
   const [eventJson, setEventJson] = useState('{"source": "manual"}')
 
+  const queryRefresh = process.env.NODE_ENV === 'test' ? false : 3000
+  const consoleRefresh = process.env.NODE_ENV === 'test' ? false : 1500
+
   const scriptsQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'scripts'],
     queryFn: () => midiHubApi.listScripts(nodeId),
-    refetchInterval: 3000,
+    refetchInterval: queryRefresh,
   })
 
   const examplesQuery = useQuery({
@@ -37,7 +58,7 @@ export function MidiScriptEditor() {
     queryKey: ['midi-hub', scopeKey, 'script-console', selectedScriptId],
     queryFn: () => midiHubApi.getScriptConsole(selectedScriptId, 200, nodeId),
     enabled: Boolean(selectedScriptId),
-    refetchInterval: selectedScriptId ? 1500 : false,
+    refetchInterval: selectedScriptId ? consoleRefresh : false,
   })
 
   const selectedScript = useMemo(
@@ -142,71 +163,71 @@ export function MidiScriptEditor() {
     setScriptCode(example.code)
   }
 
+  const rows = useMemo(
+    () =>
+      (scriptsQuery.data?.scripts ?? []).map((script) => ({
+        id: script.script_id,
+        name: script.name,
+        status: script.enabled ? 'Enabled' : 'Disabled',
+        updatedAt: new Date(script.updated_at * 1000).toLocaleString(),
+      })),
+    [scriptsQuery.data?.scripts],
+  )
+
   return (
-    <div className="midi-hub-panel-grid--2">
-      <div className="midi-hub-mini-surface">
-        <div className="midi-hub-toolbar">
-          <Tag type={(scriptsQuery.data?.scripts?.length ?? 0) > 0 ? 'green' : 'warm-gray'}>
-            {`Scripts ${scriptsQuery.data?.scripts?.length ?? 0}`}
-          </Tag>
-          {selectedScript ? <Tag type={selectedScript.enabled ? 'green' : 'warm-gray'}>{selectedScript.enabled ? 'Enabled' : 'Disabled'}</Tag> : null}
-        </div>
-
-        <div className="midi-hub-form-grid">
-          <Select
-            id="midi-hub-script-select"
-            labelText="Saved scripts"
-            value={selectedScriptId}
-            onChange={(event) => setSelectedScriptId(event.currentTarget.value)}
+    <div className="midi-hub-processing-layout">
+      <DataTable rows={rows} headers={[{ key: 'name', header: 'Script' }, { key: 'status', header: 'Status' }, { key: 'updatedAt', header: 'Updated' }]} useZebraStyles>
+        {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+          <TableContainer
+            {...getTableContainerProps()}
+            title="Script inventory"
+            description="Load a saved script into the editor or start from an example."
+            className="midi-hub-processing-table"
           >
-            <SelectItem value="" text="Select script" />
-            {(scriptsQuery.data?.scripts ?? []).map((script) => (
-              <SelectItem
-                key={script.script_id}
-                value={script.script_id}
-                text={`${script.name} (${script.enabled ? 'enabled' : 'disabled'})`}
-              />
-            ))}
-          </Select>
+            <TableToolbar {...getToolbarProps()}>
+              <TableToolbarContent>
+                <Tag type={(scriptsQuery.data?.scripts?.length ?? 0) > 0 ? 'green' : 'cool-gray'}>{`Scripts ${scriptsQuery.data?.scripts?.length ?? 0}`}</Tag>
+              </TableToolbarContent>
+            </TableToolbar>
+            <Table {...getTableProps()} aria-label="Scripts">
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => {
+                    const { key: _key, ...headerProps } = getHeaderProps({ header })
+                    return (
+                      <TableHeader key={header.key} {...headerProps}>
+                        {header.header}
+                      </TableHeader>
+                    )
+                  })}
+                  <TableHeader>Action</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => {
+                  const { key: _key, ...rowProps } = getRowProps({ row })
+                  return (
+                    <TableRow key={row.id} {...rowProps}>
+                      {row.cells.map((cell) => (
+                        <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                      ))}
+                      <TableCell>
+                        <Button size="sm" kind="ghost" onClick={() => setSelectedScriptId(row.id)}>
+                          Load
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </DataTable>
 
-          <Select
-            id="midi-hub-script-example"
-            labelText="Example scripts"
-            value={selectedExampleId}
-            onChange={(event) => applyExample(event.currentTarget.value)}
-          >
-            <SelectItem value="" text="Load example" />
-            {(examplesQuery.data?.examples ?? []).map((example) => (
-              <SelectItem key={example.script_id} value={example.script_id} text={example.name} />
-            ))}
-          </Select>
-
-          <TextInput
-            id="midi-hub-script-id"
-            labelText="Script ID"
-            value={scriptId}
-            onChange={(event) => setScriptId(event.currentTarget.value)}
-            placeholder="midi-script"
-          />
-
-          <TextInput
-            id="midi-hub-script-name"
-            labelText="Script name"
-            value={scriptName}
-            onChange={(event) => setScriptName(event.currentTarget.value)}
-            placeholder="MIDI Script"
-          />
-        </div>
-
-        <TextArea
-          id="midi-hub-script-event-json"
-          labelText="Test event JSON"
-          value={eventJson}
-          onChange={(event) => setEventJson(event.currentTarget.value)}
-          rows={4}
-        />
-
-        <div className="midi-hub-actions">
+      <Layer className="midi-hub-processing-editor-layer">
+        <div className="midi-hub-processing-toolbar">
+          <Tag type={selectedScript?.enabled ? 'green' : 'cool-gray'}>{selectedScript?.enabled ? 'Enabled' : 'Draft'}</Tag>
           <Button
             size="sm"
             kind="ghost"
@@ -221,13 +242,13 @@ export function MidiScriptEditor() {
             New script
           </Button>
           <Button size="sm" kind="primary" disabled={!scriptCode.trim()} onClick={() => upsertMutation.mutate()}>
-            Save
+            Save script
           </Button>
           <Button size="sm" kind="secondary" disabled={!selectedScriptId} onClick={() => runMutation.mutate()}>
-            Run
+            Run script
           </Button>
           <Button size="sm" kind="secondary" disabled={!selectedScriptId} onClick={() => triggerMutation.mutate()}>
-            Trigger
+            Trigger script
           </Button>
           <Button size="sm" kind="ghost" disabled={!selectedScriptId} onClick={() => toggleMutation.mutate()}>
             {selectedScript?.enabled ? 'Disable' : 'Enable'}
@@ -239,22 +260,25 @@ export function MidiScriptEditor() {
             Delete
           </Button>
         </div>
-      </div>
 
-      <div className="midi-hub-mini-surface">
-        <TextArea
-          id="midi-hub-script-code"
-          labelText="Python source"
-          value={scriptCode}
-          onChange={(event) => setScriptCode(event.currentTarget.value)}
-          rows={18}
-        />
+        <div className="midi-hub-processing-form-grid">
+          <Select id="midi-hub-script-example" labelText="Example scripts" value={selectedExampleId} onChange={(event) => applyExample(event.currentTarget.value)}>
+            <SelectItem value="" text="Load example" />
+            {(examplesQuery.data?.examples ?? []).map((example) => (
+              <SelectItem key={example.script_id} value={example.script_id} text={example.name} />
+            ))}
+          </Select>
+          <TextInput id="midi-hub-script-id" labelText="Script ID" value={scriptId} onChange={(event) => setScriptId(event.currentTarget.value)} placeholder="midi-script" />
+          <TextInput id="midi-hub-script-name" labelText="Script name" value={scriptName} onChange={(event) => setScriptName(event.currentTarget.value)} placeholder="MIDI Script" />
+          <TextArea id="midi-hub-script-event-json" labelText="Test event JSON" value={eventJson} onChange={(event) => setEventJson(event.currentTarget.value)} rows={4} />
+        </div>
 
-        <div className="midi-hub-toolbar">
+        <TextArea id="midi-hub-script-code" labelText="Python source" value={scriptCode} onChange={(event) => setScriptCode(event.currentTarget.value)} rows={18} />
+        <div className="midi-hub-processing-toolbar">
           <Tag type="cool-gray">Console</Tag>
         </div>
-        <pre className="midi-hub-code-block">{(consoleQuery.data?.lines ?? []).join('\n') || 'No output yet.'}</pre>
-      </div>
+        <pre className="midi-hub-processing-code-block">{(consoleQuery.data?.lines ?? []).join('\n') || 'No output yet.'}</pre>
+      </Layer>
     </div>
   )
 }

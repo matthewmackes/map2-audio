@@ -1,0 +1,93 @@
+.midi-hub-processing-band,
+.midi-hub-processing-stack {
+  display: grid;
+  gap: var(--cds-spacing-05);
+}
+
+.midi-hub-processing-layout {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-hub-processing-heading {
+  display: grid;
+  gap: var(--cds-spacing-03);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.midi-hub-processing-heading h3 {
+  margin: 0;
+}
+
+.midi-hub-processing-form-grid {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-hub-processing-choice-section {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-hub-processing-choice-group {
+  display: grid;
+  gap: var(--cds-spacing-04);
+}
+
+.midi-hub-processing-choice-group h4 {
+  margin: 0;
+}
+
+.midi-hub-processing-tag-grid,
+.midi-hub-processing-toolbar,
+.midi-hub-processing-inline-actions,
+.midi-hub-processing-accordion-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  align-items: center;
+}
+
+.midi-hub-processing-tag-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.midi-hub-processing-table .cds--table-container,
+.midi-hub-processing-editor-layer {
+  background: transparent;
+}
+
+.midi-hub-processing-editor-layer {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  padding: var(--cds-spacing-05);
+}
+
+.midi-hub-processing-code-block {
+  margin: 0;
+  padding: var(--cds-spacing-05);
+  background: var(--cds-layer-01);
+  color: var(--cds-text-primary);
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  overflow: auto;
+}
+
+@media (max-width: 1056px) {
+  .midi-hub-processing-layout,
+  .midi-hub-processing-choice-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .midi-hub-processing-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

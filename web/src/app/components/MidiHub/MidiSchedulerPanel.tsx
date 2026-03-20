@@ -1,6 +1,20 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Tag, TextInput } from '@carbon/react'
+import {
+  Button,
+  DataTable,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  Tag,
+  TextInput,
+} from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -30,10 +44,12 @@ export function MidiSchedulerPanel() {
   const [messageText, setMessageText] = useState('0xC0 0x0A')
   const [delayMs, setDelayMs] = useState('250')
 
+  const queryRefresh = process.env.NODE_ENV === 'test' ? false : 1500
+
   const entriesQuery = useQuery({
     queryKey: ['midi-hub', scopeKey, 'scheduler'],
     queryFn: () => midiHubApi.listSchedulerEntries(true, nodeId),
-    refetchInterval: 1500,
+    refetchInterval: queryRefresh,
   })
 
   const scheduleMutation = useMutation({
@@ -70,73 +86,96 @@ export function MidiSchedulerPanel() {
   })
 
   const entries = useMemo(() => entriesQuery.data?.entries ?? [], [entriesQuery.data?.entries])
+  const rows = useMemo(
+    () =>
+      entries.map((entry) => ({
+        id: entry.schedule_id,
+        destination: entry.destination_port,
+        message: entry.message_hex,
+        status: entry.status,
+      })),
+    [entries],
+  )
 
   return (
-    <div className="midi-hub-panel-grid--2">
-      <div className="midi-hub-mini-surface">
-        <div className="midi-hub-toolbar">
-          <Tag type={entries.length > 0 ? 'green' : 'warm-gray'}>{`Entries ${entries.length}`}</Tag>
-          <Tag type="cool-gray">Timed send</Tag>
-        </div>
-
-        <div className="midi-hub-form-grid">
-          <TextInput
-            id="midi-hub-scheduler-id"
-            labelText="Schedule ID"
-            value={scheduleId}
-            onChange={(event) => setScheduleId(event.currentTarget.value)}
-          />
-          <TextInput
-            id="midi-hub-scheduler-destination"
-            labelText="Destination port"
-            value={destinationPort}
-            onChange={(event) => setDestinationPort(event.currentTarget.value)}
-          />
-          <TextInput
-            id="midi-hub-scheduler-message"
-            labelText="Message bytes"
-            value={messageText}
-            onChange={(event) => setMessageText(event.currentTarget.value)}
-          />
-          <TextInput
-            id="midi-hub-scheduler-delay"
-            labelText="Delay (ms)"
-            value={delayMs}
-            onChange={(event) => setDelayMs(event.currentTarget.value)}
-          />
-        </div>
-
-        <div className="midi-hub-actions">
-          <Button size="sm" kind="primary" onClick={() => scheduleMutation.mutate()} disabled={!scheduleId.trim()}>
-            Schedule event
-          </Button>
-          <Button size="sm" kind="ghost" onClick={() => clearFinished.mutate()}>
-            Clear finished
-          </Button>
-        </div>
+    <div className="midi-hub-processing-stack">
+      <div className="midi-hub-processing-form-grid">
+        <TextInput id="midi-hub-scheduler-id" labelText="Schedule ID" value={scheduleId} onChange={(event) => setScheduleId(event.currentTarget.value)} />
+        <TextInput id="midi-hub-scheduler-destination" labelText="Destination port" value={destinationPort} onChange={(event) => setDestinationPort(event.currentTarget.value)} />
+        <TextInput id="midi-hub-scheduler-message" labelText="Message bytes" value={messageText} onChange={(event) => setMessageText(event.currentTarget.value)} />
+        <TextInput id="midi-hub-scheduler-delay" labelText="Delay (ms)" value={delayMs} onChange={(event) => setDelayMs(event.currentTarget.value)} />
       </div>
 
-      <div className="midi-hub-mini-surface">
-        <div className="midi-hub-record-list">
-          {entries.length === 0 ? <div className="midi-hub-empty-state">No scheduled MIDI events.</div> : null}
-          {entries.map((entry) => (
-            <div key={entry.schedule_id} className="midi-hub-record-row">
-              <div className="midi-hub-record-copy">
-                <strong>{entry.schedule_id}</strong>
-                <div className="midi-hub-record-meta">
-                  <code>{entry.destination_port}</code>
-                  {` · ${entry.message_hex} · ${entry.status}`}
-                </div>
-              </div>
-              <div className="midi-hub-record-actions">
-                <Button size="sm" kind="danger--tertiary" onClick={() => cancelMutation.mutate(entry.schedule_id)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="midi-hub-processing-toolbar">
+        <Tag type={entries.length > 0 ? 'green' : 'cool-gray'}>{`Entries ${entries.length}`}</Tag>
+        <Button size="sm" kind="primary" onClick={() => scheduleMutation.mutate()} disabled={!scheduleId.trim()}>
+          Schedule event
+        </Button>
+        <Button size="sm" kind="ghost" onClick={() => clearFinished.mutate()}>
+          Clear finished
+        </Button>
       </div>
+
+      <DataTable rows={rows} headers={[{ key: 'destination', header: 'Destination' }, { key: 'message', header: 'Message' }, { key: 'status', header: 'Status' }]} useZebraStyles>
+        {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+          <TableContainer
+            {...getTableContainerProps()}
+            title="Scheduler queue"
+            description="Review pending, sent, and cancelled scheduled MIDI events."
+            className="midi-hub-processing-table"
+          >
+            <TableToolbar {...getToolbarProps()}>
+              <TableToolbarContent>
+                <Tag type="cool-gray">Timed send</Tag>
+              </TableToolbarContent>
+            </TableToolbar>
+            <Table {...getTableProps()} aria-label="Scheduler queue">
+              <TableHead>
+                <TableRow>
+                  <TableHeader>Schedule ID</TableHeader>
+                  {headers.map((header) => {
+                    const { key: _key, ...headerProps } = getHeaderProps({ header })
+                    return (
+                      <TableHeader key={header.key} {...headerProps}>
+                        {header.header}
+                      </TableHeader>
+                    )
+                  })}
+                  <TableHeader>Action</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => {
+                  const { key: _key, ...rowProps } = getRowProps({ row })
+                  const source = entries.find((entry) => entry.schedule_id === row.id)
+                  return (
+                    <TableRow key={row.id} {...rowProps}>
+                      <TableCell>{row.id}</TableCell>
+                      {row.cells.map((cell) => {
+                        if (cell.info.header === 'status') {
+                          const status = String(cell.value)
+                          const tagType = status === 'sent' ? 'green' : status === 'cancelled' ? 'red' : 'cool-gray'
+                          return (
+                            <TableCell key={cell.id}>
+                              <Tag type={tagType}>{status}</Tag>
+                            </TableCell>
+                          )
+                        }
+                        return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                      })}
+                      <TableCell>
+                        <Button size="sm" kind="danger--tertiary" disabled={!source || source.status !== 'pending'} onClick={() => cancelMutation.mutate(row.id)}>
+                          Cancel
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </DataTable>
     </div>
   )
 }
