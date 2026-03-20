@@ -1437,7 +1437,7 @@ Subtasks:
     - Per-pad configurable: curve type + input floor (minimum velocity threshold) + output floor (minimum output velocity) + output ceiling (maximum output velocity)
     - Velocity scaling: input velocity → curve transform → output velocity (0–127)
     - Real-time preview: when adjusting curve, show input→output graph and last-hit velocity value
-  - [ ] T215-C: Zone assignment for multi-zone pads
+  - [✓] T215-C: Zone assignment for multi-zone pads
     - Zone concept: a single physical pad may send different MIDI notes for head/rim/edge strikes (e.g., Roland PD-140DS sends note 38 for head, 40 for rim, 37 for cross-stick)
     - Zone mapping: define up to 3 zones per pad (Head, Rim, Edge), each zone maps a different MIDI note to the same pad but triggers a different SFZ articulation via key switch or velocity layer
     - Common hardware presets: Roland (PD-140DS, CY-18DR, VH-14D note assignments), Yamaha (DTX pads), Alesis (Surge/Strike pads), ATV, 2Box
@@ -1456,7 +1456,7 @@ Subtasks:
     - `POST /api/engine/drums/midi/presets/load` — apply a hardware preset mapping
   - [ ] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
 Assigned to: Codex
-Last updated: 2026-03-20 08:19 - Codex
+Last updated: 2026-03-20 08:54 - Codex
 - Progress notes:
   - Completed `T215-A` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by replacing the single-note pad trigger assumption with a real note-to-pad mapping table, allowing multiple MIDI notes to target one pad while guaranteeing that any individual note maps to at most one pad.
   - Added global drum MIDI channel filtering alongside the existing per-pad channel filter, and extended the pybind surface in `juce-engine/Source/PythonBindings.cpp` with `add_drum_pad_note`, `remove_drum_pad_note`, `get_drum_pad_notes`, `set_drum_global_midi_channel`, and `get_drum_global_midi_channel`.
@@ -1466,6 +1466,10 @@ Last updated: 2026-03-20 08:19 - Codex
   - Added preview and telemetry hooks via `getVelocityCurvePreview(...)` and `getLastMappedVelocityForPad(...)`, and extended the pybind layer in `juce-engine/Source/PythonBindings.cpp` so future API/UI slices can set bounded curves and fetch preview/last-hit data without reimplementing the curve math in Python.
   - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for thresholded/scaled velocity mapping, preview generation parity with the processor math, and last-hit velocity capture after note-on processing.
   - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"` -> pass (`43 assertions in 7 test cases`); `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
+  - Completed `T215-C` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by adding per-pad Head/Rim/Edge zone assignments, a zone-aware trigger router with optional articulation keyswitch notes and per-zone velocity scaling, plus built-in hardware preset mappings for Roland, Yamaha, Alesis, ATV, and 2Box kits.
+  - Extended `juce-engine/Source/PythonBindings.cpp` with zone-management and preset-loading methods so the later REST/service slice can read configured zones, write zone assignments, enumerate available presets, and apply a selected preset without reimplementing the engine-side mapping model.
+  - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for shared-pad zone routing, no-fan-out remapping across zone assignments, and preset exposure/application behavior for the built-in hardware maps.
+  - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"` -> pass (`73 assertions in 10 test cases`); `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
 
 ---
 

@@ -2904,6 +2904,38 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_drum_pad_last_velocity", [](const Map2AudioEngine& self, int padIndex) {
             return self.getDrumMachine().getLastMappedVelocityForPad(padIndex);
         }, py::arg("pad"), "Get the last mapped hit velocity for a drum pad")
+        .def("set_drum_pad_zone", [](Map2AudioEngine& self, int padIndex, int zoneKind, int triggerNote, int keySwitchNote, float velocityScale) {
+            return self.getDrumMachine().setPadZone(
+                padIndex,
+                static_cast<map2::drummachine::DrumMachineProcessor::PadZoneKind>(std::clamp(zoneKind, 0, 2)),
+                triggerNote,
+                keySwitchNote,
+                velocityScale);
+        }, py::arg("pad"), py::arg("zone_kind"), py::arg("trigger_note"), py::arg("key_switch_note") = -1, py::arg("velocity_scale") = 1.0f, "Assign a drum pad zone trigger note and optional articulation keyswitch")
+        .def("clear_drum_pad_zone", [](Map2AudioEngine& self, int padIndex, int zoneKind) {
+            return self.getDrumMachine().clearPadZone(
+                padIndex,
+                static_cast<map2::drummachine::DrumMachineProcessor::PadZoneKind>(std::clamp(zoneKind, 0, 2)));
+        }, py::arg("pad"), py::arg("zone_kind"), "Clear a drum pad zone mapping")
+        .def("get_drum_pad_zones", [](const Map2AudioEngine& self, int padIndex) {
+            py::list zones;
+            for (const auto& zone : self.getDrumMachine().getPadZones(padIndex)) {
+                py::dict item;
+                item["kind"] = static_cast<int>(zone.kind);
+                item["trigger_note"] = zone.triggerNote;
+                item["key_switch_note"] = zone.keySwitchNote;
+                item["velocity_scale"] = zone.velocityScale;
+                item["enabled"] = zone.enabled;
+                zones.append(item);
+            }
+            return zones;
+        }, py::arg("pad"), "Get configured drum pad zones")
+        .def("get_drum_midi_presets", [](const Map2AudioEngine& self) {
+            return self.getDrumMachine().getDrumMidiPresetNames();
+        }, "List built-in drum MIDI hardware presets")
+        .def("apply_drum_midi_preset", [](Map2AudioEngine& self, const std::string& presetName) {
+            return self.getDrumMachine().applyDrumMidiPreset(presetName);
+        }, py::arg("preset_name"), "Apply a built-in drum MIDI hardware preset")
         .def("set_drum_pad_midi_channel", [](Map2AudioEngine& self, int padIndex, int midiChannel) {
             return self.getDrumMachine().setPadMidiChannel(padIndex, midiChannel);
         }, py::arg("pad"), py::arg("channel"), "Set drum pad MIDI channel")

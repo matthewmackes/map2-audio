@@ -141,3 +141,71 @@ TEST_CASE("DrumMachineProcessor records the last mapped hit velocity", "[drums][
 
     REQUIRE(processor.getLastMappedVelocityForPad(0) == Catch::Approx(0.66f));
 }
+
+TEST_CASE("DrumMachineProcessor routes zone notes to a shared pad with zone scaling", "[drums][processor]") {
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 64, 2);
+
+    REQUIRE(processor.setPadZone(1, DrumMachineProcessor::PadZoneKind::Rim, 40, -1, 0.5f));
+    REQUIRE(processor.setPadZone(1, DrumMachineProcessor::PadZoneKind::Edge, 37, -1, 0.75f));
+
+    const auto zones = processor.getPadZones(1);
+    REQUIRE(zones.size() == 2);
+    REQUIRE(zones[0].kind == DrumMachineProcessor::PadZoneKind::Rim);
+    REQUIRE(zones[0].triggerNote == 40);
+    REQUIRE(zones[0].keySwitchNote == -1);
+    REQUIRE(zones[1].kind == DrumMachineProcessor::PadZoneKind::Edge);
+    REQUIRE(zones[1].triggerNote == 37);
+
+    juce::AudioBuffer<float> buffer(2, 64);
+    buffer.clear();
+
+    juce::MidiBuffer midi;
+    midi.addEvent(juce::MidiMessage::noteOn(1, 40, static_cast<juce::uint8>(100)), 0);
+    processor.processBlock(buffer, midi);
+
+    REQUIRE(processor.getPadActiveVoices(1) == 1);
+    REQUIRE(processor.getLastMappedVelocityForPad(1) == Catch::Approx((100.0f / 127.0f) * 0.5f).margin(0.02f));
+}
+
+TEST_CASE("DrumMachineProcessor preserves one-note-to-one-pad across zone remaps", "[drums][processor]") {
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 64, 2);
+
+    REQUIRE(processor.addPadMidiNote(0, 35));
+    REQUIRE(processor.setPadZone(1, DrumMachineProcessor::PadZoneKind::Rim, 35, 38, 0.9f));
+    REQUIRE(processor.getPadMidiNotes(0) == std::vector<int>{36});
+    REQUIRE(processor.getPadMidiNotes(1) == std::vector<int>{35, 38});
+
+    juce::AudioBuffer<float> buffer(2, 64);
+    buffer.clear();
+
+    juce::MidiBuffer midi;
+    midi.addEvent(juce::MidiMessage::noteOn(1, 35, static_cast<juce::uint8>(100)), 0);
+    processor.processBlock(buffer, midi);
+
+    REQUIRE(processor.getPadActiveVoices(0) == 0);
+    REQUIRE(processor.getPadActiveVoices(1) == 1);
+}
+
+TEST_CASE("DrumMachineProcessor exposes and applies drum hardware presets", "[drums][processor]") {
+    DrumMachineProcessor processor;
+
+    const auto presets = processor.getDrumMidiPresetNames();
+    REQUIRE(presets.size() == 5);
+    REQUIRE(presets[0] == "Roland PD-140DS / CY-18DR / VH-14D");
+    REQUIRE(presets[1] == "Yamaha DTX Multi-Zone");
+    REQUIRE(presets[2] == "Alesis Surge / Strike");
+    REQUIRE(presets[3] == "ATV aDrums");
+    REQUIRE(presets[4] == "2Box Universal");
+
+    REQUIRE(processor.applyDrumMidiPreset("Roland PD-140DS / CY-18DR / VH-14D"));
+    const auto snareZones = processor.getPadZones(1);
+    REQUIRE(snareZones.size() == 3);
+    REQUIRE(snareZones[0].kind == DrumMachineProcessor::PadZoneKind::Head);
+    REQUIRE(snareZones[0].triggerNote == 38);
+    REQUIRE(snareZones[1].kind == DrumMachineProcessor::PadZoneKind::Rim);
+    REQUIRE(snareZones[1].triggerNote == 40);
+    REQUIRE(snareZones[2].kind == DrumMachineProcessor::PadZoneKind::Edge);
+    REQUIRE(snareZones[2].triggerNote == 37);
+}

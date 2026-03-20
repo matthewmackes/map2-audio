@@ -11,6 +11,81 @@ constexpr std::array<int, DrumMachineProcessor::kPadCount> kDefaultMidiNotes = {
     36, 38, 42, 46, 41, 43, 45, 49, 51, 57, 39, 37, 56, 47, 50, 48,
 };
 
+struct PresetZoneDefinition {
+    int padIndex;
+    DrumMachineProcessor::PadZoneKind kind;
+    int triggerNote;
+    int keySwitchNote;
+    float velocityScale;
+};
+
+struct PresetDefinition {
+    const char* name;
+    std::vector<PresetZoneDefinition> zones;
+};
+
+DrumMachineProcessor::PadZoneConfig makeZoneConfig(DrumMachineProcessor::PadZoneKind kind) {
+    DrumMachineProcessor::PadZoneConfig config;
+    config.kind = kind;
+    return config;
+}
+
+const std::vector<PresetDefinition>& drumMidiPresets() {
+    static const std::vector<PresetDefinition> presets = {
+        {"Roland PD-140DS / CY-18DR / VH-14D",
+         {
+             {1, DrumMachineProcessor::PadZoneKind::Head, 38, -1, 1.0f},
+             {1, DrumMachineProcessor::PadZoneKind::Rim, 40, 36, 0.92f},
+             {1, DrumMachineProcessor::PadZoneKind::Edge, 37, 37, 0.85f},
+             {2, DrumMachineProcessor::PadZoneKind::Head, 42, -1, 1.0f},
+             {2, DrumMachineProcessor::PadZoneKind::Edge, 26, 42, 0.95f},
+             {3, DrumMachineProcessor::PadZoneKind::Head, 46, -1, 1.0f},
+             {3, DrumMachineProcessor::PadZoneKind::Edge, 23, 46, 0.93f},
+             {8, DrumMachineProcessor::PadZoneKind::Head, 51, -1, 1.0f},
+             {8, DrumMachineProcessor::PadZoneKind::Edge, 59, 51, 0.97f},
+         }},
+        {"Yamaha DTX Multi-Zone",
+         {
+             {1, DrumMachineProcessor::PadZoneKind::Head, 38, -1, 1.0f},
+             {1, DrumMachineProcessor::PadZoneKind::Rim, 37, 38, 0.88f},
+             {2, DrumMachineProcessor::PadZoneKind::Head, 42, -1, 1.0f},
+             {2, DrumMachineProcessor::PadZoneKind::Edge, 22, 42, 0.92f},
+             {3, DrumMachineProcessor::PadZoneKind::Head, 46, -1, 1.0f},
+             {3, DrumMachineProcessor::PadZoneKind::Edge, 26, 46, 0.95f},
+         }},
+        {"Alesis Surge / Strike",
+         {
+             {1, DrumMachineProcessor::PadZoneKind::Head, 38, -1, 1.0f},
+             {1, DrumMachineProcessor::PadZoneKind::Rim, 40, 38, 0.9f},
+             {2, DrumMachineProcessor::PadZoneKind::Head, 42, -1, 1.0f},
+             {2, DrumMachineProcessor::PadZoneKind::Edge, 23, 42, 0.94f},
+             {8, DrumMachineProcessor::PadZoneKind::Head, 51, -1, 1.0f},
+             {8, DrumMachineProcessor::PadZoneKind::Edge, 59, 51, 0.96f},
+         }},
+        {"ATV aDrums",
+         {
+             {1, DrumMachineProcessor::PadZoneKind::Head, 38, -1, 1.0f},
+             {1, DrumMachineProcessor::PadZoneKind::Rim, 40, 36, 0.9f},
+             {2, DrumMachineProcessor::PadZoneKind::Head, 42, -1, 1.0f},
+             {2, DrumMachineProcessor::PadZoneKind::Edge, 22, 42, 0.92f},
+             {3, DrumMachineProcessor::PadZoneKind::Head, 46, -1, 1.0f},
+             {3, DrumMachineProcessor::PadZoneKind::Edge, 26, 46, 0.95f},
+             {8, DrumMachineProcessor::PadZoneKind::Head, 51, -1, 1.0f},
+             {8, DrumMachineProcessor::PadZoneKind::Edge, 59, 51, 0.97f},
+         }},
+        {"2Box Universal",
+         {
+             {1, DrumMachineProcessor::PadZoneKind::Head, 38, -1, 1.0f},
+             {1, DrumMachineProcessor::PadZoneKind::Rim, 40, 38, 0.91f},
+             {2, DrumMachineProcessor::PadZoneKind::Head, 42, -1, 1.0f},
+             {2, DrumMachineProcessor::PadZoneKind::Edge, 26, 42, 0.93f},
+             {7, DrumMachineProcessor::PadZoneKind::Head, 49, -1, 1.0f},
+             {7, DrumMachineProcessor::PadZoneKind::Edge, 55, 49, 0.95f},
+         }},
+    };
+    return presets;
+}
+
 float computePeak(const juce::AudioBuffer<float>& buffer, int channel) {
     if (channel < 0 || channel >= buffer.getNumChannels() || buffer.getNumSamples() <= 0) {
         return 0.0f;
@@ -28,7 +103,9 @@ float computeRms(const juce::AudioBuffer<float>& buffer, int channel) {
 void routeMidiToPads(
     const juce::MidiBuffer& source,
     const std::array<DrumMachineProcessor::PadConfig, DrumMachineProcessor::kPadCount>& padConfigs,
+    const std::array<std::array<DrumMachineProcessor::PadZoneConfig, 3>, DrumMachineProcessor::kPadCount>& padZones,
     const std::array<int, 128>& noteToPad,
+    const std::array<int, 128>& noteToZone,
     int globalMidiChannel,
     std::array<juce::MidiBuffer, DrumMachineProcessor::kPadCount>& padMidiBuffers,
     DrumMachineProcessor& processor) {
@@ -56,21 +133,49 @@ void routeMidiToPads(
             continue;
         }
 
+        const int zoneSlot = (incomingNote >= 0 && incomingNote < static_cast<int>(noteToZone.size()))
+            ? noteToZone[static_cast<size_t>(incomingNote)]
+            : -1;
+        const DrumMachineProcessor::PadZoneConfig* zoneConfig = nullptr;
+        if (zoneSlot >= 0 && zoneSlot < 3) {
+            const auto& candidate = padZones[static_cast<size_t>(padIndex)][static_cast<size_t>(zoneSlot)];
+            if (candidate.enabled && candidate.triggerNote == incomingNote) {
+                zoneConfig = &candidate;
+            }
+        }
+
         auto routed = message;
         if (message.isNoteOn()) {
             const float mappedVelocity = processor.mapVelocityForPad(padIndex, message.getFloatVelocity());
-            processor.setLastMappedVelocityForPad(padIndex, mappedVelocity);
+            const float scaledVelocity = std::clamp(
+                mappedVelocity * (zoneConfig != nullptr ? zoneConfig->velocityScale : 1.0f),
+                0.0f,
+                1.0f);
+            processor.setLastMappedVelocityForPad(padIndex, scaledVelocity);
+            if (zoneConfig != nullptr && zoneConfig->keySwitchNote >= 0) {
+                padMidiBuffers[static_cast<size_t>(padIndex)].addEvent(
+                    juce::MidiMessage::noteOn(
+                        1,
+                        zoneConfig->keySwitchNote,
+                        static_cast<juce::uint8>(127)),
+                    metadata.samplePosition);
+            }
             routed = juce::MidiMessage::noteOn(
                 1,
                 config.midiNote,
                 static_cast<juce::uint8>(std::clamp(
-                    static_cast<int>(std::round(mappedVelocity * 127.0f)),
+                    static_cast<int>(std::round(scaledVelocity * 127.0f)),
                     1,
                     127)));
         } else {
             routed = juce::MidiMessage::noteOff(1, config.midiNote, message.getVelocity());
         }
         padMidiBuffers[static_cast<size_t>(padIndex)].addEvent(routed, metadata.samplePosition);
+        if (message.isNoteOff() && zoneConfig != nullptr && zoneConfig->keySwitchNote >= 0) {
+            padMidiBuffers[static_cast<size_t>(padIndex)].addEvent(
+                juce::MidiMessage::noteOff(1, zoneConfig->keySwitchNote, message.getVelocity()),
+                metadata.samplePosition);
+        }
     }
 }
 
@@ -78,6 +183,7 @@ void routeMidiToPads(
 
 DrumMachineProcessor::DrumMachineProcessor() {
     noteToPad_.fill(-1);
+    noteToZone_.fill(-1);
     for (int i = 0; i < kPadCount; ++i) {
         pads_[static_cast<size_t>(i)].setPartIndex(i);
         pads_[static_cast<size_t>(i)].setMidiChannel(1);
@@ -86,6 +192,11 @@ DrumMachineProcessor::DrumMachineProcessor() {
         padConfigs_[static_cast<size_t>(i)].bus = defaultBusForPad(i);
         padConfigs_[static_cast<size_t>(i)].name = defaultPadName(i);
         padNoteAssignments_[static_cast<size_t>(i)].fill(false);
+        padZones_[static_cast<size_t>(i)] = {
+            makeZoneConfig(PadZoneKind::Head),
+            makeZoneConfig(PadZoneKind::Rim),
+            makeZoneConfig(PadZoneKind::Edge),
+        };
         addPadMidiNote(i, padConfigs_[static_cast<size_t>(i)].midiNote);
         applyPadConfigToPart(i);
     }
@@ -133,14 +244,18 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
     routeMidiToPads(
         midiBuffer,
         padConfigs_,
+        padZones_,
         noteToPad_,
+        noteToZone_,
         globalMidiChannel_.load(std::memory_order_relaxed),
         padMidiBuffers_,
         *this);
     routeMidiToPads(
         triggeredMidiBuffer_,
         padConfigs_,
+        padZones_,
         noteToPad_,
+        noteToZone_,
         globalMidiChannel_.load(std::memory_order_relaxed),
         padMidiBuffers_,
         *this);
@@ -286,12 +401,9 @@ bool DrumMachineProcessor::addPadMidiNote(int padIndex, int midiNote) {
     }
 
     const int clampedNote = std::clamp(midiNote, 0, 127);
-    const int previousPad = noteToPad_[static_cast<size_t>(clampedNote)];
-    if (previousPad >= 0 && previousPad < kPadCount) {
-        padNoteAssignments_[static_cast<size_t>(previousPad)][static_cast<size_t>(clampedNote)] = false;
-    }
-
+    unassignTriggerNote(clampedNote);
     noteToPad_[static_cast<size_t>(clampedNote)] = padIndex;
+    noteToZone_[static_cast<size_t>(clampedNote)] = -1;
     padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(clampedNote)] = true;
 
     auto notes = getPadMidiNotes(padIndex);
@@ -311,10 +423,7 @@ bool DrumMachineProcessor::removePadMidiNote(int padIndex, int midiNote) {
         return false;
     }
 
-    padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(clampedNote)] = false;
-    if (noteToPad_[static_cast<size_t>(clampedNote)] == padIndex) {
-        noteToPad_[static_cast<size_t>(clampedNote)] = -1;
-    }
+    unassignTriggerNote(clampedNote);
 
     auto notes = getPadMidiNotes(padIndex);
     auto config = getPadConfig(padIndex);
@@ -463,6 +572,111 @@ std::array<float, 128> DrumMachineProcessor::getVelocityCurvePreview(int padInde
     return preview;
 }
 
+bool DrumMachineProcessor::setPadZone(
+    int padIndex,
+    PadZoneKind kind,
+    int triggerNote,
+    int keySwitchNote,
+    float velocityScale) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+
+    const int clampedTriggerNote = std::clamp(triggerNote, 0, 127);
+    const int clampedKeySwitchNote = keySwitchNote < 0 ? -1 : std::clamp(keySwitchNote, 0, 127);
+    const int slot = zoneIndex(kind);
+    if (slot < 0 || slot >= 3) {
+        return false;
+    }
+
+    auto& zone = padZones_[static_cast<size_t>(padIndex)][static_cast<size_t>(slot)];
+    if (zone.enabled && zone.triggerNote != clampedTriggerNote) {
+        unassignTriggerNote(zone.triggerNote);
+    }
+
+    unassignTriggerNote(clampedTriggerNote);
+    zone.kind = kind;
+    zone.triggerNote = clampedTriggerNote;
+    zone.keySwitchNote = clampedKeySwitchNote;
+    zone.velocityScale = std::clamp(velocityScale, 0.0f, 2.0f);
+    zone.enabled = true;
+
+    noteToPad_[static_cast<size_t>(clampedTriggerNote)] = padIndex;
+    noteToZone_[static_cast<size_t>(clampedTriggerNote)] = slot;
+    padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(clampedTriggerNote)] = true;
+    return true;
+}
+
+bool DrumMachineProcessor::clearPadZone(int padIndex, PadZoneKind kind) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+
+    const int slot = zoneIndex(kind);
+    if (slot < 0 || slot >= 3) {
+        return false;
+    }
+
+    auto& zone = padZones_[static_cast<size_t>(padIndex)][static_cast<size_t>(slot)];
+    if (!zone.enabled) {
+        return false;
+    }
+
+    const int triggerNote = zone.triggerNote;
+    zone = makeZoneConfig(kind);
+    if (triggerNote >= 0 && triggerNote < 128) {
+        unassignTriggerNote(triggerNote);
+    }
+    return true;
+}
+
+std::vector<DrumMachineProcessor::PadZoneConfig> DrumMachineProcessor::getPadZones(int padIndex) const {
+    if (!isValidPadIndex(padIndex)) {
+        return {};
+    }
+
+    std::vector<PadZoneConfig> zones;
+    for (const auto& zone : padZones_[static_cast<size_t>(padIndex)]) {
+        if (zone.enabled) {
+            zones.push_back(zone);
+        }
+    }
+    return zones;
+}
+
+std::vector<std::string> DrumMachineProcessor::getDrumMidiPresetNames() const {
+    std::vector<std::string> names;
+    names.reserve(drumMidiPresets().size());
+    for (const auto& preset : drumMidiPresets()) {
+        names.emplace_back(preset.name);
+    }
+    return names;
+}
+
+bool DrumMachineProcessor::applyDrumMidiPreset(const std::string& presetName) {
+    const auto presetIt = std::find_if(
+        drumMidiPresets().begin(),
+        drumMidiPresets().end(),
+        [&presetName](const PresetDefinition& preset) { return preset.name == presetName; });
+    if (presetIt == drumMidiPresets().end()) {
+        return false;
+    }
+
+    for (int padIndex = 0; padIndex < kPadCount; ++padIndex) {
+        setPadMidiNote(padIndex, defaultMidiNoteForPad(padIndex));
+        clearPadZone(padIndex, PadZoneKind::Head);
+        clearPadZone(padIndex, PadZoneKind::Rim);
+        clearPadZone(padIndex, PadZoneKind::Edge);
+    }
+
+    for (const auto& zone : presetIt->zones) {
+        if (!setPadZone(zone.padIndex, zone.kind, zone.triggerNote, zone.keySwitchNote, zone.velocityScale)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool DrumMachineProcessor::setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config) {
     return mixer_.setBusEq(busIndex, config);
 }
@@ -571,8 +785,41 @@ float DrumMachineProcessor::applyVelocityCurve(
         clampedCeiling);
 }
 
+int DrumMachineProcessor::zoneIndex(PadZoneKind kind) {
+    return static_cast<int>(kind);
+}
+
+DrumMachineProcessor::PadZoneKind DrumMachineProcessor::zoneKindFromIndex(int zoneIndex) {
+    switch (zoneIndex) {
+        case 1:
+            return PadZoneKind::Rim;
+        case 2:
+            return PadZoneKind::Edge;
+        case 0:
+        default:
+            return PadZoneKind::Head;
+    }
+}
+
 std::string DrumMachineProcessor::defaultPadName(int padIndex) {
     return "Pad " + std::to_string(std::clamp(padIndex, 0, kPadCount - 1) + 1);
+}
+
+void DrumMachineProcessor::unassignTriggerNote(int midiNote) {
+    const int clampedNote = std::clamp(midiNote, 0, 127);
+    const int previousPad = noteToPad_[static_cast<size_t>(clampedNote)];
+    if (previousPad >= 0 && previousPad < kPadCount) {
+        padNoteAssignments_[static_cast<size_t>(previousPad)][static_cast<size_t>(clampedNote)] = false;
+    }
+
+    const int previousZoneIndex = noteToZone_[static_cast<size_t>(clampedNote)];
+    if (previousPad >= 0 && previousPad < kPadCount && previousZoneIndex >= 0 && previousZoneIndex < 3) {
+        auto& zone = padZones_[static_cast<size_t>(previousPad)][static_cast<size_t>(previousZoneIndex)];
+        zone = makeZoneConfig(zoneKindFromIndex(previousZoneIndex));
+    }
+
+    noteToPad_[static_cast<size_t>(clampedNote)] = -1;
+    noteToZone_[static_cast<size_t>(clampedNote)] = -1;
 }
 
 void DrumMachineProcessor::applyPadConfigToPart(int padIndex) {

@@ -36,6 +36,12 @@ public:
         Fixed,
     };
 
+    enum class PadZoneKind {
+        Head = 0,
+        Rim,
+        Edge,
+    };
+
     struct PadConfig {
         float volume = 1.0f;
         float pan = 0.0f;
@@ -51,6 +57,14 @@ public:
         int midiChannel = 0;  // 0 = OMNI
         BusId bus = BusId::Kick;
         std::string name;
+    };
+
+    struct PadZoneConfig {
+        PadZoneKind kind = PadZoneKind::Head;
+        int triggerNote = -1;
+        int keySwitchNote = -1;
+        float velocityScale = 1.0f;
+        bool enabled = false;
     };
 
     struct Metering {
@@ -103,6 +117,16 @@ public:
     float mapVelocityForPad(int padIndex, float rawVelocity) const;
     float getLastMappedVelocityForPad(int padIndex) const;
     std::array<float, 128> getVelocityCurvePreview(int padIndex) const;
+    bool setPadZone(
+        int padIndex,
+        PadZoneKind kind,
+        int triggerNote,
+        int keySwitchNote = -1,
+        float velocityScale = 1.0f);
+    bool clearPadZone(int padIndex, PadZoneKind kind);
+    std::vector<PadZoneConfig> getPadZones(int padIndex) const;
+    std::vector<std::string> getDrumMidiPresetNames() const;
+    bool applyDrumMidiPreset(const std::string& presetName);
     bool setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config);
     bool setBusComp(int busIndex, const DrumMachineMixer::BusCompConfig& config);
     bool setBusLevel(int busIndex, float level);
@@ -125,13 +149,18 @@ private:
         float inputFloor,
         float outputFloor,
         float outputCeiling);
+    static int zoneIndex(PadZoneKind kind);
+    static PadZoneKind zoneKindFromIndex(int zoneIndex);
     static std::string defaultPadName(int padIndex);
+    void unassignTriggerNote(int midiNote);
     void applyPadConfigToPart(int padIndex);
 
     std::array<synthforge::Part, kPadCount> pads_;
     std::array<PadConfig, kPadCount> padConfigs_{};
+    std::array<std::array<PadZoneConfig, 3>, kPadCount> padZones_{};
     std::array<std::array<bool, 128>, kPadCount> padNoteAssignments_{};
     std::array<int, 128> noteToPad_{};
+    std::array<int, 128> noteToZone_{};
     std::array<juce::MidiBuffer, kPadCount> padMidiBuffers_{};
     juce::MidiBuffer triggeredMidiBuffer_;
     DrumMachineMixer mixer_;
