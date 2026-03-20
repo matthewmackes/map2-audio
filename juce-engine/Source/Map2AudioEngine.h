@@ -48,6 +48,7 @@ class AvbAudioIODevice;
 #include "Peavey5150Processor.h"
 #include "TweedBassmanProcessor.h"
 #include "PassionFXProcessor.h"
+#include "DrumMachine/DrumMachineProcessor.h"
 #include "SynthForge/SynthForgeProcessor.h"
 #include "LexiconHardwareProcessor.h"
 
@@ -1265,6 +1266,10 @@ public:
     synthforge::Metering getSynthForgeMetering() const;
 
     synthforge::SynthForgeProcessor& getSynthForge() { return synthForge_; }
+    drummachine::DrumMachineProcessor& getDrumMachine() { return drumMachine_; }
+    const drummachine::DrumMachineProcessor& getDrumMachine() const { return drumMachine_; }
+    void setDrumMachineEnabled(bool enabled) { drumMachineEnabled_.store(enabled, std::memory_order_relaxed); }
+    bool isDrumMachineEnabled() const { return drumMachineEnabled_.load(std::memory_order_relaxed); }
 
     // ========================================
     // Component Access (for advanced use)
@@ -1345,6 +1350,7 @@ private:
     Peavey5150Processor peavey5150_;
     TweedBassmanProcessor tweedBassman_;
     PassionFXProcessor passionFX_;
+    drummachine::DrumMachineProcessor drumMachine_;
     synthforge::SynthForgeProcessor synthForge_;
 
 #ifdef HAS_NAM
@@ -1397,6 +1403,7 @@ private:
     // State
     bool initialized_ = false;
     std::atomic<bool> audioRunning_{false};
+    std::atomic<bool> drumMachineEnabled_{true};
 
     struct AvbManagedStream {
         AvbStreamRuntimeConfig config;

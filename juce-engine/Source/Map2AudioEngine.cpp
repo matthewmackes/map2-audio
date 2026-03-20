@@ -363,6 +363,7 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     peavey5150_.prepare(sampleRate_, bufferSize_, 2);
     tweedBassman_.prepare(sampleRate_, bufferSize_, 2);
     passionFX_.prepare(sampleRate_, bufferSize_, 2);
+    drumMachine_.prepare(sampleRate_, bufferSize_, 2);
     synthForge_.prepare(sampleRate_, bufferSize_, 2);
     std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX" << std::endl;
     std::cout << "  SynthForge: Phase 1 scaffold initialized (16-part MIDI/voice core)" << std::endl;
@@ -1547,6 +1548,12 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
         pluginHost_.setParameter(update.pluginId, update.paramIndex, update.value);
     });
 
+    // Process the built-in instruments before the plugin graph so they share the
+    // same callback buffer and MIDI drain path.
+    if (drumMachineEnabled_.load(std::memory_order_relaxed)) {
+        drumMachine_.processBlock(buffer, midiBuffer);
+    }
+
     // Process SynthForge Phase 1 MIDI/voice tracking.
     synthForge_.processBlock(buffer, midiBuffer);
 
@@ -1834,6 +1841,7 @@ void Map2AudioEngine::prepareAllProcessors(double sampleRate, int bufferSize, in
     h3000_.prepare(sampleRate, bufferSize, numChannels);
     bossXS1_.prepare(sampleRate, bufferSize, numChannels);
     lexiLove_.prepare(sampleRate, bufferSize, numChannels);
+    drumMachine_.prepare(sampleRate, bufferSize, numChannels);
     synthForge_.prepare(sampleRate, bufferSize, numChannels);
 }
 

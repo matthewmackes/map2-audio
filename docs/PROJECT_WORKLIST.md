@@ -1231,7 +1231,7 @@ Subtasks:
     - Bus output: per-bus level + pan + mute/solo
     - Master bus: sum of all 8 submix buses → stereo output with master volume
     - All bus processing must be RT-safe (pre-allocated buffers, no heap allocation in processBlock)
-  - [ ] T211-C: Integrate `DrumMachineProcessor` into `Map2AudioEngine`
+  - [✓] T211-C: Integrate `DrumMachineProcessor` into `Map2AudioEngine`
     - Add `drumMachine_` member to Map2AudioEngine (like `synthForge_`)
     - Process in audioCallback: MIDI → DrumMachineProcessor → mix into main output buffer
     - DrumMachineProcessor receives MIDI from the same ring buffer drain as SynthForge
@@ -1245,12 +1245,14 @@ Subtasks:
     - Transport: `drum_trigger_note(pad, velocity)` for software-triggered hits
   - [✓] T211-E: Add CMakeLists.txt entries for DrumMachine source files; verify build with `cmake -B build && cmake --build build`
 Assigned to: Codex
-Last updated: 2026-03-20 00:08 - Codex
+Last updated: 2026-03-20 00:17 - Codex
 - Progress notes:
   - Completed `T211-B` with a new RT-safe `juce-engine/Source/DrumMachine/DrumMachineMixer.h/cpp` implementation providing 8 fixed stereo buses, 3-band EQ, single-band compression, per-bus level/pan/mute/solo, master-volume fold-down, and cached metering.
   - Added focused JUCE coverage in `juce-engine/tests/DrumMachineMixerTests.cpp` for bus parameter mutation, stereo fold-down, metering, and solo/mute gating.
   - Updated `juce-engine/CMakeLists.txt` so the new mixer source and tests build under the existing `synthforge_tests` target.
   - Validation: `cmake --build build-synthforge-tests --target synthforge_tests` -> pass; `./synthforge_tests "[drums]"` -> pass.
+  - Completed `T211-C` by wiring `drumMachine_` into `Map2AudioEngine`, preparing it alongside SynthForge and the rest of the engine processors, processing it from the same drained MIDI buffer in `audioCallback`, and adding atomic enable/disable accessors for runtime gating.
+  - Validation: `cmake --build juce-engine/build --target map2_audio_engine` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass.
 
 ---
 
