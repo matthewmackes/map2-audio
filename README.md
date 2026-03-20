@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**788** Python | **1167** TypeScript | **294** C++/H | **122** Docs | **638** total commits | **1** stars | **0** forks | **0** open issues
+**788** Python | **1167** TypeScript | **294** C++/H | **122** Docs | **640** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`dbc90c5b`](https://github.com/matthewmackes/map2-audio/commit/dbc90c5b1168d05bb9720a2d9d100f93177d989e) | Complete T215-A drum MIDI note mapping | Map2 Audio | 2026-03-20 |
+| [`3c4a2a8a`](https://github.com/matthewmackes/map2-audio/commit/3c4a2a8abec93b4e76fc13c95d0439ad3097ccb1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`1fce4ab2`](https://github.com/matthewmackes/map2-audio/commit/1fce4ab220b816e39496723a568937f480a7aa10) | Complete T214-E drum sample sourcing evidence | Map2 Audio | 2026-03-20 |
 | [`46e084bc`](https://github.com/matthewmackes/map2-audio/commit/46e084bc38420dc703e9e99dbd48594bcac3e369) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`4b7161f4`](https://github.com/matthewmackes/map2-audio/commit/4b7161f4b238ab28decd0139d2a2c3b4bc1f2d76) | Complete T214-D drum kit API endpoints | Map2 Audio | 2026-03-20 |
 | [`e511bf7a`](https://github.com/matthewmackes/map2-audio/commit/e511bf7a13106a333f56393b059ea7624559a861) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`03a8aa35`](https://github.com/matthewmackes/map2-audio/commit/03a8aa357422f24f483f3065af7280a62e9306f7) | Complete T214-C drum kit manager service | Map2 Audio | 2026-03-20 |
 | [`fbde4e9d`](https://github.com/matthewmackes/map2-audio/commit/fbde4e9d821a68a91bbbe61d153cfd9d2c6628b2) | Complete T214-B factory drum kits | Map2 Audio | 2026-03-20 |
-| [`3473bab7`](https://github.com/matthewmackes/map2-audio/commit/3473bab7dbd66495b052865d5f99760bac8ff4b7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`225a6c50`](https://github.com/matthewmackes/map2-audio/commit/225a6c502be5f7b89ac63d8eb3538a80ce9315f8) | Complete T214-A drum kit schema | Map2 Audio | 2026-03-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
