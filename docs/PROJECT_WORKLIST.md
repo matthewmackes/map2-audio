@@ -664,7 +664,7 @@ Last updated: 2026-03-19 21:29 - Codex
   - Validation: `pytest tests/test_osc_namespace.py` -> pass, `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
 
 ID: T203-subJ
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Documentation, conformance, and test suite finalization
 Description:
 - Goal / acceptance criteria: Update all documentation to reflect the new MIDI Hub v2 architecture. Produce all Carbon conformance evidence. Ensure full test coverage.
@@ -684,8 +684,8 @@ Description:
 - Estimated effort: High
 - Required outputs: All items listed above. No silent exceptions.
 Subtasks: None
-Assigned to: Claude
-Last updated: 2026-03-17 - Claude
+Assigned to: Codex
+Last updated: 2026-03-19 21:33 - Codex
 
 ID: T203-subK
 Status: [ ] Todo
@@ -1209,7 +1209,7 @@ Last updated: 2026-03-17 22:39 - Codex
 ---
 
 ID: T211
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Drum Machine C++ Sound Engine — DrumMachineProcessor
 Description:
 - Goal / acceptance criteria: Implement a dedicated `DrumMachineProcessor` C++ class in `juce-engine/Source/DrumMachine/` that provides a 16-instrument drum sound engine built on top of the SynthForge sampler architecture, with per-instrument controls, 8 fixed submix buses, and stereo master output.
@@ -1225,7 +1225,7 @@ Subtasks:
     - Default MIDI note mapping: GM drum map (C1=36 kick through D#3=51), user-remappable per pad
     - Velocity curve per pad: Linear, Logarithmic, Exponential, S-Curve, Fixed (configurable)
     - MIDI channel filtering: per-pad or global OMNI
-  - [ ] T211-B: Implement 8 fixed submix buses in `DrumMachineMixer` class
+  - [✓] T211-B: Implement 8 fixed submix buses in `DrumMachineMixer` class
     - Bus definitions: Kick (0), Snare (1), HiHat (2), Toms (3), Cymbals (4), Percussion (5), Overhead (6), Room (7)
     - Each bus: stereo audio buffer, 3-band parametric EQ (low shelf, mid peak, high shelf), single-band compressor (threshold, ratio, attack, release, makeup gain)
     - Bus output: per-bus level + pan + mute/solo
@@ -1245,7 +1245,12 @@ Subtasks:
     - Transport: `drum_trigger_note(pad, velocity)` for software-triggered hits
   - [✓] T211-E: Add CMakeLists.txt entries for DrumMachine source files; verify build with `cmake -B build && cmake --build build`
 Assigned to: Codex
-Last updated: 2026-03-19 00:29 - Codex
+Last updated: 2026-03-20 00:08 - Codex
+- Progress notes:
+  - Completed `T211-B` with a new RT-safe `juce-engine/Source/DrumMachine/DrumMachineMixer.h/cpp` implementation providing 8 fixed stereo buses, 3-band EQ, single-band compression, per-bus level/pan/mute/solo, master-volume fold-down, and cached metering.
+  - Added focused JUCE coverage in `juce-engine/tests/DrumMachineMixerTests.cpp` for bus parameter mutation, stereo fold-down, metering, and solo/mute gating.
+  - Updated `juce-engine/CMakeLists.txt` so the new mixer source and tests build under the existing `synthforge_tests` target.
+  - Validation: `cmake --build build-synthforge-tests --target synthforge_tests` -> pass; `./synthforge_tests "[drums]"` -> pass.
 
 ---
 

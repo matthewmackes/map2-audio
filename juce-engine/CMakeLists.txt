@@ -291,6 +291,7 @@ set(SOURCES
     Source/SynthForge/Core/Part.cpp
     Source/SynthForge/Core/VoiceAllocator.cpp
     Source/SynthForge/Core/MidiRouter.cpp
+    Source/DrumMachine/DrumMachineMixer.cpp
     Source/DrumMachine/DrumMachineProcessor.cpp
     Source/SynthForge/Sampler/GroupedSampler.cpp
     Source/SynthForge/Sampler/SfzLoader.cpp
@@ -717,7 +718,9 @@ if(BUILD_SYNTHFORGE_TESTS)
 
     add_executable(synthforge_tests
         tests/DrumMachineProcessorTests.cpp
+        tests/DrumMachineMixerTests.cpp
         tests/SynthForgeSfzTests.cpp
+        Source/DrumMachine/DrumMachineMixer.cpp
         Source/DrumMachine/DrumMachineProcessor.cpp
         Source/SynthForge/Core/Part.cpp
         Source/SynthForge/Core/VoiceAllocator.cpp
