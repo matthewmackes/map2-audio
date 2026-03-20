@@ -45,6 +45,9 @@ public:
         int midiNote = 36;
         VelocityCurve velocityCurve = VelocityCurve::Linear;
         float fixedVelocity = 1.0f;
+        float inputFloor = 0.0f;
+        float outputFloor = 0.0f;
+        float outputCeiling = 1.0f;
         int midiChannel = 0;  // 0 = OMNI
         BusId bus = BusId::Kick;
         std::string name;
@@ -81,8 +84,15 @@ public:
     std::vector<int> getPadMidiNotes(int padIndex) const;
     bool setGlobalMidiChannel(int midiChannel);
     int getGlobalMidiChannel() const;
+    void setLastMappedVelocityForPad(int padIndex, float velocity);
     bool setPadBus(int padIndex, BusId bus);
-    bool setPadVelocityCurve(int padIndex, VelocityCurve curve, float fixedVelocity = 1.0f);
+    bool setPadVelocityCurve(
+        int padIndex,
+        VelocityCurve curve,
+        float fixedVelocity = 1.0f,
+        float inputFloor = 0.0f,
+        float outputFloor = 0.0f,
+        float outputCeiling = 1.0f);
     bool setPadMidiChannel(int padIndex, int midiChannel);
 
     bool loadPadSfz(int padIndex, const std::string& sfzPath);
@@ -91,6 +101,8 @@ public:
     std::array<synthforge::SampleLoadStatus, kPadCount> getKitSampleStatus() const;
     int getPadActiveVoices(int padIndex) const;
     float mapVelocityForPad(int padIndex, float rawVelocity) const;
+    float getLastMappedVelocityForPad(int padIndex) const;
+    std::array<float, 128> getVelocityCurvePreview(int padIndex) const;
     bool setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config);
     bool setBusComp(int busIndex, const DrumMachineMixer::BusCompConfig& config);
     bool setBusLevel(int busIndex, float level);
@@ -106,7 +118,13 @@ public:
 private:
     static bool isValidPadIndex(int padIndex);
     static float clampVelocity(float rawVelocity);
-    static float applyVelocityCurve(VelocityCurve curve, float rawVelocity, float fixedVelocity);
+    static float applyVelocityCurve(
+        VelocityCurve curve,
+        float rawVelocity,
+        float fixedVelocity,
+        float inputFloor,
+        float outputFloor,
+        float outputCeiling);
     static std::string defaultPadName(int padIndex);
     void applyPadConfigToPart(int padIndex);
 
@@ -121,6 +139,7 @@ private:
     juce::AudioBuffer<float> stereoMixBuffer_;
     std::array<float, kPadCount> padPeakMeters_{};
     std::array<float, kPadCount> padRmsMeters_{};
+    std::array<float, kPadCount> lastMappedVelocity_{};
 
     std::atomic<double> sampleRate_{44100.0};
     std::atomic<int> samplesPerBlock_{512};

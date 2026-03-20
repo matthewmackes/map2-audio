@@ -2885,11 +2885,25 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 padIndex,
                 static_cast<map2::drummachine::DrumMachineProcessor::BusId>(clampedBus));
         }, py::arg("pad"), py::arg("bus"), "Set drum pad output bus")
-        .def("set_drum_pad_velocity_curve", [](Map2AudioEngine& self, int padIndex, int curveType) {
+        .def("set_drum_pad_velocity_curve", [](Map2AudioEngine& self, int padIndex, int curveType, float fixedVelocity, float inputFloor, float outputFloor, float outputCeiling) {
             return self.getDrumMachine().setPadVelocityCurve(
                 padIndex,
-                static_cast<drummachine::DrumMachineProcessor::VelocityCurve>(std::clamp(curveType, 0, 4)));
-        }, py::arg("pad"), py::arg("curve_type"), "Set drum pad velocity curve")
+                static_cast<drummachine::DrumMachineProcessor::VelocityCurve>(std::clamp(curveType, 0, 4)),
+                fixedVelocity,
+                inputFloor,
+                outputFloor,
+                outputCeiling);
+        }, py::arg("pad"), py::arg("curve_type"), py::arg("fixed_velocity") = 1.0f, py::arg("input_floor") = 0.0f, py::arg("output_floor") = 0.0f, py::arg("output_ceiling") = 1.0f, "Set drum pad velocity curve and scaling bounds")
+        .def("get_drum_pad_velocity_curve_preview", [](const Map2AudioEngine& self, int padIndex) {
+            py::list preview;
+            for (const auto value : self.getDrumMachine().getVelocityCurvePreview(padIndex)) {
+                preview.append(value);
+            }
+            return preview;
+        }, py::arg("pad"), "Get a 128-point velocity curve preview for a drum pad")
+        .def("get_drum_pad_last_velocity", [](const Map2AudioEngine& self, int padIndex) {
+            return self.getDrumMachine().getLastMappedVelocityForPad(padIndex);
+        }, py::arg("pad"), "Get the last mapped hit velocity for a drum pad")
         .def("set_drum_pad_midi_channel", [](Map2AudioEngine& self, int padIndex, int midiChannel) {
             return self.getDrumMachine().setPadMidiChannel(padIndex, midiChannel);
         }, py::arg("pad"), py::arg("channel"), "Set drum pad MIDI channel")

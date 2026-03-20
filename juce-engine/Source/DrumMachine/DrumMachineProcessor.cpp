@@ -31,7 +31,7 @@ void routeMidiToPads(
     const std::array<int, 128>& noteToPad,
     int globalMidiChannel,
     std::array<juce::MidiBuffer, DrumMachineProcessor::kPadCount>& padMidiBuffers,
-    const DrumMachineProcessor& processor) {
+    DrumMachineProcessor& processor) {
     for (const auto metadata : source) {
         const auto message = metadata.getMessage();
         if (!message.isNoteOnOrOff()) {
@@ -58,11 +58,13 @@ void routeMidiToPads(
 
         auto routed = message;
         if (message.isNoteOn()) {
+            const float mappedVelocity = processor.mapVelocityForPad(padIndex, message.getFloatVelocity());
+            processor.setLastMappedVelocityForPad(padIndex, mappedVelocity);
             routed = juce::MidiMessage::noteOn(
                 1,
                 config.midiNote,
                 static_cast<juce::uint8>(std::clamp(
-                    static_cast<int>(std::round(processor.mapVelocityForPad(padIndex, message.getFloatVelocity()) * 127.0f)),
+                    static_cast<int>(std::round(mappedVelocity * 127.0f)),
                     1,
                     127)));
         } else {
@@ -208,6 +210,9 @@ bool DrumMachineProcessor::setPadConfig(int padIndex, const PadConfig& config) {
     updated.tuneSemitones = std::clamp(updated.tuneSemitones, -24.0f, 24.0f);
     updated.midiNote = std::clamp(updated.midiNote, 0, 127);
     updated.fixedVelocity = std::clamp(updated.fixedVelocity, 0.0f, 1.0f);
+    updated.inputFloor = std::clamp(updated.inputFloor, 0.0f, 1.0f);
+    updated.outputFloor = std::clamp(updated.outputFloor, 0.0f, 1.0f);
+    updated.outputCeiling = std::clamp(updated.outputCeiling, updated.outputFloor, 1.0f);
     updated.midiChannel = std::clamp(updated.midiChannel, 0, 16);
     if (updated.name.empty()) {
         updated.name = defaultPadName(padIndex);
@@ -347,16 +352,32 @@ int DrumMachineProcessor::getGlobalMidiChannel() const {
     return globalMidiChannel_.load(std::memory_order_relaxed);
 }
 
+void DrumMachineProcessor::setLastMappedVelocityForPad(int padIndex, float velocity) {
+    if (!isValidPadIndex(padIndex)) {
+        return;
+    }
+    lastMappedVelocity_[static_cast<size_t>(padIndex)] = std::clamp(velocity, 0.0f, 1.0f);
+}
+
 bool DrumMachineProcessor::setPadBus(int padIndex, BusId bus) {
     auto config = getPadConfig(padIndex);
     config.bus = bus;
     return setPadConfig(padIndex, config);
 }
 
-bool DrumMachineProcessor::setPadVelocityCurve(int padIndex, VelocityCurve curve, float fixedVelocity) {
+bool DrumMachineProcessor::setPadVelocityCurve(
+    int padIndex,
+    VelocityCurve curve,
+    float fixedVelocity,
+    float inputFloor,
+    float outputFloor,
+    float outputCeiling) {
     auto config = getPadConfig(padIndex);
     config.velocityCurve = curve;
     config.fixedVelocity = fixedVelocity;
+    config.inputFloor = inputFloor;
+    config.outputFloor = outputFloor;
+    config.outputCeiling = outputCeiling;
     return setPadConfig(padIndex, config);
 }
 
@@ -412,7 +433,34 @@ float DrumMachineProcessor::mapVelocityForPad(int padIndex, float rawVelocity) c
     }
 
     const auto& config = padConfigs_[static_cast<size_t>(padIndex)];
-    return applyVelocityCurve(config.velocityCurve, rawVelocity, config.fixedVelocity);
+    return applyVelocityCurve(
+        config.velocityCurve,
+        rawVelocity,
+        config.fixedVelocity,
+        config.inputFloor,
+        config.outputFloor,
+        config.outputCeiling);
+}
+
+float DrumMachineProcessor::getLastMappedVelocityForPad(int padIndex) const {
+    if (!isValidPadIndex(padIndex)) {
+        return 0.0f;
+    }
+    return lastMappedVelocity_[static_cast<size_t>(padIndex)];
+}
+
+std::array<float, 128> DrumMachineProcessor::getVelocityCurvePreview(int padIndex) const {
+    std::array<float, 128> preview{};
+    if (!isValidPadIndex(padIndex)) {
+        return preview;
+    }
+
+    for (int midiVelocity = 0; midiVelocity < 128; ++midiVelocity) {
+        preview[static_cast<size_t>(midiVelocity)] = mapVelocityForPad(
+            padIndex,
+            static_cast<float>(midiVelocity) / 127.0f);
+    }
+    return preview;
 }
 
 bool DrumMachineProcessor::setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config) {
@@ -483,21 +531,44 @@ float DrumMachineProcessor::clampVelocity(float rawVelocity) {
     return std::clamp(rawVelocity, 0.0f, 1.0f);
 }
 
-float DrumMachineProcessor::applyVelocityCurve(VelocityCurve curve, float rawVelocity, float fixedVelocity) {
+float DrumMachineProcessor::applyVelocityCurve(
+    VelocityCurve curve,
+    float rawVelocity,
+    float fixedVelocity,
+    float inputFloor,
+    float outputFloor,
+    float outputCeiling) {
     const float velocity = clampVelocity(rawVelocity);
+    if (velocity <= std::clamp(inputFloor, 0.0f, 1.0f)) {
+        return 0.0f;
+    }
+
+    float curvedVelocity = velocity;
     switch (curve) {
         case VelocityCurve::Logarithmic:
-            return std::sqrt(velocity);
+            curvedVelocity = std::sqrt(velocity);
+            break;
         case VelocityCurve::Exponential:
-            return velocity * velocity;
+            curvedVelocity = velocity * velocity;
+            break;
         case VelocityCurve::SCurve:
-            return velocity * velocity * (3.0f - (2.0f * velocity));
+            curvedVelocity = velocity * velocity * (3.0f - (2.0f * velocity));
+            break;
         case VelocityCurve::Fixed:
-            return std::clamp(fixedVelocity, 0.0f, 1.0f);
+            curvedVelocity = std::clamp(fixedVelocity, 0.0f, 1.0f);
+            break;
         case VelocityCurve::Linear:
         default:
-            return velocity;
+            curvedVelocity = velocity;
+            break;
     }
+
+    const float clampedFloor = std::clamp(outputFloor, 0.0f, 1.0f);
+    const float clampedCeiling = std::clamp(outputCeiling, clampedFloor, 1.0f);
+    return std::clamp(
+        clampedFloor + (curvedVelocity * (clampedCeiling - clampedFloor)),
+        clampedFloor,
+        clampedCeiling);
 }
 
 std::string DrumMachineProcessor::defaultPadName(int padIndex) {

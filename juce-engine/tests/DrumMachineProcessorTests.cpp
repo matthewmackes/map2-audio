@@ -36,6 +36,14 @@ TEST_CASE("DrumMachineProcessor maps velocity curves per pad", "[drums][processo
 
     REQUIRE(processor.setPadVelocityCurve(0, DrumMachineProcessor::VelocityCurve::Fixed, 0.73f));
     REQUIRE(processor.mapVelocityForPad(0, 0.12f) == Catch::Approx(0.73f));
+
+    REQUIRE(processor.setPadVelocityCurve(0, DrumMachineProcessor::VelocityCurve::Linear, 1.0f, 0.2f, 0.1f, 0.8f));
+    REQUIRE(processor.mapVelocityForPad(0, 0.1f) == Catch::Approx(0.0f));
+    REQUIRE(processor.mapVelocityForPad(0, 0.5f) == Catch::Approx(0.45f));
+
+    const auto preview = processor.getVelocityCurvePreview(0);
+    REQUIRE(preview[0] == Catch::Approx(0.0f));
+    REQUIRE(preview[64] == Catch::Approx(processor.mapVelocityForPad(0, 64.0f / 127.0f)));
 }
 
 TEST_CASE("DrumMachineProcessor routes midi note-ons to the matching pad", "[drums][processor]") {
@@ -117,4 +125,19 @@ TEST_CASE("DrumMachineProcessor respects the global midi channel filter", "[drum
     matchingChannel.addEvent(juce::MidiMessage::noteOn(9, 36, static_cast<juce::uint8>(100)), 0);
     processor.processBlock(buffer, matchingChannel);
     REQUIRE(processor.getPadActiveVoices(0) == 1);
+}
+
+TEST_CASE("DrumMachineProcessor records the last mapped hit velocity", "[drums][processor]") {
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 64, 2);
+    REQUIRE(processor.setPadVelocityCurve(0, DrumMachineProcessor::VelocityCurve::Fixed, 0.66f));
+
+    juce::AudioBuffer<float> buffer(2, 64);
+    buffer.clear();
+
+    juce::MidiBuffer midi;
+    midi.addEvent(juce::MidiMessage::noteOn(1, 36, static_cast<juce::uint8>(42)), 0);
+    processor.processBlock(buffer, midi);
+
+    REQUIRE(processor.getLastMappedVelocityForPad(0) == Catch::Approx(0.66f));
 }

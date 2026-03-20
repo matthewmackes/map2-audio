@@ -1432,7 +1432,7 @@ Subtasks:
     - Multi-note-to-one-pad: multiple MIDI notes can trigger the same pad (e.g., notes 36 and 35 both trigger kick pad)
     - One-note-to-one-pad: each note maps to at most one pad (no fan-out)
     - MIDI channel filter: global (OMNI or specific channel 1–16) or per-pad channel
-  - [ ] T215-B: Velocity curve engine
+  - [✓] T215-B: Velocity curve engine
     - 5 curve types per pad: Linear, Logarithmic (soft-touch emphasis), Exponential (hard-touch emphasis), S-Curve (compressed middle), Fixed (constant velocity regardless of input)
     - Per-pad configurable: curve type + input floor (minimum velocity threshold) + output floor (minimum output velocity) + output ceiling (maximum output velocity)
     - Velocity scaling: input velocity → curve transform → output velocity (0–127)
@@ -1456,12 +1456,16 @@ Subtasks:
     - `POST /api/engine/drums/midi/presets/load` — apply a hardware preset mapping
   - [ ] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
 Assigned to: Codex
-Last updated: 2026-03-20 08:09 - Codex
+Last updated: 2026-03-20 08:19 - Codex
 - Progress notes:
   - Completed `T215-A` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by replacing the single-note pad trigger assumption with a real note-to-pad mapping table, allowing multiple MIDI notes to target one pad while guaranteeing that any individual note maps to at most one pad.
   - Added global drum MIDI channel filtering alongside the existing per-pad channel filter, and extended the pybind surface in `juce-engine/Source/PythonBindings.cpp` with `add_drum_pad_note`, `remove_drum_pad_note`, `get_drum_pad_notes`, `set_drum_global_midi_channel`, and `get_drum_global_midi_channel`.
   - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for GM default note exposure, multi-note-to-one-pad routing, no-fan-out remapping behavior, per-pad channel filtering, and the new global MIDI channel gate.
   - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"` -> pass (`36 assertions in 6 test cases`); `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
+  - Completed `T215-B` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by extending each pad with configurable `inputFloor`, `outputFloor`, and `outputCeiling` bounds, keeping all 5 curve types, and applying the new scaling model directly in the MIDI-trigger path.
+  - Added preview and telemetry hooks via `getVelocityCurvePreview(...)` and `getLastMappedVelocityForPad(...)`, and extended the pybind layer in `juce-engine/Source/PythonBindings.cpp` so future API/UI slices can set bounded curves and fetch preview/last-hit data without reimplementing the curve math in Python.
+  - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for thresholded/scaled velocity mapping, preview generation parity with the processor math, and last-hit velocity capture after note-on processing.
+  - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"` -> pass (`43 assertions in 7 test cases`); `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
 
 ---
 
