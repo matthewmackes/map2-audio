@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**773** Python | **1149** TypeScript | **288** C++/H | **122** Docs | **598** total commits | **1** stars | **0** forks | **0** open issues
+**775** Python | **1155** TypeScript | **288** C++/H | **122** Docs | **600** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`00a73ef9`](https://github.com/matthewmackes/map2-audio/commit/00a73ef917be7e7577d8b4c6547a532195beed6e) | Complete T203-subE event lists area | Map2 Audio | 2026-03-19 |
+| [`cfbd7e34`](https://github.com/matthewmackes/map2-audio/commit/cfbd7e340665dc683b64c12043905a92c5e3697a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`61527063`](https://github.com/matthewmackes/map2-audio/commit/61527063a6bf8e012100754e48ae91a6acb224eb) | Complete T203-subC presets area rewrite | Map2 Audio | 2026-03-19 |
 | [`d5626021`](https://github.com/matthewmackes/map2-audio/commit/d562602138bfa5c38eb193d946c775bb6c952bf1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`40cc8a66`](https://github.com/matthewmackes/map2-audio/commit/40cc8a669e873a937de0fcaa510d502a69e72de3) | Complete T203-subB connections area rewrite | Map2 Audio | 2026-03-19 |
 | [`f38cf1d5`](https://github.com/matthewmackes/map2-audio/commit/f38cf1d5a8f7acfe1e7c50bc93c753d6a24519e6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 | [`fa73713e`](https://github.com/matthewmackes/map2-audio/commit/fa73713e98984bc3126f5bf9dc631584c93e7881) | Add JUCE Grid parameter audit coverage | Map2 Audio | 2026-03-19 |
 | [`2e07194a`](https://github.com/matthewmackes/map2-audio/commit/2e07194af76ffda3f4e2d382d5947e4a51ec57e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
-| [`df47c102`](https://github.com/matthewmackes/map2-audio/commit/df47c1025a92b4a3e1adb47a17d756042ca21897) | Complete JUCE Grid iPad interaction pass | Map2 Audio | 2026-03-19 |
-| [`fa68ac26`](https://github.com/matthewmackes/map2-audio/commit/fa68ac261f44d44360bb675c8c862b02291288f3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
