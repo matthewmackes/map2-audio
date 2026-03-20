@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**783** Python | **1167** TypeScript | **291** C++/H | **122** Docs | **611** total commits | **1** stars | **0** forks | **0** open issues
+**783** Python | **1167** TypeScript | **291** C++/H | **122** Docs | **613** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ed74d1e0`](https://github.com/matthewmackes/map2-audio/commit/ed74d1e06827796c6df2a08bc937e4f48ec47354) | Complete T211-C drum engine integration | Map2 Audio | 2026-03-20 |
+| [`f000ec9e`](https://github.com/matthewmackes/map2-audio/commit/f000ec9e118a3804f8fbc905b2faadf262feb3e1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`2746ec61`](https://github.com/matthewmackes/map2-audio/commit/2746ec61cfca54355a342196a77dda13e0330608) | Complete T211-B drum machine mixer buses | Map2 Audio | 2026-03-20 |
 | [`76ed0a34`](https://github.com/matthewmackes/map2-audio/commit/76ed0a3481e600673bf68b64a79272f10bf3d105) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`59919cb8`](https://github.com/matthewmackes/map2-audio/commit/59919cb826f77ed4e6fdf2d45cd59006e130ef30) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`d7442657`](https://github.com/matthewmackes/map2-audio/commit/d74426572e60542f029a1905064bb50df5db6d77) | Complete T203-subI OSC namespace router | Map2 Audio | 2026-03-19 |
 | [`16ce7bbd`](https://github.com/matthewmackes/map2-audio/commit/16ce7bbda4a3dfb8841e98574e802223c0cc9f32) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`485c5700`](https://github.com/matthewmackes/map2-audio/commit/485c5700ffd3e1466bcaef242110f348a069db66) | Complete T203-subH lab area rewrite | Map2 Audio | 2026-03-19 |
-| [`c7268d53`](https://github.com/matthewmackes/map2-audio/commit/c7268d53197b2d02662690105950d8c0dc6f1af0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`71060d0c`](https://github.com/matthewmackes/map2-audio/commit/71060d0ce9f5b5eee0185d7e580bb9d6b6c7ee56) | Complete T203-subG network protocol workspace | Map2 Audio | 2026-03-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
