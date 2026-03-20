@@ -113,7 +113,7 @@
 
 .midi-hub-connections-detail-card code,
 .midi-hub-connections-code-block {
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-ui));
 }
 
 .midi-hub-connections-detail-meta {

@@ -1610,7 +1610,7 @@ export function LCDPage() {
         }
         .lcd-screen {
           background: linear-gradient(180deg, #0a1628 0%, #0d1f35 50%, #0a1628 100%);
-          border-radius: 4px; padding: 8px 12px; font-family: 'Courier New', monospace;
+          border-radius: 4px; padding: 8px 12px; font-family: var(--font-ui);
           box-shadow: inset 0 1px 3px rgba(0,0,0,0.8), 0 0 20px rgba(34,197,94,0.1);
         }
         .lcd-line {

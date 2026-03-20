@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 19, 2026 (MIDI Hub v2 docs/test finalization notes)
+> **Last Updated**: March 20, 2026 (`update` shorthand workflow preference)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -89,6 +89,11 @@ When adding significant updates, append to this log:
   - GitLab remote: `gitlab` → https://gitlab.com/matthewmackes-group/matthewmackes-project
   - When user requests push/sync: `git push origin master && git push gitlab master`
   - Both repositories must stay in sync at all times
+- **When the user says `update`, perform the full release loop**
+  - Commit all current changes in the working tree
+  - Push to both `origin` and `gitlab`
+  - Rebuild the frontend bundle
+  - Restart the server on port `3000`
 
 ### Worklist Workflow
 - **Treat `docs/PROJECT_WORKLIST.md` as the canonical execution ledger**
@@ -1354,6 +1359,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-20] - `update` Shorthand Workflow Preference
+- **Section**: User Preferences, Git Workflow
+- **Change**: Added an explicit rule that the user command `update` means commit all current changes, push to both remotes, then rebuild and restart the frontend service on port `3000`.
+- **Reason**: Preserve the user's preferred one-word deployment shorthand and prevent partial sync/deploy handling.
+- **Impact**: Future `update` requests should execute the full commit/push/rebuild/restart sequence consistently.
+- **Files**: `.github/copilot-instructions.md`, `.gemini/instructions.md`
 
 ### [2026-03-18] - Carbon Icon Build-Fix Validation
 - **Section**: Gotchas & Learned Fixes (#7), Build & Test Commands

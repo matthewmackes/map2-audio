@@ -679,7 +679,7 @@ function DocumentLibrary() {
 <style>
   * { box-sizing: border-box; }
   body {
-    font-family: 'BlexMono Nerd Font', ui-monospace, monospace;
+    font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.7;
     color: #f4f4f4;
     background: #161616;
@@ -706,7 +706,7 @@ function DocumentLibrary() {
     font-style: italic;
   }
   code {
-    font-family: 'BlexMono Nerd Font', ui-monospace, monospace;
+    font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
     font-size: 13px;
     background: #262626;
     color: #3ddbd9;

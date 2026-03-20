@@ -41,7 +41,7 @@
   background: var(--cds-layer-01);
   color: var(--cds-text-primary);
   overflow: auto;
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-ui));
 }
 
 @media (max-width: 1056px) {

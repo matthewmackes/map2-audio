@@ -2496,6 +2496,9 @@
 }
 
 .juce-grid-page__signal-canvas {
+  --juce-grid-signal-card-width: clamp(11rem, 13vw, 12.75rem);
+  --juce-grid-signal-card-height: clamp(8rem, 10vw, 9.25rem);
+  --juce-grid-signal-connector-offset: calc((var(--juce-grid-signal-card-width) / 2) - 0.5rem);
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
@@ -2832,8 +2835,7 @@
 
 .juce-grid-page__signal-grid-item[data-slot-kind='plugin'],
 .juce-grid-page__signal-grid-item[data-slot-kind='add'] {
-  --juce-grid-signal-card-size: clamp(9rem, 11vw, 10.5rem);
-  inline-size: var(--juce-grid-signal-card-size);
+  inline-size: var(--juce-grid-signal-card-width);
 }
 
 .juce-grid-page__signal-flow-bridge,
@@ -2914,24 +2916,24 @@
 
 .juce-grid-page__signal-flow-vertical-connector.is-right {
   align-self: flex-end;
-  margin-right: clamp(5rem, 9vw, 6rem);
+  margin-right: var(--juce-grid-signal-connector-offset);
 }
 
 .juce-grid-page__signal-flow-vertical-connector.is-left {
   align-self: flex-start;
-  margin-left: clamp(5rem, 9vw, 6rem);
+  margin-left: var(--juce-grid-signal-connector-offset);
 }
 
-/* ── Signal Plugin Card: Square Hero-Icon Layout ── */
+/* ── Signal Plugin Card: Unified Rectangular Layout ── */
 
 .juce-grid-page__signal-plugin-card {
   --juce-grid-signal-accent: var(--cds-link-primary);
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  aspect-ratio: 1;
+  justify-content: space-between;
   inline-size: 100%;
+  min-block-size: var(--juce-grid-signal-card-height);
   border: 1px solid var(--cds-border-subtle, var(--border));
   border-radius: 0.75rem;
   background: #000000;
@@ -3024,14 +3026,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 0.75rem 0.5rem;
+  min-block-size: 0;
+  padding: 1rem 1rem 0.4rem;
   overflow: hidden;
 }
 
 .juce-grid-page__signal-plugin-hero-svg {
   display: block;
-  width: min(60%, 5rem);
-  height: min(60%, 5rem);
+  width: min(42%, 3.5rem);
+  height: min(42%, 3.5rem);
   color: var(--juce-grid-signal-accent);
   fill: var(--juce-grid-signal-accent);
   opacity: 0.85;
@@ -3048,35 +3051,37 @@
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-end;
   gap: 0;
-  padding: 0.75rem;
+  min-block-size: 3.3rem;
+  padding: 0.7rem 0.85rem 0.8rem;
   background: rgba(255, 255, 255, 0.025);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   overflow: hidden;
 }
 
 .juce-grid-page__signal-plugin-title {
-  display: block;
+  display: -webkit-box;
   inline-size: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
+  white-space: normal;
+  text-align: left;
   color: color-mix(in srgb, var(--juce-grid-signal-accent) 82%, white);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.015em;
-  line-height: 1.1;
+  line-height: 1.15;
   min-width: 0;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   text-shadow: 0 0 0.35rem color-mix(in srgb, var(--juce-grid-signal-accent) 18%, transparent);
 }
 
 .juce-grid-page__signal-plugin-actions {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 0.4rem;
+  right: 0.4rem;
   z-index: 2;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -3116,8 +3121,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.625rem;
-  aspect-ratio: 1;
   inline-size: 100%;
+  min-block-size: var(--juce-grid-signal-card-height);
   border: 1px dashed var(--cds-border-subtle, var(--border));
   border-radius: 0.75rem;
   padding: 0.75rem;

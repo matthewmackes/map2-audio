@@ -25,6 +25,7 @@
     "@carbon/react": "^1.103.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fontsource/ibm-plex-sans": "^5.2.8",
     "@fontsource/roboto": "^5.1.1",
     "@monaco-editor/react": "^4.7.0",
     "@mui/icons-material": "^6.5.0",

@@ -53,7 +53,7 @@ export function LCDEmulator({ event, nodeLabel = 'NODE-0000', loading = false }:
             <div
               key={i}
               className="text-base leading-none text-amber-900"
-              style={{ fontFamily: 'Courier New, monospace', letterSpacing: '0.1em' }}
+              style={{ fontFamily: 'var(--font-ui)', letterSpacing: '0.1em' }}
             >
               {line}
             </div>

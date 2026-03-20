@@ -1,0 +1,3 @@
+web/src/app/pages/JuceGridPage.css:2893:.juce-grid-page__signal-flow-bridge-label {
+web/src/app/pages/JuceGridSignalCanvas.tsx:529:          <span className="juce-grid-page__signal-flow-bridge-label">Input</span>
+web/src/app/pages/JuceGridSignalCanvas.tsx:707:          <span className="juce-grid-page__signal-flow-bridge-label">Output</span>

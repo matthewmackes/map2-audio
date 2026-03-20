@@ -75,7 +75,7 @@
   padding: var(--cds-spacing-05);
   background: var(--cds-layer-01);
   color: var(--cds-text-primary);
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-family: var(--cds-code-01-font-family, var(--font-ui));
   overflow: auto;
 }
 

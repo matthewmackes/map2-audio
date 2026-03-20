@@ -1,210 +1,4 @@
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-text-400-normal.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  unicode-range:
-    U+0000-00FF, U+0100-017F, U+0180-024F, U+0259, U+1E00-1EFF, U+2000-206F,
-    U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2300-23FF,
-    U+2460-24FF, U+2500-259F, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+2B00-2BFF;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-glyph-400-normal.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  unicode-range:
-    U+E0A0, U+E0B0-E0B3, U+E0B6-E0B7, U+EA6C, U+EA6D, U+EA76, U+EA78, U+EA80,
-    U+EA83, U+EAB2, U+EAF1, U+EB03, U+EB14, U+EB15, U+EB2C, U+EB4E, U+EB50,
-    U+EB51, U+EB83, U+EBA5-EBA7, U+EBB1, U+EBCE, U+EC19, U+EC1B, U+F017,
-    U+F026-F028, U+F071, U+F0C1, U+F1EB, U+F233, U+F2DB, U+F418, U+F422,
-    U+F437, U+F43A, U+F44C, U+F498, U+F529;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-text-400-italic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  unicode-range:
-    U+0000-00FF, U+0100-017F, U+0180-024F, U+0259, U+1E00-1EFF, U+2000-206F,
-    U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2300-23FF,
-    U+2460-24FF, U+2500-259F, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+2B00-2BFF;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-glyph-400-italic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  unicode-range:
-    U+E0A0, U+E0B0-E0B3, U+E0B6-E0B7, U+EA6C, U+EA6D, U+EA76, U+EA78, U+EA80,
-    U+EA83, U+EAB2, U+EAF1, U+EB03, U+EB14, U+EB15, U+EB2C, U+EB4E, U+EB50,
-    U+EB51, U+EB83, U+EBA5-EBA7, U+EBB1, U+EBCE, U+EC19, U+EC1B, U+F017,
-    U+F026-F028, U+F071, U+F0C1, U+F1EB, U+F233, U+F2DB, U+F418, U+F422,
-    U+F437, U+F43A, U+F44C, U+F498, U+F529;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-text-500-normal.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  unicode-range:
-    U+0000-00FF, U+0100-017F, U+0180-024F, U+0259, U+1E00-1EFF, U+2000-206F,
-    U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2300-23FF,
-    U+2460-24FF, U+2500-259F, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+2B00-2BFF;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-glyph-500-normal.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  unicode-range:
-    U+E0A0, U+E0B0-E0B3, U+E0B6-E0B7, U+EA6C, U+EA6D, U+EA76, U+EA78, U+EA80,
-    U+EA83, U+EAB2, U+EAF1, U+EB03, U+EB14, U+EB15, U+EB2C, U+EB4E, U+EB50,
-    U+EB51, U+EB83, U+EBA5-EBA7, U+EBB1, U+EBCE, U+EC19, U+EC1B, U+F017,
-    U+F026-F028, U+F071, U+F0C1, U+F1EB, U+F233, U+F2DB, U+F418, U+F422,
-    U+F437, U+F43A, U+F44C, U+F498, U+F529;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-text-500-italic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 500;
-  font-display: swap;
-  unicode-range:
-    U+0000-00FF, U+0100-017F, U+0180-024F, U+0259, U+1E00-1EFF, U+2000-206F,
-    U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2300-23FF,
-    U+2460-24FF, U+2500-259F, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+2B00-2BFF;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-glyph-500-italic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 500;
-  font-display: swap;
-  unicode-range:
-    U+E0A0, U+E0B0-E0B3, U+E0B6-E0B7, U+EA6C, U+EA6D, U+EA76, U+EA78, U+EA80,
-    U+EA83, U+EAB2, U+EAF1, U+EB03, U+EB14, U+EB15, U+EB2C, U+EB4E, U+EB50,
-    U+EB51, U+EB83, U+EBA5-EBA7, U+EBB1, U+EBCE, U+EC19, U+EC1B, U+F017,
-    U+F026-F028, U+F071, U+F0C1, U+F1EB, U+F233, U+F2DB, U+F418, U+F422,
-    U+F437, U+F43A, U+F44C, U+F498, U+F529;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-text-600-normal.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  unicode-range:
-    U+0000-00FF, U+0100-017F, U+0180-024F, U+0259, U+1E00-1EFF, U+2000-206F,
-    U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2300-23FF,
-    U+2460-24FF, U+2500-259F, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+2B00-2BFF;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-glyph-600-normal.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  unicode-range:
-    U+E0A0, U+E0B0-E0B3, U+E0B6-E0B7, U+EA6C, U+EA6D, U+EA76, U+EA78, U+EA80,
-    U+EA83, U+EAB2, U+EAF1, U+EB03, U+EB14, U+EB15, U+EB2C, U+EB4E, U+EB50,
-    U+EB51, U+EB83, U+EBA5-EBA7, U+EBB1, U+EBCE, U+EC19, U+EC1B, U+F017,
-    U+F026-F028, U+F071, U+F0C1, U+F1EB, U+F233, U+F2DB, U+F418, U+F422,
-    U+F437, U+F43A, U+F44C, U+F498, U+F529;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-text-600-italic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 600;
-  font-display: swap;
-  unicode-range:
-    U+0000-00FF, U+0100-017F, U+0180-024F, U+0259, U+1E00-1EFF, U+2000-206F,
-    U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2300-23FF,
-    U+2460-24FF, U+2500-259F, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+2B00-2BFF;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-glyph-600-italic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 600;
-  font-display: swap;
-  unicode-range:
-    U+E0A0, U+E0B0-E0B3, U+E0B6-E0B7, U+EA6C, U+EA6D, U+EA76, U+EA78, U+EA80,
-    U+EA83, U+EAB2, U+EAF1, U+EB03, U+EB14, U+EB15, U+EB2C, U+EB4E, U+EB50,
-    U+EB51, U+EB83, U+EBA5-EBA7, U+EBB1, U+EBCE, U+EC19, U+EC1B, U+F017,
-    U+F026-F028, U+F071, U+F0C1, U+F1EB, U+F233, U+F2DB, U+F418, U+F422,
-    U+F437, U+F43A, U+F44C, U+F498, U+F529;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-text-700-normal.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  unicode-range:
-    U+0000-00FF, U+0100-017F, U+0180-024F, U+0259, U+1E00-1EFF, U+2000-206F,
-    U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2300-23FF,
-    U+2460-24FF, U+2500-259F, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+2B00-2BFF;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-glyph-700-normal.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  unicode-range:
-    U+E0A0, U+E0B0-E0B3, U+E0B6-E0B7, U+EA6C, U+EA6D, U+EA76, U+EA78, U+EA80,
-    U+EA83, U+EAB2, U+EAF1, U+EB03, U+EB14, U+EB15, U+EB2C, U+EB4E, U+EB50,
-    U+EB51, U+EB83, U+EBA5-EBA7, U+EBB1, U+EBCE, U+EC19, U+EC1B, U+F017,
-    U+F026-F028, U+F071, U+F0C1, U+F1EB, U+F233, U+F2DB, U+F418, U+F422,
-    U+F437, U+F43A, U+F44C, U+F498, U+F529;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-text-700-italic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 700;
-  font-display: swap;
-  unicode-range:
-    U+0000-00FF, U+0100-017F, U+0180-024F, U+0259, U+1E00-1EFF, U+2000-206F,
-    U+20A0-20CF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2300-23FF,
-    U+2460-24FF, U+2500-259F, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+2B00-2BFF;
-}
-
-@font-face {
-  font-family: 'BlexMono Nerd Font';
-  src: url('/fonts/blexmono-nerd/v3.4.0/blexmono-nerd-glyph-700-italic.woff2') format('woff2');
-  font-style: italic;
-  font-weight: 700;
-  font-display: swap;
-  unicode-range:
-    U+E0A0, U+E0B0-E0B3, U+E0B6-E0B7, U+EA6C, U+EA6D, U+EA76, U+EA78, U+EA80,
-    U+EA83, U+EAB2, U+EAF1, U+EB03, U+EB14, U+EB15, U+EB2C, U+EB4E, U+EB50,
-    U+EB51, U+EB83, U+EBA5-EBA7, U+EBB1, U+EBCE, U+EC19, U+EC1B, U+F017,
-    U+F026-F028, U+F071, U+F0C1, U+F1EB, U+F233, U+F2DB, U+F418, U+F422,
-    U+F437, U+F43A, U+F44C, U+F498, U+F529;
-}
+/* IBM Plex Sans is imported from @fontsource in main.tsx. */
 
 :root {
   /* ── Quad-Tone Dark Theme ──────────────────────────────── */
@@ -266,7 +60,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: 'BlexMono Nerd Font', ui-monospace, Menlo, Monaco, monospace;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   background: var(--bg);
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
@@ -325,7 +119,7 @@ img {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  font-family: var(--font-ui-tight, 'BlexMono Nerd Font', ui-monospace, Menlo, Monaco, monospace);
+  font-family: var(--font-ui-tight, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   min-height: 46px;
   gap: 12px;
   padding: 0 clamp(12px, 1.8vw, 24px);
@@ -8474,9 +8268,9 @@ kbd {
 
 /* T092: IBM Carbon flat corporate override layer */
 :root {
-  --font-ui: 'BlexMono Nerd Font', ui-monospace, Menlo, Monaco, monospace;
-  --font-ui-tight: 'BlexMono Nerd Font', ui-monospace, Menlo, Monaco, monospace;
-  --font-display: 'BlexMono Nerd Font', ui-monospace, Menlo, Monaco, monospace;
+  --font-ui: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-ui-tight: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-sans: var(--font-ui);
   --font-mono: var(--font-ui);
   --cds-body-01-font-family: var(--font-ui);

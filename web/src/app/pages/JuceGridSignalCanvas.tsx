@@ -527,7 +527,6 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
           data-testid="juce-grid-signal-flow-bridge-input"
         >
           <span className="juce-grid-page__signal-flow-bridge-label">Input</span>
-          <span className="juce-grid-page__signal-flow-line" />
           <span className="juce-grid-page__signal-flow-dots">
             <span className="juce-grid-page__signal-flow-dot" />
             <span className="juce-grid-page__signal-flow-dot" />
@@ -705,7 +704,6 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
             <span className="juce-grid-page__signal-flow-dot" />
             <span className="juce-grid-page__signal-flow-dot" />
           </span>
-          <span className="juce-grid-page__signal-flow-line" />
           <span className="juce-grid-page__signal-flow-bridge-label">Output</span>
         </div>
 

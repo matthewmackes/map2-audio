@@ -15,7 +15,7 @@
     0 0 40px rgba(77, 158, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   overflow: hidden;
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
 }
 
 /* Header Section */

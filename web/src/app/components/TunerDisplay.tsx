@@ -293,7 +293,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
             fontWeight: 700,
             color: hasSignal ? color : 'rgba(255, 255, 255, 0.2)',
             textShadow: hasSignal ? `0 0 20px ${color}` : 'none',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontFamily: 'var(--font-ui)',
             transition: 'all 0.2s ease',
             letterSpacing: '-2px',
           }}
