@@ -174,6 +174,12 @@ class DrumMachineService(Singleton):
                 payload[target] = patch[source]
         self.update_state(payload)
         if patch.get("is_playing") is False:
+            try:
+                from app.services.drum_sequencer_service import get_drum_sequencer_service
+
+                get_drum_sequencer_service().handle_transport_stop(self._state.active_pack)
+            except Exception:
+                pass
             self._persist_state()
         return self.get_transport()
 

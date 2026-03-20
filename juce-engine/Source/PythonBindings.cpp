@@ -2969,6 +2969,37 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_drum_accent_velocity", [](const Map2AudioEngine& self) {
             return self.getDrumSequencer().getAccentVelocity();
         }, "Get global drum sequencer accent velocity")
+        .def("add_drum_song_entry", [](Map2AudioEngine& self, int patternIndex, int repeatCount, int position) {
+            return self.getDrumSequencer().addSongEntry(patternIndex, repeatCount, position);
+        }, py::arg("pattern"), py::arg("repeat_count"), py::arg("position") = -1,
+           "Insert a drum song entry")
+        .def("remove_drum_song_entry", [](Map2AudioEngine& self, int position) {
+            return self.getDrumSequencer().removeSongEntry(position);
+        }, py::arg("position"), "Remove a drum song entry")
+        .def("reorder_drum_song_entries", [](Map2AudioEngine& self, const std::vector<int>& order) {
+            return self.getDrumSequencer().reorderSongEntries(order);
+        }, py::arg("order"), "Reorder drum song entries by index")
+        .def("get_drum_song", [](const Map2AudioEngine& self) {
+            py::list result;
+            for (const auto& entry : self.getDrumSequencer().getSong()) {
+                py::dict payload;
+                payload["pattern"] = entry.patternIndex;
+                payload["repeat_count"] = entry.repeatCount;
+                result.append(payload);
+            }
+            return result;
+        }, "Get the drum song arrangement")
+        .def("clear_drum_song", [](Map2AudioEngine& self) {
+            self.getDrumSequencer().clearSong();
+            return true;
+        }, "Clear the drum song arrangement")
+        .def("set_drum_song_loop", [](Map2AudioEngine& self, bool enabled) {
+            self.getDrumSequencer().setSongLoop(enabled);
+            return true;
+        }, py::arg("enabled"), "Enable or disable drum song looping")
+        .def("get_drum_song_loop", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().getSongLoop();
+        }, "Get the drum song loop state")
 
         // ========================================
         // Parameters

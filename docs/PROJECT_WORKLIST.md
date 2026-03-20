@@ -1309,7 +1309,7 @@ Subtasks:
     - Song playback: advance through entries, repeat pattern N times, then next entry; loop or stop at end
     - API: `add_song_entry(pattern_id, repeat_count, position)`, `remove_song_entry(position)`, `reorder_song_entries(order)`, `get_song()`, `clear_song()`
     - `set_song_loop(bool)`, `get_song_loop()`
-  - [ ] T213-D: Python service layer — `app/services/drum_sequencer_service.py`
+  - [✓] T213-D: Python service layer — `app/services/drum_sequencer_service.py`
     - Wraps C++ bindings with validation, error handling, state persistence
     - Pattern save/load to `~/.map2/drums/patterns/` as JSON
     - Kit + pattern bundle save/load (kit SFZ reference + all 128 patterns + song)
@@ -1327,7 +1327,7 @@ Subtasks:
     - Variation: each pattern has Main + up to 10 variations (same step count, different velocities/instruments); `set_variation(pattern, variation_index)`
     - Count-in: play N bars (0–4) of metronome clicks before pattern starts
 Assigned to: Codex
-Last updated: 2026-03-20 07:08 - Codex
+Last updated: 2026-03-20 07:14 - Codex
 - Progress notes:
   - Completed `T213-A` with a new `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp` core that owns 128 patterns, 16 instrument lanes, 64-step storage, transport state, BPM/swing/accent controls, current pattern/step/bar tracking, sample-domain step scheduling, and tap-tempo averaging.
   - Extended `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` with queued `triggerNote(...)` support so the sequencer can inject software hits into the existing drum processor path with sample offsets.
@@ -1339,6 +1339,10 @@ Last updated: 2026-03-20 07:08 - Codex
   - Completed `T213-C` by extending `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp` with a 256-entry song list, insertion/removal/reorder APIs, loop enable/disable state, repeat-aware pattern progression, automatic transport rewind at song end, and seamless pattern handoff between song sections.
   - Added `juce-engine/tests/DrumSequencerTests.cpp` coverage for song entry ordering/editing, repeat-count playback across multiple patterns, end-of-song stop behavior, and looped restart to the first song entry.
   - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
+  - Completed `T213-D` with `app/services/drum_sequencer_service.py`, a singleton persistence layer that validates 16x64 pattern grids and song entries, syncs pattern/song/swing/accent state to the native engine bindings, persists per-pattern JSON under `~/.map2/drums/patterns/`, saves and restores full 128-pattern bundles plus song arrangements, and maintains sequencer autosave snapshots.
+  - Extended `juce-engine/Source/PythonBindings.cpp` with the missing song-arrangement bindings (`add/remove/reorder/get/clear song`, `set/get song loop`) so the new sequencer service can round-trip bundle state through the native engine, and wired `app/services/drum_machine_service.py` to trigger sequencer autosave on transport stop.
+  - Added `tests/test_drum_sequencer_service.py` coverage for per-pattern persistence, bundle/song round-trip restore, and stop-triggered autosave behavior through the drum-machine transport service.
+  - Validation: `pytest tests/test_drum_sequencer_service.py tests/test_drum_machine_service.py tests/test_drum_routes.py -q` -> `15 passed`; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass; `python3` smoke import of `juce-engine/build/map2_audio_engine` covering `add_drum_song_entry`, `get_drum_song`, `remove_drum_song_entry`, `clear_drum_song`, and `set/get_drum_song_loop` -> pass.
 
 ---
 
