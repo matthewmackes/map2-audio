@@ -2,6 +2,7 @@ import json
 import asyncio
 import pytest
 
+from app.services import drum_kit_service as drum_kit_service_module
 from app.services.websocket_manager import ws_manager
 
 from app.services import drum_machine_service as drum_service_module
@@ -195,21 +196,24 @@ def _build_service(tmp_path, monkeypatch):
     factory_dir = tmp_path / "factory"
     generated_dir = tmp_path / "generated"
     state_path = tmp_path / "state.json"
+    midi_configs_dir = tmp_path / "midi_configs"
     factory_dir.mkdir()
     generated_dir.mkdir()
+    midi_configs_dir.mkdir()
     fake_engine = _FakeDrumEngine()
     fake_engine_service = type("FakeEngineService", (), {"engine": fake_engine})()
 
     monkeypatch.setattr(drum_service_module, "_FACTORY_PACKS_DIR", factory_dir)
     monkeypatch.setattr(drum_service_module, "_GENERATED_PACKS_DIR", generated_dir)
     monkeypatch.setattr(drum_service_module, "_DEFAULT_STATE_PATH", state_path)
+    monkeypatch.setattr(drum_service_module, "_MIDI_CONFIGS_DIR", midi_configs_dir)
     monkeypatch.setattr(drum_service_module, "get_audio_engine", lambda: fake_engine_service)
     drum_service_module.DrumMachineService.reset_instance()
-    return drum_service_module.get_drum_machine_service(), factory_dir, generated_dir, state_path, fake_engine
+    return drum_service_module.get_drum_machine_service(), factory_dir, generated_dir, state_path, midi_configs_dir, fake_engine
 
 
 def test_drum_machine_service_persists_and_restores_state(tmp_path, monkeypatch):
-    service, _, _, state_path, _ = _build_service(tmp_path, monkeypatch)
+    service, _, _, state_path, _, _ = _build_service(tmp_path, monkeypatch)
 
     updated = service.update_state({
         "bpm": 142,
@@ -234,7 +238,7 @@ def test_drum_machine_service_persists_and_restores_state(tmp_path, monkeypatch)
 
 
 def test_drum_machine_service_indexes_factory_and_generated_packs(tmp_path, monkeypatch):
-    service, factory_dir, generated_dir, _, _ = _build_service(tmp_path, monkeypatch)
+    service, factory_dir, generated_dir, _, _, _ = _build_service(tmp_path, monkeypatch)
 
     (factory_dir / "factory.json").write_text(json.dumps({
         "pack_id": "factory-one",
@@ -269,7 +273,7 @@ def test_drum_machine_service_indexes_factory_and_generated_packs(tmp_path, monk
 
 
 def test_drum_machine_service_transport_projection(tmp_path, monkeypatch):
-    service, _, _, _, _ = _build_service(tmp_path, monkeypatch)
+    service, _, _, _, _, _ = _build_service(tmp_path, monkeypatch)
 
     transport = service.update_transport({
         "is_playing": True,
@@ -289,7 +293,7 @@ def test_drum_machine_service_transport_projection(tmp_path, monkeypatch):
 
 
 def test_drum_machine_service_tracks_sequencer_position(tmp_path, monkeypatch):
-    service, _, _, _, _ = _build_service(tmp_path, monkeypatch)
+    service, _, _, _, _, _ = _build_service(tmp_path, monkeypatch)
 
     position = service.update_position({
         "step": 7,
@@ -309,7 +313,7 @@ def test_drum_machine_service_tracks_sequencer_position(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_drum_machine_service_publishes_metering_topic_history(tmp_path, monkeypatch):
-    service, _, _, _, _ = _build_service(tmp_path, monkeypatch)
+    service, _, _, _, _, _ = _build_service(tmp_path, monkeypatch)
     ws_manager.event_history.clear()
 
     service.update_metering({
@@ -331,7 +335,7 @@ async def test_drum_machine_service_publishes_metering_topic_history(tmp_path, m
 
 
 def test_drum_machine_service_syncs_master_volume_and_reads_engine_metering(tmp_path, monkeypatch):
-    service, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
 
     service.update_state({"volume": 64})
     fake_engine.metering["master_peak_left"] = 0.42
@@ -345,7 +349,7 @@ def test_drum_machine_service_syncs_master_volume_and_reads_engine_metering(tmp_
 @pytest.mark.asyncio
 async def test_drum_machine_service_polls_engine_position_and_broadcasts_updates(tmp_path, monkeypatch):
     monkeypatch.setattr(drum_service_module, "_POSITION_POLL_INTERVAL_SECONDS", 0.001)
-    service, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
     ws_manager.event_history.clear()
 
     transport = service.update_transport({
@@ -383,7 +387,7 @@ async def test_drum_machine_service_polls_engine_position_and_broadcasts_updates
 
 
 def test_drum_machine_service_round_trips_midi_mapping_and_velocity_curves(tmp_path, monkeypatch):
-    service, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
 
     mapping = service.update_midi_mapping(
         {
@@ -419,7 +423,7 @@ def test_drum_machine_service_round_trips_midi_mapping_and_velocity_curves(tmp_p
 
 
 def test_drum_machine_service_round_trips_zones_learn_and_presets(tmp_path, monkeypatch):
-    service, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
 
     zones = service.update_midi_zones(
         {
@@ -449,3 +453,42 @@ def test_drum_machine_service_round_trips_zones_learn_and_presets(tmp_path, monk
     assert presets["presets"][0] == "Roland PD-140DS / CY-18DR / VH-14D"
     assert loaded["status"] == "ok"
     assert fake_engine.loaded_presets[-1] == "Roland PD-140DS / CY-18DR / VH-14D"
+
+
+def test_drum_machine_service_persists_and_restores_per_kit_midi_config(tmp_path, monkeypatch):
+    service, _, _, _, midi_configs_dir, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    class _FakeKitService:
+        @staticmethod
+        def get_active_kit():
+            return {"kit_id": "factory_one"}
+
+    fake_kit_service_module = type("FakeKitServiceModule", (), {"has_instance": staticmethod(lambda: True)})
+    monkeypatch.setattr(drum_kit_service_module, "get_drum_kit_service", lambda: _FakeKitService())
+    monkeypatch.setattr(drum_kit_service_module, "DrumKitService", fake_kit_service_module)
+
+    service.update_midi_mapping(
+        {"global_midi_channel": 9, "pads": [{"pad": 0, "notes": [36, 35], "midi_channel": 10}]}
+    )
+    service.update_velocity_curves(
+        {"pads": [{"pad": 0, "curve_type": 2, "fixed_velocity": 0.7, "input_floor": 0.1, "output_floor": 0.2, "output_ceiling": 0.9}]}
+    )
+    service.update_midi_zones(
+        {"pads": [{"pad": 1, "zones": [{"kind": 1, "trigger_note": 40, "key_switch_note": 36, "velocity_scale": 0.92, "enabled": True}]}]}
+    )
+
+    persisted = json.loads((midi_configs_dir / "factory_one.json").read_text())
+    assert persisted["mapping"]["global_midi_channel"] == 9
+    assert persisted["mapping"]["pads"][0]["notes"] == [36, 35]
+    assert persisted["velocity_curves"]["pads"][0]["curve_type"] == 2
+    assert persisted["zones"]["pads"][1]["zones"][0]["trigger_note"] == 40
+
+    fake_engine.global_midi_channel = 0
+    fake_engine.pad_notes[0] = [36]
+    fake_engine.pad_zones[1] = []
+    restored = service.load_midi_config_for_kit("factory_one")
+
+    assert restored["mapping"]["global_midi_channel"] == 9
+    assert fake_engine.global_midi_channel_calls[-1] == 9
+    assert fake_engine.pad_add_note_calls[-1] == (0, 35)
+    assert fake_engine.pad_zone_calls[-1] == (1, 1, 40, 36, 0.92)

@@ -157,6 +157,13 @@ class DrumKitService(Singleton):
 
         self._active_kit = ActiveDrumKitModel(kit_id=manifest.kit_id, source=source, root_path=str(root_path))
         self._persist_active_kit()
+        try:
+            from app.services.drum_machine_service import DrumMachineService, get_drum_machine_service
+
+            if DrumMachineService.has_instance():
+                get_drum_machine_service().load_midi_config_for_kit(manifest.kit_id)
+        except Exception:
+            pass
 
         status_getter = getattr(engine, "get_drum_kit_status", None)
         status_payload = dict(status_getter()) if callable(status_getter) else {}

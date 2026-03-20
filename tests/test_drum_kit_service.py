@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from app.services import drum_machine_service as drum_machine_service_module
 from app.services import drum_kit_service as drum_kit_service_module
 
 
@@ -189,3 +190,26 @@ def test_drum_kit_service_rejects_invalid_archive_member_paths(tmp_path, monkeyp
 
     with pytest.raises(ValueError, match="Invalid archive member path"):
         service.import_user_kit_archive(buffer.getvalue(), filename="bad.zip")
+
+
+def test_drum_kit_service_restores_persisted_midi_config_when_loading_active_kit(tmp_path, monkeypatch):
+    service, factory_dir, _, _, _ = _build_service(tmp_path, monkeypatch)
+    _write_kit(factory_dir, "factory_one", source_name="Factory One")
+
+    class _FakeDrumMachineService:
+        def __init__(self):
+            self.loaded_kit_ids = []
+
+        def load_midi_config_for_kit(self, kit_id):
+            self.loaded_kit_ids.append(kit_id)
+            return {"mapping": {}, "velocity_curves": {}, "zones": {}}
+
+    fake_drum_machine_service = _FakeDrumMachineService()
+    fake_drum_machine_service_class = type("FakeDrumMachineServiceClass", (), {"has_instance": staticmethod(lambda: True)})
+    monkeypatch.setattr(drum_machine_service_module, "get_drum_machine_service", lambda: fake_drum_machine_service)
+    monkeypatch.setattr(drum_machine_service_module, "DrumMachineService", fake_drum_machine_service_class)
+
+    payload = service.load_kit("factory_one")
+
+    assert payload["status"] == "ok"
+    assert fake_drum_machine_service.loaded_kit_ids == ["factory_one"]

@@ -28,6 +28,7 @@ _DEFAULT_STATE_PATH = Path(os.environ.get("MAP2_DRUMS_STATE_PATH", _DEFAULT_DRUM
 _FACTORY_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_FACTORY_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "factory_packs"))
 _GENERATED_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_GENERATED_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "generated"))
 _POSITION_POLL_INTERVAL_SECONDS = float(os.environ.get("MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS", "0.05"))
+_MIDI_CONFIGS_DIR = Path(os.environ.get("MAP2_DRUMS_MIDI_CONFIGS_DIR", _DEFAULT_DRUMS_ROOT / "midi_configs"))
 _DEFAULT_DRUM_NOTES = [36, 38, 42, 46, 41, 43, 45, 49, 51, 57, 39, 37, 56, 47, 50, 48]
 
 
@@ -172,6 +173,7 @@ class DrumMachineService(Singleton):
         self._state_path = _DEFAULT_STATE_PATH
         self._factory_packs_dir = _FACTORY_PACKS_DIR
         self._user_content_manager = UserContentManager(_GENERATED_PACKS_DIR)
+        self._midi_configs_dir = _MIDI_CONFIGS_DIR
         self._metering = DrumMeteringModel()
         self._state = self._load_state()
         self._position = DrumSequencerPositionModel(
@@ -386,6 +388,56 @@ class DrumMachineService(Singleton):
             "pack_id": pack_id,
         }
 
+    def _get_active_kit_id(self) -> Optional[str]:
+        try:
+            from app.services.drum_kit_service import DrumKitService, get_drum_kit_service
+
+            if not DrumKitService.has_instance():
+                return None
+            active_kit = get_drum_kit_service().get_active_kit()
+            return None if active_kit is None else str(active_kit.get("kit_id") or "")
+        except Exception:
+            return None
+
+    def _midi_config_path(self, kit_id: str) -> Path:
+        return self._midi_configs_dir / f"{kit_id}.json"
+
+    def _current_midi_config_payload(self) -> Dict[str, Any]:
+        return {
+            "mapping": self.get_midi_mapping(),
+            "velocity_curves": self.get_velocity_curves(),
+            "zones": self.get_midi_zones(),
+        }
+
+    def persist_midi_config_for_kit(self, kit_id: str) -> Dict[str, Any]:
+        payload = self._current_midi_config_payload()
+        self._midi_configs_dir.mkdir(parents=True, exist_ok=True)
+        path = self._midi_config_path(kit_id)
+        temp_path = path.with_suffix(".tmp")
+        temp_path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+        temp_path.replace(path)
+        return payload
+
+    def persist_active_kit_midi_config(self) -> Optional[Dict[str, Any]]:
+        kit_id = self._get_active_kit_id()
+        if not kit_id:
+            return None
+        return self.persist_midi_config_for_kit(kit_id)
+
+    def load_midi_config_for_kit(self, kit_id: str) -> Dict[str, Any]:
+        path = self._midi_config_path(kit_id)
+        if not path.exists():
+            return self._current_midi_config_payload()
+
+        payload = json.loads(path.read_text())
+        mapping = DrumMidiMappingModel.model_validate(payload.get("mapping", {})).model_dump()
+        velocity_curves = DrumMidiVelocityCurvesModel.model_validate(payload.get("velocity_curves", {})).model_dump()
+        zones = DrumMidiZonesModel.model_validate(payload.get("zones", {})).model_dump()
+        self.update_midi_mapping(mapping)
+        self.update_velocity_curves(velocity_curves)
+        self.update_midi_zones(zones)
+        return self._current_midi_config_payload()
+
     def get_midi_mapping(self) -> Dict[str, Any]:
         engine = self._engine()
         getter = getattr(engine, "get_drum_global_midi_channel", None) if engine is not None else None
@@ -448,7 +500,9 @@ class DrumMachineService(Singleton):
                 if callable(set_channel):
                     set_channel(pad, midi_channel)
 
-        return self.get_midi_mapping()
+        updated = self.get_midi_mapping()
+        self.persist_active_kit_midi_config()
+        return updated
 
     def get_velocity_curves(self) -> Dict[str, Any]:
         engine = self._engine()
@@ -493,7 +547,9 @@ class DrumMachineService(Singleton):
                     self._velocity_curves[pad]["output_floor"],
                     self._velocity_curves[pad]["output_ceiling"],
                 )
-        return self.get_velocity_curves()
+        updated = self.get_velocity_curves()
+        self.persist_active_kit_midi_config()
+        return updated
 
     def get_midi_zones(self) -> Dict[str, Any]:
         engine = self._engine()
@@ -536,7 +592,9 @@ class DrumMachineService(Singleton):
                             zone["key_switch_note"],
                             zone["velocity_scale"],
                         )
-        return self.get_midi_zones()
+        updated = self.get_midi_zones()
+        self.persist_active_kit_midi_config()
+        return updated
 
     def start_midi_learn(self, pad: int, learn_all: bool = False, timeout_seconds: int = 10) -> Dict[str, Any]:
         engine = self._engine()
@@ -595,12 +653,14 @@ class DrumMachineService(Singleton):
             applied = bool(loader(preset_name))
         if not applied:
             raise ValueError(f"Unknown drum MIDI preset: {preset_name}")
-        return {
+        payload = {
             "status": "ok",
             "preset_name": preset_name,
             "mapping": self.get_midi_mapping(),
             "zones": self.get_midi_zones(),
         }
+        self.persist_active_kit_midi_config()
+        return payload
 
     def _engine(self) -> Any:
         try:

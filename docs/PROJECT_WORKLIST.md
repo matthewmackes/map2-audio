@@ -1454,9 +1454,9 @@ Subtasks:
     - `GET /api/engine/drums/midi/learn/status` — current learn state (active pad, last received note)
     - `GET /api/engine/drums/midi/presets` — list hardware presets (Roland, Yamaha, Alesis, etc.)
     - `POST /api/engine/drums/midi/presets/load` — apply a hardware preset mapping
-  - [ ] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
+  - [✓] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
 Assigned to: Codex
-Last updated: 2026-03-20 09:20 - Codex
+Last updated: 2026-03-20 09:34 - Codex
 - Progress notes:
   - Completed `T215-A` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by replacing the single-note pad trigger assumption with a real note-to-pad mapping table, allowing multiple MIDI notes to target one pad while guaranteeing that any individual note maps to at most one pad.
   - Added global drum MIDI channel filtering alongside the existing per-pad channel filter, and extended the pybind surface in `juce-engine/Source/PythonBindings.cpp` with `add_drum_pad_note`, `remove_drum_pad_note`, `get_drum_pad_notes`, `set_drum_global_midi_channel`, and `get_drum_global_midi_channel`.
@@ -1478,6 +1478,10 @@ Last updated: 2026-03-20 09:20 - Codex
   - Added service-side typed models and engine-sync shims for global MIDI channel state, per-pad note/channel lists, bounded velocity curves with preview/last-hit telemetry, zone snapshots, learn-state reporting, and preset application so later persistence work can reuse one canonical Python representation.
   - Added route and service coverage in `tests/test_drum_routes.py` and `tests/test_drum_machine_service.py` for the new `/api/engine/drums/midi/*` contract, including mapping writes, curve updates, zone updates, learn mode state transitions, and preset list/load behavior.
   - Validation: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py` -> `28 passed`; `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/services/drum_machine_service.py app/routes/drums.py tests/test_drum_machine_service.py tests/test_drum_routes.py` -> pass.
+  - Completed `T215-F` in `app/services/drum_machine_service.py` by persisting the current MIDI mapping, per-pad velocity curves, and zone assignments into `~/.map2/drums/midi_configs/{kit_id}.json`, automatically saving after MIDI config mutations and reloading the matching snapshot whenever a drum kit becomes active.
+  - Extended `app/services/drum_kit_service.py` so kit loads restore any persisted per-kit MIDI config after SFZ/program assignment, keeping hardware note maps and zone/curve settings aligned with the selected drum kit instead of treating them as one global session setting.
+  - Added persistence coverage in `tests/test_drum_machine_service.py` and `tests/test_drum_kit_service.py` for per-kit JSON save/restore and active-kit reload behavior, while keeping the existing drum MIDI route contract intact in `tests/test_drum_routes.py`.
+  - Validation: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py tests/test_drum_kit_service.py` -> `35 passed`; `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/services/drum_machine_service.py app/services/drum_kit_service.py app/routes/drums.py tests/test_drum_machine_service.py tests/test_drum_routes.py tests/test_drum_kit_service.py` -> pass.
 
 ---
 
