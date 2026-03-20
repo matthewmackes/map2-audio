@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "license": "CC0-1.0",
+  "provenance_policy": "All factory drum-kit samples in this directory are procedurally generated inside the MAP2 repository and are not downloaded from third-party libraries.",
+  "generation_method": "Purpose-generated single-hit WAV assets synthesized in-repo for launch kits, with per-instrument SFZ programs defining 3 velocity layers, 2 round-robin alternates, and shared hi-hat choke groups where applicable.",
+  "sample_format": {
+    "container": "wav",
+    "channels": 1,
+    "sample_rate_hz": 32000,
+    "bit_depth": 16
+  },
+  "validation_entrypoint": "scripts/validate_factory_drum_kits.py",
+  "kits": [
+    {
+      "kit_id": "standard_rock",
+      "name": "Standard Rock",
+      "category": "acoustic",
+      "source_type": "purpose_generated",
+      "sfz_program_count": 16,
+      "sample_file_count": 96,
+      "velocity_layers_per_instrument": 3,
+      "round_robin_variations_per_instrument": 2,
+      "hihat_choke_group": 10
+    },
+    {
+      "kit_id": "electronic_808",
+      "name": "Electronic 808",
+      "category": "electronic",
+      "source_type": "purpose_generated",
+      "sfz_program_count": 16,
+      "sample_file_count": 96,
+      "velocity_layers_per_instrument": 3,
+      "round_robin_variations_per_instrument": 2,
+      "hihat_choke_group": 10
+    },
+    {
+      "kit_id": "electronic_909",
+      "name": "Electronic 909",
+      "category": "electronic",
+      "source_type": "purpose_generated",
+      "sfz_program_count": 16,
+      "sample_file_count": 96,
+      "velocity_layers_per_instrument": 3,
+      "round_robin_variations_per_instrument": 2,
+      "hihat_choke_group": 10
+    },
+    {
+      "kit_id": "jazz_brush",
+      "name": "Jazz Brush",
+      "category": "acoustic",
+      "source_type": "purpose_generated",
+      "sfz_program_count": 16,
+      "sample_file_count": 96,
+      "velocity_layers_per_instrument": 3,
+      "round_robin_variations_per_instrument": 2,
+      "hihat_choke_group": 10
+    }
+  ]
+}
