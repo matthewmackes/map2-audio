@@ -2936,6 +2936,25 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("apply_drum_midi_preset", [](Map2AudioEngine& self, const std::string& presetName) {
             return self.getDrumMachine().applyDrumMidiPreset(presetName);
         }, py::arg("preset_name"), "Apply a built-in drum MIDI hardware preset")
+        .def("start_drum_midi_learn", [](Map2AudioEngine& self, int padIndex, bool learnAll, int timeoutSeconds) {
+            return self.getDrumMachine().startMidiLearn(padIndex, learnAll, timeoutSeconds);
+        }, py::arg("pad"), py::arg("learn_all") = false, py::arg("timeout_seconds") = 10, "Start drum MIDI learn mode")
+        .def("stop_drum_midi_learn", [](Map2AudioEngine& self) {
+            self.getDrumMachine().stopMidiLearn();
+            return true;
+        }, "Stop drum MIDI learn mode")
+        .def("get_drum_midi_learn_state", [](const Map2AudioEngine& self) {
+            const auto state = self.getDrumMachine().getMidiLearnState();
+            py::dict result;
+            result["active"] = state.active;
+            result["learn_all"] = state.learnAll;
+            result["active_pad_index"] = state.activePadIndex;
+            result["next_pad_index"] = state.nextPadIndex;
+            result["last_received_note"] = state.lastReceivedNote;
+            result["last_received_channel"] = state.lastReceivedChannel;
+            result["timeout_seconds"] = state.timeoutSeconds;
+            return result;
+        }, "Get current drum MIDI learn status")
         .def("set_drum_pad_midi_channel", [](Map2AudioEngine& self, int padIndex, int midiChannel) {
             return self.getDrumMachine().setPadMidiChannel(padIndex, midiChannel);
         }, py::arg("pad"), py::arg("channel"), "Set drum pad MIDI channel")

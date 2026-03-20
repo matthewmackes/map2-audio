@@ -200,6 +200,7 @@ DrumMachineProcessor::DrumMachineProcessor() {
         addPadMidiNote(i, padConfigs_[static_cast<size_t>(i)].midiNote);
         applyPadConfigToPart(i);
     }
+    midiLearnDeadline_ = std::chrono::steady_clock::now();
 }
 
 void DrumMachineProcessor::prepare(double sampleRate, int samplesPerBlock, int numChannels) {
@@ -230,6 +231,11 @@ void DrumMachineProcessor::prepare(double sampleRate, int samplesPerBlock, int n
 }
 
 void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midiBuffer) {
+    expireMidiLearnIfNeeded();
+    for (const auto metadata : midiBuffer) {
+        handleMidiLearnMessage(metadata.getMessage());
+    }
+
     if (!prepared_.load(std::memory_order_acquire)) {
         return;
     }
@@ -677,6 +683,34 @@ bool DrumMachineProcessor::applyDrumMidiPreset(const std::string& presetName) {
     return true;
 }
 
+bool DrumMachineProcessor::startMidiLearn(int padIndex, bool learnAll, int timeoutSeconds) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+
+    midiLearnState_.active = true;
+    midiLearnState_.learnAll = learnAll;
+    midiLearnState_.activePadIndex = padIndex;
+    midiLearnState_.nextPadIndex = padIndex;
+    midiLearnState_.lastReceivedNote = -1;
+    midiLearnState_.lastReceivedChannel = -1;
+    midiLearnState_.timeoutSeconds = std::max(1, timeoutSeconds);
+    midiLearnDeadline_ = std::chrono::steady_clock::now() + std::chrono::seconds(midiLearnState_.timeoutSeconds);
+    return true;
+}
+
+void DrumMachineProcessor::stopMidiLearn() {
+    midiLearnState_.active = false;
+    midiLearnState_.learnAll = false;
+    midiLearnState_.activePadIndex = -1;
+    midiLearnState_.nextPadIndex = -1;
+}
+
+DrumMachineProcessor::MidiLearnState DrumMachineProcessor::getMidiLearnState() const {
+    expireMidiLearnIfNeeded();
+    return midiLearnState_;
+}
+
 bool DrumMachineProcessor::setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config) {
     return mixer_.setBusEq(busIndex, config);
 }
@@ -803,6 +837,64 @@ DrumMachineProcessor::PadZoneKind DrumMachineProcessor::zoneKindFromIndex(int zo
 
 std::string DrumMachineProcessor::defaultPadName(int padIndex) {
     return "Pad " + std::to_string(std::clamp(padIndex, 0, kPadCount - 1) + 1);
+}
+
+void DrumMachineProcessor::expireMidiLearnIfNeeded() const {
+    if (!midiLearnState_.active) {
+        return;
+    }
+    if (std::chrono::steady_clock::now() >= midiLearnDeadline_) {
+        midiLearnState_.active = false;
+        midiLearnState_.learnAll = false;
+        midiLearnState_.activePadIndex = -1;
+        midiLearnState_.nextPadIndex = -1;
+    }
+}
+
+bool DrumMachineProcessor::handleMidiLearnMessage(const juce::MidiMessage& message) {
+    expireMidiLearnIfNeeded();
+    if (!midiLearnState_.active || !message.isNoteOn()) {
+        return false;
+    }
+
+    const int padIndex = midiLearnState_.activePadIndex;
+    if (!isValidPadIndex(padIndex)) {
+        stopMidiLearn();
+        return false;
+    }
+
+    const int noteNumber = message.getNoteNumber();
+    const int midiChannel = message.getChannel();
+    midiLearnState_.lastReceivedNote = noteNumber;
+    midiLearnState_.lastReceivedChannel = midiChannel;
+    midiLearnDeadline_ = std::chrono::steady_clock::now() + std::chrono::seconds(midiLearnState_.timeoutSeconds);
+
+    setPadMidiNote(padIndex, noteNumber);
+    setPadMidiChannel(padIndex, midiChannel);
+
+    if (midiLearnState_.learnAll) {
+        advanceMidiLearn();
+    } else {
+        stopMidiLearn();
+    }
+    return true;
+}
+
+void DrumMachineProcessor::advanceMidiLearn() {
+    if (!midiLearnState_.learnAll) {
+        stopMidiLearn();
+        return;
+    }
+
+    const int currentPad = midiLearnState_.activePadIndex;
+    const int nextPad = currentPad + 1;
+    if (!isValidPadIndex(nextPad)) {
+        stopMidiLearn();
+        return;
+    }
+
+    midiLearnState_.activePadIndex = nextPad;
+    midiLearnState_.nextPadIndex = nextPad;
 }
 
 void DrumMachineProcessor::unassignTriggerNote(int midiNote) {

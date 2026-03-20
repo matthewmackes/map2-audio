@@ -7,6 +7,7 @@
 
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -78,6 +79,16 @@ public:
         float masterRmsRight = 0.0f;
     };
 
+    struct MidiLearnState {
+        bool active = false;
+        bool learnAll = false;
+        int activePadIndex = -1;
+        int nextPadIndex = -1;
+        int lastReceivedNote = -1;
+        int lastReceivedChannel = -1;
+        int timeoutSeconds = 10;
+    };
+
     DrumMachineProcessor();
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
@@ -127,6 +138,9 @@ public:
     std::vector<PadZoneConfig> getPadZones(int padIndex) const;
     std::vector<std::string> getDrumMidiPresetNames() const;
     bool applyDrumMidiPreset(const std::string& presetName);
+    bool startMidiLearn(int padIndex, bool learnAll = false, int timeoutSeconds = 10);
+    void stopMidiLearn();
+    MidiLearnState getMidiLearnState() const;
     bool setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config);
     bool setBusComp(int busIndex, const DrumMachineMixer::BusCompConfig& config);
     bool setBusLevel(int busIndex, float level);
@@ -152,6 +166,9 @@ private:
     static int zoneIndex(PadZoneKind kind);
     static PadZoneKind zoneKindFromIndex(int zoneIndex);
     static std::string defaultPadName(int padIndex);
+    void expireMidiLearnIfNeeded() const;
+    bool handleMidiLearnMessage(const juce::MidiMessage& message);
+    void advanceMidiLearn();
     void unassignTriggerNote(int midiNote);
     void applyPadConfigToPart(int padIndex);
 
@@ -169,6 +186,8 @@ private:
     std::array<float, kPadCount> padPeakMeters_{};
     std::array<float, kPadCount> padRmsMeters_{};
     std::array<float, kPadCount> lastMappedVelocity_{};
+    mutable MidiLearnState midiLearnState_{};
+    mutable std::chrono::steady_clock::time_point midiLearnDeadline_{};
 
     std::atomic<double> sampleRate_{44100.0};
     std::atomic<int> samplesPerBlock_{512};

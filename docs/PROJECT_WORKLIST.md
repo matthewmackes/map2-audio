@@ -1441,7 +1441,7 @@ Subtasks:
     - Zone concept: a single physical pad may send different MIDI notes for head/rim/edge strikes (e.g., Roland PD-140DS sends note 38 for head, 40 for rim, 37 for cross-stick)
     - Zone mapping: define up to 3 zones per pad (Head, Rim, Edge), each zone maps a different MIDI note to the same pad but triggers a different SFZ articulation via key switch or velocity layer
     - Common hardware presets: Roland (PD-140DS, CY-18DR, VH-14D note assignments), Yamaha (DTX pads), Alesis (Surge/Strike pads), ATV, 2Box
-  - [ ] T215-D: MIDI learn mode
+  - [✓] T215-D: MIDI learn mode
     - User hits a pad on their hardware → MAP2 captures the MIDI note number and channel → assigns it to the selected drum pad
     - "Learn All" mode: user hits each pad in sequence (kick→snare→HH→...), MAP2 auto-advances to next pad after each hit
     - Timeout: 10 seconds of inactivity exits learn mode
@@ -1456,7 +1456,7 @@ Subtasks:
     - `POST /api/engine/drums/midi/presets/load` — apply a hardware preset mapping
   - [ ] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
 Assigned to: Codex
-Last updated: 2026-03-20 08:54 - Codex
+Last updated: 2026-03-20 09:08 - Codex
 - Progress notes:
   - Completed `T215-A` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by replacing the single-note pad trigger assumption with a real note-to-pad mapping table, allowing multiple MIDI notes to target one pad while guaranteeing that any individual note maps to at most one pad.
   - Added global drum MIDI channel filtering alongside the existing per-pad channel filter, and extended the pybind surface in `juce-engine/Source/PythonBindings.cpp` with `add_drum_pad_note`, `remove_drum_pad_note`, `get_drum_pad_notes`, `set_drum_global_midi_channel`, and `get_drum_global_midi_channel`.
@@ -1470,6 +1470,10 @@ Last updated: 2026-03-20 08:54 - Codex
   - Extended `juce-engine/Source/PythonBindings.cpp` with zone-management and preset-loading methods so the later REST/service slice can read configured zones, write zone assignments, enumerate available presets, and apply a selected preset without reimplementing the engine-side mapping model.
   - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for shared-pad zone routing, no-fan-out remapping across zone assignments, and preset exposure/application behavior for the built-in hardware maps.
   - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"` -> pass (`73 assertions in 10 test cases`); `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
+  - Completed `T215-D` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by adding native MIDI learn state, single-pad capture, sequential "learn all" auto-advance, and a 10-second inactivity timeout that expires learn sessions without needing Python-side polling logic.
+  - Extended `juce-engine/Source/PythonBindings.cpp` with `start_drum_midi_learn`, `stop_drum_midi_learn`, and `get_drum_midi_learn_state` so the upcoming REST/service slice can drive learn mode and inspect the active pad plus last-seen MIDI note/channel directly from the engine.
+  - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for single-pad note/channel capture, learn-all progression across pads, and timeout expiry after inactivity.
+  - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"` -> pass (`94 assertions in 13 test cases`); `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
 
 ---
 

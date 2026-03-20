@@ -1,6 +1,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <thread>
+
 #include "../Source/DrumMachine/DrumMachineProcessor.h"
 
 using namespace map2::drummachine;
@@ -208,4 +210,63 @@ TEST_CASE("DrumMachineProcessor exposes and applies drum hardware presets", "[dr
     REQUIRE(snareZones[1].triggerNote == 40);
     REQUIRE(snareZones[2].kind == DrumMachineProcessor::PadZoneKind::Edge);
     REQUIRE(snareZones[2].triggerNote == 37);
+}
+
+TEST_CASE("DrumMachineProcessor learns a note and channel for a selected pad", "[drums][processor]") {
+    DrumMachineProcessor processor;
+    REQUIRE(processor.startMidiLearn(4, false, 10));
+
+    juce::AudioBuffer<float> buffer(2, 32);
+    buffer.clear();
+    juce::MidiBuffer midi;
+    midi.addEvent(juce::MidiMessage::noteOn(9, 65, static_cast<juce::uint8>(110)), 0);
+    processor.processBlock(buffer, midi);
+
+    const auto state = processor.getMidiLearnState();
+    REQUIRE(state.active == false);
+    REQUIRE(state.lastReceivedNote == 65);
+    REQUIRE(state.lastReceivedChannel == 9);
+    REQUIRE(processor.getPadMidiNotes(4) == std::vector<int>{65});
+    REQUIRE(processor.getPadConfig(4).midiChannel == 9);
+}
+
+TEST_CASE("DrumMachineProcessor advances through pads in learn-all mode", "[drums][processor]") {
+    DrumMachineProcessor processor;
+    REQUIRE(processor.startMidiLearn(0, true, 10));
+
+    juce::AudioBuffer<float> buffer(2, 32);
+    buffer.clear();
+
+    juce::MidiBuffer firstHit;
+    firstHit.addEvent(juce::MidiMessage::noteOn(10, 36, static_cast<juce::uint8>(100)), 0);
+    processor.processBlock(buffer, firstHit);
+
+    auto state = processor.getMidiLearnState();
+    REQUIRE(state.active == true);
+    REQUIRE(state.learnAll == true);
+    REQUIRE(state.activePadIndex == 1);
+    REQUIRE(processor.getPadMidiNotes(0) == std::vector<int>{36});
+    REQUIRE(processor.getPadConfig(0).midiChannel == 10);
+
+    juce::MidiBuffer secondHit;
+    secondHit.addEvent(juce::MidiMessage::noteOn(11, 38, static_cast<juce::uint8>(100)), 0);
+    processor.processBlock(buffer, secondHit);
+
+    state = processor.getMidiLearnState();
+    REQUIRE(state.active == true);
+    REQUIRE(state.activePadIndex == 2);
+    REQUIRE(state.lastReceivedNote == 38);
+    REQUIRE(state.lastReceivedChannel == 11);
+    REQUIRE(processor.getPadMidiNotes(1) == std::vector<int>{38});
+    REQUIRE(processor.getPadConfig(1).midiChannel == 11);
+}
+
+TEST_CASE("DrumMachineProcessor times out inactive midi learn sessions", "[drums][processor]") {
+    DrumMachineProcessor processor;
+    REQUIRE(processor.startMidiLearn(2, true, 1));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+    const auto state = processor.getMidiLearnState();
+    REQUIRE(state.active == false);
+    REQUIRE(state.activePadIndex == -1);
 }
