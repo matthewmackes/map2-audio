@@ -18,6 +18,12 @@ void DrumSequencer::prepare(double sampleRate, int samplesPerBlock) {
     samplesPerBlock_.store(std::max(1, samplesPerBlock), std::memory_order_relaxed);
     samplesUntilNextStep_ = 0.0;
     triggerStepAtBlockStart_ = true;
+    triggerCountInAtBlockStart_ = false;
+    countInActive_ = false;
+    countInBarsRemaining_ = 0;
+    countInQuarterIndex_ = 0;
+    countInSamplesUntilNextClick_ = 0.0;
+    manualFillBar_ = -1;
     prepared_.store(true, std::memory_order_release);
 }
 
@@ -30,7 +36,9 @@ bool DrumSequencer::setStep(int patternIndex, int instrumentIndex, int stepIndex
         return false;
     }
 
-    auto& step = patterns_[static_cast<size_t>(patternIndex)].steps[static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
+    auto& step = patterns_[static_cast<size_t>(patternIndex)]
+        .variations[static_cast<size_t>(resolvedVariationIndex(patternIndex))]
+        [static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
     step.velocity = velocity;
     step.accent = accent;
     return true;
@@ -41,7 +49,9 @@ DrumSequencer::Step DrumSequencer::getStep(int patternIndex, int instrumentIndex
         return {};
     }
 
-    return patterns_[static_cast<size_t>(patternIndex)].steps[static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
+    return patterns_[static_cast<size_t>(patternIndex)]
+        .variations[static_cast<size_t>(resolvedVariationIndex(patternIndex))]
+        [static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
 }
 
 bool DrumSequencer::clearPattern(int patternIndex) {
@@ -130,6 +140,7 @@ bool DrumSequencer::setCurrentPattern(int patternIndex) {
     barCount_.store(1, std::memory_order_relaxed);
     activeSongEntryIndex_ = -1;
     activeSongRepeat_ = 0;
+    manualFillBar_ = -1;
     triggerStepAtBlockStart_ = true;
     samplesUntilNextStep_ = 0.0;
     return true;
@@ -225,6 +236,71 @@ bool DrumSequencer::getSongLoop() const {
     return songLoopEnabled_.load(std::memory_order_relaxed);
 }
 
+bool DrumSequencer::setVariation(int patternIndex, int variationIndex) {
+    if (!isValidPatternIndex(patternIndex) || !isValidVariationIndex(variationIndex)) {
+        return false;
+    }
+    selectedVariationIndices_[static_cast<size_t>(patternIndex)] = variationIndex;
+    return true;
+}
+
+int DrumSequencer::getVariation(int patternIndex) const {
+    if (!isValidPatternIndex(patternIndex)) {
+        return 0;
+    }
+    return selectedVariationIndices_[static_cast<size_t>(patternIndex)];
+}
+
+bool DrumSequencer::setFillVariation(int patternIndex, int variationIndex) {
+    if (!isValidPatternIndex(patternIndex) || !isValidVariationIndex(variationIndex)) {
+        return false;
+    }
+    patterns_[static_cast<size_t>(patternIndex)].fillVariationIndex = variationIndex;
+    return true;
+}
+
+int DrumSequencer::getFillVariation(int patternIndex) const {
+    if (!isValidPatternIndex(patternIndex)) {
+        return 0;
+    }
+    return patterns_[static_cast<size_t>(patternIndex)].fillVariationIndex;
+}
+
+bool DrumSequencer::setFillLengthBeats(int patternIndex, int beats) {
+    if (!isValidPatternIndex(patternIndex) || beats < 1 || beats > 2) {
+        return false;
+    }
+    patterns_[static_cast<size_t>(patternIndex)].fillLengthBeats = beats;
+    return true;
+}
+
+int DrumSequencer::getFillLengthBeats(int patternIndex) const {
+    if (!isValidPatternIndex(patternIndex)) {
+        return 1;
+    }
+    return patterns_[static_cast<size_t>(patternIndex)].fillLengthBeats;
+}
+
+void DrumSequencer::triggerFill() {
+    manualFillBar_ = barCount_.load(std::memory_order_relaxed);
+}
+
+void DrumSequencer::setAutoFillBars(int bars) {
+    autoFillEveryBars_.store(std::clamp(bars, 0, 8), std::memory_order_relaxed);
+}
+
+int DrumSequencer::getAutoFillBars() const {
+    return autoFillEveryBars_.load(std::memory_order_relaxed);
+}
+
+void DrumSequencer::setCountInBars(int bars) {
+    countInBars_.store(std::clamp(bars, 0, 4), std::memory_order_relaxed);
+}
+
+int DrumSequencer::getCountInBars() const {
+    return countInBars_.load(std::memory_order_relaxed);
+}
+
 void DrumSequencer::play() {
     if (!prepared_.load(std::memory_order_acquire)) {
         return;
@@ -235,8 +311,18 @@ void DrumSequencer::play() {
             applySongEntry(0, true);
             activeSongRepeat_ = 0;
         }
-        triggerStepAtBlockStart_ = true;
-        samplesUntilNextStep_ = 0.0;
+        if (countInBars_.load(std::memory_order_relaxed) > 0) {
+            countInActive_ = true;
+            countInBarsRemaining_ = countInBars_.load(std::memory_order_relaxed);
+            countInQuarterIndex_ = 0;
+            countInSamplesUntilNextClick_ = 0.0;
+            triggerCountInAtBlockStart_ = true;
+            triggerStepAtBlockStart_ = false;
+        } else {
+            triggerStepAtBlockStart_ = true;
+            samplesUntilNextStep_ = 0.0;
+        }
+        manualFillBar_ = -1;
     }
     playing_.store(true, std::memory_order_relaxed);
 }
@@ -253,7 +339,13 @@ void DrumSequencer::stop() {
         activeSongRepeat_ = 0;
     }
     triggerStepAtBlockStart_ = true;
+    triggerCountInAtBlockStart_ = false;
     samplesUntilNextStep_ = 0.0;
+    countInActive_ = false;
+    countInBarsRemaining_ = 0;
+    countInQuarterIndex_ = 0;
+    countInSamplesUntilNextClick_ = 0.0;
+    manualFillBar_ = -1;
 }
 
 void DrumSequencer::pause() {
@@ -266,6 +358,10 @@ bool DrumSequencer::isPlaying() const {
 
 void DrumSequencer::processBlock(int numSamples) {
     if (!prepared_.load(std::memory_order_acquire) || !playing_.load(std::memory_order_relaxed) || numSamples <= 0) {
+        return;
+    }
+
+    if (countInActive_ && processCountInBlock(numSamples)) {
         return;
     }
 
@@ -336,8 +432,19 @@ bool DrumSequencer::isValidStepIndex(int stepIndex) {
     return stepIndex >= 0 && stepIndex < kMaxSteps;
 }
 
+bool DrumSequencer::isValidVariationIndex(int variationIndex) {
+    return variationIndex >= 0 && variationIndex < kVariationCount;
+}
+
 bool DrumSequencer::isValidSongPosition(int position, size_t songSize) {
     return position >= 0 && static_cast<size_t>(position) < songSize;
+}
+
+int DrumSequencer::resolvedVariationIndex(int patternIndex) const {
+    if (!isValidPatternIndex(patternIndex)) {
+        return 0;
+    }
+    return std::clamp(selectedVariationIndices_[static_cast<size_t>(patternIndex)], 0, kVariationCount - 1);
 }
 
 void DrumSequencer::triggerCurrentStep(int sampleOffset) {
@@ -347,8 +454,19 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
 
     const auto& pattern = patterns_[static_cast<size_t>(currentPatternIndex_.load(std::memory_order_relaxed))];
     const int stepIndex = currentStepIndex_.load(std::memory_order_relaxed);
+    const int fillLengthSteps = std::min(pattern.length, std::max(1, pattern.fillLengthBeats) * 4);
+    const bool manualFillActive = manualFillBar_ == barCount_.load(std::memory_order_relaxed);
+    const int autoFillBars = autoFillEveryBars_.load(std::memory_order_relaxed);
+    const bool autoFillActive = autoFillBars > 0
+        && (barCount_.load(std::memory_order_relaxed) % autoFillBars == 0);
+    const bool useFillVariation = (manualFillActive || autoFillActive)
+        && stepIndex >= std::max(0, pattern.length - fillLengthSteps);
+    const int variationIndex = useFillVariation
+        ? std::clamp(pattern.fillVariationIndex, 0, kVariationCount - 1)
+        : resolvedVariationIndex(currentPatternIndex_.load(std::memory_order_relaxed));
+    const auto& stepGrid = pattern.variations[static_cast<size_t>(variationIndex)];
     for (int instrumentIndex = 0; instrumentIndex < kInstrumentCount; ++instrumentIndex) {
-        const auto& step = pattern.steps[static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
+        const auto& step = stepGrid[static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
         if (step.velocity == 0) {
             continue;
         }
@@ -358,6 +476,16 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
             : static_cast<int>(step.velocity);
         drumMachine_->triggerNote(instrumentIndex, velocity, sampleOffset);
     }
+}
+
+void DrumSequencer::triggerCountInClick(int sampleOffset) {
+    if (drumMachine_ == nullptr) {
+        return;
+    }
+    const int velocity = countInQuarterIndex_ == 0
+        ? static_cast<int>(accentVelocity_.load(std::memory_order_relaxed))
+        : 96;
+    drumMachine_->triggerNote(0, velocity, sampleOffset);
 }
 
 void DrumSequencer::advanceStep() {
@@ -417,9 +545,48 @@ bool DrumSequencer::applySongEntry(int songPosition, bool resetBarCount) {
     return true;
 }
 
+bool DrumSequencer::processCountInBlock(int numSamples) {
+    if (!countInActive_) {
+        return false;
+    }
+
+    if (triggerCountInAtBlockStart_) {
+        triggerCountInClick(0);
+        countInSamplesUntilNextClick_ = quarterNoteSamples();
+        triggerCountInAtBlockStart_ = false;
+    }
+
+    double remainingSamples = static_cast<double>(numSamples);
+    double elapsedSamples = 0.0;
+    while (remainingSamples + 1.0e-9 >= countInSamplesUntilNextClick_) {
+        elapsedSamples += countInSamplesUntilNextClick_;
+        remainingSamples -= countInSamplesUntilNextClick_;
+
+        ++countInQuarterIndex_;
+        if (countInQuarterIndex_ >= 4) {
+            countInQuarterIndex_ = 0;
+            --countInBarsRemaining_;
+            if (countInBarsRemaining_ <= 0) {
+                countInActive_ = false;
+                triggerStepAtBlockStart_ = true;
+                samplesUntilNextStep_ = 0.0;
+                if (remainingSamples > 0.0) {
+                    processBlock(static_cast<int>(std::floor(remainingSamples)));
+                }
+                return true;
+            }
+        }
+
+        triggerCountInClick(std::clamp(static_cast<int>(std::llround(elapsedSamples)), 0, numSamples - 1));
+        countInSamplesUntilNextClick_ = quarterNoteSamples();
+    }
+
+    countInSamplesUntilNextClick_ -= remainingSamples;
+    return true;
+}
+
 double DrumSequencer::samplesForStep(int stepIndex) const {
-    const double quarterNoteSamples = sampleRate_.load(std::memory_order_relaxed) * 60.0 / bpm_.load(std::memory_order_relaxed);
-    const double straightStepSamples = quarterNoteSamples / 4.0;
+    const double straightStepSamples = quarterNoteSamples() / 4.0;
     const double swingRatio = std::clamp(static_cast<double>(swingPercent_.load(std::memory_order_relaxed)) / 100.0, 0.0, 1.0) / 3.0;
     const bool swungEighthOffbeat = ((stepIndex / 2) % 2 == 0) && (stepIndex % 2 == 1);
     const bool swungEighthDownbeat = ((stepIndex / 2) % 2 == 0) && (stepIndex % 2 == 0);
@@ -430,6 +597,10 @@ double DrumSequencer::samplesForStep(int stepIndex) const {
         return straightStepSamples * std::max(0.25, 1.0 - swingRatio);
     }
     return straightStepSamples;
+}
+
+double DrumSequencer::quarterNoteSamples() const {
+    return sampleRate_.load(std::memory_order_relaxed) * 60.0 / bpm_.load(std::memory_order_relaxed);
 }
 
 }  // namespace map2::drummachine

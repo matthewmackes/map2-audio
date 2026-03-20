@@ -2932,11 +2932,14 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, py::arg("source"), py::arg("destination"), "Copy one drum pattern into another")
         .def("get_drum_pattern_data", [](const Map2AudioEngine& self, int patternIndex) {
             const auto pattern = self.getDrumSequencer().getPattern(patternIndex);
+            const int activeVariation = self.getDrumSequencer().getVariation(patternIndex);
+            const auto& stepGrid = pattern.variations[static_cast<size_t>(std::clamp(activeVariation, 0, drummachine::DrumSequencer::kVariationCount - 1))];
             py::dict result;
             result["length"] = pattern.length;
+            result["variation"] = activeVariation;
 
             py::list instruments;
-            for (const auto& instrumentSteps : pattern.steps) {
+            for (const auto& instrumentSteps : stepGrid) {
                 py::list steps;
                 for (const auto& step : instrumentSteps) {
                     py::dict payload;
@@ -3000,6 +3003,42 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_drum_song_loop", [](const Map2AudioEngine& self) {
             return self.getDrumSequencer().getSongLoop();
         }, "Get the drum song loop state")
+        .def("set_drum_variation", [](Map2AudioEngine& self, int patternIndex, int variationIndex) {
+            return self.getDrumSequencer().setVariation(patternIndex, variationIndex);
+        }, py::arg("pattern"), py::arg("variation"), "Select the active variation for a drum pattern")
+        .def("get_drum_variation", [](const Map2AudioEngine& self, int patternIndex) {
+            return self.getDrumSequencer().getVariation(patternIndex);
+        }, py::arg("pattern"), "Get the active variation for a drum pattern")
+        .def("set_drum_fill_variation", [](Map2AudioEngine& self, int patternIndex, int variationIndex) {
+            return self.getDrumSequencer().setFillVariation(patternIndex, variationIndex);
+        }, py::arg("pattern"), py::arg("variation"), "Set the fill variation for a drum pattern")
+        .def("get_drum_fill_variation", [](const Map2AudioEngine& self, int patternIndex) {
+            return self.getDrumSequencer().getFillVariation(patternIndex);
+        }, py::arg("pattern"), "Get the fill variation for a drum pattern")
+        .def("set_drum_fill_length_beats", [](Map2AudioEngine& self, int patternIndex, int beats) {
+            return self.getDrumSequencer().setFillLengthBeats(patternIndex, beats);
+        }, py::arg("pattern"), py::arg("beats"), "Set the fill length in beats for a drum pattern")
+        .def("get_drum_fill_length_beats", [](const Map2AudioEngine& self, int patternIndex) {
+            return self.getDrumSequencer().getFillLengthBeats(patternIndex);
+        }, py::arg("pattern"), "Get the fill length in beats for a drum pattern")
+        .def("trigger_drum_fill", [](Map2AudioEngine& self) {
+            self.getDrumSequencer().triggerFill();
+            return true;
+        }, "Trigger a drum fill on the current bar")
+        .def("set_drum_auto_fill_bars", [](Map2AudioEngine& self, int bars) {
+            self.getDrumSequencer().setAutoFillBars(bars);
+            return true;
+        }, py::arg("bars"), "Set the auto-fill cadence in bars")
+        .def("get_drum_auto_fill_bars", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().getAutoFillBars();
+        }, "Get the auto-fill cadence in bars")
+        .def("set_drum_count_in_bars", [](Map2AudioEngine& self, int bars) {
+            self.getDrumSequencer().setCountInBars(bars);
+            return true;
+        }, py::arg("bars"), "Set the number of count-in bars before playback starts")
+        .def("get_drum_count_in_bars", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().getCountInBars();
+        }, "Get the number of count-in bars before playback starts")
         .def("set_drum_bpm", [](Map2AudioEngine& self, double bpm) {
             return self.getDrumSequencer().setTempo(bpm);
         }, py::arg("bpm"), "Set drum sequencer tempo in BPM")

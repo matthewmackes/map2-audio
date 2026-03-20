@@ -16,15 +16,21 @@ public:
     static constexpr int kPatternCount = 128;
     static constexpr int kInstrumentCount = DrumMachineProcessor::kPadCount;
     static constexpr int kMaxSteps = 64;
+    static constexpr int kVariationCount = 11;
 
     struct Step {
         uint8_t velocity = 0;
         bool accent = false;
     };
 
+    using StepLane = std::array<Step, kMaxSteps>;
+    using StepGrid = std::array<StepLane, kInstrumentCount>;
+
     struct Pattern {
         int length = 16;
-        std::array<std::array<Step, kMaxSteps>, kInstrumentCount> steps{};
+        std::array<StepGrid, kVariationCount> variations{};
+        int fillVariationIndex = 1;
+        int fillLengthBeats = 1;
     };
 
     struct Position {
@@ -67,6 +73,17 @@ public:
     void clearSong();
     void setSongLoop(bool enabled);
     bool getSongLoop() const;
+    bool setVariation(int patternIndex, int variationIndex);
+    int getVariation(int patternIndex) const;
+    bool setFillVariation(int patternIndex, int variationIndex);
+    int getFillVariation(int patternIndex) const;
+    bool setFillLengthBeats(int patternIndex, int beats);
+    int getFillLengthBeats(int patternIndex) const;
+    void triggerFill();
+    void setAutoFillBars(int bars);
+    int getAutoFillBars() const;
+    void setCountInBars(int bars);
+    int getCountInBars() const;
 
     void play();
     void stop();
@@ -81,13 +98,19 @@ private:
     static bool isValidPatternIndex(int patternIndex);
     static bool isValidInstrumentIndex(int instrumentIndex);
     static bool isValidStepIndex(int stepIndex);
+    static bool isValidVariationIndex(int variationIndex);
     static bool isValidSongPosition(int position, size_t songSize);
+    int resolvedVariationIndex(int patternIndex) const;
     void triggerCurrentStep(int sampleOffset);
+    void triggerCountInClick(int sampleOffset);
     void advanceStep();
+    bool processCountInBlock(int numSamples);
     double samplesForStep(int stepIndex) const;
+    double quarterNoteSamples() const;
     bool applySongEntry(int songPosition, bool resetBarCount);
 
     std::array<Pattern, kPatternCount> patterns_{};
+    std::array<int, kPatternCount> selectedVariationIndices_{};
     std::vector<SongEntry> songEntries_{};
     DrumMachineProcessor* drumMachine_ = nullptr;
 
@@ -102,11 +125,19 @@ private:
     std::atomic<bool> playing_{false};
     std::atomic<uint8_t> accentVelocity_{127};
     std::atomic<bool> songLoopEnabled_{false};
+    std::atomic<int> autoFillEveryBars_{0};
+    std::atomic<int> countInBars_{0};
 
     double samplesUntilNextStep_ = 0.0;
     bool triggerStepAtBlockStart_ = true;
     int activeSongEntryIndex_ = -1;
     int activeSongRepeat_ = 0;
+    bool countInActive_ = false;
+    int countInBarsRemaining_ = 0;
+    int countInQuarterIndex_ = 0;
+    double countInSamplesUntilNextClick_ = 0.0;
+    bool triggerCountInAtBlockStart_ = false;
+    int manualFillBar_ = -1;
     std::optional<std::chrono::steady_clock::time_point> lastTapAt_{};
     std::array<double, 6> recentTapIntervals_{};
     size_t recentTapCount_ = 0;

@@ -11,7 +11,8 @@ TEST_CASE("DrumSequencer exposes 128 patterns with 16-step defaults", "[drums][s
 
     REQUIRE(sequencer.getPatternLength(0) == 16);
     REQUIRE(sequencer.getPatternLength(127) == 16);
-    REQUIRE(sequencer.getPattern(0).steps.size() == DrumSequencer::kInstrumentCount);
+    REQUIRE(sequencer.getPattern(0).variations.size() == DrumSequencer::kVariationCount);
+    REQUIRE(sequencer.getPattern(0).variations[0].size() == DrumSequencer::kInstrumentCount);
     REQUIRE(sequencer.getStep(0, 0, 0).velocity == 0);
 }
 
@@ -163,4 +164,69 @@ TEST_CASE("DrumSequencer loops back to the first song entry when song loop is en
     REQUIRE(position.barCount == 1);
     REQUIRE(position.isPlaying);
     REQUIRE(sequencer.getSongLoop());
+}
+
+TEST_CASE("DrumSequencer edits and reads back per-pattern variations", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+
+    REQUIRE(sequencer.setVariation(4, 2));
+    REQUIRE(sequencer.setStep(4, 3, 8, 101, true));
+    REQUIRE(sequencer.getVariation(4) == 2);
+    REQUIRE(sequencer.getStep(4, 3, 8).velocity == 101);
+    REQUIRE(sequencer.getStep(4, 3, 8).accent);
+
+    REQUIRE(sequencer.setVariation(4, 0));
+    REQUIRE(sequencer.getStep(4, 3, 8).velocity == 0);
+}
+
+TEST_CASE("DrumSequencer uses fill variation on the last beat when a fill is triggered", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+    sequencer.prepare(48000.0, 16384);
+    REQUIRE(sequencer.setTempo(300.0));
+    REQUIRE(sequencer.setPatternLength(0, 16));
+    REQUIRE(sequencer.setStep(0, 0, 12, 60));
+    REQUIRE(sequencer.setVariation(0, 1));
+    REQUIRE(sequencer.setStep(0, 0, 12, 118));
+    REQUIRE(sequencer.setVariation(0, 0));
+    REQUIRE(sequencer.setFillVariation(0, 1));
+    REQUIRE(sequencer.setFillLengthBeats(0, 1));
+
+    sequencer.play();
+    sequencer.triggerFill();
+    sequencer.processBlock(14500);
+
+    REQUIRE(sequencer.getFillVariation(0) == 1);
+    REQUIRE(sequencer.getFillLengthBeats(0) == 1);
+    REQUIRE(sequencer.getPosition().isPlaying);
+    REQUIRE(sequencer.getPosition().stepIndex >= 4);
+}
+
+TEST_CASE("DrumSequencer auto-fill and count-in settings are applied", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+
+    sequencer.setAutoFillBars(4);
+    sequencer.setCountInBars(2);
+
+    REQUIRE(sequencer.getAutoFillBars() == 4);
+    REQUIRE(sequencer.getCountInBars() == 2);
+}
+
+TEST_CASE("DrumSequencer count-in delays first pattern step until the configured bars elapse", "[drums][sequencer]") {
+    DrumSequencer withoutCountIn;
+    withoutCountIn.prepare(48000.0, 65536);
+    REQUIRE(withoutCountIn.setTempo(120.0));
+    REQUIRE(withoutCountIn.setStep(0, 0, 0, 110));
+    withoutCountIn.play();
+    withoutCountIn.processBlock(100000);
+
+    DrumSequencer withCountIn;
+    withCountIn.prepare(48000.0, 65536);
+    REQUIRE(withCountIn.setTempo(120.0));
+    REQUIRE(withCountIn.setStep(0, 0, 0, 110));
+    withCountIn.setCountInBars(1);
+    withCountIn.play();
+    withCountIn.processBlock(100000);
+
+    REQUIRE(withoutCountIn.getPosition().barCount > withCountIn.getPosition().barCount);
+    REQUIRE(withCountIn.getCountInBars() == 1);
 }
