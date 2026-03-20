@@ -29,6 +29,8 @@
 #include "SynthForge/Common/Types.h"
 #include "LexiconHardwareProcessor.h"
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
 
 #ifdef HAS_AVDECC
@@ -2823,6 +2825,89 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_synthforge_metering", [](const Map2AudioEngine& self) {
             return synthForgeMeteringToDict(self.getSynthForgeMetering());
         }, "Get SynthForge metering payload")
+
+        // ========================================
+        // Drum Machine
+        // ========================================
+
+        .def("load_drum_kit", [](Map2AudioEngine& self, const std::string& sfzPath) {
+            return self.getDrumMachine().loadKitSfz(sfzPath);
+        }, py::arg("sfz_path"), "Load the same SFZ kit into all drum pads")
+
+        .def("get_drum_kit_status", [](const Map2AudioEngine& self) {
+            py::dict result;
+            const auto statuses = self.getDrumMachine().getKitSampleStatus();
+            for (size_t index = 0; index < statuses.size(); ++index) {
+                result[py::str("pad_" + std::to_string(index))] = synthForgeSampleLoadStatusToDict(statuses[index]);
+            }
+            return result;
+        }, "Get per-pad drum kit sample load status")
+
+        .def("set_drum_pad_volume", [](Map2AudioEngine& self, int padIndex, float volume) {
+            return self.getDrumMachine().setPadVolume(padIndex, volume);
+        }, py::arg("pad"), py::arg("volume"), "Set drum pad volume")
+        .def("set_drum_pad_pan", [](Map2AudioEngine& self, int padIndex, float pan) {
+            return self.getDrumMachine().setPadPan(padIndex, pan);
+        }, py::arg("pad"), py::arg("pan"), "Set drum pad pan")
+        .def("set_drum_pad_tune", [](Map2AudioEngine& self, int padIndex, float semitones) {
+            return self.getDrumMachine().setPadTune(padIndex, semitones);
+        }, py::arg("pad"), py::arg("semitones"), "Set drum pad tuning in semitones")
+        .def("set_drum_pad_mute", [](Map2AudioEngine& self, int padIndex, bool mute) {
+            return self.getDrumMachine().setPadMute(padIndex, mute);
+        }, py::arg("pad"), py::arg("mute"), "Mute or unmute a drum pad")
+        .def("set_drum_pad_solo", [](Map2AudioEngine& self, int padIndex, bool solo) {
+            return self.getDrumMachine().setPadSolo(padIndex, solo);
+        }, py::arg("pad"), py::arg("solo"), "Solo or unsolo a drum pad")
+        .def("set_drum_pad_note", [](Map2AudioEngine& self, int padIndex, int midiNote) {
+            return self.getDrumMachine().setPadMidiNote(padIndex, midiNote);
+        }, py::arg("pad"), py::arg("midi_note"), "Set drum pad MIDI note")
+        .def("set_drum_pad_velocity_curve", [](Map2AudioEngine& self, int padIndex, int curveType) {
+            return self.getDrumMachine().setPadVelocityCurve(
+                padIndex,
+                static_cast<drummachine::DrumMachineProcessor::VelocityCurve>(std::clamp(curveType, 0, 4)));
+        }, py::arg("pad"), py::arg("curve_type"), "Set drum pad velocity curve")
+        .def("set_drum_pad_midi_channel", [](Map2AudioEngine& self, int padIndex, int midiChannel) {
+            return self.getDrumMachine().setPadMidiChannel(padIndex, midiChannel);
+        }, py::arg("pad"), py::arg("channel"), "Set drum pad MIDI channel")
+
+        .def("set_drum_bus_eq", [](Map2AudioEngine& self, int busIndex, float lowGain, float midGain, float midFreq, float highGain) {
+            return self.getDrumMachine().setBusEq(busIndex, {lowGain, midGain, midFreq, highGain});
+        }, py::arg("bus"), py::arg("low_gain"), py::arg("mid_gain"), py::arg("mid_freq"), py::arg("high_gain"),
+           "Set drum bus EQ")
+        .def("set_drum_bus_comp", [](Map2AudioEngine& self, int busIndex, float threshold, float ratio, float attack, float release, float makeup) {
+            return self.getDrumMachine().setBusComp(busIndex, {threshold, ratio, attack, release, makeup});
+        }, py::arg("bus"), py::arg("threshold"), py::arg("ratio"), py::arg("attack"), py::arg("release"), py::arg("makeup"),
+           "Set drum bus compressor")
+        .def("set_drum_bus_level", [](Map2AudioEngine& self, int busIndex, float level) {
+            return self.getDrumMachine().setBusLevel(busIndex, level);
+        }, py::arg("bus"), py::arg("level"), "Set drum bus output level")
+        .def("set_drum_bus_mute", [](Map2AudioEngine& self, int busIndex, bool mute) {
+            return self.getDrumMachine().setBusMute(busIndex, mute);
+        }, py::arg("bus"), py::arg("mute"), "Mute or unmute a drum bus")
+        .def("set_drum_bus_solo", [](Map2AudioEngine& self, int busIndex, bool solo) {
+            return self.getDrumMachine().setBusSolo(busIndex, solo);
+        }, py::arg("bus"), py::arg("solo"), "Solo or unsolo a drum bus")
+        .def("set_drum_master_volume", [](Map2AudioEngine& self, float volume) {
+            self.getDrumMachine().setMasterVolume(volume);
+            return true;
+        }, py::arg("volume"), "Set drum machine master volume")
+        .def("get_drum_metering", [](const Map2AudioEngine& self) {
+            const auto metering = self.getDrumMachine().getMetering();
+            py::dict result;
+            result["per_pad_peak"] = py::cast(metering.perPadPeak);
+            result["per_pad_rms"] = py::cast(metering.perPadRms);
+            result["per_bus_peak"] = py::cast(metering.perBusPeak);
+            result["per_bus_rms"] = py::cast(metering.perBusRms);
+            result["master_peak_left"] = metering.masterPeakLeft;
+            result["master_peak_right"] = metering.masterPeakRight;
+            result["master_rms_left"] = metering.masterRmsLeft;
+            result["master_rms_right"] = metering.masterRmsRight;
+            return result;
+        }, "Get drum machine per-pad, per-bus, and master metering")
+        .def("drum_trigger_note", [](Map2AudioEngine& self, int padIndex, float velocity) {
+            const auto config = self.getDrumMachine().getPadConfig(padIndex);
+            return self.injectMidiNoteOn(1, config.midiNote, std::clamp(static_cast<int>(std::round(velocity * 127.0f)), 1, 127));
+        }, py::arg("pad"), py::arg("velocity"), "Trigger a software drum hit via the MIDI injection path")
 
         // ========================================
         // Parameters

@@ -11,6 +11,20 @@ constexpr std::array<int, DrumMachineProcessor::kPadCount> kDefaultMidiNotes = {
     36, 38, 42, 46, 41, 43, 45, 49, 51, 57, 39, 37, 56, 47, 50, 48,
 };
 
+float computePeak(const juce::AudioBuffer<float>& buffer, int channel) {
+    if (channel < 0 || channel >= buffer.getNumChannels() || buffer.getNumSamples() <= 0) {
+        return 0.0f;
+    }
+    return buffer.getMagnitude(channel, 0, buffer.getNumSamples());
+}
+
+float computeRms(const juce::AudioBuffer<float>& buffer, int channel) {
+    if (channel < 0 || channel >= buffer.getNumChannels() || buffer.getNumSamples() <= 0) {
+        return 0.0f;
+    }
+    return buffer.getRMSLevel(channel, 0, buffer.getNumSamples());
+}
+
 }  // namespace
 
 DrumMachineProcessor::DrumMachineProcessor() {
@@ -29,6 +43,11 @@ void DrumMachineProcessor::prepare(double sampleRate, int samplesPerBlock, int n
     sampleRate_.store(sampleRate, std::memory_order_relaxed);
     samplesPerBlock_.store(std::max(1, samplesPerBlock), std::memory_order_relaxed);
     numChannels_.store(std::max(1, numChannels), std::memory_order_relaxed);
+    busBuffer_.setSize(DrumMachineMixer::kBusChannels, std::max(1, samplesPerBlock), false, false, true);
+    busBuffer_.clear();
+    stereoMixBuffer_.setSize(std::max(2, numChannels), std::max(1, samplesPerBlock), false, false, true);
+    stereoMixBuffer_.clear();
+    mixer_.prepare(sampleRate, samplesPerBlock);
 
     const int reserveBytes = std::max(1024, samplesPerBlock * 12);
     for (auto& buffer : padMidiBuffers_) {
@@ -49,6 +68,9 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
     if (!prepared_.load(std::memory_order_acquire)) {
         return;
     }
+
+    busBuffer_.clear();
+    stereoMixBuffer_.clear();
 
     for (auto& padBuffer : padMidiBuffers_) {
         padBuffer.clear();
@@ -100,7 +122,22 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
         auto& part = pads_[static_cast<size_t>(padIndex)];
         auto& padMidi = padMidiBuffers_[static_cast<size_t>(padIndex)];
         part.processMidi(padMidi);
-        part.processAudio(buffer, padMidi, soloActive);
+        part.processAudio(busBuffer_, padMidi, soloActive);
+
+        const int busBaseChannel = static_cast<int>(padConfigs_[static_cast<size_t>(padIndex)].bus) * 2;
+        padPeakMeters_[static_cast<size_t>(padIndex)] = std::max(
+            computePeak(busBuffer_, busBaseChannel),
+            computePeak(busBuffer_, busBaseChannel + 1));
+        padRmsMeters_[static_cast<size_t>(padIndex)] = 0.5f * (
+            computeRms(busBuffer_, busBaseChannel) +
+            computeRms(busBuffer_, busBaseChannel + 1));
+    }
+
+    mixer_.process(busBuffer_, stereoMixBuffer_);
+    const int outputChannels = std::min(buffer.getNumChannels(), stereoMixBuffer_.getNumChannels());
+    const int outputSamples = std::min(buffer.getNumSamples(), stereoMixBuffer_.getNumSamples());
+    for (int channel = 0; channel < outputChannels; ++channel) {
+        buffer.addFrom(channel, 0, stereoMixBuffer_, channel, 0, outputSamples);
     }
 }
 
@@ -188,6 +225,14 @@ bool DrumMachineProcessor::loadPadSfz(int padIndex, const std::string& sfzPath) 
     return pads_[static_cast<size_t>(padIndex)].loadSfz(sfzPath);
 }
 
+bool DrumMachineProcessor::loadKitSfz(const std::string& sfzPath) {
+    bool loadedAny = false;
+    for (int padIndex = 0; padIndex < kPadCount; ++padIndex) {
+        loadedAny = loadPadSfz(padIndex, sfzPath) || loadedAny;
+    }
+    return loadedAny;
+}
+
 synthforge::SampleLoadStatus DrumMachineProcessor::getPadSampleStatus(int padIndex) const {
     if (!isValidPadIndex(padIndex)) {
         synthforge::SampleLoadStatus status;
@@ -196,6 +241,14 @@ synthforge::SampleLoadStatus DrumMachineProcessor::getPadSampleStatus(int padInd
         return status;
     }
     return pads_[static_cast<size_t>(padIndex)].getSampleStatus();
+}
+
+std::array<synthforge::SampleLoadStatus, DrumMachineProcessor::kPadCount> DrumMachineProcessor::getKitSampleStatus() const {
+    std::array<synthforge::SampleLoadStatus, kPadCount> statuses{};
+    for (int padIndex = 0; padIndex < kPadCount; ++padIndex) {
+        statuses[static_cast<size_t>(padIndex)] = getPadSampleStatus(padIndex);
+    }
+    return statuses;
 }
 
 int DrumMachineProcessor::getPadActiveVoices(int padIndex) const {
@@ -212,6 +265,48 @@ float DrumMachineProcessor::mapVelocityForPad(int padIndex, float rawVelocity) c
 
     const auto& config = padConfigs_[static_cast<size_t>(padIndex)];
     return applyVelocityCurve(config.velocityCurve, rawVelocity, config.fixedVelocity);
+}
+
+bool DrumMachineProcessor::setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config) {
+    return mixer_.setBusEq(busIndex, config);
+}
+
+bool DrumMachineProcessor::setBusComp(int busIndex, const DrumMachineMixer::BusCompConfig& config) {
+    return mixer_.setBusComp(busIndex, config);
+}
+
+bool DrumMachineProcessor::setBusLevel(int busIndex, float level) {
+    return mixer_.setBusLevel(busIndex, level);
+}
+
+bool DrumMachineProcessor::setBusMute(int busIndex, bool mute) {
+    return mixer_.setBusMute(busIndex, mute);
+}
+
+bool DrumMachineProcessor::setBusSolo(int busIndex, bool solo) {
+    return mixer_.setBusSolo(busIndex, solo);
+}
+
+void DrumMachineProcessor::setMasterVolume(float volume) {
+    mixer_.setMasterVolume(volume);
+}
+
+float DrumMachineProcessor::getMasterVolume() const {
+    return mixer_.getMasterVolume();
+}
+
+DrumMachineProcessor::Metering DrumMachineProcessor::getMetering() const {
+    Metering metering;
+    metering.perPadPeak = padPeakMeters_;
+    metering.perPadRms = padRmsMeters_;
+    const auto mixerMetering = mixer_.getMetering();
+    metering.perBusPeak = mixerMetering.busPeak;
+    metering.perBusRms = mixerMetering.busRms;
+    metering.masterPeakLeft = mixerMetering.masterPeakLeft;
+    metering.masterPeakRight = mixerMetering.masterPeakRight;
+    metering.masterRmsLeft = mixerMetering.masterRmsLeft;
+    metering.masterRmsRight = mixerMetering.masterRmsRight;
+    return metering;
 }
 
 DrumMachineProcessor::BusId DrumMachineProcessor::defaultBusForPad(int padIndex) {
@@ -268,6 +363,7 @@ void DrumMachineProcessor::applyPadConfigToPart(int padIndex) {
     auto partConfig = part.getConfig();
     partConfig.partIndex = padIndex;
     partConfig.midiChannel = 1;
+    partConfig.outputBus = static_cast<synthforge::OutputBus>(static_cast<int>(config.bus));
     partConfig.level = std::clamp(config.volume, 0.0f, 1.0f);
     partConfig.pan = std::clamp(config.pan, -1.0f, 1.0f);
     partConfig.mute = config.mute;

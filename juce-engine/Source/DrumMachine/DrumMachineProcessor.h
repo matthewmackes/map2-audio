@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DrumMachine/DrumMachineMixer.h"
 #include "SynthForge/Core/Part.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
@@ -48,6 +49,17 @@ public:
         std::string name;
     };
 
+    struct Metering {
+        std::array<float, kPadCount> perPadPeak{};
+        std::array<float, kPadCount> perPadRms{};
+        std::array<float, kBusCount> perBusPeak{};
+        std::array<float, kBusCount> perBusRms{};
+        float masterPeakLeft = 0.0f;
+        float masterPeakRight = 0.0f;
+        float masterRmsLeft = 0.0f;
+        float masterRmsRight = 0.0f;
+    };
+
     DrumMachineProcessor();
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
@@ -66,9 +78,19 @@ public:
     bool setPadMidiChannel(int padIndex, int midiChannel);
 
     bool loadPadSfz(int padIndex, const std::string& sfzPath);
+    bool loadKitSfz(const std::string& sfzPath);
     synthforge::SampleLoadStatus getPadSampleStatus(int padIndex) const;
+    std::array<synthforge::SampleLoadStatus, kPadCount> getKitSampleStatus() const;
     int getPadActiveVoices(int padIndex) const;
     float mapVelocityForPad(int padIndex, float rawVelocity) const;
+    bool setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config);
+    bool setBusComp(int busIndex, const DrumMachineMixer::BusCompConfig& config);
+    bool setBusLevel(int busIndex, float level);
+    bool setBusMute(int busIndex, bool mute);
+    bool setBusSolo(int busIndex, bool solo);
+    void setMasterVolume(float volume);
+    float getMasterVolume() const;
+    Metering getMetering() const;
 
     static BusId defaultBusForPad(int padIndex);
     static int defaultMidiNoteForPad(int padIndex);
@@ -83,6 +105,11 @@ private:
     std::array<synthforge::Part, kPadCount> pads_;
     std::array<PadConfig, kPadCount> padConfigs_{};
     std::array<juce::MidiBuffer, kPadCount> padMidiBuffers_{};
+    DrumMachineMixer mixer_;
+    juce::AudioBuffer<float> busBuffer_;
+    juce::AudioBuffer<float> stereoMixBuffer_;
+    std::array<float, kPadCount> padPeakMeters_{};
+    std::array<float, kPadCount> padRmsMeters_{};
 
     std::atomic<double> sampleRate_{44100.0};
     std::atomic<int> samplesPerBlock_{512};

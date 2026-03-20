@@ -1236,7 +1236,7 @@ Subtasks:
     - Process in audioCallback: MIDI → DrumMachineProcessor → mix into main output buffer
     - DrumMachineProcessor receives MIDI from the same ring buffer drain as SynthForge
     - Enable/disable drum machine processing via atomic flag
-  - [ ] T211-D: Expose DrumMachineProcessor via PythonBindings.cpp
+  - [✓] T211-D: Expose DrumMachineProcessor via PythonBindings.cpp
     - Kit management: `load_drum_kit(sfz_path)`, `get_drum_kit_status()`
     - Per-pad: `set_drum_pad_volume(pad, vol)`, `set_drum_pad_pan(pad, pan)`, `set_drum_pad_tune(pad, semitones)`, `set_drum_pad_mute(pad, bool)`, `set_drum_pad_solo(pad, bool)`
     - Per-pad MIDI: `set_drum_pad_note(pad, midi_note)`, `set_drum_pad_velocity_curve(pad, curve_type)`, `set_drum_pad_midi_channel(pad, channel)`
@@ -1245,7 +1245,7 @@ Subtasks:
     - Transport: `drum_trigger_note(pad, velocity)` for software-triggered hits
   - [✓] T211-E: Add CMakeLists.txt entries for DrumMachine source files; verify build with `cmake -B build && cmake --build build`
 Assigned to: Codex
-Last updated: 2026-03-20 00:17 - Codex
+Last updated: 2026-03-20 06:52 - Codex
 - Progress notes:
   - Completed `T211-B` with a new RT-safe `juce-engine/Source/DrumMachine/DrumMachineMixer.h/cpp` implementation providing 8 fixed stereo buses, 3-band EQ, single-band compression, per-bus level/pan/mute/solo, master-volume fold-down, and cached metering.
   - Added focused JUCE coverage in `juce-engine/tests/DrumMachineMixerTests.cpp` for bus parameter mutation, stereo fold-down, metering, and solo/mute gating.
@@ -1253,6 +1253,8 @@ Last updated: 2026-03-20 00:17 - Codex
   - Validation: `cmake --build build-synthforge-tests --target synthforge_tests` -> pass; `./synthforge_tests "[drums]"` -> pass.
   - Completed `T211-C` by wiring `drumMachine_` into `Map2AudioEngine`, preparing it alongside SynthForge and the rest of the engine processors, processing it from the same drained MIDI buffer in `audioCallback`, and adding atomic enable/disable accessors for runtime gating.
   - Validation: `cmake --build juce-engine/build --target map2_audio_engine` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass.
+  - Completed `T211-D` by exposing drum kit load/status, per-pad controls, per-bus EQ/compression/level/mute/solo, master volume, metering export, and software note triggering through `juce-engine/Source/PythonBindings.cpp`, with `DrumMachineProcessor` extended to own RT-safe mixer-backed metering and kit-wide control helpers.
+  - Validation: `pytest tests/test_drum_machine_service.py tests/test_drum_routes.py -q` -> `12 passed`; `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
 
 ---
 
