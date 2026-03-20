@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**785** Python | **1167** TypeScript | **294** C++/H | **122** Docs | **625** total commits | **1** stars | **0** forks | **0** open issues
+**785** Python | **1167** TypeScript | **294** C++/H | **122** Docs | **627** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b0ada46e`](https://github.com/matthewmackes/map2-audio/commit/b0ada46eca3216d8cc36c3c3e99ee2cc0bf40804) | Complete T213-F drum position websocket sync | Map2 Audio | 2026-03-20 |
+| [`3b9d23d9`](https://github.com/matthewmackes/map2-audio/commit/3b9d23d9828a767468b957b5a8ed87a89b0e82d9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`b7a30d9d`](https://github.com/matthewmackes/map2-audio/commit/b7a30d9d9f9117cddd520ef7e6cf3cd765a31294) | Complete T213-E drum sequencer routes | Map2 Audio | 2026-03-20 |
 | [`3358c418`](https://github.com/matthewmackes/map2-audio/commit/3358c4180881191103eb99b21f64d12a5456388b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`d57b7bda`](https://github.com/matthewmackes/map2-audio/commit/d57b7bda501578bca9ee8bf071728917727ea249) | Complete T213-D drum sequencer service | Map2 Audio | 2026-03-20 |
 | [`f478ff4a`](https://github.com/matthewmackes/map2-audio/commit/f478ff4a15bd837175864822c6a65382ec5220bb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`316d6bb8`](https://github.com/matthewmackes/map2-audio/commit/316d6bb8679f63940e126e5f7821baced70f8886) | Complete T213-C drum sequencer song mode | Map2 Audio | 2026-03-20 |
 | [`934f8c44`](https://github.com/matthewmackes/map2-audio/commit/934f8c448fbfd28317688c63f918979ed4d596cf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`882ba745`](https://github.com/matthewmackes/map2-audio/commit/882ba7457a070d36c2d0916d82deddcd6e6f6dfc) | Complete T213-B drum sequencer bindings | Map2 Audio | 2026-03-20 |
-| [`5be0109f`](https://github.com/matthewmackes/map2-audio/commit/5be0109f1cd32608f94df5efd07edd67874f7ffa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
