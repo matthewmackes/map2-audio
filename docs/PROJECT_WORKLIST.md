@@ -1359,7 +1359,7 @@ Last updated: 2026-03-20 07:32 - Codex
 ---
 
 ID: T214
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Drum Machine Kit Management — SFZ kit loading, factory kits, user kits
 Description:
 - Goal / acceptance criteria: Implement a complete drum kit management system that loads SFZ drum kits into DrumMachineProcessor, ships factory kits, and supports user kit import/creation. Each kit defines 16 instrument assignments with sample references, default MIDI mapping, and default bus routing.
@@ -1368,7 +1368,7 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Kit schema, factory kit SFZ files, kit manager service, REST endpoints, unit tests.
 Subtasks:
-  - [ ] T214-A: Define drum kit schema — `data/drums/schemas/drum_kit.schema.json`
+  - [✓] T214-A: Define drum kit schema — `data/drums/schemas/drum_kit.schema.json`
     - Kit metadata: `kit_id`, `name`, `description`, `author`, `version`, `category` (acoustic, electronic, percussion, hybrid)
     - 16 instrument slots: `instruments[0..15]` each with `name`, `sfz_path` (relative to kit root), `default_note` (MIDI), `bus_assignment` (0–7), `default_volume`, `default_pan`, `default_tune`
     - Kit-level defaults: `default_bpm`, `default_swing`
@@ -1398,7 +1398,10 @@ Subtasks:
     - `PATCH /api/engine/drums/kits/{kit_id}/instruments/{pad}` — modify instrument assignment
   - [ ] T214-E: Sample sourcing — identify, download, and organize CC0 drum samples for factory kits; write SFZ mappings with velocity layers (minimum 3 velocity layers per instrument), round-robin (minimum 2 variations), and choke groups for hihats
 Assigned to: Codex
-Last updated: 2026-03-18
+Last updated: 2026-03-20 07:37 - Codex
+- Progress notes:
+  - Completed `T214-A` by adding `data/drums/schemas/drum_kit.schema.json`, a draft 2020-12 schema for 16-slot drum kits with constrained metadata, relative `.sfz` instrument paths, per-pad default note/bus/volume/pan/tune fields, kit-level BPM and swing defaults, and explicit category/license validation.
+  - Validation: `python3` JSON parse + schema shape smoke test against a synthetic 16-instrument kit document -> pass.
 
 ---
 
