@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**783** Python | **1167** TypeScript | **291** C++/H | **122** Docs | **615** total commits | **1** stars | **0** forks | **0** open issues
+**783** Python | **1167** TypeScript | **294** C++/H | **122** Docs | **617** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4862cd8a`](https://github.com/matthewmackes/map2-audio/commit/4862cd8a60280f7838c4dbba2a533bf0a56c6fd3) | Complete T213-A drum sequencer core | Map2 Audio | 2026-03-20 |
+| [`f8841963`](https://github.com/matthewmackes/map2-audio/commit/f8841963c267d455a4858a1e4629d43f759b1ff9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`d8ee256f`](https://github.com/matthewmackes/map2-audio/commit/d8ee256f32dc1c7e01aa60d5e33d7b405603c4c7) | Complete T211-D drum Python bindings | Map2 Audio | 2026-03-20 |
 | [`a5a31e33`](https://github.com/matthewmackes/map2-audio/commit/a5a31e33afd1d6278968570306dc641600e9d6a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`ed74d1e0`](https://github.com/matthewmackes/map2-audio/commit/ed74d1e06827796c6df2a08bc937e4f48ec47354) | Complete T211-C drum engine integration | Map2 Audio | 2026-03-20 |
 | [`f000ec9e`](https://github.com/matthewmackes/map2-audio/commit/f000ec9e118a3804f8fbc905b2faadf262feb3e1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`2746ec61`](https://github.com/matthewmackes/map2-audio/commit/2746ec61cfca54355a342196a77dda13e0330608) | Complete T211-B drum machine mixer buses | Map2 Audio | 2026-03-20 |
 | [`76ed0a34`](https://github.com/matthewmackes/map2-audio/commit/76ed0a3481e600673bf68b64a79272f10bf3d105) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`59919cb8`](https://github.com/matthewmackes/map2-audio/commit/59919cb826f77ed4e6fdf2d45cd59006e130ef30) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`d7442657`](https://github.com/matthewmackes/map2-audio/commit/d74426572e60542f029a1905064bb50df5db6d77) | Complete T203-subI OSC namespace router | Map2 Audio | 2026-03-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
