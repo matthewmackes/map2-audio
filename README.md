@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**788** Python | **1168** TypeScript | **294** C++/H | **122** Docs | **654** total commits | **1** stars | **0** forks | **0** open issues
+**788** Python | **1168** TypeScript | **294** C++/H | **122** Docs | **656** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -187,7 +187,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cfec20fa`](https://github.com/matthewmackes/map2-audio/commit/cfec20fa5375dd7572e8fcb1953729122903df49) | Complete T217-C drum instrument row controls | Map2 Audio | 2026-03-20 |
+| [`e59148a3`](https://github.com/matthewmackes/map2-audio/commit/e59148a3fae4f993476a4094e3cda0c13050ff63) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`c8a15247`](https://github.com/matthewmackes/map2-audio/commit/c8a152478eb819677b2789674af8210a7fd3e4da) | Complete T217-B drum sequencer grid shell | Map2 Audio | 2026-03-20 |
 | [`258f27fe`](https://github.com/matthewmackes/map2-audio/commit/258f27fe7b477115703b9fb272715aa4058ebc9f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`5c33a963`](https://github.com/matthewmackes/map2-audio/commit/5c33a9634b360a719109975e4a60932f27e2627e) | Complete T217-A drum page shell layout | Map2 Audio | 2026-03-20 |
 | [`2d6c4d7b`](https://github.com/matthewmackes/map2-audio/commit/2d6c4d7b7f788aaacf40ad8dd8d75fde90ff3bcc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`38f4dfba`](https://github.com/matthewmackes/map2-audio/commit/38f4dfba551dd5536f990553a55412170bf3ecd7) | Complete T215-F drum MIDI config persistence | Map2 Audio | 2026-03-20 |
 | [`b3cafa7b`](https://github.com/matthewmackes/map2-audio/commit/b3cafa7b9d4152ad63ce8e69133389ff2ed094d9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`9457977c`](https://github.com/matthewmackes/map2-audio/commit/9457977cf0e9dca3b2bdbb25c43501ffdf8f8927) | Complete T215-E drum MIDI API and service | Map2 Audio | 2026-03-20 |
-| [`f03d7502`](https://github.com/matthewmackes/map2-audio/commit/f03d7502c1a76783446bd358c2adcc01e33d2dd3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
