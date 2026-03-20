@@ -32,6 +32,9 @@ class _FakeDrumService:
             "variation": 0,
             "updated_at": None,
         }
+        self.song = []
+        self.song_loop = False
+        self.patterns = {}
 
     def get_state(self):
         return dict(self.state)
@@ -72,6 +75,38 @@ class _FakeDrumService:
     def get_position(self):
         return dict(self.position)
 
+    def get_pattern(self, pattern_id):
+        return self.patterns.get(pattern_id, self._default_pattern(pattern_id))
+
+    def save_pattern(self, pattern_id, payload):
+        pattern = self._default_pattern(pattern_id)
+        pattern["length"] = payload["length"]
+        pattern["steps"] = payload["steps"]
+        self.patterns[pattern_id] = pattern
+        return dict(pattern)
+
+    def set_step(self, pattern_id, instrument, step, velocity, accent=False):
+        pattern = self.patterns.setdefault(pattern_id, self._default_pattern(pattern_id))
+        pattern["steps"][instrument][step] = {"velocity": velocity, "accent": accent}
+        return dict(pattern)
+
+    def get_song(self):
+        return list(self.song)
+
+    def get_song_loop(self):
+        return self.song_loop
+
+    def replace_song(self, entries, song_loop=False):
+        self.song = [
+            {
+                "pattern": entry.pattern if hasattr(entry, "pattern") else entry["pattern"],
+                "repeat_count": entry.repeat_count if hasattr(entry, "repeat_count") else entry["repeat_count"],
+            }
+            for entry in entries
+        ]
+        self.song_loop = song_loop
+        return self.get_song()
+
     def list_factory_packs(self):
         return [{"pack_id": "factory", "name": "Factory", "description": "", "source": "factory", "filename": "factory.json"}]
 
@@ -104,12 +139,24 @@ class _FakeDrumService:
     async def publish_position_update(self):
         await ws_manager.broadcast_json({"type": "drum_position", "data": self.get_position()}, topic="drums:position")
 
+    @staticmethod
+    def _default_pattern(pattern_id):
+        return {
+            "pattern_id": pattern_id,
+            "length": 16,
+            "steps": [
+                [{"velocity": 0, "accent": False} for _ in range(64)]
+                for _ in range(16)
+            ],
+        }
+
 
 def _client(monkeypatch):
     app = FastAPI()
     app.include_router(drum_routes.router)
     service = _FakeDrumService()
     monkeypatch.setattr(drum_routes, "_get_service", lambda: service)
+    monkeypatch.setattr(drum_routes, "_get_sequencer_service", lambda: service)
     ws_manager.event_history.clear()
     return TestClient(app)
 
@@ -166,6 +213,69 @@ def test_drum_position_route_returns_typed_position(monkeypatch):
         "variation": 0,
         "updated_at": None,
     }
+
+
+def test_drum_pattern_routes_round_trip_pattern_payload(monkeypatch):
+    client = _client(monkeypatch)
+    payload = {
+        "pattern_id": 7,
+        "length": 32,
+        "steps": [
+            [{"velocity": 0, "accent": False} for _ in range(64)]
+            for _ in range(16)
+        ],
+    }
+    payload["steps"][3][12] = {"velocity": 92, "accent": True}
+
+    response = client.post("/api/engine/drums/pattern/7", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["pattern_id"] == 7
+    assert response.json()["length"] == 32
+    assert response.json()["steps"][3][12]["velocity"] == 92
+    assert response.json()["steps"][3][12]["accent"] is True
+
+    fetched = client.get("/api/engine/drums/pattern/7")
+    assert fetched.status_code == 200
+    assert fetched.json()["steps"][3][12]["velocity"] == 92
+
+
+def test_drum_pattern_step_route_updates_single_step(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/pattern/9/step",
+        json={"instrument": 2, "step": 5, "velocity": 110, "accent": False},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["pattern_id"] == 9
+    assert response.json()["steps"][2][5]["velocity"] == 110
+
+
+def test_drum_song_routes_round_trip_song_state(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/song",
+        json={
+            "song": [
+                {"pattern": 4, "repeat_count": 2},
+                {"pattern": 8, "repeat_count": 1},
+            ],
+            "song_loop": True,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["song"][0]["pattern"] == 4
+    assert response.json()["song"][0]["repeat_count"] == 2
+    assert response.json()["song_loop"] is True
+
+    fetched = client.get("/api/engine/drums/song")
+    assert fetched.status_code == 200
+    assert fetched.json()["song"][1]["pattern"] == 8
+    assert fetched.json()["song_loop"] is True
 
 
 def test_drum_pack_upload_rejects_invalid_json(monkeypatch):

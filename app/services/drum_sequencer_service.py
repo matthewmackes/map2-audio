@@ -199,6 +199,26 @@ class DrumSequencerService(Singleton):
         if callable(set_song_loop):
             set_song_loop(song_loop)
 
+    def get_song(self) -> List[Dict[str, Any]]:
+        return [entry.model_dump() for entry in self._read_song_from_engine()]
+
+    def get_song_loop(self) -> bool:
+        engine = self._engine()
+        if engine is None:
+            return False
+        getter = getattr(engine, "get_drum_song_loop", None)
+        if not callable(getter):
+            return False
+        try:
+            return bool(getter())
+        except Exception:
+            return False
+
+    def replace_song(self, entries: List[DrumSongEntryModel], song_loop: bool = False) -> List[Dict[str, Any]]:
+        validated = [entry if isinstance(entry, DrumSongEntryModel) else DrumSongEntryModel.model_validate(entry) for entry in entries]
+        self._write_song_to_engine(validated, song_loop)
+        return [entry.model_dump() for entry in validated]
+
     def get_pattern(self, pattern_id: int) -> Dict[str, Any]:
         pattern = self._read_pattern_from_engine(pattern_id)
         if pattern is None:
