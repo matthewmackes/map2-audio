@@ -293,6 +293,7 @@ set(SOURCES
     Source/SynthForge/Core/MidiRouter.cpp
     Source/DrumMachine/DrumMachineMixer.cpp
     Source/DrumMachine/DrumMachineProcessor.cpp
+    Source/DrumMachine/DrumSequencer.cpp
     Source/SynthForge/Sampler/GroupedSampler.cpp
     Source/SynthForge/Sampler/SfzLoader.cpp
     Source/SynthForge/Sound/SynthVoice.cpp
@@ -389,6 +390,7 @@ set(HEADERS
     Source/SynthForge/Sampler/SfzLoader.h
     Source/SynthForge/Sound/SynthVoice.h
     Source/SynthForge/Common/Types.h
+    Source/DrumMachine/DrumSequencer.h
 
     # Existing components
     Source/MidiHandler.h
@@ -719,9 +721,11 @@ if(BUILD_SYNTHFORGE_TESTS)
     add_executable(synthforge_tests
         tests/DrumMachineProcessorTests.cpp
         tests/DrumMachineMixerTests.cpp
+        tests/DrumSequencerTests.cpp
         tests/SynthForgeSfzTests.cpp
         Source/DrumMachine/DrumMachineMixer.cpp
         Source/DrumMachine/DrumMachineProcessor.cpp
+        Source/DrumMachine/DrumSequencer.cpp
         Source/SynthForge/Core/Part.cpp
         Source/SynthForge/Core/VoiceAllocator.cpp
         Source/SynthForge/Sampler/GroupedSampler.cpp

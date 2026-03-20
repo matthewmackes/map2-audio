@@ -64,6 +64,7 @@ public:
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
     void processBlock(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midiBuffer);
+    bool triggerNote(int padIndex, int velocity, int sampleOffset = 0);
 
     PadConfig getPadConfig(int padIndex) const;
     bool setPadConfig(int padIndex, const PadConfig& config);
@@ -105,6 +106,7 @@ private:
     std::array<synthforge::Part, kPadCount> pads_;
     std::array<PadConfig, kPadCount> padConfigs_{};
     std::array<juce::MidiBuffer, kPadCount> padMidiBuffers_{};
+    juce::MidiBuffer triggeredMidiBuffer_;
     DrumMachineMixer mixer_;
     juce::AudioBuffer<float> busBuffer_;
     juce::AudioBuffer<float> stereoMixBuffer_;

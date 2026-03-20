@@ -1281,7 +1281,7 @@ Last updated: 2026-03-19 00:16 - Codex
 ---
 
 ID: T213
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Drum Machine Pattern Sequencer Engine (C++ + Python)
 Description:
 - Goal / acceptance criteria: Implement a real-time drum pattern sequencer with 128 patterns per kit, variable length (1–64 steps at 16th-note resolution, 4/4 only), per-step velocity, transport control (play/stop/pause), and BPM-synced playback that triggers notes through DrumMachineProcessor.
@@ -1290,7 +1290,7 @@ Description:
 - Estimated effort: High
 - Required outputs: C++ sequencer class, Python service layer, REST API endpoints, WebSocket real-time position broadcast, unit tests.
 Subtasks:
-  - [ ] T213-A: Create `DrumSequencer` C++ class in `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp`
+  - [✓] T213-A: Create `DrumSequencer` C++ class in `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp`
     - Pattern data structure: 128 patterns, each with configurable step count (1–64, default 16), 16 instrument tracks
     - Per-step data: velocity (0–127, 0=off), accent (bool)
     - Transport: play, stop, pause, tempo (BPM 40–300), swing amount (0–100%)
@@ -1327,7 +1327,13 @@ Subtasks:
     - Variation: each pattern has Main + up to 10 variations (same step count, different velocities/instruments); `set_variation(pattern, variation_index)`
     - Count-in: play N bars (0–4) of metronome clicks before pattern starts
 Assigned to: Codex
-Last updated: 2026-03-18
+Last updated: 2026-03-20 06:59 - Codex
+- Progress notes:
+  - Completed `T213-A` with a new `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp` core that owns 128 patterns, 16 instrument lanes, 64-step storage, transport state, BPM/swing/accent controls, current pattern/step/bar tracking, sample-domain step scheduling, and tap-tempo averaging.
+  - Extended `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` with queued `triggerNote(...)` support so the sequencer can inject software hits into the existing drum processor path with sample offsets.
+  - Wired the sequencer into `juce-engine/Source/Map2AudioEngine.h/cpp` so drum sequencing runs in the audio callback immediately before `DrumMachineProcessor` consumes its block, and registered the new source/test files in `juce-engine/CMakeLists.txt`.
+  - Added `juce-engine/tests/DrumSequencerTests.cpp` coverage for default pattern state, tempo-driven step advancement, drum trigger delivery into `DrumMachineProcessor`, and tap-tempo reset/averaging behavior.
+  - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
 
 ---
 

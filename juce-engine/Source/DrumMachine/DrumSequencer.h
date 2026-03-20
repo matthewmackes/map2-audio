@@ -1,0 +1,96 @@
+#pragma once
+
+#include "DrumMachine/DrumMachineProcessor.h"
+
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <optional>
+
+namespace map2::drummachine {
+
+class DrumSequencer {
+public:
+    static constexpr int kPatternCount = 128;
+    static constexpr int kInstrumentCount = DrumMachineProcessor::kPadCount;
+    static constexpr int kMaxSteps = 64;
+
+    struct Step {
+        uint8_t velocity = 0;
+        bool accent = false;
+    };
+
+    struct Pattern {
+        int length = 16;
+        std::array<std::array<Step, kMaxSteps>, kInstrumentCount> steps{};
+    };
+
+    struct Position {
+        int patternIndex = 0;
+        int stepIndex = 0;
+        int barCount = 1;
+        bool isPlaying = false;
+    };
+
+    void prepare(double sampleRate, int samplesPerBlock);
+    void setDrumMachine(DrumMachineProcessor* processor);
+
+    bool setStep(int patternIndex, int instrumentIndex, int stepIndex, uint8_t velocity, bool accent = false);
+    Step getStep(int patternIndex, int instrumentIndex, int stepIndex) const;
+    bool clearPattern(int patternIndex);
+    bool copyPattern(int sourcePatternIndex, int destinationPatternIndex);
+    bool setPatternLength(int patternIndex, int length);
+    int getPatternLength(int patternIndex) const;
+    Pattern getPattern(int patternIndex) const;
+
+    bool setTempo(double bpm);
+    double getTempo() const;
+    void setSwing(float percent);
+    float getSwing() const;
+    void setAccentVelocity(uint8_t velocity);
+    uint8_t getAccentVelocity() const;
+
+    bool setCurrentPattern(int patternIndex);
+    int getCurrentPattern() const;
+    Position getPosition() const;
+
+    void play();
+    void stop();
+    void pause();
+    bool isPlaying() const;
+    void processBlock(int numSamples);
+
+    double tapTempo();
+    double tapTempo(std::chrono::steady_clock::time_point timestamp);
+
+private:
+    static bool isValidPatternIndex(int patternIndex);
+    static bool isValidInstrumentIndex(int instrumentIndex);
+    static bool isValidStepIndex(int stepIndex);
+    void triggerCurrentStep(int sampleOffset);
+    void advanceStep();
+    double samplesForStep(int stepIndex) const;
+
+    std::array<Pattern, kPatternCount> patterns_{};
+    DrumMachineProcessor* drumMachine_ = nullptr;
+
+    std::atomic<double> sampleRate_{44100.0};
+    std::atomic<int> samplesPerBlock_{512};
+    std::atomic<double> bpm_{120.0};
+    std::atomic<float> swingPercent_{0.0f};
+    std::atomic<int> currentPatternIndex_{0};
+    std::atomic<int> currentStepIndex_{0};
+    std::atomic<int> barCount_{1};
+    std::atomic<bool> prepared_{false};
+    std::atomic<bool> playing_{false};
+    std::atomic<uint8_t> accentVelocity_{127};
+
+    double samplesUntilNextStep_ = 0.0;
+    bool triggerStepAtBlockStart_ = true;
+    std::optional<std::chrono::steady_clock::time_point> lastTapAt_{};
+    std::array<double, 6> recentTapIntervals_{};
+    size_t recentTapCount_ = 0;
+};
+
+}  // namespace map2::drummachine

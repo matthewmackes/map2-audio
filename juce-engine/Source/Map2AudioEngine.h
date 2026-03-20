@@ -49,6 +49,7 @@ class AvbAudioIODevice;
 #include "TweedBassmanProcessor.h"
 #include "PassionFXProcessor.h"
 #include "DrumMachine/DrumMachineProcessor.h"
+#include "DrumMachine/DrumSequencer.h"
 #include "SynthForge/SynthForgeProcessor.h"
 #include "LexiconHardwareProcessor.h"
 
@@ -1268,6 +1269,8 @@ public:
     synthforge::SynthForgeProcessor& getSynthForge() { return synthForge_; }
     drummachine::DrumMachineProcessor& getDrumMachine() { return drumMachine_; }
     const drummachine::DrumMachineProcessor& getDrumMachine() const { return drumMachine_; }
+    drummachine::DrumSequencer& getDrumSequencer() { return drumSequencer_; }
+    const drummachine::DrumSequencer& getDrumSequencer() const { return drumSequencer_; }
     void setDrumMachineEnabled(bool enabled) { drumMachineEnabled_.store(enabled, std::memory_order_relaxed); }
     bool isDrumMachineEnabled() const { return drumMachineEnabled_.load(std::memory_order_relaxed); }
 
@@ -1351,6 +1354,7 @@ private:
     TweedBassmanProcessor tweedBassman_;
     PassionFXProcessor passionFX_;
     drummachine::DrumMachineProcessor drumMachine_;
+    drummachine::DrumSequencer drumSequencer_;
     synthforge::SynthForgeProcessor synthForge_;
 
 #ifdef HAS_NAM
