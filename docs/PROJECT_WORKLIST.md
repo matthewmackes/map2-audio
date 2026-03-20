@@ -1417,7 +1417,7 @@ Last updated: 2026-03-20 08:05 - Codex
 ---
 
 ID: T215
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Drum Machine MIDI Input — velocity curves, note mapping, zone assignment
 Description:
 - Goal / acceptance criteria: Implement comprehensive MIDI input handling for the drum machine so any external e-drum module, MIDI controller, or trigger interface can play the drum machine with configurable velocity response, note-to-pad mapping, and multi-zone pad support.
@@ -1426,7 +1426,7 @@ Description:
 - Estimated effort: Medium
 - Required outputs: MIDI mapping configuration, velocity curve engine, zone assignment, preset mappings for common hardware, REST endpoints, unit tests.
 Subtasks:
-  - [ ] T215-A: Per-pad MIDI note mapping engine
+  - [✓] T215-A: Per-pad MIDI note mapping engine
     - Default: GM drum map (kick=36/C1, snare=38/D1, closed HH=42, open HH=46, etc.)
     - User-configurable: any MIDI note (0–127) → any pad (0–15)
     - Multi-note-to-one-pad: multiple MIDI notes can trigger the same pad (e.g., notes 36 and 35 both trigger kick pad)
@@ -1456,7 +1456,12 @@ Subtasks:
     - `POST /api/engine/drums/midi/presets/load` — apply a hardware preset mapping
   - [ ] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
 Assigned to: Codex
-Last updated: 2026-03-18
+Last updated: 2026-03-20 08:09 - Codex
+- Progress notes:
+  - Completed `T215-A` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by replacing the single-note pad trigger assumption with a real note-to-pad mapping table, allowing multiple MIDI notes to target one pad while guaranteeing that any individual note maps to at most one pad.
+  - Added global drum MIDI channel filtering alongside the existing per-pad channel filter, and extended the pybind surface in `juce-engine/Source/PythonBindings.cpp` with `add_drum_pad_note`, `remove_drum_pad_note`, `get_drum_pad_notes`, `set_drum_global_midi_channel`, and `get_drum_global_midi_channel`.
+  - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for GM default note exposure, multi-note-to-one-pad routing, no-fan-out remapping behavior, per-pad channel filtering, and the new global MIDI channel gate.
+  - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"` -> pass (`36 assertions in 6 test cases`); `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
 
 ---
 

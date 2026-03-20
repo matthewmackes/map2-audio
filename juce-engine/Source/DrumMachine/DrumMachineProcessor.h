@@ -8,6 +8,7 @@
 #include <array>
 #include <atomic>
 #include <string>
+#include <vector>
 
 namespace map2::drummachine {
 
@@ -75,6 +76,11 @@ public:
     bool setPadMute(int padIndex, bool mute);
     bool setPadSolo(int padIndex, bool solo);
     bool setPadMidiNote(int padIndex, int midiNote);
+    bool addPadMidiNote(int padIndex, int midiNote);
+    bool removePadMidiNote(int padIndex, int midiNote);
+    std::vector<int> getPadMidiNotes(int padIndex) const;
+    bool setGlobalMidiChannel(int midiChannel);
+    int getGlobalMidiChannel() const;
     bool setPadBus(int padIndex, BusId bus);
     bool setPadVelocityCurve(int padIndex, VelocityCurve curve, float fixedVelocity = 1.0f);
     bool setPadMidiChannel(int padIndex, int midiChannel);
@@ -106,6 +112,8 @@ private:
 
     std::array<synthforge::Part, kPadCount> pads_;
     std::array<PadConfig, kPadCount> padConfigs_{};
+    std::array<std::array<bool, 128>, kPadCount> padNoteAssignments_{};
+    std::array<int, 128> noteToPad_{};
     std::array<juce::MidiBuffer, kPadCount> padMidiBuffers_{};
     juce::MidiBuffer triggeredMidiBuffer_;
     DrumMachineMixer mixer_;
@@ -117,6 +125,7 @@ private:
     std::atomic<double> sampleRate_{44100.0};
     std::atomic<int> samplesPerBlock_{512};
     std::atomic<int> numChannels_{2};
+    std::atomic<int> globalMidiChannel_{0};
     std::atomic<bool> prepared_{false};
 };
 

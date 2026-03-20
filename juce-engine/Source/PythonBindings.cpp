@@ -2864,6 +2864,21 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("set_drum_pad_note", [](Map2AudioEngine& self, int padIndex, int midiNote) {
             return self.getDrumMachine().setPadMidiNote(padIndex, midiNote);
         }, py::arg("pad"), py::arg("midi_note"), "Set drum pad MIDI note")
+        .def("add_drum_pad_note", [](Map2AudioEngine& self, int padIndex, int midiNote) {
+            return self.getDrumMachine().addPadMidiNote(padIndex, midiNote);
+        }, py::arg("pad"), py::arg("midi_note"), "Add an additional MIDI note mapping to a drum pad")
+        .def("remove_drum_pad_note", [](Map2AudioEngine& self, int padIndex, int midiNote) {
+            return self.getDrumMachine().removePadMidiNote(padIndex, midiNote);
+        }, py::arg("pad"), py::arg("midi_note"), "Remove a MIDI note mapping from a drum pad")
+        .def("get_drum_pad_notes", [](const Map2AudioEngine& self, int padIndex) {
+            return self.getDrumMachine().getPadMidiNotes(padIndex);
+        }, py::arg("pad"), "Get all MIDI note mappings for a drum pad")
+        .def("set_drum_global_midi_channel", [](Map2AudioEngine& self, int midiChannel) {
+            return self.getDrumMachine().setGlobalMidiChannel(midiChannel);
+        }, py::arg("channel"), "Set the global MIDI channel filter for the drum machine")
+        .def("get_drum_global_midi_channel", [](const Map2AudioEngine& self) {
+            return self.getDrumMachine().getGlobalMidiChannel();
+        }, "Get the global MIDI channel filter for the drum machine")
         .def("set_drum_pad_bus", [](Map2AudioEngine& self, int padIndex, int busIndex) {
             const auto clampedBus = std::clamp(busIndex, 0, map2::drummachine::DrumMachineProcessor::kBusCount - 1);
             return self.getDrumMachine().setPadBus(

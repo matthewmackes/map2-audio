@@ -28,6 +28,8 @@ float computeRms(const juce::AudioBuffer<float>& buffer, int channel) {
 void routeMidiToPads(
     const juce::MidiBuffer& source,
     const std::array<DrumMachineProcessor::PadConfig, DrumMachineProcessor::kPadCount>& padConfigs,
+    const std::array<int, 128>& noteToPad,
+    int globalMidiChannel,
     std::array<juce::MidiBuffer, DrumMachineProcessor::kPadCount>& padMidiBuffers,
     const DrumMachineProcessor& processor) {
     for (const auto metadata : source) {
@@ -38,36 +40,42 @@ void routeMidiToPads(
 
         const int incomingNote = message.getNoteNumber();
         const int incomingChannel = message.getChannel();
-
-        for (int padIndex = 0; padIndex < DrumMachineProcessor::kPadCount; ++padIndex) {
-            const auto& config = padConfigs[static_cast<size_t>(padIndex)];
-            if (config.midiNote != incomingNote) {
-                continue;
-            }
-            if (config.midiChannel != 0 && config.midiChannel != incomingChannel) {
-                continue;
-            }
-
-            auto routed = message;
-            if (message.isNoteOn()) {
-                routed = juce::MidiMessage::noteOn(
-                    1,
-                    config.midiNote,
-                    static_cast<juce::uint8>(std::clamp(
-                        static_cast<int>(std::round(processor.mapVelocityForPad(padIndex, message.getFloatVelocity()) * 127.0f)),
-                        1,
-                        127)));
-            } else {
-                routed = juce::MidiMessage::noteOff(1, config.midiNote, message.getVelocity());
-            }
-            padMidiBuffers[static_cast<size_t>(padIndex)].addEvent(routed, metadata.samplePosition);
+        if (globalMidiChannel != 0 && globalMidiChannel != incomingChannel) {
+            continue;
         }
+
+        const int padIndex = (incomingNote >= 0 && incomingNote < static_cast<int>(noteToPad.size()))
+            ? noteToPad[static_cast<size_t>(incomingNote)]
+            : -1;
+        if (padIndex < 0 || padIndex >= DrumMachineProcessor::kPadCount) {
+            continue;
+        }
+
+        const auto& config = padConfigs[static_cast<size_t>(padIndex)];
+        if (config.midiChannel != 0 && config.midiChannel != incomingChannel) {
+            continue;
+        }
+
+        auto routed = message;
+        if (message.isNoteOn()) {
+            routed = juce::MidiMessage::noteOn(
+                1,
+                config.midiNote,
+                static_cast<juce::uint8>(std::clamp(
+                    static_cast<int>(std::round(processor.mapVelocityForPad(padIndex, message.getFloatVelocity()) * 127.0f)),
+                    1,
+                    127)));
+        } else {
+            routed = juce::MidiMessage::noteOff(1, config.midiNote, message.getVelocity());
+        }
+        padMidiBuffers[static_cast<size_t>(padIndex)].addEvent(routed, metadata.samplePosition);
     }
 }
 
 }  // namespace
 
 DrumMachineProcessor::DrumMachineProcessor() {
+    noteToPad_.fill(-1);
     for (int i = 0; i < kPadCount; ++i) {
         pads_[static_cast<size_t>(i)].setPartIndex(i);
         pads_[static_cast<size_t>(i)].setMidiChannel(1);
@@ -75,6 +83,8 @@ DrumMachineProcessor::DrumMachineProcessor() {
         padConfigs_[static_cast<size_t>(i)].midiNote = defaultMidiNoteForPad(i);
         padConfigs_[static_cast<size_t>(i)].bus = defaultBusForPad(i);
         padConfigs_[static_cast<size_t>(i)].name = defaultPadName(i);
+        padNoteAssignments_[static_cast<size_t>(i)].fill(false);
+        addPadMidiNote(i, padConfigs_[static_cast<size_t>(i)].midiNote);
         applyPadConfigToPart(i);
     }
 }
@@ -118,8 +128,20 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
         padBuffer.clear();
     }
 
-    routeMidiToPads(midiBuffer, padConfigs_, padMidiBuffers_, *this);
-    routeMidiToPads(triggeredMidiBuffer_, padConfigs_, padMidiBuffers_, *this);
+    routeMidiToPads(
+        midiBuffer,
+        padConfigs_,
+        noteToPad_,
+        globalMidiChannel_.load(std::memory_order_relaxed),
+        padMidiBuffers_,
+        *this);
+    routeMidiToPads(
+        triggeredMidiBuffer_,
+        padConfigs_,
+        noteToPad_,
+        globalMidiChannel_.load(std::memory_order_relaxed),
+        padMidiBuffers_,
+        *this);
     triggeredMidiBuffer_.clear();
 
     bool soloActive = false;
@@ -179,6 +201,7 @@ bool DrumMachineProcessor::setPadConfig(int padIndex, const PadConfig& config) {
         return false;
     }
 
+    const auto previousConfig = padConfigs_[static_cast<size_t>(padIndex)];
     auto updated = config;
     updated.volume = std::clamp(updated.volume, 0.0f, 1.0f);
     updated.pan = std::clamp(updated.pan, -1.0f, 1.0f);
@@ -191,6 +214,9 @@ bool DrumMachineProcessor::setPadConfig(int padIndex, const PadConfig& config) {
     }
 
     padConfigs_[static_cast<size_t>(padIndex)] = updated;
+    if (updated.midiNote != previousConfig.midiNote) {
+        setPadMidiNote(padIndex, updated.midiNote);
+    }
     applyPadConfigToPart(padIndex);
     return true;
 }
@@ -226,9 +252,99 @@ bool DrumMachineProcessor::setPadSolo(int padIndex, bool solo) {
 }
 
 bool DrumMachineProcessor::setPadMidiNote(int padIndex, int midiNote) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+
+    for (int note = 0; note < 128; ++note) {
+        if (padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(note)]) {
+            padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(note)] = false;
+            if (noteToPad_[static_cast<size_t>(note)] == padIndex) {
+                noteToPad_[static_cast<size_t>(note)] = -1;
+            }
+        }
+    }
+
     auto config = getPadConfig(padIndex);
-    config.midiNote = midiNote;
-    return setPadConfig(padIndex, config);
+    config.midiNote = std::clamp(midiNote, 0, 127);
+    const bool assigned = addPadMidiNote(padIndex, config.midiNote);
+    if (!assigned) {
+        return false;
+    }
+    padConfigs_[static_cast<size_t>(padIndex)] = config;
+    return true;
+}
+
+bool DrumMachineProcessor::addPadMidiNote(int padIndex, int midiNote) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+
+    const int clampedNote = std::clamp(midiNote, 0, 127);
+    const int previousPad = noteToPad_[static_cast<size_t>(clampedNote)];
+    if (previousPad >= 0 && previousPad < kPadCount) {
+        padNoteAssignments_[static_cast<size_t>(previousPad)][static_cast<size_t>(clampedNote)] = false;
+    }
+
+    noteToPad_[static_cast<size_t>(clampedNote)] = padIndex;
+    padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(clampedNote)] = true;
+
+    auto notes = getPadMidiNotes(padIndex);
+    auto config = getPadConfig(padIndex);
+    config.midiNote = notes.empty() ? clampedNote : notes.front();
+    padConfigs_[static_cast<size_t>(padIndex)] = config;
+    return true;
+}
+
+bool DrumMachineProcessor::removePadMidiNote(int padIndex, int midiNote) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+
+    const int clampedNote = std::clamp(midiNote, 0, 127);
+    if (!padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(clampedNote)]) {
+        return false;
+    }
+
+    padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(clampedNote)] = false;
+    if (noteToPad_[static_cast<size_t>(clampedNote)] == padIndex) {
+        noteToPad_[static_cast<size_t>(clampedNote)] = -1;
+    }
+
+    auto notes = getPadMidiNotes(padIndex);
+    auto config = getPadConfig(padIndex);
+    config.midiNote = notes.empty() ? defaultMidiNoteForPad(padIndex) : notes.front();
+    padConfigs_[static_cast<size_t>(padIndex)] = config;
+    if (notes.empty()) {
+        addPadMidiNote(padIndex, config.midiNote);
+    }
+    return true;
+}
+
+std::vector<int> DrumMachineProcessor::getPadMidiNotes(int padIndex) const {
+    if (!isValidPadIndex(padIndex)) {
+        return {};
+    }
+
+    std::vector<int> notes;
+    for (int note = 0; note < 128; ++note) {
+        if (padNoteAssignments_[static_cast<size_t>(padIndex)][static_cast<size_t>(note)]) {
+            notes.push_back(note);
+        }
+    }
+    return notes;
+}
+
+bool DrumMachineProcessor::setGlobalMidiChannel(int midiChannel) {
+    if (midiChannel < 0 || midiChannel > 16) {
+        return false;
+    }
+    globalMidiChannel_.store(midiChannel, std::memory_order_relaxed);
+    return true;
+}
+
+int DrumMachineProcessor::getGlobalMidiChannel() const {
+    return globalMidiChannel_.load(std::memory_order_relaxed);
 }
 
 bool DrumMachineProcessor::setPadBus(int padIndex, BusId bus) {
