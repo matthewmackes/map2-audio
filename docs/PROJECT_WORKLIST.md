@@ -587,7 +587,7 @@ Last updated: 2026-03-19 20:58 - Codex
   - Validation: `pytest tests/test_tesira_client.py tests/test_virtual_gpio.py tests/test_string_interface.py` -> pass, `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
 
 ID: T203-subH
-Status: [ ] Todo
+Status: [✓] Done
 Title: Lab area — AI Learn, Mesh, Device Shadow rewrite
 Description:
 - Goal / acceptance criteria: Rewrite the Lab area (`/midi-hub/lab`) with all existing capabilities in clean Carbon patterns. AI Learn Suggestions: Carbon form with `AILabel` per Carbon for AI conventions, confidence scores as Carbon `ProgressBar`. Mesh Networking: Carbon `DataTable` for peers with status indicators. Device Shadow State: Carbon `DataTable` for drift events with severity tags. All AI surfaces must include `AILabel` with short disclosure content per `docs/design/CARBON_AI_LABEL_CONFORMANCE.md`.
@@ -600,8 +600,14 @@ Description:
   - All AI surfaces include Carbon `AILabel` component
   - Tests: renders, AI suggestions display with confidence, mesh peer CRUD, shadow drift events display
 Subtasks: None
-Assigned to: Claude
-Last updated: 2026-03-17 - Claude
+Assigned to: Codex
+Last updated: 2026-03-19 21:05 - Codex
+- Completion notes:
+  - Rebuilt `web/src/app/pages/midi-hub/MidiHubLabPage.tsx` into a dedicated Carbon lab workspace and added `MidiHubLabPage.css` for the new three-panel route layout.
+  - Split the old innovation surface into `AiLearnPanel.tsx`, `MeshNetworkPanel.tsx`, and `DeviceShadowPanel.tsx`, with `MidiInnovationPanel.tsx` reduced to a compatibility wrapper over the new panels.
+  - Added Carbon `AILabel` disclosure plus confidence `ProgressBar` rendering for AI learn suggestions, a Carbon `DataTable` mesh peer view with peer save/remove and forwarding controls, and a Carbon `DataTable` drift log with severity tags for device shadow events.
+  - Added route coverage in `web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx` for AI suggestion display, mesh peer CRUD, and shadow drift presentation.
+  - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
 
 ID: T203-subI
 Status: [ ] Todo

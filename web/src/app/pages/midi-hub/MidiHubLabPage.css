@@ -1,0 +1,48 @@
+.midi-hub-lab-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.midi-hub-lab-page__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+}
+
+.midi-hub-lab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.midi-hub-lab-panel__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.midi-hub-lab-panel__toggle-row {
+  display: flex;
+  align-items: center;
+}
+
+.midi-hub-lab-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(140, 140, 140, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.midi-hub-lab-table {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+@media (max-width: 900px) {
+  .midi-hub-lab-page__grid {
+    grid-template-columns: 1fr;
+  }
+}

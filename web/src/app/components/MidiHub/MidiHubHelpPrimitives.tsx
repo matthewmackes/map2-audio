@@ -21,6 +21,9 @@ export type MidiHubPanelId =
   | 'tesira'
   | 'gpio'
   | 'string-interface'
+  | 'ai-learn'
+  | 'mesh'
+  | 'device-shadow'
   | 'innovation'
 
 type MidiHubPanelMeta = {
@@ -128,6 +131,24 @@ export const MIDI_HUB_PANEL_META: Record<MidiHubPanelId, MidiHubPanelMeta> = {
     title: 'String Interface',
     family: 'Network and Protocol',
     shortLabel: 'UDP text cues',
+  },
+  'ai-learn': {
+    title: 'AI Learn Suggestions',
+    family: 'Lab',
+    shortLabel: 'Assistive mappings',
+    advanced: true,
+  },
+  mesh: {
+    title: 'Mesh Networking',
+    family: 'Lab',
+    shortLabel: 'Peer routing',
+    advanced: true,
+  },
+  'device-shadow': {
+    title: 'Device Shadow State',
+    family: 'Lab',
+    shortLabel: 'Drift tracking',
+    advanced: true,
   },
   innovation: {
     title: 'Advanced and Experimental',
