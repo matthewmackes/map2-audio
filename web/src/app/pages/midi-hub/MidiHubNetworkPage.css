@@ -1,0 +1,81 @@
+.midi-hub-network-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.midi-hub-network-page__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+}
+
+.midi-hub-network-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.midi-hub-network-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+  border: 1px solid rgba(82, 82, 82, 0.18);
+  background: linear-gradient(180deg, rgba(244, 244, 244, 0.88), rgba(255, 255, 255, 0.96));
+}
+
+.midi-hub-network-panel__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.midi-hub-network-panel__toggles {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.midi-hub-network-panel__controls-grid {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.midi-hub-network-table {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.midi-hub-network-namespace {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.midi-hub-network-gpio-grid {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.midi-hub-network-gpio-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(140, 140, 140, 0.22);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.midi-hub-network-gpio-tile__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .midi-hub-network-page__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1657,6 +1657,75 @@ export interface Midi2DeviceState {
   last_discovery_at?: number | null;
 }
 
+export interface TesiraAliasState {
+  instance_tag: string;
+  block_type: string;
+  label?: string;
+  level?: number;
+  mute?: boolean;
+  selection?: number;
+  peak_db?: number;
+}
+
+export interface TesiraSubscriptionState {
+  token: string;
+  instance_tag: string;
+  attribute: string;
+  created_at: number;
+  last_value?: unknown;
+}
+
+export interface TesiraStatus {
+  connected: boolean;
+  host: string;
+  port: number;
+  secured: boolean;
+  username: string;
+  auto_reconnect: boolean;
+  connected_at?: number | null;
+  last_error?: string | null;
+  aliases: TesiraAliasState[];
+  subscriptions: TesiraSubscriptionState[];
+  history: Array<{ command: string; response: string; timestamp: number }>;
+  device_info: Record<string, unknown>;
+  presets: Array<{ preset_id: number; name: string; active: boolean }>;
+  matrix: Array<{ input: number; output: number; level: number; mute: boolean }>;
+}
+
+export interface VirtualGpioChannel {
+  channel_id: string;
+  channel_type: 'input' | 'output' | string;
+  index: number;
+  label: string;
+  state: boolean;
+  last_changed_at: number;
+}
+
+export interface VirtualGpioSnapshot {
+  input_count: number;
+  output_count: number;
+  inputs: VirtualGpioChannel[];
+  outputs: VirtualGpioChannel[];
+  events: Array<Record<string, unknown>>;
+}
+
+export interface StringInterfaceLog {
+  direction: string;
+  raw: string;
+  parsed: Record<string, unknown>;
+  timestamp: number;
+}
+
+export interface StringInterfaceStatus {
+  enabled: boolean;
+  listen_host: string;
+  listen_port: number;
+  target_host: string;
+  target_port: number;
+  log_count: number;
+  logs: StringInterfaceLog[];
+}
+
 export interface MidiHubLearnSuggestion {
   cc_number: number;
   channel: number;
@@ -2296,6 +2365,130 @@ export const midiHubApi = {
     fetchJson<{ message: number[] }>(appendNodeQuery(`${API_BASE}/midi/hub/midi2/translate/ump-to-midi1`, nodeId), {
       method: 'POST',
       body: JSON.stringify({ words }),
+    }),
+
+  getTesiraStatus: (nodeId?: string | null) => fetchJson<TesiraStatus>(appendNodeQuery(`${API_BASE}/midi/hub/tesira`, nodeId)),
+  connectTesira: (payload: {
+    host: string
+    port?: number
+    username?: string
+    password?: string
+    secured?: boolean
+    auto_reconnect?: boolean
+  }, nodeId?: string | null) =>
+    fetchJson<TesiraStatus>(appendNodeQuery(`${API_BASE}/midi/hub/tesira/connect`, nodeId), {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  disconnectTesira: (nodeId?: string | null) =>
+    fetchJson<TesiraStatus>(appendNodeQuery(`${API_BASE}/midi/hub/tesira/disconnect`, nodeId), {
+      method: 'POST',
+    }),
+  sendTesiraCommand: (command: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; response: string; aliases?: TesiraAliasState[] }>(appendNodeQuery(`${API_BASE}/midi/hub/tesira/command`, nodeId), {
+      method: 'POST',
+      body: JSON.stringify({ command }),
+    }),
+  listTesiraAliases: (nodeId?: string | null) =>
+    fetchJson<{ count: number; aliases: TesiraAliasState[] }>(appendNodeQuery(`${API_BASE}/midi/hub/tesira/aliases`, nodeId)),
+  setTesiraLevel: (instanceTag: string, level: number, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; value: number }>(appendNodeQuery(`${API_BASE}/midi/hub/tesira/controls/level`, nodeId), {
+      method: 'PUT',
+      body: JSON.stringify({ instance_tag: instanceTag, level }),
+    }),
+  setTesiraMute: (instanceTag: string, muted: boolean, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; value: boolean }>(appendNodeQuery(`${API_BASE}/midi/hub/tesira/controls/mute`, nodeId), {
+      method: 'PUT',
+      body: JSON.stringify({ instance_tag: instanceTag, muted }),
+    }),
+  listTesiraSubscriptions: (nodeId?: string | null) =>
+    fetchJson<{ count: number; subscriptions: TesiraSubscriptionState[] }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/tesira/subscriptions`, nodeId)
+    ),
+  subscribeTesira: (instanceTag: string, attribute: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; subscription: TesiraSubscriptionState }>(appendNodeQuery(`${API_BASE}/midi/hub/tesira/subscriptions`, nodeId), {
+      method: 'POST',
+      body: JSON.stringify({ instance_tag: instanceTag, attribute }),
+    }),
+  unsubscribeTesira: (token: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean }>(appendNodeQuery(`${API_BASE}/midi/hub/tesira/subscriptions/${encodeURIComponent(token)}`, nodeId), {
+      method: 'DELETE',
+    }),
+  recallTesiraPreset: (presetId: number, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; preset: { preset_id: number; name: string; active: boolean } }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/tesira/presets/recall`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ preset_id: presetId }),
+      }
+    ),
+  saveTesiraPreset: (presetId: number, name?: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; preset: { preset_id: number; name: string; active: boolean } }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/tesira/presets/save`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ preset_id: presetId, name }),
+      }
+    ),
+  getTesiraMatrix: (nodeId?: string | null) =>
+    fetchJson<{ count: number; crosspoints: Array<{ input: number; output: number; level: number; mute: boolean }> }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/tesira/matrix`, nodeId)
+    ),
+
+  getVirtualGpio: (nodeId?: string | null) => fetchJson<VirtualGpioSnapshot>(appendNodeQuery(`${API_BASE}/midi/hub/gpio`, nodeId)),
+  setVirtualGpioLabel: (channelId: string, label: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; channel: VirtualGpioChannel }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/gpio/${encodeURIComponent(channelId)}/label`, nodeId),
+      {
+        method: 'PUT',
+        body: JSON.stringify({ label }),
+      }
+    ),
+  setVirtualGpioState: (channelId: string, state: boolean, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; channel: VirtualGpioChannel }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/gpio/${encodeURIComponent(channelId)}/state`, nodeId),
+      {
+        method: 'PUT',
+        body: JSON.stringify({ state }),
+      }
+    ),
+  toggleVirtualGpio: (channelId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; channel: VirtualGpioChannel }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/gpio/${encodeURIComponent(channelId)}/toggle`, nodeId),
+      {
+        method: 'POST',
+      }
+    ),
+
+  getStringInterfaceStatus: (nodeId?: string | null) =>
+    fetchJson<StringInterfaceStatus>(appendNodeQuery(`${API_BASE}/midi/hub/string-interface`, nodeId)),
+  updateStringInterfaceConfig: (payload: {
+    enabled?: boolean
+    listen_host?: string
+    listen_port?: number
+    target_host?: string
+    target_port?: number
+  }, nodeId?: string | null) =>
+    fetchJson<StringInterfaceStatus>(appendNodeQuery(`${API_BASE}/midi/hub/string-interface`, nodeId), {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  sendStringInterfaceCommand: (command: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; entry: StringInterfaceLog }>(appendNodeQuery(`${API_BASE}/midi/hub/string-interface/send`, nodeId), {
+      method: 'POST',
+      body: JSON.stringify({ command }),
+    }),
+  receiveStringInterfaceCommand: (command: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; entry: StringInterfaceLog }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/string-interface/receive`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ command }),
+      }
+    ),
+  clearStringInterfaceLogs: (nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; cleared: number }>(appendNodeQuery(`${API_BASE}/midi/hub/string-interface/clear`, nodeId), {
+      method: 'POST',
     }),
 
   getLearnSuggestions: (payload: { parameter_id: string; chain_context?: Record<string, unknown> }, nodeId?: string | null) =>

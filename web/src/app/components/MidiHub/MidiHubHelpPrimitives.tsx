@@ -18,6 +18,9 @@ export type MidiHubPanelId =
   | 'recorder'
   | 'traffic'
   | 'midi2'
+  | 'tesira'
+  | 'gpio'
+  | 'string-interface'
   | 'innovation'
 
 type MidiHubPanelMeta = {
@@ -110,6 +113,21 @@ export const MIDI_HUB_PANEL_META: Record<MidiHubPanelId, MidiHubPanelMeta> = {
     title: 'MIDI 2.0 Workspace',
     family: 'Network and Protocol',
     shortLabel: 'UMP and MIDI-CI',
+  },
+  tesira: {
+    title: 'Tesira TTP Integration',
+    family: 'Network and Protocol',
+    shortLabel: 'Biamp control',
+  },
+  gpio: {
+    title: 'Virtual GPIO Matrix',
+    family: 'Network and Protocol',
+    shortLabel: 'Contact closures',
+  },
+  'string-interface': {
+    title: 'String Interface',
+    family: 'Network and Protocol',
+    shortLabel: 'UDP text cues',
   },
   innovation: {
     title: 'Advanced and Experimental',

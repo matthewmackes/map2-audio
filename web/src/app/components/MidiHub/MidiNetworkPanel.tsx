@@ -1,9 +1,40 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Select, SelectItem, Tag, TextInput } from '@carbon/react'
+import {
+  Button,
+  DataTable,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  Tag,
+  TextArea,
+  TextInput,
+} from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+
+const SESSION_HEADERS = [
+  { key: 'session', header: 'Session' },
+  { key: 'endpoint', header: 'Endpoint' },
+  { key: 'metrics', header: 'Metrics' },
+]
+
+const OSC_NAMESPACE = [
+  '/map2/transport/bpm',
+  '/map2/transport/song_position',
+  '/map2/presets/recall',
+  '/map2/macros/trigger',
+  '/map2/gpio/input/1',
+  '/map2/gpio/output/1',
+  '/map2/tesira/Level1/level',
+]
 
 export function MidiNetworkPanel() {
   const queryClient = useQueryClient()
@@ -23,8 +54,17 @@ export function MidiNetworkPanel() {
   const [oscPort, setOscPort] = useState('58000')
   const [oscAddress, setOscAddress] = useState('/map2/cc1')
   const [oscValue, setOscValue] = useState('0.5')
+  const [oscMappings, setOscMappings] = useState(JSON.stringify([
+    { address: '/map2/presets/recall', destination_port: 'dst', message_type: 'program_change', channel: 1 },
+  ], null, 2))
 
   const refreshSessions = () => queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'network-sessions'] })
+  const refreshOscMappings = () => queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'osc-mappings'] })
+
+  const oscMappingsQuery = useQuery({
+    queryKey: ['midi-hub', scopeKey, 'osc-mappings'],
+    queryFn: () => midiHubApi.listOscMappings(nodeId),
+  })
 
   const createSession = useMutation({
     mutationFn: async () =>
@@ -85,14 +125,32 @@ export function MidiNetworkPanel() {
     onError: () => pushToast('Failed to send OSC message', 'error'),
   })
 
-  const sessions = useMemo(() => sessionsQuery.data?.sessions ?? [], [sessionsQuery.data?.sessions])
+  const setMappings = useMutation({
+    mutationFn: async () => {
+      const mappings = JSON.parse(oscMappings) as Array<Record<string, unknown>>
+      return midiHubApi.setOscMappings(mappings, nodeId)
+    },
+    onSuccess: async () => {
+      pushToast('OSC namespace saved', 'success')
+      await refreshOscMappings()
+    },
+    onError: () => pushToast('OSC namespace update failed', 'error'),
+  })
+
+  const sessions = (sessionsQuery.data?.sessions ?? []).map((session) => ({
+    id: session.session_id,
+    session: `${session.session_id} · ${session.mode}`,
+    endpoint: `${session.host}:${session.port}`,
+    metrics: `Latency ${session.latency_ms?.toFixed?.(2) ?? 'N/A'} ms · Jitter ${session.jitter_ms?.toFixed?.(2) ?? 'N/A'} ms`,
+  }))
 
   return (
-    <div className="midi-hub-panel-grid--2">
-      <div className="midi-hub-mini-surface">
+    <div className="midi-hub-network-panel">
+      <div className="midi-hub-network-panel__section">
         <div className="midi-hub-toolbar">
           <Tag type={sessions.length > 0 ? 'green' : 'warm-gray'}>{`Sessions ${sessions.length}`}</Tag>
           <Tag type="cool-gray">{mode === 'send' ? 'Initiator' : 'Listener'}</Tag>
+          <Tag type="blue">RTP-MIDI</Tag>
         </div>
 
         <div className="midi-hub-form-grid">
@@ -114,15 +172,7 @@ export function MidiNetworkPanel() {
             value={port}
             onChange={(event) => setPort(event.currentTarget.value)}
           />
-          <Select
-            id="midi-hub-network-mode"
-            labelText="Session mode"
-            value={mode}
-            onChange={(event) => setMode(event.currentTarget.value === 'listen' ? 'listen' : 'send')}
-          >
-            <SelectItem value="send" text="Send" />
-            <SelectItem value="listen" text="Listen" />
-          </Select>
+          <TextInput id="midi-hub-network-mode" labelText="Session mode" value={mode} onChange={(event) => setMode(event.currentTarget.value === 'listen' ? 'listen' : 'send')} />
         </div>
 
         <div className="midi-hub-actions">
@@ -133,36 +183,67 @@ export function MidiNetworkPanel() {
             Refresh
           </Button>
         </div>
-
-        <div className="midi-hub-record-list">
-          {sessions.length === 0 ? <div className="midi-hub-empty-state">No network sessions configured.</div> : null}
-          {sessions.map((session) => (
-            <div key={session.session_id} className="midi-hub-record-row">
-              <div className="midi-hub-record-copy">
-                <strong>{session.session_id}</strong>
-                <div className="midi-hub-record-meta">
-                  <code>{`${session.host}:${session.port}`}</code>
-                  {` · ${session.mode} · latency ${session.latency_ms?.toFixed?.(2) ?? 'N/A'} ms`}
-                </div>
-              </div>
-              <div className="midi-hub-record-actions">
-                <Button size="sm" kind="secondary" onClick={() => sendTestMidi.mutate(session.session_id)}>
-                  Send test note
-                </Button>
-                <Button size="sm" kind="danger--tertiary" onClick={() => deleteSession.mutate(session.session_id)}>
-                  Delete
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
-      <div className="midi-hub-mini-surface">
+      <DataTable rows={sessions} headers={SESSION_HEADERS} useZebraStyles>
+        {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+          <TableContainer
+            {...getTableContainerProps()}
+            title="RTP-MIDI sessions"
+            description="Provision remote endpoints, then test payload flow and remove stale sessions from one table."
+            className="midi-hub-network-table"
+          >
+            <TableToolbar {...getToolbarProps()}>
+              <TableToolbarContent>
+                <Tag type="cool-gray">{`Latency refresh ${(sessionsQuery.data?.count ?? 0) > 0 ? 'Live' : 'Idle'}`}</Tag>
+              </TableToolbarContent>
+            </TableToolbar>
+            <Table {...getTableProps()} aria-label="RTP-MIDI sessions">
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => {
+                    const { key: _key, ...headerProps } = getHeaderProps({ header })
+                    return (
+                      <TableHeader key={header.key} {...headerProps}>
+                        {header.header}
+                      </TableHeader>
+                    )
+                  })}
+                  <TableHeader>Action</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => {
+                  const { key: _key, ...rowProps } = getRowProps({ row })
+                  return (
+                    <TableRow key={row.id} {...rowProps}>
+                      {row.cells.map((cell) => (
+                        <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                      ))}
+                      <TableCell>
+                        <div className="midi-hub-record-actions">
+                          <Button size="sm" kind="ghost" onClick={() => sendTestMidi.mutate(row.id)}>
+                            Test
+                          </Button>
+                          <Button size="sm" kind="ghost" onClick={() => deleteSession.mutate(row.id)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </DataTable>
+
+      <div className="midi-hub-network-panel__section">
         <div className="midi-hub-toolbar">
           <Tag type="cool-gray">OSC bridge</Tag>
+          <Tag type="blue">/map2/* namespace</Tag>
         </div>
-
         <div className="midi-hub-form-grid">
           <TextInput
             id="midi-hub-osc-port"
@@ -195,6 +276,20 @@ export function MidiNetworkPanel() {
             Stop OSC
           </Button>
         </div>
+        <TextArea id="midi-hub-osc-mappings" labelText="OSC namespace mappings" rows={6} value={oscMappings} onChange={(event) => setOscMappings(event.currentTarget.value)} />
+        <div className="midi-hub-actions">
+          <Button size="sm" kind="ghost" onClick={() => setMappings.mutate()}>
+            Save namespace
+          </Button>
+        </div>
+        <div className="midi-hub-network-namespace">
+          {OSC_NAMESPACE.map((entry) => (
+            <Tag key={entry} type="cool-gray">
+              {entry}
+            </Tag>
+          ))}
+        </div>
+        <pre className="midi-hub-code-block">{JSON.stringify(oscMappingsQuery.data?.mappings ?? [], null, 2)}</pre>
       </div>
     </div>
   )

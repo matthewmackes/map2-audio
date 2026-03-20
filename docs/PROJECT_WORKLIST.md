@@ -532,7 +532,7 @@ Last updated: 2026-03-19 20:24 - Codex
   - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing Vite dynamic-import/chunk-size warnings only).
 
 ID: T203-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: Network & Protocol area — RTP-MIDI, OSC namespace, MIDI 2.0, Tesira TTP, Virtual GPIO, String Interface
 Description:
 - Goal / acceptance criteria: Rewrite and expand the Network area (`/midi-hub/network`) with all existing capabilities plus new features:
@@ -575,8 +575,16 @@ Description:
   - String Interface: UDP socket on configurable port (default 3037), same command vocabulary as ETC serial strings
   - Enterprise flags: Tesira fleet management (multiple Tesira servers), GPIO hardware mapping (future USB relay board), String protocol over ACN
 Subtasks: None
-Assigned to: Claude
-Last updated: 2026-03-17 - Claude
+Assigned to: Codex
+Last updated: 2026-03-19 20:58 - Codex
+- Completion notes:
+  - Rebuilt `web/src/app/pages/midi-hub/MidiHubNetworkPage.tsx` into a route-specific protocol workspace and added `MidiHubNetworkPage.css` for the new multi-panel network layout.
+  - Reworked `MidiNetworkPanel.tsx` and `Midi2Panel.tsx` into Carbon table/form workflows for RTP-MIDI sessions, OSC namespace controls, MIDI-CI discovery, profile/property edits, and UMP translation.
+  - Added `TesiraPanel.tsx`, `VirtualGpioPanel.tsx`, and `StringInterfacePanel.tsx` with Tesira connection/command/subscription controls, a 12x12 virtual GPIO surface, and UDP string-command configuration/logging.
+  - Added backend services `app/services/midi_hub/tesira_client.py`, `app/services/midi_hub/virtual_gpio.py`, and `app/services/midi_hub/string_interface.py`, plus new MIDI Hub routes for Tesira, GPIO, and string-interface control.
+  - Extended `web/src/map2/api.ts` with typed Tesira, GPIO, and string-interface clients and expanded `MidiHubHelpPrimitives.tsx` to register the new protocol panels.
+  - Added test coverage in `tests/test_tesira_client.py`, `tests/test_virtual_gpio.py`, `tests/test_string_interface.py`, and `web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx`.
+  - Validation: `pytest tests/test_tesira_client.py tests/test_virtual_gpio.py tests/test_string_interface.py` -> pass, `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
 
 ID: T203-subH
 Status: [ ] Todo

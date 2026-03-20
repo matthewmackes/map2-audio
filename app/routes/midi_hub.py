@@ -20,7 +20,10 @@ from app.services.midi_hub.recorder import get_midi_recorder
 from app.services.midi_hub.router import get_midi_router
 from app.services.midi_hub.scheduler import get_midi_scheduler
 from app.services.midi_hub.script_engine import get_midi_script_engine
+from app.services.midi_hub.string_interface import get_string_interface_service
+from app.services.midi_hub.tesira_client import get_tesira_client
 from app.services.midi_hub.traffic_monitor import get_midi_traffic_monitor
+from app.services.midi_hub.virtual_gpio import get_virtual_gpio_service
 
 
 router = APIRouter(prefix="/api/midi/hub", tags=["midi-hub"])
@@ -206,6 +209,59 @@ class Midi2TranslateMidi1Request(BaseModel):
 
 class Midi2TranslateUmpRequest(BaseModel):
     words: List[int] = Field(..., min_length=1, max_length=8)
+
+
+class TesiraConnectRequest(BaseModel):
+    host: str = Field(..., min_length=1, max_length=255)
+    port: int = Field(default=23, ge=1, le=65535)
+    username: str = Field(default="", max_length=255)
+    password: str = Field(default="", max_length=255)
+    secured: bool = False
+    auto_reconnect: bool = True
+
+
+class TesiraCommandRequest(BaseModel):
+    command: str = Field(..., min_length=1, max_length=4096)
+
+
+class TesiraLevelRequest(BaseModel):
+    instance_tag: str = Field(..., min_length=1, max_length=255)
+    level: float = Field(..., ge=-100.0, le=20.0)
+
+
+class TesiraMuteRequest(BaseModel):
+    instance_tag: str = Field(..., min_length=1, max_length=255)
+    muted: bool = False
+
+
+class TesiraPresetRequest(BaseModel):
+    preset_id: int = Field(..., ge=1, le=999999)
+    name: Optional[str] = Field(default=None, max_length=255)
+
+
+class TesiraSubscriptionRequest(BaseModel):
+    instance_tag: str = Field(..., min_length=1, max_length=255)
+    attribute: str = Field(..., min_length=1, max_length=255)
+
+
+class VirtualGpioLabelRequest(BaseModel):
+    label: str = Field(..., min_length=1, max_length=255)
+
+
+class VirtualGpioStateRequest(BaseModel):
+    state: bool
+
+
+class StringInterfaceConfigRequest(BaseModel):
+    enabled: Optional[bool] = None
+    listen_host: Optional[str] = Field(default=None, max_length=255)
+    listen_port: Optional[int] = Field(default=None, ge=1, le=65535)
+    target_host: Optional[str] = Field(default=None, max_length=255)
+    target_port: Optional[int] = Field(default=None, ge=1, le=65535)
+
+
+class StringInterfaceCommandRequest(BaseModel):
+    command: str = Field(..., min_length=1, max_length=4096)
 
 
 class LearnSuggestRequest(BaseModel):
@@ -975,6 +1031,137 @@ async def set_midi2_property(device_id: str, req: Midi2PropertyRequest) -> Dict[
 async def get_midi2_property(device_id: str, key: str) -> Dict[str, Any]:
     manager = get_midi2_manager()
     return {"ok": True, "device_id": device_id, "key": key, "value": manager.get_property(device_id, key)}
+
+
+@router.get("/tesira")
+async def get_tesira_status() -> Dict[str, Any]:
+    return get_tesira_client().status()
+
+
+@router.post("/tesira/connect")
+async def connect_tesira(req: TesiraConnectRequest) -> Dict[str, Any]:
+    return get_tesira_client().connect(
+        host=req.host,
+        port=req.port,
+        username=req.username,
+        password=req.password,
+        secured=req.secured,
+        auto_reconnect=req.auto_reconnect,
+    )
+
+
+@router.post("/tesira/disconnect")
+async def disconnect_tesira() -> Dict[str, Any]:
+    return get_tesira_client().disconnect()
+
+
+@router.post("/tesira/command")
+async def send_tesira_command(req: TesiraCommandRequest) -> Dict[str, Any]:
+    return get_tesira_client().send_command(req.command)
+
+
+@router.get("/tesira/aliases")
+async def list_tesira_aliases() -> Dict[str, Any]:
+    client = get_tesira_client()
+    return {"count": len(client.aliases()), "aliases": client.aliases()}
+
+
+@router.get("/tesira/device-info")
+async def tesira_device_info() -> Dict[str, Any]:
+    return {"ok": True, "device_info": get_tesira_client().status()["device_info"]}
+
+
+@router.put("/tesira/controls/level")
+async def set_tesira_level(req: TesiraLevelRequest) -> Dict[str, Any]:
+    return get_tesira_client().set_level(req.instance_tag, req.level)
+
+
+@router.put("/tesira/controls/mute")
+async def set_tesira_mute(req: TesiraMuteRequest) -> Dict[str, Any]:
+    return get_tesira_client().set_mute(req.instance_tag, req.muted)
+
+
+@router.get("/tesira/matrix")
+async def tesira_matrix_status() -> Dict[str, Any]:
+    client = get_tesira_client()
+    return {"count": len(client.matrix_status()), "crosspoints": client.matrix_status()}
+
+
+@router.post("/tesira/presets/recall")
+async def recall_tesira_preset(req: TesiraPresetRequest) -> Dict[str, Any]:
+    return get_tesira_client().recall_preset(req.preset_id)
+
+
+@router.post("/tesira/presets/save")
+async def save_tesira_preset(req: TesiraPresetRequest) -> Dict[str, Any]:
+    return get_tesira_client().save_preset(req.preset_id, name=req.name)
+
+
+@router.get("/tesira/subscriptions")
+async def list_tesira_subscriptions() -> Dict[str, Any]:
+    client = get_tesira_client()
+    return {"count": len(client.list_subscriptions()), "subscriptions": client.list_subscriptions()}
+
+
+@router.post("/tesira/subscriptions")
+async def create_tesira_subscription(req: TesiraSubscriptionRequest) -> Dict[str, Any]:
+    return get_tesira_client().subscribe(req.instance_tag, req.attribute)
+
+
+@router.delete("/tesira/subscriptions/{token}")
+async def delete_tesira_subscription(token: str) -> Dict[str, Any]:
+    return get_tesira_client().unsubscribe(token)
+
+
+@router.get("/gpio")
+async def get_virtual_gpio() -> Dict[str, Any]:
+    return get_virtual_gpio_service().snapshot()
+
+
+@router.put("/gpio/{channel_id}/label")
+async def set_virtual_gpio_label(channel_id: str, req: VirtualGpioLabelRequest) -> Dict[str, Any]:
+    return {"ok": True, "channel": get_virtual_gpio_service().set_label(channel_id, req.label)}
+
+
+@router.put("/gpio/{channel_id}/state")
+async def set_virtual_gpio_state(channel_id: str, req: VirtualGpioStateRequest) -> Dict[str, Any]:
+    return get_virtual_gpio_service().set_state(channel_id, req.state)
+
+
+@router.post("/gpio/{channel_id}/toggle")
+async def toggle_virtual_gpio_state(channel_id: str) -> Dict[str, Any]:
+    return get_virtual_gpio_service().toggle(channel_id)
+
+
+@router.get("/string-interface")
+async def get_string_interface_status() -> Dict[str, Any]:
+    return get_string_interface_service().status()
+
+
+@router.put("/string-interface")
+async def configure_string_interface(req: StringInterfaceConfigRequest) -> Dict[str, Any]:
+    return get_string_interface_service().configure(
+        enabled=req.enabled,
+        listen_host=req.listen_host,
+        listen_port=req.listen_port,
+        target_host=req.target_host,
+        target_port=req.target_port,
+    )
+
+
+@router.post("/string-interface/send")
+async def send_string_interface_command(req: StringInterfaceCommandRequest) -> Dict[str, Any]:
+    return get_string_interface_service().send(req.command)
+
+
+@router.post("/string-interface/receive")
+async def receive_string_interface_command(req: StringInterfaceCommandRequest) -> Dict[str, Any]:
+    return get_string_interface_service().receive(req.command)
+
+
+@router.post("/string-interface/clear")
+async def clear_string_interface_logs() -> Dict[str, Any]:
+    return get_string_interface_service().clear_logs()
 
 
 @router.post("/learn/suggestions")

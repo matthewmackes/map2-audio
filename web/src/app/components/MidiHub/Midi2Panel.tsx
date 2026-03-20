@@ -1,9 +1,30 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Select, SelectItem, Tag, TextInput } from '@carbon/react'
+import {
+  Button,
+  DataTable,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableToolbar,
+  TableToolbarContent,
+  Tag,
+  TextInput,
+  Toggle,
+} from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+
+const DEVICE_HEADERS = [
+  { key: 'device', header: 'Device' },
+  { key: 'profiles', header: 'Profiles' },
+  { key: 'properties', header: 'Properties' },
+]
 
 export function Midi2Panel() {
   const queryClient = useQueryClient()
@@ -91,11 +112,19 @@ export function Midi2Panel() {
     onError: () => pushToast('UMP to MIDI 1.0 translation failed', 'error'),
   })
 
-  const effectiveStatus = useMemo(() => statusQuery.data, [statusQuery.data])
+  const effectiveStatus = statusQuery.data
+  const rows = devices.map((device) => ({
+    id: device.device_id,
+    device: `${device.device_id} · ${device.protocol}`,
+    profiles: Object.entries(device.profiles)
+      .map(([key, value]) => `${key}:${value ? 'on' : 'off'}`)
+      .join(', ') || 'None',
+    properties: Object.keys(device.properties).length > 0 ? JSON.stringify(device.properties) : 'No property exchange values',
+  }))
 
   return (
-    <div className="midi-hub-panel-grid--2">
-      <div className="midi-hub-mini-surface">
+    <div className="midi-hub-network-panel">
+      <div className="midi-hub-network-panel__section">
         <div className="midi-hub-toolbar">
           <Tag type={effectiveStatus?.enabled ? 'green' : 'warm-gray'}>
             {effectiveStatus?.enabled ? 'Enabled' : 'Disabled'}
@@ -123,25 +152,10 @@ export function Midi2Panel() {
         </div>
 
         <div className="midi-hub-form-grid">
-          <Select
-            id="midi-hub-midi2-enabled"
-            labelText="Service state"
-            value={enabled ? 'enabled' : 'disabled'}
-            onChange={(event) => setEnabled(event.currentTarget.value === 'enabled')}
-          >
-            <SelectItem value="disabled" text="Disabled" />
-            <SelectItem value="enabled" text="Enabled" />
-          </Select>
-
-          <Select
-            id="midi-hub-midi2-protocol"
-            labelText="Default protocol"
-            value={protocol}
-            onChange={(event) => setProtocol(event.currentTarget.value === 'midi2' ? 'midi2' : 'midi1')}
-          >
-            <SelectItem value="midi1" text="MIDI 1.0" />
-            <SelectItem value="midi2" text="MIDI 2.0" />
-          </Select>
+          <TextInput id="midi-hub-midi2-protocol" labelText="Default protocol" value={protocol} onChange={(event) => setProtocol(event.currentTarget.value === 'midi2' ? 'midi2' : 'midi1')} />
+        </div>
+        <div className="midi-hub-network-panel__toggles">
+          <Toggle id="midi-hub-midi2-enabled" labelText="Enable MIDI 2.0 service" labelA="Off" labelB="On" toggled={enabled} onToggle={setEnabled} />
         </div>
 
         <div className="midi-hub-actions">
@@ -154,7 +168,7 @@ export function Midi2Panel() {
         </div>
       </div>
 
-      <div className="midi-hub-mini-surface">
+      <div className="midi-hub-network-panel__section">
         <div className="midi-hub-form-grid">
           <TextInput
             id="midi-hub-midi2-device-id"
@@ -208,9 +222,50 @@ export function Midi2Panel() {
             UMP to MIDI 1.0
           </Button>
         </div>
-
-        {devices.length > 0 ? <pre className="midi-hub-code-block">{JSON.stringify(devices, null, 2)}</pre> : null}
       </div>
+
+      <DataTable rows={rows} headers={DEVICE_HEADERS} useZebraStyles>
+        {({ rows, headers, getHeaderProps, getRowProps, getTableProps, getTableContainerProps, getToolbarProps }) => (
+          <TableContainer
+            {...getTableContainerProps()}
+            title="MIDI-CI devices"
+            description="Discovered devices, profile activation, and property exchange state."
+            className="midi-hub-network-table"
+          >
+            <TableToolbar {...getToolbarProps()}>
+              <TableToolbarContent>
+                <Tag type="cool-gray">{`UMP ${umpWords.trim() ? 'Ready' : 'Idle'}`}</Tag>
+              </TableToolbarContent>
+            </TableToolbar>
+            <Table {...getTableProps()} aria-label="MIDI 2.0 devices">
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => {
+                    const { key: _key, ...headerProps } = getHeaderProps({ header })
+                    return (
+                      <TableHeader key={header.key} {...headerProps}>
+                        {header.header}
+                      </TableHeader>
+                    )
+                  })}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => {
+                  const { key: _key, ...rowProps } = getRowProps({ row })
+                  return (
+                    <TableRow key={row.id} {...rowProps}>
+                      {row.cells.map((cell) => (
+                        <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                      ))}
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </DataTable>
     </div>
   )
 }
