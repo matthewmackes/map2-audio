@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**781** Python | **1162** TypeScript | **288** C++/H | **122** Docs | **604** total commits | **1** stars | **0** forks | **0** open issues
+**781** Python | **1166** TypeScript | **288** C++/H | **122** Docs | **606** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -187,7 +187,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`485c5700`](https://github.com/matthewmackes/map2-audio/commit/485c5700ffd3e1466bcaef242110f348a069db66) | Complete T203-subH lab area rewrite | Map2 Audio | 2026-03-19 |
+| [`c7268d53`](https://github.com/matthewmackes/map2-audio/commit/c7268d53197b2d02662690105950d8c0dc6f1af0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`71060d0c`](https://github.com/matthewmackes/map2-audio/commit/71060d0ce9f5b5eee0185d7e580bb9d6b6c7ee56) | Complete T203-subG network protocol workspace | Map2 Audio | 2026-03-19 |
 | [`b0974693`](https://github.com/matthewmackes/map2-audio/commit/b097469393bc0c19fd13d1e95a6f7fec4978198d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`62430e8b`](https://github.com/matthewmackes/map2-audio/commit/62430e8b3118b48f171f689932081423c2937624) | Complete T203-subF processing workspace rewrite | Map2 Audio | 2026-03-19 |
 | [`92906d6d`](https://github.com/matthewmackes/map2-audio/commit/92906d6de3db533d6b481d09062074d35666eacc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`00a73ef9`](https://github.com/matthewmackes/map2-audio/commit/00a73ef917be7e7577d8b4c6547a532195beed6e) | Complete T203-subE event lists area | Map2 Audio | 2026-03-19 |
 | [`cfbd7e34`](https://github.com/matthewmackes/map2-audio/commit/cfbd7e340665dc683b64c12043905a92c5e3697a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
-| [`61527063`](https://github.com/matthewmackes/map2-audio/commit/61527063a6bf8e012100754e48ae91a6acb224eb) | Complete T203-subC presets area rewrite | Map2 Audio | 2026-03-19 |
-| [`d5626021`](https://github.com/matthewmackes/map2-audio/commit/d562602138bfa5c38eb193d946c775bb6c952bf1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
