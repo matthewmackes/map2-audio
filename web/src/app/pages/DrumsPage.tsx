@@ -26,14 +26,16 @@ import {
   useDrumActiveKit,
   useDrumMachineState,
   useDrumMidiLearn,
+  useDrumPattern,
   useDrumPacks,
+  useSetDrumStep,
   useDrumTransport,
   useUpdateDrumMachineState,
   useUpdateDrumTransport,
 } from '@/app/hooks/useDrumMachine'
 import { drumsApi } from '@/map2/api'
 import { normalizeDrumMachineState } from '@/map2/drumMachineState'
-import type { DrumMachineState } from '@/map2/types'
+import type { DrumKit, DrumMachineState, DrumPattern } from '@/map2/types'
 
 type DrumMode = DrumMachineState['ui_mode']
 
@@ -123,6 +125,11 @@ const shellStyle: Record<string, React.CSSProperties> = {
     gridTemplateColumns: 'minmax(0, 2.4fr) minmax(280px, 1fr)',
     gap: 18,
   },
+  sequencerLayout: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr) 320px',
+    gap: 18,
+  },
   modeColumn: {
     display: 'grid',
     gap: 18,
@@ -205,6 +212,61 @@ const shellStyle: Record<string, React.CSSProperties> = {
     background: 'rgba(255,255,255,0.16)',
     boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)',
   },
+  sequencerGrid: {
+    overflowX: 'auto',
+    paddingBottom: 4,
+  },
+  sequencerHeader: {
+    display: 'grid',
+    gridTemplateColumns: '220px repeat(16, 40px) 120px',
+    gap: 8,
+    alignItems: 'center',
+    minWidth: 1080,
+    marginBottom: 12,
+  },
+  sequencerRow: {
+    display: 'grid',
+    gridTemplateColumns: '220px repeat(16, 40px) 120px',
+    gap: 8,
+    alignItems: 'center',
+    minWidth: 1080,
+    marginBottom: 10,
+  },
+  rowLabel: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.03)',
+    padding: '10px 12px',
+    display: 'grid',
+    gap: 6,
+  },
+  rowTitle: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#f4f4f4',
+  },
+  rowMeta: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 6,
+    alignItems: 'center',
+  },
+  stepButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.04)',
+    color: '#f4f4f4',
+    cursor: 'pointer',
+    fontSize: 12,
+    fontWeight: 600,
+    transition: 'transform 120ms ease, border-color 120ms ease, background 120ms ease',
+  },
+  rowSlider: {
+    width: '100%',
+    accentColor: '#24a148',
+  },
 }
 
 function transportTag(active: boolean) {
@@ -213,6 +275,20 @@ function transportTag(active: boolean) {
 
 function modeIndex(mode: DrumMode | undefined) {
   return Math.max(0, MODE_ORDER.indexOf(mode ?? 'practice'))
+}
+
+function clampPatternLength(pattern: DrumPattern | undefined) {
+  const length = pattern?.length ?? 16
+  return Math.max(1, Math.min(64, length))
+}
+
+function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number, stepIndex: number) {
+  const step = pattern?.steps?.[instrumentIndex]?.[stepIndex]
+  return {
+    velocity: step?.velocity ?? 0,
+    accent: Boolean(step?.accent),
+    active: (step?.velocity ?? 0) > 0,
+  }
 }
 
 function practicePanel(
@@ -291,12 +367,30 @@ function practicePanel(
   )
 }
 
-function advancedPanel(pattern: number, variation: number, accent: string) {
+function advancedPanel(
+  patternId: number,
+  variation: number,
+  accent: string,
+  pattern: DrumPattern | undefined,
+  activeKit: DrumKit | null | undefined,
+  currentStep: number,
+  onToggleStep: (instrumentIndex: number, stepIndex: number, nextVelocity: number, accent: boolean) => void,
+) {
+  const visibleSteps = Math.min(16, clampPatternLength(pattern))
+  const instruments = Array.from({ length: 16 }, (_, instrumentIndex) => {
+    const kitInstrument = activeKit?.instruments?.[instrumentIndex]
+    return {
+      name: kitInstrument?.name ?? `Pad ${instrumentIndex + 1}`,
+      bus: kitInstrument?.bus_assignment ?? (instrumentIndex % 8),
+      volume: kitInstrument?.volume ?? 80,
+    }
+  })
+
   return (
     <div style={shellStyle.modeShell}>
-      <div style={shellStyle.modeGrid}>
+      <div style={shellStyle.sequencerLayout}>
         <div style={shellStyle.modeColumn}>
-          <Tile style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}`, minHeight: 300 }}>
+          <Tile style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}`, minHeight: 420 }}>
             <div style={shellStyle.tileHeader}>
               <h2 style={shellStyle.tileTitle}>Sequencer Workspace</h2>
               <Tag type="green">Primary View</Tag>
@@ -308,7 +402,7 @@ function advancedPanel(pattern: number, variation: number, accent: string) {
             <div style={shellStyle.statGrid}>
               <div style={shellStyle.statCard}>
                 <span style={shellStyle.statLabel}>Pattern</span>
-                <span style={shellStyle.statValue}>{pattern}</span>
+                <span style={shellStyle.statValue}>{patternId}</span>
               </div>
               <div style={shellStyle.statCard}>
                 <span style={shellStyle.statLabel}>Variation</span>
@@ -320,8 +414,99 @@ function advancedPanel(pattern: number, variation: number, accent: string) {
               </div>
               <div style={shellStyle.statCard}>
                 <span style={shellStyle.statLabel}>Step Grid</span>
-                <span style={shellStyle.statValue}>16-64</span>
+                <span style={shellStyle.statValue}>{visibleSteps} visible</span>
               </div>
+            </div>
+
+            <div style={shellStyle.sequencerGrid} role="grid" aria-label="TR-style drum step sequencer">
+              <div style={shellStyle.sequencerHeader}>
+                <span style={shellStyle.clusterLabel}>Instrument</span>
+                {Array.from({ length: visibleSteps }, (_, stepIndex) => (
+                  <Tag
+                    key={`header-${stepIndex}`}
+                    type={stepIndex === currentStep ? 'blue' : 'cool-gray'}
+                    title={`Step ${stepIndex + 1}`}
+                  >
+                    {stepIndex + 1}
+                  </Tag>
+                ))}
+                <span style={shellStyle.clusterLabel}>Level</span>
+              </div>
+
+              {instruments.map((instrument, instrumentIndex) => (
+                <div key={`${instrument.name}-${instrumentIndex}`} style={shellStyle.sequencerRow} role="row">
+                  <div style={shellStyle.rowLabel}>
+                    <span style={shellStyle.rowTitle}>{instrument.name}</span>
+                    <div style={shellStyle.rowMeta}>
+                      <Tag type="green">Bus {instrument.bus}</Tag>
+                      <Tag type="cool-gray">Row {instrumentIndex + 1}</Tag>
+                    </div>
+                  </div>
+
+                  {Array.from({ length: visibleSteps }, (_, stepIndex) => {
+                    const step = resolvedStep(pattern, instrumentIndex, stepIndex)
+                    const isCurrent = stepIndex === currentStep
+                    return (
+                      <button
+                        key={`${instrumentIndex}-${stepIndex}`}
+                        type="button"
+                        role="gridcell"
+                        aria-label={`${instrument.name} step ${stepIndex + 1}`}
+                        aria-pressed={step.active}
+                        onClick={(event) => {
+                          const nextVelocity = step.active ? 0 : 100
+                          const nextAccent = step.active ? false : event.shiftKey || step.accent
+                          onToggleStep(instrumentIndex, stepIndex, nextVelocity, nextAccent)
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            const nextVelocity = step.active ? 0 : 100
+                            const nextAccent = step.active ? false : event.shiftKey || step.accent
+                            onToggleStep(instrumentIndex, stepIndex, nextVelocity, nextAccent)
+                          }
+                        }}
+                        style={{
+                          ...shellStyle.stepButton,
+                          background: step.active
+                            ? step.accent
+                              ? 'linear-gradient(180deg, rgba(69,137,255,0.95), rgba(10,132,255,0.78))'
+                              : 'linear-gradient(180deg, rgba(36,161,72,0.95), rgba(14,104,38,0.78))'
+                            : 'rgba(255,255,255,0.04)',
+                          borderColor: isCurrent
+                            ? accent
+                            : step.accent
+                              ? '#a6c8ff'
+                              : step.active
+                                ? '#42be65'
+                                : 'rgba(255,255,255,0.12)',
+                          boxShadow: isCurrent ? `0 0 0 1px ${accent}, 0 0 16px rgba(69,137,255,0.18)` : 'none',
+                          transform: isCurrent ? 'translateY(-1px)' : 'none',
+                        }}
+                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}`}
+                      >
+                        {step.active ? (step.accent ? 'A' : step.velocity) : ''}
+                      </button>
+                    )
+                  })}
+
+                  <div style={shellStyle.sliderWrap}>
+                    <div style={shellStyle.sliderValue}>
+                      <span>Vol</span>
+                      <strong>{instrument.volume}</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={instrument.volume}
+                      readOnly
+                      aria-label={`${instrument.name} level`}
+                      style={shellStyle.rowSlider}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </Tile>
         </div>
@@ -399,6 +584,8 @@ export function DrumsPage() {
   const activeKitQuery = useDrumActiveKit()
   const packs = useDrumPacks()
   const midiLearn = useDrumMidiLearn()
+  const patternQuery = useDrumPattern(transportQuery.data?.pattern ?? 0)
+  const setStep = useSetDrumStep()
   const updateState = useUpdateDrumMachineState()
   const updateTransport = useUpdateDrumTransport()
   const tapTempo = useMutation({
@@ -415,6 +602,8 @@ export function DrumsPage() {
   const activeMode = state?.ui_mode ?? 'practice'
   const activeModeMeta = MODE_META[activeMode]
   const activeKitName = activeKitQuery.data?.name ?? 'No kit loaded'
+  const activeKit = activeKitQuery.data
+  const pattern = patternQuery.data
   const midiLearnState = midiLearn.status.data
   const packCounts = {
     factory: packs.factory.data?.length ?? 0,
@@ -454,6 +643,11 @@ export function DrumsPage() {
       </div>
     )
   }
+
+  const visibleAdvancedSteps = Math.min(16, clampPatternLength(pattern))
+  const currentStep = transport.is_playing
+    ? ((transport.pattern + transport.variation) % Math.max(1, visibleAdvancedSteps))
+    : 0
 
   return (
     <div style={shellStyle.page}>
@@ -600,7 +794,23 @@ export function DrumsPage() {
             {practicePanel(state, packCounts, MODE_META.practice.accent)}
           </TabPanel>
           <TabPanel>
-            {advancedPanel(transport.pattern, transport.variation, MODE_META.advanced.accent)}
+            {advancedPanel(
+              transport.pattern,
+              transport.variation,
+              MODE_META.advanced.accent,
+              pattern,
+              activeKit,
+              currentStep,
+              (instrumentIndex, stepIndex, nextVelocity, accentEnabled) => {
+                setStep.mutate({
+                  patternId: transport.pattern,
+                  instrument: instrumentIndex,
+                  step: stepIndex,
+                  velocity: nextVelocity,
+                  accent: accentEnabled,
+                })
+              },
+            )}
           </TabPanel>
           <TabPanel>
             {backingTracksPanel(MODE_META.backing_tracks.accent)}

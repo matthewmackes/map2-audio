@@ -1545,7 +1545,7 @@ Subtasks:
     - Mode-specific content area below transport bar
     - Footer status bar: active kit name, current pattern, playing/stopped badge, MIDI activity indicator
     - Responsive: full grid on desktop (≥1056px), stacked on tablet (672–1055px), single-column on mobile (<672px)
-  - [ ] T217-B: TR-style step sequencer grid (Advanced mode primary view)
+  - [✓] T217-B: TR-style step sequencer grid (Advanced mode primary view)
     - 16 instrument rows × N step columns (N = pattern length, default 16, max 64)
     - Each row: instrument name label (left), mute/solo toggle buttons, 16 step pads, per-instrument volume slider (right)
     - Step pad states: off (empty, `$ui-01` background), active (filled, instrument accent color), accent (filled + bright border)
@@ -1554,6 +1554,8 @@ Subtasks:
     - Scrollable horizontally if pattern length > 16 steps (with step page indicator)
     - Carbon `StructuredList` or custom grid using Carbon tokens for cell sizing (40px × 40px step cells, 8px gap)
     - Step pads must be keyboard-accessible: arrow keys navigate grid, Enter/Space toggles, Tab moves between rows
+    - Implemented in `web/src/app/pages/DrumsPage.tsx` as the Advanced-mode primary workspace, wired to the active-kit and pattern hooks with 16 instrument rows, scrollable 40px step cells, current-step highlighting, and read-only per-row level strips.
+    - Step pads now toggle through `useSetDrumStep`, support click plus Enter/Space activation, and use shift-modified input to create accented steps directly from the grid.
   - [ ] T217-C: Instrument row controls
     - Each of 16 rows shows: instrument name (editable via `TextInput` inline), pad color swatch, Mute (`Toggle`), Solo (`Toggle`), Volume (`Slider` 0–100), Pan (`Slider` -100 to +100), Tune (`Slider` -24 to +24 semitones)
     - Instrument name reflects loaded kit instrument name (e.g., "Kick", "Snare", "Closed HH")
@@ -1627,10 +1629,13 @@ Subtasks:
     - Color contrast: all step states meet WCAG 2.1 AA against `$ui-01` background
     - Pass full `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`
 Assigned to: Codex
-Last updated: 2026-03-20 09:45 - Codex
+Last updated: 2026-03-20 10:13 - Codex
 - Progress notes:
   - Completed `T217-A` in `web/src/app/pages/DrumsPage.tsx` by replacing the old pack-management placeholder with a full `/drums` page shell: Carbon tabs for Practice, Advanced, and Backing Tracks; a shared transport bar with play/stop/tap-tempo, BPM, pattern, variation, swing, and master-volume controls; dedicated mode content regions; and a footer status bar for active kit, pattern, transport state, beat dots, and MIDI status.
   - Preserved the current drum data flow by wiring the new page shell to the existing React Query hooks and drum API surface instead of adding page-local fetch logic, so later `T217-B` onward can fill in the sequencer, mixer, and browser panels without another structural rewrite.
+  - Completed `T217-B` in `web/src/app/pages/DrumsPage.tsx` by replacing the Advanced-mode placeholder with a TR-style sequencer workspace that renders the active kit and pattern grid, exposes direct step toggles, and surfaces row-level bus and level context without changing the page shell from `T217-A`.
+  - Added `web/src/app/pages/DrumsPage.test.tsx` to verify that the sequencer grid renders from the drum hooks and that shift-clicking a step emits an accented `useSetDrumStep` mutation for the active pattern.
+  - Validation: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`
   - Validation: `npm --prefix web run typecheck` -> pass.
 
 ---
