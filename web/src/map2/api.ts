@@ -1570,6 +1570,51 @@ export interface MidiHubProgramSlotMap {
   slots: Record<string, string>;
 }
 
+export interface MidiHubEventList {
+  event_list_id: string;
+  name: string;
+  list_type: 'mtc' | 'rtc' | string;
+  source_id: string;
+  internal_clock_enabled: boolean;
+  first_time: string;
+  last_time: string;
+  fps: number;
+  timezone: string;
+  enabled: boolean;
+  running: boolean;
+  current_timecode: string;
+  current_frame: number;
+  current_datetime?: string | null;
+  clock_source: string;
+  learn_mode_enabled: boolean;
+  learn_action_type: string;
+  learn_label: string;
+  learn_payload: Record<string, unknown>;
+  fired_event_ids: string[];
+  event_count: number;
+}
+
+export interface MidiHubEventListEvent {
+  event_id: string;
+  order: number;
+  time_address: string;
+  action_type: string;
+  label: string;
+  payload: Record<string, unknown>;
+  enabled: boolean;
+  last_fired_at?: number | null;
+}
+
+export interface MidiHubMscMessage {
+  device_id: number;
+  command_format: number;
+  command: string;
+  cue_number: string;
+  list_number?: string | null;
+  message_hex: string;
+  message: number[];
+}
+
 export interface MidiHubScriptSummary {
   script_id: string;
   name: string;
@@ -1973,6 +2018,111 @@ export const midiHubApi = {
     fetchJson<{ count: number; recalled_preset_ids: string[] }>(appendNodeQuery(`${API_BASE}/midi/hub/presets/context/evaluate`, nodeId), {
       method: 'POST',
       body: JSON.stringify({ context }),
+    }),
+
+  listEventLists: (nodeId?: string | null) =>
+    fetchJson<{ count: number; event_lists: MidiHubEventList[] }>(appendNodeQuery(`${API_BASE}/midi/hub/events/lists`, nodeId)),
+  getEventList: (eventListId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; event_list?: MidiHubEventList | null }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}`, nodeId),
+    ),
+  upsertEventList: (
+    payload: {
+      event_list_id: string;
+      name: string;
+      list_type: 'mtc' | 'rtc';
+      source_id: string;
+      internal_clock_enabled: boolean;
+      first_time: string;
+      last_time: string;
+      fps: number;
+      timezone: string;
+      enabled?: boolean;
+    },
+    nodeId?: string | null,
+  ) =>
+    fetchJson<{ ok: boolean; event_list: MidiHubEventList }>(appendNodeQuery(`${API_BASE}/midi/hub/events/lists`, nodeId), {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteEventList: (eventListId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean }>(appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}`, nodeId), {
+      method: 'DELETE',
+    }),
+  startEventList: (eventListId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; event_list: MidiHubEventList }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}/start`, nodeId),
+      { method: 'POST' },
+    ),
+  stopEventList: (eventListId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; event_list: MidiHubEventList }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}/stop`, nodeId),
+      { method: 'POST' },
+    ),
+  getEventListStatus: (eventListId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; status: MidiHubEventList }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}/status`, nodeId),
+    ),
+  listEventListEvents: (eventListId: string, nodeId?: string | null) =>
+    fetchJson<{ count: number; events: MidiHubEventListEvent[] }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}/events`, nodeId),
+    ),
+  upsertEventListEvent: (
+    eventListId: string,
+    payload: {
+      event_id: string;
+      order: number;
+      time_address: string;
+      action_type: string;
+      label: string;
+      payload?: Record<string, unknown>;
+      enabled?: boolean;
+    },
+    nodeId?: string | null,
+  ) =>
+    fetchJson<{ ok: boolean; event: MidiHubEventListEvent }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}/events`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
+  deleteEventListEvent: (eventListId: string, eventId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}/events/${encodeURIComponent(eventId)}`, nodeId),
+      { method: 'DELETE' },
+    ),
+  setEventListLearnMode: (
+    eventListId: string,
+    payload: { enabled: boolean; action_type?: string; label?: string; payload?: Record<string, unknown> },
+    nodeId?: string | null,
+  ) =>
+    fetchJson<{ ok: boolean; event_list: MidiHubEventList }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}/learn`, nodeId),
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      },
+    ),
+  captureEventListLearnMode: (eventListId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; event: MidiHubEventListEvent }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/events/lists/${encodeURIComponent(eventListId)}/learn/capture`, nodeId),
+      { method: 'POST' },
+    ),
+  sendMscMessage: (
+    payload: {
+      destination_port: string;
+      device_id: number;
+      command_format: number;
+      command: string;
+      cue_number: string;
+      list_number?: string | null;
+    },
+    nodeId?: string | null,
+  ) =>
+    fetchJson<{ ok: boolean } & MidiHubMscMessage>(appendNodeQuery(`${API_BASE}/midi/hub/events/msc/send`, nodeId), {
+      method: 'POST',
+      body: JSON.stringify(payload),
     }),
 
   getScriptExamples: (nodeId?: string | null) =>

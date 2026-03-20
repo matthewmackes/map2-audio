@@ -47,8 +47,13 @@ class MidiHubPresetService:
         *,
         router: Optional[MidiRouter] = None,
         hub: Optional[MidiHub] = None,
+        registry: Optional[Any] = None,
+        gateway_manager: Optional[Any] = None,
         storage_path: Optional[Path] = None,
     ) -> None:
+        # Keep compatibility with older fixture/setup call sites that still pass
+        # registry and gateway_manager even though preset snapshots no longer use them.
+        _ = registry, gateway_manager
         self._router = router or get_midi_router()
         self._hub = hub or get_midi_hub()
         self._storage_path = storage_path or _default_presets_path()

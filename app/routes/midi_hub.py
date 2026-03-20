@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from app.services.midi_hub.hub import get_midi_hub
 from app.services.midi_hub.clock_engine import get_midi_clock_engine
 from app.services.midi_hub.device_registry import get_midi_device_registry
+from app.services.midi_hub.event_list_service import get_midi_hub_event_list_service
 from app.services.midi_hub.macros import get_midi_macro_service
 from app.services.midi_hub.midi2 import get_midi2_manager
 from app.services.midi_hub.network import get_midi_network_bridge
@@ -87,6 +88,45 @@ class PresetContextRequest(BaseModel):
 
 class DefaultPresetRequest(BaseModel):
     preset_id: Optional[str] = Field(default=None, max_length=128)
+
+
+class EventListRequest(BaseModel):
+    event_list_id: str = Field(..., min_length=1, max_length=128)
+    name: str = Field(..., min_length=1, max_length=255)
+    list_type: str = Field(default="mtc", pattern="^(mtc|rtc)$")
+    source_id: str = Field(default="local", min_length=1, max_length=255)
+    internal_clock_enabled: bool = True
+    first_time: str = Field(default="00:00:00:00", min_length=4, max_length=64)
+    last_time: str = Field(default="00:10:00:00", min_length=4, max_length=64)
+    fps: int = Field(default=30, ge=24, le=30)
+    timezone: str = Field(default="UTC", min_length=1, max_length=64)
+    enabled: bool = True
+
+
+class EventListEventRequest(BaseModel):
+    event_id: str = Field(..., min_length=1, max_length=128)
+    order: int = Field(default=1, ge=1, le=10000)
+    time_address: str = Field(..., min_length=1, max_length=128)
+    action_type: str = Field(..., min_length=1, max_length=64)
+    label: str = Field(..., min_length=1, max_length=255)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    enabled: bool = True
+
+
+class LearnModeRequest(BaseModel):
+    enabled: bool = True
+    action_type: str = Field(default="RecallPreset", min_length=1, max_length=64)
+    label: str = Field(default="Learned cue", min_length=1, max_length=255)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+
+
+class MscSendRequest(BaseModel):
+    destination_port: str = Field(default="dst", min_length=1, max_length=255)
+    device_id: int = Field(default=0, ge=0, le=127)
+    command_format: int = Field(default=0, ge=0, le=127)
+    command: str = Field(default="go", min_length=1, max_length=64)
+    cue_number: str = Field(default="1", min_length=1, max_length=255)
+    list_number: Optional[str] = Field(default=None, max_length=255)
 
 
 class ProgramSlotRequest(BaseModel):
@@ -554,6 +594,122 @@ async def get_preset(preset_id: str) -> Dict[str, Any]:
     service = get_midi_hub_preset_service()
     preset = service.get_preset(preset_id)
     return {"ok": preset is not None, "preset": preset}
+
+
+@router.get("/events/lists")
+async def list_event_lists() -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    rows = service.list_event_lists()
+    return {"count": len(rows), "event_lists": rows}
+
+
+@router.post("/events/lists")
+async def upsert_event_list(req: EventListRequest) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    row = service.upsert_event_list(**req.model_dump())
+    return {"ok": True, "event_list": row}
+
+
+@router.get("/events/lists/{event_list_id}")
+async def get_event_list(event_list_id: str) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    row = service.get_event_list(event_list_id)
+    return {"ok": row is not None, "event_list": row}
+
+
+@router.delete("/events/lists/{event_list_id}")
+async def delete_event_list(event_list_id: str) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    return {"ok": service.delete_event_list(event_list_id)}
+
+
+@router.post("/events/lists/{event_list_id}/start")
+async def start_event_list(event_list_id: str) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    try:
+        row = await service.start_event_list(event_list_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True, "event_list": row}
+
+
+@router.post("/events/lists/{event_list_id}/stop")
+async def stop_event_list(event_list_id: str) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    try:
+        row = await service.stop_event_list(event_list_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True, "event_list": row}
+
+
+@router.get("/events/lists/{event_list_id}/status")
+async def get_event_list_status(event_list_id: str) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    try:
+        row = service.get_event_list_status(event_list_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True, "status": row}
+
+
+@router.get("/events/lists/{event_list_id}/events")
+async def list_event_list_events(event_list_id: str) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    rows = service.list_events(event_list_id)
+    return {"count": len(rows), "events": rows}
+
+
+@router.post("/events/lists/{event_list_id}/events")
+async def upsert_event_list_event(event_list_id: str, req: EventListEventRequest) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    try:
+        row = service.upsert_event(event_list_id=event_list_id, **req.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True, "event": row}
+
+
+@router.delete("/events/lists/{event_list_id}/events/{event_id}")
+async def delete_event_list_event(event_list_id: str, event_id: str) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    return {"ok": service.delete_event(event_list_id, event_id)}
+
+
+@router.put("/events/lists/{event_list_id}/learn")
+async def set_event_list_learn_mode(event_list_id: str, req: LearnModeRequest) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    try:
+        row = await service.set_learn_mode(
+            event_list_id,
+            enabled=req.enabled,
+            action_type=req.action_type,
+            label=req.label,
+            payload=req.payload,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True, "event_list": row}
+
+
+@router.post("/events/lists/{event_list_id}/learn/capture")
+async def capture_event_list_learn_mode(event_list_id: str) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    try:
+        row = service.capture_learn_event(event_list_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True, "event": row}
+
+
+@router.post("/events/msc/send")
+async def send_msc_message(req: MscSendRequest) -> Dict[str, Any]:
+    service = get_midi_hub_event_list_service()
+    try:
+        payload = await service.send_msc_message(**req.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return payload
 
 
 @router.get("/scripts/examples")

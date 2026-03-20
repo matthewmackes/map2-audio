@@ -1,43 +1,55 @@
-import { Button, InlineNotification, Layer, Tag } from '@carbon/react'
+import { Tag } from '@carbon/react'
+import { EventEditor } from '../../components/MidiHub/EventEditor'
+import { EventListManager } from '../../components/MidiHub/EventListManager'
+import { EventListStatus } from '../../components/MidiHub/EventListStatus'
+import { LearnModeControl } from '../../components/MidiHub/LearnModeControl'
+import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
+import { MscCommandBuilder } from '../../components/MidiHub/MscCommandBuilder'
 import { MidiHubAreaLayout } from './MidiHubAreaLayout'
+import { useState } from 'react'
+import './MidiHubEventsPage.css'
 
 export function MidiHubEventsPage() {
+  const [selectedEventListId, setSelectedEventListId] = useState('')
+
   return (
     <MidiHubAreaLayout
       routeKey="events"
       title="Event Lists"
       summary="This routed area is reserved for the Net3-style event list engine, MSC builder, learn mode, and timecode workflows."
       tags={[
-        { label: 'New feature area', type: 'warm-gray' },
+        { label: 'Cue engine', type: 'green' },
         { label: 'Timecode', type: 'blue' },
       ]}
     >
-      <section className="midi-hub-page-band">
-        <Layer className="midi-hub-area-page__placeholder">
-          <div className="midi-hub-area-page__panel-heading">
-            <h3>Event list engine</h3>
-            <Tag type="cool-gray">T203-subE</Tag>
+      <section className="midi-hub-events-band">
+        <div className="midi-hub-events-layout">
+          <MidiHubPanelShell panelId="event-lists">
+            <div className="midi-hub-events-heading">
+              <h3>Event List Manager</h3>
+              <Tag type="green">Live</Tag>
+            </div>
+            <EventListManager selectedEventListId={selectedEventListId} onSelectEventList={setSelectedEventListId} />
+          </MidiHubPanelShell>
+
+          <MidiHubPanelShell panelId="event-status">
+            <div className="midi-hub-events-heading">
+              <h3>Event List Status</h3>
+              <Tag type="cool-gray">{selectedEventListId || 'No selection'}</Tag>
+            </div>
+            <EventListStatus selectedEventListId={selectedEventListId} />
+            <LearnModeControl selectedEventListId={selectedEventListId} />
+            <MscCommandBuilder />
+          </MidiHubPanelShell>
+        </div>
+
+        <MidiHubPanelShell panelId="event-editor">
+          <div className="midi-hub-events-heading">
+            <h3>Event Editor</h3>
+            <Tag type="blue">MTC / RTC</Tag>
           </div>
-          <p>
-            Route scaffolding, state persistence, and status-bar integration are live. The event engine, MSC command builder,
-            and learn mode implementation land in the next dependent bundle.
-          </p>
-          <InlineNotification
-            kind="info"
-            lowContrast
-            hideCloseButton
-            title="Area scaffolded"
-            subtitle="Deep links, scroll persistence, and shell navigation are active now so the feature slice can land without another routing refactor."
-          />
-          <div className="midi-hub-area-page__cta-row">
-            <Button kind="tertiary" size="sm" disabled>
-              New event list
-            </Button>
-            <Button kind="ghost" size="sm" disabled>
-              Open learn mode
-            </Button>
-          </div>
-        </Layer>
+          <EventEditor selectedEventListId={selectedEventListId} />
+        </MidiHubPanelShell>
       </section>
     </MidiHubAreaLayout>
   )

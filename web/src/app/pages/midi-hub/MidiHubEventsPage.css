@@ -1,0 +1,68 @@
+.midi-hub-events-band,
+.midi-hub-events-stack {
+  display: grid;
+  gap: var(--cds-spacing-05);
+}
+
+.midi-hub-events-layout {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 0.85fr);
+}
+
+.midi-hub-events-heading {
+  display: grid;
+  gap: var(--cds-spacing-03);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.midi-hub-events-heading h3 {
+  margin: 0;
+}
+
+.midi-hub-events-form-grid {
+  display: grid;
+  gap: var(--cds-spacing-05);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.midi-hub-events-toolbar,
+.midi-hub-events-inline-actions,
+.midi-hub-events-status-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  align-items: center;
+}
+
+.midi-hub-events-selection {
+  margin-top: var(--cds-spacing-03);
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
+.midi-hub-events-table .cds--table-container {
+  background: transparent;
+}
+
+.midi-hub-events-code-block {
+  margin: 0;
+  padding: var(--cds-spacing-05);
+  background: var(--cds-layer-01);
+  color: var(--cds-text-primary);
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  overflow: auto;
+}
+
+@media (max-width: 1056px) {
+  .midi-hub-events-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .midi-hub-events-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

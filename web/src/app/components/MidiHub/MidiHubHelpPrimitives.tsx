@@ -5,6 +5,9 @@ export type MidiHubPanelId =
   | 'core'
   | 'routing'
   | 'presets'
+  | 'event-lists'
+  | 'event-status'
+  | 'event-editor'
   | 'network'
   | 'filters'
   | 'mapper'
@@ -40,6 +43,21 @@ export const MIDI_HUB_PANEL_META: Record<MidiHubPanelId, MidiHubPanelMeta> = {
     title: 'Presets and Program Change',
     family: 'Show Control',
     shortLabel: 'Recall and slots',
+  },
+  'event-lists': {
+    title: 'Event List Manager',
+    family: 'Show Control',
+    shortLabel: 'Cue lists',
+  },
+  'event-status': {
+    title: 'Event List Status',
+    family: 'Show Control',
+    shortLabel: 'Clock status',
+  },
+  'event-editor': {
+    title: 'Event Editor',
+    family: 'Show Control',
+    shortLabel: 'Cue timing',
   },
   network: {
     title: 'RTP-MIDI and OSC Bridge',
