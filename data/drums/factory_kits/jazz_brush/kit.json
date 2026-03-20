@@ -1,0 +1,157 @@
+{
+  "kit_id": "jazz_brush",
+  "name": "Jazz Brush",
+  "description": "Purpose-generated brush-oriented jazz kit with soft cymbals and room accents.",
+  "author": "MAP2 Audio procedural sample generator",
+  "version": 1,
+  "category": "acoustic",
+  "license": "CC0-1.0",
+  "default_bpm": 92,
+  "default_swing": 24,
+  "instruments": [
+    {
+      "name": "Brush Kick",
+      "sfz_path": "kick.sfz",
+      "default_note": 36,
+      "bus_assignment": 0,
+      "default_volume": 0.92,
+      "default_pan": 0.0,
+      "default_tune": 0.0
+    },
+    {
+      "name": "Brush Snare",
+      "sfz_path": "snare.sfz",
+      "default_note": 38,
+      "bus_assignment": 1,
+      "default_volume": 0.9,
+      "default_pan": -0.05,
+      "default_tune": 0.0
+    },
+    {
+      "name": "Closed Hi-Hat",
+      "sfz_path": "closed_hat.sfz",
+      "default_note": 42,
+      "bus_assignment": 2,
+      "default_volume": 0.72,
+      "default_pan": -0.2,
+      "default_tune": -2.0
+    },
+    {
+      "name": "Open Hi-Hat",
+      "sfz_path": "open_hat.sfz",
+      "default_note": 46,
+      "bus_assignment": 2,
+      "default_volume": 0.74,
+      "default_pan": 0.2,
+      "default_tune": -1.0
+    },
+    {
+      "name": "Floor Tom",
+      "sfz_path": "low_tom.sfz",
+      "default_note": 45,
+      "bus_assignment": 3,
+      "default_volume": 0.83,
+      "default_pan": -0.35,
+      "default_tune": -3.0
+    },
+    {
+      "name": "Rack Tom",
+      "sfz_path": "mid_tom.sfz",
+      "default_note": 47,
+      "bus_assignment": 3,
+      "default_volume": 0.82,
+      "default_pan": 0.0,
+      "default_tune": -1.0
+    },
+    {
+      "name": "High Tom",
+      "sfz_path": "high_tom.sfz",
+      "default_note": 50,
+      "bus_assignment": 3,
+      "default_volume": 0.81,
+      "default_pan": 0.3,
+      "default_tune": 1.0
+    },
+    {
+      "name": "Crash",
+      "sfz_path": "crash.sfz",
+      "default_note": 49,
+      "bus_assignment": 4,
+      "default_volume": 0.84,
+      "default_pan": -0.45,
+      "default_tune": 0.0
+    },
+    {
+      "name": "Ride",
+      "sfz_path": "ride.sfz",
+      "default_note": 51,
+      "bus_assignment": 4,
+      "default_volume": 0.84,
+      "default_pan": 0.45,
+      "default_tune": 0.0
+    },
+    {
+      "name": "Brush Sweep",
+      "sfz_path": "brush_sweep.sfz",
+      "default_note": 39,
+      "bus_assignment": 5,
+      "default_volume": 0.78,
+      "default_pan": 0.15,
+      "default_tune": 0.5
+    },
+    {
+      "name": "Wood Block",
+      "sfz_path": "wood_block.sfz",
+      "default_note": 56,
+      "bus_assignment": 5,
+      "default_volume": 0.68,
+      "default_pan": 0.1,
+      "default_tune": 1.0
+    },
+    {
+      "name": "Tambourine",
+      "sfz_path": "tambourine.sfz",
+      "default_note": 54,
+      "bus_assignment": 5,
+      "default_volume": 0.66,
+      "default_pan": 0.05,
+      "default_tune": 2.0
+    },
+    {
+      "name": "Shaker",
+      "sfz_path": "shaker.sfz",
+      "default_note": 82,
+      "bus_assignment": 5,
+      "default_volume": 0.62,
+      "default_pan": -0.1,
+      "default_tune": 3.0
+    },
+    {
+      "name": "Cross Stick",
+      "sfz_path": "rimshot.sfz",
+      "default_note": 37,
+      "bus_assignment": 1,
+      "default_volume": 0.76,
+      "default_pan": -0.1,
+      "default_tune": 0.0
+    },
+    {
+      "name": "Room",
+      "sfz_path": "room.sfz",
+      "default_note": 57,
+      "bus_assignment": 6,
+      "default_volume": 0.8,
+      "default_pan": 0.0,
+      "default_tune": 0.0
+    },
+    {
+      "name": "Overhead",
+      "sfz_path": "overhead.sfz",
+      "default_note": 67,
+      "bus_assignment": 7,
+      "default_volume": 0.7,
+      "default_pan": 0.0,
+      "default_tune": 0.0
+    }
+  ]
+}

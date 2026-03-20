@@ -1,0 +1,157 @@
+{
+  "kit_id": "electronic_808",
+  "name": "Electronic 808",
+  "description": "Purpose-generated analog-style 808-inspired kit with tuned percussion and wide hats.",
+  "author": "MAP2 Audio procedural sample generator",
+  "version": 1,
+  "category": "electronic",
+  "license": "CC0-1.0",
+  "default_bpm": 118,
+  "default_swing": 14,
+  "instruments": [
+    {
+      "name": "808 Kick",
+      "sfz_path": "kick.sfz",
+      "default_note": 36,
+      "bus_assignment": 0,
+      "default_volume": 0.92,
+      "default_pan": 0.0,
+      "default_tune": 0.0
+    },
+    {
+      "name": "808 Snare",
+      "sfz_path": "snare.sfz",
+      "default_note": 38,
+      "bus_assignment": 1,
+      "default_volume": 0.9,
+      "default_pan": -0.05,
+      "default_tune": 0.0
+    },
+    {
+      "name": "808 Closed Hi-Hat",
+      "sfz_path": "closed_hat.sfz",
+      "default_note": 42,
+      "bus_assignment": 2,
+      "default_volume": 0.72,
+      "default_pan": -0.2,
+      "default_tune": -2.0
+    },
+    {
+      "name": "808 Open Hi-Hat",
+      "sfz_path": "open_hat.sfz",
+      "default_note": 46,
+      "bus_assignment": 2,
+      "default_volume": 0.74,
+      "default_pan": 0.2,
+      "default_tune": -1.0
+    },
+    {
+      "name": "808 Low Tom",
+      "sfz_path": "low_tom.sfz",
+      "default_note": 45,
+      "bus_assignment": 3,
+      "default_volume": 0.83,
+      "default_pan": -0.35,
+      "default_tune": -3.0
+    },
+    {
+      "name": "808 Mid Tom",
+      "sfz_path": "mid_tom.sfz",
+      "default_note": 47,
+      "bus_assignment": 3,
+      "default_volume": 0.82,
+      "default_pan": 0.0,
+      "default_tune": -1.0
+    },
+    {
+      "name": "808 High Tom",
+      "sfz_path": "high_tom.sfz",
+      "default_note": 50,
+      "bus_assignment": 3,
+      "default_volume": 0.81,
+      "default_pan": 0.3,
+      "default_tune": 1.0
+    },
+    {
+      "name": "808 Cymbal",
+      "sfz_path": "crash.sfz",
+      "default_note": 49,
+      "bus_assignment": 4,
+      "default_volume": 0.84,
+      "default_pan": -0.45,
+      "default_tune": 0.0
+    },
+    {
+      "name": "808 Ride Bell",
+      "sfz_path": "ride.sfz",
+      "default_note": 51,
+      "bus_assignment": 4,
+      "default_volume": 0.84,
+      "default_pan": 0.45,
+      "default_tune": 0.0
+    },
+    {
+      "name": "808 Clap",
+      "sfz_path": "clap.sfz",
+      "default_note": 39,
+      "bus_assignment": 5,
+      "default_volume": 0.78,
+      "default_pan": 0.15,
+      "default_tune": 0.5
+    },
+    {
+      "name": "808 Cowbell",
+      "sfz_path": "cowbell.sfz",
+      "default_note": 56,
+      "bus_assignment": 5,
+      "default_volume": 0.68,
+      "default_pan": 0.1,
+      "default_tune": 1.0
+    },
+    {
+      "name": "808 Clave",
+      "sfz_path": "clave.sfz",
+      "default_note": 54,
+      "bus_assignment": 5,
+      "default_volume": 0.66,
+      "default_pan": 0.05,
+      "default_tune": 2.0
+    },
+    {
+      "name": "808 Maracas",
+      "sfz_path": "maracas.sfz",
+      "default_note": 82,
+      "bus_assignment": 5,
+      "default_volume": 0.62,
+      "default_pan": -0.1,
+      "default_tune": 3.0
+    },
+    {
+      "name": "808 Conga",
+      "sfz_path": "conga.sfz",
+      "default_note": 37,
+      "bus_assignment": 1,
+      "default_volume": 0.76,
+      "default_pan": -0.1,
+      "default_tune": 0.0
+    },
+    {
+      "name": "808 Rim",
+      "sfz_path": "rimshot.sfz",
+      "default_note": 57,
+      "bus_assignment": 6,
+      "default_volume": 0.8,
+      "default_pan": 0.0,
+      "default_tune": 0.0
+    },
+    {
+      "name": "808 FX",
+      "sfz_path": "fx.sfz",
+      "default_note": 67,
+      "bus_assignment": 7,
+      "default_volume": 0.7,
+      "default_pan": 0.0,
+      "default_tune": 0.0
+    }
+  ]
+}

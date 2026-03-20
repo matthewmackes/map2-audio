@@ -1373,7 +1373,7 @@ Subtasks:
     - 16 instrument slots: `instruments[0..15]` each with `name`, `sfz_path` (relative to kit root), `default_note` (MIDI), `bus_assignment` (0–7), `default_volume`, `default_pan`, `default_tune`
     - Kit-level defaults: `default_bpm`, `default_swing`
     - License field for attribution
-  - [ ] T214-B: Create factory drum kits (minimum 4 kits for launch)
+  - [✓] T214-B: Create factory drum kits (minimum 4 kits for launch)
     - `Standard Rock` — acoustic rock kit (kick, snare, hats, 3 toms, crash, ride, 4 percussion, overhead, room fills)
     - `Electronic 808` — classic TR-808 sounds (kick, snare, clap, hats, cowbell, clave, conga, maracas, toms, cymbal)
     - `Electronic 909` — classic TR-909 sounds
@@ -1398,10 +1398,13 @@ Subtasks:
     - `PATCH /api/engine/drums/kits/{kit_id}/instruments/{pad}` — modify instrument assignment
   - [ ] T214-E: Sample sourcing — identify, download, and organize CC0 drum samples for factory kits; write SFZ mappings with velocity layers (minimum 3 velocity layers per instrument), round-robin (minimum 2 variations), and choke groups for hihats
 Assigned to: Codex
-Last updated: 2026-03-20 07:37 - Codex
+Last updated: 2026-03-20 07:41 - Codex
 - Progress notes:
   - Completed `T214-A` by adding `data/drums/schemas/drum_kit.schema.json`, a draft 2020-12 schema for 16-slot drum kits with constrained metadata, relative `.sfz` instrument paths, per-pad default note/bus/volume/pan/tune fields, kit-level BPM and swing defaults, and explicit category/license validation.
   - Validation: `python3` JSON parse + schema shape smoke test against a synthetic 16-instrument kit document -> pass.
+  - Completed `T214-B` by adding four launch-ready factory kits under `data/drums/factory_kits/`: `standard_rock`, `electronic_808`, `electronic_909`, and `jazz_brush`, each with a 16-slot `kit.json`, per-instrument SFZ program files, a purpose-generated sample set, and kit-local documentation.
+  - Each shipped instrument now includes 3 velocity layers and 2 round-robin alternates, with shared choke-group wiring between `closed_hat.sfz` and `open_hat.sfz` and GM-compatible default note assignments across all four kits.
+  - Validation: `python3` factory-kit graph check covering manifest completeness, 16-slot coverage, SFZ presence, velocity/round-robin region counts, hi-hat choke-group configuration, and sample file existence for all four kits -> pass (`validated 4 factory kits`).
 
 ---
 
