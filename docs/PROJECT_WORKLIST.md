@@ -1298,7 +1298,7 @@ Subtasks:
     - On each step: trigger `DrumMachineProcessor::triggerNote(pad, velocity)` for all active instruments at that step
     - Current position tracking: pattern index, step index, bar count (for song mode)
     - Tap tempo: accept timestamps, compute running average BPM (last 6 taps, discard >2s gaps)
-  - [ ] T213-B: Pattern editing API (C++ methods exposed via Python bindings)
+  - [✓] T213-B: Pattern editing API (C++ methods exposed via Python bindings)
     - `set_step(pattern, instrument, step, velocity)`, `get_step(pattern, instrument, step)`
     - `clear_pattern(pattern)`, `copy_pattern(src, dst)`, `get_pattern_data(pattern)` → full grid
     - `set_pattern_length(pattern, steps)`, `get_pattern_length(pattern)`
@@ -1327,13 +1327,15 @@ Subtasks:
     - Variation: each pattern has Main + up to 10 variations (same step count, different velocities/instruments); `set_variation(pattern, variation_index)`
     - Count-in: play N bars (0–4) of metronome clicks before pattern starts
 Assigned to: Codex
-Last updated: 2026-03-20 06:59 - Codex
+Last updated: 2026-03-20 07:04 - Codex
 - Progress notes:
   - Completed `T213-A` with a new `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp` core that owns 128 patterns, 16 instrument lanes, 64-step storage, transport state, BPM/swing/accent controls, current pattern/step/bar tracking, sample-domain step scheduling, and tap-tempo averaging.
   - Extended `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` with queued `triggerNote(...)` support so the sequencer can inject software hits into the existing drum processor path with sample offsets.
   - Wired the sequencer into `juce-engine/Source/Map2AudioEngine.h/cpp` so drum sequencing runs in the audio callback immediately before `DrumMachineProcessor` consumes its block, and registered the new source/test files in `juce-engine/CMakeLists.txt`.
   - Added `juce-engine/tests/DrumSequencerTests.cpp` coverage for default pattern state, tempo-driven step advancement, drum trigger delivery into `DrumMachineProcessor`, and tap-tempo reset/averaging behavior.
   - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
+  - Completed `T213-B` in `juce-engine/Source/PythonBindings.cpp` by exposing sequencer step mutation/query, full pattern export, clear/copy operations, pattern-length controls, and swing/accent-velocity setters/getters through the `AudioEngine` pybind surface.
+  - Validation: `cmake --build juce-engine/build --target map2_audio_engine` -> pass; `pytest tests/test_drum_machine_service.py tests/test_drum_routes.py -q` -> `12 passed`; `python3` smoke import of `juce-engine/build/map2_audio_engine` covering `set_drum_step`, `get_drum_step`, `get_drum_pattern_data`, `copy_drum_pattern`, `clear_drum_pattern`, `set_drum_pattern_length`, `set_drum_swing`, and `set_drum_accent_velocity` -> pass.
 
 ---
 

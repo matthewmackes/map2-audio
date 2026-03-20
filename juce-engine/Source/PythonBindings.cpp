@@ -2908,6 +2908,67 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             const auto config = self.getDrumMachine().getPadConfig(padIndex);
             return self.injectMidiNoteOn(1, config.midiNote, std::clamp(static_cast<int>(std::round(velocity * 127.0f)), 1, 127));
         }, py::arg("pad"), py::arg("velocity"), "Trigger a software drum hit via the MIDI injection path")
+        .def("set_drum_step", [](Map2AudioEngine& self, int patternIndex, int instrumentIndex, int stepIndex, int velocity, bool accent) {
+            return self.getDrumSequencer().setStep(
+                patternIndex,
+                instrumentIndex,
+                stepIndex,
+                static_cast<uint8_t>(std::clamp(velocity, 0, 127)),
+                accent);
+        }, py::arg("pattern"), py::arg("instrument"), py::arg("step"), py::arg("velocity"), py::arg("accent") = false,
+           "Set a sequencer step velocity and accent state")
+        .def("get_drum_step", [](const Map2AudioEngine& self, int patternIndex, int instrumentIndex, int stepIndex) {
+            const auto step = self.getDrumSequencer().getStep(patternIndex, instrumentIndex, stepIndex);
+            py::dict result;
+            result["velocity"] = step.velocity;
+            result["accent"] = step.accent;
+            return result;
+        }, py::arg("pattern"), py::arg("instrument"), py::arg("step"), "Get a sequencer step payload")
+        .def("clear_drum_pattern", [](Map2AudioEngine& self, int patternIndex) {
+            return self.getDrumSequencer().clearPattern(patternIndex);
+        }, py::arg("pattern"), "Clear all steps in a drum pattern")
+        .def("copy_drum_pattern", [](Map2AudioEngine& self, int sourcePatternIndex, int destinationPatternIndex) {
+            return self.getDrumSequencer().copyPattern(sourcePatternIndex, destinationPatternIndex);
+        }, py::arg("source"), py::arg("destination"), "Copy one drum pattern into another")
+        .def("get_drum_pattern_data", [](const Map2AudioEngine& self, int patternIndex) {
+            const auto pattern = self.getDrumSequencer().getPattern(patternIndex);
+            py::dict result;
+            result["length"] = pattern.length;
+
+            py::list instruments;
+            for (const auto& instrumentSteps : pattern.steps) {
+                py::list steps;
+                for (const auto& step : instrumentSteps) {
+                    py::dict payload;
+                    payload["velocity"] = step.velocity;
+                    payload["accent"] = step.accent;
+                    steps.append(payload);
+                }
+                instruments.append(steps);
+            }
+            result["steps"] = instruments;
+            return result;
+        }, py::arg("pattern"), "Get full drum pattern grid data")
+        .def("set_drum_pattern_length", [](Map2AudioEngine& self, int patternIndex, int steps) {
+            return self.getDrumSequencer().setPatternLength(patternIndex, steps);
+        }, py::arg("pattern"), py::arg("steps"), "Set drum pattern length")
+        .def("get_drum_pattern_length", [](const Map2AudioEngine& self, int patternIndex) {
+            return self.getDrumSequencer().getPatternLength(patternIndex);
+        }, py::arg("pattern"), "Get drum pattern length")
+        .def("set_drum_swing", [](Map2AudioEngine& self, float percent) {
+            self.getDrumSequencer().setSwing(percent);
+            return true;
+        }, py::arg("percent"), "Set drum sequencer swing percentage")
+        .def("get_drum_swing", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().getSwing();
+        }, "Get drum sequencer swing percentage")
+        .def("set_drum_accent_velocity", [](Map2AudioEngine& self, int velocity) {
+            self.getDrumSequencer().setAccentVelocity(static_cast<uint8_t>(std::clamp(velocity, 1, 127)));
+            return true;
+        }, py::arg("velocity"), "Set global drum sequencer accent velocity")
+        .def("get_drum_accent_velocity", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().getAccentVelocity();
+        }, "Get global drum sequencer accent velocity")
 
         // ========================================
         // Parameters
