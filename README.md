@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**788** Python | **1168** TypeScript | **294** C++/H | **122** Docs | **656** total commits | **1** stars | **0** forks | **0** open issues
+**790** Python | **1172** TypeScript | **294** C++/H | **122** Docs | **659** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,12 +169,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-20 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-20 |
 | [API Load Qualification Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_LOAD_QUALIFICATION_RUNBOOK.md) | 2026-03-18 |
 | [API Qualification Observability](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_QUALIFICATION_OBSERVABILITY.md) | 2026-03-18 |
 | [API Restart Dependency Map](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_RESTART_DEPENDENCY_MAP.md) | 2026-03-18 |
 | [API Route Readiness Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_ROUTE_READINESS_MATRIX.md) | 2026-03-18 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-18 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bd06a5c9`](https://github.com/matthewmackes/map2-audio/commit/bd06a5c940953b9c30f7e3047f4b7d9f5c4b3b8b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-20 |
+| [`6b1d17b1`](https://github.com/matthewmackes/map2-audio/commit/6b1d17b1d3733ac1c1879c1e814261ae092e0741) | Complete remaining drum qualification and sync current wo... | Map2 Audio | 2026-03-20 |
+| [`6c405e5b`](https://github.com/matthewmackes/map2-audio/commit/6c405e5bec5d8d62670d1365ae858ae898d0c11c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`cfec20fa`](https://github.com/matthewmackes/map2-audio/commit/cfec20fa5375dd7572e8fcb1953729122903df49) | Complete T217-C drum instrument row controls | Map2 Audio | 2026-03-20 |
 | [`e59148a3`](https://github.com/matthewmackes/map2-audio/commit/e59148a3fae4f993476a4094e3cda0c13050ff63) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`c8a15247`](https://github.com/matthewmackes/map2-audio/commit/c8a152478eb819677b2789674af8210a7fd3e4da) | Complete T217-B drum sequencer grid shell | Map2 Audio | 2026-03-20 |
 | [`258f27fe`](https://github.com/matthewmackes/map2-audio/commit/258f27fe7b477115703b9fb272715aa4058ebc9f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`5c33a963`](https://github.com/matthewmackes/map2-audio/commit/5c33a9634b360a719109975e4a60932f27e2627e) | Complete T217-A drum page shell layout | Map2 Audio | 2026-03-20 |
-| [`2d6c4d7b`](https://github.com/matthewmackes/map2-audio/commit/2d6c4d7b7f788aaacf40ad8dd8d75fde90ff3bcc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`38f4dfba`](https://github.com/matthewmackes/map2-audio/commit/38f4dfba551dd5536f990553a55412170bf3ecd7) | Complete T215-F drum MIDI config persistence | Map2 Audio | 2026-03-20 |
-| [`b3cafa7b`](https://github.com/matthewmackes/map2-audio/commit/b3cafa7b9d4152ad63ce8e69133389ff2ed094d9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
