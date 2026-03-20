@@ -1381,7 +1381,7 @@ Subtasks:
     - Each kit: multi-velocity SFZ with round-robin, proper choke groups (open/closed HH), GM-compatible note mapping
     - SFZ files in `data/drums/factory_kits/{kit_id}/` with samples in `data/drums/factory_kits/{kit_id}/samples/`
     - All samples must be CC0/public domain or purpose-recorded
-  - [ ] T214-C: Kit manager service — `app/services/drum_kit_service.py`
+  - [✓] T214-C: Kit manager service — `app/services/drum_kit_service.py`
     - Index factory kits from `data/drums/factory_kits/`
     - Index user kits from `~/.map2/drums/user_kits/`
     - Load kit into DrumMachineProcessor: parse kit JSON → load each instrument SFZ into corresponding Part → apply default MIDI mapping and bus routing
@@ -1398,13 +1398,16 @@ Subtasks:
     - `PATCH /api/engine/drums/kits/{kit_id}/instruments/{pad}` — modify instrument assignment
   - [ ] T214-E: Sample sourcing — identify, download, and organize CC0 drum samples for factory kits; write SFZ mappings with velocity layers (minimum 3 velocity layers per instrument), round-robin (minimum 2 variations), and choke groups for hihats
 Assigned to: Codex
-Last updated: 2026-03-20 07:41 - Codex
+Last updated: 2026-03-20 07:50 - Codex
 - Progress notes:
   - Completed `T214-A` by adding `data/drums/schemas/drum_kit.schema.json`, a draft 2020-12 schema for 16-slot drum kits with constrained metadata, relative `.sfz` instrument paths, per-pad default note/bus/volume/pan/tune fields, kit-level BPM and swing defaults, and explicit category/license validation.
   - Validation: `python3` JSON parse + schema shape smoke test against a synthetic 16-instrument kit document -> pass.
   - Completed `T214-B` by adding four launch-ready factory kits under `data/drums/factory_kits/`: `standard_rock`, `electronic_808`, `electronic_909`, and `jazz_brush`, each with a 16-slot `kit.json`, per-instrument SFZ program files, a purpose-generated sample set, and kit-local documentation.
   - Each shipped instrument now includes 3 velocity layers and 2 round-robin alternates, with shared choke-group wiring between `closed_hat.sfz` and `open_hat.sfz` and GM-compatible default note assignments across all four kits.
   - Validation: `python3` factory-kit graph check covering manifest completeness, 16-slot coverage, SFZ presence, velocity/round-robin region counts, hi-hat choke-group configuration, and sample file existence for all four kits -> pass (`validated 4 factory kits`).
+  - Completed `T214-C` by adding `app/services/drum_kit_service.py`, a singleton kit manager that indexes factory and user kits, validates manifests and referenced SFZ/sample assets, loads per-pad SFZ assignments into the drum engine, applies per-pad note/volume/pan/tune/bus defaults, persists the active kit selection, copies factory kits into user space, and imports user kit `.zip` archives with traversal-safe extraction.
+  - Extended the drum engine bindings with per-pad SFZ loading and bus assignment support via `juce-engine/Source/PythonBindings.cpp`, backed by a new `setPadBus(...)` helper in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp`.
+  - Validation: `pytest -q tests/test_drum_kit_service.py tests/test_drum_machine_service.py tests/test_drum_routes.py` -> `21 passed`; `PYTHONPYCACHEPREFIX=/tmp/map2-pycache python3 -m py_compile app/services/drum_kit_service.py app/services/drum_machine_service.py app/routes/drums.py tests/test_drum_kit_service.py tests/test_drum_machine_service.py tests/test_drum_routes.py` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
 
 ---
 

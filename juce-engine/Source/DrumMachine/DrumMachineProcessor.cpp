@@ -231,6 +231,12 @@ bool DrumMachineProcessor::setPadMidiNote(int padIndex, int midiNote) {
     return setPadConfig(padIndex, config);
 }
 
+bool DrumMachineProcessor::setPadBus(int padIndex, BusId bus) {
+    auto config = getPadConfig(padIndex);
+    config.bus = bus;
+    return setPadConfig(padIndex, config);
+}
+
 bool DrumMachineProcessor::setPadVelocityCurve(int padIndex, VelocityCurve curve, float fixedVelocity) {
     auto config = getPadConfig(padIndex);
     config.velocityCurve = curve;

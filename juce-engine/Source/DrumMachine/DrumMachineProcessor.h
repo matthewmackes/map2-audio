@@ -75,6 +75,7 @@ public:
     bool setPadMute(int padIndex, bool mute);
     bool setPadSolo(int padIndex, bool solo);
     bool setPadMidiNote(int padIndex, int midiNote);
+    bool setPadBus(int padIndex, BusId bus);
     bool setPadVelocityCurve(int padIndex, VelocityCurve curve, float fixedVelocity = 1.0f);
     bool setPadMidiChannel(int padIndex, int midiChannel);
 

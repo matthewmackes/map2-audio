@@ -185,9 +185,10 @@ class DrumMachineService(Singleton):
         self._sync_transport_patch_to_engine(patch)
         if patch.get("is_playing") is False:
             try:
-                from app.services.drum_sequencer_service import get_drum_sequencer_service
+                from app.services.drum_sequencer_service import DrumSequencerService, get_drum_sequencer_service
 
-                get_drum_sequencer_service().handle_transport_stop(self._state.active_pack)
+                if DrumSequencerService.has_instance():
+                    get_drum_sequencer_service().handle_transport_stop(self._state.active_pack)
             except Exception:
                 pass
             self._persist_state()
@@ -385,8 +386,11 @@ class DrumMachineService(Singleton):
     def _stop_position_poll_task(self) -> None:
         if self._position_poll_task is None:
             return
-        self._position_poll_task.cancel()
+        task = self._position_poll_task
         self._position_poll_task = None
+        task.cancel()
+        if self._event_loop is not None and self._event_loop.is_running():
+            self._event_loop.create_task(self._drain_cancelled_task(task))
 
     async def _position_poll_loop(self) -> None:
         try:
@@ -397,6 +401,10 @@ class DrumMachineService(Singleton):
                 await asyncio.sleep(_POSITION_POLL_INTERVAL_SECONDS)
         except asyncio.CancelledError:
             raise
+
+    async def _drain_cancelled_task(self, task: asyncio.Task) -> None:
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
     def _refresh_position_from_engine(self) -> bool:
         engine = self._engine()

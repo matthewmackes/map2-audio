@@ -2833,6 +2833,9 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("load_drum_kit", [](Map2AudioEngine& self, const std::string& sfzPath) {
             return self.getDrumMachine().loadKitSfz(sfzPath);
         }, py::arg("sfz_path"), "Load the same SFZ kit into all drum pads")
+        .def("load_drum_pad_sfz", [](Map2AudioEngine& self, int padIndex, const std::string& sfzPath) {
+            return self.getDrumMachine().loadPadSfz(padIndex, sfzPath);
+        }, py::arg("pad"), py::arg("sfz_path"), "Load an SFZ into a specific drum pad")
 
         .def("get_drum_kit_status", [](const Map2AudioEngine& self) {
             py::dict result;
@@ -2861,6 +2864,12 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("set_drum_pad_note", [](Map2AudioEngine& self, int padIndex, int midiNote) {
             return self.getDrumMachine().setPadMidiNote(padIndex, midiNote);
         }, py::arg("pad"), py::arg("midi_note"), "Set drum pad MIDI note")
+        .def("set_drum_pad_bus", [](Map2AudioEngine& self, int padIndex, int busIndex) {
+            const auto clampedBus = std::clamp(busIndex, 0, map2::drummachine::DrumMachineProcessor::kBusCount - 1);
+            return self.getDrumMachine().setPadBus(
+                padIndex,
+                static_cast<map2::drummachine::DrumMachineProcessor::BusId>(clampedBus));
+        }, py::arg("pad"), py::arg("bus"), "Set drum pad output bus")
         .def("set_drum_pad_velocity_curve", [](Map2AudioEngine& self, int padIndex, int curveType) {
             return self.getDrumMachine().setPadVelocityCurve(
                 padIndex,
