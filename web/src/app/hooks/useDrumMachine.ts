@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { drumsApi } from '@/map2/api'
 import type {
   DrumBusMixerUpdate,
+  DrumKitInstrumentPatch,
   DrumMachineStateUpdate,
   DrumMidiMapping,
   DrumSong,
@@ -263,6 +264,21 @@ export function useLoadDrumKit() {
       void queryClient.invalidateQueries({ queryKey: ['drums', 'kits'] })
       void queryClient.invalidateQueries({ queryKey: ['drums', 'kits', 'active'] })
       invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function usePatchDrumKitInstrument() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ kitId, padId, patch }: { kitId: string; padId: number; patch: DrumKitInstrumentPatch }) =>
+      drumsApi.patchKitInstrument(kitId, padId, patch),
+    onSuccess: (_kit, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'kits'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'kits', 'active'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'mixer', 'pads'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'kits', variables.kitId] })
     },
   })
 }

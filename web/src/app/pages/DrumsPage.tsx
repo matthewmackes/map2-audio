@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import {
   Button,
   InlineLoading,
@@ -26,8 +27,11 @@ import {
   useDrumActiveKit,
   useDrumMachineState,
   useDrumMidiLearn,
+  useDrumMixer,
+  usePatchDrumKitInstrument,
   useDrumPattern,
   useDrumPacks,
+  useSetDrumPadControl,
   useSetDrumStep,
   useDrumTransport,
   useUpdateDrumMachineState,
@@ -35,7 +39,7 @@ import {
 } from '@/app/hooks/useDrumMachine'
 import { drumsApi } from '@/map2/api'
 import { normalizeDrumMachineState } from '@/map2/drumMachineState'
-import type { DrumKit, DrumMachineState, DrumPattern } from '@/map2/types'
+import type { DrumInstrument, DrumKit, DrumMachineState, DrumPadControl, DrumPattern } from '@/map2/types'
 
 type DrumMode = DrumMachineState['ui_mode']
 
@@ -245,11 +249,73 @@ const shellStyle: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: '#f4f4f4',
   },
+  rowHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+  },
+  colorSwatch: {
+    width: 16,
+    height: 16,
+    borderRadius: '50%',
+    boxShadow: '0 0 0 1px rgba(255,255,255,0.24)',
+  },
+  rowNameInput: {
+    width: '100%',
+    borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(0,0,0,0.16)',
+    color: '#f4f4f4',
+    padding: '7px 9px',
+    fontSize: 13,
+  },
   rowMeta: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: 6,
     alignItems: 'center',
+  },
+  rowControlStrip: {
+    display: 'grid',
+    gap: 8,
+  },
+  toggleRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  miniToggle: {
+    borderRadius: 999,
+    border: '1px solid rgba(255,255,255,0.14)',
+    background: 'rgba(255,255,255,0.06)',
+    color: '#f4f4f4',
+    padding: '5px 10px',
+    fontSize: 11,
+    cursor: 'pointer',
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+  },
+  compactRangeGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: 8,
+  },
+  compactRangeCard: {
+    display: 'grid',
+    gap: 4,
+  },
+  compactRangeLabel: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: 11,
+    color: '#c6c6c6',
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+  },
+  compactRange: {
+    width: '100%',
+    accentColor: '#24a148',
   },
   stepButton: {
     width: 40,
@@ -266,6 +332,35 @@ const shellStyle: Record<string, React.CSSProperties> = {
   rowSlider: {
     width: '100%',
     accentColor: '#24a148',
+  },
+  inspectorTile: {
+    borderTop: '3px solid #24a148',
+    minHeight: 420,
+  },
+  inspectorGrid: {
+    display: 'grid',
+    gap: 14,
+  },
+  inspectorSection: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.02)',
+    padding: 12,
+    display: 'grid',
+    gap: 10,
+  },
+  inspectorValue: {
+    fontSize: 14,
+    color: '#f4f4f4',
+  },
+  inspectorSelect: {
+    width: '100%',
+    borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(0,0,0,0.18)',
+    color: '#f4f4f4',
+    padding: '9px 10px',
+    fontSize: 13,
   },
 }
 
@@ -289,6 +384,27 @@ function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number,
     accent: Boolean(step?.accent),
     active: (step?.velocity ?? 0) > 0,
   }
+}
+
+function resolvedPadControl(
+  padControls: DrumPadControl[] | undefined,
+  instrumentIndex: number,
+  instrument: DrumInstrument | undefined,
+) {
+  const pad = padControls?.find((entry) => entry.pad_id === instrumentIndex)
+  return {
+    volume: pad?.volume ?? instrument?.volume ?? 80,
+    pan: pad?.pan ?? instrument?.pan ?? 0,
+    tune: pad?.tune ?? instrument?.tune ?? 0,
+    mute: pad?.mute ?? instrument?.mute ?? false,
+    solo: pad?.solo ?? instrument?.solo ?? false,
+    bus: pad?.bus_assignment ?? instrument?.bus_assignment ?? (instrumentIndex % 8),
+  }
+}
+
+function padAccent(index: number) {
+  const accents = ['#4589ff', '#24a148', '#ff832b', '#be95ff', '#08bdba', '#fa4d56', '#d2a106', '#a56eff']
+  return accents[index % accents.length]
 }
 
 function practicePanel(
@@ -373,16 +489,28 @@ function advancedPanel(
   accent: string,
   pattern: DrumPattern | undefined,
   activeKit: DrumKit | null | undefined,
+  padControls: DrumPadControl[] | undefined,
   currentStep: number,
+  selectedPad: number,
+  draftNames: string[],
+  onSelectPad: (padId: number) => void,
+  onRenameDraft: (padId: number, value: string) => void,
+  onCommitName: (padId: number) => void,
+  onUpdatePadControl: (padId: number, params: Partial<DrumPadControl>) => void,
   onToggleStep: (instrumentIndex: number, stepIndex: number, nextVelocity: number, accent: boolean) => void,
 ) {
   const visibleSteps = Math.min(16, clampPatternLength(pattern))
+  const selectedInstrument = activeKit?.instruments?.[selectedPad]
+  const selectedPadControl = resolvedPadControl(padControls, selectedPad, selectedInstrument)
   const instruments = Array.from({ length: 16 }, (_, instrumentIndex) => {
     const kitInstrument = activeKit?.instruments?.[instrumentIndex]
+    const pad = resolvedPadControl(padControls, instrumentIndex, kitInstrument)
     return {
       name: kitInstrument?.name ?? `Pad ${instrumentIndex + 1}`,
-      bus: kitInstrument?.bus_assignment ?? (instrumentIndex % 8),
-      volume: kitInstrument?.volume ?? 80,
+      note: kitInstrument?.default_note ?? (36 + instrumentIndex),
+      sfzPath: kitInstrument?.sfz_path ?? 'Factory assignment',
+      color: padAccent(instrumentIndex),
+      ...pad,
     }
   })
 
@@ -396,8 +524,8 @@ function advancedPanel(
               <Tag type="green">Primary View</Tag>
             </div>
             <p style={shellStyle.tileText}>
-              The page now reserves a full-width advanced workspace for the TR-style grid, row
-              controls, and pattern tools that follow in `T217-B` through `T217-E`.
+              The advanced workspace now carries editable row controls directly beside the TR-style
+              sequencer so pad-level mixer and kit metadata can be adjusted without leaving the grid.
             </p>
             <div style={shellStyle.statGrid}>
               <div style={shellStyle.statCard}>
@@ -433,13 +561,123 @@ function advancedPanel(
                 <span style={shellStyle.clusterLabel}>Level</span>
               </div>
 
-              {instruments.map((instrument, instrumentIndex) => (
-                <div key={`${instrument.name}-${instrumentIndex}`} style={shellStyle.sequencerRow} role="row">
-                  <div style={shellStyle.rowLabel}>
-                    <span style={shellStyle.rowTitle}>{instrument.name}</span>
+              {instruments.map((instrument, instrumentIndex) => {
+                const rowActive = currentStep < visibleSteps && resolvedStep(pattern, instrumentIndex, currentStep).active
+
+                return (
+                  <div
+                    key={`${instrument.name}-${instrumentIndex}`}
+                    style={{
+                      ...shellStyle.sequencerRow,
+                      padding: selectedPad === instrumentIndex ? '6px 6px 10px' : undefined,
+                      borderRadius: selectedPad === instrumentIndex ? 14 : undefined,
+                      background: selectedPad === instrumentIndex ? 'rgba(255,255,255,0.03)' : undefined,
+                    }}
+                    role="row"
+                  >
+                  <div
+                    style={{
+                      ...shellStyle.rowLabel,
+                      borderColor: rowActive
+                        ? instrument.color
+                        : selectedPad === instrumentIndex
+                          ? accent
+                          : 'rgba(255,255,255,0.08)',
+                      boxShadow: rowActive
+                        ? `0 0 0 1px ${instrument.color}, 0 0 16px rgba(0,0,0,0.18)`
+                        : selectedPad === instrumentIndex
+                          ? `0 0 0 1px ${accent}`
+                          : 'none',
+                    }}
+                    onClick={() => onSelectPad(instrumentIndex)}
+                  >
+                    <div style={shellStyle.rowHeader}>
+                      <span style={{ ...shellStyle.colorSwatch, background: instrument.color }} aria-hidden />
+                      <input
+                        aria-label={`${instrument.name} name`}
+                        value={draftNames[instrumentIndex] ?? instrument.name}
+                        onChange={(event) => onRenameDraft(instrumentIndex, event.currentTarget.value)}
+                        onBlur={() => onCommitName(instrumentIndex)}
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            onCommitName(instrumentIndex)
+                          }
+                        }}
+                        style={shellStyle.rowNameInput}
+                      />
+                    </div>
                     <div style={shellStyle.rowMeta}>
                       <Tag type="green">Bus {instrument.bus}</Tag>
+                      <Tag type="blue">Note {instrument.note}</Tag>
                       <Tag type="cool-gray">Row {instrumentIndex + 1}</Tag>
+                      {rowActive ? <Tag type="cyan">Input</Tag> : null}
+                    </div>
+                    <div style={shellStyle.rowControlStrip}>
+                      <div style={shellStyle.toggleRow}>
+                        <button
+                          type="button"
+                          aria-label={`${instrument.name} mute`}
+                          aria-pressed={instrument.mute}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onUpdatePadControl(instrumentIndex, { mute: !instrument.mute })
+                          }}
+                          style={{
+                            ...shellStyle.miniToggle,
+                            background: instrument.mute ? 'rgba(250,77,86,0.18)' : 'rgba(255,255,255,0.06)',
+                            borderColor: instrument.mute ? '#fa4d56' : 'rgba(255,255,255,0.14)',
+                          }}
+                        >
+                          Mute
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`${instrument.name} solo`}
+                          aria-pressed={instrument.solo}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onUpdatePadControl(instrumentIndex, { solo: !instrument.solo })
+                          }}
+                          style={{
+                            ...shellStyle.miniToggle,
+                            background: instrument.solo ? 'rgba(69,137,255,0.18)' : 'rgba(255,255,255,0.06)',
+                            borderColor: instrument.solo ? '#4589ff' : 'rgba(255,255,255,0.14)',
+                          }}
+                        >
+                          Solo
+                        </button>
+                      </div>
+                      <div style={shellStyle.compactRangeGrid}>
+                        {[
+                          { label: 'Vol', min: 0, max: 100, value: instrument.volume, key: 'volume' },
+                          { label: 'Pan', min: -100, max: 100, value: instrument.pan, key: 'pan' },
+                          { label: 'Tune', min: -24, max: 24, value: instrument.tune, key: 'tune' },
+                        ].map((control) => (
+                          <div key={control.key} style={shellStyle.compactRangeCard}>
+                            <div style={shellStyle.compactRangeLabel}>
+                              <span>{control.label}</span>
+                              <strong>{control.value}</strong>
+                            </div>
+                            <input
+                              type="range"
+                              min={control.min}
+                              max={control.max}
+                              step={1}
+                              value={control.value}
+                              onClick={(event) => event.stopPropagation()}
+                              onChange={(event) =>
+                                onUpdatePadControl(instrumentIndex, {
+                                  [control.key]: Number(event.currentTarget.value),
+                                })
+                              }
+                              style={shellStyle.compactRange}
+                              aria-label={`${instrument.name} ${control.label}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -454,6 +692,7 @@ function advancedPanel(
                         aria-label={`${instrument.name} step ${stepIndex + 1}`}
                         aria-pressed={step.active}
                         onClick={(event) => {
+                          onSelectPad(instrumentIndex)
                           const nextVelocity = step.active ? 0 : 100
                           const nextAccent = step.active ? false : event.shiftKey || step.accent
                           onToggleStep(instrumentIndex, stepIndex, nextVelocity, nextAccent)
@@ -461,6 +700,7 @@ function advancedPanel(
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault()
+                            onSelectPad(instrumentIndex)
                             const nextVelocity = step.active ? 0 : 100
                             const nextAccent = step.active ? false : event.shiftKey || step.accent
                             onToggleStep(instrumentIndex, stepIndex, nextVelocity, nextAccent)
@@ -505,31 +745,58 @@ function advancedPanel(
                       style={shellStyle.rowSlider}
                     />
                   </div>
-                </div>
-              ))}
+                  </div>
+                )
+              })}
             </div>
           </Tile>
         </div>
         <div style={shellStyle.modeColumn}>
-          <Tile style={shellStyle.tile}>
+          <Tile style={{ ...shellStyle.tile, ...shellStyle.inspectorTile }}>
             <div style={shellStyle.tileHeader}>
-              <h3 style={shellStyle.tileTitle}>Right Rail</h3>
-              <Tag type="purple">Reserved</Tag>
+              <h3 style={shellStyle.tileTitle}>Instrument Inspector</h3>
+              <Tag type="green">Pad {selectedPad + 1}</Tag>
             </div>
             <p style={shellStyle.tileText}>
-              Pattern bank, kit browser, song arranger, and MIDI configuration all now have a fixed
-              home in the advanced shell instead of being bolted onto the old pack-management page.
+              Selected-row context stays visible here so bus routing, note assignment, and sample
+              metadata do not compete with the sequencer grid itself.
             </p>
-          </Tile>
-          <Tile style={shellStyle.tile}>
-            <div style={shellStyle.tileHeader}>
-              <h3 style={shellStyle.tileTitle}>Meter Bridge</h3>
-              <Tag type="cyan">Planned</Tag>
+            <div style={shellStyle.inspectorGrid}>
+              <div style={shellStyle.inspectorSection}>
+                <div style={shellStyle.rowHeader}>
+                  <span style={{ ...shellStyle.colorSwatch, background: padAccent(selectedPad) }} aria-hidden />
+                  <span style={shellStyle.rowTitle}>{draftNames[selectedPad] ?? selectedInstrument?.name ?? `Pad ${selectedPad + 1}`}</span>
+                </div>
+                <div style={shellStyle.rowMeta}>
+                  <Tag type="blue">MIDI Note {selectedInstrument?.default_note ?? (36 + selectedPad)}</Tag>
+                  <Tag type={selectedPadControl.mute ? 'red' : 'gray'}>{selectedPadControl.mute ? 'Muted' : 'Live'}</Tag>
+                  <Tag type={selectedPadControl.solo ? 'cyan' : 'gray'}>{selectedPadControl.solo ? 'Soloed' : 'Grouped'}</Tag>
+                </div>
+              </div>
+              <div style={shellStyle.inspectorSection}>
+                <span style={shellStyle.clusterLabel}>Bus Assignment</span>
+                <select
+                  aria-label="Selected pad bus assignment"
+                  value={selectedPadControl.bus}
+                  onChange={(event) => onUpdatePadControl(selectedPad, { bus_assignment: Number(event.currentTarget.value) })}
+                  style={shellStyle.inspectorSelect}
+                >
+                  {Array.from({ length: 8 }, (_, busIndex) => (
+                    <option key={busIndex} value={busIndex}>
+                      Bus {busIndex}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={shellStyle.inspectorSection}>
+                <span style={shellStyle.clusterLabel}>Sample Source</span>
+                <span style={shellStyle.inspectorValue}>{selectedInstrument?.sfz_path ?? 'Factory assignment'}</span>
+                <div style={shellStyle.toggleRow}>
+                  <Tag type="cool-gray">MIDI reassign queued for `T217-K`</Tag>
+                  <Tag type="cool-gray">Sample swap queued for kit browser flow</Tag>
+                </div>
+              </div>
             </div>
-            <p style={shellStyle.tileText}>
-              The transport bar and footer already reserve space for beat sync, meter readouts, and
-              MIDI activity so later slices can plug into a stable layout.
-            </p>
           </Tile>
         </div>
       </div>
@@ -582,9 +849,12 @@ export function DrumsPage() {
   const stateQuery = useDrumMachineState()
   const transportQuery = useDrumTransport()
   const activeKitQuery = useDrumActiveKit()
+  const mixer = useDrumMixer()
   const packs = useDrumPacks()
   const midiLearn = useDrumMidiLearn()
   const patternQuery = useDrumPattern(transportQuery.data?.pattern ?? 0)
+  const patchInstrument = usePatchDrumKitInstrument()
+  const setPadControl = useSetDrumPadControl()
   const setStep = useSetDrumStep()
   const updateState = useUpdateDrumMachineState()
   const updateTransport = useUpdateDrumTransport()
@@ -603,12 +873,21 @@ export function DrumsPage() {
   const activeModeMeta = MODE_META[activeMode]
   const activeKitName = activeKitQuery.data?.name ?? 'No kit loaded'
   const activeKit = activeKitQuery.data
+  const padControls = mixer.pads.data
   const pattern = patternQuery.data
   const midiLearnState = midiLearn.status.data
+  const [selectedPad, setSelectedPad] = useState(0)
+  const [draftNames, setDraftNames] = useState<string[]>(Array.from({ length: 16 }, (_, index) => `Pad ${index + 1}`))
   const packCounts = {
     factory: packs.factory.data?.length ?? 0,
     user: packs.generated.data?.length ?? 0,
   }
+
+  useEffect(() => {
+    setDraftNames(
+      Array.from({ length: 16 }, (_, index) => activeKit?.instruments?.[index]?.name ?? `Pad ${index + 1}`),
+    )
+  }, [activeKit?.kit_id, activeKit?.instruments])
 
   if (stateQuery.isLoading && !state) {
     return (
@@ -800,7 +1079,44 @@ export function DrumsPage() {
               MODE_META.advanced.accent,
               pattern,
               activeKit,
+              padControls,
               currentStep,
+              selectedPad,
+              draftNames,
+              setSelectedPad,
+              (padId, value) => {
+                setDraftNames((current) => {
+                  const next = [...current]
+                  next[padId] = value
+                  return next
+                })
+              },
+              (padId) => {
+                if (!activeKit?.kit_id) {
+                  return
+                }
+                const nextName = (draftNames[padId] ?? '').trim()
+                const currentName = activeKit.instruments?.[padId]?.name ?? `Pad ${padId + 1}`
+                if (!nextName || nextName === currentName) {
+                  setDraftNames((current) => {
+                    const next = [...current]
+                    next[padId] = currentName
+                    return next
+                  })
+                  return
+                }
+                patchInstrument.mutate({
+                  kitId: activeKit.kit_id,
+                  padId,
+                  patch: { name: nextName },
+                })
+              },
+              (padId, params) => {
+                setPadControl.mutate({
+                  padId,
+                  params,
+                })
+              },
               (instrumentIndex, stepIndex, nextVelocity, accentEnabled) => {
                 setStep.mutate({
                   patternId: transport.pattern,

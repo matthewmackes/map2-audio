@@ -1400,6 +1400,16 @@ export interface DrumInstrument {
   solo: boolean;
 }
 
+export interface DrumKitInstrumentPatch {
+  name?: string;
+  sfz_path?: string;
+  default_note?: number;
+  bus_assignment?: number;
+  default_volume?: number;
+  default_pan?: number;
+  default_tune?: number;
+}
+
 export interface DrumKit {
   kit_id: string;
   name: string;

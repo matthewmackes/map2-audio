@@ -5,9 +5,10 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { drumsApi } from '@/map2/api'
 import {
   useDrumKits,
+  useDrumMidiLearn,
   useDrumMixer,
   useDrumPattern,
-  useDrumMidiLearn,
+  usePatchDrumKitInstrument,
 } from './useDrumMachine'
 
 jest.mock('@/map2/api', () => ({
@@ -30,6 +31,7 @@ jest.mock('@/map2/api', () => ({
     getKits: jest.fn(),
     getActiveKit: jest.fn(),
     loadKit: jest.fn(),
+    patchKitInstrument: jest.fn(),
     getPadControls: jest.fn(),
     setPadControl: jest.fn(),
     getBusMixer: jest.fn(),
@@ -146,5 +148,26 @@ describe('useDrumMachine hooks', () => {
 
     expect(result.current.status.data?.active_pad_id).toBe(3)
     expect(result.current.presets.data?.[0].preset_id).toBe('roland-vad')
+  })
+
+  it('patches a kit instrument through the dedicated mutation hook', async () => {
+    mockDrumsApi.patchKitInstrument.mockResolvedValue({
+      kit_id: 'studio',
+      name: 'Studio',
+      description: '',
+      author: 'MAP2',
+      category: 'Acoustic',
+      instruments: [],
+    })
+
+    const { result } = renderHook(() => usePatchDrumKitInstrument(), { wrapper: makeWrapper() })
+
+    result.current.mutate({
+      kitId: 'studio',
+      padId: 2,
+      patch: { name: 'Snare Rim' },
+    })
+
+    await waitFor(() => expect(mockDrumsApi.patchKitInstrument).toHaveBeenCalledWith('studio', 2, { name: 'Snare Rim' }))
   })
 })

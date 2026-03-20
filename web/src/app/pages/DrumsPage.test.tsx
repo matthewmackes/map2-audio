@@ -6,6 +6,8 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { DrumsPage } from './DrumsPage'
 
 const mockSetStepMutate = jest.fn()
+const mockSetPadControlMutate = jest.fn()
+const mockPatchInstrumentMutate = jest.fn()
 const mockUpdateStateMutate = jest.fn()
 const mockUpdateTransportMutate = jest.fn()
 
@@ -14,7 +16,10 @@ const mockUseDrumTransport = jest.fn()
 const mockUseDrumActiveKit = jest.fn()
 const mockUseDrumPacks = jest.fn()
 const mockUseDrumMidiLearn = jest.fn()
+const mockUseDrumMixer = jest.fn()
 const mockUseDrumPattern = jest.fn()
+const mockUsePatchDrumKitInstrument = jest.fn()
+const mockUseSetDrumPadControl = jest.fn()
 const mockUseSetDrumStep = jest.fn()
 const mockUseUpdateDrumMachineState = jest.fn()
 const mockUseUpdateDrumTransport = jest.fn()
@@ -53,7 +58,10 @@ jest.mock('@/app/hooks/useDrumMachine', () => ({
   useDrumActiveKit: () => mockUseDrumActiveKit(),
   useDrumPacks: () => mockUseDrumPacks(),
   useDrumMidiLearn: () => mockUseDrumMidiLearn(),
+  useDrumMixer: () => mockUseDrumMixer(),
   useDrumPattern: (patternId: number) => mockUseDrumPattern(patternId),
+  usePatchDrumKitInstrument: () => mockUsePatchDrumKitInstrument(),
+  useSetDrumPadControl: () => mockUseSetDrumPadControl(),
   useSetDrumStep: () => mockUseSetDrumStep(),
   useUpdateDrumMachineState: () => mockUseUpdateDrumMachineState(),
   useUpdateDrumTransport: () => mockUseUpdateDrumTransport(),
@@ -133,7 +141,24 @@ function primeHooks() {
     status: { data: { active: false, active_pad_index: null } },
     presets: { data: [] },
   })
+  mockUseDrumMixer.mockReturnValue({
+    pads: {
+      data: Array.from({ length: 16 }, (_, index) => ({
+        pad_id: index,
+        volume: 80 - index,
+        pan: 0,
+        tune: 0,
+        mute: false,
+        solo: false,
+        bus_assignment: index % 8,
+      })),
+    },
+    buses: { data: [] },
+    master: { data: { volume: 80 } },
+  })
   mockUseDrumPattern.mockReturnValue({ data: makePattern() })
+  mockUsePatchDrumKitInstrument.mockReturnValue({ mutate: mockPatchInstrumentMutate })
+  mockUseSetDrumPadControl.mockReturnValue({ mutate: mockSetPadControlMutate })
   mockUseSetDrumStep.mockReturnValue({ mutate: mockSetStepMutate })
   mockUseUpdateDrumMachineState.mockReturnValue({ mutate: mockUpdateStateMutate })
   mockUseUpdateDrumTransport.mockReturnValue({ mutate: mockUpdateTransportMutate })
@@ -171,6 +196,8 @@ describe('DrumsPage', () => {
         dispatchEvent: jest.fn(),
       })),
     })
+    mockSetPadControlMutate.mockReset()
+    mockPatchInstrumentMutate.mockReset()
     mockSetStepMutate.mockReset()
     mockUpdateStateMutate.mockReset()
     mockUpdateTransportMutate.mockReset()
@@ -179,7 +206,10 @@ describe('DrumsPage', () => {
     mockUseDrumActiveKit.mockReset()
     mockUseDrumPacks.mockReset()
     mockUseDrumMidiLearn.mockReset()
+    mockUseDrumMixer.mockReset()
     mockUseDrumPattern.mockReset()
+    mockUsePatchDrumKitInstrument.mockReset()
+    mockUseSetDrumPadControl.mockReset()
     mockUseSetDrumStep.mockReset()
     mockUseUpdateDrumMachineState.mockReset()
     mockUseUpdateDrumTransport.mockReset()
@@ -206,6 +236,31 @@ describe('DrumsPage', () => {
       step: 1,
       velocity: 100,
       accent: true,
+    })
+  })
+
+  it('updates per-row mute controls through the pad control mutation', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Kick mute' }))
+
+    expect(mockSetPadControlMutate).toHaveBeenCalledWith({
+      padId: 0,
+      params: { mute: true },
+    })
+  })
+
+  it('commits renamed instrument labels through the kit patch mutation', () => {
+    renderPage()
+
+    const nameInput = screen.getByLabelText('Kick name')
+    fireEvent.change(nameInput, { target: { value: 'Kick Main' } })
+    fireEvent.blur(nameInput)
+
+    expect(mockPatchInstrumentMutate).toHaveBeenCalledWith({
+      kitId: 'studio',
+      padId: 0,
+      patch: { name: 'Kick Main' },
     })
   })
 })

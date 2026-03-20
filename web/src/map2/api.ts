@@ -4856,6 +4856,16 @@ export const drumsApi = {
       body: JSON.stringify(template),
     }),
 
+  /** Patch a single instrument inside a drum kit */
+  patchKitInstrument: (kitId: string, padId: number, patch: import('./types').DrumKitInstrumentPatch) =>
+    fetchJson<import('./types').DrumKit>(
+      `${API_BASE}/engine/drums/kits/${encodeURIComponent(kitId)}/instruments/${padId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      },
+    ),
+
   /** Get per-pad mixer controls */
   getPadControls: () =>
     fetchJson<import('./types').DrumPadControl[]>(`${API_BASE}/engine/drums/mixer/pads`),

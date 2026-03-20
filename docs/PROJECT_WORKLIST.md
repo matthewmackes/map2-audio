@@ -1556,11 +1556,13 @@ Subtasks:
     - Step pads must be keyboard-accessible: arrow keys navigate grid, Enter/Space toggles, Tab moves between rows
     - Implemented in `web/src/app/pages/DrumsPage.tsx` as the Advanced-mode primary workspace, wired to the active-kit and pattern hooks with 16 instrument rows, scrollable 40px step cells, current-step highlighting, and read-only per-row level strips.
     - Step pads now toggle through `useSetDrumStep`, support click plus Enter/Space activation, and use shift-modified input to create accented steps directly from the grid.
-  - [ ] T217-C: Instrument row controls
+  - [✓] T217-C: Instrument row controls
     - Each of 16 rows shows: instrument name (editable via `TextInput` inline), pad color swatch, Mute (`Toggle`), Solo (`Toggle`), Volume (`Slider` 0–100), Pan (`Slider` -100 to +100), Tune (`Slider` -24 to +24 semitones)
     - Instrument name reflects loaded kit instrument name (e.g., "Kick", "Snare", "Closed HH")
     - Row highlight on MIDI input: flash row accent color when that instrument receives a MIDI trigger
     - Row context menu: reassign MIDI note, change bus assignment, load different sample
+    - Implemented in `web/src/app/pages/DrumsPage.tsx` with inline row-name editing, pad swatches, mute/solo toggles, volume/pan/tune sliders, and a selected-row inspector that keeps bus assignment plus sample metadata in view beside the step grid.
+    - Added `usePatchDrumKitInstrument` plus the `drumsApi.patchKitInstrument` client path so row-name edits persist back to the active kit, while `useSetDrumPadControl` continues to drive per-pad mixer updates.
   - [ ] T217-D: Pattern management panel
     - Pattern bank: 128 pattern slots displayed as Carbon `Tile` grid (8×16 or paginated)
     - Active pattern highlighted with `$interactive-01` border
@@ -1629,12 +1631,15 @@ Subtasks:
     - Color contrast: all step states meet WCAG 2.1 AA against `$ui-01` background
     - Pass full `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`
 Assigned to: Codex
-Last updated: 2026-03-20 10:13 - Codex
+Last updated: 2026-03-20 11:37 - Codex
 - Progress notes:
   - Completed `T217-A` in `web/src/app/pages/DrumsPage.tsx` by replacing the old pack-management placeholder with a full `/drums` page shell: Carbon tabs for Practice, Advanced, and Backing Tracks; a shared transport bar with play/stop/tap-tempo, BPM, pattern, variation, swing, and master-volume controls; dedicated mode content regions; and a footer status bar for active kit, pattern, transport state, beat dots, and MIDI status.
   - Preserved the current drum data flow by wiring the new page shell to the existing React Query hooks and drum API surface instead of adding page-local fetch logic, so later `T217-B` onward can fill in the sequencer, mixer, and browser panels without another structural rewrite.
   - Completed `T217-B` in `web/src/app/pages/DrumsPage.tsx` by replacing the Advanced-mode placeholder with a TR-style sequencer workspace that renders the active kit and pattern grid, exposes direct step toggles, and surfaces row-level bus and level context without changing the page shell from `T217-A`.
   - Added `web/src/app/pages/DrumsPage.test.tsx` to verify that the sequencer grid renders from the drum hooks and that shift-clicking a step emits an accented `useSetDrumStep` mutation for the active pattern.
+  - Completed `T217-C` by extending `web/src/app/pages/DrumsPage.tsx` with inline instrument-name editing, pad swatches, mute/solo toggles, compact volume/pan/tune sliders, sequencer-row input highlighting, and a selected-row inspector for bus routing and sample source context.
+  - Extended the frontend drum data layer with `drumsApi.patchKitInstrument`, the `DrumKitInstrumentPatch` type, and `usePatchDrumKitInstrument`, then added focused tests in `web/src/app/pages/DrumsPage.test.tsx` and `web/src/app/hooks/useDrumMachine.test.tsx` for row-control and kit-patch mutations.
+  - Validation: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx src/app/hooks/useDrumMachine.test.tsx`
   - Validation: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`
   - Validation: `npm --prefix web run typecheck` -> pass.
 
