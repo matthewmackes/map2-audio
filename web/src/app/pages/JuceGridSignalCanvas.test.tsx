@@ -214,10 +214,10 @@ describe('JuceGridSignalCanvas', () => {
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-svg')).toBeTruthy()
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
     expect(within(pluginCard).getByRole('button', { name: 'Actions for Studio Compressor' })).toBeTruthy()
-    expect(within(pluginCard).queryByText('Dynamics')).toBeNull()
-    expect(within(pluginCard).queryByText('CPU')).toBeNull()
-    expect(within(pluginCard).queryByText('12.4%')).toBeNull()
-    expect(within(pluginCard).queryByText('Lat')).toBeNull()
+    expect(within(pluginCard).getByText('Dynamics')).toBeTruthy()
+    expect(within(pluginCard).getByText('CPU')).toBeTruthy()
+    expect(within(pluginCard).getByText('12.4%')).toBeTruthy()
+    expect(within(pluginCard).getByText('Latency')).toBeTruthy()
     expect(within(pluginCard).queryByText('SC')).toBeNull()
     expect(within(pluginCard).queryByText('Auto')).toBeNull()
 
@@ -232,7 +232,7 @@ describe('JuceGridSignalCanvas', () => {
     expect(handleOutputPorts).toHaveBeenCalledTimes(1)
   })
 
-  it('renders flow bridges and three-dot connectors, dimming them when bypassed blocks are in the path', () => {
+  it('renders a line-free snake canvas without bridge or connector chrome', () => {
     const chainedFlow: Chain = {
       ...chain,
       plugins: [
@@ -286,15 +286,13 @@ describe('JuceGridSignalCanvas', () => {
       />,
     )
 
-    expect(screen.getByTestId('juce-grid-signal-flow-bridge-input')).toBeTruthy()
-    expect(screen.getByTestId('juce-grid-signal-flow-bridge-output')).toBeTruthy()
-
-    const connector = screen.getByTestId('juce-grid-signal-flow-connector-0')
-    expect(connector.className).toContain('is-dashed')
-    expect(connector.querySelectorAll('.juce-grid-page__signal-flow-dot')).toHaveLength(3)
+    expect(screen.queryByTestId('juce-grid-signal-flow-bridge-input')).toBeNull()
+    expect(screen.queryByTestId('juce-grid-signal-flow-bridge-output')).toBeNull()
+    expect(screen.queryByTestId('juce-grid-signal-flow-connector-0')).toBeNull()
+    expect(screen.queryByTestId('juce-grid-signal-vertical-connector-0')).toBeNull()
   })
 
-  it('builds small wrapped rows first, then restarts the next row at large width with alternating snake direction', () => {
+  it('builds left-aligned snake rows with a standard inline add card', () => {
     const longChain = buildChainWithPluginCount(7)
     const longMeta = buildPluginMetaForChain(longChain)
 
@@ -313,15 +311,39 @@ describe('JuceGridSignalCanvas', () => {
 
     const firstRow = screen.getByTestId('juce-grid-signal-row-0')
     const secondRow = screen.getByTestId('juce-grid-signal-row-1')
-    const verticalConnector = screen.getByTestId('juce-grid-signal-vertical-connector-0')
 
-    expect(firstRow.getAttribute('data-row-size')).toBe('small')
     expect(firstRow.getAttribute('data-row-direction')).toBe('forward')
-    expect(secondRow.getAttribute('data-row-size')).toBe('large')
     expect(secondRow.getAttribute('data-row-direction')).toBe('reverse')
-    expect(verticalConnector.getAttribute('data-connector-side')).toBe('right')
-    expect(verticalConnector.className).toContain('is-dashed')
-    expect(firstRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(6)
+    expect(firstRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(4)
+    expect(secondRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(3)
     expect(within(secondRow).getByRole('button', { name: 'Add effect' })).toBeTruthy()
+  })
+
+  it('expands the active card to a double-width overlay and dims the other cards', () => {
+    const longChain = buildChainWithPluginCount(4)
+    const longMeta = buildPluginMetaForChain(longChain)
+
+    render(
+      <JuceGridSignalCanvas
+        chain={longChain}
+        pluginMeta={longMeta}
+        selectedPluginUri={longChain.plugins[1].uri}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        onAddPlugin={jest.fn()}
+        showEndpoints={false}
+      />,
+    )
+
+    const activeCard = screen.getByTestId('juce-grid-signal-plugin-card-1')
+    const activeRowItem = activeCard.closest('.juce-grid-page__signal-grid-item')
+    const dimmedItems = document.querySelectorAll('.juce-grid-page__signal-grid-item.is-dimmed')
+
+    expect(activeCard.className).toContain('is-selected')
+    expect(activeRowItem).toBeTruthy()
+    expect(dimmedItems.length).toBeGreaterThan(0)
+    expect(screen.getByText('Position')).toBeTruthy()
+    expect(screen.getByText('Latency')).toBeTruthy()
   })
 })

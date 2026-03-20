@@ -1,9 +1,8 @@
-import { useCallback, useMemo, useState, type CSSProperties, type SyntheticEvent, memo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type SyntheticEvent, memo } from 'react'
 import {
   Add,
   AudioConsole,
   Link,
-  Meter,
   SettingsAdjust,
   VolumeDown,
   VolumeUp,
@@ -15,6 +14,7 @@ import { getCategoryConfig } from '../components/PluginCards/types'
 import { getEffectIcon } from '../components/icons/effectIcons'
 import type { Chain, Plugin } from '../../map2/types'
 import { getDisplayPluginName } from '../../map2/displayNames'
+import { getPluginDescription } from '../data/pluginDescriptions'
 
 export interface JuceGridAudioInterfaceStatus {
   deviceName?: string
@@ -64,7 +64,6 @@ export interface JuceGridSignalAutomationSummary {
 type EndpointSide = 'input' | 'output'
 type EndpointGroupState = 'normal' | 'warning' | 'error'
 type SignalGridRowDirection = 'forward' | 'reverse'
-type SignalGridRowSize = 'large' | 'medium' | 'small'
 type ChainPlugin = Chain['plugins'][number]
 
 interface EndpointRailSlot {
@@ -94,29 +93,18 @@ interface SignalGridSlot {
 interface SignalGridRow {
   key: string
   direction: SignalGridRowDirection
-  size: SignalGridRowSize
   slots: SignalGridSlot[]
 }
 
-const SIGNAL_GRID_ROW_CAPACITY = 6
-const SIGNAL_GRID_ROW_UNITS: Record<SignalGridRowSize, number> = {
-  large: 3,
-  medium: 2,
-  small: 1,
-}
+const SIGNAL_GRID_CARD_MIN_WIDTH_REM = 17
+const SIGNAL_GRID_CARD_GAP_REM = 1
+const SIGNAL_GRID_ROW_MIN_CAPACITY = 1
 
-function pickSignalRowLayout(remainingSlots: number): { size: SignalGridRowSize; count: number } {
-  for (const size of ['large', 'medium', 'small'] as const) {
-    const maxCount = Math.floor(SIGNAL_GRID_ROW_CAPACITY / SIGNAL_GRID_ROW_UNITS[size])
-    if (remainingSlots <= maxCount) {
-      return { size, count: remainingSlots }
-    }
-  }
-
-  return { size: 'small', count: Math.min(remainingSlots, SIGNAL_GRID_ROW_CAPACITY) }
-}
-
-function buildSignalGridRows(plugins: ChainPlugin[], includeAddSlot: boolean): SignalGridRow[] {
+function buildSignalGridRows(
+  plugins: ChainPlugin[],
+  includeAddSlot: boolean,
+  rowCapacity: number,
+): SignalGridRow[] {
   const slots: SignalGridSlot[] = plugins.map((plugin) => ({
     key: `${plugin.uri}:${plugin.position}`,
     kind: 'plugin',
@@ -134,27 +122,17 @@ function buildSignalGridRows(plugins: ChainPlugin[], includeAddSlot: boolean): S
   let cursor = 0
 
   while (cursor < slots.length) {
-    const remainingSlots = slots.length - cursor
-    const { size, count } = pickSignalRowLayout(remainingSlots)
     const rowIndex = rows.length
+    const count = Math.max(SIGNAL_GRID_ROW_MIN_CAPACITY, rowCapacity)
     rows.push({
       key: `row-${rowIndex}`,
       direction: rowIndex % 2 === 0 ? 'forward' : 'reverse',
-      size,
       slots: slots.slice(cursor, cursor + count),
     })
     cursor += count
   }
 
   return rows
-}
-
-function getFirstPluginInRow(row: SignalGridRow): ChainPlugin | undefined {
-  return row.slots.find((slot) => slot.kind === 'plugin')?.plugin
-}
-
-function getLastPluginInRow(row: SignalGridRow): ChainPlugin | undefined {
-  return [...row.slots].reverse().find((slot) => slot.kind === 'plugin')?.plugin
 }
 
 const ROUTING_MODE_SHORT_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus['routingMode']>, string> = {
@@ -338,10 +316,6 @@ function buildRailTooltip(
   return sections.join('\n')
 }
 
-function shouldRenderDashedFlow(currentPlugin: Chain['plugins'][number] | undefined, nextPlugin?: Chain['plugins'][number]) {
-  return Boolean(currentPlugin?.bypassed || nextPlugin?.bypassed)
-}
-
 export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   chain,
   pluginMeta,
@@ -362,9 +336,36 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 }: JuceGridSignalCanvasProps) {
   const [draggedUri, setDraggedUri] = useState<string | null>(null)
   const [dragOverUri, setDragOverUri] = useState<string | null>(null)
+  const [rowCapacity, setRowCapacity] = useState(4)
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const node = gridRef.current
+    if (!node || typeof ResizeObserver === 'undefined') {
+      return
+    }
+
+    const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
+    const slotWidth = (SIGNAL_GRID_CARD_MIN_WIDTH_REM + SIGNAL_GRID_CARD_GAP_REM) * rootFontSize
+
+    const updateCapacity = () => {
+      const nextCapacity = Math.max(
+        SIGNAL_GRID_ROW_MIN_CAPACITY,
+        Math.floor((node.clientWidth + rootFontSize * SIGNAL_GRID_CARD_GAP_REM) / slotWidth),
+      )
+      setRowCapacity((current) => (current === nextCapacity ? current : nextCapacity))
+    }
+
+    updateCapacity()
+    const observer = new ResizeObserver(updateCapacity)
+    observer.observe(node)
+
+    return () => observer.disconnect()
+  }, [])
+
   const signalRows = useMemo(
-    () => buildSignalGridRows(chain?.plugins ?? [], Boolean(onAddPlugin)),
-    [chain?.plugins, onAddPlugin],
+    () => buildSignalGridRows(chain?.plugins ?? [], Boolean(onAddPlugin), rowCapacity),
+    [chain?.plugins, onAddPlugin, rowCapacity],
   )
 
   const handleDrop = useCallback((targetUri: string) => {
@@ -522,26 +523,16 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 
       <div className="juce-grid-page__signal-path">
         <div
-          className={`juce-grid-page__signal-flow-bridge ${shouldRenderDashedFlow(chain.plugins[0]) ? 'is-dashed' : ''}`}
-          aria-hidden
-          data-testid="juce-grid-signal-flow-bridge-input"
+          ref={gridRef}
+          className={`juce-grid-page__signal-grid ${selectedPluginUri ? 'has-active-card' : ''}`}
+          data-testid="juce-grid-signal-grid"
         >
-          <span className="juce-grid-page__signal-flow-bridge-label">Input</span>
-          <span className="juce-grid-page__signal-flow-dots">
-            <span className="juce-grid-page__signal-flow-dot" />
-            <span className="juce-grid-page__signal-flow-dot" />
-            <span className="juce-grid-page__signal-flow-dot" />
-          </span>
-        </div>
-
-        <div className="juce-grid-page__signal-grid" data-testid="juce-grid-signal-grid">
           {signalRows.map((row, rowIndex) => {
             const displaySlots = row.direction === 'reverse' ? [...row.slots].reverse() : row.slots
-            const nextRow = signalRows[rowIndex + 1]
-            const rowExitPlugin = getLastPluginInRow(row)
-            const nextRowEntryPlugin = nextRow ? getFirstPluginInRow(nextRow) : undefined
-            const verticalConnectorDashed = shouldRenderDashedFlow(rowExitPlugin, nextRowEntryPlugin)
-            const verticalConnectorSide = row.direction === 'forward' ? 'right' : 'left'
+            const activeDisplayIndex = displaySlots.findIndex(
+              (slot) => slot.kind === 'plugin' && slot.plugin?.uri === selectedPluginUri,
+            )
+            const activeCardShifted = activeDisplayIndex === displaySlots.length - 1
 
             return (
               <div
@@ -550,21 +541,21 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                 data-testid={`juce-grid-signal-row-shell-${rowIndex}`}
               >
                 <div
-                  className={`juce-grid-page__signal-grid-row juce-grid-page__signal-grid-row--${row.size} ${row.direction === 'reverse' ? 'is-reverse' : 'is-forward'}`}
+                  className={`juce-grid-page__signal-grid-row ${row.direction === 'reverse' ? 'is-reverse' : 'is-forward'}`}
                   data-testid={`juce-grid-signal-row-${rowIndex}`}
-                  data-row-size={row.size}
                   data-row-direction={row.direction}
                 >
                   {displaySlots.map((slot, displayIndex) => {
-                    const nextDisplaySlot = displaySlots[displayIndex + 1]
-                    const leftPlugin = slot.kind === 'plugin' ? slot.plugin : undefined
-                    const rightPlugin = nextDisplaySlot?.kind === 'plugin' ? nextDisplaySlot.plugin : undefined
-                    const connectorDashed = shouldRenderDashedFlow(leftPlugin, rightPlugin)
+                    const isSelectedPlugin = slot.kind === 'plugin' && slot.plugin?.uri === selectedPluginUri
+                    const isDimmed = Boolean(selectedPluginUri) && !isSelectedPlugin
+                    const isCoveredByOverlay = Boolean(selectedPluginUri) && activeDisplayIndex >= 0 && (
+                      activeCardShifted ? displayIndex === activeDisplayIndex - 1 : displayIndex === activeDisplayIndex + 1
+                    )
 
                     return (
                       <div
                         key={slot.key}
-                        className="juce-grid-page__signal-grid-item"
+                        className={`juce-grid-page__signal-grid-item ${isDimmed ? 'is-dimmed' : ''} ${isCoveredByOverlay ? 'is-covered' : ''}`}
                         data-slot-kind={slot.kind}
                       >
                         {slot.kind === 'plugin' && slot.plugin ? (() => {
@@ -575,10 +566,12 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                           const EffectIcon = getSignalCardEffectIcon(meta, plugin)
                           const isSelected = plugin.uri === selectedPluginUri
                           const isDropTarget = dragOverUri === plugin.uri && draggedUri !== plugin.uri
+                          const description = getPluginDescription(meta?.name || plugin.name || '')
+                          const statusTone = plugin.bypassed ? 'Bypassed' : chain.is_active ? 'Live' : 'Ready'
 
                           return (
                             <article
-                              className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''} ${reorderPreviewUri === plugin.uri ? `is-reorder-preview is-reorder-preview-${reorderPreviewDirection}` : ''} ${reorderTargetUri === plugin.uri ? 'is-reorder-target' : ''}`}
+                              className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${isSelected && activeCardShifted ? 'is-selected-shifted' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''} ${reorderPreviewUri === plugin.uri ? `is-reorder-preview is-reorder-preview-${reorderPreviewDirection}` : ''} ${reorderTargetUri === plugin.uri ? 'is-reorder-target' : ''}`}
                               data-testid={`juce-grid-signal-plugin-card-${plugin.position}`}
                               aria-label={`${displayName}${plugin.bypassed ? ' bypassed' : ''}`}
                               aria-pressed={isSelected}
@@ -605,7 +598,9 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                               style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
                             >
                               <div className="juce-grid-page__signal-plugin-hero" aria-hidden>
-                                <EffectIcon className="juce-grid-page__signal-plugin-hero-svg" />
+                                <div className="juce-grid-page__signal-plugin-hero-image">
+                                  <EffectIcon className="juce-grid-page__signal-plugin-hero-svg" />
+                                </div>
                               </div>
 
                               <div className="juce-grid-page__signal-plugin-info">
@@ -638,6 +633,34 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                 </div>
 
                                 <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
+                                {isSelected && (
+                                  <div className="juce-grid-page__signal-plugin-details">
+                                    <div className="juce-grid-page__signal-plugin-detail-chips">
+                                      <Tag type="cool-gray">{meta?.category || 'Utility'}</Tag>
+                                      <Tag type={plugin.bypassed ? 'warm-gray' : 'blue'}>{statusTone}</Tag>
+                                      <Tag type="cool-gray">{meta?.format || 'Plugin'}</Tag>
+                                    </div>
+                                    <dl className="juce-grid-page__signal-plugin-detail-grid">
+                                      <div>
+                                        <dt>Position</dt>
+                                        <dd>{plugin.position + 1}</dd>
+                                      </div>
+                                      <div>
+                                        <dt>I/O</dt>
+                                        <dd>{plugin.in_ports ?? 2} in / {plugin.out_ports ?? 2} out</dd>
+                                      </div>
+                                      <div>
+                                        <dt>Latency</dt>
+                                        <dd>{plugin.latency_samples ?? 0} smp</dd>
+                                      </div>
+                                      <div>
+                                        <dt>CPU</dt>
+                                        <dd>{typeof plugin.cpu_percent === 'number' ? `${plugin.cpu_percent.toFixed(1)}%` : 'n/a'}</dd>
+                                      </div>
+                                    </dl>
+                                    {description && <p className="juce-grid-page__signal-plugin-description">{description}</p>}
+                                  </div>
+                                )}
                               </div>
                             </article>
                           )
@@ -652,69 +675,13 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                             <span>Add effect</span>
                           </button>
                         )}
-
-                        {nextDisplaySlot && (
-                          <div
-                            className={`juce-grid-page__signal-flow-connector ${connectorDashed ? 'is-dashed' : ''}`}
-                            aria-hidden
-                            data-testid={slot.kind === 'plugin' && slot.plugin ? `juce-grid-signal-flow-connector-${slot.plugin.position}` : `juce-grid-signal-flow-connector-${rowIndex}-${displayIndex}`}
-                          >
-                            <span className="juce-grid-page__signal-flow-line" />
-                            <span className="juce-grid-page__signal-flow-dots">
-                              <span className="juce-grid-page__signal-flow-dot" />
-                              <span className="juce-grid-page__signal-flow-dot" />
-                              <span className="juce-grid-page__signal-flow-dot" />
-                            </span>
-                            <span className="juce-grid-page__signal-flow-line" />
-                          </div>
-                        )}
                       </div>
                     )
                   })}
                 </div>
-
-                {nextRow && (
-                  <div
-                    className={`juce-grid-page__signal-flow-vertical-connector ${verticalConnectorDashed ? 'is-dashed' : ''} ${verticalConnectorSide === 'right' ? 'is-right' : 'is-left'}`}
-                    aria-hidden
-                    data-testid={`juce-grid-signal-vertical-connector-${rowIndex}`}
-                    data-connector-side={verticalConnectorSide}
-                  >
-                    <span className="juce-grid-page__signal-flow-line juce-grid-page__signal-flow-line--vertical" />
-                    <span className="juce-grid-page__signal-flow-dots juce-grid-page__signal-flow-dots--vertical">
-                      <span className="juce-grid-page__signal-flow-dot" />
-                      <span className="juce-grid-page__signal-flow-dot" />
-                      <span className="juce-grid-page__signal-flow-dot" />
-                    </span>
-                    <span className="juce-grid-page__signal-flow-line juce-grid-page__signal-flow-line--vertical" />
-                  </div>
-                )}
               </div>
             )
           })}
-        </div>
-
-        <div
-          className={`juce-grid-page__signal-flow-bridge ${chain.plugins.length > 0 && shouldRenderDashedFlow(chain.plugins[chain.plugins.length - 1]) ? 'is-dashed' : ''}`}
-          aria-hidden
-          data-testid="juce-grid-signal-flow-bridge-output"
-        >
-          <span className="juce-grid-page__signal-flow-dots">
-            <span className="juce-grid-page__signal-flow-dot" />
-            <span className="juce-grid-page__signal-flow-dot" />
-            <span className="juce-grid-page__signal-flow-dot" />
-          </span>
-          <span className="juce-grid-page__signal-flow-bridge-label">Output</span>
-        </div>
-
-        <div className="juce-grid-page__signal-status-row">
-          <Tag type={chain.is_active ? 'green' : 'warm-gray'}>
-            {chain.is_active ? 'Chain active' : 'Chain idle'}
-          </Tag>
-          <Tag type="cool-gray">
-            <Meter size={14} />
-            <span>{chain.plugins.length} block{chain.plugins.length === 1 ? '' : 's'}</span>
-          </Tag>
         </div>
       </div>
 
