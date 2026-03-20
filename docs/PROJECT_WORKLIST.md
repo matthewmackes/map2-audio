@@ -1529,7 +1529,7 @@ Last updated: 2026-03-19 15:43 - Codex
 ---
 
 ID: T217
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Drum Machine UI — TR-Style Step Sequencer (Carbon Design)
 Description:
 - Goal / acceptance criteria: Build the primary drum machine UI as a full-page Carbon Design surface at `/drums` with a TR-style 16-step grid, instrument rows, transport controls, pattern/song management, and real-time metering. This replaces the current placeholder `DrumsPage.tsx` and `DrumMachineCard.tsx`.
@@ -1538,7 +1538,7 @@ Description:
 - Estimated effort: Very High
 - Required outputs: Complete page implementation, plugin card, Carbon conformance checklist pass, responsive design, accessibility pass.
 Subtasks:
-  - [ ] T217-A: Page layout and navigation — `web/src/app/pages/DrumsPage.tsx` (full rewrite)
+  - [✓] T217-A: Page layout and navigation — `web/src/app/pages/DrumsPage.tsx` (full rewrite)
     - Carbon `Grid` / `Row` / `Column` layout on 16-column structure
     - Three mode tabs via Carbon `Tabs` component: Practice, Advanced, Backing Tracks
     - Global transport bar (top): Play/Stop buttons (`Button` with `renderIcon`), BPM display (`NumberInput`), Tap Tempo (`Button`), Swing knob, pattern selector (`Dropdown`), master volume (`Slider`)
@@ -1627,7 +1627,11 @@ Subtasks:
     - Color contrast: all step states meet WCAG 2.1 AA against `$ui-01` background
     - Pass full `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`
 Assigned to: Codex
-Last updated: 2026-03-18
+Last updated: 2026-03-20 09:45 - Codex
+- Progress notes:
+  - Completed `T217-A` in `web/src/app/pages/DrumsPage.tsx` by replacing the old pack-management placeholder with a full `/drums` page shell: Carbon tabs for Practice, Advanced, and Backing Tracks; a shared transport bar with play/stop/tap-tempo, BPM, pattern, variation, swing, and master-volume controls; dedicated mode content regions; and a footer status bar for active kit, pattern, transport state, beat dots, and MIDI status.
+  - Preserved the current drum data flow by wiring the new page shell to the existing React Query hooks and drum API surface instead of adding page-local fetch logic, so later `T217-B` onward can fill in the sequencer, mixer, and browser panels without another structural rewrite.
+  - Validation: `npm --prefix web run typecheck` -> pass.
 
 ---
 
