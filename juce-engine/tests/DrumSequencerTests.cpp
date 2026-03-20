@@ -14,6 +14,8 @@ TEST_CASE("DrumSequencer exposes 128 patterns with 16-step defaults", "[drums][s
     REQUIRE(sequencer.getPattern(0).variations.size() == DrumSequencer::kVariationCount);
     REQUIRE(sequencer.getPattern(0).variations[0].size() == DrumSequencer::kInstrumentCount);
     REQUIRE(sequencer.getStep(0, 0, 0).velocity == 0);
+    REQUIRE(sequencer.setPatternLength(0, 64));
+    REQUIRE(sequencer.getPatternLength(0) == 64);
 }
 
 TEST_CASE("DrumSequencer advances position using the configured tempo", "[drums][sequencer]") {
@@ -32,6 +34,28 @@ TEST_CASE("DrumSequencer advances position using the configured tempo", "[drums]
     position = sequencer.getPosition();
     REQUIRE(position.stepIndex == 1);
     REQUIRE(position.barCount == 1);
+}
+
+TEST_CASE("DrumSequencer pause preserves position and stop resets transport state", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+    sequencer.prepare(48000.0, 256);
+    REQUIRE(sequencer.setTempo(120.0));
+
+    sequencer.play();
+    sequencer.processBlock(6000);
+    const auto advanced = sequencer.getPosition();
+    REQUIRE(advanced.stepIndex == 1);
+    REQUIRE(advanced.isPlaying);
+
+    sequencer.pause();
+    REQUIRE_FALSE(sequencer.isPlaying());
+    REQUIRE(sequencer.getPosition().stepIndex == 1);
+
+    sequencer.stop();
+    const auto reset = sequencer.getPosition();
+    REQUIRE_FALSE(reset.isPlaying);
+    REQUIRE(reset.stepIndex == 0);
+    REQUIRE(reset.barCount == 1);
 }
 
 TEST_CASE("DrumSequencer triggers drum machine pads at step boundaries", "[drums][sequencer]") {
@@ -71,6 +95,28 @@ TEST_CASE("DrumSequencer tap tempo averages recent taps and resets after gaps", 
 
     REQUIRE(sequencer.tapTempo(t0 + std::chrono::milliseconds(3505)) == Catch::Approx(120.0));
     REQUIRE(sequencer.tapTempo(t0 + std::chrono::milliseconds(4105)) == Catch::Approx(100.0));
+}
+
+TEST_CASE("DrumSequencer swing delays offbeats relative to straight timing", "[drums][sequencer]") {
+    DrumSequencer straight;
+    straight.prepare(48000.0, 256);
+    REQUIRE(straight.setTempo(120.0));
+    straight.play();
+    straight.processBlock(1);
+    straight.processBlock(6000);
+    const auto straightPosition = straight.getPosition();
+
+    DrumSequencer swung;
+    swung.prepare(48000.0, 256);
+    REQUIRE(swung.setTempo(120.0));
+    swung.setSwing(100.0f);
+    swung.play();
+    swung.processBlock(1);
+    swung.processBlock(6000);
+    const auto swungPosition = swung.getPosition();
+
+    REQUIRE(straightPosition.stepIndex == 1);
+    REQUIRE(swungPosition.stepIndex == 0);
 }
 
 TEST_CASE("DrumSequencer manages song entries and reordering", "[drums][sequencer]") {
@@ -229,4 +275,19 @@ TEST_CASE("DrumSequencer count-in delays first pattern step until the configured
 
     REQUIRE(withoutCountIn.getPosition().barCount > withCountIn.getPosition().barCount);
     REQUIRE(withCountIn.getCountInBars() == 1);
+}
+
+TEST_CASE("DrumSequencer clears and copies edited patterns", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+
+    REQUIRE(sequencer.setPatternLength(12, 32));
+    REQUIRE(sequencer.setStep(12, 4, 15, 99, true));
+    REQUIRE(sequencer.copyPattern(12, 13));
+    REQUIRE(sequencer.getPatternLength(13) == 32);
+    REQUIRE(sequencer.getStep(13, 4, 15).velocity == 99);
+    REQUIRE(sequencer.getStep(13, 4, 15).accent);
+
+    REQUIRE(sequencer.clearPattern(13));
+    REQUIRE(sequencer.getPatternLength(13) == 16);
+    REQUIRE(sequencer.getStep(13, 4, 15).velocity == 0);
 }

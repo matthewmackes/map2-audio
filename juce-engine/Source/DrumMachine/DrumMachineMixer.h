@@ -64,6 +64,8 @@ public:
     void setMasterVolume(float volume);
     float getMasterVolume() const;
     Metering getMetering() const;
+    int getScratchBufferResizeCount() const { return scratchBufferResizeCount_.load(std::memory_order_relaxed); }
+    void resetProcessDiagnostics();
 
 private:
     using StereoFilter = juce::dsp::ProcessorDuplicator<
@@ -95,6 +97,7 @@ private:
     std::atomic<float> masterRmsLeft_{0.0f};
     std::atomic<float> masterRmsRight_{0.0f};
     juce::AudioBuffer<float> scratchBuffer_;
+    std::atomic<int> scratchBufferResizeCount_{0};
     double sampleRate_ = 44100.0;
     int samplesPerBlock_ = 512;
     bool prepared_ = false;

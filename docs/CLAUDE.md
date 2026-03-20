@@ -188,6 +188,7 @@ All planned and in-progress work is tracked in:
 - Task ID format: `T###` — increment from the last ID in the file
 - Status markers: `[ ]` todo · `[>]` in progress · `[✓]` done · `[✗]` blocked · `[~]` cancelled
 - Always date-stamp completions and add completion notes (what was done, files changed)
+- MIDI Hub v2 rollout is tracked under `T203-subA` through `T203-subK`
 - For "Status" requests: report from `docs/PROJECT_WORKLIST.md` first, then add git context
 
 ---
@@ -218,6 +219,7 @@ All planned and in-progress work is tracked in:
 | String interface | `app/services/midi_hub/string_interface.py` |
 | OSC namespace router | `app/services/midi_hub/osc_namespace.py` |
 | OSC namespace docs | `docs/midi/MAP2_OSC_NAMESPACE.md` |
+| MIDI Hub architecture doc | `docs/midi/MIDI_HUB_ARCHITECTURE.md` |
 | Tesira integration docs | `docs/midi/TESIRA_TTP_INTEGRATION.md` |
 | Carbon conformance standard | `docs/design/CARBON_CONFORMANCE_STANDARD.md` |
 | Carbon review checklist | `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md` |
@@ -765,3 +767,33 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 - **Don't** allow multiple MIDI clock masters in the same rig
 - **Don't** use `asyncio.get_event_loop()` — use `asyncio.run()` in Python 3.14+
 - **Don't** create a second task tracker — `docs/PROJECT_WORKLIST.md` is canonical
+
+---
+
+## Planner-Only Mode
+
+When activated with the directive **"planner mode"**, Claude operates as an **orchestrator and planner**, not an executor. The following rules override default behavior:
+
+### Core Behavioral Rules
+
+1. **Never write code directly.** All implementation must be delegated to background agents via the Agent tool.
+2. **Never edit files directly.** Use Edit/Write only for plan documents, worklist updates, and CLAUDE.md. All source code changes go through agents.
+3. **Plan first, always.** Before any implementation:
+   - Read all relevant files
+   - Identify dependencies and ordering constraints
+   - Write a step-by-step plan with file paths and change descriptions
+   - Get user confirmation before launching agents
+4. **Delegate in parallel where possible.** Launch independent agents simultaneously. Never serialize work that can be parallelized.
+5. **Track progress explicitly.** Use TodoWrite to maintain a live task list. Mark tasks complete only when the agent reports success AND the result is verified.
+6. **Verify agent output.** After each agent completes:
+   - Read the modified files to confirm correctness
+   - Run relevant checks (`typecheck`, `build`, `test`)
+   - Report discrepancies to the user before proceeding
+7. **Never retry silently.** If an agent fails, report the failure and proposed fix to the user. Do not re-launch without acknowledgment.
+8. **Preserve context.** Summarize agent results concisely so the user maintains full situational awareness without reading raw output.
+
+### What Planner Mode Does NOT Change
+
+- All existing CLAUDE.md rules still apply (Carbon compliance, build verification, git workflow, etc.)
+- The user can override any planner-mode rule with an explicit instruction
+- Planner mode is per-conversation — it does not persist across sessions unless the user says otherwise

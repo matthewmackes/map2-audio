@@ -20,6 +20,7 @@ try:
     from typing import Dict, Any, Optional, List
     from app.services.api_readiness import ensure_audio_route_ready
     from app.services.engine_runtime_facade import get_engine_service
+    from app.services.juce_engine_service import get_audio_engine as _get_audio_engine
 
     logger = logging.getLogger(__name__)
 
@@ -39,6 +40,13 @@ try:
         PLUGIN_HEALTH_AVAILABLE = False
 
     router = APIRouter(prefix="/api/audio", tags=["audio"])
+
+    def get_audio_engine():
+        """Compatibility alias for tests and older route helpers."""
+        try:
+            return _get_audio_engine()
+        except Exception:
+            return get_engine_service()
 
     def _coerce_int(raw_value: Any, default: int) -> int:
         try:
@@ -2018,10 +2026,15 @@ try:
         Returns:
             List of input/output local ports + AVB endpoint capabilities.
         """
-        service = get_engine_service()
+        service = get_audio_engine()
         from app.services.avb.avb_service import get_avb_service
 
-        if not service.is_available:
+        is_available = bool(
+            getattr(service, "is_available", False)
+            if not callable(getattr(service, "is_available", None))
+            else service.is_available()
+        )
+        if not is_available:
             return {
                 "available": False,
                 "inputs": [],
@@ -2030,8 +2043,13 @@ try:
             }
 
         info = service.get_system_info()
-        device_name = str(info.get("audio_device") or info.get("alsa_device") or "hw:0,0")
         capabilities = get_avb_service().get_channel_capabilities(system_info=info)
+        device_name = str(
+            capabilities.get("device")
+            or info.get("audio_device")
+            or info.get("alsa_device")
+            or "hw:0,0"
+        )
         inputs = list(capabilities.get("local_inputs") or [])
         outputs = list(capabilities.get("local_outputs") or [])
         input_channels = len(inputs)

@@ -1931,7 +1931,7 @@ async def get_host_machine_info():
         meminfo = await _run_cmd("grep '^MemTotal:' /proc/meminfo | awk '{print $2}'")
         try:
             ram_kb = int(meminfo)
-            total_memory_mb = ram_kb / 1024
+            total_memory_mb = ram_kb // 1024
         except Exception:
             total_memory_mb = 0
         
@@ -1968,7 +1968,7 @@ async def get_host_machine_info():
             "cpu_cores": cpu_cores,
             "cpu_threads": cpu_threads,
             "cpu_frequency_mhz": cpu_frequency_mhz,
-            "total_memory_mb": round(total_memory_mb, 1),
+            "total_memory_mb": int(total_memory_mb),
             "motherboard": motherboard.strip(),
             "firmware_version": firmware_version.strip(),
             "hostname": hostname,
@@ -1993,6 +1993,9 @@ async def get_disk_health():
         from datetime import datetime
         
         disks = []
+        smart_data = []
+        total_storage_gb = 0.0
+        total_used_gb = 0.0
         
         # Detect all block devices
         block_devs = await _run_cmd("lsblk -nd -o NAME | grep -E '^(sd|nvme|vd)'")
@@ -2072,15 +2075,38 @@ async def get_disk_health():
             
             # Get disk usage
             df_output = await _run_cmd(f"df /dev/{dev} | tail -1 | awk '{{print int($3/$2*100)}}'")
+            df_bytes = await _run_cmd(f"df -B1 /dev/{dev} | tail -1 | awk '{{print $2, $3, $4}}'")
             try:
                 used_percent = int(df_output) if df_output else 0
             except Exception:
                 used_percent = 0
+            try:
+                total_bytes_str, used_bytes_str, available_bytes_str = (df_bytes.split() + ["0", "0", "0"])[:3]
+                total_gb = round(int(total_bytes_str) / (1024 ** 3), 1)
+                used_gb = round(int(used_bytes_str) / (1024 ** 3), 1)
+                available_gb = round(int(available_bytes_str) / (1024 ** 3), 1)
+            except Exception:
+                total_gb = round(size_gb, 1)
+                used_gb = round((size_gb * used_percent) / 100, 1) if size_gb else 0.0
+                available_gb = round(max(size_gb - used_gb, 0.0), 1) if size_gb else 0.0
+
+            mount_point = await _run_cmd(f"lsblk -nd -o MOUNTPOINT /dev/{dev} 2>/dev/null | head -1")
+            status = "unknown"
+            if "PASSED" in smart_status:
+                status = "passing"
+            elif "FAILED" in smart_status:
+                status = "failing"
             
             disk_info = {
+                "device": f"/dev/{dev}",
                 "name": dev,
                 "model": model.strip(),
+                "mount_point": mount_point.strip(),
                 "size_gb": round(size_gb, 1),
+                "total_gb": total_gb,
+                "used_gb": used_gb,
+                "available_gb": available_gb,
+                "use_percent": used_percent,
                 "health_status": health_status,
                 "temperature_c": temperature_c,
                 "used_percent": used_percent,
@@ -2092,9 +2118,34 @@ async def get_disk_health():
             }
             
             disks.append(disk_info)
+            smart_data.append(
+                {
+                    "device": f"/dev/{dev}",
+                    "model": model.strip(),
+                    "serial": "",
+                    "status": status,
+                    "temperature_celsius": temperature_c if temperature_c is not None else 0,
+                    "power_on_hours": power_on_hours,
+                    "estimated_lifespan_percent": estimated_lifespan_percent,
+                }
+            )
+            total_storage_gb += total_gb
+            total_used_gb += used_gb
+
+        overall_health = "excellent"
+        if any(disk.get("health_status") == "critical" for disk in disks):
+            overall_health = "critical"
+        elif any(disk.get("health_status") in {"warning", "healthy"} and disk.get("health_status") != "healthy" for disk in disks):
+            overall_health = "warning"
+        elif disks:
+            overall_health = "good"
         
         return {
             "disks": disks,
+            "smart_data": smart_data,
+            "total_storage_gb": round(total_storage_gb, 1),
+            "total_used_gb": round(total_used_gb, 1),
+            "overall_health": overall_health,
             "last_updated": datetime.now().isoformat(),
         }
         

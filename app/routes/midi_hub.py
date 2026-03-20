@@ -12,6 +12,7 @@ from app.services.midi_hub.hub import get_midi_hub
 from app.services.midi_hub.clock_engine import get_midi_clock_engine
 from app.services.midi_hub.device_registry import get_midi_device_registry
 from app.services.midi_hub.event_list_service import get_midi_hub_event_list_service
+from app.services.midi_hub.gateway import get_midi_gateway_manager
 from app.services.midi_hub.macros import get_midi_macro_service
 from app.services.midi_hub.midi2 import get_midi2_manager
 from app.services.midi_hub.network import get_midi_network_bridge

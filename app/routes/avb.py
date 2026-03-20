@@ -515,7 +515,7 @@ def _serialize_router_endpoint(
     host = str(host_raw).strip() if host_raw not in (None, "") else _extract_host_from_node_address(node_address)
     host = host or ""
 
-    node_id = str(getattr(endpoint, "node_id", None) or "").strip() or source_node_id or host or "local"
+    node_id = str(getattr(endpoint, "node_id", None) or "").strip() or host or source_node_id or "local"
 
     last_seen = getattr(endpoint, "last_seen", None)
     if hasattr(last_seen, "isoformat"):
@@ -1287,7 +1287,28 @@ async def get_avb_status() -> Dict[str, Any]:
         from app.services.avb.avb_service import get_avb_service
 
         avb_service = get_avb_service()
-        readiness = avb_service.get_readiness()
+        get_readiness = getattr(avb_service, "get_readiness", None)
+        if callable(get_readiness):
+            readiness = get_readiness()
+        else:
+            availability = False
+            is_available = getattr(avb_service, "is_available", None)
+            if callable(is_available):
+                try:
+                    availability = bool(is_available())
+                except Exception:
+                    availability = False
+            else:
+                availability = bool(is_available)
+            readiness = {
+                "available": availability,
+                "enabled": availability,
+                "configured": availability,
+                "operational": availability,
+                "degraded": False,
+                "state": "operational" if availability else "unavailable",
+                "reason": None,
+            }
         enabled = bool(readiness.get("enabled", False))
         interface = str(readiness.get("interface", "") or "")
         available = bool(readiness.get("available", False))
@@ -2195,11 +2216,34 @@ async def get_avb_devices() -> Dict[str, Any]:
         from app.services.avb.avb_service import get_avb_service
 
         avb_service = get_avb_service()
-        readiness = avb_service.get_readiness()
-        device_names = avb_service.get_device_names()
+        readiness_getter = getattr(avb_service, "get_readiness", None)
+        if callable(readiness_getter):
+            readiness = readiness_getter()
+        else:
+            available = False
+            is_available = getattr(avb_service, "is_available", None)
+            if callable(is_available):
+                try:
+                    available = bool(is_available())
+                except Exception:
+                    available = False
+            readiness = {
+                "enabled": available,
+                "configured": available,
+                "operational": available,
+                "degraded": False,
+                "available": available,
+                "state": "operational" if available else "unavailable",
+                "interface": None,
+                "interface_source": "service_fallback",
+                "reason": None if available else "AVB readiness unavailable",
+                "checks": {},
+            }
+        device_names = list(getattr(avb_service, "get_device_names", lambda: [])() or [])
         source_node_id = _local_source_node_id()
         discovered_devices = []
-        for raw_device in avb_service.get_discovered_devices():
+        discovered_getter = getattr(avb_service, "get_discovered_devices", None)
+        for raw_device in (discovered_getter() if callable(discovered_getter) else []):
             if isinstance(raw_device, dict):
                 device = dict(raw_device)
             else:
@@ -2222,6 +2266,7 @@ async def get_avb_devices() -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Error getting AVB device inventory: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
         return {
             "available": False,
             "count": 0,

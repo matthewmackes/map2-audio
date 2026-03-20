@@ -1,8 +1,7 @@
-import { useCallback, useState, type CSSProperties, type SyntheticEvent, memo } from 'react'
+import { useCallback, useMemo, useState, type CSSProperties, type SyntheticEvent, memo } from 'react'
 import {
   Add,
   AudioConsole,
-  Draggable,
   Link,
   Meter,
   SettingsAdjust,
@@ -12,10 +11,8 @@ import {
 } from '@carbon/icons-react'
 import { Button, OverflowMenu, OverflowMenuItem, Tag, Tile } from '@carbon/react'
 import type { AudioRoutingSelectionBinding } from '../../map2/api'
-import { getPluginDescription } from '../data/pluginDescriptions'
 import { getCategoryConfig } from '../components/PluginCards/types'
 import { getEffectIcon } from '../components/icons/effectIcons'
-import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import type { Chain, Plugin } from '../../map2/types'
 import { getDisplayPluginName } from '../../map2/displayNames'
 
@@ -66,6 +63,9 @@ export interface JuceGridSignalAutomationSummary {
 
 type EndpointSide = 'input' | 'output'
 type EndpointGroupState = 'normal' | 'warning' | 'error'
+type SignalGridRowDirection = 'forward' | 'reverse'
+type SignalGridRowSize = 'large' | 'medium' | 'small'
+type ChainPlugin = Chain['plugins'][number]
 
 interface EndpointRailSlot {
   id: string
@@ -85,6 +85,78 @@ interface EndpointRailGroup {
   state: EndpointGroupState
 }
 
+interface SignalGridSlot {
+  key: string
+  kind: 'plugin' | 'add'
+  plugin?: ChainPlugin
+}
+
+interface SignalGridRow {
+  key: string
+  direction: SignalGridRowDirection
+  size: SignalGridRowSize
+  slots: SignalGridSlot[]
+}
+
+const SIGNAL_GRID_ROW_CAPACITY = 6
+const SIGNAL_GRID_ROW_UNITS: Record<SignalGridRowSize, number> = {
+  large: 3,
+  medium: 2,
+  small: 1,
+}
+
+function pickSignalRowLayout(remainingSlots: number): { size: SignalGridRowSize; count: number } {
+  for (const size of ['large', 'medium', 'small'] as const) {
+    const maxCount = Math.floor(SIGNAL_GRID_ROW_CAPACITY / SIGNAL_GRID_ROW_UNITS[size])
+    if (remainingSlots <= maxCount) {
+      return { size, count: remainingSlots }
+    }
+  }
+
+  return { size: 'small', count: Math.min(remainingSlots, SIGNAL_GRID_ROW_CAPACITY) }
+}
+
+function buildSignalGridRows(plugins: ChainPlugin[], includeAddSlot: boolean): SignalGridRow[] {
+  const slots: SignalGridSlot[] = plugins.map((plugin) => ({
+    key: `${plugin.uri}:${plugin.position}`,
+    kind: 'plugin',
+    plugin,
+  }))
+
+  if (includeAddSlot) {
+    slots.push({
+      key: 'add-effect-slot',
+      kind: 'add',
+    })
+  }
+
+  const rows: SignalGridRow[] = []
+  let cursor = 0
+
+  while (cursor < slots.length) {
+    const remainingSlots = slots.length - cursor
+    const { size, count } = pickSignalRowLayout(remainingSlots)
+    const rowIndex = rows.length
+    rows.push({
+      key: `row-${rowIndex}`,
+      direction: rowIndex % 2 === 0 ? 'forward' : 'reverse',
+      size,
+      slots: slots.slice(cursor, cursor + count),
+    })
+    cursor += count
+  }
+
+  return rows
+}
+
+function getFirstPluginInRow(row: SignalGridRow): ChainPlugin | undefined {
+  return row.slots.find((slot) => slot.kind === 'plugin')?.plugin
+}
+
+function getLastPluginInRow(row: SignalGridRow): ChainPlugin | undefined {
+  return [...row.slots].reverse().find((slot) => slot.kind === 'plugin')?.plugin
+}
+
 const ROUTING_MODE_SHORT_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus['routingMode']>, string> = {
   parallel_blend: 'MIX',
   ab_switch: 'A/B',
@@ -93,78 +165,8 @@ const ROUTING_MODE_SHORT_LABELS: Record<NonNullable<JuceGridAudioInterfaceStatus
   sidechain: 'S/C',
 }
 
-const DESCRIPTION_FEATURE_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
-  { pattern: /\bstereo\b/i, label: 'Stereo' },
-  { pattern: /\bmono\b/i, label: 'Mono' },
-  { pattern: /\bmultiband\b/i, label: 'Multiband' },
-  { pattern: /\bsidechain\b/i, label: 'Sidechain' },
-  { pattern: /\btempo[-\s]?sync(?:ed)?\b/i, label: 'Tempo Sync' },
-  { pattern: /\bmodulat(?:ion|ed)\b/i, label: 'Modulation' },
-  { pattern: /\balgorithmic\b/i, label: 'Algorithmic' },
-  { pattern: /\bconvolution\b|\bimpulse\b/i, label: 'Convolution' },
-  { pattern: /\bparametric\b/i, label: 'Parametric' },
-  { pattern: /\bgraphic\b/i, label: 'Graphic EQ' },
-  { pattern: /\breal[-\s]?time\b/i, label: 'Real-Time' },
-  { pattern: /\banaly[sz]er\b/i, label: 'Analyzer' },
-  { pattern: /\bpitch\b/i, label: 'Pitch' },
-  { pattern: /\broom\b|\bhall\b|\bspatial\b|\bambience\b/i, label: 'Spatial' },
-  { pattern: /\bcompress(?:ion|or)?\b|\bdynamics\b/i, label: 'Dynamics' },
-  { pattern: /\banalog\b|\btape\b|\btube\b/i, label: 'Analog' },
-]
-
 function levelPercent(level: number | undefined) {
   return `${Math.max(0, Math.min(100, (level || 0) * 100))}%`
-}
-
-function pushUniqueFeature(features: string[], feature: string | null | undefined) {
-  if (!feature) {
-    return
-  }
-
-  if (!features.some((entry) => entry.toLowerCase() === feature.toLowerCase())) {
-    features.push(feature)
-  }
-}
-
-function getPortFeatureLabel(inputPorts: number, outputPorts: number) {
-  if (inputPorts >= 2 && outputPorts >= 2) {
-    return 'Stereo I/O'
-  }
-  if (inputPorts === 1 && outputPorts === 1) {
-    return 'Mono I/O'
-  }
-  if (inputPorts > 0 || outputPorts > 0) {
-    return `${inputPorts}/${outputPorts} I/O`
-  }
-  return null
-}
-
-function buildPluginFeatureList(
-  meta: Plugin | undefined,
-  plugin: Chain['plugins'][number],
-  displayName: string,
-  formatLabel: string,
-  inputPorts: number,
-  outputPorts: number,
-  hasSidechainSupport: boolean,
-) {
-  const features: string[] = []
-  const description = getPluginDescription(meta?.name || plugin.name || displayName)
-
-  for (const { pattern, label } of DESCRIPTION_FEATURE_PATTERNS) {
-    if (description && pattern.test(description)) {
-      pushUniqueFeature(features, label)
-    }
-  }
-
-  pushUniqueFeature(features, meta?.category || null)
-  pushUniqueFeature(features, getPortFeatureLabel(inputPorts, outputPorts))
-  pushUniqueFeature(features, hasSidechainSupport ? 'Sidechain' : null)
-  pushUniqueFeature(features, meta?.has_midi_input && meta?.has_midi_output ? 'MIDI I/O' : meta?.has_midi_input ? 'MIDI In' : meta?.has_midi_output ? 'MIDI Out' : null)
-  pushUniqueFeature(features, meta?.has_ui ? 'Editor UI' : null)
-  pushUniqueFeature(features, formatLabel || null)
-
-  return features.slice(0, 4)
 }
 
 function getSignalCardEffectIcon(meta: Plugin | undefined, plugin: Chain['plugins'][number]) {
@@ -185,51 +187,6 @@ function getSignalCardEffectIcon(meta: Plugin | undefined, plugin: Chain['plugin
   }
 
   return getEffectIcon('plugin')
-}
-
-function samplesToMs(samples: number, sampleRate: number) {
-  return (samples / sampleRate) * 1000
-}
-
-function formatLatencyMetric(samples: number | undefined, sampleRate: number) {
-  if (!samples || samples <= 0) {
-    return '0.0 ms'
-  }
-
-  const latencyMs = samplesToMs(samples, sampleRate)
-  if (latencyMs < 1) {
-    return `${samples} smp`
-  }
-
-  return `${latencyMs.toFixed(latencyMs < 10 ? 1 : 0)} ms`
-}
-
-function cpuMetricTone(cpuPercent: number | undefined) {
-  if (!Number.isFinite(cpuPercent)) {
-    return 'neutral'
-  }
-  if ((cpuPercent ?? 0) >= 35) {
-    return 'warning'
-  }
-  if ((cpuPercent ?? 0) >= 10) {
-    return 'active'
-  }
-  return 'neutral'
-}
-
-function latencyMetricTone(latencySamples: number | undefined, sampleRate: number) {
-  if (!latencySamples || latencySamples <= 0) {
-    return 'neutral'
-  }
-
-  const latencyMs = samplesToMs(latencySamples, sampleRate)
-  if (latencyMs >= 12) {
-    return 'warning'
-  }
-  if (latencyMs >= 3) {
-    return 'active'
-  }
-  return 'neutral'
 }
 
 function isHealthyAvbState(state: string | undefined) {
@@ -399,15 +356,16 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   onAddPlugin,
   audioStatus,
   audioOutputStatus,
-  pluginLevels = {},
-  automationSummary,
   showEndpoints = false,
   onInputPortSelectClick,
   onOutputPortSelectClick,
 }: JuceGridSignalCanvasProps) {
   const [draggedUri, setDraggedUri] = useState<string | null>(null)
   const [dragOverUri, setDragOverUri] = useState<string | null>(null)
-  const sampleRate = audioStatus?.sampleRate || audioOutputStatus?.sampleRate || 48000
+  const signalRows = useMemo(
+    () => buildSignalGridRows(chain?.plugins ?? [], Boolean(onAddPlugin)),
+    [chain?.plugins, onAddPlugin],
+  )
 
   const handleDrop = useCallback((targetUri: string) => {
     if (!chain || !draggedUri || draggedUri === targetUri) {
@@ -577,221 +535,164 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
           </span>
         </div>
 
-        <div className="juce-grid-page__signal-plugin-row">
-          {chain.plugins.map((plugin, pluginIndex) => {
-            const meta = pluginMeta[plugin.uri]
-            const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
-            const categoryConfig = getCategoryConfig(meta?.category || 'Utility')
-            const EffectIcon = getSignalCardEffectIcon(meta, plugin)
-            const isSelected = plugin.uri === selectedPluginUri
-            const isDropTarget = dragOverUri === plugin.uri && draggedUri !== plugin.uri
-            const nextPlugin = chain.plugins[pluginIndex + 1]
-            const connectorDashed = shouldRenderDashedFlow(plugin, nextPlugin)
-            const levels = pluginLevels[plugin.uri] || { in: 0, out: 0 }
-            const formatLabel = meta?.format || plugin.format || plugin.plugin_display_type || 'Plugin'
-            const inputPorts = meta?.in_ports ?? plugin.in_ports ?? 0
-            const outputPorts = meta?.out_ports ?? plugin.out_ports ?? 0
-            const latencyLabel = formatLatencyMetric(plugin.latency_samples, sampleRate)
-            const sidechainBusCount = meta?.sidechain_buses ?? 0
-            const sidechainSourcePlugin = plugin.sidechain_source
-              ? chain.plugins.find((candidate) => candidate.uri === plugin.sidechain_source)
-              : null
-            const hasSidechainConnection = Boolean(plugin.sidechain_source)
-            const hasSidechainSupport = hasSidechainConnection || sidechainBusCount > 0 || plugin.sidechain_bus !== undefined
-            const automationLaneCount = automationSummary?.laneCountByPlugin[plugin.uri] ?? 0
-            const armedLaneCount = automationSummary?.armedLaneCountByPlugin[plugin.uri] ?? 0
-            const automationLabel = armedLaneCount > 0
-              ? 'Armed'
-              : automationLaneCount > 0
-                ? `${automationLaneCount} lane${automationLaneCount === 1 ? '' : 's'}`
-                : 'None'
-            const sidechainLabel = hasSidechainConnection ? 'Live' : hasSidechainSupport ? 'Ready' : 'None'
-            const sidechainTitle = hasSidechainConnection
-              ? `Sidechain source: ${getDisplayPluginName(sidechainSourcePlugin?.name || plugin.sidechain_source || 'Source', plugin.sidechain_source || '')}`
-              : hasSidechainSupport
-                ? `Sidechain capable${sidechainBusCount > 0 ? ` · ${sidechainBusCount} bus${sidechainBusCount === 1 ? '' : 'es'}` : ''}`
-                : 'No sidechain routing'
-            const automationTitle = automationLaneCount > 0
-              ? [
-                `${automationLaneCount} automation lane${automationLaneCount === 1 ? '' : 's'}`,
-                armedLaneCount > 0 ? `${armedLaneCount} armed` : null,
-                automationSummary?.recording ? 'transport recording' : automationSummary?.playing ? 'transport playing' : null,
-              ].filter(Boolean).join(' · ')
-              : 'No automation lanes'
-            const featureList = buildPluginFeatureList(
-              meta,
-              plugin,
-              displayName,
-              formatLabel,
-              inputPorts,
-              outputPorts,
-              hasSidechainSupport,
-            )
+        <div className="juce-grid-page__signal-grid" data-testid="juce-grid-signal-grid">
+          {signalRows.map((row, rowIndex) => {
+            const displaySlots = row.direction === 'reverse' ? [...row.slots].reverse() : row.slots
+            const nextRow = signalRows[rowIndex + 1]
+            const rowExitPlugin = getLastPluginInRow(row)
+            const nextRowEntryPlugin = nextRow ? getFirstPluginInRow(nextRow) : undefined
+            const verticalConnectorDashed = shouldRenderDashedFlow(rowExitPlugin, nextRowEntryPlugin)
+            const verticalConnectorSide = row.direction === 'forward' ? 'right' : 'left'
 
             return (
-              <div key={`${plugin.uri}:${plugin.position}`} className="juce-grid-page__signal-plugin-slot">
-                <article
-                  className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''} ${reorderPreviewUri === plugin.uri ? `is-reorder-preview is-reorder-preview-${reorderPreviewDirection}` : ''} ${reorderTargetUri === plugin.uri ? 'is-reorder-target' : ''}`}
-                  data-testid={`juce-grid-signal-plugin-card-${plugin.position}`}
-                  aria-label={`${displayName}${plugin.bypassed ? ' bypassed' : ''}`}
-                  aria-pressed={isSelected}
-                  role="button"
-                  tabIndex={0}
-                  draggable
-                  onClick={() => onPluginSelect(plugin.uri)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      onPluginSelect(plugin.uri)
-                    }
-                  }}
-                  onDragStart={() => setDraggedUri(plugin.uri)}
-                  onDragOver={(event) => {
-                    event.preventDefault()
-                    setDragOverUri(plugin.uri)
-                  }}
-                  onDrop={() => handleDrop(plugin.uri)}
-                  onDragEnd={() => {
-                    setDraggedUri(null)
-                    setDragOverUri(null)
-                  }}
-                  style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
+              <div
+                key={row.key}
+                className="juce-grid-page__signal-grid-row-shell"
+                data-testid={`juce-grid-signal-row-shell-${rowIndex}`}
+              >
+                <div
+                  className={`juce-grid-page__signal-grid-row juce-grid-page__signal-grid-row--${row.size} ${row.direction === 'reverse' ? 'is-reverse' : 'is-forward'}`}
+                  data-testid={`juce-grid-signal-row-${rowIndex}`}
+                  data-row-size={row.size}
+                  data-row-direction={row.direction}
                 >
-                  <div className="juce-grid-page__signal-plugin-hero" aria-hidden>
-                    <EffectIcon className="juce-grid-page__signal-plugin-hero-svg" />
-                  </div>
+                  {displaySlots.map((slot, displayIndex) => {
+                    const nextDisplaySlot = displaySlots[displayIndex + 1]
+                    const leftPlugin = slot.kind === 'plugin' ? slot.plugin : undefined
+                    const rightPlugin = nextDisplaySlot?.kind === 'plugin' ? nextDisplaySlot.plugin : undefined
+                    const connectorDashed = shouldRenderDashedFlow(leftPlugin, rightPlugin)
 
-                  <div className="juce-grid-page__signal-plugin-info">
-                    <div className="juce-grid-page__signal-plugin-toolbar">
-                      <span className="juce-grid-page__signal-plugin-drag" aria-hidden>
-                        <Draggable size={14} />
-                      </span>
+                    return (
                       <div
-                        className="juce-grid-page__signal-plugin-actions"
-                        data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
-                        onClick={stopPluginCardEvent}
-                        onMouseDown={stopPluginCardEvent}
-                        onPointerDown={stopPluginCardEvent}
+                        key={slot.key}
+                        className="juce-grid-page__signal-grid-item"
+                        data-slot-kind={slot.kind}
                       >
-                        <OverflowMenu
-                          ariaLabel={`Actions for ${displayName}`}
-                          iconDescription={`Actions for ${displayName}`}
-                          size="sm"
-                          flipped
-                        >
-                          <OverflowMenuItem itemText="Inspect block" onClick={() => onPluginSelect(plugin.uri)} />
-                          <OverflowMenuItem
-                            itemText={plugin.bypassed ? 'Enable block' : 'Bypass block'}
-                            onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed)}
-                          />
-                          {onDeletePlugin && (
-                            <OverflowMenuItem
-                              itemText="Remove block"
-                              isDelete
-                              onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
-                            />
-                          )}
-                        </OverflowMenu>
-                      </div>
-                    </div>
+                        {slot.kind === 'plugin' && slot.plugin ? (() => {
+                          const plugin = slot.plugin
+                          const meta = pluginMeta[plugin.uri]
+                          const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
+                          const categoryConfig = getCategoryConfig(meta?.category || 'Utility')
+                          const EffectIcon = getSignalCardEffectIcon(meta, plugin)
+                          const isSelected = plugin.uri === selectedPluginUri
+                          const isDropTarget = dragOverUri === plugin.uri && draggedUri !== plugin.uri
 
-                    <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
+                          return (
+                            <article
+                              className={`juce-grid-page__signal-plugin-card ${isSelected ? 'is-selected' : ''} ${plugin.bypassed ? 'is-bypassed' : ''} ${isDropTarget ? 'is-drop-target' : ''} ${reorderPreviewUri === plugin.uri ? `is-reorder-preview is-reorder-preview-${reorderPreviewDirection}` : ''} ${reorderTargetUri === plugin.uri ? 'is-reorder-target' : ''}`}
+                              data-testid={`juce-grid-signal-plugin-card-${plugin.position}`}
+                              aria-label={`${displayName}${plugin.bypassed ? ' bypassed' : ''}`}
+                              aria-pressed={isSelected}
+                              role="button"
+                              tabIndex={0}
+                              draggable
+                              onClick={() => onPluginSelect(plugin.uri)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault()
+                                  onPluginSelect(plugin.uri)
+                                }
+                              }}
+                              onDragStart={() => setDraggedUri(plugin.uri)}
+                              onDragOver={(event) => {
+                                event.preventDefault()
+                                setDragOverUri(plugin.uri)
+                              }}
+                              onDrop={() => handleDrop(plugin.uri)}
+                              onDragEnd={() => {
+                                setDraggedUri(null)
+                                setDragOverUri(null)
+                              }}
+                              style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
+                            >
+                              <div className="juce-grid-page__signal-plugin-hero" aria-hidden>
+                                <EffectIcon className="juce-grid-page__signal-plugin-hero-svg" />
+                              </div>
 
-                    <div className="juce-grid-page__signal-plugin-features" data-testid={`juce-grid-signal-plugin-features-${plugin.position}`}>
-                      {featureList.map((item) => (
-                        <span
-                          key={`${plugin.uri}:${item}`}
-                          className={`juce-grid-page__signal-plugin-feature ${item === (meta?.category || 'Utility') ? 'is-category' : ''}`}
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
+                              <div className="juce-grid-page__signal-plugin-info">
+                                <div
+                                  className="juce-grid-page__signal-plugin-actions"
+                                  data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
+                                  onClick={stopPluginCardEvent}
+                                  onMouseDown={stopPluginCardEvent}
+                                  onPointerDown={stopPluginCardEvent}
+                                >
+                                  <OverflowMenu
+                                    ariaLabel={`Actions for ${displayName}`}
+                                    iconDescription={`Actions for ${displayName}`}
+                                    size="sm"
+                                    flipped
+                                  >
+                                    <OverflowMenuItem itemText="Inspect block" onClick={() => onPluginSelect(plugin.uri)} />
+                                    <OverflowMenuItem
+                                      itemText={plugin.bypassed ? 'Enable block' : 'Bypass block'}
+                                      onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed)}
+                                    />
+                                    {onDeletePlugin && (
+                                      <OverflowMenuItem
+                                        itemText="Remove block"
+                                        isDelete
+                                        onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                                      />
+                                    )}
+                                  </OverflowMenu>
+                                </div>
 
-                    <div
-                      className="juce-grid-page__signal-plugin-metrics"
-                      data-testid={`juce-grid-signal-plugin-metrics-${plugin.position}`}
-                    >
-                      <div
-                        className={`juce-grid-page__signal-plugin-metric is-${cpuMetricTone(plugin.cpu_percent)}`}
-                        title={Number.isFinite(plugin.cpu_percent) ? `CPU load ${plugin.cpu_percent?.toFixed(1)}%` : 'CPU load unavailable'}
-                      >
-                        <span className="juce-grid-page__signal-plugin-metric-label">CPU</span>
-                        <span className="juce-grid-page__signal-plugin-metric-value">
-                          {Number.isFinite(plugin.cpu_percent) ? `${plugin.cpu_percent?.toFixed(1)}%` : '--'}
-                        </span>
-                      </div>
-                      <div
-                        className={`juce-grid-page__signal-plugin-metric is-${latencyMetricTone(plugin.latency_samples, sampleRate)}`}
-                        title={plugin.latency_samples ? `${plugin.latency_samples} samples @ ${sampleRate}Hz` : 'No added latency'}
-                      >
-                        <span className="juce-grid-page__signal-plugin-metric-label">Lat</span>
-                        <span className="juce-grid-page__signal-plugin-metric-value">{latencyLabel}</span>
-                      </div>
-                      <div
-                        className={`juce-grid-page__signal-plugin-metric is-${hasSidechainConnection ? 'active' : hasSidechainSupport ? 'ready' : 'neutral'}`}
-                        title={sidechainTitle}
-                      >
-                        <span className="juce-grid-page__signal-plugin-metric-label">SC</span>
-                        <span className="juce-grid-page__signal-plugin-metric-value">{sidechainLabel}</span>
-                      </div>
-                      <div
-                        className={`juce-grid-page__signal-plugin-metric is-${armedLaneCount > 0 ? 'active' : automationLaneCount > 0 ? 'ready' : 'neutral'}`}
-                        title={automationTitle}
-                      >
-                        <span className="juce-grid-page__signal-plugin-metric-label">Auto</span>
-                        <span className="juce-grid-page__signal-plugin-metric-value">{automationLabel}</span>
-                      </div>
-                    </div>
+                                <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
+                              </div>
+                            </article>
+                          )
+                        })() : (
+                          <button
+                            type="button"
+                            className="juce-grid-page__signal-plugin-add"
+                            onClick={onAddPlugin}
+                            aria-label="Add effect"
+                          >
+                            <Add size={20} />
+                            <span>Add effect</span>
+                          </button>
+                        )}
 
-                    <div
-                      className="juce-grid-page__signal-levels"
-                      data-testid={`juce-grid-signal-plugin-levels-${plugin.position}`}
-                    >
-                      <div className="juce-grid-page__signal-level">
-                        <span className="juce-grid-page__signal-level-label">In</span>
-                        <SegmentedLedText value={`${Math.round((levels.in || 0) * 100)}%`} size="xs" color={categoryConfig.color} />
+                        {nextDisplaySlot && (
+                          <div
+                            className={`juce-grid-page__signal-flow-connector ${connectorDashed ? 'is-dashed' : ''}`}
+                            aria-hidden
+                            data-testid={slot.kind === 'plugin' && slot.plugin ? `juce-grid-signal-flow-connector-${slot.plugin.position}` : `juce-grid-signal-flow-connector-${rowIndex}-${displayIndex}`}
+                          >
+                            <span className="juce-grid-page__signal-flow-line" />
+                            <span className="juce-grid-page__signal-flow-dots">
+                              <span className="juce-grid-page__signal-flow-dot" />
+                              <span className="juce-grid-page__signal-flow-dot" />
+                              <span className="juce-grid-page__signal-flow-dot" />
+                            </span>
+                            <span className="juce-grid-page__signal-flow-line" />
+                          </div>
+                        )}
                       </div>
-                      <div className="juce-grid-page__signal-level">
-                        <span className="juce-grid-page__signal-level-label">Out</span>
-                        <SegmentedLedText value={`${Math.round((levels.out || 0) * 100)}%`} size="xs" color={categoryConfig.color} />
-                      </div>
-                    </div>
-                  </div>
-                </article>
+                    )
+                  })}
+                </div>
 
-                {(nextPlugin || onAddPlugin) && (
+                {nextRow && (
                   <div
-                    className={`juce-grid-page__signal-flow-connector ${connectorDashed ? 'is-dashed' : ''}`}
+                    className={`juce-grid-page__signal-flow-vertical-connector ${verticalConnectorDashed ? 'is-dashed' : ''} ${verticalConnectorSide === 'right' ? 'is-right' : 'is-left'}`}
                     aria-hidden
-                    data-testid={`juce-grid-signal-flow-connector-${plugin.position}`}
+                    data-testid={`juce-grid-signal-vertical-connector-${rowIndex}`}
+                    data-connector-side={verticalConnectorSide}
                   >
-                    <span className="juce-grid-page__signal-flow-line" />
-                    <span className="juce-grid-page__signal-flow-dots">
+                    <span className="juce-grid-page__signal-flow-line juce-grid-page__signal-flow-line--vertical" />
+                    <span className="juce-grid-page__signal-flow-dots juce-grid-page__signal-flow-dots--vertical">
                       <span className="juce-grid-page__signal-flow-dot" />
                       <span className="juce-grid-page__signal-flow-dot" />
                       <span className="juce-grid-page__signal-flow-dot" />
                     </span>
-                    <span className="juce-grid-page__signal-flow-line" />
+                    <span className="juce-grid-page__signal-flow-line juce-grid-page__signal-flow-line--vertical" />
                   </div>
                 )}
               </div>
             )
           })}
-
-          {onAddPlugin && (
-            <div className="juce-grid-page__signal-plugin-slot">
-              <button
-                type="button"
-                className="juce-grid-page__signal-plugin-add"
-                onClick={onAddPlugin}
-                aria-label="Add effect"
-              >
-                <Add size={20} />
-                <span>Add effect</span>
-              </button>
-            </div>
-          )}
         </div>
 
         <div

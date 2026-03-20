@@ -1,26 +1,28 @@
 /**
- * DrumMachineCard - Carbon-compliant JUCE Drum Machine
+ * DrumMachineCard - compact drum-machine surface for pedalboard/JUCE Grid embeds.
  *
- * Uses InstrumentCategoryLayout for AXE-FX Edit structural parity.
- * Three UI modes (Practice, Advanced, Backing Tracks) in advancedSections.
- * Transport visualization, tap tempo, beat indicator in layout viz slot.
- * Full MIDI mapping support via withMidiDialog.
+ * Provides a mode-aware transport summary, compact step visualization, bus metering,
+ * and a direct route into the full /drums workspace while preserving MIDI mapping.
  */
 
-import { useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
-import {
-  Flash, Folder, Headphones, Hashtag, Music, Playlist, Play,
-  SettingsAdjust, StackLimitation, StopFilled, VolumeUp,
-} from '@carbon/icons-react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { drumsApi } from '@/map2/api'
-import { normalizeDrumMachineState } from '@/map2/drumMachineState'
-import { InstrumentCategoryLayout, type ParamSlot } from '../../Layouts/InstrumentCategoryLayout'
+import { Headphones, Music, PlayFilled, SettingsAdjust, StopFilled } from '@carbon/icons-react'
+
+import { PluginCardShell } from '../../Base/PluginCardShell'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
-import type { DrumMachineState, DrumPack } from '@/map2/types'
+import { drumsApi } from '@/map2/api'
+import { normalizeDrumMachineState } from '@/map2/drumMachineState'
+import type {
+  DrumMachineState,
+  DrumMetering,
+  DrumPattern,
+  DrumTransportState,
+  DrumKit,
+} from '@/map2/types'
 
-// ── Constants ──────────────────────────────────────────────
+type DrumMode = DrumMachineState['ui_mode']
 
 const DRUM_MACHINE_URI = 'map2://juce/drums'
 
@@ -40,233 +42,264 @@ const DRUM_MACHINE_PARAMS: PluginParamDef[] = [
   { index: PARAM.TRANSPORT, name: 'Transport', symbol: 'transport' },
 ]
 
-const MODE_CONFIG = {
-  practice:       { label: 'Practice', icon: Headphones,     color: '#22c55e', desc: 'Guided practice with count-in & auto-fill' },
-  advanced:       { label: 'Advanced', icon: SettingsAdjust,  color: '#f59e0b', desc: 'Full pattern & pack editing' },
-  backing_tracks: { label: 'Backing',  icon: Music,           color: '#8b5cf6', desc: 'Song sections & performance' },
+const MODE_META: Record<DrumMode, { label: string; accent: string; icon: typeof Headphones }> = {
+  practice: { label: 'Practice', accent: '#4589ff', icon: Headphones },
+  advanced: { label: 'Advanced', accent: '#24a148', icon: SettingsAdjust },
+  backing_tracks: { label: 'Backing', accent: '#ff832b', icon: Music },
+}
+
+const CARD_STYLES = {
+  body: {
+    display: 'grid',
+    gap: 12,
+  },
+  hero: {
+    display: 'grid',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background:
+      'linear-gradient(145deg, rgba(18,18,18,0.98), rgba(10,10,10,0.94)),' +
+      'radial-gradient(circle at top right, rgba(69,137,255,0.16), transparent 40%)',
+  } as CSSProperties,
+  heroTop: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modePill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '5px 9px',
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    background: 'rgba(255,255,255,0.06)',
+  } as CSSProperties,
+  transportCluster: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  transportButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    border: 'none',
+    borderRadius: 10,
+    padding: '10px 14px',
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    color: '#081018',
+  } as CSSProperties,
+  secondaryButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.04)',
+    color: '#f4f4f4',
+    padding: '10px 12px',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+  } as CSSProperties,
+  bpmValue: {
+    display: 'grid',
+    gap: 4,
+  },
+  bpmNumber: {
+    fontSize: 28,
+    fontWeight: 800,
+    letterSpacing: '-0.04em',
+    color: '#f4f4f4',
+  },
+  bpmMeta: {
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: '#a8a8a8',
+  },
+  detailRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 10,
+  },
+  detailCard: {
+    borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.03)',
+    padding: '10px 12px',
+    display: 'grid',
+    gap: 4,
+  },
+  detailLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: '#8d8d8d',
+  },
+  detailValue: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#f4f4f4',
+  },
+  beatRow: {
+    display: 'flex',
+    gap: 6,
+  },
+  beatDot: {
+    width: 10,
+    height: 10,
+    borderRadius: '50%',
+    background: 'rgba(255,255,255,0.12)',
+    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+  } as CSSProperties,
+  section: {
+    display: 'grid',
+    gap: 8,
+  },
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  sectionTitle: {
+    margin: 0,
+    fontSize: 12,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: '#a8a8a8',
+  },
+  sectionMeta: {
+    fontSize: 11,
+    color: '#8d8d8d',
+  },
+  stepRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(16, minmax(0, 1fr))',
+    gap: 6,
+  },
+  stepDot: {
+    height: 16,
+    borderRadius: 6,
+    background: 'rgba(255,255,255,0.08)',
+    border: '1px solid transparent',
+  } as CSSProperties,
+  meterGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gap: 8,
+  },
+  meterStrip: {
+    display: 'grid',
+    gap: 6,
+  },
+  meterTrack: {
+    height: 54,
+    borderRadius: 8,
+    background: 'rgba(255,255,255,0.05)',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'flex-end',
+  } as CSSProperties,
+  meterFill: {
+    width: '100%',
+    borderRadius: 8,
+    minHeight: 4,
+  } as CSSProperties,
+  meterLabel: {
+    fontSize: 10,
+    color: '#a8a8a8',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+  },
+  modeGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: 8,
+  },
+  modeButton: {
+    display: 'grid',
+    gap: 4,
+    alignContent: 'center',
+    minHeight: 72,
+    borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.03)',
+    padding: 10,
+    textAlign: 'left',
+    cursor: 'pointer',
+  } as CSSProperties,
+  modeLabel: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#f4f4f4',
+  },
+  modeRoute: {
+    fontSize: 10,
+    color: '#8d8d8d',
+  },
+  footer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    flexWrap: 'wrap',
+    fontSize: 11,
+    color: '#c6c6c6',
+  },
 } as const
 
-// ── Inline Styles ──────────────────────────────────────────
-
-const S = {
-  modeBar: {
-    display: 'flex', gap: 4, marginBottom: 14, padding: 3,
-    background: '#111827', borderRadius: 10,
-  } as React.CSSProperties,
-  modeBtn: (active: boolean, color: string) => ({
-    flex: 1, padding: '7px 6px', border: 'none', borderRadius: 8,
-    fontWeight: 700, cursor: 'pointer', fontSize: 10,
-    letterSpacing: '0.3px', transition: 'all 0.15s ease',
-    background: active ? color : 'transparent',
-    color: active ? '#000' : '#9ca3af',
-    boxShadow: active ? `0 0 12px ${color}44` : 'none',
-  } as React.CSSProperties),
-  vizContainer: {
-    padding: 16,
-    background: 'linear-gradient(135deg, #0a0a14 0%, #0f1424 100%)',
-    borderRadius: 10, border: '1px solid #1e293b',
-    position: 'relative' as const, overflow: 'hidden' as const,
-  } as React.CSSProperties,
-  bpmDisplay: (color: string) => ({
-    textAlign: 'center' as const, marginBottom: 14,
-    fontSize: 36, fontWeight: 800, color,
-    fontFamily: 'var(--font-mono)',
-    textShadow: `0 0 20px ${color}66`, letterSpacing: '-1px',
-  } as React.CSSProperties),
-  transportRow: {
-    display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center', marginBottom: 10,
-  } as React.CSSProperties,
-  transportBtn: (active: boolean, color: string) => ({
-    padding: '10px 18px', border: 'none', borderRadius: 8,
-    fontWeight: 700, cursor: 'pointer', display: 'flex',
-    alignItems: 'center', gap: 6, fontSize: 12, transition: 'all 0.15s',
-    background: active ? color : '#1e293b', color: active ? '#000' : '#d1d5db',
-    boxShadow: active ? `0 0 16px ${color}55` : 'none',
-  } as React.CSSProperties),
-  tapBtn: {
-    padding: '10px 14px', background: '#1e293b', color: '#d1d5db',
-    border: '1px solid #334155', borderRadius: 8, fontWeight: 600,
-    cursor: 'pointer', fontSize: 11, transition: 'all 0.15s',
-  } as React.CSSProperties,
-  beatRow: {
-    display: 'flex', gap: 4, justifyContent: 'center', marginTop: 10,
-  } as React.CSSProperties,
-  beatDot: (active: boolean, color: string) => ({
-    width: 10, height: 10, borderRadius: '50%', transition: 'all 0.1s',
-    background: active ? color : '#334155',
-    boxShadow: active ? `0 0 8px ${color}` : 'none',
-  } as React.CSSProperties),
-  modeLabel: {
-    textAlign: 'center' as const, fontSize: 10, color: '#6b7280',
-    marginTop: 8, letterSpacing: '0.5px', textTransform: 'uppercase' as const,
-  } as React.CSSProperties,
-  toggleRow: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '8px 12px', background: '#111827', borderRadius: 8, marginBottom: 6,
-  } as React.CSSProperties,
-  toggleLabel: { fontSize: 12, fontWeight: 600, color: '#d1d5db' } as React.CSSProperties,
-  toggle: (on: boolean, color: string) => ({
-    width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
-    background: on ? color : '#374151', position: 'relative' as const, transition: 'background 0.2s',
-  } as React.CSSProperties),
-  toggleKnob: (on: boolean) => ({
-    width: 16, height: 16, borderRadius: '50%', background: '#fff',
-    position: 'absolute' as const, top: 3, left: on ? 21 : 3, transition: 'left 0.2s',
-  } as React.CSSProperties),
-  packCard: (active: boolean, color: string) => ({
-    padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
-    transition: 'all 0.15s', textAlign: 'left' as const,
-    border: active ? `1px solid ${color}` : '1px solid #1e293b',
-    background: active ? `${color}15` : '#111827',
-  } as React.CSSProperties),
-  packName: (active: boolean, color: string) => ({
-    fontSize: 12, fontWeight: 700, color: active ? color : '#e5e7eb', marginBottom: 2,
-  } as React.CSSProperties),
-  packMeta: {
-    fontSize: 10, color: '#6b7280', overflow: 'hidden' as const,
-    textOverflow: 'ellipsis' as const, whiteSpace: 'nowrap' as const,
-  } as React.CSSProperties,
-  emptyState: {
-    padding: '16px 8px', textAlign: 'center' as const, fontSize: 12,
-    color: '#6b7280', fontStyle: 'italic' as const,
-  } as React.CSSProperties,
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
 }
 
-// ── Toggle Sub-Component ───────────────────────────────────
-
-function Toggle({ on, color, onChange, label }: {
-  on: boolean; color: string; onChange: (v: boolean) => void; label: string
-}) {
-  return (
-    <div style={S.toggleRow}>
-      <span style={S.toggleLabel}>{label}</span>
-      <button style={S.toggle(on, color)} onClick={() => onChange(!on)}>
-        <div style={S.toggleKnob(on)} />
-      </button>
-    </div>
-  )
+function formatPatternLabel(pattern: number, variation: number) {
+  return `P${String(pattern + 1).padStart(3, '0')} · ${variation === 0 ? 'Main' : `Var ${variation}`}`
 }
 
-// ── Mode Section Builders ──────────────────────────────────
+function navigateToDrums(mode: DrumMode) {
+  if (typeof window === 'undefined') {
+    return
+  }
 
-function PracticeModeContent({ state }: { state: DrumMachineState }): ReactNode {
-  const color = MODE_CONFIG.practice.color
-  return (
-    <div>
-      <div style={{ marginBottom: 12 }}>
-        <div className="carbon-param-row">
-          {/* Practice knobs rendered inline — these are mode-specific, not top-level performance */}
-        </div>
-        <Toggle
-          on={state.practice_auto_fill} color={color}
-          onChange={v => drumsApi.updateState({ practice_auto_fill: v })}
-          label="Auto-Fill at End of Phrase"
-        />
-        <div style={{ padding: '4px 12px', fontSize: 10, color: '#6b7280' }}>
-          Automatically triggers a drum fill before the quantize boundary
-        </div>
-      </div>
-    </div>
-  )
+  const nextUrl = `/drums?mode=${mode}`
+  window.history.pushState({}, '', nextUrl)
+  window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
-function AdvancedModeContent({ state, factoryPacks, generatedPacks }: {
-  state: DrumMachineState; factoryPacks: DrumPack[]; generatedPacks: DrumPack[]
-}): ReactNode {
-  const color = MODE_CONFIG.advanced.color
-  const [showAllPacks, setShowAllPacks] = useState(false)
+function resolveActiveInstrumentIndex(kit: DrumKit | null | undefined, metering: DrumMetering | undefined) {
+  const instrumentCount = kit?.instruments.length ?? 0
+  if (instrumentCount === 0) {
+    return 0
+  }
 
-  return (
-    <div>
-      {/* Pattern controls */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#d1d5db', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Pattern: P{String(state.pattern + 1).padStart(3, '0')} / Variation: {state.variation === 0 ? 'Main' : `Var ${state.variation}`}
-        </div>
-      </div>
-
-      {/* Factory Packs */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#d1d5db', marginBottom: 6 }}>
-          Factory Packs ({factoryPacks.length})
-        </div>
-        {factoryPacks.length === 0 ? (
-          <div style={S.emptyState}>No factory packs available</div>
-        ) : (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {(showAllPacks ? factoryPacks : factoryPacks.slice(0, 8)).map(pack => (
-                <div
-                  key={pack.pack_id}
-                  style={S.packCard(state.active_pack === pack.pack_id, color)}
-                  onClick={() => drumsApi.updateState({ active_pack: pack.pack_id })}
-                >
-                  <div style={S.packName(state.active_pack === pack.pack_id, color)}>{pack.name}</div>
-                  <div style={S.packMeta}>{pack.description || pack.source}</div>
-                </div>
-              ))}
-            </div>
-            {factoryPacks.length > 8 && (
-              <button
-                onClick={() => setShowAllPacks(!showAllPacks)}
-                style={{
-                  width: '100%', padding: '8px', marginTop: 6,
-                  background: 'transparent', color, border: `1px solid ${color}44`,
-                  borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                }}
-              >
-                {showAllPacks ? 'Show Less' : `Show All ${factoryPacks.length} Packs`}
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* User Packs */}
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#d1d5db', marginBottom: 6 }}>
-          User Packs ({generatedPacks.length})
-        </div>
-        {generatedPacks.length === 0 ? (
-          <div style={S.emptyState}>No user-generated packs — create one from the API</div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            {generatedPacks.map(pack => (
-              <div
-                key={pack.pack_id}
-                style={S.packCard(state.active_pack === pack.pack_id, '#8b5cf6')}
-                onClick={() => drumsApi.updateState({ active_pack: pack.pack_id })}
-              >
-                <div style={S.packName(state.active_pack === pack.pack_id, '#8b5cf6')}>{pack.name}</div>
-                <div style={S.packMeta}>{pack.description || 'User pack'}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
+  const peaks = metering?.per_pad_peak ?? []
+  let loudestIndex = 0
+  let loudestLevel = -1
+  for (let index = 0; index < instrumentCount; index += 1) {
+    const level = peaks[index] ?? 0
+    if (level > loudestLevel) {
+      loudestLevel = level
+      loudestIndex = index
+    }
+  }
+  return loudestIndex
 }
-
-function BackingTracksModeContent({ state }: { state: DrumMachineState }): ReactNode {
-  const color = MODE_CONFIG.backing_tracks.color
-  return (
-    <div>
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#d1d5db', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Pattern: P{String(state.pattern + 1).padStart(3, '0')} / Section: {state.variation === 0 ? 'A' : String.fromCharCode(65 + state.variation)}
-        </div>
-      </div>
-      <Toggle
-        on={state.practice_auto_fill} color={color}
-        onChange={v => drumsApi.updateState({ practice_auto_fill: v })}
-        label="Auto-Fill Between Sections"
-      />
-    </div>
-  )
-}
-
-// ── Main Component ─────────────────────────────────────────
 
 interface DrumMachineCardProps extends PluginCardProps {
   onOpenMidiMappings?: () => void
@@ -274,217 +307,275 @@ interface DrumMachineCardProps extends PluginCardProps {
 
 function DrumMachineCardBase({
   plugin,
-  accentColor = '#f59e0b',
-  compact = false,
+  accentColor = '#24a148',
+  compact = true,
+  onBypassToggle,
   onOpenMidiMappings,
 }: DrumMachineCardProps) {
-
-  // ── Queries ──
   const stateQuery = useQuery({
     queryKey: ['drums', 'state'],
     queryFn: drumsApi.getState,
-    refetchInterval: 1500, staleTime: 800,
+    refetchInterval: 1500,
+    staleTime: 500,
   })
-  const factoryPacksQuery = useQuery({
-    queryKey: ['drums', 'factory-packs'],
-    queryFn: drumsApi.getFactoryPacks,
-    staleTime: 60_000,
+  const transportQuery = useQuery({
+    queryKey: ['drums', 'transport'],
+    queryFn: drumsApi.getTransport,
+    refetchInterval: 1000,
+    staleTime: 250,
   })
-  const generatedPacksQuery = useQuery({
-    queryKey: ['drums', 'generated-packs'],
-    queryFn: drumsApi.getGeneratedPacks,
-    staleTime: 30_000,
+  const activeKitQuery = useQuery({
+    queryKey: ['drums', 'active-kit'],
+    queryFn: drumsApi.getActiveKit,
+    staleTime: 10_000,
+  })
+  const meteringQuery = useQuery({
+    queryKey: ['drums', 'metering'],
+    queryFn: drumsApi.getMetering,
+    refetchInterval: 1000,
+    staleTime: 0,
   })
 
-  // ── Local State ──
-  const [tapTimes, setTapTimes] = useState<number[]>([])
+  const transport = transportQuery.data as DrumTransportState | undefined
+  const normalizedState = normalizeDrumMachineState(stateQuery.data as DrumMachineState | undefined)
+  const activeKit = activeKitQuery.data as DrumKit | null | undefined
+  const metering = meteringQuery.data as DrumMetering | undefined
+
+  const patternQuery = useQuery({
+    queryKey: ['drums', 'pattern', transport?.pattern ?? normalizedState.pattern ?? 0],
+    queryFn: () => drumsApi.getPattern(transport?.pattern ?? normalizedState.pattern ?? 0),
+    staleTime: 1000,
+  })
+
+  const currentMode = normalizedState.ui_mode
+  const modeMeta = MODE_META[currentMode]
+  const isPlaying = transport?.is_playing ?? normalizedState.transport
+  const bpm = transport?.bpm ?? normalizedState.bpm
+  const patternId = transport?.pattern ?? normalizedState.pattern
+  const variation = transport?.variation ?? normalizedState.variation
+
   const [beatPhase, setBeatPhase] = useState(0)
-  const beatInterval = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [tapTimes, setTapTimes] = useState<number[]>([])
+  const beatInterval = useRef<number | null>(null)
 
-  const state = stateQuery.data as DrumMachineState | undefined
-  const factoryPacks = (factoryPacksQuery.data ?? []) as DrumPack[]
-  const generatedPacks = (generatedPacksQuery.data ?? []) as DrumPack[]
-
-  const resolvedState = normalizeDrumMachineState(state)
-  const currentMode = resolvedState.ui_mode
-  const modeColor = MODE_CONFIG[currentMode]?.color ?? accentColor
-  const isPlaying = resolvedState.transport
-  const bpm = resolvedState.bpm
-
-  // ── Beat animation ──
   useEffect(() => {
-    if (beatInterval.current) clearInterval(beatInterval.current)
-    if (isPlaying && bpm > 0) {
-      const ms = 60000 / bpm
-      beatInterval.current = setInterval(() => {
-        setBeatPhase(prev => (prev + 1) % 4)
-      }, ms)
+    if (beatInterval.current != null) {
+      window.clearInterval(beatInterval.current)
+      beatInterval.current = null
+    }
+    if (typeof window !== 'undefined' && isPlaying && bpm > 0) {
+      beatInterval.current = window.setInterval(() => {
+        setBeatPhase((value) => (value + 1) % 4)
+      }, 60000 / bpm)
     } else {
       setBeatPhase(0)
     }
-    return () => { if (beatInterval.current) clearInterval(beatInterval.current) }
-  }, [isPlaying, bpm])
 
-  // ── Tap Tempo ──
-  const handleTapTempo = useCallback(() => {
-    const now = Date.now()
-    const newTaps = [...tapTimes, now].slice(-6)
-    setTapTimes(newTaps)
-    if (newTaps.length >= 2) {
-      const intervals: number[] = []
-      for (let i = 1; i < newTaps.length; i++) {
-        const diff = newTaps[i] - newTaps[i - 1]
-        if (diff < 2000) intervals.push(diff)
-      }
-      if (intervals.length > 0) {
-        const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length
-        const newBpm = Math.round(60000 / avg)
-        if (newBpm >= 40 && newBpm <= 300) drumsApi.updateState({ bpm: newBpm })
+    return () => {
+      if (beatInterval.current != null) {
+        window.clearInterval(beatInterval.current)
       }
     }
+  }, [bpm, isPlaying])
+
+  const handleTransportToggle = useCallback(() => {
+    void drumsApi.updateState({ transport: !isPlaying })
+  }, [isPlaying])
+
+  const handleTapTempo = useCallback(() => {
+    const now = Date.now()
+    const nextTapTimes = [...tapTimes, now].slice(-6)
+    setTapTimes(nextTapTimes)
+    void drumsApi.tapTempo(now)
   }, [tapTimes])
 
-  // ── Transport Visualization ──
-  const transportVisualization = (
-    <div style={S.vizContainer}>
-      {isPlaying && (
-        <div style={{
-          position: 'absolute', inset: 0, opacity: 0.04,
-          background: `radial-gradient(circle at center, ${modeColor} 0%, transparent 70%)`,
-        }} />
-      )}
-      <div style={S.bpmDisplay(modeColor)}>
-        {bpm}<span style={{ fontSize: 14, fontWeight: 400, marginLeft: 4, opacity: 0.6 }}>BPM</span>
-      </div>
-      <div style={S.transportRow}>
-        <button onClick={() => drumsApi.updateState({ transport: !isPlaying })} style={S.transportBtn(isPlaying, modeColor)}>
-          {isPlaying ? <StopFilled size={14} /> : <Play size={14} />}
-          {isPlaying ? 'Stop' : 'Play'}
-        </button>
-        <button onClick={handleTapTempo} style={S.tapBtn}>Tap</button>
-      </div>
-      <div style={S.beatRow}>
-        {[0, 1, 2, 3].map(i => (
-          <div key={i} style={S.beatDot(isPlaying && beatPhase === i, modeColor)} />
-        ))}
-      </div>
-      <div style={S.modeLabel}>{MODE_CONFIG[currentMode]?.desc ?? ''}</div>
-    </div>
+  const handleModeNavigate = useCallback((mode: DrumMode) => {
+    void drumsApi.updateState({ ui_mode: mode })
+    navigateToDrums(mode)
+  }, [])
+
+  const activeInstrumentIndex = useMemo(
+    () => resolveActiveInstrumentIndex(activeKit, metering),
+    [activeKit, metering],
   )
 
-  // ── Transport content (mode selector + play/stop inline) ──
-  const transportContent = (
-    <div style={S.modeBar}>
-      {(Object.entries(MODE_CONFIG) as [keyof typeof MODE_CONFIG, typeof MODE_CONFIG[keyof typeof MODE_CONFIG]][]).map(([key, cfg]) => {
-        const Icon = cfg.icon
-        return (
-          <button key={key} onClick={() => drumsApi.updateState({ ui_mode: key })} style={S.modeBtn(currentMode === key, cfg.color)}>
-            <Icon size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
-            {cfg.label}
+  const activeInstrument = activeKit?.instruments[activeInstrumentIndex]
+  const activePattern = patternQuery.data as DrumPattern | undefined
+  const visibleSteps = useMemo(
+    () => (activePattern?.steps[activeInstrumentIndex] ?? []).slice(0, 16),
+    [activeInstrumentIndex, activePattern],
+  )
+  const visibleStepCount = Math.min(activePattern?.length ?? 16, 16)
+  const busLevels = (metering?.per_bus_peak ?? []).slice(0, 4)
+  const footer = (
+    <div style={CARD_STYLES.footer}>
+      <span aria-label="Active kit name">Kit: {activeKit?.name ?? 'Unloaded'}</span>
+      <span aria-label="Active pattern label">{formatPatternLabel(patternId, variation)}</span>
+    </div>
+  )
+  const ModeIcon = modeMeta.icon
+
+  const hero = (
+    <div style={CARD_STYLES.hero}>
+      <div style={CARD_STYLES.heroTop}>
+        <div style={CARD_STYLES.modePill}>
+          <ModeIcon size={14} />
+          <span style={{ color: modeMeta.accent }}>{modeMeta.label}</span>
+        </div>
+        <div style={CARD_STYLES.transportCluster}>
+          <button
+            type="button"
+            aria-label={isPlaying ? 'Stop drum transport' : 'Start drum transport'}
+            onClick={handleTransportToggle}
+            style={{ ...CARD_STYLES.transportButton, background: modeMeta.accent }}
+          >
+            {isPlaying ? <StopFilled size={16} /> : <PlayFilled size={16} />}
+            {isPlaying ? 'Stop' : 'Play'}
           </button>
-        )
-      })}
+          <button
+            type="button"
+            aria-label="Tap tempo"
+            onClick={handleTapTempo}
+            style={CARD_STYLES.secondaryButton}
+          >
+            Tap
+          </button>
+        </div>
+      </div>
+
+      <div style={CARD_STYLES.heroTop}>
+        <div style={CARD_STYLES.bpmValue}>
+          <span style={CARD_STYLES.bpmNumber}>{bpm}</span>
+          <span style={CARD_STYLES.bpmMeta}>BPM</span>
+        </div>
+        <div style={CARD_STYLES.beatRow} aria-label="Beat indicator">
+          {[0, 1, 2, 3].map((beat) => (
+            <span
+              key={beat}
+              aria-hidden="true"
+              style={{
+                ...CARD_STYLES.beatDot,
+                background: isPlaying && beat === beatPhase ? modeMeta.accent : 'rgba(255,255,255,0.12)',
+                boxShadow: isPlaying && beat === beatPhase ? `0 0 10px ${modeMeta.accent}` : CARD_STYLES.beatDot.boxShadow,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div style={CARD_STYLES.detailRow}>
+        <div style={CARD_STYLES.detailCard}>
+          <span style={CARD_STYLES.detailLabel}>Pattern</span>
+          <span style={CARD_STYLES.detailValue}>{formatPatternLabel(patternId, variation)}</span>
+        </div>
+        <div style={CARD_STYLES.detailCard}>
+          <span style={CARD_STYLES.detailLabel}>Current Instrument</span>
+          <span style={CARD_STYLES.detailValue}>{activeInstrument?.name ?? 'Pad 1'}</span>
+        </div>
+      </div>
     </div>
   )
-
-  // ── Performance params ──
-  const performanceParams: ParamSlot[] = [
-    {
-      label: 'BPM',
-      value: bpm,
-      min: 40, max: 300, step: 1, defaultValue: 120,
-      onChange: v => drumsApi.updateState({ bpm: v }),
-      midi: { pluginUri: DRUM_MACHINE_URI, paramIndex: PARAM.BPM },
-    },
-    {
-      label: 'Volume',
-      value: resolvedState.volume,
-      min: 0, max: 100, step: 1, defaultValue: 80,
-      unit: '%',
-      onChange: v => drumsApi.updateState({ volume: v }),
-      midi: { pluginUri: DRUM_MACHINE_URI, paramIndex: PARAM.VOLUME },
-    },
-    {
-      label: 'Pattern',
-      value: resolvedState.pattern,
-      min: 0, max: 127, step: 1, defaultValue: 0,
-      onChange: v => drumsApi.updateState({ pattern: v }),
-      valueFormatter: v => `P${String(v + 1).padStart(3, '0')}`,
-      midi: { pluginUri: DRUM_MACHINE_URI, paramIndex: PARAM.PATTERN },
-    },
-    {
-      label: 'Variation',
-      value: resolvedState.variation,
-      min: 0, max: 10, step: 1, defaultValue: 0,
-      onChange: v => drumsApi.updateState({ variation: v }),
-      valueFormatter: v => v === 0 ? 'Main' : `Var ${v}`,
-      midi: { pluginUri: DRUM_MACHINE_URI, paramIndex: PARAM.VARIATION },
-    },
-  ]
-
-  // ── Advanced sections (mode-specific content) ──
-  const advancedSections = [
-    {
-      id: 'practice',
-      title: 'Practice Mode',
-      icon: <Headphones size={14} />,
-      children: <PracticeModeContent state={resolvedState} />,
-      defaultOpen: currentMode === 'practice',
-    },
-    {
-      id: 'advanced',
-      title: 'Advanced / Packs',
-      icon: <SettingsAdjust size={14} />,
-      children: (
-        <AdvancedModeContent
-          state={resolvedState}
-          factoryPacks={factoryPacks}
-          generatedPacks={generatedPacks}
-        />
-      ),
-      defaultOpen: currentMode === 'advanced',
-    },
-    {
-      id: 'backing',
-      title: 'Backing Tracks',
-      icon: <Music size={14} />,
-      children: <BackingTracksModeContent state={resolvedState} />,
-      defaultOpen: currentMode === 'backing_tracks',
-    },
-  ]
-
-  // ── Loading state ──
-  if (!state) {
-    return (
-      <InstrumentCategoryLayout
-        plugin={plugin}
-        accentColor={accentColor}
-        compact={compact}
-        extraContent={
-          <div style={{ ...S.emptyState, padding: 32 }}>
-            <Music size={24} style={{ marginBottom: 8, opacity: 0.4 }} />
-            <div>Connecting to Drum Machine...</div>
-          </div>
-        }
-      />
-    )
-  }
 
   return (
-    <InstrumentCategoryLayout
+    <PluginCardShell
       plugin={plugin}
-      accentColor={modeColor}
+      accentColor={modeMeta.accent ?? accentColor}
       compact={compact}
+      onBypassToggle={onBypassToggle}
       onOpenMidiMappings={onOpenMidiMappings}
-      visualization={transportVisualization}
-      transport={transportContent}
-      performanceParams={performanceParams}
-      advancedSections={advancedSections}
-    />
+      visualization={hero}
+      footer={footer}
+      showPresetControls={false}
+    >
+      <div style={CARD_STYLES.body}>
+        <section style={CARD_STYLES.section} aria-label="Current step overview">
+          <div style={CARD_STYLES.sectionHeader}>
+            <h4 style={CARD_STYLES.sectionTitle}>Current Instrument Steps</h4>
+            <span style={CARD_STYLES.sectionMeta}>{visibleStepCount} visible</span>
+          </div>
+          <div style={CARD_STYLES.stepRow} aria-label={`${activeInstrument?.name ?? 'Current instrument'} step indicator`}>
+            {Array.from({ length: 16 }, (_, index) => {
+              const step = visibleSteps[index]
+              const isActive = step?.active ?? false
+              const isAccent = step?.accent ?? false
+              const isCurrent = isPlaying && (beatPhase % 16) === index
+              return (
+                <span
+                  key={index}
+                  aria-label={`Step ${index + 1} ${isActive ? 'active' : 'inactive'}`}
+                  style={{
+                    ...CARD_STYLES.stepDot,
+                    background: isActive ? modeMeta.accent : 'rgba(255,255,255,0.08)',
+                    opacity: isAccent ? 1 : isActive ? 0.82 : 1,
+                    borderColor: isCurrent ? '#f4f4f4' : isAccent ? '#f1c21b' : 'transparent',
+                    boxShadow: isCurrent ? `0 0 0 1px ${modeMeta.accent}` : 'none',
+                  }}
+                />
+              )
+            })}
+          </div>
+        </section>
+
+        <section style={CARD_STYLES.section} aria-label="Bus metering">
+          <div style={CARD_STYLES.sectionHeader}>
+            <h4 style={CARD_STYLES.sectionTitle}>Bus Metering</h4>
+            <span style={CARD_STYLES.sectionMeta}>Buses 1-4</span>
+          </div>
+          <div style={CARD_STYLES.meterGrid}>
+            {Array.from({ length: 4 }, (_, index) => {
+              const level = clamp(busLevels[index] ?? 0, 0, 1)
+              return (
+                <div key={index} style={CARD_STYLES.meterStrip}>
+                  <div style={CARD_STYLES.meterTrack} aria-label={`Bus ${index + 1} level`}>
+                    <div
+                      style={{
+                        ...CARD_STYLES.meterFill,
+                        height: `${Math.max(8, Math.round(level * 100))}%`,
+                        background: `linear-gradient(180deg, ${modeMeta.accent}, rgba(255,255,255,0.16))`,
+                      }}
+                    />
+                  </div>
+                  <span style={CARD_STYLES.meterLabel}>Bus {index + 1}</span>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        <section style={CARD_STYLES.section} aria-label="Mode routing">
+          <div style={CARD_STYLES.sectionHeader}>
+            <h4 style={CARD_STYLES.sectionTitle}>Open Full Workspace</h4>
+            <span style={CARD_STYLES.sectionMeta}>Jump to /drums</span>
+          </div>
+          <div style={CARD_STYLES.modeGrid}>
+            {(Object.entries(MODE_META) as [DrumMode, (typeof MODE_META)[DrumMode]][]).map(([mode, meta]) => {
+              const Icon = meta.icon
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  aria-label={`Open ${meta.label} mode`}
+                  onClick={() => handleModeNavigate(mode)}
+                  style={{
+                    ...CARD_STYLES.modeButton,
+                    borderColor: currentMode === mode ? meta.accent : 'rgba(255,255,255,0.1)',
+                    boxShadow: currentMode === mode ? `inset 0 0 0 1px ${meta.accent}` : 'none',
+                  }}
+                >
+                  <span style={CARD_STYLES.modeLabel}>
+                    <Icon size={14} style={{ color: meta.accent }} />
+                    {meta.label}
+                  </span>
+                  <span style={CARD_STYLES.modeRoute}>{mode === currentMode ? 'Current mode' : 'Route to full page'}</span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      </div>
+    </PluginCardShell>
   )
 }
-
-// ── Exports ────────────────────────────────────────────────
 
 export { DrumMachineCardBase as DrumMachineCard }
 export default withMidiDialog(DrumMachineCardBase, DRUM_MACHINE_URI, DRUM_MACHINE_PARAMS)

@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Path, UploadFile
 from pydantic import BaseModel, Field
 
 from app.services.drum_kit_service import (
@@ -22,6 +22,7 @@ from app.services.drum_kit_service import (
 
 from app.services.drum_sequencer_service import (
     DrumPatternModel,
+    DrumSequencerStepModel,
     DrumSequencerService,
     DrumSongEntryModel,
     get_drum_sequencer_service,
@@ -37,6 +38,7 @@ from app.services.drum_machine_service import (
     DrumMachineService,
     DrumMeteringModel,
     DrumSequencerPositionModel,
+    DrumSongTransportStateModel,
     DrumTransportStateModel,
     DrumTransportUpdateModel,
     get_drum_machine_service,
@@ -57,9 +59,9 @@ class DrumPackUploadResponse(BaseModel):
 
 
 class DrumPatternStepUpdateModel(BaseModel):
-    instrument: int
-    step: int
-    velocity: int
+    instrument: int = Field(..., ge=0, le=15)
+    step: int = Field(..., ge=0, le=63)
+    velocity: int = Field(..., ge=0, le=127)
     accent: bool = False
 
 
@@ -71,6 +73,11 @@ class DrumSongUpdateResponse(BaseModel):
 class DrumSongUpdateModel(BaseModel):
     song: List[DrumSongEntryModel]
     song_loop: bool = False
+
+
+class DrumPatternCopyModel(BaseModel):
+    source_pattern_id: int = Field(..., ge=0, le=127)
+    destination_pattern_id: int = Field(..., ge=0, le=127)
 
 
 class DrumKitLoadRequest(BaseModel):
@@ -161,6 +168,22 @@ def get_drum_position() -> Dict[str, Any]:
     return _get_service().get_position()
 
 
+@router.post("/api/engine/drums/fill/trigger")
+def trigger_drum_fill() -> Dict[str, Any]:
+    return _get_service().trigger_fill()
+
+
+@router.post("/api/engine/drums/pattern/copy", response_model=DrumPatternModel)
+def copy_drum_pattern(copy: DrumPatternCopyModel) -> Dict[str, Any]:
+    service = _get_sequencer_service()
+    try:
+        source = DrumPatternModel.model_validate(service.get_pattern(copy.source_pattern_id))
+        payload = source.model_dump(exclude={"pattern_id"})
+        return service.save_pattern(copy.destination_pattern_id, payload)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.get("/api/engine/drums/pattern/{pattern_id}", response_model=DrumPatternModel)
 def get_drum_pattern(pattern_id: int) -> Dict[str, Any]:
     try:
@@ -194,6 +217,18 @@ def set_drum_pattern_step(pattern_id: int, update: DrumPatternStepUpdateModel) -
         raise HTTPException(status_code=400, detail=str(exc))
 
 
+@router.post("/api/engine/drums/pattern/{pattern_id}/clear", response_model=DrumPatternModel)
+def clear_drum_pattern(pattern_id: int) -> Dict[str, Any]:
+    service = _get_sequencer_service()
+    try:
+        pattern = DrumPatternModel.model_validate(service.get_pattern(pattern_id))
+        pattern.length = 16
+        pattern.steps = [[DrumSequencerStepModel() for _ in range(64)] for _ in range(16)]
+        return service.save_pattern(pattern_id, pattern.model_dump(exclude={"pattern_id"}))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.get("/api/engine/drums/song", response_model=DrumSongUpdateResponse)
 def get_drum_song() -> DrumSongUpdateResponse:
     service = _get_sequencer_service()
@@ -211,6 +246,55 @@ def set_drum_song(update: DrumSongUpdateModel) -> DrumSongUpdateResponse:
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return DrumSongUpdateResponse(song=update.song, song_loop=update.song_loop)
+
+
+@router.post("/api/engine/drums/song/entries", response_model=DrumSongUpdateResponse)
+def add_drum_song_entry(entry: DrumSongEntryModel) -> DrumSongUpdateResponse:
+    service = _get_sequencer_service()
+    try:
+        next_song = [DrumSongEntryModel.model_validate(item) for item in service.get_song()]
+        next_song.append(entry)
+        service.replace_song(next_song, service.get_song_loop())
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return DrumSongUpdateResponse(song=next_song, song_loop=service.get_song_loop())
+
+
+@router.delete("/api/engine/drums/song/entries/{position}", response_model=DrumSongUpdateResponse)
+def remove_drum_song_entry(position: int = Path(..., ge=0)) -> DrumSongUpdateResponse:
+    service = _get_sequencer_service()
+    song = [DrumSongEntryModel.model_validate(item) for item in service.get_song()]
+    if position >= len(song):
+        raise HTTPException(status_code=404, detail="Song entry not found")
+    try:
+        next_song = [entry for index, entry in enumerate(song) if index != position]
+        service.replace_song(next_song, service.get_song_loop())
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return DrumSongUpdateResponse(song=next_song, song_loop=service.get_song_loop())
+
+
+@router.get("/api/engine/drums/song/transport", response_model=DrumSongTransportStateModel)
+def get_drum_song_transport() -> Dict[str, Any]:
+    return _get_service().get_song_transport()
+
+
+@router.post("/api/engine/drums/song/transport/play", response_model=DrumSongTransportStateModel)
+async def play_drum_song_transport() -> Dict[str, Any]:
+    service = _get_service()
+    state = service.start_song_playback()
+    await service.publish_transport_update()
+    await service.publish_position_update()
+    return state
+
+
+@router.post("/api/engine/drums/song/transport/stop", response_model=DrumSongTransportStateModel)
+async def stop_drum_song_transport() -> Dict[str, Any]:
+    service = _get_service()
+    state = service.stop_song_playback()
+    await service.publish_transport_update()
+    await service.publish_position_update()
+    return state
 
 
 @router.get("/api/engine/drums/metering", response_model=DrumMeteringModel)

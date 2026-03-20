@@ -102,6 +102,15 @@ class DrumSequencerPositionModel(BaseModel):
     updated_at: Optional[str] = None
 
 
+class DrumSongTransportStateModel(BaseModel):
+    is_playing: bool = False
+    current_entry_index: int = Field(-1, ge=-1)
+    current_repeat: int = Field(0, ge=0)
+    total_entries: int = Field(0, ge=0)
+    loop: bool = False
+    active_pattern: int = Field(0, ge=0, le=127)
+
+
 class DrumPackSummaryModel(BaseModel):
     pack_id: str
     name: str
@@ -181,6 +190,8 @@ class DrumMachineService(Singleton):
             pattern_id=self._state.pattern,
             variation=self._state.variation,
         )
+        self._song_transport = DrumSongTransportStateModel(active_pattern=self._state.pattern)
+        self._last_polled_step: Optional[int] = None
         self._position_poll_task: Optional[asyncio.Task] = None
         self._event_loop: Optional[asyncio.AbstractEventLoop] = None
         self._global_midi_channel = 0
@@ -280,6 +291,10 @@ class DrumMachineService(Singleton):
     def get_position(self) -> Dict[str, Any]:
         return self._position.model_dump()
 
+    def get_song_transport(self) -> Dict[str, Any]:
+        self._refresh_song_transport_metadata()
+        return self._song_transport.model_dump()
+
     def update_position(self, patch: Dict[str, Any]) -> Dict[str, Any]:
         current = self._position.model_dump()
         current.update({key: value for key, value in patch.items() if value is not None or key in patch})
@@ -290,6 +305,58 @@ class DrumMachineService(Singleton):
         current["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         self._position = DrumSequencerPositionModel.model_validate(current)
         return self.get_position()
+
+    def trigger_fill(self) -> Dict[str, Any]:
+        engine = self._engine()
+        if engine is not None:
+            trigger = getattr(engine, "trigger_drum_fill", None)
+            if callable(trigger):
+                trigger()
+        return {
+            "status": "ok",
+            "pattern": self._state.pattern,
+            "variation": self._state.variation,
+        }
+
+    def start_song_playback(self) -> Dict[str, Any]:
+        entries = self._get_song_entries()
+        if not entries:
+            self._song_transport = DrumSongTransportStateModel(
+                is_playing=False,
+                current_entry_index=-1,
+                current_repeat=0,
+                total_entries=0,
+                loop=self._get_song_loop(),
+                active_pattern=self._state.pattern,
+            )
+            return self.get_song_transport()
+
+        first_pattern = int(entries[0]["pattern"])
+        self._song_transport = DrumSongTransportStateModel(
+            is_playing=True,
+            current_entry_index=0,
+            current_repeat=1,
+            total_entries=len(entries),
+            loop=self._get_song_loop(),
+            active_pattern=first_pattern,
+        )
+        self._last_polled_step = None
+        self.update_transport({"pattern": first_pattern, "is_playing": True})
+        return self.get_song_transport()
+
+    def stop_song_playback(self, stop_transport: bool = True) -> Dict[str, Any]:
+        self._refresh_song_transport_metadata()
+        self._song_transport = DrumSongTransportStateModel(
+            is_playing=False,
+            current_entry_index=self._song_transport.current_entry_index,
+            current_repeat=self._song_transport.current_repeat if self._song_transport.current_entry_index >= 0 else 0,
+            total_entries=self._song_transport.total_entries,
+            loop=self._song_transport.loop,
+            active_pattern=self._state.pattern,
+        )
+        if stop_transport:
+            self.update_transport({"is_playing": False})
+        return self.get_song_transport()
 
     async def publish_state_update(self) -> None:
         from app.services.websocket_manager import ws_manager
@@ -697,6 +764,17 @@ class DrumMachineService(Singleton):
             setter = getattr(engine, "set_drum_current_pattern", None)
             if callable(setter):
                 setter(self._state.pattern)
+            self._song_transport = DrumSongTransportStateModel.model_validate(
+                {
+                    **self._song_transport.model_dump(),
+                    "active_pattern": self._state.pattern,
+                }
+            )
+
+        if "variation" in patch:
+            setter = getattr(engine, "set_drum_variation", None)
+            if callable(setter):
+                setter(self._state.pattern, self._state.variation)
 
         if "swing" in patch:
             setter = getattr(engine, "set_drum_swing", None)
@@ -715,6 +793,12 @@ class DrumMachineService(Singleton):
                 if callable(setter):
                     setter(False)
                 self._stop_position_poll_task()
+                self._song_transport = DrumSongTransportStateModel.model_validate(
+                    {
+                        **self._song_transport.model_dump(),
+                        "is_playing": False,
+                    }
+                )
                 self._refresh_position_from_engine()
 
     def _safe_running_loop(self) -> Optional[asyncio.AbstractEventLoop]:
@@ -778,7 +862,96 @@ class DrumMachineService(Singleton):
         current_snapshot = self._position.model_dump(exclude={"updated_at"})
         updated = self.update_position(payload)
         updated_snapshot = {key: value for key, value in updated.items() if key != "updated_at"}
+        self._advance_song_transport(updated_snapshot)
         return updated_snapshot != current_snapshot
+
+    def _get_song_entries(self) -> List[Dict[str, Any]]:
+        try:
+            from app.services.drum_sequencer_service import DrumSequencerService, get_drum_sequencer_service
+
+            if not DrumSequencerService.has_instance():
+                return []
+            return list(get_drum_sequencer_service().get_song())
+        except Exception:
+            return []
+
+    def _get_song_loop(self) -> bool:
+        try:
+            from app.services.drum_sequencer_service import DrumSequencerService, get_drum_sequencer_service
+
+            if not DrumSequencerService.has_instance():
+                return False
+            return bool(get_drum_sequencer_service().get_song_loop())
+        except Exception:
+            return False
+
+    def _refresh_song_transport_metadata(self) -> None:
+        entries = self._get_song_entries()
+        loop = self._get_song_loop()
+        current_index = self._song_transport.current_entry_index
+        if current_index >= len(entries):
+            current_index = len(entries) - 1
+        self._song_transport = DrumSongTransportStateModel.model_validate(
+            {
+                **self._song_transport.model_dump(),
+                "current_entry_index": current_index if entries else -1,
+                "current_repeat": self._song_transport.current_repeat if entries else 0,
+                "total_entries": len(entries),
+                "loop": loop,
+                "active_pattern": self._state.pattern,
+            }
+        )
+
+    def _advance_song_transport(self, position_snapshot: Dict[str, Any]) -> None:
+        current_step = int(position_snapshot.get("step", 0))
+        is_playing = bool(position_snapshot.get("is_playing", False))
+        if not is_playing:
+            self._last_polled_step = current_step
+            return
+
+        if not self._song_transport.is_playing:
+            self._last_polled_step = current_step
+            return
+
+        entries = self._get_song_entries()
+        if not entries:
+            self._song_transport = DrumSongTransportStateModel(active_pattern=self._state.pattern)
+            self._last_polled_step = current_step
+            return
+
+        if self._last_polled_step is not None and current_step < self._last_polled_step:
+            entry_index = max(0, min(self._song_transport.current_entry_index, len(entries) - 1))
+            repeat = max(1, self._song_transport.current_repeat)
+            current_entry = entries[entry_index]
+            if repeat < int(current_entry["repeat_count"]):
+                self._song_transport = DrumSongTransportStateModel.model_validate(
+                    {
+                        **self._song_transport.model_dump(),
+                        "current_repeat": repeat + 1,
+                    }
+                )
+            else:
+                next_index = entry_index + 1
+                if next_index >= len(entries):
+                    if self._song_transport.loop:
+                        next_index = 0
+                    else:
+                        self.stop_song_playback(stop_transport=True)
+                        self._last_polled_step = current_step
+                        return
+                next_pattern = int(entries[next_index]["pattern"])
+                self._song_transport = DrumSongTransportStateModel.model_validate(
+                    {
+                        **self._song_transport.model_dump(),
+                        "current_entry_index": next_index,
+                        "current_repeat": 1,
+                        "active_pattern": next_pattern,
+                    }
+                )
+                self.update_transport({"pattern": next_pattern})
+
+        self._refresh_song_transport_metadata()
+        self._last_polled_step = current_step
 
     def _refresh_metering_from_engine(self) -> None:
         engine = self._engine()

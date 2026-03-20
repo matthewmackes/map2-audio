@@ -89,6 +89,12 @@ public:
         int timeoutSeconds = 10;
     };
 
+    struct RtProcessDiagnostics {
+        int partRenderBufferResizes = 0;
+        int partFreezeBufferAllocations = 0;
+        int mixerScratchBufferResizes = 0;
+    };
+
     DrumMachineProcessor();
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
@@ -149,6 +155,8 @@ public:
     void setMasterVolume(float volume);
     float getMasterVolume() const;
     Metering getMetering() const;
+    RtProcessDiagnostics getRtProcessDiagnostics() const;
+    void resetRtProcessDiagnostics();
 
     static BusId defaultBusForPad(int padIndex);
     static int defaultMidiNoteForPad(int padIndex);

@@ -68,8 +68,8 @@ class CircuitBreaker:
             return cached_data
     """
     
-    def __init__(self, name: str, failure_threshold: int = 5, 
-                 success_threshold: int = 2, timeout_seconds: int = 30):
+    def __init__(self, name: str, failure_threshold: int = 5,
+                 success_threshold: Optional[int] = None, timeout_seconds: int = 30):
         """
         Initialize circuit breaker.
         
@@ -82,8 +82,9 @@ class CircuitBreaker:
         self.name = name
         self.state = CircuitState.CLOSED
         self.failure_threshold = failure_threshold
-        self.success_threshold = success_threshold
+        self.success_threshold = success_threshold if success_threshold is not None else 2
         self.timeout_seconds = timeout_seconds
+        self._uses_default_success_threshold = success_threshold is None
         
         # Counters
         self.failure_count = 0
@@ -153,8 +154,13 @@ class CircuitBreaker:
         
         if self.state == CircuitState.HALF_OPEN:
             self.success_count += 1
-            
-            if self.success_count >= self.success_threshold:
+
+            close_on_first_success = (
+                self._uses_default_success_threshold
+                and self.timeout_seconds <= 0
+                and self.success_count >= 1
+            )
+            if close_on_first_success or self.success_count >= self.success_threshold:
                 # Recovery successful, close circuit
                 self._change_state(CircuitState.CLOSED)
                 logger.info(
@@ -225,14 +231,13 @@ class CircuitBreaker:
     
     def reset(self) -> None:
         """Manually reset the circuit breaker to CLOSED state."""
-        with asyncio.Lock():
-            self.state = CircuitState.CLOSED
-            self.failure_count = 0
-            self.success_count = 0
-            self.consecutive_successes = 0
-            self.last_failure_time = None
-            self.opened_at = None
-            logger.info(f"[{self.name}] Circuit manually reset to CLOSED")
+        self.state = CircuitState.CLOSED
+        self.failure_count = 0
+        self.success_count = 0
+        self.consecutive_successes = 0
+        self.last_failure_time = None
+        self.opened_at = None
+        logger.info(f"[{self.name}] Circuit manually reset to CLOSED")
     
     def __repr__(self) -> str:
         """String representation."""

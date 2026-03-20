@@ -1,9 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { type RefObject, useEffect, useRef, useState } from 'react'
 import {
+  Accordion,
+  AccordionItem,
   Button,
   InlineLoading,
   InlineNotification,
+  Modal,
   Tab,
   TabList,
   TabPanel,
@@ -13,33 +16,70 @@ import {
   Tile,
 } from '@carbon/react'
 import {
+  Add,
   Music,
   PauseFilled,
   PlayFilled,
   StopFilled,
+  TrashCan,
   VolumeUp,
   Waveform,
 } from '@carbon/icons-react'
 
 import { PageHeader } from '@/app/components/PageHeader'
 import { NumberInput } from '@/app/components/Controls/NumberInput'
+import './DrumsPage.css'
 import {
   useDrumActiveKit,
+  useDrumKits,
+  useDrumMidiMapping,
+  useLoadDrumKit,
+  useLoadDrumMidiPreset,
+  useDrumMetering,
+  useDrumPosition,
+  useDrumSong,
+  useDrumSongTransport,
+  useClearDrumPattern,
+  useCopyDrumPattern,
   useDrumMachineState,
   useDrumMidiLearn,
   useDrumMixer,
   usePatchDrumKitInstrument,
   useDrumPattern,
   useDrumPacks,
+  useSetDrumPattern,
   useSetDrumPadControl,
+  useSetDrumBusMixer,
+  useSetDrumMasterVolume,
+  useSetDrumMidiMapping,
+  useSetDrumMidiZones,
+  useSetDrumVelocityCurve,
+  useAddDrumSongEntry,
+  usePlayDrumSongTransport,
+  useRemoveDrumSongEntry,
+  useSetDrumSong,
   useSetDrumStep,
+  useStartDrumMidiLearn,
+  useStopDrumSongTransport,
+  useStopDrumMidiLearn,
+  useTriggerDrumFill,
   useDrumTransport,
   useUpdateDrumMachineState,
   useUpdateDrumTransport,
 } from '@/app/hooks/useDrumMachine'
 import { drumsApi } from '@/map2/api'
 import { normalizeDrumMachineState } from '@/map2/drumMachineState'
-import type { DrumInstrument, DrumKit, DrumMachineState, DrumPadControl, DrumPattern } from '@/map2/types'
+import type {
+  DrumBusMixer,
+  DrumInstrument,
+  DrumKit,
+  DrumMachineState,
+  DrumMidiMapping,
+  DrumMidiZones,
+  DrumPadControl,
+  DrumPattern,
+  DrumVelocityCurve,
+} from '@/map2/types'
 
 type DrumMode = DrumMachineState['ui_mode']
 
@@ -63,6 +103,32 @@ const MODE_META: Record<DrumMode, { label: string; accent: string; description: 
   },
 }
 
+const PRACTICE_STYLES = [
+  { id: 'rock_8', label: 'Rock 8', icon: '8', feel: 'Straight', signature: '4/4' },
+  { id: 'rock_16', label: 'Rock 16', icon: '16', feel: 'Driving', signature: '4/4' },
+  { id: 'shuffle_blues', label: 'Shuffle Blues', icon: 'S', feel: 'Shuffle', signature: '12/8' },
+  { id: 'funk_16', label: 'Funk 16', icon: 'F', feel: 'Syncopated', signature: '4/4' },
+  { id: 'metal_doublekick', label: 'Metal DK', icon: 'M', feel: 'Aggressive', signature: '4/4' },
+  { id: 'pop_4onfloor', label: 'Pop 4', icon: 'P', feel: 'Four on Floor', signature: '4/4' },
+  { id: 'jazz_swing', label: 'Jazz Swing', icon: 'J', feel: 'Swing', signature: '4/4' },
+  { id: 'reggae_1drop', label: 'Reggae 1', icon: 'R', feel: 'One Drop', signature: '4/4' },
+] as const
+
+const BACKING_TRACK_LIBRARY = [
+  { id: 'bt-001', name: 'Midnight Motor', genre: 'Rock', key: 'E minor', tempo: 118, duration: '03:24' },
+  { id: 'bt-002', name: 'City Lights', genre: 'Pop', key: 'A major', tempo: 124, duration: '02:58' },
+  { id: 'bt-003', name: 'Copper Shuffle', genre: 'Blues', key: 'G', tempo: 92, duration: '04:11' },
+  { id: 'bt-004', name: 'Neon Circuit', genre: 'Electronic', key: 'D minor', tempo: 128, duration: '03:42' },
+] as const
+
+const VELOCITY_CURVE_OPTIONS: Array<{ value: DrumVelocityCurve['curve_type']; label: string }> = [
+  { value: 0, label: 'Linear' },
+  { value: 1, label: 'Log' },
+  { value: 2, label: 'Exp' },
+  { value: 3, label: 'S-Curve' },
+  { value: 4, label: 'Fixed' },
+]
+
 const shellStyle: Record<string, React.CSSProperties> = {
   page: {
     padding: '24px 24px 40px',
@@ -71,6 +137,38 @@ const shellStyle: Record<string, React.CSSProperties> = {
     display: 'grid',
     gap: 24,
   },
+  skipLinks: {
+    display: 'flex',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  skipLink: {
+    position: 'absolute',
+    left: -9999,
+    top: 'auto',
+    width: 1,
+    height: 1,
+    overflow: 'hidden',
+    padding: '10px 14px',
+    borderRadius: 999,
+    background: '#0f62fe',
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 700,
+    textDecoration: 'none',
+    zIndex: 5,
+  },
+  visuallyHidden: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: 'hidden',
+    clip: 'rect(0, 0, 0, 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
+  } as React.CSSProperties,
   transport: {
     borderRadius: 18,
     border: '1px solid rgba(255,255,255,0.08)',
@@ -321,8 +419,8 @@ const shellStyle: Record<string, React.CSSProperties> = {
     width: 40,
     height: 40,
     borderRadius: 10,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid #6f6f6f',
+    background: '#262626',
     color: '#f4f4f4',
     cursor: 'pointer',
     fontSize: 12,
@@ -362,6 +460,201 @@ const shellStyle: Record<string, React.CSSProperties> = {
     padding: '9px 10px',
     fontSize: 13,
   },
+  panelGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr)',
+    gap: 18,
+  },
+  patternBankGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
+    gap: 8,
+  },
+  patternTileButton: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.03)',
+    color: '#f4f4f4',
+    padding: '10px 8px',
+    cursor: 'pointer',
+    display: 'grid',
+    gap: 4,
+    textAlign: 'left',
+  },
+  patternTileMeta: {
+    fontSize: 11,
+    color: '#a8a8a8',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
+  actionGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+    gap: 10,
+  },
+  fieldGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: 12,
+    alignItems: 'end',
+  },
+  fieldStack: {
+    display: 'grid',
+    gap: 6,
+  },
+  input: {
+    width: '100%',
+    borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(0,0,0,0.18)',
+    color: '#f4f4f4',
+    padding: '9px 10px',
+    fontSize: 13,
+  },
+  songList: {
+    display: 'grid',
+    gap: 10,
+  },
+  songEntry: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.03)',
+    padding: 12,
+    display: 'grid',
+    gap: 10,
+  },
+  songEntryHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
+  songEntryActions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'center',
+  },
+  kitGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: 10,
+  },
+  practiceStyleGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+    gap: 10,
+  },
+  styleTileButton: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.03)',
+    color: '#f4f4f4',
+    padding: 12,
+    cursor: 'pointer',
+    display: 'grid',
+    gap: 8,
+    textAlign: 'left',
+  },
+  styleHero: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    display: 'grid',
+    placeItems: 'center',
+    fontSize: 14,
+    fontWeight: 700,
+    background: 'rgba(69,137,255,0.16)',
+    color: '#a6c8ff',
+  },
+  kitTileButton: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.03)',
+    color: '#f4f4f4',
+    padding: 12,
+    cursor: 'pointer',
+    display: 'grid',
+    gap: 8,
+    textAlign: 'left',
+  },
+  busStripGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+    gap: 12,
+  },
+  busStrip: {
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.03)',
+    padding: 12,
+    display: 'grid',
+    gap: 10,
+  },
+  meterWrap: {
+    height: 110,
+    borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(0,0,0,0.25)',
+    display: 'flex',
+    alignItems: 'flex-end',
+    overflow: 'hidden',
+  },
+  meterFill: {
+    width: '100%',
+    background: 'linear-gradient(180deg, #42be65, #24a148)',
+    transition: 'height 120ms linear',
+    minHeight: 2,
+  },
+  trackTable: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    color: '#f4f4f4',
+  },
+  trackCell: {
+    padding: '10px 8px',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    fontSize: 13,
+  },
+  waveform: {
+    position: 'relative',
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background:
+      'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
+    padding: 12,
+    minHeight: 140,
+    overflow: 'hidden',
+  },
+  waveformBars: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(48, 1fr)',
+    gap: 4,
+    alignItems: 'end',
+    minHeight: 90,
+  },
+  waveformBar: {
+    borderRadius: 999,
+    background: 'linear-gradient(180deg, rgba(255,131,43,0.92), rgba(69,137,255,0.6))',
+  },
+  midiTable: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    color: '#f4f4f4',
+  },
+  midiTableWrap: {
+    overflowX: 'auto',
+  },
+  miniInput: {
+    width: '100%',
+    minWidth: 72,
+    borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'rgba(0,0,0,0.18)',
+    color: '#f4f4f4',
+    padding: '7px 8px',
+    fontSize: 12,
+  },
 }
 
 function transportTag(active: boolean) {
@@ -375,6 +668,30 @@ function modeIndex(mode: DrumMode | undefined) {
 function clampPatternLength(pattern: DrumPattern | undefined) {
   const length = pattern?.length ?? 16
   return Math.max(1, Math.min(64, length))
+}
+
+function buildPatternPayload(patternId: number, pattern: DrumPattern | undefined, length: number): DrumPattern {
+  const boundedLength = Math.max(1, Math.min(64, length))
+  return {
+    pattern_id: patternId,
+    variation: pattern?.variation ?? 0,
+    length: boundedLength,
+    steps: Array.from({ length: 16 }, (_, instrumentIndex) =>
+      Array.from({ length: 64 }, (_, stepIndex) => {
+        const step = pattern?.steps?.[instrumentIndex]?.[stepIndex]
+        return {
+          active: (step?.velocity ?? 0) > 0,
+          velocity: step?.velocity ?? 0,
+          accent: Boolean(step?.accent),
+        }
+      }),
+    ),
+  }
+}
+
+function meterPercent(level: number | undefined) {
+  const value = Number.isFinite(level) ? Number(level) : 0
+  return Math.max(0, Math.min(100, Math.round(value * 100)))
 }
 
 function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number, stepIndex: number) {
@@ -402,6 +719,27 @@ function resolvedPadControl(
   }
 }
 
+function resolvedMidiPad(mapping: DrumMidiMapping | undefined, pad: number) {
+  return mapping?.pads?.find((entry) => entry.pad === pad) ?? { pad, notes: [36 + pad], midi_channel: 10 }
+}
+
+function resolvedVelocityCurve(curves: { pads: DrumVelocityCurve[] } | undefined, pad: number) {
+  return curves?.pads?.find((entry) => entry.pad === pad) ?? {
+    pad,
+    curve_type: 0 as DrumVelocityCurve['curve_type'],
+    fixed_velocity: 1,
+    input_floor: 0,
+    output_floor: 0,
+    output_ceiling: 1,
+    preview: [],
+    last_velocity: 0,
+  }
+}
+
+function resolvedZones(zones: DrumMidiZones | undefined, pad: number) {
+  return zones?.pads?.find((entry) => entry.pad === pad) ?? { pad, zones: [] }
+}
+
 function padAccent(index: number) {
   const accents = ['#4589ff', '#24a148', '#ff832b', '#be95ff', '#08bdba', '#fa4d56', '#d2a106', '#a56eff']
   return accents[index % accents.length]
@@ -409,8 +747,9 @@ function padAccent(index: number) {
 
 function practicePanel(
   state: DrumMachineState,
-  packCounts: { factory: number; user: number },
+  packs: { factory: { pack_id: string; name: string; description: string }[]; user: { pack_id: string; name: string; description: string }[] },
   accent: string,
+  onUpdateState: (patch: Partial<DrumMachineState>) => void,
 ) {
   return (
     <div style={shellStyle.modeShell}>
@@ -419,13 +758,95 @@ function practicePanel(
           <Tile style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}` }}>
             <div style={shellStyle.tileHeader}>
               <h2 style={shellStyle.tileTitle}>Practice Workspace</h2>
-              <Tag type="blue">Ready</Tag>
+              <Tag type="blue">Live</Tag>
             </div>
             <p style={shellStyle.tileText}>
-              This mode shell now carries the correct page structure for style selection, count-in,
-              quantization, variation, and arrangement loading. The detailed style browser lands in
-              `T217-G`.
+              Style, count-in, quantize, variation, and arrangement sources now live in one rehearsal
+              surface so practice sessions can be configured without dropping back to Advanced mode.
             </p>
+            <div style={shellStyle.practiceStyleGrid}>
+              {PRACTICE_STYLES.map((style) => {
+                const isActive = state.practice_style_id === style.id
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => onUpdateState({ practice_style_id: style.id })}
+                    style={{
+                      ...shellStyle.styleTileButton,
+                      borderColor: isActive ? accent : 'rgba(255,255,255,0.12)',
+                      boxShadow: isActive ? `0 0 0 1px ${accent}` : 'none',
+                    }}
+                  >
+                    <span style={shellStyle.styleHero} aria-hidden>{style.icon}</span>
+                    <strong>{style.label}</strong>
+                    <div style={shellStyle.rowMeta}>
+                      <Tag type={isActive ? 'green' : 'cool-gray'}>{isActive ? 'Active' : style.feel}</Tag>
+                      <Tag type="blue">{style.signature}</Tag>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </Tile>
+          <Tile style={shellStyle.tile}>
+            <div style={shellStyle.tileHeader}>
+              <h3 style={shellStyle.tileTitle}>Rehearsal Controls</h3>
+              <Tag type="cool-gray">Session</Tag>
+            </div>
+            <div style={shellStyle.fieldGrid}>
+              <label style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Count-In Bars</span>
+                <input
+                  aria-label="Practice count-in bars"
+                  type="number"
+                  min={0}
+                  max={4}
+                  value={state.practice_count_in_bars}
+                  onChange={(event) => onUpdateState({ practice_count_in_bars: Number(event.currentTarget.value) })}
+                  style={shellStyle.input}
+                />
+              </label>
+              <label style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Quantize Bars</span>
+                <input
+                  aria-label="Practice quantize bars"
+                  type="number"
+                  min={1}
+                  max={8}
+                  value={state.practice_change_quantization}
+                  onChange={(event) => onUpdateState({ practice_change_quantization: Number(event.currentTarget.value) })}
+                  style={shellStyle.input}
+                />
+              </label>
+            </div>
+            <label style={shellStyle.fieldStack}>
+              <span style={shellStyle.clusterLabel}>Variation</span>
+              <div style={shellStyle.sliderValue}>
+                <span>Intensity</span>
+                <strong>{state.practice_variation}</strong>
+              </div>
+              <input
+                aria-label="Practice variation"
+                type="range"
+                min={0}
+                max={10}
+                step={1}
+                value={state.practice_variation}
+                onChange={(event) => onUpdateState({ practice_variation: Number(event.currentTarget.value) })}
+                style={shellStyle.range}
+              />
+            </label>
+            <div style={shellStyle.toggleRow}>
+              <Button
+                kind={state.practice_auto_fill ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => onUpdateState({ practice_auto_fill: !state.practice_auto_fill })}
+              >
+                Auto Fill {state.practice_auto_fill ? 'On' : 'Off'}
+              </Button>
+            </div>
             <div style={shellStyle.statGrid}>
               <div style={shellStyle.statCard}>
                 <span style={shellStyle.statLabel}>Variation</span>
@@ -445,37 +866,45 @@ function practicePanel(
               </div>
             </div>
           </Tile>
-          <Tile style={shellStyle.tile}>
-            <div style={shellStyle.tileHeader}>
-              <h3 style={shellStyle.tileTitle}>Arrangement Sources</h3>
-              <Tag type="cool-gray">Catalog</Tag>
-            </div>
-            <p style={shellStyle.tileText}>
-              Factory packs, user packs, and style-arrangement loading now have a dedicated content
-              region instead of being split across the old placeholder tabs.
-            </p>
-            <div style={shellStyle.statGrid}>
-              <div style={shellStyle.statCard}>
-                <span style={shellStyle.statLabel}>Factory Packs</span>
-                <span style={shellStyle.statValue}>{packCounts.factory}</span>
-              </div>
-              <div style={shellStyle.statCard}>
-                <span style={shellStyle.statLabel}>User Packs</span>
-                <span style={shellStyle.statValue}>{packCounts.user}</span>
-              </div>
-            </div>
-          </Tile>
         </div>
         <div style={shellStyle.modeColumn}>
           <Tile style={shellStyle.tile}>
             <div style={shellStyle.tileHeader}>
-              <h3 style={shellStyle.tileTitle}>Status Focus</h3>
-              <Tag type="teal">Session</Tag>
+              <h3 style={shellStyle.tileTitle}>Practice Pack Browser</h3>
+              <Tag type="teal">Catalog</Tag>
             </div>
-            <p style={shellStyle.tileText}>
-              Practice mode stays simplified while preserving the same top transport and footer
-              status bar as the Advanced and Backing Tracks shells.
-            </p>
+            <Accordion align="start">
+              <AccordionItem title={`Factory Packs (${packs.factory.length})`}>
+                <div style={shellStyle.songList}>
+                  {packs.factory.length === 0 ? (
+                    <p style={shellStyle.tileText}>No factory packs detected.</p>
+                  ) : packs.factory.map((pack) => (
+                    <div key={pack.pack_id} style={shellStyle.songEntry}>
+                      <strong>{pack.name}</strong>
+                      <p style={shellStyle.tileText}>{pack.description || 'Factory rehearsal arrangement pack.'}</p>
+                      <Button size="sm" kind="ghost" onClick={() => onUpdateState({ active_pack: pack.pack_id })}>
+                        Load Arrangement
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </AccordionItem>
+              <AccordionItem title={`User Packs (${packs.user.length})`}>
+                <div style={shellStyle.songList}>
+                  {packs.user.length === 0 ? (
+                    <p style={shellStyle.tileText}>No user packs imported yet.</p>
+                  ) : packs.user.map((pack) => (
+                    <div key={pack.pack_id} style={shellStyle.songEntry}>
+                      <strong>{pack.name}</strong>
+                      <p style={shellStyle.tileText}>{pack.description || 'User rehearsal arrangement pack.'}</p>
+                      <Button size="sm" kind="ghost" onClick={() => onUpdateState({ active_pack: pack.pack_id })}>
+                        Load Arrangement
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </AccordionItem>
+            </Accordion>
           </Tile>
         </div>
       </div>
@@ -486,6 +915,9 @@ function practicePanel(
 function advancedPanel(
   patternId: number,
   variation: number,
+  isPlaying: boolean,
+  isSongPlaying: boolean,
+  currentSongEntryIndex: number,
   accent: string,
   pattern: DrumPattern | undefined,
   activeKit: DrumKit | null | undefined,
@@ -498,6 +930,64 @@ function advancedPanel(
   onCommitName: (padId: number) => void,
   onUpdatePadControl: (padId: number, params: Partial<DrumPadControl>) => void,
   onToggleStep: (instrumentIndex: number, stepIndex: number, nextVelocity: number, accent: boolean) => void,
+  selectedPatternSlot: number,
+  selectedPatternPage: number,
+  patternClipboard: number | null,
+  clearModalOpen: boolean,
+  songEntries: { pattern_id: number; repeat_count: number }[],
+  songLoop: boolean,
+  songDraftPattern: number,
+  songDraftRepeats: number,
+  onSelectPatternSlot: (patternId: number) => void,
+  onChangePatternPage: (page: number) => void,
+  onCopyPattern: () => void,
+  onPastePattern: () => void,
+  onDuplicatePattern: () => void,
+  onRequestClearPattern: () => void,
+  onConfirmClearPattern: () => void,
+  onCloseClearPattern: () => void,
+  onSetPatternLength: (length: number) => void,
+  onSetVariation: (variation: number) => void,
+  onTriggerFill: () => void,
+  onSongDraftPatternChange: (patternId: number) => void,
+  onSongDraftRepeatsChange: (repeatCount: number) => void,
+  onAddSongEntry: () => void,
+  onRemoveSongEntry: (index: number) => void,
+  onMoveSongEntry: (index: number, direction: -1 | 1) => void,
+  onToggleSongLoop: () => void,
+  onPlaySong: () => void,
+  onStopSong: () => void,
+  kits: DrumKit[],
+  busMixers: DrumBusMixer[],
+  masterVolume: number,
+  metering: {
+    per_pad_peak: number[]
+    per_bus_peak: number[]
+    master_peak_left: number
+    master_peak_right: number
+  } | undefined,
+  pendingKitId: string | null,
+  kitModalOpen: boolean,
+  onSelectKit: (kitId: string) => void,
+  onCloseKitModal: () => void,
+  onConfirmLoadKit: () => void,
+  onUpdateBusMixer: (busId: number, params: Partial<DrumBusMixer>) => void,
+  onUpdateMasterVolume: (volume: number) => void,
+  midiMapping: DrumMidiMapping | undefined,
+  velocityCurves: { pads: DrumVelocityCurve[] } | undefined,
+  midiZones: DrumMidiZones | undefined,
+  midiLearnState: { active: boolean; active_pad_index: number; learn_all: boolean; last_received_note: number; last_received_channel: number } | undefined,
+  midiPresets: string[],
+  selectedMidiPreset: string,
+  onSelectMidiPreset: (presetName: string) => void,
+  onUpdateMidiPad: (padId: number, patch: { notes?: number[]; midi_channel?: number }) => void,
+  onUpdateVelocityCurve: (padId: number, patch: Partial<DrumVelocityCurve>) => void,
+  onUpdateMidiZones: (padId: number, zones: DrumMidiZones['pads'][number]['zones']) => void,
+  onStartMidiLearn: (padId?: number) => void,
+  onStopMidiLearn: () => void,
+  onLoadMidiPreset: () => void,
+  onNavigateStep: (rowDelta: number, colDelta: number, instrumentIndex: number, stepIndex: number) => void,
+  sequencerRef: RefObject<HTMLDivElement | null>,
 ) {
   const visibleSteps = Math.min(16, clampPatternLength(pattern))
   const selectedInstrument = activeKit?.instruments?.[selectedPad]
@@ -513,6 +1003,12 @@ function advancedPanel(
       ...pad,
     }
   })
+  const pageStart = selectedPatternPage * 32
+  const pagePatterns = Array.from({ length: 32 }, (_, offset) => pageStart + offset)
+  const selectedKitSummary = kits.find((kit) => kit.kit_id === pendingKitId) ?? null
+  const selectedMidiPad = resolvedMidiPad(midiMapping, selectedPad)
+  const selectedVelocityCurve = resolvedVelocityCurve(velocityCurves, selectedPad)
+  const selectedZoneConfig = resolvedZones(midiZones, selectedPad)
 
   return (
     <div style={shellStyle.modeShell}>
@@ -546,7 +1042,7 @@ function advancedPanel(
               </div>
             </div>
 
-            <div style={shellStyle.sequencerGrid} role="grid" aria-label="TR-style drum step sequencer">
+            <div ref={sequencerRef} style={shellStyle.sequencerGrid} role="grid" aria-label="TR-style drum step sequencer">
               <div style={shellStyle.sequencerHeader}>
                 <span style={shellStyle.clusterLabel}>Instrument</span>
                 {Array.from({ length: visibleSteps }, (_, stepIndex) => (
@@ -562,7 +1058,9 @@ function advancedPanel(
               </div>
 
               {instruments.map((instrument, instrumentIndex) => {
-                const rowActive = currentStep < visibleSteps && resolvedStep(pattern, instrumentIndex, currentStep).active
+                const rowActive =
+                  (currentStep < visibleSteps && resolvedStep(pattern, instrumentIndex, currentStep).active) ||
+                  (metering?.per_pad_peak?.[instrumentIndex] ?? 0) > 0.05
 
                 return (
                   <div
@@ -689,8 +1187,11 @@ function advancedPanel(
                         key={`${instrumentIndex}-${stepIndex}`}
                         type="button"
                         role="gridcell"
+                        data-step-key={`${instrumentIndex}:${stepIndex}`}
                         aria-label={`${instrument.name} step ${stepIndex + 1}`}
                         aria-pressed={step.active}
+                        aria-rowindex={instrumentIndex + 1}
+                        aria-colindex={stepIndex + 1}
                         onClick={(event) => {
                           onSelectPad(instrumentIndex)
                           const nextVelocity = step.active ? 0 : 100
@@ -698,6 +1199,26 @@ function advancedPanel(
                           onToggleStep(instrumentIndex, stepIndex, nextVelocity, nextAccent)
                         }}
                         onKeyDown={(event) => {
+                          if (event.key === 'ArrowRight') {
+                            event.preventDefault()
+                            onNavigateStep(0, 1, instrumentIndex, stepIndex)
+                            return
+                          }
+                          if (event.key === 'ArrowLeft') {
+                            event.preventDefault()
+                            onNavigateStep(0, -1, instrumentIndex, stepIndex)
+                            return
+                          }
+                          if (event.key === 'ArrowDown') {
+                            event.preventDefault()
+                            onNavigateStep(1, 0, instrumentIndex, stepIndex)
+                            return
+                          }
+                          if (event.key === 'ArrowUp') {
+                            event.preventDefault()
+                            onNavigateStep(-1, 0, instrumentIndex, stepIndex)
+                            return
+                          }
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault()
                             onSelectPad(instrumentIndex)
@@ -710,17 +1231,17 @@ function advancedPanel(
                           ...shellStyle.stepButton,
                           background: step.active
                             ? step.accent
-                              ? 'linear-gradient(180deg, rgba(69,137,255,0.95), rgba(10,132,255,0.78))'
-                              : 'linear-gradient(180deg, rgba(36,161,72,0.95), rgba(14,104,38,0.78))'
-                            : 'rgba(255,255,255,0.04)',
+                              ? 'linear-gradient(180deg, #78a9ff, #0f62fe)'
+                              : 'linear-gradient(180deg, #42be65, #198038)'
+                            : '#262626',
                           borderColor: isCurrent
-                            ? accent
+                            ? '#ffffff'
                             : step.accent
-                              ? '#a6c8ff'
+                              ? '#d0e2ff'
                               : step.active
-                                ? '#42be65'
-                                : 'rgba(255,255,255,0.12)',
-                          boxShadow: isCurrent ? `0 0 0 1px ${accent}, 0 0 16px rgba(69,137,255,0.18)` : 'none',
+                                ? '#a7f0ba'
+                                : '#6f6f6f',
+                          boxShadow: isCurrent ? `0 0 0 2px ${accent}, 0 0 0 4px rgba(255,255,255,0.18)` : 'none',
                           transform: isCurrent ? 'translateY(-1px)' : 'none',
                         }}
                         title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}`}
@@ -750,6 +1271,375 @@ function advancedPanel(
               })}
             </div>
           </Tile>
+          <div style={shellStyle.panelGrid}>
+            <Tile style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}` }}>
+              <div style={shellStyle.tileHeader}>
+                <h3 style={shellStyle.tileTitle}>Pattern Management</h3>
+                <Tag type="blue">Slot {selectedPatternSlot}</Tag>
+              </div>
+              <p style={shellStyle.tileText}>
+                Pattern banking is now live with slot paging, clipboard copy/paste, duplicate, length
+                updates, and confirmed clear for the selected slot.
+              </p>
+              <div style={shellStyle.actionGrid}>
+                {[0, 1, 2, 3].map((page) => (
+                  <Button
+                    key={`pattern-page-${page}`}
+                    kind={selectedPatternPage === page ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => onChangePatternPage(page)}
+                  >
+                    Slots {page * 32}-{page * 32 + 31}
+                  </Button>
+                ))}
+              </div>
+              <div style={shellStyle.patternBankGrid}>
+                {pagePatterns.map((slotPatternId) => (
+                  <button
+                    key={`pattern-slot-${slotPatternId}`}
+                    type="button"
+                    aria-label={`Pattern slot ${slotPatternId}`}
+                    onClick={() => onSelectPatternSlot(slotPatternId)}
+                    style={{
+                      ...shellStyle.patternTileButton,
+                      borderColor:
+                        slotPatternId === patternId
+                          ? accent
+                          : slotPatternId === patternClipboard
+                            ? '#4589ff'
+                            : 'rgba(255,255,255,0.12)',
+                      boxShadow: slotPatternId === patternId ? `0 0 0 1px ${accent}` : 'none',
+                      background:
+                        slotPatternId === patternId ? 'rgba(36,161,72,0.12)' : 'rgba(255,255,255,0.03)',
+                    }}
+                  >
+                    <strong>P{slotPatternId.toString().padStart(3, '0')}</strong>
+                    <span style={shellStyle.patternTileMeta}>
+                      {slotPatternId === patternId ? 'Active' : slotPatternId === selectedPatternSlot ? 'Selected' : 'Slot'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div style={shellStyle.actionGrid}>
+                <Button kind="secondary" size="sm" onClick={onCopyPattern}>
+                  Copy
+                </Button>
+                <Button kind="secondary" size="sm" onClick={onPastePattern} disabled={patternClipboard === null}>
+                  Paste
+                </Button>
+                <Button kind="secondary" size="sm" onClick={onDuplicatePattern}>
+                  Duplicate
+                </Button>
+                <Button kind="danger--tertiary" size="sm" onClick={onRequestClearPattern}>
+                  Clear
+                </Button>
+              </div>
+              <div style={shellStyle.fieldGrid}>
+                <label style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Pattern Length</span>
+                  <input
+                    aria-label="Pattern length"
+                    type="number"
+                    min={1}
+                    max={64}
+                    value={clampPatternLength(pattern)}
+                    onChange={(event) => onSetPatternLength(Number(event.currentTarget.value))}
+                    style={shellStyle.input}
+                  />
+                </label>
+                <label style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Variation</span>
+                  <select
+                    aria-label="Pattern variation"
+                    value={variation}
+                    onChange={(event) => onSetVariation(Number(event.currentTarget.value))}
+                    style={shellStyle.input}
+                  >
+                    <option value={0}>Main</option>
+                    {Array.from({ length: 10 }, (_, index) => (
+                      <option key={`variation-${index + 1}`} value={index + 1}>
+                        Var {index + 1}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Fill</span>
+                  <Button kind="ghost" size="sm" onClick={onTriggerFill}>
+                    Trigger Fill
+                  </Button>
+                </div>
+              </div>
+              <Modal
+                open={clearModalOpen}
+                modalHeading={`Clear pattern ${selectedPatternSlot}`}
+                primaryButtonText="Clear Pattern"
+                secondaryButtonText="Cancel"
+                danger
+                onRequestSubmit={onConfirmClearPattern}
+                onRequestClose={onCloseClearPattern}
+              >
+                Clearing resets the selected slot to a blank 16-step pattern.
+              </Modal>
+            </Tile>
+            <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #4589ff' }}>
+              <div style={shellStyle.tileHeader}>
+                <h3 style={shellStyle.tileTitle}>Song Arranger</h3>
+                <Tag type={songLoop ? 'blue' : 'gray'}>{songLoop ? 'Looping' : 'One Pass'}</Tag>
+              </div>
+              <p style={shellStyle.tileText}>
+                The arranger now supports append/remove plus accessible move controls so pattern
+                chains can be assembled without drag-only interactions.
+              </p>
+              <div style={shellStyle.actionGrid}>
+                <Button kind="primary" size="sm" renderIcon={Add} onClick={onAddSongEntry}>
+                  Add Entry
+                </Button>
+                <Button kind={isSongPlaying ? 'secondary' : 'primary'} size="sm" onClick={onPlaySong}>
+                  Play Song
+                </Button>
+                <Button kind="tertiary" size="sm" onClick={onStopSong}>
+                  Stop Song
+                </Button>
+                <Button kind={songLoop ? 'primary' : 'secondary'} size="sm" onClick={onToggleSongLoop}>
+                  Loop {songLoop ? 'On' : 'Off'}
+                </Button>
+              </div>
+              <div style={shellStyle.fieldGrid}>
+                <label style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Pattern</span>
+                  <input
+                    aria-label="Song entry pattern"
+                    type="number"
+                    min={0}
+                    max={127}
+                    value={songDraftPattern}
+                    onChange={(event) => onSongDraftPatternChange(Number(event.currentTarget.value))}
+                    style={shellStyle.input}
+                  />
+                </label>
+                <label style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Repeats</span>
+                  <input
+                    aria-label="Song entry repeats"
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={songDraftRepeats}
+                    onChange={(event) => onSongDraftRepeatsChange(Number(event.currentTarget.value))}
+                    style={shellStyle.input}
+                  />
+                </label>
+              </div>
+              <div style={shellStyle.songList}>
+                {songEntries.length === 0 ? (
+                  <InlineNotification
+                    kind="info"
+                    lowContrast
+                    hideCloseButton
+                    title="No song entries yet"
+                    subtitle="Add patterns above to build a repeatable song arrangement."
+                  />
+                ) : (
+                  songEntries.map((entry, index) => {
+                    const isCurrent = isSongPlaying && currentSongEntryIndex === index
+                    return (
+                      <div
+                        key={`song-entry-${index}-${entry.pattern_id}`}
+                        style={{
+                          ...shellStyle.songEntry,
+                          borderColor: isCurrent ? accent : 'rgba(255,255,255,0.1)',
+                          boxShadow: isCurrent ? `0 0 0 1px ${accent}` : 'none',
+                        }}
+                      >
+                        <div style={shellStyle.songEntryHeader}>
+                          <div>
+                            <strong>Pattern {entry.pattern_id}</strong>
+                            <p style={{ ...shellStyle.tileText, marginTop: 4 }}>Repeat {entry.repeat_count}x</p>
+                          </div>
+                          <div style={shellStyle.songEntryActions}>
+                            <Tag type={isCurrent ? 'green' : 'cool-gray'}>{isCurrent ? 'Current' : `Step ${index + 1}`}</Tag>
+                          </div>
+                        </div>
+                        <div style={shellStyle.songEntryActions}>
+                          <Button
+                            kind="ghost"
+                            size="sm"
+                            disabled={index === 0}
+                            onClick={() => onMoveSongEntry(index, -1)}
+                          >
+                            Move Up
+                          </Button>
+                          <Button
+                            kind="ghost"
+                            size="sm"
+                            disabled={index === songEntries.length - 1}
+                            onClick={() => onMoveSongEntry(index, 1)}
+                          >
+                            Move Down
+                          </Button>
+                          <Button
+                            kind="danger--ghost"
+                            size="sm"
+                            renderIcon={TrashCan}
+                            onClick={() => onRemoveSongEntry(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </Tile>
+          </div>
+          <div style={shellStyle.panelGrid}>
+            <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #08bdba' }}>
+              <div style={shellStyle.tileHeader}>
+                <h3 style={shellStyle.tileTitle}>Kit Browser</h3>
+                <Tag type="teal">{kits.length} kits</Tag>
+              </div>
+              <p style={shellStyle.tileText}>
+                Available drum kits are now browsable inline and load through a confirmation modal so
+                the active assignment cannot be replaced accidentally.
+              </p>
+              <div style={shellStyle.kitGrid}>
+                {kits.map((kit) => {
+                  const isActiveKit = kit.kit_id === activeKit?.kit_id
+                  return (
+                    <button
+                      key={kit.kit_id}
+                      type="button"
+                      aria-label={`Load kit ${kit.name}`}
+                      onClick={() => onSelectKit(kit.kit_id)}
+                      style={{
+                        ...shellStyle.kitTileButton,
+                        borderColor: isActiveKit ? '#08bdba' : 'rgba(255,255,255,0.12)',
+                        boxShadow: isActiveKit ? '0 0 0 1px #08bdba' : 'none',
+                      }}
+                    >
+                      <strong>{kit.name}</strong>
+                      <div style={shellStyle.rowMeta}>
+                        <Tag type={isActiveKit ? 'green' : 'cool-gray'}>{isActiveKit ? 'Active' : 'Available'}</Tag>
+                        <Tag type="blue">{kit.category}</Tag>
+                      </div>
+                      <span style={shellStyle.tileText}>{kit.instruments?.length ?? 0} instruments</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <Modal
+                open={kitModalOpen}
+                modalHeading={selectedKitSummary ? `Load ${selectedKitSummary.name}` : 'Load drum kit'}
+                primaryButtonText="Load Kit"
+                secondaryButtonText="Cancel"
+                onRequestSubmit={onConfirmLoadKit}
+                onRequestClose={onCloseKitModal}
+              >
+                Loading a kit replaces the current active drum assignment and row metadata.
+              </Modal>
+            </Tile>
+            <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #d2a106' }}>
+              <div style={shellStyle.tileHeader}>
+                <h3 style={shellStyle.tileTitle}>Mixer + Metering</h3>
+                <Tag type="warm-gray">8 buses</Tag>
+              </div>
+              <p style={shellStyle.tileText}>
+                Bus strips now expose EQ, compressor, mute/solo, level, and live peak metering,
+                with master output control and stereo peak readout alongside them.
+              </p>
+              <div style={shellStyle.fieldGrid}>
+                <label style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Master Output</span>
+                  <input
+                    aria-label="Mixer master volume"
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={masterVolume}
+                    onChange={(event) => onUpdateMasterVolume(Number(event.currentTarget.value))}
+                    style={shellStyle.compactRange}
+                  />
+                </label>
+                <div style={shellStyle.statGrid}>
+                  <div style={shellStyle.statCard}>
+                    <span style={shellStyle.statLabel}>Master L</span>
+                    <span style={shellStyle.statValue}>{meterPercent(metering?.master_peak_left)}%</span>
+                  </div>
+                  <div style={shellStyle.statCard}>
+                    <span style={shellStyle.statLabel}>Master R</span>
+                    <span style={shellStyle.statValue}>{meterPercent(metering?.master_peak_right)}%</span>
+                  </div>
+                </div>
+              </div>
+              <div style={shellStyle.busStripGrid}>
+                {busMixers.map((bus) => (
+                  <div key={bus.bus_id} style={shellStyle.busStrip}>
+                    <div style={shellStyle.tileHeader}>
+                      <strong>{bus.name || `Bus ${bus.bus_id}`}</strong>
+                      <Tag type={bus.mute ? 'red' : bus.solo ? 'cyan' : 'cool-gray'}>
+                        {bus.mute ? 'Muted' : bus.solo ? 'Solo' : 'Live'}
+                      </Tag>
+                    </div>
+                    <div style={shellStyle.meterWrap} aria-label={`${bus.name} peak meter`}>
+                      <div
+                        style={{
+                          ...shellStyle.meterFill,
+                          height: `${meterPercent(metering?.per_bus_peak?.[bus.bus_id])}%`,
+                        }}
+                      />
+                    </div>
+                    <div style={shellStyle.toggleRow}>
+                      <button
+                        type="button"
+                        aria-label={`${bus.name} mute`}
+                        aria-pressed={bus.mute}
+                        onClick={() => onUpdateBusMixer(bus.bus_id, { mute: !bus.mute })}
+                        style={shellStyle.miniToggle}
+                      >
+                        Mute
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`${bus.name} solo`}
+                        aria-pressed={bus.solo}
+                        onClick={() => onUpdateBusMixer(bus.bus_id, { solo: !bus.solo })}
+                        style={shellStyle.miniToggle}
+                      >
+                        Solo
+                      </button>
+                    </div>
+                    {[
+                      { label: 'Level', min: 0, max: 100, value: bus.level, update: (value: number) => ({ level: value }) },
+                      { label: 'Low', min: -24, max: 24, value: bus.eq.low_gain, update: (value: number) => ({ eq: { ...bus.eq, low_gain: value } }) },
+                      { label: 'Mid', min: -24, max: 24, value: bus.eq.mid_gain, update: (value: number) => ({ eq: { ...bus.eq, mid_gain: value } }) },
+                      { label: 'High', min: -24, max: 24, value: bus.eq.high_gain, update: (value: number) => ({ eq: { ...bus.eq, high_gain: value } }) },
+                      { label: 'Ratio', min: 1, max: 20, value: bus.comp.ratio, update: (value: number) => ({ comp: { ...bus.comp, ratio: value } }) },
+                    ].map((control) => (
+                      <label key={`${bus.bus_id}-${control.label}`} style={shellStyle.fieldStack}>
+                        <div style={shellStyle.sliderValue}>
+                          <span>{control.label}</span>
+                          <strong>{control.value}</strong>
+                        </div>
+                        <input
+                          aria-label={`${bus.name} ${control.label}`}
+                          type="range"
+                          min={control.min}
+                          max={control.max}
+                          step={1}
+                          value={control.value}
+                          onChange={(event) => onUpdateBusMixer(bus.bus_id, control.update(Number(event.currentTarget.value)))}
+                          style={shellStyle.compactRange}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </Tile>
+          </div>
         </div>
         <div style={shellStyle.modeColumn}>
           <Tile style={{ ...shellStyle.tile, ...shellStyle.inspectorTile }}>
@@ -798,45 +1688,346 @@ function advancedPanel(
               </div>
             </div>
           </Tile>
+          <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #be95ff' }}>
+            <div style={shellStyle.tileHeader}>
+              <h3 style={shellStyle.tileTitle}>MIDI Configuration</h3>
+              <Tag type={midiLearnState?.active ? 'magenta' : 'purple'}>
+                {midiLearnState?.active ? `Learning Pad ${midiLearnState.active_pad_index + 1}` : 'Ready'}
+              </Tag>
+            </div>
+            <p style={shellStyle.tileText}>
+              Pad note/channel assignment, velocity shaping, learn mode, hardware presets, and zone
+              routing now live beside the sequencer instead of staying queued behind the inspector.
+            </p>
+            <div style={shellStyle.fieldGrid}>
+              <label style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Hardware Preset</span>
+                <select
+                  aria-label="Drum MIDI preset"
+                  value={selectedMidiPreset}
+                  onChange={(event) => onSelectMidiPreset(event.currentTarget.value)}
+                  style={shellStyle.input}
+                >
+                  {midiPresets.length === 0 ? <option value="">No presets detected</option> : null}
+                  {midiPresets.map((preset) => (
+                    <option key={preset} value={preset}>{preset}</option>
+                  ))}
+                </select>
+              </label>
+              <div style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Learn Controls</span>
+                <div style={shellStyle.buttonRow}>
+                  <Button size="sm" kind="secondary" onClick={() => onStartMidiLearn(selectedPad)}>
+                    Learn Pad {selectedPad + 1}
+                  </Button>
+                  <Button size="sm" kind="secondary" onClick={() => onStartMidiLearn()}>
+                    Learn All
+                  </Button>
+                  <Button size="sm" kind="tertiary" onClick={onStopMidiLearn}>
+                    Stop Learn
+                  </Button>
+                  <Button size="sm" kind="ghost" onClick={onLoadMidiPreset} disabled={!selectedMidiPreset}>
+                    Apply Preset
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div style={shellStyle.statGrid}>
+              <div style={shellStyle.statCard}>
+                <span style={shellStyle.statLabel}>Last Note</span>
+                <span style={shellStyle.statValue}>{midiLearnState && midiLearnState.last_received_note >= 0 ? midiLearnState.last_received_note : '--'}</span>
+              </div>
+              <div style={shellStyle.statCard}>
+                <span style={shellStyle.statLabel}>Last Channel</span>
+                <span style={shellStyle.statValue}>{midiLearnState && midiLearnState.last_received_channel >= 0 ? midiLearnState.last_received_channel + 1 : '--'}</span>
+              </div>
+            </div>
+            <div style={shellStyle.midiTableWrap}>
+              <table style={shellStyle.midiTable} aria-label="Drum MIDI mapping table">
+                <thead>
+                  <tr>
+                    {['Pad', 'Note', 'Channel', 'Curve', 'Zone'].map((heading) => (
+                      <th key={heading} style={{ ...shellStyle.trackCell, textAlign: 'left', color: '#a8a8a8' }}>{heading}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 16 }, (_, padId) => {
+                    const padMapping = resolvedMidiPad(midiMapping, padId)
+                    const curve = resolvedVelocityCurve(velocityCurves, padId)
+                    const zoneConfig = resolvedZones(midiZones, padId)
+                    return (
+                      <tr key={`midi-pad-${padId}`}>
+                        <td style={shellStyle.trackCell}>{draftNames[padId] ?? `Pad ${padId + 1}`}</td>
+                        <td style={shellStyle.trackCell}>
+                          <input
+                            aria-label={`Pad ${padId + 1} MIDI note`}
+                            type="number"
+                            min={0}
+                            max={127}
+                            value={padMapping.notes[0] ?? 36 + padId}
+                            onChange={(event) => onUpdateMidiPad(padId, { notes: [Number(event.currentTarget.value)] })}
+                            style={shellStyle.miniInput}
+                          />
+                        </td>
+                        <td style={shellStyle.trackCell}>
+                          <select
+                            aria-label={`Pad ${padId + 1} MIDI channel`}
+                            value={padMapping.midi_channel}
+                            onChange={(event) => onUpdateMidiPad(padId, { midi_channel: Number(event.currentTarget.value) })}
+                            style={shellStyle.miniInput}
+                          >
+                            {Array.from({ length: 16 }, (_, channel) => (
+                              <option key={`${padId}-channel-${channel}`} value={channel}>{channel + 1}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={shellStyle.trackCell}>
+                          <select
+                            aria-label={`Pad ${padId + 1} velocity curve`}
+                            value={curve.curve_type}
+                            onChange={(event) => onUpdateVelocityCurve(padId, { curve_type: Number(event.currentTarget.value) as DrumVelocityCurve['curve_type'] })}
+                            style={shellStyle.miniInput}
+                          >
+                            {VELOCITY_CURVE_OPTIONS.map((option) => (
+                              <option key={`${padId}-curve-${option.value}`} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={shellStyle.trackCell}>
+                          <input
+                            aria-label={`Pad ${padId + 1} head zone note`}
+                            type="number"
+                            min={0}
+                            max={127}
+                            value={zoneConfig.zones[0]?.trigger_note ?? padMapping.notes[0] ?? 36 + padId}
+                            onChange={(event) =>
+                              onUpdateMidiZones(padId, [
+                                {
+                                  kind: 0,
+                                  trigger_note: Number(event.currentTarget.value),
+                                  key_switch_note: zoneConfig.zones[0]?.key_switch_note ?? -1,
+                                  velocity_scale: zoneConfig.zones[0]?.velocity_scale ?? 1,
+                                  enabled: zoneConfig.zones[0]?.enabled ?? true,
+                                },
+                                ...(zoneConfig.zones.slice(1)),
+                              ])
+                            }
+                            style={shellStyle.miniInput}
+                          />
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div style={shellStyle.fieldGrid}>
+              <label style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Selected Pad Curve</span>
+                <div style={shellStyle.sliderValue}>
+                  <span>Output Ceiling</span>
+                  <strong>{selectedVelocityCurve.output_ceiling.toFixed(2)}</strong>
+                </div>
+                <input
+                  aria-label="Selected pad output ceiling"
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={selectedVelocityCurve.output_ceiling}
+                  onChange={(event) => onUpdateVelocityCurve(selectedPad, { output_ceiling: Number(event.currentTarget.value) })}
+                  style={shellStyle.range}
+                />
+              </label>
+              <label style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Selected Pad Zone</span>
+                <div style={shellStyle.sliderValue}>
+                  <span>Head Trigger</span>
+                  <strong>{selectedZoneConfig.zones[0]?.trigger_note ?? selectedMidiPad.notes[0] ?? '--'}</strong>
+                </div>
+                <input
+                  aria-label="Selected pad head zone note"
+                  type="number"
+                  min={0}
+                  max={127}
+                  value={selectedZoneConfig.zones[0]?.trigger_note ?? selectedMidiPad.notes[0] ?? 36 + selectedPad}
+                  onChange={(event) =>
+                    onUpdateMidiZones(selectedPad, [
+                      {
+                        kind: 0,
+                        trigger_note: Number(event.currentTarget.value),
+                        key_switch_note: selectedZoneConfig.zones[0]?.key_switch_note ?? -1,
+                        velocity_scale: selectedZoneConfig.zones[0]?.velocity_scale ?? 1,
+                        enabled: selectedZoneConfig.zones[0]?.enabled ?? true,
+                      },
+                      ...(selectedZoneConfig.zones.slice(1)),
+                    ])
+                  }
+                  style={shellStyle.input}
+                />
+              </label>
+            </div>
+          </Tile>
         </div>
       </div>
     </div>
   )
 }
 
-function backingTracksPanel(accent: string) {
+function backingTracksPanel(
+  accent: string,
+  search: string,
+  selectedTrackId: string,
+  loopEnabled: boolean,
+  tempoShift: number,
+  pitchShift: number,
+  onSearchChange: (value: string) => void,
+  onSelectTrack: (trackId: string) => void,
+  onToggleLoop: () => void,
+  onTempoShiftChange: (value: number) => void,
+  onPitchShiftChange: (value: number) => void,
+) {
+  const filteredTracks = BACKING_TRACK_LIBRARY.filter((track) => {
+    const normalized = search.trim().toLowerCase()
+    if (!normalized) {
+      return true
+    }
+    return [track.name, track.genre, track.key].some((value) => value.toLowerCase().includes(normalized))
+  })
+  const selectedTrack =
+    filteredTracks.find((track) => track.id === selectedTrackId) ??
+    BACKING_TRACK_LIBRARY.find((track) => track.id === selectedTrackId) ??
+    filteredTracks[0] ??
+    BACKING_TRACK_LIBRARY[0]
+
   return (
     <div style={shellStyle.modeShell}>
       <div style={shellStyle.modeGrid}>
         <div style={shellStyle.modeColumn}>
           <Tile style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}` }}>
             <div style={shellStyle.tileHeader}>
-              <h2 style={shellStyle.tileTitle}>Backing Tracks Shell</h2>
-              <Tag type="warm-gray">Scaffolded</Tag>
+              <h2 style={shellStyle.tileTitle}>Backing Track Browser</h2>
+              <Tag type="warm-gray">UI Ready</Tag>
             </div>
-            <p style={shellStyle.tileText}>
-              The mode now has the same page-level shell and transport integration as the other drum
-              views, while detailed track browsing and waveform transport land in `T217-H`.
-            </p>
-            <InlineNotification
-              kind="warning"
-              lowContrast
-              hideCloseButton
-              title="Backing-track engine surface pending"
-              subtitle="This shell is ready for the dedicated track browser, waveform, and loop controls."
-            />
+            <div style={shellStyle.fieldGrid}>
+              <label style={shellStyle.fieldStack}>
+                <span style={shellStyle.clusterLabel}>Search Tracks</span>
+                <input
+                  aria-label="Backing track search"
+                  type="search"
+                  value={search}
+                  onChange={(event) => onSearchChange(event.currentTarget.value)}
+                  placeholder="Filter by name, genre, or key"
+                  style={shellStyle.input}
+                />
+              </label>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={shellStyle.trackTable} aria-label="Backing track browser">
+                <thead>
+                  <tr>
+                    {['Track', 'Genre', 'Key', 'Tempo', 'Duration'].map((heading) => (
+                      <th key={heading} style={{ ...shellStyle.trackCell, textAlign: 'left', color: '#a8a8a8' }}>{heading}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTracks.map((track) => {
+                    const isSelected = selectedTrack?.id === track.id
+                    return (
+                      <tr
+                        key={track.id}
+                        onClick={() => onSelectTrack(track.id)}
+                        style={{ background: isSelected ? 'rgba(255,131,43,0.08)' : 'transparent', cursor: 'pointer' }}
+                      >
+                        <td style={shellStyle.trackCell}>{track.name}</td>
+                        <td style={shellStyle.trackCell}>{track.genre}</td>
+                        <td style={shellStyle.trackCell}>{track.key}</td>
+                        <td style={shellStyle.trackCell}>{track.tempo} BPM</td>
+                        <td style={shellStyle.trackCell}>{track.duration}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Tile>
         </div>
         <div style={shellStyle.modeColumn}>
           <Tile style={shellStyle.tile}>
             <div style={shellStyle.tileHeader}>
-              <h3 style={shellStyle.tileTitle}>Future Panel</h3>
-              <Tag type="orange">Coming Soon</Tag>
+              <h3 style={shellStyle.tileTitle}>Track Player</h3>
+              <Tag type="warm-gray">{selectedTrack?.tempo ?? 0} BPM</Tag>
             </div>
+            <strong>{selectedTrack?.name ?? 'No track selected'}</strong>
             <p style={shellStyle.tileText}>
-              Search, genre filtering, tempo/pitch offsets, and loop markers will attach here
-              without changing the page navigation established in this slice.
+              The browser, waveform shell, seek transport, and loop/shift controls are now in place.
+              Time-stretch and pitch-shift processing remain backend-engine dependent.
             </p>
+            <div style={shellStyle.waveform} aria-label="Backing track waveform overview">
+              <div style={shellStyle.waveformBars}>
+                {Array.from({ length: 48 }, (_, index) => (
+                  <span
+                    key={`wave-${index}`}
+                    style={{
+                      ...shellStyle.waveformBar,
+                      height: `${30 + ((index * 17) % 60)}%`,
+                      opacity: selectedTrack ? 1 : 0.5,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div style={shellStyle.buttonRow}>
+              <Button size="sm" kind="secondary" renderIcon={PlayFilled}>Play</Button>
+              <Button size="sm" kind="secondary" renderIcon={PauseFilled}>Pause</Button>
+              <Button size="sm" kind="tertiary" renderIcon={StopFilled}>Stop</Button>
+              <Button size="sm" kind={loopEnabled ? 'primary' : 'secondary'} onClick={onToggleLoop}>
+                Loop {loopEnabled ? 'On' : 'Off'}
+              </Button>
+            </div>
+            <label style={shellStyle.fieldStack}>
+              <span style={shellStyle.clusterLabel}>Tempo Shift</span>
+              <div style={shellStyle.sliderValue}>
+                <span>Stretch</span>
+                <strong>{tempoShift}%</strong>
+              </div>
+              <input
+                aria-label="Backing track tempo shift"
+                type="range"
+                min={-50}
+                max={50}
+                step={1}
+                value={tempoShift}
+                onChange={(event) => onTempoShiftChange(Number(event.currentTarget.value))}
+                style={shellStyle.range}
+              />
+            </label>
+            <label style={shellStyle.fieldStack}>
+              <span style={shellStyle.clusterLabel}>Pitch Shift</span>
+              <div style={shellStyle.sliderValue}>
+                <span>Transpose</span>
+                <strong>{pitchShift} st</strong>
+              </div>
+              <input
+                aria-label="Backing track pitch shift"
+                type="range"
+                min={-12}
+                max={12}
+                step={1}
+                value={pitchShift}
+                onChange={(event) => onPitchShiftChange(Number(event.currentTarget.value))}
+                style={shellStyle.range}
+              />
+            </label>
+            <InlineNotification
+              kind="warning"
+              lowContrast
+              hideCloseButton
+              title="Audio playback engine not wired here yet"
+              subtitle="The UI is live; transport, looping, tempo stretch, and pitch shift still need the dedicated backing-track engine path."
+            />
           </Tile>
         </div>
       </div>
@@ -848,14 +2039,38 @@ export function DrumsPage() {
   const queryClient = useQueryClient()
   const stateQuery = useDrumMachineState()
   const transportQuery = useDrumTransport()
+  const positionQuery = useDrumPosition()
   const activeKitQuery = useDrumActiveKit()
+  const kitsQuery = useDrumKits()
+  const midiMapping = useDrumMidiMapping()
+  const songQuery = useDrumSong()
+  const songTransportQuery = useDrumSongTransport()
+  const meteringQuery = useDrumMetering()
   const mixer = useDrumMixer()
   const packs = useDrumPacks()
   const midiLearn = useDrumMidiLearn()
   const patternQuery = useDrumPattern(transportQuery.data?.pattern ?? 0)
   const patchInstrument = usePatchDrumKitInstrument()
+  const clearPattern = useClearDrumPattern()
+  const copyPattern = useCopyDrumPattern()
+  const loadKit = useLoadDrumKit()
   const setPadControl = useSetDrumPadControl()
+  const setBusMixer = useSetDrumBusMixer()
+  const setMasterVolume = useSetDrumMasterVolume()
+  const setMidiMapping = useSetDrumMidiMapping()
+  const setMidiZones = useSetDrumMidiZones()
+  const setVelocityCurve = useSetDrumVelocityCurve()
+  const setPattern = useSetDrumPattern()
+  const startMidiLearn = useStartDrumMidiLearn()
+  const addSongEntry = useAddDrumSongEntry()
+  const loadMidiPreset = useLoadDrumMidiPreset()
+  const playSongTransport = usePlayDrumSongTransport()
+  const removeSongEntry = useRemoveDrumSongEntry()
+  const setSong = useSetDrumSong()
   const setStep = useSetDrumStep()
+  const stopMidiLearn = useStopDrumMidiLearn()
+  const stopSongTransport = useStopDrumSongTransport()
+  const triggerFill = useTriggerDrumFill()
   const updateState = useUpdateDrumMachineState()
   const updateTransport = useUpdateDrumTransport()
   const tapTempo = useMutation({
@@ -873,14 +2088,44 @@ export function DrumsPage() {
   const activeModeMeta = MODE_META[activeMode]
   const activeKitName = activeKitQuery.data?.name ?? 'No kit loaded'
   const activeKit = activeKitQuery.data
+  const kits = kitsQuery.data ?? []
   const padControls = mixer.pads.data
+  const busMixers = mixer.buses.data ?? []
+  const masterVolume = mixer.master.data?.volume ?? state?.volume ?? 80
   const pattern = patternQuery.data
+  const song = songQuery.data ?? { entries: [], loop: false }
+  const position = positionQuery.data
+  const metering = meteringQuery.data
+  const songTransport = songTransportQuery.data ?? {
+    is_playing: false,
+    current_entry_index: -1,
+    current_repeat: 0,
+    total_entries: song.entries.length,
+    loop: song.loop,
+    active_pattern: transport?.pattern ?? 0,
+  }
   const midiLearnState = midiLearn.status.data
   const [selectedPad, setSelectedPad] = useState(0)
+  const [selectedPatternSlot, setSelectedPatternSlot] = useState(transport?.pattern ?? 0)
+  const [selectedPatternPage, setSelectedPatternPage] = useState(Math.floor((transport?.pattern ?? 0) / 32))
+  const [patternClipboard, setPatternClipboard] = useState<number | null>(null)
+  const [clearModalOpen, setClearModalOpen] = useState(false)
+  const [songDraftPattern, setSongDraftPattern] = useState(transport?.pattern ?? 0)
+  const [songDraftRepeats, setSongDraftRepeats] = useState(1)
+  const [pendingKitId, setPendingKitId] = useState<string | null>(null)
+  const [kitModalOpen, setKitModalOpen] = useState(false)
   const [draftNames, setDraftNames] = useState<string[]>(Array.from({ length: 16 }, (_, index) => `Pad ${index + 1}`))
-  const packCounts = {
-    factory: packs.factory.data?.length ?? 0,
-    user: packs.generated.data?.length ?? 0,
+  const [selectedMidiPreset, setSelectedMidiPreset] = useState('')
+  const [backingTrackSearch, setBackingTrackSearch] = useState('')
+  const [selectedBackingTrackId, setSelectedBackingTrackId] = useState(BACKING_TRACK_LIBRARY[0]?.id ?? '')
+  const [backingTrackLoop, setBackingTrackLoop] = useState(false)
+  const [backingTrackTempoShift, setBackingTrackTempoShift] = useState(0)
+  const [backingTrackPitchShift, setBackingTrackPitchShift] = useState(0)
+  const [liveMessage, setLiveMessage] = useState('Drum machine workspace ready.')
+  const sequencerRef = useRef<HTMLDivElement | null>(null)
+  const packLists = {
+    factory: packs.factory.data ?? [],
+    user: packs.generated.data ?? [],
   }
 
   useEffect(() => {
@@ -888,6 +2133,22 @@ export function DrumsPage() {
       Array.from({ length: 16 }, (_, index) => activeKit?.instruments?.[index]?.name ?? `Pad ${index + 1}`),
     )
   }, [activeKit?.kit_id, activeKit?.instruments])
+
+  useEffect(() => {
+    if (!transport) {
+      return
+    }
+    setSelectedPatternSlot(transport.pattern)
+    setSelectedPatternPage(Math.floor(transport.pattern / 32))
+    setSongDraftPattern(transport.pattern)
+  }, [transport?.pattern])
+
+  useEffect(() => {
+    const presets = midiLearn.presets.data?.presets ?? []
+    if (!selectedMidiPreset && presets.length > 0) {
+      setSelectedMidiPreset(presets[0])
+    }
+  }, [midiLearn.presets.data, selectedMidiPreset])
 
   if (stateQuery.isLoading && !state) {
     return (
@@ -925,18 +2186,68 @@ export function DrumsPage() {
 
   const visibleAdvancedSteps = Math.min(16, clampPatternLength(pattern))
   const currentStep = transport.is_playing
-    ? ((transport.pattern + transport.variation) % Math.max(1, visibleAdvancedSteps))
+    ? Math.max(0, Math.min(visibleAdvancedSteps - 1, position?.step ?? 0))
     : 0
+  const focusStep = (instrumentIndex: number, stepIndex: number) => {
+    const nextStep = Math.max(0, Math.min(visibleAdvancedSteps - 1, stepIndex))
+    const nextRow = Math.max(0, Math.min(15, instrumentIndex))
+    const node = sequencerRef.current?.querySelector<HTMLButtonElement>(`[data-step-key="${nextRow}:${nextStep}"]`)
+    node?.focus()
+  }
+  const announce = (message: string) => {
+    setLiveMessage(message)
+  }
 
   return (
-    <div style={shellStyle.page}>
+    <main className="drums-page" style={shellStyle.page}>
+      <nav aria-label="Skip links" style={shellStyle.skipLinks}>
+        <a
+          href="#drum-transport"
+          style={shellStyle.skipLink}
+          onFocus={(event) => {
+            Object.assign(event.currentTarget.style, { left: '24px', top: '16px', width: 'auto', height: 'auto' })
+          }}
+          onBlur={(event) => {
+            Object.assign(event.currentTarget.style, { left: '-9999px', top: 'auto', width: '1px', height: '1px' })
+          }}
+        >
+          Skip to transport
+        </a>
+        <a
+          href="#drum-modes"
+          style={shellStyle.skipLink}
+          onFocus={(event) => {
+            Object.assign(event.currentTarget.style, { left: '170px', top: '16px', width: 'auto', height: 'auto' })
+          }}
+          onBlur={(event) => {
+            Object.assign(event.currentTarget.style, { left: '-9999px', top: 'auto', width: '1px', height: '1px' })
+          }}
+        >
+          Skip to modes
+        </a>
+        <a
+          href="#drum-footer"
+          style={shellStyle.skipLink}
+          onFocus={(event) => {
+            Object.assign(event.currentTarget.style, { left: '300px', top: '16px', width: 'auto', height: 'auto' })
+          }}
+          onBlur={(event) => {
+            Object.assign(event.currentTarget.style, { left: '-9999px', top: 'auto', width: '1px', height: '1px' })
+          }}
+        >
+          Skip to status
+        </a>
+      </nav>
+      <p style={shellStyle.visuallyHidden} aria-live="polite" aria-atomic="true" role="status">
+        {liveMessage}
+      </p>
       <PageHeader
         title="Drum Machine"
         subtitle={activeModeMeta.description}
         icon={<Music size={32} style={{ color: activeModeMeta.accent }} />}
       />
 
-      <section style={shellStyle.transport}>
+      <section id="drum-transport" style={shellStyle.transport} aria-label="Drum transport">
         <div style={shellStyle.buttonRow}>
           <Tag type="blue">{activeModeMeta.label}</Tag>
           {transportTag(transport.is_playing)}
@@ -952,7 +2263,10 @@ export function DrumsPage() {
                 kind={transport.is_playing ? 'secondary' : 'primary'}
                 size="md"
                 renderIcon={transport.is_playing ? PauseFilled : PlayFilled}
-                onClick={() => updateTransport.mutate({ is_playing: !transport.is_playing })}
+                onClick={() => {
+                  updateTransport.mutate({ is_playing: !transport.is_playing })
+                  announce(transport.is_playing ? 'Transport paused.' : 'Transport playing.')
+                }}
               >
                 {transport.is_playing ? 'Pause' : 'Play'}
               </Button>
@@ -960,7 +2274,10 @@ export function DrumsPage() {
                 kind="tertiary"
                 size="md"
                 renderIcon={StopFilled}
-                onClick={() => updateTransport.mutate({ is_playing: false })}
+                onClick={() => {
+                  updateTransport.mutate({ is_playing: false })
+                  announce('Transport stopped.')
+                }}
               >
                 Stop
               </Button>
@@ -1046,7 +2363,9 @@ export function DrumsPage() {
             <span style={shellStyle.clusterLabel}>Master Volume</span>
             <div style={shellStyle.sliderValue}>
               <span>Output</span>
-              <strong>{state.volume}%</strong>
+              <strong>
+                {state.volume}% · L {meterPercent(metering?.master_peak_left)} / R {meterPercent(metering?.master_peak_right)}
+              </strong>
             </div>
             <input
               aria-label="Master volume"
@@ -1062,20 +2381,30 @@ export function DrumsPage() {
         </div>
       </section>
 
-      <Tabs selectedIndex={modeIndex(activeMode)} onChange={({ selectedIndex }) => updateState.mutate({ ui_mode: MODE_ORDER[selectedIndex] })}>
-        <TabList aria-label="Drum machine modes" contained>
+      <Tabs
+        selectedIndex={modeIndex(activeMode)}
+        onChange={({ selectedIndex }) => {
+          const nextMode = MODE_ORDER[selectedIndex]
+          updateState.mutate({ ui_mode: nextMode })
+          announce(`${MODE_META[nextMode].label} mode selected.`)
+        }}
+      >
+        <TabList id="drum-modes" aria-label="Drum machine modes" contained>
           {MODE_ORDER.map((mode) => (
             <Tab key={mode}>{MODE_META[mode].label}</Tab>
           ))}
         </TabList>
         <TabPanels>
           <TabPanel>
-            {practicePanel(state, packCounts, MODE_META.practice.accent)}
+            {practicePanel(state, packLists, MODE_META.practice.accent, (patch) => updateState.mutate(patch))}
           </TabPanel>
           <TabPanel>
             {advancedPanel(
               transport.pattern,
               transport.variation,
+              transport.is_playing,
+              songTransport.is_playing,
+              songTransport.current_entry_index,
               MODE_META.advanced.accent,
               pattern,
               activeKit,
@@ -1125,16 +2454,232 @@ export function DrumsPage() {
                   velocity: nextVelocity,
                   accent: accentEnabled,
                 })
+                announce(
+                  `${activeKit?.instruments?.[instrumentIndex]?.name ?? `Pad ${instrumentIndex + 1}`} step ${stepIndex + 1} ${nextVelocity > 0 ? `set to velocity ${nextVelocity}${accentEnabled ? ' with accent' : ''}` : 'cleared'}.`,
+                )
               },
+              selectedPatternSlot,
+              selectedPatternPage,
+              patternClipboard,
+              clearModalOpen,
+              song.entries,
+              song.loop,
+              songDraftPattern,
+              songDraftRepeats,
+              (patternId) => {
+                setSelectedPatternSlot(patternId)
+                setSelectedPatternPage(Math.floor(patternId / 32))
+                updateTransport.mutate({ pattern: patternId })
+                announce(`Pattern ${patternId + 1} selected.`)
+              },
+              setSelectedPatternPage,
+              () => {
+                setPatternClipboard(selectedPatternSlot)
+              },
+              () => {
+                if (patternClipboard === null) {
+                  return
+                }
+                copyPattern.mutate({
+                  sourcePatternId: patternClipboard,
+                  destinationPatternId: selectedPatternSlot,
+                })
+                updateTransport.mutate({ pattern: selectedPatternSlot })
+              },
+              () => {
+                const destinationPatternId = (selectedPatternSlot + 1) % 128
+                copyPattern.mutate({
+                  sourcePatternId: transport.pattern,
+                  destinationPatternId,
+                })
+                setSelectedPatternSlot(destinationPatternId)
+                setSelectedPatternPage(Math.floor(destinationPatternId / 32))
+                updateTransport.mutate({ pattern: destinationPatternId })
+              },
+              () => setClearModalOpen(true),
+              () => {
+                clearPattern.mutate(selectedPatternSlot)
+                setClearModalOpen(false)
+                updateTransport.mutate({ pattern: selectedPatternSlot, variation: 0 })
+                announce(`Pattern ${selectedPatternSlot + 1} cleared.`)
+              },
+              () => setClearModalOpen(false),
+              (length) => {
+                setPattern.mutate({
+                  patternId: transport.pattern,
+                  pattern: buildPatternPayload(transport.pattern, pattern, length),
+                })
+              },
+              (nextVariation) => {
+                updateTransport.mutate({ variation: nextVariation })
+                announce(nextVariation === 0 ? 'Pattern variation set to main.' : `Pattern variation set to ${nextVariation}.`)
+              },
+              () => {
+                triggerFill.mutate()
+                announce('Drum fill triggered.')
+              },
+              (patternId) => setSongDraftPattern(Math.max(0, Math.min(127, patternId))),
+              (repeatCount) => setSongDraftRepeats(Math.max(1, Math.min(99, repeatCount))),
+              () => {
+                addSongEntry.mutate({
+                  pattern_id: songDraftPattern,
+                  repeat_count: songDraftRepeats,
+                })
+                announce(`Song entry added for pattern ${songDraftPattern + 1}, ${songDraftRepeats} repeats.`)
+              },
+              (index) => {
+                removeSongEntry.mutate(index)
+                announce(`Song entry ${index + 1} removed.`)
+              },
+              (index, direction) => {
+                const targetIndex = index + direction
+                if (targetIndex < 0 || targetIndex >= song.entries.length) {
+                  return
+                }
+                const nextEntries = [...song.entries]
+                const [entry] = nextEntries.splice(index, 1)
+                nextEntries.splice(targetIndex, 0, entry)
+                setSong.mutate({
+                  entries: nextEntries,
+                  loop: song.loop,
+                })
+              },
+              () => {
+                setSong.mutate({
+                  entries: song.entries,
+                  loop: !song.loop,
+                })
+              },
+              () => {
+                playSongTransport.mutate()
+                announce('Song playback started.')
+              },
+              () => {
+                stopSongTransport.mutate()
+                announce('Song playback stopped.')
+              },
+              kits,
+              busMixers,
+              masterVolume,
+              metering
+                ? {
+                    per_pad_peak: metering.per_pad_peak,
+                    per_bus_peak: metering.per_bus_peak,
+                    master_peak_left: metering.master_peak_left,
+                    master_peak_right: metering.master_peak_right,
+                  }
+                : undefined,
+              pendingKitId,
+              kitModalOpen,
+              (kitId) => {
+                setPendingKitId(kitId)
+                setKitModalOpen(true)
+              },
+              () => setKitModalOpen(false),
+              () => {
+                if (!pendingKitId) {
+                  return
+                }
+                loadKit.mutate(pendingKitId)
+                setKitModalOpen(false)
+                const nextKitName = kits.find((kit) => kit.kit_id === pendingKitId)?.name ?? pendingKitId
+                announce(`Kit ${nextKitName} loading.`)
+              },
+              (busId, params) => {
+                setBusMixer.mutate({
+                  busId,
+                  params: {
+                    level: params.level,
+                    mute: params.mute,
+                    solo: params.solo,
+                    eq: params.eq,
+                    comp: params.comp,
+                  },
+                })
+              },
+              (volume) => {
+                setMasterVolume.mutate(volume)
+              },
+              midiMapping.mapping.data,
+              midiMapping.velocityCurves.data,
+              midiMapping.zones.data,
+              midiLearnState,
+              midiLearn.presets.data?.presets ?? [],
+              selectedMidiPreset,
+              setSelectedMidiPreset,
+              (padId, patch) => {
+                const current = midiMapping.mapping.data ?? { global_midi_channel: 10, pads: [] }
+                const nextPads = Array.from({ length: 16 }, (_, index) => {
+                  const existing = resolvedMidiPad(current, index)
+                  return index === padId
+                    ? {
+                        ...existing,
+                        notes: patch.notes ?? existing.notes,
+                        midi_channel: patch.midi_channel ?? existing.midi_channel,
+                      }
+                    : existing
+                })
+                setMidiMapping.mutate({
+                  global_midi_channel: current.global_midi_channel,
+                  pads: nextPads,
+                })
+              },
+              (padId, patch) => {
+                const existing = resolvedVelocityCurve(midiMapping.velocityCurves.data, padId)
+                setVelocityCurve.mutate({
+                  padId,
+                  curve: {
+                    ...existing,
+                    ...patch,
+                    pad: padId,
+                  },
+                })
+              },
+              (padId, zones) => {
+                const current = midiMapping.zones.data ?? { pads: [] }
+                const nextPads = Array.from({ length: 16 }, (_, index) => (
+                  index === padId ? { pad: index, zones } : resolvedZones(current, index)
+                ))
+                setMidiZones.mutate({ pads: nextPads })
+              },
+              (padId) => {
+                startMidiLearn.mutate(padId)
+                announce(`MIDI learn armed for pad ${padId + 1}.`)
+              },
+              () => {
+                stopMidiLearn.mutate()
+                announce('MIDI learn stopped.')
+              },
+              () => {
+                if (!selectedMidiPreset) {
+                  return
+                }
+                loadMidiPreset.mutate(selectedMidiPreset)
+                announce(`MIDI preset ${selectedMidiPreset} applied.`)
+              },
+              (rowDelta, colDelta, instrumentIndex, stepIndex) => focusStep(instrumentIndex + rowDelta, stepIndex + colDelta),
+              sequencerRef,
             )}
           </TabPanel>
           <TabPanel>
-            {backingTracksPanel(MODE_META.backing_tracks.accent)}
+            {backingTracksPanel(
+              MODE_META.backing_tracks.accent,
+              backingTrackSearch,
+              selectedBackingTrackId,
+              backingTrackLoop,
+              backingTrackTempoShift,
+              backingTrackPitchShift,
+              setBackingTrackSearch,
+              setSelectedBackingTrackId,
+              () => setBackingTrackLoop((current) => !current),
+              setBackingTrackTempoShift,
+              setBackingTrackPitchShift,
+            )}
           </TabPanel>
         </TabPanels>
       </Tabs>
 
-      <footer style={shellStyle.footer}>
+      <footer id="drum-footer" style={shellStyle.footer} aria-label="Drum status footer">
         <div style={shellStyle.footerGroup}>
           <Tag type="cool-gray">Active kit: {activeKitName}</Tag>
           <Tag type="warm-gray">Pattern {transport.pattern}</Tag>
@@ -1147,13 +2692,13 @@ export function DrumsPage() {
                 key={index}
                 style={{
                   ...shellStyle.dot,
-                  background: index === ((transport.pattern + transport.variation) % 4) ? activeModeMeta.accent : shellStyle.dot.background,
+                  background: index === Math.max(0, (position?.beat ?? 1) - 1) ? activeModeMeta.accent : shellStyle.dot.background,
                 }}
               />
             ))}
           </div>
           <Tag type={midiLearnState?.active ? 'magenta' : 'gray'}>
-            MIDI {midiLearnState?.active ? `Learning Pad ${midiLearnState.active_pad_index ?? '-'}` : 'Ready'}
+            MIDI {midiLearnState?.active ? `Learning Pad ${midiLearnState.active_pad_index + 1}` : 'Ready'}
           </Tag>
           {tapTempo.isPending ? <InlineLoading description="Capturing tap" status="active" /> : null}
           <Tag type="blue">
@@ -1162,7 +2707,7 @@ export function DrumsPage() {
           </Tag>
         </div>
       </footer>
-    </div>
+    </main>
   )
 }
 

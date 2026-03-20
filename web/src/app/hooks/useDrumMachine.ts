@@ -6,6 +6,7 @@ import type {
   DrumKitInstrumentPatch,
   DrumMachineStateUpdate,
   DrumMidiMapping,
+  DrumMidiZones,
   DrumSong,
   DrumSongEntry,
   DrumTransportUpdate,
@@ -50,10 +51,28 @@ export function useDrumPattern(patternId: number) {
   })
 }
 
+export function useDrumPosition() {
+  return useQuery({
+    queryKey: ['drums', 'position'],
+    queryFn: drumsApi.getPosition,
+    refetchInterval: 250,
+    staleTime: 100,
+  })
+}
+
 export function useDrumSong() {
   return useQuery({
     queryKey: ['drums', 'song'],
     queryFn: drumsApi.getSong,
+  })
+}
+
+export function useDrumSongTransport() {
+  return useQuery({
+    queryKey: ['drums', 'song', 'transport'],
+    queryFn: drumsApi.getSongTransport,
+    refetchInterval: (query) => (query.state.data?.is_playing ? 250 : 1_000),
+    staleTime: 100,
   })
 }
 
@@ -123,10 +142,22 @@ export function useDrumMetering() {
 }
 
 export function useDrumMidiMapping() {
-  return useQuery({
+  const mapping = useQuery({
     queryKey: ['drums', 'midi', 'mapping'],
     queryFn: drumsApi.getMidiMapping,
   })
+
+  const velocityCurves = useQuery({
+    queryKey: ['drums', 'midi', 'velocity-curves'],
+    queryFn: drumsApi.getVelocityCurves,
+  })
+
+  const zones = useQuery({
+    queryKey: ['drums', 'midi', 'zones'],
+    queryFn: drumsApi.getMidiZones,
+  })
+
+  return { mapping, velocityCurves, zones }
 }
 
 export function useDrumMidiLearn() {
@@ -198,6 +229,18 @@ export function useSetDrumStep() {
   })
 }
 
+export function useTriggerDrumFill() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => drumsApi.triggerFill(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'position'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'transport'] })
+    },
+  })
+}
+
 export function useClearDrumPattern() {
   const queryClient = useQueryClient()
 
@@ -251,6 +294,32 @@ export function useRemoveDrumSongEntry() {
     mutationFn: (position: number) => drumsApi.removeSongEntry(position),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['drums', 'song'] })
+    },
+  })
+}
+
+export function usePlayDrumSongTransport() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => drumsApi.playSongTransport(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'song', 'transport'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'position'] })
+      invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function useStopDrumSongTransport() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => drumsApi.stopSongTransport(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'song', 'transport'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'position'] })
+      invalidateDrumState(queryClient)
     },
   })
 }
@@ -323,7 +392,7 @@ export function useSetDrumMidiMapping() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (mapping: DrumMidiMapping[]) => drumsApi.setMidiMapping(mapping),
+    mutationFn: (mapping: DrumMidiMapping) => drumsApi.setMidiMapping(mapping),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'mapping'] })
     },
@@ -337,7 +406,18 @@ export function useSetDrumVelocityCurve() {
     mutationFn: ({ padId, curve }: { padId: number; curve: DrumVelocityCurve }) =>
       drumsApi.setVelocityCurve(padId, curve),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'mapping'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'velocity-curves'] })
+    },
+  })
+}
+
+export function useSetDrumMidiZones() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (zones: DrumMidiZones) => drumsApi.setMidiZones(zones),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'zones'] })
     },
   })
 }
@@ -368,9 +448,10 @@ export function useLoadDrumMidiPreset() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (presetId: string) => drumsApi.loadMidiPreset(presetId),
+    mutationFn: (presetName: string) => drumsApi.loadMidiPreset(presetName),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'mapping'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'zones'] })
     },
   })
 }

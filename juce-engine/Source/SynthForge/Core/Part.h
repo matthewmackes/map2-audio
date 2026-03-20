@@ -82,6 +82,9 @@ public:
     int getActiveVoices() const { return voices_.getActiveVoices(); }
     int getPeakVoices() const { return voices_.getPeakVoices(); }
     void resetVoices();
+    int getProcessBufferResizeCount() const { return processBufferResizeCount_.load(std::memory_order_relaxed); }
+    int getFreezeBufferAllocationCount() const { return freezeBufferAllocationCount_.load(std::memory_order_relaxed); }
+    void resetProcessDiagnostics();
 
     void setParameter(const std::string& name, float value);
     std::map<std::string, float> getParameters() const;
@@ -167,6 +170,8 @@ private:
     std::atomic<double> sampleRate_{DEFAULT_SAMPLE_RATE};
     juce::AudioFormatManager audioFormatManager_;
     std::atomic<bool> prepared_{false};
+    std::atomic<int> processBufferResizeCount_{0};
+    std::atomic<int> freezeBufferAllocationCount_{0};
 
     mutable std::mutex sfzFileMutex_;
     juce::File lastLoadedSfzFile_;

@@ -4763,6 +4763,16 @@ export const drumsApi = {
   getPattern: (patternId: number) =>
     fetchJson<import('./types').DrumPattern>(`${API_BASE}/engine/drums/pattern/${patternId}`),
 
+  /** Get the current sequencer position */
+  getPosition: () =>
+    fetchJson<import('./types').DrumSequencerPosition>(`${API_BASE}/engine/drums/position`),
+
+  /** Trigger a sequencer fill */
+  triggerFill: () =>
+    fetchJson<{ status: string; pattern: number; variation: number }>(`${API_BASE}/engine/drums/fill/trigger`, {
+      method: 'POST',
+    }),
+
   /** Replace a pattern */
   setPattern: (patternId: number, pattern: import('./types').DrumPattern) =>
     fetchJson<import('./types').DrumPattern>(`${API_BASE}/engine/drums/pattern/${patternId}`, {
@@ -4797,27 +4807,77 @@ export const drumsApi = {
     }),
 
   /** Get the drum song arrangement */
-  getSong: () =>
-    fetchJson<import('./types').DrumSong>(`${API_BASE}/engine/drums/song`),
+  getSong: async () => {
+    const response = await fetchJson<{ song?: import('./types').DrumSongEntry[]; song_loop?: boolean; entries?: import('./types').DrumSongEntry[]; loop?: boolean }>(
+      `${API_BASE}/engine/drums/song`,
+    )
+    return {
+      entries: (response.entries ?? response.song ?? []).map((item) => ({
+        pattern_id: item.pattern_id ?? (item as unknown as { pattern: number }).pattern,
+        repeat_count: item.repeat_count,
+      })),
+      loop: response.loop ?? response.song_loop ?? false,
+    } satisfies import('./types').DrumSong
+  },
 
   /** Replace the drum song arrangement */
-  setSong: (song: import('./types').DrumSong) =>
-    fetchJson<import('./types').DrumSong>(`${API_BASE}/engine/drums/song`, {
+  setSong: async (song: import('./types').DrumSong) => {
+    const response = await fetchJson<{ song?: import('./types').DrumSongEntry[]; song_loop?: boolean }>(`${API_BASE}/engine/drums/song`, {
       method: 'POST',
-      body: JSON.stringify(song),
-    }),
+      body: JSON.stringify({ song: song.entries, song_loop: song.loop }),
+    })
+    return {
+      entries: (response.song ?? []).map((item) => ({
+        pattern_id: item.pattern_id ?? (item as unknown as { pattern: number }).pattern,
+        repeat_count: item.repeat_count,
+      })),
+      loop: response.song_loop ?? false,
+    } satisfies import('./types').DrumSong
+  },
 
   /** Append a song entry */
-  addSongEntry: (entry: import('./types').DrumSongEntry) =>
-    fetchJson<import('./types').DrumSong>(`${API_BASE}/engine/drums/song/entries`, {
+  addSongEntry: async (entry: import('./types').DrumSongEntry) => {
+    const response = await fetchJson<{ song?: import('./types').DrumSongEntry[]; song_loop?: boolean }>(`${API_BASE}/engine/drums/song/entries`, {
       method: 'POST',
-      body: JSON.stringify(entry),
-    }),
+      body: JSON.stringify({ pattern: entry.pattern_id, repeat_count: entry.repeat_count }),
+    })
+    return {
+      entries: (response.song ?? []).map((item) => ({
+        pattern_id: item.pattern_id ?? (item as unknown as { pattern: number }).pattern,
+        repeat_count: item.repeat_count,
+      })),
+      loop: response.song_loop ?? false,
+    } satisfies import('./types').DrumSong
+  },
 
   /** Remove a song entry by position */
-  removeSongEntry: (position: number) =>
-    fetchJson<import('./types').DrumSong>(`${API_BASE}/engine/drums/song/entries/${position}`, {
+  removeSongEntry: async (position: number) => {
+    const response = await fetchJson<{ song?: import('./types').DrumSongEntry[]; song_loop?: boolean }>(`${API_BASE}/engine/drums/song/entries/${position}`, {
       method: 'DELETE',
+    })
+    return {
+      entries: (response.song ?? []).map((item) => ({
+        pattern_id: item.pattern_id ?? (item as unknown as { pattern: number }).pattern,
+        repeat_count: item.repeat_count,
+      })),
+      loop: response.song_loop ?? false,
+    } satisfies import('./types').DrumSong
+  },
+
+  /** Get drum song transport state */
+  getSongTransport: () =>
+    fetchJson<import('./types').DrumSongTransportState>(`${API_BASE}/engine/drums/song/transport`),
+
+  /** Start drum song playback */
+  playSongTransport: () =>
+    fetchJson<import('./types').DrumSongTransportState>(`${API_BASE}/engine/drums/song/transport/play`, {
+      method: 'POST',
+    }),
+
+  /** Stop drum song playback */
+  stopSongTransport: () =>
+    fetchJson<import('./types').DrumSongTransportState>(`${API_BASE}/engine/drums/song/transport/stop`, {
+      method: 'POST',
     }),
 
   /** List available drum kits */
@@ -4901,31 +4961,44 @@ export const drumsApi = {
 
   /** Get MIDI note mapping */
   getMidiMapping: () =>
-    fetchJson<import('./types').DrumMidiMapping[]>(`${API_BASE}/engine/drums/midi/mapping`),
+    fetchJson<import('./types').DrumMidiMapping>(`${API_BASE}/engine/drums/midi/mapping`),
 
   /** Replace MIDI note mapping */
-  setMidiMapping: (mapping: import('./types').DrumMidiMapping[]) =>
-    fetchJson<import('./types').DrumMidiMapping[]>(`${API_BASE}/engine/drums/midi/mapping`, {
+  setMidiMapping: (mapping: import('./types').DrumMidiMapping) =>
+    fetchJson<import('./types').DrumMidiMapping>(`${API_BASE}/engine/drums/midi/mapping`, {
       method: 'POST',
       body: JSON.stringify(mapping),
     }),
 
   /** Get all velocity curves */
   getVelocityCurves: () =>
-    fetchJson<import('./types').DrumVelocityCurve[]>(`${API_BASE}/engine/drums/midi/velocity-curves`),
+    fetchJson<import('./types').DrumMidiVelocityCurves>(`${API_BASE}/engine/drums/midi/velocity-curves`),
 
   /** Update a single velocity curve */
   setVelocityCurve: (padId: number, curve: import('./types').DrumVelocityCurve) =>
-    fetchJson<import('./types').DrumVelocityCurve>(`${API_BASE}/engine/drums/midi/velocity-curves`, {
+    fetchJson<import('./types').DrumMidiVelocityCurves>(`${API_BASE}/engine/drums/midi/velocity-curves`, {
       method: 'POST',
-      body: JSON.stringify({ pad_id: padId, ...curve }),
+      body: JSON.stringify({
+        pads: [{ ...curve, pad: padId }],
+      }),
+    }),
+
+  /** Get per-pad MIDI zones */
+  getMidiZones: () =>
+    fetchJson<import('./types').DrumMidiZones>(`${API_BASE}/engine/drums/midi/zones`),
+
+  /** Replace per-pad MIDI zones */
+  setMidiZones: (zones: import('./types').DrumMidiZones) =>
+    fetchJson<import('./types').DrumMidiZones>(`${API_BASE}/engine/drums/midi/zones`, {
+      method: 'POST',
+      body: JSON.stringify(zones),
     }),
 
   /** Start MIDI learn mode */
   startMidiLearn: (padId?: number) =>
     fetchJson<import('./types').DrumMidiLearnStatus>(`${API_BASE}/engine/drums/midi/learn/start`, {
       method: 'POST',
-      body: JSON.stringify(padId == null ? {} : { pad_id: padId }),
+      body: JSON.stringify(padId == null ? { pad: 0, learn_all: true } : { pad: padId }),
     }),
 
   /** Stop MIDI learn mode */
@@ -4940,13 +5013,13 @@ export const drumsApi = {
 
   /** List bundled hardware MIDI presets */
   getMidiPresets: () =>
-    fetchJson<import('./types').DrumMidiPreset[]>(`${API_BASE}/engine/drums/midi/presets`),
+    fetchJson<import('./types').DrumMidiPresetList>(`${API_BASE}/engine/drums/midi/presets`),
 
   /** Load a hardware MIDI preset */
-  loadMidiPreset: (presetId: string) =>
-    fetchJson<import('./types').DrumMidiMapping[]>(`${API_BASE}/engine/drums/midi/presets/load`, {
+  loadMidiPreset: (presetName: string) =>
+    fetchJson<{ status: string; preset_name: string; mapping: import('./types').DrumMidiMapping; zones: import('./types').DrumMidiZones }>(`${API_BASE}/engine/drums/midi/presets/load`, {
       method: 'POST',
-      body: JSON.stringify({ preset_id: presetId }),
+      body: JSON.stringify({ preset_name: presetName }),
     }),
 
   /** Get factory drum packs */

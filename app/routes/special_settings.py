@@ -42,7 +42,7 @@ def _normalize_pinned_routes(routes: Optional[list]) -> list[str]:
             continue
 
         route = raw_route.strip()
-        if not route or not route.startswith("/"):
+        if not route:
             continue
 
         if route in seen:

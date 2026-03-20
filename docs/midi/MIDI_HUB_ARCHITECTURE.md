@@ -1,73 +1,169 @@
-# MAP2 Native MIDI Hub Architecture (T066-subA)
+# MAP2 Native MIDI Hub Architecture
+
+Date: 2026-03-19  
+Canonical tasks: `T203-subA` through `T203-subI`
 
 ## Scope
 
-This document defines the core MIDI Hub engine and port abstraction layer delivered in `app/services/midi_hub/`.
+This document defines the shipped MIDI Hub v2 architecture across:
 
-## Core Components
+- Backend services under `app/services/midi_hub/`
+- API routes in `app/routes/midi_hub.py`
+- Routed frontend shell and area pages under `web/src/app/pages/MidiHubShell.tsx` and `web/src/app/pages/midi-hub/*`
 
-- `ring_buffer.py`
-  - `MidiRingBuffer`: bounded FIFO queue for hot-path MIDI message passing.
-  - Supports drop-on-full or overwrite-on-full behavior.
-  - Provides queue stats for diagnostics.
+## Frontend Route Architecture
 
-- `ports.py`
-  - `MidiPort` abstract base class.
-  - Concrete ports:
-    - `AlsaMidiPort` (python-rtmidi-backed ALSA)
-    - `JackMidiPort` (JACK bridge placeholder, in-process buffer)
-    - `VirtualMidiPort` (internal software routing)
-    - `NetworkMidiPort` (RTP-MIDI placeholder, in-process buffer)
-  - Shared `MidiMessage` envelope with timestamp + source/destination metadata.
+The canonical operator entry point is `/midi-hub`, implemented as a sidebar-routed shell with deep-linkable child routes:
+
+- `/midi-hub/connections`
+- `/midi-hub/presets`
+- `/midi-hub/transport`
+- `/midi-hub/events`
+- `/midi-hub/processing`
+- `/midi-hub/network`
+- `/midi-hub/lab`
+
+Shared route infrastructure:
+
+- `MidiHubShell.tsx`
+  - Sidebar navigation
+  - Theme/layout ownership
+  - Persistent bottom status bar
+- `MidiHubAreaLayout.tsx`
+  - Shared hero frame, tag row, and route scroll persistence
+- `midiHubNavStore.ts`
+  - Per-route scroll state and panel navigation continuity
+
+## Backend Service Topology
+
+### Core routing and transport
 
 - `hub.py`
-  - `MidiHub` singleton (`get_midi_hub()`) as central owner of all ports.
-  - Dedicated MIDI I/O worker thread:
-    - drains outbound queue
-    - polls inbound data from registered ports
-    - dispatches messages to subscribers via central message bus
-  - Dedicated hot-plug polling thread:
-    - ALSA snapshot polling
-    - auto-rebuild of ALSA port inventory
-  - Best-effort RT scheduling via `SCHED_FIFO` when privileges permit.
+  - Central MIDI message bus and subscriber dispatch
+- `router.py`
+  - Route graph, routing rules, transform execution, and destination fanout
+- `traffic_monitor.py`
+  - Snapshot, stats, and export for message telemetry
+- `network.py`
+  - RTP/UDP sessions
+  - OSC server/client bridge
+  - Mesh peer routing
+  - `/map2/*` namespace packet ingress and implicit-output fanout
+- `osc_namespace.py`
+  - Hierarchical `/map2/*` address router
+  - Current-value catalog for the namespace browser
+  - Implicit output event log and dispatch feedback
 
-## Thread Model
+### Show-control services
 
-- `midi_hub_io` thread
-  - High-frequency poll loop (`poll_interval_s`, default 2 ms)
-  - Runs message collection, queue drain, subscriber dispatch.
+- `preset_service.py`
+  - Preset snapshots
+  - Default preset and program-change slots
+  - Preset chains and timed chain traversal
+- `event_list_service.py`
+  - Event lists
+  - Cue/event execution
+  - Learn mode capture
+  - MSC message generation
+- `clock_engine.py`
+  - BPM state
+  - Start/stop/continue/tap transport controls
+- `recorder.py`
+  - MIDI capture, playback, and export
 
-- `midi_hub_hotplug` thread
-  - Lower-frequency port monitor (`hotplug_interval_s`, default 1.5 s)
-  - Reconciles ALSA port changes.
+### Processing and automation
 
-## Message Flow
+- `script_engine.py`
+  - Python scripting runtime and console capture
+- `macros.py`
+  - Trigger/action bundles across routing and preset workflows
+- `scheduler.py`
+  - Delayed and absolute-time MIDI event scheduling
+- `midi2.py`
+  - MIDI-CI discovery
+  - Property exchange state
+  - UMP translation helpers
 
-1. Producer calls `hub.send(...)` -> outbound ring buffer.
-2. I/O thread drains outbound queue -> `port.send(data)`.
-3. I/O thread polls `port.receive()` for inbound data.
-4. Inbound messages pushed to inbound ring buffer.
-5. I/O thread dispatches messages to registered subscribers.
+### Device and protocol integration
 
-## Port Abstraction Contract
+- `tesira_client.py`
+  - In-memory Tesira Text Protocol facade
+  - Alias browser, command history, subscriptions, preset actions
+- `virtual_gpio.py`
+  - 12 virtual inputs
+  - 12 virtual outputs
+  - State/event tracking
+- `string_interface.py`
+  - UDP-style string-command configuration and logging
+- `device_registry.py`
+  - Device inventory
+  - Shadow state and drift logging
 
-Each `MidiPort` implementation must provide:
+## Network and Protocol Architecture
 
-- `open() -> bool`
-- `close() -> None`
-- `send(data: bytes) -> bool`
-- `receive(max_messages: int) -> list[MidiMessage]`
+The Network area is now a composite of six protocol surfaces:
 
-## Current Limitations (Planned Follow-on)
+- RTP-MIDI sessions
+- OSC bridge
+- `/map2/*` namespace browser and direct dispatch
+- MIDI 2.0 workspace
+- Tesira TTP integration
+- Virtual GPIO
+- String interface
 
-- JACK bridge currently implemented as a placeholder virtual transport; JUCE/JACK bridge work belongs to `T066-subF`.
-- Network MIDI is a placeholder (`NetworkMidiPort`) until `T066-subN` RTP-MIDI implementation.
-- Ring buffer is lock-minimized but not formally lock-free under all Python runtime semantics.
+### OSC namespace flow
 
-## Delivered Files
+1. OSC UDP packet arrives at `MidiNetworkBridge`.
+2. If the address starts with `/map2/`, the bridge dispatches to `OscNamespaceRouter`.
+3. The namespace router calls the owning service:
+   - clock
+   - presets/chains
+   - event lists/cues
+   - macros
+   - GPIO
+   - plugin state placeholder store
+4. Namespace side effects emit implicit output events.
+5. The bridge fans those implicit outputs back to known OSC clients and exposes the same history to the frontend browser.
 
-- `app/services/midi_hub/__init__.py`
-- `app/services/midi_hub/ring_buffer.py`
-- `app/services/midi_hub/ports.py`
-- `app/services/midi_hub/hub.py`
-- `tests/midi_hub/*`
+Legacy non-namespace OSC mappings still use the earlier address-to-MIDI translation table and continue to coexist with the namespace router.
+
+## Lab Architecture
+
+The Lab area no longer uses one monolithic innovation panel. It is split into three Carbon panels:
+
+- `AiLearnPanel.tsx`
+  - AI-assisted mapping suggestions
+  - Carbon `AILabel`
+  - Confidence `ProgressBar`
+- `MeshNetworkPanel.tsx`
+  - Peer CRUD
+  - Mesh forwarding toggle
+  - Route-publication workflow
+- `DeviceShadowPanel.tsx`
+  - Shadow-state sync
+  - Drift-event review
+  - Severity-tagged table
+
+## Test and Validation Model
+
+Dedicated page tests now exist for all active MIDI Hub area pages:
+
+- `MidiHubConnectionsPage.test.tsx`
+- `MidiHubPresetsPage.test.tsx`
+- `MidiHubTransportPage.test.tsx`
+- `MidiHubEventsPage.test.tsx`
+- `MidiHubProcessingPage.test.tsx`
+- `MidiHubNetworkPage.test.tsx`
+- `MidiHubLabPage.test.tsx`
+
+Dedicated backend service tests exist for new protocol and integration services:
+
+- `tests/test_tesira_client.py`
+- `tests/test_virtual_gpio.py`
+- `tests/test_string_interface.py`
+- `tests/test_osc_namespace.py`
+
+## Remaining Non-Architectural Work
+
+- Real Tesira hardware validation remains tracked separately under `T203-subK`.
+- Documentation/conformance rollup remains under `T203-subJ`.

@@ -40,7 +40,7 @@ import {
   TableToolbarContent,
   Tag,
 } from '@carbon/react'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo, useSyncExternalStore } from 'react'
 import { NavLink } from 'react-router-dom'
 import { applyTheme, getSavedThemeId, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 import type { Theme } from '../theme'
@@ -52,6 +52,14 @@ import {
   MAP2_PLATFORM_BUILD_TIME,
   MAP2_PLATFORM_VERSION,
 } from '../components/branding/map2Branding'
+import {
+  getCategoryColorOverrideSnapshot,
+  getEditableCategoryConfigs,
+  resetAllCategoryColorOverrides,
+  resetCategoryColorOverride,
+  setCategoryColorOverride,
+  subscribeCategoryColorOverrides,
+} from '../data/categoryStyles'
 import { PlatformInfoGuideSection } from './PlatformInfoGuideSection'
 import './AboutPage.css'
 
@@ -499,6 +507,11 @@ export function AboutPage() {
   const [customThemes, setCustomThemes] = useState<Record<string, Theme>>({})
   const [currentTheme, setCurrentTheme] = useState(getSavedThemeId())
   const [showShoppingDialog, setShowShoppingDialog] = useState(false)
+  const categoryOverrideSnapshot = useSyncExternalStore(
+    subscribeCategoryColorOverrides,
+    getCategoryColorOverrideSnapshot,
+    getCategoryColorOverrideSnapshot,
+  )
 
   const refreshCustomThemes = useCallback(() => {
     setCustomThemes(getCustomThemes())
@@ -544,6 +557,7 @@ export function AboutPage() {
 
   const availableThemes = { ...getAllThemes(), ...customThemes }
   const activeTheme = availableThemes[currentTheme] ?? availableThemes.default
+  const editableCategoryConfigs = useMemo(() => getEditableCategoryConfigs(), [categoryOverrideSnapshot])
 
   const toggleWelcomeBanner = async () => {
     if (!welcomeBanner || bannerLoading) return
@@ -646,6 +660,57 @@ export function AboutPage() {
         <Button kind="tertiary" renderIcon={PaintBrush} onClick={() => setShowThemeChooser(true)}>
           Choose theme
         </Button>
+      </div>
+      <div className="about-category-card">
+        <div className="about-category-card__header">
+          <div>
+            <h3 className="about-category-card__title">Category colors</h3>
+            <p className="about-category-card__description">
+              Set the shared accent colors used by plugin cards and JUCE Grid categories.
+            </p>
+          </div>
+          <Button kind="ghost" size="sm" onClick={() => resetAllCategoryColorOverrides()}>
+            Reset all
+          </Button>
+        </div>
+        <div className="about-category-card__grid">
+          {editableCategoryConfigs.map(({ key, label, config, overridden }) => {
+            const Icon = config.icon
+
+            return (
+              <div key={key} className="about-category-card__item">
+                <div className="about-category-card__item-main">
+                  <span className="about-category-card__icon" style={{ color: config.color }}>
+                    <Icon size={18} />
+                  </span>
+                  <div className="about-category-card__meta">
+                    <span className="about-category-card__label">{label}</span>
+                    <span className="about-category-card__value">{config.color}</span>
+                  </div>
+                </div>
+                <div className="about-category-card__controls">
+                  <input
+                    aria-label={`${label} color`}
+                    className="about-category-card__picker"
+                    type="color"
+                    value={config.color}
+                    onChange={(event) => {
+                      setCategoryColorOverride(key, event.target.value)
+                    }}
+                  />
+                  <Button
+                    kind="ghost"
+                    size="sm"
+                    disabled={!overridden}
+                    onClick={() => resetCategoryColorOverride(key)}
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </section>
   )

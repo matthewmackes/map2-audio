@@ -1,6 +1,9 @@
 import json
 import asyncio
+import sys
+import types
 import pytest
+from pydantic import ValidationError
 
 from app.services import drum_kit_service as drum_kit_service_module
 from app.services.websocket_manager import ws_manager
@@ -15,6 +18,8 @@ class _FakeDrumEngine:
         self.bpm_calls = []
         self.pattern_calls = []
         self.swing_calls = []
+        self.variation_calls = []
+        self.fill_trigger_calls = 0
         self.global_midi_channel = 0
         self.global_midi_channel_calls = []
         self.pad_notes = {pad: [36 + pad] for pad in range(16)}
@@ -79,6 +84,17 @@ class _FakeDrumEngine:
 
     def set_drum_swing(self, swing):
         self.swing_calls.append(swing)
+        return True
+
+    def set_drum_variation(self, pattern, variation):
+        self.variation_calls.append((pattern, variation))
+        self.position["pattern"] = pattern
+        self.position["pattern_id"] = pattern
+        self.position["variation"] = variation
+        return True
+
+    def trigger_drum_fill(self):
+        self.fill_trigger_calls += 1
         return True
 
     def set_drum_global_midi_channel(self, value):
@@ -237,6 +253,15 @@ def test_drum_machine_service_persists_and_restores_state(tmp_path, monkeypatch)
     assert restored.get_state()["active_pack"] == "classic-rock"
 
 
+def test_drum_machine_service_rejects_invalid_state_updates(tmp_path, monkeypatch):
+    service, _, _, _, _, _ = _build_service(tmp_path, monkeypatch)
+
+    with pytest.raises(ValidationError):
+        service.update_state({"bpm": 12})
+
+    assert service.get_state()["bpm"] == 120
+
+
 def test_drum_machine_service_indexes_factory_and_generated_packs(tmp_path, monkeypatch):
     service, factory_dir, generated_dir, _, _, _ = _build_service(tmp_path, monkeypatch)
 
@@ -309,6 +334,57 @@ def test_drum_machine_service_tracks_sequencer_position(tmp_path, monkeypatch):
     assert position["variation"] == 0
     assert position["is_playing"] is False
     assert position["updated_at"] is not None
+
+
+def test_drum_machine_service_triggers_fill_and_tracks_song_transport(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    class _FakeSequencerService:
+        @staticmethod
+        def get_song():
+            return [
+                {"pattern": 4, "repeat_count": 2},
+                {"pattern": 9, "repeat_count": 1},
+            ]
+
+        @staticmethod
+        def get_song_loop():
+            return True
+
+    fake_module = types.ModuleType("app.services.drum_sequencer_service")
+    fake_module.DrumSequencerService = type("FakeSequencerServiceClass", (), {"has_instance": staticmethod(lambda: True)})
+    fake_module.get_drum_sequencer_service = lambda: _FakeSequencerService()
+    monkeypatch.setitem(sys.modules, "app.services.drum_sequencer_service", fake_module)
+
+    fill = service.trigger_fill()
+    assert fill["status"] == "ok"
+    assert fake_engine.fill_trigger_calls == 1
+
+    song_transport = service.start_song_playback()
+    assert song_transport["is_playing"] is True
+    assert song_transport["current_entry_index"] == 0
+    assert song_transport["current_repeat"] == 1
+    assert fake_engine.pattern_calls[-1] == 4
+    assert fake_engine.transport_playing_calls[-1] is True
+
+    fake_engine.position.update({"step": 15, "bar": 1, "beat": 4, "pattern": 4, "pattern_id": 4, "is_playing": True})
+    service._refresh_position_from_engine()
+    fake_engine.position.update({"step": 0, "bar": 2, "beat": 1, "pattern": 4, "pattern_id": 4, "is_playing": True})
+    service._refresh_position_from_engine()
+
+    repeated = service.get_song_transport()
+    assert repeated["current_entry_index"] == 0
+    assert repeated["current_repeat"] == 2
+
+    fake_engine.position.update({"step": 15, "bar": 2, "beat": 4, "pattern": 4, "pattern_id": 4, "is_playing": True})
+    service._refresh_position_from_engine()
+    fake_engine.position.update({"step": 0, "bar": 3, "beat": 1, "pattern": 4, "pattern_id": 4, "is_playing": True})
+    service._refresh_position_from_engine()
+
+    advanced = service.get_song_transport()
+    assert advanced["current_entry_index"] == 1
+    assert advanced["current_repeat"] == 1
+    assert fake_engine.pattern_calls[-1] == 9
 
 
 @pytest.mark.asyncio
@@ -453,6 +529,13 @@ def test_drum_machine_service_round_trips_zones_learn_and_presets(tmp_path, monk
     assert presets["presets"][0] == "Roland PD-140DS / CY-18DR / VH-14D"
     assert loaded["status"] == "ok"
     assert fake_engine.loaded_presets[-1] == "Roland PD-140DS / CY-18DR / VH-14D"
+
+
+def test_drum_machine_service_rejects_unknown_midi_preset(tmp_path, monkeypatch):
+    service, _, _, _, _, _ = _build_service(tmp_path, monkeypatch)
+
+    with pytest.raises(ValueError, match="Unknown drum MIDI preset"):
+        service.load_midi_preset("Not A Real Preset")
 
 
 def test_drum_machine_service_persists_and_restores_per_kit_midi_config(tmp_path, monkeypatch):

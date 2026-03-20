@@ -117,8 +117,47 @@ function buildOutputStatus(): JuceGridAudioInterfaceStatus {
   }
 }
 
+function buildChainWithPluginCount(count: number): Chain {
+  return {
+    ...chain,
+    plugins: Array.from({ length: count }, (_, index) => ({
+      uri: `plugin://slot-${index}`,
+      name: `Processor ${index + 1}`,
+      position: index,
+      bypassed: index === 5,
+      parameters: {},
+      in_ports: 2,
+      out_ports: 2,
+      latency_samples: 0,
+      cpu_percent: 0,
+    })),
+  }
+}
+
+function buildPluginMetaForChain(targetChain: Chain): Record<string, Plugin> {
+  return Object.fromEntries(
+    targetChain.plugins.map((plugin, index) => [
+      plugin.uri,
+      {
+        uri: plugin.uri,
+        name: plugin.name,
+        author: 'MAP2',
+        category: index % 2 === 0 ? 'Dynamics' : 'Modulation',
+        class_label: 'Effect',
+        version: '1.0.0',
+        license: 'AGPL-3.0-only',
+        has_ui: false,
+        in_ports: 2,
+        out_ports: 2,
+        parameters: [],
+        format: 'VST3',
+      } satisfies Plugin,
+    ]),
+  )
+}
+
 describe('JuceGridSignalCanvas', () => {
-  it('renders input and output routing summaries above and below the block lane with full-detail tooltips and warning state', () => {
+  it('renders uniform simplified signal cards with routing summaries above and below the block lane', () => {
     const handleInputPorts = jest.fn()
     const handleOutputPorts = jest.fn()
     const handlePluginSelect = jest.fn()
@@ -172,23 +211,15 @@ describe('JuceGridSignalCanvas', () => {
 
     expect(pluginTitle).toBeTruthy()
     expect(pluginTitle.getAttribute('title')).toBe('Studio Compressor')
+    expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-svg')).toBeTruthy()
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
-    expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-features-0')).toBeTruthy()
-    expect(within(pluginCard).getByText('Dynamics')).toBeTruthy()
-    expect(within(pluginCard).getByText('Stereo I/O')).toBeTruthy()
-    expect(within(pluginCard).getByText('Sidechain')).toBeTruthy()
-    expect(within(pluginCard).getByText('VST3')).toBeTruthy()
     expect(within(pluginCard).getByRole('button', { name: 'Actions for Studio Compressor' })).toBeTruthy()
-    expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-metrics-0')).toBeTruthy()
-    expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-levels-0')).toBeTruthy()
-    expect(within(pluginCard).getByText('CPU')).toBeTruthy()
-    expect(within(pluginCard).getByText('12.4%')).toBeTruthy()
-    expect(within(pluginCard).getByText('Lat')).toBeTruthy()
-    expect(within(pluginCard).getByText('2.0 ms')).toBeTruthy()
-    expect(within(pluginCard).getByText('SC')).toBeTruthy()
-    expect(within(pluginCard).getByText('Ready')).toBeTruthy()
-    expect(within(pluginCard).getByText('Auto')).toBeTruthy()
-    expect(within(pluginCard).getByText('Armed')).toBeTruthy()
+    expect(within(pluginCard).queryByText('Dynamics')).toBeNull()
+    expect(within(pluginCard).queryByText('CPU')).toBeNull()
+    expect(within(pluginCard).queryByText('12.4%')).toBeNull()
+    expect(within(pluginCard).queryByText('Lat')).toBeNull()
+    expect(within(pluginCard).queryByText('SC')).toBeNull()
+    expect(within(pluginCard).queryByText('Auto')).toBeNull()
 
     fireEvent.click(pluginCard)
 
@@ -261,5 +292,36 @@ describe('JuceGridSignalCanvas', () => {
     const connector = screen.getByTestId('juce-grid-signal-flow-connector-0')
     expect(connector.className).toContain('is-dashed')
     expect(connector.querySelectorAll('.juce-grid-page__signal-flow-dot')).toHaveLength(3)
+  })
+
+  it('builds small wrapped rows first, then restarts the next row at large width with alternating snake direction', () => {
+    const longChain = buildChainWithPluginCount(7)
+    const longMeta = buildPluginMetaForChain(longChain)
+
+    render(
+      <JuceGridSignalCanvas
+        chain={longChain}
+        pluginMeta={longMeta}
+        selectedPluginUri={longChain.plugins[0].uri}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        onAddPlugin={jest.fn()}
+        showEndpoints={false}
+      />,
+    )
+
+    const firstRow = screen.getByTestId('juce-grid-signal-row-0')
+    const secondRow = screen.getByTestId('juce-grid-signal-row-1')
+    const verticalConnector = screen.getByTestId('juce-grid-signal-vertical-connector-0')
+
+    expect(firstRow.getAttribute('data-row-size')).toBe('small')
+    expect(firstRow.getAttribute('data-row-direction')).toBe('forward')
+    expect(secondRow.getAttribute('data-row-size')).toBe('large')
+    expect(secondRow.getAttribute('data-row-direction')).toBe('reverse')
+    expect(verticalConnector.getAttribute('data-connector-side')).toBe('right')
+    expect(verticalConnector.className).toContain('is-dashed')
+    expect(firstRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(6)
+    expect(within(secondRow).getByRole('button', { name: 'Add effect' })).toBeTruthy()
   })
 })

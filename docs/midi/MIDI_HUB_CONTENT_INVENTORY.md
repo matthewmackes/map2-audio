@@ -1,8 +1,8 @@
-# MIDI Hub Content Inventory (T202-subA)
+# MIDI Hub Content Inventory (T203-subJ)
 
-Date: 2026-03-17
+Date: 2026-03-19
 Owner: Codex
-Scope: `web/src/app/pages/MidiHubPage.tsx` and `web/src/app/components/MidiHub/*`
+Scope: `web/src/app/pages/MidiHubShell.tsx`, `web/src/app/pages/midi-hub/*`, and `web/src/app/components/MidiHub/*`
 
 ## 1. Product Direction
 
@@ -27,29 +27,39 @@ The active `/midi-hub` route is now an advanced operator workspace, not a guided
 
 ## 3. Route Information Architecture
 
-The page is organized into five ordered bands:
+The shipped route is a routed shell with one index entry point plus seven child workspaces:
 
-1. `Signal path`
-   - `Routing workspace`
-   - `Event monitor`
-   - `Quick routing`
-2. `Show control`
-   - `Presets and program change`
-   - `Clock and transport`
-   - `Capture and playback`
-3. `Network and protocol`
-   - `RTP-MIDI and OSC bridge`
-   - `MIDI 2.0 workspace`
-4. `Message processing and automation`
-   - `Message filtering`
-   - `Message mapping`
-   - `Script engine`
-   - `Macros`
-   - `Scheduled MIDI events`
-5. `Advanced and experimental`
-   - `AI-assisted mapping suggestions`
-   - `Mesh route publication`
-   - `Device shadow drift tools`
+1. `/midi-hub`
+   - Operator landing shell with status bar, area cards, and current-route summary
+2. `/midi-hub/connections`
+   - Routing workspace
+   - Event monitor
+   - Quick routing and patch inspection
+3. `/midi-hub/presets`
+   - Preset save and recall
+   - Program change slots and preset chaining
+4. `/midi-hub/transport`
+   - Clock engine
+   - Recorder and playback capture
+5. `/midi-hub/events`
+   - Message filtering
+   - Message mapping
+   - Event list review
+6. `/midi-hub/processing`
+   - Script engine
+   - Macros
+   - Scheduled MIDI events
+7. `/midi-hub/network`
+   - RTP-MIDI and OSC bridge
+   - MIDI 2.0 workspace
+8. `/midi-hub/lab`
+   - AI-assisted mapping suggestions
+   - Mesh route publication
+   - Device shadow drift tools
+   - Tesira TTP control surface
+   - Virtual GPIO triggers
+   - String interface console
+   - OSC namespace browser
 
 ## 4. Panel Inventory and Operational Role
 
@@ -68,15 +78,20 @@ The page is organized into five ordered bands:
 | `macros` | Automation | Macro save, trigger, delete | Bundle repeated actions behind one trigger |
 | `scheduler` | Automation | Delayed send, cancel, clear-finished | Queue deterministic timed MIDI events |
 | `innovation` | Experimental | AI learn suggestions, mesh, shadow sync | Isolated advanced/experimental control surface |
+| `tesira` | Experimental control | Connect, subscribe, command, matrix aliases | Drive Tesira TTP objects from the Lab workspace |
+| `virtual-gpio` | Experimental control | Trigger bank, labels, momentary/latch modes | Exercise virtual contact closures without leaving MIDI Hub |
+| `string-interface` | Experimental control | Send line, command history, response feed | Probe text-oriented device integrations |
+| `osc-namespace` | Experimental control | Namespace browser, node details, value send | Inspect and drive the routed OSC namespace surface |
 
 ## 5. Carbon and Accessibility Implementation Notes
 
-- Route shell uses one Carbon-layered sequential page instead of route-level tab navigation.
+- Route shell uses one Carbon-layered landing page that hands off to child routes rather than one long sequential workspace.
 - Route and panel headers use concise titles plus Carbon `Tag` status framing only.
 - Touched MIDI Hub panels no longer import MUI/Ariakit/Phosphor controls.
 - Dense editors use Carbon `TextInput`, `TextArea`, `Select`, `Checkbox`, `Button`, `Tag`, `Table*`, and `Modal` primitives, plus Carbon tokenized custom SVG/table states where Carbon has no native equivalent.
 - The routing matrix remains a custom interaction surface, but it is now tokenized to Carbon and backed by semantic table structure and Carbon modal editing.
 - The patchbay remains a custom SVG topology view, but it now uses Carbon tokens and Carbon controls for state and actions.
+- The Lab route splits device-control and namespace tools into separate Carbon panels so experimental controls stay scannable at iPad width.
 
 ## 6. Validation Signals
 
@@ -87,8 +102,9 @@ The page is organized into five ordered bands:
 | Start transport clock | `clock`, `traffic` | Clock running plus visible timing traffic |
 | Add a remote peer | `network`, `routing` | RTP session exists and route references the endpoint |
 | Troubleshoot no-signal | `routing`, `traffic`, `presets` | Ports visible, route state visible, ingress visible, rollback available |
+| Verify Tesira or GPIO control path | `tesira`, `virtual-gpio`, `string-interface`, `osc-namespace` | Command round-trip, control state update, and namespace/browser response visible |
 
-## 7. Drift Removed In T202
+## 7. Drift Removed In T203
 
 - Removed route-level tab-stack workflow in favor of ordered operator bands.
 - Removed guided-help assumptions from the route plan and content inventory.

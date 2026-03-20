@@ -1,0 +1,15 @@
+.drums-page a:focus-visible,
+.drums-page button:focus-visible,
+.drums-page input:focus-visible,
+.drums-page select:focus-visible,
+.drums-page [role='tab']:focus-visible,
+.drums-page [role='gridcell']:focus-visible {
+  outline: 2px solid var(--cds-focus, #ffffff);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(15, 98, 254, 0.35);
+}
+
+.drums-page [role='gridcell']:focus-visible {
+  position: relative;
+  z-index: 1;
+}

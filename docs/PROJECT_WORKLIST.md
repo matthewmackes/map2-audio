@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-19 - Codex (T203-subF MIDI Hub Message Processing area completed with a new Carbon-first `/midi-hub/processing` workspace, a tag-toggle filter planner with live route preview and route-save flow, a 16-slot accordion message mapper planner, a layered script editor with toolbar actions, and DataTable-based macro and scheduler surfaces with route-scoped styling/tests; clean typecheck; clean dedicated processing-page test; and clean production build. T203-subE MIDI Hub Event Lists area completed with a new persisted event-list backend service for MTC/RTC scheduling, learn-mode capture, MSC composition/sending, and routed cue actions; a shipped `/midi-hub/events` workspace with Carbon DataTable-based event-list manager and event editor, event-list status, learn-mode controls, MSC builder, and dedicated page styling/tests; clean typecheck; clean event-lists backend pytest suite; clean dedicated events-page frontend test; and clean production build. T203-subC MIDI Hub Presets & Recall rewrite completed with split Carbon preset manager surfaces, Carbon DataTable-based preset and slot management, Carbon ComposedModal compare flow, FileUploader-backed import affordance, preset-chain reorder editing, dedicated presets-page coverage, clean typecheck, clean routed MIDI Hub tests, and clean production build; T203-subB MIDI Hub Connections area rewrite completed with Carbon DataTable-based routing and traffic workspaces, Carbon ComposedModal route editor, Carbon Toggle-based quick router, dedicated page-scoped CSS, targeted connections-page coverage, clean typecheck, clean routed MIDI Hub tests, and clean production build; T223-subI JUCE Grid verification audit completed with deployment-backed bottom-editor coverage for 35 shipped grid plugins, fallback-template registry fix for lazy template resolution, clean typecheck, clean targeted JUCE Grid test suites, and clean production build; T223-subG JUCE Grid iPad interaction pass completed with touch-select contextual actions, smart-control parameter editing, 44pt touch targets, and swipe-down editor dismiss handling; T223-subE JUCE Grid select-and-move reorder workflow completed with bottom-editor move controls, keyboard arrow repositioning, and signal-canvas reorder preview states; T223-subC JUCE Grid signal-flow visualization completed with 3-dot connectors, input/output bridges, and dashed bypass path treatment; T223-subD JUCE Grid bottom parameter editor completed with slide-up panel workflow, standardized Carbon NumberInput/Dropdown controls, and grouped always-visible sections; T223-subH JUCE Grid viewport block screen completed for sub-768 mobile layouts with touch-device rotation guidance; T223-subF JUCE Grid add-effect slot and state persistence completed with selected-block/editor/scroll restore; T223-subB JUCE Grid signal-card face completed with Axe-FX-style hero/info standardization and metadata-aware effect icon resolution; T218 drum TypeScript/API/hook integration committed with tests; T216 drum backend service completed with persistence, websocket topics, typed routes, and live JUCE master-volume/metering bridge hooks; T205 icon system overhaul completed across active frontend paths with zero Phosphor/MUI/emoji holdouts in `web/src/app` + `web/src/map2`; T220 typography rollout completed with BlexMono-first delivery and IBM Plex Sans build emission removed; T222 Carbon Category Card refactor completed — all 47 effect cards + 8 templates refactored to AXE-FX Edit structural parity with Carbon Design System compliance)
+Last updated: 2026-03-20 - Codex (Closed the remaining drum UI parent task and the remaining software-side drum processor qualification. `T217` is now done because every UI subtask from `T217-A` through `T217-L` is complete and validated. `T219-A` is now done because `juce-engine/tests/DrumMachineProcessorTests.cpp` now includes a stronger global-allocation guard for steady-state `processBlock`, and that test exposed then verified a real hot-path fix in `juce-engine/Source/SynthForge/Core/Part.cpp`: `Part::applyModMatrix()` had been copying modulation-source state on every callback even when no modulation routes existed, causing callback-thread heap traffic. After short-circuiting the no-route case, the full SynthForge JUCE test target passes with RT-safety, EQ, compression, routing, and native-audio proofs. `T219-F` remains blocked on environment/hardware: the repo now has both in-process full-stack integration coverage in `tests/test_drum_integration.py` and native-audio callback coverage in `tests/test_juce_engine_drum_native_stability.py`, but true live MIDI-in and hardware-backed end-to-end proof still cannot be closed in this host because ALSA sequencer access is unavailable and no physical drum hardware path is present. As a result, parent task `T219` is now correctly blocked rather than left misleadingly in progress. Earlier this session, T223 JUCE Grid redesign completed by shipping `T223-subA`, the missing tile/snake layout engine in `JuceGridSignalCanvas`, with deterministic large/medium/small row sizing, alternating boustrophedon rows, vertical row connectors, clean JUCE Grid tests, clean frontend typecheck, and clean production build. Earlier this session, T203-subJ MIDI Hub v2 documentation/conformance/test finalization completed with updated Carbon docs, MIDI Hub architecture/content docs, synced assistant instructions, full routed MIDI Hub page tests, focused backend MIDI Hub coverage, clean frontend typecheck, clean production build, and a small `DrumsPage.tsx` build-fix. T211/T213/T214/T215 drum-engine parent tasks were closed after verifying their completed subtasks and prior validation evidence. T209 was reclassified as blocked because only the host-level `RLIMIT_NOFILE` gate remains before rerunning the final qualification bundle. T203 is now software-complete and blocked only on live Tesira hardware validation in T203-subK.)
 
 ## Active Blockers Only
 
@@ -342,7 +342,7 @@ Last updated: 2026-03-16 00:00 - Codex
 ## MIDI Hub v2 — Show Control Platform Rewrite
 
 ID: T203
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: MIDI Hub v2 — Full show control platform rewrite with sidebar navigation, Net3 feature parity, Tesira TTP integration, and enterprise OSC namespace
 Description:
 - Goal / acceptance criteria: Complete clean rewrite of the MIDI Hub from a monolithic scrolling page into a 7-area sidebar-navigated show control platform. Add Net3 Show Control Gateway feature parity (Event Lists, MSC command builder, virtual GPIO, MIDI Raw from cues, Learn Mode, String Interface). Add bidirectional Tesira TTP integration. Add hierarchical `/map2/*` OSC namespace. Add persistent bottom status bar, dark/light theming with system preference detection, scroll/panel state persistence across navigation, and deep-linkable routes. All surfaces must pass Carbon Conformance Standard and Carbon Contribution Review Checklist. Enterprise features must be identified and flagged throughout.
@@ -664,7 +664,7 @@ Last updated: 2026-03-19 21:29 - Codex
   - Validation: `pytest tests/test_osc_namespace.py` -> pass, `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
 
 ID: T203-subJ
-Status: [>] In Progress
+Status: [✓] Done
 Title: Documentation, conformance, and test suite finalization
 Description:
 - Goal / acceptance criteria: Update all documentation to reflect the new MIDI Hub v2 architecture. Produce all Carbon conformance evidence. Ensure full test coverage.
@@ -685,10 +685,15 @@ Description:
 - Required outputs: All items listed above. No silent exceptions.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-19 21:33 - Codex
+Last updated: 2026-03-20 13:00 - Codex
+- Completion notes:
+  - Updated `docs/design/CARBON_ROUTE_PATTERN_MAPPING.md`, `docs/design/CARBON_CONFORMANCE_MATRIX.md`, and `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md` so the routed `/midi-hub/*` shell, child pages, and v2 Carbon evidence match the shipped implementation.
+  - Updated `docs/midi/MIDI_HUB_CONTENT_INVENTORY.md`, `docs/midi/MIDI_HUB_ARCHITECTURE.md`, `docs/midi/MAP2_OSC_NAMESPACE.md`, `docs/midi/TESIRA_TTP_INTEGRATION.md`, `docs/CLAUDE.md`, `.gemini/instructions.md`, and `.github/copilot-instructions.md` to reflect the v2 information architecture, service inventory, OSC namespace, Tesira integration surface, and worklist/instruction updates.
+  - Verified the required page/backend test surface is present and green with `npm --prefix web test -- --runInBand src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx src/app/pages/midi-hub/MidiHubTransportPage.test.tsx src/app/pages/midi-hub/MidiHubEventsPage.test.tsx src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx src/app/pages/midi-hub/MidiHubLabPage.test.tsx` and `pytest -q tests/test_tesira_client.py tests/test_virtual_gpio.py tests/test_string_interface.py tests/test_osc_namespace.py tests/test_midi_hub_event_lists.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py`.
+  - Final validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import/chunk-size warnings only).
 
 ID: T203-subK
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Tesira hardware integration testing (save for end)
 Description:
 - Goal / acceptance criteria: Test the Tesira TTP integration against the real Tesira system on the network. Verify: TCP connection, instance tag discovery, fader get/set, mute toggle, preset recall, subscription live updates, auto-reconnect on disconnect, command console free-text commands. Archive evidence.
@@ -698,15 +703,21 @@ Description:
 - Required outputs: Test evidence document, any bug fixes discovered during testing.
 Subtasks: None
 Assigned to: Claude + Lab
-Last updated: 2026-03-17 - Claude
+Last updated: 2026-03-20 13:00 - Codex
+- Blocked notes:
+  - Software implementation, route coverage, and documentation are complete.
+  - Remaining work is the user-requested end-of-program live Tesira session against real hardware on the network.
 
 Assigned to: Claude
-Last updated: 2026-03-17 - Claude
+Last updated: 2026-03-20 13:00 - Codex
+- Blocked notes:
+  - All software-side MIDI Hub v2 deliverables are complete.
+  - Remaining closure depends only on live Tesira hardware validation in `T203-subK`.
 
 ## API Reliability
 
 ID: T209
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: API startup, restart, and load-reliability remediation program
 Description:
 - Goal / acceptance criteria: Eliminate the API failure modes observed in the 2026-03-07 qualification review by hardening startup/readiness behavior, restart sequencing, endpoint degradation paths, and observability so that the load qualification suite passes consistently without transient `404`, `500`, `503`, connection resets, or 8-second read/connect timeouts during warmup or steady-state runs.
@@ -1209,7 +1220,7 @@ Last updated: 2026-03-17 22:39 - Codex
 ---
 
 ID: T211
-Status: [>] In Progress
+Status: [✓] Done
 Title: Drum Machine C++ Sound Engine — DrumMachineProcessor
 Description:
 - Goal / acceptance criteria: Implement a dedicated `DrumMachineProcessor` C++ class in `juce-engine/Source/DrumMachine/` that provides a 16-instrument drum sound engine built on top of the SynthForge sampler architecture, with per-instrument controls, 8 fixed submix buses, and stereo master output.
@@ -1246,7 +1257,7 @@ Subtasks:
   - [✓] T211-E: Add CMakeLists.txt entries for DrumMachine source files; verify build with `cmake -B build && cmake --build build`
 Assigned to: Codex
 Last updated: 2026-03-20 06:52 - Codex
-- Progress notes:
+- Completion notes:
   - Completed `T211-B` with a new RT-safe `juce-engine/Source/DrumMachine/DrumMachineMixer.h/cpp` implementation providing 8 fixed stereo buses, 3-band EQ, single-band compression, per-bus level/pan/mute/solo, master-volume fold-down, and cached metering.
   - Added focused JUCE coverage in `juce-engine/tests/DrumMachineMixerTests.cpp` for bus parameter mutation, stereo fold-down, metering, and solo/mute gating.
   - Updated `juce-engine/CMakeLists.txt` so the new mixer source and tests build under the existing `synthforge_tests` target.
@@ -1281,7 +1292,7 @@ Last updated: 2026-03-19 00:16 - Codex
 ---
 
 ID: T213
-Status: [>] In Progress
+Status: [✓] Done
 Title: Drum Machine Pattern Sequencer Engine (C++ + Python)
 Description:
 - Goal / acceptance criteria: Implement a real-time drum pattern sequencer with 128 patterns per kit, variable length (1–64 steps at 16th-note resolution, 4/4 only), per-step velocity, transport control (play/stop/pause), and BPM-synced playback that triggers notes through DrumMachineProcessor.
@@ -1328,7 +1339,7 @@ Subtasks:
     - Count-in: play N bars (0–4) of metronome clicks before pattern starts
 Assigned to: Codex
 Last updated: 2026-03-20 07:32 - Codex
-- Progress notes:
+- Completion notes:
   - Completed `T213-A` with a new `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp` core that owns 128 patterns, 16 instrument lanes, 64-step storage, transport state, BPM/swing/accent controls, current pattern/step/bar tracking, sample-domain step scheduling, and tap-tempo averaging.
   - Extended `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` with queued `triggerNote(...)` support so the sequencer can inject software hits into the existing drum processor path with sample offsets.
   - Wired the sequencer into `juce-engine/Source/Map2AudioEngine.h/cpp` so drum sequencing runs in the audio callback immediately before `DrumMachineProcessor` consumes its block, and registered the new source/test files in `juce-engine/CMakeLists.txt`.
@@ -1359,7 +1370,7 @@ Last updated: 2026-03-20 07:32 - Codex
 ---
 
 ID: T214
-Status: [>] In Progress
+Status: [✓] Done
 Title: Drum Machine Kit Management — SFZ kit loading, factory kits, user kits
 Description:
 - Goal / acceptance criteria: Implement a complete drum kit management system that loads SFZ drum kits into DrumMachineProcessor, ships factory kits, and supports user kit import/creation. Each kit defines 16 instrument assignments with sample references, default MIDI mapping, and default bus routing.
@@ -1399,7 +1410,7 @@ Subtasks:
   - [✓] T214-E: Sample sourcing — identify, download, and organize CC0 drum samples for factory kits; write SFZ mappings with velocity layers (minimum 3 velocity layers per instrument), round-robin (minimum 2 variations), and choke groups for hihats
 Assigned to: Codex
 Last updated: 2026-03-20 08:05 - Codex
-- Progress notes:
+- Completion notes:
   - Completed `T214-A` by adding `data/drums/schemas/drum_kit.schema.json`, a draft 2020-12 schema for 16-slot drum kits with constrained metadata, relative `.sfz` instrument paths, per-pad default note/bus/volume/pan/tune fields, kit-level BPM and swing defaults, and explicit category/license validation.
   - Validation: `python3` JSON parse + schema shape smoke test against a synthetic 16-instrument kit document -> pass.
   - Completed `T214-B` by adding four launch-ready factory kits under `data/drums/factory_kits/`: `standard_rock`, `electronic_808`, `electronic_909`, and `jazz_brush`, each with a 16-slot `kit.json`, per-instrument SFZ program files, a purpose-generated sample set, and kit-local documentation.
@@ -1417,7 +1428,7 @@ Last updated: 2026-03-20 08:05 - Codex
 ---
 
 ID: T215
-Status: [>] In Progress
+Status: [✓] Done
 Title: Drum Machine MIDI Input — velocity curves, note mapping, zone assignment
 Description:
 - Goal / acceptance criteria: Implement comprehensive MIDI input handling for the drum machine so any external e-drum module, MIDI controller, or trigger interface can play the drum machine with configurable velocity response, note-to-pad mapping, and multi-zone pad support.
@@ -1457,7 +1468,7 @@ Subtasks:
   - [✓] T215-F: Persist MIDI configuration per kit — mapping, curves, and zones saved alongside kit data in `~/.map2/drums/midi_configs/{kit_id}.json`
 Assigned to: Codex
 Last updated: 2026-03-20 09:34 - Codex
-- Progress notes:
+- Completion notes:
   - Completed `T215-A` in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` by replacing the single-note pad trigger assumption with a real note-to-pad mapping table, allowing multiple MIDI notes to target one pad while guaranteeing that any individual note maps to at most one pad.
   - Added global drum MIDI channel filtering alongside the existing per-pad channel filter, and extended the pybind surface in `juce-engine/Source/PythonBindings.cpp` with `add_drum_pad_note`, `remove_drum_pad_note`, `get_drum_pad_notes`, `set_drum_global_midi_channel`, and `get_drum_global_midi_channel`.
   - Added native coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for GM default note exposure, multi-note-to-one-pad routing, no-fan-out remapping behavior, per-pad channel filtering, and the new global MIDI channel gate.
@@ -1529,7 +1540,7 @@ Last updated: 2026-03-19 15:43 - Codex
 ---
 
 ID: T217
-Status: [>] In Progress
+Status: [✓] Done
 Title: Drum Machine UI — TR-Style Step Sequencer (Carbon Design)
 Description:
 - Goal / acceptance criteria: Build the primary drum machine UI as a full-page Carbon Design surface at `/drums` with a TR-style 16-step grid, instrument rows, transport controls, pattern/song management, and real-time metering. This replaces the current placeholder `DrumsPage.tsx` and `DrumMachineCard.tsx`.
@@ -1563,28 +1574,28 @@ Subtasks:
     - Row context menu: reassign MIDI note, change bus assignment, load different sample
     - Implemented in `web/src/app/pages/DrumsPage.tsx` with inline row-name editing, pad swatches, mute/solo toggles, volume/pan/tune sliders, and a selected-row inspector that keeps bus assignment plus sample metadata in view beside the step grid.
     - Added `usePatchDrumKitInstrument` plus the `drumsApi.patchKitInstrument` client path so row-name edits persist back to the active kit, while `useSetDrumPadControl` continues to drive per-pad mixer updates.
-  - [ ] T217-D: Pattern management panel
+  - [✓] T217-D: Pattern management panel
     - Pattern bank: 128 pattern slots displayed as Carbon `Tile` grid (8×16 or paginated)
     - Active pattern highlighted with `$interactive-01` border
     - Pattern operations: Copy (`Button`), Paste (`Button`), Clear (`Button` with `Modal` confirmation), Duplicate
     - Pattern length control: `NumberInput` (1–64 steps)
     - Variation selector: `Dropdown` (Main, Var 1–10)
     - Fill trigger: `Button` with `Lightning` icon
-  - [ ] T217-E: Song mode arranger panel
+  - [✓] T217-E: Song mode arranger panel
     - Vertical list of song entries: each entry shows pattern name/number + repeat count
     - Carbon `OrderedList` or `StructuredList` with drag-to-reorder (or move up/down buttons for accessibility)
     - Add entry: `Button` → `Modal` with pattern selector `Dropdown` + repeat count `NumberInput` (1–99)
     - Remove entry: `Button` with `TrashCan` icon + confirmation
     - Song transport: Play Song / Stop Song buttons, loop toggle
     - Current position indicator: highlight active entry during song playback
-  - [ ] T217-F: Kit browser and mixer panel
+  - [✓] T217-F: Kit browser and mixer panel
     - Kit browser: `Dropdown` for active kit selection + `Tile` grid showing available kits (factory + user) with name, category badge, instrument count
     - Load kit: click tile → `Modal` confirmation (loading replaces current kit)
     - Mixer view (toggled via Carbon `Toggle` or `ContentSwitcher`):
       - 8 submix bus channel strips arranged horizontally
       - Each strip: bus name label, EQ controls (3-band: low gain, mid gain + freq, high gain via `Slider`), compressor controls (threshold, ratio, attack, release, makeup via `Slider`), bus level `Slider`, mute/solo `Toggle`, peak meter bar (vertical, real-time via WebSocket)
     - Master strip: master volume `Slider` + master peak meter
-  - [ ] T217-G: Practice mode panel
+  - [✓] T217-G: Practice mode panel
     - Style selector: Carbon `Tile` grid of 8 built-in styles (rock_8, rock_16, shuffle_blues, funk_16, metal_doublekick, pop_4onfloor, jazz_swing, reggae_1drop) with icon + label
     - Active style highlighted
     - Count-in control: `NumberInput` (0–4 bars)
@@ -1593,20 +1604,20 @@ Subtasks:
     - Auto-fill toggle: `Toggle` with description text
     - Practice pack browser: `Accordion` sections for factory packs and user packs, each showing arrangement list with name, BPM, feel, time signature
     - Load arrangement: click → applies style, BPM, and section sequence to sequencer
-  - [ ] T217-H: Backing Tracks mode panel
+  - [✓] T217-H: Backing Tracks mode panel
     - Track browser: `Search` + filterable `DataTable` of available tracks (name, genre, key, tempo, duration)
     - Track player: play/pause/stop, seek bar (`Slider`), waveform overview (reuse platform visualization components or `canvas`), current time / total time display
     - Tempo shift: `Slider` (-50% to +50%) — requires time-stretch engine integration (may be deferred)
     - Pitch shift: `Slider` (-12 to +12 semitones) — requires pitch-shift engine integration (may be deferred)
     - Loop controls: loop toggle, loop start/end markers on waveform
     - Note: Audio playback engine for backing tracks is a separate dependency — this subtask covers UI only; if engine not ready, show "Coming soon" `InlineNotification` (warning type, not coaching)
-  - [ ] T217-I: Real-time metering and beat visualization
+  - [✓] T217-I: Real-time metering and beat visualization
     - Per-instrument hit indicator: step pad flashes on trigger (via WebSocket)
     - Per-bus level meters: vertical bar meters on mixer strips, updated at 30fps via WebSocket
     - Master level meter: stereo peak meter in transport bar
     - Beat indicator: 4-dot display in transport bar synced to sequencer position via WebSocket (replace current interval-based animation with server-synced position)
     - Tempo display: large BPM readout with tap tempo visual feedback
-  - [ ] T217-J: DrumMachineCard.tsx plugin card (full rewrite)
+  - [✓] T217-J: DrumMachineCard.tsx plugin card (full rewrite)
     - Compact card version for embedding in pedalboard/JUCE Grid
     - Uses `PluginCardShell` with `accentColor` based on active mode
     - Compact transport: BPM display, Play/Stop, pattern name
@@ -1615,7 +1626,7 @@ Subtasks:
     - Mode switcher (Practice/Advanced/Backing) → navigates to full `/drums` page in that mode
     - Metering: small per-bus level bars in visualization area
     - MIDI mapping via `withMidiDialog` HOC (retain existing pattern)
-  - [ ] T217-K: MIDI configuration panel
+  - [✓] T217-K: MIDI configuration panel
     - Accessible from Advanced mode via Carbon `Tab` or side panel
     - Note mapping table: Carbon `DataTable` with 16 rows (pad 0–15), columns: Pad Name, MIDI Note (editable `NumberInput`), MIDI Channel (`Dropdown`), Velocity Curve (`Dropdown`), Zone Config
     - Velocity curve editor: visual curve display (SVG/canvas, 128×128 grid), curve type selector, floor/ceiling sliders
@@ -1623,7 +1634,7 @@ Subtasks:
     - "Learn All" `Button` → sequential learn across all 16 pads
     - Hardware preset loader: `Dropdown` (Roland, Yamaha, Alesis, etc.) → `Button` "Apply Preset"
     - Zone configuration: per-pad expandable row showing Head/Rim/Edge zone note assignments
-  - [ ] T217-L: Accessibility and Carbon conformance
+  - [✓] T217-L: Accessibility and Carbon conformance
     - Full keyboard navigation: Tab between sections, arrow keys within grids, Enter/Space to toggle steps
     - ARIA roles: grid role for step sequencer, row/gridcell for steps, aria-pressed for active steps, aria-label for instruments
     - Screen reader announcements: step state changes, transport state, pattern changes
@@ -1631,7 +1642,7 @@ Subtasks:
     - Color contrast: all step states meet WCAG 2.1 AA against `$ui-01` background
     - Pass full `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`
 Assigned to: Codex
-Last updated: 2026-03-20 11:37 - Codex
+Last updated: 2026-03-20 17:01 - Codex
 - Progress notes:
   - Completed `T217-A` in `web/src/app/pages/DrumsPage.tsx` by replacing the old pack-management placeholder with a full `/drums` page shell: Carbon tabs for Practice, Advanced, and Backing Tracks; a shared transport bar with play/stop/tap-tempo, BPM, pattern, variation, swing, and master-volume controls; dedicated mode content regions; and a footer status bar for active kit, pattern, transport state, beat dots, and MIDI status.
   - Preserved the current drum data flow by wiring the new page shell to the existing React Query hooks and drum API surface instead of adding page-local fetch logic, so later `T217-B` onward can fill in the sequencer, mixer, and browser panels without another structural rewrite.
@@ -1639,9 +1650,32 @@ Last updated: 2026-03-20 11:37 - Codex
   - Added `web/src/app/pages/DrumsPage.test.tsx` to verify that the sequencer grid renders from the drum hooks and that shift-clicking a step emits an accented `useSetDrumStep` mutation for the active pattern.
   - Completed `T217-C` by extending `web/src/app/pages/DrumsPage.tsx` with inline instrument-name editing, pad swatches, mute/solo toggles, compact volume/pan/tune sliders, sequencer-row input highlighting, and a selected-row inspector for bus routing and sample source context.
   - Extended the frontend drum data layer with `drumsApi.patchKitInstrument`, the `DrumKitInstrumentPatch` type, and `usePatchDrumKitInstrument`, then added focused tests in `web/src/app/pages/DrumsPage.test.tsx` and `web/src/app/hooks/useDrumMachine.test.tsx` for row-control and kit-patch mutations.
+  - Advanced `T217-D` and `T217-E` in `web/src/app/pages/DrumsPage.tsx` by adding a paged 128-slot pattern bank, active-slot selection, pattern copy/duplicate/clear flows, pattern-length editing, variation selection, a fill trigger control, and a song arranger with add/remove/reorder controls, loop toggle, and transport buttons.
+  - Repaired the missing API surface that those controls depended on by extending `app/routes/drums.py` with pattern copy/clear routes plus song-entry append/remove routes, and by normalizing the song arrangement payload contract in `web/src/map2/api.ts` so the frontend's `DrumSong { entries, loop }` shape works against the current FastAPI `song/song_loop` response model.
+  - Added focused validation for the new contract and UI flows in `tests/test_drum_routes.py` and `web/src/app/pages/DrumsPage.test.tsx`; this slice now passes `pytest -q tests/test_drum_routes.py`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, `npm --prefix web run typecheck`, and `npm --prefix web run build`.
+  - Completed `T224` and closed `T217-D` / `T217-E` by adding explicit fill-trigger and song-transport endpoints in `app/routes/drums.py`, a service-level song-playback controller in `app/services/drum_machine_service.py`, and matching client/hooks in `web/src/map2/api.ts` plus `web/src/app/hooks/useDrumMachine.ts`.
+  - Updated `web/src/app/pages/DrumsPage.tsx` to consume real sequencer position and song-transport state, so the beat dots now follow backend position, the arranger highlights the actual active song entry, "Play Song" uses the new song transport route, and "Trigger Fill" uses the dedicated fill command instead of a variation jump workaround.
+  - Added regression coverage in `tests/test_drum_machine_service.py`, `tests/test_drum_routes.py`, and `web/src/app/pages/DrumsPage.test.tsx`; validation passed with `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py tests/test_drum_sequencer_service.py`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, `npm --prefix web run typecheck`, and `npm --prefix web run build`.
+  - Completed `T217-F` in `web/src/app/pages/DrumsPage.tsx` by adding an inline kit browser with load confirmation, an 8-bus mixer surface with level/EQ/compressor/mute/solo controls, and master output control wired through `useDrumKits`, `useLoadDrumKit`, `useSetDrumBusMixer`, and `useSetDrumMasterVolume`.
+  - Completed `T217-I` in `web/src/app/pages/DrumsPage.tsx` by driving row flash state from per-pad metering, rendering live per-bus peak meters in the mixer strips, surfacing master L/R peaks in the transport bar, and keeping the beat dots tied to backend sequencer position instead of local projection.
+  - Extended `web/src/app/pages/DrumsPage.test.tsx` to cover kit loading plus bus/master mixer mutations; validation passed with `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, `npm --prefix web run typecheck`, and `npm --prefix web run build`.
+  - Completed `T217-G` by replacing the Practice-mode placeholder in `web/src/app/pages/DrumsPage.tsx` with live style tiles, count-in and quantize controls, variation and auto-fill controls, plus a pack browser that loads factory/user arrangements into the current practice session through the existing drum-state mutation path.
+  - Completed `T217-H` by replacing the Backing Tracks placeholder with a searchable track browser, a selectable player shell with waveform overview, transport buttons, loop toggle, and tempo/pitch controls, while explicitly warning that audio playback still depends on the separate backing-track engine integration the task already allowed to defer.
+  - Completed `T217-K` by adding an Advanced-mode MIDI configuration panel in `web/src/app/pages/DrumsPage.tsx` and aligning the frontend drum MIDI contract in `web/src/map2/api.ts`, `web/src/map2/types.ts`, and `web/src/app/hooks/useDrumMachine.ts` so note mapping, velocity curves, zone notes, per-pad/all-pad learn, and hardware preset application hit the current FastAPI routes correctly.
+  - Advanced `T217-L` by adding arrow-key step-grid navigation, explicit grid row/column metadata, broader control labeling, skip links, landmark ids, and a polite live region in `web/src/app/pages/DrumsPage.tsx`.
+  - Closed `T217-L` by adding route-local focus-visible treatment in `web/src/app/pages/DrumsPage.css`, strengthening step-button contrast in `web/src/app/pages/DrumsPage.tsx`, promoting the page announcement region to `role="status"`, and extending `web/src/app/pages/DrumsPage.test.tsx` with skip-link, keyboard-focus, and live-announcement regression coverage.
+  - Completed `T217-J` by rewriting `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx` around `PluginCardShell` with a mode-colored compact transport hero, current-pattern summary, 16-step active-instrument indicator, four-bus metering strips, kit footer, and mode buttons that route into the full `/drums` workspace while preserving `withMidiDialog`.
+  - Completed the remaining frontend card coverage in `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx`, covering compact rendering, transport/tap-tempo actions, and mode routing alongside the existing page-level drum interaction tests.
+  - Advanced `T219-E` by extending `web/src/app/pages/DrumsPage.test.tsx` to cover all three drum modes plus the new MIDI configuration controls; broader lower-layer qualification work still remains under `T219`.
   - Validation: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx src/app/hooks/useDrumMachine.test.tsx`
+  - Closed parent task `T217` after confirming every UI subtask `T217-A` through `T217-L` is complete, validated, and reflected in the current `/drums` page and compact plugin card implementations.
   - Validation: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`
   - Validation: `npm --prefix web run typecheck` -> pass.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx` -> pass.
+  - Validation: `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx src/app/pages/DrumsPage.test.tsx` -> pass.
+  - Validation: `npm --prefix web run typecheck` -> pass after the `T217-L` accessibility pass.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx` -> pass after the final `T217-L` conformance pass.
+  - Validation: `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
 
 ---
 
@@ -1698,7 +1732,7 @@ Last updated: 2026-03-18 18:53 - Codex
 ---
 
 ID: T219
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Drum Machine integration testing and qualification
 Description:
 - Goal / acceptance criteria: Comprehensive test coverage for the drum machine across all layers — C++ unit tests, Python service tests, API endpoint tests, frontend component tests, and end-to-end integration tests.
@@ -1707,7 +1741,7 @@ Description:
 - Estimated effort: High
 - Required outputs: Test suites, CI integration, qualification evidence.
 Subtasks:
-  - [ ] T219-A: C++ unit tests for DrumMachineProcessor
+  - [✓] T219-A: C++ unit tests for DrumMachineProcessor
     - 16-pad triggering with correct bus routing
     - Per-pad volume/pan/tune/mute/solo
     - Per-bus EQ and compressor (verify frequency response, gain reduction)
@@ -1715,7 +1749,7 @@ Subtasks:
     - SFZ kit loading and instrument assignment
     - Velocity curve transforms (all 5 types)
     - RT-safety verification: no allocations in processBlock
-  - [ ] T219-B: C++ unit tests for DrumSequencer
+  - [✓] T219-B: C++ unit tests for DrumSequencer
     - Pattern step set/get/clear/copy
     - Transport play/stop/pause with sample-accurate step timing
     - Variable pattern length (1–64 steps)
@@ -1723,7 +1757,7 @@ Subtasks:
     - Song mode playback with repeat counts
     - Fill trigger timing
     - Tap tempo BPM calculation
-  - [ ] T219-C: Python service tests — `tests/test_drum_machine.py`
+  - [✓] T219-C: Python service tests — `tests/test_drum_machine.py`
     - Kit loading and switching
     - Pattern CRUD operations
     - Song arrangement management
@@ -1731,11 +1765,11 @@ Subtasks:
     - MIDI mapping configuration
     - Velocity curve configuration
     - Input validation (out-of-range BPM, invalid pattern ID, etc.)
-  - [ ] T219-D: API endpoint tests — `tests/test_drum_routes.py`
+  - [✓] T219-D: API endpoint tests — `tests/test_drum_routes.py`
     - All REST endpoints: correct status codes, response schemas, error handling
     - Pydantic model validation
     - Concurrent access (multiple clients updating state)
-  - [ ] T219-E: Frontend component tests
+  - [✓] T219-E: Frontend component tests
     - `DrumsPage.test.tsx` — renders all three modes, tab switching, transport controls
     - `DrumMachineCard.test.tsx` — compact card rendering, mode display, metering
     - Step grid interaction: click toggles step, shift+click sets accent, keyboard navigation
@@ -1743,14 +1777,41 @@ Subtasks:
     - Kit browser: load kit, display instruments
     - Mixer: adjust bus EQ/comp, verify slider values
     - MIDI config: note mapping table, learn mode UI
-  - [ ] T219-F: Integration test — full stack end-to-end
+  - [✗] T219-F: Integration test — full stack end-to-end
     - Load kit → set pattern → play → verify audio output (non-silence) → stop
     - MIDI input → verify correct pad triggers → verify metering response
     - Pattern edit during playback → verify changes take effect at next step
     - Song mode: play through multiple patterns with repeats → verify correct sequence
     - Kit switch during playback → verify clean transition
 Assigned to: Codex
-Last updated: 2026-03-18
+Last updated: 2026-03-20 17:01 - Codex
+- Progress notes:
+  - Completed the frontend qualification slice by adding `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx` and extending `web/src/app/pages/DrumsPage.test.tsx`, covering compact card rendering, transport/tap-tempo actions, mode routing, sequencer interaction, pattern management, kit loading, mixer controls, and MIDI configuration UI.
+  - Validation: `npm --prefix web run typecheck` -> pass.
+  - Validation: `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx src/app/pages/DrumsPage.test.tsx` -> pass.
+  - Frontend coverage is complete; the active qualification gap is now backend-side validation for service persistence/input guards plus route-level error/concurrent access handling under `T219-C` and `T219-D`.
+  - Completed `T219-C` by extending `tests/test_drum_machine_service.py` with explicit invalid-state and unknown-preset coverage, closing the remaining service-side input-validation gap on top of the existing persistence, transport, song, metering, MIDI, and per-kit config tests.
+  - Completed `T219-D` by extending `tests/test_drum_routes.py` with additional request-validation/error handling checks plus a shared-app multi-client concurrent state-update test, and by tightening the route contract in `app/routes/drums.py` so pattern-step payloads now validate instrument, step, and velocity bounds at request time instead of failing later during response serialization.
+  - Validation: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py` -> pass.
+  - Validation: `npm --prefix web run build` -> pass (existing Vite dynamic-import/chunk-size warnings only).
+  - The remaining active qualification slice is JUCE coverage for processor/sequencer edge cases that are not yet asserted explicitly in `juce-engine/tests/DrumMachineProcessorTests.cpp` and `juce-engine/tests/DrumSequencerTests.cpp`.
+  - Extended `juce-engine/tests/DrumSequencerTests.cpp` to cover 64-step pattern lengths, pause/stop transport behavior, swing delaying offbeats relative to straight timing, and explicit clear/copy round trips, which closes the remaining `T219-B` acceptance points on top of the earlier song/fill/tap-tempo coverage.
+  - Extended `juce-engine/tests/DrumMachineProcessorTests.cpp` with missing pad-control setter coverage, logarithmic-curve coverage, master-volume checks, and SFZ load-status assertions for valid and invalid pad content. This meaningfully advances `T219-A`, but the stricter RT-safety proof and deeper processor-side bus/compression qualification still remain before that subtask can be closed.
+  - Extended `juce-engine/tests/DrumMachineProcessorTests.cpp` again with temporary WAV/SFZ render fixtures and explicit audio-path assertions for per-pad volume/pan/mute behavior, per-bus mute/solo routing, master-volume scaling, and bus-compressor makeup gain, which closes much of the remaining processor-side signal-path gap under `T219-A`.
+  - Extended `juce-engine/tests/DrumMachineProcessorTests.cpp` again with rendered-audio bus-EQ assertions, validating that low- and high-frequency material respond measurably to bus shelf boosts on the final processor path and further narrowing the remaining processor-side qualification gap under `T219-A`.
+  - Added lightweight process diagnostics to `juce-engine/Source/DrumMachine/DrumMachineProcessor.*`, `juce-engine/Source/DrumMachine/DrumMachineMixer.*`, and `juce-engine/Source/SynthForge/Core/Part.*`, then extended `juce-engine/tests/DrumMachineProcessorTests.cpp` with a steady-state process test asserting zero internal buffer-growth events after `prepare()`. This exposed and fixed a real hot-path allocation bug in `SynthForge/Core/Part.cpp`, where the part render buffer was being resized to the full mix-bus channel count on first callback instead of the stereo render path actually used by the part.
+  - Added `tests/test_drum_integration.py` to exercise the real FastAPI drum routes against the actual drum machine, kit, and sequencer services with a deterministic integrated fake engine, covering end-to-end kit loading, pattern editing, transport-driven non-silent metering, song progression across pattern boundaries, and kit switching while playback is active.
+  - Extended `tests/test_drum_integration.py` with an additional end-to-end playback-edit case proving that a pattern step mutation applied through the route layer becomes visible in metering on the next playback step, further advancing `T219-F` without yet claiming native-audio closure.
+  - Extended `tests/test_drum_integration.py` again to assert websocket event-history updates for transport and position topics during the same end-to-end flows, so the in-process integration coverage now includes the real-time broadcast path in addition to REST-state mutation and retrieval.
+  - Added `tests/test_juce_engine_drum_native_stability.py`, a subprocess-based native JUCE smoke test that starts the real `map2_audio_engine` Python extension, writes temporary WAV/SFZ fixtures, loads drum pads through the actual drum bindings, proves non-silent metering from a direct trigger on the live audio callback path, and proves sequencer transport advancement while audio is running. This meaningfully advances `T219-F` beyond the integrated fake-engine suite, but does not yet close the task because hardware-backed end-to-end proof is still missing.
+  - Closed `T219-A` by strengthening `juce-engine/tests/DrumMachineProcessorTests.cpp` with a global-allocation guard around steady-state `processBlock`, then fixing the real callback-path allocation it exposed in `juce-engine/Source/SynthForge/Core/Part.cpp`: `Part::applyModMatrix()` now short-circuits before copying modulation-source state when no modulation routes are configured, eliminating unnecessary callback-thread heap traffic in the default drum path.
+  - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j$(nproc)` -> pass after the `Part::applyModMatrix()` RT-safety fix.
+  - Validation: `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` -> pass after the stronger global-allocation test was added.
+  - Reclassified `T219-F` and parent task `T219` as blocked instead of in progress: software-side integration coverage is now extensive, but closing the remaining acceptance gap requires live MIDI-in and/or physical hardware-backed end-to-end proof that cannot be executed on this host because ALSA sequencer access is unavailable and no external drum-hardware path is attached.
+  - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j$(nproc)` -> pass.
+  - Validation: `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` -> pass.
+  - Validation: `pytest -q tests/test_drum_integration.py` -> pass.
+  - Validation: `pytest -q tests/test_juce_engine_drum_native_stability.py` -> pass.
 
 ---
 
@@ -2030,7 +2091,7 @@ Last updated: 2026-03-19 - Codex
 ## JUCE Grid — Axe-FX Edit / GarageBand Redesign
 
 ID: T223
-Status: [>] In Progress
+Status: [✓] Done
 Title: JUCE Grid Page — Axe-FX Edit desktop + GarageBand iPad redesign
 Description:
 - Goal / acceptance criteria: Full replacement and refactor of JuceGridPage and JuceGridSignalCanvas into an Axe-FX Edit–style effect block grid with GarageBand-informed iPad experience and Carbon Design System compliance.
@@ -2105,7 +2166,7 @@ Description:
 Subtasks:
 
 ID: T223-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Grid layout engine — tile sizing, row fill, snake flow
 Description:
 - Build the responsive tile grid with 3 width sizes, uniform height
@@ -2113,8 +2174,14 @@ Description:
 - Previous rows stay smallest; new rows start fresh at largest
 - Snake-pattern signal flow (boustrophedon) with right/left vertical connectors
 - Replace JuceGridSignalCanvas (use as guide)
-Assigned to: Unassigned
-Last updated: 2026-03-19
+Assigned to: Codex
+Last updated: 2026-03-20 13:16 - Codex
+- Completion notes:
+  - Replaced the single auto-fill signal row in `web/src/app/pages/JuceGridSignalCanvas.tsx` with an explicit row engine that slices the chain into `large`/`medium`/`small` rows, keeps wrapped rows at the small size, restarts new rows at the largest feasible size, and alternates row direction for boustrophedon signal flow.
+  - Added right/left vertical row-transition connectors plus row-level data attributes and slot metadata so the signal path is deterministic across wrapped rows instead of depending on plain CSS auto-fill behavior.
+  - Updated `web/src/app/pages/JuceGridPage.css` with row-shell, tile-size, and vertical-connector styling while preserving the existing card colors and bypass flow treatment.
+  - Extended `web/src/app/pages/JuceGridSignalCanvas.test.tsx` to verify wrapped small rows, large-size restart on the next row, reverse-direction snake layout, and vertical connector placement.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import/chunk-size warnings only).
 
 ID: T223-subB
 Status: [✓] Done
@@ -2246,3 +2313,54 @@ Last updated: 2026-03-19 - Codex
   - Added router-level audit coverage for the registered custom-card set and the eight fallback template categories so template-backed processors are validated alongside exact custom card registrations.
   - Fixed `web/src/app/components/PluginCards/registry.ts` so lazy template registrations participate in `getPluginCardConfig()` lookups; before this, fallback templates registered through `registerTemplateLazy()` were invisible to the config lookup path.
   - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx`, and `npm --prefix web run build`; no additional card sizing fixes were required from the audited deployment inventory.
+
+---
+
+ID: T224
+Status: [✓] Done
+Title: Drum sequencer transport API parity for fill and song playback
+Description:
+- Goal / acceptance criteria: Expose dedicated backend/API contract for drum-song playback state and explicit fill triggering so the drum UI can drive the sequencer without transport workarounds.
+- Why it matters: `T217-D` and `T217-E` currently have usable UI, but "Trigger Fill" and "Play Song" still rely on approximations because the FastAPI/client layer does not yet expose first-class sequencer controls for those flows.
+- Dependencies: T213, T216
+- Estimated effort: Medium
+- Required outputs: Backend routes/service wiring, frontend client/hooks, and regression coverage.
+Subtasks:
+  - [✓] T224-A: Add explicit fill-trigger route(s) in `app/routes/drums.py` and service wiring to native sequencer bindings
+  - [✓] T224-B: Add drum-song playback / current-position route(s) so the UI can start song mode and highlight the real active entry
+  - [✓] T224-C: Extend `web/src/map2/api.ts` and `web/src/app/hooks/useDrumMachine.ts` for the new transport commands and position state
+  - [✓] T224-D: Update `web/src/app/pages/DrumsPage.tsx` to replace the current variation-jump / first-pattern-start workarounds
+  - [✓] T224-E: Add backend/frontend validation covering fill trigger, song transport, and arranger highlighting
+Assigned to: Codex
+Last updated: 2026-03-20 14:36 - Codex
+- Completion notes:
+  - Added `POST /api/engine/drums/fill/trigger` plus `GET/POST /api/engine/drums/song/transport*` routes in `app/routes/drums.py`, backed by new `DrumMachineService` fill and song-transport methods.
+  - Extended `app/services/drum_machine_service.py` with a lightweight song-playback controller that tracks the active song entry and repeat count from the sequencer position poll and advances arranged patterns at loop boundaries.
+  - Extended `web/src/map2/types.ts`, `web/src/map2/api.ts`, and `web/src/app/hooks/useDrumMachine.ts` with sequencer-position and song-transport contracts plus fill/song mutations.
+  - Updated `web/src/app/pages/DrumsPage.tsx` to use the real position/song-transport data for beat indicators, arranger highlighting, fill triggering, and song start/stop behavior.
+  - Validation: `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py tests/test_drum_sequencer_service.py` -> pass; `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass.
+
+---
+
+ID: T225
+Status: [✓] Done
+Title: Editable shared category colors for plugin and grid surfaces
+Description:
+- Goal / acceptance criteria: Add an operator-facing way to set shared category accent colors used across plugin cards and JUCE Grid surfaces, persist those choices locally, and consolidate category-color resolution behind one frontend source of truth.
+- Why it matters: Category colors are currently hardcoded in multiple frontend maps, which makes the taxonomy difficult to tune and leaves no supported path for operators to personalize or standardize category accents.
+- Dependencies: Existing category icon/color consumers in `web/src/app/components/PluginCards/**`, `web/src/app/grid/shared.tsx`, and the About/theme settings surface
+- Estimated effort: Medium
+- Required outputs: Shared category-style resolver with persistence, settings UI for editing/resetting colors, updated consumers, and focused frontend validation.
+Subtasks:
+  - [✓] T225-A: Consolidate duplicated category-color maps into one shared resolver with icon/color/background/gradient support
+  - [✓] T225-B: Add persisted category-color overrides and reset actions for operators
+  - [✓] T225-C: Extend the About/theme settings surface with category color editing controls
+  - [✓] T225-D: Add focused frontend tests for category-color override behavior and updated settings rendering
+Assigned to: Codex
+Last updated: 2026-03-20 15:15 - Codex
+- Completion notes:
+  - Added `web/src/app/data/categoryStyles.tsx` as the single shared category-style resolver, including icon/color/background/gradient generation, category-key resolution, and localStorage-backed operator overrides.
+  - Updated `web/src/app/grid/shared.tsx` and `web/src/app/components/PluginCards/types.ts` to consume the shared resolver instead of maintaining duplicate hardcoded category-color maps.
+  - Extended `web/src/app/pages/AboutPage.tsx` plus `web/src/app/pages/AboutPage.css` with a new category-color editor inside the existing theme/settings surface, including per-category color pickers and reset controls.
+  - Added focused validation in `web/src/app/data/categoryStyles.test.tsx` and `web/src/app/pages/AboutPage.test.tsx`.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand src/app/data/categoryStyles.test.tsx src/app/pages/AboutPage.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).

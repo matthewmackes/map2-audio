@@ -97,6 +97,7 @@ class EnhancedMDNSDiscovery:
         self,
         service_type: str = "_map2-audio._tcp.local.",
         cache_timeout: int = 120,
+        service_name: Optional[str] = None,
     ):
         """
         Initialize enhanced mDNS discovery.
@@ -104,11 +105,13 @@ class EnhancedMDNSDiscovery:
         Args:
             service_type: mDNS service type to advertise
             cache_timeout: Cache timeout for discovered nodes (seconds)
+            service_name: Backward-compatible alias for service_type
         """
-        self.service_type = service_type
+        self.service_type = service_name or service_type
         self.cache_timeout = cache_timeout
         self.discovered_nodes: Dict[str, MDNSNode] = {}
         self.logger = logging.getLogger(__name__)
+        self._running = False
 
     def get_local_hostname(self) -> str:
         """Get hostname for this machine"""
@@ -286,6 +289,19 @@ class EnhancedMDNSDiscovery:
             ),
             "nodes": [n.to_dict() for n in online_nodes],
         }
+
+    async def discover(self) -> List[MDNSNode]:
+        """Compatibility method for older callers expecting an async discovery scan."""
+        self.cleanup_offline_nodes()
+        return self.get_discovered_nodes()
+
+    async def start(self) -> None:
+        """Compatibility lifecycle hook for older cluster bootstrap code."""
+        self._running = True
+
+    async def stop(self) -> None:
+        """Compatibility lifecycle hook for older cluster bootstrap code."""
+        self._running = False
 
 
 # Global discovery instance

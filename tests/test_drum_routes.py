@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import json
 
 from fastapi import FastAPI
@@ -36,6 +37,14 @@ class _FakeDrumService:
         }
         self.song = []
         self.song_loop = False
+        self.song_transport = {
+            "is_playing": False,
+            "current_entry_index": -1,
+            "current_repeat": 0,
+            "total_entries": 0,
+            "loop": False,
+            "active_pattern": 0,
+        }
         self.patterns = {}
         self.midi_mapping = {
             "global_midi_channel": 0,
@@ -106,6 +115,9 @@ class _FakeDrumService:
 
     def get_position(self):
         return dict(self.position)
+
+    def trigger_fill(self):
+        return {"status": "ok", "pattern": self.state["pattern"], "variation": self.state["variation"]}
 
     def get_midi_mapping(self):
         return json.loads(json.dumps(self.midi_mapping))
@@ -203,6 +215,36 @@ class _FakeDrumService:
         ]
         self.song_loop = song_loop
         return self.get_song()
+
+    def get_song_transport(self):
+        self.song_transport["total_entries"] = len(self.song)
+        self.song_transport["loop"] = self.song_loop
+        self.song_transport["active_pattern"] = self.state["pattern"]
+        return dict(self.song_transport)
+
+    def start_song_playback(self):
+        first_pattern = self.song[0]["pattern"] if self.song else self.state["pattern"]
+        self.song_transport = {
+            "is_playing": bool(self.song),
+            "current_entry_index": 0 if self.song else -1,
+            "current_repeat": 1 if self.song else 0,
+            "total_entries": len(self.song),
+            "loop": self.song_loop,
+            "active_pattern": first_pattern,
+        }
+        self.state["transport"] = bool(self.song)
+        self.state["pattern"] = first_pattern
+        self.position["pattern"] = first_pattern
+        self.position["pattern_id"] = first_pattern
+        self.position["is_playing"] = bool(self.song)
+        return self.get_song_transport()
+
+    def stop_song_playback(self, stop_transport=True):
+        self.song_transport["is_playing"] = False
+        if stop_transport:
+            self.state["transport"] = False
+            self.position["is_playing"] = False
+        return self.get_song_transport()
 
     def list_factory_packs(self):
         return [{"pack_id": "factory", "name": "Factory", "description": "", "source": "factory", "filename": "factory.json"}]
@@ -356,7 +398,7 @@ class _FakeDrumKitService:
         }
 
 
-def _client(monkeypatch):
+def _app_with_service(monkeypatch):
     app = FastAPI()
     app.include_router(drum_routes.router)
     service = _FakeDrumService()
@@ -365,6 +407,11 @@ def _client(monkeypatch):
     monkeypatch.setattr(drum_routes, "_get_sequencer_service", lambda: service)
     monkeypatch.setattr(drum_routes, "_get_kit_service", lambda: kit_service)
     ws_manager.event_history.clear()
+    return app, service
+
+
+def _client(monkeypatch):
+    app, _ = _app_with_service(monkeypatch)
     return TestClient(app)
 
 
@@ -384,6 +431,14 @@ def test_drum_state_route_validates_updates(monkeypatch):
     client = _client(monkeypatch)
 
     response = client.post("/api/engine/drums/state", json={"bpm": 500})
+
+    assert response.status_code == 422
+
+
+def test_drum_transport_route_rejects_out_of_range_variation(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post("/api/engine/drums/transport", json={"variation": 11})
 
     assert response.status_code == 422
 
@@ -422,6 +477,34 @@ def test_drum_position_route_returns_typed_position(monkeypatch):
         "is_playing": False,
         "updated_at": None,
     }
+
+
+def test_drum_fill_and_song_transport_routes(monkeypatch):
+    client = _client(monkeypatch)
+
+    fill = client.post("/api/engine/drums/fill/trigger")
+    assert fill.status_code == 200
+    assert fill.json()["status"] == "ok"
+
+    client.post(
+        "/api/engine/drums/song",
+        json={"song": [{"pattern": 4, "repeat_count": 2}], "song_loop": True},
+    )
+
+    play = client.post("/api/engine/drums/song/transport/play")
+    assert play.status_code == 200
+    assert play.json()["is_playing"] is True
+    assert play.json()["current_entry_index"] == 0
+    assert play.json()["active_pattern"] == 4
+
+    fetch = client.get("/api/engine/drums/song/transport")
+    assert fetch.status_code == 200
+    assert fetch.json()["loop"] is True
+    assert fetch.json()["total_entries"] == 1
+
+    stop = client.post("/api/engine/drums/song/transport/stop")
+    assert stop.status_code == 200
+    assert stop.json()["is_playing"] is False
 
 
 def test_drum_midi_mapping_routes_round_trip_mapping(monkeypatch):
@@ -525,6 +608,15 @@ def test_drum_midi_preset_routes_list_and_load(monkeypatch):
     assert load.json()["zones"]["pads"][1]["zones"][0]["trigger_note"] == 40
 
 
+def test_drum_midi_preset_route_returns_400_for_unknown_preset(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post("/api/engine/drums/midi/presets/load", json={"preset_name": "Unknown Preset"})
+
+    assert response.status_code == 400
+    assert "Unknown drum MIDI preset" in response.json()["detail"]
+
+
 def test_drum_pattern_routes_round_trip_pattern_payload(monkeypatch):
     client = _client(monkeypatch)
     payload = {
@@ -563,6 +655,44 @@ def test_drum_pattern_step_route_updates_single_step(monkeypatch):
     assert response.json()["steps"][2][5]["velocity"] == 110
 
 
+def test_drum_pattern_step_route_rejects_invalid_velocity(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/pattern/9/step",
+        json={"instrument": 2, "step": 5, "velocity": 500, "accent": False},
+    )
+
+    assert response.status_code == 422
+
+
+def test_drum_pattern_clear_and_copy_routes(monkeypatch):
+    client = _client(monkeypatch)
+    payload = {
+        "pattern_id": 5,
+        "length": 24,
+        "steps": [
+            [{"velocity": 0, "accent": False} for _ in range(64)]
+            for _ in range(16)
+        ],
+    }
+    payload["steps"][1][3] = {"velocity": 101, "accent": True}
+    client.post("/api/engine/drums/pattern/5", json=payload)
+
+    copy_response = client.post(
+        "/api/engine/drums/pattern/copy",
+        json={"source_pattern_id": 5, "destination_pattern_id": 6},
+    )
+    assert copy_response.status_code == 200
+    assert copy_response.json()["pattern_id"] == 6
+    assert copy_response.json()["steps"][1][3]["velocity"] == 101
+
+    clear_response = client.post("/api/engine/drums/pattern/6/clear")
+    assert clear_response.status_code == 200
+    assert clear_response.json()["length"] == 16
+    assert clear_response.json()["steps"][1][3]["velocity"] == 0
+
+
 def test_drum_song_routes_round_trip_song_state(monkeypatch):
     client = _client(monkeypatch)
 
@@ -586,6 +716,31 @@ def test_drum_song_routes_round_trip_song_state(monkeypatch):
     assert fetched.status_code == 200
     assert fetched.json()["song"][1]["pattern"] == 8
     assert fetched.json()["song_loop"] is True
+
+
+def test_drum_song_entry_routes_append_and_remove(monkeypatch):
+    client = _client(monkeypatch)
+
+    client.post(
+        "/api/engine/drums/song",
+        json={
+            "song": [{"pattern": 4, "repeat_count": 2}],
+            "song_loop": False,
+        },
+    )
+
+    add_response = client.post(
+        "/api/engine/drums/song/entries",
+        json={"pattern": 12, "repeat_count": 3},
+    )
+    assert add_response.status_code == 200
+    assert len(add_response.json()["song"]) == 2
+    assert add_response.json()["song"][1]["pattern"] == 12
+
+    remove_response = client.delete("/api/engine/drums/song/entries/0")
+    assert remove_response.status_code == 200
+    assert len(remove_response.json()["song"]) == 1
+    assert remove_response.json()["song"][0]["pattern"] == 12
 
 
 def test_drum_pack_upload_rejects_invalid_json(monkeypatch):
@@ -686,3 +841,28 @@ def test_drum_kit_instrument_patch_route_rejects_factory_edits(monkeypatch):
     )
 
     assert response.status_code == 403
+
+
+def test_drum_routes_support_concurrent_state_updates(monkeypatch):
+    app, service = _app_with_service(monkeypatch)
+    payloads = [
+        {"bpm": 101, "pattern": 1, "variation": 1},
+        {"bpm": 112, "pattern": 2, "variation": 2},
+        {"bpm": 123, "pattern": 3, "variation": 3},
+        {"bpm": 134, "pattern": 4, "variation": 4},
+    ]
+
+    def submit(payload):
+        with TestClient(app) as client:
+            response = client.post("/api/engine/drums/state", json=payload)
+            assert response.status_code == 200
+            return response.json()["state"]
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        results = list(executor.map(submit, payloads))
+
+    assert {result["bpm"] for result in results}.issubset({101, 112, 123, 134})
+    final_state = service.get_state()
+    assert final_state["bpm"] in {101, 112, 123, 134}
+    assert final_state["pattern"] in {1, 2, 3, 4}
+    assert final_state["variation"] in {1, 2, 3, 4}

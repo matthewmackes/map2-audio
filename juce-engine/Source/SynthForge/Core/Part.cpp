@@ -197,6 +197,11 @@ void Part::prepare(double sampleRate, int samplesPerBlock, int numChannels) {
     prepared_.store(true, std::memory_order_release);
 }
 
+void Part::resetProcessDiagnostics() {
+    processBufferResizeCount_.store(0, std::memory_order_relaxed);
+    freezeBufferAllocationCount_.store(0, std::memory_order_relaxed);
+}
+
 void Part::setPartIndex(int partIndex) {
     partIndex_.store(std::clamp(partIndex, 0, kNumParts - 1), std::memory_order_relaxed);
 }
@@ -290,8 +295,9 @@ void Part::processAudio(juce::AudioBuffer<float>& mixBuffer, const juce::MidiBuf
     }
 
     const int numSamples = mixBuffer.getNumSamples();
-    const int channels = std::max(2, mixBuffer.getNumChannels());
+    const int channels = 2;
     if (renderBuffer_.getNumSamples() < numSamples || renderBuffer_.getNumChannels() < channels) {
+        processBufferResizeCount_.fetch_add(1, std::memory_order_relaxed);
         renderBuffer_.setSize(channels, numSamples, false, false, true);
     }
     renderBuffer_.clear();
@@ -332,6 +338,7 @@ void Part::processAudio(juce::AudioBuffer<float>& mixBuffer, const juce::MidiBuf
 
     if (freezeEnabled_.load(std::memory_order_relaxed)) {
         if (!freezeReady_.load(std::memory_order_relaxed)) {
+            freezeBufferAllocationCount_.fetch_add(1, std::memory_order_relaxed);
             auto frozen = std::make_shared<juce::AudioBuffer<float>>(2, numSamples);
             frozen->copyFrom(0, 0, renderBuffer_, 0, 0, numSamples);
             frozen->copyFrom(1, 0, renderBuffer_, 1, 0, numSamples);
@@ -1105,12 +1112,11 @@ void Part::applyModMatrix() {
     std::map<std::string, float> sources;
     {
         std::lock_guard<std::mutex> guard(modMatrixMutex_);
+        if (modMatrixRoutes_.empty()) {
+            return;
+        }
         routes = modMatrixRoutes_;
         sources = modulationSources_;
-    }
-
-    if (routes.empty()) {
-        return;
     }
 
     std::map<std::string, float> base;

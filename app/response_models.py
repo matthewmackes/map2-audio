@@ -353,7 +353,7 @@ class HostMachineInfo(BaseModel):
     cpu_cores: int
     cpu_threads: int
     cpu_frequency_mhz: Optional[float] = None
-    total_memory_mb: float
+    total_memory_mb: int
     motherboard: Optional[str] = None
     firmware_version: Optional[str] = None
     hostname: Optional[str] = None

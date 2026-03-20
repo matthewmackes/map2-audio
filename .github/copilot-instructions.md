@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 18, 2026 (Carbon icon build-fix + typography rollout notes)
+> **Last Updated**: March 19, 2026 (MIDI Hub v2 docs/test finalization notes)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -89,6 +89,12 @@ When adding significant updates, append to this log:
   - GitLab remote: `gitlab` → https://gitlab.com/matthewmackes-group/matthewmackes-project
   - When user requests push/sync: `git push origin master && git push gitlab master`
   - Both repositories must stay in sync at all times
+
+### Worklist Workflow
+- **Treat `docs/PROJECT_WORKLIST.md` as the canonical execution ledger**
+  - Mark the active task `[>] In Progress` before substantive work
+  - Close each completed slice with concrete file/test notes and a timestamp
+  - When a user asks to continue, resume from the next unblocked worklist item instead of inventing a side queue
 
 ### Questioning Workflow
 - **When the user says "ask questions", use the 5-Question Clarification Protocol**
@@ -210,6 +216,16 @@ cd web && npm run build
 # Type checking only (no build)
 cd web && npm run typecheck
 
+# Focused MIDI Hub v2 child-route tests
+cd web && npm test -- --runInBand \
+  src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx \
+  src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx \
+  src/app/pages/midi-hub/MidiHubTransportPage.test.tsx \
+  src/app/pages/midi-hub/MidiHubEventsPage.test.tsx \
+  src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx \
+  src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx \
+  src/app/pages/midi-hub/MidiHubLabPage.test.tsx
+
 # Preview production build (port 3000)
 cd web && npm run preview
 
@@ -240,6 +256,10 @@ python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 
 # Run tests (if test suite exists)
 pytest tests/
+
+# Focused MIDI Hub backend service coverage
+pytest tests/test_tesira_client.py tests/test_virtual_gpio.py \
+  tests/test_string_interface.py tests/test_osc_namespace.py
 
 # Check database migrations
 alembic current

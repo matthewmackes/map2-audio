@@ -20,6 +20,11 @@ async def test_assign_flow_to_node_with_registry(monkeypatch):
 
     orchestrator.registry = DummyRegistry()
 
+    async def fake_persist(primary, standby, strategy):
+        return None
+
+    monkeypatch.setattr(orchestrator, "_persist_assignments", fake_persist)
+
     deployment = await orchestrator.assign_flow_to_node(
         flow_id="flow-0",
         chain_id=1,

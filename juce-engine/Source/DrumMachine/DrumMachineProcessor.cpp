@@ -753,6 +753,23 @@ DrumMachineProcessor::Metering DrumMachineProcessor::getMetering() const {
     return metering;
 }
 
+DrumMachineProcessor::RtProcessDiagnostics DrumMachineProcessor::getRtProcessDiagnostics() const {
+    RtProcessDiagnostics diagnostics;
+    diagnostics.mixerScratchBufferResizes = mixer_.getScratchBufferResizeCount();
+    for (const auto& pad : pads_) {
+        diagnostics.partRenderBufferResizes += pad.getProcessBufferResizeCount();
+        diagnostics.partFreezeBufferAllocations += pad.getFreezeBufferAllocationCount();
+    }
+    return diagnostics;
+}
+
+void DrumMachineProcessor::resetRtProcessDiagnostics() {
+    mixer_.resetProcessDiagnostics();
+    for (auto& pad : pads_) {
+        pad.resetProcessDiagnostics();
+    }
+}
+
 DrumMachineProcessor::BusId DrumMachineProcessor::defaultBusForPad(int padIndex) {
     if (padIndex <= 0) return BusId::Kick;
     if (padIndex == 1) return BusId::Snare;

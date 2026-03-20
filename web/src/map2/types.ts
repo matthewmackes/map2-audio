@@ -1376,7 +1376,7 @@ export interface DrumMachineStateUpdate {
   practice_auto_fill?: boolean;
 }
 
-export type DrumVelocityCurveType = 'linear' | 'log' | 'exp' | 's-curve' | 'fixed';
+export type DrumVelocityCurveType = 0 | 1 | 2 | 3 | 4;
 export type DrumZoneType = 'head' | 'rim' | 'edge';
 
 export interface DrumPack {
@@ -1458,6 +1458,26 @@ export interface DrumSong {
   loop: boolean;
 }
 
+export interface DrumSequencerPosition {
+  step: number;
+  bar: number;
+  beat: number;
+  pattern: number;
+  pattern_id: number;
+  variation: number;
+  is_playing: boolean;
+  updated_at: string | null;
+}
+
+export interface DrumSongTransportState {
+  is_playing: boolean;
+  current_entry_index: number;
+  current_repeat: number;
+  total_entries: number;
+  loop: boolean;
+  active_pattern: number;
+}
+
 export interface DrumEqState {
   low_gain: number;
   mid_gain: number;
@@ -1532,32 +1552,60 @@ export interface DrumZone {
 }
 
 export interface DrumVelocityCurve {
-  type: DrumVelocityCurveType;
+  pad: number;
+  curve_type: DrumVelocityCurveType;
+  fixed_velocity: number;
   input_floor: number;
   output_floor: number;
   output_ceiling: number;
+  preview: number[];
+  last_velocity: number;
+}
+
+export interface DrumMidiPadMapping {
+  pad: number;
+  notes: number[];
+  midi_channel: number;
 }
 
 export interface DrumMidiMapping {
-  pad_id: number;
-  midi_note: number;
-  midi_channel: number;
-  velocity_curve: DrumVelocityCurve;
-  zones: DrumZone[];
+  global_midi_channel: number;
+  pads: DrumMidiPadMapping[];
+}
+
+export interface DrumPadZone {
+  kind: number;
+  trigger_note: number;
+  key_switch_note: number;
+  velocity_scale: number;
+  enabled: boolean;
+}
+
+export interface DrumPadZones {
+  pad: number;
+  zones: DrumPadZone[];
+}
+
+export interface DrumMidiZones {
+  pads: DrumPadZones[];
+}
+
+export interface DrumMidiVelocityCurves {
+  pads: DrumVelocityCurve[];
 }
 
 export interface DrumMidiLearnStatus {
   active: boolean;
-  active_pad_id: number | null;
-  last_received_note: number | null;
-  last_received_channel: number | null;
+  learn_all: boolean;
+  active_pad_index: number;
+  next_pad_index: number;
+  last_received_note: number;
+  last_received_channel: number;
+  timeout_seconds: number;
 }
 
-export interface DrumMidiPreset {
-  preset_id: string;
-  name: string;
-  manufacturer: string;
-  description: string;
+export interface DrumMidiPresetList {
+  presets: string[];
 }
 
 // ==================== Sidechain Types ====================

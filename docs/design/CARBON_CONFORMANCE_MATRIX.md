@@ -151,3 +151,24 @@ Date: 2026-03-12 20:27 EDT
 | EX-002 | Deferred high-drift routes (`LCDPage`, `AboutPage`, `LV2PluginsPage`, `ApiObservatoryPage`) | Route-shell migration completed with Carbon `Layer` wrappers/tokenized CSS and focused route validation. | Route-level Carbon consistency restored for deferred bundle. | Completed (`T114-subK`) |
 | EX-003 | Manual contrast/viewport audit debt across full migrated route set | Manual sweep artifact delivered with route-level pass/fail evidence and validation commands. | Responsive/contrast review now explicitly captured and auditable. | Completed (`T114-subM`) |
 | EX-004 | AI label conventions on AI-enabled surfaces | Carbon AI labels now applied on API Observatory, Shopping Search, and MIDI Innovation surfaces; checklist/test gate updated. | AI affordance clarity and assistive naming consistency improved across active AI surfaces. | Completed (`T114-subN`) |
+
+## MIDI Hub v2 Conformance Addendum (T203)
+
+Date: 2026-03-19 21:33 EDT
+
+| Surface | Carbon pattern outcome | Remaining exception | Evidence |
+| --- | --- | --- | --- |
+| `MidiHubShell` + `/midi-hub/*` child routes | Completed product-shell conversion with deep-linkable route areas | None | `web/src/app/pages/MidiHubPage.test.tsx`, route tests under `web/src/app/pages/midi-hub/*.test.tsx` |
+| Connections area | Carbon tables/forms plus tokenized custom patchbay and routing matrix | Custom SVG matrix/patchbay remain bespoke by necessity but Carbon-tokenized | `web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx` |
+| Presets area | Carbon DataTable, modal, and slot-chain patterns | None | `web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx` |
+| Transport area | Carbon transport/recording controls in route-local layout | None | `web/src/app/pages/midi-hub/MidiHubTransportPage.test.tsx` |
+| Events area | Carbon event-list/status/editor/MSC/Learn Mode patterns | None | `web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx` |
+| Processing area | Carbon filter/mapper/script/macro/scheduler patterns | None | `web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx` |
+| Network area | Carbon RTP-MIDI, OSC, MIDI 2.0, Tesira, GPIO, string interface, and namespace browser patterns | None | `web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx`, `tests/test_osc_namespace.py` |
+| Lab area | Carbon AI Learn, mesh, and device-shadow panels with `AILabel` and `ProgressBar` | None | `web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx` |
+
+Summary:
+
+- MIDI Hub v2 is now conformant at the route-shell and area-page level.
+- Remaining bespoke visuals are isolated to topology-style signal-path canvases and are tokenized rather than mixed with non-Carbon control systems.
+- AI surfaces now use Carbon `AILabel` conventions on active user-facing assistive workflows.

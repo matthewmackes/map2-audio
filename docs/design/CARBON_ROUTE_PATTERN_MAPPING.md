@@ -113,7 +113,23 @@ These replacements should be implemented once and reused:
 - Overlays: `Modal`, `ComposedModal`, `Popover`, `OverflowMenu`
 - Feedback/loading: `ToastNotification`, `InlineNotification`, `Loading`, `InlineLoading`, skeleton set
 
-## 5. Mapping Notes
+## 5. MIDI Hub v2 Route Notes
+
+Date: 2026-03-19 21:33 EDT
+
+- `/midi-hub` now resolves to a Carbon product-shell route host (`MidiHubShell.tsx`) with deep-linkable child routes instead of a monolithic scrolling operator page.
+- The shipped child-route set is:
+  - `/midi-hub/connections`
+  - `/midi-hub/presets`
+  - `/midi-hub/transport`
+  - `/midi-hub/events`
+  - `/midi-hub/processing`
+  - `/midi-hub/network`
+  - `/midi-hub/lab`
+- Each child route now owns a route-local page composition with `MidiHubAreaLayout`, route-local CSS where needed, and focused route tests under `web/src/app/pages/midi-hub/*.test.tsx`.
+- Network now includes the `/map2/*` OSC namespace browser and dispatch workflow; Lab now uses split Carbon panels for AI Learn, mesh, and device shadow instead of the prior single innovation panel.
+
+## 6. Mapping Notes
 
 - This mapping defines target patterns only; behavior and API contracts must remain unchanged unless accessibility/conformance requires updates.
 - Route-level migration should start only after shared primitive migration is complete (T114-subF dependency).

@@ -55,6 +55,10 @@ void DrumMachineMixer::prepare(double sampleRate, int samplesPerBlock) {
     prepared_ = true;
 }
 
+void DrumMachineMixer::resetProcessDiagnostics() {
+    scratchBufferResizeCount_.store(0, std::memory_order_relaxed);
+}
+
 void DrumMachineMixer::process(const juce::AudioBuffer<float>& busInput, juce::AudioBuffer<float>& stereoOutput) {
     if (!prepared_ || stereoOutput.getNumChannels() < 2 || stereoOutput.getNumSamples() <= 0) {
         return;
@@ -77,6 +81,9 @@ void DrumMachineMixer::process(const juce::AudioBuffer<float>& busInput, juce::A
             continue;
         }
 
+        if (scratchBuffer_.getNumSamples() < numSamples || scratchBuffer_.getNumChannels() < 2) {
+            scratchBufferResizeCount_.fetch_add(1, std::memory_order_relaxed);
+        }
         scratchBuffer_.setSize(2, numSamples, false, false, true);
         scratchBuffer_.copyFrom(0, 0, busInput, leftChannel, 0, numSamples);
         scratchBuffer_.copyFrom(1, 0, busInput, rightChannel, 0, numSamples);
