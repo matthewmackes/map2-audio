@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace map2::drummachine {
 
@@ -33,6 +34,11 @@ public:
         bool isPlaying = false;
     };
 
+    struct SongEntry {
+        int patternIndex = 0;
+        int repeatCount = 1;
+    };
+
     void prepare(double sampleRate, int samplesPerBlock);
     void setDrumMachine(DrumMachineProcessor* processor);
 
@@ -54,6 +60,13 @@ public:
     bool setCurrentPattern(int patternIndex);
     int getCurrentPattern() const;
     Position getPosition() const;
+    bool addSongEntry(int patternIndex, int repeatCount, int position = -1);
+    bool removeSongEntry(int position);
+    bool reorderSongEntries(const std::vector<int>& order);
+    std::vector<SongEntry> getSong() const;
+    void clearSong();
+    void setSongLoop(bool enabled);
+    bool getSongLoop() const;
 
     void play();
     void stop();
@@ -68,11 +81,14 @@ private:
     static bool isValidPatternIndex(int patternIndex);
     static bool isValidInstrumentIndex(int instrumentIndex);
     static bool isValidStepIndex(int stepIndex);
+    static bool isValidSongPosition(int position, size_t songSize);
     void triggerCurrentStep(int sampleOffset);
     void advanceStep();
     double samplesForStep(int stepIndex) const;
+    bool applySongEntry(int songPosition, bool resetBarCount);
 
     std::array<Pattern, kPatternCount> patterns_{};
+    std::vector<SongEntry> songEntries_{};
     DrumMachineProcessor* drumMachine_ = nullptr;
 
     std::atomic<double> sampleRate_{44100.0};
@@ -85,9 +101,12 @@ private:
     std::atomic<bool> prepared_{false};
     std::atomic<bool> playing_{false};
     std::atomic<uint8_t> accentVelocity_{127};
+    std::atomic<bool> songLoopEnabled_{false};
 
     double samplesUntilNextStep_ = 0.0;
     bool triggerStepAtBlockStart_ = true;
+    int activeSongEntryIndex_ = -1;
+    int activeSongRepeat_ = 0;
     std::optional<std::chrono::steady_clock::time_point> lastTapAt_{};
     std::array<double, 6> recentTapIntervals_{};
     size_t recentTapCount_ = 0;

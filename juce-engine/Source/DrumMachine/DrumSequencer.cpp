@@ -128,6 +128,8 @@ bool DrumSequencer::setCurrentPattern(int patternIndex) {
     currentPatternIndex_.store(patternIndex, std::memory_order_relaxed);
     currentStepIndex_.store(0, std::memory_order_relaxed);
     barCount_.store(1, std::memory_order_relaxed);
+    activeSongEntryIndex_ = -1;
+    activeSongRepeat_ = 0;
     triggerStepAtBlockStart_ = true;
     samplesUntilNextStep_ = 0.0;
     return true;
@@ -146,12 +148,93 @@ DrumSequencer::Position DrumSequencer::getPosition() const {
     };
 }
 
+bool DrumSequencer::addSongEntry(int patternIndex, int repeatCount, int position) {
+    if (!isValidPatternIndex(patternIndex) || repeatCount < 1 || songEntries_.size() >= 256) {
+        return false;
+    }
+
+    SongEntry entry{
+        .patternIndex = patternIndex,
+        .repeatCount = repeatCount,
+    };
+    if (position < 0 || position >= static_cast<int>(songEntries_.size())) {
+        songEntries_.push_back(entry);
+        return true;
+    }
+
+    songEntries_.insert(songEntries_.begin() + position, entry);
+    return true;
+}
+
+bool DrumSequencer::removeSongEntry(int position) {
+    if (!isValidSongPosition(position, songEntries_.size())) {
+        return false;
+    }
+
+    songEntries_.erase(songEntries_.begin() + position);
+    if (songEntries_.empty()) {
+        activeSongEntryIndex_ = -1;
+        activeSongRepeat_ = 0;
+        return true;
+    }
+
+    if (activeSongEntryIndex_ >= static_cast<int>(songEntries_.size())) {
+        activeSongEntryIndex_ = static_cast<int>(songEntries_.size()) - 1;
+        activeSongRepeat_ = 0;
+    }
+    return true;
+}
+
+bool DrumSequencer::reorderSongEntries(const std::vector<int>& order) {
+    if (order.size() != songEntries_.size()) {
+        return false;
+    }
+
+    std::vector<SongEntry> reordered;
+    reordered.reserve(songEntries_.size());
+    std::vector<bool> used(songEntries_.size(), false);
+    for (const int index : order) {
+        if (!isValidSongPosition(index, songEntries_.size()) || used[static_cast<size_t>(index)]) {
+            return false;
+        }
+        used[static_cast<size_t>(index)] = true;
+        reordered.push_back(songEntries_[static_cast<size_t>(index)]);
+    }
+
+    songEntries_ = std::move(reordered);
+    activeSongEntryIndex_ = -1;
+    activeSongRepeat_ = 0;
+    return true;
+}
+
+std::vector<DrumSequencer::SongEntry> DrumSequencer::getSong() const {
+    return songEntries_;
+}
+
+void DrumSequencer::clearSong() {
+    songEntries_.clear();
+    activeSongEntryIndex_ = -1;
+    activeSongRepeat_ = 0;
+}
+
+void DrumSequencer::setSongLoop(bool enabled) {
+    songLoopEnabled_.store(enabled, std::memory_order_relaxed);
+}
+
+bool DrumSequencer::getSongLoop() const {
+    return songLoopEnabled_.load(std::memory_order_relaxed);
+}
+
 void DrumSequencer::play() {
     if (!prepared_.load(std::memory_order_acquire)) {
         return;
     }
 
     if (!playing_.load(std::memory_order_relaxed)) {
+        if (!songEntries_.empty() && activeSongEntryIndex_ < 0) {
+            applySongEntry(0, true);
+            activeSongRepeat_ = 0;
+        }
         triggerStepAtBlockStart_ = true;
         samplesUntilNextStep_ = 0.0;
     }
@@ -162,6 +245,13 @@ void DrumSequencer::stop() {
     playing_.store(false, std::memory_order_relaxed);
     currentStepIndex_.store(0, std::memory_order_relaxed);
     barCount_.store(1, std::memory_order_relaxed);
+    if (!songEntries_.empty()) {
+        applySongEntry(0, true);
+        activeSongRepeat_ = 0;
+    } else {
+        activeSongEntryIndex_ = -1;
+        activeSongRepeat_ = 0;
+    }
     triggerStepAtBlockStart_ = true;
     samplesUntilNextStep_ = 0.0;
 }
@@ -191,11 +281,16 @@ void DrumSequencer::processBlock(int numSamples) {
         elapsedSamples += samplesUntilNextStep_;
         remainingSamples -= samplesUntilNextStep_;
         advanceStep();
+        if (!playing_.load(std::memory_order_relaxed)) {
+            break;
+        }
         triggerCurrentStep(std::clamp(static_cast<int>(std::llround(elapsedSamples)), 0, numSamples - 1));
         samplesUntilNextStep_ = samplesForStep(currentStepIndex_.load(std::memory_order_relaxed));
     }
 
-    samplesUntilNextStep_ -= remainingSamples;
+    if (playing_.load(std::memory_order_relaxed)) {
+        samplesUntilNextStep_ -= remainingSamples;
+    }
 }
 
 double DrumSequencer::tapTempo() {
@@ -241,6 +336,10 @@ bool DrumSequencer::isValidStepIndex(int stepIndex) {
     return stepIndex >= 0 && stepIndex < kMaxSteps;
 }
 
+bool DrumSequencer::isValidSongPosition(int position, size_t songSize) {
+    return position >= 0 && static_cast<size_t>(position) < songSize;
+}
+
 void DrumSequencer::triggerCurrentStep(int sampleOffset) {
     if (drumMachine_ == nullptr) {
         return;
@@ -267,11 +366,55 @@ void DrumSequencer::advanceStep() {
     const int nextStep = currentStepIndex_.load(std::memory_order_relaxed) + 1;
     if (nextStep >= length) {
         currentStepIndex_.store(0, std::memory_order_relaxed);
-        barCount_.store(barCount_.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+        if (songEntries_.empty()) {
+            barCount_.store(barCount_.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+            return;
+        }
+
+        const int currentSongEntry = activeSongEntryIndex_ >= 0 ? activeSongEntryIndex_ : 0;
+        const auto& songEntry = songEntries_[static_cast<size_t>(currentSongEntry)];
+        ++activeSongRepeat_;
+        if (activeSongRepeat_ < songEntry.repeatCount) {
+            barCount_.store(barCount_.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+            return;
+        }
+
+        const int nextSongEntry = currentSongEntry + 1;
+        if (nextSongEntry < static_cast<int>(songEntries_.size())) {
+            applySongEntry(nextSongEntry, false);
+            activeSongRepeat_ = 0;
+            return;
+        }
+
+        if (songLoopEnabled_.load(std::memory_order_relaxed) && applySongEntry(0, true)) {
+            activeSongRepeat_ = 0;
+            return;
+        }
+
+        stop();
         return;
     }
 
     currentStepIndex_.store(nextStep, std::memory_order_relaxed);
+}
+
+bool DrumSequencer::applySongEntry(int songPosition, bool resetBarCount) {
+    if (!isValidSongPosition(songPosition, songEntries_.size())) {
+        return false;
+    }
+
+    const auto& entry = songEntries_[static_cast<size_t>(songPosition)];
+    currentPatternIndex_.store(entry.patternIndex, std::memory_order_relaxed);
+    currentStepIndex_.store(0, std::memory_order_relaxed);
+    if (resetBarCount) {
+        barCount_.store(1, std::memory_order_relaxed);
+    } else {
+        barCount_.store(barCount_.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+    }
+    activeSongEntryIndex_ = songPosition;
+    triggerStepAtBlockStart_ = true;
+    samplesUntilNextStep_ = 0.0;
+    return true;
 }
 
 double DrumSequencer::samplesForStep(int stepIndex) const {

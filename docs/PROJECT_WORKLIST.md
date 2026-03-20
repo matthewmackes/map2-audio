@@ -1304,7 +1304,7 @@ Subtasks:
     - `set_pattern_length(pattern, steps)`, `get_pattern_length(pattern)`
     - `set_swing(percent)`, `get_swing()`
     - `set_accent_velocity(velocity)` — global accent level (default 127)
-  - [ ] T213-C: Song mode arranger
+  - [✓] T213-C: Song mode arranger
     - Song data structure: ordered list of `{pattern_id, repeat_count}` entries, max 256 entries
     - Song playback: advance through entries, repeat pattern N times, then next entry; loop or stop at end
     - API: `add_song_entry(pattern_id, repeat_count, position)`, `remove_song_entry(position)`, `reorder_song_entries(order)`, `get_song()`, `clear_song()`
@@ -1327,7 +1327,7 @@ Subtasks:
     - Variation: each pattern has Main + up to 10 variations (same step count, different velocities/instruments); `set_variation(pattern, variation_index)`
     - Count-in: play N bars (0–4) of metronome clicks before pattern starts
 Assigned to: Codex
-Last updated: 2026-03-20 07:04 - Codex
+Last updated: 2026-03-20 07:08 - Codex
 - Progress notes:
   - Completed `T213-A` with a new `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp` core that owns 128 patterns, 16 instrument lanes, 64-step storage, transport state, BPM/swing/accent controls, current pattern/step/bar tracking, sample-domain step scheduling, and tap-tempo averaging.
   - Extended `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` with queued `triggerNote(...)` support so the sequencer can inject software hits into the existing drum processor path with sample offsets.
@@ -1336,6 +1336,9 @@ Last updated: 2026-03-20 07:04 - Codex
   - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
   - Completed `T213-B` in `juce-engine/Source/PythonBindings.cpp` by exposing sequencer step mutation/query, full pattern export, clear/copy operations, pattern-length controls, and swing/accent-velocity setters/getters through the `AudioEngine` pybind surface.
   - Validation: `cmake --build juce-engine/build --target map2_audio_engine` -> pass; `pytest tests/test_drum_machine_service.py tests/test_drum_routes.py -q` -> `12 passed`; `python3` smoke import of `juce-engine/build/map2_audio_engine` covering `set_drum_step`, `get_drum_step`, `get_drum_pattern_data`, `copy_drum_pattern`, `clear_drum_pattern`, `set_drum_pattern_length`, `set_drum_swing`, and `set_drum_accent_velocity` -> pass.
+  - Completed `T213-C` by extending `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp` with a 256-entry song list, insertion/removal/reorder APIs, loop enable/disable state, repeat-aware pattern progression, automatic transport rewind at song end, and seamless pattern handoff between song sections.
+  - Added `juce-engine/tests/DrumSequencerTests.cpp` coverage for song entry ordering/editing, repeat-count playback across multiple patterns, end-of-song stop behavior, and looped restart to the first song entry.
+  - Validation: `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests` -> pass; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass.
 
 ---
 
