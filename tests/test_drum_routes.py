@@ -29,7 +29,9 @@ class _FakeDrumService:
             "bar": 1,
             "beat": 1,
             "pattern": 0,
+            "pattern_id": 0,
             "variation": 0,
+            "is_playing": False,
             "updated_at": None,
         }
         self.song = []
@@ -210,7 +212,9 @@ def test_drum_position_route_returns_typed_position(monkeypatch):
         "bar": 1,
         "beat": 1,
         "pattern": 0,
+        "pattern_id": 0,
         "variation": 0,
+        "is_playing": False,
         "updated_at": None,
     }
 

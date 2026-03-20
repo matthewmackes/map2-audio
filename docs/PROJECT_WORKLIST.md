@@ -1320,14 +1320,14 @@ Subtasks:
     - `POST /api/engine/drums/pattern/{id}/step` — set individual step
     - `GET/POST /api/engine/drums/song` — get/set song arrangement
     - `GET /api/engine/drums/position` — current step/bar/pattern (also via WebSocket)
-  - [ ] T213-F: WebSocket real-time position — broadcast `{step, bar, pattern_id, is_playing}` at each step advance via existing WebSocket infrastructure for UI beat indicator sync
+  - [✓] T213-F: WebSocket real-time position — broadcast `{step, bar, pattern_id, is_playing}` at each step advance via existing WebSocket infrastructure for UI beat indicator sync
   - [ ] T213-G: Fill and variation system
     - Fill trigger: `trigger_fill()` — plays a fill pattern (last 1–2 beats of current pattern replaced with fill variation)
     - Auto-fill: at quantization boundary (configurable 1–8 bars), automatically trigger fill before next pattern/section
     - Variation: each pattern has Main + up to 10 variations (same step count, different velocities/instruments); `set_variation(pattern, variation_index)`
     - Count-in: play N bars (0–4) of metronome clicks before pattern starts
 Assigned to: Codex
-Last updated: 2026-03-20 07:17 - Codex
+Last updated: 2026-03-20 07:23 - Codex
 - Progress notes:
   - Completed `T213-A` with a new `juce-engine/Source/DrumMachine/DrumSequencer.h/cpp` core that owns 128 patterns, 16 instrument lanes, 64-step storage, transport state, BPM/swing/accent controls, current pattern/step/bar tracking, sample-domain step scheduling, and tap-tempo averaging.
   - Extended `juce-engine/Source/DrumMachine/DrumMachineProcessor.h/cpp` with queued `triggerNote(...)` support so the sequencer can inject software hits into the existing drum processor path with sample offsets.
@@ -1347,6 +1347,10 @@ Last updated: 2026-03-20 07:17 - Codex
   - Extended `app/services/drum_sequencer_service.py` with route-facing `get_song`, `get_song_loop`, and `replace_song` helpers so the HTTP layer can manage validated song-arrangement updates without duplicating engine-sync logic.
   - Added `tests/test_drum_routes.py` coverage for full-pattern round-trip save/load, single-step mutation, and song arrangement route round-trip behavior.
   - Validation: `pytest tests/test_drum_routes.py tests/test_drum_machine_service.py tests/test_drum_sequencer_service.py -q` -> `18 passed`; in-memory `python3` compile smoke for `app/routes/drums.py`, `app/services/drum_machine_service.py`, `app/services/drum_sequencer_service.py`, and `tests/test_drum_routes.py` -> pass.
+  - Completed `T213-F` by extending `juce-engine/Source/PythonBindings.cpp` with sequencer transport/position bindings (`set_drum_bpm`, `set_drum_current_pattern`, `set_drum_transport_playing`, `pause_drum_transport`, `get_drum_sequencer_position`) and wiring `app/services/drum_machine_service.py` to mirror transport updates into the native sequencer, poll live engine position while transport is running, and publish `drums:position` WebSocket events whenever step/bar/pattern playback state changes.
+  - Expanded `DrumSequencerPositionModel` and the drum route/service test fixtures to carry `pattern_id` and `is_playing`, matching the realtime WebSocket payload needed for beat-synced UI indicators.
+  - Added async `tests/test_drum_machine_service.py` coverage proving the poll loop emits `drums:position` history entries when the engine-reported sequencer position advances, while preserving master-volume/metering and route behaviors.
+  - Validation: `pytest tests/test_drum_machine_service.py tests/test_drum_routes.py tests/test_drum_sequencer_service.py -q` -> `19 passed`; `./juce-engine/build-synthforge-tests/synthforge_tests "[drums]"` -> pass; `cmake --build juce-engine/build --target map2_audio_engine` -> pass; `python3` smoke import of `juce-engine/build/map2_audio_engine` confirming `set_drum_bpm`, `set_drum_current_pattern`, `set_drum_transport_playing`, and `get_drum_sequencer_position` bindings are callable -> pass (with non-blocking ALSA sequencer warnings on this host).
 
 ---
 

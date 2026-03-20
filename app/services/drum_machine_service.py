@@ -7,6 +7,8 @@ surface while the deeper engine integration work is still in progress.
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -25,6 +27,7 @@ _DEFAULT_DRUMS_ROOT = Path(os.environ.get("MAP2_DRUMS_ROOT", Path.home() / ".map
 _DEFAULT_STATE_PATH = Path(os.environ.get("MAP2_DRUMS_STATE_PATH", _DEFAULT_DRUMS_ROOT / "state.json"))
 _FACTORY_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_FACTORY_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "factory_packs"))
 _GENERATED_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_GENERATED_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "generated"))
+_POSITION_POLL_INTERVAL_SECONDS = float(os.environ.get("MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS", "0.05"))
 
 
 class DrumMachineStateModel(BaseModel):
@@ -91,7 +94,9 @@ class DrumSequencerPositionModel(BaseModel):
     bar: int = Field(1, ge=1)
     beat: int = Field(1, ge=1, le=4)
     pattern: int = Field(0, ge=0, le=127)
+    pattern_id: int = Field(0, ge=0, le=127)
     variation: int = Field(0, ge=0, le=10)
+    is_playing: bool = False
     updated_at: Optional[str] = None
 
 
@@ -113,8 +118,11 @@ class DrumMachineService(Singleton):
         self._state = self._load_state()
         self._position = DrumSequencerPositionModel(
             pattern=self._state.pattern,
+            pattern_id=self._state.pattern,
             variation=self._state.variation,
         )
+        self._position_poll_task: Optional[asyncio.Task] = None
+        self._event_loop: Optional[asyncio.AbstractEventLoop] = None
         self._sync_static_state_to_engine()
 
     def _load_state(self) -> DrumMachineStateModel:
@@ -144,6 +152,7 @@ class DrumMachineService(Singleton):
             {
                 **self._position.model_dump(),
                 "pattern": self._state.pattern,
+                "pattern_id": self._state.pattern,
                 "variation": self._state.variation,
             }
         )
@@ -173,6 +182,7 @@ class DrumMachineService(Singleton):
             if source in patch:
                 payload[target] = patch[source]
         self.update_state(payload)
+        self._sync_transport_patch_to_engine(patch)
         if patch.get("is_playing") is False:
             try:
                 from app.services.drum_sequencer_service import get_drum_sequencer_service
@@ -198,7 +208,9 @@ class DrumMachineService(Singleton):
         current = self._position.model_dump()
         current.update({key: value for key, value in patch.items() if value is not None or key in patch})
         current["pattern"] = self._state.pattern if "pattern" not in patch else current["pattern"]
+        current["pattern_id"] = current["pattern"]
         current["variation"] = self._state.variation if "variation" not in patch else current["variation"]
+        current["is_playing"] = self._state.transport if "is_playing" not in patch else current["is_playing"]
         current["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         self._position = DrumSequencerPositionModel.model_validate(current)
         return self.get_position()
@@ -309,6 +321,7 @@ class DrumMachineService(Singleton):
     def _sync_static_state_to_engine(self) -> None:
         self._sync_state_patch_to_engine({"volume": self._state.volume})
         self._refresh_metering_from_engine()
+        self._refresh_position_from_engine()
 
     def _sync_state_patch_to_engine(self, patch: Dict[str, Any]) -> None:
         engine = self._engine()
@@ -319,6 +332,96 @@ class DrumMachineService(Singleton):
             setter = getattr(engine, "set_drum_master_volume", None)
             if callable(setter):
                 setter(float(self._state.volume) / 100.0)
+
+    def _sync_transport_patch_to_engine(self, patch: Dict[str, Any]) -> None:
+        engine = self._engine()
+        if engine is None:
+            return
+
+        if "bpm" in patch:
+            setter = getattr(engine, "set_drum_bpm", None)
+            if callable(setter):
+                setter(self._state.bpm)
+
+        if "pattern" in patch:
+            setter = getattr(engine, "set_drum_current_pattern", None)
+            if callable(setter):
+                setter(self._state.pattern)
+
+        if "swing" in patch:
+            setter = getattr(engine, "set_drum_swing", None)
+            if callable(setter):
+                setter(float(self._state.swing))
+
+        if "is_playing" in patch:
+            self._event_loop = self._safe_running_loop()
+            if patch["is_playing"]:
+                setter = getattr(engine, "set_drum_transport_playing", None)
+                if callable(setter):
+                    setter(True)
+                self._ensure_position_poll_task()
+            else:
+                setter = getattr(engine, "set_drum_transport_playing", None)
+                if callable(setter):
+                    setter(False)
+                self._stop_position_poll_task()
+                self._refresh_position_from_engine()
+
+    def _safe_running_loop(self) -> Optional[asyncio.AbstractEventLoop]:
+        try:
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            return None
+
+    def _ensure_position_poll_task(self) -> None:
+        if self._event_loop is None:
+            return
+        if self._position_poll_task is None or self._position_poll_task.done():
+            self._position_poll_task = self._event_loop.create_task(
+                self._position_poll_loop(),
+                name="drum_machine_position_poll",
+            )
+
+    def _stop_position_poll_task(self) -> None:
+        if self._position_poll_task is None:
+            return
+        self._position_poll_task.cancel()
+        self._position_poll_task = None
+
+    async def _position_poll_loop(self) -> None:
+        try:
+            while self._state.transport:
+                changed = self._refresh_position_from_engine()
+                if changed:
+                    await self.publish_position_update()
+                await asyncio.sleep(_POSITION_POLL_INTERVAL_SECONDS)
+        except asyncio.CancelledError:
+            raise
+
+    def _refresh_position_from_engine(self) -> bool:
+        engine = self._engine()
+        if engine is None:
+            return False
+
+        getter = getattr(engine, "get_drum_sequencer_position", None)
+        if not callable(getter):
+            return False
+
+        try:
+            payload = dict(getter())
+        except Exception:
+            return False
+
+        payload.setdefault("pattern", payload.get("pattern_id", self._state.pattern))
+        payload.setdefault("pattern_id", payload.get("pattern", self._state.pattern))
+        payload.setdefault("variation", self._state.variation)
+        payload.setdefault("is_playing", self._state.transport)
+        payload.setdefault("beat", min(4, (int(payload.get("step", 0)) // 4) + 1))
+
+        current_snapshot = self._position.model_dump(exclude={"updated_at"})
+        updated = self.update_position(payload)
+        updated_snapshot = {key: value for key, value in updated.items() if key != "updated_at"}
+        return updated_snapshot != current_snapshot
 
     def _refresh_metering_from_engine(self) -> None:
         engine = self._engine()

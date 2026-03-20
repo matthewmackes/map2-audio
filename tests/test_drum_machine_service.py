@@ -1,4 +1,5 @@
 import json
+import asyncio
 import pytest
 
 from app.services.websocket_manager import ws_manager
@@ -9,6 +10,10 @@ from app.services import drum_machine_service as drum_service_module
 class _FakeDrumEngine:
     def __init__(self):
         self.master_volume_calls = []
+        self.transport_playing_calls = []
+        self.bpm_calls = []
+        self.pattern_calls = []
+        self.swing_calls = []
         self.metering = {
             "per_pad_peak": [0.0] * 16,
             "per_pad_rms": [0.0] * 16,
@@ -19,13 +24,43 @@ class _FakeDrumEngine:
             "master_rms_left": 0.0,
             "master_rms_right": 0.0,
         }
+        self.position = {
+            "step": 0,
+            "bar": 1,
+            "beat": 1,
+            "pattern": 0,
+            "pattern_id": 0,
+            "is_playing": False,
+        }
 
     def set_drum_master_volume(self, value):
         self.master_volume_calls.append(value)
         return True
 
+    def set_drum_transport_playing(self, is_playing):
+        self.transport_playing_calls.append(is_playing)
+        self.position["is_playing"] = is_playing
+        return True
+
+    def set_drum_bpm(self, bpm):
+        self.bpm_calls.append(bpm)
+        return True
+
+    def set_drum_current_pattern(self, pattern):
+        self.pattern_calls.append(pattern)
+        self.position["pattern"] = pattern
+        self.position["pattern_id"] = pattern
+        return True
+
+    def set_drum_swing(self, swing):
+        self.swing_calls.append(swing)
+        return True
+
     def get_drum_metering(self):
         return dict(self.metering)
+
+    def get_drum_sequencer_position(self):
+        return dict(self.position)
 
 
 def _build_service(tmp_path, monkeypatch):
@@ -138,7 +173,9 @@ def test_drum_machine_service_tracks_sequencer_position(tmp_path, monkeypatch):
     assert position["bar"] == 2
     assert position["beat"] == 4
     assert position["pattern"] == 0
+    assert position["pattern_id"] == 0
     assert position["variation"] == 0
+    assert position["is_playing"] is False
     assert position["updated_at"] is not None
 
 
@@ -175,3 +212,43 @@ def test_drum_machine_service_syncs_master_volume_and_reads_engine_metering(tmp_
 
     assert fake_engine.master_volume_calls[-1] == pytest.approx(0.64)
     assert metering["master_peak_left"] == pytest.approx(0.42)
+
+
+@pytest.mark.asyncio
+async def test_drum_machine_service_polls_engine_position_and_broadcasts_updates(tmp_path, monkeypatch):
+    monkeypatch.setattr(drum_service_module, "_POSITION_POLL_INTERVAL_SECONDS", 0.001)
+    service, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+    ws_manager.event_history.clear()
+
+    transport = service.update_transport({
+        "is_playing": True,
+        "bpm": 126,
+        "pattern": 6,
+        "swing": 18,
+    })
+    assert transport["is_playing"] is True
+    assert fake_engine.transport_playing_calls[-1] is True
+    assert fake_engine.bpm_calls[-1] == 126
+    assert fake_engine.pattern_calls[-1] == 6
+    assert fake_engine.swing_calls[-1] == 18.0
+
+    fake_engine.position.update({
+        "step": 9,
+        "bar": 3,
+        "beat": 3,
+        "pattern": 6,
+        "pattern_id": 6,
+        "is_playing": True,
+    })
+
+    await asyncio.sleep(0.02)
+
+    history = ws_manager.get_event_history("drums:position")
+    assert history["events"][-1]["type"] == "drum_position"
+    assert history["events"][-1]["data"]["step"] == 9
+    assert history["events"][-1]["data"]["bar"] == 3
+    assert history["events"][-1]["data"]["pattern_id"] == 6
+    assert history["events"][-1]["data"]["is_playing"] is True
+
+    service.update_transport({"is_playing": False})
+    await asyncio.sleep(0)

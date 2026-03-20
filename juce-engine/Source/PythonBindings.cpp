@@ -3000,6 +3000,35 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_drum_song_loop", [](const Map2AudioEngine& self) {
             return self.getDrumSequencer().getSongLoop();
         }, "Get the drum song loop state")
+        .def("set_drum_bpm", [](Map2AudioEngine& self, double bpm) {
+            return self.getDrumSequencer().setTempo(bpm);
+        }, py::arg("bpm"), "Set drum sequencer tempo in BPM")
+        .def("set_drum_current_pattern", [](Map2AudioEngine& self, int patternIndex) {
+            return self.getDrumSequencer().setCurrentPattern(patternIndex);
+        }, py::arg("pattern"), "Set the active drum sequencer pattern")
+        .def("set_drum_transport_playing", [](Map2AudioEngine& self, bool isPlaying) {
+            if (isPlaying) {
+                self.getDrumSequencer().play();
+            } else {
+                self.getDrumSequencer().stop();
+            }
+            return true;
+        }, py::arg("is_playing"), "Start or stop the drum sequencer transport")
+        .def("pause_drum_transport", [](Map2AudioEngine& self) {
+            self.getDrumSequencer().pause();
+            return true;
+        }, "Pause the drum sequencer transport")
+        .def("get_drum_sequencer_position", [](const Map2AudioEngine& self) {
+            const auto position = self.getDrumSequencer().getPosition();
+            py::dict result;
+            result["step"] = position.stepIndex;
+            result["bar"] = position.barCount;
+            result["beat"] = (position.stepIndex / 4) + 1;
+            result["pattern"] = position.patternIndex;
+            result["pattern_id"] = position.patternIndex;
+            result["is_playing"] = position.isPlaying;
+            return result;
+        }, "Get the current drum sequencer playback position")
 
         // ========================================
         // Parameters
