@@ -1726,6 +1726,21 @@ export interface StringInterfaceStatus {
   logs: StringInterfaceLog[];
 }
 
+export interface OscNamespaceEntry {
+  address: string;
+  description: string;
+  direction: string;
+  current_value: unknown;
+}
+
+export interface OscNamespaceEvent {
+  address: string;
+  value: unknown;
+  source: string;
+  metadata: Record<string, unknown>;
+  timestamp: number;
+}
+
 export interface MidiHubLearnSuggestion {
   cc_number: number;
   channel: number;
@@ -2314,6 +2329,18 @@ export const midiHubApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  getOscNamespace: (nodeId?: string | null) =>
+    fetchJson<{ count: number; entries: OscNamespaceEntry[]; recent_events: OscNamespaceEvent[] }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/network/osc/namespace`, nodeId)
+    ),
+  dispatchOscNamespace: (payload: { address: string; value?: unknown }, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; address: string; value?: unknown; events?: OscNamespaceEvent[] }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/network/osc/namespace/dispatch`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
 
   getMidi2Status: (nodeId?: string | null) =>
     fetchJson<{ enabled: boolean; default_protocol: string; device_count: number; devices: Midi2DeviceState[] }>(

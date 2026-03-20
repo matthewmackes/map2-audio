@@ -17,6 +17,7 @@ import {
   TextInput,
 } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
+import { OscNamespaceBrowser } from './OscNamespaceBrowser'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
 
@@ -24,16 +25,6 @@ const SESSION_HEADERS = [
   { key: 'session', header: 'Session' },
   { key: 'endpoint', header: 'Endpoint' },
   { key: 'metrics', header: 'Metrics' },
-]
-
-const OSC_NAMESPACE = [
-  '/map2/transport/bpm',
-  '/map2/transport/song_position',
-  '/map2/presets/recall',
-  '/map2/macros/trigger',
-  '/map2/gpio/input/1',
-  '/map2/gpio/output/1',
-  '/map2/tesira/Level1/level',
 ]
 
 export function MidiNetworkPanel() {
@@ -282,15 +273,10 @@ export function MidiNetworkPanel() {
             Save namespace
           </Button>
         </div>
-        <div className="midi-hub-network-namespace">
-          {OSC_NAMESPACE.map((entry) => (
-            <Tag key={entry} type="cool-gray">
-              {entry}
-            </Tag>
-          ))}
-        </div>
         <pre className="midi-hub-code-block">{JSON.stringify(oscMappingsQuery.data?.mappings ?? [], null, 2)}</pre>
       </div>
+
+      <OscNamespaceBrowser />
     </div>
   )
 }

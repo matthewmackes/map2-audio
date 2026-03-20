@@ -14,6 +14,7 @@ from urllib import request as urllib_request
 
 from app.config import config_get
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
+from app.services.midi_hub.osc_namespace import OscNamespaceRouter, get_osc_namespace_router
 from app.services.midi_hub.ports import MidiMessage
 
 
@@ -115,7 +116,12 @@ class _OscProtocol(asyncio.DatagramProtocol):
 
 
 class MidiNetworkBridge:
-    def __init__(self, hub: Optional[MidiHub] = None, cluster_router: Optional[Any] = None) -> None:
+    def __init__(
+        self,
+        hub: Optional[MidiHub] = None,
+        cluster_router: Optional[Any] = None,
+        osc_namespace: Optional[OscNamespaceRouter] = None,
+    ) -> None:
         self._hub = hub or get_midi_hub()
         self._sessions: Dict[str, NetworkSession] = {}
         self._session_transports: Dict[str, asyncio.DatagramTransport] = {}
@@ -130,6 +136,8 @@ class MidiNetworkBridge:
         self._local_node_id = _resolve_local_node_id()
         self._transport_mode = self._normalize_transport_mode(config_get("midi.cluster.transport", "http-mesh"))
         self._mesh_subscriber_id = "midi_network_mesh_forward"
+        self._osc_namespace = osc_namespace or get_osc_namespace_router()
+        self._osc_clients: set[Tuple[str, int]] = set()
         self._hub.subscribe(self._mesh_subscriber_id, self._on_hub_message)
 
     def list_sessions(self) -> List[Dict[str, Any]]:
@@ -137,6 +145,14 @@ class MidiNetworkBridge:
 
     def list_osc_mappings(self) -> List[Dict[str, Any]]:
         return [row.to_dict() for row in self._osc_mappings]
+
+    def osc_namespace_catalog(self) -> Dict[str, Any]:
+        return self._osc_namespace.catalog()
+
+    async def dispatch_osc_namespace(self, address: str, value: Any = None, *, source: str = "api") -> Dict[str, Any]:
+        payload = await self._osc_namespace.dispatch(address, value, source=source)
+        await self._broadcast_namespace_events(payload.get("events") or [])
+        return payload
 
     def list_mesh_peers(self) -> List[Dict[str, Any]]:
         self._sync_discovered_mesh_peers()
@@ -594,6 +610,10 @@ class MidiNetworkBridge:
         address, value = _decode_osc_packet(data)
         if not address:
             return
+        self._osc_clients.add((str(addr[0]), int(addr[1])))
+        if address.startswith("/map2/"):
+            self._schedule_coroutine(self._handle_namespace_packet(address, value, addr))
+            return
         for mapping in self._osc_mappings:
             if mapping.address != address:
                 continue
@@ -607,6 +627,25 @@ class MidiNetworkBridge:
                 cc_value = max(0, min(127, int(round(float(value) * 127.0))))
                 payload = bytes([0xB0 | ((channel - 1) & 0x0F), cc, cc_value])
             self._hub.send(source_port=f"osc:{addr[0]}:{addr[1]}", destination_port=mapping.destination_port, data=payload)
+
+    async def _handle_namespace_packet(self, address: str, value: Any, addr: Tuple[str, int]) -> None:
+        payload = await self._osc_namespace.dispatch(address, value, source=f"osc:{addr[0]}:{addr[1]}")
+        await self._broadcast_namespace_events(payload.get("events") or [])
+
+    async def _broadcast_namespace_events(self, events: List[Dict[str, Any]]) -> None:
+        if not events or not self._osc_clients:
+            return
+        for host, port in list(self._osc_clients):
+            for event in events:
+                packet = _encode_osc_packet(str(event.get("address") or "/map2/out/event"), event.get("value"))
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.settimeout(0.2)
+                try:
+                    sock.sendto(packet, (host, int(port)))
+                except Exception:
+                    continue
+                finally:
+                    sock.close()
 
     def _sync_discovered_mesh_peers(self) -> None:
         if not bool(config_get("midi.cluster.enabled", False)):
@@ -648,10 +687,17 @@ def _pad4(data: bytes) -> bytes:
     return data + (b"\x00" * padding)
 
 
-def _encode_osc_packet(address: str, value: float) -> bytes:
+def _encode_osc_packet(address: str, value: Any) -> bytes:
     address_bytes = _pad4(address.encode("utf-8") + b"\x00")
-    tags = _pad4(b",f\x00")
-    payload = struct.pack(">f", float(value))
+    if isinstance(value, str):
+        tags = _pad4(b",s\x00")
+        payload = _pad4(str(value).encode("utf-8") + b"\x00")
+    elif isinstance(value, int) and not isinstance(value, bool):
+        tags = _pad4(b",i\x00")
+        payload = struct.pack(">i", int(value))
+    else:
+        tags = _pad4(b",f\x00")
+        payload = struct.pack(">f", float(value if value is not None else 0.0))
     return address_bytes + tags + payload
 
 
@@ -669,6 +715,9 @@ def _decode_osc_packet(packet: bytes) -> Tuple[str, float]:
         if tags == ",i" and len(packet) >= offset + 4:
             (value,) = struct.unpack(">i", packet[offset:offset + 4])
             return address, float(value)
+        if tags == ",s":
+            value_end = packet.index(0, offset)
+            return address, packet[offset:value_end].decode("utf-8", errors="ignore")
         return address, 0.0
     except Exception:
         return "", 0.0

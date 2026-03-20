@@ -15,6 +15,7 @@ from app.services.midi_hub.event_list_service import get_midi_hub_event_list_ser
 from app.services.midi_hub.macros import get_midi_macro_service
 from app.services.midi_hub.midi2 import get_midi2_manager
 from app.services.midi_hub.network import get_midi_network_bridge
+from app.services.midi_hub.osc_namespace import get_osc_namespace_router
 from app.services.midi_hub.preset_service import get_midi_hub_preset_service
 from app.services.midi_hub.recorder import get_midi_recorder
 from app.services.midi_hub.router import get_midi_router
@@ -182,6 +183,11 @@ class OscSendRequest(BaseModel):
     port: int = Field(..., ge=1, le=65535)
     address: str = Field(..., min_length=1, max_length=255)
     value: float = 0.0
+
+
+class OscNamespaceDispatchRequest(BaseModel):
+    address: str = Field(..., min_length=1, max_length=255)
+    value: Any = None
 
 
 class Midi2ConfigRequest(BaseModel):
@@ -975,6 +981,16 @@ async def send_osc(req: OscSendRequest) -> Dict[str, Any]:
         address=req.address,
         value=req.value,
     )
+
+
+@router.get("/network/osc/namespace")
+async def get_osc_namespace() -> Dict[str, Any]:
+    return get_midi_network_bridge().osc_namespace_catalog()
+
+
+@router.post("/network/osc/namespace/dispatch")
+async def dispatch_osc_namespace(req: OscNamespaceDispatchRequest) -> Dict[str, Any]:
+    return await get_midi_network_bridge().dispatch_osc_namespace(req.address, req.value)
 
 
 @router.get("/midi2")

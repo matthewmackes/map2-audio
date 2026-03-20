@@ -610,7 +610,7 @@ Last updated: 2026-03-19 21:05 - Codex
   - Validation: `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
 
 ID: T203-subI
-Status: [ ] Todo
+Status: [✓] Done
 Title: `/map2/*` OSC namespace — hierarchical address space with bidirectional feedback
 Description:
 - Goal / acceptance criteria: Design and implement a hierarchical OSC namespace for MAP2 following ETC `/eos/*` industry-standard pattern. The namespace must expose ALL internal MAP2 state for external control surfaces (TouchOSC, Lemur, Open Stage Control). Namespace structure:
@@ -652,8 +652,16 @@ Description:
   - Use `python-osc` library (already in project for OSC bridge)
   - Enterprise flags: namespace access control (whitelist addresses per client), OSC-over-TCP for reliable transport, namespace versioning
 Subtasks: None
-Assigned to: Claude
-Last updated: 2026-03-17 - Claude
+Assigned to: Codex
+Last updated: 2026-03-19 21:29 - Codex
+- Completion notes:
+  - Added `app/services/midi_hub/osc_namespace.py` as the canonical `/map2/*` router covering transport, plugin parameter/bypass, presets, chains, cues, macros, GPIO, meter feedback, command dispatch, ping, and implicit output event logging.
+  - Updated `app/services/midi_hub/network.py` so incoming `/map2/*` OSC packets are dispatched through the namespace router while legacy OSC-to-MIDI mappings remain intact, and added namespace event fanout back to known OSC clients.
+  - Extended `app/routes/midi_hub.py` with namespace catalog and direct dispatch endpoints for the browser and tooling workflows.
+  - Added `web/src/app/components/MidiHub/OscNamespaceBrowser.tsx` and integrated it into `MidiNetworkPanel.tsx`, then extended `web/src/map2/api.ts` with typed namespace catalog and dispatch clients.
+  - Added namespace reference documentation in `docs/midi/MAP2_OSC_NAMESPACE.md`.
+  - Added backend coverage in `tests/test_osc_namespace.py` for parameter dispatch, bypass, BPM, chain recall, cue fire, preset recall, macro fire, GPIO state, ping, and catalog feedback.
+  - Validation: `pytest tests/test_osc_namespace.py` -> pass, `npm --prefix web run typecheck` -> pass, `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx` -> pass, `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
 
 ID: T203-subJ
 Status: [ ] Todo
