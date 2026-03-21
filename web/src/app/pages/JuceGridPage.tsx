@@ -17,7 +17,6 @@ import { useState, useCallback, useMemo, useEffect, useRef, type CSSProperties, 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Add,
-  Book,
   Branch,
   Camera,
   ArrowLeft,
@@ -789,6 +788,7 @@ export function JuceGridPage() {
   const [showPerformModal, setShowPerformModal] = useState(false)
   const [showAudioNodesModal, setShowAudioNodesModal] = useState(false)
   const [showRoutingTopologyModal, setShowRoutingTopologyModal] = useState(false)
+  const missingSelectedPluginMetaWarningKeyRef = useRef<string | null>(null)
   const openPlatformDocs = useCallback((doc?: string) => {
     const params = new URLSearchParams({
       panel: 'about',
@@ -1404,15 +1404,37 @@ export function JuceGridPage() {
 
   const selectedPluginMeta = useMemo(() => {
     if (!selectedPluginUri) return null
-    const meta = pluginMeta[selectedPluginUri]
-    // Debug: log when metadata lookup fails
-    if (!meta && selectedPluginUri) {
-      console.warn('[JuceGridPage] Plugin metadata not found for URI:', selectedPluginUri)
-      console.warn('[JuceGridPage] Available URIs:', Object.keys(pluginMeta).slice(0, 5), '...')
-      console.warn('[JuceGridPage] pluginsQuery status:', pluginsQuery.status, 'data count:', pluginsQuery.data?.plugins?.length ?? 0)
+    return pluginMeta[selectedPluginUri] || null
+  }, [selectedPluginUri, pluginMeta])
+
+  useEffect(() => {
+    if (!selectedPluginUri || !selectedPlugin) {
+      missingSelectedPluginMetaWarningKeyRef.current = null
+      return
     }
-    return meta || null
-  }, [selectedPluginUri, pluginMeta, pluginsQuery.status, pluginsQuery.data?.plugins?.length])
+
+    if (selectedPluginMeta) {
+      missingSelectedPluginMetaWarningKeyRef.current = null
+      return
+    }
+
+    if (pluginsQuery.status !== 'success') {
+      return
+    }
+
+    const discoveredPluginCount = pluginsQuery.data?.plugins?.length ?? 0
+    const warningKey = `${selectedPluginUri}:${discoveredPluginCount}`
+    if (missingSelectedPluginMetaWarningKeyRef.current === warningKey) {
+      return
+    }
+
+    missingSelectedPluginMetaWarningKeyRef.current = warningKey
+    console.warn('[JuceGridPage] Selected plugin metadata is missing after discovery settled:', {
+      selectedPluginUri,
+      availableUris: Object.keys(pluginMeta).slice(0, 5),
+      discoveredPluginCount,
+    })
+  }, [pluginMeta, pluginsQuery.data?.plugins?.length, pluginsQuery.status, selectedPlugin, selectedPluginMeta, selectedPluginUri])
 
   const selectedPluginCard = useMemo(() => {
     if (!selectedPlugin || !selectedPluginMeta) {
@@ -4104,12 +4126,28 @@ export function JuceGridPage() {
               <Button
                 size="sm"
                 kind="tertiary"
+                className="juce-grid-page__masthead-button--success-tertiary"
+                renderIcon={Network_3}
+                onClick={() => setShowAudioNodesModal(true)}
+              >
+                Audio Nodes
+              </Button>
+              <Button
+                size="sm"
+                kind="tertiary"
+                className="juce-grid-page__masthead-button--success-tertiary"
                 renderIcon={Flow}
                 onClick={() => setShowRoutingTopologyModal(true)}
               >
                 Configure routing
               </Button>
-              <Button size="sm" kind="secondary" onClick={addFlow} disabled={flowSlots.length >= MAX_FLOWS}>
+              <Button
+                size="sm"
+                kind="primary"
+                className="juce-grid-page__masthead-button--success-primary"
+                onClick={addFlow}
+                disabled={flowSlots.length >= MAX_FLOWS}
+              >
                 Add flow
               </Button>
               <Button
@@ -4127,14 +4165,8 @@ export function JuceGridPage() {
             <div className="juce-grid-page__masthead-secondary-actions">
               {!isCompactLayout && (
                 <>
-                  <Button size="sm" kind="ghost" renderIcon={Book} onClick={() => openPlatformDocs()}>
-                    Docs
-                  </Button>
                   <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
                     Shortcuts
-                  </Button>
-                  <Button size="sm" kind="ghost" renderIcon={Network_3} onClick={() => setShowAudioNodesModal(true)}>
-                    Audio Nodes
                   </Button>
                 </>
               )}
@@ -4145,9 +4177,7 @@ export function JuceGridPage() {
                   size="sm"
                   flipped
                 >
-                  <OverflowMenuItem itemText="Docs" onClick={() => openPlatformDocs()} />
                   <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
-                  <OverflowMenuItem itemText="Audio Nodes" onClick={() => setShowAudioNodesModal(true)} />
                 </OverflowMenu>
               )}
             </div>

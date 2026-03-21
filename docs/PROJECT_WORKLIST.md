@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 17:08 EDT - Codex (Completed `T255`-`T257` for special-settings cleanup, shared dialog state, and Carbon modal warning removal.)
+Last updated: 2026-03-21 17:15 EDT - Codex (Closed the second push/build/restart cycle on port `3000` and started `T258`-`T260` for Juce Grid masthead cleanup and warning reduction.)
 
 ## Active Blockers Only
 
@@ -3032,3 +3032,42 @@ Last updated: 2026-03-21 17:08 EDT - Codex
   - Revalidated the previously noisy modal paths with `web/src/app/components/snapshots/SnapshotModal.test.tsx` and the full `web/src/app/pages/JuceGridPage.test.tsx` run; the old non-boolean Carbon modal warning did not reappear, leaving only the pre-existing JUCE Grid plugin-metadata debug warnings in the test output.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModal.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
   - Licensing: Reused the repository license/notices scan for the touched MAP2-owned frontend/test/worklist files and found no new AGPL or third-party notice gaps.
+
+ID: T258
+Status: [>] In Progress
+Title: Promote Audio Nodes into the primary JUCE Grid masthead action strip
+Description:
+- Goal / acceptance criteria: Move `Audio Nodes` out of the secondary action cluster and into the primary JUCE Grid masthead button strip ahead of routing configuration so node-aware placement controls are visible without opening the overflow path. Keep the existing modal behavior and add focused regression coverage for the new masthead order.
+- Why it matters: Audio-node assignment is a first-class flow operation in the live grid, and burying it behind the secondary action area makes it harder to discover than routing and add-flow actions.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridPage.test.tsx`, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Primary-action `Audio Nodes` placement, preserved modal behavior, focused masthead-order regression coverage, validation notes, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 17:15 EDT - Codex
+
+ID: T259
+Status: [>] In Progress
+Title: Remove the redundant JUCE Grid masthead Docs button while keeping shortcut-modal docs access
+Description:
+- Goal / acceptance criteria: Remove the standalone `Docs` button from the JUCE Grid masthead and compact overflow so the top bar stays focused on live control actions, while preserving the existing `Open docs` path from the keyboard shortcuts modal. Update focused tests to match the slimmer masthead contract.
+- Why it matters: The masthead is currently overloaded with both workflow actions and reference affordances; keeping docs behind the keyboard-help modal preserves discoverability without crowding the highest-frequency controls.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.test.tsx`, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Docs removed from masthead/overflow, keyboard-help docs access preserved, focused regression coverage, validation notes, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 17:15 EDT - Codex
+
+ID: T260
+Status: [>] In Progress
+Title: Suppress transient JUCE Grid selected-plugin metadata warnings until discovery settles
+Description:
+- Goal / acceptance criteria: Rework the selected-plugin metadata fallback in JUCE Grid so the page does not emit the repeated debug `console.warn` sequence while plugin discovery is still pending or empty during expected test/setup flows. Preserve a debuggable path for genuinely missing metadata once discovery has settled, and add focused regression coverage for the quieter behavior.
+- Why it matters: The current warning spam obscures real test failures and makes the selected-plugin fallback look unstable even when the only issue is that discovery has not finished yet.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.test.tsx`, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Settled-state-only metadata warning behavior, focused regression coverage, cleaner JUCE Grid test output, validation notes, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 17:15 EDT - Codex

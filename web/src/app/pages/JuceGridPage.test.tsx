@@ -477,6 +477,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
   })
 
   afterEach(() => {
+    jest.restoreAllMocks()
     delete (globalThis as { ResizeObserver?: unknown }).ResizeObserver
     delete (globalThis as { fetch?: typeof fetch }).fetch
     delete (window as Window & { ontouchstart?: unknown }).ontouchstart
@@ -501,7 +502,10 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     expect(await screen.findByLabelText('Open Snapshots')).toBeTruthy()
     expect(screen.getByLabelText('Open MIDI')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Docs' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Docs' })).toBeNull()
+    const audioNodesButton = screen.getByRole('button', { name: 'Audio Nodes' })
+    const configureRoutingButton = screen.getByRole('button', { name: 'Configure routing' })
+    expect(audioNodesButton.compareDocumentPosition(configureRoutingButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(container.querySelector('.juce-grid-page__state-rail')).toBeNull()
     expect(container.querySelector('.juce-grid-page__midi-rail-shell')).toBeNull()
     expect(container.querySelector('.snapshot-floating-trigger')).toBeTruthy()
@@ -815,6 +819,106 @@ describe('JuceGridPage snapshot modal workflow', () => {
     await waitFor(() => {
       expect(window.scrollTo).toHaveBeenCalledWith({ top: 144, behavior: 'auto' })
     })
+  })
+
+  it('keeps docs access inside the keyboard shortcuts modal after removing the masthead docs button', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByRole('button', { name: 'Shortcuts' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Docs' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shortcuts' }))
+
+    expect(await screen.findByRole('heading', { name: 'Keyboard shortcuts' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Open docs' })).toBeTruthy()
+  })
+
+  it('waits for settled discovery before warning about missing selected plugin metadata', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#2563eb', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 1, label: 'B', color: '#60a5fa', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+    localStorage.setItem('map2_juce_grid_selected_plugin_uri', 'map2://juce/modulation/chorus')
+    localStorage.setItem('map2_juce_grid_effect_modal_open', 'true')
+
+    mockChainsApi.list.mockResolvedValue({
+      chains: [
+        {
+          id: 1,
+          name: 'Song 1',
+          is_active: true,
+          plugins: [
+            {
+              uri: 'map2://juce/modulation/chorus',
+              name: 'Alpha Chorus',
+              position: 0,
+              bypassed: false,
+              parameters: {},
+            },
+          ],
+        },
+      ],
+      active_chain_id: 1,
+    })
+
+    let resolveDiscover: ((value: { plugins: Array<unknown> }) => void) | null = null
+    mockPluginsApi.discover.mockImplementation(
+      () => new Promise((resolve) => {
+        resolveDiscover = resolve as (value: { plugins: Array<unknown> }) => void
+      }),
+    )
+
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => expect(mockPluginsApi.discover).toHaveBeenCalled())
+    expect(warnSpy).not.toHaveBeenCalled()
+
+    await act(async () => {
+      resolveDiscover?.({ plugins: [] })
+      await Promise.resolve()
+    })
+
+    await waitFor(() => {
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[JuceGridPage] Selected plugin metadata is missing after discovery settled:',
+        expect.objectContaining({
+          selectedPluginUri: 'map2://juce/modulation/chorus',
+          discoveredPluginCount: 0,
+        }),
+      )
+    })
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+    warnSpy.mockRestore()
   })
 
   it('opens the bottom editor panel on block select and closes it when the same block is selected again', async () => {
@@ -1299,7 +1403,10 @@ describe('JuceGridPage snapshot modal workflow', () => {
     const addFlowButton = await screen.findByRole('button', { name: 'Add flow' })
     const masthead = addFlowButton.closest('.juce-grid-page__thin-bar')
     expect(masthead).toBeTruthy()
+    expect(within(masthead as HTMLElement).getByRole('button', { name: 'Audio Nodes' })).toBeTruthy()
+    expect(within(masthead as HTMLElement).queryByRole('button', { name: 'Docs' })).toBeNull()
     expect(within(masthead as HTMLElement).getByRole('button', { name: 'Add flow' })).toBeTruthy()
+    expect(within(masthead as HTMLElement).getByRole('button', { name: 'Configure routing' })).toBeTruthy()
     expect(within(masthead as HTMLElement).getByRole('button', { name: /Clear flows/i })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Place a single Flow inside a Chain' })).toBeNull()
     expect(container.querySelector('.juce-grid-page__toolbar')).toBeNull()

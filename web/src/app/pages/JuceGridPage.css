@@ -1842,6 +1842,34 @@
   min-width: 0;
 }
 
+.juce-grid-page__masthead-button--success-tertiary.cds--btn:not(:disabled) {
+  border-color: color-mix(in srgb, var(--cds-support-success, #24a148) 55%, var(--cds-border-subtle, var(--border)));
+  background: color-mix(in srgb, var(--cds-support-success, #24a148) 12%, transparent);
+  color: var(--cds-support-success, #24a148);
+}
+
+.juce-grid-page__masthead-button--success-tertiary.cds--btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cds-support-success, #24a148) 18%, transparent);
+}
+
+.juce-grid-page__masthead-button--success-tertiary.cds--btn:active:not(:disabled) {
+  background: color-mix(in srgb, var(--cds-support-success, #24a148) 24%, transparent);
+}
+
+.juce-grid-page__masthead-button--success-primary.cds--btn:not(:disabled) {
+  border-color: var(--cds-support-success, #24a148);
+  background: var(--cds-support-success, #24a148);
+  color: var(--cds-text-on-color, #ffffff);
+}
+
+.juce-grid-page__masthead-button--success-primary.cds--btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cds-support-success, #24a148) 88%, black);
+}
+
+.juce-grid-page__masthead-button--success-primary.cds--btn:active:not(:disabled) {
+  background: color-mix(in srgb, var(--cds-support-success, #24a148) 78%, black);
+}
+
 .juce-grid-page__toolbar-label {
   font-size: 0.75rem;
   font-weight: 600;
