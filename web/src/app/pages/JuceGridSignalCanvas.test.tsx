@@ -208,13 +208,15 @@ describe('JuceGridSignalCanvas', () => {
     expect(outputRail.getAttribute('title')).toContain('Main Room Listener')
 
     const pluginTitle = within(pluginCard).getByText('Studio Compressor')
+    const pluginCategory = within(pluginCard).getByText('Dynamics')
 
     expect(pluginTitle).toBeTruthy()
     expect(pluginTitle.getAttribute('title')).toBe('Studio Compressor')
+    expect(pluginCategory).toBeTruthy()
+    expect(pluginCategory.getAttribute('title')).toBe('Dynamics')
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-svg')).toBeTruthy()
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
     expect(within(pluginCard).getByRole('button', { name: 'Actions for Studio Compressor' })).toBeTruthy()
-    expect(within(pluginCard).queryByText('Dynamics')).toBeNull()
     expect(within(pluginCard).queryByText('CPU')).toBeNull()
     expect(within(pluginCard).queryByText('12.4%')).toBeNull()
     expect(within(pluginCard).queryByText('Latency')).toBeNull()

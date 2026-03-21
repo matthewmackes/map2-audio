@@ -100,7 +100,7 @@ interface SignalGridRow {
   slots: SignalGridSlot[]
 }
 
-const SIGNAL_GRID_CARD_MIN_WIDTH_REM = 19.5
+const SIGNAL_GRID_CARD_MIN_WIDTH_REM = 9.75
 const SIGNAL_GRID_CARD_GAP_REM = 1
 const SIGNAL_GRID_ROW_MIN_CAPACITY = 1
 
@@ -579,7 +579,8 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                           const plugin = slot.plugin
                           const meta = pluginMeta[plugin.uri]
                           const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
-                          const categoryConfig = getCategoryConfig(meta?.category || 'Utility')
+                          const categoryLabel = meta?.category || 'Utility'
+                          const categoryConfig = getCategoryConfig(categoryLabel)
                           const EffectIcon = getSignalCardEffectIcon(meta, plugin)
                           const isSelected = isSelectedPlugin(plugin)
                           const isDropTarget = Boolean(
@@ -664,7 +665,10 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                   </OverflowMenu>
                                 </div>
 
-                                <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
+                                <div className="juce-grid-page__signal-plugin-copy">
+                                  <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
+                                  <span className="juce-grid-page__signal-plugin-category" title={categoryLabel}>{categoryLabel}</span>
+                                </div>
                               </div>
                             </article>
                           )

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-20 22:30 - Codex (Completed `T234` by propagating duplicate-plugin runtime identity through profiler, meter, and UI telemetry paths, fixing the stranded JUCE instance-resolution lookup, and preserving URI-only fallback behavior when runtime identity is unavailable. All remaining open items in the canonical list are hardware- or environment-blocked, so no further workable software tasks remain.)
+Last updated: 2026-03-21 06:35 - Codex (Completed `T236` by shrinking the JUCE Grid signal-path effect cards, stacking category labels under titles, matching the hero field to the card shell, and enlarging the hero art within the smaller footprint. No new licensing gaps were identified for the touched MAP2-owned UI files.)
 
 ## Active Blockers Only
 
@@ -2555,3 +2555,22 @@ Last updated: 2026-03-20 22:00 - Codex
   - Wrapped the sibling output-row blocks in `web/src/app/components/PluginCards/Custom/JUCE/ShoeGazeCard.tsx` with a fragment so the card's accordion section returns a single JSX parent and the TypeScript build succeeds.
   - Reran `npm --prefix web run deploy`, which rebuilt the production bundle, restarted `map2-web-prod`, and verified the live frontend on port `3000`.
   - Confirmed post-deploy health with `curl http://localhost:3000/` -> `200` and `curl http://localhost:8080/api/health` -> `200` before proceeding to the git release steps.
+
+ID: T236
+Status: [✓] Done
+Title: Resize JUCE Grid signal cards and restack title/category hero treatment
+Description:
+- Goal / acceptance criteria: Shrink the `JUCE-GRID` signal-path effect cards by 50%, move the effect category under the effect title, retone the hero field so it matches the card frame/shell color instead of the previous bright panel, and enlarge the hero image by 50% without increasing the card footprint.
+- Why it matters: The live signal path needs denser cards with clearer metadata hierarchy while preserving the fast-scan hero image treatment inside a tighter operator layout.
+- Dependencies: T231, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`
+- Estimated effort: Low
+- Required outputs: Updated live signal-card markup/styles, category line beneath the title, hero-field retone + larger hero art inside the fixed card bounds, focused validation evidence, and licensing/worklist status for the touched MAP2-owned UI files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 06:35 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so signal cards use a 50%-smaller width basis for row-capacity calculations and now render the effect category directly beneath the display title.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the signal-card width/height are halved, the hero field reuses the same dark shell treatment as the card frame, the hero icon grows by 50% inside the smaller hero area, and the add-card typography/actions scale down with the tighter footprint.
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.test.tsx` so the live signal-card assertions now require the category label on the card face.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings unchanged); `npm --prefix web run typecheck` -> pass.
+  - Licensing: Reviewed the touched files as MAP2-owned AGPL-covered UI code and found no new AGPL or third-party notice gaps; no worklist follow-up was required beyond this completion record.
