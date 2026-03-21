@@ -94,9 +94,8 @@ describe('navigation catalog', () => {
   })
 
   it('normalizes pinned routes by trimming, aliasing legacy paths, filtering invalid values, and deduplicating', () => {
-    expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/about'])).toEqual([
+    expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/about', '/platform'])).toEqual([
       '/juce-grid',
-      '/about',
       '/midi-hub',
     ])
   })
@@ -148,7 +147,9 @@ describe('navigation catalog', () => {
     expect(platform).toBeDefined()
     expect(platform?.label).toBe('Platforms and Labs')
     expect(platform?.includeInAdvancedMenu).toBe(false)
+    expect(platform?.pinnable).toBe(false)
     expect(platform?.showOnHome).toBe(true)
+    expect(pinnableNavigationItems.some((item) => item.to === '/platform')).toBe(false)
 
     const appearsOnHome = homeNavigationSections.some((section) =>
       section.items.some((item) => item.to === '/platform'),

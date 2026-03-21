@@ -1,0 +1,67 @@
+import '@testing-library/jest-dom'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+
+import { CATEGORY_COLOR_OVERRIDE_STORAGE_KEY } from '../data/categoryStyles'
+import { REDUCED_EFFECTS_STORAGE_KEY, useEffectsSettingsStore } from '../stores/effectsSettingsStore'
+import { ThemePage } from './ThemePage'
+
+jest.mock('../components/ThemeChooserModal', () => ({
+  ThemeChooserModal: () => null,
+}))
+
+describe('ThemePage', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+    useEffectsSettingsStore.setState({ reducedEffectsEnabled: false })
+
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jest.fn().mockImplementation(() => ({
+        matches: false,
+        media: '(prefers-reduced-motion: reduce)',
+        onchange: null,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      })),
+    })
+  })
+
+  it('renders the dedicated Theme platform workspace', () => {
+    render(<ThemePage />)
+
+    expect(screen.getByRole('heading', { name: 'Theme' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /open theme studio/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /platform gui font/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /category color theming/i })).toBeTruthy()
+  })
+
+  it('persists category color overrides from the Theme workspace', () => {
+    render(<ThemePage />)
+
+    const dynamicsPicker = screen.getByLabelText('Dynamics color') as HTMLInputElement
+    fireEvent.change(dynamicsPicker, { target: { value: '#112233' } })
+
+    expect(window.localStorage.getItem(CATEGORY_COLOR_OVERRIDE_STORAGE_KEY)).toContain('#112233')
+    expect(screen.getByText('#112233')).toBeTruthy()
+  })
+
+  it('persists reduced-effects mode and GUI font changes', () => {
+    render(<ThemePage />)
+
+    const reduceEffectsToggle = screen.getByRole('switch', { name: /reduce effects mode/i })
+    fireEvent.click(reduceEffectsToggle)
+
+    expect(window.localStorage.getItem(REDUCED_EFFECTS_STORAGE_KEY)).toContain('"reducedEffectsEnabled":true')
+
+    const robotoTile = screen.getByRole('radio', { name: /roboto/i })
+    fireEvent.click(robotoTile)
+
+    return waitFor(() => {
+      expect(window.localStorage.getItem('map2.platform-font-preset.v1')).toBe('roboto')
+      expect(document.documentElement.style.getPropertyValue('--font-ui')).toContain('Roboto')
+    })
+  })
+})

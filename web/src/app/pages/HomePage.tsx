@@ -659,29 +659,28 @@ export function HomePage() {
                     tabIndex={0}
                     aria-label={`Open ${item.label}`}
                   >
-                    {/* Pin button */}
-                    <button
-                      type="button"
-                      className={`hp-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (!pinDisabled) void handleTogglePin(item, !isPinned)
-                      }}
-                      title={
-                        !item.pinnable
-                          ? 'Cannot be pinned'
-                          : limitReached
+                    {item.pinnable ? (
+                      <button
+                        type="button"
+                        className={`hp-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!pinDisabled) void handleTogglePin(item, !isPinned)
+                        }}
+                        title={
+                          limitReached
                             ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned`
                             : isPinned
                               ? 'Unpin from navigation'
                               : 'Pin to navigation'
-                      }
-                      aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                      aria-pressed={isPinned}
-                      disabled={pinDisabled}
-                    >
-                      {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
-                    </button>
+                        }
+                        aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                        aria-pressed={isPinned}
+                        disabled={pinDisabled}
+                      >
+                        {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
+                      </button>
+                    ) : null}
 
                     {/* Icon */}
                     <Icon className="hp-card__icon" aria-hidden />

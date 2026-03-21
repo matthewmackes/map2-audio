@@ -8,7 +8,6 @@ import { isPlatformLayerId } from '../platform/model'
 import type { PlatformLayerId } from '../platform/model'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
-import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
@@ -75,22 +74,6 @@ function getAdvancedCardId(sectionTitle: string, item: MobileMenuItem): string {
 }
 
 function toTopNavItem(item: PinnedMenuItem): TopNavItem {
-  if (item.to === '/platform') {
-    return {
-      to: item.to,
-      label: item.label,
-      shortLabel: item.shortLabel,
-      icon: item.icon,
-      description: item.description,
-      color: item.color,
-      maturity: item.maturity,
-      gatedReason: 'gatedReason' in item ? item.gatedReason : undefined,
-      deviceType: 'deviceType' in item ? item.deviceType : undefined,
-      kind: 'platform-modal',
-      target: { layer: 'overview' },
-    }
-  }
-
   return {
     to: item.to,
     label: item.label,
@@ -190,7 +173,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     updateSettings: updateSpecialSettings,
   } = useSpecialSettings()
 
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [showSpecialSettings, setShowSpecialSettings] = useState(false)
 
   const requestedPinnedRoutes = useMemo(
@@ -342,40 +324,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate(item.to)
   }
 
-  const handleSpecialSettingsIconClick = () => {
-    if (specialSettingsLoading) return
-    setShowPasswordDialog(true)
-  }
-
-  const handlePasswordSuccess = async () => {
-    setShowPasswordDialog(false)
-    const nextMenuLocation = specialSettings?.menuLocation ?? 'top-nav'
-    const nextHiddenPlugins = specialSettings?.hiddenPlugins ?? []
-    const nextPinnedRoutes = normalizePinnedRoutes(specialSettings?.pinnedRoutes ?? defaultPinnedRoutes)
-    const nextEnabled = specialSettings?.enabled ?? false
-
-    try {
-      if (!nextEnabled) {
-        await updateSpecialSettings({
-          enabled: true,
-          hiddenPlugins: nextHiddenPlugins,
-          menuLocation: nextMenuLocation,
-          pinnedRoutes: nextPinnedRoutes,
-        })
-      }
-    } catch (err) {
-      console.error('Failed to enable special mode after authentication:', err)
-    } finally {
-      setShowSpecialSettings(true)
-    }
-  }
-
-  const handleSpecialSettingsSave = async (settings: {
-    enabled: boolean
-    hiddenPlugins: string[]
-    menuLocation: 'top-nav' | 'mobile-only' | 'hidden'
-  }) => {
-    await updateSpecialSettings(settings)
+  const handleSpecialSettingsSave = async ({ hiddenPlugins }: { hiddenPlugins: string[] }) => {
+    await updateSpecialSettings({ hiddenPlugins })
     setShowSpecialSettings(false)
   }
 
@@ -947,43 +897,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="nav-tab-item nav-tab-special"
-              disabled={specialSettingsLoading}
               aria-label="Open special settings"
-              onClick={handleSpecialSettingsIconClick}
+              onClick={() => setShowSpecialSettings(true)}
               onMouseEnter={(e) => {
-                if (!specialSettingsLoading) {
-                  e.currentTarget.style.borderColor = 'var(--cds-support-error)'
-                }
+                e.currentTarget.style.borderColor = 'var(--cds-support-error)'
               }}
               onMouseLeave={(e) => {
-                if (!specialSettingsLoading) {
-                  e.currentTarget.style.borderColor = 'transparent'
-                }
+                e.currentTarget.style.borderColor = 'transparent'
               }}
-              title="Open Special settings (password required)"
+              title="Open special settings"
             >
-              <Settings
-                size={14}
-                aria-hidden
-                style={{ color: specialSettings?.enabled ? 'var(--cds-support-error)' : 'var(--cds-text-secondary)' }}
-              />
-            </button>
-            <button
-              type="button"
-              className={`nav-tab-item nav-tab-platform${platformModalOpen ? ' nav-tab-platform--active' : ''}`}
-              aria-label="Open Platforms and Labs window"
-              aria-haspopup="dialog"
-              aria-expanded={platformModalOpen}
-              onClick={() => {
-                if (platformModalOpen) {
-                  handlePlatformModalClose()
-                } else {
-                  handlePlatformModalOpen()
-                }
-              }}
-              title="Open the unified Platforms and Labs window"
-            >
-              <span className="nav-tab-platform-label">Platforms + Labs</span>
+              <Settings size={14} aria-hidden style={{ color: 'var(--cds-text-secondary)' }} />
             </button>
           </HeaderNavigation>
 
@@ -999,29 +923,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         {navOpen && (
           <div className="nav-mobile-menu" ref={navMenuRef}>
             <div className="nav-mobile-menu-content">
-              <section className="nav-mobile-advanced-group">
-                <div className="nav-mobile-group-label">Platforms and Labs</div>
-                <div className="nav-mobile-group-grid">
-                  <div className="nav-mobile-item-wrap">
-                    <button
-                      type="button"
-                      className={`nav-mobile-item nav-mobile-item--platform${platformModalOpen ? ' active' : ''}`}
-                      onClick={() => {
-                        closeMobileNavigation()
-                        handlePlatformModalOpen()
-                      }}
-                    >
-                      <span className="nav-mobile-item-text">
-                        <span className="nav-mobile-item-heading">
-                          <span className="nav-mobile-item-label">Platforms and Labs</span>
-                          <Tag type="warm-gray" size="sm" className="nav-mobile-item-maturity">beta</Tag>
-                        </span>
-                        <span className="nav-mobile-item-desc">Open the unified Platforms and Labs window for node, AVB, MIDI cluster, API, fleet, and lab workflows.</span>
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </section>
               {homeNavigationSections.map((section) => (
                 <section key={`mobile-home-${section.title}`} className="nav-mobile-advanced-group">
                   <div className="nav-mobile-group-label">{section.title}</div>
@@ -1047,11 +948,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <PasswordDialog
-        isOpen={showPasswordDialog}
-        onClose={() => setShowPasswordDialog(false)}
-        onSuccess={handlePasswordSuccess}
-      />
       <SpecialSettingsDialog
         isOpen={showSpecialSettings}
         onClose={() => setShowSpecialSettings(false)}

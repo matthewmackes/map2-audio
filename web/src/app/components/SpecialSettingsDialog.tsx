@@ -4,8 +4,6 @@ import {
   InlineLoading,
   InlineNotification,
   Modal,
-  RadioButton,
-  RadioButtonGroup,
 } from '@carbon/react'
 import { apiUrl } from '../utils/apiTarget'
 import { getDisplayPluginName } from '../../map2/displayNames'
@@ -16,22 +14,15 @@ interface Plugin {
   category: string
 }
 
-interface SpecialSettings {
-  enabled: boolean
-  hiddenPlugins: string[]
-  menuLocation: 'top-nav' | 'mobile-only' | 'hidden'
-}
-
 interface SpecialSettingsDialogProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (settings: SpecialSettings) => Promise<void>
+  onSave: (settings: { hiddenPlugins: string[] }) => Promise<void>
 }
 
 export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettingsDialogProps) {
   const [nativePlugins, setNativePlugins] = useState<Plugin[]>([])
   const [hiddenPlugins, setHiddenPlugins] = useState<Set<string>>(new Set())
-  const [menuLocation, setMenuLocation] = useState<'top-nav' | 'mobile-only' | 'hidden'>('top-nav')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -50,7 +41,6 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
       const response = await fetch(apiUrl('/api/settings/special'))
       const data = await response.json()
       setHiddenPlugins(new Set(data.hidden_plugins || []))
-      setMenuLocation(data.menu_location || 'top-nav')
     } catch (err) {
       console.error('Failed to load current settings:', err)
     }
@@ -95,13 +85,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
     setSaveError('')
     
     try {
-      const settings: SpecialSettings = {
-        enabled: true,  // Saving settings implies enabling
-        hiddenPlugins: Array.from(hiddenPlugins),
-        menuLocation
-      }
-      
-      await onSave(settings)
+      await onSave({ hiddenPlugins: Array.from(hiddenPlugins) })
       onClose()
     } catch (err) {
       setSaveError('Failed to save settings.')
@@ -199,26 +183,6 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
             })}
           </div>
         ) : null}
-      </section>
-
-      <section className="special-settings-section">
-        <h3 className="special-settings-section-title">Platforms and Labs location</h3>
-        <p className="special-settings-copy">Choose where the unified Platforms and Labs window entry is visible.</p>
-
-        <RadioButtonGroup
-          name="menuLocation"
-          legendText="Menu location"
-          valueSelected={menuLocation}
-          onChange={(value) => setMenuLocation(value as typeof menuLocation)}
-        >
-          <RadioButton id="menu-location-top-nav" value="top-nav" labelText="Show in top navigation" />
-          <RadioButton id="menu-location-mobile-only" value="mobile-only" labelText="Mobile menu only" />
-          <RadioButton id="menu-location-hidden" value="hidden" labelText="Hide completely" />
-        </RadioButtonGroup>
-        <p className="special-settings-radio-help">
-          Show in top navigation keeps the unified Platforms and Labs window available from the desktop shell. Mobile
-          menu only limits access to the compact navigation. Hide completely removes those entry points.
-        </p>
       </section>
     </Modal>
   )

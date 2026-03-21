@@ -14,7 +14,7 @@ import {
   MapRackDeviceIcon,
   MapStagePerformanceIcon,
 } from '../components/icons/map'
-import { isPlatformPinnedRoute, platformPinnedItems, type PlatformPinnedNavItem } from './platformMenuItems'
+import { platformPinnedItems, type PlatformPinnedNavItem } from './platformMenuItems'
 
 export type NavigationMaturityState = 'production' | 'qualified-with-waiver' | 'beta' | 'experimental' | 'hardware-blocked'
 export type NavigationRenderKind = 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
@@ -136,7 +136,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     color: 'var(--cds-support-warning)',
     homeSection: 'System',
     includeInAdvancedMenu: false,
-    pinnable: true,
+    pinnable: false,
     maturity: 'beta',
     kind: 'link',
     showOnHome: true,
@@ -368,6 +368,8 @@ export const allPinnableNavigationItems: Array<ShellNavigationItem | HardwareInt
   ...platformPinnedItems,
 ]
 
+const PINNABLE_ROUTE_SET = new Set(allPinnableNavigationItems.map((item) => item.to))
+
 const PINNED_ROUTE_ALIASES: Record<string, string> = {
   '/welcome': '/about',
   '/grid': '/juce-grid',
@@ -395,8 +397,7 @@ export function normalizePinnedRoutes(routes: string[] | null | undefined): stri
   for (const rawRoute of routes) {
     const route = typeof rawRoute === 'string' ? rawRoute.trim() : ''
     const canonicalRoute = PINNED_ROUTE_ALIASES[route] ?? route
-    const isSupportedRoute = canonicalRoute.startsWith('/') || isPlatformPinnedRoute(canonicalRoute)
-    if (!canonicalRoute || !isSupportedRoute || seen.has(canonicalRoute)) {
+    if (!canonicalRoute || !PINNABLE_ROUTE_SET.has(canonicalRoute) || seen.has(canonicalRoute)) {
       continue
     }
     seen.add(canonicalRoute)

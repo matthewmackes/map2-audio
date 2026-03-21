@@ -99,16 +99,3 @@ class SpecialSettingsUpdateRequest(BaseModel):
             data = dict(data)
             data["pinned_routes"] = data.get("promoted_advanced_routes") or []
         return data
-
-
-class PasswordAuthRequest(BaseModel):
-    """Password authentication request."""
-
-    password: str
-
-
-class PasswordAuthResponse(BaseModel):
-    """Password authentication response."""
-
-    success: bool
-    message: str = ""

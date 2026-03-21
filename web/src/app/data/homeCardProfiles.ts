@@ -75,6 +75,19 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Platform Guide whenever you need a single place for first-run orientation, document lookup, release provenance, or support escalation context.',
     bestFor: 'Onboarding and support traceability',
   },
+  'platform:panel:theme': {
+    summary: 'Platform appearance workspace for Carbon presets, typography selection, motion reduction, and shared category accent control.',
+    capabilities: [
+      'Carbon theme preset and custom palette access',
+      'Persisted GUI font selection for the shell',
+      'Reduced-effects preference control',
+      'Shared plugin-category accent customization',
+      'Deep-linkable platform appearance window',
+      'Consistent operator-facing visual tuning',
+    ],
+    learnMore: 'Use Theme when you want to tune the shell’s visual language without hunting through documentation or unrelated support screens.',
+    bestFor: 'Platform appearance and operator comfort tuning',
+  },
   '/plugins': {
     summary: 'LV2 inventory and catalog management surface for understanding and organizing available processing blocks.',
     capabilities: [

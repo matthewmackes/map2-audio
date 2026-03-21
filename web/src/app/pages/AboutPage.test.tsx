@@ -1,15 +1,9 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { AboutPage } from './AboutPage'
-import { CATEGORY_COLOR_OVERRIDE_STORAGE_KEY } from '../data/categoryStyles'
-import { REDUCED_EFFECTS_STORAGE_KEY, useEffectsSettingsStore } from '../stores/effectsSettingsStore'
-
-jest.mock('../components/ThemeCreatorDialog', () => ({
-  ThemeCreatorDialog: () => null,
-}))
 
 jest.mock('../components/ShoppingSearchDialog', () => ({
   ShoppingSearchDialog: () => null,
@@ -18,7 +12,6 @@ jest.mock('../components/ShoppingSearchDialog', () => ({
 describe('AboutPage', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    useEffectsSettingsStore.setState({ reducedEffectsEnabled: false })
     ;(globalThis as { fetch?: typeof fetch }).fetch = jest.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes('/api/version')) {
@@ -29,6 +22,9 @@ describe('AboutPage', () => {
       }
       if (url.includes('/api/system/boot-splash')) {
         return { ok: true, json: async () => ({ installed: false }) } as Response
+      }
+      if (url.includes('/api/system/docs/list')) {
+        return { ok: true, json: async () => [] } as Response
       }
       return { ok: true, json: async () => ({}) } as Response
     }) as unknown as typeof fetch
@@ -50,15 +46,14 @@ describe('AboutPage', () => {
       </MemoryRouter>,
     )
 
-    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(3))
+    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(4))
     expect(screen.getByRole('heading', { name: /map2 platform guide/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /choose theme/i })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /category colors/i })).toBeTruthy()
+    expect(screen.getByText(/documentation library/i)).toBeTruthy()
     expect(document.querySelector('.about-page')).toBeTruthy()
     expect(document.querySelector('.about-page__surface')).toBeTruthy()
   })
 
-  it('persists category color changes from the settings card', async () => {
+  it('renders version and hardware helper sections without theme controls', async () => {
     render(
       <MemoryRouter
         future={{
@@ -70,33 +65,10 @@ describe('AboutPage', () => {
       </MemoryRouter>,
     )
 
-    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(3))
+    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(4))
 
-    const dynamicsPicker = screen.getByLabelText('Dynamics color') as HTMLInputElement
-    fireEvent.change(dynamicsPicker, { target: { value: '#112233' } })
-
-    expect(window.localStorage.getItem(CATEGORY_COLOR_OVERRIDE_STORAGE_KEY)).toContain('#112233')
-    expect(screen.getByText('#112233')).toBeTruthy()
-  })
-
-  it('persists the reduced effects preference from the theme settings card', async () => {
-    render(
-      <MemoryRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <AboutPage />
-      </MemoryRouter>,
-    )
-
-    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(3))
-
-    const reduceEffectsButton = screen.getByRole('button', { name: /reduce effects mode/i })
-    fireEvent.click(reduceEffectsButton)
-
-    expect(reduceEffectsButton).toHaveAttribute('aria-pressed', 'true')
-    expect(window.localStorage.getItem(REDUCED_EFFECTS_STORAGE_KEY)).toContain('"reducedEffectsEnabled":true')
+    expect(screen.getByText(/platform version/i)).toBeTruthy()
+    expect(screen.getByText(/help me find hardware/i)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /choose theme/i })).toBeNull()
   })
 })

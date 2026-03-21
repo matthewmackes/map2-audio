@@ -13,6 +13,7 @@ import {
   Devices,
   Information,
   Network_3,
+  PaintBrush,
   Screen,
   Share,
   SettingsAdjust,
@@ -80,6 +81,7 @@ import {
 
 const HostMachinePage = lazy(() => import('../../pages/HostMachinePage').then(m => ({ default: m.HostMachinePage })))
 const AudioEnginePage = lazy(() => import('../../pages/AudioEnginePage').then(m => ({ default: m.AudioEnginePage })))
+const ThemePage       = lazy(() => import('../../pages/ThemePage').then(m => ({ default: m.ThemePage })))
 const AboutPage       = lazy(() => import('../../pages/AboutPage').then(m => ({ default: m.AboutPage })))
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -102,6 +104,7 @@ const PLATFORM_CONTROL_PANEL_ITEMS = platformPinnedItems
 const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string; icon: CarbonIconType }> = {
   'host-machine': { label: 'Host Machine',   eyebrow: 'Hardware', icon: Screen },
   'audio-engine': { label: 'Audio Engine',   eyebrow: 'System',   icon: Terminal },
+  'theme':        { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
 }
 
@@ -565,6 +568,7 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
       <Suspense fallback={<div className="platform-shell__table-state"><span>Loading…</span></div>}>
         {panel === 'host-machine' && <HostMachinePage />}
         {panel === 'audio-engine' && <AudioEnginePage />}
+        {panel === 'theme'        && <ThemePage />}
         {panel === 'about'        && <AboutPage />}
       </Suspense>
     </motion.section>

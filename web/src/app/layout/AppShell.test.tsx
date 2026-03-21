@@ -50,10 +50,6 @@ jest.mock('../../map2/mpx1Api', () => ({
   }),
 }))
 
-jest.mock('../components/PasswordDialog', () => ({
-  PasswordDialog: () => null,
-}))
-
 jest.mock('../components/SpecialSettingsDialog', () => ({
   SpecialSettingsDialog: () => null,
 }))
@@ -99,7 +95,7 @@ describe('AppShell navigation', () => {
     }
   })
 
-  it('renders only Home, Platforms and Labs, and Dragon when no routes are pinned', () => {
+  it('renders only Home and shell controls when no routes are pinned', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -109,9 +105,9 @@ describe('AppShell navigation', () => {
     expect(screen.getByLabelText('Home')).toBeTruthy()
     expect(screen.getByLabelText('Mackes Audio Platform home')).toBeTruthy()
     expect(screen.getByTestId('shell-latency-pressure-readout')).toBeTruthy()
-    expect(screen.getByLabelText('Open Platforms and Labs window')).toBeTruthy()
     expect(screen.getByLabelText('Open special settings')).toBeTruthy()
     expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
+    expect(screen.queryByLabelText('Open Platforms and Labs window')).toBeNull()
     expect(screen.queryByLabelText('Open advanced menu')).toBeNull()
     expect(screen.queryByLabelText('Open Platform panel')).toBeNull()
     expect(screen.queryByText('Guide')).toBeNull()
@@ -119,34 +115,6 @@ describe('AppShell navigation', () => {
     expect(container.querySelector('.nav-active-title')).toBeNull()
     expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
     expect(container.querySelector('.nav-tabs-left')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
-  })
-
-  it('opens the unified Platforms and Labs window from the shell trigger', () => {
-    renderInRouter(
-      <AppShell>
-        <div>shell content</div>
-      </AppShell>,
-    )
-
-    fireEvent.click(screen.getByLabelText('Open Platforms and Labs window'))
-
-    expect(screen.getByTestId('platform-modal-content')).toHaveTextContent('root')
-    expect(screen.queryByLabelText('Open advanced menu')).toBeNull()
-    expect(screen.queryByLabelText('Open Platform panel')).toBeNull()
-  })
-
-  it('renders pinned Platforms and Labs as a modal trigger anchored to the overview workspace', () => {
-    mockSpecialSettings.pinnedRoutes = ['/platform']
-
-    renderInRouter(
-      <AppShell>
-        <div>shell content</div>
-      </AppShell>,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Platforms and Labs' }))
-
-    expect(screen.getByTestId('platform-modal-content')).toHaveTextContent('overview')
   })
 
   it('orders pinned routes by catalog order and caps desktop pins at four items', () => {
@@ -160,7 +128,7 @@ describe('AppShell navigation', () => {
     )
 
     const labels = Array.from(container.querySelectorAll('.nav-tabs-center .nav-tab-label')).map((node) => node.textContent)
-    expect(labels).toEqual(['Platforms + Labs', 'Stage Mode', 'Audio Artifacts', 'MIDI Hub'])
+    expect(labels).toEqual(['Stage Mode', 'Audio Artifacts', 'MIDI Hub', 'IntelFX Rack'])
   })
 
   it('renders MPX1 as a mega-menu trigger when it is pinned', () => {

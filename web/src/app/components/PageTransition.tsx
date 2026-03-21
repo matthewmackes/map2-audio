@@ -7,7 +7,6 @@ import './PageTransition.css'
 
 type TransitionScope = {
   id: 'home' | 'audio-artifacts' | 'juce-grid' | 'midi-hub'
-  label: string
 }
 
 type TransitionMode = 'block' | 'fade'
@@ -24,19 +23,30 @@ interface TransitionSnapshot {
 
 const BLOCK_REVEAL_DURATION_MS = 880
 const FADE_DURATION_MS = 220
-const TRANSITION_BLOCK_COUNT = 24
+const TRANSITION_BLOCK_COLUMNS = 8
+const TRANSITION_BLOCK_ROWS = 5
+const TRANSITION_BLOCK_MOBILE_COLUMNS = 5
+const TRANSITION_BLOCK_COUNT = TRANSITION_BLOCK_COLUMNS * TRANSITION_BLOCK_ROWS
+const FALLBACK_SCOPE: TransitionScope = { id: 'home' }
+const TRANSITION_BLOCKS = Array.from({ length: TRANSITION_BLOCK_COUNT }, (_, index) => ({
+  index,
+  column: index % TRANSITION_BLOCK_COLUMNS,
+  row: Math.floor(index / TRANSITION_BLOCK_COLUMNS),
+  mobileColumn: index % TRANSITION_BLOCK_MOBILE_COLUMNS,
+  mobileRow: Math.floor(index / TRANSITION_BLOCK_MOBILE_COLUMNS),
+}))
 
 export function getLandingTransitionScope(pathname: string): TransitionScope | null {
   if (pathname === '/') {
-    return { id: 'home', label: 'Home' }
+    return { id: 'home' }
   }
 
   if (pathname.startsWith('/audio-artifacts')) {
-    return { id: 'audio-artifacts', label: 'Audio Artifacts' }
+    return { id: 'audio-artifacts' }
   }
 
   if (pathname.startsWith('/juce-grid')) {
-    return { id: 'juce-grid', label: 'JUCE Grid' }
+    return { id: 'juce-grid' }
   }
 
   if (
@@ -45,7 +55,7 @@ export function getLandingTransitionScope(pathname: string): TransitionScope | n
     || pathname === '/midi-hub-2'
     || pathname.startsWith('/midi-hub/')
   ) {
-    return { id: 'midi-hub', label: 'MIDI Hub' }
+    return { id: 'midi-hub' }
   }
 
   return null
@@ -81,7 +91,7 @@ export function PageTransition({ children }: PageTransitionProps) {
     const nextTransition: TransitionSnapshot = {
       key: Date.now(),
       mode: shouldReduceEffects ? 'fade' : 'block',
-      scope: currentScope ?? previousScope ?? { id: 'home', label: 'Home' },
+      scope: currentScope ?? previousScope ?? FALLBACK_SCOPE,
     }
 
     setTransition(nextTransition)
@@ -111,21 +121,20 @@ export function PageTransition({ children }: PageTransitionProps) {
           aria-hidden="true"
         >
           {transition.mode === 'block' ? (
-            <>
-              <div className="landing-route-transition__grid">
-                {Array.from({ length: TRANSITION_BLOCK_COUNT }, (_, index) => (
-                  <span
-                    key={`${transition.key}-${transition.scope.id}-${index}`}
-                    className="landing-route-transition__block"
-                    style={{ '--landing-route-transition-index': index } as CSSProperties}
-                  />
-                ))}
-              </div>
-              <div className="landing-route-transition__copy">
-                <span className="landing-route-transition__eyebrow">Route Shift</span>
-                <strong className="landing-route-transition__label">{transition.scope.label}</strong>
-              </div>
-            </>
+            <div className="landing-route-transition__grid">
+              {TRANSITION_BLOCKS.map((block) => (
+                <span
+                  key={`${transition.key}-${transition.scope.id}-${block.index}`}
+                  className="landing-route-transition__block"
+                  style={{
+                    '--landing-route-transition-column': block.column,
+                    '--landing-route-transition-row': block.row,
+                    '--landing-route-transition-mobile-column': block.mobileColumn,
+                    '--landing-route-transition-mobile-row': block.mobileRow,
+                  } as CSSProperties}
+                />
+              ))}
+            </div>
           ) : (
             <span className="landing-route-transition__fade-panel" />
           )}

@@ -218,9 +218,9 @@ describe('HomePage navigation landing', () => {
 
     await screen.findByText('MAP2-TESTBED')
 
-    fireEvent.click(screen.getByLabelText('Pin Platforms and Labs'))
+    fireEvent.click(screen.getByLabelText('Pin Audio Grid'))
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ pinnedRoutes: ['/platform'] })
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ pinnedRoutes: ['/juce-grid'] })
     expect(screen.getByTestId('location-probe').textContent).toBe('/')
   })
 

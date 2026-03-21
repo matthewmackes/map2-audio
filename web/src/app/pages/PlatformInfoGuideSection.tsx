@@ -825,13 +825,13 @@ function DocumentLibrary() {
 }
 
 interface PlatformInfoGuideSectionProps {
-  themeCard: React.ReactNode
+  themeCard?: React.ReactNode
 }
 
 export function PlatformInfoGuideSection({ themeCard }: PlatformInfoGuideSectionProps) {
   return (
     <div id="guide" style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
-      {themeCard}
+      {themeCard ?? null}
       <DocumentLibrary />
     </div>
   )

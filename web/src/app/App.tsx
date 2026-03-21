@@ -20,11 +20,8 @@ const ReactQueryDevtools = lazy(() =>
 // Only the code for the current route is downloaded; the rest load on demand.
 // ============================================================================
 const HomePage              = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })))
-const PlatformShellPage     = lazy(() => import('./pages/PlatformShellPage').then(m => ({ default: m.PlatformShellPage })))
 const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => ({ default: m.ChainsPage })))
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
-const LV2PluginsPage        = lazy(() => import('./pages/LV2PluginsPage').then(m => ({ default: m.LV2PluginsPage })))
-const LibraryPage           = lazy(() => import('./pages/LibraryPage').then(m => ({ default: m.LibraryPage })))
 const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').then(m => ({ default: m.AudioArtifactsPage })))
 const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
@@ -168,6 +165,7 @@ export function App() {
                                 <Route path="/chains" element={<ChainsPage />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
                                 <Route path="/about" element={<Navigate to="/platform?panel=about" replace />} />
+                                <Route path="/theme" element={<Navigate to="/platform?panel=theme" replace />} />
                                 <Route path="/plugins" element={<Navigate to="/audio-artifacts?category=lv2-plugins" replace />} />
                                 <Route path="/library" element={<Navigate to="/audio-artifacts" replace />} />
                                 <Route path="/audio-artifacts" element={<AudioArtifactsPage />} />

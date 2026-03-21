@@ -54,7 +54,7 @@ describe('useSpecialSettings', () => {
           enabled: true,
           hidden_plugins: [],
           menu_location: 'top-nav',
-          promoted_advanced_routes: ['/engine'],
+          promoted_advanced_routes: ['/midi-hub'],
           last_active_node: null,
           version: 97,
         }),
@@ -63,10 +63,10 @@ describe('useSpecialSettings', () => {
     const { result } = renderHook(() => useSpecialSettings())
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
-    expect(result.current.settings?.pinnedRoutes).toEqual(['/about', '/juce-grid'])
+    expect(result.current.settings?.pinnedRoutes).toEqual(['/juce-grid'])
 
     await act(async () => {
-      await result.current.updateSettings({ pinnedRoutes: ['/engine'] })
+      await result.current.updateSettings({ pinnedRoutes: ['/midi-hub'] })
     })
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
@@ -75,9 +75,9 @@ describe('useSpecialSettings', () => {
     expect(postCall?.[1]?.method).toBe('POST')
 
     const payload = JSON.parse(String(postCall?.[1]?.body))
-    expect(payload.pinned_routes).toEqual(['/engine'])
-    expect(payload.promoted_advanced_routes).toEqual(['/engine'])
+    expect(payload.pinned_routes).toEqual(['/midi-hub'])
+    expect(payload.promoted_advanced_routes).toEqual(['/midi-hub'])
 
-    await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/engine']))
+    await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/midi-hub']))
   })
 })

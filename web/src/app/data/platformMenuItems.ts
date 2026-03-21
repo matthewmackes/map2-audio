@@ -4,6 +4,7 @@ import {
   Devices,
   Information,
   Network_3,
+  PaintBrush,
   Screen,
   Share,
   Terminal,
@@ -12,10 +13,10 @@ import {
 
 import { PLATFORM_LAYER_META, type PlatformLayerId } from '../platform/model'
 
-export type StandalonePanel = 'host-machine' | 'audio-engine' | 'about'
+export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about'
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
-  return value === 'host-machine' || value === 'audio-engine' || value === 'about'
+  return value === 'host-machine' || value === 'audio-engine' || value === 'theme' || value === 'about'
 }
 
 export interface PlatformPinnedNavItem {
@@ -63,6 +64,14 @@ const STANDALONE_PANEL_ITEMS: Array<{
     description: 'Open the audio-engine workspace for runtime, latency, and engine-state inspection.',
     color: 'var(--cds-support-error)',
     icon: Terminal,
+  },
+  {
+    id: 'theme',
+    label: 'Theme',
+    shortLabel: 'Theme',
+    description: 'Open the appearance workspace for Carbon theme presets, GUI typography, motion reduction, and category accents.',
+    color: 'var(--cds-link-primary)',
+    icon: PaintBrush,
   },
   {
     id: 'about',

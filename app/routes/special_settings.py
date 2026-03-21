@@ -30,6 +30,10 @@ CLUSTER_MODE = os.getenv("CLUSTER_MODE", "disabled").lower() == "enabled"
 DEFAULT_PINNED_ROUTES: list[str] = []
 
 
+def _is_supported_pinned_route(route: str) -> bool:
+    return route.startswith("/") or route.startswith("platform:")
+
+
 def _normalize_pinned_routes(routes: Optional[list]) -> list[str]:
     if not routes:
         return []
@@ -42,7 +46,7 @@ def _normalize_pinned_routes(routes: Optional[list]) -> list[str]:
             continue
 
         route = raw_route.strip()
-        if not route:
+        if not route or not _is_supported_pinned_route(route):
             continue
 
         if route in seen:

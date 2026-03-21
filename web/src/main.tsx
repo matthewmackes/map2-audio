@@ -3,11 +3,14 @@ import '@fontsource/ibm-plex-sans/400.css'
 import '@fontsource/ibm-plex-sans/500.css'
 import '@fontsource/ibm-plex-sans/600.css'
 import '@fontsource/ibm-plex-sans/700.css'
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/500.css'
+import '@fontsource/roboto/700.css'
 import '@carbon/styles/css/styles.css'
 import './index.css'
 import './styles/mobile.css'
 import ErrorBoundary from './ErrorBoundary'
-import { initializeTheme } from './app/theme'
+import { initializePlatformTypography, initializeTheme } from './app/theme'
 
 const rootElement = document.getElementById('root')
 const FONT_READY_TIMEOUT_MS = 2500
@@ -138,6 +141,7 @@ async function mountApp() {
 
   // Initialize theme after resources settle to avoid forced layout before stylesheets load.
   initializeTheme()
+  initializePlatformTypography()
   createRoot(rootElement).render(
     <ErrorBoundary>
       <App />
