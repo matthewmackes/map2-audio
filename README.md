@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**796** Python | **1196** TypeScript | **294** C++/H | **122** Docs | **702** total commits | **1** stars | **0** forks | **0** open issues
+**796** Python | **1197** TypeScript | **294** C++/H | **122** Docs | **705** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`82da9141`](https://github.com/matthewmackes/map2-audio/commit/82da914160e795c2339fbe0fe4ee0b3bf00e735b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
+| [`7fc1264a`](https://github.com/matthewmackes/map2-audio/commit/7fc1264a6ceb245841b2e40113bfc63fb958f9f5) | Normalize special settings defaults and quiet modal warnings | Map2 Audio | 2026-03-21 |
+| [`11e19ce3`](https://github.com/matthewmackes/map2-audio/commit/11e19ce38cc98fa19c5b3e439c44f0066b83db04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`bb98412c`](https://github.com/matthewmackes/map2-audio/commit/bb98412c4a103b624cda6a2580161b80b6448754) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
 | [`1723c38a`](https://github.com/matthewmackes/map2-audio/commit/1723c38a33f29f19cbe2a305996b15f5f614ffd5) | Refresh theme controls and curate JUCE browser | Map2 Audio | 2026-03-21 |
 | [`80f25aba`](https://github.com/matthewmackes/map2-audio/commit/80f25aba27cb347f0ebaec25070cccd6cef2ac7e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`196f26ae`](https://github.com/matthewmackes/map2-audio/commit/196f26aee2896e87c3b49c0985099cebf7e01e72) | Refresh theme, platform shell, and effect card UI | Map2 Audio | 2026-03-21 |
 | [`05629aff`](https://github.com/matthewmackes/map2-audio/commit/05629affaf9dfdbc9488c496c63595a6c39916d1) | Update generated build version metadata | Map2 Audio | 2026-03-21 |
-| [`28ff8a14`](https://github.com/matthewmackes/map2-audio/commit/28ff8a1496172a9202fa8a4241a2498bfc5632c4) | Refactor special settings auth and add platform theme wor... | Map2 Audio | 2026-03-21 |
-| [`1153b4ce`](https://github.com/matthewmackes/map2-audio/commit/1153b4ceea158d2dd8917158f52e2f11a2a923f4) | Unify card headers with flat Carbon styling | Map2 Audio | 2026-03-21 |
-| [`82f9bd1d`](https://github.com/matthewmackes/map2-audio/commit/82f9bd1d32386a3a74a7bb4bd6291b67ce80ad03) | Tighten JUCE grid editor card layout | Map2 Audio | 2026-03-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
