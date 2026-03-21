@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**798** Python | **1182** TypeScript | **294** C++/H | **122** Docs | **671** total commits | **1** stars | **0** forks | **0** open issues
+**798** Python | **1182** TypeScript | **294** C++/H | **122** Docs | **673** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,8 +169,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-21 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-20 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-20 |
 | [API Load Qualification Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_LOAD_QUALIFICATION_RUNBOOK.md) | 2026-03-18 |
 | [API Qualification Observability](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_QUALIFICATION_OBSERVABILITY.md) | 2026-03-18 |
 | [API Restart Dependency Map](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_RESTART_DEPENDENCY_MAP.md) | 2026-03-18 |
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`143ebb91`](https://github.com/matthewmackes/map2-audio/commit/143ebb9139a529335eff7a5cf2ba34b29c6e6237) | Resize JUCE Grid signal cards | Map2 Audio | 2026-03-21 |
+| [`c7f5ce80`](https://github.com/matthewmackes/map2-audio/commit/c7f5ce809836e06dd1aee3b30162b3436ad7ce44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`73f7ceba`](https://github.com/matthewmackes/map2-audio/commit/73f7cebab108938fe624bb5423156ff10930a5d2) | Resize effect parameter cards and rebuild web bundle | Map2 Audio | 2026-03-21 |
 | [`5117d06f`](https://github.com/matthewmackes/map2-audio/commit/5117d06f7335bcfeb49efe683a78e1434a9cd478) | chore: sync release build outputs | Map2 Audio | 2026-03-20 |
 | [`5b11e88f`](https://github.com/matthewmackes/map2-audio/commit/5b11e88f6e670ea969b47fac25bb7996daf6219a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`5c024aa9`](https://github.com/matthewmackes/map2-audio/commit/5c024aa979f6c7c77f958b8b44703ac767e39032) | Finish effect-card parity and duplicate-plugin telemetry | Map2 Audio | 2026-03-20 |
 | [`8d4b33a2`](https://github.com/matthewmackes/map2-audio/commit/8d4b33a22945956961334f54a2214e87ad7fc8b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`debbaeea`](https://github.com/matthewmackes/map2-audio/commit/debbaeea7e643a58256b7695f5172adb53a5ffa8) | Complete effect-card remediation and live editor deployment | Map2 Audio | 2026-03-20 |
-| [`30e66719`](https://github.com/matthewmackes/map2-audio/commit/30e6671930277dc21f830d1724d5fc56480dcf9f) | Refine JUCE grid signal card layout | Map2 Audio | 2026-03-20 |
-| [`c93babf0`](https://github.com/matthewmackes/map2-audio/commit/c93babf064bd41ca32d4ec9bab94eb85f2b5568a) | chore: sync release build outputs | Map2 Audio | 2026-03-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
