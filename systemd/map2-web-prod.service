@@ -24,8 +24,5 @@ SyslogIdentifier=map2-web-prod
 # Resource limits
 LimitNOFILE=65536
 
-# Resource limits
-LimitNOFILE=65536
-
 [Install]
 WantedBy=multi-user.target

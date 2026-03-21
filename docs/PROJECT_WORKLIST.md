@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 18:10 EDT - Codex (Completed `T262` for JUCE Grid signal-card icon readability and render normalization.)
+Last updated: 2026-03-21 18:48 EDT - Codex (Completed `T263` to align the production deploy wrapper with the shipped `serve_web_dist` runtime.)
 
 ## Active Blockers Only
 
@@ -3127,5 +3127,50 @@ Last updated: 2026-03-21 18:10 EDT - Codex
   - Updated `web/src/app/pages/JuceGridPage.css` so the icon-darkening face overlay no longer sits over the hero art, outline SVGs are no longer force-filled via the shared hero rule, and both outline and solid icons get tone-aware opacity/drop-shadow treatment that makes the art read much more clearly on the live cards.
   - Added focused coverage in `web/src/app/pages/JuceGridSignalCanvas.test.tsx` for the tone-aware hero markup and for the category fallback path when a plugin name itself is unmapped.
   - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only). Build regenerated `VERSION` and `version.json` as part of the standard frontend build pipeline.
-  - Additional validation note: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` still reports one unrelated failure in `web/src/app/pages/JuceGridPage.test.tsx` (`moves the selected block left from the bottom editor controls and keyboard arrows` unable to find `Move left`) outside the files changed for `T262`.
-  - Licensing: Classified the touched frontend/test/worklist files as MAP2-owned AGPL-covered code, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+- Additional validation note: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` still reports one unrelated failure in `web/src/app/pages/JuceGridPage.test.tsx` (`moves the selected block left from the bottom editor controls and keyboard arrows` unable to find `Move left`) outside the files changed for `T262`.
+- Licensing: Classified the touched frontend/test/worklist files as MAP2-owned AGPL-covered code, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T263
+Status: [✓] Done
+Title: Align the production deploy script with the shipped `serve_web_dist` runtime and no-sleep restart rules
+Description:
+- Goal / acceptance criteria: Update the production web deploy/restart path so the repo-controlled automation starts the same `serve_web_dist.mjs` runtime the shipped systemd unit uses, removes the stale `serve` fallback path, and verifies restart readiness by polling instead of fixed sleeps. Keep port `3000` behavior, build flow, and restart verification intact.
+- Why it matters: The current deploy wrapper and several recent release notes still assume `vite preview` or `serve`, while the actual production runtime is now `npm run serve` / `scripts/serve_web_dist.mjs`. That drift makes restart behavior harder to trust and conflicts with the documented no-sleep rule.
+- Dependencies: `scripts/build/deploy`, `systemd/map2-web-prod.service`, `web/package.json`, current port-`3000` runtime contract
+- Estimated effort: Low
+- Required outputs: Updated deploy script/runtime references, syntax/health validation, completion notes, and licensing/worklist evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 18:48 EDT - Codex
+- Completion notes:
+  - Updated `scripts/build/deploy` so the production wrapper now reports the live bundle hash from the actual port-`3000` response, polls service/port shutdown instead of relying on fixed sleeps, escalates stuck `map2-web-prod` stops with `systemctl kill`, and uses `npm run serve` as the manual fallback so it matches the shipped `serve_web_dist.mjs` runtime instead of the stale `serve` package path.
+  - Updated `.gitignore` to stop hiding repo-controlled files under `scripts/build/`, which exposed `scripts/build/deploy` for version control and prevents future deploy-wrapper fixes from silently disappearing outside git.
+  - Cleaned `systemd/map2-web-prod.service` by removing the duplicate `LimitNOFILE` stanza while keeping the tracked `npm run serve` production contract unchanged.
+  - Validation: `bash -n scripts/build/deploy` -> pass; `./scripts/build/deploy --status` -> pass (`map2-web-prod` active, port `3000` listening, bundle `index-B5asl_7g.js`, health `OK`).
+  - Licensing: Classified `.gitignore`, `scripts/build/deploy`, `systemd/map2-web-prod.service`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T264
+Status: [ ] Todo
+Title: Refresh canonical AI/operator instructions for the production web server contract
+Description:
+- Goal / acceptance criteria: Update the canonical AI/operator guidance files so the documented port-`3000` contract, restart commands, and gotchas all reference `serve_web_dist.mjs` / `npm run serve|preview` rather than stale `vite preview` assumptions, and so they reflect the no-sleep polling guidance consistently.
+- Why it matters: `.github/copilot-instructions.md`, `.gemini/instructions.md`, and related restart notes drive future implementation and release behavior; leaving them stale will reintroduce the same deployment drift.
+- Dependencies: T263, `.github/copilot-instructions.md`, `.gemini/instructions.md`, `.copilot-notes/server-restart-pattern.md`
+- Estimated effort: Low
+- Required outputs: Updated canonical instruction docs, consistency validation, completion notes, and licensing/worklist evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 18:33 EDT - Codex
+
+ID: T265
+Status: [ ] Todo
+Title: Refresh secondary troubleshooting/reference docs and clear stale release notes
+Description:
+- Goal / acceptance criteria: Update the remaining operator-facing troubleshooting/reference docs and any now-stale worklist notes so they no longer describe `vite preview` as the production server, no longer recommend fixed sleeps for port-`3000` recovery, and no longer report the already-fixed JUCE Grid `Move left` test failure as current.
+- Why it matters: Secondary docs and stale completion notes are still part of the project handoff surface; they currently contradict the shipped runtime and can mislead future debugging/release work.
+- Dependencies: T263, T264, `docs/VITE_TROUBLESHOOTING_GUIDE.md`, `docs/CLAUDE.md`, `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: Updated troubleshooting/reference docs, corrected stale worklist notes, consistency validation, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 18:33 EDT - Codex
