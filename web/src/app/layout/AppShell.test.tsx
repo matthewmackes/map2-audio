@@ -72,6 +72,10 @@ jest.mock('../components/NodeNav/NodeNavBar', () => ({
   NodeNavBar: () => <div data-testid="node-nav-bar" />,
 }))
 
+jest.mock('../components/LatencyPressureShellReadout', () => ({
+  LatencyPressureShellReadout: () => <div data-testid="shell-latency-pressure-readout">09</div>,
+}))
+
 function renderInRouter(ui: React.ReactNode, initialEntries: string[] = ['/']) {
   return render(
     <MemoryRouter
@@ -104,6 +108,7 @@ describe('AppShell navigation', () => {
 
     expect(screen.getByLabelText('Home')).toBeTruthy()
     expect(screen.getByLabelText('Mackes Audio Platform home')).toBeTruthy()
+    expect(screen.getByTestId('shell-latency-pressure-readout')).toBeTruthy()
     expect(screen.getByLabelText('Open advanced menu')).toBeTruthy()
     expect(screen.getByLabelText('Open special settings')).toBeTruthy()
     expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
@@ -111,6 +116,7 @@ describe('AppShell navigation', () => {
     expect(screen.queryByText('About')).toBeNull()
     expect(container.querySelector('.nav-active-title')).toBeNull()
     expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
+    expect(container.querySelector('.nav-tabs-left')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
   })
 
   it('shows advanced workflows plus the blocked/lab section inside the advanced launcher', () => {
@@ -123,16 +129,18 @@ describe('AppShell navigation', () => {
     fireEvent.click(screen.getByLabelText('Open advanced menu'))
 
     expect(screen.getByRole('menu', { name: 'Advanced menu' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Close advanced menu' })).toBeTruthy()
     expect(screen.getByText('MIDI Hub')).toBeTruthy()
     expect(screen.getByText('Tesira AVB')).toBeTruthy()
     expect(screen.getByText('Blocked / Lab')).toBeTruthy()
     expect(screen.getByText('LCD Console')).toBeTruthy()
     expect(screen.getByText('Generic Interface')).toBeTruthy()
+    expect(screen.queryByText('Developer, cluster, and non-default workflows')).toBeNull()
     expect(screen.queryByText('API Observatory')).toBeNull()
     expect(screen.queryByText('MIDI Cluster')).toBeNull()
   })
 
-  it('auto-expands the current route card when the advanced launcher opens', () => {
+  it('auto-expands the current route detail tray when the advanced menu opens', () => {
     renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -142,10 +150,10 @@ describe('AppShell navigation', () => {
 
     fireEvent.click(screen.getByLabelText('Open advanced menu'))
 
-    const card = screen.getByText('IntelFX Rack').closest('article')
-    expect(card).toBeTruthy()
-    expect(within(card as HTMLElement).getByText('Capabilities')).toBeTruthy()
-    expect(within(card as HTMLElement).getByRole('button', { name: /Less/i })).toBeTruthy()
+    const details = screen.getByRole('note', { name: 'IntelFX Rack details' })
+    expect(details).toBeTruthy()
+    expect(within(details).getByText('Capabilities')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Hide details for IntelFX Rack' })).toBeTruthy()
   })
 
   it('orders pinned routes by catalog order and caps desktop pins at four items', () => {

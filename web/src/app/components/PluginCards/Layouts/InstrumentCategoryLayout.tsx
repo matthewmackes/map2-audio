@@ -19,6 +19,7 @@ export interface InstrumentCategoryLayoutProps {
   plugin: Plugin
   accentColor?: string
   compact?: boolean
+  cardWidth?: number
   bypassed?: boolean
   onBypassToggle?: (bypassed: boolean) => void
   onOpenMidiMappings?: () => void
@@ -44,6 +45,7 @@ export function InstrumentCategoryLayout({
   plugin,
   accentColor = '#8b5cf6',
   compact = false,
+  cardWidth,
   bypassed = false,
   onBypassToggle,
   onOpenMidiMappings,
@@ -72,6 +74,7 @@ export function InstrumentCategoryLayout({
       footer={footer}
       compact={compact}
       cardHeight={560}
+      cardWidth={cardWidth}
     >
       {/* Transport */}
       {transport && (

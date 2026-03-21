@@ -439,7 +439,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
       window.removeEventListener('resize', scheduleCapacityUpdate)
       observer?.disconnect()
     }
-  }, [])
+  }, [chain?.id])
 
   const signalRows = useMemo(
     () => buildSignalGridRows(chain?.plugins ?? [], Boolean(onAddPlugin), rowCapacity),
@@ -700,14 +700,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                               }}
                               style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
                             >
-                              <div className="juce-grid-page__signal-plugin-hero" aria-hidden>
-                                <div className="juce-grid-page__signal-plugin-hero-image">
-                                  <span className="juce-grid-page__signal-plugin-hero-outline" />
-                                  <EffectIcon className="juce-grid-page__signal-plugin-hero-svg" />
-                                </div>
-                              </div>
-
-                              <div className="juce-grid-page__signal-plugin-info">
+                              <div className="juce-grid-page__signal-plugin-face">
                                 <div
                                   className="juce-grid-page__signal-plugin-actions"
                                   data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
@@ -734,6 +727,12 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                       />
                                     )}
                                   </OverflowMenu>
+                                </div>
+
+                                <div className="juce-grid-page__signal-plugin-hero" aria-hidden>
+                                  <div className="juce-grid-page__signal-plugin-hero-image">
+                                    <EffectIcon className="juce-grid-page__signal-plugin-hero-svg" />
+                                  </div>
                                 </div>
 
                                 <div className="juce-grid-page__signal-plugin-copy">

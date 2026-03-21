@@ -218,9 +218,47 @@
   gap: var(--cds-spacing-02);
 }
 
+.audio-engine-page__latency-score-card,
+.audio-engine-page__pressure-graph-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+  min-height: 8rem;
+  padding: var(--cds-spacing-04);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+}
+
+.audio-engine-page__latency-score-card {
+  justify-content: center;
+}
+
+.audio-engine-page__latency-score-digits {
+  font-size: 1.75rem;
+}
+
+.audio-engine-page__latency-status {
+  color: var(--audio-engine-pressure-color, var(--cds-support-info));
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.audio-engine-page__latency-stat {
+  color: var(--cds-text-primary);
+  font-family: var(--cds-code-01-font-family, var(--font-mono));
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.audio-engine-page__pressure-graph-card {
+  min-width: 0;
+}
+
 .audio-engine-page__sparkline {
   width: 100%;
-  height: 3rem;
+  height: 4.5rem;
   display: block;
   overflow: visible;
 }
@@ -230,6 +268,42 @@
   stroke: var(--cds-support-info);
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
+}
+
+.audio-engine-page__pressure-threshold {
+  stroke: rgba(250, 77, 86, 0.28);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.audio-engine-page__pressure-area {
+  fill: var(--audio-engine-pressure-fill, rgba(120, 169, 255, 0.18));
+}
+
+.audio-engine-page__pressure-line {
+  fill: none;
+  stroke: var(--audio-engine-pressure-color, var(--cds-support-info));
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.audio-engine-page__pressure-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.audio-engine-page__pressure-progress-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
+  margin-top: var(--cds-spacing-03);
+  color: var(--audio-engine-pressure-color, var(--cds-support-info));
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 600;
 }
 
 /* ── Shared utilities ──────────────────────────────────────────────────── */

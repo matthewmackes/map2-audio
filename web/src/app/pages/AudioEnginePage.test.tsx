@@ -12,6 +12,7 @@ const mockGetSourceOfTruth = jest.fn()
 const mockGetJitterStats = jest.fn()
 const mockResetXruns = jest.fn()
 const mockUseNodePageContext = jest.fn()
+const mockUseLatencyPressure = jest.fn()
 
 jest.mock('../contexts/ClusterContext', () => ({
   useCluster: () => mockUseCluster(),
@@ -23,6 +24,10 @@ jest.mock('../hooks/usePipeWire', () => ({
 
 jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: (...args: unknown[]) => mockUseNodePageContext(...args),
+}))
+
+jest.mock('../hooks/useLatencyPressure', () => ({
+  useLatencyPressure: (...args: unknown[]) => mockUseLatencyPressure(...args),
 }))
 
 jest.mock('../../map2/api', () => ({
@@ -128,6 +133,7 @@ describe('AudioEnginePage', () => {
     mockGetSourceOfTruth.mockReset()
     mockGetJitterStats.mockReset()
     mockResetXruns.mockReset()
+    mockUseLatencyPressure.mockReset()
     mockUseCluster.mockReturnValue({
       activeNodeId: null,
       nodes: [
@@ -180,6 +186,24 @@ describe('AudioEnginePage', () => {
       callback_count: 100,
       running: true,
       rtl_p95_ms: 4.2,
+    })
+    mockUseLatencyPressure.mockReturnValue({
+      isAvailable: true,
+      scoreDisplay: '09',
+      pressurePercent: 18,
+      tone: 'blue',
+      toneColor: '#78a9ff',
+      fillColor: 'rgba(120, 169, 255, 0.18)',
+      statusLabel: 'Stable',
+      helperText: 'Score 09/10 · RTL p95 4.20 ms · Jitter p95 0.300 ms · Callback 38% of budget',
+      inputs: {
+        effectiveLatencyMs: 4.2,
+        jitterP95Ms: 0.3,
+        callbackLoadPercent: 38,
+        xrunCount: 0,
+      },
+      isResetting: false,
+      resetXruns: jest.fn(),
     })
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -239,7 +263,7 @@ describe('AudioEnginePage', () => {
   })
 
   it('renders the live metering strip, routing tables, and diagnostics surfaces', async () => {
-    renderPage()
+    const { container } = renderPage()
 
     await waitFor(() => {
       expect(screen.getByText('Frequency Spectrum')).toBeInTheDocument()
@@ -255,6 +279,10 @@ describe('AudioEnginePage', () => {
     expect(screen.getByText('Port connections')).toBeInTheDocument()
     expect(screen.getByText('CPU Meter Panel Mock')).toBeInTheDocument()
     expect(screen.getByText('Latency Display Mock')).toBeInTheDocument()
+    expect(screen.getByText('Shared operator score driven by latency, callback budget, jitter, headroom, and xruns.')).toBeInTheDocument()
+    expect(screen.getAllByText('Latency pressure').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Stable').length).toBeGreaterThanOrEqual(1)
+    expect(container.querySelector('.segmented-led')?.getAttribute('aria-label')).toBe('09')
   })
 
   it('contains no Phosphor icon imports', () => {

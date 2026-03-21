@@ -13,6 +13,7 @@ import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { Map2BrandMark } from '../components/branding/map2Branding'
+import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
@@ -673,7 +674,91 @@ export function AppShell({ children }: { children: ReactNode }) {
     )
   }
 
-  const renderAdvancedLauncherCard = (item: MobileMenuItem, sectionTitle: string) => {
+  const renderAdvancedSectionDetail = (item: MobileMenuItem, sectionTitle: string) => {
+    const cardId = getAdvancedCardId(sectionTitle, item)
+    const Icon = item.icon
+    const hardwareLocation = hardwareLocationNotes[item.to]
+    const profile = resolveHomeCardProfile(item)
+    const isActive = isRouteMatch(location.pathname, item.to)
+    const supportNotes = [
+      item.description,
+      hardwareLocation ? `On ${hardwareLocation.hostname}` : null,
+      item.gatedReason ?? null,
+    ].filter((note): note is string => Boolean(note))
+
+    return (
+      <div
+        id={`${cardId}-details`}
+        className="advanced-menu-control-panel__details"
+        role="note"
+        aria-label={`${item.label} details`}
+      >
+        <div className="advanced-menu-control-panel__details-header">
+          <div className="advanced-menu-control-panel__details-title-wrap">
+            <span className="advanced-menu-control-panel__details-icon" aria-hidden>
+              <Icon size={20} />
+            </span>
+            <div className="advanced-menu-control-panel__details-title-copy">
+              <p className="advanced-menu-control-panel__details-section">{sectionTitle}</p>
+              <h3 className="advanced-menu-control-panel__details-title">{item.label}</h3>
+            </div>
+          </div>
+          <div className="advanced-menu-control-panel__details-tags">
+            <Tag type={maturityTagType(item.maturity)} size="sm">
+              {maturityTagLabel(item.maturity)}
+            </Tag>
+            {isActive ? (
+              <Tag type="cool-gray" size="sm">
+                Current route
+              </Tag>
+            ) : null}
+            {hardwareLocation ? (
+              <Tag type="cool-gray" size="sm">
+                On {hardwareLocation.hostname}
+              </Tag>
+            ) : null}
+          </div>
+        </div>
+
+        <p className="advanced-menu-control-panel__details-summary">{profile.summary}</p>
+
+        {supportNotes.length > 0 ? (
+          <div className="advanced-menu-control-panel__details-notes">
+            {supportNotes.map((note) => (
+              <p key={`${cardId}-${note}`} className="advanced-menu-control-panel__details-note">
+                {note}
+              </p>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="advanced-menu-control-panel__details-grid">
+          <div className="advanced-menu-control-panel__details-block">
+            <p className="advanced-menu-control-panel__details-heading">Capabilities</p>
+            <ul className="advanced-menu-control-panel__details-list">
+              {profile.capabilities.slice(0, 4).map((capability) => (
+                <li key={`${cardId}-${capability}`}>{capability}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="advanced-menu-control-panel__details-block">
+            <p className="advanced-menu-control-panel__details-heading">Workflow notes</p>
+            <p className="advanced-menu-control-panel__details-body">{profile.learnMore}</p>
+          </div>
+
+          <div className="advanced-menu-control-panel__details-block">
+            <p className="advanced-menu-control-panel__details-heading">Best for</p>
+            <p className="advanced-menu-control-panel__details-body advanced-menu-control-panel__details-body--strong">
+              {profile.bestFor}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderAdvancedControlPanelItem = (item: MobileMenuItem, sectionTitle: string) => {
     const cardId = getAdvancedCardId(sectionTitle, item)
     const Icon = item.icon
     const isBlocked = isBlockedAdvancedMenuItem(item)
@@ -681,38 +766,27 @@ export function AppShell({ children }: { children: ReactNode }) {
     const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
     const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
     const hardwareLocation = hardwareLocationNotes[item.to]
-    const profile = resolveHomeCardProfile(item)
     const isExpanded = expandedAdvancedCardId === cardId
     const isActive = isRouteMatch(location.pathname, item.to)
-    const supportNotes = [
-      hardwareLocation ? `On ${hardwareLocation.hostname}` : null,
-      item.gatedReason ?? null,
-    ].filter((note): note is string => Boolean(note))
+    const statusLabel = hardwareLocation
+      ? `On ${hardwareLocation.hostname}`
+      : isBlocked
+        ? 'Blocked'
+        : isActive
+          ? 'Current route'
+          : maturityTagLabel(item.maturity)
 
     return (
       <article
         key={cardId}
         role="listitem"
-        className={`advanced-menu-launcher-card${isBlocked ? ' is-blocked' : ''}${isActive ? ' is-active' : ''}`}
-        style={{ '--advanced-menu-card-accent': item.color } as CSSProperties}
-        onClick={() => openAdvancedRoute(item)}
-        onKeyDown={(event) => {
-          if (event.target !== event.currentTarget) {
-            return
-          }
-          if ((event.key === 'Enter' || event.key === ' ') && !isBlocked) {
-            event.preventDefault()
-            openAdvancedRoute(item)
-          }
-        }}
-        tabIndex={isBlocked ? -1 : 0}
-        aria-label={`Open ${item.label}`}
-        aria-disabled={isBlocked || undefined}
+        className={`platform-shell__cp-item advanced-menu-control-panel__item${isBlocked ? ' is-blocked' : ''}${isActive ? ' is-active' : ''}${isExpanded ? ' is-expanded' : ''}`}
+        style={{ '--advanced-menu-item-accent': item.color } as CSSProperties}
       >
         {item.pinnable ? (
           <button
             type="button"
-            className={`advanced-menu-launcher-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
+            className={`platform-shell__cp-pin-btn advanced-menu-control-panel__pin-btn${isPinned ? ' is-pinned' : ''}`}
             onClick={(event) => {
               event.preventDefault()
               event.stopPropagation()
@@ -731,53 +805,32 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-pressed={isPinned}
             disabled={pinDisabled}
           >
-            {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
+            {isPinned ? 'PINNED' : 'PIN'}
           </button>
         ) : null}
 
-        <div className="advanced-menu-launcher-card__meta">
-          <Icon className="advanced-menu-launcher-card__icon" aria-hidden />
-          <div className="advanced-menu-launcher-card__badges">
-            <span className="advanced-menu-launcher-card__maturity">{maturityTagLabel(item.maturity)}</span>
-            {isActive ? <span className="advanced-menu-launcher-card__status">Current route</span> : null}
-            {hardwareLocation ? (
-              <span className="advanced-menu-launcher-card__status">On {hardwareLocation.hostname}</span>
-            ) : null}
-          </div>
-        </div>
+        <button
+          type="button"
+          className="platform-shell__cp-item-open advanced-menu-control-panel__item-open"
+          onClick={() => openAdvancedRoute(item)}
+          aria-label={isBlocked ? `${item.label} unavailable` : item.label}
+          title={item.description}
+          disabled={isBlocked}
+        >
+          <span className="platform-shell__cp-icon advanced-menu-control-panel__item-icon" aria-hidden>
+            <Icon size={45} />
+          </span>
+          <span className="platform-shell__cp-label advanced-menu-control-panel__item-label">{item.label}</span>
+        </button>
 
-        <h3 className="advanced-menu-launcher-card__label">{item.label}</h3>
-        <p className="advanced-menu-launcher-card__desc">{profile.summary}</p>
-
-        {supportNotes.length > 0 ? (
-          <div className="advanced-menu-launcher-card__notes">
-            {supportNotes.map((note) => (
-              <p key={`${cardId}-${note}`} className="advanced-menu-launcher-card__note">
-                {note}
-              </p>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="advanced-menu-launcher-card__footer">
+        <div className="advanced-menu-control-panel__item-footer">
+          <span className="advanced-menu-control-panel__item-state">{statusLabel}</span>
           <button
             type="button"
-            className="advanced-menu-launcher-card__open-btn"
-            disabled={isBlocked}
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              if (!isBlocked) {
-                openAdvancedRoute(item)
-              }
-            }}
-          >
-            Open interface
-          </button>
-          <button
-            type="button"
-            className="advanced-menu-launcher-card__details-btn"
+            className="advanced-menu-control-panel__details-btn"
+            aria-label={isExpanded ? `Hide details for ${item.label}` : `Show details for ${item.label}`}
             aria-expanded={isExpanded}
+            aria-controls={`${cardId}-details`}
             onClick={(event) => {
               event.preventDefault()
               event.stopPropagation()
@@ -786,40 +839,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             {isExpanded ? (
               <>
-                <ChevronUp size={14} aria-hidden /> Less
+                <ChevronUp size={12} aria-hidden /> Hide
               </>
             ) : (
               <>
-                <ChevronDown size={14} aria-hidden /> Details
+                <ChevronDown size={12} aria-hidden /> Details
               </>
             )}
           </button>
         </div>
-
-        {isExpanded ? (
-          <div className="advanced-menu-launcher-card__detail-panel" role="note">
-            <div>
-              <p className="advanced-menu-launcher-card__detail-heading">Capabilities</p>
-              <ul className="advanced-menu-launcher-card__detail-list">
-                {profile.capabilities.slice(0, 4).map((capability) => (
-                  <li key={`${cardId}-${capability}`}>{capability}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <p className="advanced-menu-launcher-card__detail-heading">Workflow notes</p>
-              <p className="advanced-menu-launcher-card__detail-body">{profile.learnMore}</p>
-            </div>
-
-            <div>
-              <p className="advanced-menu-launcher-card__detail-heading">Best for</p>
-              <p className="advanced-menu-launcher-card__detail-body advanced-menu-launcher-card__detail-body--strong">
-                {profile.bestFor}
-              </p>
-            </div>
-          </div>
-        ) : null}
       </article>
     )
   }
@@ -873,6 +901,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Header className="topbar-pro" aria-label="MAP2 primary navigation shell">
         <HeaderNavigation className="nav-tabs-left" aria-label="Primary navigation">
           {renderNavItem(homeTopNavItem)}
+          <LatencyPressureShellReadout />
           <NavLink to="/" className="topbar-pro__brand" aria-label="Mackes Audio Platform home">
             <span className="topbar-pro__brand-mark-wrap" aria-hidden="true">
               <Map2BrandMark className="topbar-pro__brand-mark" />
@@ -925,56 +954,49 @@ export function AppShell({ children }: { children: ReactNode }) {
               {advancedMenuOpen && (
                 <div
                   id="advanced-menu-panel"
-                  className="advanced-menu-panel advanced-menu-panel--launcher"
+                  className="advanced-menu-panel advanced-menu-panel--control-panel platform-modal__body platform-modal__body--compact"
                   role="menu"
                   aria-label="Advanced menu"
                 >
-                  <div className="advanced-menu-launcher">
-                    <div className="advanced-menu-header advanced-menu-launcher__hero">
-                      <div className="advanced-menu-launcher__hero-art" aria-hidden="true">
-                        <Map2BrandMark className="advanced-menu-launcher__brand-mark" />
-                      </div>
-                      <div className="advanced-menu-header-main advanced-menu-launcher__hero-copy">
-                        <p className="advanced-menu-kicker">Advanced launcher</p>
-                        <h2 className="advanced-menu-title">Developer, cluster, and non-default workflows</h2>
-                        <p className="advanced-menu-subtitle">
-                          Routes stay visible here even when they are not pinned into the primary shell navigation.
-                        </p>
-                      </div>
-                      <div className="advanced-menu-launcher__hero-metrics" aria-label="Advanced launcher status">
-                        <div className="advanced-menu-launcher__metric">
-                          <span className="advanced-menu-launcher__metric-label">Routes</span>
-                          <strong className="advanced-menu-launcher__metric-value">{advancedLauncherItems.length}</strong>
-                        </div>
-                        <div className="advanced-menu-launcher__metric">
-                          <span className="advanced-menu-launcher__metric-label">Pinned</span>
-                          <strong className="advanced-menu-launcher__metric-value">
-                            {pinnedRouteSet.size}/{MAX_PINNED_NAV_ITEMS}
-                          </strong>
-                        </div>
-                        <div className="advanced-menu-launcher__metric">
-                          <span className="advanced-menu-launcher__metric-label">Sections</span>
-                          <strong className="advanced-menu-launcher__metric-value">{advancedSections.length}</strong>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="platform-modal__header">
+                    <span className="platform-modal__header-title">Advanced</span>
+                    <button
+                      type="button"
+                      className="platform-modal__close"
+                      onClick={closeTransientMenus}
+                      aria-label="Close advanced menu"
+                    >
+                      <Close size={20} aria-hidden />
+                    </button>
+                  </div>
+                  <div className="platform-modal__scroll platform-modal__scroll--compact">
+                    <div className="platform-shell-page">
+                      <div className="platform-shell__content">
+                        <div className="advanced-menu-control-panel">
+                          {advancedSections.map(([sectionTitle, items]) => {
+                            const expandedItem = items.find((item) => getAdvancedCardId(sectionTitle, item) === expandedAdvancedCardId) ?? null
 
-                    <div className="advanced-menu-launcher__body">
-                      {advancedSections.map(([sectionTitle, items]) => (
-                        <section
-                          key={`advanced-${sectionTitle}`}
-                          className="advanced-menu-launcher__section"
-                          aria-label={`${sectionTitle} advanced workflows`}
-                        >
-                          <div className="advanced-menu-launcher__section-heading">
-                            <h3 className="advanced-menu-launcher__section-title">{sectionTitle}</h3>
-                            <span className="advanced-menu-launcher__section-count">{items.length}</span>
-                          </div>
-                          <div className="advanced-menu-launcher__grid" role="list" aria-label={`${sectionTitle} launcher cards`}>
-                            {items.map((item) => renderAdvancedLauncherCard(item, sectionTitle))}
-                          </div>
-                        </section>
-                      ))}
+                            return (
+                              <section
+                                key={`advanced-${sectionTitle}`}
+                                className="platform-shell__cp-panel advanced-menu-control-panel__section"
+                                aria-label={`${sectionTitle} advanced workflows`}
+                              >
+                                <div className="advanced-menu-control-panel__section-heading">
+                                  <h2 className="platform-shell__cp-title advanced-menu-control-panel__section-title">{sectionTitle}</h2>
+                                  <span className="advanced-menu-control-panel__section-count" aria-label={`${items.length} routes in ${sectionTitle}`}>
+                                    {items.length}
+                                  </span>
+                                </div>
+                                <div className="platform-shell__cp-grid advanced-menu-control-panel__grid" role="list" aria-label={`${sectionTitle} launcher tiles`}>
+                                  {items.map((item) => renderAdvancedControlPanelItem(item, sectionTitle))}
+                                </div>
+                                {expandedItem ? renderAdvancedSectionDetail(expandedItem, sectionTitle) : null}
+                              </section>
+                            )
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

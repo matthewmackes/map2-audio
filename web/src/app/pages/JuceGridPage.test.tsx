@@ -237,7 +237,32 @@ jest.mock('../components/PluginDetailsModal', () => ({
 }))
 
 jest.mock('../components/Controls/NumberInput', () => ({
-  NumberInput: ({ value }: { value: number }) => <input aria-label="Number input" readOnly value={value} />,
+  NumberInput: ({
+    value,
+    label,
+    min = 0,
+    max = 100,
+    defaultValue,
+    onChange,
+  }: {
+    value: number
+    label?: string
+    min?: number
+    max?: number
+    defaultValue?: number
+    onChange?: (nextValue: number) => void
+  }) => (
+    <input
+      aria-label={label ?? 'Number input'}
+      aria-valuemax={max}
+      aria-valuemin={min}
+      aria-valuenow={value}
+      onDoubleClick={() => onChange?.(typeof defaultValue === 'number' ? defaultValue : value)}
+      readOnly
+      role="slider"
+      value={value}
+    />
+  ),
 }))
 
 jest.mock('../components/snapshots/SnapshotImportDialog', () => ({
@@ -666,6 +691,63 @@ describe('JuceGridPage snapshot modal workflow', () => {
         seriesOrder: ['flow-0', 'flow-1', 'flow-2'],
       })
       expect(localStorage.getItem('map2_juce_grid_active_v2')).toBe('2')
+    })
+  })
+
+  it('renders a readable per-flow signal-chain level control and resets it to unity on double click', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'Lead', color: '#0f62fe', muted: false, solo: false, dryWetMix: 75 },
+      { id: 'flow-1', chainId: null, label: 'B', color: '#24a148', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      flowStates: {
+        'flow-0': { activeAudio: true, dimmed: false, sidechainKey: false },
+      },
+      mobileSummary: ['Flow Lead live'],
+      groups: [
+        {
+          id: 'group-0',
+          kind: 'series',
+          tone: 'active',
+          dashed: false,
+          flowIds: ['flow-0'],
+        },
+      ],
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await screen.findByTestId('juce-grid-routing-visualizer')
+
+    const levelControl = await screen.findByTestId('juce-grid-flow-level-flow-0')
+    const slider = within(levelControl).getByRole('slider', { name: 'Signal chain Lead level' })
+
+    expect(slider.getAttribute('aria-valuenow')).toBe('75')
+
+    fireEvent.doubleClick(slider)
+
+    await waitFor(() => {
+      const storedFlows = JSON.parse(localStorage.getItem('map2_juce_grid_flows_v2') ?? '[]')
+      expect(storedFlows[0].dryWetMix).toBe(100)
     })
   })
 

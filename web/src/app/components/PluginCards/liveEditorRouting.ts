@@ -7,6 +7,10 @@ export interface LivePluginCardStrategy {
   template?: PluginCardTemplate
 }
 
+export interface LivePluginCardContext {
+  sameFamilyCount?: number
+}
+
 const LIVE_SAFE_CUSTOM_URIS = new Set([
   'map2://juce/modulation/intellifx',
 ])
@@ -16,8 +20,6 @@ const LIVE_GENERIC_ONLY_URIS = new Set([
   'map2://juce/convolution/reverb',
   'map2://juce/nam',
   'map2://juce/drums',
-  'map2://juce/synthforge',
-  'map2://juce/instrument/synthforge',
 ])
 
 function normalizeLiveEditorUri(uri: string): string {
@@ -31,8 +33,22 @@ function normalizeLiveEditorUri(uri: string): string {
   return noTrailingSlash.toLowerCase()
 }
 
-export function resolveLivePluginCardStrategy(uri: string, category: string): LivePluginCardStrategy {
+function isSynthForgeUri(uri: string): boolean {
+  return uri.includes('synthforge')
+}
+
+export function resolveLivePluginCardStrategy(
+  uri: string,
+  category: string,
+  context: LivePluginCardContext = {},
+): LivePluginCardStrategy {
   const normalizedUri = normalizeLiveEditorUri(uri)
+
+  if (isSynthForgeUri(normalizedUri)) {
+    return (context.sameFamilyCount ?? 1) <= 1
+      ? { renderMode: 'custom' }
+      : { renderMode: 'generic' }
+  }
 
   if (LIVE_SAFE_CUSTOM_URIS.has(normalizedUri)) {
     return { renderMode: 'custom' }

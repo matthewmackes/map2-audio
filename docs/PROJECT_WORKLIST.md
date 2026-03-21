@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 07:47 - Codex (Completed `T240` after syncing the JUCE Grid row-capacity release to both remotes, rerunning the production web deploy on port `3000`, and capturing the regenerated release metadata.)
+Last updated: 2026-03-21 09:52 - Codex (Completed `T246` after flattening the JUCE Grid effect signal card into a lower-depth single-plane shell.)
 
 ## Active Blockers Only
 
@@ -929,6 +929,28 @@ Last updated: 2026-03-17 16:36 - Codex
   - Added a co-located `AppShell.css` stylesheet so the Advanced Menu can carry the landing page's neon-grid/brand-mark treatment without relying on global shell dropdown styles.
   - Validation: `npm run typecheck` -> pass, `npm test -- AppShell.test.tsx --runInBand` -> pass, `npm run build` -> pass (existing Vite chunk-size warnings only).
   - Follow-up refinement completed: blocked and experimental routes now surface in a dedicated `Blocked / Lab` section, the current route card auto-expands when the launcher opens, the mobile menu remains compact, the `Advanced` trigger label is unchanged, and the launcher metrics remain visible.
+
+ID: T245
+Status: [✓] Done
+Title: Advanced Menu matches the Platform control-panel pattern
+Description:
+- Goal / acceptance criteria: Rework the top-shell Advanced Menu so it matches the Platform control panel's layout, spacing, interaction model, and component grammar while keeping the existing Advanced route content, section grouping, pinning behavior, blocked-state handling, and Advanced-only metadata/details.
+- Why it matters: The Advanced Menu currently uses a separate launcher visual language, which breaks consistency with the Platform menu the user wants as the shell's reference pattern.
+- Dependencies: `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.css`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/pages/PlatformShellPage.css`, and existing `AppShell` tests
+- Estimated effort: Medium
+- Required outputs: Updated Advanced Menu markup/behavior, Platform-patterned Advanced Menu styling, focused `AppShell` regression coverage, and frontend validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 09:45 EDT - Codex
+- Completion notes:
+  - Replaced the Advanced Menu launcher hero/card layout in `web/src/app/layout/AppShell.tsx` with stacked control-panel sections that use the Platform menu's tile grammar (`platform-shell__cp-*`) while preserving Advanced section grouping, route access, pinning, blocked-route handling, and current-route auto-expansion.
+  - Moved Advanced-only route metadata into section detail trays so the tile interactions match Platform more closely while still retaining summary, capabilities, workflow notes, best-for guidance, maturity tags, and hardware/location notes.
+  - Rewrote the Advanced Menu styling in `web/src/app/layout/AppShell.css` around the Platform control-panel sizing model (`--platform-menu-scale`) and removed the prior neon-grid launcher treatment.
+  - Updated `web/src/app/layout/AppShell.test.tsx` to verify the Platform-patterned Advanced Menu still exposes the expected routes/sections and auto-expands the current route detail tray.
+  - Validation: `npm --prefix web test -- src/app/layout/AppShell.test.tsx --runInBand --silent` -> pass, `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass (existing Vite dynamic-import/chunk-size warnings only).
+  - Follow-up reopened on 2026-03-21 after user review: the tile internals were close, but the Advanced popup window chrome/layout still differed from the Platform modal.
+  - Follow-up refinement completed: the Advanced popup now uses the Platform modal body/header/scroll frame directly, wraps content in the same `platform-shell-page` / `platform-shell__content` layout, increases tile icon sizing to the Platform control-panel size, and trims custom tile overrides so the box treatment more closely matches Platform while preserving Advanced-specific details and section counts.
+  - Follow-up validation: `npm --prefix web test -- src/app/layout/AppShell.test.tsx --runInBand --silent` -> pass, `npm --prefix web run typecheck` -> pass, `npm --prefix web run build` -> pass (existing Vite dynamic-import/chunk-size warnings only).
 
 ## Icon System
 
@@ -2646,3 +2668,99 @@ Last updated: 2026-03-21 07:47 - Codex
   - Reran `npm --prefix /home/mm/map2-audio/web run deploy`; the build succeeded, `systemctl stop map2-web-prod` stalled in `deactivating`, and the release was unblocked by force-killing stale service PIDs `390267` and `390279` before the wrapper completed the restart.
   - Verification: `npm --prefix /home/mm/map2-audio/web run deploy:status` -> port `3000` listening, service `map2-web-prod` active, health `OK`; `curl -I --max-time 10 http://localhost:3000/` -> `HTTP/1.1 200 OK`.
   - Remaining tracked changes after the deploy were the expected regenerated release artifacts: `VERSION`, `version.json`, and `logs/deploy-build.log`.
+
+ID: T241
+Status: [✓] Done
+Title: Recalculate JUCE Grid signal row capacity after async chain mount
+Description:
+- Goal / acceptance criteria: Update the signal canvas so row-capacity measurement/observation attaches when the grid first appears after an initial `chain = null` render, add a regression test that mounts empty then rerenders with a populated chain, and verify the row count expands beyond the default 4-slot fallback when the lane is wide enough.
+- Why it matters: The live JUCE Grid page commonly renders the canvas before chain data arrives, so the existing empty-dependency effect exits before `gridRef` exists and leaves production flows wrapped into a premature second snake row.
+- Dependencies: `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`, `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: Fixed signal-canvas measurement lifecycle, regression coverage for async chain mount, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 08:04 - Codex
+- Completion notes:
+  - Root cause: `JuceGridSignalCanvas` mounted first with `chain = null` in the real page, so the empty-dependency measurement effect returned before `gridRef` existed and never attached the resize/observer logic; the lane therefore stayed at the default `rowCapacity = 4` even on wide desktop flows.
+  - Fix: Changed the measurement effect in `web/src/app/pages/JuceGridSignalCanvas.tsx` to re-run when `chain?.id` changes so the observer and resize handler attach when a populated chain first appears.
+  - Regression: Added an async-mount test in `web/src/app/pages/JuceGridSignalCanvas.test.tsx` that renders empty, rerenders with a populated chain, fires resize, and confirms the extra row disappears once the wide lane is measured.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass.
+  - Deploy: `npm --prefix web run deploy` -> success after clearing the usual stuck `map2-web-prod` preview PIDs `395124` and `395136`; service health revalidated on port `3000`.
+
+ID: T242
+Status: [✓] Done
+Title: Rebuild SynthForge as a live-safe flagship workstation card for professional keyboard players
+Description:
+- Goal / acceptance criteria: Replace the current SynthForge live-editor quarantine/generic fallback with a custom workstation-grade card that is safe in the shipped JUCE Grid editor flow and presents the full professional sampler surface a keyboard player expects. Acceptance requires: an instance-safe editor contract or an explicitly justified equivalent live-safe routing model; a redesigned `SynthForgeCard` that keeps full library/preset loading, performance controls, part/routing controls, keyboard interaction, and advanced sampler operations while upgrading the layout, hierarchy, and feedback to a premium instrument experience; routing updates so the active grid can render the flagship card instead of the generic editor when safe; and focused validation covering rendering/routing behavior plus the critical SynthForge interaction paths touched by the redesign.
+- Why it matters: The existing custom SynthForge card is a dense first-pass sampler slice, while the shipped JUCE Grid currently forces SynthForge into the generic editor because the richer surface is not yet treated as live-safe. The user has now clarified that the target is not a spare parameter card but a best-practice, industry-standard, visually strong instrument editor suitable for professional keyboard workflow.
+- Dependencies: T210, T227, `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx`, `web/src/app/components/PluginCards/liveEditorRouting.ts`, `web/src/app/pages/JuceGridPage.tsx`, `web/src/map2/api.ts`, and any backend/editor-contract work required to remove the current SynthForge generic-only restriction safely.
+- Estimated effort: High
+- Required outputs: Updated worklist notes; implementation of the live-safe SynthForge editor contract and routing as needed; redesigned flagship SynthForge card UI; focused tests/typecheck evidence; and explicit handoff notes for any remaining backend/plugin-instance constraints that still block full parity.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 08:37 - Codex
+- Completion notes:
+  - Reframed the requirement from a spare parameter strip to a flagship workstation card and rebuilt `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx` around a premium instrument surface: hero/status overview, performance controls, 16-part strip, workstation tabs, richer library/preset workflows, rack editing, play surface, engine controls, and advanced sampler tooling intended for professional keyboard use.
+  - Updated `web/src/app/components/PluginCards/liveEditorRouting.ts` and `web/src/app/pages/JuceGridPage.tsx` so SynthForge can render the custom workstation card in the active JUCE Grid editor when the selected chain contains only one SynthForge-family block, while duplicate SynthForge blocks still fall back to the generic editor with an explicit user notice. This is the justified live-safe routing model for the current global `/api/synthforge` backend contract.
+  - Extended the card shell plumbing in `web/src/app/components/PluginCards/Layouts/InstrumentCategoryLayout.tsx` to support the wider flagship instrument presentation required by the redesigned SynthForge surface.
+- Added focused validation in `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx` and `web/src/app/components/PluginCards/liveEditorRouting.test.ts`, covering the workstation render path, preset loading interaction, and the guarded custom-vs-generic routing behavior. Validation: `npm --prefix web test -- --runInBand web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.test.tsx web/src/app/components/PluginCards/liveEditorRouting.test.ts web/src/app/pages/JuceGridPage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass.
+- Remaining limitation / handoff: true multi-instance custom SynthForge editing is still blocked by the backend's global SynthForge state contract, so duplicate SynthForge-family blocks intentionally stay on the generic editor path until the engine/API become instance-addressable.
+- Licensing: reviewed the touched files as MAP2-owned AGPL-covered UI/editor code and found no new third-party notice or attribution gap.
+
+ID: T243
+Status: [✓] Done
+Title: Replace ad hoc latency pressure with a shared realtime score and shell LCD readout
+Description:
+- Goal / acceptance criteria: Verify the current `audio-engine` latency-pressure logic, replace the existing single-threshold approximation with a single source of truth that derives a realtime `00`-`10` operator score from active latency telemetry, render that shared metric as a clearer latency-pressure graph in the audio-engine surface, and add the same shared score to the left shell area between the Home icon and the MAP2 logo as a two-digit LCD-style readout that stays blue for scores `10` through `04` and turns red for `03` through `00`.
+- Why it matters: The current audio-engine pressure indicator is only a `totalLatencyMs / 20 ms` progress bar, which is too weak to trust as a system-wide operator signal and cannot support the requested integrated header presentation without duplicating or contradicting the underlying logic.
+- Dependencies: `web/src/app/pages/AudioEnginePage.tsx`, `web/src/app/pages/AudioEnginePage.test.tsx`, `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.test.tsx`, shared realtime telemetry hooks under `web/src/app/hooks/**`, display primitives under `web/src/app/components/Displays/**`, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: Shared latency-pressure scoring logic and hook, updated audio-engine graph/presentation, integrated shell LCD score, focused unit/UI coverage, typecheck/test evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 08:52 - Codex
+- Completion notes:
+  - Replaced the old `totalLatencyMs / 20 ms` pressure approximation with a shared scoring model in `web/src/app/utils/latencyPressure.ts` and `web/src/app/hooks/useLatencyPressure.ts`, using realtime callback-budget, round-trip latency, jitter, headroom, and xrun telemetry to produce a single `00`-`10` operator score plus a synchronized pressure percentage.
+  - Updated `web/src/app/pages/AudioEnginePage.tsx` and `web/src/app/pages/AudioEnginePage.css` so the diagnostics surface now renders a real latency-pressure monitor driven by the shared hook: LCD-style score, rolling pressure-history graph, synchronized helper text, and a latency-breakdown pressure bar that uses the same source of truth instead of the prior 20 ms-only math.
+  - Added `web/src/app/components/LatencyPressureShellReadout.tsx`, wired it into `web/src/app/layout/AppShell.tsx`, and styled it in `web/src/app/layout/AppShell.css` so the left shell area now shows the two-digit LCD score between Home and the MAP2 logo, with blue `10`-`04` and red `03`-`00` handling from the shared score.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/utils/latencyPressure.test.ts web/src/app/components/LatencyPressureShellReadout.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/pages/AudioEnginePage.test.tsx` -> pass.
+  - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend code, reran the repository license/notices scan (`rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`), and found no new AGPL or third-party notice gaps requiring a follow-up task.
+
+ID: T244
+Status: [✓] Done
+Title: Rebuild the JUCE Grid per-flow signal-chain level control for readability and usability
+Description:
+- Goal / acceptance criteria: Replace the current cramped per-flow level widget in the JUCE Grid flow card with a clearer compact control that remains readable at `100%`, communicates that it is the per-signal-chain level control, preserves the existing inline edit/drag behavior, and stays aligned with the established Carbon/MAP2 visual language. Acceptance requires updated UI code/styles, focused coverage for the touched flow-card surface, and validation evidence.
+- Why it matters: The current control is too visually cramped and ambiguous in the shipped flow card, which makes a core per-chain gain control look broken even when the value is valid.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridPage.test.tsx`, and the shared numeric input/display primitives already used by the route.
+- Estimated effort: Low
+- Required outputs: Updated flow-card level control UI, focused regression coverage, validation notes, and completion notes in this worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 09:50 - Codex
+- Completion notes:
+  - Replaced the cramped bare percentage widget in `web/src/app/pages/JuceGridPage.tsx` with a dedicated `FlowLevelControl` wrapper that labels the control as `Level`, keeps the existing inline numeric interaction path, applies the flow color as the accent, and restores a practical double-click reset to `100%` unity level.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the per-flow control keeps the larger segmented readout readable at `100%` without clipping while removing the extra outer label box and placing the `Level` label plus glyph inline to the left of the slider.
+  - Added focused regression coverage in `web/src/app/pages/JuceGridPage.test.tsx` that renders a live flow card, verifies the signal-chain level control semantics, and confirms double-click resets the stored flow level back to unity.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings still emit in the test suite, but the suite passes).
+  - Licensing: Classified the touched JUCE Grid files as MAP2-owned AGPL-covered frontend code; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new third-party notice or attribution gap requiring a follow-up task.
+
+ID: T246
+Status: [✓] Done
+Title: Flatten the JUCE Grid effect signal card into a lower-depth single-plane shell
+Description:
+- Goal / acceptance criteria: Flatten the live JUCE Grid effect signal card so the hero, metadata, and action affordances read as one lower-depth plane instead of stacked inner panels, while preserving the current icon, title/category, overflow actions, selection, bypass, and add-card behavior. Acceptance requires updated signal-card markup/styles, focused regression coverage for the flattened structure, and validation evidence.
+- Why it matters: The current card still reads taller and more layered than requested, which adds unnecessary visual depth in the live signal lane and slows operator scanning.
+- Dependencies: T237, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`, `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: Flattened signal-card shell/add-card styling, focused regression coverage for the new single-plane markup, validation evidence, and licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 09:52 - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/JuceGridSignalCanvas.tsx` so each live effect card now uses a single `.juce-grid-page__signal-plugin-face` container, keeping the existing hero art/copy/actions while removing the extra nested info panel and internal accent outline that were still making the card read stacked.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the effect/add cards now use a lower-depth shell: simpler gradients, reduced shadows, flatter hero framing, sharper overflow-menu chrome, and softer selected/hover treatments that still preserve category-accent recognition and bypass readability.
+  - Added a focused structural regression in `web/src/app/pages/JuceGridSignalCanvas.test.tsx` that requires the flattened face container and verifies the removed inner info/outline elements do not return.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings unchanged); `npm --prefix web run typecheck` -> pass.
+  - Licensing: Classified the touched JUCE Grid files as MAP2-owned AGPL-covered frontend code; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring a follow-up task.

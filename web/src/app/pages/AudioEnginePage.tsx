@@ -12,7 +12,7 @@
  */
 
 import './AudioEnginePage.css'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Accordion,
@@ -61,8 +61,7 @@ import {
   WarningAltFilled,
 } from '@carbon/icons-react'
 import { usePipeWire } from '../hooks/usePipeWire'
-import { audioApi, latencyV2Api } from '../../map2/api'
-import type { LatencyJitterStats } from '../../map2/api'
+import { audioApi } from '../../map2/api'
 import type {
   AudioSourceTruthPayload,
   PipeWireAlert,
@@ -84,6 +83,8 @@ import { LatencyDisplay } from '../components/Visualizations/LatencyDisplay'
 import { PhaseCorrelationMeter } from '../components/Visualizations/PhaseCorrelationMeter'
 import { VuMeterDisplay } from '../components/Visualizations/VuMeterDisplay'
 import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMeteringPanel'
+import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
+import { useLatencyPressure } from '../hooks/useLatencyPressure'
 
 type TableCellValue = string | number | boolean | null | undefined
 type RoutingRow = {
@@ -169,6 +170,26 @@ function renderValue(value: TableCellValue) {
   }
 
   return String(value)
+}
+
+function buildSparklinePaths(points: number[], maxValue = 100) {
+  if (points.length === 0) {
+    return { linePath: '', areaPath: '' }
+  }
+
+  const coordinates = points.map((value, index) => {
+    const x = points.length === 1 ? 100 : (index / (points.length - 1)) * 100
+    const y = 100 - (Math.min(maxValue, Math.max(0, value)) / maxValue) * 100
+    return { x, y }
+  })
+
+  const linePath = coordinates
+    .map(({ x, y }, index) => `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(' ')
+  const lastX = coordinates[coordinates.length - 1]?.x ?? 100
+  const areaPath = `${linePath} L ${lastX.toFixed(2)} 100 L 0 100 Z`
+
+  return { linePath, areaPath }
 }
 
 function SourceOfTruthSection({ nodeId }: { nodeId?: string | null }) {
@@ -286,66 +307,79 @@ function HealthList({
   )
 }
 
-function LatencyMonitorPanel({ nodeId }: { nodeId?: string | null }) {
-  const [history, setHistory] = useState<number[]>([])
-  const [isResetting, setIsResetting] = useState(false)
-
-  const jitterQuery = useQuery<LatencyJitterStats>({
-    queryKey: ['latency-jitter-stats', nodeId ?? 'local'],
-    queryFn: () => latencyV2Api.getJitterStats(nodeId),
-    refetchInterval: 1000,
-    staleTime: 500,
-  })
+function LatencyMonitorPanel({ pressure }: { pressure: ReturnType<typeof useLatencyPressure> }) {
+  const [pressureHistory, setPressureHistory] = useState<number[]>([])
 
   useEffect(() => {
-    const nextPoint = jitterQuery.data?.p95_ms
-    if (typeof nextPoint !== 'number') {
+    if (typeof pressure.pressurePercent !== 'number') {
       return
     }
 
-    setHistory((previous) => [...previous.slice(-59), nextPoint])
-  }, [jitterQuery.data?.p95_ms])
+    setPressureHistory((previous) => [...previous.slice(-59), pressure.pressurePercent ?? 0])
+  }, [pressure.pressurePercent])
 
-  const maxValue = Math.max(1, ...history)
-  const sparklinePath = history.map((value, index) => {
-    const x = history.length <= 1 ? 0 : (index / (history.length - 1)) * 100
-    const y = 100 - (value / maxValue) * 100
-    return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
-  }).join(' ')
-
-  const resetXruns = async () => {
-    try {
-      setIsResetting(true)
-      await latencyV2Api.resetXruns(nodeId)
-      await jitterQuery.refetch()
-    } finally {
-      setIsResetting(false)
-    }
-  }
+  const graphPaths = useMemo(() => buildSparklinePaths(pressureHistory, 100), [pressureHistory])
+  const pressureStyle = useMemo(
+    () => ({
+      '--audio-engine-pressure-color': pressure.toneColor,
+      '--audio-engine-pressure-fill': pressure.fillColor,
+    }) as CSSProperties,
+    [pressure.fillColor, pressure.toneColor],
+  )
 
   return (
-    <Tile className="audio-engine-page__latency-monitor">
+    <Tile className="audio-engine-page__latency-monitor" style={pressureStyle}>
       <div className="audio-engine-page__section-header">
-        <h3 className="audio-engine-page__section-title">Latency monitor</h3>
-        <Button kind="danger--tertiary" size="sm" renderIcon={Renew} onClick={() => void resetXruns()} disabled={isResetting}>
-          {isResetting ? 'Resetting…' : 'Reset xruns'}
+        <div>
+          <h3 className="audio-engine-page__section-title">Latency monitor</h3>
+          <p className="audio-engine-page__muted">
+            Shared operator score driven by latency, callback budget, jitter, headroom, and xruns.
+          </p>
+        </div>
+        <Button kind="danger--tertiary" size="sm" renderIcon={Renew} onClick={() => void pressure.resetXruns()} disabled={pressure.isResetting}>
+          {pressure.isResetting ? 'Resetting…' : 'Reset xruns'}
         </Button>
       </div>
       <div className="audio-engine-page__latency-grid">
-        <div className="audio-engine-page__kv-tile">
-          <span className="audio-engine-page__kv-label">RTL P95</span>
-          <span className="audio-engine-page__kv-value">{(jitterQuery.data?.rtl_p95_ms ?? 0).toFixed(2)} ms</span>
+        <div className="audio-engine-page__latency-score-card">
+          <span className="audio-engine-page__kv-label">Score</span>
+          <SegmentedLedText
+            value={pressure.scoreDisplay}
+            size="md"
+            color={pressure.toneColor}
+            className="audio-engine-page__latency-score-digits"
+          />
+          <span className="audio-engine-page__latency-status">{pressure.statusLabel}</span>
         </div>
-        <div className="audio-engine-page__sparkline-card">
-          <span className="audio-engine-page__kv-label">Jitter sparkline</span>
-          <svg viewBox="0 0 100 100" className="audio-engine-page__sparkline" role="img" aria-label="Jitter sparkline">
-            {sparklinePath ? <path d={sparklinePath} className="audio-engine-page__sparkline-path" /> : null}
+        <div className="audio-engine-page__pressure-graph-card">
+          <span className="audio-engine-page__kv-label">Latency pressure</span>
+          <svg viewBox="0 0 100 100" className="audio-engine-page__sparkline" role="img" aria-label="Latency pressure history">
+            <line x1="0" x2="100" y1="30" y2="30" className="audio-engine-page__pressure-threshold" />
+            {graphPaths.areaPath ? <path d={graphPaths.areaPath} className="audio-engine-page__pressure-area" /> : null}
+            {graphPaths.linePath ? <path d={graphPaths.linePath} className="audio-engine-page__pressure-line" /> : null}
           </svg>
-          <span className="audio-engine-page__muted">p95 {(jitterQuery.data?.p95_ms ?? 0).toFixed(3)} ms</span>
+          <div className="audio-engine-page__pressure-meta">
+            <span>{pressure.pressurePercent != null ? `${pressure.pressurePercent}% pressure` : 'Waiting for telemetry'}</span>
+            <span>
+              {pressure.inputs.effectiveLatencyMs != null
+                ? `RTL p95 ${pressure.inputs.effectiveLatencyMs.toFixed(2)} ms`
+                : 'RTL p95 —'}
+            </span>
+            <span>
+              {pressure.inputs.callbackLoadPercent != null
+                ? `Callback ${pressure.inputs.callbackLoadPercent}% of budget`
+                : 'Callback —'}
+            </span>
+          </div>
         </div>
-        <div className="audio-engine-page__kv-tile">
+        <div className="audio-engine-page__latency-score-card">
           <span className="audio-engine-page__kv-label">XRuns</span>
-          <span className="audio-engine-page__kv-value">{jitterQuery.data?.xrun_count ?? 0}</span>
+          <span className="audio-engine-page__latency-stat">{pressure.isAvailable ? (pressure.inputs.xrunCount ?? 0) : '—'}</span>
+          <span className="audio-engine-page__muted">
+            {pressure.inputs.jitterP95Ms != null
+              ? `Jitter p95 ${pressure.inputs.jitterP95Ms.toFixed(3)} ms`
+              : 'Jitter p95 —'}
+          </span>
         </div>
       </div>
     </Tile>
@@ -460,6 +494,7 @@ export function AudioEnginePage() {
     : detailNode
   const detailNodeId = detailNodeMeta.isLocal ? null : detailNodeMeta.nodeId
   const pw = usePipeWire({ nodeId: detailNodeId })
+  const latencyPressure = useLatencyPressure({ nodeId: detailNodeId })
 
   const health = engineStatusTag(pw.overallStatus)
   const clusterHealth = clusterHealthType(nodes)
@@ -871,7 +906,7 @@ export function AudioEnginePage() {
                     </div>
                     <LatencyDisplay nodeId={detailNodeId} showBreakdown compact={false} />
                   </Tile>
-                  <LatencyMonitorPanel nodeId={detailNodeId} />
+                  <LatencyMonitorPanel pressure={latencyPressure} />
                 </div>
               </Column>
               <Column sm={4} md={4} lg={8}>
@@ -946,11 +981,19 @@ export function AudioEnginePage() {
                     </StructuredListWrapper>
                     <ProgressBar
                       label="Latency pressure"
-                      helperText={`${Math.min(100, Math.round((pw.totalLatencyMs / 20) * 100))}% of 20 ms threshold`}
+                      helperText={latencyPressure.helperText}
                       max={100}
-                      value={Math.min(100, Math.round((pw.totalLatencyMs / 20) * 100))}
-                      status={pw.isHighLatency ? 'error' : 'active'}
+                      value={latencyPressure.pressurePercent ?? 0}
+                      status={latencyPressure.tone === 'red' ? 'error' : 'active'}
                     />
+                    <div className="audio-engine-page__pressure-progress-summary" style={{ '--audio-engine-pressure-color': latencyPressure.toneColor } as CSSProperties}>
+                      <SegmentedLedText
+                        value={latencyPressure.scoreDisplay}
+                        size="sm"
+                        color={latencyPressure.toneColor}
+                      />
+                      <span>{latencyPressure.statusLabel}</span>
+                    </div>
                   </Tile>
                 </div>
               </Column>

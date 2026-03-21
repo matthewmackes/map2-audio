@@ -214,6 +214,9 @@ describe('JuceGridSignalCanvas', () => {
     expect(pluginTitle.getAttribute('title')).toBe('Studio Compressor')
     expect(pluginCategory).toBeTruthy()
     expect(pluginCategory.getAttribute('title')).toBe('Dynamics')
+    expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-face')).toBeTruthy()
+    expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-info')).toBeNull()
+    expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-outline')).toBeNull()
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-svg')).toBeTruthy()
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
     expect(within(pluginCard).getByRole('button', { name: 'Actions for Studio Compressor' })).toBeTruthy()
@@ -410,6 +413,61 @@ describe('JuceGridSignalCanvas', () => {
           y: 0,
           toJSON: () => ({}),
         }),
+      })
+
+      fireEvent(window, new Event('resize'))
+
+      await waitFor(() => expect(screen.queryByTestId('juce-grid-signal-row-1')).toBeNull())
+
+      const onlyRow = screen.getByTestId('juce-grid-signal-row-0')
+      expect(onlyRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(7)
+      expect(within(onlyRow).getByRole('button', { name: 'Add effect' })).toBeTruthy()
+    } finally {
+      if (originalResizeObserver) {
+        resizeObserverOwner.ResizeObserver = originalResizeObserver
+      }
+    }
+  })
+
+  it('re-attaches row-capacity measurement when a populated chain arrives after an empty mount', async () => {
+    const longChain = buildChainWithPluginCount(7)
+    const longMeta = buildPluginMetaForChain(longChain)
+    const resizeObserverOwner = globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }
+    const originalResizeObserver = resizeObserverOwner.ResizeObserver
+
+    delete resizeObserverOwner.ResizeObserver
+
+    try {
+      const { rerender } = render(
+        <JuceGridSignalCanvas
+          chain={null}
+          pluginMeta={{}}
+          selectedPluginUri={null}
+          onPluginSelect={jest.fn()}
+          onToggleBypass={jest.fn()}
+          onReorderPlugins={jest.fn()}
+          onAddPlugin={jest.fn()}
+          showEndpoints={false}
+        />,
+      )
+
+      rerender(
+        <JuceGridSignalCanvas
+          chain={longChain}
+          pluginMeta={longMeta}
+          selectedPluginUri={longChain.plugins[0].uri}
+          onPluginSelect={jest.fn()}
+          onToggleBypass={jest.fn()}
+          onReorderPlugins={jest.fn()}
+          onAddPlugin={jest.fn()}
+          showEndpoints={false}
+        />,
+      )
+
+      const grid = await screen.findByTestId('juce-grid-signal-grid')
+      Object.defineProperty(grid, 'clientWidth', {
+        configurable: true,
+        value: 1500,
       })
 
       fireEvent(window, new Event('resize'))

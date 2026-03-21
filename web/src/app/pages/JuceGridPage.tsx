@@ -141,6 +141,63 @@ const API_BASE = (() => {
 
 const FLOW_CARD_LED_COLOR = '#59a8ff'
 
+interface FlowLevelControlProps {
+  flowId: string
+  flowLabel: string
+  value: number
+  accentColor: string
+  onChange: (value: number) => void
+}
+
+function FlowLevelControl({
+  flowId,
+  flowLabel,
+  value,
+  accentColor,
+  onChange,
+}: FlowLevelControlProps) {
+  const clampedValue = Math.max(0, Math.min(100, Math.round(value)))
+  const levelLabel = `Signal chain ${flowLabel} level`
+
+  return (
+    <div
+      className="juce-grid-page__flow-card-input"
+      data-testid={`juce-grid-flow-level-${flowId}`}
+      title={`${levelLabel}: ${clampedValue}%`}
+    >
+      <span className="juce-grid-page__flow-card-input-label" aria-hidden="true">
+        <VolumeUp size={12} />
+        <span>Level</span>
+      </span>
+      <NumberInput
+        label={levelLabel}
+        value={clampedValue}
+        min={0}
+        max={100}
+        step={1}
+        defaultValue={100}
+        valueFormatter={(nextValue) => `${Math.round(nextValue)}%`}
+        displayOverlay={(
+          <div className="juce-grid-page__flow-level-overlay">
+            <SegmentedLedText
+              value={`${clampedValue}%`}
+              size="sm"
+              color={FLOW_CARD_LED_COLOR}
+              className="juce-grid-page__flow-level-readout"
+            />
+          </div>
+        )}
+        onChange={onChange}
+        size="small"
+        showLabel={false}
+        showBounds={false}
+        accentColor={accentColor}
+        className="juce-grid-page__flow-level-input"
+      />
+    </div>
+  )
+}
+
 function isTabletViewport(): boolean {
   if (typeof window === 'undefined') {
     return false
@@ -1357,8 +1414,32 @@ export function JuceGridPage() {
       return null
     }
 
-    return resolveLivePluginCardStrategy(selectedPluginCard.uri, selectedPluginCard.category)
-  }, [selectedPluginCard])
+    const sameFamilyCount = currentChain?.plugins.filter((plugin) => (
+      selectedPluginCard.uri.toLowerCase().includes('synthforge')
+        ? plugin.uri.toLowerCase().includes('synthforge')
+        : plugin.uri === selectedPluginCard.uri
+    )).length
+
+    return resolveLivePluginCardStrategy(selectedPluginCard.uri, selectedPluginCard.category, {
+      sameFamilyCount,
+    })
+  }, [currentChain?.plugins, selectedPluginCard])
+
+  const selectedPluginEditorNotice = useMemo(() => {
+    if (!selectedPluginCard || !selectedPluginCardStrategy) {
+      return ''
+    }
+
+    if (
+      selectedPluginCardStrategy.renderMode === 'generic'
+      && selectedPluginCard.uri.toLowerCase().includes('synthforge')
+      && (currentChain?.plugins.filter((plugin) => plugin.uri.toLowerCase().includes('synthforge')).length ?? 0) > 1
+    ) {
+      return 'Full SynthForge workstation editing is enabled when the active chain contains a single SynthForge block. Duplicate SynthForge blocks still fall back to the generic editor while the backend remains globally scoped.'
+    }
+
+    return ''
+  }, [currentChain?.plugins, selectedPluginCard, selectedPluginCardStrategy])
 
   useEffect(() => {
     if (selectedPluginUri && chainsQuery.isPending) {
@@ -2405,7 +2486,7 @@ export function JuceGridPage() {
   }, [handleCloseEffectModal, isTabletTouchLayout])
 
   useEffect(() => {
-    if (!effectModalOpen) {
+    if (!effectModalOpen || !isTabletTouchLayout) {
       return
     }
 
@@ -2417,7 +2498,7 @@ export function JuceGridPage() {
     requestAnimationFrame(() => {
       panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     })
-  }, [effectModalOpen])
+  }, [effectModalOpen, isTabletTouchLayout])
 
   const handleFlowSlotKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>, index: number) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -3641,24 +3722,13 @@ export function JuceGridPage() {
                   }}
                 />
 
-                <div className="juce-grid-page__flow-card-input" onClick={(event) => event.stopPropagation()} title={`Dry/Wet: ${flow.dryWetMix}%`}>
-                  <NumberInput
+                <div onClick={(event) => event.stopPropagation()}>
+                  <FlowLevelControl
+                    flowId={flow.id}
+                    flowLabel={flowLabel}
                     value={flow.dryWetMix}
-                    min={0}
-                    max={100}
-                    step={1}
-                    valueFormatter={(value) => `${Math.round(value)}%`}
-                    displayOverlay={(
-                      <SegmentedLedText
-                        value={`${Math.round(flow.dryWetMix)}%`}
-                        size="sm"
-                        color={FLOW_CARD_LED_COLOR}
-                        className="juce-grid-page__flow-card-led-overlay"
-                      />
-                    )}
+                    accentColor={flow.color}
                     onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
-                    size="small"
-                    showLabel={false}
                   />
                 </div>
 
@@ -3845,6 +3915,9 @@ export function JuceGridPage() {
   }
 
   const SelectedPluginHeroIcon = getSelectedPluginHeroIcon(selectedPluginMeta, selectedPlugin)
+  const bottomEditorHasSelection = Boolean(selectedPlugin)
+  const bottomEditorOpen = effectModalOpen && bottomEditorHasSelection
+  const bottomEditorAccentColor = getCategoryConfig(selectedPluginMeta?.category || 'Utility').color
   const selectedPluginIndex = selectedPlugin && currentChain
     ? currentChain.plugins.findIndex((plugin) => (
       plugin.uri === selectedPlugin.uri
@@ -4092,73 +4165,95 @@ export function JuceGridPage() {
         </div>
       )}
 
-      {effectModalOpen && selectedPlugin && (
-        <section
-          ref={bottomEditorRef}
-          className={`juce-grid-page__bottom-editor-shell ${isTabletTouchLayout ? 'is-touch-mode' : ''}`}
-          aria-label="Block parameter editor"
-          onTouchStart={handleBottomEditorTouchStart}
-          onTouchEnd={handleBottomEditorTouchEnd}
-          onTouchCancel={() => {
-            bottomEditorTouchStartYRef.current = null
-          }}
-        >
-          <Layer className={`juce-grid-page__bottom-editor-panel ${isTabletTouchLayout ? 'is-touch-mode' : ''}`}>
-            <div className="juce-grid-page__bottom-editor-header">
-              <div className="juce-grid-page__bottom-editor-identity">
-                <div
-                  className={`juce-grid-page__bottom-editor-icon ${selectedPlugin.bypassed ? 'is-bypassed' : ''}`}
-                  aria-hidden
-                  style={{ '--juce-grid-editor-accent': getCategoryConfig(selectedPluginMeta?.category || 'Utility').color } as CSSProperties}
-                >
-                  <SelectedPluginHeroIcon width={32} height={32} />
-                </div>
-                <div className="juce-grid-page__bottom-editor-copy">
-                  <div className="juce-grid-page__bottom-editor-tags">
-                    {selectedPluginMeta?.category && <Tag type="cool-gray">{selectedPluginMeta.category}</Tag>}
-                    {selectedPluginMeta?.format && <Tag type="blue">{selectedPluginMeta.format}</Tag>}
+      <section
+        ref={bottomEditorRef}
+        className={`juce-grid-page__bottom-editor-shell ${isTabletTouchLayout ? 'is-touch-mode' : ''} ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}
+        aria-label={bottomEditorOpen ? 'Block parameter editor' : undefined}
+        aria-hidden={bottomEditorOpen ? undefined : true}
+        onTouchStart={handleBottomEditorTouchStart}
+        onTouchEnd={handleBottomEditorTouchEnd}
+        onTouchCancel={() => {
+          bottomEditorTouchStartYRef.current = null
+        }}
+      >
+        <Layer className={`juce-grid-page__bottom-editor-panel ${isTabletTouchLayout ? 'is-touch-mode' : ''} ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}>
+          <div className="juce-grid-page__bottom-editor-header">
+            <div className="juce-grid-page__bottom-editor-identity">
+              <div
+                className={`juce-grid-page__bottom-editor-icon ${selectedPlugin?.bypassed ? 'is-bypassed' : ''}`}
+                aria-hidden
+                style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
+              >
+                {selectedPlugin ? <SelectedPluginHeroIcon width={32} height={32} /> : <Edit size={32} />}
+              </div>
+              <div className="juce-grid-page__bottom-editor-copy">
+                <div className="juce-grid-page__bottom-editor-tags">
+                  {bottomEditorOpen && selectedPluginMeta?.category && <Tag type="cool-gray">{selectedPluginMeta.category}</Tag>}
+                  {bottomEditorOpen && selectedPluginMeta?.format && <Tag type="blue">{selectedPluginMeta.format}</Tag>}
+                  {bottomEditorOpen && selectedPlugin ? (
                     <Tag type={selectedPlugin.bypassed ? 'red' : 'green'}>{selectedPlugin.bypassed ? 'Bypassed' : 'Active'}</Tag>
-                  </div>
-                  <strong>{getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri)}</strong>
+                  ) : (
+                    <Tag type="cool-gray">Idle</Tag>
+                  )}
+                  {!bottomEditorOpen && <Tag type="warm-gray">Closed</Tag>}
+                </div>
+                <strong>{bottomEditorOpen && selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}</strong>
+                {bottomEditorOpen && selectedPlugin ? (
                   <p>
                     {selectedPluginMeta?.parameters?.length ?? 0} parameter{(selectedPluginMeta?.parameters?.length ?? 0) === 1 ? '' : 's'}
                     {' '}
                     {isTabletTouchLayout
-                      ? 'with swipe-down dismiss and touch-first smart controls.'
-                      : 'organized in always-visible Carbon groups.'}
+                      ? 'loaded into the reserved touch editor area below.'
+                      : 'loaded into the reserved editor area below.'}
                   </p>
-                </div>
-              </div>
-              <div className="juce-grid-page__bottom-editor-actions">
-                <Button
-                  size="sm"
-                  kind="ghost"
-                  renderIcon={ArrowLeft}
-                  onClick={() => moveSelectedPlugin('left')}
-                  disabled={!canMoveSelectedPluginLeft || reorderMutation.isPending}
-                >
-                  Move left
-                </Button>
-                <Button
-                  size="sm"
-                  kind="ghost"
-                  renderIcon={ArrowRight}
-                  onClick={() => moveSelectedPlugin('right')}
-                  disabled={!canMoveSelectedPluginRight || reorderMutation.isPending}
-                >
-                  Move right
-                </Button>
-                <Button size="sm" kind={selectedPlugin.bypassed ? 'ghost' : 'secondary'} onClick={handleToggleSelectedBypass}>
-                  {selectedPlugin.bypassed ? 'Enable block' : 'Bypass block'}
-                </Button>
-                <Button size="sm" kind="ghost" renderIcon={Close} onClick={handleCloseEffectModal}>
-                  Close editor
-                </Button>
+                ) : (
+                  <p>Select a processor in the grid, then open the reserved editor area when you want to work on it.</p>
+                )}
+                {bottomEditorOpen && selectedPluginEditorNotice && <p>{selectedPluginEditorNotice}</p>}
               </div>
             </div>
+            <div className="juce-grid-page__bottom-editor-actions">
+              <Button
+                size="sm"
+                kind="ghost"
+                renderIcon={ArrowLeft}
+                onClick={() => moveSelectedPlugin('left')}
+                disabled={!bottomEditorOpen || !canMoveSelectedPluginLeft || reorderMutation.isPending}
+              >
+                Move left
+              </Button>
+              <Button
+                size="sm"
+                kind="ghost"
+                renderIcon={ArrowRight}
+                onClick={() => moveSelectedPlugin('right')}
+                disabled={!bottomEditorOpen || !canMoveSelectedPluginRight || reorderMutation.isPending}
+              >
+                Move right
+              </Button>
+              <Button
+                size="sm"
+                kind={selectedPlugin?.bypassed ? 'ghost' : 'secondary'}
+                onClick={handleToggleSelectedBypass}
+                disabled={!selectedPlugin}
+              >
+                {selectedPlugin?.bypassed ? 'Enable block' : 'Bypass block'}
+              </Button>
+              <Button
+                size="sm"
+                kind="ghost"
+                renderIcon={bottomEditorOpen ? Close : Edit}
+                onClick={bottomEditorOpen ? handleCloseEffectModal : openEffectModal}
+                disabled={!selectedPlugin}
+              >
+                {bottomEditorOpen ? 'Close editor' : 'Open editor'}
+              </Button>
+            </div>
+          </div>
 
-            <div className="juce-grid-page__bottom-editor-body">
-              {selectedPluginCard
+          <div className="juce-grid-page__bottom-editor-body">
+            {bottomEditorOpen && selectedPlugin ? (
+              selectedPluginCard
                 && selectedPluginCardStrategy
                 && selectedPluginCardStrategy.renderMode !== 'generic'
                 && selectedPluginMeta
@@ -4184,11 +4279,22 @@ export function JuceGridPage() {
                   isRefreshing={isRefreshingPlugins}
                   touchMode={isTabletTouchLayout}
                 />
-              )}
-            </div>
-          </Layer>
-        </section>
-      )}
+              )
+            ) : (
+              <Tile className="juce-grid-page__bottom-editor-placeholder">
+                <div className="juce-grid-page__parameter-editor-copy">
+                  <strong>{selectedPlugin ? 'Selected block ready' : 'No block selected'}</strong>
+                  <p>
+                    {selectedPlugin
+                      ? 'The editor shell stays pinned here. Use Open editor when you want to work on the selected block.'
+                      : 'Select a processor in the grid to load its controls here without shifting the page.'}
+                  </p>
+                </div>
+              </Tile>
+            )}
+          </div>
+        </Layer>
+      </section>
 
       <div className="juce-grid-page__floating-actions" aria-label="Audio Grid floating actions">
         {renderSnapshotsTrigger()}
