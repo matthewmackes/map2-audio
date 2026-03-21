@@ -334,6 +334,16 @@ export interface MIDIMappingV2 {
   updated_at?: string;
 }
 
+export interface MIDIMappingTestResult {
+  mapping_id: number;
+  channel: number;
+  cc: number;
+  normalized_value: number;
+  cc_value: number;
+  source: 'current' | 'manual';
+  message: string;
+}
+
 export interface MIDIMappingGroup {
   id: number;
   name: string;
@@ -414,13 +424,14 @@ export interface MIDIStatus {
 
 export interface MIDILearnTarget {
   chain_id: number;
-  plugin_id: number;
+  plugin_id?: number;
+  plugin_uri?: string;
   parameter_symbol: string;
   parameter_index: number;
   min_value: number;
   max_value: number;
   curve: MIDICurveType;
-  is_active: boolean;
+  is_active?: boolean;
 }
 
 // WebSocket event types for MIDI

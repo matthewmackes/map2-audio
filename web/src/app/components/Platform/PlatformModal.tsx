@@ -7,7 +7,6 @@
  *   - PlatformShellPage  (deep-link compatibility: ?layer= / ?panel=)
  */
 import {
-  ArrowLeft,
   ChartColumn,
   Close,
   DataBase,
@@ -16,11 +15,11 @@ import {
   Network_3,
   Screen,
   Share,
+  SettingsAdjust,
   Terminal,
   type CarbonIconType,
 } from '@carbon/icons-react'
 import {
-  Button,
   ClickableTile,
   DataTable,
   InlineLoading,
@@ -41,14 +40,20 @@ import {
   TableToolbarSearch,
 } from '@carbon/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react'
 
 import '../../pages/PlatformShellPage.css'
-import { MAX_PINNED_NAV_ITEMS, allPinnableNavigationItems } from '../../data/advancedMenuItems'
+import {
+  MAX_PINNED_NAV_ITEMS,
+  allPinnableNavigationItems,
+  type HardwareInterfaceMenuItem,
+  type ShellNavigationItem,
+} from '../../data/advancedMenuItems'
 import { platformPinnedItems, type PlatformPinnedNavItem, type StandalonePanel } from '../../data/platformMenuItems'
 import { useSpecialSettings } from '../../hooks/useSpecialSettings'
 import { MidiClusterNodeCard } from '../MidiCluster/MidiClusterNodeCard'
 import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
+import { LabsWorkspace } from './LabsWorkspace'
 import {
   useMidiClusterConnections,
   useMidiClusterEndpoints,
@@ -71,7 +76,6 @@ import {
   usePlatformAlerts,
   usePlatformAnimationState,
   usePlatformSummaryMetrics,
-  usePlatformView,
 } from '../../stores/platformStore'
 
 const HostMachinePage = lazy(() => import('../../pages/HostMachinePage').then(m => ({ default: m.HostMachinePage })))
@@ -82,6 +86,7 @@ const AboutPage       = lazy(() => import('../../pages/AboutPage').then(m => ({ 
 
 const PAGE_SIZES = [5, 10, 20]
 const PLATFORM_CONTROL_PANEL_ICON_SIZE = 45
+const DEFAULT_PLATFORM_LAYER: PlatformLayerId = 'overview'
 
 const LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
   overview: ChartColumn,
@@ -99,6 +104,8 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'audio-engine': { label: 'Audio Engine',   eyebrow: 'System',   icon: Terminal },
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
 }
+
+type PinnableNavTarget = PlatformPinnedNavItem | ShellNavigationItem | HardwareInterfaceMenuItem
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -139,6 +146,116 @@ function renderCellValue(headerKey: string, value: PlatformTableValue) {
     return <span className={`platform-shell__table-alert${text === 'Clear' ? ' is-clear' : ''}`}>{text}</span>
   }
   return text
+}
+
+function SidebarNavigation({
+  activeId,
+  pinnedRouteSet,
+  pinningDisabled,
+  onOpenLayer,
+  onOpenStandalone,
+  onOpenLabs,
+  onTogglePin,
+}: {
+  activeId: string | null
+  pinnedRouteSet: Set<string>
+  pinningDisabled: boolean
+  onOpenLayer: (id: PlatformLayerId) => void
+  onOpenStandalone: (id: StandalonePanel) => void
+  onOpenLabs: () => void
+  onTogglePin: (item: PlatformPinnedNavItem, checked: boolean) => void
+}) {
+  return (
+    <aside className="platform-shell__sidebar" aria-label="Platforms and Labs navigation">
+      <div className="platform-shell__sidebar-head">
+        <p className="platform-shell__sidebar-eyebrow">Navigation</p>
+        <h2 className="platform-shell__sidebar-title">Platforms and Labs</h2>
+        <p className="platform-shell__sidebar-copy">
+          Move across platform workspaces from one rail, then drop into Labs for the former Advanced launchers.
+        </p>
+      </div>
+
+      <div className="platform-shell__sidebar-list" role="list">
+        {PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
+          const Icon = item.icon
+          const targetId = item.target.layer ?? item.target.panel ?? null
+          const isSelected = activeId === targetId
+          const isPinned = pinnedRouteSet.has(item.to)
+          const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
+          const pinDisabled = pinningDisabled || limitReached
+
+          return (
+            <article
+              key={item.to}
+              role="listitem"
+              className={`platform-shell__nav-item${isSelected ? ' is-selected' : ''}`}
+            >
+              <button
+                type="button"
+                className="platform-shell__nav-item-main"
+                onClick={() => {
+                  if (item.target.layer) {
+                    onOpenLayer(item.target.layer)
+                    return
+                  }
+                  if (item.target.panel) {
+                    onOpenStandalone(item.target.panel)
+                  }
+                }}
+                aria-label={`Open ${item.label} workspace`}
+              >
+                <span className="platform-shell__nav-item-icon" aria-hidden>
+                  <Icon size={20} />
+                </span>
+                <span className="platform-shell__nav-item-copy">
+                  <span className="platform-shell__nav-item-label">{item.label}</span>
+                  <span className="platform-shell__nav-item-desc">{item.description}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={`platform-shell__nav-item-pin${isPinned ? ' is-pinned' : ''}`}
+                onClick={() => onTogglePin(item, !isPinned)}
+                aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                title={
+                  limitReached
+                    ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
+                    : isPinned
+                      ? 'Unpin from navigation bar'
+                      : 'Pin to navigation bar'
+                }
+                aria-pressed={isPinned}
+                disabled={pinDisabled}
+              >
+                {isPinned ? 'PINNED' : 'PIN'}
+              </button>
+            </article>
+          )
+        })}
+      </div>
+
+      <div className="platform-shell__sidebar-footer">
+        <button
+          type="button"
+          className={`platform-shell__nav-item platform-shell__nav-item--labs${activeId === 'labs' ? ' is-selected' : ''}`}
+          onClick={onOpenLabs}
+          aria-label="Open Labs workspace"
+        >
+          <span className="platform-shell__nav-item-main">
+            <span className="platform-shell__nav-item-icon" aria-hidden>
+              <SettingsAdjust size={20} />
+            </span>
+            <span className="platform-shell__nav-item-copy">
+              <span className="platform-shell__nav-item-chip">Labs</span>
+              <span className="platform-shell__nav-item-desc">
+                Advanced and experimental launchers formerly grouped under the old Advanced menu.
+              </span>
+            </span>
+          </span>
+        </button>
+      </div>
+    </aside>
+  )
 }
 
 // ── Control Panel Grid ───────────────────────────────────────────────────────
@@ -431,7 +548,7 @@ function MidiClusterNodeDetail({ selectedEndpointId }: { selectedEndpointId: str
 
 // ── Standalone Workspace ─────────────────────────────────────────────────────
 
-function StandaloneWorkspace({ panel, onBack }: { panel: StandalonePanel; onBack: () => void }) {
+function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
   const { label, eyebrow, icon: Icon } = STANDALONE_META[panel]
   return (
     <motion.section key={panel} className="platform-shell__workspace"
@@ -444,9 +561,6 @@ function StandaloneWorkspace({ panel, onBack }: { panel: StandalonePanel; onBack
           <span className="platform-shell__ws-header-eyebrow">{eyebrow}</span>
           <h2 className="platform-shell__ws-header-title">{label}</h2>
         </div>
-        <Button kind="ghost" size="sm" renderIcon={ArrowLeft} onClick={onBack} className="platform-shell__ws-back">
-          Control Panel
-        </Button>
       </div>
       <Suspense fallback={<div className="platform-shell__table-state"><span>Loading…</span></div>}>
         {panel === 'host-machine' && <HostMachinePage />}
@@ -459,10 +573,9 @@ function StandaloneWorkspace({ panel, onBack }: { panel: StandalonePanel; onBack
 
 // ── Layer Workspace ──────────────────────────────────────────────────────────
 
-function LayerWorkspace({ layer, alerts, onBack, onDismissAlert }: {
+function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   layer: PlatformLayerData
   alerts: PlatformAlert[]
-  onBack: () => void
   onDismissAlert: (id: string) => void
 }) {
   const Icon = LAYER_ICONS[layer.id]
@@ -487,9 +600,6 @@ function LayerWorkspace({ layer, alerts, onBack, onDismissAlert }: {
           <span className="platform-shell__ws-header-eyebrow">{layer.shortLabel}</span>
           <h2 className="platform-shell__ws-header-title">{layer.label}</h2>
         </div>
-        <Button kind="ghost" size="sm" renderIcon={ArrowLeft} onClick={onBack} className="platform-shell__ws-back">
-          Control Panel
-        </Button>
       </div>
       <NotificationStrip alerts={alerts} onDismiss={onDismissAlert} />
       {layer.error && layer.tableRows.length > 0 && (
@@ -527,15 +637,14 @@ export interface PlatformModalContentProps {
 export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, onClose }: PlatformModalContentProps) {
   const { settings: specialSettings, isLoading: specialSettingsLoading, updateSettings } = useSpecialSettings()
   const { layers, layerHealth: nextLayerHealth, summaryMetrics: nextSummaryMetrics, alerts: nextAlerts } = usePlatformShellData()
-  const currentView = usePlatformView()
   const activeLayerId = usePlatformActiveLayer()
   const alerts = usePlatformAlerts()
   const animationState = usePlatformAnimationState()
   const { openLayer, closeLayer, clearAnimation, setAlerts, setLayerHealth, setSummaryMetrics, dismissAlert } = usePlatformActions()
   const _summaryMetrics = usePlatformSummaryMetrics()
 
-  // Track what "panel" (standalone) is open locally — not in the platform store
   const [activePanel, setActivePanel] = useState<StandalonePanel | null>(initialPanel ?? null)
+  const [activeLabs, setActiveLabs] = useState(false)
   const pinnedRoutes = useMemo(() => specialSettings?.pinnedRoutes ?? [], [specialSettings?.pinnedRoutes])
   const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
 
@@ -546,16 +655,25 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
     setAlerts(nextAlerts)
   }, [nextAlerts, nextLayerHealth, nextSummaryMetrics, setAlerts, setLayerHealth, setSummaryMetrics])
 
-  // Apply initial deep-link layer once layers are loaded
-  const didApplyInitial = useRef(false)
   useEffect(() => {
-    if (didApplyInitial.current) return
-    if (initialPanel) { didApplyInitial.current = true; return }
-    if (initialLayer && isPlatformLayerId(initialLayer)) {
-      didApplyInitial.current = true
-      startTransition(() => openLayer(initialLayer))
+    if (initialPanel) {
+      setActiveLabs(false)
+      setActivePanel(initialPanel)
+      startTransition(() => closeLayer())
+      return
     }
-  }, [initialLayer, initialPanel, openLayer])
+
+    if (initialLayer && isPlatformLayerId(initialLayer)) {
+      setActiveLabs(false)
+      setActivePanel(null)
+      startTransition(() => openLayer(initialLayer))
+      return
+    }
+
+    if (!activeLabs && activePanel === null && activeLayerId === null) {
+      startTransition(() => openLayer(DEFAULT_PLATFORM_LAYER))
+    }
+  }, [activeLabs, activeLayerId, activePanel, closeLayer, initialLayer, initialPanel, openLayer])
 
   // Animation cleanup
   useEffect(() => {
@@ -574,7 +692,7 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
     return alerts.filter((a) => a.layerId === activeLayer.id)
   }, [activeLayer, alerts])
 
-  const togglePinnedRoute = async (item: PlatformPinnedNavItem, checked: boolean) => {
+  const togglePinnedRoute = async (item: PinnableNavTarget, checked: boolean) => {
     if (!checked) {
       await updateSettings({ pinnedRoutes: pinnedRoutes.filter((route) => route !== item.to) })
       return
@@ -594,66 +712,91 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
   }
 
   const handleOpenLayer = (layerId: PlatformLayerId) => {
+    setActiveLabs(false)
     setActivePanel(null)
     startTransition(() => openLayer(layerId))
     onNavigate?.({ layer: layerId })
   }
 
   const handleOpenStandalone = (panel: StandalonePanel) => {
+    setActiveLabs(false)
     startTransition(() => closeLayer())
     setActivePanel(panel)
     onNavigate?.({ panel })
   }
 
-  const handleBack = () => {
+  const handleOpenLabs = () => {
     startTransition(() => closeLayer())
     setActivePanel(null)
+    setActiveLabs(true)
     onNavigate?.(null)
   }
 
   const showStandalone = activePanel !== null
-  const showLayer = !showStandalone && currentView === 'layer' && activeLayer !== null
-  const showGrid = !showStandalone && !showLayer
-  const activeId = showStandalone ? activePanel : (activeLayerId ?? null)
+  const showLayer = !activeLabs && !showStandalone && activeLayer !== null
+  const activeId = activeLabs ? 'labs' : (activePanel ?? activeLayerId)
 
   return (
-    <div className={`platform-modal__body${showGrid ? ' platform-modal__body--compact' : ' platform-modal__body--expanded'}`}>
-      {/* Header row: title + close button */}
+    <div className="platform-modal__body platform-modal__body--expanded">
       <div className="platform-modal__header">
-        <span className="platform-modal__header-title">Platform</span>
+        <span className="platform-modal__header-title">Platforms and Labs</span>
         <button
           type="button"
           className="platform-modal__close"
           onClick={onClose}
-          aria-label="Close platform panel"
+          aria-label="Close Platforms and Labs window"
         >
           <Close size={20} aria-hidden />
         </button>
       </div>
 
-      {/* Scrollable content area */}
-      <div className={`platform-modal__scroll${showGrid ? ' platform-modal__scroll--compact' : ''}`}>
+      <div className="platform-modal__scroll">
         <div className="platform-shell-page">
           <div className="platform-shell__content">
-            {showGrid ? (
-              <ControlPanelGrid
+            <div className="platform-shell__window">
+              <SidebarNavigation
                 activeId={activeId}
                 pinnedRouteSet={pinnedRouteSet}
                 onOpenLayer={handleOpenLayer}
                 onOpenStandalone={handleOpenStandalone}
+                onOpenLabs={handleOpenLabs}
                 onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
                 pinningDisabled={specialSettingsLoading}
               />
-            ) : (
+              <div className="platform-shell__panel">
               <AnimatePresence mode="wait">
+                {activeLabs && (
+                  <LabsWorkspace
+                    key="labs"
+                    pinnedRouteSet={pinnedRouteSet}
+                    pinningDisabled={specialSettingsLoading}
+                    onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
+                    onLaunch={onClose}
+                  />
+                )}
                 {showStandalone && activePanel && (
-                  <StandaloneWorkspace key={activePanel} panel={activePanel} onBack={handleBack} />
+                  <StandaloneWorkspace key={activePanel} panel={activePanel} />
                 )}
                 {showLayer && activeLayer && (
-                  <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onBack={handleBack} onDismissAlert={dismissAlert} />
+                  <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
+                )}
+                {!activeLabs && !showStandalone && !showLayer && (
+                  <motion.section
+                    key="platform-loading"
+                    className="platform-shell__workspace platform-shell__workspace--empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.16, ease: 'easeOut' }}
+                  >
+                    <div className="platform-shell__table-state">
+                      <InlineLoading description="Loading platform workspace" status="active" />
+                    </div>
+                  </motion.section>
                 )}
               </AnimatePresence>
-            )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

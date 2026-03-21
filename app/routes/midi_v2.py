@@ -66,15 +66,24 @@ class MappingCreateRequest(BaseModel):
 
 class MappingUpdateRequest(BaseModel):
     """Request body for updating a MIDI mapping."""
+    channel: Optional[int] = Field(None, ge=0, le=16)
+    cc: Optional[int] = Field(None, ge=0, le=127)
+    chain_id: Optional[int] = None
     min_val: Optional[float] = None
     max_val: Optional[float] = None
     curve_type: Optional[str] = None
     invert: Optional[bool] = None
     feedback_enabled: Optional[bool] = None
-    feedback_cc: Optional[int] = None
+    feedback_cc: Optional[int] = Field(None, ge=0, le=127)
     name: Optional[str] = None
     is_enabled: Optional[bool] = None
     group_id: Optional[int] = None
+
+
+class MappingTestRequest(BaseModel):
+    """Request body for sending a one-shot outbound feedback test."""
+    normalized_value: Optional[float] = Field(None, ge=0.0, le=1.0)
+    use_current_value: bool = Field(False, description="Use the live parameter value instead of an explicit preview value")
 
 
 class CommandCreateRequest(BaseModel):
@@ -181,8 +190,10 @@ async def create_mapping(request: MappingCreateRequest):
             mapping_id = await midi_service.create_mapping(dto, session)
             if not mapping_id:
                 raise HTTPException(status_code=400, detail="Failed to create mapping - check server logs")
-
-            return {"status": "created", "mapping_id": mapping_id}
+            mapping = await midi_service.get_mapping(mapping_id, session)
+            if not mapping:
+                raise HTTPException(status_code=500, detail="Mapping was created but could not be reloaded")
+            return {"mapping": mapping, "message": "Mapping created"}
     except HTTPException:
         raise
     except Exception as e:
@@ -194,14 +205,16 @@ async def create_mapping(request: MappingCreateRequest):
 @router.patch("/mappings/{mapping_id}")
 async def update_mapping(mapping_id: int, request: MappingUpdateRequest):
     """Update a MIDI mapping."""
-    updates = request.dict(exclude_none=True)
+    updates = request.dict(exclude_unset=True)
 
     async with get_session() as session:
         success = await midi_service.update_mapping(mapping_id, updates, session)
         if not success:
             raise HTTPException(status_code=404, detail="Mapping not found")
-
-        return {"status": "updated", "mapping_id": mapping_id}
+        mapping = await midi_service.get_mapping(mapping_id, session)
+        if not mapping:
+            raise HTTPException(status_code=404, detail="Mapping not found")
+        return {"mapping": mapping, "message": "Mapping updated"}
 
 
 @router.delete("/mappings/{mapping_id}")
@@ -213,6 +226,26 @@ async def delete_mapping(mapping_id: int):
             raise HTTPException(status_code=404, detail="Mapping not found")
 
         return {"status": "deleted", "mapping_id": mapping_id}
+
+
+@router.post("/mappings/{mapping_id}/test")
+async def test_mapping_feedback(mapping_id: int, request: MappingTestRequest):
+    """Send a one-shot outbound MIDI feedback message for a mapping."""
+    async with get_session() as session:
+        try:
+            payload = await midi_service.send_mapping_feedback_test(
+                mapping_id,
+                session,
+                normalized_value=request.normalized_value,
+                use_current_value=request.use_current_value,
+            )
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+        if not payload:
+            raise HTTPException(status_code=404, detail="Mapping not found")
+
+        return {"message": "Feedback test sent", **payload}
 
 
 # ==================== Commands ====================
@@ -311,11 +344,15 @@ async def start_learn(request: LearnStartRequest):
     )
 
     return {
-        "status": "learning",
+        "success": success,
         "target": {
             "chain_id": request.chain_id,
             "plugin_uri": request.plugin_uri,
-            "param_index": request.param_index,
+            "parameter_index": request.param_index,
+            "parameter_symbol": request.param_symbol,
+            "min_value": request.min_val,
+            "max_value": request.max_val,
+            "curve": curve.value,
         }
     }
 
@@ -324,13 +361,29 @@ async def start_learn(request: LearnStartRequest):
 async def stop_learn():
     """Stop MIDI learn mode."""
     await midi_service.stop_learn()
-    return {"status": "stopped"}
+    return {"success": True}
 
 
 @router.get("/learn/status")
 async def get_learn_status():
     """Get current MIDI learn status."""
-    return midi_service.get_learn_status()
+    status = midi_service.get_learn_status()
+    target = status.get("target")
+    normalized_target = None
+    if target:
+        normalized_target = {
+            "chain_id": target.get("chain_id"),
+            "plugin_uri": target.get("plugin_uri"),
+            "parameter_index": target.get("param_index"),
+            "parameter_symbol": target.get("param_symbol"),
+            "min_value": target.get("min_val"),
+            "max_value": target.get("max_val"),
+            "curve": target.get("curve").value if isinstance(target.get("curve"), CurveType) else target.get("curve"),
+        }
+    return {
+        "learning": status.get("active", False),
+        "target": normalized_target,
+    }
 
 
 @router.post("/learn/complete")

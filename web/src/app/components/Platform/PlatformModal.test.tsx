@@ -1,6 +1,7 @@
 import React from 'react'
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 import { PlatformModalContent } from './PlatformModal'
 
@@ -22,6 +23,12 @@ jest.mock('../../hooks/useSpecialSettings', () => ({
     isLoading: false,
     error: null,
     updateSettings: mockUpdateSettings,
+  }),
+}))
+
+jest.mock('../../hooks/useDeviceLocation', () => ({
+  useHardwareMenuLocations: () => ({
+    locationsByRoute: {},
   }),
 }))
 
@@ -87,12 +94,41 @@ describe('PlatformModalContent', () => {
   })
 
   it('pins platform control-panel items into the main navigation settings', () => {
-    render(<PlatformModalContent onClose={() => undefined} />)
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} />
+      </MemoryRouter>,
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'Pin Overview' }))
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
       pinnedRoutes: ['platform:layer:overview'],
     })
+  })
+
+  it('shows the former advanced launcher set inside the Labs workspace', () => {
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Labs workspace' }))
+
+    expect(screen.getAllByText('Labs').length).toBeGreaterThan(0)
+    expect(screen.getByText('MIDI Hub')).toBeTruthy()
+    expect(screen.getByText('Tesira AVB')).toBeTruthy()
+    expect(screen.getByText('Blocked / Lab')).toBeTruthy()
   })
 })

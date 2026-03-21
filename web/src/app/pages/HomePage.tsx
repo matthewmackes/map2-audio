@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HeroDotGrid } from '../components/HeroDotGrid/HeroDotGrid'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronUp, Pin, PinFilled } from '@carbon/icons-react'
 import { ApiActivityOverlay } from '../components/ApiActivityOverlay/ApiActivityOverlay'
 import {
@@ -22,7 +22,6 @@ import {
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import { useNodePageContext } from '../hooks/useNodePageContext'
-import { buildPlatformHref } from '../platform/model'
 import { isBlockedAdvancedMenuItem } from '../layout/advancedMenuState'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './HomePage.css'
@@ -335,6 +334,7 @@ function clusterDotClass(status: ClusterTile['status']): string {
 
 export function HomePage() {
   const { localNode, topology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.home)
+  const location = useLocation()
   const navigate = useNavigate()
   const {
     settings: specialSettings,
@@ -536,6 +536,28 @@ export function HomePage() {
     await updateSpecialSettings({ pinnedRoutes: nextRoutes })
   }
 
+  const openPlatformWindow = useCallback((params: { layer?: string; panel?: string }) => {
+    const nextSearch = new URLSearchParams(location.search)
+    nextSearch.delete('layer')
+    nextSearch.delete('panel')
+    if (params.layer) nextSearch.set('layer', params.layer)
+    if (params.panel) nextSearch.set('panel', params.panel)
+
+    navigate({
+      pathname: location.pathname,
+      search: nextSearch.toString() ? `?${nextSearch.toString()}` : '',
+    })
+  }, [location.pathname, location.search, navigate])
+
+  const openHomeItem = useCallback((item: HomeNavigationItem) => {
+    if (item.to === '/platform') {
+      openPlatformWindow({ layer: 'overview' })
+      return
+    }
+
+    navigate(item.to)
+  }, [navigate, openPlatformWindow])
+
   // ── Visible sections (non-empty only) ──────────────────────────────────────
 
   const visibleSections = useMemo(
@@ -581,7 +603,7 @@ export function HomePage() {
                 key={`hero-node-${tile.id}`}
                 type="button"
                 className="hp-hero__node"
-                onClick={() => navigate(buildPlatformHref('cluster-dashboard'))}
+                onClick={() => openPlatformWindow({ layer: 'cluster-dashboard' })}
                 title={`${tile.hostname} · ${tile.status}`}
               >
                 <span
@@ -626,12 +648,12 @@ export function HomePage() {
                     role="listitem"
                     className={`hp-card${isBlocked ? ' is-blocked' : ''}${item.to === '/juce-grid' ? ' hp-card--wide' : ''}`}
                     onClick={() => {
-                      if (!isBlocked) navigate(item.to)
+                      if (!isBlocked) openHomeItem(item)
                     }}
                     onKeyDown={(e) => {
                       if ((e.key === 'Enter' || e.key === ' ') && !isBlocked) {
                         e.preventDefault()
-                        navigate(item.to)
+                        openHomeItem(item)
                       }
                     }}
                     tabIndex={0}
@@ -686,7 +708,7 @@ export function HomePage() {
                         disabled={isBlocked}
                         onClick={(e) => {
                           e.stopPropagation()
-                          if (!isBlocked) navigate(item.to)
+                          if (!isBlocked) openHomeItem(item)
                         }}
                       >
                         Open Interface

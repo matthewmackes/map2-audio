@@ -202,8 +202,8 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
       </section>
 
       <section className="special-settings-section">
-        <h3 className="special-settings-section-title">Advanced menu location</h3>
-        <p className="special-settings-copy">Choose where the advanced menu is visible.</p>
+        <h3 className="special-settings-section-title">Platforms and Labs location</h3>
+        <p className="special-settings-copy">Choose where the unified Platforms and Labs window entry is visible.</p>
 
         <RadioButtonGroup
           name="menuLocation"
@@ -216,8 +216,8 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
           <RadioButton id="menu-location-hidden" value="hidden" labelText="Hide completely" />
         </RadioButtonGroup>
         <p className="special-settings-radio-help">
-          Show in top navigation keeps advanced routes available from the desktop shell. Mobile menu only limits access
-          to the compact navigation. Hide completely removes advanced navigation entry points.
+          Show in top navigation keeps the unified Platforms and Labs window available from the desktop shell. Mobile
+          menu only limits access to the compact navigation. Hide completely removes those entry points.
         </p>
       </section>
     </Modal>

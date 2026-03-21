@@ -11,17 +11,17 @@ export interface HomeCardProfile {
 
 const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
   '/platform': {
-    summary: 'Unified platform stack that collapses overview, node, AVB, MIDI cluster, API observability, and fleet posture into one route.',
+    summary: 'Unified Platforms and Labs window that combines platform workspaces with the relocated advanced launcher surface in one shell entry point.',
     capabilities: [
-      'Single-route access to six operational layers',
-      'Fast stack-to-workspace transitions with deep links',
-      'Shared notification grammar across cluster domains',
-      'Cluster, node, AVB, MIDI, and API summaries in one surface',
-      'Common table and tile layout for every layer',
-      'Reduced navigation overhead during troubleshooting',
+      'Persistent left-rail access to platform workspaces',
+      'Unified path across node, AVB, MIDI, API, and fleet views',
+      'Bottom-rail Labs entry for advanced and experimental launchers',
+      'Shared shell window for platform and lab workflows',
+      'Consistent icon grammar across platform destinations and labs launchers',
+      'Reduced navigation overhead during troubleshooting and exploration',
     ],
-    learnMore: 'Open Platform Stack when you need one operational workspace that can pivot quickly between topology, services, network audio, cluster MIDI, API behavior, and fleet status.',
-    bestFor: 'Cross-domain operations and first-response triage',
+    learnMore: 'Open Platforms and Labs when you need one window that can pivot between the main platform workspaces and the relocated advanced launchers without jumping between separate shell menus.',
+    bestFor: 'Cross-domain operations plus advanced workflow launch',
   },
   '/engine': {
     summary: 'Realtime engine command surface for core audio runtime state, metering, and processing-path confidence checks.',

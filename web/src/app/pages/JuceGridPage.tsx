@@ -98,13 +98,14 @@ import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { SnapshotModal } from '../components/snapshots/SnapshotModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, PluginOrderRef, HistoryStatus, FlowSnapshot, FlowSnapshotData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus } from '../../map2/types'
+import type { Chain, Plugin, PluginOrderRef, HistoryStatus, FlowSnapshot, FlowSnapshotData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus, PluginParameter } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
 import { JuceGridChainManagementCard } from './JuceGridChainManagementCard'
 import { ChainAssignmentModal } from './ChainAssignmentModal'
+import { JuceGridSelectedBlockMidiPanel } from './JuceGridSelectedBlockMidiPanel'
 import { RoutingTopologyModal } from './RoutingTopologyModal'
 import { AudioNodesModal } from './AudioNodesModal'
 import { JuceGridParameterEditor } from './JuceGridParameterEditor'
@@ -2604,6 +2605,31 @@ export function JuceGridPage() {
     stopMidiLearnMutation,
   ])
 
+  const handleStartSelectedBlockMidiLearn = useCallback((parameter: PluginParameter) => {
+    if (!currentChain || !selectedPlugin) {
+      pushToast('Select a block before starting MIDI learn', 'warn')
+      return
+    }
+    if (startMidiLearnMutation.isPending) {
+      return
+    }
+
+    setMidiLearnActive(false)
+    pushToast(`Learning ${parameter.name}... move your controller now`, 'info')
+    startMidiLearnMutation.mutate({
+      chain_id: currentChain.id,
+      plugin_uri: selectedPlugin.uri,
+      param_symbol: parameter.symbol,
+      param_index: parameter.index,
+      min_val: parameter.min,
+      max_val: parameter.max,
+    })
+  }, [currentChain, pushToast, selectedPlugin, startMidiLearnMutation])
+
+  const handleStopSelectedBlockMidiLearn = useCallback(() => {
+    stopMidiLearnMutation.mutate()
+  }, [stopMidiLearnMutation])
+
   const updateMidiMappingRangeDraft = useCallback((mappingId: number, field: 'min' | 'max', value: string) => {
     setMidiRangeDrafts((previous) => ({
       ...previous,
@@ -3686,111 +3712,125 @@ export function JuceGridPage() {
               </div>
 
               <div className="juce-grid-page__flow-card-actions">
-                <button
-                  type="button"
-                  className="juce-grid-page__flow-card-routing-summary"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    selectFlowIndex(index)
-                    setPortSelectorFlowIndex(index)
-                  }}
-                  title={flowCardRoutingSummary.title}
-                >
-                  <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
-                  <span>{flowCardRoutingSummary.statusLabel}</span>
-                  <span>
-                    <SegmentedLedText value={flowCardRoutingSummary.ioLabel} size="xs" color={FLOW_CARD_LED_COLOR} />
-                  </span>
-                  <span>
-                    <SegmentedLedText value={flowCardRoutingSummary.clockLabel} size="xs" color={FLOW_CARD_LED_COLOR} />
-                  </span>
-                  <span>{flowCardRoutingSummary.routingMode}</span>
-                  <span>{flowCardRoutingSummary.avbLabel}</span>
-                </button>
+                <Layer className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--routing">
+                  <button
+                    type="button"
+                    className="juce-grid-page__flow-card-routing-summary"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      selectFlowIndex(index)
+                      setPortSelectorFlowIndex(index)
+                    }}
+                    title={flowCardRoutingSummary.title}
+                  >
+                    <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--identity">
+                      <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
+                      <span className="juce-grid-page__flow-card-routing-status">{flowCardRoutingSummary.statusLabel}</span>
+                    </span>
+                    <span className="juce-grid-page__flow-card-routing-divider" aria-hidden="true" />
+                    <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--metrics">
+                      <span className="juce-grid-page__flow-card-routing-readout">
+                        <SegmentedLedText value={flowCardRoutingSummary.ioLabel} size="sm" color={FLOW_CARD_LED_COLOR} />
+                      </span>
+                      <span className="juce-grid-page__flow-card-routing-readout">
+                        <SegmentedLedText value={flowCardRoutingSummary.clockLabel} size="sm" color={FLOW_CARD_LED_COLOR} />
+                      </span>
+                    </span>
+                    <span className="juce-grid-page__flow-card-routing-divider" aria-hidden="true" />
+                    <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--context">
+                      <span className="juce-grid-page__flow-card-routing-badge">{flowCardRoutingSummary.routingMode}</span>
+                      <span className="juce-grid-page__flow-card-routing-badge">{flowCardRoutingSummary.avbLabel}</span>
+                    </span>
+                  </button>
 
-                <Button
-                  type="button"
-                  hasIconOnly
-                  renderIcon={Edit}
-                  iconDescription={flowChain ? `Edit chain for flow ${flowLabel}` : `Assign chain to flow ${flowLabel}`}
-                  size="sm"
-                  kind={!flowChain ? 'primary' : 'ghost'}
-                  className="juce-grid-page__flow-card-action"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setChainModalFlowId(flow.id)
-                  }}
-                />
-
-                <div onClick={(event) => event.stopPropagation()}>
-                  <FlowLevelControl
-                    flowId={flow.id}
-                    flowLabel={flowLabel}
-                    value={flow.dryWetMix}
-                    accentColor={flow.color}
-                    onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
-                  />
-                </div>
-
-                <Button
-                  type="button"
-                  hasIconOnly
-                  renderIcon={Link}
-                  iconDescription={`Assign ${flowLabel} to node`}
-                  size="sm"
-                  kind="ghost"
-                  className="juce-grid-page__flow-card-action"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    openAssignmentDialog(flow)
-                  }}
-                />
-
-                <Button
-                  type="button"
-                  hasIconOnly
-                  renderIcon={Headphones}
-                  iconDescription={`${flow.solo ? 'Disable' : 'Enable'} solo for flow ${flowLabel}`}
-                  size="sm"
-                  kind={flow.solo ? 'secondary' : 'ghost'}
-                  className="juce-grid-page__flow-card-action"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    updateFlow(flow.id, { solo: !flow.solo })
-                  }}
-                  aria-pressed={flow.solo}
-                />
-
-                <Button
-                  type="button"
-                  hasIconOnly
-                  renderIcon={flow.muted ? VolumeMute : VolumeUp}
-                  iconDescription={`${flow.muted ? 'Disable' : 'Enable'} mute for flow ${flowLabel}`}
-                  size="sm"
-                  kind={flow.muted ? 'danger--tertiary' : 'ghost'}
-                  className="juce-grid-page__flow-card-action"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    updateFlow(flow.id, { muted: !flow.muted })
-                  }}
-                  aria-pressed={flow.muted}
-                />
-
-                {flowSlots.length > MIN_FLOWS && (
                   <Button
                     type="button"
                     hasIconOnly
-                    renderIcon={TrashCan}
-                    iconDescription={`Delete flow ${flowLabel}`}
+                    renderIcon={Edit}
+                    iconDescription={flowChain ? `Edit chain for flow ${flowLabel}` : `Assign chain to flow ${flowLabel}`}
                     size="sm"
-                    kind="danger--tertiary"
+                    kind={!flowChain ? 'primary' : 'ghost'}
                     className="juce-grid-page__flow-card-action"
                     onClick={(event) => {
                       event.stopPropagation()
-                      removeFlow(flow.id)
+                      setChainModalFlowId(flow.id)
                     }}
                   />
-                )}
+                </Layer>
+
+                <Layer className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--level">
+                  <div onClick={(event) => event.stopPropagation()}>
+                    <FlowLevelControl
+                      flowId={flow.id}
+                      flowLabel={flowLabel}
+                      value={flow.dryWetMix}
+                      accentColor={flow.color}
+                      onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
+                    />
+                  </div>
+                </Layer>
+
+                <Layer className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--utility">
+                  <Button
+                    type="button"
+                    hasIconOnly
+                    renderIcon={Link}
+                    iconDescription={`Assign ${flowLabel} to node`}
+                    size="sm"
+                    kind="ghost"
+                    className="juce-grid-page__flow-card-action"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      openAssignmentDialog(flow)
+                    }}
+                  />
+
+                  <Button
+                    type="button"
+                    hasIconOnly
+                    renderIcon={Headphones}
+                    iconDescription={`${flow.solo ? 'Disable' : 'Enable'} solo for flow ${flowLabel}`}
+                    size="sm"
+                    kind={flow.solo ? 'secondary' : 'ghost'}
+                    className="juce-grid-page__flow-card-action"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      updateFlow(flow.id, { solo: !flow.solo })
+                    }}
+                    aria-pressed={flow.solo}
+                  />
+
+                  <Button
+                    type="button"
+                    hasIconOnly
+                    renderIcon={flow.muted ? VolumeMute : VolumeUp}
+                    iconDescription={`${flow.muted ? 'Disable' : 'Enable'} mute for flow ${flowLabel}`}
+                    size="sm"
+                    kind={flow.muted ? 'danger--tertiary' : 'ghost'}
+                    className="juce-grid-page__flow-card-action"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      updateFlow(flow.id, { muted: !flow.muted })
+                    }}
+                    aria-pressed={flow.muted}
+                  />
+
+                  {flowSlots.length > MIN_FLOWS && (
+                    <Button
+                      type="button"
+                      hasIconOnly
+                      renderIcon={TrashCan}
+                      iconDescription={`Delete flow ${flowLabel}`}
+                      size="sm"
+                      kind="danger--tertiary"
+                      className="juce-grid-page__flow-card-action"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        removeFlow(flow.id)
+                      }}
+                    />
+                  )}
+                </Layer>
               </div>
             </div>
 
@@ -3928,6 +3968,46 @@ export function JuceGridPage() {
   const canMoveSelectedPluginRight = selectedPluginIndex >= 0 && currentChain
     ? selectedPluginIndex < currentChain.plugins.length - 1
     : false
+  const selectedBlockMidiPanelEnabled = Boolean(
+    bottomEditorOpen
+    && selectedPlugin
+    && selectedPluginMeta
+    && !isMobile
+    && !isTabletTouchLayout
+    && (selectedPluginMeta.parameters?.length ?? 0) > 0
+    && selectedPluginMeta.format !== 'Hardware'
+    && !selectedPluginMeta.is_hardware
+    && !selectedPlugin.uri.startsWith('hardware://')
+  )
+  const selectedPluginEditorContent = bottomEditorOpen && selectedPlugin ? (
+    selectedPluginCard
+      && selectedPluginCardStrategy
+      && selectedPluginCardStrategy.renderMode !== 'generic'
+      && selectedPluginMeta
+      && selectedPluginMeta.format !== 'Hardware'
+      && !selectedPluginMeta.is_hardware
+      && !selectedPluginMeta.uri.startsWith('hardware://') ? (
+      <PluginCardRouter
+        plugin={selectedPluginCard}
+        chainId={currentChain?.id}
+        pluginPosition={selectedPlugin.position}
+        showAddToChain={false}
+        compact={isTabletTouchLayout}
+        forceTemplate={selectedPluginCardStrategy.renderMode === 'template' ? selectedPluginCardStrategy.template : undefined}
+      />
+    ) : (
+      <JuceGridParameterEditor
+        plugin={selectedPlugin}
+        meta={selectedPluginMeta}
+        onParameterChange={handleParameterChange}
+        onParameterChangeEnd={handleParameterChangeEnd}
+        onToggleBypass={handleToggleSelectedBypass}
+        onRefreshPlugins={handleRefreshPlugins}
+        isRefreshing={isRefreshingPlugins}
+        touchMode={isTabletTouchLayout}
+      />
+    )
+  ) : null
 
   if (showViewportBlockScreen) {
     return (
@@ -4251,34 +4331,26 @@ export function JuceGridPage() {
             </div>
           </div>
 
-          <div className="juce-grid-page__bottom-editor-body">
+          <div className={`juce-grid-page__bottom-editor-body ${selectedBlockMidiPanelEnabled ? 'has-desktop-midi-panel' : ''}`}>
             {bottomEditorOpen && selectedPlugin ? (
-              selectedPluginCard
-                && selectedPluginCardStrategy
-                && selectedPluginCardStrategy.renderMode !== 'generic'
-                && selectedPluginMeta
-                && selectedPluginMeta.format !== 'Hardware'
-                && !selectedPluginMeta.is_hardware
-                && !selectedPluginMeta.uri.startsWith('hardware://') ? (
-                <PluginCardRouter
-                  plugin={selectedPluginCard}
-                  chainId={currentChain?.id}
-                  pluginPosition={selectedPlugin.position}
-                  showAddToChain={false}
-                  compact={isTabletTouchLayout}
-                  forceTemplate={selectedPluginCardStrategy.renderMode === 'template' ? selectedPluginCardStrategy.template : undefined}
-                />
+              selectedBlockMidiPanelEnabled && selectedPluginMeta ? (
+                <div className="juce-grid-page__bottom-editor-desktop-layout">
+                  <div className="juce-grid-page__bottom-editor-main">
+                    {selectedPluginEditorContent}
+                  </div>
+                  <JuceGridSelectedBlockMidiPanel
+                    plugin={selectedPlugin}
+                    meta={selectedPluginMeta}
+                    chainId={currentChain?.id ?? null}
+                    lastMidiEvent={lastMidiEvent}
+                    midiLearnInProgress={midiLearnInProgress}
+                    midiLearnTarget={midiLearnStatus?.target ?? null}
+                    onStartLearn={handleStartSelectedBlockMidiLearn}
+                    onStopLearn={handleStopSelectedBlockMidiLearn}
+                  />
+                </div>
               ) : (
-                <JuceGridParameterEditor
-                  plugin={selectedPlugin}
-                  meta={selectedPluginMeta}
-                  onParameterChange={handleParameterChange}
-                  onParameterChangeEnd={handleParameterChangeEnd}
-                  onToggleBypass={handleToggleSelectedBypass}
-                  onRefreshPlugins={handleRefreshPlugins}
-                  isRefreshing={isRefreshingPlugins}
-                  touchMode={isTabletTouchLayout}
-                />
+                selectedPluginEditorContent
               )
             ) : (
               <Tile className="juce-grid-page__bottom-editor-placeholder">

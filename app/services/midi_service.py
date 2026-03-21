@@ -11,6 +11,7 @@ Features:
 """
 
 import asyncio
+import inspect
 import logging
 from typing import List, Dict, Any, Optional, Callable
 from dataclasses import dataclass, field
@@ -204,6 +205,37 @@ class MIDIService:
         """Set the currently active chain (affects which mappings are active)."""
         self._active_chain_id = chain_id
 
+    @staticmethod
+    def _normalize_feedback_channel(channel: int) -> int:
+        """MIDI output cannot transmit on omni, so fall back to channel 1."""
+        return channel if 1 <= int(channel) <= 16 else 1
+
+    @staticmethod
+    def _normalize_parameter_feedback_value(value: float, min_val: float, max_val: float) -> float:
+        """Convert a parameter-space value into a 0..1 controller feedback value."""
+        if not isinstance(value, (int, float)):
+            return 0.0
+        if max_val == min_val:
+            return 0.0
+        normalized = (float(value) - float(min_val)) / (float(max_val) - float(min_val))
+        return max(0.0, min(1.0, normalized))
+
+    async def _call_engine_method(self, *method_names: str, args: tuple = ()) -> Any:
+        """Call the first available engine method, handling sync and async implementations."""
+        if not self._engine:
+            return None
+
+        for method_name in method_names:
+            method = getattr(self._engine, method_name, None)
+            if not callable(method):
+                continue
+            result = method(*args)
+            if inspect.isawaitable(result):
+                return await result
+            return result
+
+        return None
+
     # ==================== CC Mappings ====================
 
     async def create_mapping(self, mapping: MIDIMappingDTO, session: AsyncSession) -> Optional[int]:
@@ -331,6 +363,68 @@ class MIDIService:
         except Exception as e:
             logger.error(f"Error getting MIDI mapping {mapping_id}: {e}")
             return None
+
+    async def send_mapping_feedback_test(
+        self,
+        mapping_id: int,
+        session: AsyncSession,
+        normalized_value: Optional[float] = None,
+        use_current_value: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+        """Send a real outbound feedback message for a mapping."""
+        mapping = await self.get_mapping(mapping_id, session)
+        if not mapping:
+            return None
+        if not self._engine:
+            raise RuntimeError("MIDI engine is not available")
+
+        feedback_cc = mapping.get("feedback_cc") or mapping["cc"]
+        output_channel = self._normalize_feedback_channel(mapping.get("channel", 0))
+
+        if use_current_value:
+            current_value = await self._call_engine_method(
+                "get_plugin_parameter",
+                args=(mapping["target_plugin_uri"], mapping["target_param_index"]),
+            )
+            if current_value is None:
+                raise RuntimeError("The engine did not return a current parameter value")
+            normalized = self._normalize_parameter_feedback_value(
+                float(current_value),
+                float(mapping["min_val"]),
+                float(mapping["max_val"]),
+            )
+            source = "current"
+        else:
+            normalized = max(0.0, min(1.0, float(normalized_value if normalized_value is not None else 1.0)))
+            source = "manual"
+
+        feedback_sent = await self._call_engine_method(
+            "send_parameter_feedback",
+            "midi_send_parameter_feedback",
+            args=(output_channel, feedback_cc, normalized),
+        )
+
+        if feedback_sent is None:
+            cc_value = int(round(normalized * 127))
+            feedback_sent = await self._call_engine_method(
+                "send_cc",
+                "midi_send_cc",
+                args=(output_channel, feedback_cc, cc_value),
+            )
+        else:
+            cc_value = int(round(normalized * 127))
+
+        if feedback_sent is None:
+            raise RuntimeError("The MIDI engine does not support outbound controller feedback")
+
+        return {
+            "mapping_id": mapping_id,
+            "channel": output_channel,
+            "cc": feedback_cc,
+            "normalized_value": normalized,
+            "cc_value": cc_value,
+            "source": source,
+        }
 
     async def get_all_mappings(self, session: AsyncSession, chain_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get all MIDI mappings, optionally filtered by chain."""
@@ -972,21 +1066,32 @@ class MIDIService:
                 continue
 
             # Get current parameter value from engine
-            value = await self._engine.get_plugin_parameter(
-                mapping["target_plugin_uri"],
-                mapping["target_param_index"]
+            value = await self._call_engine_method(
+                "get_plugin_parameter",
+                args=(mapping["target_plugin_uri"], mapping["target_param_index"]),
             )
 
             if value is not None:
-                # Convert to MIDI CC value (0-127)
-                min_val = mapping["min_val"]
-                max_val = mapping["max_val"]
-                normalized = (value - min_val) / (max_val - min_val) if max_val != min_val else 0
-                cc_value = int(max(0, min(127, normalized * 127)))
-
-                # Send to controller
                 feedback_cc = mapping.get("feedback_cc") or mapping["cc"]
-                await self._engine.send_cc(mapping["channel"], feedback_cc, cc_value)
+                output_channel = self._normalize_feedback_channel(mapping.get("channel", 0))
+                normalized = self._normalize_parameter_feedback_value(
+                    float(value),
+                    float(mapping["min_val"]),
+                    float(mapping["max_val"]),
+                )
+
+                feedback_sent = await self._call_engine_method(
+                    "send_parameter_feedback",
+                    "midi_send_parameter_feedback",
+                    args=(output_channel, feedback_cc, normalized),
+                )
+                if feedback_sent is None:
+                    cc_value = int(round(normalized * 127))
+                    await self._call_engine_method(
+                        "send_cc",
+                        "midi_send_cc",
+                        args=(output_channel, feedback_cc, cc_value),
+                    )
 
     # ==================== WebSocket Broadcasting ====================
 

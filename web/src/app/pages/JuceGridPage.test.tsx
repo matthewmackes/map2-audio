@@ -130,8 +130,10 @@ const mockMidiApiV2 = {
     target: null,
   })),
   getMappings: jest.fn(async () => ({ mappings: [], count: 0 })),
+  createMapping: jest.fn(async () => ({ mapping: {}, message: 'created' })),
   updateMapping: jest.fn(async () => ({ mapping: {}, message: 'ok' })),
   deleteMapping: jest.fn(async () => ({ success: true, message: 'deleted' })),
+  testMappingFeedback: jest.fn(async () => ({ mapping_id: 1, channel: 1, cc: 11, normalized_value: 1, cc_value: 127, source: 'manual', message: 'sent' })),
   startLearn: jest.fn(async () => ({ success: true, target: {} })),
   stopLearn: jest.fn(async () => ({ success: true })),
 }
@@ -1532,6 +1534,104 @@ describe('JuceGridPage snapshot modal workflow', () => {
     expect(screen.getByText('Chorus')).toBeTruthy()
     expect(screen.getByText('CC 11')).toBeTruthy()
     expect(mockMidiApiV2.getMappings).toHaveBeenCalledWith()
+  })
+
+  it('renders the desktop selected block MIDI panel beside the editor shell', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#2563eb', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 1, label: 'B', color: '#60a5fa', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+    localStorage.setItem('map2_juce_grid_selected_plugin_uri', 'map2://juce/modulation/chorus')
+    localStorage.setItem('map2_juce_grid_effect_modal_open', 'true')
+
+    mockChainsApi.list.mockResolvedValue({
+      chains: [
+        {
+          id: 1,
+          name: 'Song 1',
+          is_active: true,
+          plugins: [
+            {
+              uri: 'map2://juce/modulation/chorus',
+              name: 'Chorus',
+              position: 0,
+              bypassed: false,
+              parameters: {
+                depth: 0.42,
+                mix: 0.58,
+              },
+            },
+          ],
+        },
+      ],
+      active_chain_id: 1,
+    })
+    mockPluginsApi.discover.mockResolvedValue({
+      plugins: [
+        {
+          uri: 'map2://juce/modulation/chorus',
+          name: 'Chorus',
+          author: 'MAP2 Audio',
+          category: 'Modulation',
+          class_label: 'Effect',
+          version: '1.0.0',
+          license: 'AGPL-3.0-only',
+          has_ui: false,
+          in_ports: 2,
+          out_ports: 2,
+          format: 'JUCE',
+          parameters: [
+            { index: 0, name: 'Depth', symbol: 'depth', min: 0, max: 1, default: 0.5, is_toggled: false, is_log: false },
+            { index: 1, name: 'Mix', symbol: 'mix', min: 0, max: 1, default: 0.5, is_toggled: false, is_log: false },
+          ],
+        },
+      ],
+    })
+    mockMidiApiV2.getMappings.mockResolvedValue({
+      mappings: [
+        {
+          id: 77,
+          channel: 1,
+          cc: 11,
+          chain_id: 1,
+          target_plugin_uri: 'map2://juce/modulation/chorus',
+          target_param_index: 0,
+          target_param_symbol: 'depth',
+          min_val: 0,
+          max_val: 1,
+          curve_type: 'linear',
+          invert: false,
+          feedback_enabled: true,
+          feedback_cc: null,
+          name: 'Chorus - Depth',
+          group_id: null,
+          is_learned: true,
+          is_enabled: true,
+        },
+      ],
+      count: 1,
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByText('Selected block MIDI')).toBeTruthy()
+    expect(screen.getByText('Focused parameter')).toBeTruthy()
+    expect(mockMidiApiV2.getMappings).toHaveBeenCalledWith({ plugin_uri: 'map2://juce/modulation/chorus' })
   })
 
   it('marks snapshot and MIDI modal rows with alternating stripe tones', async () => {

@@ -110,9 +110,13 @@ jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: () => mockNodePageContext,
 }))
 
+jest.mock('../components/HeroDotGrid/HeroDotGrid', () => ({
+  HeroDotGrid: () => null,
+}))
+
 function LocationProbe() {
   const location = useLocation()
-  return <div data-testid="location-probe">{location.pathname}</div>
+  return <div data-testid="location-probe">{`${location.pathname}${location.search}`}</div>
 }
 
 function renderHome(ui: React.ReactNode) {
@@ -179,26 +183,21 @@ describe('HomePage navigation landing', () => {
 
     await screen.findByText('MAP2-TESTBED')
 
-    expect(screen.getByText('MAP2')).toBeTruthy()
     expect(screen.queryByText(/MAP2 Node Status/i)).toBeNull()
-    expect(screen.getByLabelText('Cluster node status')).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /Audio Grid/i })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /AVB/i })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /MIDI/i })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /System/i })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: /Hardware/i })).toBeTruthy()
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent?.replace(/\d+$/, '').trim())).toEqual([
-      'Audio Grid',
-      'AVB',
-      'MIDI',
-      'System',
-      'Hardware',
-    ])
-    expect(screen.getAllByText('Audio Engine').length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('Node context and cluster status')).toBeTruthy()
+    expect(screen.getByLabelText('Audio Grid interfaces')).toBeTruthy()
+    expect(screen.queryByText(/^AVB$/)).toBeNull()
+    expect(screen.getByText(/^MIDI$/)).toBeTruthy()
+    expect(screen.getByText(/^System$/)).toBeTruthy()
+    expect(screen.getByText(/^Hardware$/)).toBeTruthy()
+    expect(screen.getByLabelText('Audio Grid navigation cards')).toBeTruthy()
+    expect(screen.getByLabelText('MIDI navigation cards')).toBeTruthy()
+    expect(screen.getByLabelText('System navigation cards')).toBeTruthy()
+    expect(screen.getByLabelText('Hardware navigation cards')).toBeTruthy()
     expect(screen.getAllByText('Audio Grid').length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByRole('tab', { name: /System/i }))
-    expect(screen.getAllByText('Platform Stack').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Host Machine').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Platforms and Labs').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('MIDI Hub').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('LCD Console').length).toBeGreaterThan(0)
     expect(container.querySelector('.hp-hero__brand-mark')).toBeTruthy()
   })
 
@@ -219,11 +218,32 @@ describe('HomePage navigation landing', () => {
 
     await screen.findByText('MAP2-TESTBED')
 
-    fireEvent.click(screen.getByRole('tab', { name: /Audio Grid/i }))
-    fireEvent.click(screen.getByLabelText('Pin Audio Engine'))
+    fireEvent.click(screen.getByLabelText('Pin Platforms and Labs'))
 
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ pinnedRoutes: ['/engine'] })
+    expect(mockUpdateSettings).toHaveBeenCalledWith({ pinnedRoutes: ['/platform'] })
     expect(screen.getByTestId('location-probe').textContent).toBe('/')
+  })
+
+  it('opens Platforms and Labs from the landing card by setting the modal query on Home', async () => {
+    renderHome(
+      <Routes>
+        <Route
+          path="/"
+          element={(
+            <>
+              <HomePage />
+              <LocationProbe />
+            </>
+          )}
+        />
+      </Routes>,
+    )
+
+    await screen.findByText('MAP2-TESTBED')
+
+    fireEvent.click(screen.getByRole('listitem', { name: 'Open Platforms and Labs' }))
+
+    expect(screen.getByTestId('location-probe').textContent).toBe('/?layer=overview')
   })
 
   it('renders the local node tile from host and network APIs when peers fail', async () => {

@@ -1,6 +1,6 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AppShell } from './AppShell'
 
@@ -99,7 +99,7 @@ describe('AppShell navigation', () => {
     }
   })
 
-  it('renders only Home, Advanced, and Dragon when no routes are pinned', () => {
+  it('renders only Home, Platforms and Labs, and Dragon when no routes are pinned', () => {
     const { container } = renderInRouter(
       <AppShell>
         <div>shell content</div>
@@ -109,9 +109,11 @@ describe('AppShell navigation', () => {
     expect(screen.getByLabelText('Home')).toBeTruthy()
     expect(screen.getByLabelText('Mackes Audio Platform home')).toBeTruthy()
     expect(screen.getByTestId('shell-latency-pressure-readout')).toBeTruthy()
-    expect(screen.getByLabelText('Open advanced menu')).toBeTruthy()
+    expect(screen.getByLabelText('Open Platforms and Labs window')).toBeTruthy()
     expect(screen.getByLabelText('Open special settings')).toBeTruthy()
     expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
+    expect(screen.queryByLabelText('Open advanced menu')).toBeNull()
+    expect(screen.queryByLabelText('Open Platform panel')).toBeNull()
     expect(screen.queryByText('Guide')).toBeNull()
     expect(screen.queryByText('About')).toBeNull()
     expect(container.querySelector('.nav-active-title')).toBeNull()
@@ -119,41 +121,32 @@ describe('AppShell navigation', () => {
     expect(container.querySelector('.nav-tabs-left')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
   })
 
-  it('shows advanced workflows plus the blocked/lab section inside the advanced launcher', () => {
+  it('opens the unified Platforms and Labs window from the shell trigger', () => {
     renderInRouter(
       <AppShell>
         <div>shell content</div>
       </AppShell>,
     )
 
-    fireEvent.click(screen.getByLabelText('Open advanced menu'))
+    fireEvent.click(screen.getByLabelText('Open Platforms and Labs window'))
 
-    expect(screen.getByRole('menu', { name: 'Advanced menu' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Close advanced menu' })).toBeTruthy()
-    expect(screen.getByText('MIDI Hub')).toBeTruthy()
-    expect(screen.getByText('Tesira AVB')).toBeTruthy()
-    expect(screen.getByText('Blocked / Lab')).toBeTruthy()
-    expect(screen.getByText('LCD Console')).toBeTruthy()
-    expect(screen.getByText('Generic Interface')).toBeTruthy()
-    expect(screen.queryByText('Developer, cluster, and non-default workflows')).toBeNull()
-    expect(screen.queryByText('API Observatory')).toBeNull()
-    expect(screen.queryByText('MIDI Cluster')).toBeNull()
+    expect(screen.getByTestId('platform-modal-content')).toHaveTextContent('root')
+    expect(screen.queryByLabelText('Open advanced menu')).toBeNull()
+    expect(screen.queryByLabelText('Open Platform panel')).toBeNull()
   })
 
-  it('auto-expands the current route detail tray when the advanced menu opens', () => {
+  it('renders pinned Platforms and Labs as a modal trigger anchored to the overview workspace', () => {
+    mockSpecialSettings.pinnedRoutes = ['/platform']
+
     renderInRouter(
       <AppShell>
         <div>shell content</div>
       </AppShell>,
-      ['/intelfx'],
     )
 
-    fireEvent.click(screen.getByLabelText('Open advanced menu'))
+    fireEvent.click(screen.getByRole('button', { name: 'Platforms and Labs' }))
 
-    const details = screen.getByRole('note', { name: 'IntelFX Rack details' })
-    expect(details).toBeTruthy()
-    expect(within(details).getByText('Capabilities')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Hide details for IntelFX Rack' })).toBeTruthy()
+    expect(screen.getByTestId('platform-modal-content')).toHaveTextContent('overview')
   })
 
   it('orders pinned routes by catalog order and caps desktop pins at four items', () => {
@@ -167,7 +160,7 @@ describe('AppShell navigation', () => {
     )
 
     const labels = Array.from(container.querySelectorAll('.nav-tabs-center .nav-tab-label')).map((node) => node.textContent)
-    expect(labels).toEqual(['Platform Stack', 'Stage Mode', 'Audio Artifacts', 'MIDI Hub'])
+    expect(labels).toEqual(['Platforms + Labs', 'Stage Mode', 'Audio Artifacts', 'MIDI Hub'])
   })
 
   it('renders MPX1 as a mega-menu trigger when it is pinned', () => {

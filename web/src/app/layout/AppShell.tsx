@@ -12,6 +12,7 @@ import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
+import { PageTransition } from '../components/PageTransition'
 import { Map2BrandMark } from '../components/branding/map2Branding'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
@@ -74,6 +75,22 @@ function getAdvancedCardId(sectionTitle: string, item: MobileMenuItem): string {
 }
 
 function toTopNavItem(item: PinnedMenuItem): TopNavItem {
+  if (item.to === '/platform') {
+    return {
+      to: item.to,
+      label: item.label,
+      shortLabel: item.shortLabel,
+      icon: item.icon,
+      description: item.description,
+      color: item.color,
+      maturity: item.maturity,
+      gatedReason: 'gatedReason' in item ? item.gatedReason : undefined,
+      deviceType: 'deviceType' in item ? item.deviceType : undefined,
+      kind: 'platform-modal',
+      target: { layer: 'overview' },
+    }
+  }
+
   return {
     to: item.to,
     label: item.label,
@@ -151,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (initialLayer || initialPanel) {
       setPlatformModalOpen(true)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialLayer, initialPanel])
 
   const {
     state: mpx1State,
@@ -927,81 +944,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <HeaderGlobalBar className="nav-tabs-right-container">
           <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
             <NodeNavBar />
-            <div className="advanced-menu-root" ref={advancedMenuRef}>
-              <button
-                type="button"
-                className={`nav-tab-item nav-tab-advanced${advancedMenuOpen ? ' nav-tab-advanced--open' : ''}`}
-                aria-label="Open advanced menu"
-                aria-haspopup="menu"
-                aria-expanded={advancedMenuOpen}
-                aria-controls="advanced-menu-panel"
-                onClick={() => {
-                  const nextOpen = !advancedMenuOpen
-                  setAdvancedMenuOpen(nextOpen)
-                  setExpandedAdvancedCardId(nextOpen ? currentAdvancedCardId : null)
-                  if (nextOpen) {
-                    setNavOpen(false)
-                    setMpx1MenuOpen(false)
-                    setTopHardwareSubmenuOpen(false)
-                  }
-                }}
-                title="Open advanced routes and developer workflows"
-              >
-                <span className="nav-tab-advanced-label">Advanced</span>
-                <ChevronRight size={12} className={`nav-tab-advanced-caret${advancedMenuOpen ? ' is-open' : ''}`} />
-              </button>
-
-              {advancedMenuOpen && (
-                <div
-                  id="advanced-menu-panel"
-                  className="advanced-menu-panel advanced-menu-panel--control-panel platform-modal__body platform-modal__body--compact"
-                  role="menu"
-                  aria-label="Advanced menu"
-                >
-                  <div className="platform-modal__header">
-                    <span className="platform-modal__header-title">Advanced</span>
-                    <button
-                      type="button"
-                      className="platform-modal__close"
-                      onClick={closeTransientMenus}
-                      aria-label="Close advanced menu"
-                    >
-                      <Close size={20} aria-hidden />
-                    </button>
-                  </div>
-                  <div className="platform-modal__scroll platform-modal__scroll--compact">
-                    <div className="platform-shell-page">
-                      <div className="platform-shell__content">
-                        <div className="advanced-menu-control-panel">
-                          {advancedSections.map(([sectionTitle, items]) => {
-                            const expandedItem = items.find((item) => getAdvancedCardId(sectionTitle, item) === expandedAdvancedCardId) ?? null
-
-                            return (
-                              <section
-                                key={`advanced-${sectionTitle}`}
-                                className="platform-shell__cp-panel advanced-menu-control-panel__section"
-                                aria-label={`${sectionTitle} advanced workflows`}
-                              >
-                                <div className="advanced-menu-control-panel__section-heading">
-                                  <h2 className="platform-shell__cp-title advanced-menu-control-panel__section-title">{sectionTitle}</h2>
-                                  <span className="advanced-menu-control-panel__section-count" aria-label={`${items.length} routes in ${sectionTitle}`}>
-                                    {items.length}
-                                  </span>
-                                </div>
-                                <div className="platform-shell__cp-grid advanced-menu-control-panel__grid" role="list" aria-label={`${sectionTitle} launcher tiles`}>
-                                  {items.map((item) => renderAdvancedControlPanelItem(item, sectionTitle))}
-                                </div>
-                                {expandedItem ? renderAdvancedSectionDetail(expandedItem, sectionTitle) : null}
-                              </section>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
             <button
               type="button"
               className="nav-tab-item nav-tab-special"
@@ -1029,7 +971,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               className={`nav-tab-item nav-tab-platform${platformModalOpen ? ' nav-tab-platform--active' : ''}`}
-              aria-label="Open Platform panel"
+              aria-label="Open Platforms and Labs window"
               aria-haspopup="dialog"
               aria-expanded={platformModalOpen}
               onClick={() => {
@@ -1039,9 +981,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   handlePlatformModalOpen()
                 }
               }}
-              title="Open Platform control panel"
+              title="Open the unified Platforms and Labs window"
             >
-              <span className="nav-tab-platform-label">Platform</span>
+              <span className="nav-tab-platform-label">Platforms + Labs</span>
             </button>
           </HeaderNavigation>
 
@@ -1058,7 +1000,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="nav-mobile-menu" ref={navMenuRef}>
             <div className="nav-mobile-menu-content">
               <section className="nav-mobile-advanced-group">
-                <div className="nav-mobile-group-label">Platform</div>
+                <div className="nav-mobile-group-label">Platforms and Labs</div>
                 <div className="nav-mobile-group-grid">
                   <div className="nav-mobile-item-wrap">
                     <button
@@ -1071,10 +1013,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                     >
                       <span className="nav-mobile-item-text">
                         <span className="nav-mobile-item-heading">
-                          <span className="nav-mobile-item-label">Platform Stack</span>
+                          <span className="nav-mobile-item-label">Platforms and Labs</span>
                           <Tag type="warm-gray" size="sm" className="nav-mobile-item-maturity">beta</Tag>
                         </span>
-                        <span className="nav-mobile-item-desc">Open the unified platform control panel for node, AVB, MIDI cluster, API, and fleet operations.</span>
+                        <span className="nav-mobile-item-desc">Open the unified Platforms and Labs window for node, AVB, MIDI cluster, API, fleet, and lab workflows.</span>
                       </span>
                     </button>
                   </div>
@@ -1095,7 +1037,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Platform modal overlay — anchored below the nav bar */}
       {platformModalOpen && (
-        <div className="platform-modal-overlay" role="dialog" aria-modal="true" aria-label="Platform control panel">
+        <div className="platform-modal-overlay" role="dialog" aria-modal="true" aria-label="Platforms and Labs window">
           <PlatformModalContent
             initialLayer={initialLayer}
             initialPanel={initialPanel}
@@ -1115,7 +1057,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         onClose={() => setShowSpecialSettings(false)}
         onSave={handleSpecialSettingsSave}
       />
-      <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>{children}</main>
+      <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
+        <PageTransition>{children}</PageTransition>
+      </main>
       <nav className="mobile-bottom-tabbar" aria-label="Mobile quick navigation">
         <NavLink
           key="mobile-home"

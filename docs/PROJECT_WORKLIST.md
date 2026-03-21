@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 09:52 - Codex (Completed `T246` after flattening the JUCE Grid effect signal card into a lower-depth single-plane shell.)
+Last updated: 2026-03-21 12:04 EDT - Codex (Completed `T247` for scoped landing-route transitions and reduced-effects preferences.)
 
 ## Active Blockers Only
 
@@ -2764,3 +2764,103 @@ Last updated: 2026-03-21 09:52 - Codex
   - Added a focused structural regression in `web/src/app/pages/JuceGridSignalCanvas.test.tsx` that requires the flattened face container and verifies the removed inner info/outline elements do not return.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings unchanged); `npm --prefix web run typecheck` -> pass.
   - Licensing: Classified the touched JUCE Grid files as MAP2-owned AGPL-covered frontend code; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring a follow-up task.
+
+ID: T247
+Status: [✓] Done
+Title: Add Hyperactive Block Reveal transitions for landing routes with persistent reduced-effects mode
+Description:
+- Goal / acceptance criteria: Implement the "Hyperactive Block Reveal Effect" as the shared route transition for every navigation change involving `/`, `/audio-artifacts`, `/juce-grid`, and the `/midi-hub/*` route family, including in-app navigation, browser back/forward, and returns between those screens; add an app-wide persistent `Reduce Effects Mode` control near the Theme settings section on the About page; when `prefers-reduced-motion: reduce` is active or the user enables reduced effects, downgrade the experience to a minimal fade instead of the full block reveal.
+- Why it matters: These are the main landing-page workflows, and they currently hard-cut between visually distinct surfaces with no consistent movement language or operator control over motion intensity.
+- Dependencies: `web/src/app/App.tsx`, `web/src/app/layout/AppShell.tsx`, `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/AudioArtifactsPage.tsx`, `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/MidiHubShell.tsx`, `web/src/app/pages/AboutPage.tsx`, any new shared motion-preference hook/store under `web/src/app/hooks/**` or `web/src/app/contexts/**`, relevant route tests, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: Shared scoped route-transition implementation, persistent reduced-effects preference plumbing, About page control near Theme settings, minimal-fade fallback behavior, focused regression coverage for route transitions/preferences, and validation notes.
+Subtasks:
+ID: T247-subA
+Status: [✓] Done
+Title: Define the scoped transition contract for home, Audio Artifacts, JUCE Grid, and MIDI Hub
+Description:
+- Goal / acceptance criteria: Audit how `/`, `/audio-artifacts`, `/juce-grid`, and `/midi-hub/*` mount inside `App.tsx` and `AppShell.tsx`, then choose the correct wrapper/keying strategy so transitions fire on every qualifying route change, including browser history navigation, without breaking lazy loading or shell chrome.
+- Why it matters: The effect needs one authoritative orchestration point or it will miss routes, double-fire, or clash with existing page shells.
+- Dependencies: T247, `web/src/app/App.tsx`, `web/src/app/layout/AppShell.tsx`, `web/src/app/pages/MidiHubShell.tsx`
+- Estimated effort: Low
+- Required outputs: Implementation-ready transition scope/routing notes captured in code comments or task completion notes, plus the chosen wrapper insertion point.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 12:04 EDT - Codex
+- Completion notes:
+  - Chose `web/src/app/layout/AppShell.tsx` as the single orchestration point because every scoped landing surface already mounts inside the shared shell, including the full `/midi-hub/*` family, so a single wrapper can cover in-app navigation and browser history changes without breaking lazy loading or shell chrome.
+ID: T247-subB
+Status: [✓] Done
+Title: Build a persistent reduced-effects preference and About page toggle
+Description:
+- Goal / acceptance criteria: Add a shared persisted preference for reduced effects, expose it through a `Reduce Effects Mode` button near the About page Theme settings section, and make the setting survive reloads and future visits.
+- Why it matters: The user explicitly wants motion control beyond system defaults, and route animation work should not ship without a user-owned intensity override.
+- Dependencies: T247-subA, `web/src/app/pages/AboutPage.tsx`, `web/src/app/pages/AboutPage.css`, shared state/persistence utilities
+- Estimated effort: Low
+- Required outputs: Persistent preference storage, About page button wiring/UI, and focused test coverage for the setting.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 12:04 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/stores/effectsSettingsStore.ts` and `web/src/app/hooks/useReducedEffectsPreference.ts` so reduced-effects mode is persisted in local storage and merged with live `prefers-reduced-motion` detection.
+  - Updated `web/src/app/pages/AboutPage.tsx`, `web/src/app/pages/AboutPage.css`, and `web/src/app/pages/AboutPage.test.tsx` with a saved `Reduce Effects Mode` control beside Theme settings plus visible state tags for the saved preference and any active system override.
+ID: T247-subC
+Status: [✓] Done
+Title: Implement the Hyperactive Block Reveal transition across the scoped routes
+Description:
+- Goal / acceptance criteria: Ship the full block-reveal transition for qualifying route changes between home, Audio Artifacts, JUCE Grid, and MIDI Hub, including page exits/entries and returns, while keeping the effect performant and visually coherent across full-bleed and shell-contained layouts.
+- Why it matters: This is the core UX change requested and depends on real route orchestration rather than page-local animation fragments.
+- Dependencies: T247-subA, T247-subB, route shells/styles for the scoped pages
+- Estimated effort: Medium
+- Required outputs: Shared transition component/styles, route integration for the scoped destinations, and verification that all requested navigation paths animate.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 12:04 EDT - Codex
+- Completion notes:
+  - Rebuilt `web/src/app/components/PageTransition.tsx` and added `web/src/app/components/PageTransition.css` so the old unused stub now renders a scoped Hyperactive Block Reveal overlay keyed by route family for Home, Audio Artifacts, JUCE Grid, and MIDI Hub.
+  - Wrapped the shared shell content in `web/src/app/layout/AppShell.tsx` with the new transition component so cross-route navigation and `/midi-hub/*` family navigation use the same movement system.
+ID: T247-subD
+Status: [✓] Done
+Title: Add minimal-fade fallback and regression coverage for motion preferences
+Description:
+- Goal / acceptance criteria: Ensure `prefers-reduced-motion: reduce` and the persisted reduced-effects mode both switch the scoped route transitions to a minimal fade, then add regression coverage for the preference behavior and the About page control.
+- Why it matters: Accessibility and the new user-facing setting are part of the acceptance criteria, not optional polish.
+- Dependencies: T247-subB, T247-subC, `web/src/app/pages/AboutPage.test.tsx`, app-shell/app-route tests
+- Estimated effort: Low
+- Required outputs: Reduced-motion fallback behavior, focused automated coverage, and validation notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 12:04 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/PageTransition.test.tsx` to cover eligible landing-route transitions, `/midi-hub/*` family transitions, unrelated-route no-op behavior, and the reduced-motion minimal-fade path.
+  - Verified the persisted preference path in `web/src/app/pages/AboutPage.test.tsx`.
+Assigned to: Codex
+Last updated: 2026-03-21 12:04 EDT - Codex
+- Completion notes:
+  - Implemented the shared landing-route transition across Home, Audio Artifacts, JUCE Grid, and MIDI Hub by converting the old page-transition stub into a route-aware overlay driven from the shared shell and route-family matching.
+  - Added a persistent reduced-effects preference with live system reduced-motion detection so the About page can save a softer motion profile while `prefers-reduced-motion: reduce` still forces the minimal fade.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/components/PageTransition.test.tsx web/src/app/pages/AboutPage.test.tsx web/src/app/layout/AppShell.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+## Navigation Shell Follow-up
+
+ID: T248
+Status: [✓] Done
+Title: Unify Platform and Advanced shell launchers into one Platforms and Labs window
+Description:
+- Goal / acceptance criteria: Replace the separate top-shell Platform and Advanced menus with one shared `Platforms and Labs` window that uses a left-side navigation rail for the existing Platform destinations and a bottom `Labs` entry that opens all former Advanced launchers, keeping the same item icons, matching Carbon/MAP2 styling, and removing the old separate menus. Add a matching `Platforms and Labs` landing-page card that fits the existing home-card layout/style and opens the new unified surface.
+- Why it matters: The current split between Platform and Advanced forces users to hunt across two different launcher surfaces and breaks the IA the user now wants for platform operations versus lab workflows.
+- Dependencies: `web/src/app/layout/AppShell.tsx`, `web/src/app/layout/AppShell.css`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Platform/PlatformModal.test.tsx`, `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.test.tsx`, navigation data under `web/src/app/data/*.ts`, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Medium
+- Required outputs: Unified modal/window implementation with left-side navigation and `Labs` styling, removal of the old Advanced/Platform shell menu triggers, updated landing-page card behavior/content, focused regression coverage, validation notes, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 11:50 EDT - Codex
+- Completion notes:
+  - Rebuilt `web/src/app/components/Platform/PlatformModal.tsx` into a single `Platforms and Labs` window with a left-side rail for the former Platform destinations, preserved the existing destination icons, and added a bottom `Labs` rail entry with the requested orange label treatment that opens a new shared labs workspace instead of the old Advanced launcher surface.
+  - Added `web/src/app/components/Platform/LabsWorkspace.tsx` to host the former Advanced launchers inside the unified window, preserving the existing icons, grouping, blocked/lab treatment, and launcher behavior while letting the modal close cleanly after route launch.
+  - Removed the separate Advanced and Platform shell triggers in `web/src/app/layout/AppShell.tsx`, replaced them with one `Platforms + Labs` trigger, updated the shell/mobile copy, and rewired `/platform` pinned-card behavior so it opens the unified modal at the overview layer.
+  - Updated the landing experience in `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/homeCardProfiles.ts`, `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/posterManifest.ts`, and `web/src/app/components/SpecialSettingsDialog.tsx` so the main page now shows a matching `Platforms and Labs` card, the card opens the new modal from Home, and stale Advanced/Platform naming is removed from touched UI copy.
+  - Added or refreshed focused coverage in `web/src/app/layout/AppShell.test.tsx`, `web/src/app/components/Platform/PlatformModal.test.tsx`, `web/src/app/pages/HomePage.test.tsx`, and `web/src/app/data/advancedMenuItems.test.ts` for the unified trigger, labs workspace, home-card opening flow, and updated navigation metadata.
+  - Validation: `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx src/app/components/Platform/PlatformModal.test.tsx src/app/pages/HomePage.test.tsx src/app/data/advancedMenuItems.test.ts` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass.
+  - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.

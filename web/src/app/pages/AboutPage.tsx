@@ -61,6 +61,7 @@ import {
   subscribeCategoryColorOverrides,
 } from '../data/categoryStyles'
 import { PlatformInfoGuideSection } from './PlatformInfoGuideSection'
+import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import './AboutPage.css'
 
 interface VersionInfo {
@@ -558,6 +559,11 @@ export function AboutPage() {
   const availableThemes = { ...getAllThemes(), ...customThemes }
   const activeTheme = availableThemes[currentTheme] ?? availableThemes.default
   const editableCategoryConfigs = useMemo(() => getEditableCategoryConfigs(), [categoryOverrideSnapshot])
+  const {
+    reducedEffectsEnabled,
+    prefersReducedMotion,
+    setReducedEffectsEnabled,
+  } = useReducedEffectsPreference()
 
   const toggleWelcomeBanner = async () => {
     if (!welcomeBanner || bannerLoading) return
@@ -660,6 +666,36 @@ export function AboutPage() {
         <Button kind="tertiary" renderIcon={PaintBrush} onClick={() => setShowThemeChooser(true)}>
           Choose theme
         </Button>
+        <div className="about-theme-card__effects" role="group" aria-label="Route effects preference">
+          <div className="about-theme-card__effects-copy">
+            <h3 className="about-theme-card__effects-title">Reduce Effects Mode</h3>
+            <p className="about-theme-card__effects-description">
+              Save a softer transition profile for Home, Audio Artifacts, JUCE Grid, and MIDI Hub. System reduced-motion
+              always forces minimal fades.
+            </p>
+          </div>
+          <div className="about-theme-card__effects-controls">
+            <div className="about-theme-card__effects-tags">
+              <Tag type={reducedEffectsEnabled ? 'green' : 'warm-gray'} size="sm">
+                {reducedEffectsEnabled ? 'Saved on' : 'Saved off'}
+              </Tag>
+              {prefersReducedMotion ? (
+                <Tag type="cool-gray" size="sm">
+                  System reduce active
+                </Tag>
+              ) : null}
+            </div>
+            <Button
+              kind={reducedEffectsEnabled ? 'primary' : 'ghost'}
+              size="sm"
+              renderIcon={Accessibility}
+              aria-pressed={reducedEffectsEnabled}
+              onClick={() => setReducedEffectsEnabled(!reducedEffectsEnabled)}
+            >
+              Reduce Effects Mode
+            </Button>
+          </div>
+        </div>
       </div>
       <div className="about-category-card">
         <div className="about-category-card__header">

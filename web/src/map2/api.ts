@@ -20,6 +20,7 @@ import type {
   MIDIDevice,
   MIDIMapping,
   MIDIMappingV2,
+  MIDIMappingTestResult,
   MIDIMappingGroup,
   MIDICommand,
   MIDIRoutingRule,
@@ -1279,6 +1280,15 @@ export const midiApiV2 = {
     fetchJson<{ success: boolean; message: string }>(
       `${API_BASE}/v2/midi/mappings/${mappingId}`,
       { method: 'DELETE' }
+    ),
+
+  testMappingFeedback: (
+    mappingId: number,
+    options?: { normalized_value?: number; use_current_value?: boolean },
+  ) =>
+    fetchJson<MIDIMappingTestResult>(
+      `${API_BASE}/v2/midi/mappings/${mappingId}/test`,
+      { method: 'POST', body: JSON.stringify(options ?? {}) }
     ),
 
   // ========== Commands ==========

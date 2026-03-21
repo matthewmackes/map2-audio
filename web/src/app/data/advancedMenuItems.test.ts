@@ -63,8 +63,8 @@ describe('navigation catalog', () => {
     for (const item of hardwareSection?.items ?? []) {
       expect(item.to.startsWith('/')).toBe(true)
     }
-    expect(hardwareSection?.items.some((item) => item.to === '/host-machine')).toBe(true)
-    expect(systemSection?.items.some((item) => item.to === '/host-machine')).toBe(false)
+    expect(hardwareSection?.items.some((item) => item.to === '/lcd')).toBe(true)
+    expect(systemSection?.items.some((item) => item.to === '/lcd')).toBe(false)
 
     for (const item of hardwareInterfaceMenuItems) {
       expect(item.maturity).not.toBe('hardware-blocked')
@@ -143,9 +143,10 @@ describe('navigation catalog', () => {
     ])
   })
 
-  it('keeps Platform Stack on Home instead of the removed dedicated cluster pages', () => {
+  it('keeps Platforms and Labs on Home instead of the removed dedicated cluster pages', () => {
     const platform = navigationCatalogItems.find((item) => item.to === '/platform')
     expect(platform).toBeDefined()
+    expect(platform?.label).toBe('Platforms and Labs')
     expect(platform?.includeInAdvancedMenu).toBe(false)
     expect(platform?.showOnHome).toBe(true)
 

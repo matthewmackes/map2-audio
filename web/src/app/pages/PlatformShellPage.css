@@ -14,6 +14,196 @@
   padding: calc(2rem * var(--platform-menu-scale)) calc(2.5rem * var(--platform-menu-scale));
 }
 
+.platform-shell__window {
+  display: grid;
+  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  gap: calc(1.25rem * var(--platform-menu-scale));
+  min-height: 100%;
+}
+
+.platform-shell__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.85rem * var(--platform-menu-scale));
+  min-width: 0;
+  padding: calc(1rem * var(--platform-menu-scale));
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 92%, transparent);
+}
+
+.platform-shell__sidebar-head {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.platform-shell__sidebar-eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__sidebar-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--cds-text-primary);
+}
+
+.platform-shell__sidebar-copy {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__sidebar-list,
+.platform-shell__sidebar-footer {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.platform-shell__sidebar-footer {
+  margin-top: auto;
+  padding-top: 0.35rem;
+  border-top: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 72%, transparent);
+}
+
+.platform-shell__nav-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-02) 90%, transparent);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.platform-shell__nav-item:hover {
+  background: color-mix(in srgb, var(--cds-layer-hover-02) 92%, transparent);
+  border-color: color-mix(in srgb, var(--cds-link-primary) 32%, var(--cds-border-subtle-01));
+}
+
+.platform-shell__nav-item.is-selected {
+  background: color-mix(in srgb, var(--cds-layer-selected-02) 94%, transparent);
+  border-color: color-mix(in srgb, var(--cds-link-primary) 42%, var(--cds-border-strong-01));
+}
+
+.platform-shell__nav-item-main {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.8rem 0.85rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.platform-shell__nav-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  color: var(--cds-icon-primary);
+  flex-shrink: 0;
+}
+
+.platform-shell__nav-item-copy {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.platform-shell__nav-item-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--cds-text-primary);
+}
+
+.platform-shell__nav-item-desc {
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--cds-text-secondary);
+}
+
+.platform-shell__nav-item-pin {
+  align-self: flex-start;
+  margin: 0.6rem 0.6rem 0 0;
+  min-height: 0;
+  padding: 0.18rem 0.36rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle-01) 76%, transparent);
+  background: color-mix(in srgb, var(--cds-layer-01) 94%, transparent);
+  color: var(--cds-text-secondary);
+  font-size: 0.48rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.platform-shell__nav-item-pin:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--cds-link-primary) 48%, transparent);
+  color: var(--cds-text-primary);
+}
+
+.platform-shell__nav-item-pin.is-pinned {
+  border-color: color-mix(in srgb, var(--cds-link-primary) 60%, transparent);
+  background: color-mix(in srgb, var(--cds-link-primary) 14%, var(--cds-layer-01));
+  color: var(--cds-text-primary);
+}
+
+.platform-shell__nav-item-pin:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.platform-shell__nav-item-main:focus-visible,
+.platform-shell__nav-item-pin:focus-visible,
+.platform-shell__nav-item--labs:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: -2px;
+}
+
+.platform-shell__nav-item--labs {
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+}
+
+.platform-shell__nav-item--labs .platform-shell__nav-item-main {
+  width: 100%;
+}
+
+.platform-shell__nav-item-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 1.5rem;
+  padding: 0 0.6rem;
+  background: var(--cds-orange-40, #ff832b);
+  color: #161616;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.platform-shell__panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── Control Panel ───────────────────────────────────────── */
 .platform-shell__cp-panel {
   display: flex;
@@ -144,6 +334,10 @@
   gap: 1rem;
 }
 
+.platform-shell__workspace--empty {
+  min-height: 12rem;
+}
+
 /* Workspace header bar */
 .platform-shell__ws-header {
   display: flex;
@@ -184,6 +378,14 @@
   font-weight: 400;
   line-height: 1.2;
   color: var(--cds-text-primary);
+}
+
+.platform-shell__ws-header-summary {
+  margin: 0.5rem 0 0;
+  max-width: 42rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--cds-text-secondary);
 }
 
 .platform-shell__ws-back {
@@ -374,6 +576,19 @@
   .platform-shell-page {
     --platform-menu-scale: 1.2;
   }
+
+  .platform-shell__window {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-shell__sidebar {
+    order: -1;
+  }
+
+  .platform-shell__sidebar-list,
+  .platform-shell__sidebar-footer {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
@@ -387,6 +602,21 @@
 
   .platform-shell__cp-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .platform-shell__sidebar-list,
+  .platform-shell__sidebar-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-shell__nav-item {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .platform-shell__nav-item-pin {
+    align-self: flex-end;
+    margin: 0 0.75rem 0.75rem 0;
   }
 
   .platform-shell__detail-row {
