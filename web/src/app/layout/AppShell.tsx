@@ -1,14 +1,13 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useRef, useEffect, useMemo, startTransition } from 'react'
-import { ChevronDown, ChevronRight, ChevronUp, Close, Menu, Pin, PinFilled, Settings } from '@carbon/icons-react'
+import { ChevronDown, ChevronRight, ChevronUp, Close, Menu, Pin, PinFilled } from '@carbon/icons-react'
 import { Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
 import { PlatformModalContent } from '../components/Platform/PlatformModal'
 import { isPlatformLayerId } from '../platform/model'
 import type { PlatformLayerId } from '../platform/model'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
-import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { PageTransition } from '../components/PageTransition'
@@ -173,8 +172,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     updateSettings: updateSpecialSettings,
   } = useSpecialSettings()
 
-  const [showSpecialSettings, setShowSpecialSettings] = useState(false)
-
   const requestedPinnedRoutes = useMemo(
     () => normalizePinnedRoutes(specialSettings?.pinnedRoutes ?? defaultPinnedRoutes),
     [specialSettings?.pinnedRoutes],
@@ -327,11 +324,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
     closeTransientMenus()
     navigate(item.to)
-  }
-
-  const handleSpecialSettingsSave = async ({ hiddenPlugins }: { hiddenPlugins: string[] }) => {
-    await updateSpecialSettings({ hiddenPlugins })
-    setShowSpecialSettings(false)
   }
 
   const handleMpx1Rescan = async () => {
@@ -899,21 +891,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <HeaderGlobalBar className="nav-tabs-right-container">
           <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
             <NodeNavBar />
-            <button
-              type="button"
-              className="nav-tab-item nav-tab-special"
-              aria-label="Open special settings"
-              onClick={() => setShowSpecialSettings(true)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--cds-support-error)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'transparent'
-              }}
-              title="Open special settings"
-            >
-              <Settings size={14} aria-hidden style={{ color: 'var(--cds-text-secondary)' }} />
-            </button>
           </HeaderNavigation>
 
           <HeaderMenuButton
@@ -954,11 +931,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <SpecialSettingsDialog
-        isOpen={showSpecialSettings}
-        onClose={() => setShowSpecialSettings(false)}
-        onSave={handleSpecialSettingsSave}
-      />
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
         <PageTransition>{children}</PageTransition>
       </main>

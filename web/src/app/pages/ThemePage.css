@@ -531,6 +531,13 @@
   align-items: start;
 }
 
+.theme-page__motion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  align-items: center;
+}
+
 .theme-page__category-card {
   display: grid;
   gap: var(--cds-spacing-04);
@@ -608,7 +615,8 @@
   .theme-page__studio-actions,
   .theme-page__theme-actions,
   .theme-page__category-controls,
-  .theme-page__picker-foot {
+  .theme-page__picker-foot,
+  .theme-page__motion-actions {
     flex-direction: column;
     align-items: stretch;
   }

@@ -249,6 +249,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     pinnable: false,
     maturity: 'hardware-blocked',
     kind: 'link',
+    showOnHome: false,
     gatedReason: 'Requires the dedicated LCD hardware path and qualification evidence before routine use.',
   },
   {

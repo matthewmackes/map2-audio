@@ -1850,7 +1850,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
     })
   })
 
-  it('renders plugin browser results in a stable alphabetical order', async () => {
+  it('groups featured native browser results ahead of LV2 entries without duplication', async () => {
     mockLivePathLayout = {
       status: 'available',
       activeFlowIds: ['flow-0'],
@@ -1892,10 +1892,10 @@ describe('JuceGridPage snapshot modal workflow', () => {
           format: 'LV2',
         },
         {
-          uri: 'map2://juce/modulation/chorus',
-          name: 'Chorus',
+          uri: 'map2://juce/nam',
+          name: 'Neural Amp Modeler',
           author: 'MAP2 Audio',
-          category: 'Modulation',
+          category: 'Amplifier',
           format: 'JUCE',
         },
         {
@@ -1906,10 +1906,10 @@ describe('JuceGridPage snapshot modal workflow', () => {
           format: 'LV2',
         },
         {
-          uri: 'map2://juce/amp/amp-sim',
-          name: 'Amp Sim',
+          uri: 'map2://juce/drums',
+          name: 'Drums',
           author: 'MAP2 Audio',
-          category: 'Amplifier',
+          category: 'Instrument',
           format: 'JUCE',
         },
       ],
@@ -1935,13 +1935,23 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     await screen.findByText('Alpha Delay')
 
+    const featuredGroups = container.querySelector('.juce-grid-page__browser-featured-groups') as HTMLElement | null
+    expect(featuredGroups).toBeTruthy()
+    expect(within(featuredGroups as HTMLElement).getByText('Linear and Nonlinear Modeling')).toBeTruthy()
+    expect(within(featuredGroups as HTMLElement).getByText('Instruments')).toBeTruthy()
+    expect(within(featuredGroups as HTMLElement).getByText('Neural Amp Modeler')).toBeTruthy()
+    expect(within(featuredGroups as HTMLElement).getByText('Drums')).toBeTruthy()
+    expect(within(featuredGroups as HTMLElement).queryByText('Alpha Delay')).toBeNull()
+
+    expect(screen.queryByText('Core integrated')).toBeNull()
+
     const browserPluginNames = Array.from(
       container.querySelectorAll('.juce-grid-page__browser-plugin-tile h3'),
     ).map((element) => element.textContent?.trim())
 
     expect(browserPluginNames).toEqual([
-      'Amp Sim',
-      'Chorus',
+      'Neural Amp Modeler',
+      'Drums',
       'Alpha Delay',
       'Zeta Delay',
     ])

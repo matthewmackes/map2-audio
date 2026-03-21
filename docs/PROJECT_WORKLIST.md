@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 15:23 EDT - Codex (Completed `T251` for full commit/push and frontend rebuild/restart.)
+Last updated: 2026-03-21 16:34 EDT - Codex (Completed `T254` by featuring flagship native JUCE browser groups and trimming the browser modal dead space.)
 
 ## Active Blockers Only
 
@@ -2917,3 +2917,62 @@ Last updated: 2026-03-21 15:23 EDT - Codex
   - Rebuilt the frontend with `npm --prefix web run build`, which refreshed the generated version artifacts and completed successfully with the repo's existing dynamic-import and chunk-size warnings only.
   - Replaced the previous `vite preview` tree on port `3000` with a fresh background process using the documented nohup pattern; the new listener is PID `660949`.
   - Verification: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/` -> `200`; `curl -s http://localhost:3000/ | grep -o 'index-[^"]*\\.js' | head -1` -> `index-CJl1HjmH.js`.
+
+ID: T252
+Status: [✓] Done
+Title: Move Special Settings access into the Theme workspace beside motion controls
+Description:
+- Goal / acceptance criteria: Relocate the user-facing Special Settings entry out of the global header navigation and into the Theme workspace/modal, positioned near the existing motion-effects controls, while preserving the current Special Settings dialog behavior for native-plugin visibility. Update focused frontend tests so the header no longer exposes the entry and the Theme workspace does.
+- Why it matters: The user wants Theme-related controls consolidated in one modal and the global nav decluttered, so the Special Settings access point must live with the rest of the appearance/motion controls instead of as a top-bar singleton.
+- Dependencies: `web/src/app/pages/ThemePage.tsx`, `web/src/app/pages/ThemePage.css`, `web/src/app/layout/AppShell.tsx`, focused frontend tests, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: Relocated Theme workspace entry, removed header trigger, updated test coverage, validation notes, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 15:34 EDT - Codex
+- Completion notes:
+  - Added a dedicated `Special Settings Menu` card beside `Reduce Effects Mode` in `web/src/app/pages/ThemePage.tsx`, including a hidden-plugin count summary and Theme-owned dialog launch state so the special-settings entry now lives inside the Theme workspace/modal.
+  - Extended `web/src/app/pages/ThemePage.css` with scoped motion-action layout rules so the new launcher sits cleanly beside the existing motion controls on desktop and mobile.
+  - Removed the header special-settings button and shell-owned dialog wiring from `web/src/app/layout/AppShell.tsx`, leaving the global nav bar free of the old trigger.
+  - Updated focused coverage in `web/src/app/pages/ThemePage.test.tsx` and `web/src/app/layout/AppShell.test.tsx` to verify the new Theme launcher and the absence of the header control.
+  - Validation: `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx src/app/pages/ThemePage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T253
+Status: [✓] Done
+Title: Remove the LCD home tile and add Fira Sans, Space Grotesk, and Inter to the Theme font chooser
+Description:
+- Goal / acceptance criteria: Remove the `LCD Console` card from the Home landing-page navigation while leaving the underlying route metadata intact elsewhere, then expand the Theme font catalog/chooser so `Fira Sans`, `Space Grotesk`, and `Inter` appear as selectable persisted GUI font presets with their font assets loaded by the app. Update focused tests and any required dependency/notice files touched by the change.
+- Why it matters: The user wants the landing page decluttered and the Theme workspace to offer a broader, intentional typography set without dead or partial chooser entries.
+- Dependencies: `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/homeCardProfiles.ts`, `web/src/app/pages/HomePage.test.tsx`, `web/src/main.tsx`, `web/src/app/theme/usePlatformTypography.ts`, `web/package.json`, `web/package-lock.json`, any touched notice files, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: LCD tile removed from Home, three new working Theme font presets, updated dependency/font-loading config, focused regression coverage, validation notes, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 15:53 EDT - Codex
+- Completion notes:
+  - Set `showOnHome: false` for the `LCD Console` navigation entry in `web/src/app/data/advancedMenuItems.ts`, which removes the tile from the Home landing page while keeping the underlying route metadata in the shared navigation catalog.
+  - Expanded `web/src/app/theme/usePlatformTypography.ts` with persisted font presets for `Fira Sans`, `Space Grotesk`, and `Inter`, and loaded their bundled assets in `web/src/main.tsx` via `@fontsource` imports so the Theme chooser can apply them immediately.
+  - Added the corresponding frontend package dependencies in `web/package.json` and `web/package-lock.json`, then documented the additional bundled web-font packages in `docs/THIRD_PARTY_NOTICES.md`.
+  - Updated focused coverage in `web/src/app/pages/HomePage.test.tsx` and `web/src/app/pages/ThemePage.test.tsx` to verify the LCD tile is absent from Home and the new font options appear and persist through the Theme selector.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx src/app/pages/ThemePage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, updated `docs/THIRD_PARTY_NOTICES.md` for the new bundled font packages, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new licensing gaps requiring follow-up work.
+
+ID: T254
+Status: [✓] Done
+Title: Feature flagship native JUCE plugins in the browser and trim browser modal dead space
+Description:
+- Goal / acceptance criteria: Rework the JUCE Grid plugin browser so flagship integrated processors surface first in curated featured groups for modeling and instruments, remove those entries from the remaining native list to avoid duplication, and reduce the large bottom dead space in the browser modal without regressing add/details actions or responsive layout. Add focused regression coverage for the featured-group/browser ordering behavior.
+- Why it matters: The current browser makes the most important integrated processors harder to discover and wastes vertical space at the bottom of the modal, which slows operator scanning in one of the most-used JUCE Grid workflows.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridPage.test.tsx`, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: Featured native browser groups, deduplicated remaining native list, trimmed modal spacing, focused regression coverage, validation notes, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 16:34 EDT - Codex
+- Completion notes:
+  - Added curated featured native browser groups in `web/src/app/pages/JuceGridPage.tsx` for flagship modeling and instrument processors, using canonical URI matching so those plugins surface first and are removed from the remaining native grid instead of appearing twice.
+  - Updated `web/src/app/pages/JuceGridPage.css` to render the featured groups in a dedicated responsive grid and reduced the browser modal's excess bottom padding so the results area uses the available height more efficiently.
+  - Extended `web/src/app/pages/JuceGridPage.test.tsx` with an explicit regression that verifies featured native plugins render ahead of LV2 entries and do not leak back into a duplicate `Core integrated` section when the featured set consumes the available native fixtures.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal `preventCloseOnClickOutside={false}` warnings unchanged); `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import/chunk-size warnings only).
+  - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, reused the repository license/notices scan (`rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`), and found no new AGPL or third-party notice gaps requiring follow-up work.

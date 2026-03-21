@@ -31,6 +31,7 @@ import {
   Launch,
   Link,
   Meter,
+  MachineLearningModel,
   Music,
   Pause,
   Play,
@@ -102,6 +103,7 @@ import type { Chain, Plugin, PluginOrderRef, HistoryStatus, FlowSnapshot, FlowSn
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
+import { canonicalizePluginUri } from '../utils/pluginUris'
 import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
 import { JuceGridChainManagementCard } from './JuceGridChainManagementCard'
 import { ChainAssignmentModal } from './ChainAssignmentModal'
@@ -141,6 +143,28 @@ const API_BASE = (() => {
 })()
 
 const FLOW_CARD_LED_COLOR = '#59a8ff'
+
+const FEATURED_NATIVE_BROWSER_GROUPS = [
+  {
+    key: 'linear-nonlinear-modeling',
+    title: 'Linear and Nonlinear Modeling',
+    icon: MachineLearningModel,
+    pluginUris: [
+      'map2://juce/nam',
+      'map2://juce/convolution/reverb',
+      'map2://juce/convolution/cabinet',
+    ],
+  },
+  {
+    key: 'instruments',
+    title: 'Instruments',
+    icon: Music,
+    pluginUris: [
+      'map2://juce/drums',
+      'map2://juce/synthforge',
+    ],
+  },
+] as const
 
 interface FlowLevelControlProps {
   flowId: string
@@ -1628,6 +1652,38 @@ export function JuceGridPage() {
 
     return { nativeProcessors: native, lv2Plugins: lv2 }
   }, [filteredPlugins, specialSettings])
+
+  const { featuredNativeGroups, remainingNativeProcessors } = useMemo(() => {
+    const nativeByUri = new Map(
+      nativeProcessors.map((plugin) => [canonicalizePluginUri(plugin.uri), plugin] as const),
+    )
+
+    const featuredGroups = FEATURED_NATIVE_BROWSER_GROUPS
+      .map((group) => {
+        const plugins = group.pluginUris
+          .map((pluginUri) => nativeByUri.get(pluginUri))
+          .filter((plugin): plugin is Plugin => plugin !== undefined)
+
+        return {
+          ...group,
+          plugins,
+        }
+      })
+      .filter((group) => group.plugins.length > 0)
+
+    const featuredPluginUris = new Set(
+      featuredGroups.flatMap((group) => group.plugins.map((plugin) => canonicalizePluginUri(plugin.uri))),
+    )
+
+    const remainingNative = nativeProcessors.filter(
+      (plugin) => !featuredPluginUris.has(canonicalizePluginUri(plugin.uri)),
+    )
+
+    return {
+      featuredNativeGroups: featuredGroups,
+      remainingNativeProcessors: remainingNative,
+    }
+  }, [nativeProcessors])
 
   // Group LV2 plugins by category for collapsible display
   const groupedPlugins = useMemo(() => {
@@ -4615,7 +4671,66 @@ export function JuceGridPage() {
             )}
 
             <div className="juce-grid-page__browser-results">
-              {nativeProcessors.length > 0 && (
+              {featuredNativeGroups.length > 0 && (
+                <section
+                  className={`juce-grid-page__browser-featured-groups${featuredNativeGroups.length === 1 ? ' juce-grid-page__browser-featured-groups--single' : ''}`}
+                  aria-label="Featured core integrated plugins"
+                >
+                  {featuredNativeGroups.map((group) => {
+                    const GroupIcon = group.icon
+
+                    return (
+                      <div key={group.key} className="juce-grid-page__browser-featured-group">
+                        <div className="juce-grid-page__browser-section-header">
+                          <div className="juce-grid-page__browser-section-title">
+                            <GroupIcon size={16} />
+                            <span>{group.title}</span>
+                          </div>
+                          <Tag type="cool-gray">{group.plugins.length}</Tag>
+                        </div>
+
+                        <div className="juce-grid-page__browser-featured-plugin-list">
+                          {group.plugins.map((plugin) => {
+                            const catConfig = getCategoryConfig(plugin.category)
+                            const displayName = getDisplayPluginName(plugin.name, plugin.uri)
+
+                            return (
+                              <Tile
+                                key={plugin.uri}
+                                className="juce-grid-page__browser-plugin-tile juce-grid-page__browser-plugin-tile--native juce-grid-page__browser-plugin-tile--featured"
+                                style={{ '--browser-accent': catConfig.color } as React.CSSProperties}
+                              >
+                                <div className="juce-grid-page__browser-plugin-header">
+                                  <div>
+                                    <h3>{displayName}</h3>
+                                    <p>{sanitizeRestrictedDisplayText(plugin.author) || 'Integrated JUCE processor'}</p>
+                                  </div>
+                                  <Tag type="blue">{plugin.category}</Tag>
+                                </div>
+                                <div className="juce-grid-page__compact-actions">
+                                  <Button
+                                    size="sm"
+                                    kind="primary"
+                                    onClick={() => handleAddPluginToCurrentChain(plugin.uri)}
+                                    disabled={!currentChain}
+                                  >
+                                    Add
+                                  </Button>
+                                  <Button size="sm" kind="ghost" onClick={() => handleShowDetails(plugin)}>
+                                    Details
+                                  </Button>
+                                </div>
+                              </Tile>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </section>
+              )}
+
+              {remainingNativeProcessors.length > 0 && (
                 <section className="juce-grid-page__browser-section">
                   <div className="juce-grid-page__browser-section-header">
                     <div className="juce-grid-page__browser-section-title">
@@ -4624,11 +4739,11 @@ export function JuceGridPage() {
                     </div>
                     <div className="juce-grid-page__compact-tags">
                       <Tag type="green">Zero latency</Tag>
-                      <Tag type="cool-gray">{nativeProcessors.length} plugins</Tag>
+                      <Tag type="cool-gray">{remainingNativeProcessors.length} plugins</Tag>
                     </div>
                   </div>
                   <div className="juce-grid-page__browser-native-grid">
-                    {nativeProcessors.map((plugin) => {
+                    {remainingNativeProcessors.map((plugin) => {
                       const catConfig = getCategoryConfig(plugin.category)
                       const displayName = getDisplayPluginName(plugin.name, plugin.uri)
                       return (

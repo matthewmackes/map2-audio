@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
-export type PlatformFontPresetId = 'ibm-plex-sans' | 'roboto' | 'system-ui';
+export type PlatformFontPresetId =
+  | 'ibm-plex-sans'
+  | 'roboto'
+  | 'fira-sans'
+  | 'space-grotesk'
+  | 'inter'
+  | 'system-ui';
 
 export interface PlatformFontPreset {
   id: PlatformFontPresetId;
@@ -31,6 +37,30 @@ export const PLATFORM_FONT_PRESETS: Record<PlatformFontPresetId, PlatformFontPre
     family: "'Roboto', 'Helvetica Neue', Arial, sans-serif",
     accent: 'var(--cds-support-info)',
     sample: 'Compact control-surface rhythm',
+  },
+  'fira-sans': {
+    id: 'fira-sans',
+    name: 'Fira Sans',
+    description: 'Humanist sans with clearer personality for operator dashboards that still need technical calm.',
+    family: "'Fira Sans', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-support-warning)',
+    sample: 'Readable cues with warmer cadence',
+  },
+  'space-grotesk': {
+    id: 'space-grotesk',
+    name: 'Space Grotesk',
+    description: 'Sharper geometric voice for bold shells, larger cards, and more pronounced visual direction.',
+    family: "'Space Grotesk', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-link-primary)',
+    sample: 'Crisp geometry for live surfaces',
+  },
+  inter: {
+    id: 'inter',
+    name: 'Inter',
+    description: 'Balanced UI sans tuned for dense controls, long sessions, and modern application clarity.',
+    family: "'Inter', 'Helvetica Neue', Arial, sans-serif",
+    accent: 'var(--cds-support-success)',
+    sample: 'Neutral precision for long sessions',
   },
   'system-ui': {
     id: 'system-ui',

@@ -1,4 +1,4 @@
-import { Accessibility, Checkmark, PaintBrush, Reset } from '@carbon/icons-react'
+import { Accessibility, Checkmark, PaintBrush, Reset, Settings } from '@carbon/icons-react'
 import {
   Button,
   InlineNotification,
@@ -19,6 +19,7 @@ import {
   subscribeCategoryColorOverrides,
 } from '../data/categoryStyles'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
+import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import {
   CARBON_COLOR_FAMILIES,
   CARBON_FAMILY_BY_ID,
@@ -36,6 +37,7 @@ import {
   usePlatformFontPreference,
   useTheme,
 } from '../theme'
+import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import './ThemePage.css'
 
 function carbonThemeLabel(carbonTheme: Theme['carbonTheme']): string {
@@ -217,6 +219,12 @@ export function ThemePage() {
   const { theme, themeId, setTheme } = useTheme()
   const { fontPreset, fontPresetId, fontPresets, setFontPreset } = usePlatformFontPreference()
   const {
+    settings: specialSettings,
+    isLoading: specialSettingsLoading,
+    error: specialSettingsError,
+    updateSettings: updateSpecialSettings,
+  } = useSpecialSettings()
+  const {
     reducedEffectsEnabled,
     prefersReducedMotion,
     shouldReduceEffects,
@@ -228,6 +236,7 @@ export function ThemePage() {
   const [draftName, setDraftName] = useState('')
   const [draftOverrides, setDraftOverrides] = useState<Partial<ThemeColors>>({})
   const [activeSlot, setActiveSlot] = useState<keyof ThemeColors | null>(null)
+  const [showSpecialSettings, setShowSpecialSettings] = useState(false)
   const categoryOverrideSnapshot = useSyncExternalStore(
     subscribeCategoryColorOverrides,
     getCategoryColorOverrideSnapshot,
@@ -244,6 +253,7 @@ export function ThemePage() {
     () => Object.values(customThemes).sort((left, right) => left.name.localeCompare(right.name)),
     [customThemes],
   )
+  const hiddenPluginCount = specialSettings?.hiddenPlugins.length ?? 0
   const previewTheme = useMemo(() => resolvePreviewTheme(themeId, theme), [theme, themeId])
   const draftTheme = useMemo(
     () =>
@@ -296,6 +306,11 @@ export function ThemePage() {
     setDraftName('')
     setDraftOverrides({})
     setActiveSlot(null)
+  }
+
+  const handleSpecialSettingsSave = async ({ hiddenPlugins }: { hiddenPlugins: string[] }) => {
+    await updateSpecialSettings({ hiddenPlugins })
+    setShowSpecialSettings(false)
   }
 
   return (
@@ -831,7 +846,43 @@ export function ThemePage() {
                 onToggle={setReducedEffectsEnabled}
               />
             </div>
+            <div className="theme-page__motion-card">
+              <div className="theme-page__motion-head">
+                <Settings size={20} aria-hidden />
+                <div>
+                  <strong>Special Settings Menu</strong>
+                  <p>Keep native-plugin visibility controls in the Theme workspace instead of the global header.</p>
+                </div>
+              </div>
+              <div className="theme-page__motion-actions">
+                <Tag type={hiddenPluginCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                  {hiddenPluginCount > 0 ? `${hiddenPluginCount} hidden plugin${hiddenPluginCount === 1 ? '' : 's'}` : 'All native plugins visible'}
+                </Tag>
+                {specialSettingsLoading ? (
+                  <Tag type="cyan" size="sm">
+                    Loading
+                  </Tag>
+                ) : null}
+                <Button
+                  kind="secondary"
+                  size="sm"
+                  renderIcon={Settings}
+                  onClick={() => setShowSpecialSettings(true)}
+                >
+                  Open Special Settings Menu
+                </Button>
+              </div>
+            </div>
           </div>
+          {specialSettingsError ? (
+            <InlineNotification
+              lowContrast
+              hideCloseButton
+              kind="error"
+              title="Special settings are unavailable."
+              subtitle={specialSettingsError}
+            />
+          ) : null}
           {prefersReducedMotion ? (
             <InlineNotification
               lowContrast
@@ -843,6 +894,12 @@ export function ThemePage() {
           ) : null}
         </section>
       </div>
+
+      <SpecialSettingsDialog
+        isOpen={showSpecialSettings}
+        onClose={() => setShowSpecialSettings(false)}
+        onSave={handleSpecialSettingsSave}
+      />
 
       <section className="theme-page__panel">
         <div className="theme-page__section-head">

@@ -50,10 +50,6 @@ jest.mock('../../map2/mpx1Api', () => ({
   }),
 }))
 
-jest.mock('../components/SpecialSettingsDialog', () => ({
-  SpecialSettingsDialog: () => null,
-}))
-
 jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
   MPX1MegaMenu: () => <div data-testid="mpx1-mega-menu">MPX1 menu</div>,
 }))
@@ -123,7 +119,7 @@ describe('AppShell navigation', () => {
     expect(screen.getByLabelText('Home')).toBeTruthy()
     expect(screen.getByLabelText('Mackes Audio Platform home')).toBeTruthy()
     expect(screen.getByTestId('shell-latency-pressure-readout')).toBeTruthy()
-    expect(screen.getByLabelText('Open special settings')).toBeTruthy()
+    expect(screen.queryByLabelText('Open special settings')).toBeNull()
     expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
     expect(screen.queryByLabelText('Open Platforms and Labs window')).toBeNull()
     expect(screen.queryByLabelText('Open advanced menu')).toBeNull()

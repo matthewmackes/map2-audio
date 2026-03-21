@@ -5,10 +5,33 @@ import { CATEGORY_COLOR_OVERRIDE_STORAGE_KEY } from '../data/categoryStyles'
 import { REDUCED_EFFECTS_STORAGE_KEY, useEffectsSettingsStore } from '../stores/effectsSettingsStore'
 import { ThemePage } from './ThemePage'
 
+const mockUpdateSpecialSettings = jest.fn()
+
+jest.mock('../hooks/useSpecialSettings', () => ({
+  useSpecialSettings: () => ({
+    settings: {
+      enabled: true,
+      hiddenPlugins: ['map2://native/hidden'],
+      menuLocation: 'top-nav',
+      pinnedRoutes: [],
+    },
+    isLoading: false,
+    error: null,
+    updateSettings: mockUpdateSpecialSettings,
+    reload: jest.fn(),
+  }),
+}))
+
+jest.mock('../components/SpecialSettingsDialog', () => ({
+  SpecialSettingsDialog: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="special-settings-dialog">Special settings dialog</div> : null,
+}))
+
 describe('ThemePage', () => {
   beforeEach(() => {
     window.localStorage.clear()
     useEffectsSettingsStore.setState({ reducedEffectsEnabled: false })
+    mockUpdateSpecialSettings.mockReset()
 
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -34,6 +57,19 @@ describe('ThemePage', () => {
     expect(screen.getByRole('heading', { name: /theme studio/i })).toBeTruthy()
     expect(screen.getByRole('heading', { name: /platform gui font/i })).toBeTruthy()
     expect(screen.getByRole('heading', { name: /category color theming/i })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: /fira sans/i })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: /space grotesk/i })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: /inter/i })).toBeTruthy()
+  })
+
+  it('opens the special settings menu from the motion section', () => {
+    render(<ThemePage />)
+
+    expect(screen.getByText('1 hidden plugin')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /open special settings menu/i }))
+
+    expect(screen.getByTestId('special-settings-dialog')).toBeTruthy()
   })
 
   it('persists category color overrides from the Theme workspace', () => {
@@ -54,12 +90,12 @@ describe('ThemePage', () => {
 
     expect(window.localStorage.getItem(REDUCED_EFFECTS_STORAGE_KEY)).toContain('"reducedEffectsEnabled":true')
 
-    const robotoTile = screen.getByRole('radio', { name: /roboto/i })
-    fireEvent.click(robotoTile)
+    const interTile = screen.getByRole('radio', { name: /inter/i })
+    fireEvent.click(interTile)
 
     return waitFor(() => {
-      expect(window.localStorage.getItem('map2.platform-font-preset.v1')).toBe('roboto')
-      expect(document.documentElement.style.getPropertyValue('--font-ui')).toContain('Roboto')
+      expect(window.localStorage.getItem('map2.platform-font-preset.v1')).toBe('inter')
+      expect(document.documentElement.style.getPropertyValue('--font-ui')).toContain('Inter')
     })
   })
 
