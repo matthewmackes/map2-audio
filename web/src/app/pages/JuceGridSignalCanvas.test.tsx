@@ -364,6 +364,68 @@ describe('JuceGridSignalCanvas', () => {
     }
   })
 
+  it('prefers rendered slot width over the fallback estimate when recalculating row capacity', async () => {
+    const longChain = buildChainWithPluginCount(7)
+    const longMeta = buildPluginMetaForChain(longChain)
+    const resizeObserverOwner = globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }
+    const originalResizeObserver = resizeObserverOwner.ResizeObserver
+
+    delete resizeObserverOwner.ResizeObserver
+
+    try {
+      render(
+        <JuceGridSignalCanvas
+          chain={longChain}
+          pluginMeta={longMeta}
+          selectedPluginUri={longChain.plugins[0].uri}
+          onPluginSelect={jest.fn()}
+          onToggleBypass={jest.fn()}
+          onReorderPlugins={jest.fn()}
+          onAddPlugin={jest.fn()}
+          showEndpoints={false}
+        />,
+      )
+
+      const grid = screen.getByTestId('juce-grid-signal-grid')
+      Object.defineProperty(grid, 'clientWidth', {
+        configurable: true,
+        value: 1000,
+      })
+
+      const row = screen.getByTestId('juce-grid-signal-row-0')
+      row.setAttribute('style', 'gap: 10px;')
+
+      const firstSlot = row.querySelector('.juce-grid-page__signal-grid-item[data-slot-kind="plugin"]') as HTMLElement | null
+      expect(firstSlot).toBeTruthy()
+      Object.defineProperty(firstSlot as HTMLElement, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({
+          width: 100,
+          height: 100,
+          top: 0,
+          left: 0,
+          right: 100,
+          bottom: 100,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }),
+      })
+
+      fireEvent(window, new Event('resize'))
+
+      await waitFor(() => expect(screen.queryByTestId('juce-grid-signal-row-1')).toBeNull())
+
+      const onlyRow = screen.getByTestId('juce-grid-signal-row-0')
+      expect(onlyRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(7)
+      expect(within(onlyRow).getByRole('button', { name: 'Add effect' })).toBeTruthy()
+    } finally {
+      if (originalResizeObserver) {
+        resizeObserverOwner.ResizeObserver = originalResizeObserver
+      }
+    }
+  })
+
   it('keeps the active card in place and subtly dims the other cards', () => {
     const longChain = buildChainWithPluginCount(4)
     const longMeta = buildPluginMetaForChain(longChain)

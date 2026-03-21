@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 07:22 - Codex (Completed `T238` by syncing the deploy-generated web release metadata, merging the latest `origin/master`, rerunning the production deploy, and verifying `map2-web-prod` on port `3000`.)
+Last updated: 2026-03-21 07:36 - Codex (Started `T240` to commit and sync the deployed JUCE Grid row-capacity fix plus the regenerated release metadata, then rerun the production web release loop on port `3000`.)
 
 ## Active Blockers Only
 
@@ -2610,3 +2610,34 @@ Last updated: 2026-03-21 07:22 - Codex
   - Committed the existing dirty deploy metadata in `VERSION`, `version.json`, and `logs/deploy-build.log`, then resolved a non-fast-forward GitHub push by merging the latest `origin/master` README auto-update into local `master` before re-pushing both remotes.
   - Reran `npm --prefix web run deploy`, forced the stale preview PIDs to exit when `systemctl stop map2-web-prod` hung in `deactivating`, and let the deploy script complete the clean `systemd` restart.
   - Verified production health with `npm --prefix web run deploy:status` showing port `3000` listening and service `map2-web-prod` active, plus `curl -I http://localhost:3000/` returning `200 OK`.
+
+ID: T239
+Status: [✓] Done
+Title: Replace JUCE Grid signal-row capacity guesses with DOM-measured slot sizing
+Description:
+- Goal / acceptance criteria: Eliminate the remaining premature `JUCE-GRID` signal-card snake wrap by basing row-capacity math on the rendered slot width and actual row gap from the live DOM instead of a hardcoded `rem` estimate, while keeping a safe fallback path for zero-width and test environments.
+- Why it matters: The previous fix still under-counts cards in the real page, so operators continue seeing signal cards wrap even when the visible lane is wide enough to keep them on one line.
+- Dependencies: T237, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`, `docs/PROJECT_WORKLIST.md`
+- Estimated effort: Low
+- Required outputs: Updated DOM-based row-capacity measurement, focused regression coverage for the measured-width path, validation evidence, and completion notes in the canonical worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 07:34 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so row-capacity math now prefers the rendered slot width and actual row gap from the live DOM, only falling back to the previous constant estimate when layout metrics are not available yet.
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.test.tsx` with a focused regression that proves measured slot sizing overrides the fallback estimate and keeps all cards on one row when the visible lane is wide enough.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings unchanged); `npm --prefix web run typecheck` -> pass.
+  - Licensing: Reviewed the touched files as MAP2-owned AGPL-covered UI code and found no new AGPL or third-party notice gaps; no follow-up licensing task was required.
+
+ID: T240
+Status: [>] In Progress
+Title: Sync the deployed JUCE Grid row-capacity fix and rerun the web release loop
+Description:
+- Goal / acceptance criteria: Commit the current JUCE Grid row-capacity fix together with the deploy-generated metadata/worklist changes, push `master` to both `origin` and `gitlab`, rerun the frontend production deploy, restart the web service on port `3000`, and finish with a clean local worktree plus updated worklist notes.
+- Why it matters: The live service has been updated with the new row-capacity logic, but the repository is still dirty and both remotes need to be synchronized to the deployed state so the next release pass starts clean.
+- Dependencies: T239, `VERSION`, `version.json`, `logs/deploy-build.log`, `docs/PROJECT_WORKLIST.md`, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`, Git remotes `origin`/`gitlab`, `scripts/build/deploy`, `map2-web-prod`
+- Estimated effort: Low
+- Required outputs: Synced commits on both remotes, rebuilt/restarted production web service, health-check evidence, clean worktree state, and completion notes in the canonical worklist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 07:36 - Codex

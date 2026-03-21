@@ -103,17 +103,46 @@ interface SignalGridRow {
 const SIGNAL_GRID_CARD_MIN_WIDTH_REM = 9.75
 const SIGNAL_GRID_CARD_GAP_REM = 1
 const SIGNAL_GRID_ROW_MIN_CAPACITY = 1
+const SIGNAL_GRID_SLOT_SELECTOR = ".juce-grid-page__signal-grid-item[data-slot-kind='plugin'], .juce-grid-page__signal-grid-item[data-slot-kind='add']"
+
+function getSignalGridFallbackMetrics() {
+  const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
+  return {
+    cardWidth: rootFontSize * SIGNAL_GRID_CARD_MIN_WIDTH_REM,
+    gapWidth: rootFontSize * SIGNAL_GRID_CARD_GAP_REM,
+  }
+}
+
+function getSignalGridSlotMetrics(node: HTMLDivElement) {
+  const fallback = getSignalGridFallbackMetrics()
+  const firstSlot = node.querySelector<HTMLElement>(SIGNAL_GRID_SLOT_SELECTOR)
+  const row = node.querySelector<HTMLElement>('.juce-grid-page__signal-grid-row')
+  const measuredCardWidth = firstSlot?.getBoundingClientRect().width ?? 0
+
+  let measuredGapWidth = 0
+  if (row) {
+    const rowStyles = window.getComputedStyle(row)
+    const gapCandidate = Number.parseFloat(rowStyles.columnGap || rowStyles.gap || '')
+    if (Number.isFinite(gapCandidate) && gapCandidate > 0) {
+      measuredGapWidth = gapCandidate
+    }
+  }
+
+  return {
+    cardWidth: measuredCardWidth > 0 ? measuredCardWidth : fallback.cardWidth,
+    gapWidth: measuredGapWidth > 0 ? measuredGapWidth : fallback.gapWidth,
+  }
+}
 
 function measureSignalGridRowCapacity(node: HTMLDivElement) {
-  const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
   const availableWidth = node.clientWidth
 
   if (availableWidth <= 0) {
     return null
   }
 
-  const gapWidth = rootFontSize * SIGNAL_GRID_CARD_GAP_REM
-  const slotWidth = rootFontSize * SIGNAL_GRID_CARD_MIN_WIDTH_REM + gapWidth
+  const { cardWidth, gapWidth } = getSignalGridSlotMetrics(node)
+  const slotWidth = cardWidth + gapWidth
 
   return Math.max(
     SIGNAL_GRID_ROW_MIN_CAPACITY,
