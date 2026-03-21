@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**796** Python | **1198** TypeScript | **294** C++/H | **122** Docs | **715** total commits | **1** stars | **0** forks | **0** open issues
+**796** Python | **1198** TypeScript | **294** C++/H | **122** Docs | **718** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`07324cce`](https://github.com/matthewmackes/map2-audio/commit/07324cceb7e69d26214f9bdfe3ed0f33af017a58) | Improve JUCE Grid signal icons and editor toggle | Map2 Audio | 2026-03-21 |
+| [`172ad6f8`](https://github.com/matthewmackes/map2-audio/commit/172ad6f89c7f86ebb66d567f09024feef2711668) | Sync generated build version metadata | Map2 Audio | 2026-03-21 |
+| [`37f95782`](https://github.com/matthewmackes/map2-audio/commit/37f957829751fbc3ced8bf14fd05cf51ee5a2600) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`f266a8d1`](https://github.com/matthewmackes/map2-audio/commit/f266a8d1a8b27b88c2985062b947b407525bf19e) | Update Audio Grid editor cards and related plugin surfaces | Map2 Audio | 2026-03-21 |
 | [`56412e3e`](https://github.com/matthewmackes/map2-audio/commit/56412e3e6ed09858320b04c372be1c215b339c25) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
 | [`407644ce`](https://github.com/matthewmackes/map2-audio/commit/407644ce71a8509309ff7a2b2db289992c98f865) | Update generated build version metadata | Map2 Audio | 2026-03-21 |
 | [`231a8ddf`](https://github.com/matthewmackes/map2-audio/commit/231a8ddff288c863ce3bf433e6e768837f27929d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`58c29008`](https://github.com/matthewmackes/map2-audio/commit/58c290085f1b8338232438e3cdfb6e8dce81f1b1) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
-| [`15d5a9a1`](https://github.com/matthewmackes/map2-audio/commit/15d5a9a17d9a004fd64d0978ed0c3f417509e7cd) | Record JUCE Grid masthead completion notes | Map2 Audio | 2026-03-21 |
-| [`c581acd9`](https://github.com/matthewmackes/map2-audio/commit/c581acd965bbd43e0497a9232d2e38e8428a0b6f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
-| [`83e9b126`](https://github.com/matthewmackes/map2-audio/commit/83e9b1266cd3c5f9c5279c213513b86df0a0ddf4) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
