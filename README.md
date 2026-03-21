@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**796** Python | **1196** TypeScript | **294** C++/H | **122** Docs | **699** total commits | **1** stars | **0** forks | **0** open issues
+**796** Python | **1196** TypeScript | **294** C++/H | **122** Docs | **702** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -170,11 +170,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-21 |
+| [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-03-21 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-20 |
 | [API Load Qualification Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_LOAD_QUALIFICATION_RUNBOOK.md) | 2026-03-18 |
 | [API Qualification Observability](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_QUALIFICATION_OBSERVABILITY.md) | 2026-03-18 |
 | [API Restart Dependency Map](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_RESTART_DEPENDENCY_MAP.md) | 2026-03-18 |
-| [API Route Readiness Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_ROUTE_READINESS_MATRIX.md) | 2026-03-18 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bb98412c`](https://github.com/matthewmackes/map2-audio/commit/bb98412c4a103b624cda6a2580161b80b6448754) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
+| [`1723c38a`](https://github.com/matthewmackes/map2-audio/commit/1723c38a33f29f19cbe2a305996b15f5f614ffd5) | Refresh theme controls and curate JUCE browser | Map2 Audio | 2026-03-21 |
+| [`80f25aba`](https://github.com/matthewmackes/map2-audio/commit/80f25aba27cb347f0ebaec25070cccd6cef2ac7e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`196f26ae`](https://github.com/matthewmackes/map2-audio/commit/196f26aee2896e87c3b49c0985099cebf7e01e72) | Refresh theme, platform shell, and effect card UI | Map2 Audio | 2026-03-21 |
 | [`05629aff`](https://github.com/matthewmackes/map2-audio/commit/05629affaf9dfdbc9488c496c63595a6c39916d1) | Update generated build version metadata | Map2 Audio | 2026-03-21 |
 | [`28ff8a14`](https://github.com/matthewmackes/map2-audio/commit/28ff8a1496172a9202fa8a4241a2498bfc5632c4) | Refactor special settings auth and add platform theme wor... | Map2 Audio | 2026-03-21 |
 | [`1153b4ce`](https://github.com/matthewmackes/map2-audio/commit/1153b4ceea158d2dd8917158f52e2f11a2a923f4) | Unify card headers with flat Carbon styling | Map2 Audio | 2026-03-21 |
 | [`82f9bd1d`](https://github.com/matthewmackes/map2-audio/commit/82f9bd1d32386a3a74a7bb4bd6291b67ce80ad03) | Tighten JUCE grid editor card layout | Map2 Audio | 2026-03-21 |
-| [`9535e179`](https://github.com/matthewmackes/map2-audio/commit/9535e179ef1d315ddbabb41dec045cc701db8227) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
-| [`502fe7cc`](https://github.com/matthewmackes/map2-audio/commit/502fe7cc27eb8cc1513c833a0b11c0891d2d92f3) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
-| [`4fce486d`](https://github.com/matthewmackes/map2-audio/commit/4fce486d7b6da424781f8335e991c245473c8941) | Ship platform launcher, JUCE Grid MIDI, and route transit... | Map2 Audio | 2026-03-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
