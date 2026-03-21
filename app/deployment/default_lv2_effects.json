@@ -1,14 +1,15 @@
 {
-  "description": "Optimized LV2 effects - Best-in-class plugins only (redundant plugins moved to JUCE native)",
-  "version": "2.0.0",
-  "source": "https://github.com/rerdavies/ToobAmp + Dragonfly Reverb",
-  "note": "JUCE native processors (Dynamics, EQ, NAM, IR) are now the primary choice. LV2 plugins complement them.",
+  "description": "Declared LV2 deployment inventory for the standard MAP2 host",
+  "version": "3.0.0",
+  "source": "Live MAP2 LV2 runtime inventory aligned with /api/plugins/discover",
+  "note": "This manifest is the deployment and audit source of truth for the standard MAP2 operator host. Legacy TooB and legacy Dragonfly URI cards may remain in the repo for compatibility, but they are not part of the declared runtime baseline. Instrument-only plugins are declared here for inventory parity even when they are not used by the default audio-effect chain templates.",
   "plugins": [
     {
-      "name": "TooB CE-2 Chorus",
-      "uri": "http://two-play.com/plugins/toob-ce2-chorus",
-      "category": "Chorus",
-      "description": "Boss CE-2 style chorus - warm analog modulation",
+      "name": "MVerb",
+      "uri": "http://distrho.sf.net/plugins/MVerb",
+      "category": "Reverb",
+      "description": "Compact algorithmic reverb with density, damping, and early/late balance controls",
+      "author": "Martin Eastwood, falkTX",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
@@ -17,94 +18,76 @@
       "is_hard_rt_capable": true
     },
     {
-      "name": "TooB BF-2 Flanger",
-      "uri": "http://two-play.com/plugins/toob-bf2-flanger",
-      "category": "Flanger",
-      "description": "Boss BF-2 style flanger - classic jet sweep",
+      "name": "sfizz",
+      "uri": "http://sfztools.github.io/sfizz",
+      "category": "Instrument",
+      "description": "Stereo SFZ sampler instrument backend",
+      "author": "SFZTools",
       "audio_ports": {
-        "inputs": 2,
+        "inputs": 0,
         "outputs": 2
       },
-      "priority": 10,
-      "is_hard_rt_capable": true
+      "priority": 7,
+      "is_hard_rt_capable": false
     },
     {
-      "name": "TooB Phaser",
-      "uri": "http://two-play.com/plugins/toob-phaser",
-      "category": "Phaser",
-      "description": "Multi-stage phaser effect",
+      "name": "sfizz-multi",
+      "uri": "http://sfztools.github.io/sfizz-multi",
+      "category": "Instrument",
+      "description": "Multi-output SFZ sampler instrument backend",
+      "author": "SFZTools",
       "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
+        "inputs": 0,
+        "outputs": 16
       },
-      "priority": 10,
-      "is_hard_rt_capable": true
+      "priority": 7,
+      "is_hard_rt_capable": false
     },
     {
-      "name": "TooB Tremolo",
-      "uri": "http://two-play.com/plugins/toob-tremolo",
-      "category": "Modulator",
-      "description": "Classic tremolo with multiple waveforms",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 10,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Delay",
-      "uri": "http://two-play.com/plugins/toob-delay",
-      "category": "Delay",
-      "description": "Versatile delay with feedback and filtering",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 10,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Tuner",
-      "uri": "http://two-play.com/plugins/toob-tuner",
-      "category": "Utility",
-      "description": "Chromatic guitar tuner",
-      "audio_ports": {
-        "inputs": 1,
-        "outputs": 1
-      },
-      "priority": 10,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB 4Looper",
-      "uri": "http://two-play.com/plugins/toob-4looper",
-      "category": "Utility",
-      "description": "4-track looper for layered performances",
+      "name": "IR",
+      "uri": "http://tomszilagyi.github.io/plugins/lv2/ir",
+      "category": "Reverb",
+      "description": "Convolution-style impulse-response processor with predelay and envelope controls",
+      "author": "Tom Szilagyi",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
       "priority": 9,
-      "is_hard_rt_capable": false
+      "is_hard_rt_capable": true
     },
     {
-      "name": "Dragonfly Room Reverb",
-      "uri": "https://michaelwillis.github.io/dragonfly-reverb#room",
-      "category": "Reverb",
-      "description": "Natural small-to-medium room ambience",
+      "name": "Outotune",
+      "uri": "http://uralyx.cz/prog/outotune",
+      "category": "Utility",
+      "description": "Mono pitch-correction utility with MIDI mode support",
+      "author": "Richard Hladík",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Soul Force",
+      "uri": "http://www.niallmoody.com/ndcplugs/soulforce.htm",
+      "category": "Distortion",
+      "description": "Waveshaper-style distortion and feedback effect",
+      "author": "ndc Plugs",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
-      "priority": 10,
+      "priority": 9,
       "is_hard_rt_capable": true
     },
     {
       "name": "Dragonfly Hall Reverb",
-      "uri": "https://michaelwillis.github.io/dragonfly-reverb#hall",
+      "uri": "https://github.com/michaelwillis/dragonfly-reverb",
       "category": "Reverb",
-      "description": "Concert hall and large space reverb",
+      "description": "Large-space Dragonfly hall reverb",
+      "author": "Michael Willis and Rob vd Berg",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
@@ -113,10 +96,76 @@
       "is_hard_rt_capable": true
     },
     {
-      "name": "Dragonfly Plate Reverb",
-      "uri": "https://michaelwillis.github.io/dragonfly-reverb#plate",
+      "name": "REEV-R",
+      "uri": "https://github.com/tiagolr/reevr",
+      "category": "Utility",
+      "description": "Minimal reverb utility exposing enable and freewheeling controls",
+      "author": "Tilr",
+      "audio_ports": {
+        "inputs": 4,
+        "outputs": 2
+      },
+      "priority": 6,
+      "is_hard_rt_capable": false
+    },
+    {
+      "name": "Graillon 3 (Mono)",
+      "uri": "https://www.auburnsounds.com/products/Graillon.html40733133#mono",
+      "category": "Pitch",
+      "description": "Mono Graillon pitch and vocal processing plugin",
+      "author": "Auburn Sounds",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Graillon 3 (Stereo)",
+      "uri": "https://www.auburnsounds.com/products/Graillon.html40733133#stereo",
+      "category": "Pitch",
+      "description": "Stereo Graillon pitch and vocal processing plugin",
+      "author": "Auburn Sounds",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Dragonfly Early Reflections",
+      "uri": "urn:dragonfly:early",
       "category": "Reverb",
-      "description": "Classic studio plate reverb",
+      "description": "Early-reflection focused Dragonfly ambience processor",
+      "author": "Michael Willis",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 9,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Dragonfly Plate Reverb",
+      "uri": "urn:dragonfly:plate",
+      "category": "Reverb",
+      "description": "Plate-style Dragonfly reverb with algorithm selection",
+      "author": "Michael Willis",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Dragonfly Room Reverb",
+      "uri": "urn:dragonfly:room",
+      "category": "Reverb",
+      "description": "Room-style Dragonfly reverb for small and medium spaces",
+      "author": "Michael Willis",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
@@ -128,128 +177,79 @@
   "default_chains": [
     {
       "name": "Clean Tone",
-      "description": "Clean guitar tone with subtle effects",
+      "description": "Clean guitar tone with light room ambience from the live Dragonfly room plugin",
       "plugins": [
         "map2://juce/dynamics/gate",
         "map2://juce/eq/parametric",
-        "http://two-play.com/plugins/toob-ce2-chorus",
-        "http://two-play.com/plugins/toob-delay",
-        "https://michaelwillis.github.io/dragonfly-reverb#room"
+        "urn:dragonfly:room"
       ]
     },
     {
       "name": "High Gain",
-      "description": "Modern high-gain amp tone",
+      "description": "High-gain guitar chain with Soul Force drive ahead of NAM and cabinet simulation",
       "plugins": [
         "map2://juce/dynamics/gate",
+        "http://www.niallmoody.com/ndcplugs/soulforce.htm",
         "map2://juce/nam",
         "map2://juce/convolution/cabinet",
-        "map2://juce/eq/parametric",
-        "http://two-play.com/plugins/toob-delay"
+        "map2://juce/eq/parametric"
       ]
     },
     {
       "name": "Lead Guitar",
-      "description": "High-gain lead tone with reverb",
+      "description": "Singing lead chain with compression and Dragonfly hall reverb",
       "plugins": [
         "map2://juce/dynamics/gate",
         "map2://juce/nam",
         "map2://juce/convolution/cabinet",
         "map2://juce/dynamics/compressor",
-        "http://two-play.com/plugins/toob-delay",
-        "https://michaelwillis.github.io/dragonfly-reverb#hall"
-      ]
-    },
-    {
-      "name": "Practice Setup",
-      "description": "Practice chain with tuner and EQ",
-      "plugins": [
-        "http://two-play.com/plugins/toob-tuner",
-        "map2://juce/eq/parametric",
-        "map2://juce/dynamics/compressor"
+        "https://github.com/michaelwillis/dragonfly-reverb"
       ]
     },
     {
       "name": "Ambient Soundscape",
-      "description": "Spacious ambient sound",
+      "description": "Layered ambience using Dragonfly early reflections and plate reverb",
       "plugins": [
         "map2://juce/eq/parametric",
-        "http://two-play.com/plugins/toob-delay",
-        "https://michaelwillis.github.io/dragonfly-reverb#hall",
+        "urn:dragonfly:early",
+        "urn:dragonfly:plate",
         "map2://juce/dynamics/limiter"
       ]
     },
     {
-      "name": "Metal High Gain",
-      "description": "Tight metal tone with gate",
+      "name": "Vintage Room",
+      "description": "Compressed room sound blending MVerb and Dragonfly room",
+      "plugins": [
+        "map2://juce/dynamics/compressor",
+        "http://distrho.sf.net/plugins/MVerb",
+        "urn:dragonfly:room"
+      ]
+    },
+    {
+      "name": "Convolution Space",
+      "description": "Amp chain feeding the live IR LV2 processor for impulse-based ambience",
       "plugins": [
         "map2://juce/dynamics/gate",
         "map2://juce/nam",
-        "map2://juce/eq/parametric",
         "map2://juce/convolution/cabinet",
+        "http://tomszilagyi.github.io/plugins/lv2/ir"
+      ]
+    },
+    {
+      "name": "Pitch Texture",
+      "description": "Stereo pitch texture chain using Graillon and Dragonfly plate",
+      "plugins": [
+        "map2://juce/dynamics/compressor",
+        "https://www.auburnsounds.com/products/Graillon.html40733133#stereo",
+        "urn:dragonfly:plate"
+      ]
+    },
+    {
+      "name": "Mono Correction",
+      "description": "Mono utility chain centered on Outotune pitch correction",
+      "plugins": [
+        "http://uralyx.cz/prog/outotune",
         "map2://juce/dynamics/compressor"
-      ]
-    },
-    {
-      "name": "Blues Crunch",
-      "description": "Warm bluesy overdrive tone",
-      "plugins": [
-        "map2://juce/nam",
-        "map2://juce/convolution/cabinet",
-        "map2://juce/eq/parametric",
-        "http://two-play.com/plugins/toob-tremolo",
-        "https://michaelwillis.github.io/dragonfly-reverb#room"
-      ]
-    },
-    {
-      "name": "Jazz Clean",
-      "description": "Warm, clean jazz tone",
-      "plugins": [
-        "map2://juce/dynamics/compressor",
-        "map2://juce/eq/parametric",
-        "http://two-play.com/plugins/toob-ce2-chorus",
-        "https://michaelwillis.github.io/dragonfly-reverb#room"
-      ]
-    },
-    {
-      "name": "80s Rock",
-      "description": "Classic 80s rock tone",
-      "plugins": [
-        "map2://juce/dynamics/gate",
-        "map2://juce/nam",
-        "map2://juce/convolution/cabinet",
-        "http://two-play.com/plugins/toob-ce2-chorus",
-        "http://two-play.com/plugins/toob-delay"
-      ]
-    },
-    {
-      "name": "Looper Practice",
-      "description": "Loop-based practice setup",
-      "plugins": [
-        "http://two-play.com/plugins/toob-tuner",
-        "map2://juce/dynamics/gate",
-        "map2://juce/eq/parametric",
-        "http://two-play.com/plugins/toob-4looper"
-      ]
-    },
-    {
-      "name": "Funk Clean",
-      "description": "Tight, punchy funk tone",
-      "plugins": [
-        "map2://juce/dynamics/gate",
-        "map2://juce/dynamics/compressor",
-        "map2://juce/eq/parametric",
-        "http://two-play.com/plugins/toob-phaser"
-      ]
-    },
-    {
-      "name": "IR Reverb",
-      "description": "Convolution reverb with cabinet",
-      "plugins": [
-        "map2://juce/dynamics/gate",
-        "map2://juce/nam",
-        "map2://juce/convolution/cabinet",
-        "map2://juce/convolution/reverb"
       ]
     }
   ]

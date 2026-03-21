@@ -8,6 +8,7 @@ Provides Python wrapper for MAP2 Audio Engine
 import asyncio
 import logging
 import sys
+from collections import defaultdict, deque
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
@@ -410,6 +411,102 @@ class JuceEngineService(Singleton):
             )
         return None
 
+    @staticmethod
+    def _runtime_item_latency_samples(item: Dict[str, Any]) -> Optional[int]:
+        for key in ("latency_samples", "reported_latency_samples", "latency"):
+            raw_value = item.get(key)
+            try:
+                latency = int(raw_value)
+            except (TypeError, ValueError):
+                continue
+            if latency >= 0:
+                return latency
+        return None
+
+    def _get_current_pedalboard_items(self) -> List[Dict[str, Any]]:
+        if not self._engine:
+            return []
+        try:
+            pedalboard = self._engine.get_current_pedalboard()
+        except Exception:
+            return []
+        items = pedalboard.get("items", []) if isinstance(pedalboard, dict) else []
+        return [item for item in items if isinstance(item, dict)]
+
+    def _attach_runtime_identity_to_plugin_payloads(
+        self,
+        payloads: List[Dict[str, Any]],
+        runtime_items: Optional[List[Dict[str, Any]]] = None,
+    ) -> List[Dict[str, Any]]:
+        items = runtime_items if runtime_items is not None else self._get_current_pedalboard_items()
+        if not items:
+            return [dict(payload) for payload in payloads if isinstance(payload, dict)]
+
+        by_uri: Dict[str, deque[tuple[int, Dict[str, Any]]]] = defaultdict(deque)
+        by_instance: Dict[int, Dict[str, Any]] = {}
+        by_position: Dict[tuple[str, int], Dict[str, Any]] = {}
+        for index, item in enumerate(items):
+            uri = item.get("uri")
+            if not isinstance(uri, str) or not uri:
+                continue
+            by_uri[uri].append((index, item))
+            instance_id = item.get("instance_id")
+            if isinstance(instance_id, int) and instance_id > 0:
+                by_instance[instance_id] = item
+            position = self._pedalboard_item_position(item, index)
+            if position is not None:
+                by_position[(uri, position)] = item
+
+        matched_runtime_indexes: set[int] = set()
+        enriched: List[Dict[str, Any]] = []
+        for payload_index, raw_payload in enumerate(payloads):
+            if not isinstance(raw_payload, dict):
+                continue
+            payload = dict(raw_payload)
+            uri = payload.get("uri") or payload.get("plugin_uri")
+            runtime_item: Optional[Dict[str, Any]] = None
+
+            instance_id = payload.get("instance_id")
+            if isinstance(instance_id, int) and instance_id > 0:
+                runtime_item = by_instance.get(instance_id)
+
+            if runtime_item is None and isinstance(uri, str):
+                raw_position = payload.get("plugin_position", payload.get("position"))
+                try:
+                    position = int(raw_position)
+                except (TypeError, ValueError):
+                    position = None
+                if position is not None and position >= 0:
+                    runtime_item = by_position.get((uri, position))
+
+            if runtime_item is None and isinstance(uri, str):
+                queue = by_uri.get(uri)
+                while queue:
+                    candidate_index, candidate_item = queue.popleft()
+                    if candidate_index in matched_runtime_indexes:
+                        continue
+                    runtime_item = candidate_item
+                    matched_runtime_indexes.add(candidate_index)
+                    break
+
+            if isinstance(runtime_item, dict):
+                runtime_instance_id = runtime_item.get("instance_id")
+                if isinstance(runtime_instance_id, int) and runtime_instance_id > 0:
+                    payload.setdefault("instance_id", runtime_instance_id)
+                runtime_position = self._pedalboard_item_position(runtime_item, payload_index)
+                if runtime_position is not None:
+                    payload.setdefault("position", runtime_position)
+                    payload.setdefault("plugin_position", runtime_position)
+                runtime_latency = self._runtime_item_latency_samples(runtime_item)
+                if runtime_latency is not None:
+                    payload.setdefault("latency_samples", runtime_latency)
+                if runtime_item.get("name") and not payload.get("name"):
+                    payload["name"] = runtime_item.get("name")
+
+            enriched.append(payload)
+
+        return enriched
+
     async def set_parameter(
         self,
         plugin_uri: str,
@@ -743,7 +840,79 @@ class JuceEngineService(Singleton):
         """Get per-plugin VU levels"""
         if not self._engine:
             return []
-        return await asyncio.to_thread(self._engine.get_plugin_vu_levels)
+        raw_levels = await asyncio.to_thread(self._engine.get_plugin_vu_levels)
+        if not isinstance(raw_levels, list):
+            return []
+        runtime_items = self._get_current_pedalboard_items()
+        return self._attach_runtime_identity_to_plugin_payloads(raw_levels, runtime_items)
+
+    @staticmethod
+    def _lookup_runtime_cpu_percent(per_plugin_percent: Any, instance_id: Optional[int]) -> Optional[float]:
+        if not isinstance(instance_id, int) or instance_id <= 0:
+            return None
+        if isinstance(per_plugin_percent, dict):
+            for key in (instance_id, str(instance_id)):
+                raw_value = per_plugin_percent.get(key)
+                if raw_value is None:
+                    continue
+                try:
+                    return float(raw_value)
+                except (TypeError, ValueError):
+                    return None
+        return None
+
+    async def get_runtime_plugin_cpu_telemetry(self) -> List[Dict[str, Any]]:
+        """Get per-instance plugin CPU telemetry for the active pedalboard."""
+        if not self._engine:
+            return []
+
+        runtime_items = self._get_current_pedalboard_items()
+        if not runtime_items:
+            return []
+
+        try:
+            cpu_metrics = await asyncio.to_thread(self._engine.get_cpu_metrics)
+        except Exception:
+            cpu_metrics = {}
+        per_plugin_percent = cpu_metrics.get("per_plugin_percent", {}) if isinstance(cpu_metrics, dict) else {}
+
+        telemetry: List[Dict[str, Any]] = []
+        for fallback_index, item in enumerate(runtime_items):
+            uri = item.get("uri")
+            if not isinstance(uri, str) or not uri:
+                continue
+
+            payload: Dict[str, Any] = {
+                "uri": uri,
+                "name": item.get("name") or uri,
+                "cpu_percent": 0.0,
+            }
+
+            instance_id = item.get("instance_id")
+            if isinstance(instance_id, int) and instance_id > 0:
+                payload["instance_id"] = instance_id
+
+            position = self._pedalboard_item_position(item, fallback_index)
+            if position is not None:
+                payload["position"] = position
+                payload["plugin_position"] = position
+
+            latency = self._runtime_item_latency_samples(item)
+            if latency is not None:
+                payload["latency_samples"] = latency
+
+            cpu_percent = self._lookup_runtime_cpu_percent(per_plugin_percent, instance_id)
+            if cpu_percent is None and isinstance(instance_id, int) and instance_id > 0:
+                try:
+                    cpu_percent = float(self._engine.get_plugin_cpu(instance_id))
+                except Exception:
+                    cpu_percent = None
+            if cpu_percent is not None:
+                payload["cpu_percent"] = round(cpu_percent, 2)
+
+            telemetry.append(payload)
+
+        return telemetry
 
     # ========================================
     # Spectrum Analysis (NEW)

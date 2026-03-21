@@ -22,6 +22,7 @@ from typing import List, Dict, Any, Optional, ClassVar
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from .command_queue import CommandQueue, CommandType
+from .default_effects_manifest import load_default_effects_manifest
 from app.services.plugin_loader_unified import get_plugin_loader
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,12 @@ def _warn_chain_deploy_api_once(missing_methods: List[str]) -> None:
         "Skipping JUCE chain deployment: engine missing required APIs (%s).",
         ", ".join(missing_methods),
     )
+
+
+def _load_default_chain_templates() -> List[Dict[str, Any]]:
+    """Load default chain templates from the canonical deployment manifest."""
+    config = load_default_effects_manifest()
+    return list(config.get("default_chains", []))
 
 
 class ChainService:
@@ -1532,7 +1539,7 @@ class ChainService:
     async def create_chain_from_template(self, template_name: str) -> Optional[Dict[str, Any]]:
         """Create a chain from a default template (demo pedalboard).
 
-        Loads default chains from app/config/default_lv2_effects.json
+        Loads default chains from app/deployment/default_lv2_effects.json
 
         Args:
             template_name: Name of the template chain (e.g., "Rock Distortion")
@@ -1541,23 +1548,7 @@ class ChainService:
             Created chain dict or None on error
         """
         try:
-            import os
-
-            # Load templates from config file
-            config_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "config", "default_lv2_effects.json"
-            )
-
-            if not os.path.exists(config_path):
-                logger.error(f"Config file not found: {config_path}")
-                return None
-
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-
-            # Find template
-            templates = config.get("default_chains", [])
+            templates = _load_default_chain_templates()
             template = next(
                 (t for t in templates if t["name"] == template_name),
                 None
@@ -1595,21 +1586,8 @@ class ChainService:
             List of template dicts with name, description, plugins
         """
         try:
-            import os
-
-            config_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "config", "default_lv2_effects.json"
-            )
-
-            if not os.path.exists(config_path):
-                return []
-
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-
             templates = []
-            for chain in config.get("default_chains", []):
+            for chain in _load_default_chain_templates():
                 templates.append({
                     "name": chain["name"],
                     "description": chain.get("description", ""),

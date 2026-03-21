@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-20 22:00 - Codex (Completed `T235` by fixing the `ShoeGazeCard.tsx` JSX parent regression that blocked `npm --prefix web run deploy`, rerunning the production web deploy successfully, and verifying `http://localhost:3000/` plus `http://localhost:8080/api/health` both returned `200` before the commit/push step.)
+Last updated: 2026-03-20 22:30 - Codex (Completed `T234` by propagating duplicate-plugin runtime identity through profiler, meter, and UI telemetry paths, fixing the stranded JUCE instance-resolution lookup, and preserving URI-only fallback behavior when runtime identity is unavailable. All remaining open items in the canonical list are hardware- or environment-blocked, so no further workable software tasks remain.)
 
 ## Active Blockers Only
 
@@ -2447,7 +2447,7 @@ Last updated: 2026-03-20 20:26 - Codex
   - Validation: `pytest -q tests/test_plugin_parameter_schema_route.py` -> pass; `pytest -q tests/test_route_caching_and_latency_metrics.py -k touchscreen` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/utils/pluginUris.test.ts web/src/app/components/snapshots/SnapshotDeployModal.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass; `python3 scripts/audit_plugin_inventory_live.py --base-url http://localhost:8080` -> expected nonzero with zero missing schema keys and explicit runtime/deployment drift details.
 
 ID: T230
-Status: [ ] Todo
+Status: [✓] Done
 Title: Resolve declared deployment inventory against current live LV2 runtime inventory
 Description:
 - Goal / acceptance criteria: Decide whether the current deployment manifests or the current live LV2 plugin set are authoritative for shipped JUCE Grid/operator audit scope, then update the manifests, packaging/install assumptions, and audit expectations so the live inventory parity audit returns zero drift on a correctly provisioned host.
@@ -2457,7 +2457,12 @@ Description:
 - Required outputs: Inventory authority decision, manifest/provisioning updates, rerun live audit with zero drift, and documented rationale for any intentional exclusions.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-20 20:26 - Codex
+Last updated: 2026-03-20 22:25 - Codex
+- Completion notes:
+  - Replaced the stale TooB/legacy-Dragonfly deployment manifest in `app/deployment/default_lv2_effects.json` with the live 13-plugin LV2 inventory exposed by `http://localhost:8080/api/plugins/discover`, including refreshed default chain templates that no longer reference absent plugins.
+  - Added `app/services/default_effects_manifest.py` and updated `app/services/chain_service.py` plus `app/services/default_effects_loader.py` so runtime template/default-effect loading now reads the canonical deployment manifest instead of the nonexistent `app/config/default_lv2_effects.json` path, while also dropping the old TooB-only author/bundle assumptions.
+  - Updated `web/src/app/components/PluginCards/registry.ts` and its audit coverage so live Dragonfly URIs resolve through the Carbon reverb template path alongside the retained legacy URI compatibility entries.
+  - Validation: `python3 scripts/audit_plugin_inventory_live.py --base-url http://localhost:8080` -> pass with `declared_plugin_count=38`, `runtime_plugin_count=38`, zero drift, zero schema omissions; `pytest -q tests/test_default_effects_manifest.py tests/test_chain_service_runtime_mapping.py` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/components/PluginCards/registry.test.ts web/src/app/pages/JuceGridParameterAudit.test.tsx` -> pass.
 
 ID: T231
 Status: [✓] Done
@@ -2516,7 +2521,7 @@ Last updated: 2026-03-20 21:46 - Codex
   - Validation: `pytest -q tests/test_chain_service_runtime_mapping.py` -> pass; `pytest -q tests/test_chain_service_runtime_mapping.py tests/test_route_caching_and_latency_metrics.py -k "reorder_plugins_route_passes_positioned_plugin_refs_to_service or remove_plugin_route_passes_position_to_service or add_plugin_route_returns_plugin_position or update_touchscreen_stomps_route_passes_assignments_to_service"` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/map2/components/ChainBuilder/utils/flowToChain.test.ts` -> pass.
 
 ID: T234
-Status: [ ] Todo
+Status: [✓] Done
 Title: Emit per-instance meter and profiling telemetry for duplicate chain plugins
 Description:
 - Goal / acceptance criteria: Extend the profiling and meter telemetry producers so duplicate-URI plugins emit stable per-instance identity (`instance_id` and/or `plugin_position`) in `/api/profiling/plugins`, plugin VU level payloads, and any websocket meter events consumed by the UI. Update the remaining consumers so duplicate instances no longer share CPU or meter badges.
@@ -2526,7 +2531,13 @@ Description:
 - Required outputs: Backend telemetry payloads with per-instance identity, consumer updates that use the new identity keys, focused duplicate-URI telemetry regression coverage, and documented fallback behavior when identity is unavailable.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-20 21:46 - Codex
+Last updated: 2026-03-20 22:30 - Codex
+- Completion notes:
+  - Added per-instance identity fields to profiler/runtime telemetry in `app/services/plugin_profiler.py`, `app/services/juce_engine_service.py`, `app/routes/profiling.py`, and `app/services/audio_meters.py`, so `/api/profiling/plugins` and plugin meter payloads can distinguish duplicate URIs by `instance_id` and `plugin_position`.
+  - Fixed the stranded `_get_instance_id_for_uri()` lookup body in `app/services/juce_engine_service.py`, which had left duplicate-instance resolution inert after the T232/T233 chain identity work.
+  - Added duplicate-plugin telemetry mapping helpers in `web/src/map2/utils/pluginTelemetry.ts` and applied them in `web/src/map2/components/ChainBuilder.tsx`, preserving URI fallback only when runtime identity is genuinely unavailable.
+  - Added focused regression coverage in `tests/test_plugin_profiler_identity.py`, `tests/test_juce_engine_service_instance_resolution.py`, `tests/test_plugin_telemetry_identity.py`, and `web/src/map2/utils/pluginTelemetry.test.ts`.
+  - Validation: `pytest -q tests/test_plugin_profiler_identity.py tests/test_juce_engine_service_instance_resolution.py tests/test_plugin_telemetry_identity.py` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/map2/utils/pluginTelemetry.test.ts web/src/app/components/PluginCards/registry.test.ts web/src/app/pages/JuceGridParameterAudit.test.tsx` -> pass.
 
 ID: T235
 Status: [✓] Done

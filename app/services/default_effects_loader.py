@@ -1,17 +1,18 @@
 """
 Default Effects Loader
 
-Loads and manages default LV2 effects based on PiPedal's ToobAmp collection.
-Provides initialization of default plugins and preset chains.
+Loads and manages the declared default LV2 deployment inventory and preset chains.
 """
 
-import json
 import logging
-from pathlib import Path
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 
 from app.database import Plugin, Chain, ChainPlugin
+from app.services.default_effects_manifest import (
+    get_default_effects_manifest_path,
+    load_default_effects_manifest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class DefaultEffectsLoader:
             db: Database session for persisting default effects
         """
         self.db = db
-        self.config_path = Path(__file__).parent.parent / "config" / "default_lv2_effects.json"
+        self.config_path = get_default_effects_manifest_path()
         self.default_effects: List[Dict[str, Any]] = []
         self.default_chains: List[Dict[str, Any]] = []
 
@@ -45,9 +46,7 @@ class DefaultEffectsLoader:
                 logger.warning(f"Default effects config not found: {self.config_path}")
                 return False
 
-            with open(self.config_path, 'r') as f:
-                config = json.load(f)
-
+            config = load_default_effects_manifest()
             self.default_effects = config.get('plugins', [])
             self.default_chains = config.get('default_chains', [])
 
@@ -98,11 +97,11 @@ class DefaultEffectsLoader:
                     'uri': uri,
                     'name': effect.get('name', 'Unknown Plugin'),
                     'category': effect.get('category', 'Utility'),
-                    'author': 'TooB',
-                    'version': '1.0.0',
+                    'author': effect.get('author', 'Unknown'),
+                    'version': effect.get('version', '1.0.0'),
                     'priority': effect.get('priority', 5),
-                    'is_hard_rt_capable': effect.get('is_hard_rt_capable', True),
-                    'bundle_path': f"/usr/lib/lv2/toob-{effect.get('name', 'unknown').lower().replace(' ', '-')}.lv2"
+                    'is_hard_rt_capable': effect.get('is_hard_rt_capable', False),
+                    'bundle_path': effect.get('bundle_path'),
                 }
 
                 if existing:

@@ -339,6 +339,16 @@ class MeterBroadcaster:
             try:
                 # Get current levels
                 levels = self.get_levels()
+                try:
+                    from app.services.engine_runtime_facade import get_engine_service
+
+                    service = get_engine_service()
+                    if getattr(service, "is_available", False):
+                        plugin_levels = await service.get_plugin_vu_levels()
+                        if isinstance(plugin_levels, list):
+                            levels["plugins"] = plugin_levels
+                except Exception:
+                    pass
                 
                 # Broadcast to subscribers
                 await ws_manager.broadcast_json(

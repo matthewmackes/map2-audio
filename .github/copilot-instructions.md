@@ -1089,6 +1089,22 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Derive mock test ids from the rail variant (`className` / `assistiveText`) so snapshot and MIDI assertions stay distinct.
 - **Lesson**: When mocking shared layout primitives, selectors need to preserve the rendered variant boundary or the test starts failing for harness reasons instead of UI regressions.
 
+**18. Default LV2 Chain Inventory Lives in Deployment Manifest (HIGH - Mar 20, 2026)**
+- **Files**: `app/deployment/default_lv2_effects.json`, `app/services/default_effects_manifest.py`, `app/services/default_effects_loader.py`, `app/services/chain_service.py`
+- **Problem**: Default chain templates and audit inventory drifted because some code still assumed a nonexistent `app/config/default_lv2_effects.json` source while the live host inventory had moved on.
+- **Root Cause**: The deployment manifest was the real operator-facing source of truth, but loader/service paths were split between stale config assumptions and live runtime discovery.
+- **Fix**: Promote `app/deployment/default_lv2_effects.json` to the shared default-effects source of truth, load it through a single helper, and keep chain templates/audits aligned to the live runtime inventory.
+- **Verification**: `python3 scripts/audit_plugin_inventory_live.py --base-url http://localhost:8080`; `pytest -q tests/test_default_effects_manifest.py tests/test_chain_service_runtime_mapping.py`.
+- **Lesson**: Treat the deployment manifest, not an inferred config path, as the canonical LV2 default inventory contract.
+
+**19. Duplicate Plugin Telemetry Must Key by Instance or Position (HIGH - Mar 20, 2026)**
+- **Files**: `app/services/plugin_profiler.py`, `app/services/juce_engine_service.py`, `app/routes/profiling.py`, `app/services/audio_meters.py`, `web/src/map2/utils/pluginTelemetry.ts`, `web/src/map2/components/ChainBuilder.tsx`
+- **Problem**: Duplicate-URI plugins shared CPU and meter badges even after parameter edits and reorders became instance-safe.
+- **Root Cause**: Telemetry producers and consumers still keyed most profiler/meter data by URI only, and one JUCE instance lookup path was accidentally stranded out of execution.
+- **Fix**: Emit and consume `instance_id` / `plugin_position` across profiler, runtime CPU, plugin VU, and websocket meter paths, with URI fallback only when runtime identity is unavailable; restore the JUCE instance lookup body.
+- **Verification**: `pytest -q tests/test_plugin_profiler_identity.py tests/test_juce_engine_service_instance_resolution.py tests/test_plugin_telemetry_identity.py`; `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand web/src/map2/utils/pluginTelemetry.test.ts`.
+- **Lesson**: Once duplicate plugins are allowed in the chain, every runtime telemetry path must be identity-aware end to end or the UI will silently recombine distinct instances.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1359,6 +1375,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-20] - Effect Inventory + Duplicate Telemetry Contracts
+- **Section**: Gotchas & Learned Fixes (#18, #19), Worklist Workflow
+- **Change**: Documented that `app/deployment/default_lv2_effects.json` is the real default LV2 inventory/template source of truth and that duplicate-plugin telemetry must carry `instance_id` / `plugin_position` through profiler and meter paths.
+- **Reason**: The effect-card remediation surfaced two repo-wide contracts that were easy to violate silently: stale manifest path assumptions and URI-only runtime telemetry.
+- **Impact**: Future inventory, template, profiling, and meter changes should stay aligned with live deployment state and duplicate-plugin-safe UI behavior.
+- **Files**: `.github/copilot-instructions.md`, `.gemini/instructions.md`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-20] - `update` Shorthand Workflow Preference
 - **Section**: User Preferences, Git Workflow

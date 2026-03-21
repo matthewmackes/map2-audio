@@ -56,6 +56,7 @@ import {
   getPluginIdentityKeyFromParts,
   samePluginIdentity,
 } from '../utils/pluginIdentity';
+import { buildPluginLevelMap, buildPluginPerformanceMap } from '../utils/pluginTelemetry';
 import {
   ChainFlowCanvas,
   chainToFlow,
@@ -468,18 +469,7 @@ export default function ChainBuilder() {
         const res = await fetch('/profiling/plugins');
         if (res.ok) {
           const data = await res.json();
-          const perfMap: Record<string, any> = {};
-          (data.plugins || []).forEach((p: any) => {
-            const pluginKey = getPluginIdentityKeyFromParts(p.uri, p.plugin_position ?? p.position, p.instance_id);
-            const entry = {
-              cpuPercent: p.cpu_percent,
-              latencySamples: p.latency_samples,
-            };
-            perfMap[pluginKey] = entry;
-            if (!perfMap[p.uri]) {
-              perfMap[p.uri] = entry;
-            }
-          });
+          const perfMap: Record<string, any> = buildPluginPerformanceMap(data.plugins || []);
           
           // Also fetch automation/LFO status
           try {
@@ -527,16 +517,7 @@ export default function ChainBuilder() {
         output_right: meterLevels.output_right,
       });
       if (meterLevels.plugins) {
-        const map: Record<string, { input: number; output: number }> = {};
-        meterLevels.plugins.forEach((p: any) => {
-          const pluginKey = getPluginIdentityKeyFromParts(p.uri, p.position, p.instance_id);
-          const entry = { input: p.input, output: p.output };
-          map[pluginKey] = entry;
-          if (!map[p.uri]) {
-            map[p.uri] = entry;
-          }
-        });
-        setPluginLevels(map);
+        setPluginLevels(buildPluginLevelMap(meterLevels.plugins));
       }
     }
   }, [meterLevels]);
@@ -545,8 +526,14 @@ export default function ChainBuilder() {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await audioApi.getLevels();
-        setGlobalLevels(res as any);
+        const [levelsRes, pluginLevelsRes] = await Promise.all([
+          audioApi.getLevels(),
+          audioApi.getPluginLevels(),
+        ]);
+        setGlobalLevels(levelsRes as any);
+        if (Array.isArray(pluginLevelsRes.plugins)) {
+          setPluginLevels(buildPluginLevelMap(pluginLevelsRes.plugins));
+        }
       } catch (e) {
         // ignore
       }

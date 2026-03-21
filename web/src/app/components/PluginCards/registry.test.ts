@@ -1,7 +1,13 @@
 import { getPluginCardConfig } from './registry'
 
 describe('Plugin card registry fallbacks', () => {
-  it('routes stale Dragonfly custom URIs back to Carbon reverb templates', () => {
+  it('routes live and legacy Dragonfly URIs back to Carbon reverb templates', () => {
+    expect(getPluginCardConfig('urn:dragonfly:room', 'Reverb')).toMatchObject({
+      template: 'reverb',
+    })
+    expect(getPluginCardConfig('https://github.com/michaelwillis/dragonfly-reverb', 'Reverb')).toMatchObject({
+      template: 'reverb',
+    })
     expect(getPluginCardConfig('https://michaelwillis.github.io/dragonfly-reverb#hall', 'Reverb')).toMatchObject({
       template: 'reverb',
     })

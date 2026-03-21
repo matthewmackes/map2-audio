@@ -28,6 +28,8 @@ class PluginStats:
     
     uri: str
     name: str = ""
+    instance_id: Optional[int] = None
+    plugin_position: Optional[int] = None
     
     # Current window statistics
     call_count: int = 0
@@ -101,20 +103,86 @@ class PluginProfiler:
         
         logger.info(f"PluginProfiler initialized: {sample_rate}Hz, {buffer_size} samples, "
                    f"{self.deadline_us:.1f}μs deadline")
+
+    @staticmethod
+    def _stats_key(
+        uri: str,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> str:
+        if isinstance(instance_id, int) and instance_id > 0:
+            return f"instance:{instance_id}"
+        if isinstance(plugin_position, int) and plugin_position >= 0:
+            return f"position:{uri}:{plugin_position}"
+        return f"uri:{uri}"
+
+    def _serialize_stats(self, stats: PluginStats) -> Dict:
+        payload = {
+            "uri": stats.uri,
+            "name": stats.name,
+            "call_count": stats.call_count,
+            "avg_time_us": round(stats.avg_time_us, 2),
+            "max_time_us": round(stats.max_time_us, 2),
+            "cpu_percent": round(stats.cpu_percent, 2),
+            "deadline_us": round(self.deadline_us, 2),
+        }
+        if isinstance(stats.instance_id, int) and stats.instance_id > 0:
+            payload["instance_id"] = stats.instance_id
+        if isinstance(stats.plugin_position, int) and stats.plugin_position >= 0:
+            payload["plugin_position"] = stats.plugin_position
+            payload["position"] = stats.plugin_position
+        return payload
+
+    def _aggregate_stats(self, matches: List[PluginStats]) -> Dict:
+        total_calls = sum(stats.call_count for stats in matches)
+        weighted_avg_us = (
+            sum(stats.avg_time_us * stats.call_count for stats in matches) / total_calls
+            if total_calls > 0
+            else 0.0
+        )
+        max_time_us = max((stats.max_time_us for stats in matches), default=0.0)
+        cpu_percent = sum(stats.cpu_percent for stats in matches)
+        return {
+            "uri": matches[0].uri,
+            "name": matches[0].name,
+            "call_count": total_calls,
+            "avg_time_us": round(weighted_avg_us, 2),
+            "max_time_us": round(max_time_us, 2),
+            "cpu_percent": round(cpu_percent, 2),
+            "deadline_us": round(self.deadline_us, 2),
+        }
     
-    def register_plugin(self, uri: str, name: str = "") -> None:
+    def register_plugin(
+        self,
+        uri: str,
+        name: str = "",
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Register a plugin for profiling.
         
         Args:
             uri: Plugin URI
             name: Human-readable plugin name
         """
+        stats_key = self._stats_key(uri, instance_id, plugin_position)
         with self._stats_lock:
-            if uri not in self._stats:
-                self._stats[uri] = PluginStats(uri=uri, name=name or uri)
+            if stats_key not in self._stats:
+                self._stats[stats_key] = PluginStats(
+                    uri=uri,
+                    name=name or uri,
+                    instance_id=instance_id if isinstance(instance_id, int) and instance_id > 0 else None,
+                    plugin_position=plugin_position if isinstance(plugin_position, int) and plugin_position >= 0 else None,
+                )
                 logger.debug(f"Registered plugin for profiling: {name} ({uri})")
     
-    def measure_start(self, plugin_uri: str) -> int:
+    def measure_start(
+        self,
+        plugin_uri: str,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> int:
         """Mark plugin processing start (RT-safe).
         
         Args:
@@ -125,7 +193,13 @@ class PluginProfiler:
         """
         return time.perf_counter_ns()
     
-    def measure_end(self, plugin_uri: str, start_ns: int) -> None:
+    def measure_end(
+        self,
+        plugin_uri: str,
+        start_ns: int,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Record plugin processing time (RT-safe).
         
         Args:
@@ -133,17 +207,24 @@ class PluginProfiler:
             start_ns: Start timestamp from measure_start()
         """
         elapsed_ns = time.perf_counter_ns() - start_ns
+        stats_key = self._stats_key(plugin_uri, instance_id, plugin_position)
         
         # Update plugin stats
         with self._stats_lock:
-            if plugin_uri in self._stats:
-                self._stats[plugin_uri].update(elapsed_ns, self.deadline_us)
+            if stats_key in self._stats:
+                self._stats[stats_key].update(elapsed_ns, self.deadline_us)
             
             # Update chain totals
             self._chain_total_ns += elapsed_ns
             self._chain_call_count += 1
     
-    def get_plugin_stats(self, plugin_uri: str) -> Optional[Dict]:
+    def get_plugin_stats(
+        self,
+        plugin_uri: str,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> Optional[Dict]:
         """Get statistics for specific plugin.
         
         Args:
@@ -152,20 +233,18 @@ class PluginProfiler:
         Returns:
             Stats dict or None if not found
         """
+        stats_key = self._stats_key(plugin_uri, instance_id, plugin_position)
         with self._stats_lock:
-            stats = self._stats.get(plugin_uri)
-            if not stats:
+            if instance_id is not None or plugin_position is not None:
+                stats = self._stats.get(stats_key)
+                return self._serialize_stats(stats) if stats else None
+
+            matches = [stats for stats in self._stats.values() if stats.uri == plugin_uri]
+            if not matches:
                 return None
-            
-            return {
-                "uri": stats.uri,
-                "name": stats.name,
-                "call_count": stats.call_count,
-                "avg_time_us": round(stats.avg_time_us, 2),
-                "max_time_us": round(stats.max_time_us, 2),
-                "cpu_percent": round(stats.cpu_percent, 2),
-                "deadline_us": round(self.deadline_us, 2)
-            }
+            if len(matches) == 1:
+                return self._serialize_stats(matches[0])
+            return self._aggregate_stats(matches)
     
     def get_all_stats(self) -> List[Dict]:
         """Get statistics for all plugins.
@@ -176,17 +255,11 @@ class PluginProfiler:
         with self._stats_lock:
             stats_list = []
             
-            for uri, stats in self._stats.items():
+            for stats in self._stats.values():
                 if stats.call_count > 0:
-                    stats_list.append({
-                        "uri": uri,
-                        "name": stats.name,
-                        "call_count": stats.call_count,
-                        "avg_time_us": round(stats.avg_time_us, 2),
-                        "max_time_us": round(stats.max_time_us, 2),
-                        "cpu_percent": round(stats.cpu_percent, 2),
-                        "calls_per_second": round(self.sample_rate / self.buffer_size, 2)
-                    })
+                    payload = self._serialize_stats(stats)
+                    payload["calls_per_second"] = round(self.sample_rate / self.buffer_size, 2)
+                    stats_list.append(payload)
             
             # Sort by CPU usage (highest first)
             stats_list.sort(key=lambda x: x["cpu_percent"], reverse=True)
@@ -213,7 +286,13 @@ class PluginProfiler:
                 "chain_call_count": self._chain_call_count
             }
     
-    def reset_stats(self, plugin_uri: Optional[str] = None) -> None:
+    def reset_stats(
+        self,
+        plugin_uri: Optional[str] = None,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> None:
         """Reset statistics.
         
         Args:
@@ -221,9 +300,17 @@ class PluginProfiler:
         """
         with self._stats_lock:
             if plugin_uri:
-                if plugin_uri in self._stats:
-                    self._stats[plugin_uri].reset()
-                    logger.debug(f"Reset stats for plugin: {plugin_uri}")
+                if instance_id is not None or plugin_position is not None:
+                    stats_key = self._stats_key(plugin_uri, instance_id, plugin_position)
+                    if stats_key in self._stats:
+                        self._stats[stats_key].reset()
+                        logger.debug(f"Reset stats for plugin: {plugin_uri}")
+                    return
+
+                for stats in self._stats.values():
+                    if stats.uri == plugin_uri:
+                        stats.reset()
+                logger.debug(f"Reset stats for plugin: {plugin_uri}")
             else:
                 for stats in self._stats.values():
                     stats.reset()

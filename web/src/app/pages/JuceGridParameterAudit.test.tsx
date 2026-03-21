@@ -26,6 +26,7 @@ const TEMPLATE_CATEGORY_AUDIT_SET = [
   'Modulation',
   'Pitch',
   'Utility',
+  'Instrument',
 ] as const
 
 registerTemplateLazy('dynamics', () => import('../components/PluginCards/Templates/DynamicsTemplate').then((module) => ({ default: module.DynamicsTemplate })))
@@ -36,6 +37,7 @@ registerTemplateLazy('distortion', () => import('../components/PluginCards/Templ
 registerTemplateLazy('modulation', () => import('../components/PluginCards/Templates/ModulationTemplate').then((module) => ({ default: module.ModulationTemplate })))
 registerTemplateLazy('utility', () => import('../components/PluginCards/Templates/UtilityTemplate').then((module) => ({ default: module.UtilityTemplate })))
 registerTemplateLazy('pitch', () => import('../components/PluginCards/Templates/PitchTemplate').then((module) => ({ default: module.PitchTemplate })))
+registerTemplateLazy('instrument', () => import('../components/PluginCards/Templates/InstrumentTemplate').then((module) => ({ default: module.InstrumentTemplate })))
 
 function toPluginParameter(parameter: Record<string, any>, index: number): PluginParameter {
   const isToggle = parameter.type === 'toggle'

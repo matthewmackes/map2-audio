@@ -455,6 +455,26 @@ registerPluginPattern(/map2:\/\/juce\/.*synthforge/i, synthForgeCardConfig)
 // ==================== Dragonfly Reverbs ====================
 // Best-in-class algorithmic reverbs
 
+registerPluginCard('urn:dragonfly:room', {
+  template: 'reverb',
+  visualizations: ['reverb-decay', 'level-meter'],
+})
+
+registerPluginCard('https://github.com/michaelwillis/dragonfly-reverb', {
+  template: 'reverb',
+  visualizations: ['reverb-decay', 'level-meter'],
+})
+
+registerPluginCard('urn:dragonfly:plate', {
+  template: 'reverb',
+  visualizations: ['reverb-decay'],
+})
+
+registerPluginCard('urn:dragonfly:early', {
+  template: 'reverb',
+  visualizations: ['reverb-decay'],
+})
+
 registerPluginCard('https://michaelwillis.github.io/dragonfly-reverb#room', {
   template: 'reverb',
   visualizations: ['reverb-decay', 'level-meter'],

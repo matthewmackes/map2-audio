@@ -4,6 +4,7 @@ Per-plugin CPU performance monitoring endpoints.
 """
 
 import logging
+from collections import defaultdict, deque
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends
@@ -11,10 +12,128 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 
 from app.services.plugin_profiler import get_profiler
+from app.services.juce_engine_service import get_audio_engine
 from app.database import get_db, PluginPerformanceLog
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/profiling", tags=["profiling"])
+
+
+def _merge_runtime_and_profiler_plugins(
+    runtime_plugins: List[Dict[str, Any]],
+    profiler_plugins: List[Dict[str, Any]],
+    *,
+    profiler_info: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    if not runtime_plugins:
+        return profiler_plugins
+
+    by_instance: Dict[int, Dict[str, Any]] = {}
+    by_position: Dict[tuple[str, int], deque[Dict[str, Any]]] = defaultdict(deque)
+    by_uri: Dict[str, deque[Dict[str, Any]]] = defaultdict(deque)
+    for plugin in profiler_plugins:
+        instance_id = plugin.get("instance_id")
+        if isinstance(instance_id, int) and instance_id > 0:
+            by_instance[instance_id] = plugin
+
+        position = plugin.get("plugin_position", plugin.get("position"))
+        if isinstance(position, int) and position >= 0:
+            by_position[(plugin.get("uri"), position)].append(plugin)
+
+        uri = plugin.get("uri")
+        if isinstance(uri, str):
+            by_uri[uri].append(plugin)
+
+    merged: List[Dict[str, Any]] = []
+    matched_profiler_ids: set[int] = set()
+    default_calls_per_second = round(
+        float(profiler_info.get("sample_rate", 0)) / float(profiler_info.get("buffer_size", 1) or 1),
+        2,
+    )
+
+    for runtime_plugin in runtime_plugins:
+        profiler_plugin: Optional[Dict[str, Any]] = None
+        instance_id = runtime_plugin.get("instance_id")
+        if isinstance(instance_id, int) and instance_id > 0:
+            profiler_plugin = by_instance.get(instance_id)
+
+        if profiler_plugin is None:
+            position = runtime_plugin.get("plugin_position", runtime_plugin.get("position"))
+            uri = runtime_plugin.get("uri")
+            if isinstance(uri, str) and isinstance(position, int) and position >= 0:
+                queue = by_position.get((uri, position))
+                while queue:
+                    candidate = queue.popleft()
+                    if id(candidate) in matched_profiler_ids:
+                        continue
+                    profiler_plugin = candidate
+                    break
+
+        if profiler_plugin is None:
+            uri = runtime_plugin.get("uri")
+            if isinstance(uri, str):
+                queue = by_uri.get(uri)
+                while queue:
+                    candidate = queue.popleft()
+                    if id(candidate) in matched_profiler_ids:
+                        continue
+                    profiler_plugin = candidate
+                    break
+
+        if profiler_plugin is not None:
+            matched_profiler_ids.add(id(profiler_plugin))
+
+        payload = dict(profiler_plugin or {})
+        payload.update(runtime_plugin)
+        payload.setdefault("call_count", int((profiler_plugin or {}).get("call_count", 0)))
+        payload.setdefault("avg_time_us", float((profiler_plugin or {}).get("avg_time_us", 0.0)))
+        payload.setdefault("max_time_us", float((profiler_plugin or {}).get("max_time_us", 0.0)))
+        payload.setdefault("calls_per_second", default_calls_per_second)
+        payload["cpu_percent"] = round(float(payload.get("cpu_percent", 0.0) or 0.0), 2)
+        merged.append(payload)
+
+    for profiler_plugin in profiler_plugins:
+        if id(profiler_plugin) in matched_profiler_ids:
+            continue
+        merged.append(dict(profiler_plugin))
+
+    merged.sort(key=lambda plugin: float(plugin.get("cpu_percent", 0.0) or 0.0), reverse=True)
+    return merged
+
+
+async def _build_live_plugin_stats_payload() -> Dict[str, Any]:
+    profiler = get_profiler()
+    if not profiler:
+        raise HTTPException(status_code=503, detail="Profiler not initialized")
+
+    profiler_plugins = profiler.get_all_stats()
+    chain = profiler.get_chain_stats()
+    profiler_info = profiler.get_profiler_stats()
+
+    runtime_plugins: List[Dict[str, Any]] = []
+    engine_service = get_audio_engine()
+    if engine_service and getattr(engine_service, "is_available", False) and getattr(engine_service, "is_running", False):
+        try:
+            runtime_plugins = await engine_service.get_runtime_plugin_cpu_telemetry()
+        except Exception as exc:
+            logger.debug("Unable to load runtime plugin CPU telemetry: %s", exc)
+
+    plugins = _merge_runtime_and_profiler_plugins(runtime_plugins, profiler_plugins, profiler_info=profiler_info)
+    if runtime_plugins:
+        chain = {
+            **chain,
+            "total_plugins": len(runtime_plugins),
+            "total_cpu_percent": round(
+                sum(float(plugin.get("cpu_percent", 0.0) or 0.0) for plugin in runtime_plugins),
+                2,
+            ),
+        }
+
+    return {
+        "plugins": plugins,
+        "chain": chain,
+        "profiler": profiler_info,
+    }
 
 
 @router.get("/plugins")
@@ -51,20 +170,10 @@ async def get_plugin_stats() -> Dict[str, Any]:
             }
         }
     """
-    profiler = get_profiler()
-    if not profiler:
-        raise HTTPException(status_code=503, detail="Profiler not initialized")
-    
     try:
-        plugins = profiler.get_all_stats()
-        chain = profiler.get_chain_stats()
-        profiler_info = profiler.get_profiler_stats()
-        
-        return {
-            "plugins": plugins,
-            "chain": chain,
-            "profiler": profiler_info
-        }
+        return await _build_live_plugin_stats_payload()
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting plugin stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -234,14 +343,11 @@ async def get_summary() -> Dict[str, Any]:
             "overhead": float
         }
     """
-    profiler = get_profiler()
-    if not profiler:
-        raise HTTPException(status_code=503, detail="Profiler not initialized")
-    
     try:
-        plugins = profiler.get_all_stats()
-        chain = profiler.get_chain_stats()
-        profiler_info = profiler.get_profiler_stats()
+        payload = await _build_live_plugin_stats_payload()
+        plugins = payload["plugins"]
+        chain = payload["chain"]
+        profiler_info = payload["profiler"]
         
         # Top 5 consumers
         top_consumers = sorted(plugins, key=lambda x: x["cpu_percent"], reverse=True)[:5]
