@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**796** Python | **1198** TypeScript | **294** C++/H | **122** Docs | **724** total commits | **1** stars | **0** forks | **0** open issues
+**796** Python | **1198** TypeScript | **294** C++/H | **122** Docs | **726** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,12 +169,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-21 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-21 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-03-21 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-20 |
+| [Vite Build & Server Troubleshooting Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/VITE_TROUBLESHOOTING_GUIDE.md) | 2026-03-21 |
 | [API Load Qualification Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_LOAD_QUALIFICATION_RUNBOOK.md) | 2026-03-18 |
 | [API Qualification Observability](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_QUALIFICATION_OBSERVABILITY.md) | 2026-03-18 |
-| [API Restart Dependency Map](https://github.com/matthewmackes/map2-audio/blob/master/docs/API_RESTART_DEPENDENCY_MAP.md) | 2026-03-18 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9f741bd1`](https://github.com/matthewmackes/map2-audio/commit/9f741bd1d7a12e10aa5eb3c4a9c14b2b70c830ed) | Refresh web server docs and sync release metadata | Map2 Audio | 2026-03-21 |
+| [`8648da69`](https://github.com/matthewmackes/map2-audio/commit/8648da69e795d938e82106d257c8c7bf2345876f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`56fbd83b`](https://github.com/matthewmackes/map2-audio/commit/56fbd83be3bc53a1e808f40b91dedd4fd4981bdb) | Harden deploy restart path and rebalance home hero cards | Map2 Audio | 2026-03-21 |
 | [`df011e8b`](https://github.com/matthewmackes/map2-audio/commit/df011e8b43396ee696c67fbc0d298c97325bbcac) | Sync deploy metadata and refine shell home mark | Map2 Audio | 2026-03-21 |
 | [`6b5d1cae`](https://github.com/matthewmackes/map2-audio/commit/6b5d1cae57fd4636412b3a1490fcd4197709995b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`c9424ee9`](https://github.com/matthewmackes/map2-audio/commit/c9424ee90b7b9a2efca3d3e7aa0d14663682de3d) | Align production deploy runtime with serve_web_dist | Map2 Audio | 2026-03-21 |
 | [`4465eff3`](https://github.com/matthewmackes/map2-audio/commit/4465eff34a947629ae735ec5923f4b7dd5c5e3e1) | Sync generated build version metadata | Map2 Audio | 2026-03-21 |
 | [`a0ed1bb3`](https://github.com/matthewmackes/map2-audio/commit/a0ed1bb3010018841beb67ccaf7ccba0b275dcbf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
-| [`07324cce`](https://github.com/matthewmackes/map2-audio/commit/07324cceb7e69d26214f9bdfe3ed0f33af017a58) | Improve JUCE Grid signal icons and editor toggle | Map2 Audio | 2026-03-21 |
-| [`172ad6f8`](https://github.com/matthewmackes/map2-audio/commit/172ad6f89c7f86ebb66d567f09024feef2711668) | Sync generated build version metadata | Map2 Audio | 2026-03-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
