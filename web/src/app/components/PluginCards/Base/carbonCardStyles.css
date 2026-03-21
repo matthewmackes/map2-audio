@@ -64,8 +64,9 @@
 
 .carbon-card-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--carbon-spacing-04);
   padding: var(--carbon-spacing-04) var(--carbon-spacing-05);
   background: var(--cds-layer-accent, #262626);
   border-bottom: 1px solid var(--cds-border-subtle, #393939);
@@ -74,9 +75,17 @@
   z-index: 2;
 }
 
+.carbon-card-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--carbon-spacing-05);
+}
+
 .carbon-card-header-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--carbon-spacing-03);
   min-width: 0;
   flex: 1;
@@ -89,9 +98,17 @@
   min-width: 0;
 }
 
+.carbon-card-header-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--cds-text-helper, #8d8d8d);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .carbon-card-header-name {
   margin: 0;
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--cds-text-primary, #f4f4f4);
   letter-spacing: 0.16px;
@@ -101,9 +118,12 @@
 }
 
 .carbon-card-header-subtitle {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--cds-text-secondary, #a8a8a8);
   letter-spacing: 0.32px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .carbon-card-header-right {
@@ -111,6 +131,17 @@
   align-items: center;
   gap: var(--carbon-spacing-02);
   flex-shrink: 0;
+}
+
+.carbon-card-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--carbon-spacing-03);
+}
+
+.carbon-card-header-meta .cds--tag {
+  margin: 0;
 }
 
 /* ==================== Visualization Area ==================== */

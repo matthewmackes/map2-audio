@@ -79,6 +79,8 @@ export function CarbonCardShell({
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
+  const authorLabel = sanitizeRestrictedDisplayText(plugin.author) || 'MAP2 Audio'
+  const parameterCount = plugin.parameters?.length ?? 0
   const resolvedWidth = Math.round((cardWidth || DEFAULT_CARD_WIDTH) * CARD_WIDTH_SCALE)
 
   const handleBypassToggle = useCallback(() => {
@@ -98,68 +100,75 @@ export function CarbonCardShell({
     >
       {/* Header */}
       <div className="carbon-card-header">
-        <div className="carbon-card-header-left">
-          {onBypassToggle && (
-            <Toggle
-              id={`bypass-${plugin.uri}`}
-              size="sm"
-              toggled={!bypassed}
-              onToggle={() => handleBypassToggle()}
-              labelA=""
-              labelB=""
-              hideLabel
-              aria-label="Bypass"
-            />
-          )}
-          <div className="carbon-card-header-title">
-            <h3 className="carbon-card-header-name">{displayName}</h3>
-            {!compact && (
+        <div className="carbon-card-header-row">
+          <div className="carbon-card-header-left">
+            {onBypassToggle && (
+              <Toggle
+                id={`bypass-${plugin.uri}`}
+                size="sm"
+                toggled={!bypassed}
+                onToggle={() => handleBypassToggle()}
+                labelA=""
+                labelB=""
+                hideLabel
+                aria-label="Bypass"
+              />
+            )}
+            <div className="carbon-card-header-title">
+              <span className="carbon-card-header-eyebrow">Selected block audio</span>
+              <h3 className="carbon-card-header-name">Audio Parameters</h3>
               <span className="carbon-card-header-subtitle">
-                {sanitizeRestrictedDisplayText(plugin.author) || 'MAP2'}
+                {compact ? displayName : `${displayName} · ${authorLabel}`}
               </span>
+            </div>
+          </div>
+
+          <div className="carbon-card-header-right">
+            {onLoadPreset && (
+              <button className="carbon-card-icon-btn" onClick={onLoadPreset} title="Load Preset">
+                <FolderOpen size={16} />
+              </button>
+            )}
+            {onSavePreset && (
+              <button className="carbon-card-icon-btn" onClick={onSavePreset} title="Save Preset">
+                <Save size={16} />
+              </button>
+            )}
+
+            {hasOverflowActions && (
+              <OverflowMenu size="sm" flipped aria-label="More options">
+                {onOpenMidiMappings && (
+                  <OverflowMenuItem
+                    itemText="MIDI Mappings"
+                    onClick={onOpenMidiMappings}
+                  />
+                )}
+                {onCopyParams && (
+                  <OverflowMenuItem
+                    itemText="Copy Parameters"
+                    onClick={onCopyParams}
+                  />
+                )}
+                {onResetParams && (
+                  <OverflowMenuItem
+                    itemText="Reset to Default"
+                    onClick={onResetParams}
+                    hasDivider
+                  />
+                )}
+              </OverflowMenu>
             )}
           </div>
         </div>
 
-        <div className="carbon-card-header-right">
-          <Tag type="outline" size="sm" style={{ color: accentColor, borderColor: accentColor }}>
-            {plugin.category}
+        <div className="carbon-card-header-meta">
+          <Tag type="blue" size="sm">{plugin.category}</Tag>
+          <Tag type="cool-gray" size="sm">
+            {parameterCount} parameter{parameterCount === 1 ? '' : 's'}
           </Tag>
-
-          {onLoadPreset && (
-            <button className="carbon-card-icon-btn" onClick={onLoadPreset} title="Load Preset">
-              <FolderOpen size={16} />
-            </button>
-          )}
-          {onSavePreset && (
-            <button className="carbon-card-icon-btn" onClick={onSavePreset} title="Save Preset">
-              <Save size={16} />
-            </button>
-          )}
-
-          {hasOverflowActions && (
-            <OverflowMenu size="sm" flipped aria-label="More options">
-              {onOpenMidiMappings && (
-                <OverflowMenuItem
-                  itemText="MIDI Mappings"
-                  onClick={onOpenMidiMappings}
-                />
-              )}
-              {onCopyParams && (
-                <OverflowMenuItem
-                  itemText="Copy Parameters"
-                  onClick={onCopyParams}
-                />
-              )}
-              {onResetParams && (
-                <OverflowMenuItem
-                  itemText="Reset to Default"
-                  onClick={onResetParams}
-                  hasDivider
-                />
-              )}
-            </OverflowMenu>
-          )}
+          <Tag type={bypassed ? 'red' : 'green'} size="sm">
+            {bypassed ? 'Bypassed' : 'Active'}
+          </Tag>
         </div>
       </div>
 

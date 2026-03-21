@@ -8,6 +8,7 @@
  */
 
 import { useState, useCallback, type ReactNode } from 'react'
+import { Tag, Toggle } from '@carbon/react'
 import {
   CopyFile,
   FolderOpen,
@@ -18,7 +19,6 @@ import {
 } from '@carbon/icons-react'
 import type { Plugin } from '../../../../map2/types'
 import { getCategoryConfig } from '../types'
-import { BypassSwitch } from './BypassSwitch'
 import { getPluginDescription } from '../../../data/pluginDescriptions'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
 import { getEffectIcon } from '../../icons/effectIcons'
@@ -70,6 +70,8 @@ export function PluginCardShell({
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
+  const authorLabel = sanitizeRestrictedDisplayText(plugin.author) || 'MAP2 Audio'
+  const parameterCount = plugin.parameters?.length ?? 0
   const description = sanitizeRestrictedDisplayText(getPluginDescription(plugin.name) || '')
   const WatermarkIcon = getEffectIcon(plugin.category)
   const hasWatermark = !compact && !isMobile
@@ -84,7 +86,6 @@ export function PluginCardShell({
       style={{
         '--accent-color': accentColor,
         '--accent-bg': catConfig.bg,
-        '--accent-gradient': catConfig.gradient,
         '--card-width': 'min(100%, 840px)',
         '--card-padding': '16px',
         '--card-gap': '12px',
@@ -113,82 +114,96 @@ export function PluginCardShell({
 
       {/* Header */}
       <div className="plugin-card-header">
-        <div className="plugin-card-header-left">
-          {showBypass && (
-            <BypassSwitch
-              bypassed={bypassed}
-              onToggle={handleBypassToggle}
-              accentColor={accentColor}
-              size={compact ? 'small' : 'medium'}
-            />
-          )}
-          <div className="plugin-card-title-section">
-            <h3 className="plugin-card-title">{displayName}</h3>
-            {!compact && (
+        <div className="plugin-card-header-row">
+          <div className="plugin-card-header-left">
+            {showBypass && (
+              <Toggle
+                id={`bypass-${plugin.uri}`}
+                size="sm"
+                toggled={!bypassed}
+                onToggle={() => handleBypassToggle()}
+                labelA=""
+                labelB=""
+                hideLabel
+                aria-label="Bypass"
+              />
+            )}
+            <div className="plugin-card-title-section">
+              <span className="plugin-card-eyebrow">Selected block audio</span>
+              <h3 className="plugin-card-title">Audio Parameters</h3>
               <div className="plugin-card-subtitle">
-                <span className="plugin-card-author">{sanitizeRestrictedDisplayText(plugin.author) || 'Unknown'}</span>
-                <span className="plugin-card-category" style={{ color: accentColor }}>
-                  {plugin.category}
+                <span className="plugin-card-author">
+                  {compact ? displayName : `${displayName} · ${authorLabel}`}
                 </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="plugin-card-header-right">
+            {showPresetControls && (
+              <div className="plugin-card-preset-controls">
+                {onLoadPreset && (
+                  <button
+                    className="plugin-card-btn"
+                    onClick={onLoadPreset}
+                    title="Load Preset"
+                  >
+                    <FolderOpen size={14} />
+                  </button>
+                )}
+                {onSavePreset && (
+                  <button
+                    className="plugin-card-btn"
+                    onClick={onSavePreset}
+                    title="Save Preset"
+                  >
+                    <Save size={14} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {showMoreMenu && (
+              <div className="plugin-card-menu-container">
+                <button
+                  className="plugin-card-btn"
+                  onClick={() => setShowMenu(!showMenu)}
+                  title="More Options"
+                >
+                  <OverflowMenuVertical size={14} />
+                </button>
+                {showMenu && (
+                  <div className="plugin-card-menu">
+                    {onOpenMidiMappings && (
+                      <button onClick={() => { onOpenMidiMappings(); setShowMenu(false); }}>
+                        <SettingsAdjust size={12} /> MIDI Mappings
+                      </button>
+                    )}
+                    {onCopyParams && (
+                      <button onClick={() => { onCopyParams(); setShowMenu(false); }}>
+                        <CopyFile size={12} /> Copy Parameters
+                      </button>
+                    )}
+                    {onResetParams && (
+                      <button onClick={() => { onResetParams(); setShowMenu(false); }}>
+                        <Reset size={12} /> Reset to Default
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        <div className="plugin-card-header-right">
-          {showPresetControls && (
-            <div className="plugin-card-preset-controls">
-              {onLoadPreset && (
-                <button
-                  className="plugin-card-btn"
-                  onClick={onLoadPreset}
-                  title="Load Preset"
-                >
-                  <FolderOpen size={14} />
-                </button>
-              )}
-              {onSavePreset && (
-                <button
-                  className="plugin-card-btn"
-                  onClick={onSavePreset}
-                  title="Save Preset"
-                >
-                  <Save size={14} />
-                </button>
-              )}
-            </div>
-          )}
-
-          {showMoreMenu && (
-            <div className="plugin-card-menu-container">
-              <button
-                className="plugin-card-btn"
-                onClick={() => setShowMenu(!showMenu)}
-                title="More Options"
-              >
-                <OverflowMenuVertical size={14} />
-              </button>
-              {showMenu && (
-                <div className="plugin-card-menu">
-                  {onOpenMidiMappings && (
-                    <button onClick={() => { onOpenMidiMappings(); setShowMenu(false); }}>
-                      <SettingsAdjust size={12} /> MIDI Mappings
-                    </button>
-                  )}
-                  {onCopyParams && (
-                    <button onClick={() => { onCopyParams(); setShowMenu(false); }}>
-                      <CopyFile size={12} /> Copy Parameters
-                    </button>
-                  )}
-                  {onResetParams && (
-                    <button onClick={() => { onResetParams(); setShowMenu(false); }}>
-                      <Reset size={12} /> Reset to Default
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+        <div className="plugin-card-header-meta">
+          <Tag type="blue" size="sm">{plugin.category}</Tag>
+          <Tag type="cool-gray" size="sm">
+            {parameterCount} parameter{parameterCount === 1 ? '' : 's'}
+          </Tag>
+          <Tag type={bypassed ? 'red' : 'green'} size="sm">
+            {bypassed ? 'Bypassed' : 'Active'}
+          </Tag>
         </div>
       </div>
 
@@ -231,13 +246,14 @@ export function PluginCardShell({
       <style>{`
         .plugin-card-shell {
           width: var(--card-width);
-          background: linear-gradient(145deg, #0a0a0a 0%, #141414 100%);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
+          background: var(--cds-layer, #161616);
+          border: 1px solid var(--cds-border-subtle, #393939);
+          border-radius: 4px;
           overflow: hidden;
           position: relative;
           isolation: isolate;
-          transition: all 0.2s ease;
+          transition: border-color 0.2s ease, opacity 0.2s ease;
+          color: var(--cds-text-primary, #f4f4f4);
         }
 
         .plugin-card-shell::before {
@@ -252,13 +268,7 @@ export function PluginCardShell({
         }
 
         .plugin-card-watermark {
-          position: absolute;
-          inset: auto;
-          pointer-events: none;
-          z-index: 0;
-          opacity: 0.1;
-          color: var(--accent-color);
-          filter: saturate(0.8);
+          display: none;
         }
 
         .plugin-card-watermark--centered {
@@ -294,16 +304,17 @@ export function PluginCardShell({
         }
 
         .plugin-card-shell.compact {
-          border-radius: 8px;
+          border-radius: 4px;
         }
 
         .plugin-card-header {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
           padding: var(--header-padding);
-          background: rgba(0, 0, 0, 0.2);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          background: var(--cds-layer-accent, #262626);
+          border-bottom: 1px solid var(--cds-border-subtle, #393939);
           position: relative;
           z-index: 1;
         }
@@ -312,24 +323,42 @@ export function PluginCardShell({
           padding: 8px 12px;
         }
 
+        .plugin-card-header-row {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
         .plugin-card-header-left {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           gap: 12px;
+          min-width: 0;
+          flex: 1;
         }
 
         .plugin-card-title-section {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 4px;
+          min-width: 0;
+        }
+
+        .plugin-card-eyebrow {
+          font-size: 11px;
+          color: var(--cds-text-helper, #8d8d8d);
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
         }
 
         .plugin-card-title {
           margin: 0;
-          font-size: calc(14px * var(--font-scale));
+          font-size: calc(16px * var(--font-scale));
           font-weight: 600;
-          color: #f2f6ff;
-          letter-spacing: 0.3px;
+          color: var(--cds-text-primary, #f4f4f4);
+          letter-spacing: 0.16px;
         }
 
         .compact .plugin-card-title {
@@ -339,31 +368,34 @@ export function PluginCardShell({
         .plugin-card-subtitle {
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 10px;
+          gap: 0;
+          font-size: 12px;
+          min-width: 0;
         }
 
         .plugin-card-author {
-          color: #6b7280;
-        }
-
-        .plugin-card-category {
-          padding: 1px 6px;
-          background: var(--accent-bg);
-          border-radius: 4px;
-          font-weight: 500;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          font-size: 9px;
-          display: inline-flex;
-          align-items: center;
-          gap: 2px;
+          color: var(--cds-text-secondary, #a8a8a8);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .plugin-card-header-right {
           display: flex;
           align-items: center;
           gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .plugin-card-header-meta {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .plugin-card-header-meta .cds--tag {
+          margin: 0;
         }
 
         .plugin-card-preset-controls {
@@ -377,17 +409,18 @@ export function PluginCardShell({
           justify-content: center;
           width: 28px;
           height: 28px;
-          border: none;
-          border-radius: 6px;
-          background: rgba(255, 255, 255, 0.05);
-          color: #6b7280;
+          border: 1px solid var(--cds-border-subtle, #525252);
+          border-radius: 4px;
+          background: var(--cds-layer-02, #262626);
+          color: var(--cds-text-secondary, #c6c6c6);
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         }
 
         .plugin-card-btn:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: #f2f6ff;
+          background: var(--cds-layer-hover, #333333);
+          border-color: var(--cds-border-strong, #6f6f6f);
+          color: var(--cds-text-primary, #f4f4f4);
         }
 
         .plugin-card-menu-container {
@@ -400,9 +433,9 @@ export function PluginCardShell({
           right: 0;
           margin-top: 4px;
           min-width: 160px;
-          background: #111111;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
+          background: var(--cds-layer, #161616);
+          border: 1px solid var(--cds-border-subtle, #393939);
+          border-radius: 4px;
           padding: 4px;
           z-index: 100;
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -417,15 +450,15 @@ export function PluginCardShell({
           border: none;
           border-radius: 4px;
           background: transparent;
-          color: #d1d5db;
+          color: var(--cds-text-secondary, #c6c6c6);
           font-size: 12px;
           cursor: pointer;
           text-align: left;
         }
 
         .plugin-card-menu button:hover {
-          background: rgba(255, 255, 255, 0.05);
-          color: #f2f6ff;
+          background: var(--cds-layer-hover, #333333);
+          color: var(--cds-text-primary, #f4f4f4);
         }
 
         .plugin-card-menu-backdrop {
@@ -437,9 +470,9 @@ export function PluginCardShell({
         .plugin-card-description {
           padding: 8px 16px;
           font-size: 11px;
-          color: #6b7280;
-          background: rgba(0, 0, 0, 0.1);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+          color: var(--cds-text-secondary, #a8a8a8);
+          background: var(--cds-layer-01, #1d1d1d);
+          border-bottom: 1px solid var(--cds-border-subtle, #393939);
           line-height: 1.4;
           position: relative;
           z-index: 1;
@@ -447,8 +480,8 @@ export function PluginCardShell({
 
         .plugin-card-visualization {
           padding: var(--card-padding);
-          background: rgba(0, 0, 0, 0.15);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+          background: var(--cds-layer-01, #1d1d1d);
+          border-bottom: 1px solid var(--cds-border-subtle, #393939);
           position: relative;
           z-index: 1;
         }
@@ -469,8 +502,8 @@ export function PluginCardShell({
 
         .plugin-card-footer {
           padding: 12px 16px;
-          background: rgba(0, 0, 0, 0.2);
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          background: var(--cds-layer-accent, #262626);
+          border-top: 1px solid var(--cds-border-subtle, #393939);
           position: relative;
           z-index: 1;
         }

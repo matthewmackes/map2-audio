@@ -434,12 +434,12 @@ export function JuceGridSelectedBlockMidiPanel({
             <Music size={16} />
             <span>Selected block MIDI</span>
           </div>
-          <strong>{displayPluginName}</strong>
-          <p>Per-chain mapping grid with focused learn, feedback, and real outbound test rides.</p>
+          <strong>MIDI Parameters</strong>
+          <p>{`${displayPluginName} · Focused mapping, feedback, and controller test rides.`}</p>
         </div>
         <div className="juce-grid-page__selected-midi-panel-tags">
           <Tag type="blue">{chainId !== null ? `Chain ${chainId}` : 'Global only'}</Tag>
-          <Tag type="cool-gray">{rows.length} parameters</Tag>
+          <Tag type="cool-gray">{rows.length} parameter{rows.length === 1 ? '' : 's'}</Tag>
           {lastMidiEvent && <Tag type="purple">{`CC ${lastMidiEvent.cc} · Ch ${lastMidiEvent.channel}`}</Tag>}
           <Tag type={midiLearnInProgress ? 'green' : 'cool-gray'}>
             {midiLearnInProgress ? 'Learn live' : 'Learn idle'}
@@ -563,83 +563,85 @@ export function JuceGridSelectedBlockMidiPanel({
                     <Tag type="cool-gray">{draft.scope === 'chain' ? 'Per-chain default' : 'Global'}</Tag>
                   </div>
 
-                  <div className="juce-grid-page__selected-midi-form-grid">
-                    <label>
-                      <span>CC</span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={127}
-                        value={draft.cc}
-                        onChange={(event) => handleDraftChange({ cc: event.currentTarget.value })}
-                      />
-                    </label>
-                    <label>
-                      <span>Channel</span>
-                      <select
-                        value={draft.channel}
-                        onChange={(event) => handleDraftChange({ channel: Number(event.currentTarget.value) })}
-                      >
-                        <option value={0}>Omni</option>
-                        {Array.from({ length: 16 }, (_, index) => (
-                          <option key={`channel-${index + 1}`} value={index + 1}>{`Ch ${index + 1}`}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>Scope</span>
-                      <select
-                        value={draft.scope}
-                        onChange={(event) => handleDraftChange({ scope: event.currentTarget.value as DraftScope })}
-                      >
-                        {chainId !== null && <option value="chain">Per-chain</option>}
-                        <option value="global">Global</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span>Curve</span>
-                      <select
-                        value={draft.curve}
-                        onChange={(event) => handleDraftChange({ curve: event.currentTarget.value as MIDICurveType })}
-                      >
-                        {CURVE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>{option.label}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>Min</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={draft.min}
-                        onChange={(event) => handleDraftChange({ min: event.currentTarget.value })}
-                      />
-                    </label>
-                    <label>
-                      <span>Max</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={draft.max}
-                        onChange={(event) => handleDraftChange({ max: event.currentTarget.value })}
-                      />
-                    </label>
-                  </div>
+                  <div className="juce-grid-page__selected-midi-card-body">
+                    <div className="juce-grid-page__selected-midi-form-grid">
+                      <label>
+                        <span>CC</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={127}
+                          value={draft.cc}
+                          onChange={(event) => handleDraftChange({ cc: event.currentTarget.value })}
+                        />
+                      </label>
+                      <label>
+                        <span>Channel</span>
+                        <select
+                          value={draft.channel}
+                          onChange={(event) => handleDraftChange({ channel: Number(event.currentTarget.value) })}
+                        >
+                          <option value={0}>Omni</option>
+                          {Array.from({ length: 16 }, (_, index) => (
+                            <option key={`channel-${index + 1}`} value={index + 1}>{`Ch ${index + 1}`}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>Scope</span>
+                        <select
+                          value={draft.scope}
+                          onChange={(event) => handleDraftChange({ scope: event.currentTarget.value as DraftScope })}
+                        >
+                          {chainId !== null && <option value="chain">Per-chain</option>}
+                          <option value="global">Global</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Curve</span>
+                        <select
+                          value={draft.curve}
+                          onChange={(event) => handleDraftChange({ curve: event.currentTarget.value as MIDICurveType })}
+                        >
+                          {CURVE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>Min</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={draft.min}
+                          onChange={(event) => handleDraftChange({ min: event.currentTarget.value })}
+                        />
+                      </label>
+                      <label>
+                        <span>Max</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={draft.max}
+                          onChange={(event) => handleDraftChange({ max: event.currentTarget.value })}
+                        />
+                      </label>
+                    </div>
 
-                  <div className="juce-grid-page__selected-midi-check-row">
-                    <Checkbox
-                      id={`juce-grid-selected-midi-enabled-${plugin.position}-${selectedRow.parameter.index}`}
-                      labelText="Mapping enabled"
-                      checked={draft.isEnabled}
-                      onChange={(_, data) => handleDraftChange({ isEnabled: Boolean(data.checked) })}
-                    />
-                    <Checkbox
-                      id={`juce-grid-selected-midi-invert-${plugin.position}-${selectedRow.parameter.index}`}
-                      labelText="Invert response"
-                      checked={draft.invert}
-                      onChange={(_, data) => handleDraftChange({ invert: Boolean(data.checked) })}
-                    />
+                    <div className="juce-grid-page__selected-midi-check-row">
+                      <Checkbox
+                        id={`juce-grid-selected-midi-enabled-${plugin.position}-${selectedRow.parameter.index}`}
+                        labelText="Mapping enabled"
+                        checked={draft.isEnabled}
+                        onChange={(_, data) => handleDraftChange({ isEnabled: Boolean(data.checked) })}
+                      />
+                      <Checkbox
+                        id={`juce-grid-selected-midi-invert-${plugin.position}-${selectedRow.parameter.index}`}
+                        labelText="Invert response"
+                        checked={draft.invert}
+                        onChange={(_, data) => handleDraftChange({ invert: Boolean(data.checked) })}
+                      />
+                    </div>
                   </div>
                 </section>
 
@@ -652,43 +654,45 @@ export function JuceGridSelectedBlockMidiPanel({
                     <Tag type="purple">{`Out Ch ${feedbackOutputChannel(draft.channel)}`}</Tag>
                   </div>
 
-                  <div className="juce-grid-page__selected-midi-check-row">
-                    <Checkbox
-                      id={`juce-grid-selected-midi-feedback-${plugin.position}-${selectedRow.parameter.index}`}
-                      labelText="Feedback enabled"
-                      checked={draft.feedbackEnabled}
-                      onChange={(_, data) => handleDraftChange({ feedbackEnabled: Boolean(data.checked) })}
-                    />
-                    <Checkbox
-                      id={`juce-grid-selected-midi-feedback-same-${plugin.position}-${selectedRow.parameter.index}`}
-                      labelText="Use mapped CC for feedback"
-                      checked={draft.feedbackUsesMappedCc}
-                      onChange={(_, data) => handleDraftChange({ feedbackUsesMappedCc: Boolean(data.checked) })}
-                    />
-                  </div>
-
-                  {!draft.feedbackUsesMappedCc && (
-                    <div className="juce-grid-page__selected-midi-form-grid juce-grid-page__selected-midi-form-grid--single">
-                      <label>
-                        <span>Feedback CC</span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={127}
-                          value={draft.feedbackCc}
-                          onChange={(event) => handleDraftChange({ feedbackCc: event.currentTarget.value })}
-                        />
-                      </label>
+                  <div className="juce-grid-page__selected-midi-card-body">
+                    <div className="juce-grid-page__selected-midi-check-row">
+                      <Checkbox
+                        id={`juce-grid-selected-midi-feedback-${plugin.position}-${selectedRow.parameter.index}`}
+                        labelText="Feedback enabled"
+                        checked={draft.feedbackEnabled}
+                        onChange={(_, data) => handleDraftChange({ feedbackEnabled: Boolean(data.checked) })}
+                      />
+                      <Checkbox
+                        id={`juce-grid-selected-midi-feedback-same-${plugin.position}-${selectedRow.parameter.index}`}
+                        labelText="Use mapped CC for feedback"
+                        checked={draft.feedbackUsesMappedCc}
+                        onChange={(_, data) => handleDraftChange({ feedbackUsesMappedCc: Boolean(data.checked) })}
+                      />
                     </div>
-                  )}
 
-                  <div className="juce-grid-page__selected-midi-feedback-note">
-                    <Meter size={16} />
-                    <span>
-                      {draft.feedbackEnabled
-                        ? `Current return path: CC ${draft.feedbackUsesMappedCc ? draft.cc || '??' : draft.feedbackCc || '??'} on Ch ${feedbackOutputChannel(draft.channel)}`
-                        : 'Feedback is currently muted for this mapping.'}
-                    </span>
+                    {!draft.feedbackUsesMappedCc && (
+                      <div className="juce-grid-page__selected-midi-form-grid juce-grid-page__selected-midi-form-grid--single">
+                        <label>
+                          <span>Feedback CC</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={127}
+                            value={draft.feedbackCc}
+                            onChange={(event) => handleDraftChange({ feedbackCc: event.currentTarget.value })}
+                          />
+                        </label>
+                      </div>
+                    )}
+
+                    <div className="juce-grid-page__selected-midi-feedback-note">
+                      <Meter size={16} />
+                      <span>
+                        {draft.feedbackEnabled
+                          ? `Current return path: CC ${draft.feedbackUsesMappedCc ? draft.cc || '??' : draft.feedbackCc || '??'} on Ch ${feedbackOutputChannel(draft.channel)}`
+                          : 'Feedback is currently muted for this mapping.'}
+                      </span>
+                    </div>
                   </div>
                 </section>
 
@@ -703,39 +707,41 @@ export function JuceGridSelectedBlockMidiPanel({
                     )}
                   </div>
 
-                  <div className="juce-grid-page__selected-midi-test-row">
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      onClick={() => handleTestRide('heel')}
-                      disabled={!selectedMapping || testMappingMutation.isPending}
-                    >
-                      Heel
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="secondary"
-                      onClick={() => handleTestRide('live')}
-                      disabled={!selectedMapping || testMappingMutation.isPending}
-                    >
-                      Live
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      onClick={() => handleTestRide('toe')}
-                      disabled={!selectedMapping || testMappingMutation.isPending}
-                    >
-                      Toe
-                    </Button>
-                  </div>
-
-                  {learningThisParameter && (
-                    <div className="juce-grid-page__selected-midi-feedback-note">
-                      <Flash size={16} />
-                      <span>Listening for the next controller move on {selectedParamLabel}.</span>
+                  <div className="juce-grid-page__selected-midi-card-body">
+                    <div className="juce-grid-page__selected-midi-test-row">
+                      <Button
+                        size="sm"
+                        kind="ghost"
+                        onClick={() => handleTestRide('heel')}
+                        disabled={!selectedMapping || testMappingMutation.isPending}
+                      >
+                        Heel
+                      </Button>
+                      <Button
+                        size="sm"
+                        kind="secondary"
+                        onClick={() => handleTestRide('live')}
+                        disabled={!selectedMapping || testMappingMutation.isPending}
+                      >
+                        Live
+                      </Button>
+                      <Button
+                        size="sm"
+                        kind="ghost"
+                        onClick={() => handleTestRide('toe')}
+                        disabled={!selectedMapping || testMappingMutation.isPending}
+                      >
+                        Toe
+                      </Button>
                     </div>
-                  )}
+
+                    {learningThisParameter && (
+                      <div className="juce-grid-page__selected-midi-feedback-note">
+                        <Flash size={16} />
+                        <span>Listening for the next controller move on {selectedParamLabel}.</span>
+                      </div>
+                    )}
+                  </div>
                 </section>
               </div>
 
