@@ -86,7 +86,6 @@ export function PluginCardShell({
         '--accent-bg': catConfig.bg,
         '--accent-gradient': catConfig.gradient,
         '--card-width': 'min(100%, 840px)',
-        '--card-min-height': 'min(720px, calc(100dvh - 2rem))',
         '--card-padding': '16px',
         '--card-gap': '12px',
         '--header-padding': '12px 16px',
@@ -232,7 +231,6 @@ export function PluginCardShell({
       <style>{`
         .plugin-card-shell {
           width: var(--card-width);
-          min-height: var(--card-min-height);
           background: linear-gradient(145deg, #0a0a0a 0%, #141414 100%);
           border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 12px;

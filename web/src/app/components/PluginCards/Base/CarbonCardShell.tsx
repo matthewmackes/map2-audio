@@ -6,7 +6,7 @@
  * advanced sections, and metering footer across all effect categories.
  */
 
-import { useState, useCallback, type ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import {
   Tag,
   Toggle,
@@ -18,20 +18,14 @@ import {
 import {
   Save,
   FolderOpen,
-  Copy,
-  Reset,
-  SettingsAdjust,
 } from '@carbon/icons-react'
 import type { Plugin } from '../../../../map2/types'
-import { getCategoryConfig, CATEGORY_CARD_DIMENSIONS } from '../types'
+import { getCategoryConfig } from '../types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
-import { getEffectIcon } from '../../icons/effectIcons'
 import './carbonCardStyles.css'
 
 const CARD_WIDTH_SCALE = 2
-const CARD_HEIGHT_SCALE = 1.5
 const DEFAULT_CARD_WIDTH = 420
-const DEFAULT_CARD_HEIGHT = 480
 
 /** Section definition for accordion-based advanced controls */
 export interface AdvancedSection {
@@ -58,7 +52,7 @@ interface CarbonCardShellProps {
   footer?: ReactNode
   compact?: boolean
   className?: string
-  /** Override category card height (px) */
+  /** Legacy fixed-height override retained for compatibility; cards now auto-size. */
   cardHeight?: number
   /** Override card width for dense cards that need additional horizontal room */
   cardWidth?: number
@@ -80,14 +74,11 @@ export function CarbonCardShell({
   footer,
   compact = false,
   className = '',
-  cardHeight,
   cardWidth,
 }: CarbonCardShellProps) {
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
-  const baseHeight = cardHeight || CATEGORY_CARD_DIMENSIONS[plugin.category] || DEFAULT_CARD_HEIGHT
-  const resolvedHeight = Math.round(baseHeight * CARD_HEIGHT_SCALE)
   const resolvedWidth = Math.round((cardWidth || DEFAULT_CARD_WIDTH) * CARD_WIDTH_SCALE)
 
   const handleBypassToggle = useCallback(() => {
@@ -103,7 +94,6 @@ export function CarbonCardShell({
         '--accent-color': accentColor,
         '--accent-bg': catConfig.bg,
         '--category-card-width': `${resolvedWidth}px`,
-        '--category-card-height': `${resolvedHeight}px`,
       } as React.CSSProperties}
     >
       {/* Header */}

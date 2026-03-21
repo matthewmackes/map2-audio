@@ -2,7 +2,7 @@
  * Carbon-Compliant Card Styles
  *
  * Shared styles for all Carbon-refactored plugin cards.
- * Provides category-specific fixed dimensions, standardized spacing,
+ * Provides standardized sizing, spacing,
  * Carbon accordion overrides, and metering footer styles.
  */
 
@@ -11,19 +11,6 @@
 :root {
   --carbon-card-width: 840px;
   --carbon-card-radius: 4px;
-
-  /* Category heights */
-  --carbon-card-height-dynamics: 520px;
-  --carbon-card-height-modulation: 480px;
-  --carbon-card-height-delay: 520px;
-  --carbon-card-height-reverb: 500px;
-  --carbon-card-height-pitch: 480px;
-  --carbon-card-height-amplifier: 560px;
-  --carbon-card-height-multieffect: 560px;
-  --carbon-card-height-eq: 500px;
-  --carbon-card-height-convolution: 420px;
-  --carbon-card-height-instrument: 560px;
-  --carbon-card-height-utility: 400px;
 
   /* Spacing tokens (Carbon-aligned) */
   --carbon-spacing-02: 4px;
@@ -39,10 +26,7 @@
 .carbon-card {
   width: min(100%, var(--category-card-width, var(--carbon-card-width)));
   max-width: 100%;
-  min-height: var(--category-card-height, 720px);
-  max-height: var(--category-card-height, 720px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   background: var(--cds-layer, #161616);
   border: 1px solid var(--cds-border-subtle, #393939);
   border-radius: var(--carbon-card-radius);
@@ -74,24 +58,6 @@
 
 .carbon-card.bypassed::before {
   background: #525252;
-}
-
-/* Scrollbar */
-.carbon-card::-webkit-scrollbar {
-  width: 4px;
-}
-
-.carbon-card::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.carbon-card::-webkit-scrollbar-thumb {
-  background: #525252;
-  border-radius: 2px;
-}
-
-.carbon-card::-webkit-scrollbar-thumb:hover {
-  background: #6f6f6f;
 }
 
 /* ==================== Card Header ==================== */
