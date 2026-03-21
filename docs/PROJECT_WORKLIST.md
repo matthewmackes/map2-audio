@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-20 - Codex (Closed the remaining drum UI parent task and the remaining software-side drum processor qualification. `T217` is now done because every UI subtask from `T217-A` through `T217-L` is complete and validated. `T219-A` is now done because `juce-engine/tests/DrumMachineProcessorTests.cpp` now includes a stronger global-allocation guard for steady-state `processBlock`, and that test exposed then verified a real hot-path fix in `juce-engine/Source/SynthForge/Core/Part.cpp`: `Part::applyModMatrix()` had been copying modulation-source state on every callback even when no modulation routes existed, causing callback-thread heap traffic. After short-circuiting the no-route case, the full SynthForge JUCE test target passes with RT-safety, EQ, compression, routing, and native-audio proofs. `T219-F` remains blocked on environment/hardware: the repo now has both in-process full-stack integration coverage in `tests/test_drum_integration.py` and native-audio callback coverage in `tests/test_juce_engine_drum_native_stability.py`, but true live MIDI-in and hardware-backed end-to-end proof still cannot be closed in this host because ALSA sequencer access is unavailable and no physical drum hardware path is present. As a result, parent task `T219` is now correctly blocked rather than left misleadingly in progress. Earlier this session, T223 JUCE Grid redesign completed by shipping `T223-subA`, the missing tile/snake layout engine in `JuceGridSignalCanvas`, with deterministic large/medium/small row sizing, alternating boustrophedon rows, vertical row connectors, clean JUCE Grid tests, clean frontend typecheck, and clean production build. Earlier this session, T203-subJ MIDI Hub v2 documentation/conformance/test finalization completed with updated Carbon docs, MIDI Hub architecture/content docs, synced assistant instructions, full routed MIDI Hub page tests, focused backend MIDI Hub coverage, clean frontend typecheck, clean production build, and a small `DrumsPage.tsx` build-fix. T211/T213/T214/T215 drum-engine parent tasks were closed after verifying their completed subtasks and prior validation evidence. T209 was reclassified as blocked because only the host-level `RLIMIT_NOFILE` gate remains before rerunning the final qualification bundle. T203 is now software-complete and blocked only on live Tesira hardware validation in T203-subK.)
+Last updated: 2026-03-20 22:00 - Codex (Completed `T235` by fixing the `ShoeGazeCard.tsx` JSX parent regression that blocked `npm --prefix web run deploy`, rerunning the production web deploy successfully, and verifying `http://localhost:3000/` plus `http://localhost:8080/api/health` both returned `200` before the commit/push step.)
 
 ## Active Blockers Only
 
@@ -2364,3 +2364,183 @@ Last updated: 2026-03-20 15:15 - Codex
   - Extended `web/src/app/pages/AboutPage.tsx` plus `web/src/app/pages/AboutPage.css` with a new category-color editor inside the existing theme/settings surface, including per-category color pickers and reset controls.
   - Added focused validation in `web/src/app/data/categoryStyles.test.tsx` and `web/src/app/pages/AboutPage.test.tsx`.
   - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand src/app/data/categoryStyles.test.tsx src/app/pages/AboutPage.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
+
+---
+
+## Effect Card Audit
+
+ID: T226
+Status: [✓] Done
+Title: Full trace-driven audit of effect GUI card parameter, feature, and preset coverage
+Description:
+- Goal / acceptance criteria: Produce a full evidence-backed audit covering every shipped effect GUI card and fallback template across backend/API parameter sources, frontend plugin-card routing, UI control exposure, preset definitions, and supporting documentation; quantify coverage, list gaps with severity, and provide a remediation plan tied to affected layers.
+- Why it matters: Existing JUCE Grid audit coverage proves renderability and registry resolution, but it does not verify that every backend-exposed parameter, feature state, and preset path is actually reachable and correctly bound in the operator-facing card surfaces.
+- Dependencies: `app/deployment/juce_processors.json`, `app/deployment/default_lv2_effects.json`, `app/routes/plugins.py`, `web/src/app/components/PluginCards/**`, `web/src/app/pages/JuceGridParameterEditor.tsx`, preset definitions under `web/src/app/components/PluginCards/**` and backend preset routes/docs, and any current plugin parameter schema/docs in the repo
+- Estimated effort: High
+- Required outputs: Audit evidence artifacts/tables, executive summary, confirmed issue list with reproduction steps and expected vs actual behavior, and follow-up remediation tasks for real gaps.
+Subtasks:
+  - [✓] T226-A: Inventory the source-of-truth parameter, routing, and preset layers for every shipped effect card
+  - [✓] T226-B: Generate parameter coverage and feature accessibility evidence across custom cards, templates, and fallback editor paths
+  - [✓] T226-C: Validate built-in preset/configuration behavior and round-trip persistence where definitions exist
+  - [✓] T226-D: Publish the audit report and create remediation follow-up tasks for confirmed gaps
+Assigned to: Codex
+Last updated: 2026-03-20 19:35 - Codex
+- Completion notes:
+  - Published the audit narrative in `docs/evaluation/effect-card-audit-20260320.md` and the supporting machine-readable inventory in `docs/evaluation/effect-card-audit-20260320.json`.
+  - Confirmed the live JUCE Grid editor path currently bypasses the custom effect-card subsystem entirely by rendering `JuceGridParameterEditor` directly from `JuceGridPage.tsx`, while `PluginCardRouter` is unreferenced elsewhere in `web/src/app`.
+  - Confirmed five JUCE cards embed stale plugin URIs in `withMidiDialog` wrappers, and confirmed the live manifest/runtime audit drift: the shipped Jest audit covers 35 deployment entries, while the live host exposes a different 39-plugin non-Tesira inventory with 596 native/LV2 parameters.
+  - Confirmed `/api/plugins/parameter-schema` currently serializes 588 of 596 live native/LV2 parameters, dropping the 8 parametric-EQ band-type parameters.
+
+---
+
+ID: T227
+Status: [✓] Done
+Title: Reconnect or retire the dormant custom effect-card subsystem
+Description:
+- Goal / acceptance criteria: Decide whether `PluginCardRouter` and the 39 custom cards are part of the shipped operator experience. If yes, wire them into the active JUCE Grid/editor flow and verify instance-safe editing. If no, remove or clearly quarantine the dead subsystem and its inactive tests/docs so the repo stops treating unreachable UI as shipped.
+- Why it matters: The audit confirmed the current app bypasses the entire custom card system, making preset browsers, MIDI mapping dialogs, and advanced layouts inaccessible despite existing source/test coverage.
+- Dependencies: T226, active JUCE Grid editor flow in `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/components/PluginCards/**`
+- Estimated effort: High
+- Required outputs: Editor-path decision, implementation to match that decision, updated tests/docs, and pass/fail evidence for live reachability.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 21:00 - Codex
+- Completion notes:
+  - Reconnected the active JUCE Grid bottom editor to the effect-card subsystem by routing the live selection panel through `PluginCardRouter` when the editor strategy is not generic, while keeping `JuceGridParameterEditor` as the explicit fallback for hardware and generic-only processors.
+  - Added `web/src/app/components/PluginCards/liveEditorRouting.ts`, which turns the shipped operator path into a deliberate hybrid: safe custom cards remain custom, broad category templates provide Carbon-themed parameter-complete editing for the rest of the live-compatible categories, and singleton/special-case processors such as NAM, convolution, drums, and SynthForge stay quarantined on the generic editor until instance-safe paths exist.
+  - Added template override support to `PluginCardRouter`, threaded plugin position through live bypass actions, and updated the JUCE Grid page so the active bottom editor can force Carbon templates without reviving every legacy singleton/global card implementation.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/components/PluginCards/liveEditorRouting.test.ts web/src/app/components/PluginCards/registry.test.ts web/src/app/components/PluginCards/withMidiDialog.test.tsx` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx --testNamePattern "uses the live plugin card router|opens the bottom editor panel on block select and closes it when the same block is selected again|renders the selected block touch actions before opening the editor in tablet touch layouts"` -> pass.
+
+ID: T228
+Status: [✓] Done
+Title: Normalize canonical plugin URIs across effect cards, snapshots, and audit surfaces
+Description:
+- Goal / acceptance criteria: Replace stale legacy plugin URIs with the live canonical URIs everywhere they participate in feature flows, including `withMidiDialog` wrappers, snapshot helper surfaces, and any affected tests, so MIDI mapping, snapshots, and audits all address the same plugin identities.
+- Why it matters: The audit confirmed five JUCE custom cards still target non-registered URIs, which would break feature flows immediately if the cards were reactivated.
+- Dependencies: T226, `web/src/app/components/PluginCards/Custom/JUCE/**`, `web/src/app/components/snapshots/SnapshotDeployModal.tsx`, affected tests
+- Estimated effort: Medium
+- Required outputs: Canonical URI sweep, updated tests, and evidence that all touched plugin URIs match live discovery/registry entries.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 20:26 - Codex
+- Completion notes:
+  - Replaced stale legacy JUCE URIs in the five affected custom cards (`NativeDelayCard`, `CabinetIRCard`, `ReverbIRCard`, `NAMCard`, `EVHPitchShifterCard`) so `withMidiDialog` now targets the registry/live-discovery canonical plugin identities.
+  - Added `web/src/app/utils/pluginUris.ts` and updated `SnapshotDeployModal.tsx` to canonicalize legacy snapshot/plugin URIs before checking plugin and asset dependencies, preserving compatibility for older stored snapshot data while aligning new flows to canonical URIs.
+  - Normalized affected tests and audit fixtures to canonical URIs, including the JUCE Grid page test and the touchscreen-stomp cache regression coverage.
+
+ID: T229
+Status: [✓] Done
+Title: Replace manifest-only parameter audit with live inventory parity and schema completeness checks
+Description:
+- Goal / acceptance criteria: Update the effect-card audit automation so it starts from `/api/plugins/discover` and `/api/plugins/parameter-schema`, proves manifest/runtime parity explicitly, and fails when live parameters are omitted from the schema payload or when the runtime inventory drifts unexpectedly from the declared deployment set.
+- Why it matters: The current audit test passes against deployment JSON while the live host exposes a different LV2 inventory and an 8-parameter schema omission for EQ band types.
+- Dependencies: T226, backend plugin discovery readiness, `web/src/app/pages/JuceGridParameterAudit.test.tsx`, `app/routes/plugins.py`
+- Estimated effort: Medium
+- Required outputs: Updated automated audit coverage, schema omission fix or tracked waiver, and validation evidence against a live backend session.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 20:26 - Codex
+- Completion notes:
+  - Fixed `app/routes/plugins.py` so JUCE enum parameters are normalized to numeric min/max/default metadata during discovery, restoring schema coverage for the 8 parametric-EQ `band*_type` parameters and yielding zero missing schema keys on the live `:8080` backend.
+  - Added `scripts/audit_plugin_inventory_live.py`, a live backend audit that starts from `/api/plugins/discover` and `/api/plugins/parameter-schema`, exits nonzero on schema omissions or declared-vs-runtime inventory drift, and produced the current evidence bundle showing schema completeness with remaining inventory drift.
+  - Narrowed `web/src/app/pages/JuceGridParameterAudit.test.tsx` to its actual role as a deployment-backed render audit and added backend/frontend regression coverage for enum normalization plus canonical URI mapping.
+  - Validation: `pytest -q tests/test_plugin_parameter_schema_route.py` -> pass; `pytest -q tests/test_route_caching_and_latency_metrics.py -k touchscreen` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/utils/pluginUris.test.ts web/src/app/components/snapshots/SnapshotDeployModal.test.tsx web/src/app/pages/JuceGridParameterAudit.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass; `python3 scripts/audit_plugin_inventory_live.py --base-url http://localhost:8080` -> expected nonzero with zero missing schema keys and explicit runtime/deployment drift details.
+
+ID: T230
+Status: [ ] Todo
+Title: Resolve declared deployment inventory against current live LV2 runtime inventory
+Description:
+- Goal / acceptance criteria: Decide whether the current deployment manifests or the current live LV2 plugin set are authoritative for shipped JUCE Grid/operator audit scope, then update the manifests, packaging/install assumptions, and audit expectations so the live inventory parity audit returns zero drift on a correctly provisioned host.
+- Why it matters: `scripts/audit_plugin_inventory_live.py` now proves schema completeness, but the live `:8080` backend still reports 10 declared plugins missing from runtime and 13 runtime plugins not declared by the deployment manifests, so parity remains an open product/deployment issue rather than an invisible audit gap.
+- Dependencies: T226, T229, deployment manifests in `app/deployment/*.json`, host/plugin provisioning policy
+- Estimated effort: Medium
+- Required outputs: Inventory authority decision, manifest/provisioning updates, rerun live audit with zero drift, and documented rationale for any intentional exclusions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 20:26 - Codex
+
+ID: T231
+Status: [✓] Done
+Title: Restyle JUCE Grid signal-path effect cards with Carbon-inspired carbon shell and white hero field
+Description:
+- Goal / acceptance criteria: Update every `JUCE-GRID` signal-path effect card to follow the provided Carbon-style reference as visual direction only, ignoring its embedded words. The card shell should adopt a darker Carbon-inspired treatment, while the hero area becomes a clean white field containing only the existing effect hero image and category-color accent treatment. Preserve current card semantics, selection, bypass, and responsive behavior unless a directly necessary visual adjustment is required for the new theme.
+- Why it matters: The current effect-card styling already improved layout consistency, but the requested carbon-shell treatment should make the signal path read as a more cohesive premium surface while still using category color and hero imagery as the primary fast-scan identifiers.
+- Dependencies: T223-subB, T225, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridPage.css`, and existing effect hero/category-style mappings
+- Estimated effort: Medium
+- Required outputs: Updated JUCE Grid signal-card markup/styles, category-aware white hero-field treatment using the existing hero image system, focused regression or visual validation evidence, and canonical worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 21:46 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.css` so live signal cards use a darker Carbon-style shell with stronger layer depth, left-edge category accenting, and a clean white hero field around the existing effect icon/art treatment.
+  - Expanded the live card footprint horizontally by updating the active card width/height variables in `web/src/app/pages/JuceGridPage.css` and the responsive row-capacity constant in `web/src/app/pages/JuceGridSignalCanvas.tsx`, so the new shell has more horizontal breathing room without changing card semantics.
+  - Kept selection, bypass, drag/reorder previews, and the add-card affordance intact while aligning them visually to the same Carbon shell treatment.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings unchanged).
+
+ID: T232
+Status: [✓] Done
+Title: Add instance-aware chain-plugin parameter addressing across live editor and plugin APIs
+Description:
+- Goal / acceptance criteria: Introduce a stable per-instance parameter-addressing path for chain plugins so duplicate URIs can be edited safely in the live JUCE Grid and other operator surfaces. This should include backend support for disambiguated parameter updates, surfaced instance identity in the required API payloads, frontend batching support, and focused validation that two identical plugins in one chain do not cross-write parameters.
+- Why it matters: `T227` reconnected the live editor safely by preferring templates/generic fallbacks, but the underlying parameter-write path still targets `plugin_uri` only, so duplicate-URI chain instances remain a correctness risk beyond bypass operations.
+- Dependencies: T227, chain deployment/runtime plugin identity, `app/routes/plugins.py`, `app/routes/chains.py`, `app/services/juce_engine_service.py`, `web/src/map2/api.ts`, `web/src/app/pages/JuceGridPage.tsx`
+- Estimated effort: High
+- Required outputs: Backend/API design for instance-safe parameter writes, frontend adoption in live editors/cards, regression coverage for duplicate-URI chains, and documented operator constraints if any residual ambiguity remains.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 22:20 - Codex
+- Completion notes:
+  - Extended `app/routes/plugins.py` so single and batched parameter writes accept `instance_id` and `plugin_position`, discovered plugin metadata can drive writes even when `_loaded_plugins` is empty, and batch dedupe now keys duplicate-URI updates by instance/position rather than collapsing them to one write.
+  - Updated `app/services/juce_engine_service.py` with position-aware duplicate-URI instance resolution and updated `app/services/chain_service.py` so active chain payloads expose runtime `instance_id` and latency data by matching pedalboard items back to chain positions.
+  - Updated the live frontend path in `web/src/map2/api.ts`, `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/components/PluginCards/PluginCardRouter.tsx`, `web/src/app/components/LV2PluginParameterEditor.tsx`, and `web/src/map2/components/ChainBuilder.tsx` so selected-block identity, batched writes, and card editors all propagate per-instance identity.
+  - Added focused regression coverage for duplicate-URI batch writes, position-aware engine resolution, runtime chain matching, and selected-block position handling in the JUCE Grid tests.
+  - Validation: `pytest -q tests/test_plugins_engine_op_pipeline.py tests/test_juce_engine_service_instance_resolution.py tests/test_chain_service_runtime_mapping.py` -> pass; `pytest -q tests/test_plugin_parameter_schema_route.py` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/app/components/LV2PluginParameterEditor.test.tsx web/src/app/components/PluginCards/liveEditorRouting.test.ts web/src/app/components/PluginCards/registry.test.ts web/src/app/components/PluginCards/withMidiDialog.test.tsx` -> pass. `pytest -q tests/test_route_caching_and_latency_metrics.py -k "chains_list_supports_etag_304 or remove_plugin_route_passes_position_to_service or add_plugin_route_returns_plugin_position"` still hits the existing route-readiness guard in this environment for the chain-list leg; the other two selected tests passed.
+
+ID: T233
+Status: [✓] Done
+Title: Remove remaining duplicate-URI assumptions from reorder and URI-keyed chain UI state
+Description:
+- Goal / acceptance criteria: Make the remaining duplicate-plugin paths outside the parameter editor instance-safe by replacing URI-only identity in reorder payloads and URI-keyed runtime UI state with stable per-instance/per-position identity. This includes JUCE Grid reorder interactions and any quick-control or telemetry caches that still collapse multiple identical plugins into one UI slot.
+- Why it matters: `T232` fixed live parameter editing and block selection for duplicate URIs, but reorder operations and a few runtime UI caches still assume URI uniqueness, which can misaddress duplicate plugins even though the cards themselves now edit safely.
+- Dependencies: T232, `app/routes/chains.py`, `app/services/chain_service.py`, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridPage.tsx`, `web/src/map2/components/ChainBuilder.tsx`
+- Estimated effort: Medium
+- Required outputs: Instance-safe reorder contract end to end, duplicate-URI-safe UI state keys where needed, regression coverage for duplicate-plugin reorder/quick-control flows, and updated completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 21:46 - Codex
+- Completion notes:
+  - Replaced the chain reorder contract with ordered plugin refs in `app/routes/chains.py`, `app/services/chain_service.py`, `web/src/map2/api.ts`, and `web/src/map2/types.ts`, while preserving legacy URI-list compatibility for older callers and resolving duplicate URIs deterministically by position.
+  - Updated the active JUCE Grid path in `web/src/app/pages/JuceGridSignalCanvas.tsx` and `web/src/app/pages/JuceGridPage.tsx` so drag/reorder preview state, move-left/right actions, and reorder mutations all target `{ uri, position }` rather than collapsing duplicate blocks onto one URI.
+  - Added shared identity helpers in `web/src/map2/utils/pluginIdentity.ts` and applied them through `web/src/map2/components/ChainBuilder.tsx`, `web/src/map2/components/ChainBuilder/utils/chainToFlow.ts`, `web/src/map2/components/ChainBuilder/utils/chainToABFlow.ts`, `web/src/map2/components/ChainBuilder/utils/flowToChain.ts`, and `web/src/map2/components/ChainBuilder/hooks/useFlowSync.ts` so quick parameters, insert-before actions, remove/bypass actions, and local reorder calculations are keyed by instance/position instead of URI.
+  - Added regression coverage in `tests/test_chain_service_runtime_mapping.py`, `tests/test_route_caching_and_latency_metrics.py`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`, `web/src/app/pages/JuceGridPage.test.tsx`, and `web/src/map2/components/ChainBuilder/utils/flowToChain.test.ts`.
+  - Validation: `pytest -q tests/test_chain_service_runtime_mapping.py` -> pass; `pytest -q tests/test_chain_service_runtime_mapping.py tests/test_route_caching_and_latency_metrics.py -k "reorder_plugins_route_passes_positioned_plugin_refs_to_service or remove_plugin_route_passes_position_to_service or add_plugin_route_returns_plugin_position or update_touchscreen_stomps_route_passes_assignments_to_service"` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/map2/components/ChainBuilder/utils/flowToChain.test.ts` -> pass.
+
+ID: T234
+Status: [ ] Todo
+Title: Emit per-instance meter and profiling telemetry for duplicate chain plugins
+Description:
+- Goal / acceptance criteria: Extend the profiling and meter telemetry producers so duplicate-URI plugins emit stable per-instance identity (`instance_id` and/or `plugin_position`) in `/api/profiling/plugins`, plugin VU level payloads, and any websocket meter events consumed by the UI. Update the remaining consumers so duplicate instances no longer share CPU or meter badges.
+- Why it matters: `T233` removed the UI-side URI-only assumptions and made reorder/quick controls instance-safe, but the current backend telemetry sources still emit most profiling and meter data by URI, so duplicate plugins can still share readouts even though editing and reorder are now correct.
+- Dependencies: T233, `app/routes/profiling.py`, `app/routes/audio.py`, `app/services/plugin_profiler.py`, JUCE engine telemetry payloads, and the related UI consumers in `web/src/map2/components/ChainBuilder.tsx`
+- Estimated effort: Medium
+- Required outputs: Backend telemetry payloads with per-instance identity, consumer updates that use the new identity keys, focused duplicate-URI telemetry regression coverage, and documented fallback behavior when identity is unavailable.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 21:46 - Codex
+
+ID: T235
+Status: [✓] Done
+Title: Clear the effect-card deployment blocker in ShoeGazeCard and complete the requested release loop
+Description:
+- Goal / acceptance criteria: Fix the JSX/TypeScript regression currently preventing the frontend production bundle from building, rerun the production deploy successfully, then finish the user-requested commit/push/restart sequence against the deployed state.
+- Why it matters: The current worktree cannot be deployed or cleanly committed as a release-ready snapshot while `npm --prefix web run deploy` fails in `web/src/app/components/PluginCards/Custom/JUCE/ShoeGazeCard.tsx`.
+- Dependencies: Current effect-card worktree, `web/src/app/components/PluginCards/Custom/JUCE/ShoeGazeCard.tsx`, `scripts/build/deploy`, Git remotes `origin` and `gitlab`
+- Estimated effort: Low
+- Required outputs: Fixed JSX structure, successful deploy/restart evidence, completed git commit/push, and final status report.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-20 22:00 - Codex
+- Completion notes:
+  - Wrapped the sibling output-row blocks in `web/src/app/components/PluginCards/Custom/JUCE/ShoeGazeCard.tsx` with a fragment so the card's accordion section returns a single JSX parent and the TypeScript build succeeds.
+  - Reran `npm --prefix web run deploy`, which rebuilt the production bundle, restarted `map2-web-prod`, and verified the live frontend on port `3000`.
+  - Confirmed post-deploy health with `curl http://localhost:3000/` -> `200` and `curl http://localhost:8080/api/health` -> `200` before proceeding to the git release steps.

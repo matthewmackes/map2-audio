@@ -455,7 +455,12 @@ export function LV2PluginParameterEditor({
   // Set parameter mutation
   const setParameterMutation = useMutation({
     mutationFn: async ({ paramIndex, value }: { paramIndex: number; value: number }) => {
-      return pluginsApi.setParameterBatched(plugin.uri, paramIndex, value)
+      return pluginsApi.setParameterBatched(
+        plugin.uri,
+        paramIndex,
+        value,
+        plugin.instance_id,
+      )
     },
   })
 

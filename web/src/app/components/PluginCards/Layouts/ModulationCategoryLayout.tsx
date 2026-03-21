@@ -19,6 +19,7 @@ export interface ModulationCategoryLayoutProps {
   plugin: Plugin
   accentColor?: string
   compact?: boolean
+  cardWidth?: number
   bypassed?: boolean
   onBypassToggle?: (bypassed: boolean) => void
   onOpenMidiMappings?: () => void
@@ -57,6 +58,7 @@ export function ModulationCategoryLayout({
   plugin,
   accentColor = '#f59e0b',
   compact = false,
+  cardWidth,
   bypassed = false,
   onBypassToggle,
   onOpenMidiMappings,
@@ -111,6 +113,7 @@ export function ModulationCategoryLayout({
       footer={footer}
       compact={compact}
       cardHeight={480}
+      cardWidth={cardWidth}
     >
       {/* Modulation Section */}
       {(rate || depth || centreDelay) && (

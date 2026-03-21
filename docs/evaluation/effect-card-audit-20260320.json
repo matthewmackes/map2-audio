@@ -1,0 +1,1542 @@
+{
+  "generated_at": "2026-03-20T23:29:58.325995+00:00",
+  "scope": {
+    "deployment_plugin_count": 35,
+    "custom_card_count": 39,
+    "custom_card_router_hits_in_app": [
+      "web/src/app/components/PluginCards/PluginCardRouter.tsx"
+    ]
+  },
+  "live_inventory": {
+    "available": true,
+    "discover_count": 40,
+    "schema_count": 588,
+    "plugin_count_without_tesira": 39,
+    "parameter_total_without_tesira": 592,
+    "live_lv2_plugins": [
+      {
+        "uri": "http://distrho.sf.net/plugins/MVerb",
+        "name": "MVerb",
+        "category": "Reverb",
+        "parameter_count": 9
+      },
+      {
+        "uri": "http://sfztools.github.io/sfizz",
+        "name": "sfizz",
+        "category": "Instrument",
+        "parameter_count": 13
+      },
+      {
+        "uri": "http://sfztools.github.io/sfizz-multi",
+        "name": "sfizz-multi",
+        "category": "Instrument",
+        "parameter_count": 13
+      },
+      {
+        "uri": "http://tomszilagyi.github.io/plugins/lv2/ir",
+        "name": "IR",
+        "category": "Reverb",
+        "parameter_count": 17
+      },
+      {
+        "uri": "http://uralyx.cz/prog/outotune",
+        "name": "Outotune",
+        "category": "Utility",
+        "parameter_count": 2
+      },
+      {
+        "uri": "http://www.niallmoody.com/ndcplugs/soulforce.htm",
+        "name": "Soul Force",
+        "category": "Distortion",
+        "parameter_count": 4
+      },
+      {
+        "uri": "https://github.com/michaelwillis/dragonfly-reverb",
+        "name": "Dragonfly Hall Reverb",
+        "category": "Reverb",
+        "parameter_count": 18
+      },
+      {
+        "uri": "https://github.com/tiagolr/reevr",
+        "name": "REEV-R",
+        "category": "Utility",
+        "parameter_count": 2
+      },
+      {
+        "uri": "https://www.auburnsounds.com/products/Graillon.html40733133#mono",
+        "name": "Graillon 3",
+        "category": "Pitch",
+        "parameter_count": 65
+      },
+      {
+        "uri": "https://www.auburnsounds.com/products/Graillon.html40733133#stereo",
+        "name": "Graillon 3",
+        "category": "Pitch",
+        "parameter_count": 65
+      },
+      {
+        "uri": "urn:dragonfly:early",
+        "name": "Dragonfly Early Reflections",
+        "category": "Reverb",
+        "parameter_count": 7
+      },
+      {
+        "uri": "urn:dragonfly:plate",
+        "name": "Dragonfly Plate Reverb",
+        "category": "Reverb",
+        "parameter_count": 9
+      },
+      {
+        "uri": "urn:dragonfly:room",
+        "name": "Dragonfly Room Reverb",
+        "category": "Reverb",
+        "parameter_count": 17
+      }
+    ],
+    "missing_from_live_vs_deployment": [
+      "http://two-play.com/plugins/toob-4looper",
+      "http://two-play.com/plugins/toob-bf2-flanger",
+      "http://two-play.com/plugins/toob-ce2-chorus",
+      "http://two-play.com/plugins/toob-delay",
+      "http://two-play.com/plugins/toob-phaser",
+      "http://two-play.com/plugins/toob-tremolo",
+      "http://two-play.com/plugins/toob-tuner",
+      "https://michaelwillis.github.io/dragonfly-reverb#hall",
+      "https://michaelwillis.github.io/dragonfly-reverb#plate",
+      "https://michaelwillis.github.io/dragonfly-reverb#room"
+    ],
+    "extra_live_vs_deployment": [
+      "hardware://lexicon-mpx1-spdif",
+      "http://distrho.sf.net/plugins/MVerb",
+      "http://sfztools.github.io/sfizz",
+      "http://sfztools.github.io/sfizz-multi",
+      "http://tomszilagyi.github.io/plugins/lv2/ir",
+      "http://uralyx.cz/prog/outotune",
+      "http://www.niallmoody.com/ndcplugs/soulforce.htm",
+      "https://github.com/michaelwillis/dragonfly-reverb",
+      "https://github.com/tiagolr/reevr",
+      "https://www.auburnsounds.com/products/Graillon.html40733133#mono",
+      "https://www.auburnsounds.com/products/Graillon.html40733133#stereo",
+      "map2://tesira/avb-node",
+      "urn:dragonfly:early",
+      "urn:dragonfly:plate",
+      "urn:dragonfly:room"
+    ]
+  },
+  "deployment_plugins": [
+    {
+      "uri": "map2://juce/dynamics/compressor",
+      "name": "Compressor",
+      "category": "Dynamics",
+      "parameter_count": 8,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/dynamics/celestial",
+      "name": "Celestial Compressor",
+      "category": "Dynamics",
+      "parameter_count": 8,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/dynamics/limiter",
+      "name": "Limiter",
+      "category": "Dynamics",
+      "parameter_count": 3,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/dynamics/gate",
+      "name": "Noise Gate",
+      "category": "Dynamics",
+      "parameter_count": 5,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/eq/parametric",
+      "name": "8-Band Parametric EQ",
+      "category": "EQ",
+      "parameter_count": 42,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/convolution/cabinet",
+      "name": "Cabinet IR",
+      "category": "Cabinet",
+      "parameter_count": 2,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/convolution/reverb",
+      "name": "Reverb IR",
+      "category": "Reverb",
+      "parameter_count": 2,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/nam",
+      "name": "Neural Amp Modeler",
+      "category": "Amplifier",
+      "parameter_count": 4,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/synthforge",
+      "name": "SynthForge",
+      "category": "Instrument",
+      "parameter_count": 1,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/delay",
+      "name": "Stereo Delay",
+      "category": "Delay",
+      "parameter_count": 22,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/delay/circular",
+      "name": "Circular Delay",
+      "category": "Delay",
+      "parameter_count": 8,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/modulation/chorus",
+      "name": "Stereo Chorus",
+      "category": "Modulation",
+      "parameter_count": 7,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/modulation/phaser",
+      "name": "6-Stage Phaser",
+      "category": "Modulation",
+      "parameter_count": 6,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/pitch/shifter",
+      "name": "EVH Harmonizer",
+      "category": "Pitch",
+      "parameter_count": 9,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/modulation/intellifx",
+      "name": "IntelliFX 8-Voice",
+      "category": "Modulation",
+      "parameter_count": 50,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/pitch/boss-xs1",
+      "name": "Boss XS-1 Poly Shifter",
+      "category": "Pitch",
+      "parameter_count": 12,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/multieffect/shoegaze",
+      "name": "ShoeGaze",
+      "category": "Multi-Effect",
+      "parameter_count": 21,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/reverb/pcm70",
+      "name": "Lexi Love PCM 70",
+      "category": "Reverb",
+      "parameter_count": 17,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/pitch/interval",
+      "name": "Interval Shifter",
+      "category": "Pitch",
+      "parameter_count": 4,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/pitch/h3000",
+      "name": "H3000 Ultra-Harmonizer",
+      "category": "Pitch",
+      "parameter_count": 16,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/effects/eventide-h9",
+      "name": "Eventide H9 Multi-Effect",
+      "category": "Effects",
+      "parameter_count": 5,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/amp/peavey5150",
+      "name": "Peavey 5150",
+      "category": "Amplifier",
+      "parameter_count": 10,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/amp/tweedbassman",
+      "name": "Tweed Bassman",
+      "category": "Amplifier",
+      "parameter_count": 21,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/multieffect/passionfx",
+      "name": "PassionFX",
+      "category": "Multi-Effect",
+      "parameter_count": 63,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "map2://juce/drums",
+      "name": "Drum Machine",
+      "category": "Drums",
+      "parameter_count": 5,
+      "has_static_parameters": true
+    },
+    {
+      "uri": "http://two-play.com/plugins/toob-ce2-chorus",
+      "name": "TooB CE-2 Chorus",
+      "category": "Chorus",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "http://two-play.com/plugins/toob-bf2-flanger",
+      "name": "TooB BF-2 Flanger",
+      "category": "Flanger",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "http://two-play.com/plugins/toob-phaser",
+      "name": "TooB Phaser",
+      "category": "Phaser",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "http://two-play.com/plugins/toob-tremolo",
+      "name": "TooB Tremolo",
+      "category": "Modulator",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "http://two-play.com/plugins/toob-delay",
+      "name": "TooB Delay",
+      "category": "Delay",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "http://two-play.com/plugins/toob-tuner",
+      "name": "TooB Tuner",
+      "category": "Utility",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "http://two-play.com/plugins/toob-4looper",
+      "name": "TooB 4Looper",
+      "category": "Utility",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "https://michaelwillis.github.io/dragonfly-reverb#room",
+      "name": "Dragonfly Room Reverb",
+      "category": "Reverb",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "https://michaelwillis.github.io/dragonfly-reverb#hall",
+      "name": "Dragonfly Hall Reverb",
+      "category": "Reverb",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    },
+    {
+      "uri": "https://michaelwillis.github.io/dragonfly-reverb#plate",
+      "name": "Dragonfly Plate Reverb",
+      "category": "Reverb",
+      "parameter_count": 0,
+      "has_static_parameters": false
+    }
+  ],
+  "custom_cards": [
+    {
+      "card": "GlitchShifterCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/Airwindows/GlitchShifterCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [
+        "const presets =",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "DragonflyHallCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/Dragonfly/DragonflyHallCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "DragonflyPlateCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/Dragonfly/DragonflyPlateCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "DragonflyRoomCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/Dragonfly/DragonflyRoomCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "BossXS1Card.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/BossXS1Card.tsx",
+      "hardcoded_uris": [
+        "map2://juce/pitch/boss-xs1"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/pitch/boss-xs1": true
+      },
+      "param_def_count": 8,
+      "param_def_symbols": [
+        "shiftAmount",
+        "balance",
+        "detuneAmount",
+        "glide",
+        "feedback",
+        "pedalPosition",
+        "pedalMin",
+        "pedalMax"
+      ],
+      "ui_parameter_fields": [
+        "balance",
+        "bypass",
+        "detuneAmount",
+        "detuneMode",
+        "feedback",
+        "glide",
+        "pedalEnabled",
+        "pedalMax",
+        "pedalMin",
+        "pedalPosition",
+        "preset",
+        "shiftAmount"
+      ],
+      "preset_tokens": [
+        "PRESETS",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "CabinetIRCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/ir/cabinet"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/ir/cabinet": false
+      },
+      "param_def_count": 1,
+      "param_def_symbols": [
+        "mix"
+      ],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "CelestialCompressorCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/CelestialCompressorCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/dynamics/celestial"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/dynamics/celestial": true
+      },
+      "param_def_count": 6,
+      "param_def_symbols": [
+        "threshold",
+        "ratio",
+        "attack",
+        "release",
+        "knee",
+        "makeupGain"
+      ],
+      "ui_parameter_fields": [
+        "attack",
+        "autoMakeup",
+        "bypass",
+        "knee",
+        "makeupGain",
+        "ratio",
+        "release",
+        "threshold"
+      ],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "ChorusCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/ChorusCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/modulation/chorus"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/modulation/chorus": true
+      },
+      "param_def_count": 6,
+      "param_def_symbols": [
+        "rate",
+        "depth",
+        "centreDelay",
+        "feedback",
+        "mix",
+        "spread"
+      ],
+      "ui_parameter_fields": [
+        "bypass",
+        "centreDelay",
+        "depth",
+        "feedback",
+        "mix",
+        "rate",
+        "spread"
+      ],
+      "preset_tokens": [
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "CompressorCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/CompressorCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/dynamics/compressor"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/dynamics/compressor": true
+      },
+      "param_def_count": 6,
+      "param_def_symbols": [
+        "threshold",
+        "ratio",
+        "attack",
+        "release",
+        "knee",
+        "makeupGain"
+      ],
+      "ui_parameter_fields": [
+        "attack",
+        "autoMakeup",
+        "bypass",
+        "knee",
+        "makeupGain",
+        "ratio",
+        "release",
+        "threshold"
+      ],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "DrumMachineCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/drums"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/drums": true
+      },
+      "param_def_count": 5,
+      "param_def_symbols": [
+        "bpm",
+        "volume",
+        "pattern",
+        "variation",
+        "transport"
+      ],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "EVHPitchShifterCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/EVHPitchShifterCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/pitch/evh"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/pitch/evh": false
+      },
+      "param_def_count": 7,
+      "param_def_symbols": [
+        "pitchL",
+        "pitchR",
+        "delayL",
+        "delayR",
+        "feedback",
+        "mix",
+        "spread"
+      ],
+      "ui_parameter_fields": [
+        "bypass",
+        "delayL",
+        "delayR",
+        "feedback",
+        "mix",
+        "pitchL",
+        "pitchR",
+        "preset"
+      ],
+      "preset_tokens": [
+        "PRESETS",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "EventideH9Card.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/EventideH9Card.tsx",
+      "hardcoded_uris": [
+        "map2://juce/effects/eventide-h9"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/effects/eventide-h9": true
+      },
+      "param_def_count": 5,
+      "param_def_symbols": [
+        "algorithm",
+        "inputGain",
+        "outputGain",
+        "mix",
+        "bypass"
+      ],
+      "ui_parameter_fields": [
+        "algorithm",
+        "bypass",
+        "inputGain",
+        "mix",
+        "outputGain"
+      ],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "GateCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/GateCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/dynamics/gate"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/dynamics/gate": true
+      },
+      "param_def_count": 4,
+      "param_def_symbols": [
+        "threshold",
+        "ratio",
+        "attack",
+        "release"
+      ],
+      "ui_parameter_fields": [
+        "attack",
+        "bypass",
+        "ratio",
+        "release",
+        "threshold"
+      ],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "H3000Card.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/H3000Card.tsx",
+      "hardcoded_uris": [
+        "map2://juce/pitch/h3000"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/pitch/h3000": true
+      },
+      "param_def_count": 15,
+      "param_def_symbols": [
+        "algorithm",
+        "pitchL",
+        "pitchR",
+        "delayL",
+        "delayR",
+        "feedback",
+        "crossFeedback",
+        "modDepth",
+        "modRate",
+        "lowCut",
+        "highCut",
+        "mix",
+        "levelL",
+        "levelR",
+        "glide"
+      ],
+      "ui_parameter_fields": [
+        "algorithm",
+        "bypass",
+        "crossFeedback",
+        "delayL",
+        "delayR",
+        "feedback",
+        "glide",
+        "highCut",
+        "levelL",
+        "levelR",
+        "lowCut",
+        "mix",
+        "modDepth",
+        "modRate",
+        "pitchL",
+        "pitchR"
+      ],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "IntelliFXCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/IntelliFXCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/modulation/intellifx"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/modulation/intellifx": true
+      },
+      "param_def_count": 12,
+      "param_def_symbols": [
+        "v1_level",
+        "v1_pan",
+        "v1_delay",
+        "v1_depth",
+        "v1_rate",
+        "chorusLevel",
+        "directLevelL",
+        "directLevelR",
+        "regenL",
+        "regenR",
+        "hushThreshold",
+        "hushRelease"
+      ],
+      "ui_parameter_fields": [],
+      "preset_tokens": [
+        "presetBrowser",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "IntervalShifterCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/IntervalShifterCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/pitch/interval"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/pitch/interval": true
+      },
+      "param_def_count": 3,
+      "param_def_symbols": [
+        "semitonesL",
+        "semitonesR",
+        "mix"
+      ],
+      "ui_parameter_fields": [
+        "bypass",
+        "mix",
+        "semitonesL",
+        "semitonesR"
+      ],
+      "preset_tokens": [
+        "PRESETS",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "LexiLoveCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/LexiLoveCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/reverb/pcm70"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/reverb/pcm70": true
+      },
+      "param_def_count": 13,
+      "param_def_symbols": [
+        "algorithm",
+        "preDelay",
+        "decayTime",
+        "diffusion",
+        "earlyLevel",
+        "earlyPattern",
+        "lowDecayMult",
+        "highDecayMult",
+        "modDepth",
+        "modRate",
+        "mix",
+        "highCut",
+        "lowCut"
+      ],
+      "ui_parameter_fields": [
+        "algorithm",
+        "bypass",
+        "decayTime",
+        "diffusion",
+        "earlyLevel",
+        "earlyPattern",
+        "highCut",
+        "highDecayMult",
+        "lowCut",
+        "lowDecayMult",
+        "mix",
+        "modDepth",
+        "modRate",
+        "preDelay"
+      ],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "LimiterCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/LimiterCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/dynamics/limiter"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/dynamics/limiter": true
+      },
+      "param_def_count": 2,
+      "param_def_symbols": [
+        "threshold",
+        "release"
+      ],
+      "ui_parameter_fields": [
+        "bypass",
+        "release",
+        "threshold"
+      ],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "NAMCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/amp/nam"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/amp/nam": false
+      },
+      "param_def_count": 2,
+      "param_def_symbols": [
+        "inputGain",
+        "outputLevel"
+      ],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "NativeDelayCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/NativeDelayCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/delay/stereo"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/delay/stereo": false
+      },
+      "param_def_count": 23,
+      "param_def_symbols": [
+        "delayTimeL",
+        "delayTimeR",
+        "feedback",
+        "mix",
+        "tempo",
+        "tap1Level",
+        "tap2Level",
+        "tap2Ratio",
+        "tap3Level",
+        "tap3Ratio",
+        "tap4Level",
+        "tap4Ratio",
+        "stereoSpread",
+        "pan",
+        "modRate",
+        "modDepth",
+        "lowCut",
+        "highCut",
+        "diffusion",
+        "duckThreshold",
+        "duckAmount",
+        "duckRelease",
+        "outputLevel"
+      ],
+      "ui_parameter_fields": [
+        "bypass",
+        "delayTimeL",
+        "delayTimeR",
+        "diffusion",
+        "duckAmount",
+        "duckRelease",
+        "duckThreshold",
+        "feedback",
+        "filterInLoop",
+        "highCut",
+        "lowCut",
+        "mix",
+        "modDepth",
+        "modRate",
+        "modWaveform",
+        "spillover",
+        "stereoMode",
+        "tap1Level",
+        "tap2Level",
+        "tap2Ratio",
+        "tap3Level",
+        "tap3Ratio",
+        "tap4Level",
+        "tap4Ratio",
+        "tempo",
+        "tempoSyncL",
+        "tempoSyncR"
+      ],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "ParametricEQCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/ParametricEQCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/eq/parametric"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/eq/parametric": true
+      },
+      "param_def_count": 25,
+      "param_def_symbols": [
+        "outputGain",
+        "band1_frequency",
+        "band1_gain",
+        "band1_q",
+        "band2_frequency",
+        "band2_gain",
+        "band2_q",
+        "band3_frequency",
+        "band3_gain",
+        "band3_q",
+        "band4_frequency",
+        "band4_gain",
+        "band4_q",
+        "band5_frequency",
+        "band5_gain",
+        "band5_q",
+        "band6_frequency",
+        "band6_gain",
+        "band6_q",
+        "band7_frequency",
+        "band7_gain",
+        "band7_q",
+        "band8_frequency",
+        "band8_gain",
+        "band8_q"
+      ],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "PassionFXCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/PassionFXCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/multieffect/passionfx"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/multieffect/passionfx": true
+      },
+      "param_def_count": 31,
+      "param_def_symbols": [
+        "gateThreshold",
+        "compThreshold",
+        "compRatio",
+        "wahPosition",
+        "wahQ",
+        "phaserRate",
+        "phaserDepth",
+        "chorusRate",
+        "chorusDepth",
+        "chorusMix",
+        "pitchSemitones",
+        "pitchMix",
+        "harmVoice1Interval",
+        "harmVoice2Interval",
+        "harmDetuneCents",
+        "delayTimeL",
+        "delayFeedback",
+        "delayMix",
+        "reverbDecay",
+        "reverbShimmerAmount",
+        "reverbMix",
+        "eqLowGain",
+        "eqMidGain",
+        "eqHighGain",
+        "exciterWarmth",
+        "exciterPresence",
+        "exciterAir",
+        "tremRate",
+        "tremDepth",
+        "mix",
+        "outputLevel"
+      ],
+      "ui_parameter_fields": [
+        "bypass",
+        "chorusDepth",
+        "chorusEnabled",
+        "chorusMix",
+        "chorusRate",
+        "compEnabled",
+        "compGlassy",
+        "compRatio",
+        "compThreshold",
+        "delayEnabled",
+        "delayFeedback",
+        "delayMix",
+        "delayTimeL",
+        "eqEnabled",
+        "eqHighGain",
+        "eqLowGain",
+        "eqMidGain",
+        "exciterAir",
+        "exciterEnabled",
+        "exciterPresence",
+        "exciterWarmth",
+        "gateEnabled",
+        "gateThreshold",
+        "harmDetuneCents",
+        "harmEnabled",
+        "harmVoice1Interval",
+        "harmVoice2Interval",
+        "mix",
+        "phaserDepth",
+        "phaserEnabled",
+        "phaserRate",
+        "pitchEnabled",
+        "pitchMix",
+        "pitchSemitones",
+        "reverbDecay",
+        "reverbEnabled",
+        "reverbMix",
+        "reverbShimmerAmount",
+        "tremDepth",
+        "tremEnabled",
+        "tremRate",
+        "wahEnabled",
+        "wahPosition",
+        "wahQ"
+      ],
+      "preset_tokens": [
+        "PRESETS",
+        "presetSelector",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "Peavey5150Card.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/Peavey5150Card.tsx",
+      "hardcoded_uris": [
+        "map2://juce/amp/peavey5150"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/amp/peavey5150": true
+      },
+      "param_def_count": 8,
+      "param_def_symbols": [
+        "preGain",
+        "postGain",
+        "low",
+        "mid",
+        "high",
+        "presence",
+        "resonance",
+        "bias"
+      ],
+      "ui_parameter_fields": [
+        "bias",
+        "bright",
+        "bypass",
+        "high",
+        "low",
+        "mid",
+        "postGain",
+        "preGain",
+        "presence",
+        "resonance"
+      ],
+      "preset_tokens": [
+        "PRESETS",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "PhaserCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/PhaserCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/modulation/phaser"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/modulation/phaser": true
+      },
+      "param_def_count": 5,
+      "param_def_symbols": [
+        "rate",
+        "depth",
+        "centreFrequency",
+        "feedback",
+        "mix"
+      ],
+      "ui_parameter_fields": [
+        "bypass",
+        "centreFrequency",
+        "depth",
+        "feedback",
+        "mix",
+        "rate"
+      ],
+      "preset_tokens": [
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "ReverbIRCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/ir/reverb"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/ir/reverb": false
+      },
+      "param_def_count": 1,
+      "param_def_symbols": [
+        "mix"
+      ],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "ShoeGazeCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/ShoeGazeCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/multieffect/shoegaze"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/multieffect/shoegaze": true
+      },
+      "param_def_count": 15,
+      "param_def_symbols": [
+        "atmosphere",
+        "decay",
+        "shimmer",
+        "shimmerPitch",
+        "modulation",
+        "modRate",
+        "drive",
+        "delayTime",
+        "delayFeedback",
+        "delayMod",
+        "lowCut",
+        "highCut",
+        "mix",
+        "stereoWidth",
+        "duckingAmount"
+      ],
+      "ui_parameter_fields": [
+        "atmosphere",
+        "bypass",
+        "decay",
+        "delayFeedback",
+        "delayMod",
+        "delayTime",
+        "drive",
+        "duckingAmount",
+        "highCut",
+        "lowCut",
+        "mix",
+        "modRate",
+        "modulation",
+        "shimmer",
+        "shimmerPitch",
+        "stereoWidth"
+      ],
+      "preset_tokens": [
+        "PRESETS",
+        "presetSelector",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "SynthForgeCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/synthforge"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/synthforge": true
+      },
+      "param_def_count": 4,
+      "param_def_symbols": [
+        "masterTranspose",
+        "velocityCurve",
+        "pitchBendRange",
+        "level"
+      ],
+      "ui_parameter_fields": [],
+      "preset_tokens": [
+        "const presets ="
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "TweedBassmanCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/JUCE/TweedBassmanCard.tsx",
+      "hardcoded_uris": [
+        "map2://juce/amp/tweedbassman"
+      ],
+      "hardcoded_uri_matches_registry": {
+        "map2://juce/amp/tweedbassman": true
+      },
+      "param_def_count": 8,
+      "param_def_symbols": [
+        "normalVolume",
+        "brightVolume",
+        "treble",
+        "mid",
+        "bass",
+        "masterVolume",
+        "presence",
+        "outputLevel"
+      ],
+      "ui_parameter_fields": [
+        "bass",
+        "biasMode",
+        "brightCap",
+        "brightVolume",
+        "bypass",
+        "cabinetEnabled",
+        "cabinetIR",
+        "cathodeBias",
+        "cathodeBypass",
+        "channelMode",
+        "masterVolume",
+        "mid",
+        "nfbMode",
+        "normalVolume",
+        "outputLevel",
+        "powerTubeType",
+        "presence",
+        "rawSwitch",
+        "rectifierType",
+        "treble",
+        "v1TubeType"
+      ],
+      "preset_tokens": [
+        "PRESETS",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": true
+    },
+    {
+      "card": "KeyboardSamplerCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/LV2/KeyboardSamplerCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "OutotuneCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/LV2/OutotuneCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [
+        "PRESETS",
+        "const presets =",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "REEVRCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/LV2/REEVRCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [
+        "PRESETS",
+        "const presets =",
+        "presets={"
+      ],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "WhammyCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/LV2/WhammyCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "BF2FlangerCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/TooB/BF2FlangerCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "CE2ChorusCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/TooB/CE2ChorusCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "DelayCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/TooB/DelayCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "LooperCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/TooB/LooperCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "PhaserCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/TooB/PhaserCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "TremoloCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/TooB/TremoloCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    },
+    {
+      "card": "TunerCard.tsx",
+      "path": "web/src/app/components/PluginCards/Custom/TooB/TunerCard.tsx",
+      "hardcoded_uris": [],
+      "hardcoded_uri_matches_registry": {},
+      "param_def_count": 0,
+      "param_def_symbols": [],
+      "ui_parameter_fields": [],
+      "preset_tokens": [],
+      "has_midi_dialog_wrapper": false
+    }
+  ],
+  "findings": [
+    {
+      "id": "F001",
+      "severity": "critical",
+      "title": "Custom effect-card subsystem is not wired into the active web app",
+      "evidence": [
+        "web/src/app/components/PluginCards/PluginCardRouter.tsx"
+      ],
+      "expected": "The card router should be mounted by an operator-facing route so custom cards, presets, and MIDI mapping are reachable.",
+      "actual": "Within web/src/app, PluginCardRouter appears only in its own source file; JuceGridPage renders JuceGridParameterEditor directly."
+    },
+    {
+      "id": "F002",
+      "severity": "major",
+      "title": "Multiple JUCE custom cards carry stale plugin URIs in MIDI mapping wrappers",
+      "evidence": [
+        {
+          "card": "CabinetIRCard.tsx",
+          "hardcoded_uris": [
+            "map2://juce/ir/cabinet"
+          ],
+          "matches_registry": {
+            "map2://juce/ir/cabinet": false
+          }
+        },
+        {
+          "card": "EVHPitchShifterCard.tsx",
+          "hardcoded_uris": [
+            "map2://juce/pitch/evh"
+          ],
+          "matches_registry": {
+            "map2://juce/pitch/evh": false
+          }
+        },
+        {
+          "card": "NAMCard.tsx",
+          "hardcoded_uris": [
+            "map2://juce/amp/nam"
+          ],
+          "matches_registry": {
+            "map2://juce/amp/nam": false
+          }
+        },
+        {
+          "card": "NativeDelayCard.tsx",
+          "hardcoded_uris": [
+            "map2://juce/delay/stereo"
+          ],
+          "matches_registry": {
+            "map2://juce/delay/stereo": false
+          }
+        },
+        {
+          "card": "ReverbIRCard.tsx",
+          "hardcoded_uris": [
+            "map2://juce/ir/reverb"
+          ],
+          "matches_registry": {
+            "map2://juce/ir/reverb": false
+          }
+        }
+      ],
+      "expected": "withMidiDialog should use the same plugin URI the registry and discovery APIs expose.",
+      "actual": "Five JUCE cards embed non-registered URIs, so their MIDI mapping dialog targets stale identities."
+    },
+    {
+      "id": "F003",
+      "severity": "major",
+      "title": "The existing parameter-audit test validates deployment manifests, not the live plugin inventory",
+      "evidence": {
+        "deployment_plugin_count": 35,
+        "live_discover_count": 39,
+        "missing_from_live_vs_deployment": [
+          "http://two-play.com/plugins/toob-4looper",
+          "http://two-play.com/plugins/toob-bf2-flanger",
+          "http://two-play.com/plugins/toob-ce2-chorus",
+          "http://two-play.com/plugins/toob-delay",
+          "http://two-play.com/plugins/toob-phaser",
+          "http://two-play.com/plugins/toob-tremolo",
+          "http://two-play.com/plugins/toob-tuner",
+          "https://michaelwillis.github.io/dragonfly-reverb#hall",
+          "https://michaelwillis.github.io/dragonfly-reverb#plate",
+          "https://michaelwillis.github.io/dragonfly-reverb#room"
+        ],
+        "extra_live_vs_deployment": [
+          "hardware://lexicon-mpx1-spdif",
+          "http://distrho.sf.net/plugins/MVerb",
+          "http://sfztools.github.io/sfizz",
+          "http://sfztools.github.io/sfizz-multi",
+          "http://tomszilagyi.github.io/plugins/lv2/ir",
+          "http://uralyx.cz/prog/outotune",
+          "http://www.niallmoody.com/ndcplugs/soulforce.htm",
+          "https://github.com/michaelwillis/dragonfly-reverb",
+          "https://github.com/tiagolr/reevr",
+          "https://www.auburnsounds.com/products/Graillon.html40733133#mono",
+          "https://www.auburnsounds.com/products/Graillon.html40733133#stereo",
+          "map2://tesira/avb-node",
+          "urn:dragonfly:early",
+          "urn:dragonfly:plate",
+          "urn:dragonfly:room"
+        ]
+      },
+      "expected": "Audit coverage should be driven by the live /api/plugins/discover and /api/plugins/parameter-schema inventory.",
+      "actual": "JuceGridParameterAudit.test.tsx hardcodes app/deployment manifests, which diverge from the current runtime LV2 inventory on this host."
+    },
+    {
+      "id": "F004",
+      "severity": "major",
+      "title": "Card-specific preset affordances are effectively inaccessible in the live GUI",
+      "evidence": [
+        "GlitchShifterCard.tsx",
+        "BossXS1Card.tsx",
+        "ChorusCard.tsx",
+        "EVHPitchShifterCard.tsx",
+        "IntelliFXCard.tsx",
+        "IntervalShifterCard.tsx",
+        "PassionFXCard.tsx",
+        "Peavey5150Card.tsx",
+        "PhaserCard.tsx",
+        "ShoeGazeCard.tsx",
+        "SynthForgeCard.tsx",
+        "TweedBassmanCard.tsx",
+        "OutotuneCard.tsx",
+        "REEVRCard.tsx"
+      ],
+      "expected": "Preset-bearing cards should be reachable from an active operator-facing route.",
+      "actual": "Preset UI exists in source, but the inactive card router prevents these flows from being used in the current web app."
+    }
+  ]
+}

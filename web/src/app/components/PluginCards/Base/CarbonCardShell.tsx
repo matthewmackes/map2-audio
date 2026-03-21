@@ -55,6 +55,8 @@ interface CarbonCardShellProps {
   className?: string
   /** Override category card height (px) */
   cardHeight?: number
+  /** Override card width for dense cards that need additional horizontal room */
+  cardWidth?: number
 }
 
 export function CarbonCardShell({
@@ -74,6 +76,7 @@ export function CarbonCardShell({
   compact = false,
   className = '',
   cardHeight,
+  cardWidth,
 }: CarbonCardShellProps) {
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
@@ -93,6 +96,7 @@ export function CarbonCardShell({
         '--accent-color': accentColor,
         '--accent-bg': catConfig.bg,
         '--category-card-height': `${resolvedHeight}px`,
+        ...(cardWidth ? { '--category-card-width': `${cardWidth}px` } : {}),
       } as React.CSSProperties}
     >
       {/* Header */}

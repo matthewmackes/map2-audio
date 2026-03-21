@@ -38,7 +38,7 @@ export interface ChainAssignmentModalProps {
    * Receives the pending (locally selected) chainId so the parent can
    * apply the chain selection and open the plugin editor.
    */
-  onPluginChipClick?: (chainId: number, pluginUri: string) => void
+  onPluginChipClick?: (chainId: number, pluginUri: string, pluginPosition: number) => void
   /**
    * Chain lifecycle handlers — receive the currently-pending chainId so
    * JuceGridPage can operate on the right chain while the modal is open.

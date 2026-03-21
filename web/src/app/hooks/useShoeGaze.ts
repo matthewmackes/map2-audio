@@ -25,8 +25,13 @@ export interface ShoeGazeParameters {
   highCut: number          // 2000-20000Hz
   mix: number              // 0-100% - Wet/dry blend
   stereoWidth: number      // 0-200% - Stereo spread
-  duckingAmount: number    // 0-100% - Input-triggered wet reduction
-  preset: number           // Current preset index
+  reverbDiffusion: number  // 0-100% - Reverb diffusion
+  reverbDamping: number    // 0-100% - Reverb damping
+  shimmerFeedback: number  // 0-80% - Shimmer feedback
+  chorusVoices: number     // 1-6 chorus voices
+  ducking: number          // 0-100% - Input-triggered wet reduction
+  preset: string           // Current preset id
+  spillover: boolean
   bypass: boolean
 }
 
@@ -112,7 +117,12 @@ export function useShoeGaze() {
       if (params.highCut !== undefined) apiParams.high_cut = params.highCut
       if (params.mix !== undefined) apiParams.mix = params.mix
       if (params.stereoWidth !== undefined) apiParams.stereo_width = params.stereoWidth
-      if (params.duckingAmount !== undefined) apiParams.ducking_amount = params.duckingAmount
+      if (params.reverbDiffusion !== undefined) apiParams.reverb_diffusion = params.reverbDiffusion
+      if (params.reverbDamping !== undefined) apiParams.reverb_damping = params.reverbDamping
+      if (params.shimmerFeedback !== undefined) apiParams.shimmer_feedback = params.shimmerFeedback
+      if (params.chorusVoices !== undefined) apiParams.chorus_voices = params.chorusVoices
+      if (params.ducking !== undefined) apiParams.ducking = params.ducking
+      if (params.spillover !== undefined) apiParams.spillover = params.spillover
       if (params.bypass !== undefined) apiParams.bypass = params.bypass
 
       const response = await fetch('/api/engine/shoegaze/parameters', {
@@ -164,8 +174,13 @@ export function useShoeGaze() {
     highCut: shoegazeData?.parameters?.high_cut ?? 8000,
     mix: shoegazeData?.parameters?.mix ?? 50,
     stereoWidth: shoegazeData?.parameters?.stereo_width ?? 150,
-    duckingAmount: shoegazeData?.parameters?.ducking_amount ?? 20,
-    preset: shoegazeData?.parameters?.preset ?? 0,
+    reverbDiffusion: shoegazeData?.parameters?.reverb_diffusion ?? 85,
+    reverbDamping: shoegazeData?.parameters?.reverb_damping ?? 40,
+    shimmerFeedback: shoegazeData?.parameters?.shimmer_feedback ?? 35,
+    chorusVoices: shoegazeData?.parameters?.chorus_voices ?? 4,
+    ducking: shoegazeData?.parameters?.ducking ?? shoegazeData?.parameters?.ducking_amount ?? 20,
+    preset: shoegazeData?.parameters?.preset ?? 'manual',
+    spillover: shoegazeData?.parameters?.spillover ?? true,
     bypass: shoegazeData?.parameters?.bypass ?? false,
   }
 
@@ -184,7 +199,7 @@ export function useShoeGaze() {
   }
 
   // Get current preset info
-  const currentPreset = SHOEGAZE_PRESETS[parameters.preset] || SHOEGAZE_PRESETS[0]
+  const currentPreset = SHOEGAZE_PRESETS.find((preset) => preset.id === parameters.preset) || SHOEGAZE_PRESETS[0]
 
   return {
     parameters,
@@ -208,7 +223,13 @@ export function useShoeGaze() {
     setHighCut: (v: number) => updateParam.mutate({ highCut: v }),
     setMix: (v: number) => updateParam.mutate({ mix: v }),
     setStereoWidth: (v: number) => updateParam.mutate({ stereoWidth: v }),
-    setDuckingAmount: (v: number) => updateParam.mutate({ duckingAmount: v }),
+    setReverbDiffusion: (v: number) => updateParam.mutate({ reverbDiffusion: v }),
+    setReverbDamping: (v: number) => updateParam.mutate({ reverbDamping: v }),
+    setShimmerFeedback: (v: number) => updateParam.mutate({ shimmerFeedback: v }),
+    setChorusVoices: (v: number) => updateParam.mutate({ chorusVoices: v }),
+    setDucking: (v: number) => updateParam.mutate({ ducking: v }),
+    setDuckingAmount: (v: number) => updateParam.mutate({ ducking: v }),
+    setSpillover: (v: boolean) => updateParam.mutate({ spillover: v }),
     setBypass: (v: boolean) => setBypassMutation.mutate(v),
     setPreset: (presetName: string) => setPreset.mutate(presetName),
     // Bulk update

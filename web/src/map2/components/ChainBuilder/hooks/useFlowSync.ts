@@ -7,11 +7,13 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useChainUpdates } from '../../../hooks/useWebSocket';
 import { AudioPluginNode } from '../nodes/AudioPluginNodeTypes';
 import { flowToChainOrder } from '../utils/flowToChain';
+import type { PluginOrderRef } from '../../../types';
+import { getPluginIdentityKey } from '../../../utils/pluginIdentity';
 
 export interface UseFlowSyncOptions {
   chainId: number;
   nodes: AudioPluginNode[];
-  onReorderPlugins: (orderedUris: string[]) => Promise<void>;
+  onReorderPlugins: (pluginOrder: PluginOrderRef[]) => Promise<void>;
   onReloadChain: () => Promise<void>;
 }
 
@@ -25,7 +27,7 @@ export function useFlowSync({
   onReloadChain,
 }: UseFlowSyncOptions) {
   const { lastEvent } = useChainUpdates();
-  const previousOrderRef = useRef<string[]>([]);
+  const previousOrderRef = useRef<PluginOrderRef[]>([]);
   const isDraggingRef = useRef(false);
 
   // Track current plugin order
@@ -74,7 +76,7 @@ export function useFlowSync({
       // Check if order actually changed
       if (
         newOrder.length === previousOrder.length &&
-        newOrder.every((uri, idx) => uri === previousOrder[idx])
+        newOrder.every((pluginRef, idx) => getPluginIdentityKey(pluginRef) === getPluginIdentityKey(previousOrder[idx]))
       ) {
         return; // No change
       }

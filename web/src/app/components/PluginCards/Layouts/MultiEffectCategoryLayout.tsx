@@ -25,6 +25,7 @@ export interface MultiEffectCategoryLayoutProps {
   plugin: Plugin
   accentColor?: string
   compact?: boolean
+  cardWidth?: number
   bypassed?: boolean
   onBypassToggle?: (bypassed: boolean) => void
   onOpenMidiMappings?: () => void
@@ -55,6 +56,7 @@ export function MultiEffectCategoryLayout({
   plugin,
   accentColor = '#ec4899',
   compact = false,
+  cardWidth,
   bypassed = false,
   onBypassToggle,
   onOpenMidiMappings,
@@ -109,6 +111,7 @@ export function MultiEffectCategoryLayout({
       footer={footer}
       compact={compact}
       cardHeight={560}
+      cardWidth={cardWidth}
     >
       {/* Algorithm Selector */}
       {algorithms && algorithms.length > 0 && (

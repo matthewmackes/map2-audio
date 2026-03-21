@@ -48,8 +48,14 @@ import {
 } from '@carbon/icons-react';
 import { chainsApi, pluginsApi, usbApi, historyApi, audioApi, automationApi } from '../api';
 import { useChainUpdates, useMeterData } from '../hooks/useWebSocket';
-import type { Chain, Plugin, PluginParameter } from '../types';
+import type { Chain, ChainPlugin, Plugin, PluginOrderRef, PluginParameter } from '../types';
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../displayNames';
+import {
+  buildPluginOrderRef,
+  getPluginIdentityKey,
+  getPluginIdentityKeyFromParts,
+  samePluginIdentity,
+} from '../utils/pluginIdentity';
 import {
   ChainFlowCanvas,
   chainToFlow,
@@ -238,8 +244,7 @@ export default function ChainBuilder() {
   const [favoriteUris, setFavoriteUris] = useState<string[]>([]);
   const [recentUris, setRecentUris] = useState<string[]>([]);
   const [insertDialogOpen, setInsertDialogOpen] = useState(false);
-  const [insertTargetUri, setInsertTargetUri] = useState<string | null>(null);
-  const [previewPluginUri, setPreviewPluginUri] = useState<string | null>(null);
+  const [insertTargetPlugin, setInsertTargetPlugin] = useState<PluginOrderRef | null>(null);
 
   // JUCE Integration Feature State
   const [audioConfigDialogOpen, setAudioConfigDialogOpen] = useState(false);
@@ -465,10 +470,15 @@ export default function ChainBuilder() {
           const data = await res.json();
           const perfMap: Record<string, any> = {};
           (data.plugins || []).forEach((p: any) => {
-            perfMap[p.uri] = {
+            const pluginKey = getPluginIdentityKeyFromParts(p.uri, p.plugin_position ?? p.position, p.instance_id);
+            const entry = {
               cpuPercent: p.cpu_percent,
               latencySamples: p.latency_samples,
             };
+            perfMap[pluginKey] = entry;
+            if (!perfMap[p.uri]) {
+              perfMap[p.uri] = entry;
+            }
           });
           
           // Also fetch automation/LFO status
@@ -478,7 +488,8 @@ export default function ChainBuilder() {
               const autoData = await autoRes.json();
               // Mark plugins that have active LFO or envelope
               (autoData.automated_parameters || []).forEach((paramId: string) => {
-                const [uri] = paramId.split(':');
+                const separatorIndex = paramId.lastIndexOf(':');
+                const uri = separatorIndex >= 0 ? paramId.slice(0, separatorIndex) : paramId;
                 if (perfMap[uri]) {
                   perfMap[uri].hasAutomation = true;
                 }
@@ -518,7 +529,12 @@ export default function ChainBuilder() {
       if (meterLevels.plugins) {
         const map: Record<string, { input: number; output: number }> = {};
         meterLevels.plugins.forEach((p: any) => {
-          map[p.uri] = { input: p.input, output: p.output };
+          const pluginKey = getPluginIdentityKeyFromParts(p.uri, p.position, p.instance_id);
+          const entry = { input: p.input, output: p.output };
+          map[pluginKey] = entry;
+          if (!map[p.uri]) {
+            map[p.uri] = entry;
+          }
         });
         setPluginLevels(map);
       }
@@ -580,7 +596,7 @@ export default function ChainBuilder() {
               data: {
                 ...n.data,
                 onQuickParamChange: (symbol: string, value: number, index: number) =>
-                  handleQuickParamChange((n as any).data.plugin.uri, symbol, index, value),
+                  handleQuickParamChange((n as any).data.plugin, symbol, index, value),
               },
             } as any;
           }
@@ -596,7 +612,7 @@ export default function ChainBuilder() {
               data: {
                 ...n.data,
                 onQuickParamChange: (symbol: string, value: number, index: number) =>
-                  handleQuickParamChange(n.data.plugin.uri, symbol, index, value),
+                  handleQuickParamChange(n.data.plugin, symbol, index, value),
               },
             } as any;
           }
@@ -835,14 +851,14 @@ export default function ChainBuilder() {
   };
 
   // Remove plugin from chain
-  const handleRemovePlugin = async (pluginUri: string) => {
+  const handleRemovePlugin = async (plugin: ChainPlugin) => {
     if (!selectedChain) return;
 
     // Prevent WebSocket-triggered reloads from racing with our explicit reload
     localMutationInProgress.current = true;
     try {
-      await chainsApi.removePlugin(selectedChain.id, pluginUri);
-      if (selectedPlugin?.uri === pluginUri) {
+      await chainsApi.removePlugin(selectedChain.id, plugin.uri, plugin.position);
+      if (selectedPlugin && samePluginIdentity(selectedPlugin, plugin)) {
         setSelectedPlugin(null);
         setParametersPanelOpen(false);
       }
@@ -857,11 +873,11 @@ export default function ChainBuilder() {
   };
 
   // Toggle plugin bypass
-  const handleToggleBypass = async (pluginUri: string, currentBypass: boolean) => {
+  const handleToggleBypass = async (plugin: ChainPlugin) => {
     if (!selectedChain) return;
 
     try {
-      await chainsApi.togglePluginBypass(selectedChain.id, pluginUri, !currentBypass);
+      await chainsApi.togglePluginBypass(selectedChain.id, plugin.uri, !plugin.bypassed, plugin.position);
       const updated = await chainsApi.get(selectedChain.id);
       setSelectedChain(updated);
     } catch (err) {
@@ -870,13 +886,13 @@ export default function ChainBuilder() {
   };
 
   // Remove plugin from Chain B (A/B split view)
-  const handleRemovePluginB = async (pluginUri: string) => {
+  const handleRemovePluginB = async (plugin: ChainPlugin) => {
     if (!chainB) return;
 
     localMutationInProgress.current = true;
     try {
-      await chainsApi.removePlugin(chainB.id, pluginUri);
-      if (selectedPlugin?.uri === pluginUri) {
+      await chainsApi.removePlugin(chainB.id, plugin.uri, plugin.position);
+      if (selectedPlugin && samePluginIdentity(selectedPlugin, plugin)) {
         setSelectedPlugin(null);
         setParametersPanelOpen(false);
       }
@@ -891,11 +907,11 @@ export default function ChainBuilder() {
   };
 
   // Toggle plugin bypass on Chain B (A/B split view)
-  const handleToggleBypassB = async (pluginUri: string, currentBypass: boolean) => {
+  const handleToggleBypassB = async (plugin: ChainPlugin) => {
     if (!chainB) return;
 
     try {
-      await chainsApi.togglePluginBypass(chainB.id, pluginUri, !currentBypass);
+      await chainsApi.togglePluginBypass(chainB.id, plugin.uri, !plugin.bypassed, plugin.position);
       const updated = await chainsApi.get(chainB.id);
       setChainB(updated);
     } catch (err) {
@@ -908,7 +924,13 @@ export default function ChainBuilder() {
     if (!selectedPlugin?.uri) return;
 
     try {
-      await pluginsApi.setParameter(selectedPlugin.uri, paramIndex, value);
+      await pluginsApi.setParameter(
+        selectedPlugin.uri,
+        paramIndex,
+        value,
+        selectedPlugin.instance_id,
+        selectedPlugin.position,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update parameter');
     }
@@ -918,13 +940,19 @@ export default function ChainBuilder() {
     setPinnedParams((prev) => (prev.includes(symbol) ? prev.filter((s) => s !== symbol) : [...prev, symbol]));
   };
 
-  const handleQuickParamChange = async (pluginUri: string, symbol: string, index: number, value: number) => {
+  const handleQuickParamChange = async (
+    plugin: ChainPlugin,
+    symbol: string,
+    index: number,
+    value: number,
+  ) => {
+    const pluginKey = getPluginIdentityKey(plugin);
     setQuickParamValues((prev) => ({
       ...prev,
-      [pluginUri]: { ...prev[pluginUri], [symbol]: value },
+      [pluginKey]: { ...prev[pluginKey], [symbol]: value },
     }));
     try {
-      await pluginsApi.setParameter(pluginUri, index, value);
+      await pluginsApi.setParameter(plugin.uri, index, value, plugin.instance_id, plugin.position);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update parameter');
     }
@@ -952,22 +980,37 @@ export default function ChainBuilder() {
   };
 
   const handleInsertUtility = async (utilityUri: string) => {
-    if (!selectedChain || !insertTargetUri) return;
+    if (!selectedChain || !insertTargetPlugin) return;
     try {
-      await chainsApi.addPlugin(selectedChain.id, utilityUri);
+      const addResult = await chainsApi.addPlugin(selectedChain.id, utilityUri);
       const updated = await chainsApi.get(selectedChain.id);
-      // Reorder: place utility before target
-      const uris = (updated.plugins || []).map((p: any) => p.uri);
-      const without = uris.filter((u: string) => u !== utilityUri);
-      const idx = without.indexOf(insertTargetUri);
-      const newOrder = idx >= 0
-        ? [...without.slice(0, idx), utilityUri, ...without.slice(idx)]
-        : [...without, utilityUri];
-      await chainsApi.reorderPlugins(selectedChain.id, newOrder);
+      const addedPosition = typeof addResult.plugin_position === 'number' ? addResult.plugin_position : null;
+      const currentOrder = (updated.plugins || []).map((plugin) => buildPluginOrderRef(plugin));
+      const addedIndex = currentOrder.findIndex((pluginRef) => (
+        pluginRef.uri === utilityUri
+        && (addedPosition === null || pluginRef.position === addedPosition)
+      ));
+      const targetIndex = currentOrder.findIndex((pluginRef) => (
+        pluginRef.uri === insertTargetPlugin.uri && pluginRef.position === insertTargetPlugin.position
+      ));
+      if (addedIndex < 0) {
+        throw new Error('Inserted utility could not be resolved after add')
+      }
+      const nextOrder = [...currentOrder];
+      const [addedPlugin] = nextOrder.splice(addedIndex, 1);
+      const insertionIndex = targetIndex >= 0 ? nextOrder.findIndex((pluginRef) => (
+        pluginRef.uri === insertTargetPlugin.uri && pluginRef.position === insertTargetPlugin.position
+      )) : -1;
+      if (insertionIndex >= 0) {
+        nextOrder.splice(insertionIndex, 0, addedPlugin);
+      } else {
+        nextOrder.push(addedPlugin);
+      }
+      await chainsApi.reorderPlugins(selectedChain.id, nextOrder);
       const finalChain = await chainsApi.get(selectedChain.id);
       setSelectedChain(finalChain);
       setInsertDialogOpen(false);
-      setInsertTargetUri(null);
+      setInsertTargetPlugin(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to insert utility');
     }
@@ -1400,7 +1443,7 @@ export default function ChainBuilder() {
                       onNodeContextMenu={(node) => {
                         if (node.type === 'audioPlugin') {
                           setSelectedPlugin(node.data.plugin);
-                          setInsertTargetUri(node.data.plugin.uri);
+                          setInsertTargetPlugin(buildPluginOrderRef(node.data.plugin));
                           setInsertDialogOpen(true);
                         }
                       }}
@@ -1449,7 +1492,7 @@ export default function ChainBuilder() {
                       onNodeContextMenu={(node) => {
                         if (node.type === 'audioPlugin') {
                           setSelectedPlugin(node.data.plugin);
-                          setInsertTargetUri(node.data.plugin.uri);
+                          setInsertTargetPlugin(buildPluginOrderRef(node.data.plugin));
                           setInsertDialogOpen(true);
                         }
                       }}
@@ -1485,7 +1528,9 @@ export default function ChainBuilder() {
                     plugins={(selectedChain?.plugins || []).map((p: any) => ({
                       uri: p.uri,
                       name: p.name,
-                      latencySamples: pluginPerformance[p.uri]?.latencySamples || 0,
+                      latencySamples: pluginPerformance[getPluginIdentityKey(p)]?.latencySamples
+                        ?? pluginPerformance[p.uri]?.latencySamples
+                        ?? 0,
                       isCompensated: true,
                     }))}
                     sampleRate={48000}
@@ -1725,7 +1770,7 @@ export default function ChainBuilder() {
       </Box>
 
       {/* Insert Utility Dialog */}
-      <Dialog open={insertDialogOpen} onClose={() => { setInsertDialogOpen(false); setInsertTargetUri(null); }} maxWidth="sm" fullWidth>
+      <Dialog open={insertDialogOpen} onClose={() => { setInsertDialogOpen(false); setInsertTargetPlugin(null); }} maxWidth="sm" fullWidth>
         <DialogTitle>Insert Utility Before Selected</DialogTitle>
         <DialogContent dividers>
           {utilityPlugins.length === 0 ? (
@@ -1749,7 +1794,7 @@ export default function ChainBuilder() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setInsertDialogOpen(false); setInsertTargetUri(null); }}>Close</Button>
+          <Button onClick={() => { setInsertDialogOpen(false); setInsertTargetPlugin(null); }}>Close</Button>
         </DialogActions>
       </Dialog>
 

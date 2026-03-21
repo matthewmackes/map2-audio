@@ -235,7 +235,9 @@ export function useCustomTopic<T = any>(
 export function useBatchedParameter(
   pluginUri: string,
   paramIndex: number,
-  initialValue: number = 0
+  initialValue: number = 0,
+  instanceId?: number,
+  pluginPosition?: number,
 ) {
   const [value, setValue] = useState(initialValue);
   const [isPending, setIsPending] = useState(false);
@@ -249,14 +251,14 @@ export function useBatchedParameter(
       try {
         // Use dynamic import to get the batched API
         const { pluginsApi } = await import('../api');
-        await pluginsApi.setParameterBatched(pluginUri, paramIndex, newValue);
+        await pluginsApi.setParameterBatched(pluginUri, paramIndex, newValue, instanceId, pluginPosition);
       } catch (error) {
         console.error('Failed to update parameter:', error);
       } finally {
         setIsPending(false);
       }
     },
-    [pluginUri, paramIndex]
+    [instanceId, pluginPosition, pluginUri, paramIndex]
   );
 
   // Flush pending updates (call on mouse up / touch end)

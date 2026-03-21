@@ -29,7 +29,7 @@ interface JuceGridChainManagementCardProps {
   /** Plugin metadata lookup (URI → Plugin) passed from parent to avoid duplicate fetch */
   pluginMeta?: Record<string, Plugin>
   /** Called when a plugin chip is clicked — selects the chain and opens that plugin's editor */
-  onPluginChipClick?: (chainId: number, pluginUri: string) => void
+  onPluginChipClick?: (chainId: number, pluginUri: string, pluginPosition: number) => void
 }
 
 export function JuceGridChainManagementCard({
@@ -324,7 +324,7 @@ export function JuceGridChainManagementCard({
                                   onClick={onPluginChipClick ? (e) => {
                                     e.stopPropagation()
                                     onChainSelect?.(chain.id)
-                                    onPluginChipClick(chain.id, plugin.uri)
+                                    onPluginChipClick(chain.id, plugin.uri, plugin.position)
                                   } : undefined}
                                 >
                                   {label}

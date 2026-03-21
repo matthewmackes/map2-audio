@@ -13,6 +13,7 @@ import type {
   LoopInsertion,
   ChainTemplate,
   Plugin,
+  PluginOrderRef,
   Snapshot,
   SnapshotCategory,
   CreateSnapshotRequest,
@@ -186,6 +187,8 @@ interface ParameterUpdate {
   plugin_uri: string;
   param_index: number;
   value: number;
+  instance_id?: number;
+  plugin_position?: number;
 }
 
 class ParameterBatcher {
@@ -199,20 +202,46 @@ class ParameterBatcher {
   /**
    * Queue a parameter update for batched sending
    */
-  async queueUpdate(pluginUri: string, paramIndex: number, value: number): Promise<void> {
+  private static updateIdentityKey(update: Pick<ParameterUpdate, 'plugin_uri' | 'param_index' | 'instance_id' | 'plugin_position'>): string {
+    if (typeof update.instance_id === 'number' && Number.isFinite(update.instance_id) && update.instance_id > 0) {
+      return `instance:${update.instance_id}:${update.param_index}`
+    }
+    if (typeof update.plugin_position === 'number' && Number.isFinite(update.plugin_position) && update.plugin_position >= 0) {
+      return `position:${update.plugin_uri}:${update.plugin_position}:${update.param_index}`
+    }
+    return `uri:${update.plugin_uri}:${update.param_index}`
+  }
+
+  async queueUpdate(
+    pluginUri: string,
+    paramIndex: number,
+    value: number,
+    instanceId?: number,
+    pluginPosition?: number,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
+      const normalizedInstanceId = typeof instanceId === 'number' && Number.isFinite(instanceId) && instanceId > 0
+        ? Math.trunc(instanceId)
+        : undefined
+      const normalizedPluginPosition = typeof pluginPosition === 'number' && Number.isFinite(pluginPosition) && pluginPosition >= 0
+        ? Math.trunc(pluginPosition)
+        : undefined
+      const nextUpdate: ParameterUpdate = {
+        plugin_uri: pluginUri,
+        param_index: paramIndex,
+        value,
+        ...(normalizedInstanceId !== undefined ? { instance_id: normalizedInstanceId } : {}),
+        ...(normalizedPluginPosition !== undefined ? { plugin_position: normalizedPluginPosition } : {}),
+      }
+
       // Replace any existing update for the same parameter
       const existingIndex = this.queue.findIndex(
-        (u) => u.plugin_uri === pluginUri && u.param_index === paramIndex
+        (u) => ParameterBatcher.updateIdentityKey(u) === ParameterBatcher.updateIdentityKey(nextUpdate)
       );
       if (existingIndex >= 0) {
-        this.queue[existingIndex].value = value;
+        this.queue[existingIndex] = nextUpdate;
       } else {
-        this.queue.push({
-          plugin_uri: pluginUri,
-          param_index: paramIndex,
-          value,
-        });
+        this.queue.push(nextUpdate);
       }
 
       this.pendingPromises.push({ resolve, reject });
@@ -769,12 +798,12 @@ export const chainsApi = {
     )
   },
 
-  reorderPlugins: (chainId: number, pluginUris: string[], nodeId?: string | null) =>
-    fetchJson<{ status: string; chain_id: number; plugins: string[] }>(
+  reorderPlugins: (chainId: number, pluginOrder: PluginOrderRef[], nodeId?: string | null) =>
+    fetchJson<{ status: string; chain_id: number; plugins: PluginOrderRef[] }>(
       appendNodeQuery(`${API_BASE}/chains/${chainId}/reorder`, nodeId),
       {
         method: 'POST',
-        body: JSON.stringify(pluginUris),
+        body: JSON.stringify(pluginOrder),
       }
     ),
 
@@ -1055,19 +1084,27 @@ export const pluginsApi = {
   getParameters: (uri: string) =>
     fetchJson<{ uri: string; parameters: unknown[] }>(`${API_BASE}/plugins/${encodeURIComponent(uri)}/parameters`),
 
-  setParameter: (uri: string, paramIndex: number, value: number) =>
-    fetchJson<{ uri: string; param: number; value: number }>(
-      `${API_BASE}/plugins/${encodeURIComponent(uri)}/parameters/${paramIndex}?value=${value}`,
+  setParameter: (uri: string, paramIndex: number, value: number, instanceId?: number, pluginPosition?: number) => {
+    const params = new URLSearchParams({ value: String(value) })
+    if (typeof instanceId === 'number' && Number.isFinite(instanceId) && instanceId > 0) {
+      params.set('instance_id', String(Math.trunc(instanceId)))
+    }
+    if (typeof pluginPosition === 'number' && Number.isFinite(pluginPosition) && pluginPosition >= 0) {
+      params.set('plugin_position', String(Math.trunc(pluginPosition)))
+    }
+    return fetchJson<{ uri: string; param: number; value: number }>(
+      `${API_BASE}/plugins/${encodeURIComponent(uri)}/parameters/${paramIndex}?${params.toString()}`,
       { method: 'POST' }
-    ),
+    )
+  },
 
   /**
    * Queue a parameter update for batched sending.
    * Multiple rapid parameter updates are combined into a single API call.
    * Ideal for real-time knob/slider adjustments.
    */
-  setParameterBatched: (uri: string, paramIndex: number, value: number) =>
-    parameterBatcher.queueUpdate(uri, paramIndex, value),
+  setParameterBatched: (uri: string, paramIndex: number, value: number, instanceId?: number, pluginPosition?: number) =>
+    parameterBatcher.queueUpdate(uri, paramIndex, value, instanceId, pluginPosition),
 
   /**
    * Immediately flush any pending batched parameter updates.
@@ -1084,7 +1121,7 @@ export const pluginsApi = {
    * Send multiple parameter updates in a single request.
    * Use this for programmatic bulk updates (e.g., loading a preset).
    */
-  batchSetParameters: (updates: Array<{ uri: string; paramIndex: number; value: number }>) =>
+  batchSetParameters: (updates: Array<{ uri: string; paramIndex: number; value: number; instanceId?: number; pluginPosition?: number }>) =>
     fetchJson<{
       status: string;
       applied: number;
@@ -1098,6 +1135,12 @@ export const pluginsApi = {
           plugin_uri: u.uri,
           param_index: u.paramIndex,
           value: u.value,
+          ...(typeof u.instanceId === 'number' && Number.isFinite(u.instanceId) && u.instanceId > 0
+            ? { instance_id: Math.trunc(u.instanceId) }
+            : {}),
+          ...(typeof u.pluginPosition === 'number' && Number.isFinite(u.pluginPosition) && u.pluginPosition >= 0
+            ? { plugin_position: Math.trunc(u.pluginPosition) }
+            : {}),
         })),
       }),
     }),

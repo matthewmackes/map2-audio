@@ -98,8 +98,9 @@ import { MapAudioGridIcon } from '../components/icons/map'
 import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { SnapshotModal } from '../components/snapshots/SnapshotModal'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
-import type { Chain, Plugin, HistoryStatus, FlowSnapshot, FlowSnapshotData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus } from '../../map2/types'
+import type { Chain, Plugin, PluginOrderRef, HistoryStatus, FlowSnapshot, FlowSnapshotData, ChainSnapshot, ChainsResponse, Snapshot, MIDIMappingV2, MIDIStatus } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
 import { sortPluginsForBrowser } from '../utils/pluginBrowserSort'
 import { JuceGridAudioPortModal } from './JuceGridAudioPortModal'
 import { JuceGridChainManagementCard } from './JuceGridChainManagementCard'
@@ -126,6 +127,8 @@ import {
 import './JuceGridPage.css'
 import { PerformPage } from './PerformPage'
 import { ExpressionOverlay } from '../components/PluginCards/Dialogs/ExpressionOverlay'
+import { PluginCardRouter } from '../components/PluginCards'
+import { resolveLivePluginCardStrategy } from '../components/PluginCards/liveEditorRouting'
 import type { CcChannelPair } from './ExpressionPage'
 
 const API_BASE = (() => {
@@ -351,7 +354,9 @@ type MidiRangeDraft = {
 
 type ReorderPreviewState = {
   pluginUri: string
+  pluginPosition: number
   targetUri: string
+  targetPosition: number
   direction: ReorderDirection
 } | null
 
@@ -577,21 +582,47 @@ function loadInitialJuceGridState(): { flowSlots: FlowSlot[]; routing: RoutingCo
 
 function loadInitialPluginPersistence(): {
   selectedPluginUri: string | null
+  selectedPluginPosition: number | null
   effectModalOpen: boolean
   scrollTop: number
 } {
   try {
-    const selectedPluginUri = localStorage.getItem(JUCE_GRID_SELECTED_PLUGIN_KEY)
+    const rawSelectedPlugin = localStorage.getItem(JUCE_GRID_SELECTED_PLUGIN_KEY)
+    let selectedPluginUri: string | null = null
+    let selectedPluginPosition: number | null = null
+
+    if (rawSelectedPlugin) {
+      try {
+        const parsed = JSON.parse(rawSelectedPlugin)
+        if (typeof parsed === 'string') {
+          selectedPluginUri = parsed || null
+        } else if (parsed && typeof parsed === 'object') {
+          const uri = typeof parsed.uri === 'string' ? parsed.uri.trim() : ''
+          if (uri) {
+            selectedPluginUri = uri
+          }
+          const parsedPosition = Number.parseInt(String(parsed.position ?? ''), 10)
+          if (Number.isFinite(parsedPosition) && parsedPosition >= 0) {
+            selectedPluginPosition = parsedPosition
+          }
+        }
+      } catch {
+        selectedPluginUri = rawSelectedPlugin || null
+      }
+    }
+
     const effectModalOpen = localStorage.getItem(JUCE_GRID_EFFECT_MODAL_OPEN_KEY) === 'true'
     const rawScrollTop = Number.parseFloat(localStorage.getItem(JUCE_GRID_SCROLL_TOP_KEY) ?? '0')
     return {
-      selectedPluginUri: selectedPluginUri || null,
+      selectedPluginUri,
+      selectedPluginPosition,
       effectModalOpen,
       scrollTop: Number.isFinite(rawScrollTop) ? Math.max(0, rawScrollTop) : 0,
     }
   } catch {
     return {
       selectedPluginUri: null,
+      selectedPluginPosition: null,
       effectModalOpen: false,
       scrollTop: 0,
     }
@@ -644,6 +675,7 @@ export function JuceGridPage() {
 
   // UI State
   const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(initialPluginPersistence.selectedPluginUri)
+  const [selectedPluginPosition, setSelectedPluginPosition] = useState<number | null>(initialPluginPersistence.selectedPluginPosition)
   const [effectModalOpen, setEffectModalOpen] = useState(initialPluginPersistence.effectModalOpen)
   const [showPluginBrowser, setShowPluginBrowser] = useState(false)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
@@ -669,8 +701,6 @@ export function JuceGridPage() {
   const [favoritePlugins, setFavoritePlugins] = useState<Set<string>>(new Set())
   const [pluginLevels, setPluginLevels] = useState<Record<string, { in: number; out: number }>>({})
   const [wetDryMixes, setWetDryMixes] = useState<Record<string, number>>({})
-  const [draggedPluginUri, setDraggedPluginUri] = useState<string | null>(null)
-  const [dragOverPluginUri, setDragOverPluginUri] = useState<string | null>(null)
   const [reorderPreview, setReorderPreview] = useState<ReorderPreviewState>(null)
   const bottomEditorTouchStartYRef = useRef<number | null>(null)
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
@@ -735,6 +765,11 @@ export function JuceGridPage() {
   const [automationLanes, setAutomationLanes] = useState<AutomationLane[]>([])
   const [lanePickerOpen, setLanePickerOpen] = useState(false)
 
+  const setSelectedPluginSelection = useCallback((uri: string | null, position?: number | null) => {
+    setSelectedPluginUri(uri)
+    setSelectedPluginPosition(uri && typeof position === 'number' && Number.isFinite(position) ? position : null)
+  }, [])
+
   const signalAutomationSummary = useMemo(() => {
     const laneCountByPlugin: Record<string, number> = {}
     const armedLaneCountByPlugin: Record<string, number> = {}
@@ -780,12 +815,15 @@ export function JuceGridPage() {
   useEffect(() => {
     try {
       if (selectedPluginUri) {
-        localStorage.setItem(JUCE_GRID_SELECTED_PLUGIN_KEY, selectedPluginUri)
+        localStorage.setItem(JUCE_GRID_SELECTED_PLUGIN_KEY, JSON.stringify({
+          uri: selectedPluginUri,
+          position: selectedPluginPosition,
+        }))
       } else {
         localStorage.removeItem(JUCE_GRID_SELECTED_PLUGIN_KEY)
       }
     } catch {}
-  }, [selectedPluginUri])
+  }, [selectedPluginPosition, selectedPluginUri])
 
   useEffect(() => {
     try {
@@ -893,7 +931,7 @@ export function JuceGridPage() {
   })
 
   const midiMappingsQuery = useQuery({
-    queryKey: ['midi', 'mappings', 'juce-grid', midiScope, activeFlowChainId, selectedPluginUri ?? null],
+    queryKey: ['midi', 'mappings', 'juce-grid', midiScope, activeFlowChainId, selectedPluginUri ?? null, selectedPluginPosition ?? null],
     queryFn: () => {
       if (midiScope === 'selected-plugin' && selectedPluginUri) {
         return midiApiV2.getMappings({
@@ -1276,8 +1314,11 @@ export function JuceGridPage() {
 
   const selectedPlugin = useMemo(() => {
     if (!selectedPluginUri || !currentChain) return null
-    return currentChain.plugins.find((p) => p.uri === selectedPluginUri) || null
-  }, [selectedPluginUri, currentChain])
+    return currentChain.plugins.find((plugin) => (
+      plugin.uri === selectedPluginUri
+      && (typeof selectedPluginPosition !== 'number' || plugin.position === selectedPluginPosition)
+    )) || null
+  }, [selectedPluginPosition, selectedPluginUri, currentChain])
 
   const selectedPluginMeta = useMemo(() => {
     if (!selectedPluginUri) return null
@@ -1290,6 +1331,34 @@ export function JuceGridPage() {
     }
     return meta || null
   }, [selectedPluginUri, pluginMeta, pluginsQuery.status, pluginsQuery.data?.plugins?.length])
+
+  const selectedPluginCard = useMemo(() => {
+    if (!selectedPlugin || !selectedPluginMeta) {
+      return null
+    }
+
+    const selectedParameters = selectedPlugin.parameters || {}
+
+    return {
+      ...selectedPluginMeta,
+      name: selectedPluginMeta.name || selectedPlugin.name,
+      bypassed: selectedPlugin.bypassed,
+      instance_id: selectedPlugin.instance_id ?? selectedPluginMeta.instance_id,
+      latency_samples: selectedPlugin.latency_samples ?? selectedPluginMeta.latency_samples,
+      parameters: selectedPluginMeta.parameters.map((parameter) => ({
+        ...parameter,
+        value: selectedParameters[parameter.symbol] ?? parameter.value ?? parameter.default,
+      })),
+    }
+  }, [selectedPlugin, selectedPluginMeta])
+
+  const selectedPluginCardStrategy = useMemo(() => {
+    if (!selectedPluginCard) {
+      return null
+    }
+
+    return resolveLivePluginCardStrategy(selectedPluginCard.uri, selectedPluginCard.category)
+  }, [selectedPluginCard])
 
   useEffect(() => {
     if (selectedPluginUri && chainsQuery.isPending) {
@@ -1855,8 +1924,8 @@ export function JuceGridPage() {
   })
 
   const reorderMutation = useMutation({
-    mutationFn: ({ chainId, pluginUris }: { chainId: number; pluginUris: string[] }) =>
-      chainsApi.reorderPlugins(chainId, pluginUris),
+    mutationFn: ({ chainId, pluginOrder }: { chainId: number; pluginOrder: PluginOrderRef[] }) =>
+      chainsApi.reorderPlugins(chainId, pluginOrder),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       markSnapshotsDirty()
@@ -1868,8 +1937,8 @@ export function JuceGridPage() {
   })
 
   const bypassMutation = useMutation({
-    mutationFn: ({ chainId, pluginUri, bypass }: { chainId: number; pluginUri: string; bypass: boolean }) =>
-      chainsApi.togglePluginBypass(chainId, pluginUri, bypass),
+    mutationFn: ({ chainId, pluginUri, bypass, pluginPosition }: { chainId: number; pluginUri: string; bypass: boolean; pluginPosition?: number }) =>
+      chainsApi.togglePluginBypass(chainId, pluginUri, bypass, pluginPosition),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       markSnapshotsDirty()
@@ -1880,6 +1949,7 @@ export function JuceGridPage() {
   type PluginMutationContext = {
     previousChains?: ChainsResponse
     previousSelectedPluginUri: string | null
+    previousSelectedPluginPosition: number | null
   }
 
   type AddPluginMutationContext = PluginMutationContext & {
@@ -1894,6 +1964,7 @@ export function JuceGridPage() {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
       const previousSelectedPluginUri = selectedPluginUri
+      const previousSelectedPluginPosition = selectedPluginPosition
 
       updateChainPluginsCache(variables.chainId, (plugins) => {
         if (typeof variables.pluginPosition !== 'number') {
@@ -1903,13 +1974,20 @@ export function JuceGridPage() {
           (plugin) => !(plugin.uri === variables.pluginUri && plugin.position === variables.pluginPosition)
         )
       })
-      if (selectedPluginUri === variables.pluginUri) {
-        setSelectedPluginUri(null)
+      if (
+        selectedPluginUri === variables.pluginUri
+        && (
+          typeof variables.pluginPosition !== 'number'
+          || selectedPluginPosition === variables.pluginPosition
+        )
+      ) {
+        setSelectedPluginSelection(null)
       }
 
       return {
         previousChains,
         previousSelectedPluginUri,
+        previousSelectedPluginPosition,
       }
     },
     onSuccess: () => {
@@ -1919,7 +1997,10 @@ export function JuceGridPage() {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
-      setSelectedPluginUri(context?.previousSelectedPluginUri ?? null)
+      setSelectedPluginSelection(
+        context?.previousSelectedPluginUri ?? null,
+        context?.previousSelectedPluginPosition ?? null,
+      )
       pushToast(`Failed to remove: ${error}`, 'error')
     },
     onSettled: () => {
@@ -1935,6 +2016,7 @@ export function JuceGridPage() {
       await queryClient.cancelQueries({ queryKey: ['chains'] })
       const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
       const previousSelectedPluginUri = selectedPluginUri
+      const previousSelectedPluginPosition = selectedPluginPosition
       const previousShowPluginBrowser = showPluginBrowser
       const previousPluginSearchQuery = pluginSearchQuery
       const meta = pluginMeta[variables.pluginUri]
@@ -1963,6 +2045,7 @@ export function JuceGridPage() {
       return {
         previousChains,
         previousSelectedPluginUri,
+        previousSelectedPluginPosition,
         previousShowPluginBrowser,
         previousPluginSearchQuery,
       }
@@ -1974,7 +2057,10 @@ export function JuceGridPage() {
       if (context?.previousChains) {
         queryClient.setQueryData(['chains'], context.previousChains)
       }
-      setSelectedPluginUri(context?.previousSelectedPluginUri ?? null)
+      setSelectedPluginSelection(
+        context?.previousSelectedPluginUri ?? null,
+        context?.previousSelectedPluginPosition ?? null,
+      )
       setShowPluginBrowser(context?.previousShowPluginBrowser ?? false)
       setPluginSearchQuery(context?.previousPluginSearchQuery ?? '')
       pushToast(`Failed to add: ${error}`, 'error')
@@ -2263,14 +2349,14 @@ export function JuceGridPage() {
     setEffectModalOpen(true)
   }, [])
 
-  const handlePluginSelect = useCallback((uri: string) => {
-    if (selectedPluginUri === uri && effectModalOpen) {
+  const handlePluginSelect = useCallback((uri: string, position: number) => {
+    if (selectedPluginUri === uri && selectedPluginPosition === position && effectModalOpen) {
       setEffectModalOpen(false)
       return
     }
 
-    setSelectedPluginUri(uri)
-    if (isTabletTouchLayout && selectedPluginUri !== uri) {
+    setSelectedPluginSelection(uri, position)
+    if (isTabletTouchLayout && (selectedPluginUri !== uri || selectedPluginPosition !== position)) {
       return
     }
 
@@ -2278,7 +2364,15 @@ export function JuceGridPage() {
     if (isCompactLayout) {
       setCompactTab('editor')
     }
-  }, [effectModalOpen, isCompactLayout, isTabletTouchLayout, openEffectModal, selectedPluginUri])
+  }, [
+    effectModalOpen,
+    isCompactLayout,
+    isTabletTouchLayout,
+    openEffectModal,
+    selectedPluginPosition,
+    selectedPluginUri,
+    setSelectedPluginSelection,
+  ])
 
   const handleCloseEffectModal = useCallback(() => {
     setEffectModalOpen(false)
@@ -2332,9 +2426,9 @@ export function JuceGridPage() {
     }
   }, [selectFlowIndex])
 
-  const handleToggleBypass = useCallback((uri: string, bypassed: boolean) => {
+  const handleToggleBypass = useCallback((uri: string, bypassed: boolean, position: number) => {
     if (!currentChain) return
-    bypassMutation.mutate({ chainId: currentChain.id, pluginUri: uri, bypass: bypassed })
+    bypassMutation.mutate({ chainId: currentChain.id, pluginUri: uri, bypass: bypassed, pluginPosition: position })
   }, [currentChain, bypassMutation])
 
   const handleDeletePlugin = useCallback((uri: string, position?: number) => {
@@ -2342,9 +2436,9 @@ export function JuceGridPage() {
     deleteMutation.mutate({ chainId: currentChain.id, pluginUri: uri, pluginPosition: position })
   }, [currentChain, deleteMutation])
 
-  const handleReorderPlugins = useCallback((pluginUris: string[]) => {
+  const handleReorderPlugins = useCallback((pluginOrder: PluginOrderRef[]) => {
     if (!currentChain) return
-    reorderMutation.mutate({ chainId: currentChain.id, pluginUris })
+    reorderMutation.mutate({ chainId: currentChain.id, pluginOrder })
   }, [currentChain, reorderMutation])
 
   const moveSelectedPlugin = useCallback((direction: ReorderDirection) => {
@@ -2353,7 +2447,10 @@ export function JuceGridPage() {
     }
 
     const plugins = [...currentChain.plugins]
-    const currentIndex = plugins.findIndex((plugin) => plugin.uri === selectedPluginUri)
+    const currentIndex = plugins.findIndex((plugin) => (
+      plugin.uri === selectedPluginUri
+      && (typeof selectedPluginPosition !== 'number' || plugin.position === selectedPluginPosition)
+    ))
     if (currentIndex < 0) {
       return
     }
@@ -2370,14 +2467,16 @@ export function JuceGridPage() {
 
     setReorderPreview({
       pluginUri: movedPlugin.uri,
+      pluginPosition: movedPlugin.position,
       targetUri: targetPlugin.uri,
+      targetPosition: targetPlugin.position,
       direction,
     })
     reorderMutation.mutate({
       chainId: currentChain.id,
-      pluginUris: plugins.map((plugin) => plugin.uri),
+      pluginOrder: plugins.map((plugin) => buildPluginOrderRef(plugin)),
     })
-  }, [currentChain, reorderMutation, selectedPluginUri])
+  }, [currentChain, reorderMutation, selectedPluginPosition, selectedPluginUri])
 
   const handleAddPlugin = useCallback(() => {
     setShowPluginBrowser(true)
@@ -2499,7 +2598,13 @@ export function JuceGridPage() {
       return
     }
 
-    pluginsApi.setParameterBatched(selectedPluginUri, paramIndex, value)
+    pluginsApi.setParameterBatched(
+      selectedPluginUri,
+      paramIndex,
+      value,
+      selectedPlugin.instance_id,
+      selectedPlugin.position,
+    )
   }, [
     currentChain,
     midiLearnActive,
@@ -2507,6 +2612,7 @@ export function JuceGridPage() {
     pushToast,
     selectedPlugin,
     selectedPluginMeta,
+    selectedPluginPosition,
     selectedPluginUri,
     startMidiLearnMutation,
   ])
@@ -2523,6 +2629,7 @@ export function JuceGridPage() {
       chainId: currentChain.id,
       pluginUri: selectedPlugin.uri,
       bypass: !selectedPlugin.bypassed,
+      pluginPosition: selectedPlugin.position,
     })
   }, [selectedPlugin, currentChain, bypassMutation])
 
@@ -2602,14 +2709,11 @@ export function JuceGridPage() {
         : slot
     )))
 
-    setSelectedPluginUri((previous) => {
-      if (!currentChain || currentChain.id !== chainId) {
-        return previous
-      }
-      return null
-    })
+    if (currentChain && currentChain.id === chainId) {
+      setSelectedPluginSelection(null)
+    }
     markSnapshotsDirty()
-  }, [currentChain, markSnapshotsDirty])
+  }, [currentChain, markSnapshotsDirty, setSelectedPluginSelection])
 
   const submitRenameChain = useCallback(() => {
     const normalizedName = renameChainName.trim()
@@ -2688,49 +2792,6 @@ export function JuceGridPage() {
   const handleWetDryChange = useCallback((uri: string, value: number) => {
     setWetDryMixes(prev => ({ ...prev, [uri]: value }))
   }, [])
-
-  // Drag and drop handlers
-  const handleDragStart = useCallback((e: React.DragEvent, uri: string) => {
-    setDraggedPluginUri(uri)
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', uri)
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent, uri: string) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    if (draggedPluginUri && uri !== draggedPluginUri) {
-      setDragOverPluginUri(uri)
-    }
-  }, [draggedPluginUri])
-
-  const handleDragEnd = useCallback(() => {
-    setDraggedPluginUri(null)
-    setDragOverPluginUri(null)
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent, dropUri: string) => {
-    e.preventDefault()
-    if (!currentChain || !draggedPluginUri || draggedPluginUri === dropUri) {
-      handleDragEnd()
-      return
-    }
-
-    const plugins = [...currentChain.plugins]
-    const dragIdx = plugins.findIndex(p => p.uri === draggedPluginUri)
-    const dropIdx = plugins.findIndex(p => p.uri === dropUri)
-
-    if (dragIdx !== -1 && dropIdx !== -1) {
-      const [dragged] = plugins.splice(dragIdx, 1)
-      plugins.splice(dropIdx, 0, dragged)
-      reorderMutation.mutate({
-        chainId: currentChain.id,
-        pluginUris: plugins.map(p => p.uri),
-      })
-    }
-
-    handleDragEnd()
-  }, [currentChain, draggedPluginUri, reorderMutation, handleDragEnd])
 
   // Show plugin details
   const handleShowDetails = useCallback((plugin: Plugin) => {
@@ -3355,7 +3416,7 @@ export function JuceGridPage() {
           const fallbackIndex = e.key === 'ArrowLeft' ? currentChain.plugins.length - 1 : 0
           const fallbackPlugin = currentChain.plugins[fallbackIndex]
           if (fallbackPlugin) {
-            setSelectedPluginUri(fallbackPlugin.uri)
+            setSelectedPluginSelection(fallbackPlugin.uri, fallbackPlugin.position)
             openEffectModal()
           }
           return
@@ -3379,7 +3440,7 @@ export function JuceGridPage() {
         else if (showKeyboardHelp) setShowKeyboardHelp(false)
         else if (detailsPlugin) setDetailsPlugin(null)
         else if (effectModalOpen) setEffectModalOpen(false)
-        else if (selectedPluginUri) setSelectedPluginUri(null)
+        else if (selectedPluginUri) setSelectedPluginSelection(null)
         return
       }
     }
@@ -3392,7 +3453,7 @@ export function JuceGridPage() {
     flowSlots, showSavePresetModal, showRenameChainModal, presetPendingDelete,
     showClearFlowsModal, snapshotsModalOpen, midiModalOpen, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen,
-    handleSavePreset, toggleFavorite, selectFlowIndex, openEffectModal, moveSelectedPlugin,
+    handleSavePreset, toggleFavorite, selectFlowIndex, openEffectModal, moveSelectedPlugin, setSelectedPluginSelection,
   ])
 
   // ============================================================================
@@ -3668,16 +3729,19 @@ export function JuceGridPage() {
                 chain={flowChain || null}
                 pluginMeta={pluginMeta}
                 selectedPluginUri={isActive ? selectedPluginUri : null}
+                selectedPluginPosition={isActive ? selectedPluginPosition : null}
                 reorderPreviewUri={isActive ? reorderPreview?.pluginUri ?? null : null}
+                reorderPreviewPosition={isActive ? reorderPreview?.pluginPosition ?? null : null}
                 reorderTargetUri={isActive ? reorderPreview?.targetUri ?? null : null}
+                reorderTargetPosition={isActive ? reorderPreview?.targetPosition ?? null : null}
                 reorderPreviewDirection={isActive ? reorderPreview?.direction ?? null : null}
-                onPluginSelect={(uri) => {
+                onPluginSelect={(uri, position) => {
                   selectFlowIndex(index)
-                  handlePluginSelect(uri)
+                  handlePluginSelect(uri, position)
                 }}
-                onToggleBypass={(uri, bypassed) => {
+                onToggleBypass={(uri, bypassed, position) => {
                   if (!flowChain) return
-                  bypassMutation.mutate({ chainId: flowChain.id, pluginUri: uri, bypass: bypassed })
+                  bypassMutation.mutate({ chainId: flowChain.id, pluginUri: uri, bypass: bypassed, pluginPosition: position })
                 }}
                 onDeletePlugin={(uri, position) => {
                   if (!flowChain) return
@@ -3687,9 +3751,9 @@ export function JuceGridPage() {
                     pluginPosition: position,
                   })
                 }}
-                onReorderPlugins={(pluginUris) => {
+                onReorderPlugins={(pluginOrder) => {
                   if (!flowChain) return
-                  reorderMutation.mutate({ chainId: flowChain.id, pluginUris })
+                  reorderMutation.mutate({ chainId: flowChain.id, pluginOrder })
                 }}
                 onAddPlugin={handleAddPlugin}
                 audioStatus={audioInterfaceStatus}
@@ -3782,7 +3846,10 @@ export function JuceGridPage() {
 
   const SelectedPluginHeroIcon = getSelectedPluginHeroIcon(selectedPluginMeta, selectedPlugin)
   const selectedPluginIndex = selectedPlugin && currentChain
-    ? currentChain.plugins.findIndex((plugin) => plugin.uri === selectedPlugin.uri)
+    ? currentChain.plugins.findIndex((plugin) => (
+      plugin.uri === selectedPlugin.uri
+      && plugin.position === selectedPlugin.position
+    ))
     : -1
   const canMoveSelectedPluginLeft = selectedPluginIndex > 0
   const canMoveSelectedPluginRight = selectedPluginIndex >= 0 && currentChain
@@ -4091,16 +4158,33 @@ export function JuceGridPage() {
             </div>
 
             <div className="juce-grid-page__bottom-editor-body">
-              <JuceGridParameterEditor
-                plugin={selectedPlugin}
-                meta={selectedPluginMeta}
-                onParameterChange={handleParameterChange}
-                onParameterChangeEnd={handleParameterChangeEnd}
-                onToggleBypass={handleToggleSelectedBypass}
-                onRefreshPlugins={handleRefreshPlugins}
-                isRefreshing={isRefreshingPlugins}
-                touchMode={isTabletTouchLayout}
-              />
+              {selectedPluginCard
+                && selectedPluginCardStrategy
+                && selectedPluginCardStrategy.renderMode !== 'generic'
+                && selectedPluginMeta
+                && selectedPluginMeta.format !== 'Hardware'
+                && !selectedPluginMeta.is_hardware
+                && !selectedPluginMeta.uri.startsWith('hardware://') ? (
+                <PluginCardRouter
+                  plugin={selectedPluginCard}
+                  chainId={currentChain?.id}
+                  pluginPosition={selectedPlugin.position}
+                  showAddToChain={false}
+                  compact={isTabletTouchLayout}
+                  forceTemplate={selectedPluginCardStrategy.renderMode === 'template' ? selectedPluginCardStrategy.template : undefined}
+                />
+              ) : (
+                <JuceGridParameterEditor
+                  plugin={selectedPlugin}
+                  meta={selectedPluginMeta}
+                  onParameterChange={handleParameterChange}
+                  onParameterChangeEnd={handleParameterChangeEnd}
+                  onToggleBypass={handleToggleSelectedBypass}
+                  onRefreshPlugins={handleRefreshPlugins}
+                  isRefreshing={isRefreshingPlugins}
+                  touchMode={isTabletTouchLayout}
+                />
+              )}
             </div>
           </Layer>
         </section>
@@ -4945,12 +5029,12 @@ export function JuceGridPage() {
         }}
         onClose={() => setChainModalFlowId(null)}
         onSelectedChainRemoved={handleChainRemoved}
-        onPluginChipClick={(chainId, pluginUri) => {
+        onPluginChipClick={(chainId, pluginUri, pluginPosition) => {
           if (chainModalFlowId) {
             updateFlow(chainModalFlowId, { chainId })
           }
           setChainModalFlowId(null)
-          handlePluginSelect(pluginUri)
+          handlePluginSelect(pluginUri, pluginPosition)
         }}
         onToggleActive={handleModalToggleActive}
         onDuplicate={handleModalDuplicate}

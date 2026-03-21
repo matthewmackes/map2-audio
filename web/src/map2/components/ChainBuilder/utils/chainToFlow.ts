@@ -3,7 +3,7 @@
 // Converts backend Chain model to React Flow nodes and edges
 // ============================================================================
 
-import { Chain } from '../../../types';
+import { Chain, ChainPlugin } from '../../../types';
 import {
   AudioPluginNode,
   AudioPluginNodeData,
@@ -15,11 +15,12 @@ import {
   createAudioConnectionEdge,
 } from '../edges/AudioConnectionEdgeTypes';
 import { loadNodePositions } from './positionStorage';
+import { getPluginIdentityKey } from '../../../utils/pluginIdentity';
 
 export interface FlowCallbacks {
-  onRemove: (uri: string) => void;
-  onToggleBypass: (uri: string, bypass: boolean) => void;
-  onOpenParameters: (plugin: any) => void;
+  onRemove: (plugin: ChainPlugin) => void;
+  onToggleBypass: (plugin: ChainPlugin) => void;
+  onOpenParameters: (plugin: ChainPlugin) => void;
 }
 
 export interface ChainFlowData {
@@ -71,7 +72,7 @@ export function chainToFlow(
     pluginSidechain?: Record<string, PluginSidechainData>;
     sampleRate?: number;
     expandedMeterPanels?: Set<string>;
-    onToggleMeterPanel?: (uri: string) => void;
+    onToggleMeterPanel?: (plugin: ChainPlugin) => void;
   }
 ): ChainFlowData {
   const savedPositions = loadNodePositions(chain.id);
@@ -99,11 +100,12 @@ export function chainToFlow(
   );
 
   const pluginNodes: AudioPluginNode[] = chain.plugins.map((plugin, index) => {
-    const nodeId = `plugin-${plugin.uri}-${index}`;
+    const pluginKey = getPluginIdentityKey(plugin);
+    const nodeId = `plugin-${pluginKey}`;
 
     const meta = options?.pluginMeta?.[plugin.uri];
-    const perf = options?.pluginPerformance?.[plugin.uri];
-    const sidechain = options?.pluginSidechain?.[plugin.uri];
+    const perf = options?.pluginPerformance?.[pluginKey] ?? options?.pluginPerformance?.[plugin.uri];
+    const sidechain = options?.pluginSidechain?.[pluginKey] ?? options?.pluginSidechain?.[plugin.uri];
     const quickParams = (meta?.parameters || []).filter((p: any) => !p.is_toggled).slice(0, 2);
 
     // Get sidechain info from plugin metadata or sidechain data
@@ -119,8 +121,8 @@ export function chainToFlow(
       inputPorts: plugin.in_ports || 0,
       outputPorts: plugin.out_ports || 0,
       compact: options?.compact,
-      meters: options?.pluginMeters?.[plugin.uri],
-      meterPanelExpanded: options?.expandedMeterPanels?.has(plugin.uri),
+      meters: options?.pluginMeters?.[pluginKey] ?? options?.pluginMeters?.[plugin.uri],
+      meterPanelExpanded: options?.expandedMeterPanels?.has(pluginKey) || options?.expandedMeterPanels?.has(plugin.uri),
       isHardware,
       // Performance and modulation indicators
       cpuPercent: perf?.cpuPercent ?? plugin.cpu_percent,
@@ -137,17 +139,17 @@ export function chainToFlow(
       quickParameters: quickParams.map((p: any) => ({
         name: p.name,
         symbol: p.symbol,
-        value: options?.quickParamValues?.[plugin.uri]?.[p.symbol] ?? p.default,
+        value: options?.quickParamValues?.[pluginKey]?.[p.symbol] ?? options?.quickParamValues?.[plugin.uri]?.[p.symbol] ?? p.default,
         min: p.min,
         max: p.max,
         index: p.index,
       })),
       // Callbacks
-      onRemove: () => callbacks.onRemove(plugin.uri),
-      onToggleBypass: () => callbacks.onToggleBypass(plugin.uri, plugin.bypassed),
+      onRemove: () => callbacks.onRemove(plugin),
+      onToggleBypass: () => callbacks.onToggleBypass(plugin),
       onOpenParameters: () => callbacks.onOpenParameters(plugin),
       onToggleMeterPanel: options?.onToggleMeterPanel
-        ? () => options.onToggleMeterPanel!(plugin.uri)
+        ? () => options.onToggleMeterPanel!(plugin)
         : undefined,
     };
 

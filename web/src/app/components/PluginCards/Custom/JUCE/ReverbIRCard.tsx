@@ -12,7 +12,7 @@ import { ReverbDecayCurve } from '../../Visualizations/ReverbDecayCurve'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 
-const REVERB_IR_URI = 'map2://juce/ir/reverb'
+const REVERB_IR_URI = 'map2://juce/convolution/reverb'
 
 const PARAM = { MIX: 0 } as const
 

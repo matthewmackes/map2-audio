@@ -354,38 +354,109 @@ class JuceEngineService(Singleton):
     
     # Parameter Control
 
-    def _get_instance_id_for_uri(self, plugin_uri: str) -> Optional[int]:
-        """Look up instance_id for a plugin URI in the current chain."""
+    @staticmethod
+    def _pedalboard_item_position(item: Dict[str, Any], fallback_index: int) -> Optional[int]:
+        """Extract a stable chain position hint from a pedalboard item."""
+        for key in ("position", "chain_position", "plugin_position", "slot_index", "order", "index"):
+            raw = item.get(key)
+            try:
+                position = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if position >= 0:
+                return position
+        return fallback_index if fallback_index >= 0 else None
+
+    def _get_instance_id_for_uri(
+        self,
+        plugin_uri: str,
+        plugin_position: Optional[int] = None,
+    ) -> Optional[int]:
+        """Look up an engine instance for a plugin URI, optionally disambiguated by chain position."""
         if not self._engine:
             return None
         try:
             pedalboard = self._engine.get_current_pedalboard()
-            for item in pedalboard.get("items", []):
-                if item.get("uri") == plugin_uri:
-                    return item.get("instance_id")
+            items = pedalboard.get("items", [])
+            if not isinstance(items, list):
+                return None
+
+            matches: List[tuple[int, Dict[str, Any]]] = [
+                (index, item)
+                for index, item in enumerate(items)
+                if isinstance(item, dict) and item.get("uri") == plugin_uri
+            ]
+            if not matches:
+                return None
+
+            if isinstance(plugin_position, int) and plugin_position >= 0:
+                for index, item in matches:
+                    item_position = self._pedalboard_item_position(item, index)
+                    if item_position == plugin_position:
+                        instance_id = item.get("instance_id")
+                        if isinstance(instance_id, int) and instance_id > 0:
+                            return instance_id
+
+            for _index, item in matches:
+                instance_id = item.get("instance_id")
+                if isinstance(instance_id, int) and instance_id > 0:
+                    return instance_id
         except Exception as e:
-            logger.error(f"Error looking up instance_id for {plugin_uri}: {e}")
+            logger.error(
+                "Error looking up instance_id for %s (position=%s): %s",
+                plugin_uri,
+                plugin_position,
+                e,
+            )
         return None
 
-    async def set_parameter(self, plugin_uri: str, param_name: str, value: float) -> bool:
-        """Set a plugin parameter using plugin URI"""
+    async def set_parameter(
+        self,
+        plugin_uri: str,
+        param_name: str,
+        value: float,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> bool:
+        """Set a plugin parameter using an explicit instance or URI plus optional chain position."""
         if not self._engine:
             logger.error("Cannot set parameter: engine not initialized")
             return False
-        instance_id = await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri)
-        if instance_id is None:
-            logger.error(f"Plugin not found in chain: {plugin_uri}")
+
+        resolved_instance_id = instance_id
+        if not isinstance(resolved_instance_id, int) or resolved_instance_id <= 0:
+            resolved_instance_id = await asyncio.to_thread(
+                self._get_instance_id_for_uri,
+                plugin_uri,
+                plugin_position,
+            )
+
+        if resolved_instance_id is None:
+            logger.error("Plugin not found in chain: %s (position=%s)", plugin_uri, plugin_position)
             return False
-        logger.debug(f"Setting parameter: instance_id={instance_id}, param={param_name}, value={value}")
+        logger.debug(
+            "Setting parameter: instance_id=%s, param=%s, value=%s, uri=%s, position=%s",
+            resolved_instance_id,
+            param_name,
+            value,
+            plugin_uri,
+            plugin_position,
+        )
         try:
             result = await asyncio.to_thread(
                 self._engine.set_parameter_by_name,
-                instance_id,
+                resolved_instance_id,
                 param_name,
                 value,
             )
             if not result:
-                logger.error(f"Engine returned False for set_parameter({instance_id}, {param_name}, {value})")
+                logger.error(
+                    "Engine returned False for set_parameter(%s, %s, %s)",
+                    resolved_instance_id,
+                    param_name,
+                    value,
+                )
             return result
         except Exception as e:
             logger.error(f"Exception in set_parameter: {e}")
@@ -1910,8 +1981,11 @@ class JuceEngineService(Singleton):
                 "shimmer_pitch": 12.0, "modulation": 35.0, "mod_rate": 0.7,
                 "drive": 15.0, "delay_time": 200.0, "delay_feedback": 30.0,
                 "delay_mod": 20.0, "low_cut": 80.0, "high_cut": 8000.0,
-                "mix": 50.0, "stereo_width": 150.0, "ducking_amount": 20.0,
-                "preset": 0, "bypass": False
+                "mix": 50.0, "stereo_width": 150.0,
+                "reverb_diffusion": 85.0, "reverb_damping": 40.0,
+                "shimmer_feedback": 35.0, "chorus_voices": 4,
+                "ducking": 20.0, "preset": "manual",
+                "spillover": True, "bypass": False
             }
         params = self._engine.get_shoegaze_parameters()
         return {
@@ -1929,8 +2003,13 @@ class JuceEngineService(Singleton):
             "high_cut": params.get("high_cut", 8000.0),
             "mix": params.get("mix", 50.0),
             "stereo_width": params.get("stereo_width", 150.0),
-            "ducking_amount": params.get("ducking_amount", 20.0),
-            "preset": params.get("preset", 0),
+            "reverb_diffusion": params.get("reverb_diffusion", 85.0),
+            "reverb_damping": params.get("reverb_damping", 40.0),
+            "shimmer_feedback": params.get("shimmer_feedback", 35.0),
+            "chorus_voices": params.get("chorus_voices", 4),
+            "ducking": params.get("ducking", params.get("ducking_amount", 20.0)),
+            "preset": params.get("preset_name", params.get("preset", "manual")),
+            "spillover": params.get("spillover", True),
             "bypass": params.get("bypass", False)
         }
 

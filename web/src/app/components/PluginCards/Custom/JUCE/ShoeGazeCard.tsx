@@ -34,9 +34,13 @@ const PARAM = {
   HIGH_CUT: 11,
   MIX: 12,
   STEREO_WIDTH: 13,
-  DUCKING: 14,
-  PRESET: 15,
-  BYPASS: 16,
+  REVERB_DIFFUSION: 14,
+  REVERB_DAMPING: 15,
+  SHIMMER_FEEDBACK: 16,
+  CHORUS_VOICES: 17,
+  DUCKING: 18,
+  SPILLOVER: 19,
+  BYPASS: 20,
 }
 
 // Parameter definitions for MIDI mapping dialog
@@ -55,7 +59,12 @@ const SHOEGAZE_PARAMS: PluginParamDef[] = [
   { index: PARAM.HIGH_CUT, name: 'High Cut', symbol: 'highCut' },
   { index: PARAM.MIX, name: 'Mix', symbol: 'mix' },
   { index: PARAM.STEREO_WIDTH, name: 'Stereo Width', symbol: 'stereoWidth' },
-  { index: PARAM.DUCKING, name: 'Ducking', symbol: 'duckingAmount' },
+  { index: PARAM.REVERB_DIFFUSION, name: 'Reverb Diffusion', symbol: 'reverbDiffusion' },
+  { index: PARAM.REVERB_DAMPING, name: 'Reverb Damping', symbol: 'reverbDamping' },
+  { index: PARAM.SHIMMER_FEEDBACK, name: 'Shimmer Feedback', symbol: 'shimmerFeedback' },
+  { index: PARAM.CHORUS_VOICES, name: 'Chorus Voices', symbol: 'chorusVoices' },
+  { index: PARAM.DUCKING, name: 'Ducking', symbol: 'ducking' },
+  { index: PARAM.SPILLOVER, name: 'Spillover', symbol: 'spillover' },
 ]
 
 interface ShoeGazeCardProps extends PluginCardProps {
@@ -87,6 +96,12 @@ function ShoeGazeCardBase({
     setHighCut,
     setMix,
     setStereoWidth,
+    setReverbDiffusion,
+    setReverbDamping,
+    setShimmerFeedback,
+    setChorusVoices,
+    setDucking,
+    setSpillover,
     setDuckingAmount,
     setBypass,
     setPreset,
@@ -278,6 +293,18 @@ function ShoeGazeCardBase({
             size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.SHIMMER_PITCH }}
           />
+          <ParameterKnob
+            label="Feedback"
+            value={parameters.shimmerFeedback}
+            min={0}
+            max={80}
+            defaultValue={35}
+            unit="%"
+            onChange={setShimmerFeedback}
+            accentColor="#9b59b6"
+            size={compact ? 'small' : 'medium'}
+            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.SHIMMER_FEEDBACK }}
+          />
         </div>
       ),
     },
@@ -311,6 +338,19 @@ function ShoeGazeCardBase({
             accentColor="#3498db"
             size={compact ? 'small' : 'medium'}
             midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.MOD_RATE }}
+          />
+          <ParameterKnob
+            label="Voices"
+            value={parameters.chorusVoices}
+            min={1}
+            max={6}
+            defaultValue={4}
+            unit=""
+            step={1}
+            onChange={(value) => setChorusVoices(Math.round(value))}
+            accentColor="#3498db"
+            size={compact ? 'small' : 'medium'}
+            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.CHORUS_VOICES }}
           />
         </div>
       ),
@@ -365,46 +405,74 @@ function ShoeGazeCardBase({
       title: 'Tone',
       defaultOpen: false,
       children: (
-        <div className="carbon-param-row">
-          <ParameterKnob
-            label="Drive"
-            value={parameters.drive}
-            min={0}
-            max={100}
-            defaultValue={15}
-            unit="%"
-            onChange={setDrive}
-            accentColor="#e67e22"
-            size="small"
-            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DRIVE }}
-          />
-          <ParameterKnob
-            label="Lo Cut"
-            value={parameters.lowCut}
-            min={20}
-            max={500}
-            defaultValue={80}
-            unit="Hz"
-            onChange={setLowCut}
-            isLogarithmic
-            accentColor="#e67e22"
-            size="small"
-            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.LOW_CUT }}
-          />
-          <ParameterKnob
-            label="Hi Cut"
-            value={parameters.highCut}
-            min={2000}
-            max={20000}
-            defaultValue={8000}
-            unit=""
-            valueFormatter={(v: number) => v >= 10000 ? (v/1000).toFixed(0) + 'k' : (v/1000).toFixed(1) + 'k'}
-            onChange={setHighCut}
-            isLogarithmic
-            accentColor="#e67e22"
-            size="small"
-            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.HIGH_CUT }}
-          />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Drive"
+              value={parameters.drive}
+              min={0}
+              max={100}
+              defaultValue={15}
+              unit="%"
+              onChange={setDrive}
+              accentColor="#e67e22"
+              size="small"
+              midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DRIVE }}
+            />
+            <ParameterKnob
+              label="Lo Cut"
+              value={parameters.lowCut}
+              min={20}
+              max={500}
+              defaultValue={80}
+              unit="Hz"
+              onChange={setLowCut}
+              isLogarithmic
+              accentColor="#e67e22"
+              size="small"
+              midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.LOW_CUT }}
+            />
+            <ParameterKnob
+              label="Hi Cut"
+              value={parameters.highCut}
+              min={2000}
+              max={20000}
+              defaultValue={8000}
+              unit=""
+              valueFormatter={(v: number) => v >= 10000 ? (v / 1000).toFixed(0) + 'k' : (v / 1000).toFixed(1) + 'k'}
+              onChange={setHighCut}
+              isLogarithmic
+              accentColor="#e67e22"
+              size="small"
+              midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.HIGH_CUT }}
+            />
+          </div>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Diffuse"
+              value={parameters.reverbDiffusion}
+              min={0}
+              max={100}
+              defaultValue={85}
+              unit="%"
+              onChange={setReverbDiffusion}
+              accentColor="#e67e22"
+              size="small"
+              midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.REVERB_DIFFUSION }}
+            />
+            <ParameterKnob
+              label="Damping"
+              value={parameters.reverbDamping}
+              min={0}
+              max={100}
+              defaultValue={40}
+              unit="%"
+              onChange={setReverbDamping}
+              accentColor="#e67e22"
+              size="small"
+              midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.REVERB_DAMPING }}
+            />
+          </div>
         </div>
       ),
     },
@@ -413,32 +481,43 @@ function ShoeGazeCardBase({
       title: 'Output',
       defaultOpen: false,
       children: (
-        <div className="carbon-param-row">
-          <ParameterKnob
-            label="Width"
-            value={parameters.stereoWidth}
-            min={0}
-            max={200}
-            defaultValue={150}
-            unit="%"
-            onChange={setStereoWidth}
-            accentColor={accentColor}
-            size="small"
-            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.STEREO_WIDTH }}
-          />
-          <ParameterKnob
-            label="Duck"
-            value={parameters.duckingAmount}
-            min={0}
-            max={100}
-            defaultValue={20}
-            unit="%"
-            onChange={setDuckingAmount}
-            accentColor={accentColor}
-            size="small"
-            midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DUCKING }}
-          />
-        </div>
+        <>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Width"
+              value={parameters.stereoWidth}
+              min={0}
+              max={200}
+              defaultValue={150}
+              unit="%"
+              onChange={setStereoWidth}
+              accentColor={accentColor}
+              size="small"
+              midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.STEREO_WIDTH }}
+            />
+            <ParameterKnob
+              label="Duck"
+              value={parameters.ducking}
+              min={0}
+              max={100}
+              defaultValue={20}
+              unit="%"
+              onChange={setDucking}
+              accentColor={accentColor}
+              size="small"
+              midi={{ pluginUri: SHOEGAZE_URI, paramIndex: PARAM.DUCKING }}
+            />
+          </div>
+          <div className="carbon-param-row" style={{ marginTop: 8 }}>
+            <button
+              className={`carbon-toggle-btn ${parameters.spillover ? 'active' : ''}`}
+              onClick={() => setSpillover(!parameters.spillover)}
+              style={parameters.spillover ? { background: accentColor, borderColor: accentColor } : undefined}
+            >
+              Spillover
+            </button>
+          </div>
+        </>
       ),
     },
   ]
@@ -489,6 +568,7 @@ function ShoeGazeCardBase({
       advancedSections={advancedSections}
       presets={presetSelector}
       extraContent={extraContent}
+      cardWidth={760}
     />
   )
 }

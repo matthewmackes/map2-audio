@@ -20,6 +20,7 @@ const mockSetQueryData = jest.fn()
 const mockCancelQueries = jest.fn(async () => undefined)
 const mockGetQueryData = jest.fn()
 const mockUseIsMobile = jest.fn(() => false)
+const mockResolveLivePluginCardStrategy = jest.fn(() => ({ renderMode: 'generic' as const }))
 let mockLivePathLayout: any = {
   status: 'unavailable',
   activeFlowIds: [],
@@ -271,19 +272,54 @@ jest.mock('./JuceGridParameterEditor', () => ({
   JuceGridParameterEditor: () => <div data-testid="juce-grid-parameter-editor">Editor</div>,
 }))
 
+jest.mock('../components/PluginCards', () => ({
+  PluginCardRouter: ({ forceTemplate }: { forceTemplate?: string }) => (
+    <div
+      data-testid="plugin-card-router"
+      data-force-template={forceTemplate ?? ''}
+    >
+      Plugin card router
+    </div>
+  ),
+}))
+
+jest.mock('../components/PluginCards/liveEditorRouting', () => ({
+  resolveLivePluginCardStrategy: (...args: unknown[]) => mockResolveLivePluginCardStrategy(...args),
+}))
+
 jest.mock('./JuceGridRoutingVisualizer', () => ({
   JuceGridRoutingVisualizer: () => <div data-testid="juce-grid-routing-visualizer">Routing</div>,
   getJuceGridRoutingInspectorItems: () => [],
 }))
 
 jest.mock('./JuceGridSignalCanvas', () => ({
-  JuceGridSignalCanvas: ({ onAddPlugin, onPluginSelect }: { onAddPlugin?: () => void; onPluginSelect?: (uri: string) => void }) => (
+  JuceGridSignalCanvas: ({
+    chain,
+    onAddPlugin,
+    onPluginSelect,
+  }: {
+    chain?: { plugins?: Array<{ uri: string; position: number }> } | null
+    onAddPlugin?: () => void
+    onPluginSelect?: (uri: string, position: number) => void
+  }) => {
+    const targetPlugin = chain?.plugins?.find((plugin) => plugin.uri === 'map2://juce/modulation/chorus')
+      ?? chain?.plugins?.[0]
+
+    return (
     <div data-testid="juce-grid-signal-canvas">
       <button type="button" onClick={onAddPlugin}>Add block</button>
-      <button type="button" onClick={() => onPluginSelect?.('map2://juce/modulation/chorus')}>Select block</button>
+      {targetPlugin && (
+        <button
+          type="button"
+          onClick={() => onPluginSelect?.(targetPlugin.uri, targetPlugin.position)}
+        >
+          Select block
+        </button>
+      )}
       Signal canvas
     </div>
-  ),
+    )
+  },
 }))
 
 jest.mock('./juceGridLivePath', () => ({
@@ -320,6 +356,8 @@ describe('JuceGridPage snapshot modal workflow', () => {
     mockSideNav.mockClear()
     mockUseIsMobile.mockReset()
     mockUseIsMobile.mockReturnValue(false)
+    mockResolveLivePluginCardStrategy.mockReset()
+    mockResolveLivePluginCardStrategy.mockReturnValue({ renderMode: 'generic' })
     mockInvalidateQueries.mockReset()
     mockFetchQuery.mockReset()
     mockSetQueryData.mockReset()
@@ -877,8 +915,8 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     await waitFor(() => {
       expect(mockChainsApi.reorderPlugins).toHaveBeenCalledWith(1, [
-        'map2://juce/modulation/chorus',
-        'map2://juce/dynamics/compressor',
+        { uri: 'map2://juce/modulation/chorus', position: 1 },
+        { uri: 'map2://juce/dynamics/compressor', position: 0 },
       ])
     })
 
@@ -1003,6 +1041,91 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     await screen.findByLabelText('Block parameter editor')
   }, 15000)
+
+  it('uses the live plugin card router with a forced Carbon template when the strategy resolves to template mode', async () => {
+    mockResolveLivePluginCardStrategy.mockReturnValue({ renderMode: 'template', template: 'modulation' })
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#2563eb', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 1, label: 'B', color: '#60a5fa', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      flowStates: {
+        'flow-0': { activeAudio: true, dimmed: false, sidechainKey: false },
+      },
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'group-0',
+          kind: 'series',
+          tone: 'active',
+          dashed: false,
+          flowIds: ['flow-0'],
+        },
+      ],
+    }
+
+    mockChainsApi.list.mockResolvedValue({
+      chains: [
+        {
+          id: 1,
+          name: 'Song 1',
+          is_active: true,
+          plugins: [
+            {
+              uri: 'map2://juce/modulation/chorus',
+              name: 'Alpha Chorus',
+              position: 0,
+              bypassed: false,
+              parameters: {},
+            },
+          ],
+        },
+      ],
+      active_chain_id: 1,
+    })
+
+    mockPluginsApi.discover.mockResolvedValue({
+      plugins: [
+        {
+          uri: 'map2://juce/modulation/chorus',
+          name: 'Alpha Chorus',
+          category: 'Modulation',
+          parameters: [
+            { index: 0, name: 'Mix', symbol: 'mix', min: 0, max: 100, default: 50, is_toggled: false, is_log: false },
+          ],
+        },
+      ],
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const selectButton = (await screen.findAllByRole('button', { name: 'Select block' }))[0]
+    fireEvent.click(selectButton)
+
+    expect(await screen.findByLabelText('Block parameter editor')).toBeTruthy()
+    expect((await screen.findByTestId('plugin-card-router')).getAttribute('data-force-template')).toBe('modulation')
+    expect(screen.queryByTestId('juce-grid-parameter-editor')).toBeNull()
+  })
 
   it('shows the mobile block screen below the supported viewport width', async () => {
     mockUseIsMobile.mockReturnValue(true)
@@ -1395,7 +1518,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
           channel: 0,
           cc: 12,
           chain_id: null,
-          target_plugin_uri: 'map2://juce/delay/stereo-delay',
+          target_plugin_uri: 'map2://juce/delay',
           target_param_index: 1,
           target_param_symbol: 'mix',
           min_val: 0,
@@ -1427,7 +1550,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
           ],
         },
         {
-          uri: 'map2://juce/delay/stereo-delay',
+          uri: 'map2://juce/delay',
           name: 'Stereo Delay',
           author: 'MAP2 Audio',
           category: 'Delay',

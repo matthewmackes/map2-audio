@@ -42,25 +42,28 @@ const GLOBAL_PARAMS = {
   hush_threshold: 46,
   hush_release: 47,
   preset: 48,
+  bypass: 49,
 }
 
-// Parameter definitions for MIDI mapping dialog (global params + voice 1 as example)
+// Parameter definitions for MIDI mapping dialog
 const INTELLIFX_PARAMS: PluginParamDef[] = [
-  // Voice 1 (most commonly MIDI-mapped)
-  { index: 0, name: 'V1 Level', symbol: 'v1_level' },
-  { index: 1, name: 'V1 Pan', symbol: 'v1_pan' },
-  { index: 2, name: 'V1 Delay', symbol: 'v1_delay' },
-  { index: 3, name: 'V1 Depth', symbol: 'v1_depth' },
-  { index: 4, name: 'V1 Rate', symbol: 'v1_rate' },
-  // Global mixer
-  { index: GLOBAL_PARAMS.chorus_level, name: 'Chorus Level', symbol: 'chorusLevel' },
-  { index: GLOBAL_PARAMS.direct_level_l, name: 'Direct L', symbol: 'directLevelL' },
-  { index: GLOBAL_PARAMS.direct_level_r, name: 'Direct R', symbol: 'directLevelR' },
-  { index: GLOBAL_PARAMS.regen_l, name: 'Regen L', symbol: 'regenL' },
-  { index: GLOBAL_PARAMS.regen_r, name: 'Regen R', symbol: 'regenR' },
-  // HUSH
-  { index: GLOBAL_PARAMS.hush_threshold, name: 'HUSH Threshold', symbol: 'hushThreshold' },
-  { index: GLOBAL_PARAMS.hush_release, name: 'HUSH Release', symbol: 'hushRelease' },
+  ...VOICE_PARAMS.flatMap((voice, index) => [
+    { index: voice.level, name: `Voice ${index + 1} Level`, symbol: `v${index + 1}_level` },
+    { index: voice.pan, name: `Voice ${index + 1} Pan`, symbol: `v${index + 1}_pan` },
+    { index: voice.delay, name: `Voice ${index + 1} Delay`, symbol: `v${index + 1}_delay` },
+    { index: voice.depth, name: `Voice ${index + 1} Depth`, symbol: `v${index + 1}_depth` },
+    { index: voice.rate, name: `Voice ${index + 1} Rate`, symbol: `v${index + 1}_rate` },
+  ]),
+  { index: GLOBAL_PARAMS.chorus_level, name: 'Chorus Level', symbol: 'chorus_level' },
+  { index: GLOBAL_PARAMS.direct_level_l, name: 'Direct Level L', symbol: 'direct_level_l' },
+  { index: GLOBAL_PARAMS.direct_level_r, name: 'Direct Level R', symbol: 'direct_level_r' },
+  { index: GLOBAL_PARAMS.regen_l, name: 'Regeneration L', symbol: 'regen_l' },
+  { index: GLOBAL_PARAMS.regen_r, name: 'Regeneration R', symbol: 'regen_r' },
+  { index: GLOBAL_PARAMS.hush_enabled, name: 'HUSH Enabled', symbol: 'hush_enabled' },
+  { index: GLOBAL_PARAMS.hush_threshold, name: 'HUSH Threshold', symbol: 'hush_threshold' },
+  { index: GLOBAL_PARAMS.hush_release, name: 'HUSH Release', symbol: 'hush_release' },
+  { index: GLOBAL_PARAMS.preset, name: 'Preset', symbol: 'preset' },
+  { index: GLOBAL_PARAMS.bypass, name: 'Bypass', symbol: 'bypass' },
 ]
 
 const PRESET_NAMES = [
@@ -110,6 +113,7 @@ function IntelliFXCardBase({
 
   const presetIdx = Math.round(getValue(GLOBAL_PARAMS.preset, 0))
   const presetName = PRESET_NAMES[presetIdx] || 'Custom'
+  const hushEnabled = getValue(GLOBAL_PARAMS.hush_enabled, 1) > 0.5
 
   // Multi-voice visualization
   const voiceVisualization = (
@@ -265,6 +269,13 @@ function IntelliFXCardBase({
 
       <CarbonParameterSection title="HUSH" accentColor={accentColor}>
         <div className="carbon-param-row">
+          <button
+            className={`carbon-toggle-btn ${hushEnabled ? 'active' : ''}`}
+            onClick={() => setValue(GLOBAL_PARAMS.hush_enabled, hushEnabled ? 0 : 1)}
+            style={hushEnabled ? { background: accentColor, borderColor: accentColor } : undefined}
+          >
+            HUSH
+          </button>
           <ParameterKnob
             label="Threshold"
             value={getValue(GLOBAL_PARAMS.hush_threshold, -40)}
@@ -312,6 +323,7 @@ function IntelliFXCardBase({
           accentColor={accentColor}
           size="small"
           unit="dB"
+          midi={{ pluginUri: INTELLIFX_URI, paramIndex: VOICE_PARAMS[voiceIdx].level }}
         />
         <ParameterKnob
           label="Pan"
@@ -323,6 +335,7 @@ function IntelliFXCardBase({
           accentColor={accentColor}
           size="small"
           unit="%"
+          midi={{ pluginUri: INTELLIFX_URI, paramIndex: VOICE_PARAMS[voiceIdx].pan }}
         />
         <ParameterKnob
           label="Delay"
@@ -334,6 +347,7 @@ function IntelliFXCardBase({
           accentColor={accentColor}
           size="small"
           unit="ms"
+          midi={{ pluginUri: INTELLIFX_URI, paramIndex: VOICE_PARAMS[voiceIdx].delay }}
         />
         <ParameterKnob
           label="Depth"
@@ -345,6 +359,7 @@ function IntelliFXCardBase({
           accentColor={accentColor}
           size="small"
           unit="%"
+          midi={{ pluginUri: INTELLIFX_URI, paramIndex: VOICE_PARAMS[voiceIdx].depth }}
         />
         <ParameterKnob
           label="Rate"
@@ -355,6 +370,7 @@ function IntelliFXCardBase({
           onChange={(v) => setVoiceValue(voiceIdx, 'rate', v)}
           accentColor={accentColor}
           size="small"
+          midi={{ pluginUri: INTELLIFX_URI, paramIndex: VOICE_PARAMS[voiceIdx].rate }}
         />
       </div>
     ),
@@ -365,15 +381,14 @@ function IntelliFXCardBase({
       plugin={plugin}
       accentColor={accentColor}
       compact={compact}
-      bypassed={getValue(GLOBAL_PARAMS.hush_enabled + 4, 0) === 0}
-      onBypassToggle={() => {
-        // Toggle bypass - adjust index based on actual parameter location
-      }}
+      bypassed={getValue(GLOBAL_PARAMS.bypass, 0) > 0.5}
+      onBypassToggle={(bypassed) => setValue(GLOBAL_PARAMS.bypass, bypassed ? 1 : 0)}
       onOpenMidiMappings={onOpenMidiMappings}
       visualization={voiceVisualization}
       advancedSections={voiceSections}
       presets={presetBrowser}
       extraContent={masterMixer}
+      cardWidth={800}
     />
   )
 }

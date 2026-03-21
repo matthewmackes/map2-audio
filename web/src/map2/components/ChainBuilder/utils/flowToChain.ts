@@ -5,6 +5,8 @@
 
 import { AudioPluginNode } from '../nodes/AudioPluginNodeTypes';
 import { DeviceNode } from '../nodes/DeviceNodeTypes';
+import type { PluginOrderRef } from '../../../types';
+import { buildPluginOrderRef, getPluginIdentityKey } from '../../../utils/pluginIdentity';
 
 /**
  * Extract plugin order from React Flow nodes based on X position
@@ -12,15 +14,15 @@ import { DeviceNode } from '../nodes/DeviceNodeTypes';
  */
 export type ChainFlowNode = AudioPluginNode | DeviceNode;
 
-export function flowToChainOrder(nodes: ChainFlowNode[]): string[] {
+export function flowToChainOrder(nodes: ChainFlowNode[]): PluginOrderRef[] {
   // Only consider audio plugin nodes for ordering
   const pluginNodes = nodes.filter((n): n is AudioPluginNode => n.type === 'audioPlugin');
 
   // Sort nodes by X position (left to right)
   const sortedNodes = [...pluginNodes].sort((a, b) => a.position.x - b.position.x);
 
-  // Extract plugin URIs in order
-  return sortedNodes.map((node) => node.data.plugin.uri);
+  // Extract current plugin refs in order
+  return sortedNodes.map((node) => buildPluginOrderRef(node.data.plugin));
 }
 
 /**
@@ -28,10 +30,10 @@ export function flowToChainOrder(nodes: ChainFlowNode[]): string[] {
  */
 export function getPluginPosition(
   nodes: ChainFlowNode[],
-  pluginUri: string
+  pluginRef: PluginOrderRef
 ): number {
-  const orderedUris = flowToChainOrder(nodes);
-  return orderedUris.indexOf(pluginUri);
+  const pluginKey = getPluginIdentityKey(pluginRef);
+  return flowToChainOrder(nodes).findIndex((entry) => getPluginIdentityKey(entry) === pluginKey);
 }
 
 /**
@@ -46,5 +48,7 @@ export function hasOrderChanged(
 
   if (prevOrder.length !== currOrder.length) return true;
 
-  return !prevOrder.every((uri, index) => uri === currOrder[index]);
+  return !prevOrder.every((pluginRef, index) => (
+    getPluginIdentityKey(pluginRef) === getPluginIdentityKey(currOrder[index])
+  ));
 }

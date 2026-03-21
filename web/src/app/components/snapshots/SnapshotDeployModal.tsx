@@ -18,6 +18,7 @@ import { Information, MachineLearningModel, VolumeUp, WarningAlt } from '@carbon
 import { irApi, namApi } from '../../../map2/api'
 import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import { useCluster } from '../../contexts/ClusterContext'
+import { canonicalizePluginUri } from '../../utils/pluginUris'
 import { useToasts } from '../Toasts'
 import './SnapshotDeployModal.css'
 
@@ -143,6 +144,7 @@ export function SnapshotDeployModal({
   const [selectedTargetIds, setSelectedTargetIds] = useState<Set<string>>(new Set())
 
   const sourceApiNodeId = sourceNodeId !== localNodeId ? sourceNodeId : null
+  const snapshotPluginUri = canonicalizePluginUri(snapshot?.plugin_uri)
   const targetNodes = useMemo(() => nodes.filter((node) => node.nodeId !== sourceNodeId), [nodes, sourceNodeId])
   const nodeLabelById = useMemo(
     () => new Map(nodes.map((node) => [node.nodeId, node.isLocal ? `${node.hostname} (Local)` : node.hostname])),
@@ -173,14 +175,14 @@ export function SnapshotDeployModal({
   const namStatusQuery = useQuery<NAMStatus>({
     queryKey: ['nam', 'status', sourceNodeId, 'snapshot-deploy'],
     queryFn: () => namApi.getStatus(sourceApiNodeId),
-    enabled: open && snapshot?.plugin_uri === 'map2://juce/amp/nam',
+    enabled: open && snapshotPluginUri === 'map2://juce/nam',
     staleTime: 5000,
   })
 
   const irStatusQuery = useQuery<IRStatus>({
     queryKey: ['ir', 'status', sourceNodeId, 'snapshot-deploy'],
     queryFn: () => irApi.getStatus(sourceApiNodeId),
-    enabled: open && (snapshot?.plugin_uri === 'map2://juce/ir/cabinet' || snapshot?.plugin_uri === 'map2://juce/ir/reverb'),
+    enabled: open && (snapshotPluginUri === 'map2://juce/convolution/cabinet' || snapshotPluginUri === 'map2://juce/convolution/reverb'),
     staleTime: 5000,
   })
 
@@ -193,7 +195,7 @@ export function SnapshotDeployModal({
       }
       return response.json() as Promise<ClusterLibraryFanoutResponse>
     },
-    enabled: open && snapshot?.plugin_uri === 'map2://juce/amp/nam',
+    enabled: open && snapshotPluginUri === 'map2://juce/nam',
     staleTime: 10000,
   })
 
@@ -206,7 +208,7 @@ export function SnapshotDeployModal({
       }
       return response.json() as Promise<ClusterLibraryFanoutResponse>
     },
-    enabled: open && (snapshot?.plugin_uri === 'map2://juce/ir/cabinet' || snapshot?.plugin_uri === 'map2://juce/ir/reverb'),
+    enabled: open && (snapshotPluginUri === 'map2://juce/convolution/cabinet' || snapshotPluginUri === 'map2://juce/convolution/reverb'),
     staleTime: 10000,
   })
 
@@ -215,23 +217,23 @@ export function SnapshotDeployModal({
       return null
     }
 
-    const plugin = pluginCatalogQuery.data?.plugins?.find((candidate) => candidate.uri === snapshot.plugin_uri)
-    const installedOn = plugin?.installed_on ?? (snapshot.plugin_uri.startsWith('map2://juce/') ? nodes.map((node) => node.nodeId) : [])
+    const plugin = pluginCatalogQuery.data?.plugins?.find((candidate) => candidate.uri === snapshotPluginUri)
+    const installedOn = plugin?.installed_on ?? (snapshotPluginUri.startsWith('map2://juce/') ? nodes.map((node) => node.nodeId) : [])
 
     return {
       kind: 'plugin',
-      label: sanitizeRestrictedDisplayText(snapshot.plugin_name) || snapshot.plugin_uri,
+      label: sanitizeRestrictedDisplayText(snapshot.plugin_name) || snapshotPluginUri,
       availableOn: installedOn,
       canDeploy: false,
     }
-  }, [nodes, pluginCatalogQuery.data?.plugins, snapshot])
+  }, [nodes, pluginCatalogQuery.data?.plugins, snapshot, snapshotPluginUri])
 
   const assetDependency = useMemo<DependencyDescriptor | null>(() => {
     if (!snapshot) {
       return null
     }
 
-    if (snapshot.plugin_uri === 'map2://juce/amp/nam') {
+    if (snapshotPluginUri === 'map2://juce/nam') {
       const activeModel = namStatusQuery.data?.activeModel
       if (!activeModel) {
         return null
@@ -246,7 +248,7 @@ export function SnapshotDeployModal({
       }
     }
 
-    if (snapshot.plugin_uri === 'map2://juce/ir/cabinet') {
+    if (snapshotPluginUri === 'map2://juce/convolution/cabinet') {
       const loadedCabinet = irStatusQuery.data?.loaded_cabinet
       if (!loadedCabinet) {
         return null
@@ -261,7 +263,7 @@ export function SnapshotDeployModal({
       }
     }
 
-    if (snapshot.plugin_uri === 'map2://juce/ir/reverb') {
+    if (snapshotPluginUri === 'map2://juce/convolution/reverb') {
       const loadedReverb = irStatusQuery.data?.loaded_reverb
       if (!loadedReverb) {
         return null
@@ -284,6 +286,7 @@ export function SnapshotDeployModal({
     namLibraryQuery.data,
     namStatusQuery.data?.activeModel,
     snapshot,
+    snapshotPluginUri,
     sourceNodeId,
   ])
 

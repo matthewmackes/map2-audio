@@ -214,16 +214,16 @@ describe('JuceGridSignalCanvas', () => {
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-svg')).toBeTruthy()
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
     expect(within(pluginCard).getByRole('button', { name: 'Actions for Studio Compressor' })).toBeTruthy()
-    expect(within(pluginCard).getByText('Dynamics')).toBeTruthy()
-    expect(within(pluginCard).getByText('CPU')).toBeTruthy()
-    expect(within(pluginCard).getByText('12.4%')).toBeTruthy()
-    expect(within(pluginCard).getByText('Latency')).toBeTruthy()
+    expect(within(pluginCard).queryByText('Dynamics')).toBeNull()
+    expect(within(pluginCard).queryByText('CPU')).toBeNull()
+    expect(within(pluginCard).queryByText('12.4%')).toBeNull()
+    expect(within(pluginCard).queryByText('Latency')).toBeNull()
     expect(within(pluginCard).queryByText('SC')).toBeNull()
     expect(within(pluginCard).queryByText('Auto')).toBeNull()
 
     fireEvent.click(pluginCard)
 
-    expect(handlePluginSelect).toHaveBeenCalledWith(pluginUri)
+    expect(handlePluginSelect).toHaveBeenCalledWith(pluginUri, 0)
 
     fireEvent.click(screen.getByRole('button', { name: 'Configure input routing' }))
     fireEvent.click(screen.getByRole('button', { name: 'Configure output routing' }))
@@ -319,7 +319,7 @@ describe('JuceGridSignalCanvas', () => {
     expect(within(secondRow).getByRole('button', { name: 'Add effect' })).toBeTruthy()
   })
 
-  it('expands the active card to a double-width overlay and dims the other cards', () => {
+  it('keeps the active card in place and subtly dims the other cards', () => {
     const longChain = buildChainWithPluginCount(4)
     const longMeta = buildPluginMetaForChain(longChain)
 
@@ -343,7 +343,118 @@ describe('JuceGridSignalCanvas', () => {
     expect(activeCard.className).toContain('is-selected')
     expect(activeRowItem).toBeTruthy()
     expect(dimmedItems.length).toBeGreaterThan(0)
-    expect(screen.getByText('Position')).toBeTruthy()
-    expect(screen.getByText('Latency')).toBeTruthy()
+    expect(screen.queryByText('Position')).toBeNull()
+    expect(screen.queryByText('Latency')).toBeNull()
+  })
+
+  it('tracks duplicate-uri selection by chain position', () => {
+    const duplicateUri = 'plugin://duplicate-compressor'
+    const duplicateChain: Chain = {
+      ...chain,
+      plugins: [
+        {
+          ...chain.plugins[0],
+          uri: duplicateUri,
+          position: 0,
+        },
+        {
+          ...chain.plugins[0],
+          uri: duplicateUri,
+          position: 1,
+        },
+      ],
+    }
+    const duplicateMeta: Record<string, Plugin> = {
+      [duplicateUri]: {
+        ...pluginMeta[pluginUri],
+        uri: duplicateUri,
+      },
+    }
+    const handlePluginSelect = jest.fn()
+
+    render(
+      <JuceGridSignalCanvas
+        chain={duplicateChain}
+        pluginMeta={duplicateMeta}
+        selectedPluginUri={duplicateUri}
+        selectedPluginPosition={1}
+        onPluginSelect={handlePluginSelect}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-1').className).toContain('is-selected')
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-0').className).not.toContain('is-selected')
+
+    fireEvent.click(screen.getByTestId('juce-grid-signal-plugin-card-0'))
+    expect(handlePluginSelect).toHaveBeenCalledWith(duplicateUri, 0)
+  })
+
+  it('reorders duplicate-uri cards by position instead of collapsing them by URI', () => {
+    const duplicateUri = 'plugin://duplicate-delay'
+    const duplicateChain: Chain = {
+      ...chain,
+      plugins: [
+        {
+          ...chain.plugins[0],
+          uri: duplicateUri,
+          position: 0,
+          name: 'Delay A',
+        },
+        {
+          ...chain.plugins[0],
+          uri: duplicateUri,
+          position: 1,
+          name: 'Delay B',
+        },
+        {
+          ...chain.plugins[0],
+          uri: 'plugin://widener',
+          position: 2,
+          name: 'Widener',
+        },
+      ],
+    }
+    const duplicateMeta: Record<string, Plugin> = {
+      [duplicateUri]: {
+        ...pluginMeta[pluginUri],
+        uri: duplicateUri,
+        name: 'Stereo Delay',
+        category: 'Delay',
+      },
+      'plugin://widener': {
+        ...pluginMeta[pluginUri],
+        uri: 'plugin://widener',
+        name: 'Widener',
+        category: 'Modulation',
+      },
+    }
+    const handleReorderPlugins = jest.fn()
+
+    render(
+      <JuceGridSignalCanvas
+        chain={duplicateChain}
+        pluginMeta={duplicateMeta}
+        selectedPluginUri={duplicateUri}
+        selectedPluginPosition={0}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={handleReorderPlugins}
+      />,
+    )
+
+    const firstDuplicate = screen.getByTestId('juce-grid-signal-plugin-card-0')
+    const thirdCard = screen.getByTestId('juce-grid-signal-plugin-card-2')
+
+    fireEvent.dragStart(firstDuplicate)
+    fireEvent.dragOver(thirdCard)
+    fireEvent.drop(thirdCard)
+
+    expect(handleReorderPlugins).toHaveBeenCalledWith([
+      { uri: duplicateUri, position: 1 },
+      { uri: 'plugin://widener', position: 2 },
+      { uri: duplicateUri, position: 0 },
+    ])
   })
 })

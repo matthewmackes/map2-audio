@@ -10,8 +10,8 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { pluginsApi, chainsApi } from '../../../map2/api'
 import type { Plugin } from '../../../map2/types'
-import { getPluginCardComponent } from './registry'
-import { getCategoryConfig, type PluginCardProps, type PluginRealtimeData } from './types'
+import { getPluginCardComponent, getTemplateCardComponent } from './registry'
+import { getCategoryConfig, type PluginCardProps, type PluginCardTemplate, type PluginRealtimeData } from './types'
 import { usePluginOutput } from '../../hooks/usePluginOutputs'
 
 interface PluginCardRouterProps {
@@ -20,9 +20,11 @@ interface PluginCardRouterProps {
   showAddToChain?: boolean
   compact?: boolean
   /** Force use of a specific template (for testing) */
-  forceTemplate?: string
+  forceTemplate?: PluginCardTemplate
   /** Chain ID for bypass toggle functionality */
   chainId?: number
+  /** Chain position for duplicate-URI disambiguation */
+  pluginPosition?: number
   /** Callback when bypass state changes */
   onBypassChange?: (pluginUri: string, bypassed: boolean) => void
 }
@@ -38,6 +40,7 @@ export function PluginCardRouter({
   compact = false,
   forceTemplate,
   chainId,
+  pluginPosition,
   onBypassChange,
 }: PluginCardRouterProps) {
   const queryClient = useQueryClient()
@@ -61,7 +64,13 @@ export function PluginCardRouter({
   // Set parameter mutation
   const setParameterMutation = useMutation({
     mutationFn: async ({ paramIndex, value }: { paramIndex: number; value: number }) => {
-      return pluginsApi.setParameterBatched(plugin.uri, paramIndex, value)
+      return pluginsApi.setParameterBatched(
+        plugin.uri,
+        paramIndex,
+        value,
+        plugin.instance_id,
+        pluginPosition,
+      )
     },
   })
 
@@ -80,7 +89,7 @@ export function PluginCardRouter({
   const bypassMutation = useMutation({
     mutationFn: async (bypass: boolean) => {
       if (!chainId) throw new Error('No chain context for bypass toggle')
-      return chainsApi.togglePluginBypass(chainId, plugin.uri, bypass)
+      return chainsApi.togglePluginBypass(chainId, plugin.uri, bypass, pluginPosition)
     },
     onSuccess: (_, bypass) => {
       // Invalidate chain queries to refresh state
@@ -135,8 +144,11 @@ export function PluginCardRouter({
 
   // Get the card component from registry
   const CardComponent = useMemo(() => {
+    if (forceTemplate) {
+      return getTemplateCardComponent(forceTemplate)
+    }
     return getPluginCardComponent(plugin.uri, plugin.category)
-  }, [plugin.uri, plugin.category])
+  }, [forceTemplate, plugin.uri, plugin.category])
 
   // Build props for the card
   const cardProps: PluginCardProps = {

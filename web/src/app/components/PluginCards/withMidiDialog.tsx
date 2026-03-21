@@ -67,6 +67,10 @@ export function withMidiDialog<P extends WithMidiDialogProps>(
 
     // Use static plugin if available, otherwise fall back to props.plugin
     const pluginForDialog = useMemo<Plugin>(() => {
+      if (props.plugin?.parameters?.length) {
+        return props.plugin
+      }
+
       if (staticPlugin) {
         return staticPlugin
       }

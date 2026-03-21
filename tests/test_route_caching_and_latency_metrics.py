@@ -214,6 +214,47 @@ def test_add_plugin_route_returns_plugin_position(monkeypatch):
     }
 
 
+def test_reorder_plugins_route_passes_positioned_plugin_refs_to_service(monkeypatch):
+    captured: dict[str, object] = {}
+
+    class _FakeChainService:
+        def __init__(self, session) -> None:
+            self.session = session
+
+        async def reorder_plugins(self, chain_id, plugin_order):
+            captured["chain_id"] = chain_id
+            captured["plugin_order"] = plugin_order
+            return True
+
+    @asynccontextmanager
+    async def _fake_session():
+        yield object()
+
+    monkeypatch.setattr(chains_routes, "ChainService", _FakeChainService)
+    monkeypatch.setattr("app.database.get_session", lambda: _fake_session())
+
+    payload = asyncio.run(
+        chains_routes.reorder_plugins(
+            44,
+            [
+                {"uri": "map2://juce/modulation/chorus", "position": 2},
+                {"plugin_uri": "map2://juce/dynamics/compressor", "plugin_position": 0},
+            ],
+        )
+    )
+
+    assert payload == {
+        "status": "reordered",
+        "chain_id": 44,
+        "plugins": [
+            {"plugin_uri": "map2://juce/modulation/chorus", "plugin_position": 2},
+            {"plugin_uri": "map2://juce/dynamics/compressor", "plugin_position": 0},
+        ],
+    }
+    assert captured["chain_id"] == 44
+    assert captured["plugin_order"] == payload["plugins"]
+
+
 def test_update_touchscreen_stomps_route_passes_assignments_to_service(monkeypatch):
     captured: dict[str, object] = {}
 
@@ -240,12 +281,12 @@ def test_update_touchscreen_stomps_route_passes_assignments_to_service(monkeypat
                 assignments=[
                     chains_routes.TouchscreenStompAssignment(
                         slot=1,
-                        plugin_uri="map2://juce/dynamics/comp",
+                        plugin_uri="map2://juce/dynamics/compressor",
                         plugin_position=0,
                     ),
                     chains_routes.TouchscreenStompAssignment(
                         slot=2,
-                        plugin_uri="map2://juce/delay/stereo",
+                        plugin_uri="map2://juce/delay",
                         plugin_position=3,
                     ),
                 ]
@@ -255,8 +296,8 @@ def test_update_touchscreen_stomps_route_passes_assignments_to_service(monkeypat
 
     assert payload["chain_id"] == 9
     assert payload["stomp_assignments"] == [
-        {"slot": 1, "plugin_uri": "map2://juce/dynamics/comp", "plugin_position": 0},
-        {"slot": 2, "plugin_uri": "map2://juce/delay/stereo", "plugin_position": 3},
+        {"slot": 1, "plugin_uri": "map2://juce/dynamics/compressor", "plugin_position": 0},
+        {"slot": 2, "plugin_uri": "map2://juce/delay", "plugin_position": 3},
     ]
     assert captured["chain_id"] == 9
     assert captured["assignments"] == payload["stomp_assignments"]

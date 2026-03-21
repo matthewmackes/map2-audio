@@ -190,6 +190,29 @@ export function getTemplateComponent(
 }
 
 /**
+ * Get the template component, resolving lazy loaders when necessary.
+ */
+export function getTemplateCardComponent(
+  template: PluginCardTemplate
+): ComponentType<PluginCardProps> | null {
+  const eagerly = TEMPLATE_REGISTRY.get(template)
+  if (eagerly) {
+    return eagerly
+  }
+
+  const templateLoader = TEMPLATE_LOADER_REGISTRY.get(template)
+  if (templateLoader) {
+    const cacheKey = `template:${template}`
+    if (!LAZY_COMPONENT_CACHE.has(cacheKey)) {
+      LAZY_COMPONENT_CACHE.set(cacheKey, lazy(templateLoader))
+    }
+    return LAZY_COMPONENT_CACHE.get(cacheKey)!
+  }
+
+  return null
+}
+
+/**
  * Check if a plugin has a custom card
  */
 export function hasCustomCard(uri: string): boolean {
@@ -433,15 +456,18 @@ registerPluginPattern(/map2:\/\/juce\/.*synthforge/i, synthForgeCardConfig)
 // Best-in-class algorithmic reverbs
 
 registerPluginCard('https://michaelwillis.github.io/dragonfly-reverb#room', {
-  loader: () => import('./Custom/Dragonfly/DragonflyRoomCard').then(m => ({ default: m.DragonflyRoomCard })),
+  template: 'reverb',
+  visualizations: ['reverb-decay', 'level-meter'],
 })
 
 registerPluginCard('https://michaelwillis.github.io/dragonfly-reverb#hall', {
-  loader: () => import('./Custom/Dragonfly/DragonflyHallCard').then(m => ({ default: m.DragonflyHallCard })),
+  template: 'reverb',
+  visualizations: ['reverb-decay', 'level-meter'],
 })
 
 registerPluginCard('https://michaelwillis.github.io/dragonfly-reverb#plate', {
-  loader: () => import('./Custom/Dragonfly/DragonflyPlateCard').then(m => ({ default: m.DragonflyPlateCard })),
+  template: 'reverb',
+  visualizations: ['reverb-decay'],
 })
 
 // ==================== TooB Plugins ====================
@@ -483,12 +509,14 @@ registerPluginCard('http://two-play.com/plugins/toob-4looper', {
 
 // REEV-R Reverb (FabFilter Pro-R inspired)
 registerPluginPattern(/REEV-?R/i, {
-  loader: () => import('./Custom/LV2/REEVRCard').then(m => ({ default: m.REEVRCard })),
+  template: 'utility',
+  visualizations: ['level-meter'],
 })
 
 // Outotune Auto-Tune (Antares inspired)
 registerPluginPattern(/outotune/i, {
-  loader: () => import('./Custom/LV2/OutotuneCard').then(m => ({ default: m.OutotuneCard })),
+  template: 'utility',
+  visualizations: ['level-meter'],
 })
 
 // dm-Whammy Pitch Shifter (DigiTech Whammy inspired)
@@ -502,12 +530,14 @@ registerPluginPattern(/whammy/i, {
 
 // Sfizz - Keyboard Sampler (with soundfont browser)
 registerPluginCard('http://sfztools.github.io/sfizz', {
-  loader: () => import('./Custom/LV2/KeyboardSamplerCard').then(m => ({ default: m.KeyboardSamplerCard })),
+  template: 'instrument',
+  visualizations: ['spectrum-analyzer'],
 })
 
 // Also match sfizz variants
 registerPluginPattern(/sfizz/i, {
-  loader: () => import('./Custom/LV2/KeyboardSamplerCard').then(m => ({ default: m.KeyboardSamplerCard })),
+  template: 'instrument',
+  visualizations: ['spectrum-analyzer'],
 })
 
 // ==================== GlitchShifter ====================

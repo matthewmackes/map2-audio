@@ -103,3 +103,78 @@ def test_build_parameter_schema_payload_treats_transformed_lv2_plugins_as_lv2():
     assert payload["plugins"][0]["source"] == "lv2"
     assert payload["plugins"][0]["format"] == "LV2"
     assert payload["schema"]["lv2://delay:feedback"]["profile"] == "normalized_0_1"
+
+
+def test_load_juce_processors_normalizes_enum_defaults_to_numeric_indices(monkeypatch):
+    monkeypatch.setattr(plugins, "_juce_processors_cache", [])
+
+    payload = plugins._get_juce_processors()
+    eq_plugin = next(plugin for plugin in payload if plugin["uri"] == "map2://juce/eq/parametric")
+    band_type = next(parameter for parameter in eq_plugin["parameters"] if parameter["symbol"] == "band0_type")
+
+    assert band_type["min"] == 0.0
+    assert band_type["max"] == 7.0
+    assert band_type["default"] == 0.0
+    assert band_type["options"] == [
+        "peak",
+        "lowshelf",
+        "highshelf",
+        "lowpass",
+        "highpass",
+        "bandpass",
+        "notch",
+        "allpass",
+    ]
+
+
+def test_get_parameter_schema_covers_every_discovered_native_and_lv2_parameter(monkeypatch):
+    monkeypatch.setattr(plugins, "_juce_processors_cache", [])
+    discovered_plugins = [
+        next(plugin for plugin in plugins._get_juce_processors() if plugin["uri"] == "map2://juce/eq/parametric"),
+        {
+            "uri": "lv2://plate",
+            "name": "Plate Verb",
+            "format": "LV2",
+            "parameters": [
+                {
+                    "index": 0,
+                    "name": "Mix",
+                    "symbol": "mix",
+                    "min": 0.0,
+                    "max": 100.0,
+                    "default": 50.0,
+                    "is_toggled": False,
+                    "is_log": False,
+                }
+            ],
+        },
+        {
+            "uri": "hardware://mpx1",
+            "name": "MPX-1",
+            "format": "Hardware",
+            "parameters": [],
+        },
+    ]
+
+    async def _fake_discover_plugins(response, refresh=False):
+        return {
+            "plugins": discovered_plugins,
+            "cached": False,
+        }
+
+    monkeypatch.setattr(plugins, "discover_plugins", _fake_discover_plugins)
+
+    payload = asyncio.run(plugins.get_parameter_schema(Response(), refresh=False))
+
+    missing_keys = []
+    for plugin_entry in discovered_plugins:
+        if str(plugin_entry.get("format", "")).upper() not in {"JUCE", "LV2"}:
+            continue
+        for parameter in plugin_entry.get("parameters", []):
+            index = int(parameter.get("index", 0))
+            raw_key = str(parameter.get("symbol") or parameter.get("name") or "").strip()
+            schema_key = f"{plugin_entry['uri']}:{plugins._normalize_parameter_key(raw_key, f'param-{index}')}"
+            if schema_key not in payload["schema"]:
+                missing_keys.append(schema_key)
+
+    assert missing_keys == []

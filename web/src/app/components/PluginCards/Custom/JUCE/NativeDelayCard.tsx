@@ -1,13 +1,13 @@
 /**
  * NativeDelayCard - Carbon-compliant JUCE Stereo Delay Processor
  *
- * Uses DelayCategoryLayout for AXE-FX Edit structural parity.
- * All parameters exposed: time L/R, feedback, mix, tempo sync, modulation,
- * filters, ducking, multi-tap, stereo mode, spillover.
+ * Uses DelayCategoryLayout for Carbon grouped control of the live stereo delay
+ * parameter set: timing, sync, stereo image, modulation, filtering, ducking,
+ * output trim, spillover, and bypass.
  */
 
 import { useState, useCallback, useEffect } from 'react'
-import { Activity, Filter, VolumeDown, ListDropdown } from '@carbon/icons-react'
+import { Activity, Filter, SettingsAdjust, VolumeDown } from '@carbon/icons-react'
 import { useDelay, TEMPO_DIVISIONS, STEREO_MODES, MOD_WAVEFORMS } from '../../../../hooks/useDelay'
 import { DelayCategoryLayout } from '../../Layouts/DelayCategoryLayout'
 import { NumberInput } from '../../../Controls/NumberInput'
@@ -17,40 +17,39 @@ import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
 
-const DELAY_URI = 'map2://juce/delay/stereo'
+const DELAY_URI = 'map2://juce/delay'
 
 const PARAM = {
   DELAY_TIME_L: 0, DELAY_TIME_R: 1, FEEDBACK: 2, MIX: 3, TEMPO: 4,
-  TAP1_LEVEL: 5, TAP2_LEVEL: 6, TAP2_RATIO: 7, TAP3_LEVEL: 8, TAP3_RATIO: 9,
-  TAP4_LEVEL: 10, TAP4_RATIO: 11, STEREO_SPREAD: 12, PAN: 13,
-  MOD_RATE: 14, MOD_DEPTH: 15, LOW_CUT: 16, HIGH_CUT: 17,
-  DIFFUSION: 18, DUCK_THRESHOLD: 19, DUCK_AMOUNT: 20, DUCK_RELEASE: 21, OUTPUT_LEVEL: 22,
+  TEMPO_SYNC_L: 5, TEMPO_SYNC_R: 6, STEREO_MODE: 7, STEREO_SPREAD: 8,
+  MOD_RATE: 9, MOD_DEPTH: 10, MOD_WAVEFORM: 11, LOW_CUT: 12, HIGH_CUT: 13,
+  FILTER_IN_LOOP: 14, DIFFUSION: 15, DUCK_THRESHOLD: 16, DUCK_AMOUNT: 17,
+  DUCK_RELEASE: 18, OUTPUT_LEVEL: 19, SPILLOVER: 20, BYPASS: 21,
 } as const
 
 const DELAY_PARAMS: PluginParamDef[] = [
-  { index: 0, name: 'Delay Time L', symbol: 'delayTimeL' },
-  { index: 1, name: 'Delay Time R', symbol: 'delayTimeR' },
+  { index: 0, name: 'Delay L', symbol: 'delay_time_l' },
+  { index: 1, name: 'Delay R', symbol: 'delay_time_r' },
   { index: 2, name: 'Feedback', symbol: 'feedback' },
   { index: 3, name: 'Mix', symbol: 'mix' },
   { index: 4, name: 'Tempo', symbol: 'tempo' },
-  { index: 5, name: 'Tap 1 Level', symbol: 'tap1Level' },
-  { index: 6, name: 'Tap 2 Level', symbol: 'tap2Level' },
-  { index: 7, name: 'Tap 2 Ratio', symbol: 'tap2Ratio' },
-  { index: 8, name: 'Tap 3 Level', symbol: 'tap3Level' },
-  { index: 9, name: 'Tap 3 Ratio', symbol: 'tap3Ratio' },
-  { index: 10, name: 'Tap 4 Level', symbol: 'tap4Level' },
-  { index: 11, name: 'Tap 4 Ratio', symbol: 'tap4Ratio' },
-  { index: 12, name: 'Stereo Spread', symbol: 'stereoSpread' },
-  { index: 13, name: 'Pan', symbol: 'pan' },
-  { index: 14, name: 'Mod Rate', symbol: 'modRate' },
-  { index: 15, name: 'Mod Depth', symbol: 'modDepth' },
-  { index: 16, name: 'Low Cut', symbol: 'lowCut' },
-  { index: 17, name: 'High Cut', symbol: 'highCut' },
-  { index: 18, name: 'Diffusion', symbol: 'diffusion' },
-  { index: 19, name: 'Duck Threshold', symbol: 'duckThreshold' },
-  { index: 20, name: 'Duck Amount', symbol: 'duckAmount' },
-  { index: 21, name: 'Duck Release', symbol: 'duckRelease' },
-  { index: 22, name: 'Output Level', symbol: 'outputLevel' },
+  { index: 5, name: 'Sync L', symbol: 'tempo_sync_l' },
+  { index: 6, name: 'Sync R', symbol: 'tempo_sync_r' },
+  { index: 7, name: 'Stereo Mode', symbol: 'stereo_mode' },
+  { index: 8, name: 'Stereo Spread', symbol: 'stereo_spread' },
+  { index: 9, name: 'Mod Rate', symbol: 'mod_rate' },
+  { index: 10, name: 'Mod Depth', symbol: 'mod_depth' },
+  { index: 11, name: 'Mod Waveform', symbol: 'mod_waveform' },
+  { index: 12, name: 'Low Cut', symbol: 'low_cut' },
+  { index: 13, name: 'High Cut', symbol: 'high_cut' },
+  { index: 14, name: 'Filter In Loop', symbol: 'filter_in_loop' },
+  { index: 15, name: 'Diffusion', symbol: 'diffusion' },
+  { index: 16, name: 'Duck Threshold', symbol: 'duck_threshold' },
+  { index: 17, name: 'Duck Amount', symbol: 'duck_amount' },
+  { index: 18, name: 'Duck Release', symbol: 'duck_release' },
+  { index: 19, name: 'Output', symbol: 'output_level' },
+  { index: 20, name: 'Spillover', symbol: 'spillover' },
+  { index: 21, name: 'Bypass', symbol: 'bypass' },
 ]
 
 const QUICK_DIVISIONS = [
@@ -78,9 +77,7 @@ function NativeDelayCardBase({
     setDelayTimeL, setDelayTimeR, setDelayTimeBoth,
     setFeedback, setMix, setTempo,
     setTempoSyncL, setTempoSyncR, setTempoSyncBoth,
-    setTap1Level, setTap2Level, setTap2Ratio,
-    setTap3Level, setTap3Ratio, setTap4Level, setTap4Ratio,
-    setStereoMode, setStereoSpread, setPan,
+    setStereoMode, setStereoSpread,
     setModRate, setModDepth, setModWaveform,
     setLowCut, setHighCut, setFilterInLoop, setDiffusion,
     setDuckThreshold, setDuckAmount, setDuckRelease,
@@ -155,6 +152,9 @@ function NativeDelayCardBase({
           title="Tap Tempo (T key)"
         >
           TAP
+        </button>
+        <button className="carbon-toggle-btn" onClick={() => clearTaps()}>
+          CLEAR
         </button>
         {tapCount > 0 && <span style={{ fontSize: 9, color: '#a8a8a8' }}>{tapCount} taps</span>}
       </div>
@@ -293,26 +293,18 @@ function NativeDelayCardBase({
       ),
     },
     {
-      id: 'multiTap',
-      title: 'Multi-Tap',
-      icon: <ListDropdown size={14} />,
+      id: 'stereoOutput',
+      title: 'Stereo & Output',
+      icon: <SettingsAdjust size={14} />,
       children: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {[
-            { label: 'TAP 1', level: parameters.tap1Level, setLevel: setTap1Level, ratio: null, setRatio: null, defLevel: 100, info: '(main)' },
-            { label: 'TAP 2', level: parameters.tap2Level, setLevel: setTap2Level, ratio: parameters.tap2Ratio, setRatio: setTap2Ratio, defLevel: 0 },
-            { label: 'TAP 3', level: parameters.tap3Level, setLevel: setTap3Level, ratio: parameters.tap3Ratio, setRatio: setTap3Ratio, defLevel: 0 },
-            { label: 'TAP 4', level: parameters.tap4Level, setLevel: setTap4Level, ratio: parameters.tap4Ratio, setRatio: setTap4Ratio, defLevel: 0 },
-          ].map((tap) => (
-            <div key={tap.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 9, fontWeight: 'bold', color: '#a8a8a8', width: 36 }}>{tap.label}</span>
-              <ParameterKnob label="Level" value={tap.level} min={0} max={100} defaultValue={tap.defLevel} unit="%" onChange={tap.setLevel} accentColor={accentColor} size="small" />
-              {tap.setRatio && (
-                <ParameterKnob label="Ratio" value={tap.ratio!} min={0.1} max={1} defaultValue={0.5} step={0.01} onChange={tap.setRatio} valueFormatter={(v) => `${(v * 100).toFixed(0)}%`} accentColor={accentColor} size="small" />
-              )}
-              {tap.info && <span style={{ fontSize: 9, color: '#666' }}>{tap.info}</span>}
-            </div>
-          ))}
+          <div className="carbon-param-row">
+            <ParameterKnob label="Spread" value={parameters.stereoSpread} min={0} max={200} defaultValue={100} unit="%" onChange={setStereoSpread} accentColor={accentColor} size="small" midi={{ pluginUri: DELAY_URI, paramIndex: PARAM.STEREO_SPREAD }} />
+            <ParameterKnob label="Output" value={parameters.outputLevel} min={-12} max={12} defaultValue={0} unit="dB" onChange={setOutputLevel} accentColor={accentColor} size="small" midi={{ pluginUri: DELAY_URI, paramIndex: PARAM.OUTPUT_LEVEL }} />
+          </div>
+          <div style={{ fontSize: 10, color: '#a8a8a8' }}>
+            Stereo mode is selected in the sync bar. Spread and output trim stay visible here for fast balancing.
+          </div>
         </div>
       ),
     },
@@ -369,6 +361,7 @@ function NativeDelayCardBase({
       outputLevel={Math.max(metering.outputLevelL, metering.outputLevelR)}
       advancedSections={advancedSections}
       extraContent={tempoSyncContent}
+      cardWidth={720}
     />
   )
 }

@@ -12,9 +12,11 @@ class _FakeEngine:
         self.is_available = True
         self.is_running = True
         self._uri_to_instance: dict[str, int] = {}
+        self._uri_position_to_instance: dict[tuple[str, int], int] = {}
         self.loaded_uris: list[str] = []
         self.unloaded_ids: list[int] = []
         self.parameter_batches: list[list[tuple[int, str, float]]] = []
+        self.parameter_sets: list[tuple[str, str, float, int | None, int | None]] = []
         self._next_instance = 100
 
     async def load_plugin(self, uri: str) -> int:
@@ -38,7 +40,23 @@ class _FakeEngine:
         self.parameter_batches.append(list(updates))
         return len(updates)
 
-    def _get_instance_id_for_uri(self, uri: str):
+    async def set_parameter(
+        self,
+        uri: str,
+        symbol: str,
+        value: float,
+        *,
+        instance_id: int | None = None,
+        plugin_position: int | None = None,
+    ) -> bool:
+        self.parameter_sets.append((uri, symbol, value, instance_id, plugin_position))
+        return True
+
+    def _get_instance_id_for_uri(self, uri: str, plugin_position: int | None = None):
+        if isinstance(plugin_position, int):
+            positioned = self._uri_position_to_instance.get((uri, plugin_position))
+            if isinstance(positioned, int):
+                return positioned
         return self._uri_to_instance.get(uri)
 
 
@@ -52,6 +70,7 @@ async def _await_worker() -> None:
 @pytest.fixture(autouse=True)
 async def _reset_plugin_routes_state(monkeypatch):
     # Isolate module globals used by route-level worker tests.
+    monkeypatch.setattr(plugins_routes, "ensure_plugin_route_ready", lambda _route: None)
     monkeypatch.setattr(plugins_routes, "_discovered_plugins", [])
     monkeypatch.setattr(plugins_routes, "_loaded_plugins", {})
     monkeypatch.setattr(plugins_routes, "_engine_op_queue", None)
@@ -209,3 +228,62 @@ async def test_batch_parameters_sync_mode_applies_inline(monkeypatch):
     assert payload["engine_deferred"] is False
     assert payload["engine_applied"] == 1
     assert fake_engine.parameter_batches == [[(777, "gain", 0.9)]]
+
+
+@pytest.mark.asyncio
+async def test_batch_parameters_keeps_duplicate_uri_instances_separate(monkeypatch):
+    uri = "urn:test:plugin:duplicate-uri"
+    fake_engine = _FakeEngine()
+
+    monkeypatch.setattr(juce_engine_service, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(plugins_routes, "_ENABLE_SYNC_ENGINE_PLUGIN_OPS", True)
+    monkeypatch.setattr(
+        plugins_routes,
+        "_loaded_plugins",
+        {
+            uri: {
+                "uri": uri,
+                "name": "Duplicate Plugin",
+                "category": "Utility",
+                "instance_id": 1001,
+                "engine_loaded": True,
+                "engine_deferred": False,
+                "parameters": [{"index": 0, "name": "Gain", "symbol": "gain"}],
+            }
+        },
+    )
+
+    payload = await plugins_routes.batch_set_parameters(
+        {
+            "updates": [
+                {"plugin_uri": uri, "param_index": 0, "value": 0.11, "instance_id": 1001, "plugin_position": 0},
+                {"plugin_uri": uri, "param_index": 0, "value": 0.82, "instance_id": 1002, "plugin_position": 1},
+            ]
+        }
+    )
+
+    assert payload["deduplicated"] == 2
+    assert payload["applied"] == 2
+    assert payload["engine_applied"] == 2
+    assert fake_engine.parameter_batches == [[(1001, "gain", 0.11), (1002, "gain", 0.82)]]
+
+
+@pytest.mark.asyncio
+async def test_single_parameter_write_supports_discovered_plugin_with_position(monkeypatch):
+    uri = "urn:test:plugin:discovered-only"
+    fake_engine = _FakeEngine()
+
+    monkeypatch.setattr(juce_engine_service, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(plugins_routes, "_loaded_plugins", {})
+    monkeypatch.setattr(plugins_routes, "_discovered_plugins", [_plugin_definition(uri)])
+
+    payload = await plugins_routes.set_parameter(
+        uri=uri,
+        param_index=0,
+        value=0.67,
+        plugin_position=3,
+    )
+
+    assert payload["engine_set"] is True
+    assert payload["plugin_position"] == 3
+    assert fake_engine.parameter_sets == [(uri, "gain", 0.67, None, 3)]

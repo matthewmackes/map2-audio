@@ -3,7 +3,7 @@
 // Converts two chains (A and B) into a unified parallel routing visualization
 // ============================================================================
 
-import { Chain } from '../../../types';
+import { Chain, ChainPlugin } from '../../../types';
 import {
   AudioPluginNode,
   AudioPluginNodeData,
@@ -19,14 +19,15 @@ import {
   AudioConnectionEdge,
   createAudioConnectionEdge,
 } from '../edges/AudioConnectionEdgeTypes';
+import { getPluginIdentityKey } from '../../../utils/pluginIdentity';
 
 export interface ABFlowCallbacks {
-  onRemoveA: (uri: string) => void;
-  onRemoveB: (uri: string) => void;
-  onToggleBypassA: (uri: string, bypass: boolean) => void;
-  onToggleBypassB: (uri: string, bypass: boolean) => void;
-  onOpenParametersA: (plugin: any) => void;
-  onOpenParametersB: (plugin: any) => void;
+  onRemoveA: (plugin: ChainPlugin) => void;
+  onRemoveB: (plugin: ChainPlugin) => void;
+  onToggleBypassA: (plugin: ChainPlugin) => void;
+  onToggleBypassB: (plugin: ChainPlugin) => void;
+  onOpenParametersA: (plugin: ChainPlugin) => void;
+  onOpenParametersB: (plugin: ChainPlugin) => void;
 }
 
 export interface ABFlowData {
@@ -328,9 +329,9 @@ function createPluginNodes(
   pathId: 'A' | 'B',
   startX: number,
   y: number,
-  onRemove: (uri: string) => void,
-  onToggleBypass: (uri: string, bypass: boolean) => void,
-  onOpenParameters: (plugin: any) => void,
+  onRemove: (plugin: ChainPlugin) => void,
+  onToggleBypass: (plugin: ChainPlugin) => void,
+  onOpenParameters: (plugin: ChainPlugin) => void,
   compact?: boolean,
   pluginMeters?: Record<string, { input?: number; output?: number }>,
   pluginMeta?: Record<string, any>,
@@ -342,11 +343,12 @@ function createPluginNodes(
   const NODE_SPACING = 40;
 
   return chain.plugins.map((plugin, index) => {
-    const nodeId = `plugin-${pathId}-${plugin.uri}-${index}`;
+    const pluginKey = getPluginIdentityKey(plugin);
+    const nodeId = `plugin-${pathId}-${pluginKey}`;
     const x = startX + index * (NODE_WIDTH + NODE_SPACING);
 
     const meta = pluginMeta?.[plugin.uri];
-    const perf = pluginPerformance?.[plugin.uri];
+    const perf = pluginPerformance?.[pluginKey] ?? pluginPerformance?.[plugin.uri];
     const quickParams = (meta?.parameters || []).filter((p: any) => !p.is_toggled).slice(0, 2);
 
     const nodeData: AudioPluginNodeData = {
@@ -356,7 +358,7 @@ function createPluginNodes(
       inputPorts: plugin.in_ports || 0,
       outputPorts: plugin.out_ports || 0,
       compact,
-      meters: pluginMeters?.[plugin.uri],
+      meters: pluginMeters?.[pluginKey] ?? pluginMeters?.[plugin.uri],
       isHardware: plugin.format === 'Hardware' || plugin.uri.startsWith('hardware://'),
       cpuPercent: perf?.cpuPercent ?? plugin.cpu_percent,
       latencySamples: perf?.latencySamples ?? plugin.latency_samples,
@@ -367,13 +369,13 @@ function createPluginNodes(
       quickParameters: quickParams.map((p: any) => ({
         name: p.name,
         symbol: p.symbol,
-        value: quickParamValues?.[plugin.uri]?.[p.symbol] ?? p.default,
+        value: quickParamValues?.[pluginKey]?.[p.symbol] ?? quickParamValues?.[plugin.uri]?.[p.symbol] ?? p.default,
         min: p.min,
         max: p.max,
         index: p.index,
       })),
-      onRemove: () => onRemove(plugin.uri),
-      onToggleBypass: () => onToggleBypass(plugin.uri, plugin.bypassed),
+      onRemove: () => onRemove(plugin),
+      onToggleBypass: () => onToggleBypass(plugin),
       onOpenParameters: () => onOpenParameters(plugin),
       // Visual indicator for which path this plugin belongs to
       pathIndicator: pathId,

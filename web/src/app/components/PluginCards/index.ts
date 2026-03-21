@@ -23,6 +23,7 @@ export {
   getPluginCardConfig,
   getPluginCardComponent,
   getTemplateComponent,
+  getTemplateCardComponent,
   hasCustomCard,
   getRegisteredPlugins,
   getRegisteredTemplates,

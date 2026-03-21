@@ -22,6 +22,72 @@ from app.services.plugin_resource_manager import get_resource_manager, ResourceL
 logger = logging.getLogger(__name__)
 
 
+def _coerce_finite_float(value: Any, fallback: float) -> float:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return fallback
+    return numeric if math.isfinite(numeric) else fallback
+
+
+def _normalize_juce_parameter_definition(
+    definition: Dict[str, Any],
+    index: int,
+    *,
+    band_index: Optional[int] = None,
+) -> Dict[str, Any]:
+    param_type = str(definition.get("type") or "").strip().lower()
+    is_toggled = param_type == "toggle"
+    is_enum = param_type == "enum"
+    options = [str(option) for option in definition.get("options", [])] if isinstance(definition.get("options"), list) else []
+
+    if is_toggled:
+        minimum = 0.0
+        maximum = 1.0
+        default_value = 1.0 if bool(definition.get("default", False)) else 0.0
+    elif is_enum:
+        minimum = _coerce_finite_float(definition.get("min", 0.0), 0.0)
+        fallback_maximum = float(len(options) - 1) if options else 1.0
+        maximum = _coerce_finite_float(definition.get("max", fallback_maximum), fallback_maximum)
+        raw_default = definition.get("default", minimum)
+        if isinstance(raw_default, str) and options:
+            try:
+                default_value = float(options.index(raw_default))
+            except ValueError:
+                default_value = minimum
+        else:
+            default_value = _coerce_finite_float(raw_default, minimum)
+    else:
+        minimum = _coerce_finite_float(definition.get("min", 0.0), 0.0)
+        maximum = _coerce_finite_float(definition.get("max", 1.0), 1.0)
+        default_value = _coerce_finite_float(definition.get("default", minimum), minimum)
+
+    if maximum < minimum:
+        minimum, maximum = maximum, minimum
+
+    default_value = min(max(default_value, minimum), maximum)
+    base_name = str(definition.get("name", "")).strip()
+    base_symbol = str(definition.get("symbol", "")).strip()
+    name = base_name if band_index is None else f"Band {band_index + 1} {base_name}".strip()
+    symbol = base_symbol if band_index is None else f"band{band_index}_{base_symbol}"
+
+    parameter = {
+        "index": index,
+        "name": name,
+        "symbol": symbol,
+        "min": minimum,
+        "max": maximum,
+        "default": default_value,
+        "is_toggled": is_toggled,
+        "is_log": bool(definition.get("logarithmic", False)) and not (is_toggled or is_enum),
+    }
+
+    if options:
+        parameter["options"] = options
+
+    return parameter
+
+
 def _load_juce_processors() -> List[Dict[str, Any]]:
     """Load JUCE native processors from configuration file.
 
@@ -51,16 +117,7 @@ def _load_juce_processors() -> List[Dict[str, Any]]:
             param_index = 0
 
             for param in proc.get("parameters", []):
-                parameters.append({
-                    "index": param_index,
-                    "name": param.get("name", ""),
-                    "symbol": param.get("symbol", ""),
-                    "min": param.get("min", 0),
-                    "max": param.get("max", 1),
-                    "default": param.get("default", 0),
-                    "is_toggled": param.get("type") == "toggle",
-                    "is_log": param.get("logarithmic", False),
-                })
+                parameters.append(_normalize_juce_parameter_definition(param, param_index))
                 param_index += 1
 
             # Add band parameters for EQ
@@ -68,16 +125,13 @@ def _load_juce_processors() -> List[Dict[str, Any]]:
                 band_config = proc["band_parameters"]
                 for band_idx in range(band_config.get("count", 0)):
                     for band_param in band_config.get("per_band", []):
-                        parameters.append({
-                            "index": param_index,
-                            "name": f"Band {band_idx + 1} {band_param.get('name', '')}",
-                            "symbol": f"band{band_idx}_{band_param.get('symbol', '')}",
-                            "min": band_param.get("min", 0),
-                            "max": band_param.get("max", 1),
-                            "default": band_param.get("default", 0),
-                            "is_toggled": band_param.get("type") == "toggle",
-                            "is_log": band_param.get("logarithmic", False),
-                        })
+                        parameters.append(
+                            _normalize_juce_parameter_definition(
+                                band_param,
+                                param_index,
+                                band_index=band_idx,
+                            )
+                        )
                         param_index += 1
 
             processors.append({
@@ -181,6 +235,8 @@ try:
         plugin_uri: str
         param_index: int
         value: float
+        instance_id: Optional[int] = None
+        plugin_position: Optional[int] = None
 
     class BatchParameterRequest(BaseModel):
         """Batch parameter update request."""
@@ -292,37 +348,100 @@ try:
             return None
         return engine
 
+    def _normalize_positive_int(value: Any) -> Optional[int]:
+        try:
+            numeric = int(value)
+        except (TypeError, ValueError):
+            return None
+        return numeric if numeric > 0 else None
+
+    def _normalize_non_negative_int(value: Any) -> Optional[int]:
+        try:
+            numeric = int(value)
+        except (TypeError, ValueError):
+            return None
+        return numeric if numeric >= 0 else None
+
+    async def _call_instance_resolver(
+        resolver,
+        plugin_uri: str,
+        plugin_position: Optional[int] = None,
+    ) -> Optional[int]:
+        if not callable(resolver):
+            return None
+
+        try:
+            if isinstance(plugin_position, int) and plugin_position >= 0:
+                try:
+                    resolved = await asyncio.to_thread(resolver, plugin_uri, plugin_position)
+                except TypeError:
+                    resolved = await asyncio.to_thread(resolver, plugin_uri)
+            else:
+                resolved = await asyncio.to_thread(resolver, plugin_uri)
+        except Exception:
+            return None
+
+        return resolved if isinstance(resolved, int) and resolved > 0 else None
+
+    def _find_plugin_info_in_snapshot(
+        plugin_uri: str,
+        discovered_snapshot: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        plugin_info = next(
+            (plugin for plugin in discovered_snapshot if isinstance(plugin, dict) and plugin.get("uri") == plugin_uri),
+            None,
+        )
+        return dict(plugin_info or {})
+
+    async def _get_plugin_info_for_uri(
+        plugin_uri: str,
+        *,
+        allow_refresh: bool = False,
+    ) -> Dict[str, Any]:
+        with _plugin_cache_lock:
+            loaded_entry = dict(_loaded_plugins.get(plugin_uri, {}))
+            discovered_snapshot = list(_discovered_plugins)
+
+        if loaded_entry:
+            return loaded_entry
+
+        discovered_entry = _find_plugin_info_in_snapshot(plugin_uri, discovered_snapshot)
+        if discovered_entry or not allow_refresh:
+            return discovered_entry
+
+        discovery = await discover_plugins(response=Response(), refresh=not _is_cache_valid())
+        plugins = discovery.get("plugins", []) if isinstance(discovery, dict) else []
+        if not isinstance(plugins, list):
+            return {}
+        return _find_plugin_info_in_snapshot(plugin_uri, plugins)
+
     async def _resolve_instance_id_for_uri(
         engine,
         plugin_uri: str,
         fallback_instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
     ) -> Optional[int]:
-        if isinstance(fallback_instance_id, int) and fallback_instance_id > 0:
-            return fallback_instance_id
+        explicit_instance_id = _normalize_positive_int(fallback_instance_id)
+        if explicit_instance_id is not None:
+            return explicit_instance_id
 
-        with _plugin_cache_lock:
-            loaded = _loaded_plugins.get(plugin_uri)
-            if loaded:
-                cached_instance = loaded.get("instance_id")
-                if isinstance(cached_instance, int) and cached_instance > 0:
-                    return cached_instance
+        if plugin_position is None:
+            with _plugin_cache_lock:
+                loaded = _loaded_plugins.get(plugin_uri)
+                if loaded:
+                    cached_instance = _normalize_positive_int(loaded.get("instance_id"))
+                    if cached_instance is not None:
+                        return cached_instance
 
         resolver = getattr(engine, "_get_instance_id_for_uri", None)
-        if callable(resolver):
-            try:
-                resolved = await asyncio.to_thread(resolver, plugin_uri)
-                if isinstance(resolved, int) and resolved > 0:
-                    return resolved
-            except Exception:
-                return None
-        return None
+        return await _call_instance_resolver(resolver, plugin_uri, plugin_position)
 
     async def _apply_engine_parameter_batch(engine, updates: List[Dict[str, Any]]) -> int:
         if not updates:
             return 0
 
         resolver = getattr(engine, "_get_instance_id_for_uri", None)
-        instance_id_cache: Dict[str, Optional[int]] = {}
+        instance_id_cache: Dict[tuple[str, int], Optional[int]] = {}
         direct_updates: List[tuple[int, str, float]] = []
 
         for update in updates:
@@ -332,26 +451,21 @@ try:
             if not plugin_uri or not symbol:
                 continue
 
-            instance_id = update.get("instance_id")
-            if not isinstance(instance_id, int) or instance_id <= 0:
-                if plugin_uri in instance_id_cache:
-                    instance_id = instance_id_cache[plugin_uri]
+            plugin_position = _normalize_non_negative_int(update.get("plugin_position"))
+            instance_id = _normalize_positive_int(update.get("instance_id"))
+            if instance_id is None:
+                cache_key = (plugin_uri, plugin_position if plugin_position is not None else -1)
+                if cache_key in instance_id_cache:
+                    instance_id = instance_id_cache[cache_key]
                 else:
-                    instance_id = None
-                    with _plugin_cache_lock:
-                        loaded = _loaded_plugins.get(plugin_uri)
-                        if loaded:
-                            cached_instance = loaded.get("instance_id")
-                            if isinstance(cached_instance, int) and cached_instance > 0:
-                                instance_id = cached_instance
-                    if instance_id is None and callable(resolver):
-                        try:
-                            resolved = await asyncio.to_thread(resolver, plugin_uri)
-                            if isinstance(resolved, int) and resolved > 0:
-                                instance_id = resolved
-                        except Exception:
-                            instance_id = None
-                    instance_id_cache[plugin_uri] = instance_id
+                    instance_id = await _resolve_instance_id_for_uri(
+                        engine,
+                        plugin_uri,
+                        plugin_position=plugin_position,
+                    )
+                    if instance_id is None:
+                        instance_id = await _call_instance_resolver(resolver, plugin_uri, plugin_position)
+                    instance_id_cache[cache_key] = instance_id
 
             if isinstance(instance_id, int) and instance_id > 0:
                 direct_updates.append((instance_id, symbol, value))
@@ -1328,14 +1442,19 @@ try:
         return {"uri": uri, "parameters": parameters}
 
     @router.post("/{uri:path}/parameters/{param_index}")
-    async def set_parameter(uri: str, param_index: int, value: float):
+    async def set_parameter(
+        uri: str,
+        param_index: int,
+        value: float,
+        instance_id: Optional[int] = Query(None),
+        plugin_position: Optional[int] = Query(None),
+    ):
         """Set a plugin parameter value."""
         if param_index < 0:
             raise HTTPException(status_code=400, detail="Parameter index must be >= 0")
-        with _plugin_cache_lock:
-            plugin_info = dict(_loaded_plugins.get(uri, {}))
+        plugin_info = await _get_plugin_info_for_uri(uri, allow_refresh=True)
         if not plugin_info:
-            raise HTTPException(status_code=404, detail="Plugin not loaded")
+            raise HTTPException(status_code=404, detail="Plugin not found")
 
         # Set parameter in running plugin instance
         engine_set = False
@@ -1350,20 +1469,41 @@ try:
             from app.services.juce_engine_service import get_audio_engine
             engine = get_audio_engine()
             if engine.is_available and engine.is_running and symbol:
-                engine_set = await engine.set_parameter(uri, symbol, value)
+                engine_set = await engine.set_parameter(
+                    uri,
+                    symbol,
+                    value,
+                    instance_id=_normalize_positive_int(instance_id),
+                    plugin_position=_normalize_non_negative_int(plugin_position),
+                )
                 if not engine_set:
                     logger.warning(f"Failed to set parameter in audio engine: {uri}:{symbol}={value}")
         except Exception as e:
             logger.error(f"Error setting parameter in audio engine: {e}")
 
+        event_payload = {"plugin_uri": uri, "param_index": param_index, "value": value}
+        normalized_instance_id = _normalize_positive_int(instance_id)
+        normalized_plugin_position = _normalize_non_negative_int(plugin_position)
+        if normalized_instance_id is not None:
+            event_payload["instance_id"] = normalized_instance_id
+        if normalized_plugin_position is not None:
+            event_payload["plugin_position"] = normalized_plugin_position
+
         # Publish parameter change event
         await event_publisher.publish(
             "plugin_params",
             EventType.PLUGIN_PARAMETER_CHANGED,
-            {"plugin_uri": uri, "param_index": param_index, "value": value}
+            event_payload
         )
 
-        return {"uri": uri, "param": param_index, "value": value, "engine_set": engine_set}
+        return {
+            "uri": uri,
+            "param": param_index,
+            "value": value,
+            "instance_id": normalized_instance_id,
+            "plugin_position": normalized_plugin_position,
+            "engine_set": engine_set,
+        }
 
     @router.post("/batch/parameters")
     async def batch_set_parameters(payload: Dict[str, Any] = Body(...)):
@@ -1387,13 +1527,15 @@ try:
         results = []
         errors = []
 
-        deduped_updates: Dict[tuple[str, int], tuple[str, int, float]] = {}
+        deduped_updates: Dict[tuple[str, int, int, int], Dict[str, Any]] = {}
         for raw in updates_raw:
             if not isinstance(raw, dict):
                 continue
             plugin_uri = raw.get("plugin_uri")
             param_index_raw = raw.get("param_index")
             value_raw = raw.get("value")
+            instance_id = _normalize_positive_int(raw.get("instance_id"))
+            plugin_position = _normalize_non_negative_int(raw.get("plugin_position"))
 
             if not isinstance(plugin_uri, str) or not plugin_uri:
                 continue
@@ -1406,28 +1548,63 @@ try:
             except Exception:
                 continue
 
-            deduped_updates[(plugin_uri, param_index)] = (plugin_uri, param_index, value)
+            deduped_updates[
+                (
+                    plugin_uri,
+                    instance_id if instance_id is not None else -1,
+                    plugin_position if plugin_position is not None else -1,
+                    param_index,
+                )
+            ] = {
+                "plugin_uri": plugin_uri,
+                "param_index": param_index,
+                "value": value,
+                "instance_id": instance_id,
+                "plugin_position": plugin_position,
+            }
 
         unique_updates = list(deduped_updates.values())
 
         with _plugin_cache_lock:
             loaded_snapshot = {uri: dict(info) for uri, info in _loaded_plugins.items()}
+            discovered_snapshot = list(_discovered_plugins)
+
+        discovered_lookup = {
+            str(plugin.get("uri")): dict(plugin)
+            for plugin in discovered_snapshot
+            if isinstance(plugin, dict) and plugin.get("uri")
+        }
+        if any(
+            update["plugin_uri"] not in loaded_snapshot and update["plugin_uri"] not in discovered_lookup
+            for update in unique_updates
+        ):
+            discovery = await discover_plugins(response=Response(), refresh=not _is_cache_valid())
+            plugins = discovery.get("plugins", []) if isinstance(discovery, dict) else []
+            if isinstance(plugins, list):
+                discovered_lookup = {
+                    str(plugin.get("uri")): dict(plugin)
+                    for plugin in plugins
+                    if isinstance(plugin, dict) and plugin.get("uri")
+                }
 
         sync_engine_ops = _ENABLE_ENGINE_PLUGIN_OPS and _ENABLE_SYNC_ENGINE_PLUGIN_OPS
         engine = None
-        resolver = None
-        instance_id_cache: Dict[str, Optional[int]] = {}
+        instance_id_cache: Dict[tuple[str, int], Optional[int]] = {}
         sync_engine_updates: List[tuple[int, str, float]] = []
         deferred_engine_updates: List[Dict[str, Any]] = []
         if sync_engine_ops:
             try:
                 from app.services.juce_engine_service import get_audio_engine
                 engine = get_audio_engine()
-                resolver = getattr(engine, "_get_instance_id_for_uri", None)
             except Exception:
                 engine = None
 
-        for plugin_uri, param_index, value in unique_updates:
+        for update in unique_updates:
+            plugin_uri = update["plugin_uri"]
+            param_index = update["param_index"]
+            value = update["value"]
+            explicit_instance_id = _normalize_positive_int(update.get("instance_id"))
+            plugin_position = _normalize_non_negative_int(update.get("plugin_position"))
             try:
                 if param_index < 0:
                     errors.append({
@@ -1437,12 +1614,12 @@ try:
                     })
                     continue
 
-                plugin_info = loaded_snapshot.get(plugin_uri, {})
+                plugin_info = dict(loaded_snapshot.get(plugin_uri) or discovered_lookup.get(plugin_uri) or {})
                 if not plugin_info:
                     errors.append({
                         "plugin_uri": plugin_uri,
                         "param_index": param_index,
-                        "error": "Plugin not loaded"
+                        "error": "Plugin not found"
                     })
                     continue
 
@@ -1455,15 +1632,17 @@ try:
 
                 if symbol and _ENABLE_ENGINE_PLUGIN_OPS:
                     if sync_engine_ops and engine and engine.is_available and engine.is_running:
-                        if plugin_uri not in instance_id_cache:
-                            instance_id = plugin_info.get("instance_id")
-                            if not isinstance(instance_id, int) or instance_id <= 0:
-                                instance_id = None
-                                if callable(resolver):
-                                    instance_id = await asyncio.to_thread(resolver, plugin_uri)
-                            instance_id_cache[plugin_uri] = instance_id
-
-                        instance_id = instance_id_cache.get(plugin_uri)
+                        instance_id = explicit_instance_id
+                        if instance_id is None:
+                            cache_key = (plugin_uri, plugin_position if plugin_position is not None else -1)
+                            if cache_key not in instance_id_cache:
+                                instance_id_cache[cache_key] = await _resolve_instance_id_for_uri(
+                                    engine,
+                                    plugin_uri,
+                                    fallback_instance_id=plugin_info.get("instance_id"),
+                                    plugin_position=plugin_position,
+                                )
+                            instance_id = instance_id_cache.get(cache_key)
                         if isinstance(instance_id, int) and instance_id > 0:
                             sync_engine_updates.append((instance_id, symbol, value))
                     elif not sync_engine_ops:
@@ -1472,22 +1651,33 @@ try:
                                 "plugin_uri": plugin_uri,
                                 "symbol": symbol,
                                 "value": value,
-                                "instance_id": plugin_info.get("instance_id"),
+                                "instance_id": explicit_instance_id or _normalize_positive_int(plugin_info.get("instance_id")),
+                                "plugin_position": plugin_position,
                             }
                         )
 
-                results.append({
+                result_payload: Dict[str, Any] = {
                     "plugin_uri": plugin_uri,
                     "param_index": param_index,
-                    "value": value
-                })
+                    "value": value,
+                }
+                if explicit_instance_id is not None:
+                    result_payload["instance_id"] = explicit_instance_id
+                if plugin_position is not None:
+                    result_payload["plugin_position"] = plugin_position
+                results.append(result_payload)
 
             except Exception as e:
-                errors.append({
+                error_payload: Dict[str, Any] = {
                     "plugin_uri": plugin_uri,
                     "param_index": param_index,
-                    "error": str(e)
-                })
+                    "error": str(e),
+                }
+                if explicit_instance_id is not None:
+                    error_payload["instance_id"] = explicit_instance_id
+                if plugin_position is not None:
+                    error_payload["plugin_position"] = plugin_position
+                errors.append(error_payload)
 
         engine_applied = 0
         engine_deferred = False

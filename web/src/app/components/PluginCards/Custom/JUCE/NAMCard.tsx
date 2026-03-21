@@ -22,7 +22,7 @@ import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import type { PluginCardProps } from '../../types'
 
 // Plugin URI for MIDI mappings
-const NAM_URI = 'map2://juce/amp/nam'
+const NAM_URI = 'map2://juce/nam'
 
 // Parameter definitions for MIDI mapping dialog
 const NAM_PARAMS: PluginParamDef[] = [

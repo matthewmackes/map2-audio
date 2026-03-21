@@ -2496,9 +2496,8 @@
 }
 
 .juce-grid-page__signal-canvas {
-  --juce-grid-signal-card-width: 17rem;
-  --juce-grid-signal-card-height: 15rem;
-  --juce-grid-signal-card-expanded-width: calc((var(--juce-grid-signal-card-width) * 2) + 1rem);
+  --juce-grid-signal-card-width: 19.5rem;
+  --juce-grid-signal-card-height: 13.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -2841,13 +2840,8 @@
 }
 
 .juce-grid-page__signal-grid.has-active-card .juce-grid-page__signal-grid-item.is-dimmed {
-  opacity: 0.24;
-  filter: saturate(0.55);
-}
-
-.juce-grid-page__signal-grid.has-active-card .juce-grid-page__signal-grid-item.is-covered {
-  opacity: 0.12;
-  filter: saturate(0.4) blur(0.02rem);
+  opacity: 0.72;
+  filter: saturate(0.78);
 }
 
 .juce-grid-page__signal-flow-bridge,
@@ -2948,9 +2942,15 @@
   block-size: var(--juce-grid-signal-card-height);
   border: 1px solid var(--cds-border-subtle, var(--border));
   border-radius: 0;
-  background: var(--cds-layer, #161616);
+  background:
+    linear-gradient(180deg, rgba(57, 57, 57, 0.18) 0%, rgba(38, 38, 38, 0.94) 16%, rgba(22, 22, 22, 1) 100%),
+    linear-gradient(135deg, rgba(15, 98, 254, 0.05) 0%, transparent 42%),
+    #161616;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 1.15rem 2rem rgba(0, 0, 0, 0.22);
   overflow: hidden;
-  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease, inline-size 160ms ease;
+  transition: border-color 160ms ease, transform 120ms ease, opacity 160ms ease, box-shadow 160ms ease;
   cursor: pointer;
   outline: none;
 }
@@ -2958,27 +2958,18 @@
 .juce-grid-page__signal-plugin-card::before {
   content: '';
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: var(--juce-grid-signal-accent);
-  opacity: 0.7;
+  inset: 0 auto 0 0;
+  inline-size: 0.22rem;
+  background: linear-gradient(180deg, color-mix(in srgb, white 12%, var(--juce-grid-signal-accent)) 0%, var(--juce-grid-signal-accent) 100%);
+  opacity: 0.92;
   z-index: 1;
 }
 
 .juce-grid-page__signal-plugin-card.is-selected {
-  position: absolute;
-  inset: 0 auto auto 0;
-  inline-size: var(--juce-grid-signal-card-expanded-width);
-  block-size: var(--juce-grid-signal-card-height);
-  z-index: 4;
-  border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 60%, var(--cds-border-subtle, var(--border)));
+  border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 26%, var(--cds-border-subtle, var(--border)));
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 18%, transparent),
-    0 0.8rem 2rem color-mix(in srgb, var(--juce-grid-signal-accent) 14%, transparent);
-}
-
-.juce-grid-page__signal-plugin-card.is-selected-shifted {
-  inset: 0 0 auto auto;
+    inset 0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 24%, transparent),
+    0 1.25rem 2.4rem color-mix(in srgb, black 76%, transparent);
 }
 
 @media (pointer: coarse) and (min-width: 768px) {
@@ -2999,7 +2990,9 @@
 }
 
 .juce-grid-page__signal-plugin-card.is-bypassed {
-  background: color-mix(in srgb, var(--cds-layer, #161616) 88%, black);
+  background:
+    linear-gradient(180deg, rgba(57, 57, 57, 0.12) 0%, rgba(22, 22, 22, 0.96) 100%),
+    #111111;
 }
 
 .juce-grid-page__signal-plugin-card.is-bypassed .juce-grid-page__signal-plugin-hero-svg {
@@ -3009,6 +3002,9 @@
 .juce-grid-page__signal-plugin-card.is-drop-target {
   transform: translateY(-2px);
   border-style: dashed;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 18%, transparent),
+    0 1.15rem 2rem color-mix(in srgb, var(--juce-grid-signal-accent) 18%, rgba(0, 0, 0, 0.28));
 }
 
 .juce-grid-page__signal-plugin-card.is-reorder-preview {
@@ -3033,22 +3029,29 @@
 .juce-grid-page__signal-plugin-card:hover,
 .juce-grid-page__signal-plugin-card:focus-visible {
   border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 45%, var(--cds-border-subtle, var(--border)));
-  box-shadow: 0 0.45rem 1.1rem color-mix(in srgb, black 20%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1.25rem 2.35rem color-mix(in srgb, var(--juce-grid-signal-accent) 10%, rgba(0, 0, 0, 0.28));
 }
 
 .juce-grid-page__signal-plugin-card:hover .juce-grid-page__signal-plugin-hero-svg {
   transform: scale(1.02);
 }
 
+.juce-grid-page__signal-plugin-card.is-selected,
+.juce-grid-page__signal-plugin-card:focus-visible {
+  border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 32%, var(--cds-border-subtle, var(--border)));
+}
+
 /* ── Hero icon area: fills top portion, centered ── */
 
 .juce-grid-page__signal-plugin-hero {
-  flex: 0 0 9rem;
+  flex: 0 0 7.15rem;
   display: flex;
   align-items: center;
   justify-content: stretch;
   min-block-size: 0;
-  padding: 0;
+  padding: 0.9rem 0.9rem 0;
   overflow: hidden;
 }
 
@@ -3059,33 +3062,65 @@
   justify-content: center;
   inline-size: 100%;
   block-size: 100%;
+  padding: 0.75rem;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--juce-grid-signal-accent) 20%, transparent) 0%, transparent 100%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--juce-grid-signal-accent) 26%, transparent) 0%, transparent 55%),
-    linear-gradient(135deg, color-mix(in srgb, var(--juce-grid-signal-accent) 12%, var(--cds-layer, #161616)) 0%, color-mix(in srgb, black 55%, var(--cds-layer, #161616)) 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 244, 244, 0.98) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--juce-grid-signal-accent) 7%, transparent) 0%, transparent 58%);
+  border: 1px solid color-mix(in srgb, var(--juce-grid-signal-accent) 16%, rgba(22, 22, 22, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.juce-grid-page__signal-plugin-hero-outline {
+  position: absolute;
+  inset: 0.42rem auto 0.42rem 0;
+  inline-size: 0.22rem;
+  background: linear-gradient(180deg, color-mix(in srgb, white 8%, var(--juce-grid-signal-accent)) 0%, var(--juce-grid-signal-accent) 100%);
+  pointer-events: none;
+  transition: inline-size 160ms ease, opacity 160ms ease;
+  opacity: 0.85;
 }
 
 .juce-grid-page__signal-plugin-hero-image::after {
   content: '';
   position: absolute;
   inset: auto 0 0;
-  block-size: 2.5rem;
-  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, black 58%, transparent) 100%);
+  block-size: 0.16rem;
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--juce-grid-signal-accent) 68%, white) 42%, transparent 100%);
 }
 
 .juce-grid-page__signal-plugin-hero-svg {
   position: relative;
   z-index: 1;
   display: block;
-  width: min(48%, 5rem);
-  height: min(48%, 5rem);
-  color: color-mix(in srgb, white 78%, var(--juce-grid-signal-accent));
+  width: min(56%, 5.6rem);
+  height: min(56%, 5.6rem);
+  color: color-mix(in srgb, var(--juce-grid-signal-accent) 78%, #161616);
   fill: currentColor;
-  opacity: 0.92;
+  opacity: 0.96;
   transition: transform 160ms ease, opacity 160ms ease;
 }
 
 .juce-grid-page__signal-plugin-card.is-selected .juce-grid-page__signal-plugin-hero-svg {
+  opacity: 1;
+}
+
+.juce-grid-page__signal-plugin-card.is-selected .juce-grid-page__signal-plugin-hero-image,
+.juce-grid-page__signal-plugin-card:focus-visible .juce-grid-page__signal-plugin-hero-image {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(244, 244, 244, 1) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--juce-grid-signal-accent) 10%, transparent) 0%, transparent 62%);
+  border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 32%, rgba(22, 22, 22, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 12%, rgba(0, 0, 0, 0.04));
+}
+
+.juce-grid-page__signal-plugin-card.is-selected .juce-grid-page__signal-plugin-hero-outline,
+.juce-grid-page__signal-plugin-card:focus-visible .juce-grid-page__signal-plugin-hero-outline {
+  inline-size: 0.3rem;
   opacity: 1;
 }
 
@@ -3097,11 +3132,12 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 0.75rem;
+  gap: 0;
   min-block-size: 0;
-  padding: 0.85rem 1rem 1rem;
-  background: color-mix(in srgb, var(--cds-layer-hover, rgba(255, 255, 255, 0.06)) 72%, transparent);
-  border-top: 1px solid color-mix(in srgb, white 6%, transparent);
+  padding: 0.95rem 1.1rem 1.1rem 1.2rem;
+  background:
+    linear-gradient(180deg, rgba(38, 38, 38, 0.12) 0%, rgba(38, 38, 38, 0.92) 16%, rgba(22, 22, 22, 1) 100%);
+  border-top: 1px solid color-mix(in srgb, white 5%, transparent);
   overflow: hidden;
 }
 
@@ -3112,69 +3148,13 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   text-align: left;
-  color: color-mix(in srgb, var(--juce-grid-signal-accent) 82%, white);
-  font-size: 1rem;
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: 1.04rem;
   font-weight: 700;
-  letter-spacing: 0.015em;
-  line-height: 1.2;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
   min-width: 0;
-  text-shadow: 0 0 0.35rem color-mix(in srgb, var(--juce-grid-signal-accent) 18%, transparent);
-}
-
-.juce-grid-page__signal-plugin-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-  inline-size: 100%;
-  min-width: 0;
-}
-
-.juce-grid-page__signal-plugin-detail-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.juce-grid-page__signal-plugin-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem 0.8rem;
-  margin: 0;
-}
-
-.juce-grid-page__signal-plugin-detail-grid div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.juce-grid-page__signal-plugin-detail-grid dt {
-  margin: 0;
-  color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.juce-grid-page__signal-plugin-detail-grid dd {
-  margin: 0;
-  color: var(--cds-text-primary, var(--text));
-  font-size: 0.82rem;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.juce-grid-page__signal-plugin-description {
-  margin: 0;
-  color: var(--cds-text-secondary, var(--text-secondary));
-  font-size: 0.76rem;
-  line-height: 1.4;
-  max-inline-size: 100%;
-  overflow: hidden;
+  text-shadow: none;
 }
 
 .juce-grid-page__signal-plugin-actions {
@@ -3186,23 +3166,21 @@
   transition: opacity 120ms ease;
 }
 
-.juce-grid-page__signal-plugin-card:hover .juce-grid-page__signal-plugin-actions,
-.juce-grid-page__signal-plugin-card:focus-visible .juce-grid-page__signal-plugin-actions,
 .juce-grid-page__signal-plugin-card.is-selected .juce-grid-page__signal-plugin-actions,
 .juce-grid-page__signal-plugin-actions:focus-within {
   opacity: 1;
 }
 
 .juce-grid-page__signal-plugin-actions .cds--overflow-menu {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, rgba(57, 57, 57, 0.92) 78%, rgba(255, 255, 255, 0.08));
 }
 
 .juce-grid-page__signal-plugin-actions .cds--overflow-menu:hover,
 .juce-grid-page__signal-plugin-actions .cds--overflow-menu:focus-visible {
-  background: color-mix(in srgb, var(--juce-grid-signal-accent) 16%, rgba(255, 255, 255, 0.06));
+  background: color-mix(in srgb, var(--juce-grid-signal-accent) 12%, rgba(57, 57, 57, 0.96));
 }
 
 /* Feature row */
@@ -3212,6 +3190,15 @@
 .juce-grid-page__signal-plugin-card.is-bypassed .juce-grid-page__signal-plugin-title,
 .juce-grid-page__signal-plugin-card.is-bypassed .juce-grid-page__signal-plugin-actions {
   opacity: 0.55;
+}
+
+.juce-grid-page__signal-plugin-card.is-selected.is-bypassed {
+  border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 22%, var(--cds-border-subtle, var(--border)));
+}
+
+.juce-grid-page__signal-plugin-card.is-selected.is-bypassed .juce-grid-page__signal-plugin-hero-outline,
+.juce-grid-page__signal-plugin-card.is-bypassed:focus-visible .juce-grid-page__signal-plugin-hero-outline {
+  opacity: 0.72;
 }
 
 .juce-grid-page__signal-plugin-add {
@@ -3225,16 +3212,27 @@
   border: 1px solid var(--cds-border-subtle, var(--border));
   border-radius: 0;
   padding: 0.75rem;
-  background: color-mix(in srgb, var(--cds-layer-hover, rgba(255, 255, 255, 0.06)) 70%, var(--cds-layer, #161616));
+  background:
+    linear-gradient(180deg, rgba(57, 57, 57, 0.16) 0%, rgba(38, 38, 38, 0.92) 16%, rgba(22, 22, 22, 1) 100%),
+    #161616;
   color: var(--cds-text-primary, var(--text-primary));
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 1rem 1.8rem rgba(0, 0, 0, 0.18);
 }
 
 .juce-grid-page__signal-plugin-add:hover,
 .juce-grid-page__signal-plugin-add:focus-visible {
   border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 46%, var(--cds-border-subtle, var(--border)));
-  background: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, var(--cds-layer, #161616));
+  background:
+    linear-gradient(180deg, rgba(57, 57, 57, 0.18) 0%, rgba(38, 38, 38, 0.94) 16%, rgba(22, 22, 22, 1) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 12%, transparent) 0%, transparent 55%),
+    #161616;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 1.1rem 2rem color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, rgba(0, 0, 0, 0.22));
 }
 
 .juce-grid-page__port-modal,

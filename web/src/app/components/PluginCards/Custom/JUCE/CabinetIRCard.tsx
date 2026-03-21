@@ -11,7 +11,7 @@ import { ConvolutionCategoryLayout } from '../../Layouts/ConvolutionCategoryLayo
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 
-const CABINET_IR_URI = 'map2://juce/ir/cabinet'
+const CABINET_IR_URI = 'map2://juce/convolution/cabinet'
 
 const PARAM = { MIX: 0 } as const
 

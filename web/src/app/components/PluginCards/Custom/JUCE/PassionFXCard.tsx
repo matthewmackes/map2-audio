@@ -140,6 +140,37 @@ function pitchLabel(semitones: number): string {
   return (semitones > 0 ? '+' : '') + semitones
 }
 
+const WAH_MODE_OPTIONS = [
+  { value: 0, label: 'Auto' },
+  { value: 1, label: 'Manual' },
+  { value: 2, label: 'Env' },
+]
+
+const REVERB_TYPE_OPTIONS = [
+  { value: 0, label: 'Hall' },
+  { value: 1, label: 'Plate' },
+  { value: 2, label: 'Chamber' },
+  { value: 3, label: 'Spring' },
+  { value: 4, label: 'Shimmer' },
+]
+
+const REVERB_INTERVAL_OPTIONS = [
+  { value: 5, label: '+4th' },
+  { value: 7, label: '+5th' },
+  { value: 12, label: '+Oct' },
+  { value: 19, label: '+12th' },
+  { value: 24, label: '+2Oct' },
+]
+
+const TREM_WAVEFORM_OPTIONS = [
+  { value: 0, label: 'Sine' },
+  { value: 1, label: 'Tri' },
+  { value: 2, label: 'Square' },
+  { value: 3, label: 'Saw' },
+  { value: 4, label: 'S&H' },
+  { value: 5, label: 'Trap' },
+]
+
 // Signal chain module definitions
 const SIGNAL_CHAIN = [
   { id: 'gate', label: 'GATE', mfr: 'Classic', color: '#4caf50' },
@@ -190,23 +221,30 @@ function PassionFXCardBase({
     // Gate
     setGateEnabled,
     setGateThreshold,
+    setGateRelease,
     // Comp
     setCompEnabled,
     setCompThreshold,
     setCompRatio,
+    setCompAttack,
+    setCompRelease,
     setCompGlassy,
     // Wah
     setWahEnabled,
+    setWahMode,
     setWahPosition,
     setWahQ,
     // Phaser
     setPhaserEnabled,
     setPhaserRate,
     setPhaserDepth,
+    setPhaserStages,
+    setPhaserFeedback,
     // Chorus
     setChorusEnabled,
     setChorusRate,
     setChorusDepth,
+    setChorusVoices,
     setChorusMix,
     // Pitch
     setPitchEnabled,
@@ -217,21 +255,30 @@ function PassionFXCardBase({
     setHarmVoice1Interval,
     setHarmVoice2Interval,
     setHarmDetuneCents,
+    setHarmMix,
     // Delay
     setDelayEnabled,
     setDelayTimeL,
+    setDelayTimeR,
     setDelayFeedback,
     setDelayMix,
+    setDelayFreeze,
+    setDelayPitchShiftL,
+    setDelayPitchShiftR,
     // Reverb
     setReverbEnabled,
+    setReverbType,
     setReverbDecay,
     setReverbShimmerAmount,
+    setReverbShimmerInterval,
     setReverbMix,
+    setReverbFreeze,
     // EQ
     setEqEnabled,
     setEqLowGain,
     setEqMidGain,
     setEqHighGain,
+    setEqTilt,
     // Exciter
     setExciterEnabled,
     setExciterWarmth,
@@ -241,8 +288,10 @@ function PassionFXCardBase({
     setTremEnabled,
     setTremRate,
     setTremDepth,
+    setTremWaveform,
     // Master
     setMix,
+    setOutputLevel,
     setBypass,
     setPreset,
     isConnected,
@@ -290,6 +339,17 @@ function PassionFXCardBase({
     unit: '%',
     onChange: setMix,
     midi: { pluginUri: PASSIONFX_URI, paramIndex: PARAM.MIX },
+  }
+
+  const outputSlot: ParamSlot = {
+    label: 'Output',
+    value: parameters.outputLevel,
+    min: -24,
+    max: 12,
+    defaultValue: 0,
+    unit: 'dB',
+    onChange: setOutputLevel,
+    midi: { pluginUri: PASSIONFX_URI, paramIndex: PARAM.OUTPUT_LEVEL },
   }
 
   // Signal chain visualization
@@ -821,6 +881,243 @@ function PassionFXCardBase({
         </div>
       ),
     },
+    {
+      id: 'rack-dynamics',
+      title: 'Dynamics & Wah Detail',
+      defaultOpen: false,
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Gate Rel"
+              value={parameters.gateRelease}
+              min={5}
+              max={2000}
+              defaultValue={100}
+              unit="ms"
+              onChange={setGateRelease}
+              isLogarithmic
+              accentColor="#4caf50"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.GATE_RELEASE }}
+            />
+            <ParameterKnob
+              label="Comp Att"
+              value={parameters.compAttack}
+              min={0.01}
+              max={300}
+              defaultValue={10}
+              unit="ms"
+              onChange={setCompAttack}
+              isLogarithmic
+              accentColor="#66bb6a"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_ATTACK }}
+            />
+            <ParameterKnob
+              label="Comp Rel"
+              value={parameters.compRelease}
+              min={10}
+              max={3000}
+              defaultValue={100}
+              unit="ms"
+              onChange={setCompRelease}
+              isLogarithmic
+              accentColor="#66bb6a"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.COMP_RELEASE }}
+            />
+          </div>
+          <div className="carbon-preset-row">
+            {WAH_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                className={`carbon-preset-btn ${parameters.wahMode === option.value ? 'active' : ''}`}
+                onClick={() => setWahMode(option.value)}
+                style={parameters.wahMode === option.value ? { background: '#81c784', borderColor: '#81c784' } : undefined}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'rack-modulation',
+      title: 'Modulation & Harmony Detail',
+      defaultOpen: false,
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Stages"
+              value={parameters.phaserStages}
+              min={2}
+              max={16}
+              defaultValue={4}
+              step={2}
+              unit=""
+              onChange={(value) => setPhaserStages(Math.round(value / 2) * 2)}
+              accentColor="#a5d6a7"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PHASER_STAGES }}
+            />
+            <ParameterKnob
+              label="Ph Feed"
+              value={parameters.phaserFeedback}
+              min={-100}
+              max={100}
+              defaultValue={30}
+              unit="%"
+              onChange={setPhaserFeedback}
+              accentColor="#a5d6a7"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.PHASER_FEEDBACK }}
+            />
+            <ParameterKnob
+              label="Voices"
+              value={parameters.chorusVoices}
+              min={1}
+              max={6}
+              defaultValue={3}
+              step={1}
+              unit=""
+              onChange={(value) => setChorusVoices(Math.round(value))}
+              accentColor="#00e676"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.CHORUS_VOICES }}
+            />
+          </div>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Harm Mix"
+              value={parameters.harmMix}
+              min={0}
+              max={100}
+              defaultValue={50}
+              unit="%"
+              onChange={setHarmMix}
+              accentColor="#00c853"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.HARM_MIX }}
+            />
+            <ParameterKnob
+              label="Tilt"
+              value={parameters.eqTilt}
+              min={-1}
+              max={1}
+              defaultValue={0}
+              step={0.1}
+              unit=""
+              onChange={setEqTilt}
+              accentColor="#64ffda"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.EQ_TILT }}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'rack-time-space',
+      title: 'Delay, Reverb & Trem Detail',
+      defaultOpen: false,
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Time R"
+              value={parameters.delayTimeR}
+              min={1}
+              max={8000}
+              defaultValue={500}
+              unit="ms"
+              onChange={setDelayTimeR}
+              accentColor="#00bfa5"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_TIME_R }}
+            />
+            <ParameterKnob
+              label="Pitch L"
+              value={parameters.delayPitchShiftL}
+              min={-12}
+              max={12}
+              defaultValue={0}
+              unit="st"
+              onChange={(value) => setDelayPitchShiftL(Math.round(value))}
+              accentColor="#00bfa5"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_PITCH_L }}
+            />
+            <ParameterKnob
+              label="Pitch R"
+              value={parameters.delayPitchShiftR}
+              min={-12}
+              max={12}
+              defaultValue={0}
+              unit="st"
+              onChange={(value) => setDelayPitchShiftR(Math.round(value))}
+              accentColor="#00bfa5"
+              size={knobSize}
+              midi={{ pluginUri: PASSIONFX_URI, paramIndex: PARAM.DELAY_PITCH_R }}
+            />
+          </div>
+          <div className="carbon-preset-row">
+            {REVERB_TYPE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                className={`carbon-preset-btn ${parameters.reverbType === option.value ? 'active' : ''}`}
+                onClick={() => setReverbType(option.value)}
+                style={parameters.reverbType === option.value ? { background: '#1de9b6', borderColor: '#1de9b6' } : undefined}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="carbon-preset-row">
+            {REVERB_INTERVAL_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                className={`carbon-preset-btn ${parameters.reverbShimmerInterval === option.value ? 'active' : ''}`}
+                onClick={() => setReverbShimmerInterval(option.value)}
+                style={parameters.reverbShimmerInterval === option.value ? { background: '#1de9b6', borderColor: '#1de9b6' } : undefined}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="carbon-preset-row">
+            {TREM_WAVEFORM_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                className={`carbon-preset-btn ${parameters.tremWaveform === option.value ? 'active' : ''}`}
+                onClick={() => setTremWaveform(option.value)}
+                style={parameters.tremWaveform === option.value ? { background: '#b9f6ca', borderColor: '#b9f6ca' } : undefined}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="carbon-param-row">
+            <button
+              className={`carbon-toggle-btn ${parameters.delayFreeze ? 'active' : ''}`}
+              onClick={() => setDelayFreeze(!parameters.delayFreeze)}
+              style={parameters.delayFreeze ? { background: '#00bfa5', borderColor: '#00bfa5' } : undefined}
+            >
+              Delay Freeze
+            </button>
+            <button
+              className={`carbon-toggle-btn ${parameters.reverbFreeze ? 'active' : ''}`}
+              onClick={() => setReverbFreeze(!parameters.reverbFreeze)}
+              style={parameters.reverbFreeze ? { background: '#1de9b6', borderColor: '#1de9b6' } : undefined}
+            >
+              Reverb Freeze
+            </button>
+          </div>
+        </div>
+      ),
+    },
   ]
 
   // Extra content: footer with metering
@@ -874,12 +1171,14 @@ function PassionFXCardBase({
       onBypassToggle={() => setBypass(!parameters.bypass)}
       onOpenMidiMappings={onOpenMidiMappings}
       visualization={signalChainVisualization}
+      outputGain={outputSlot}
       mix={mixSlot}
       inputLevel={metering.inputLevel}
       outputLevel={metering.outputLevel}
       advancedSections={advancedSections}
       presets={presetSelector}
       extraContent={extraContent}
+      cardWidth={860}
     />
   )
 }

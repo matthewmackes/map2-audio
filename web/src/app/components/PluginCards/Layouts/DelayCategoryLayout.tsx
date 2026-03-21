@@ -19,6 +19,7 @@ export interface DelayCategoryLayoutProps {
   plugin: Plugin
   accentColor?: string
   compact?: boolean
+  cardWidth?: number
   bypassed?: boolean
   onBypassToggle?: (bypassed: boolean) => void
   onOpenMidiMappings?: () => void
@@ -54,6 +55,7 @@ export function DelayCategoryLayout({
   plugin,
   accentColor = '#45b7d1',
   compact = false,
+  cardWidth,
   bypassed = false,
   onBypassToggle,
   onOpenMidiMappings,
@@ -111,6 +113,7 @@ export function DelayCategoryLayout({
       footer={footer}
       compact={compact}
       cardHeight={520}
+      cardWidth={cardWidth}
     >
       {/* Time Section */}
       <CarbonParameterSection title="Time" accentColor={accentColor}>

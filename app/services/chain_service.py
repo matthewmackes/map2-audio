@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import time
+from collections import Counter, defaultdict, deque
 from typing import List, Dict, Any, Optional, ClassVar
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -269,6 +270,197 @@ class ChainService:
         }
 
     @staticmethod
+    def _runtime_item_position(item: Dict[str, Any], fallback_index: int) -> Optional[int]:
+        for key in ("position", "chain_position", "plugin_position", "slot_index", "order", "index"):
+            raw = item.get(key)
+            try:
+                position = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if position >= 0:
+                return position
+        return fallback_index if fallback_index >= 0 else None
+
+    @staticmethod
+    def _runtime_item_latency_samples(item: Dict[str, Any]) -> Optional[int]:
+        for key in ("latency_samples", "reported_latency_samples", "latency"):
+            raw = item.get(key)
+            try:
+                latency = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if latency >= 0:
+                return latency
+        return None
+
+    @classmethod
+    def _match_runtime_plugin_items(
+        cls,
+        chain_plugins: List[Any],
+        pedalboard_items: List[Dict[str, Any]],
+    ) -> Dict[int, Dict[str, Any]]:
+        """Best-effort match DB chain plugins to live engine items."""
+        matches: Dict[int, Dict[str, Any]] = {}
+        remaining_items: List[tuple[int, Dict[str, Any]]] = [
+            (index, item)
+            for index, item in enumerate(pedalboard_items or [])
+            if isinstance(item, dict)
+        ]
+
+        for plugin in sorted(chain_plugins, key=lambda entry: int(getattr(entry, "position", 0))):
+            plugin_uri = str(getattr(plugin, "plugin_uri", ""))
+            plugin_position = int(getattr(plugin, "position", -1))
+            matched_index: Optional[int] = None
+
+            for index, (fallback_index, item) in enumerate(remaining_items):
+                if item.get("uri") != plugin_uri:
+                    continue
+                item_position = cls._runtime_item_position(item, fallback_index)
+                if item_position == plugin_position:
+                    matched_index = index
+                    break
+
+            if matched_index is None:
+                for index, (fallback_index, item) in enumerate(remaining_items):
+                    if item.get("uri") != plugin_uri:
+                        continue
+                    if fallback_index == plugin_position:
+                        matched_index = index
+                        break
+
+            if matched_index is None:
+                for index, (_fallback_index, item) in enumerate(remaining_items):
+                    if item.get("uri") == plugin_uri:
+                        matched_index = index
+                        break
+
+            if matched_index is None:
+                continue
+
+            _fallback_index, matched_item = remaining_items.pop(matched_index)
+            matches[plugin_position] = matched_item
+
+        return matches
+
+    @staticmethod
+    def _resolve_reorder_chain_plugins(
+        chain_plugins: List[Any],
+        plugin_order: List[Any],
+    ) -> Optional[List[Any]]:
+        if not plugin_order or len(plugin_order) != len(chain_plugins):
+            return None
+
+        ordered_chain_plugins = sorted(chain_plugins, key=lambda entry: int(getattr(entry, "position", 0)))
+
+        if all(isinstance(item, dict) for item in plugin_order):
+            plugins_by_position = {
+                int(getattr(plugin, "position", -1)): plugin
+                for plugin in ordered_chain_plugins
+            }
+            seen_positions: set[int] = set()
+            resolved: List[Any] = []
+
+            for raw in plugin_order:
+                plugin_uri = str(raw.get("plugin_uri") or raw.get("uri") or "").strip()
+                if not plugin_uri:
+                    return None
+
+                try:
+                    plugin_position = int(raw.get("plugin_position", raw.get("position")))
+                except (TypeError, ValueError):
+                    return None
+
+                if plugin_position < 0 or plugin_position in seen_positions:
+                    return None
+
+                plugin = plugins_by_position.get(plugin_position)
+                if plugin is None or str(getattr(plugin, "plugin_uri", "")) != plugin_uri:
+                    return None
+
+                seen_positions.add(plugin_position)
+                resolved.append(plugin)
+
+            return resolved
+
+        if all(isinstance(item, str) for item in plugin_order):
+            normalized_uris = [str(item).strip() for item in plugin_order]
+            if any(not uri for uri in normalized_uris):
+                return None
+
+            current_counts = Counter(str(getattr(plugin, "plugin_uri", "")) for plugin in ordered_chain_plugins)
+            requested_counts = Counter(normalized_uris)
+            if requested_counts != current_counts:
+                return None
+
+            plugins_by_uri: dict[str, deque[Any]] = defaultdict(deque)
+            for plugin in ordered_chain_plugins:
+                plugins_by_uri[str(getattr(plugin, "plugin_uri", ""))].append(plugin)
+
+            resolved = []
+            for plugin_uri in normalized_uris:
+                bucket = plugins_by_uri.get(plugin_uri)
+                if not bucket:
+                    return None
+                resolved.append(bucket.popleft())
+
+            return resolved
+
+        return None
+
+    async def _get_runtime_plugin_match_map(self, chain_plugins: List[Any]) -> Dict[int, Dict[str, Any]]:
+        if not chain_plugins:
+            return {}
+
+        try:
+            from app.services.juce_engine_service import get_audio_engine
+
+            engine_service = get_audio_engine()
+            if not engine_service or not engine_service.is_available or not engine_service.is_running:
+                return {}
+
+            pedalboard = await engine_service.get_current_pedalboard()
+            if not isinstance(pedalboard, dict):
+                return {}
+
+            items = pedalboard.get("items", [])
+            if not isinstance(items, list):
+                return {}
+
+            return self._match_runtime_plugin_items(chain_plugins, items)
+        except Exception as e:
+            logger.debug(f"Unable to resolve runtime chain plugin identities: {e}")
+            return {}
+
+    def _serialize_chain_plugin_entry(
+        self,
+        plugin: Any,
+        runtime_item: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        meta = self._get_plugin_metadata(plugin.plugin_uri)
+        payload: Dict[str, Any] = {
+            "uri": plugin.plugin_uri,
+            "name": meta.get("name", plugin.plugin_uri),
+            "author": meta.get("author", ""),
+            "category": meta.get("category", ""),
+            "position": plugin.position,
+            "bypassed": plugin.bypass,
+            "in_ports": meta.get("in_port_count", 0),
+            "out_ports": meta.get("out_port_count", 0),
+            "parameters": {},
+        }
+
+        if isinstance(runtime_item, dict):
+            instance_id = runtime_item.get("instance_id")
+            if isinstance(instance_id, int) and instance_id > 0:
+                payload["instance_id"] = instance_id
+
+            latency_samples = self._runtime_item_latency_samples(runtime_item)
+            if latency_samples is not None:
+                payload["latency_samples"] = latency_samples
+
+        return payload
+
+    @staticmethod
     def _touchscreen_config_key(chain_id: int) -> str:
         return f"chain_touchscreen_{chain_id}"
 
@@ -466,22 +658,17 @@ class ChainService:
                 .order_by(ChainPlugin.position)
             )
             plugins = plugins_result.scalars().all()
+            runtime_plugin_map = await self._get_runtime_plugin_match_map(plugins) if chain.is_active else {}
             
             # Build plugins list with single metadata lookup per plugin
             plugins_list = []
             for p in plugins:
-                meta = self._get_plugin_metadata(p.plugin_uri)  # Single lookup
-                plugins_list.append({
-                    "uri": p.plugin_uri,
-                    "name": meta.get("name", p.plugin_uri),
-                    "author": meta.get("author", ""),
-                    "category": meta.get("category", ""),
-                    "position": p.position,
-                    "bypassed": p.bypass,
-                    "in_ports": meta.get("in_port_count", 0),
-                    "out_ports": meta.get("out_port_count", 0),
-                    "parameters": {},
-                })
+                plugins_list.append(
+                    self._serialize_chain_plugin_entry(
+                        p,
+                        runtime_plugin_map.get(int(p.position)),
+                    )
+                )
 
             insertion_result = await self.session.execute(
                 select(EffectsLoopInsertion)
@@ -542,6 +729,7 @@ class ChainService:
                     .order_by(ChainPlugin.position)
                 )
                 plugins = plugins_result.scalars().all()
+                runtime_plugin_map = await self._get_runtime_plugin_match_map(plugins) if chain.is_active else {}
 
                 chain_data = {
                     "id": chain.id,
@@ -555,18 +743,12 @@ class ChainService:
                 }
 
                 for p in plugins:
-                    meta = self._get_plugin_metadata(p.plugin_uri)
-                    chain_data["plugins"].append({
-                        "uri": p.plugin_uri,
-                        "name": meta.get("name", p.plugin_uri),
-                        "author": meta.get("author", ""),
-                        "category": meta.get("category", ""),
-                        "position": p.position,
-                        "bypassed": p.bypass,
-                        "in_ports": meta.get("in_port_count", 0),
-                        "out_ports": meta.get("out_port_count", 0),
-                        "parameters": {},
-                    })
+                    chain_data["plugins"].append(
+                        self._serialize_chain_plugin_entry(
+                            p,
+                            runtime_plugin_map.get(int(p.position)),
+                        )
+                    )
 
                 insertion_result = await self.session.execute(
                     select(EffectsLoopInsertion)
@@ -1056,12 +1238,12 @@ class ChainService:
             logger.error(f"Error renaming chain {chain_id}: {e}")
             return False
 
-    async def reorder_plugins(self, chain_id: int, plugin_uris: List[str]) -> bool:
+    async def reorder_plugins(self, chain_id: int, plugin_order: List[Any]) -> bool:
         """Reorder plugins in a chain.
         
         Args:
             chain_id: Chain ID
-            plugin_uris: Ordered list of plugin URIs
+            plugin_order: Ordered list of plugin URIs or plugin refs
             
         Returns:
             True if reordered, False otherwise
@@ -1087,17 +1269,14 @@ class ChainService:
             )
             chain_plugins = result.scalars().all()
             
-            # Create lookup by URI
-            cp_by_uri = {cp.plugin_uri: cp for cp in chain_plugins}
-            
-            # Verify all URIs exist in chain
-            if set(plugin_uris) != set(cp_by_uri.keys()):
-                logger.error(f"Plugin URI mismatch for chain {chain_id}")
+            resolved_order = self._resolve_reorder_chain_plugins(chain_plugins, plugin_order)
+            if resolved_order is None:
+                logger.error("Plugin reorder mismatch for chain %s", chain_id)
                 return False
-            
+
             # Update positions
-            for position, plugin_uri in enumerate(plugin_uris):
-                cp_by_uri[plugin_uri].position = position
+            for position, chain_plugin in enumerate(resolved_order):
+                chain_plugin.position = position
             
             await self.session.flush()
 

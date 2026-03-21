@@ -8,6 +8,7 @@ import json
 import asyncio
 import time
 import threading
+from typing import Any
 
 try:
     from fastapi import APIRouter, HTTPException, Query, Body, Request, Response
@@ -40,6 +41,44 @@ try:
 
     class TouchscreenStompAssignmentsRequest(BaseModel):
         assignments: List[TouchscreenStompAssignment] = []
+
+    def _normalize_reorder_plugins_payload(payload: Any) -> list[dict[str, int | str]] | list[str]:
+        if not isinstance(payload, list) or len(payload) == 0:
+            raise HTTPException(status_code=400, detail="plugin order must be a non-empty list")
+
+        if all(isinstance(item, str) for item in payload):
+            normalized_uris = [item.strip() for item in payload if isinstance(item, str)]
+            if any(not uri for uri in normalized_uris):
+                raise HTTPException(status_code=400, detail="plugin order contains an empty URI")
+            return normalized_uris
+
+        normalized_plugins: list[dict[str, int | str]] = []
+        for item in payload:
+            if not isinstance(item, dict):
+                raise HTTPException(
+                    status_code=400,
+                    detail="plugin order entries must be strings or objects with uri/plugin_uri and position/plugin_position",
+                )
+
+            uri = item.get("plugin_uri") or item.get("uri")
+            if not isinstance(uri, str) or not uri.strip():
+                raise HTTPException(status_code=400, detail="plugin order entry missing uri/plugin_uri")
+
+            raw_position = item.get("plugin_position", item.get("position"))
+            try:
+                plugin_position = int(raw_position)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="plugin order entry missing valid position/plugin_position") from None
+
+            if plugin_position < 0:
+                raise HTTPException(status_code=400, detail="plugin order entry position must be non-negative")
+
+            normalized_plugins.append({
+                "plugin_uri": uri.strip(),
+                "plugin_position": plugin_position,
+            })
+
+        return normalized_plugins
 
     _CHAIN_ROUTE_TIMEOUT_SECONDS = 0.09
     _CHAIN_LIST_CACHE_TTL_SECONDS = 30.0
@@ -831,26 +870,31 @@ try:
         return {"status": "renamed", "chain_id": chain_id, "name": new_name}
 
     @router.post("/{chain_id}/reorder")
-    async def reorder_plugins(chain_id: int, plugin_uris: List[str] = Body(..., description="Ordered list of plugin URIs")):
+    async def reorder_plugins(
+        chain_id: int,
+        plugin_order: Any = Body(
+            ...,
+            description="Ordered list of plugin URIs or plugin refs with uri/plugin_uri and position/plugin_position",
+        ),
+    ):
         """Reorder plugins in chain.
 
         Args:
             chain_id: Signal chain ID
-            plugin_uris: Ordered list of plugin URIs (request body)
+            plugin_order: Ordered list of plugin refs (request body)
         """
         from app.database import get_session
-        
-        if not plugin_uris or not isinstance(plugin_uris, list):
-            raise HTTPException(status_code=400, detail="plugin_uris must be a non-empty list")
-        
+
+        normalized_plugin_order = _normalize_reorder_plugins_payload(plugin_order)
+
         async with get_session() as session:
             service = ChainService(session)
-            success = await service.reorder_plugins(chain_id, plugin_uris)
+            success = await service.reorder_plugins(chain_id, normalized_plugin_order)
             if not success:
                 raise HTTPException(status_code=400, detail="Failed to reorder plugins")
 
         _invalidate_chain_cache(chain_id)
-        return {"status": "reordered", "chain_id": chain_id, "plugins": plugin_uris}
+        return {"status": "reordered", "chain_id": chain_id, "plugins": normalized_plugin_order}
 
     @router.post("/{chain_id}/plugins/{plugin_uri}/bypass")
     async def toggle_plugin_bypass(

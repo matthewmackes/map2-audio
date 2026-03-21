@@ -30,6 +30,8 @@ export interface PluginLevels {
   name: string;
   input: number;
   output: number;
+  position?: number;
+  instance_id?: number;
 }
 
 export type AudioSourceTruthSeverity = 'info' | 'warning' | 'error';
@@ -188,6 +190,11 @@ export interface ChainPlugin {
   cpu_percent?: number;
 }
 
+export interface PluginOrderRef {
+  uri: string;
+  position: number;
+}
+
 export interface ChainTemplate {
   name: string;
   description: string;
@@ -231,6 +238,7 @@ export interface Plugin {
   format_name?: string;
   file_path?: string;
   brand?: string;
+  instance_id?: number;
   latency_samples?: number;
   has_midi_input?: boolean;
   has_midi_output?: boolean;

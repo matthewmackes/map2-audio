@@ -12,8 +12,9 @@ const LEXI_LOVE_URI = 'map2://juce/reverb/pcm70'
 
 const PARAM = {
   ALGORITHM: 0, PRE_DELAY: 1, DECAY_TIME: 2, DIFFUSION: 3,
-  EARLY_LEVEL: 4, EARLY_PATTERN: 5, LOW_DECAY_MULT: 6, HIGH_DECAY_MULT: 7,
-  MOD_DEPTH: 8, MOD_RATE: 9, MIX: 10, HIGH_CUT: 11, LOW_CUT: 12,
+  MIX: 4, HIGH_CUT: 5, LOW_CUT: 6, LOW_DECAY_MULT: 7, HIGH_DECAY_MULT: 8,
+  LOW_CROSSOVER: 9, HIGH_CROSSOVER: 10, EARLY_LEVEL: 11, EARLY_PATTERN: 12,
+  MOD_DEPTH: 13, MOD_RATE: 14, SPILLOVER: 15, BYPASS: 16,
 } as const
 
 const LEXI_LOVE_PARAMS: PluginParamDef[] = [
@@ -21,15 +22,18 @@ const LEXI_LOVE_PARAMS: PluginParamDef[] = [
   { index: PARAM.PRE_DELAY, name: 'Pre-Delay', symbol: 'preDelay' },
   { index: PARAM.DECAY_TIME, name: 'Decay Time', symbol: 'decayTime' },
   { index: PARAM.DIFFUSION, name: 'Diffusion', symbol: 'diffusion' },
-  { index: PARAM.EARLY_LEVEL, name: 'Early Level', symbol: 'earlyLevel' },
-  { index: PARAM.EARLY_PATTERN, name: 'Early Pattern', symbol: 'earlyPattern' },
-  { index: PARAM.LOW_DECAY_MULT, name: 'Low Decay', symbol: 'lowDecayMult' },
-  { index: PARAM.HIGH_DECAY_MULT, name: 'High Decay', symbol: 'highDecayMult' },
-  { index: PARAM.MOD_DEPTH, name: 'Mod Depth', symbol: 'modDepth' },
-  { index: PARAM.MOD_RATE, name: 'Mod Rate', symbol: 'modRate' },
   { index: PARAM.MIX, name: 'Mix', symbol: 'mix' },
   { index: PARAM.HIGH_CUT, name: 'High Cut', symbol: 'highCut' },
   { index: PARAM.LOW_CUT, name: 'Low Cut', symbol: 'lowCut' },
+  { index: PARAM.LOW_DECAY_MULT, name: 'Low Decay', symbol: 'lowDecayMult' },
+  { index: PARAM.HIGH_DECAY_MULT, name: 'High Decay', symbol: 'highDecayMult' },
+  { index: PARAM.LOW_CROSSOVER, name: 'Low Crossover', symbol: 'lowCrossover' },
+  { index: PARAM.HIGH_CROSSOVER, name: 'High Crossover', symbol: 'highCrossover' },
+  { index: PARAM.EARLY_LEVEL, name: 'Early Level', symbol: 'earlyLevel' },
+  { index: PARAM.EARLY_PATTERN, name: 'Early Pattern', symbol: 'earlyPattern' },
+  { index: PARAM.MOD_DEPTH, name: 'Mod Depth', symbol: 'modDepth' },
+  { index: PARAM.MOD_RATE, name: 'Mod Rate', symbol: 'modRate' },
+  { index: PARAM.SPILLOVER, name: 'Spillover', symbol: 'spillover' },
 ]
 
 interface LexiLoveCardProps extends PluginCardProps {
@@ -53,6 +57,8 @@ function LexiLoveCardBase({
     setDiffusion,
     setLowDecayMult,
     setHighDecayMult,
+    setLowCrossover,
+    setHighCrossover,
     setEarlyLevel,
     setEarlyPattern,
     setModDepth,
@@ -60,6 +66,7 @@ function LexiLoveCardBase({
     setMix,
     setHighCut,
     setLowCut,
+    setSpillover,
     setBypass,
     isConnected,
   } = useLexiLove()
@@ -149,19 +156,46 @@ function LexiLoveCardBase({
       id: 'tone-shaping',
       title: 'Tone Shaping',
       children: (
-        <div className="carbon-param-row">
-          <ParameterKnob
-            label="Lo Decay" value={parameters.lowDecayMult}
-            min={0.25} max={2} defaultValue={1} unit="x"
-            onChange={setLowDecayMult} accentColor={accentColor} size="small"
-            midi={{ pluginUri: LEXI_LOVE_URI, paramIndex: PARAM.LOW_DECAY_MULT }}
-          />
-          <ParameterKnob
-            label="Hi Decay" value={parameters.highDecayMult}
-            min={0.25} max={2} defaultValue={0.8} unit="x"
-            onChange={setHighDecayMult} accentColor={accentColor} size="small"
-            midi={{ pluginUri: LEXI_LOVE_URI, paramIndex: PARAM.HIGH_DECAY_MULT }}
-          />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Lo Decay" value={parameters.lowDecayMult}
+              min={0.25} max={2} defaultValue={1} unit="x"
+              onChange={setLowDecayMult} accentColor={accentColor} size="small"
+              midi={{ pluginUri: LEXI_LOVE_URI, paramIndex: PARAM.LOW_DECAY_MULT }}
+            />
+            <ParameterKnob
+              label="Hi Decay" value={parameters.highDecayMult}
+              min={0.25} max={2} defaultValue={0.8} unit="x"
+              onChange={setHighDecayMult} accentColor={accentColor} size="small"
+              midi={{ pluginUri: LEXI_LOVE_URI, paramIndex: PARAM.HIGH_DECAY_MULT }}
+            />
+          </div>
+          <div className="carbon-param-row">
+            <ParameterKnob
+              label="Lo Xover" value={parameters.lowCrossover}
+              min={100} max={2000} defaultValue={500} unit=""
+              valueFormatter={formatFreq}
+              onChange={setLowCrossover} isLogarithmic accentColor={accentColor} size="small"
+              midi={{ pluginUri: LEXI_LOVE_URI, paramIndex: PARAM.LOW_CROSSOVER }}
+            />
+            <ParameterKnob
+              label="Hi Xover" value={parameters.highCrossover}
+              min={2000} max={15000} defaultValue={9000} unit=""
+              valueFormatter={formatFreq}
+              onChange={setHighCrossover} isLogarithmic accentColor={accentColor} size="small"
+              midi={{ pluginUri: LEXI_LOVE_URI, paramIndex: PARAM.HIGH_CROSSOVER }}
+            />
+          </div>
+          <div className="carbon-param-row">
+            <button
+              className={`carbon-toggle-btn ${parameters.spillover ? 'active' : ''}`}
+              onClick={() => setSpillover(!parameters.spillover)}
+              style={parameters.spillover ? { background: accentColor, borderColor: accentColor } : undefined}
+            >
+              Spillover
+            </button>
+          </div>
         </div>
       ),
     },
@@ -223,6 +257,7 @@ function LexiLoveCardBase({
       inputLevel={metering.inputLevelL}
       outputLevel={metering.outputLevelL}
       advancedSections={advancedSections}
+      cardWidth={700}
     />
   )
 }

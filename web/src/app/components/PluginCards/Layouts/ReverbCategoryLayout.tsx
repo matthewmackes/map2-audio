@@ -19,6 +19,7 @@ export interface ReverbCategoryLayoutProps {
   plugin: Plugin
   accentColor?: string
   compact?: boolean
+  cardWidth?: number
   bypassed?: boolean
   onBypassToggle?: (bypassed: boolean) => void
   onOpenMidiMappings?: () => void
@@ -59,6 +60,7 @@ export function ReverbCategoryLayout({
   plugin,
   accentColor = '#a855f7',
   compact = false,
+  cardWidth,
   bypassed = false,
   onBypassToggle,
   onOpenMidiMappings,
@@ -119,6 +121,7 @@ export function ReverbCategoryLayout({
       footer={footer}
       compact={compact}
       cardHeight={500}
+      cardWidth={cardWidth}
     >
       {/* Space Section */}
       {(size || width || diffusion) && (

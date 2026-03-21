@@ -14,7 +14,7 @@ import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 
 // Plugin URI for MIDI mappings
-const EVH_PITCH_URI = 'map2://juce/pitch/evh'
+const EVH_PITCH_URI = 'map2://juce/pitch/shifter'
 
 // Parameter definitions for MIDI mapping dialog
 const EVH_PITCH_PARAMS: PluginParamDef[] = [
