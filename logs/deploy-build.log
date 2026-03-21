@@ -2,7 +2,7 @@
 > mackes-audio-platform-2-web@3.0.0-FEB2026 prebuild
 > python3 ../scripts/generate_platform_version.py
 
-2026032021522101
+2026032022251301
 
 > mackes-audio-platform-2-web@3.0.0-FEB2026 build
 > python3 ../scripts/build_web_dist_atomic.py
@@ -15,262 +15,262 @@ rendering chunks...
 (!) /home/mm/map2-audio/web/src/map2/api.ts is dynamically imported by /home/mm/map2-audio/web/src/map2/hooks/useWebSocket.ts, /home/mm/map2-audio/web/src/map2/hooks/useWebSocket.ts, /home/mm/map2-audio/web/src/map2/hooks/useWebSocket.ts, /home/mm/map2-audio/web/src/map2/hooks/useWebSocket.ts but also statically imported by /home/mm/map2-audio/web/src/app/components/MidiHub/AiLearnPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/DeviceShadowPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/EventEditor.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/EventListManager.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/EventListStatus.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/LearnModeControl.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MeshNetworkPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/Midi2Panel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiClockPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiHubFilterPlanner.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiHubPresetManager.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiHubQuickRouter.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiHubWorkbenchCards.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiMacroPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiNetworkPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiPatchbay.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiRecorderPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiRoutingMatrix.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiSchedulerPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiScriptEditor.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiTrafficMonitor.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MscCommandBuilder.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/OscNamespaceBrowser.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/StringInterfacePanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/TesiraPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/VirtualGpioPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/useMidiHubOverview.ts, /home/mm/map2-audio/web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx, /home/mm/map2-audio/web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx, /home/mm/map2-audio/web/src/app/components/PluginCards/Dialogs/MidiMappingDialog.tsx, /home/mm/map2-audio/web/src/app/components/PluginCards/PluginCardRouter.tsx, /home/mm/map2-audio/web/src/app/components/Routing/EffectsLoopSummaryPanel.tsx, /home/mm/map2-audio/web/src/app/components/ShoppingSearchDialog.tsx, /home/mm/map2-audio/web/src/app/components/Tesira/components/TesiraDeployDialog.tsx, /home/mm/map2-audio/web/src/app/components/Tesira/components/TesiraEQTab.tsx, /home/mm/map2-audio/web/src/app/components/Tesira/components/TesiraLoopBuilderTab.tsx, /home/mm/map2-audio/web/src/app/components/Tesira/hooks/useTesiraApi.ts, /home/mm/map2-audio/web/src/app/components/artifacts/ArtifactDownloadModal.tsx, /home/mm/map2-audio/web/src/app/components/library/InstalledAssetsTable.tsx, /home/mm/map2-audio/web/src/app/components/library/LibrarySources.tsx, /home/mm/map2-audio/web/src/app/components/library/Tone3000Config.tsx, /home/mm/map2-audio/web/src/app/components/snapshots/SnapshotModalContent.tsx, /home/mm/map2-audio/web/src/app/components/upload/UnifiedUploadDialog.tsx, /home/mm/map2-audio/web/src/app/hooks/useAvbStatus.ts, /home/mm/map2-audio/web/src/app/hooks/useCPUMetrics.ts, /home/mm/map2-audio/web/src/app/hooks/useDelay.ts, /home/mm/map2-audio/web/src/app/hooks/useDownloadProgress.ts, /home/mm/map2-audio/web/src/app/hooks/useDrumMachine.ts, /home/mm/map2-audio/web/src/app/hooks/useDynamics.ts, /home/mm/map2-audio/web/src/app/hooks/useFlowSnapshots.ts, /home/mm/map2-audio/web/src/app/hooks/useHostMachine.ts, /home/mm/map2-audio/web/src/app/hooks/useLCDEvents.ts, /home/mm/map2-audio/web/src/app/hooks/useLatency.ts, /home/mm/map2-audio/web/src/app/hooks/useLoudness.ts, /home/mm/map2-audio/web/src/app/hooks/useMidiCluster.ts, /home/mm/map2-audio/web/src/app/hooks/useNodeTopology.ts, /home/mm/map2-audio/web/src/app/hooks/usePipeWire.ts, /home/mm/map2-audio/web/src/app/hooks/usePlatformShellData.ts, /home/mm/map2-audio/web/src/app/hooks/usePluginOutputs.ts, /home/mm/map2-audio/web/src/app/hooks/useSoundFontDownloadProgress.ts, /home/mm/map2-audio/web/src/app/hooks/useSpectrum.ts, /home/mm/map2-audio/web/src/app/hooks/useVuMeters.ts, /home/mm/map2-audio/web/src/app/pages/AudioArtifactsPage.tsx, /home/mm/map2-audio/web/src/app/pages/AudioEnginePage.tsx, /home/mm/map2-audio/web/src/app/pages/ChainsPage.tsx, /home/mm/map2-audio/web/src/app/pages/DrumsPage.tsx, /home/mm/map2-audio/web/src/app/pages/EdirolUA1000Page.tsx, /home/mm/map2-audio/web/src/app/pages/JuceGridAudioPortModal.tsx, /home/mm/map2-audio/web/src/app/pages/JuceGridChainManagementCard.tsx, /home/mm/map2-audio/web/src/app/pages/JuceGridPage.tsx, /home/mm/map2-audio/web/src/app/pages/LV2PluginsPage.tsx, /home/mm/map2-audio/web/src/app/pages/LibraryPage.tsx, /home/mm/map2-audio/web/src/app/pages/MOTURMEPage.tsx, /home/mm/map2-audio/web/src/app/pages/PerformPage.tsx, /home/mm/map2-audio/web/src/app/pages/RoutingTopologyModal.tsx, /home/mm/map2-audio/web/src/map2/intelfxApi.ts, /home/mm/map2-audio/web/src/map2/mpx1Api.ts, dynamic import will not move module into another chunk.
 
 computing gzip size...
-.dist-staging-5e690db6/index.html                                                       1.17 kB │ gzip:   0.56 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-vietnamese-400-normal-fK1oJ5dG.woff         6.39 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-vietnamese-700-normal-BV5B8Are.woff         6.42 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-vietnamese-600-normal-DgdngZtN.woff         6.58 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-vietnamese-500-normal-BEb3_waV.woff         6.59 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-vietnamese-400-normal-DG4YqDda.woff2        8.20 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-vietnamese-700-normal-CkEo6LDy.woff2        8.22 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-vietnamese-500-normal-e4dixQRQ.woff2        8.42 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-vietnamese-600-normal-DpPYBSTl.woff2        8.46 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-greek-700-normal-CkZN0sRy.woff              8.74 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-greek-400-normal-D9ESIMu3.woff              8.76 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-greek-500-normal-CuWXN6rf.woff              9.15 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-greek-600-normal-D-CqTdkO.woff              9.22 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-greek-700-normal-wyJ6jzdA.woff2             9.93 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-greek-400-normal-_efipK4i.woff2             9.94 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-ext-700-normal-DCQwxkRk.woff      10.16 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-ext-400-normal-Dsrv2Tcn.woff      10.29 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-greek-600-normal-DzTrcv_p.woff2            10.37 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-greek-500-normal-JMMifIXV.woff2            10.38 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-ext-500-normal-DB5PtV2g.woff      10.59 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-ext-600-normal-Bz0x94Yp.woff      10.62 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-ext-700-normal-BmRLXWpJ.woff2     12.06 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-ext-400-normal-g30qAdWV.woff2     12.15 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-ext-600-normal-DUMzJB7m.woff2     12.30 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-ext-500-normal-Cs5J6C77.woff2     12.31 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-700-normal-RFb1v-CK.woff          13.33 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-400-normal-BTotfTJu.woff          13.51 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-500-normal-ByOcLdNv.woff          13.86 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-600-normal-BGq0mW3O.woff          13.89 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-ext-400-normal-RBey6euL.woff         14.36 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-ext-700-normal-DZH6Xh-4.woff         14.42 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-700-normal-D_uavGvn.woff2         14.57 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-ext-500-normal-D0aIdm-b.woff         14.74 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-ext-600-normal-DIrixKbi.woff         14.77 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-400-normal-DZqxrq2p.woff2         14.80 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-500-normal-CocWQlwt.woff2         15.00 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-cyrillic-600-normal-71GNu3SW.woff2         15.04 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-ext-400-normal-C5H60-Va.woff2        15.98 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-ext-700-normal-aMgXseD4.woff2        16.19 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-ext-600-normal-DOrvGEcy.woff2        16.45 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-ext-500-normal-DakdToA3.woff2        16.46 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-400-normal-CYLoc0-x.woff             22.10 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-700-normal-Bth3BMcD.woff             22.28 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-400-normal-CDDApCn2.woff2            22.59 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-700-normal-Bxkt5Cjx.woff2            22.83 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-600-normal-Cu4Hd6ag.woff             23.88 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-500-normal-BgVn5rGT.woff             23.92 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-500-normal-6ng42L7E.woff2            24.18 kB
-.dist-staging-5e690db6/assets/ibm-plex-sans-latin-600-normal-CuJfVYMP.woff2            24.25 kB
-.dist-staging-5e690db6/assets/LCDPage-BEzA_YP-.css                                      0.17 kB │ gzip:   0.12 kB
-.dist-staging-5e690db6/assets/DrumsPage-sN2OR9cz.css                                    0.37 kB │ gzip:   0.19 kB
-.dist-staging-5e690db6/assets/MidiHubLabPage-CMo4iWbR.css                               0.65 kB │ gzip:   0.29 kB
-.dist-staging-5e690db6/assets/MidiHubPresetsPage-vSVUB5lz.css                           1.00 kB │ gzip:   0.39 kB
-.dist-staging-5e690db6/assets/MidiHubEventsPage-CsqE56C0.css                            1.21 kB │ gzip:   0.43 kB
-.dist-staging-5e690db6/assets/MidiHubNetworkPage-DKbdM4iv.css                           1.29 kB │ gzip:   0.42 kB
-.dist-staging-5e690db6/assets/MidiHubProcessingPage-1s1bLj4Q.css                        1.56 kB │ gzip:   0.46 kB
-.dist-staging-5e690db6/assets/IntelFXEditorView-BWyxFZr5.css                            1.92 kB │ gzip:   0.61 kB
-.dist-staging-5e690db6/assets/MPX1DiagView-BvUz8ohh.css                                 2.58 kB │ gzip:   0.71 kB
-.dist-staging-5e690db6/assets/LCDDisplay-CRjaMFq5.css                                   2.71 kB │ gzip:   0.77 kB
-.dist-staging-5e690db6/assets/LV2PluginsPage-Byi6hzkI.css                               2.73 kB │ gzip:   0.76 kB
-.dist-staging-5e690db6/assets/IntelFXMidiMapView-DDpMId36.css                           2.84 kB │ gzip:   0.70 kB
-.dist-staging-5e690db6/assets/IntelFXPerformView-COmD_Kce.css                           3.02 kB │ gzip:   0.69 kB
-.dist-staging-5e690db6/assets/IntelFXPanelView-DeCIBAUf.css                             3.08 kB │ gzip:   0.90 kB
-.dist-staging-5e690db6/assets/MidiHubConnectionsPage-LzDsmtc-.css                       3.19 kB │ gzip:   0.71 kB
-.dist-staging-5e690db6/assets/IntelFXLibraryView-CaFePbJK.css                           3.26 kB │ gzip:   0.74 kB
-.dist-staging-5e690db6/assets/NumericInput-CaqPgQuA.css                                 3.33 kB │ gzip:   1.02 kB
-.dist-staging-5e690db6/assets/MPX1LibraryView-DdgK_uVk.css                              3.54 kB │ gzip:   0.78 kB
-.dist-staging-5e690db6/assets/MPX1MatrixView-BVEFmg2J.css                               4.45 kB │ gzip:   0.96 kB
-.dist-staging-5e690db6/assets/MidiHubShell-BfHPxA2J.css                                 4.48 kB │ gzip:   1.40 kB
-.dist-staging-5e690db6/assets/IntelFXMonitorView-D3zHqyuu.css                           4.61 kB │ gzip:   0.92 kB
-.dist-staging-5e690db6/assets/AudioEnginePage-Dt_6cFUS.css                              4.81 kB │ gzip:   1.03 kB
-.dist-staging-5e690db6/assets/ChainsPage-CdagMRhh.css                                   5.02 kB │ gzip:   1.00 kB
-.dist-staging-5e690db6/assets/MPX1MidiMapView-CUq_SYwv.css                              5.06 kB │ gzip:   1.03 kB
-.dist-staging-5e690db6/assets/MPX1PerformView-Dh6Gya6H.css                              5.09 kB │ gzip:   1.11 kB
-.dist-staging-5e690db6/assets/MPX1Page-CMXsJoVi.css                                     5.14 kB │ gzip:   1.26 kB
-.dist-staging-5e690db6/assets/IntelFXPage-C7XKszoV.css                                  5.23 kB │ gzip:   1.31 kB
-.dist-staging-5e690db6/assets/MPX1EditorView-HDfKCXkb.css                               5.64 kB │ gzip:   1.17 kB
-.dist-staging-5e690db6/assets/ShoppingSearchDialog-DMzZ69cM.css                         7.04 kB │ gzip:   1.26 kB
-.dist-staging-5e690db6/assets/CarbonCardShell-Cehj4QWs.css                              7.17 kB │ gzip:   1.65 kB
-.dist-staging-5e690db6/assets/TesiraPage-BCk_hnPg.css                                   7.53 kB │ gzip:   1.66 kB
-.dist-staging-5e690db6/assets/HoToneJoGGPage-W6OFPG12.css                               8.10 kB │ gzip:   2.12 kB
-.dist-staging-5e690db6/assets/PipeWirePage-_7PDdbMY.css                                 8.41 kB │ gzip:   1.31 kB
-.dist-staging-5e690db6/assets/AboutPage-JXWQXBJm.css                                   10.90 kB │ gzip:   2.13 kB
-.dist-staging-5e690db6/assets/IntelFXFlowView-pAXBamRh.css                             11.01 kB │ gzip:   2.32 kB
-.dist-staging-5e690db6/assets/MPX1PanelView-De6sLIb8.css                               12.56 kB │ gzip:   2.74 kB
-.dist-staging-5e690db6/assets/AudioArtifactsPage-DEcn50mt.css                          12.65 kB │ gzip:   2.70 kB
-.dist-staging-5e690db6/assets/LibraryPage-sV35lQNC.css                                 14.07 kB │ gzip:   2.15 kB
-.dist-staging-5e690db6/assets/MidiHubAreaLayout-CYfCWuoU.css                           15.45 kB │ gzip:   2.90 kB
-.dist-staging-5e690db6/assets/HomePage-CyscPvOl.css                                    15.95 kB │ gzip:   3.61 kB
-.dist-staging-5e690db6/assets/MPX1FlowView-CJbBoK7Q.css                                16.32 kB │ gzip:   2.71 kB
-.dist-staging-5e690db6/assets/HostMachinePage-CcMO3lEF.css                             17.59 kB │ gzip:   3.23 kB
-.dist-staging-5e690db6/assets/App-YDxND9wr.css                                         31.46 kB │ gzip:   5.75 kB
-.dist-staging-5e690db6/assets/JuceGridPage-CbfqZnZw.css                               104.15 kB │ gzip:  14.98 kB
-.dist-staging-5e690db6/assets/index-BPD_2nOC.css                                    1,005.20 kB │ gzip: 112.64 kB
-.dist-staging-5e690db6/assets/PlatformShellPage-iNSihHMF.js                             0.11 kB │ gzip:   0.12 kB │ map:     0.39 kB
-.dist-staging-5e690db6/assets/index-zioTSqyj.js                                         0.16 kB │ gzip:   0.14 kB │ map:     0.90 kB
-.dist-staging-5e690db6/assets/WelcomePage-BV3QGI2_.js                                   0.22 kB │ gzip:   0.20 kB │ map:     0.41 kB
-.dist-staging-5e690db6/assets/metering-hZn6K4Xc.js                                      0.32 kB │ gzip:   0.24 kB │ map:     4.80 kB
-.dist-staging-5e690db6/assets/MidiHubNodeScope-DzqvExmY.js                              0.33 kB │ gzip:   0.25 kB │ map:     1.40 kB
-.dist-staging-5e690db6/assets/drumMachineState-jPaIte-x.js                              0.33 kB │ gzip:   0.25 kB │ map:     1.05 kB
-.dist-staging-5e690db6/assets/useMatchMedia-B3a6DIgN.js                                 0.41 kB │ gzip:   0.30 kB │ map:     6.95 kB
-.dist-staging-5e690db6/assets/useControllableState-3-bKS5SX.js                          0.48 kB │ gzip:   0.32 kB │ map:     3.53 kB
-.dist-staging-5e690db6/assets/StatCard-DnEui_zK.js                                      0.53 kB │ gzip:   0.33 kB │ map:     1.42 kB
-.dist-staging-5e690db6/assets/LegacyPage-HwnQZvA2.js                                    0.54 kB │ gzip:   0.32 kB │ map:     0.99 kB
-.dist-staging-5e690db6/assets/ParameterKnob-CfgUVvZM.js                                 0.57 kB │ gzip:   0.38 kB │ map:     2.51 kB
-.dist-staging-5e690db6/assets/formatters-DuCYu7AR.js                                    0.82 kB │ gzip:   0.46 kB │ map:     7.70 kB
-.dist-staging-5e690db6/assets/SVGGradients-Cn58Mxkq.js                                  0.95 kB │ gzip:   0.32 kB │ map:     5.96 kB
-.dist-staging-5e690db6/assets/Filename-CmwYObS9.js                                      1.07 kB │ gzip:   0.56 kB │ map:     4.01 kB
-.dist-staging-5e690db6/assets/PageHeader-BZyVC8JS.js                                    1.17 kB │ gzip:   0.47 kB │ map:     3.02 kB
-.dist-staging-5e690db6/assets/InstrumentCategoryLayout-DvYznd3L.js                      1.22 kB │ gzip:   0.65 kB │ map:     4.82 kB
-.dist-staging-5e690db6/assets/useResponsiveVizSize-DKuLgxCD.js                          1.24 kB │ gzip:   0.69 kB │ map:     7.55 kB
-.dist-staging-5e690db6/assets/MidiHubTransportPage-DJsosE7E.js                          1.27 kB │ gzip:   0.61 kB │ map:     2.50 kB
-.dist-staging-5e690db6/assets/NumberInput-aXuGsqvQ.js                                   1.28 kB │ gzip:   0.75 kB │ map:     4.55 kB
-.dist-staging-5e690db6/assets/CarbonMeteringFooter-CSXEiqNu.js                          1.37 kB │ gzip:   0.46 kB │ map:     3.58 kB
-.dist-staging-5e690db6/assets/PitchCategoryLayout-D8eQ8okO.js                           1.52 kB │ gzip:   0.75 kB │ map:     6.16 kB
-.dist-staging-5e690db6/assets/LCDDisplay-DMt36Xi2.js                                    1.67 kB │ gzip:   0.65 kB │ map:     6.00 kB
-.dist-staging-5e690db6/assets/ModulationCategoryLayout-OssFZ9G5.js                      1.73 kB │ gzip:   0.84 kB │ map:     7.11 kB
-.dist-staging-5e690db6/assets/ReverbCategoryLayout-Cc1taz-Z.js                          1.75 kB │ gzip:   0.80 kB │ map:     7.22 kB
-.dist-staging-5e690db6/assets/CE2ChorusCard-2fe6v-HN.js                                 1.84 kB │ gzip:   1.02 kB │ map:     3.33 kB
-.dist-staging-5e690db6/assets/TremoloCard-DSh7WAbW.js                                   1.85 kB │ gzip:   1.01 kB │ map:     3.68 kB
-.dist-staging-5e690db6/assets/ConvolutionCategoryLayout-DMl7DtoL.js                     1.87 kB │ gzip:   0.95 kB │ map:     6.42 kB
-.dist-staging-5e690db6/assets/useMidiHubOverview-CCIXcRhC.js                            1.92 kB │ gzip:   0.87 kB │ map:    29.77 kB
-.dist-staging-5e690db6/assets/MultiEffectCategoryLayout-CDI9_lIr.js                     1.96 kB │ gzip:   0.99 kB │ map:     7.23 kB
-.dist-staging-5e690db6/assets/Toggle-BhLl-Rj5.js                                        1.96 kB │ gzip:   0.98 kB │ map:     8.92 kB
-.dist-staging-5e690db6/assets/DelayCard-B1kIlRPw.js                                     2.00 kB │ gzip:   1.02 kB │ map:     3.88 kB
-.dist-staging-5e690db6/assets/ProgressBar-14mHfsfG.js                                   2.03 kB │ gzip:   0.92 kB │ map:     7.93 kB
-.dist-staging-5e690db6/assets/AmplifierCategoryLayout-BFoxTU5P.js                       2.07 kB │ gzip:   0.93 kB │ map:     8.26 kB
-.dist-staging-5e690db6/assets/EQCategoryLayout-C524IpUq.js                              2.08 kB │ gzip:   1.02 kB │ map:     7.66 kB
-.dist-staging-5e690db6/assets/BF2FlangerCard-DiV5NyfS.js                                2.09 kB │ gzip:   1.08 kB │ map:     4.02 kB
-.dist-staging-5e690db6/assets/bucket-11-DZaGbEHe.js                                     2.09 kB │ gzip:   0.90 kB │ map:   166.79 kB
-.dist-staging-5e690db6/assets/LimiterCard-BRQx5-qm.js                                   2.12 kB │ gzip:   1.07 kB │ map:     3.81 kB
-.dist-staging-5e690db6/assets/DelayCategoryLayout-CaFNgQ1D.js                           2.12 kB │ gzip:   0.95 kB │ map:     7.86 kB
-.dist-staging-5e690db6/assets/AccordionItem-Bg38Xk-5.js                                 2.24 kB │ gzip:   1.06 kB │ map:    11.88 kB
-.dist-staging-5e690db6/assets/useVuMeters-DSRdgEQn.js                                   2.26 kB │ gzip:   0.99 kB │ map:     8.41 kB
-.dist-staging-5e690db6/assets/PhaserCard-OEGr1coA.js                                    2.27 kB │ gzip:   1.13 kB │ map:     4.88 kB
-.dist-staging-5e690db6/assets/CarbonParameterSection-DWeuFOAF.js                        2.32 kB │ gzip:   0.86 kB │ map:     8.66 kB
-.dist-staging-5e690db6/assets/CarbonCardShell-BZHV-NZ6.js                               2.47 kB │ gzip:   1.12 kB │ map:     9.58 kB
-.dist-staging-5e690db6/assets/LFOWaveform-ciHalj2k.js                                   2.58 kB │ gzip:   1.34 kB │ map:    10.50 kB
-.dist-staging-5e690db6/assets/ModulationTemplate-c6dRpoTH.js                            2.58 kB │ gzip:   1.33 kB │ map:     7.43 kB
-.dist-staging-5e690db6/assets/DistortionTemplate-Cnf-4QAW.js                            2.59 kB │ gzip:   1.35 kB │ map:     7.26 kB
-.dist-staging-5e690db6/assets/LandscapePrompt-DCaB7G_i.js                               2.61 kB │ gzip:   1.23 kB │ map:     7.33 kB
-.dist-staging-5e690db6/assets/DelayTapGrid-D7FbbQ-x.js                                  2.69 kB │ gzip:   1.34 kB │ map:    11.53 kB
-.dist-staging-5e690db6/assets/PitchTemplate-_N4b4_3c.js                                 2.74 kB │ gzip:   1.38 kB │ map:     7.83 kB
-.dist-staging-5e690db6/assets/ReverbTemplate-NkBNS25d.js                                2.75 kB │ gzip:   1.41 kB │ map:     8.15 kB
-.dist-staging-5e690db6/assets/useFilters-DTabsHxL.js                                    2.78 kB │ gzip:   1.10 kB │ map:    11.57 kB
-.dist-staging-5e690db6/assets/DelayTemplate-Bpqz8zyA.js                                 2.82 kB │ gzip:   1.44 kB │ map:     8.48 kB
-.dist-staging-5e690db6/assets/GateCard-D2ZIXENE.js                                      2.88 kB │ gzip:   1.43 kB │ map:     6.06 kB
-.dist-staging-5e690db6/assets/UtilityTemplate-ce8h1Z8q.js                               2.88 kB │ gzip:   1.28 kB │ map:     8.76 kB
-.dist-staging-5e690db6/assets/MPX1Knob-CSVy1o8K.js                                      2.92 kB │ gzip:   1.43 kB │ map:    10.88 kB
-.dist-staging-5e690db6/assets/DynamicsTemplate-C76b3SAM.js                              2.99 kB │ gzip:   1.48 kB │ map:     8.51 kB
-.dist-staging-5e690db6/assets/GainReductionMeter-BpzklZqs.js                            3.00 kB │ gzip:   1.12 kB │ map:     7.02 kB
-.dist-staging-5e690db6/assets/TunerCard-CzSmA1-s.js                                     3.00 kB │ gzip:   1.43 kB │ map:     6.79 kB
-.dist-staging-5e690db6/assets/CompressorCard-BMlGl8qU.js                                3.10 kB │ gzip:   1.36 kB │ map:     6.74 kB
-.dist-staging-5e690db6/assets/bucket-17-CmVz2Q1d.js                                     3.38 kB │ gzip:   1.04 kB │ map:   146.49 kB
-.dist-staging-5e690db6/assets/LooperCard-B5fMJykv.js                                    3.46 kB │ gzip:   1.59 kB │ map:     8.87 kB
-.dist-staging-5e690db6/assets/CabinetIRCard-BeT754JB.js                                 3.99 kB │ gzip:   1.82 kB │ map:     9.72 kB
-.dist-staging-5e690db6/assets/IntelFXEditorView-BPF2BKfK.js                             4.02 kB │ gzip:   1.73 kB │ map:    12.36 kB
-.dist-staging-5e690db6/assets/ChorusCard-BLV3TgJy.js                                    4.05 kB │ gzip:   1.82 kB │ map:     9.30 kB
-.dist-staging-5e690db6/assets/EQTemplate-kaL_8G71.js                                    4.22 kB │ gzip:   1.92 kB │ map:    13.79 kB
-.dist-staging-5e690db6/assets/PhaserCard-LdEe1Ziw.js                                    4.45 kB │ gzip:   1.96 kB │ map:    10.93 kB
-.dist-staging-5e690db6/assets/IntelFXPanelView-D-udf5RE.js                              4.48 kB │ gzip:   1.83 kB │ map:    13.45 kB
-.dist-staging-5e690db6/assets/SideNavLink-BNVzdG87.js                                   4.52 kB │ gzip:   1.82 kB │ map:    27.46 kB
-.dist-staging-5e690db6/assets/usePluginBrowser-CF-QZ899.js                              4.68 kB │ gzip:   1.77 kB │ map:    18.07 kB
-.dist-staging-5e690db6/assets/MidiHubAreaLayout-Dib44CuA.js                             4.82 kB │ gzip:   1.76 kB │ map:    14.59 kB
-.dist-staging-5e690db6/assets/DynamicsCategoryLayout-Dk0g1oX5.js                        4.91 kB │ gzip:   2.26 kB │ map:    21.93 kB
-.dist-staging-5e690db6/assets/WhammyCard-BCy41iTd.js                                    5.03 kB │ gzip:   1.98 kB │ map:    13.52 kB
-.dist-staging-5e690db6/assets/Column-BbpB4Wtr.js                                        5.22 kB │ gzip:   1.58 kB │ map:    29.86 kB
-.dist-staging-5e690db6/assets/GlitchShifterCard-STjnUnYo.js                             5.37 kB │ gzip:   2.34 kB │ map:    14.55 kB
-.dist-staging-5e690db6/assets/MPX1DiagView-BsNgjNxZ.js                                  5.49 kB │ gzip:   1.85 kB │ map:    14.93 kB
-.dist-staging-5e690db6/assets/FileUploader-D2HgTZhG.js                                  5.54 kB │ gzip:   2.36 kB │ map:    26.71 kB
-.dist-staging-5e690db6/assets/MPX1MatrixView-Doqd7Z-n.js                                5.72 kB │ gzip:   2.14 kB │ map:    18.65 kB
-.dist-staging-5e690db6/assets/useDynamics-DbITvoqm.js                                   5.74 kB │ gzip:   1.66 kB │ map:    22.04 kB
-.dist-staging-5e690db6/assets/TextArea-Cy4dgzvz.js                                      5.93 kB │ gzip:   2.38 kB │ map:    25.02 kB
-.dist-staging-5e690db6/assets/TableRow-DFRVAlmU.js                                      6.42 kB │ gzip:   2.15 kB │ map:    35.94 kB
-.dist-staging-5e690db6/assets/MPX1PerformView-BP-5UW3k.js                               6.46 kB │ gzip:   2.29 kB │ map:    21.26 kB
-.dist-staging-5e690db6/assets/EventideH9Card-BgkNWImv.js                                6.57 kB │ gzip:   2.39 kB │ map:    18.27 kB
-.dist-staging-5e690db6/assets/LinearProgress-Dp0T_nri.js                                6.67 kB │ gzip:   2.04 kB │ map:    23.76 kB
-.dist-staging-5e690db6/assets/MidiHubShell-Bq_2Ucsw.js                                  6.75 kB │ gzip:   2.96 kB │ map:   204.48 kB
-.dist-staging-5e690db6/assets/EVHPitchShifterCard-BzgYgnuY.js                           6.82 kB │ gzip:   2.31 kB │ map:    18.32 kB
-.dist-staging-5e690db6/assets/ReverbIRCard-C-X2EzLx.js                                  7.05 kB │ gzip:   3.18 kB │ map:    23.74 kB
-.dist-staging-5e690db6/assets/IntervalShifterCard-DNb-PSEe.js                           7.12 kB │ gzip:   2.13 kB │ map:    20.23 kB
-.dist-staging-5e690db6/assets/library-CrTn8_y2.js                                       7.46 kB │ gzip:   2.16 kB │ map:    26.23 kB
-.dist-staging-5e690db6/assets/BossXS1Card-0fhCQOkK.js                                   7.56 kB │ gzip:   2.56 kB │ map:    20.41 kB
-.dist-staging-5e690db6/assets/ParametricEQCard-B6qlNYJX.js                              7.57 kB │ gzip:   3.14 kB │ map:    24.49 kB
-.dist-staging-5e690db6/assets/MPX1Page-BpzZodQL.js                                      7.71 kB │ gzip:   3.06 kB │ map:    24.98 kB
-.dist-staging-5e690db6/assets/IntelliFXCard-zs6BYPJh.js                                 7.82 kB │ gzip:   2.75 kB │ map:    23.98 kB
-.dist-staging-5e690db6/assets/MPX1LibraryView-Dc5FBQYa.js                               7.96 kB │ gzip:   3.05 kB │ map:    26.83 kB
-.dist-staging-5e690db6/assets/NAMCard-BqhGQKI7.js                                       8.34 kB │ gzip:   2.81 kB │ map:    22.41 kB
-.dist-staging-5e690db6/assets/IntelFXMidiMapView-BcvoCisy.js                            8.70 kB │ gzip:   3.00 kB │ map:    30.87 kB
-.dist-staging-5e690db6/assets/IntelFXLibraryView-CnfsfR1w.js                            9.17 kB │ gzip:   3.08 kB │ map:    31.12 kB
-.dist-staging-5e690db6/assets/MPX1EditorView-B6CbuopC.js                                9.41 kB │ gzip:   3.19 kB │ map:    28.98 kB
-.dist-staging-5e690db6/assets/IntelFXPerformView-CRQ9d0Cd.js                            9.44 kB │ gzip:   3.00 kB │ map:    32.57 kB
-.dist-staging-5e690db6/assets/MPX1PanelView-CZ2M9tvE.js                                 9.53 kB │ gzip:   2.86 kB │ map:    28.45 kB
-.dist-staging-5e690db6/assets/NumericInput-B61R4cdu.js                                  9.64 kB │ gzip:   3.40 kB │ map:    42.55 kB
-.dist-staging-5e690db6/assets/Button-CR1HtX5W.js                                        9.86 kB │ gzip:   2.68 kB │ map:    34.59 kB
-.dist-staging-5e690db6/assets/ComposedModal-B0Zd2-7D.js                                 9.93 kB │ gzip:   3.60 kB │ map:    47.35 kB
-.dist-staging-5e690db6/assets/MidiHubLabPage-BTKj6Xen.js                               10.01 kB │ gzip:   3.33 kB │ map:    30.75 kB
-.dist-staging-5e690db6/assets/MPX1MidiMapView-LZwZ74UY.js                              11.37 kB │ gzip:   3.60 kB │ map:    38.40 kB
-.dist-staging-5e690db6/assets/CPUPerformancePage-S_4HKqUC.js                           11.50 kB │ gzip:   3.11 kB │ map:    34.83 kB
-.dist-staging-5e690db6/assets/Alert-DXAD5RbH.js                                        11.52 kB │ gzip:   3.91 kB │ map:    52.78 kB
-.dist-staging-5e690db6/assets/H3000Card-M-cTlHQU.js                                    11.53 kB │ gzip:   3.68 kB │ map:    29.54 kB
-.dist-staging-5e690db6/assets/IntelFXMonitorView-CgRUeSXZ.js                           12.42 kB │ gzip:   2.94 kB │ map:    30.07 kB
-.dist-staging-5e690db6/assets/LexiLoveCard-BC6SRZTS.js                                 13.05 kB │ gzip:   4.16 kB │ map:    32.50 kB
-.dist-staging-5e690db6/assets/Tabs-B-4tSwPi.js                                         13.58 kB │ gzip:   4.50 kB │ map:    64.43 kB
-.dist-staging-5e690db6/assets/HoToneJoGGPage-KwIOE2pK.js                               13.73 kB │ gzip:   4.03 kB │ map:    35.60 kB
-.dist-staging-5e690db6/assets/MOTURMEPage-oyu1xVlo.js                                  14.41 kB │ gzip:   4.13 kB │ map:    39.78 kB
-.dist-staging-5e690db6/assets/withMidiDialog-BdNLWqL1.js                               14.91 kB │ gzip:   4.03 kB │ map:    38.58 kB
-.dist-staging-5e690db6/assets/MidiHubPresetsPage-BnBxufkM.js                           15.20 kB │ gzip:   4.64 kB │ map:    50.94 kB
-.dist-staging-5e690db6/assets/MidiHubEventsPage-BCvOhOh4.js                            15.63 kB │ gzip:   4.54 kB │ map:    50.36 kB
-.dist-staging-5e690db6/assets/Tabs-B2rsm7as.js                                         16.04 kB │ gzip:   5.58 kB │ map:    77.46 kB
-.dist-staging-5e690db6/assets/HomePage-NSgiQ5Ag.js                                     16.70 kB │ gzip:   6.39 kB │ map:    72.54 kB
-.dist-staging-5e690db6/assets/MeteringPage-Dfj7j-9i.js                                 16.71 kB │ gzip:   4.65 kB │ map:    43.67 kB
-.dist-staging-5e690db6/assets/Peavey5150Card-DIOn-AC5.js                               16.82 kB │ gzip:   6.03 kB │ map:    68.77 kB
-.dist-staging-5e690db6/assets/LV2PluginsPage-DepF3qQE.js                               17.07 kB │ gzip:   5.13 kB │ map:    56.75 kB
-.dist-staging-5e690db6/assets/NativeDelayCard-BnH5qhkt.js                              17.55 kB │ gzip:   5.57 kB │ map:    52.77 kB
-.dist-staging-5e690db6/assets/ShoeGazeCard-Ch3KpP0X.js                                 17.61 kB │ gzip:   5.39 kB │ map:    48.53 kB
-.dist-staging-5e690db6/assets/ShoppingSearchDialog-B4_Thr1u.js                         17.79 kB │ gzip:   5.28 kB │ map:    52.33 kB
-.dist-staging-5e690db6/assets/IntelFXPage-DG7JU0TO.js                                  17.88 kB │ gzip:   6.13 kB │ map:    74.19 kB
-.dist-staging-5e690db6/assets/useModulation-wDGQlYJA.js                                18.06 kB │ gzip:   4.13 kB │ map:    46.93 kB
-.dist-staging-5e690db6/assets/NumberInput-DNnHEZlX.js                                  18.28 kB │ gzip:   6.80 kB │ map:    87.92 kB
-.dist-staging-5e690db6/assets/SynthForgeCard-DLWRymQr.js                               18.90 kB │ gzip:   6.31 kB │ map:    54.89 kB
-.dist-staging-5e690db6/assets/IntelFXFlowView-rrtNRr8j.js                              19.02 kB │ gzip:   6.29 kB │ map:    67.48 kB
-.dist-staging-5e690db6/assets/PipeWirePage-B4vJKANf.js                                 20.29 kB │ gzip:   5.53 kB │ map:    56.73 kB
-.dist-staging-5e690db6/assets/TweedBassmanCard-ipI0rj1m.js                             22.72 kB │ gzip:   5.94 kB │ map:    60.01 kB
-.dist-staging-5e690db6/assets/PerformPage-BX-OBOEo.js                                  23.34 kB │ gzip:   7.52 kB │ map:    81.48 kB
-.dist-staging-5e690db6/assets/ExpressionPage-DCEo4BXW.js                               23.74 kB │ gzip:   6.55 kB │ map:    77.74 kB
-.dist-staging-5e690db6/assets/MidiHubProcessingPage-BVAHUNqX.js                        24.04 kB │ gzip:   6.52 kB │ map:    75.55 kB
-.dist-staging-5e690db6/assets/MPX1FlowView-DE8PWoW2.js                                 24.46 kB │ gzip:   8.08 kB │ map:    93.66 kB
-.dist-staging-5e690db6/assets/MidiHubConnectionsPage-FJQeE1qU.js                       26.50 kB │ gzip:   7.85 kB │ map:    84.34 kB
-.dist-staging-5e690db6/assets/MidiRecorderPanel-D5m18-zO.js                            27.67 kB │ gzip:   8.07 kB │ map:   103.79 kB
-.dist-staging-5e690db6/assets/PassionFXCard-MPm1jLKg.js                                29.32 kB │ gzip:   7.53 kB │ map:    86.09 kB
-.dist-staging-5e690db6/assets/MidiHubNetworkPage-BKYLmE7R.js                           29.41 kB │ gzip:   6.82 kB │ map:    84.53 kB
-.dist-staging-5e690db6/assets/AudioEnginePage-IUP5hoG0.js                              30.18 kB │ gzip:   8.16 kB │ map:    94.36 kB
-.dist-staging-5e690db6/assets/Dropdown-hyH4WHSS.js                                     33.09 kB │ gzip:  11.48 kB │ map:   270.78 kB
-.dist-staging-5e690db6/assets/DynamicsMeteringPanel-BGoqEUol.js                        38.54 kB │ gzip:   9.61 kB │ map:   120.41 kB
-.dist-staging-5e690db6/assets/DSPPage-BHP0C3Qo.js                                      40.31 kB │ gzip:   8.71 kB │ map:    92.25 kB
-.dist-staging-5e690db6/assets/ChainsPage-CfYbWz9V.js                                   42.43 kB │ gzip:  10.69 kB │ map:   130.56 kB
-.dist-staging-5e690db6/assets/DrumMachineCard-Bs42RDn_.js                              42.70 kB │ gzip:  12.22 kB │ map:    81.74 kB
-.dist-staging-5e690db6/assets/HostMachinePage-B0p7kvsn.js                              43.05 kB │ gzip:  12.14 kB │ map:   135.39 kB
-.dist-staging-5e690db6/assets/AudioArtifactsPage-C5BRNwG1.js                           45.40 kB │ gzip:  13.19 kB │ map:   155.05 kB
-.dist-staging-5e690db6/assets/CelestialCompressorCard-Cdn_WEsn.js                      45.50 kB │ gzip:  12.06 kB │ map:   105.35 kB
-.dist-staging-5e690db6/assets/LibraryPage-2Zuw0lrQ.js                                  55.53 kB │ gzip:  16.00 kB │ map:   180.60 kB
-.dist-staging-5e690db6/assets/DrumsPage-C0aoJnAO.js                                    60.85 kB │ gzip:  15.05 kB │ map:   193.32 kB
-.dist-staging-5e690db6/assets/Switch-BhAZQ1Vr.js                                       79.60 kB │ gzip:  22.98 kB │ map:   438.24 kB
-.dist-staging-5e690db6/assets/LCDPage-Dwpkkf3p.js                                      84.31 kB │ gzip:  19.17 kB │ map:   202.44 kB
-.dist-staging-5e690db6/assets/AboutPage-DcP1Wtmd.js                                    91.77 kB │ gzip:  26.51 kB │ map:   301.41 kB
-.dist-staging-5e690db6/assets/EdirolUA1000Page-Cg42PGa7.js                             94.19 kB │ gzip:  26.76 kB │ map:   364.58 kB
-.dist-staging-5e690db6/assets/categoryStyles-DRcmt2-A.js                              100.71 kB │ gzip:  22.92 kB │ map:   162.93 kB
-.dist-staging-5e690db6/assets/index-QVl4SoaJ.js                                       200.35 kB │ gzip:  63.99 kB │ map:   907.52 kB
-.dist-staging-5e690db6/assets/JuceGridPage-j5301PXE.js                                263.02 kB │ gzip:  70.92 kB │ map:   863.49 kB
-.dist-staging-5e690db6/assets/TesiraPage-CiTzEHJc.js                                  286.87 kB │ gzip:  83.82 kB │ map: 1,157.32 kB
-.dist-staging-5e690db6/assets/LineChart-DNIt6ax5.js                                   335.44 kB │ gzip: 100.73 kB │ map: 1,722.22 kB
-.dist-staging-5e690db6/assets/App-D_beqi-O.js                                         887.88 kB │ gzip: 264.06 kB │ map: 6,791.46 kB
+.dist-staging-a229fa6a/index.html                                                       1.17 kB │ gzip:   0.56 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-vietnamese-400-normal-fK1oJ5dG.woff         6.39 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-vietnamese-700-normal-BV5B8Are.woff         6.42 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-vietnamese-600-normal-DgdngZtN.woff         6.58 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-vietnamese-500-normal-BEb3_waV.woff         6.59 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-vietnamese-400-normal-DG4YqDda.woff2        8.20 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-vietnamese-700-normal-CkEo6LDy.woff2        8.22 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-vietnamese-500-normal-e4dixQRQ.woff2        8.42 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-vietnamese-600-normal-DpPYBSTl.woff2        8.46 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-greek-700-normal-CkZN0sRy.woff              8.74 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-greek-400-normal-D9ESIMu3.woff              8.76 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-greek-500-normal-CuWXN6rf.woff              9.15 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-greek-600-normal-D-CqTdkO.woff              9.22 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-greek-700-normal-wyJ6jzdA.woff2             9.93 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-greek-400-normal-_efipK4i.woff2             9.94 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-ext-700-normal-DCQwxkRk.woff      10.16 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-ext-400-normal-Dsrv2Tcn.woff      10.29 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-greek-600-normal-DzTrcv_p.woff2            10.37 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-greek-500-normal-JMMifIXV.woff2            10.38 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-ext-500-normal-DB5PtV2g.woff      10.59 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-ext-600-normal-Bz0x94Yp.woff      10.62 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-ext-700-normal-BmRLXWpJ.woff2     12.06 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-ext-400-normal-g30qAdWV.woff2     12.15 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-ext-600-normal-DUMzJB7m.woff2     12.30 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-ext-500-normal-Cs5J6C77.woff2     12.31 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-700-normal-RFb1v-CK.woff          13.33 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-400-normal-BTotfTJu.woff          13.51 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-500-normal-ByOcLdNv.woff          13.86 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-600-normal-BGq0mW3O.woff          13.89 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-ext-400-normal-RBey6euL.woff         14.36 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-ext-700-normal-DZH6Xh-4.woff         14.42 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-700-normal-D_uavGvn.woff2         14.57 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-ext-500-normal-D0aIdm-b.woff         14.74 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-ext-600-normal-DIrixKbi.woff         14.77 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-400-normal-DZqxrq2p.woff2         14.80 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-500-normal-CocWQlwt.woff2         15.00 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-cyrillic-600-normal-71GNu3SW.woff2         15.04 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-ext-400-normal-C5H60-Va.woff2        15.98 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-ext-700-normal-aMgXseD4.woff2        16.19 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-ext-600-normal-DOrvGEcy.woff2        16.45 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-ext-500-normal-DakdToA3.woff2        16.46 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-400-normal-CYLoc0-x.woff             22.10 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-700-normal-Bth3BMcD.woff             22.28 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-400-normal-CDDApCn2.woff2            22.59 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-700-normal-Bxkt5Cjx.woff2            22.83 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-600-normal-Cu4Hd6ag.woff             23.88 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-500-normal-BgVn5rGT.woff             23.92 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-500-normal-6ng42L7E.woff2            24.18 kB
+.dist-staging-a229fa6a/assets/ibm-plex-sans-latin-600-normal-CuJfVYMP.woff2            24.25 kB
+.dist-staging-a229fa6a/assets/LCDPage-BEzA_YP-.css                                      0.17 kB │ gzip:   0.12 kB
+.dist-staging-a229fa6a/assets/DrumsPage-sN2OR9cz.css                                    0.37 kB │ gzip:   0.19 kB
+.dist-staging-a229fa6a/assets/MidiHubLabPage-CMo4iWbR.css                               0.65 kB │ gzip:   0.29 kB
+.dist-staging-a229fa6a/assets/MidiHubPresetsPage-vSVUB5lz.css                           1.00 kB │ gzip:   0.39 kB
+.dist-staging-a229fa6a/assets/MidiHubEventsPage-CsqE56C0.css                            1.21 kB │ gzip:   0.43 kB
+.dist-staging-a229fa6a/assets/MidiHubNetworkPage-DKbdM4iv.css                           1.29 kB │ gzip:   0.42 kB
+.dist-staging-a229fa6a/assets/MidiHubProcessingPage-1s1bLj4Q.css                        1.56 kB │ gzip:   0.46 kB
+.dist-staging-a229fa6a/assets/IntelFXEditorView-BWyxFZr5.css                            1.92 kB │ gzip:   0.61 kB
+.dist-staging-a229fa6a/assets/MPX1DiagView-BvUz8ohh.css                                 2.58 kB │ gzip:   0.71 kB
+.dist-staging-a229fa6a/assets/LCDDisplay-CRjaMFq5.css                                   2.71 kB │ gzip:   0.77 kB
+.dist-staging-a229fa6a/assets/LV2PluginsPage-Byi6hzkI.css                               2.73 kB │ gzip:   0.76 kB
+.dist-staging-a229fa6a/assets/IntelFXMidiMapView-DDpMId36.css                           2.84 kB │ gzip:   0.70 kB
+.dist-staging-a229fa6a/assets/IntelFXPerformView-COmD_Kce.css                           3.02 kB │ gzip:   0.69 kB
+.dist-staging-a229fa6a/assets/IntelFXPanelView-DeCIBAUf.css                             3.08 kB │ gzip:   0.90 kB
+.dist-staging-a229fa6a/assets/MidiHubConnectionsPage-LzDsmtc-.css                       3.19 kB │ gzip:   0.71 kB
+.dist-staging-a229fa6a/assets/IntelFXLibraryView-CaFePbJK.css                           3.26 kB │ gzip:   0.74 kB
+.dist-staging-a229fa6a/assets/NumericInput-CaqPgQuA.css                                 3.33 kB │ gzip:   1.02 kB
+.dist-staging-a229fa6a/assets/MPX1LibraryView-DdgK_uVk.css                              3.54 kB │ gzip:   0.78 kB
+.dist-staging-a229fa6a/assets/MPX1MatrixView-BVEFmg2J.css                               4.45 kB │ gzip:   0.96 kB
+.dist-staging-a229fa6a/assets/MidiHubShell-BfHPxA2J.css                                 4.48 kB │ gzip:   1.40 kB
+.dist-staging-a229fa6a/assets/IntelFXMonitorView-D3zHqyuu.css                           4.61 kB │ gzip:   0.92 kB
+.dist-staging-a229fa6a/assets/AudioEnginePage-Dt_6cFUS.css                              4.81 kB │ gzip:   1.03 kB
+.dist-staging-a229fa6a/assets/ChainsPage-CdagMRhh.css                                   5.02 kB │ gzip:   1.00 kB
+.dist-staging-a229fa6a/assets/MPX1MidiMapView-CUq_SYwv.css                              5.06 kB │ gzip:   1.03 kB
+.dist-staging-a229fa6a/assets/MPX1PerformView-Dh6Gya6H.css                              5.09 kB │ gzip:   1.11 kB
+.dist-staging-a229fa6a/assets/MPX1Page-CMXsJoVi.css                                     5.14 kB │ gzip:   1.26 kB
+.dist-staging-a229fa6a/assets/IntelFXPage-C7XKszoV.css                                  5.23 kB │ gzip:   1.31 kB
+.dist-staging-a229fa6a/assets/MPX1EditorView-HDfKCXkb.css                               5.64 kB │ gzip:   1.17 kB
+.dist-staging-a229fa6a/assets/ShoppingSearchDialog-DMzZ69cM.css                         7.04 kB │ gzip:   1.26 kB
+.dist-staging-a229fa6a/assets/CarbonCardShell-Cehj4QWs.css                              7.17 kB │ gzip:   1.65 kB
+.dist-staging-a229fa6a/assets/TesiraPage-BCk_hnPg.css                                   7.53 kB │ gzip:   1.66 kB
+.dist-staging-a229fa6a/assets/HoToneJoGGPage-W6OFPG12.css                               8.10 kB │ gzip:   2.12 kB
+.dist-staging-a229fa6a/assets/PipeWirePage-_7PDdbMY.css                                 8.41 kB │ gzip:   1.31 kB
+.dist-staging-a229fa6a/assets/AboutPage-JXWQXBJm.css                                   10.90 kB │ gzip:   2.13 kB
+.dist-staging-a229fa6a/assets/IntelFXFlowView-pAXBamRh.css                             11.01 kB │ gzip:   2.32 kB
+.dist-staging-a229fa6a/assets/MPX1PanelView-De6sLIb8.css                               12.56 kB │ gzip:   2.74 kB
+.dist-staging-a229fa6a/assets/AudioArtifactsPage-DEcn50mt.css                          12.65 kB │ gzip:   2.70 kB
+.dist-staging-a229fa6a/assets/LibraryPage-sV35lQNC.css                                 14.07 kB │ gzip:   2.15 kB
+.dist-staging-a229fa6a/assets/MidiHubAreaLayout-CYfCWuoU.css                           15.45 kB │ gzip:   2.90 kB
+.dist-staging-a229fa6a/assets/HomePage-CyscPvOl.css                                    15.95 kB │ gzip:   3.61 kB
+.dist-staging-a229fa6a/assets/MPX1FlowView-CJbBoK7Q.css                                16.32 kB │ gzip:   2.71 kB
+.dist-staging-a229fa6a/assets/HostMachinePage-CcMO3lEF.css                             17.59 kB │ gzip:   3.23 kB
+.dist-staging-a229fa6a/assets/App-YDxND9wr.css                                         31.46 kB │ gzip:   5.75 kB
+.dist-staging-a229fa6a/assets/JuceGridPage-CbfqZnZw.css                               104.15 kB │ gzip:  14.98 kB
+.dist-staging-a229fa6a/assets/index-BPD_2nOC.css                                    1,005.20 kB │ gzip: 112.64 kB
+.dist-staging-a229fa6a/assets/PlatformShellPage-iNSihHMF.js                             0.11 kB │ gzip:   0.12 kB │ map:     0.39 kB
+.dist-staging-a229fa6a/assets/index-zioTSqyj.js                                         0.16 kB │ gzip:   0.14 kB │ map:     0.90 kB
+.dist-staging-a229fa6a/assets/WelcomePage-Bpn9sR2-.js                                   0.22 kB │ gzip:   0.19 kB │ map:     0.41 kB
+.dist-staging-a229fa6a/assets/metering-hZn6K4Xc.js                                      0.32 kB │ gzip:   0.24 kB │ map:     4.80 kB
+.dist-staging-a229fa6a/assets/MidiHubNodeScope-DFgYQubi.js                              0.33 kB │ gzip:   0.25 kB │ map:     1.40 kB
+.dist-staging-a229fa6a/assets/drumMachineState-jPaIte-x.js                              0.33 kB │ gzip:   0.25 kB │ map:     1.05 kB
+.dist-staging-a229fa6a/assets/useMatchMedia-0ZceBPJw.js                                 0.41 kB │ gzip:   0.30 kB │ map:     6.95 kB
+.dist-staging-a229fa6a/assets/useControllableState-mn3Nile_.js                          0.48 kB │ gzip:   0.31 kB │ map:     3.53 kB
+.dist-staging-a229fa6a/assets/StatCard-ZNkjpsc4.js                                      0.53 kB │ gzip:   0.33 kB │ map:     1.42 kB
+.dist-staging-a229fa6a/assets/LegacyPage-CdoI4LxA.js                                    0.54 kB │ gzip:   0.32 kB │ map:     0.99 kB
+.dist-staging-a229fa6a/assets/ParameterKnob-CWp7Q3dr.js                                 0.57 kB │ gzip:   0.38 kB │ map:     2.51 kB
+.dist-staging-a229fa6a/assets/formatters-DuCYu7AR.js                                    0.82 kB │ gzip:   0.46 kB │ map:     7.70 kB
+.dist-staging-a229fa6a/assets/SVGGradients-CmD5p0C2.js                                  0.95 kB │ gzip:   0.32 kB │ map:     5.96 kB
+.dist-staging-a229fa6a/assets/Filename-zDTkSAY0.js                                      1.07 kB │ gzip:   0.56 kB │ map:     4.01 kB
+.dist-staging-a229fa6a/assets/PageHeader-bcZF5PyN.js                                    1.17 kB │ gzip:   0.48 kB │ map:     3.02 kB
+.dist-staging-a229fa6a/assets/InstrumentCategoryLayout-By0TWLme.js                      1.22 kB │ gzip:   0.65 kB │ map:     4.82 kB
+.dist-staging-a229fa6a/assets/useResponsiveVizSize-BuuVzuSB.js                          1.24 kB │ gzip:   0.69 kB │ map:     7.55 kB
+.dist-staging-a229fa6a/assets/MidiHubTransportPage-Bf6tDw_9.js                          1.27 kB │ gzip:   0.62 kB │ map:     2.50 kB
+.dist-staging-a229fa6a/assets/NumberInput-DmskAvM9.js                                   1.28 kB │ gzip:   0.75 kB │ map:     4.55 kB
+.dist-staging-a229fa6a/assets/CarbonMeteringFooter-BCnzBuL8.js                          1.37 kB │ gzip:   0.46 kB │ map:     3.58 kB
+.dist-staging-a229fa6a/assets/PitchCategoryLayout-3SEogizg.js                           1.52 kB │ gzip:   0.75 kB │ map:     6.16 kB
+.dist-staging-a229fa6a/assets/LCDDisplay-PZ-Fn9OM.js                                    1.67 kB │ gzip:   0.65 kB │ map:     6.00 kB
+.dist-staging-a229fa6a/assets/ModulationCategoryLayout-DEnNTziv.js                      1.73 kB │ gzip:   0.84 kB │ map:     7.11 kB
+.dist-staging-a229fa6a/assets/ReverbCategoryLayout-Dt6sNCnK.js                          1.75 kB │ gzip:   0.80 kB │ map:     7.22 kB
+.dist-staging-a229fa6a/assets/CE2ChorusCard-B8Y3QIbr.js                                 1.84 kB │ gzip:   1.02 kB │ map:     3.33 kB
+.dist-staging-a229fa6a/assets/TremoloCard-82Q7LRPl.js                                   1.85 kB │ gzip:   1.00 kB │ map:     3.68 kB
+.dist-staging-a229fa6a/assets/ConvolutionCategoryLayout-Cb-2raQh.js                     1.87 kB │ gzip:   0.95 kB │ map:     6.42 kB
+.dist-staging-a229fa6a/assets/useMidiHubOverview-C55UWMrR.js                            1.92 kB │ gzip:   0.88 kB │ map:    29.77 kB
+.dist-staging-a229fa6a/assets/MultiEffectCategoryLayout-BW9TP0Jd.js                     1.96 kB │ gzip:   0.99 kB │ map:     7.23 kB
+.dist-staging-a229fa6a/assets/Toggle-B_vpuanZ.js                                        1.96 kB │ gzip:   0.98 kB │ map:     8.92 kB
+.dist-staging-a229fa6a/assets/DelayCard-CduhPf1A.js                                     2.00 kB │ gzip:   1.02 kB │ map:     3.88 kB
+.dist-staging-a229fa6a/assets/ProgressBar-D1n6lzYh.js                                   2.03 kB │ gzip:   0.92 kB │ map:     7.93 kB
+.dist-staging-a229fa6a/assets/AmplifierCategoryLayout-LsC_tPyy.js                       2.07 kB │ gzip:   0.93 kB │ map:     8.26 kB
+.dist-staging-a229fa6a/assets/EQCategoryLayout-9rX6VibP.js                              2.08 kB │ gzip:   1.02 kB │ map:     7.66 kB
+.dist-staging-a229fa6a/assets/BF2FlangerCard-CLgQjE1D.js                                2.09 kB │ gzip:   1.08 kB │ map:     4.02 kB
+.dist-staging-a229fa6a/assets/bucket-11-BEXDJ7G5.js                                     2.09 kB │ gzip:   0.90 kB │ map:   166.79 kB
+.dist-staging-a229fa6a/assets/LimiterCard-B6UYAhOS.js                                   2.12 kB │ gzip:   1.07 kB │ map:     3.81 kB
+.dist-staging-a229fa6a/assets/DelayCategoryLayout-DgyjFWWG.js                           2.12 kB │ gzip:   0.95 kB │ map:     7.86 kB
+.dist-staging-a229fa6a/assets/AccordionItem-oZNs7kBe.js                                 2.24 kB │ gzip:   1.06 kB │ map:    11.88 kB
+.dist-staging-a229fa6a/assets/useVuMeters-C5Lxa17b.js                                   2.26 kB │ gzip:   0.99 kB │ map:     8.41 kB
+.dist-staging-a229fa6a/assets/PhaserCard-DDPJRERx.js                                    2.27 kB │ gzip:   1.13 kB │ map:     4.88 kB
+.dist-staging-a229fa6a/assets/CarbonParameterSection-MJXsQODi.js                        2.32 kB │ gzip:   0.86 kB │ map:     8.66 kB
+.dist-staging-a229fa6a/assets/CarbonCardShell-DmNvyy_s.js                               2.47 kB │ gzip:   1.12 kB │ map:     9.58 kB
+.dist-staging-a229fa6a/assets/LFOWaveform-B0D4P51R.js                                   2.58 kB │ gzip:   1.33 kB │ map:    10.50 kB
+.dist-staging-a229fa6a/assets/ModulationTemplate-BdJ157PF.js                            2.58 kB │ gzip:   1.32 kB │ map:     7.43 kB
+.dist-staging-a229fa6a/assets/DistortionTemplate-scVmecAt.js                            2.59 kB │ gzip:   1.34 kB │ map:     7.26 kB
+.dist-staging-a229fa6a/assets/LandscapePrompt-BreePLVq.js                               2.61 kB │ gzip:   1.23 kB │ map:     7.33 kB
+.dist-staging-a229fa6a/assets/DelayTapGrid-C8gvjEzH.js                                  2.69 kB │ gzip:   1.34 kB │ map:    11.53 kB
+.dist-staging-a229fa6a/assets/PitchTemplate-CSkAKaoj.js                                 2.74 kB │ gzip:   1.38 kB │ map:     7.83 kB
+.dist-staging-a229fa6a/assets/ReverbTemplate-CRl9E0j6.js                                2.75 kB │ gzip:   1.40 kB │ map:     8.15 kB
+.dist-staging-a229fa6a/assets/useFilters-DHmVs6jS.js                                    2.78 kB │ gzip:   1.10 kB │ map:    11.57 kB
+.dist-staging-a229fa6a/assets/DelayTemplate-BS57MHv-.js                                 2.82 kB │ gzip:   1.43 kB │ map:     8.48 kB
+.dist-staging-a229fa6a/assets/GateCard-Bmc5QeEV.js                                      2.88 kB │ gzip:   1.43 kB │ map:     6.06 kB
+.dist-staging-a229fa6a/assets/UtilityTemplate-DGRtcnGy.js                               2.88 kB │ gzip:   1.28 kB │ map:     8.76 kB
+.dist-staging-a229fa6a/assets/MPX1Knob-knq_iKOg.js                                      2.92 kB │ gzip:   1.43 kB │ map:    10.88 kB
+.dist-staging-a229fa6a/assets/DynamicsTemplate-njMj_nJh.js                              2.99 kB │ gzip:   1.47 kB │ map:     8.51 kB
+.dist-staging-a229fa6a/assets/GainReductionMeter-DtMelB6o.js                            3.00 kB │ gzip:   1.12 kB │ map:     7.02 kB
+.dist-staging-a229fa6a/assets/TunerCard-DidJOBTI.js                                     3.00 kB │ gzip:   1.43 kB │ map:     6.79 kB
+.dist-staging-a229fa6a/assets/CompressorCard-Nj6LvceR.js                                3.10 kB │ gzip:   1.36 kB │ map:     6.74 kB
+.dist-staging-a229fa6a/assets/bucket-17-COMfEkA1.js                                     3.38 kB │ gzip:   1.04 kB │ map:   146.49 kB
+.dist-staging-a229fa6a/assets/LooperCard-BKZUaKL7.js                                    3.46 kB │ gzip:   1.59 kB │ map:     8.87 kB
+.dist-staging-a229fa6a/assets/CabinetIRCard-BEuPvv0m.js                                 3.99 kB │ gzip:   1.82 kB │ map:     9.72 kB
+.dist-staging-a229fa6a/assets/IntelFXEditorView-ClBDgY8u.js                             4.02 kB │ gzip:   1.73 kB │ map:    12.36 kB
+.dist-staging-a229fa6a/assets/ChorusCard-D3dOS5Fq.js                                    4.05 kB │ gzip:   1.81 kB │ map:     9.30 kB
+.dist-staging-a229fa6a/assets/EQTemplate-B-xT9EZM.js                                    4.22 kB │ gzip:   1.92 kB │ map:    13.79 kB
+.dist-staging-a229fa6a/assets/PhaserCard-DKXG5q-D.js                                    4.45 kB │ gzip:   1.95 kB │ map:    10.93 kB
+.dist-staging-a229fa6a/assets/IntelFXPanelView-zJCRY6Ic.js                              4.48 kB │ gzip:   1.83 kB │ map:    13.45 kB
+.dist-staging-a229fa6a/assets/SideNavLink-By3WLQ5u.js                                   4.52 kB │ gzip:   1.82 kB │ map:    27.46 kB
+.dist-staging-a229fa6a/assets/usePluginBrowser-D18YOoAL.js                              4.68 kB │ gzip:   1.77 kB │ map:    18.07 kB
+.dist-staging-a229fa6a/assets/MidiHubAreaLayout-B-34N1aW.js                             4.82 kB │ gzip:   1.76 kB │ map:    14.59 kB
+.dist-staging-a229fa6a/assets/DynamicsCategoryLayout-Dzfdc937.js                        4.91 kB │ gzip:   2.26 kB │ map:    21.93 kB
+.dist-staging-a229fa6a/assets/WhammyCard-D_7N1XcW.js                                    5.03 kB │ gzip:   1.99 kB │ map:    13.52 kB
+.dist-staging-a229fa6a/assets/Column-DXKKCKyS.js                                        5.22 kB │ gzip:   1.59 kB │ map:    29.86 kB
+.dist-staging-a229fa6a/assets/GlitchShifterCard-BN01T0tn.js                             5.37 kB │ gzip:   2.34 kB │ map:    14.55 kB
+.dist-staging-a229fa6a/assets/MPX1DiagView-BU_wJ2-v.js                                  5.49 kB │ gzip:   1.84 kB │ map:    14.93 kB
+.dist-staging-a229fa6a/assets/FileUploader-BkEJqISl.js                                  5.54 kB │ gzip:   2.36 kB │ map:    26.71 kB
+.dist-staging-a229fa6a/assets/MPX1MatrixView-KzQwKtL4.js                                5.72 kB │ gzip:   2.14 kB │ map:    18.65 kB
+.dist-staging-a229fa6a/assets/useDynamics--S8VX3ti.js                                   5.74 kB │ gzip:   1.67 kB │ map:    22.04 kB
+.dist-staging-a229fa6a/assets/TextArea-D1GqlmMF.js                                      5.93 kB │ gzip:   2.38 kB │ map:    25.02 kB
+.dist-staging-a229fa6a/assets/TableRow-DlPs5BBZ.js                                      6.42 kB │ gzip:   2.16 kB │ map:    35.94 kB
+.dist-staging-a229fa6a/assets/MPX1PerformView-kBFzqDbY.js                               6.46 kB │ gzip:   2.29 kB │ map:    21.26 kB
+.dist-staging-a229fa6a/assets/EventideH9Card-hLSweldh.js                                6.57 kB │ gzip:   2.39 kB │ map:    18.27 kB
+.dist-staging-a229fa6a/assets/LinearProgress-CQPUXOZ-.js                                6.67 kB │ gzip:   2.05 kB │ map:    23.76 kB
+.dist-staging-a229fa6a/assets/MidiHubShell-CAD7dx7v.js                                  6.75 kB │ gzip:   2.97 kB │ map:   204.48 kB
+.dist-staging-a229fa6a/assets/EVHPitchShifterCard-BeiaYfQz.js                           6.82 kB │ gzip:   2.31 kB │ map:    18.32 kB
+.dist-staging-a229fa6a/assets/ReverbIRCard-C--xGwB_.js                                  7.05 kB │ gzip:   3.17 kB │ map:    23.74 kB
+.dist-staging-a229fa6a/assets/IntervalShifterCard-CrUbn37R.js                           7.12 kB │ gzip:   2.13 kB │ map:    20.23 kB
+.dist-staging-a229fa6a/assets/library-DspVigPS.js                                       7.46 kB │ gzip:   2.16 kB │ map:    26.23 kB
+.dist-staging-a229fa6a/assets/BossXS1Card-C-fR6cjm.js                                   7.56 kB │ gzip:   2.56 kB │ map:    20.41 kB
+.dist-staging-a229fa6a/assets/ParametricEQCard-B7_ZZT5P.js                              7.57 kB │ gzip:   3.14 kB │ map:    24.49 kB
+.dist-staging-a229fa6a/assets/MPX1Page-B_4vXcza.js                                      7.71 kB │ gzip:   3.06 kB │ map:    24.98 kB
+.dist-staging-a229fa6a/assets/IntelliFXCard-XROvWrIn.js                                 7.82 kB │ gzip:   2.74 kB │ map:    23.98 kB
+.dist-staging-a229fa6a/assets/MPX1LibraryView-koii-N0F.js                               7.96 kB │ gzip:   3.05 kB │ map:    26.83 kB
+.dist-staging-a229fa6a/assets/NAMCard-DZLz_p_a.js                                       8.34 kB │ gzip:   2.81 kB │ map:    22.41 kB
+.dist-staging-a229fa6a/assets/IntelFXMidiMapView-BRmYHyEP.js                            8.70 kB │ gzip:   3.01 kB │ map:    30.87 kB
+.dist-staging-a229fa6a/assets/IntelFXLibraryView-BwZNn9dI.js                            9.17 kB │ gzip:   3.09 kB │ map:    31.12 kB
+.dist-staging-a229fa6a/assets/MPX1EditorView-G-byicCU.js                                9.41 kB │ gzip:   3.19 kB │ map:    28.98 kB
+.dist-staging-a229fa6a/assets/IntelFXPerformView-GaWCD-IG.js                            9.44 kB │ gzip:   3.01 kB │ map:    32.57 kB
+.dist-staging-a229fa6a/assets/MPX1PanelView-D66Ucze1.js                                 9.53 kB │ gzip:   2.85 kB │ map:    28.45 kB
+.dist-staging-a229fa6a/assets/NumericInput-sj6Dr4K0.js                                  9.64 kB │ gzip:   3.40 kB │ map:    42.55 kB
+.dist-staging-a229fa6a/assets/Button-rMh2AUYc.js                                        9.86 kB │ gzip:   2.68 kB │ map:    34.59 kB
+.dist-staging-a229fa6a/assets/ComposedModal-DpmfbD9c.js                                 9.93 kB │ gzip:   3.60 kB │ map:    47.35 kB
+.dist-staging-a229fa6a/assets/MidiHubLabPage-Bn0kKgGR.js                               10.01 kB │ gzip:   3.33 kB │ map:    30.75 kB
+.dist-staging-a229fa6a/assets/MPX1MidiMapView-C0EbAnIN.js                              11.37 kB │ gzip:   3.60 kB │ map:    38.40 kB
+.dist-staging-a229fa6a/assets/CPUPerformancePage-rF4wIXnZ.js                           11.50 kB │ gzip:   3.10 kB │ map:    34.83 kB
+.dist-staging-a229fa6a/assets/Alert-vUTygMGf.js                                        11.52 kB │ gzip:   3.91 kB │ map:    52.78 kB
+.dist-staging-a229fa6a/assets/H3000Card-DoVpen_l.js                                    11.53 kB │ gzip:   3.68 kB │ map:    29.54 kB
+.dist-staging-a229fa6a/assets/IntelFXMonitorView-C9CeizHt.js                           12.42 kB │ gzip:   2.94 kB │ map:    30.07 kB
+.dist-staging-a229fa6a/assets/LexiLoveCard-grk3Nbj_.js                                 13.05 kB │ gzip:   4.16 kB │ map:    32.50 kB
+.dist-staging-a229fa6a/assets/Tabs-G9M3b0e_.js                                         13.58 kB │ gzip:   4.50 kB │ map:    64.43 kB
+.dist-staging-a229fa6a/assets/HoToneJoGGPage-BM476Et5.js                               13.73 kB │ gzip:   4.03 kB │ map:    35.60 kB
+.dist-staging-a229fa6a/assets/MOTURMEPage-DwLWYja3.js                                  14.41 kB │ gzip:   4.13 kB │ map:    39.78 kB
+.dist-staging-a229fa6a/assets/withMidiDialog-CxpyegWu.js                               14.91 kB │ gzip:   4.03 kB │ map:    38.58 kB
+.dist-staging-a229fa6a/assets/MidiHubPresetsPage-fJ-tccuS.js                           15.20 kB │ gzip:   4.64 kB │ map:    50.94 kB
+.dist-staging-a229fa6a/assets/MidiHubEventsPage-4HS9U_EG.js                            15.63 kB │ gzip:   4.54 kB │ map:    50.36 kB
+.dist-staging-a229fa6a/assets/Tabs-i2cU2jsO.js                                         16.04 kB │ gzip:   5.58 kB │ map:    77.46 kB
+.dist-staging-a229fa6a/assets/HomePage-BsMbywsD.js                                     16.70 kB │ gzip:   6.39 kB │ map:    72.54 kB
+.dist-staging-a229fa6a/assets/MeteringPage-B4TtHfoM.js                                 16.71 kB │ gzip:   4.65 kB │ map:    43.67 kB
+.dist-staging-a229fa6a/assets/Peavey5150Card-Xg9cswLE.js                               16.82 kB │ gzip:   6.03 kB │ map:    68.77 kB
+.dist-staging-a229fa6a/assets/LV2PluginsPage-1RpAcsEa.js                               17.07 kB │ gzip:   5.13 kB │ map:    56.75 kB
+.dist-staging-a229fa6a/assets/NativeDelayCard-98fZjh4t.js                              17.55 kB │ gzip:   5.57 kB │ map:    52.77 kB
+.dist-staging-a229fa6a/assets/ShoeGazeCard-BWJBr70u.js                                 17.61 kB │ gzip:   5.38 kB │ map:    48.53 kB
+.dist-staging-a229fa6a/assets/ShoppingSearchDialog-BbL1ReVE.js                         17.79 kB │ gzip:   5.28 kB │ map:    52.33 kB
+.dist-staging-a229fa6a/assets/IntelFXPage-BM9uQeEe.js                                  17.88 kB │ gzip:   6.13 kB │ map:    74.19 kB
+.dist-staging-a229fa6a/assets/useModulation-CuEMri-c.js                                18.06 kB │ gzip:   4.12 kB │ map:    46.93 kB
+.dist-staging-a229fa6a/assets/NumberInput-DZUjAKhj.js                                  18.28 kB │ gzip:   6.80 kB │ map:    87.92 kB
+.dist-staging-a229fa6a/assets/SynthForgeCard-xVKNimOw.js                               18.90 kB │ gzip:   6.31 kB │ map:    54.89 kB
+.dist-staging-a229fa6a/assets/IntelFXFlowView-BYj4q2o6.js                              19.02 kB │ gzip:   6.29 kB │ map:    67.48 kB
+.dist-staging-a229fa6a/assets/PipeWirePage-BhOBCn_q.js                                 20.29 kB │ gzip:   5.54 kB │ map:    56.73 kB
+.dist-staging-a229fa6a/assets/TweedBassmanCard-ED__fEFN.js                             22.72 kB │ gzip:   5.93 kB │ map:    60.01 kB
+.dist-staging-a229fa6a/assets/PerformPage-Dr7wUKAB.js                                  23.34 kB │ gzip:   7.52 kB │ map:    81.48 kB
+.dist-staging-a229fa6a/assets/ExpressionPage-CIRT_mI1.js                               23.74 kB │ gzip:   6.55 kB │ map:    77.74 kB
+.dist-staging-a229fa6a/assets/MidiHubProcessingPage-gKU9hvI8.js                        24.04 kB │ gzip:   6.52 kB │ map:    75.55 kB
+.dist-staging-a229fa6a/assets/MPX1FlowView-B-Cv2x-t.js                                 24.46 kB │ gzip:   8.08 kB │ map:    93.66 kB
+.dist-staging-a229fa6a/assets/MidiHubConnectionsPage-D0o87mqK.js                       26.50 kB │ gzip:   7.85 kB │ map:    84.34 kB
+.dist-staging-a229fa6a/assets/MidiRecorderPanel-D-F5_fZO.js                            27.67 kB │ gzip:   8.07 kB │ map:   103.79 kB
+.dist-staging-a229fa6a/assets/PassionFXCard-BpUq_iuw.js                                29.32 kB │ gzip:   7.52 kB │ map:    86.09 kB
+.dist-staging-a229fa6a/assets/MidiHubNetworkPage-n4lhY_1X.js                           29.41 kB │ gzip:   6.82 kB │ map:    84.53 kB
+.dist-staging-a229fa6a/assets/AudioEnginePage-DhkeWfhd.js                              30.18 kB │ gzip:   8.16 kB │ map:    94.36 kB
+.dist-staging-a229fa6a/assets/Dropdown-pihJfiv3.js                                     33.09 kB │ gzip:  11.48 kB │ map:   270.78 kB
+.dist-staging-a229fa6a/assets/DynamicsMeteringPanel-DL1SYyNK.js                        38.54 kB │ gzip:   9.61 kB │ map:   120.41 kB
+.dist-staging-a229fa6a/assets/DSPPage-jkj8PsBX.js                                      40.31 kB │ gzip:   8.70 kB │ map:    92.25 kB
+.dist-staging-a229fa6a/assets/ChainsPage-CdBKIXsl.js                                   42.43 kB │ gzip:  10.69 kB │ map:   130.56 kB
+.dist-staging-a229fa6a/assets/DrumMachineCard-B6Ckug_W.js                              42.70 kB │ gzip:  12.22 kB │ map:    81.74 kB
+.dist-staging-a229fa6a/assets/HostMachinePage-COZ6IQ5b.js                              43.05 kB │ gzip:  12.14 kB │ map:   135.39 kB
+.dist-staging-a229fa6a/assets/AudioArtifactsPage-BYhvvJHX.js                           45.40 kB │ gzip:  13.19 kB │ map:   155.05 kB
+.dist-staging-a229fa6a/assets/CelestialCompressorCard-ufbINx6f.js                      45.50 kB │ gzip:  12.06 kB │ map:   105.35 kB
+.dist-staging-a229fa6a/assets/LibraryPage-Sizd0NGP.js                                  55.53 kB │ gzip:  16.00 kB │ map:   180.60 kB
+.dist-staging-a229fa6a/assets/DrumsPage-CxvU7T2T.js                                    60.85 kB │ gzip:  15.05 kB │ map:   193.32 kB
+.dist-staging-a229fa6a/assets/Switch-HJJvEiUk.js                                       79.60 kB │ gzip:  22.99 kB │ map:   438.24 kB
+.dist-staging-a229fa6a/assets/LCDPage-Drd-uiZg.js                                      84.31 kB │ gzip:  19.17 kB │ map:   202.44 kB
+.dist-staging-a229fa6a/assets/AboutPage-D5Od2P09.js                                    91.77 kB │ gzip:  26.51 kB │ map:   301.41 kB
+.dist-staging-a229fa6a/assets/EdirolUA1000Page-C-5ObkH8.js                             94.19 kB │ gzip:  26.76 kB │ map:   364.58 kB
+.dist-staging-a229fa6a/assets/categoryStyles-0HcPXGBc.js                              100.71 kB │ gzip:  22.92 kB │ map:   162.93 kB
+.dist-staging-a229fa6a/assets/index-f8n9wWwE.js                                       200.35 kB │ gzip:  63.99 kB │ map:   907.52 kB
+.dist-staging-a229fa6a/assets/JuceGridPage-DbrTbpZS.js                                263.39 kB │ gzip:  70.96 kB │ map:   864.25 kB
+.dist-staging-a229fa6a/assets/TesiraPage-z869114F.js                                  286.87 kB │ gzip:  83.83 kB │ map: 1,157.32 kB
+.dist-staging-a229fa6a/assets/LineChart-BeTtxf8J.js                                   335.44 kB │ gzip: 100.73 kB │ map: 1,722.22 kB
+.dist-staging-a229fa6a/assets/App-vB1Uqwzq.js                                         887.88 kB │ gzip: 264.07 kB │ map: 6,791.46 kB
 
 (!) Some chunks are larger than 600 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
-✓ built in 16.76s
+✓ built in 16.28s
