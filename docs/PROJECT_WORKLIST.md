@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 10:28 - Codex (Completed `T237` by adding resilient JUCE Grid signal-lane width measurement, flattening the live signal-card treatment, and tinting category labels from the category accent. No new licensing gaps were identified for the touched MAP2-owned UI files.)
+Last updated: 2026-03-21 07:13 - Codex (Started `T238` to commit and sync the deploy-generated JUCE Grid release metadata, then rerun the frontend deploy/restart loop on port `3000`.)
 
 ## Active Blockers Only
 
@@ -2593,3 +2593,16 @@ Last updated: 2026-03-21 10:28 - Codex
   - Updated `web/src/app/pages/JuceGridSignalCanvas.test.tsx` with a focused fallback-width test that proves the row expands correctly without `ResizeObserver` support.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings unchanged); `npm --prefix web run typecheck` -> pass.
   - Licensing: Reviewed the touched files as MAP2-owned AGPL-covered UI code and found no new AGPL or third-party notice gaps; no follow-up licensing task was required.
+
+ID: T238
+Status: [>] In Progress
+Title: Sync deploy-generated version metadata and rerun the production web release loop
+Description:
+- Goal / acceptance criteria: Commit the currently dirty deploy-generated release metadata/log artifacts, push `master` to both `origin` and `gitlab`, rerun the frontend production deploy, restart the web service on port `3000`, and verify the production endpoint is healthy afterward.
+- Why it matters: The previous release loop left tracked build metadata dirty after deployment, so the repository and both remotes are not yet aligned with the release artifacts that are actually serving from production.
+- Dependencies: `VERSION`, `version.json`, `logs/deploy-build.log`, Git remotes `origin`/`gitlab`, `scripts/build/deploy`, `map2-web-prod`
+- Estimated effort: Low
+- Required outputs: Committed deploy metadata/log files, successful pushes to both remotes, rebuilt/restarted production web service, health-check evidence, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 07:13 - Codex
