@@ -65,7 +65,7 @@ class SpecialSettingsResponse(BaseModel):
 
     enabled: bool = False
     hidden_plugins: List[str] = []
-    menu_location: str = "top-nav"
+    menu_location: str = "hidden"
     pinned_routes: List[str] = Field(default_factory=list)
     last_active_node: Optional[str] = None
     version: int = 1
@@ -88,7 +88,7 @@ class SpecialSettingsUpdateRequest(BaseModel):
 
     enabled: bool
     hidden_plugins: List[str]
-    menu_location: str  # "top-nav" | "mobile-only" | "hidden"
+    menu_location: str  # legacy "top-nav" is coerced to "hidden"
     pinned_routes: List[str] = Field(default_factory=list)
     last_active_node: Optional[str] = None
 

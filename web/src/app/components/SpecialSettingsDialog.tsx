@@ -17,10 +17,11 @@ interface Plugin {
 interface SpecialSettingsDialogProps {
   isOpen: boolean
   onClose: () => void
+  currentHiddenPlugins: string[]
   onSave: (settings: { hiddenPlugins: string[] }) => Promise<void>
 }
 
-export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettingsDialogProps) {
+export function SpecialSettingsDialog({ isOpen, onClose, currentHiddenPlugins, onSave }: SpecialSettingsDialogProps) {
   const [nativePlugins, setNativePlugins] = useState<Plugin[]>([])
   const [hiddenPlugins, setHiddenPlugins] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
@@ -31,20 +32,10 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
   useEffect(() => {
     if (isOpen) {
       setSaveError('')
-      loadCurrentSettings()
-      fetchNativePlugins()
+      setHiddenPlugins(new Set(currentHiddenPlugins))
+      void fetchNativePlugins()
     }
-  }, [isOpen])
-
-  const loadCurrentSettings = async () => {
-    try {
-      const response = await fetch(apiUrl('/api/settings/special'))
-      const data = await response.json()
-      setHiddenPlugins(new Set(data.hidden_plugins || []))
-    } catch (err) {
-      console.error('Failed to load current settings:', err)
-    }
-  }
+  }, [currentHiddenPlugins, isOpen])
 
   const fetchNativePlugins = async () => {
     setIsLoading(true)
@@ -55,7 +46,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
-      const data = await response.json()
+      const data = await response.json() as { plugins?: Plugin[] }
       
       // Filter for native plugins (uri starts with "map2://")
       const plugins = data.plugins || []

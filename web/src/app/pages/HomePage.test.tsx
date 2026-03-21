@@ -7,7 +7,7 @@ const mockUpdateSettings = jest.fn()
 const mockSpecialSettings = {
   enabled: true,
   hiddenPlugins: [],
-  menuLocation: 'top-nav' as const,
+  menuLocation: 'hidden' as const,
   pinnedRoutes: [] as string[],
 }
 const mockNodePageContext = {

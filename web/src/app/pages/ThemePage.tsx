@@ -253,7 +253,11 @@ export function ThemePage() {
     () => Object.values(customThemes).sort((left, right) => left.name.localeCompare(right.name)),
     [customThemes],
   )
-  const hiddenPluginCount = specialSettings?.hiddenPlugins.length ?? 0
+  const specialSettingsHiddenPlugins = useMemo(
+    () => specialSettings?.hiddenPlugins ?? [],
+    [specialSettings?.hiddenPlugins],
+  )
+  const hiddenPluginCount = specialSettingsHiddenPlugins.length
   const previewTheme = useMemo(() => resolvePreviewTheme(themeId, theme), [theme, themeId])
   const draftTheme = useMemo(
     () =>
@@ -898,6 +902,7 @@ export function ThemePage() {
       <SpecialSettingsDialog
         isOpen={showSpecialSettings}
         onClose={() => setShowSpecialSettings(false)}
+        currentHiddenPlugins={specialSettingsHiddenPlugins}
         onSave={handleSpecialSettingsSave}
       />
 

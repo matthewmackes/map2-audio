@@ -97,7 +97,6 @@ export function SnapshotModal({
       open={open}
       id="snapshots-modal"
       className="snapshot-modal"
-      preventCloseOnClickOutside={false}
       onClose={onClose}
     >
       <ModalHeader title="Snapshots" />

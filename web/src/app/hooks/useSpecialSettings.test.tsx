@@ -29,7 +29,7 @@ describe('useSpecialSettings', () => {
     jest.resetAllMocks()
   })
 
-  it('writes both pinned_routes and promoted_advanced_routes for backend compatibility', async () => {
+  it('normalizes legacy top-nav settings to hidden and writes both pinned route fields for backend compatibility', async () => {
     const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>
 
     fetchMock
@@ -53,7 +53,7 @@ describe('useSpecialSettings', () => {
         json: async () => ({
           enabled: true,
           hidden_plugins: [],
-          menu_location: 'top-nav',
+          menu_location: 'hidden',
           promoted_advanced_routes: ['/midi-hub'],
           last_active_node: null,
           version: 97,
@@ -63,6 +63,7 @@ describe('useSpecialSettings', () => {
     const { result } = renderHook(() => useSpecialSettings())
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.settings?.menuLocation).toBe('hidden')
     expect(result.current.settings?.pinnedRoutes).toEqual(['/juce-grid'])
 
     await act(async () => {
@@ -75,9 +76,11 @@ describe('useSpecialSettings', () => {
     expect(postCall?.[1]?.method).toBe('POST')
 
     const payload = JSON.parse(String(postCall?.[1]?.body))
+    expect(payload.menu_location).toBe('hidden')
     expect(payload.pinned_routes).toEqual(['/midi-hub'])
     expect(payload.promoted_advanced_routes).toEqual(['/midi-hub'])
 
     await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/midi-hub']))
+    expect(result.current.settings?.menuLocation).toBe('hidden')
   })
 })

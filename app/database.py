@@ -1388,7 +1388,7 @@ class SpecialSettings(Base):
     id = Column(Integer, primary_key=True, default=1)  # Singleton
     enabled = Column(Boolean, nullable=False, default=False)
     hidden_plugins = Column(JSON, default=list)  # List of plugin URIs to hide
-    menu_location = Column(String(20), default="top-nav")  # "top-nav" | "mobile-only" | "hidden"
+    menu_location = Column(String(20), default="hidden")  # "hidden" | "mobile-only" (legacy "top-nav" coerced to hidden)
     pinned_routes = Column(JSON, default=list)
     last_active_node = Column(String(128), nullable=True)
     

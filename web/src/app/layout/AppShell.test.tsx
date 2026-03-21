@@ -9,7 +9,7 @@ const mockHardwareLocationNotes: Record<string, { hostname: string } | null> = {
 const mockSpecialSettings = {
   enabled: true,
   hiddenPlugins: [],
-  menuLocation: 'top-nav' as const,
+  menuLocation: 'hidden' as const,
   pinnedRoutes: [] as string[],
 }
 

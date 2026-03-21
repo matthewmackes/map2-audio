@@ -19,7 +19,7 @@ jest.mock('framer-motion', () => ({
 
 jest.mock('../../hooks/useSpecialSettings', () => ({
   useSpecialSettings: () => ({
-    settings: { pinnedRoutes: [], enabled: true, hiddenPlugins: [], menuLocation: 'top-nav' },
+    settings: { pinnedRoutes: [], enabled: true, hiddenPlugins: [], menuLocation: 'hidden' },
     isLoading: false,
     error: null,
     updateSettings: mockUpdateSettings,

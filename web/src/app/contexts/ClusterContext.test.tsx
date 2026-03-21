@@ -53,7 +53,7 @@ describe('ClusterContext', () => {
       settings: {
         enabled: false,
         hiddenPlugins: [],
-        menuLocation: 'top-nav',
+        menuLocation: 'hidden',
         pinnedRoutes: [],
         lastActiveNode: null,
       },
@@ -146,7 +146,7 @@ describe('ClusterContext', () => {
       settings: {
         enabled: false,
         hiddenPlugins: [],
-        menuLocation: 'top-nav',
+        menuLocation: 'hidden',
         pinnedRoutes: [],
         lastActiveNode: 'node-b',
       },

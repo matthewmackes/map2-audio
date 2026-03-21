@@ -28,6 +28,7 @@ router = APIRouter(prefix="/api/settings/special", tags=["special"])
 # Detect if running in cluster mode
 CLUSTER_MODE = os.getenv("CLUSTER_MODE", "disabled").lower() == "enabled"
 DEFAULT_PINNED_ROUTES: list[str] = []
+DEFAULT_MENU_LOCATION = "hidden"
 
 
 def _is_supported_pinned_route(route: str) -> bool:
@@ -71,6 +72,12 @@ def _normalize_last_active_node(node_id: Optional[str]) -> Optional[str]:
     return normalized
 
 
+def _normalize_menu_location(menu_location: Optional[str]) -> str:
+    if isinstance(menu_location, str) and menu_location.strip() == "mobile-only":
+        return "mobile-only"
+    return DEFAULT_MENU_LOCATION
+
+
 def _resolve_pinned_routes_from_settings(settings) -> list[str]:
     raw_routes = getattr(settings, "pinned_routes", None)
     if raw_routes is None:
@@ -92,7 +99,7 @@ async def create_default_special_settings(session: AsyncSession) -> SpecialSetti
         id=1,
         enabled=False,
         hidden_plugins=[],
-        menu_location="top-nav",
+        menu_location=DEFAULT_MENU_LOCATION,
         pinned_routes=DEFAULT_PINNED_ROUTES.copy(),
         last_active_node=None,
         version=1,
@@ -133,7 +140,7 @@ async def get_special_settings():
             return SpecialSettingsResponse(
                 enabled=settings.enabled,
                 hidden_plugins=settings.hidden_plugins or [],
-                menu_location=settings.menu_location,
+                menu_location=_normalize_menu_location(settings.menu_location),
                 pinned_routes=_resolve_pinned_routes_from_settings(settings),
                 last_active_node=_normalize_last_active_node(getattr(settings, "last_active_node", None)),
                 version=settings.version,
@@ -161,6 +168,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
         Updated settings or leader redirect (307) in cluster mode
     """
     node_id = os.getenv("NODE_ID", "standalone")
+    normalized_menu_location = _normalize_menu_location(request.menu_location)
     
     if CLUSTER_MODE:
         # CLUSTER MODE: Try Raft replication
@@ -196,7 +204,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                         session_factory=get_session,
                         enabled=request.enabled,
                         hidden_plugins=request.hidden_plugins,
-                        menu_location=request.menu_location,
+                        menu_location=normalized_menu_location,
                         pinned_routes=_normalize_pinned_routes(request.pinned_routes),
                         last_active_node=_normalize_last_active_node(request.last_active_node),
                         node_id=node_id
@@ -208,7 +216,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                     return SpecialSettingsResponse(
                         enabled=settings.enabled,
                         hidden_plugins=settings.hidden_plugins or [],
-                        menu_location=settings.menu_location,
+                        menu_location=_normalize_menu_location(settings.menu_location),
                         pinned_routes=_resolve_pinned_routes_from_settings(settings),
                         last_active_node=_normalize_last_active_node(getattr(settings, "last_active_node", None)),
                         version=settings.version,
@@ -225,7 +233,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                         return SpecialSettingsResponse(
                             enabled=settings.enabled,
                             hidden_plugins=settings.hidden_plugins or [],
-                            menu_location=settings.menu_location,
+                            menu_location=_normalize_menu_location(settings.menu_location),
                             pinned_routes=_resolve_pinned_routes_from_settings(settings),
                             last_active_node=_normalize_last_active_node(getattr(settings, "last_active_node", None)),
                             version=settings.version,
@@ -253,7 +261,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
             # Update settings
             settings.enabled = request.enabled
             settings.hidden_plugins = request.hidden_plugins
-            settings.menu_location = request.menu_location
+            settings.menu_location = normalized_menu_location
             settings.pinned_routes = _normalize_pinned_routes(request.pinned_routes)
             settings.last_active_node = _normalize_last_active_node(request.last_active_node)
             settings.version += 1
@@ -273,7 +281,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
             return SpecialSettingsResponse(
                 enabled=settings.enabled,
                 hidden_plugins=settings.hidden_plugins or [],
-                menu_location=settings.menu_location,
+                menu_location=_normalize_menu_location(settings.menu_location),
                 pinned_routes=_resolve_pinned_routes_from_settings(settings),
                 last_active_node=_normalize_last_active_node(getattr(settings, "last_active_node", None)),
                 version=settings.version,
@@ -300,7 +308,7 @@ async def reset_special_settings():
             if settings:
                 settings.enabled = False
                 settings.hidden_plugins = []
-                settings.menu_location = "top-nav"
+                settings.menu_location = DEFAULT_MENU_LOCATION
                 settings.pinned_routes = DEFAULT_PINNED_ROUTES.copy()
                 settings.last_active_node = None
                 settings.version += 1

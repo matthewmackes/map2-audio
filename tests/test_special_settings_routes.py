@@ -23,6 +23,13 @@ def test_normalize_last_active_node_coerces_local_and_blank_values():
     assert special_settings._normalize_last_active_node("") is None
 
 
+def test_normalize_menu_location_hides_legacy_top_nav_values():
+    assert special_settings._normalize_menu_location("top-nav") == "hidden"
+    assert special_settings._normalize_menu_location(" hidden ") == "hidden"
+    assert special_settings._normalize_menu_location("mobile-only") == "mobile-only"
+    assert special_settings._normalize_menu_location("unexpected") == "hidden"
+
+
 def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch):
     @asynccontextmanager
     async def _fake_session_ctx():
@@ -49,6 +56,7 @@ def test_get_special_settings_defaults_to_pinned_routes_when_missing(monkeypatch
     response = asyncio.run(special_settings.get_special_settings())
 
     assert response.pinned_routes == ["/welcome", "/grid"]
+    assert response.menu_location == "hidden"
     assert response.last_active_node == "node-b"
     assert response.version == 3
 
@@ -67,7 +75,7 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
     settings = SimpleNamespace(
         enabled=False,
         hidden_plugins=[],
-        menu_location="top-nav",
+        menu_location="hidden",
         pinned_routes=[],
         last_active_node=None,
         version=1,
@@ -95,7 +103,9 @@ def test_update_special_settings_normalizes_pinned_routes(monkeypatch):
     )
 
     assert settings.pinned_routes == ["/grid", "/mpx1"]
+    assert settings.menu_location == "hidden"
     assert settings.last_active_node == "node-b"
+    assert response.menu_location == "hidden"
     assert response.pinned_routes == ["/grid", "/mpx1"]
     assert response.last_active_node == "node-b"
     assert response.enabled is True

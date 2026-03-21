@@ -18,6 +18,7 @@ from app.database import SpecialSettings
 
 logger = logging.getLogger(__name__)
 DEFAULT_PINNED_ROUTES: list[str] = []
+DEFAULT_MENU_LOCATION = "hidden"
 
 
 def _is_supported_pinned_route(route: str) -> bool:
@@ -62,6 +63,12 @@ def _normalize_last_active_node(node_id: Optional[str]) -> Optional[str]:
     return normalized
 
 
+def _normalize_menu_location(menu_location: Optional[str]) -> str:
+    if isinstance(menu_location, str) and menu_location.strip() == "mobile-only":
+        return "mobile-only"
+    return DEFAULT_MENU_LOCATION
+
+
 class SpecialSettingsStateManager:
     """
     Manages special settings state machine for Raft consensus.
@@ -100,7 +107,7 @@ class SpecialSettingsStateManager:
                         id=1,
                         enabled=False,
                         hidden_plugins=[],
-                        menu_location="top-nav",
+                        menu_location=DEFAULT_MENU_LOCATION,
                         pinned_routes=DEFAULT_PINNED_ROUTES.copy(),
                         last_active_node=None,
                         version=1
@@ -110,7 +117,7 @@ class SpecialSettingsStateManager:
                 # Update settings from log entry
                 settings.enabled = entry_data.get("enabled", False)
                 settings.hidden_plugins = entry_data.get("hidden_plugins", [])
-                settings.menu_location = entry_data.get("menu_location", "top-nav")
+                settings.menu_location = _normalize_menu_location(entry_data.get("menu_location"))
                 settings.pinned_routes = _normalize_pinned_routes(
                     entry_data.get(
                         "pinned_routes",
@@ -158,7 +165,7 @@ class SpecialSettingsStateManager:
                 return {
                     "enabled": settings.enabled,
                     "hidden_plugins": settings.hidden_plugins or [],
-                    "menu_location": settings.menu_location,
+                    "menu_location": _normalize_menu_location(settings.menu_location),
                     "pinned_routes": _resolve_pinned_routes(settings),
                     "last_active_node": _normalize_last_active_node(getattr(settings, "last_active_node", None)),
                     "version": settings.version,
@@ -203,7 +210,7 @@ async def replicate_special_settings_to_raft(
         entry_data = {
             "enabled": enabled,
             "hidden_plugins": hidden_plugins,
-            "menu_location": menu_location,
+            "menu_location": _normalize_menu_location(menu_location),
             "pinned_routes": _normalize_pinned_routes(pinned_routes),
             "last_active_node": _normalize_last_active_node(last_active_node),
             "updated_by_node": node_id,
@@ -221,7 +228,7 @@ async def replicate_special_settings_to_raft(
         logger.info(
             f"Special settings replicated to Raft log at index {log_index}: "
             f"enabled={enabled}, hidden={len(hidden_plugins)}, "
-            f"location={menu_location}, pinned={len(entry_data['pinned_routes'])}, "
+            f"location={entry_data['menu_location']}, pinned={len(entry_data['pinned_routes'])}, "
             f"last_active_node={entry_data['last_active_node']}, version={version}"
         )
         

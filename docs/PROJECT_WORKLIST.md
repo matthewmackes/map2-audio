@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 16:34 EDT - Codex (Completed `T254` by featuring flagship native JUCE browser groups and trimming the browser modal dead space.)
+Last updated: 2026-03-21 17:08 EDT - Codex (Completed `T255`-`T257` for special-settings cleanup, shared dialog state, and Carbon modal warning removal.)
 
 ## Active Blockers Only
 
@@ -2976,3 +2976,59 @@ Last updated: 2026-03-21 16:34 EDT - Codex
   - Extended `web/src/app/pages/JuceGridPage.test.tsx` with an explicit regression that verifies featured native plugins render ahead of LV2 entries and do not leak back into a duplicate `Core integrated` section when the featured set consumes the available native fixtures.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal `preventCloseOnClickOutside={false}` warnings unchanged); `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import/chunk-size warnings only).
   - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, reused the repository license/notices scan (`rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`), and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T255
+Status: [✓] Done
+Title: Retire legacy `top-nav` special-settings defaults so Theme ownership persists cleanly
+Description:
+- Goal / acceptance criteria: Update the frontend and backend special-settings defaults/normalization so the legacy `top-nav` menu location no longer gets recreated during ordinary special-settings writes or resets after the Special Settings entry moved into Theme. Preserve backend compatibility for existing payloads and add focused regression coverage for the new normalized default behavior.
+- Why it matters: The current hook/model defaults still write `menu_location: "top-nav"` whenever callers update hidden plugins, pinned routes, or cluster node preferences, which can silently preserve or reassert the old header-owned special-settings placement in persisted state.
+- Dependencies: `web/src/app/hooks/useSpecialSettings.tsx`, backend special-settings models/routes/storage defaults, focused frontend/backend tests, and worklist/licensing notes
+- Estimated effort: Medium
+- Required outputs: Normalized hidden/default special-settings location across frontend/backend, compatibility-safe payload handling for legacy stored values, focused regression coverage, validation notes, and worklist/licensing completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 17:08 EDT - Codex
+- Completion notes:
+  - Updated the frontend special-settings hook in `web/src/app/hooks/useSpecialSettings.tsx` so legacy or unknown `menu_location` values normalize to `hidden`, and ordinary writes now default back to `hidden` instead of silently re-persisting `top-nav`.
+  - Updated the backend defaults and normalization path in `app/models_compat.py`, `app/database.py`, `app/routes/special_settings.py`, and `app/services/special_settings_raft.py` so default rows, resets, standalone writes, Raft replication, and API responses all coerce the legacy `top-nav` value to the Theme-owned hidden state while still accepting older payloads.
+  - Refreshed focused backend/frontend fixtures in `tests/test_special_settings_routes.py`, `web/src/app/hooks/useSpecialSettings.test.tsx`, and the shared `useSpecialSettings` consumer tests so the normalized hidden default is explicitly covered.
+  - Validation: `pytest -q tests/test_special_settings_routes.py` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/hooks/useSpecialSettings.test.tsx web/src/app/components/SpecialSettingsDialog.test.tsx web/src/app/pages/ThemePage.test.tsx web/src/app/contexts/ClusterContext.test.tsx web/src/app/pages/HomePage.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/components/snapshots/SnapshotModal.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Classified the touched backend/frontend/test/worklist files as MAP2-owned AGPL-covered code, reran the repository license/notices scan (`rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`), and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T256
+Status: [✓] Done
+Title: Make the Theme-owned Special Settings dialog use shared settings state instead of refetching it
+Description:
+- Goal / acceptance criteria: Refactor the Theme-owned `SpecialSettingsDialog` flow so it receives the current hidden-plugin selection from `useSpecialSettings` instead of issuing a second `/api/settings/special` fetch every time the dialog opens. Preserve save/error behavior and add focused regression coverage for dialog initialization and save wiring.
+- Why it matters: Theme already owns the Special Settings entry and the shared hook state; refetching the same settings in the dialog introduces redundant network work, another source of stale state, and avoidable loading churn when operators open the menu repeatedly.
+- Dependencies: `web/src/app/components/SpecialSettingsDialog.tsx`, `web/src/app/pages/ThemePage.tsx`, any focused dialog/page tests, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Dialog initialization from shared settings, no duplicate special-settings fetch on open, preserved save semantics, focused regression coverage, validation notes, and worklist/licensing completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 17:08 EDT - Codex
+- Completion notes:
+  - Refactored `web/src/app/components/SpecialSettingsDialog.tsx` so the dialog now receives `currentHiddenPlugins` from Theme-owned shared state and only fetches `/api/plugins/discover` on open, removing the duplicate `/api/settings/special` round-trip.
+  - Added a focused component regression in `web/src/app/components/SpecialSettingsDialog.test.tsx` that proves the dialog initializes checkbox state from the shared hidden-plugin list, avoids the extra settings fetch, and saves the updated hidden-plugin selection.
+  - Threaded the shared hidden-plugin list from `web/src/app/pages/ThemePage.tsx` into the dialog with a stable memoized prop so repeated parent renders do not churn the dialog state.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/components/SpecialSettingsDialog.test.tsx web/src/app/hooks/useSpecialSettings.test.tsx web/src/app/pages/ThemePage.test.tsx` -> pass; full focused frontend batch above -> pass.
+  - Licensing: Reused the repository license/notices scan for the touched MAP2-owned frontend/test/worklist files and found no new AGPL or third-party notice gaps.
+
+ID: T257
+Status: [✓] Done
+Title: Remove unsupported Carbon modal props that spam test warnings
+Description:
+- Goal / acceptance criteria: Eliminate the unsupported `preventCloseOnClickOutside={false}` usage from the affected Carbon modal wrappers so JUCE Grid and snapshot-related tests stop emitting the repeated non-boolean DOM attribute warning, without regressing the current close behavior.
+- Why it matters: The warning noise obscures real failures in focused frontend runs and indicates route-local modal code is still passing a prop the current Carbon components do not consume safely.
+- Dependencies: `web/src/app/pages/RoutingTopologyModal.tsx`, `web/src/app/components/snapshots/SnapshotModal.tsx`, any focused frontend tests that exercise those modals, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Warning-free modal prop usage, preserved close behavior, focused regression or smoke validation, and worklist/licensing completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 17:08 EDT - Codex
+- Completion notes:
+  - Removed the unsupported `preventCloseOnClickOutside={false}` prop from `web/src/app/pages/RoutingTopologyModal.tsx` and `web/src/app/components/snapshots/SnapshotModal.tsx`, keeping the existing close handlers intact while letting the current Carbon components use their native defaults.
+  - Revalidated the previously noisy modal paths with `web/src/app/components/snapshots/SnapshotModal.test.tsx` and the full `web/src/app/pages/JuceGridPage.test.tsx` run; the old non-boolean Carbon modal warning did not reappear, leaving only the pre-existing JUCE Grid plugin-metadata debug warnings in the test output.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/snapshots/SnapshotModal.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Reused the repository license/notices scan for the touched MAP2-owned frontend/test/worklist files and found no new AGPL or third-party notice gaps.

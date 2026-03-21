@@ -18,7 +18,7 @@ const SPECIAL_SETTINGS_SYNC_EVENT = 'map2:special-settings-sync'
 export interface SpecialSettings {
   enabled: boolean
   hiddenPlugins: string[]
-  menuLocation: 'top-nav' | 'mobile-only' | 'hidden'
+  menuLocation: 'mobile-only' | 'hidden'
   pinnedRoutes: string[]
   lastActiveNode?: string | null
   version?: number
@@ -54,7 +54,7 @@ function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
     hiddenPlugins: Array.isArray(data.hidden_plugins)
       ? data.hidden_plugins.filter((item): item is string => typeof item === 'string')
       : [],
-    menuLocation: data.menu_location === 'mobile-only' || data.menu_location === 'hidden' ? data.menu_location : 'top-nav',
+    menuLocation: data.menu_location === 'mobile-only' ? 'mobile-only' : 'hidden',
     pinnedRoutes: resolvePinnedRoutes(data),
     lastActiveNode: typeof data.last_active_node === 'string' ? data.last_active_node : null,
     version: typeof data.version === 'number' ? data.version : undefined,
@@ -69,7 +69,7 @@ function buildUpdatePayload(newSettings: Partial<SpecialSettings>, currentSettin
   return {
     enabled: newSettings.enabled ?? currentSettings?.enabled ?? false,
     hidden_plugins: newSettings.hiddenPlugins ?? currentSettings?.hiddenPlugins ?? [],
-    menu_location: newSettings.menuLocation ?? currentSettings?.menuLocation ?? 'top-nav',
+    menu_location: newSettings.menuLocation ?? currentSettings?.menuLocation ?? 'hidden',
     pinned_routes: pinnedRoutes,
     promoted_advanced_routes: pinnedRoutes,
     last_active_node: newSettings.lastActiveNode ?? currentSettings?.lastActiveNode ?? null,

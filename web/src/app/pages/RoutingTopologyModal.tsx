@@ -735,7 +735,6 @@ export function RoutingTopologyModal({
       onRequestClose={onClose}
       onRequestSubmit={onClose}
       secondaryButtons={[]}
-      preventCloseOnClickOutside={false}
       aria-label="Routing topology"
     >
       <div className="rtm__body">

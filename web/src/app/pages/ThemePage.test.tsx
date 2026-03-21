@@ -12,7 +12,7 @@ jest.mock('../hooks/useSpecialSettings', () => ({
     settings: {
       enabled: true,
       hiddenPlugins: ['map2://native/hidden'],
-      menuLocation: 'top-nav',
+      menuLocation: 'hidden',
       pinnedRoutes: [],
     },
     isLoading: false,
