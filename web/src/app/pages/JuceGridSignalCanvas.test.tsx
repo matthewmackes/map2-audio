@@ -217,7 +217,12 @@ describe('JuceGridSignalCanvas', () => {
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-face')).toBeTruthy()
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-info')).toBeNull()
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-outline')).toBeNull()
-    expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-svg')).toBeTruthy()
+    const heroImage = pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-image')
+    const heroSvg = pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-svg')
+    expect(heroImage).toBeTruthy()
+    expect(heroImage?.getAttribute('data-icon-tone')).toBe('outline')
+    expect(heroSvg).toBeTruthy()
+    expect(heroSvg?.getAttribute('class')).toContain('is-outline')
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
     expect(within(pluginCard).getByRole('button', { name: 'Actions for Studio Compressor' })).toBeTruthy()
     expect(within(pluginCard).queryByText('CPU')).toBeNull()
@@ -295,6 +300,50 @@ describe('JuceGridSignalCanvas', () => {
     expect(screen.queryByTestId('juce-grid-signal-flow-bridge-output')).toBeNull()
     expect(screen.queryByTestId('juce-grid-signal-flow-connector-0')).toBeNull()
     expect(screen.queryByTestId('juce-grid-signal-vertical-connector-0')).toBeNull()
+  })
+
+  it('falls back from unmapped plugin names to the mapped category icon before using the generic plugin fallback', () => {
+    const multiEffectUri = 'plugin://shoegaze'
+    const multiEffectChain: Chain = {
+      ...chain,
+      plugins: [
+        {
+          ...chain.plugins[0],
+          uri: multiEffectUri,
+          name: 'ShoeGaze',
+        },
+      ],
+    }
+
+    const multiEffectMeta: Record<string, Plugin> = {
+      [multiEffectUri]: {
+        ...pluginMeta[pluginUri],
+        uri: multiEffectUri,
+        name: 'ShoeGaze',
+        category: 'Multi-Effect',
+        class_label: 'Processor',
+      },
+    }
+
+    render(
+      <JuceGridSignalCanvas
+        chain={multiEffectChain}
+        pluginMeta={multiEffectMeta}
+        selectedPluginUri={multiEffectUri}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        showEndpoints={false}
+      />,
+    )
+
+    const pluginCard = screen.getByTestId('juce-grid-signal-plugin-card-0')
+    const heroImage = pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-image')
+    const heroSvg = pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-svg')
+
+    expect(heroImage?.getAttribute('data-icon-tone')).toBe('outline')
+    expect(heroSvg?.getAttribute('class')).toContain('is-outline')
+    expect(heroSvg?.getAttribute('class')).not.toContain('is-solid')
   })
 
   it('builds left-aligned snake rows with a standard inline add card', () => {

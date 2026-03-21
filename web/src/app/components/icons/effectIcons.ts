@@ -58,6 +58,13 @@ import FxSplitB from '../HorizontalSignalChain/icons/fx_split_b.svg?react'
 import FxTerminal from './noun/utility/fx-terminal.svg?react'
 
 export type EffectIconComponent = FC<SVGProps<SVGSVGElement>>
+export type EffectIconTone = 'outline' | 'solid'
+
+export interface EffectIconSpec {
+  component: EffectIconComponent
+  tone: EffectIconTone
+  matched: boolean
+}
 
 // ── Canonical category → icon mapping ─────────────────────────────────
 // Keys are lowercase for case-insensitive matching.
@@ -212,23 +219,65 @@ const EFFECT_ICON_MAP: Record<string, EffectIconComponent> = {
   other: FxPlugin,
 }
 
+const OUTLINE_EFFECT_ICONS = new Set<EffectIconComponent>([
+  FxAmplifier,
+  FxCompressor,
+  FxDistortion,
+  FxDrums,
+  FxLexicon,
+  FxModulator,
+  FxParametricEq,
+  FxRack,
+  FxReverb,
+  FxSpatial,
+  FxSpectral,
+  FxSplitA,
+  FxTerminal,
+  FxUtility,
+])
+
+function getEffectIconTone(component: EffectIconComponent): EffectIconTone {
+  return OUTLINE_EFFECT_ICONS.has(component) ? 'outline' : 'solid'
+}
+
+function resolveEffectIcon(category: string | undefined): { component: EffectIconComponent; matched: boolean } {
+  if (!category) {
+    return { component: FxPlugin, matched: false }
+  }
+
+  const key = category.toLowerCase().trim()
+
+  // Exact match
+  if (key in EFFECT_ICON_MAP) {
+    return { component: EFFECT_ICON_MAP[key], matched: true }
+  }
+
+  // Partial match
+  for (const [mapKey, icon] of Object.entries(EFFECT_ICON_MAP)) {
+    if (key.includes(mapKey) || mapKey.includes(key)) {
+      return { component: icon, matched: true }
+    }
+  }
+
+  return { component: FxPlugin, matched: false }
+}
+
 /**
  * Get the effect icon component for a category string.
  * Single universal lookup — use this everywhere.
  */
 export function getEffectIcon(category: string | undefined): EffectIconComponent {
-  if (!category) return FxPlugin
-  const key = category.toLowerCase().trim()
+  return resolveEffectIcon(category).component
+}
 
-  // Exact match
-  if (key in EFFECT_ICON_MAP) return EFFECT_ICON_MAP[key]
+export function getEffectIconSpec(category: string | undefined): EffectIconSpec {
+  const { component, matched } = resolveEffectIcon(category)
 
-  // Partial match
-  for (const [mapKey, icon] of Object.entries(EFFECT_ICON_MAP)) {
-    if (key.includes(mapKey) || mapKey.includes(key)) return icon
+  return {
+    component,
+    tone: getEffectIconTone(component),
+    matched,
   }
-
-  return FxPlugin
 }
 
 // ── Named re-exports for direct use ───────────────────────────────────

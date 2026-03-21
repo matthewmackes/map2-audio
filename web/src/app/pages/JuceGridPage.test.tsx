@@ -1098,7 +1098,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
     const selectButtons = await screen.findAllByRole('button', { name: 'Select block' })
     fireEvent.click(selectButtons[0])
 
-    const moveLeftButton = await screen.findByRole('button', { name: 'Move left' })
+    const moveLeftButton = await screen.findByRole('button', { name: 'Move selected block left' })
     fireEvent.click(moveLeftButton)
 
     await waitFor(() => {
@@ -1227,6 +1227,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open editor' }))
 
+    expect(screen.getByRole('button', { name: 'Close editor' }).getAttribute('aria-expanded')).toBe('true')
     await screen.findByLabelText('Block parameter editor')
   }, 15000)
 

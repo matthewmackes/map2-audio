@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 17:39 EDT - Codex (Completed `T261` for in-card NAM/IR selector actions on JUCE parameter cards.)
+Last updated: 2026-03-21 18:10 EDT - Codex (Completed `T262` for JUCE Grid signal-card icon readability and render normalization.)
 
 ## Active Blockers Only
 
@@ -3108,3 +3108,24 @@ Last updated: 2026-03-21 17:39 EDT - Codex
   - Added `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` to confirm the NAM, cabinet IR, and reverb IR cards each open the shared manager dialog from the new in-card `Select...` entry point.
   - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
   - Licensing: Classified the touched frontend/test/worklist files as MAP2-owned AGPL-covered code, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T262
+Status: [✓] Done
+Title: Remove the JUCE Grid signal-card icon wash and normalize mixed SVG rendering
+Description:
+- Goal / acceptance criteria: Update the `JUCE-GRID` signal-path effect cards so the icon art is no longer obscured by the current overlay/filter treatment, the mixed legacy/noun SVG set renders with consistent legibility, and the resulting cards read with higher icon contrast/pop while preserving selection, bypass, and reorder behavior.
+- Why it matters: The current card treatment leaves several signal icons looking muted or effectively absent because the face overlay and low-opacity hero styling flatten already mixed SVG assets into dark blocks, which makes fast operator scanning harder than it should be.
+- Dependencies: `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/components/icons/effectIcons.ts`, focused JUCE Grid tests, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: Updated signal-card icon presentation and any required icon normalization logic, focused regression coverage, validation evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 18:10 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/icons/effectIcons.ts` so icon resolution now reports whether a lookup actually matched and whether the resolved SVG should render as an outline or solid mark, instead of treating every miss as an immediate generic-plugin success.
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so signal cards keep searching across plugin name, category, class label, display type, and URI until they find a real icon match, which fixes unmapped names like `ShoeGaze` falling back too early to the generic square plugin icon.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the icon-darkening face overlay no longer sits over the hero art, outline SVGs are no longer force-filled via the shared hero rule, and both outline and solid icons get tone-aware opacity/drop-shadow treatment that makes the art read much more clearly on the live cards.
+  - Added focused coverage in `web/src/app/pages/JuceGridSignalCanvas.test.tsx` for the tone-aware hero markup and for the category fallback path when a plugin name itself is unmapped.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only). Build regenerated `VERSION` and `version.json` as part of the standard frontend build pipeline.
+  - Additional validation note: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` still reports one unrelated failure in `web/src/app/pages/JuceGridPage.test.tsx` (`moves the selected block left from the bottom editor controls and keyboard arrows` unable to find `Move left`) outside the files changed for `T262`.
+  - Licensing: Classified the touched frontend/test/worklist files as MAP2-owned AGPL-covered code, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.

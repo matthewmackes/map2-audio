@@ -4358,16 +4358,31 @@ export function JuceGridPage() {
               <Button
                 size="sm"
                 kind="ghost"
-                renderIcon={bottomEditorOpen ? Close : Edit}
+                renderIcon={bottomEditorOpen ? Close : Launch}
                 onClick={bottomEditorOpen ? handleCloseEffectModal : openEffectModal}
                 disabled={!selectedPlugin}
+                aria-label={bottomEditorOpen ? 'Close editor' : 'Open editor'}
+                aria-controls="juce-grid-bottom-editor-panel"
+                aria-expanded={bottomEditorOpen}
+                className={`juce-grid-page__bottom-editor-toggle ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}
+                style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
               >
-                {bottomEditorOpen ? 'Close editor' : 'Open editor'}
+                <span className="juce-grid-page__bottom-editor-toggle-copy">
+                  <span className="juce-grid-page__bottom-editor-toggle-kicker" aria-hidden="true">
+                    {bottomEditorOpen ? 'Editor live' : 'Editor panel'}
+                  </span>
+                  <span className="juce-grid-page__bottom-editor-toggle-text">
+                    {bottomEditorOpen ? 'Close editor' : 'Open editor'}
+                  </span>
+                </span>
               </Button>
             </div>
           </div>
 
-          <div className={`juce-grid-page__bottom-editor-body ${selectedBlockMidiPanelEnabled ? 'has-desktop-midi-panel' : ''}`}>
+          <div
+            id="juce-grid-bottom-editor-panel"
+            className={`juce-grid-page__bottom-editor-body ${selectedBlockMidiPanelEnabled ? 'has-desktop-midi-panel' : ''}`}
+          >
             {bottomEditorOpen && selectedPlugin ? (
               selectedBlockMidiPanelEnabled && selectedPluginMeta ? (
                 <div className="juce-grid-page__bottom-editor-desktop-layout">

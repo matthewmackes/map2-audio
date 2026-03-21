@@ -11,7 +11,7 @@ import {
 import { Button, OverflowMenu, OverflowMenuItem, Tag, Tile } from '@carbon/react'
 import type { AudioRoutingSelectionBinding } from '../../map2/api'
 import { getCategoryConfig } from '../components/PluginCards/types'
-import { getEffectIcon } from '../components/icons/effectIcons'
+import { getEffectIconSpec, type EffectIconSpec } from '../components/icons/effectIcons'
 import type { Chain, Plugin, PluginOrderRef } from '../../map2/types'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { buildPluginOrderRef, samePluginIdentity } from '../../map2/utils/pluginIdentity'
@@ -197,7 +197,7 @@ function levelPercent(level: number | undefined) {
   return `${Math.max(0, Math.min(100, (level || 0) * 100))}%`
 }
 
-function getSignalCardEffectIcon(meta: Plugin | undefined, plugin: Chain['plugins'][number]) {
+function getSignalCardEffectIcon(meta: Plugin | undefined, plugin: Chain['plugins'][number]): EffectIconSpec {
   const iconHints = [
     meta?.name,
     meta?.category,
@@ -207,14 +207,18 @@ function getSignalCardEffectIcon(meta: Plugin | undefined, plugin: Chain['plugin
     plugin.uri,
   ].filter((value): value is string => Boolean(value && value.trim()))
 
+  let fallbackSpec: EffectIconSpec | null = null
+
   for (const hint of iconHints) {
-    const icon = getEffectIcon(hint)
-    if (icon) {
-      return icon
+    const iconSpec = getEffectIconSpec(hint)
+    if (iconSpec.matched) {
+      return iconSpec
     }
+
+    fallbackSpec ??= iconSpec
   }
 
-  return getEffectIcon('plugin')
+  return fallbackSpec ?? getEffectIconSpec('plugin')
 }
 
 function isHealthyAvbState(state: string | undefined) {
@@ -652,7 +656,8 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                           const displayName = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
                           const categoryLabel = meta?.category || 'Utility'
                           const categoryConfig = getCategoryConfig(categoryLabel)
-                          const EffectIcon = getSignalCardEffectIcon(meta, plugin)
+                          const effectIcon = getSignalCardEffectIcon(meta, plugin)
+                          const EffectIcon = effectIcon.component
                           const isSelected = isSelectedPlugin(plugin)
                           const isDropTarget = Boolean(
                             dragOverPlugin
@@ -730,8 +735,11 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                 </div>
 
                                 <div className="juce-grid-page__signal-plugin-hero" aria-hidden>
-                                  <div className="juce-grid-page__signal-plugin-hero-image">
-                                    <EffectIcon className="juce-grid-page__signal-plugin-hero-svg" />
+                                  <div
+                                    className="juce-grid-page__signal-plugin-hero-image"
+                                    data-icon-tone={effectIcon.tone}
+                                  >
+                                    <EffectIcon className={`juce-grid-page__signal-plugin-hero-svg is-${effectIcon.tone}`} />
                                   </div>
                                 </div>
 
