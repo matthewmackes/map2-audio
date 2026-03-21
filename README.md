@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**796** Python | **1197** TypeScript | **294** C++/H | **122** Docs | **705** total commits | **1** stars | **0** forks | **0** open issues
+**796** Python | **1197** TypeScript | **294** C++/H | **122** Docs | **708** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`83e9b126`](https://github.com/matthewmackes/map2-audio/commit/83e9b1266cd3c5f9c5279c213513b86df0a0ddf4) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
+| [`c4502438`](https://github.com/matthewmackes/map2-audio/commit/c45024381f8861f271c1d336891bba842081818b) | Refine JUCE Grid masthead actions | Map2 Audio | 2026-03-21 |
+| [`f3beba87`](https://github.com/matthewmackes/map2-audio/commit/f3beba87abdfc63a56ad8f2385e65cd6d8a1191f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`82da9141`](https://github.com/matthewmackes/map2-audio/commit/82da914160e795c2339fbe0fe4ee0b3bf00e735b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
 | [`7fc1264a`](https://github.com/matthewmackes/map2-audio/commit/7fc1264a6ceb245841b2e40113bfc63fb958f9f5) | Normalize special settings defaults and quiet modal warnings | Map2 Audio | 2026-03-21 |
 | [`11e19ce3`](https://github.com/matthewmackes/map2-audio/commit/11e19ce38cc98fa19c5b3e439c44f0066b83db04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`bb98412c`](https://github.com/matthewmackes/map2-audio/commit/bb98412c4a103b624cda6a2580161b80b6448754) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-21 |
 | [`1723c38a`](https://github.com/matthewmackes/map2-audio/commit/1723c38a33f29f19cbe2a305996b15f5f614ffd5) | Refresh theme controls and curate JUCE browser | Map2 Audio | 2026-03-21 |
-| [`80f25aba`](https://github.com/matthewmackes/map2-audio/commit/80f25aba27cb347f0ebaec25070cccd6cef2ac7e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
-| [`196f26ae`](https://github.com/matthewmackes/map2-audio/commit/196f26aee2896e87c3b49c0985099cebf7e01e72) | Refresh theme, platform shell, and effect card UI | Map2 Audio | 2026-03-21 |
-| [`05629aff`](https://github.com/matthewmackes/map2-audio/commit/05629affaf9dfdbc9488c496c63595a6c39916d1) | Update generated build version metadata | Map2 Audio | 2026-03-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
