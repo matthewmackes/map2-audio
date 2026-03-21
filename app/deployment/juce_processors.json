@@ -515,7 +515,7 @@
     },
     {
       "uri": "map2://juce/modulation/intellifx",
-      "name": "IntelliFX 8-Voice",
+      "name": "AMDiFX 8-Voice",
       "category": "Modulation",
       "description": "Rocktron IntelliFX-style 8-voice multi-chorus with HUSH noise reduction. Each voice can be individually controlled with pan, level, delay, depth, and rate for rich, complex modulation textures.",
       "author": "MAP2 Audio",
@@ -582,7 +582,7 @@
     },
     {
       "uri": "map2://juce/pitch/boss-xs1",
-      "name": "Boss XS-1 Poly Shifter",
+      "name": "Mutii WR-2 Shifter",
       "category": "Pitch",
       "description": "Polyphonic pitch shifter emulating the Boss XS-1 pedal with expression pedal control, detune mode, and 23 professional presets for drop tunings, capo simulation, octave effects, and doubling.",
       "author": "MAP2 Audio",

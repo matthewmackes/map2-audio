@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 17:21 EDT - Codex (Completed `T258`-`T260` for Juce Grid masthead cleanup and settled-state warning reduction.)
+Last updated: 2026-03-21 17:39 EDT - Codex (Completed `T261` for in-card NAM/IR selector actions on JUCE parameter cards.)
 
 ## Active Blockers Only
 
@@ -3088,3 +3088,23 @@ Last updated: 2026-03-21 17:21 EDT - Codex
   - Added a focused regression in `web/src/app/pages/JuceGridPage.test.tsx` that proves no warning is emitted while discovery is pending and that a single warning appears only after a settled empty discovery result.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
   - Licensing: Reused the repository license/notices scan for the touched MAP2-owned JUCE Grid/test/worklist files and found no new AGPL or third-party notice gaps.
+
+ID: T261
+Status: [✓] Done
+Title: Add in-card `Select...` asset actions for NAM and IR JUCE parameter cards
+Description:
+- Goal / acceptance criteria: Update the `NAMCard`, `CabinetIRCard`, and `ReverbIRCard` parameter cards so each card exposes an explicit in-card `Select...` action that opens the existing shared NAM/IR manager dialogs, replacing the remaining bespoke inline browser modals. Preserve current active-asset readouts, keep the shared category layouts visually consistent, and add focused regression coverage for the new selector entry points.
+- Why it matters: The cards currently expose inconsistent load flows. NAM still uses a custom browser modal, while the IR cards rely on a generic browse affordance and card-local modals. A clear `Select...` action backed by the shared managers gives all three cards the same loader pattern and reduces duplicated browser UI.
+- Dependencies: `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `CabinetIRCard.tsx`, `ReverbIRCard.tsx`, `web/src/app/components/PluginCards/Layouts/ConvolutionCategoryLayout.tsx`, shared Carbon card styles, focused JUCE card tests, and licensing/worklist notes
+- Estimated effort: Medium
+- Required outputs: In-card selector UI for NAM/cabinet/reverb cards, shared-dialog integration, removal of duplicated inline browser modal code, focused tests, validation notes, and licensing status update.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 17:39 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx` so the card now exposes an always-visible `Model` section with the active NAM name and a `Select...` action that opens the shared `NAMManagerDialog`, replacing the bespoke in-card browser modal.
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx` and `ReverbIRCard.tsx` to use `CabinetIRManagerDialog` / `ReverbIRManagerDialog` instead of custom inline browser modals, and close the dialog after a successful asset load callback.
+  - Refined `web/src/app/components/PluginCards/Layouts/ConvolutionCategoryLayout.tsx` and `web/src/app/components/PluginCards/Base/carbonCardStyles.css` so the shared IR selector row uses a dedicated asset-selector layout and the in-card action reads `Select...` consistently across cabinet and reverb cards.
+  - Added `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` to confirm the NAM, cabinet IR, and reverb IR cards each open the shared manager dialog from the new in-card `Select...` entry point.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Classified the touched frontend/test/worklist files as MAP2-owned AGPL-covered code, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.

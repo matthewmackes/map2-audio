@@ -8,18 +8,20 @@
  * - bypass: boolean
  *
  * Features:
- * - Model browser and selection
+ * - In-card model selection backed by the shared NAM manager dialog
  * - Input/Output level meters
  * - Model metadata display
- * - Favorites and ratings
  */
 
 import { useState, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { MachineLearningModel } from '@carbon/icons-react'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { AmplifierCategoryLayout, type ParamSlot } from '../../Layouts/AmplifierCategoryLayout'
 import type { AdvancedSection } from '../../Base/CarbonCardShell'
+import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
 import type { PluginCardProps } from '../../types'
+import { NAMManagerDialog } from '../../../loaders/NAMManagerDialog'
 
 // Plugin URI for MIDI mappings
 const NAM_URI = 'map2://juce/nam'
@@ -40,26 +42,13 @@ interface NAMStatus {
   inputGain: number
   outputGain: number
   normalize: boolean
-}
-
-interface NAMModel {
-  name: string
-  model_type?: string
-  is_favorite?: boolean
-  rating?: number
+  availableModels: string[]
 }
 
 async function fetchNAMStatus(): Promise<NAMStatus> {
   const res = await fetch('/api/nam/status')
   if (!res.ok) throw new Error('Failed to fetch NAM status')
   return res.json()
-}
-
-async function fetchNAMModels(): Promise<NAMModel[]> {
-  const res = await fetch('/api/nam/models')
-  if (!res.ok) throw new Error('Failed to fetch NAM models')
-  const data = await res.json()
-  return data.models || []
 }
 
 interface NAMCardProps extends PluginCardProps {
@@ -73,30 +62,12 @@ function NAMCardBase({
   onOpenMidiMappings,
 }: NAMCardProps) {
   const queryClient = useQueryClient()
-  const [showBrowser, setShowBrowser] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [managerOpen, setManagerOpen] = useState(false)
 
   const statusQuery = useQuery({
     queryKey: ['nam', 'status'],
     queryFn: fetchNAMStatus,
     refetchInterval: 500, // Fast updates for level meters
-  })
-
-  const modelsQuery = useQuery({
-    queryKey: ['nam', 'models'],
-    queryFn: fetchNAMModels,
-  })
-
-  const loadMutation = useMutation({
-    mutationFn: async (modelName: string) => {
-      const res = await fetch(`/api/nam/models/${encodeURIComponent(modelName)}/load`, { method: 'POST' })
-      if (!res.ok) throw new Error('Failed to load NAM model')
-      return res.json()
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['nam'] })
-      setShowBrowser(false)
-    },
   })
 
   const setInputGain = useCallback(async (value: number) => {
@@ -136,12 +107,7 @@ function NAMCardBase({
   }, [queryClient])
 
   const status = statusQuery.data
-  const models = modelsQuery.data || []
-
-  // Filter models by search query
-  const filteredModels = searchQuery
-    ? models.filter((m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : models
+  const availableModelCount = status?.availableModels?.length ?? 0
 
   // Level meter helper
   const levelToPercent = (db: number) => Math.max(0, Math.min(100, ((db + 60) / 60) * 100))
@@ -203,21 +169,6 @@ function NAMCardBase({
             {status?.loading ? 'Loading...' : status?.activeModel || 'No Model'}
           </div>
         </div>
-        <button
-          onClick={() => setShowBrowser(true)}
-          style={{
-            padding: '8px 20px',
-            background: accentColor,
-            border: 'none',
-            borderRadius: '4px',
-            color: '#000',
-            cursor: 'pointer',
-            fontSize: '11px',
-            fontWeight: 'bold',
-          }}
-        >
-          BROWSE ({models.length})
-        </button>
       </div>
 
       {/* Output Meter */}
@@ -274,29 +225,7 @@ function NAMCardBase({
     valueFormatter: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`,
   }
 
-  // Model browser in advanced sections
   const advancedSections: AdvancedSection[] = [
-    {
-      id: 'model-browser',
-      title: 'Model Browser',
-      defaultOpen: true,
-      children: (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button
-            onClick={() => setShowBrowser(true)}
-            className="carbon-toggle-btn active"
-            style={{ background: accentColor, borderColor: accentColor }}
-          >
-            Browse Models ({models.length})
-          </button>
-          {status?.activeModel && (
-            <div style={{ fontSize: '11px', color: '#c6c6c6' }}>
-              Active: <strong>{status.activeModel}</strong>
-            </div>
-          )}
-        </div>
-      ),
-    },
     {
       id: 'options',
       title: 'Options',
@@ -314,6 +243,47 @@ function NAMCardBase({
     },
   ]
 
+  const modelSelector = (
+    <CarbonParameterSection
+      title="Model"
+      icon={<MachineLearningModel size={14} aria-hidden="true" />}
+      accentColor={accentColor}
+      autoIcon={false}
+    >
+      <div className="carbon-asset-selector">
+        <div
+          className={`carbon-asset-selector-value ${status?.activeModel ? '' : 'empty'}`}
+          title={status?.activeModel || 'No model loaded'}
+        >
+          {status?.loading ? 'Loading...' : status?.activeModel || 'No model loaded'}
+        </div>
+        <div className="carbon-asset-selector-actions">
+          <button
+            type="button"
+            className="carbon-toggle-btn"
+            onClick={() => setManagerOpen(true)}
+            disabled={!status?.available}
+          >
+            Select...
+          </button>
+        </div>
+      </div>
+      {availableModelCount > 0 && (
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 10,
+            color: '#8d8d8d',
+            textTransform: 'uppercase',
+            letterSpacing: '0.24px',
+          }}
+        >
+          {availableModelCount} models available
+        </div>
+      )}
+    </CarbonParameterSection>
+  )
+
   return (
     <>
       <AmplifierCategoryLayout
@@ -329,111 +299,13 @@ function NAMCardBase({
         inputLevel={status?.inputLevel ?? 0}
         outputLevel={status?.outputLevel ?? 0}
         advancedSections={advancedSections}
+        extraContent={modelSelector}
       />
-
-      {/* Browser Modal */}
-      {showBrowser && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => setShowBrowser(false)}
-        >
-          <div
-            style={{
-              background: '#1a1a1a',
-              borderRadius: '12px',
-              padding: '20px',
-              width: '90%',
-              maxWidth: '500px',
-              maxHeight: '600px',
-              display: 'flex',
-              flexDirection: 'column',
-              border: `1px solid ${accentColor}`,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ margin: '0 0 16px 0', color: accentColor }}>Select NAM Model</h3>
-
-            {/* Search */}
-            <input
-              type="text"
-              placeholder="Search models..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                marginBottom: '12px',
-                background: '#222',
-                border: '1px solid #444',
-                borderRadius: '6px',
-                color: '#fff',
-                fontSize: '13px',
-              }}
-            />
-
-            {/* Model List */}
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {filteredModels.map((model) => (
-                  <button
-                    key={model.name}
-                    onClick={() => loadMutation.mutate(model.name)}
-                    disabled={loadMutation.isPending}
-                    style={{
-                      padding: '12px 16px',
-                      background: status?.activeModel === model.name ? accentColor : '#2a2a2a',
-                      border: 'none',
-                      borderRadius: '6px',
-                      color: status?.activeModel === model.name ? '#000' : '#fff',
-                      cursor: loadMutation.isPending ? 'wait' : 'pointer',
-                      textAlign: 'left',
-                      fontSize: '12px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 'bold' }}>{model.name}</div>
-                      {model.model_type && (
-                        <div style={{ fontSize: '10px', opacity: 0.7 }}>{model.model_type}</div>
-                      )}
-                    </div>
-                    {model.is_favorite && <span style={{ color: '#ffaa00' }}>★</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Close Button */}
-            <button
-              onClick={() => setShowBrowser(false)}
-              style={{
-                marginTop: '12px',
-                padding: '10px',
-                background: '#333',
-                border: '1px solid #555',
-                borderRadius: '6px',
-                color: '#fff',
-                cursor: 'pointer',
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <NAMManagerDialog
+        open={managerOpen}
+        onClose={() => setManagerOpen(false)}
+        onLoadNAM={() => setManagerOpen(false)}
+      />
     </>
   )
 }

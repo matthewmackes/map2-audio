@@ -1780,7 +1780,6 @@
   min-width: 0;
 }
 
-.juce-grid-page__hero-tags,
 .juce-grid-page__toolbar-buttons,
 .juce-grid-page__compact-tags,
 .juce-grid-page__compact-actions {
@@ -1977,20 +1976,49 @@
   align-items: center;
 }
 
+.juce-grid-page__bottom-editor-actions {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.juce-grid-page__bottom-editor-actions > .cds--btn:last-child {
+  margin-inline-start: auto;
+}
+
+.juce-grid-page__selected-block-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cds-layer, var(--surface)) 92%, black 8%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cds-layer-accent, var(--surface-2)) 38%, transparent);
+}
+
+.juce-grid-page__selected-block-nav .cds--btn {
+  border-radius: 999px;
+}
+
+.juce-grid-page__selected-block-nav .cds--btn--icon-only.cds--btn--sm {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  min-inline-size: 2.5rem;
+  min-block-size: 2.5rem;
+}
+
 .juce-grid-page__bottom-editor-copy {
   min-width: 0;
   flex: 1 1 auto;
   flex-direction: column;
+  justify-content: center;
 }
 
 .juce-grid-page__bottom-editor-copy strong {
-  font-size: 1.125rem;
-}
-
-.juce-grid-page__bottom-editor-copy p {
-  margin: 0;
-  color: #c6c6c6;
-  font-size: 0.875rem;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  line-height: 1;
+  font-weight: 600;
 }
 
 .juce-grid-page__bottom-editor-icon {
@@ -2374,10 +2402,17 @@
   font-size: 1rem;
 }
 
+.juce-grid-page__touch-toolbar-nav {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline: auto;
+}
+
 .juce-grid-page__touch-toolbar-actions {
-  flex: 999 1 auto;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
   align-items: center;
+  justify-content: flex-end;
+  margin-inline-start: auto;
 }
 
 .juce-grid-page__touch-toolbar-actions .cds--btn,
@@ -4636,6 +4671,10 @@
   .juce-grid-page__automation-lane-header,
   .juce-grid-page__automation-lane-actions {
     flex-direction: column;
+  }
+
+  .juce-grid-page__bottom-editor-actions > .cds--btn:last-child {
+    margin-inline-start: 0;
   }
 
   .juce-grid-page__midi-range-grid {

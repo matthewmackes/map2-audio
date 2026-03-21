@@ -746,7 +746,6 @@ export function JuceGridPage() {
 
   // Flow slots state (with migration support)
   const [flowSlots, setFlowSlots] = useState<FlowSlot[]>(initialPersistedState.flowSlots)
-  const flowCountLabel = `${flowSlots.length} ${flowSlots.length === 1 ? 'flow' : 'flows'}`
 
   // Routing state
   const [routing, setRouting] = useState<RoutingConfig>(initialPersistedState.routing)
@@ -1471,22 +1470,6 @@ export function JuceGridPage() {
       sameFamilyCount,
     })
   }, [currentChain?.plugins, selectedPluginCard])
-
-  const selectedPluginEditorNotice = useMemo(() => {
-    if (!selectedPluginCard || !selectedPluginCardStrategy) {
-      return ''
-    }
-
-    if (
-      selectedPluginCardStrategy.renderMode === 'generic'
-      && selectedPluginCard.uri.toLowerCase().includes('synthforge')
-      && (currentChain?.plugins.filter((plugin) => plugin.uri.toLowerCase().includes('synthforge')).length ?? 0) > 1
-    ) {
-      return 'Full SynthForge workstation editing is enabled when the active chain contains a single SynthForge block. Duplicate SynthForge blocks still fall back to the generic editor while the backend remains globally scoped.'
-    }
-
-    return ''
-  }, [currentChain?.plugins, selectedPluginCard, selectedPluginCardStrategy])
 
   useEffect(() => {
     if (selectedPluginUri && chainsQuery.isPending) {
@@ -3064,6 +3047,55 @@ export function JuceGridPage() {
     </div>
   )
 
+  const renderSelectedBlockNavBar = (options: {
+    disabled?: boolean
+    className?: string
+  } = {}) => {
+    if (!selectedPlugin) {
+      return null
+    }
+
+    const navClassName = options.className
+      ? `juce-grid-page__selected-block-nav ${options.className}`
+      : 'juce-grid-page__selected-block-nav'
+    const navDisabled = Boolean(options.disabled)
+
+    return (
+      <div className={navClassName} role="toolbar" aria-label="Selected block navigation">
+        <Button
+          hasIconOnly
+          size="sm"
+          kind="ghost"
+          renderIcon={ArrowLeft}
+          iconDescription="Move selected block left"
+          aria-label="Move selected block left"
+          onClick={() => moveSelectedPlugin('left')}
+          disabled={navDisabled || !canMoveSelectedPluginLeft || reorderMutation.isPending}
+        />
+        <Button
+          hasIconOnly
+          size="sm"
+          kind={selectedPlugin.bypassed ? 'secondary' : 'ghost'}
+          renderIcon={selectedPlugin.bypassed ? VolumeUp : VolumeMute}
+          iconDescription={selectedPlugin.bypassed ? 'Enable selected block' : 'Bypass selected block'}
+          aria-label={selectedPlugin.bypassed ? 'Enable selected block' : 'Bypass selected block'}
+          onClick={handleToggleSelectedBypass}
+          disabled={navDisabled}
+        />
+        <Button
+          hasIconOnly
+          size="sm"
+          kind="ghost"
+          renderIcon={ArrowRight}
+          iconDescription="Move selected block right"
+          aria-label="Move selected block right"
+          onClick={() => moveSelectedPlugin('right')}
+          disabled={navDisabled || !canMoveSelectedPluginRight || reorderMutation.isPending}
+        />
+      </div>
+    )
+  }
+
   const renderMidiMappingsWorkspace = (options: { closable: boolean; onClose?: () => void }) => (
     <div className="juce-grid-page__midi-workspace">
       <div className="juce-grid-page__midi-header">
@@ -3956,6 +3988,7 @@ export function JuceGridPage() {
                     <span className="juce-grid-page__toolbar-label">Selected block</span>
                     <strong>{getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri)}</strong>
                   </div>
+                  {renderSelectedBlockNavBar({ className: 'juce-grid-page__touch-toolbar-nav' })}
                   <div className="juce-grid-page__touch-toolbar-actions">
                     <Button
                       size="sm"
@@ -3968,31 +4001,6 @@ export function JuceGridPage() {
                       disabled={effectModalOpen}
                     >
                       Open editor
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      renderIcon={ArrowLeft}
-                      onClick={() => moveSelectedPlugin('left')}
-                      disabled={!canMoveSelectedPluginLeft || reorderMutation.isPending}
-                    >
-                      Move left
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      renderIcon={ArrowRight}
-                      onClick={() => moveSelectedPlugin('right')}
-                      disabled={!canMoveSelectedPluginRight || reorderMutation.isPending}
-                    >
-                      Move right
-                    </Button>
-                    <Button
-                      size="sm"
-                      kind={selectedPlugin.bypassed ? 'ghost' : 'secondary'}
-                      onClick={handleToggleSelectedBypass}
-                    >
-                      {selectedPlugin.bypassed ? 'Enable block' : 'Bypass block'}
                     </Button>
                     <Button
                       size="sm"
@@ -4108,17 +4116,6 @@ export function JuceGridPage() {
             <div className="juce-grid-page__thin-bar-brand">
               <MapAudioGridIcon size={38} />
               <span className="juce-grid-page__thin-bar-title">Audio Grid</span>
-            </div>
-            <div className="juce-grid-page__hero-tags" aria-label="Audio Grid status">
-              <Tag type={livePathLayout.status === 'available' ? 'green' : 'cool-gray'}>
-                {livePathLayout.status === 'available' ? 'Live' : 'Unavailable'}
-              </Tag>
-              <Tag type="cool-gray">{activeRoutingMode.label}</Tag>
-              <Tag type="gray">{flowCountLabel}</Tag>
-              <Tag type={currentChain?.is_active ? 'green' : 'red'}>
-                {currentChain?.is_active ? 'Active chain' : 'Standby chain'}
-              </Tag>
-              {currentChain && <Tag type="cool-gray">{currentChain.name}</Tag>}
             </div>
           </div>
           <div className="juce-grid-page__masthead-actions">
@@ -4353,58 +4350,11 @@ export function JuceGridPage() {
                 {selectedPlugin ? <SelectedPluginHeroIcon width={32} height={32} /> : <Edit size={32} />}
               </div>
               <div className="juce-grid-page__bottom-editor-copy">
-                <div className="juce-grid-page__bottom-editor-tags">
-                  {bottomEditorOpen && selectedPluginMeta?.category && <Tag type="cool-gray">{selectedPluginMeta.category}</Tag>}
-                  {bottomEditorOpen && selectedPluginMeta?.format && <Tag type="blue">{selectedPluginMeta.format}</Tag>}
-                  {bottomEditorOpen && selectedPlugin ? (
-                    <Tag type={selectedPlugin.bypassed ? 'red' : 'green'}>{selectedPlugin.bypassed ? 'Bypassed' : 'Active'}</Tag>
-                  ) : (
-                    <Tag type="cool-gray">Idle</Tag>
-                  )}
-                  {!bottomEditorOpen && <Tag type="warm-gray">Closed</Tag>}
-                </div>
                 <strong>{bottomEditorOpen && selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}</strong>
-                {bottomEditorOpen && selectedPlugin ? (
-                  <p>
-                    {selectedPluginMeta?.parameters?.length ?? 0} parameter{(selectedPluginMeta?.parameters?.length ?? 0) === 1 ? '' : 's'}
-                    {' '}
-                    {isTabletTouchLayout
-                      ? 'loaded into the reserved touch editor area below.'
-                      : 'loaded into the reserved editor area below.'}
-                  </p>
-                ) : (
-                  <p>Select a processor in the grid, then open the reserved editor area when you want to work on it.</p>
-                )}
-                {bottomEditorOpen && selectedPluginEditorNotice && <p>{selectedPluginEditorNotice}</p>}
               </div>
             </div>
             <div className="juce-grid-page__bottom-editor-actions">
-              <Button
-                size="sm"
-                kind="ghost"
-                renderIcon={ArrowLeft}
-                onClick={() => moveSelectedPlugin('left')}
-                disabled={!bottomEditorOpen || !canMoveSelectedPluginLeft || reorderMutation.isPending}
-              >
-                Move left
-              </Button>
-              <Button
-                size="sm"
-                kind="ghost"
-                renderIcon={ArrowRight}
-                onClick={() => moveSelectedPlugin('right')}
-                disabled={!bottomEditorOpen || !canMoveSelectedPluginRight || reorderMutation.isPending}
-              >
-                Move right
-              </Button>
-              <Button
-                size="sm"
-                kind={selectedPlugin?.bypassed ? 'ghost' : 'secondary'}
-                onClick={handleToggleSelectedBypass}
-                disabled={!selectedPlugin}
-              >
-                {selectedPlugin?.bypassed ? 'Enable block' : 'Bypass block'}
-              </Button>
+              {renderSelectedBlockNavBar({ disabled: !bottomEditorOpen })}
               <Button
                 size="sm"
                 kind="ghost"

@@ -257,7 +257,7 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   // MAP2 Native Processors - Modulation
   'Stereo Chorus': 'Classic stereo chorus with adjustable depth, rate, and centre delay for rich modulation.',
   '6-Stage Phaser': 'Classic 6-stage phaser with modulated all-pass filters for sweeping notches.',
-  'IntelliFX 8-Voice': 'Rocktron IntelliFX-style 8-voice multi-chorus with independent voice control and HUSH noise reduction.',
+  'AMDiFX 8-Voice': 'Rocktron IntelliFX-style 8-voice multi-chorus with independent voice control and HUSH noise reduction.',
 
   // MAP2 Native Processors - Effects
   'Eventide H9': 'Professional multi-effect processor with 10 iconic algorithms: MicroPitch, UltraShift, SmartShift, Transpose, PitchFactor, ReverseDelays, ShimmerVerbs, MotionReverbs, Granular, and Crystallize. Features STFT pitch shifting, granular synthesis, and freeverb reverb architecture.',

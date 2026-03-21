@@ -99,38 +99,31 @@ export function ConvolutionCategoryLayout({
     >
       {/* IR Browser Section */}
       <CarbonParameterSection title="Impulse Response" accentColor={accentColor}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="carbon-asset-selector">
           {onPrevIR && (
-            <button className="carbon-card-icon-btn" onClick={onPrevIR} title="Previous IR">
+            <button type="button" className="carbon-card-icon-btn" onClick={onPrevIR} title="Previous IR">
               <ChevronLeft size={16} />
             </button>
           )}
-          <div style={{
-            flex: 1,
-            padding: '8px 12px',
-            background: '#262626',
-            border: '1px solid #393939',
-            borderRadius: 4,
-            fontSize: 12,
-            color: '#f4f4f4',
-            textAlign: 'center',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
+          <div
+            className={`carbon-asset-selector-value ${irName ? '' : 'empty'}`}
+            title={irName || 'No IR loaded'}
+          >
             {irName || 'No IR loaded'}
           </div>
-          {onNextIR && (
-            <button className="carbon-card-icon-btn" onClick={onNextIR} title="Next IR">
-              <ChevronRight size={16} />
-            </button>
-          )}
-          {onBrowseIR && (
-            <button className="carbon-toggle-btn" onClick={onBrowseIR}>
-              <FolderOpen size={14} style={{ marginRight: 4 }} />
-              Browse
-            </button>
-          )}
+          <div className="carbon-asset-selector-actions">
+            {onNextIR && (
+              <button type="button" className="carbon-card-icon-btn" onClick={onNextIR} title="Next IR">
+                <ChevronRight size={16} />
+              </button>
+            )}
+            {onBrowseIR && (
+              <button type="button" className="carbon-toggle-btn" onClick={onBrowseIR}>
+                <FolderOpen size={14} style={{ marginRight: 4 }} />
+                Select...
+              </button>
+            )}
+          </div>
         </div>
       </CarbonParameterSection>
 

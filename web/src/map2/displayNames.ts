@@ -14,7 +14,8 @@ const RESTRICTED_TERMS = [
 
 const PLUGIN_URI_OVERRIDES: Record<string, string> = {
   'map2://juce/pitch/shifter': 'Vintage Harmonizer',
-  'map2://juce/pitch/boss-xs1': 'Poly XS-1 Shifter',
+  'map2://juce/pitch/boss-xs1': 'Mutii WR-2 Shifter',
+  'map2://juce/modulation/intellifx': 'AMDiFX 8-Voice',
   'map2://juce/pitch/h3000': 'Ultra Harmonizer',
   'map2://juce/effects/eventide-h9': 'Multi-Effect Rack',
   'map2://juce/amp/peavey5150': 'Block Letter Amp',
