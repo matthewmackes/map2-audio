@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 07:36 - Codex (Started `T240` to commit and sync the deployed JUCE Grid row-capacity fix plus the regenerated release metadata, then rerun the production web release loop on port `3000`.)
+Last updated: 2026-03-21 07:47 - Codex (Completed `T240` after syncing the JUCE Grid row-capacity release to both remotes, rerunning the production web deploy on port `3000`, and capturing the regenerated release metadata.)
 
 ## Active Blockers Only
 
@@ -2630,7 +2630,7 @@ Last updated: 2026-03-21 07:34 - Codex
   - Licensing: Reviewed the touched files as MAP2-owned AGPL-covered UI code and found no new AGPL or third-party notice gaps; no follow-up licensing task was required.
 
 ID: T240
-Status: [>] In Progress
+Status: [✓] Done
 Title: Sync the deployed JUCE Grid row-capacity fix and rerun the web release loop
 Description:
 - Goal / acceptance criteria: Commit the current JUCE Grid row-capacity fix together with the deploy-generated metadata/worklist changes, push `master` to both `origin` and `gitlab`, rerun the frontend production deploy, restart the web service on port `3000`, and finish with a clean local worktree plus updated worklist notes.
@@ -2640,4 +2640,9 @@ Description:
 - Required outputs: Synced commits on both remotes, rebuilt/restarted production web service, health-check evidence, clean worktree state, and completion notes in the canonical worklist.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-21 07:36 - Codex
+Last updated: 2026-03-21 07:47 - Codex
+- Completion notes:
+  - Committed the JUCE Grid DOM-measured row-capacity fix as `cef38eb3` and merged the newer `origin/master` README auto-update into local `master`, producing synced head `7e3a7b6a` on both `origin` and `gitlab`.
+  - Reran `npm --prefix /home/mm/map2-audio/web run deploy`; the build succeeded, `systemctl stop map2-web-prod` stalled in `deactivating`, and the release was unblocked by force-killing stale service PIDs `390267` and `390279` before the wrapper completed the restart.
+  - Verification: `npm --prefix /home/mm/map2-audio/web run deploy:status` -> port `3000` listening, service `map2-web-prod` active, health `OK`; `curl -I --max-time 10 http://localhost:3000/` -> `HTTP/1.1 200 OK`.
+  - Remaining tracked changes after the deploy were the expected regenerated release artifacts: `VERSION`, `version.json`, and `logs/deploy-build.log`.
