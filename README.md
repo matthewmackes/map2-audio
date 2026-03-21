@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**790** Python | **1172** TypeScript | **294** C++/H | **122** Docs | **659** total commits | **1** stars | **0** forks | **0** open issues
+**794** Python | **1180** TypeScript | **294** C++/H | **122** Docs | **666** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`debbaeea`](https://github.com/matthewmackes/map2-audio/commit/debbaeea7e643a58256b7695f5172adb53a5ffa8) | Complete effect-card remediation and live editor deployment | Map2 Audio | 2026-03-20 |
+| [`30e66719`](https://github.com/matthewmackes/map2-audio/commit/30e6671930277dc21f830d1724d5fc56480dcf9f) | Refine JUCE grid signal card layout | Map2 Audio | 2026-03-20 |
+| [`c93babf0`](https://github.com/matthewmackes/map2-audio/commit/c93babf064bd41ca32d4ec9bab94eb85f2b5568a) | chore: sync release build outputs | Map2 Audio | 2026-03-20 |
+| [`d8174672`](https://github.com/matthewmackes/map2-audio/commit/d8174672000ff3222a020182e6ffbae869ccc06a) | chore: update current worktree | Map2 Audio | 2026-03-20 |
+| [`5e3c672b`](https://github.com/matthewmackes/map2-audio/commit/5e3c672b3558231ebf91ce35981ff86ae1127830) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-20 |
+| [`6e561943`](https://github.com/matthewmackes/map2-audio/commit/6e561943c86f2e722c618a530afddeaa76e39bac) | Update generated build version after production rebuild | Map2 Audio | 2026-03-20 |
+| [`2093ea3e`](https://github.com/matthewmackes/map2-audio/commit/2093ea3e2d116f49161263dc399fca235b56ce61) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
 | [`bd06a5c9`](https://github.com/matthewmackes/map2-audio/commit/bd06a5c940953b9c30f7e3047f4b7d9f5c4b3b8b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-20 |
-| [`6b1d17b1`](https://github.com/matthewmackes/map2-audio/commit/6b1d17b1d3733ac1c1879c1e814261ae092e0741) | Complete remaining drum qualification and sync current wo... | Map2 Audio | 2026-03-20 |
-| [`6c405e5b`](https://github.com/matthewmackes/map2-audio/commit/6c405e5bec5d8d62670d1365ae858ae898d0c11c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`cfec20fa`](https://github.com/matthewmackes/map2-audio/commit/cfec20fa5375dd7572e8fcb1953729122903df49) | Complete T217-C drum instrument row controls | Map2 Audio | 2026-03-20 |
-| [`e59148a3`](https://github.com/matthewmackes/map2-audio/commit/e59148a3fae4f993476a4094e3cda0c13050ff63) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`c8a15247`](https://github.com/matthewmackes/map2-audio/commit/c8a152478eb819677b2789674af8210a7fd3e4da) | Complete T217-B drum sequencer grid shell | Map2 Audio | 2026-03-20 |
-| [`258f27fe`](https://github.com/matthewmackes/map2-audio/commit/258f27fe7b477115703b9fb272715aa4058ebc9f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-20 |
-| [`5c33a963`](https://github.com/matthewmackes/map2-audio/commit/5c33a9634b360a719109975e4a60932f27e2627e) | Complete T217-A drum page shell layout | Map2 Audio | 2026-03-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
