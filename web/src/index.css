@@ -159,7 +159,9 @@ img {
 .nav-tabs-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  flex: 1 1 auto;
   min-width: 0;
   justify-self: end;
 }
@@ -355,8 +357,11 @@ img {
 .nav-tabs-right-container {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
+  min-width: 0;
   justify-self: end;
+  width: 100%;
 }
 
 .advanced-menu-root {
@@ -8603,6 +8608,11 @@ a {
 .nav-tab-icon > svg {
   width: 19px;
   height: 19px;
+}
+
+.topbar-pro__hero-home-mark {
+  width: 22px;
+  height: 22px;
 }
 
 .nav-tab-icon--audio-grid > svg {

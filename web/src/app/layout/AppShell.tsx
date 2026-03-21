@@ -56,6 +56,10 @@ type MobileMenuItem = ShellNavigationItem | HardwareInterfaceMenuItem
 
 const ADVANCED_SECTION_ORDER = ['Audio Grid', 'AVB', 'MIDI', 'System', 'Hardware', 'Blocked / Lab'] as const
 
+function HeroHomeIcon() {
+  return <Map2BrandMark className="topbar-pro__hero-home-mark" />
+}
+
 function routeItemKey(item: MobileMenuItem): string {
   return `${item.to}::${item.label}`
 }
@@ -211,6 +215,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       iconOnly: true,
     }),
     [],
+  )
+  const heroHomeTopNavItem = useMemo<TopNavItem>(
+    () => ({
+      ...homeTopNavItem,
+      icon: HeroHomeIcon,
+    }),
+    [homeTopNavItem],
   )
   const HomeIcon = homeTopNavItem.icon
 
@@ -864,13 +875,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
       <Header className="topbar-pro" aria-label="MAP2 primary navigation shell">
         <HeaderNavigation className="nav-tabs-left" aria-label="Primary navigation">
-          {renderNavItem(homeTopNavItem)}
+          {renderNavItem(heroHomeTopNavItem)}
           <LatencyPressureShellReadout />
-          <NavLink to="/" className="topbar-pro__brand" aria-label="Mackes Audio Platform home">
-            <span className="topbar-pro__brand-mark-wrap" aria-hidden="true">
-              <Map2BrandMark className="topbar-pro__brand-mark" />
-            </span>
-          </NavLink>
         </HeaderNavigation>
 
         <HeaderNavigation className="nav-tabs-center" aria-label="Pinned navigation">
@@ -889,10 +895,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </HeaderNavigation>
 
         <HeaderGlobalBar className="nav-tabs-right-container">
-          <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
-            <NodeNavBar />
-          </HeaderNavigation>
-
           <HeaderMenuButton
             className="nav-hamburger-btn"
             onClick={handleMenuToggle}
@@ -900,6 +902,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             isActive={navOpen}
             aria-label="Toggle navigation menu"
           />
+
+          <HeaderNavigation className="nav-tabs-right" aria-label="Settings navigation">
+            <NodeNavBar />
+          </HeaderNavigation>
         </HeaderGlobalBar>
 
         {navOpen && (

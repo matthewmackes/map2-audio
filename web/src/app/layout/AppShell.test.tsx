@@ -117,7 +117,6 @@ describe('AppShell navigation', () => {
     )
 
     expect(screen.getByLabelText('Home')).toBeTruthy()
-    expect(screen.getByLabelText('Mackes Audio Platform home')).toBeTruthy()
     expect(screen.getByTestId('shell-latency-pressure-readout')).toBeTruthy()
     expect(screen.queryByLabelText('Open special settings')).toBeNull()
     expect(screen.getByLabelText('Toggle mobile menu')).toBeTruthy()
@@ -126,6 +125,7 @@ describe('AppShell navigation', () => {
     expect(screen.queryByLabelText('Open Platform panel')).toBeNull()
     expect(screen.queryByText('Guide')).toBeNull()
     expect(screen.queryByText('About')).toBeNull()
+    expect(container.querySelector('.topbar-pro__hero-home-mark')).toBeTruthy()
     expect(container.querySelector('.nav-active-title')).toBeNull()
     expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
     expect(container.querySelector('.nav-tabs-left')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
