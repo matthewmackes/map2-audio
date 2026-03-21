@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**798** Python | **1182** TypeScript | **294** C++/H | **122** Docs | **668** total commits | **1** stars | **0** forks | **0** open issues
+**798** Python | **1182** TypeScript | **294** C++/H | **122** Docs | **671** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`73f7ceba`](https://github.com/matthewmackes/map2-audio/commit/73f7cebab108938fe624bb5423156ff10930a5d2) | Resize effect parameter cards and rebuild web bundle | Map2 Audio | 2026-03-21 |
+| [`5117d06f`](https://github.com/matthewmackes/map2-audio/commit/5117d06f7335bcfeb49efe683a78e1434a9cd478) | chore: sync release build outputs | Map2 Audio | 2026-03-20 |
+| [`5b11e88f`](https://github.com/matthewmackes/map2-audio/commit/5b11e88f6e670ea969b47fac25bb7996daf6219a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`5c024aa9`](https://github.com/matthewmackes/map2-audio/commit/5c024aa979f6c7c77f958b8b44703ac767e39032) | Finish effect-card parity and duplicate-plugin telemetry | Map2 Audio | 2026-03-20 |
 | [`8d4b33a2`](https://github.com/matthewmackes/map2-audio/commit/8d4b33a22945956961334f54a2214e87ad7fc8b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 | [`debbaeea`](https://github.com/matthewmackes/map2-audio/commit/debbaeea7e643a58256b7695f5172adb53a5ffa8) | Complete effect-card remediation and live editor deployment | Map2 Audio | 2026-03-20 |
 | [`30e66719`](https://github.com/matthewmackes/map2-audio/commit/30e6671930277dc21f830d1724d5fc56480dcf9f) | Refine JUCE grid signal card layout | Map2 Audio | 2026-03-20 |
 | [`c93babf0`](https://github.com/matthewmackes/map2-audio/commit/c93babf064bd41ca32d4ec9bab94eb85f2b5568a) | chore: sync release build outputs | Map2 Audio | 2026-03-20 |
-| [`d8174672`](https://github.com/matthewmackes/map2-audio/commit/d8174672000ff3222a020182e6ffbae869ccc06a) | chore: update current worktree | Map2 Audio | 2026-03-20 |
-| [`5e3c672b`](https://github.com/matthewmackes/map2-audio/commit/5e3c672b3558231ebf91ce35981ff86ae1127830) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-20 |
-| [`6e561943`](https://github.com/matthewmackes/map2-audio/commit/6e561943c86f2e722c618a530afddeaa76e39bac) | Update generated build version after production rebuild | Map2 Audio | 2026-03-20 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
