@@ -109,7 +109,7 @@ Severity tags: `CRITICAL` · `HIGH` · `MEDIUM` · `LOW`
 
 | Port | Service |
 |---|---|
-| **3000** | Frontend production server (`vite preview`) |
+| **3000** | Frontend production server (`scripts/serve_web_dist.mjs` via `npm run serve`) |
 | **8080** | Backend API (`uvicorn`) |
 
 ---
@@ -572,11 +572,11 @@ If any page currently renders these components, they must be removed and replace
 
 ```bash
 # Kill old server before starting new one
-kill -9 $(pgrep -f "vite preview")
+pkill -9 -f "serve_web_dist.mjs"
 kill -9 $(pgrep -f "uvicorn app.main")
 
 # Start frontend (production only — no dev server)
-cd web && nohup npm run preview > /tmp/vite.log 2>&1 &
+cd web && nohup npm run serve > /tmp/map2-web-prod.log 2>&1 &
 
 # Start backend
 cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
@@ -584,13 +584,13 @@ cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
 ```
 
 **NEVER use `sleep` in automated scripts** — it causes `^C` interrupts that kill builds mid-run.
-**ONLY use `vite preview`** for the frontend — port 3000 is the sole supported web entry point.
+**ONLY use the dedicated MAP2 production web server** (`npm run serve` / `scripts/serve_web_dist.mjs`) for the frontend — port 3000 is the sole supported web entry point.
 
 ### Diagnostic Stack (Bottom to Top)
 
 ```bash
 ls -lh web/dist/index.html          # Layer 1: build files exist?
-ps aux | grep "vite preview"         # Layer 2: server running?
+ps aux | grep "serve_web_dist.mjs"   # Layer 2: server running?
 curl -s -I http://localhost:3000/    # Layer 3: server responding?
 curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 ```
@@ -664,7 +664,7 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 ### [HIGH] Port Conflict on Server Restart
 
 - **Problem**: `ERROR: [Errno 98] address already in use`
-- **Fix**: `kill -9 $(pgrep -f "vite preview")` before starting new server
+- **Fix**: `kill -9 $(lsof -ti:3000)` or `pkill -9 -f "serve_web_dist.mjs"` before starting new server
 
 ### [HIGH] Canonical Work List is `docs/PROJECT_WORKLIST.md`
 
@@ -734,11 +734,11 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 - **Problem**: `sleep 5 && curl` blocks terminal, causes `^C` interrupts killing builds mid-run
 - **Fix**: Use `nohup ... &` + poll logs with `grep`/`tail` — NEVER use `sleep` in CI or automated scripts
 
-### [MEDIUM] Vite Preview on localhost Does Not Proxy `/api`
+### [MEDIUM] Legacy `vite preview` Localhost Proxy Gap (Retired)
 
-- **Problem**: `vite preview` on `localhost` or `127.0.0.1` leaves pages stuck loading for live API data because `web/src/map2/api.ts` resolves `API_BASE` to relative `/api`
-- **Fix**: For real preview smoke with live data, use a same-origin reverse proxy or access preview from a non-localhost hostname/IP that resolves API calls to `http://<host>:8080/api`
-- **Lesson**: A successful `vite preview` page mount does not prove API hydration on localhost; smoke evidence must distinguish shell render from live backend data
+- **Problem**: Older notes used raw `vite preview`, which could leave localhost smoke tests stuck on shell-only renders because `/api` stayed unresolved.
+- **Fix**: Use the current production server contract instead: `npm run serve`, `npm run preview`, or `map2-web-prod.service`, all of which route through `scripts/serve_web_dist.mjs` and proxy `/api` / `/ws` correctly.
+- **Lesson**: If localhost still appears shell-only, verify backend `8080` health and the running `serve_web_dist.mjs` process rather than reviving the raw `vite preview` path.
 
 ### [MEDIUM] Python 3.14 asyncio
 
@@ -757,7 +757,7 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 - **Don't** add coaching, wizards, tutorials, or explanatory `InlineNotification` banners to pages
 - **Don't** expand MUI or Phosphor Icons usage — Carbon only for new work
 - **Don't** use `manualChunks` in Vite config
-- **Don't** use any alternate frontend serving mode — `vite preview` on port 3000 is the supported path
+- **Don't** use any alternate frontend serving mode — `serve_web_dist.mjs` on port 3000 is the supported path
 - **Don't** use `sleep` in scripts
 - **Don't** commit with known TypeScript or build errors
 - **Don't** manually commit in SQLAlchemy service methods

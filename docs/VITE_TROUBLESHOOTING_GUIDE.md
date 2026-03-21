@@ -5,7 +5,7 @@
 **Reported Issue**: "Pages are not loading correctly" / "Server down"  
 **Actual Cause**: Build folder (`dist/`) was deleted, rebuild in progress, server waiting for files  
 **Resolution Time**: ~60 seconds (build completion time)  
-**Root Cause**: `rm -rf dist` removed build output; vite preview server was running but serving empty folder
+**Root Cause**: `rm -rf dist` removed build output while the production web server on port `3000` was still running, so operators saw an empty/incomplete bundle until the rebuild finished
 
 ---
 
@@ -19,7 +19,7 @@
 ls -lh /home/mm/map2-audio/web/dist/index.html 2>&1 | head -1
 
 # Layer 2: Is the server process running?
-ps aux | grep -E "vite preview|node.*3000" | grep -v grep
+ps aux | grep -E "serve_web_dist.mjs|node.*3000" | grep -v grep
 
 # Layer 3: Is the server responding?
 curl -s -I http://localhost:3000/ 2>&1 | head -1
@@ -50,16 +50,10 @@ curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js' | head -1
 **Solution**:
 ```bash
 # Check if build is already running
-ps aux | grep "vite build" | grep -v grep
+ps aux | grep -E "build_web_dist_atomic.py|vite build" | grep -v grep
 
 # If not running, start build
-cd /home/mm/map2-audio/web && npx vite build
-
-# Wait for completion (~30 seconds)
-while [ ! -f /home/mm/map2-audio/web/dist/index.html ]; do 
-  sleep 2
-done
-echo "Build complete!"
+cd /home/mm/map2-audio/web && npm run build
 
 # Server will automatically serve new files
 ```
@@ -94,21 +88,19 @@ grep -c '00d9ff' /home/mm/map2-audio/web/dist/assets/*.js
 
 ### Scenario C: Server Actually Down
 **Symptoms**:
-- No vite preview process
+- No production web server process
 - `curl` connection refused
 
 **Solution**:
 ```bash
 # Start server
 cd /home/mm/map2-audio/web
-nohup npx vite preview --host 0.0.0.0 --port 3000 > /tmp/vite-preview.log 2>&1 &
-
-# Wait for startup
-sleep 3
+nohup npm run serve > /tmp/map2-web-prod.log 2>&1 &
 
 # Verify
+curl --silent --show-error --fail --retry 30 --retry-delay 0 --retry-connrefused \
+  --retry-all-errors --retry-max-time 15 http://localhost:3000/ >/dev/null
 curl -s -I http://localhost:3000/ | head -1
-# Should see: HTTP/1.1 200 OK
 ```
 
 ---
@@ -122,9 +114,9 @@ curl -s -I http://localhost:3000/ | head -1
    test -f /home/mm/map2-audio/web/dist/index.html && echo "Built" || echo "Building"
    ```
 
-2. **Wait for long-running processes** (builds take ~30s)
+2. **Let long-running processes finish** (builds take ~30s)
    ```bash
-   timeout 60 bash -c 'while [ ! -f dist/index.html ]; do sleep 2; done'
+   cd /home/mm/map2-audio/web && npm run build
    ```
 
 3. **Verify the complete chain**:
@@ -141,13 +133,13 @@ curl -s -I http://localhost:3000/ | head -1
 
 5. **Check logs before making assumptions**:
    ```bash
-   tail -20 /tmp/vite-preview.log
-   tail -20 /tmp/build.log
+   journalctl -u map2-web-prod.service -n 20 --no-pager
+   tail -20 /home/mm/map2-audio/logs/deploy-build.log
    ```
 
 ### ❌ DON'T
 
-1. **Don't kill servers unnecessarily** - vite preview auto-reloads when dist/ changes
+1. **Don't kill servers unnecessarily** - the production web server will serve the rebuilt `dist/` once the deploy/build finishes
 2. **Don't run parallel builds** - causes conflicts and wasted resources
 3. **Don't use `rm -rf dist`** during development - breaks hot module reload
 4. **Don't assume terminal output = ground truth** - verify with filesystem checks
@@ -162,20 +154,15 @@ curl -s -I http://localhost:3000/ | head -1
 echo "=== BUILD STATUS ===" && \
 test -f /home/mm/map2-audio/web/dist/index.html && echo "✓ Built" || echo "✗ Missing" && \
 echo "=== SERVER STATUS ===" && \
-ps aux | grep "vite preview" | grep -v grep && echo "✓ Running" || echo "✗ Stopped" && \
+ps aux | grep "serve_web_dist.mjs" | grep -v grep && echo "✓ Running" || echo "✗ Stopped" && \
 echo "=== SERVER RESPONSE ===" && \
 curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/ || echo "✗ No response"
 ```
 
 ### Full Recovery (Copy-Paste)
 ```bash
-# Clean restart
-cd /home/mm/map2-audio/web && \
-npx vite build && \
-sudo pkill -9 -f "vite preview" 2>/dev/null ; \
-nohup npx vite preview --host 0.0.0.0 --port 3000 > /tmp/vite-preview.log 2>&1 & \
-sleep 3 && \
-curl -s http://localhost:3000/ | head -5
+# Full rebuild + restart
+cd /home/mm/map2-audio/web && npm run deploy
 ```
 
 ---
@@ -185,12 +172,12 @@ curl -s http://localhost:3000/ | head -5
 When a user reports "pages not loading" or "server down":
 
 - [ ] Check if `dist/index.html` exists
-- [ ] Check if vite preview process is running
+- [ ] Check if the production web server process is running
 - [ ] Check if build process is running
 - [ ] Test server response with curl
 - [ ] Verify build output contains expected changes
 - [ ] Check for port conflicts (`sudo lsof -ti:3000`)
-- [ ] Review server logs (`/tmp/vite-preview.log`)
+- [ ] Review server logs (`journalctl -u map2-web-prod.service -n 50 --no-pager` or `/tmp/map2-web-prod.log` for manual starts)
 - [ ] Review build logs (`/tmp/build.log`)
 - [ ] Only after ALL checks: restart server
 
@@ -220,8 +207,8 @@ When a user reports "pages not loading" or "server down":
 |------|---------|
 | `/home/mm/map2-audio/web/dist/` | Build output folder |
 | `/home/mm/map2-audio/web/src/` | Source files |
-| `/tmp/vite-preview.log` | Server log |
-| `/tmp/build.log` | Build log |
+| `/tmp/map2-web-prod.log` | Manual server log |
+| `/home/mm/map2-audio/logs/deploy-build.log` | Deploy/build log |
 | `http://localhost:3000/` | Local server |
 | `http://172.20.234.234:3000/` | Network server |
 

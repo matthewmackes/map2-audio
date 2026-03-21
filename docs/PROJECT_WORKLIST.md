@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 19:00 EDT - Codex (Completed `T264` after hardening the production deploy-wrapper restart path and refreshing the canonical tracked server guidance.)
+Last updated: 2026-03-21 19:06 EDT - Codex (Completed `T265` to refresh secondary troubleshooting/reference docs and clear stale web-release notes.)
 
 ## Active Blockers Only
 
@@ -2905,9 +2905,9 @@ ID: T251
 Status: [✓] Done
 Title: Commit all pending frontend changes, push both remotes, and restart port 3000
 Description:
-- Goal / acceptance criteria: Stage and commit the entire current worktree, push `master` to both `origin` and `gitlab`, rebuild the frontend production bundle, and restart the production `vite preview` server on port `3000` using the documented nohup/background pattern.
+- Goal / acceptance criteria: Stage and commit the entire current worktree, push `master` to both `origin` and `gitlab`, rebuild the frontend production bundle, and restart the production web server on port `3000` using the documented nohup/background pattern.
 - Why it matters: The user explicitly requested the full sync/deploy loop rather than a local-only code change, so repository state and the running frontend need to match.
-- Dependencies: Clean enough git state to commit, reachable `origin` and `gitlab` remotes, successful frontend production build, and ability to replace the existing `vite preview` process on port `3000`.
+- Dependencies: Clean enough git state to commit, reachable `origin` and `gitlab` remotes, successful frontend production build, and ability to replace the existing port-`3000` production web server process.
 - Estimated effort: Low
 - Required outputs: Single commit covering the full current worktree, successful pushes to both remotes, confirmed frontend build, restarted port `3000` server, verification notes, and updated worklist status.
 Subtasks: None
@@ -2915,7 +2915,7 @@ Assigned to: Codex
 Last updated: 2026-03-21 15:23 EDT - Codex
 - Completion notes:
   - Rebuilt the frontend with `npm --prefix web run build`, which refreshed the generated version artifacts and completed successfully with the repo's existing dynamic-import and chunk-size warnings only.
-  - Replaced the previous `vite preview` tree on port `3000` with a fresh background process using the documented nohup pattern; the new listener is PID `660949`.
+  - Replaced the previous port-`3000` production web server tree with a fresh background process using the documented nohup pattern; the new listener was PID `660949`.
   - Verification: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/` -> `200`; `curl -s http://localhost:3000/ | grep -o 'index-[^"]*\\.js' | head -1` -> `index-CJl1HjmH.js`.
 
 ID: T252
@@ -3124,10 +3124,10 @@ Last updated: 2026-03-21 18:10 EDT - Codex
 - Completion notes:
   - Updated `web/src/app/components/icons/effectIcons.ts` so icon resolution now reports whether a lookup actually matched and whether the resolved SVG should render as an outline or solid mark, instead of treating every miss as an immediate generic-plugin success.
   - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so signal cards keep searching across plugin name, category, class label, display type, and URI until they find a real icon match, which fixes unmapped names like `ShoeGaze` falling back too early to the generic square plugin icon.
-  - Updated `web/src/app/pages/JuceGridPage.css` so the icon-darkening face overlay no longer sits over the hero art, outline SVGs are no longer force-filled via the shared hero rule, and both outline and solid icons get tone-aware opacity/drop-shadow treatment that makes the art read much more clearly on the live cards.
-  - Added focused coverage in `web/src/app/pages/JuceGridSignalCanvas.test.tsx` for the tone-aware hero markup and for the category fallback path when a plugin name itself is unmapped.
-  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only). Build regenerated `VERSION` and `version.json` as part of the standard frontend build pipeline.
-- Additional validation note: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` still reports one unrelated failure in `web/src/app/pages/JuceGridPage.test.tsx` (`moves the selected block left from the bottom editor controls and keyboard arrows` unable to find `Move left`) outside the files changed for `T262`.
+- Updated `web/src/app/pages/JuceGridPage.css` so the icon-darkening face overlay no longer sits over the hero art, outline SVGs are no longer force-filled via the shared hero rule, and both outline and solid icons get tone-aware opacity/drop-shadow treatment that makes the art read much more clearly on the live cards.
+- Added focused coverage in `web/src/app/pages/JuceGridSignalCanvas.test.tsx` for the tone-aware hero markup and for the category fallback path when a plugin name itself is unmapped.
+- Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only). Build regenerated `VERSION` and `version.json` as part of the standard frontend build pipeline.
+- Verification update: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` now passes, so the earlier `Move left` failure note is no longer current and was cleared as part of `T265`.
 - Licensing: Classified the touched frontend/test/worklist files as MAP2-owned AGPL-covered code, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
 
 ID: T263
@@ -3169,7 +3169,7 @@ Last updated: 2026-03-21 19:00 EDT - Codex
   - Licensing: Classified `.github/copilot-instructions.md`, `scripts/build/deploy`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repo artifacts, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
 
 ID: T265
-Status: [ ] Todo
+Status: [✓] Done
 Title: Refresh secondary troubleshooting/reference docs and clear stale release notes
 Description:
 - Goal / acceptance criteria: Update the remaining operator-facing troubleshooting/reference docs and any now-stale worklist notes so they no longer describe `vite preview` as the production server, no longer recommend fixed sleeps for port-`3000` recovery, and no longer report the already-fixed JUCE Grid `Move left` test failure as current.
@@ -3179,7 +3179,13 @@ Description:
 - Required outputs: Updated troubleshooting/reference docs, corrected stale worklist notes, consistency validation, and completion notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-21 18:33 EDT - Codex
+Last updated: 2026-03-21 19:06 EDT - Codex
+- Completion notes:
+  - Updated `docs/VITE_TROUBLESHOOTING_GUIDE.md` so the troubleshooting flow, health checks, restart commands, and log references now target the production `serve_web_dist.mjs` runtime / `npm run serve`, and the guide now recommends `npm run build` / `npm run deploy` rather than raw `vite preview` plus fixed sleeps.
+  - Updated `docs/CLAUDE.md` so the secondary operator guidance now treats `serve_web_dist.mjs` as the supported port-`3000` server, replaces the old `vite preview` kill/start examples, and marks the prior localhost `vite preview` proxy issue as retired legacy context.
+  - Corrected stale historical notes in `docs/PROJECT_WORKLIST.md`: `T251` no longer names `vite preview` as the production target, and `T262` now records that the JUCE Grid `Move left` regression run passes rather than preserving the obsolete failure warning.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass; `rg -n "vite preview|Move left|vite-preview|sleep 3|sleep 2|serve_web_dist" docs/CLAUDE.md docs/VITE_TROUBLESHOOTING_GUIDE.md docs/PROJECT_WORKLIST.md` -> only expected current references remained.
+  - Licensing: Classified `docs/CLAUDE.md`, `docs/VITE_TROUBLESHOOTING_GUIDE.md`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered documentation, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
 
 ID: T266
 Status: [✓] Done
