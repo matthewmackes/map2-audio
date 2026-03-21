@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from './JuceGridSignalCanvas'
 import type { Chain, Plugin } from '../../map2/types'
 
@@ -319,6 +319,49 @@ describe('JuceGridSignalCanvas', () => {
     expect(firstRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(4)
     expect(secondRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(3)
     expect(within(secondRow).getByRole('button', { name: 'Add effect' })).toBeTruthy()
+  })
+
+  it('expands the row capacity from measured lane width without ResizeObserver support', async () => {
+    const longChain = buildChainWithPluginCount(7)
+    const longMeta = buildPluginMetaForChain(longChain)
+    const resizeObserverOwner = globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }
+    const originalResizeObserver = resizeObserverOwner.ResizeObserver
+
+    delete resizeObserverOwner.ResizeObserver
+
+    try {
+      render(
+        <JuceGridSignalCanvas
+          chain={longChain}
+          pluginMeta={longMeta}
+          selectedPluginUri={longChain.plugins[0].uri}
+          onPluginSelect={jest.fn()}
+          onToggleBypass={jest.fn()}
+          onReorderPlugins={jest.fn()}
+          onAddPlugin={jest.fn()}
+          showEndpoints={false}
+        />,
+      )
+
+      const grid = screen.getByTestId('juce-grid-signal-grid')
+      Object.defineProperty(grid, 'clientWidth', {
+        configurable: true,
+        value: 1500,
+      })
+
+      fireEvent(window, new Event('resize'))
+
+      await waitFor(() => expect(screen.queryByTestId('juce-grid-signal-row-1')).toBeNull())
+
+      const firstRow = screen.getByTestId('juce-grid-signal-row-0')
+      expect(firstRow.getAttribute('data-row-direction')).toBe('forward')
+      expect(firstRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(7)
+      expect(within(firstRow).getByRole('button', { name: 'Add effect' })).toBeTruthy()
+    } finally {
+      if (originalResizeObserver) {
+        resizeObserverOwner.ResizeObserver = originalResizeObserver
+      }
+    }
   })
 
   it('keeps the active card in place and subtly dims the other cards', () => {

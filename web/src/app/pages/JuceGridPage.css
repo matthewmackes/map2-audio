@@ -2783,7 +2783,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 @keyframes juce-grid-signal-avb-pulse {
@@ -2935,11 +2935,11 @@
 .juce-grid-page__signal-plugin-card {
   --juce-grid-signal-accent: var(--cds-link-primary);
   --juce-grid-signal-shell-background:
-    linear-gradient(180deg, rgba(57, 57, 57, 0.18) 0%, rgba(38, 38, 38, 0.94) 16%, rgba(22, 22, 22, 1) 100%),
-    linear-gradient(135deg, rgba(15, 98, 254, 0.05) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.012) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--juce-grid-signal-accent) 7%, transparent) 0%, transparent 62%),
     #161616;
   --juce-grid-signal-shell-background-bypassed:
-    linear-gradient(180deg, rgba(57, 57, 57, 0.12) 0%, rgba(22, 22, 22, 0.96) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.004) 100%),
     #111111;
   position: relative;
   display: flex;
@@ -2951,8 +2951,8 @@
   border-radius: 0;
   background: var(--juce-grid-signal-shell-background);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 1.15rem 2rem rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 0.4rem 1rem rgba(0, 0, 0, 0.14);
   overflow: hidden;
   transition: border-color 160ms ease, transform 120ms ease, opacity 160ms ease, box-shadow 160ms ease;
   cursor: pointer;
@@ -2972,8 +2972,8 @@
 .juce-grid-page__signal-plugin-card.is-selected {
   border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 26%, var(--cds-border-subtle, var(--border)));
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 24%, transparent),
-    0 1.25rem 2.4rem color-mix(in srgb, black 76%, transparent);
+    inset 0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 20%, transparent),
+    0 0.6rem 1.2rem rgba(0, 0, 0, 0.18);
 }
 
 @media (pointer: coarse) and (min-width: 768px) {
@@ -3006,13 +3006,13 @@
   border-style: dashed;
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 18%, transparent),
-    0 1.15rem 2rem color-mix(in srgb, var(--juce-grid-signal-accent) 18%, rgba(0, 0, 0, 0.28));
+    0 0.55rem 1.15rem color-mix(in srgb, var(--juce-grid-signal-accent) 16%, rgba(0, 0, 0, 0.16));
 }
 
 .juce-grid-page__signal-plugin-card.is-reorder-preview {
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 30%, transparent),
-    0 0.65rem 1.8rem color-mix(in srgb, var(--juce-grid-signal-accent) 18%, transparent);
+    0 0.45rem 1rem color-mix(in srgb, var(--juce-grid-signal-accent) 14%, transparent);
 }
 
 .juce-grid-page__signal-plugin-card.is-reorder-preview-left {
@@ -3032,8 +3032,8 @@
 .juce-grid-page__signal-plugin-card:focus-visible {
   border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 45%, var(--cds-border-subtle, var(--border)));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1.25rem 2.35rem color-mix(in srgb, var(--juce-grid-signal-accent) 10%, rgba(0, 0, 0, 0.28));
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 0.55rem 1.15rem color-mix(in srgb, var(--juce-grid-signal-accent) 10%, rgba(0, 0, 0, 0.16));
 }
 
 .juce-grid-page__signal-plugin-card:hover .juce-grid-page__signal-plugin-hero-svg {
@@ -3065,11 +3065,11 @@
   inline-size: 100%;
   block-size: 100%;
   padding: 0.35rem;
-  background: var(--juce-grid-signal-shell-background);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.006) 100%),
+    color-mix(in srgb, #161616 94%, var(--juce-grid-signal-accent) 6%);
   border: 1px solid color-mix(in srgb, var(--juce-grid-signal-accent) 20%, rgba(244, 244, 244, 0.08));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -3091,8 +3091,9 @@
   content: '';
   position: absolute;
   inset: auto 0 0;
-  block-size: 0.16rem;
-  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--juce-grid-signal-accent) 68%, white) 42%, transparent 100%);
+  block-size: 0.1rem;
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--juce-grid-signal-accent) 54%, white) 42%, transparent 100%);
+  opacity: 0.72;
 }
 
 .juce-grid-page__signal-plugin-hero-svg {
@@ -3115,8 +3116,8 @@
 .juce-grid-page__signal-plugin-card:focus-visible .juce-grid-page__signal-plugin-hero-image {
   border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 36%, rgba(244, 244, 244, 0.08));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 18%, rgba(0, 0, 0, 0.18));
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 16%, rgba(0, 0, 0, 0.14));
 }
 
 .juce-grid-page__signal-plugin-card.is-selected .juce-grid-page__signal-plugin-hero-outline,
@@ -3137,8 +3138,8 @@
   min-block-size: 0;
   padding: 0.55rem 0.7rem 0.65rem 0.8rem;
   background:
-    linear-gradient(180deg, rgba(38, 38, 38, 0.12) 0%, rgba(38, 38, 38, 0.92) 16%, rgba(22, 22, 22, 1) 100%);
-  border-top: 1px solid color-mix(in srgb, white 5%, transparent);
+    linear-gradient(180deg, rgba(24, 24, 24, 0.22) 0%, rgba(20, 20, 20, 0.9) 24%, rgba(16, 16, 16, 0.98) 100%);
+  border-top: 1px solid color-mix(in srgb, var(--juce-grid-signal-accent) 12%, rgba(255, 255, 255, 0.04));
   overflow: hidden;
 }
 
@@ -3168,7 +3169,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--cds-text-secondary, #a8a8a8);
+  color: var(--juce-grid-signal-accent);
   font-size: 0.58rem;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -3233,14 +3234,14 @@
   border-radius: 0;
   padding: 0.75rem;
   background:
-    linear-gradient(180deg, rgba(57, 57, 57, 0.16) 0%, rgba(38, 38, 38, 0.92) 16%, rgba(22, 22, 22, 1) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%),
     #161616;
   color: var(--cds-text-primary, var(--text-primary));
   cursor: pointer;
   transition: border-color 120ms ease, background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 1rem 1.8rem rgba(0, 0, 0, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 0.4rem 1rem rgba(0, 0, 0, 0.14);
 }
 
 .juce-grid-page__signal-plugin-add span {
@@ -3251,12 +3252,12 @@
 .juce-grid-page__signal-plugin-add:focus-visible {
   border-color: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 46%, var(--cds-border-subtle, var(--border)));
   background:
-    linear-gradient(180deg, rgba(57, 57, 57, 0.18) 0%, rgba(38, 38, 38, 0.94) 16%, rgba(22, 22, 22, 1) 100%),
-    linear-gradient(135deg, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 12%, transparent) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.012) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, transparent) 0%, transparent 55%),
     #161616;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 1.1rem 2rem color-mix(in srgb, var(--cds-link-primary, #0f62fe) 10%, rgba(0, 0, 0, 0.22));
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 0.55rem 1.15rem color-mix(in srgb, var(--cds-link-primary, #0f62fe) 9%, rgba(0, 0, 0, 0.16));
 }
 
 .juce-grid-page__port-modal,

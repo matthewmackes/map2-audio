@@ -104,6 +104,23 @@ const SIGNAL_GRID_CARD_MIN_WIDTH_REM = 9.75
 const SIGNAL_GRID_CARD_GAP_REM = 1
 const SIGNAL_GRID_ROW_MIN_CAPACITY = 1
 
+function measureSignalGridRowCapacity(node: HTMLDivElement) {
+  const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
+  const availableWidth = node.clientWidth
+
+  if (availableWidth <= 0) {
+    return null
+  }
+
+  const gapWidth = rootFontSize * SIGNAL_GRID_CARD_GAP_REM
+  const slotWidth = rootFontSize * SIGNAL_GRID_CARD_MIN_WIDTH_REM + gapWidth
+
+  return Math.max(
+    SIGNAL_GRID_ROW_MIN_CAPACITY,
+    Math.floor((availableWidth + gapWidth) / slotWidth),
+  )
+}
+
 function buildSignalGridRows(
   plugins: ChainPlugin[],
   includeAddSlot: boolean,
@@ -348,26 +365,51 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 
   useEffect(() => {
     const node = gridRef.current
-    if (!node || typeof ResizeObserver === 'undefined') {
+    if (!node) {
       return
     }
 
-    const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
-    const slotWidth = (SIGNAL_GRID_CARD_MIN_WIDTH_REM + SIGNAL_GRID_CARD_GAP_REM) * rootFontSize
-
     const updateCapacity = () => {
-      const nextCapacity = Math.max(
-        SIGNAL_GRID_ROW_MIN_CAPACITY,
-        Math.floor((node.clientWidth + rootFontSize * SIGNAL_GRID_CARD_GAP_REM) / slotWidth),
-      )
+      const nextCapacity = measureSignalGridRowCapacity(node)
+      if (!nextCapacity) {
+        return
+      }
       setRowCapacity((current) => (current === nextCapacity ? current : nextCapacity))
     }
 
-    updateCapacity()
-    const observer = new ResizeObserver(updateCapacity)
-    observer.observe(node)
+    let frameId: number | null = null
+    const scheduleCapacityUpdate = () => {
+      if (typeof window.requestAnimationFrame !== 'function') {
+        updateCapacity()
+        return
+      }
 
-    return () => observer.disconnect()
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId)
+      }
+
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null
+        updateCapacity()
+      })
+    }
+
+    scheduleCapacityUpdate()
+    window.addEventListener('resize', scheduleCapacityUpdate)
+
+    let observer: ResizeObserver | null = null
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(scheduleCapacityUpdate)
+      observer.observe(node)
+    }
+
+    return () => {
+      if (frameId !== null && typeof window.cancelAnimationFrame === 'function') {
+        window.cancelAnimationFrame(frameId)
+      }
+      window.removeEventListener('resize', scheduleCapacityUpdate)
+      observer?.disconnect()
+    }
   }, [])
 
   const signalRows = useMemo(

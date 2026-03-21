@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 06:35 - Codex (Completed `T236` by shrinking the JUCE Grid signal-path effect cards, stacking category labels under titles, matching the hero field to the card shell, and enlarging the hero art within the smaller footprint. No new licensing gaps were identified for the touched MAP2-owned UI files.)
+Last updated: 2026-03-21 10:28 - Codex (Completed `T237` by adding resilient JUCE Grid signal-lane width measurement, flattening the live signal-card treatment, and tinting category labels from the category accent. No new licensing gaps were identified for the touched MAP2-owned UI files.)
 
 ## Active Blockers Only
 
@@ -2574,3 +2574,22 @@ Last updated: 2026-03-21 06:35 - Codex
   - Updated `web/src/app/pages/JuceGridSignalCanvas.test.tsx` so the live signal-card assertions now require the category label on the card face.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings unchanged); `npm --prefix web run typecheck` -> pass.
   - Licensing: Reviewed the touched files as MAP2-owned AGPL-covered UI code and found no new AGPL or third-party notice gaps; no worklist follow-up was required beyond this completion record.
+
+ID: T237
+Status: [✓] Done
+Title: Relax JUCE Grid signal-card wrapping and flatten the live card treatment
+Description:
+- Goal / acceptance criteria: Prevent the `JUCE-GRID` signal cards from snaking onto a second row earlier than the available lane width requires, reduce the visual depth of the live signal-card shell so it reads flatter, and tint the category label with the same category accent already driving the card stripe/icon treatment.
+- Why it matters: The current live-path lane wastes available width on wide layouts and the card face still reads heavier than requested, which makes fast operator scanning harder than it needs to be.
+- Dependencies: T236, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`
+- Estimated effort: Low
+- Required outputs: Updated row-capacity behavior with a resilient width-measurement fallback, flatter signal-card visuals, category-accent label treatment, focused validation evidence, and licensing/worklist completion notes for the touched UI files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 10:28 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so the signal lane measures row capacity on mount and on window resize even when `ResizeObserver` is unavailable, while ignoring zero-width transient reads instead of collapsing to a narrower row count.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the signal path stretches to the full available lane width, the live/add cards use a flatter shell with reduced shadow depth and simpler gradients, and the category label now uses the existing per-category accent color.
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.test.tsx` with a focused fallback-width test that proves the row expands correctly without `ResizeObserver` support.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> pass (existing Carbon modal warnings unchanged); `npm --prefix web run typecheck` -> pass.
+  - Licensing: Reviewed the touched files as MAP2-owned AGPL-covered UI code and found no new AGPL or third-party notice gaps; no follow-up licensing task was required.
