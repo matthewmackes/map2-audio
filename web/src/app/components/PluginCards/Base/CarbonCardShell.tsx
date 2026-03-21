@@ -28,6 +28,11 @@ import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../..
 import { getEffectIcon } from '../../icons/effectIcons'
 import './carbonCardStyles.css'
 
+const CARD_WIDTH_SCALE = 2
+const CARD_HEIGHT_SCALE = 1.5
+const DEFAULT_CARD_WIDTH = 420
+const DEFAULT_CARD_HEIGHT = 480
+
 /** Section definition for accordion-based advanced controls */
 export interface AdvancedSection {
   id: string
@@ -81,7 +86,9 @@ export function CarbonCardShell({
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
-  const resolvedHeight = cardHeight || CATEGORY_CARD_DIMENSIONS[plugin.category] || 480
+  const baseHeight = cardHeight || CATEGORY_CARD_DIMENSIONS[plugin.category] || DEFAULT_CARD_HEIGHT
+  const resolvedHeight = Math.round(baseHeight * CARD_HEIGHT_SCALE)
+  const resolvedWidth = Math.round((cardWidth || DEFAULT_CARD_WIDTH) * CARD_WIDTH_SCALE)
 
   const handleBypassToggle = useCallback(() => {
     onBypassToggle?.(!bypassed)
@@ -95,8 +102,8 @@ export function CarbonCardShell({
       style={{
         '--accent-color': accentColor,
         '--accent-bg': catConfig.bg,
+        '--category-card-width': `${resolvedWidth}px`,
         '--category-card-height': `${resolvedHeight}px`,
-        ...(cardWidth ? { '--category-card-width': `${cardWidth}px` } : {}),
       } as React.CSSProperties}
     >
       {/* Header */}

@@ -9,7 +9,7 @@
 /* ==================== Category Card Dimensions ==================== */
 
 :root {
-  --carbon-card-width: 420px;
+  --carbon-card-width: 840px;
   --carbon-card-radius: 4px;
 
   /* Category heights */
@@ -39,8 +39,8 @@
 .carbon-card {
   width: min(100%, var(--category-card-width, var(--carbon-card-width)));
   max-width: 100%;
-  min-height: var(--category-card-height, 480px);
-  max-height: var(--category-card-height, 480px);
+  min-height: var(--category-card-height, 720px);
+  max-height: var(--category-card-height, 720px);
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--cds-layer, #161616);
