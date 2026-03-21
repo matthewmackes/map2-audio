@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 07:13 - Codex (Started `T238` to commit and sync the deploy-generated JUCE Grid release metadata, then rerun the frontend deploy/restart loop on port `3000`.)
+Last updated: 2026-03-21 07:22 - Codex (Completed `T238` by syncing the deploy-generated web release metadata, merging the latest `origin/master`, rerunning the production deploy, and verifying `map2-web-prod` on port `3000`.)
 
 ## Active Blockers Only
 
@@ -2595,7 +2595,7 @@ Last updated: 2026-03-21 10:28 - Codex
   - Licensing: Reviewed the touched files as MAP2-owned AGPL-covered UI code and found no new AGPL or third-party notice gaps; no follow-up licensing task was required.
 
 ID: T238
-Status: [>] In Progress
+Status: [✓] Done
 Title: Sync deploy-generated version metadata and rerun the production web release loop
 Description:
 - Goal / acceptance criteria: Commit the currently dirty deploy-generated release metadata/log artifacts, push `master` to both `origin` and `gitlab`, rerun the frontend production deploy, restart the web service on port `3000`, and verify the production endpoint is healthy afterward.
@@ -2605,4 +2605,8 @@ Description:
 - Required outputs: Committed deploy metadata/log files, successful pushes to both remotes, rebuilt/restarted production web service, health-check evidence, and updated worklist notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-21 07:13 - Codex
+Last updated: 2026-03-21 07:22 - Codex
+- Completion notes:
+  - Committed the existing dirty deploy metadata in `VERSION`, `version.json`, and `logs/deploy-build.log`, then resolved a non-fast-forward GitHub push by merging the latest `origin/master` README auto-update into local `master` before re-pushing both remotes.
+  - Reran `npm --prefix web run deploy`, forced the stale preview PIDs to exit when `systemctl stop map2-web-prod` hung in `deactivating`, and let the deploy script complete the clean `systemd` restart.
+  - Verified production health with `npm --prefix web run deploy:status` showing port `3000` listening and service `map2-web-prod` active, plus `curl -I http://localhost:3000/` returning `200 OK`.
