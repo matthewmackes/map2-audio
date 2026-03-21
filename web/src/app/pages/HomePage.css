@@ -289,12 +289,12 @@
 .hp-hero__card-overlay {
   position: relative;
   z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
   width: 100%;
   padding: clamp(1.5rem, 4vw, 3rem) var(--hp-grid-margin) var(--hp-grid-margin);
+  gap: var(--hp-s-05);
   pointer-events: none;
 }
 
@@ -307,12 +307,24 @@
 /* Group heading suppressed — cards are self-labelled */
 .hp-hero__card-overlay .hp-group {
   padding-top: 0;
-  width: min(100%, 78rem);
-  margin-inline: auto auto;
+  width: 100%;
+  margin: 0;
 }
 
 .hp-hero__card-overlay .hp-group__heading {
   display: none;
+}
+
+.hp-hero__card-overlay .hp-group--audio-grid {
+  grid-column: 1 / -1;
+}
+
+.hp-hero__card-overlay .hp-group--system {
+  grid-column: 1 / span 1;
+}
+
+.hp-hero__card-overlay .hp-group--midi {
+  grid-column: 2 / span 2;
 }
 
 /*
@@ -321,10 +333,18 @@
  */
 .hp-hero__card-overlay .hp-card-grid {
   width: 100%;
-  max-width: min(72vw, 68rem);
-  margin-inline: 0 auto;
+  max-width: none;
+  margin: 0;
   gap: var(--hp-s-05);         /* Carbon $spacing-05 = 1rem */
   background: transparent;     /* remove the 1px gap fill */
+}
+
+.hp-hero__card-overlay .hp-card-grid--single {
+  grid-template-columns: 1fr;
+}
+
+.hp-hero__card-overlay .hp-card-grid--wide-single {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 /* Cards: fixed height to form a clean bottom-aligned strip */
@@ -334,8 +354,20 @@
 
 /* On narrower viewports, allow the constrained grid to relax */
 @media (max-width: 1055px) {
-  .hp-hero__card-overlay .hp-card-grid {
-    max-width: 100%;
+  .hp-hero__card-overlay {
+    grid-template-columns: 1fr;
+  }
+
+  .hp-hero__card-overlay .hp-group--audio-grid,
+  .hp-hero__card-overlay .hp-group--system,
+  .hp-hero__card-overlay .hp-group--midi {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 671px) {
+  .hp-hero__card-overlay .hp-card-grid--wide-single {
+    grid-template-columns: 1fr;
   }
 }
 

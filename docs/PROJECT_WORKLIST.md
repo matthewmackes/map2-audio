@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 18:48 EDT - Codex (Completed `T263` to align the production deploy wrapper with the shipped `serve_web_dist` runtime.)
+Last updated: 2026-03-21 19:00 EDT - Codex (Completed `T264` after hardening the production deploy-wrapper restart path and refreshing the canonical tracked server guidance.)
 
 ## Active Blockers Only
 
@@ -3150,17 +3150,23 @@ Last updated: 2026-03-21 18:48 EDT - Codex
   - Licensing: Classified `.gitignore`, `scripts/build/deploy`, `systemd/map2-web-prod.service`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
 
 ID: T264
-Status: [ ] Todo
-Title: Refresh canonical AI/operator instructions for the production web server contract
+Status: [✓] Done
+Title: Harden the production deploy-wrapper stop path and refresh canonical AI/operator instructions
 Description:
-- Goal / acceptance criteria: Update the canonical AI/operator guidance files so the documented port-`3000` contract, restart commands, and gotchas all reference `serve_web_dist.mjs` / `npm run serve|preview` rather than stale `vite preview` assumptions, and so they reflect the no-sleep polling guidance consistently.
-- Why it matters: `.github/copilot-instructions.md`, `.gemini/instructions.md`, and related restart notes drive future implementation and release behavior; leaving them stale will reintroduce the same deployment drift.
-- Dependencies: T263, `.github/copilot-instructions.md`, `.gemini/instructions.md`, `.copilot-notes/server-restart-pattern.md`
+- Goal / acceptance criteria: Fix the remaining `scripts/build/deploy` stop/restart bugs exposed by the first post-`T263` release loop, especially the blocking `systemctl stop` call and the empty-port early-exit under `set -e`, then update the canonical AI/operator guidance files so the documented port-`3000` contract and restart commands match the hardened `serve_web_dist.mjs` runtime behavior.
+- Why it matters: The first full rebuild/restart after `T263` still needed one manual `systemctl kill` because the wrapper waited inside `systemctl stop` before it could poll, and then exited early when `port_pids` returned no listener. The canonical AI docs also still describe the old runtime, which would repeat the same mistakes.
+- Dependencies: T263, `scripts/build/deploy`, `.github/copilot-instructions.md`, `.gemini/instructions.md`, `.copilot-notes/server-restart-pattern.md`
 - Estimated effort: Low
-- Required outputs: Updated canonical instruction docs, consistency validation, completion notes, and licensing/worklist evidence.
+- Required outputs: Hardened deploy-wrapper stop/start behavior, updated canonical instruction docs, consistency validation, completion notes, and licensing/worklist evidence.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-21 18:33 EDT - Codex
+Last updated: 2026-03-21 19:00 EDT - Codex
+- Completion notes:
+  - Updated `scripts/build/deploy` so the restart wrapper no longer exits under `set -e` when port `3000` is already free, uses `systemctl stop --no-block`, waits on `ActiveState` instead of a single substate, and force-kills the unit only if the stop timeout actually expires.
+  - Updated the tracked canonical guidance in `.github/copilot-instructions.md` so port `3000`, the clean-start snippets, the diagnostic stack, and the port table now reference `scripts/serve_web_dist.mjs` / `npm run serve` instead of stale `vite preview` commands.
+  - Refreshed `.gemini/instructions.md` and `.copilot-notes/server-restart-pattern.md` locally with the same runtime contract, but those files remain intentionally ignored by the repository, so the persistent repo-side source of truth for this loop is the tracked `.github/copilot-instructions.md` update plus the hardened deploy wrapper itself.
+  - Validation: `bash -n scripts/build/deploy` -> pass; `npm --prefix web run deploy` -> pass after the wrapper fix with no manual service kill required (`map2-web-prod` restarted cleanly and served `index-B4wtKAjO.js` on port `3000`); `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> pass for the concurrently present HomePage changes included in the rebuilt tree.
+  - Licensing: Classified `.github/copilot-instructions.md`, `scripts/build/deploy`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repo artifacts, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
 
 ID: T265
 Status: [ ] Todo
@@ -3174,3 +3180,21 @@ Description:
 Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-21 18:33 EDT - Codex
+
+ID: T266
+Status: [✓] Done
+Title: Rebalance Home landing-page hero cards for Platforms and Labs plus MIDI Hub
+Description:
+- Goal / acceptance criteria: Update the Home landing-page hero card layout so `Platforms and Labs` remains an unchanged standard card, appears immediately to the left of `MIDI Hub`, and `MIDI Hub` renders at double-card width on desktop without breaking responsive layouts or Home navigation behavior.
+- Why it matters: The landing page currently separates these cards into different home-section rows, which prevents the requested left-to-right relationship and under-emphasizes the primary MIDI workflow.
+- Dependencies: `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, `web/src/app/pages/HomePage.test.tsx`
+- Estimated effort: Low
+- Required outputs: Updated Home page layout/styles, regression coverage for ordering and wide-card behavior, and completion notes with licensing/worklist evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 18:58 EDT - Codex
+- Completion notes:
+  - Reordered the Home hero sections locally so the `System` card row renders before `MIDI`, then converted the hero overlay to a three-column grid that keeps `Platforms and Labs` as a standard-width card on the left and gives `MIDI Hub` a two-column footprint on desktop while preserving stacked responsive behavior at narrower breakpoints.
+  - Marked `MIDI Hub` as a wide hero card alongside the existing wide `Audio Grid` treatment and added landing-page regression coverage that checks the new section order plus the wide-card class assignment.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite chunk-size and mixed static/dynamic import warnings only, no new failures).
+  - Licensing: Classified `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, `web/src/app/pages/HomePage.test.tsx`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.

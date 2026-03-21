@@ -246,6 +246,29 @@ describe('HomePage navigation landing', () => {
     expect(screen.getByTestId('location-probe').textContent).toBe('/?layer=overview')
   })
 
+  it('places Platforms and Labs before MIDI Hub and renders MIDI Hub as a wide hero card', async () => {
+    const { container } = renderHome(
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>,
+    )
+
+    await screen.findByText('MAP2-TESTBED')
+
+    const overlayGroups = Array.from(container.querySelectorAll('.hp-hero__card-overlay .hp-group')).map((group) =>
+      group.getAttribute('aria-label'),
+    )
+
+    expect(overlayGroups).toEqual([
+      'Audio Grid interfaces',
+      'System interfaces',
+      'MIDI interfaces',
+    ])
+
+    expect(screen.getByRole('listitem', { name: 'Open MIDI Hub' }).classList.contains('hp-card--wide')).toBe(true)
+    expect(screen.getByRole('listitem', { name: 'Open Platforms and Labs' }).classList.contains('hp-card--wide')).toBe(false)
+  })
+
   it('renders the local node tile from host and network APIs when peers fail', async () => {
     ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
       async (input: RequestInfo | URL) => {

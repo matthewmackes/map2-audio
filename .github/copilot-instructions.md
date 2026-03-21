@@ -204,7 +204,7 @@ When adding significant updates, append to this log:
 - Audio interface with ALSA support
 
 **Port Assignments:**
-- `3000`: Frontend production server (vite preview)
+- `3000`: Frontend production server (`scripts/serve_web_dist.mjs` via `npm run serve` / `npm run preview`)
 - `8080`: Backend API server (uvicorn)
 - `3001`: ❌ NOT USED (reserved but unused)
 
@@ -340,7 +340,7 @@ ls -lh web/dist/assets/*.js | wc -l
 - **File**: `WEB_SERVER_PORTS.md`
 - **Why**: Defines production-only server setup (no dev server, only port 3000)
 - **Key Rules**:
-  - Only use `vite preview` for production builds, never `vite dev`
+  - Only use the dedicated production web server on port `3000` (`npm run serve` / `scripts/serve_web_dist.mjs`), never `vite dev`
   - NO port 3001 (no dev server)
   - NO HMR (hot module replacement)
 
@@ -373,7 +373,7 @@ sleep 5 && curl http://localhost:3000/
 npx vite --port 3001
 
 # NEVER run server without nohup/background
-npx vite preview --port 3000
+npm run serve
 ```
 
 ### ✅ CORRECT Pattern
@@ -384,7 +384,7 @@ npx vite preview --port 3000
 kill -9 $(pgrep -f "uvicorn app.main") 2>/dev/null
 
 # Kill old frontend
-kill $(pgrep -f "vite preview") 2>/dev/null
+pkill -f "serve_web_dist.mjs" 2>/dev/null
 pkill -9 npm 2>/dev/null
 ```
 
@@ -395,8 +395,7 @@ cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
   --host 0.0.0.0 --port 8080 > /tmp/uvicorn.log 2>&1 &
 
 # Frontend Web (port 3000)
-cd /home/mm/map2-audio/web && nohup npx vite preview \
-  --port 3000 --host 0.0.0.0 > /tmp/preview.log 2>&1 &
+cd /home/mm/map2-audio/web && nohup npm run serve > /tmp/preview.log 2>&1 &
 ```
 
 #### 3. Check Status (NOT sleep)
@@ -461,7 +460,7 @@ grep -rn 'YourComponent' web/src/app/ --include='*.tsx' --include='*.ts'
 
 | Port | Purpose | Server | Command |
 |------|---------|--------|---------|
-| 3000 | Frontend (production) | Vite preview | `npx vite preview --port 3000 --host 0.0.0.0` |
+| 3000 | Frontend (production) | MAP2 production web server | `cd /home/mm/map2-audio/web && npm run serve` |
 | 8080 | Backend API | Uvicorn | `python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080` |
 | 3001 | ❌ NOT USED | None | Never use this port |
 
@@ -507,7 +506,7 @@ grep -rn 'YourComponent' web/src/app/ --include='*.tsx' --include='*.ts'
 ls -lh /home/mm/map2-audio/web/dist/index.html
 
 # Layer 2: Server process running?
-ps aux | grep "vite preview" | grep -v grep
+ps aux | grep "serve_web_dist.mjs" | grep -v grep
 
 # Layer 3: Server responding?
 curl -s -I http://localhost:3000/
@@ -989,7 +988,7 @@ These files represent best practices and architectural patterns to follow:
 **5. Port Conflicts on Restart**
 - **Problem**: `ERROR: [Errno 98] address already in use`
 - **Cause**: Old server process still bound to port
-- **Fix**: `kill -9 $(pgrep -f "vite preview")` before starting new server
+- **Fix**: `kill -9 $(lsof -ti:3000)` or `pkill -9 -f "serve_web_dist.mjs"` before starting new server
 - **Why -9**: Graceful kill sometimes doesn't release port fast enough
 
 **6. Dist Folder Deleted Mid-Build**
@@ -1466,7 +1465,7 @@ curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js'
 ```bash
 # Kill everything
 kill -9 $(pgrep -f "uvicorn") 2>/dev/null
-pkill -9 -f "vite preview" 2>/dev/null
+pkill -9 -f "serve_web_dist.mjs" 2>/dev/null
 pkill -9 npm 2>/dev/null
 
 # Start backend
@@ -1474,8 +1473,7 @@ cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
   --host 0.0.0.0 --port 8080 > /tmp/uvicorn.log 2>&1 &
 
 # Start frontend
-cd /home/mm/map2-audio/web && nohup npx vite preview \
-  --port 3000 --host 0.0.0.0 > /tmp/preview.log 2>&1 &
+cd /home/mm/map2-audio/web && nohup npm run serve > /tmp/preview.log 2>&1 &
 
 # Check status
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health
@@ -1529,7 +1527,7 @@ systemctl --user status pipewire
 
 ### 2. Dev Server
 ❌ `npx vite --port 3001`  
-✅ `npx vite preview --port 3000` (production build only)
+✅ `cd /home/mm/map2-audio/web && npm run serve`
 
 ### 3. Manual Server Restarts
 ❌ Restarting server after every build  

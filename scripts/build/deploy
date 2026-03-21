@@ -39,11 +39,11 @@ info()  { echo -e "${CYAN}→${NC} $*"; }
 header(){ echo -e "\n${BOLD}$*${NC}"; }
 
 port_pids() {
-    lsof -i :"$PROD_PORT" -sTCP:LISTEN -t 2>/dev/null
+    lsof -i :"$PROD_PORT" -sTCP:LISTEN -t 2>/dev/null || true
 }
 
-service_substate() {
-    systemctl show -p SubState --value "$SERVICE_NAME" 2>/dev/null || true
+service_active_state() {
+    systemctl show -p ActiveState --value "$SERVICE_NAME" 2>/dev/null || true
 }
 
 wait_for_port_release() {
@@ -62,7 +62,12 @@ wait_for_service_stop() {
     local timeout_seconds=${1:-10}
     local deadline=$((SECONDS + timeout_seconds))
 
-    while systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null || [[ "$(service_substate)" == "deactivating" ]]; do
+    while true; do
+        local active_state
+        active_state=$(service_active_state)
+        if [[ -z "$active_state" || "$active_state" == "inactive" || "$active_state" == "failed" ]]; then
+            return 0
+        fi
         if (( SECONDS >= deadline )); then
             return 1
         fi
@@ -129,14 +134,20 @@ stop_prod() {
     info "Stopping production server..."
 
     # Try systemd first
-    if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
-        sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+    local active_state
+    active_state=$(service_active_state)
+    if [[ "$active_state" == "active" || "$active_state" == "activating" || "$active_state" == "deactivating" ]]; then
+        sudo systemctl stop --no-block "$SERVICE_NAME" 2>/dev/null || true
         if wait_for_service_stop 10; then
             log "Stopped $SERVICE_NAME service"
         else
             warn "$SERVICE_NAME stop timed out; sending SIGKILL to the unit"
             sudo systemctl kill --signal=KILL "$SERVICE_NAME" 2>/dev/null || true
-            wait_for_service_stop 5 || true
+            if ! wait_for_service_stop 5; then
+                err "$SERVICE_NAME did not stop cleanly after SIGKILL"
+                return 1
+            fi
+            log "Stopped $SERVICE_NAME service after forced kill"
         fi
     fi
 

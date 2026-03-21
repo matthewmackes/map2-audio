@@ -19,6 +19,7 @@ import {
   normalizePinnedRoutes,
   type AdvancedMenuItem,
   type HardwareInterfaceMenuItem,
+  type NavigationHomeSection,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import { useNodePageContext } from '../hooks/useNodePageContext'
@@ -111,6 +112,9 @@ interface ClusterDiscoveredResponse {
 interface DeploymentModeResponse {
   mode?: string
 }
+
+const HERO_SECTION_ORDER: NavigationHomeSection[] = ['Audio Grid', 'AVB', 'System', 'MIDI', 'Hardware']
+const HERO_SECTION_INDEX = new Map(HERO_SECTION_ORDER.map((title, index) => [title, index]))
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -328,6 +332,10 @@ function clusterDotClass(status: ClusterTile['status']): string {
     maintenance: '#525252',
   }
   return colors[status] ?? '#525252'
+}
+
+function sectionSlug(title: NavigationHomeSection): string {
+  return title.toLowerCase().replace(/\s+/g, '-')
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -561,7 +569,13 @@ export function HomePage() {
   // ── Visible sections (non-empty only) ──────────────────────────────────────
 
   const visibleSections = useMemo(
-    () => homeNavigationTabSections.filter((s) => s.items.length > 0),
+    () => homeNavigationTabSections
+      .filter((s) => s.items.length > 0)
+      .sort(
+        (left, right) =>
+          (HERO_SECTION_INDEX.get(left.title) ?? Number.MAX_SAFE_INTEGER) -
+          (HERO_SECTION_INDEX.get(right.title) ?? Number.MAX_SAFE_INTEGER),
+      ),
     [],
   )
 
@@ -621,154 +635,169 @@ export function HomePage() {
             CARD OVERLAY — wireframe cards float over hero artwork
             ══════════════════════════════════════════════════════════ */}
         <div className="hp-hero__card-overlay" aria-label="Navigation cards">
-          {visibleSections.map((section) => (
-            <section key={section.title} className="hp-group" aria-label={`${section.title} interfaces`}>
-              {/* ── Group heading (hidden in overlay via CSS) ── */}
-              <div className="hp-group__heading">
-                <h2 className="hp-group__title">{section.title}</h2>
-                <span className="hp-group__count">{section.items.length}</span>
-              </div>
+          {visibleSections.map((section) => {
+            const isWideSingleSection = section.items.length === 1 && section.items[0]?.to === '/midi-hub'
+            const isSingleCardSection = section.items.length === 1
+            const gridClasses = [
+              'hp-card-grid',
+              isWideSingleSection ? 'hp-card-grid--wide-single' : '',
+              !isWideSingleSection && isSingleCardSection ? 'hp-card-grid--single' : '',
+            ].filter(Boolean).join(' ')
 
-              {/* ── 4-up card grid ── */}
-              <div className="hp-card-grid" role="list" aria-label={`${section.title} navigation cards`}>
-                {section.items.map((item) => {
-                const cardId = `${item.to}-${item.label}`
-                const isBlocked = isBlockedHomeItem(item)
-                const isPinned = pinnedRouteSet.has(item.to)
-                const limitReached = !isPinned && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
-                const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
-                const maturityMeta = navigationMaturityMeta[item.maturity]
-                const profile = resolveHomeCardProfile(item)
-                const isExpanded = expandedCardId === cardId
-                const Icon = item.icon
+            return (
+              <section
+                key={section.title}
+                className={`hp-group hp-group--${sectionSlug(section.title)}`}
+                aria-label={`${section.title} interfaces`}
+              >
+                {/* ── Group heading (hidden in overlay via CSS) ── */}
+                <div className="hp-group__heading">
+                  <h2 className="hp-group__title">{section.title}</h2>
+                  <span className="hp-group__count">{section.items.length}</span>
+                </div>
 
-                return (
-                  <article
-                    key={cardId}
-                    role="listitem"
-                    className={`hp-card${isBlocked ? ' is-blocked' : ''}${item.to === '/juce-grid' ? ' hp-card--wide' : ''}`}
-                    onClick={() => {
-                      if (!isBlocked) openHomeItem(item)
-                    }}
-                    onKeyDown={(e) => {
-                      if ((e.key === 'Enter' || e.key === ' ') && !isBlocked) {
-                        e.preventDefault()
-                        openHomeItem(item)
-                      }
-                    }}
-                    tabIndex={0}
-                    aria-label={`Open ${item.label}`}
-                  >
-                    {item.pinnable ? (
-                      <button
-                        type="button"
-                        className={`hp-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (!pinDisabled) void handleTogglePin(item, !isPinned)
-                        }}
-                        title={
-                          limitReached
-                            ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned`
-                            : isPinned
-                              ? 'Unpin from navigation'
-                              : 'Pin to navigation'
-                        }
-                        aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                        aria-pressed={isPinned}
-                        disabled={pinDisabled}
-                      >
-                        {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
-                      </button>
-                    ) : null}
+                {/* ── 4-up card grid ── */}
+                <div className={gridClasses} role="list" aria-label={`${section.title} navigation cards`}>
+                  {section.items.map((item) => {
+                    const cardId = `${item.to}-${item.label}`
+                    const isBlocked = isBlockedHomeItem(item)
+                    const isPinned = pinnedRouteSet.has(item.to)
+                    const limitReached = !isPinned && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
+                    const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
+                    const maturityMeta = navigationMaturityMeta[item.maturity]
+                    const profile = resolveHomeCardProfile(item)
+                    const isExpanded = expandedCardId === cardId
+                    const Icon = item.icon
+                    const isWideCard = item.to === '/juce-grid' || item.to === '/midi-hub'
 
-                    {/* Icon */}
-                    <Icon className="hp-card__icon" aria-hidden />
-
-                    {/* Maturity badge */}
-                    <span
-                      className={`hp-card__maturity hp-card__maturity--${item.maturity}`}
-                      title={maturityMeta.description}
-                    >
-                      {maturityMeta.label}
-                    </span>
-
-                    {/* Label */}
-                    <h3 className="hp-card__label">{item.label}</h3>
-
-                    {/* Description */}
-                    <p className="hp-card__desc">{item.description}</p>
-
-                    {/* Footer actions */}
-                    <div className="hp-card__footer">
-                      <button
-                        type="button"
-                        className="hp-card__open-btn"
-                        disabled={isBlocked}
-                        onClick={(e) => {
-                          e.stopPropagation()
+                    return (
+                      <article
+                        key={cardId}
+                        role="listitem"
+                        className={`hp-card${isBlocked ? ' is-blocked' : ''}${isWideCard ? ' hp-card--wide' : ''}`}
+                        onClick={() => {
                           if (!isBlocked) openHomeItem(item)
                         }}
-                      >
-                        Open Interface
-                      </button>
-
-                      <button
-                        type="button"
-                        className="hp-card__details-btn"
-                        aria-expanded={isExpanded}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setExpandedCardId((current) => (current === cardId ? null : cardId))
+                        onKeyDown={(e) => {
+                          if ((e.key === 'Enter' || e.key === ' ') && !isBlocked) {
+                            e.preventDefault()
+                            openHomeItem(item)
+                          }
                         }}
+                        tabIndex={0}
+                        aria-label={`Open ${item.label}`}
                       >
-                        {isExpanded ? (
-                          <>
-                            <ChevronUp size={14} aria-hidden /> Less
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown size={14} aria-hidden /> Details
-                          </>
+                        {item.pinnable ? (
+                          <button
+                            type="button"
+                            className={`hp-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (!pinDisabled) void handleTogglePin(item, !isPinned)
+                            }}
+                            title={
+                              limitReached
+                                ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned`
+                                : isPinned
+                                  ? 'Unpin from navigation'
+                                  : 'Pin to navigation'
+                            }
+                            aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                            aria-pressed={isPinned}
+                            disabled={pinDisabled}
+                          >
+                            {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
+                          </button>
+                        ) : null}
+
+                        {/* Icon */}
+                        <Icon className="hp-card__icon" aria-hidden />
+
+                        {/* Maturity badge */}
+                        <span
+                          className={`hp-card__maturity hp-card__maturity--${item.maturity}`}
+                          title={maturityMeta.description}
+                        >
+                          {maturityMeta.label}
+                        </span>
+
+                        {/* Label */}
+                        <h3 className="hp-card__label">{item.label}</h3>
+
+                        {/* Description */}
+                        <p className="hp-card__desc">{item.description}</p>
+
+                        {/* Footer actions */}
+                        <div className="hp-card__footer">
+                          <button
+                            type="button"
+                            className="hp-card__open-btn"
+                            disabled={isBlocked}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (!isBlocked) openHomeItem(item)
+                            }}
+                          >
+                            Open Interface
+                          </button>
+
+                          <button
+                            type="button"
+                            className="hp-card__details-btn"
+                            aria-expanded={isExpanded}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedCardId((current) => (current === cardId ? null : cardId))
+                            }}
+                          >
+                            {isExpanded ? (
+                              <>
+                                <ChevronUp size={14} aria-hidden /> Less
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown size={14} aria-hidden /> Details
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Expandable detail panel */}
+                        {isExpanded && (
+                          <div className="hp-card__detail-panel" role="note">
+                            <div>
+                              <p className="hp-card__detail-heading">Capabilities</p>
+                              <ul className="hp-card__detail-list">
+                                {profile.capabilities.slice(0, 4).map((cap) => (
+                                  <li key={`${cardId}-${cap}`}>{cap}</li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            <div>
+                              <p className="hp-card__detail-heading">Workflow notes</p>
+                              <p className="hp-card__detail-body">{profile.learnMore}</p>
+                            </div>
+
+                            <div>
+                              <p className="hp-card__best-for-label">Best for</p>
+                              <p className="hp-card__best-for-value">{profile.bestFor}</p>
+                            </div>
+
+                            {item.gatedReason && (
+                              <p className="hp-card__detail-body" style={{ color: '#ffd7d9' }}>
+                                {item.gatedReason}
+                              </p>
+                            )}
+                          </div>
                         )}
-                      </button>
-                    </div>
-
-                    {/* Expandable detail panel */}
-                    {isExpanded && (
-                      <div className="hp-card__detail-panel" role="note">
-                        <div>
-                          <p className="hp-card__detail-heading">Capabilities</p>
-                          <ul className="hp-card__detail-list">
-                            {profile.capabilities.slice(0, 4).map((cap) => (
-                              <li key={`${cardId}-${cap}`}>{cap}</li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div>
-                          <p className="hp-card__detail-heading">Workflow notes</p>
-                          <p className="hp-card__detail-body">{profile.learnMore}</p>
-                        </div>
-
-                        <div>
-                          <p className="hp-card__best-for-label">Best for</p>
-                          <p className="hp-card__best-for-value">{profile.bestFor}</p>
-                        </div>
-
-                        {item.gatedReason && (
-                          <p className="hp-card__detail-body" style={{ color: '#ffd7d9' }}>
-                            {item.gatedReason}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </article>
-                )
-              })}
-            </div>
-          </section>
-        ))}
+                      </article>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })}
         </div>{/* end hp-hero__card-overlay */}
       </header>
 
