@@ -280,6 +280,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     }, { replace: true })
   }
 
+  const handlePlatformRouteLaunch = (to: string) => {
+    setPlatformModalOpen(false)
+    navigate(to)
+  }
+
   const handlePlatformNavigate = (params: { layer?: PlatformLayerId; panel?: StandalonePanel } | null) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
@@ -943,6 +948,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             initialLayer={initialLayer}
             initialPanel={initialPanel}
             onNavigate={handlePlatformNavigate}
+            onLaunchRoute={handlePlatformRouteLaunch}
             onClose={handlePlatformModalClose}
           />
         </div>

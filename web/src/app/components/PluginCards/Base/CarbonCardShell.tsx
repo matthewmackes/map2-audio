@@ -188,20 +188,25 @@ export function CarbonCardShell({
       {advancedSections && advancedSections.length > 0 && (
         <div className="carbon-card-advanced">
           <Accordion>
-            {advancedSections.map(section => (
-              <AccordionItem
-                key={section.id}
-                title={
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {section.icon}
-                    {section.title}
-                  </span>
-                }
-                open={section.defaultOpen}
-              >
-                {section.children}
-              </AccordionItem>
-            ))}
+            {advancedSections.map((section) => {
+              const isMoreSection = section.title.trim().toLowerCase() === 'more'
+
+              return (
+                <AccordionItem
+                  key={section.id}
+                  className={isMoreSection ? 'carbon-card-accordion-item--more' : undefined}
+                  title={
+                    <span className="carbon-card-accordion-title">
+                      {section.icon}
+                      {section.title}
+                    </span>
+                  }
+                  open={section.defaultOpen}
+                >
+                  {section.children}
+                </AccordionItem>
+              )
+            })}
           </Accordion>
         </div>
       )}

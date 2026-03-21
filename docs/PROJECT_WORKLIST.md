@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 12:04 EDT - Codex (Completed `T247` for scoped landing-route transitions and reduced-effects preferences.)
+Last updated: 2026-03-21 15:23 EDT - Codex (Completed `T251` for full commit/push and frontend rebuild/restart.)
 
 ## Active Blockers Only
 
@@ -2864,3 +2864,56 @@ Last updated: 2026-03-21 11:50 EDT - Codex
   - Added or refreshed focused coverage in `web/src/app/layout/AppShell.test.tsx`, `web/src/app/components/Platform/PlatformModal.test.tsx`, `web/src/app/pages/HomePage.test.tsx`, and `web/src/app/data/advancedMenuItems.test.ts` for the unified trigger, labs workspace, home-card opening flow, and updated navigation metadata.
   - Validation: `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx src/app/components/Platform/PlatformModal.test.tsx src/app/pages/HomePage.test.tsx src/app/data/advancedMenuItems.test.ts` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass.
   - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T249
+Status: [✓] Done
+Title: Restore Labs tile launches from the unified Platforms and Labs modal
+Description:
+- Goal / acceptance criteria: Make every non-blocked item in the `Labs` workspace of the unified `Platforms and Labs` modal launch its target route reliably, without the modal-close flow swallowing or racing the route transition. Add focused regression coverage for at least one Labs route launch path from the modal host.
+- Why it matters: The new unified launcher shipped under `T248`, but the user reports that Labs entries do not open, which breaks the primary entry path for former Advanced workflows.
+- Dependencies: T248, `web/src/app/layout/AppShell.tsx`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Platform/LabsWorkspace.tsx`, focused frontend tests, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: Stable Labs launch callback wiring, focused automated regression coverage, validation notes, and updated worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 14:35 EDT - Codex
+- Completion notes:
+  - Moved Labs route launching out of `web/src/app/components/Platform/LabsWorkspace.tsx` and into the stable shell host path by threading an explicit launch callback through `web/src/app/components/Platform/PlatformModal.tsx` and `web/src/app/layout/AppShell.tsx`, so closing the unified modal no longer races the route transition.
+  - Added focused regression coverage in `web/src/app/components/Platform/PlatformModal.test.tsx` to verify that clicking a non-blocked Labs tile delegates the correct target route upward, and in `web/src/app/layout/AppShell.test.tsx` to verify the host callback closes the modal and navigates to the requested route.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/layout/AppShell.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, reused the repository license/notices evidence from the current scan (`rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`), and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T250
+Status: [✓] Done
+Title: Emphasize effect-card `More` accordions and enlarge numeric controls
+Description:
+- Goal / acceptance criteria: Update the shared effect parameter card shell so every `More` accordion trigger reads with Carbon primary-button colors by default, and enlarge the numeric input controls used inside effect parameter cards by 100px without increasing text size.
+- Why it matters: The current `More` affordance is visually understated, and the numeric controls inside the effect cards are too small for fast scan and touch/mouse precision.
+- Dependencies: `web/src/app/components/PluginCards/Base/CarbonCardShell.tsx`, `web/src/app/components/PluginCards/Base/carbonCardStyles.css`, shared `NumericInput` usage inside effect cards, and focused frontend validation.
+- Estimated effort: Low
+- Required outputs: Scoped Carbon effect-card styling updates, no unintended typography growth in numeric fields, validation notes, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 15:18 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/PluginCards/Base/CarbonCardShell.tsx` so advanced sections titled `More` are tagged explicitly, letting the shared shell emphasize that trigger without changing unrelated accordions.
+  - Updated `web/src/app/components/PluginCards/Base/carbonCardStyles.css` so `More` accordions now use Carbon primary-button colors by default and numeric inputs inside `.carbon-card` gain an extra `100px` of width while preserving the existing field and label font sizes.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing dynamic-import/chunk-size warnings only).
+  - Licensing: Classified the touched files as MAP2-owned AGPL-covered frontend/worklist code, reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T251
+Status: [✓] Done
+Title: Commit all pending frontend changes, push both remotes, and restart port 3000
+Description:
+- Goal / acceptance criteria: Stage and commit the entire current worktree, push `master` to both `origin` and `gitlab`, rebuild the frontend production bundle, and restart the production `vite preview` server on port `3000` using the documented nohup/background pattern.
+- Why it matters: The user explicitly requested the full sync/deploy loop rather than a local-only code change, so repository state and the running frontend need to match.
+- Dependencies: Clean enough git state to commit, reachable `origin` and `gitlab` remotes, successful frontend production build, and ability to replace the existing `vite preview` process on port `3000`.
+- Estimated effort: Low
+- Required outputs: Single commit covering the full current worktree, successful pushes to both remotes, confirmed frontend build, restarted port `3000` server, verification notes, and updated worklist status.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-21 15:23 EDT - Codex
+- Completion notes:
+  - Rebuilt the frontend with `npm --prefix web run build`, which refreshed the generated version artifacts and completed successfully with the repo's existing dynamic-import and chunk-size warnings only.
+  - Replaced the previous `vite preview` tree on port `3000` with a fresh background process using the documented nohup pattern; the new listener is PID `660949`.
+  - Verification: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/` -> `200`; `curl -s http://localhost:3000/ | grep -o 'index-[^"]*\\.js' | head -1` -> `index-CJl1HjmH.js`.

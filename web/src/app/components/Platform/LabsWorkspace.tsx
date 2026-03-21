@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, ChevronUp } from '@carbon/icons-react'
 import { Tag } from '@carbon/react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import {
   MAX_PINNED_NAV_ITEMS,
@@ -65,17 +65,16 @@ interface LabsWorkspaceProps {
   pinnedRouteSet: Set<string>
   pinningDisabled: boolean
   onTogglePin: (item: LabsMenuItem, checked: boolean) => void | Promise<void>
-  onLaunch: () => void
+  onLaunchRoute: (to: string) => void
 }
 
 export function LabsWorkspace({
   pinnedRouteSet,
   pinningDisabled,
   onTogglePin,
-  onLaunch,
+  onLaunchRoute,
 }: LabsWorkspaceProps) {
   const location = useLocation()
-  const navigate = useNavigate()
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
 
@@ -124,8 +123,7 @@ export function LabsWorkspace({
       return
     }
 
-    navigate(item.to)
-    onLaunch()
+    onLaunchRoute(item.to)
   }
 
   const renderLabsSectionDetail = (item: LabsMenuItem, sectionTitle: string) => {

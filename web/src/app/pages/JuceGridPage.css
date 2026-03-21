@@ -3493,7 +3493,7 @@
 }
 
 .juce-grid-page__signal-plugin-card.is-bypassed .juce-grid-page__signal-plugin-hero-svg {
-  opacity: 0.25;
+  opacity: 0.16;
 }
 
 .juce-grid-page__signal-plugin-card.is-drop-target {
@@ -3528,7 +3528,7 @@
 }
 
 .juce-grid-page__signal-plugin-card:hover .juce-grid-page__signal-plugin-hero-svg {
-  transform: scale(1.02);
+  transform: translate(0.42rem, -0.28rem) scale(1.02);
 }
 
 .juce-grid-page__signal-plugin-card.is-selected,
@@ -3540,23 +3540,44 @@
 
 .juce-grid-page__signal-plugin-face {
   position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   gap: 0.45rem;
   flex: 1 1 auto;
   min-block-size: 0;
   padding: 0.45rem 0.55rem 0.55rem 0.7rem;
+  isolation: isolate;
+}
+
+.juce-grid-page__signal-plugin-face::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  block-size: 52%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, #161616 24%, transparent) 28%,
+    color-mix(in srgb, #161616 88%, transparent) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ── Hero icon area: fills top portion, centered ── */
 
 .juce-grid-page__signal-plugin-hero {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
-  justify-content: stretch;
+  justify-content: center;
   min-block-size: 0;
-  padding: 0.1rem 0 0;
+  padding: 0;
   overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .juce-grid-page__signal-plugin-hero-image {
@@ -3567,42 +3588,55 @@
   inline-size: 100%;
   block-size: 100%;
   min-block-size: 0;
-  padding: 0.35rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.012) 0%, rgba(255, 255, 255, 0.004) 100%),
-    color-mix(in srgb, #161616 95%, var(--juce-grid-signal-accent) 5%);
-  border: 1px solid color-mix(in srgb, var(--juce-grid-signal-accent) 16%, rgba(244, 244, 244, 0.06));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
-  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  padding: 0;
+  background: radial-gradient(
+    circle at 52% 34%,
+    color-mix(in srgb, var(--juce-grid-signal-accent) 14%, transparent) 0%,
+    transparent 72%
+  );
+  border: none;
+  box-shadow: none;
+  transition: background 160ms ease, opacity 160ms ease;
 }
 
 .juce-grid-page__signal-plugin-card.is-bypassed .juce-grid-page__signal-plugin-hero-image {
-  background: var(--juce-grid-signal-shell-background-bypassed);
+  background: radial-gradient(
+    circle at 52% 34%,
+    color-mix(in srgb, var(--juce-grid-signal-accent) 6%, transparent) 0%,
+    transparent 72%
+  );
 }
 
 .juce-grid-page__signal-plugin-hero-svg {
   position: relative;
-  z-index: 1;
+  z-index: 0;
   display: block;
-  width: min(80%, 5rem);
-  height: min(80%, 5rem);
+  inline-size: clamp(5.75rem, 74%, 7rem);
+  block-size: auto;
+  aspect-ratio: 1 / 1;
   color: color-mix(in srgb, var(--juce-grid-signal-accent) 72%, #161616);
   fill: currentColor;
-  opacity: 0.94;
+  opacity: 0.24;
+  transform: translate(0.42rem, -0.28rem);
   transition: transform 160ms ease, opacity 160ms ease;
 }
 
 .juce-grid-page__signal-plugin-card.is-selected .juce-grid-page__signal-plugin-hero-svg {
-  opacity: 1;
+  opacity: 0.34;
 }
 
 .juce-grid-page__signal-plugin-card.is-selected .juce-grid-page__signal-plugin-hero-image,
 .juce-grid-page__signal-plugin-card:focus-visible .juce-grid-page__signal-plugin-hero-image {
-  border-color: color-mix(in srgb, var(--juce-grid-signal-accent) 28%, rgba(244, 244, 244, 0.06));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 8%, transparent);
+  background: radial-gradient(
+    circle at 52% 34%,
+    color-mix(in srgb, var(--juce-grid-signal-accent) 20%, transparent) 0%,
+    transparent 72%
+  );
 }
 
 .juce-grid-page__signal-plugin-copy {
+  position: relative;
+  z-index: 1;
   gap: 0.14rem;
   min-width: 0;
 }
@@ -3681,7 +3715,11 @@
 
 .juce-grid-page__signal-plugin-card.is-selected.is-bypassed .juce-grid-page__signal-plugin-hero-image,
 .juce-grid-page__signal-plugin-card.is-bypassed:focus-visible .juce-grid-page__signal-plugin-hero-image {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--juce-grid-signal-accent) 6%, transparent);
+  background: radial-gradient(
+    circle at 52% 34%,
+    color-mix(in srgb, var(--juce-grid-signal-accent) 10%, transparent) 0%,
+    transparent 72%
+  );
 }
 
 .juce-grid-page__signal-plugin-add {

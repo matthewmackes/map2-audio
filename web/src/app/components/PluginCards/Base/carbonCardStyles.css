@@ -26,6 +26,7 @@
 .carbon-card {
   width: min(100%, var(--category-card-width, var(--carbon-card-width)));
   max-width: 100%;
+  --effect-card-numeric-input-extra-width: 100px;
   overflow: hidden;
   background: var(--cds-layer, #161616);
   border: 1px solid var(--cds-border-subtle, #393939);
@@ -229,6 +230,24 @@
   justify-content: center;
 }
 
+/* ==================== Effect Card Numeric Inputs ==================== */
+
+.carbon-card .numeric-input {
+  min-width: calc(7.5rem + var(--effect-card-numeric-input-extra-width));
+}
+
+.carbon-card .numeric-input--small {
+  min-width: calc(5.5rem + var(--effect-card-numeric-input-extra-width));
+}
+
+.carbon-card .numeric-input--large {
+  min-width: calc(9rem + var(--effect-card-numeric-input-extra-width));
+}
+
+.carbon-card .numeric-input--responsive {
+  min-width: clamp(12.25rem, calc(12vw + var(--effect-card-numeric-input-extra-width)), 14.25rem);
+}
+
 /* ==================== Carbon Accordion Overrides ==================== */
 
 .carbon-card .cds--accordion {
@@ -256,6 +275,12 @@
   background: #262626;
 }
 
+.carbon-card-accordion-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .carbon-card .cds--accordion__title {
   font-size: 12px;
   font-weight: 600;
@@ -271,6 +296,37 @@
 .carbon-card .cds--accordion__content {
   padding: var(--carbon-spacing-04);
   background: #1a1a1a;
+}
+
+.carbon-card .carbon-card-accordion-item--more {
+  border-top-color: color-mix(in srgb, var(--cds-button-primary, #0f62fe) 48%, #000);
+}
+
+.carbon-card .carbon-card-accordion-item--more .cds--accordion__heading {
+  min-height: 48px;
+  padding: var(--carbon-spacing-04) var(--carbon-spacing-05);
+  color: var(--cds-text-on-color, #ffffff);
+  background: var(--cds-button-primary, #0f62fe);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--cds-button-primary, #0f62fe) 68%, #000);
+}
+
+.carbon-card .carbon-card-accordion-item--more .cds--accordion__heading:hover,
+.carbon-card .carbon-card-accordion-item--more .cds--accordion__heading:focus-visible {
+  background: var(--cds-button-primary-hover, #0353e9);
+}
+
+.carbon-card .carbon-card-accordion-item--more .cds--accordion__title {
+  color: var(--cds-text-on-color, #ffffff);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.carbon-card .carbon-card-accordion-item--more .cds--accordion__arrow {
+  fill: var(--cds-text-on-color, #ffffff);
+}
+
+.carbon-card .carbon-card-accordion-item--more .cds--accordion__content {
+  border-top: 1px solid color-mix(in srgb, var(--cds-button-primary, #0f62fe) 32%, #000);
 }
 
 /* ==================== Carbon Toggle Overrides (Bypass) ==================== */

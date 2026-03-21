@@ -42,6 +42,7 @@ import {
 } from '@carbon/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import '../../pages/PlatformShellPage.css'
 import {
@@ -634,11 +635,14 @@ export interface PlatformModalContentProps {
   initialPanel?: StandalonePanel | null
   /** Called when the user navigates to a layer/panel (for URL sync). */
   onNavigate?: (params: { layer?: PlatformLayerId; panel?: StandalonePanel } | null) => void
+  /** Called when the user launches a Labs route from the unified modal host. */
+  onLaunchRoute?: (to: string) => void
   /** Called when user clicks the × close button. */
   onClose: () => void
 }
 
-export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, onClose }: PlatformModalContentProps) {
+export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, onLaunchRoute, onClose }: PlatformModalContentProps) {
+  const navigate = useNavigate()
   const { settings: specialSettings, isLoading: specialSettingsLoading, updateSettings } = useSpecialSettings()
   const { layers, layerHealth: nextLayerHealth, summaryMetrics: nextSummaryMetrics, alerts: nextAlerts } = usePlatformShellData()
   const activeLayerId = usePlatformActiveLayer()
@@ -736,6 +740,16 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
     onNavigate?.(null)
   }
 
+  const handleLaunchRoute = (to: string) => {
+    if (onLaunchRoute) {
+      onLaunchRoute(to)
+      return
+    }
+
+    navigate(to)
+    onClose()
+  }
+
   const showStandalone = activePanel !== null
   const showLayer = !activeLabs && !showStandalone && activeLayer !== null
   const activeId = activeLabs ? 'labs' : (activePanel ?? activeLayerId)
@@ -775,7 +789,7 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
                     pinnedRouteSet={pinnedRouteSet}
                     pinningDisabled={specialSettingsLoading}
                     onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
-                    onLaunch={onClose}
+                    onLaunchRoute={handleLaunchRoute}
                   />
                 )}
                 {showStandalone && activePanel && (

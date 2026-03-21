@@ -5,10 +5,6 @@ import { CATEGORY_COLOR_OVERRIDE_STORAGE_KEY } from '../data/categoryStyles'
 import { REDUCED_EFFECTS_STORAGE_KEY, useEffectsSettingsStore } from '../stores/effectsSettingsStore'
 import { ThemePage } from './ThemePage'
 
-jest.mock('../components/ThemeChooserModal', () => ({
-  ThemeChooserModal: () => null,
-}))
-
 describe('ThemePage', () => {
   beforeEach(() => {
     window.localStorage.clear()
@@ -29,11 +25,13 @@ describe('ThemePage', () => {
     })
   })
 
-  it('renders the dedicated Theme platform workspace', () => {
+  it('renders the dedicated Theme platform workspace with inline studio controls', () => {
     render(<ThemePage />)
 
     expect(screen.getByRole('heading', { name: 'Theme' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /open theme studio/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /theme library/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /suggested directions/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /theme studio/i })).toBeTruthy()
     expect(screen.getByRole('heading', { name: /platform gui font/i })).toBeTruthy()
     expect(screen.getByRole('heading', { name: /category color theming/i })).toBeTruthy()
   })
@@ -62,6 +60,20 @@ describe('ThemePage', () => {
     return waitFor(() => {
       expect(window.localStorage.getItem('map2.platform-font-preset.v1')).toBe('roboto')
       expect(document.documentElement.style.getPropertyValue('--font-ui')).toContain('Roboto')
+    })
+  })
+
+  it('saves and applies a custom theme from the inline studio', async () => {
+    render(<ThemePage />)
+
+    fireEvent.change(screen.getByLabelText(/custom theme name/i), {
+      target: { value: 'Ops Deck' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /save and apply custom theme/i }))
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem('custom-themes')).toContain('Ops Deck')
+      expect(window.localStorage.getItem('theme')).toContain('custom-')
     })
   })
 })

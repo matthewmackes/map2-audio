@@ -131,4 +131,24 @@ describe('PlatformModalContent', () => {
     expect(screen.getByText('Tesira AVB')).toBeTruthy()
     expect(screen.getByText('Blocked / Lab')).toBeTruthy()
   })
+
+  it('delegates Labs route launches to the modal host callback', () => {
+    const handleLaunchRoute = jest.fn()
+
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <PlatformModalContent onClose={() => undefined} onLaunchRoute={handleLaunchRoute} />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Labs workspace' }))
+    fireEvent.click(screen.getByRole('button', { name: 'MIDI Hub' }))
+
+    expect(handleLaunchRoute).toHaveBeenCalledWith('/midi-hub')
+  })
 })

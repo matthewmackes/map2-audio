@@ -167,6 +167,31 @@ function ParameterControl({ param, value, onChange }: ParameterControlProps) {
   );
 }
 
+function syncSelectedPluginNodeState<
+  T extends {
+    type?: string;
+    data?: Record<string, any>;
+    selected?: boolean;
+  }
+>(nodes: T[], selectedPlugin: ChainPlugin | null): T[] {
+  return nodes.map((node) => {
+    if (node.type !== 'audioPlugin' || !node.data?.plugin) {
+      return node;
+    }
+
+    const isSelected = Boolean(selectedPlugin && samePluginIdentity(node.data.plugin, selectedPlugin));
+
+    return {
+      ...node,
+      selected: isSelected,
+      data: {
+        ...node.data,
+        isSelected,
+      },
+    };
+  });
+}
+
 export default function ChainBuilder() {
   const [chains, setChains] = useState<Chain[]>([]);
   const [availablePlugins, setAvailablePlugins] = useState<Plugin[]>([]);
@@ -552,15 +577,7 @@ export default function ChainBuilder() {
       const { nodes, edges } = chainToFlow(selectedChain, {
         onRemove: handleRemovePlugin,
         onToggleBypass: handleToggleBypass,
-        onOpenParameters: (plugin: any) => {
-          // Route hardware plugins to their dedicated editors
-          if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
-            window.location.href = '/mpx1/panel';
-            return;
-          }
-          setSelectedPlugin(plugin);
-          setParametersPanelOpen(true);
-        },
+        onOpenParameters: openPluginParameters,
       }, deviceInfo ? {
         inputChannels: deviceInfo.inputChannels,
         outputChannels: deviceInfo.outputChannels,
@@ -589,8 +606,9 @@ export default function ChainBuilder() {
           }
           return n;
         });
-        setFlowNodes(layoutedNodes);
-        saveNodePositions(selectedChain.id, layoutedNodes);
+        const nextNodes = syncSelectedPluginNodeState(layoutedNodes, selectedPlugin);
+        setFlowNodes(nextNodes);
+        saveNodePositions(selectedChain.id, nextNodes);
       } else {
         const enhanced = nodes.map((n) => {
           if (n.type === 'audioPlugin') {
@@ -605,12 +623,12 @@ export default function ChainBuilder() {
           }
           return n;
         });
-        setFlowNodes(enhanced);
+        setFlowNodes(syncSelectedPluginNodeState(enhanced, selectedPlugin));
       }
 
       setFlowEdges(edges);
     }
-  }, [selectedChain, compactView, pluginLevels, deviceInfo, availablePlugins, quickParamValues, pluginPerformance]);
+  }, [selectedChain, compactView, pluginLevels, deviceInfo, availablePlugins, quickParamValues, pluginPerformance, selectedPlugin, openPluginParameters]);
 
   // Load Chain B when in A/B mode
   useEffect(() => {
@@ -651,14 +669,7 @@ export default function ChainBuilder() {
       const { nodes, edges } = chainToFlow(chainB, {
         onRemove: handleRemovePluginB,
         onToggleBypass: handleToggleBypassB,
-        onOpenParameters: (plugin: any) => {
-          if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
-            window.location.href = '/mpx1/panel';
-            return;
-          }
-          setSelectedPlugin(plugin);
-          setParametersPanelOpen(true);
-        },
+        onOpenParameters: openPluginParameters,
       }, deviceInfo ? {
         inputChannels: deviceInfo.inputChannels,
         outputChannels: deviceInfo.outputChannels,
@@ -675,10 +686,11 @@ export default function ChainBuilder() {
       // Auto-layout if no saved positions
       if (!hasSavedPositions(chainB.id)) {
         const layoutedNodes = autoLayoutNodes(nodes, edges);
-        setFlowNodesB(layoutedNodes);
-        saveNodePositions(chainB.id, layoutedNodes);
+        const nextNodes = syncSelectedPluginNodeState(layoutedNodes, selectedPlugin);
+        setFlowNodesB(nextNodes);
+        saveNodePositions(chainB.id, nextNodes);
       } else {
-        setFlowNodesB(nodes);
+        setFlowNodesB(syncSelectedPluginNodeState(nodes, selectedPlugin));
       }
 
       setFlowEdgesB(edges);
@@ -686,7 +698,7 @@ export default function ChainBuilder() {
       setFlowNodesB([]);
       setFlowEdgesB([]);
     }
-  }, [chainB, abModeEnabled, compactView, pluginLevels, deviceInfo, availablePlugins, quickParamValues, pluginPerformance]);
+  }, [chainB, abModeEnabled, compactView, pluginLevels, deviceInfo, availablePlugins, quickParamValues, pluginPerformance, selectedPlugin, openPluginParameters]);
 
   // Generate unified A/B routing flow visualization
   useEffect(() => {
@@ -704,22 +716,8 @@ export default function ChainBuilder() {
           onRemoveB: handleRemovePluginB,
           onToggleBypassA: handleToggleBypass,
           onToggleBypassB: handleToggleBypassB,
-          onOpenParametersA: (plugin: any) => {
-            if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
-              window.location.href = '/mpx1/panel';
-              return;
-            }
-            setSelectedPlugin(plugin);
-            setParametersPanelOpen(true);
-          },
-          onOpenParametersB: (plugin: any) => {
-            if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
-              window.location.href = '/mpx1/panel';
-              return;
-            }
-            setSelectedPlugin(plugin);
-            setParametersPanelOpen(true);
-          },
+          onOpenParametersA: openPluginParameters,
+          onOpenParametersB: openPluginParameters,
         },
         currentBlend,
         deviceInfo ? {
@@ -740,13 +738,13 @@ export default function ChainBuilder() {
         }
       );
 
-      setAbFlowNodes(nodes);
+      setAbFlowNodes(syncSelectedPluginNodeState(nodes, selectedPlugin));
       setAbFlowEdges(edges);
     } else {
       setAbFlowNodes([]);
       setAbFlowEdges([]);
     }
-  }, [abModeEnabled, selectedChain, chainB, currentBlend, compactView, pluginLevels, deviceInfo, availablePlugins, quickParamValues, pluginPerformance]);
+  }, [abModeEnabled, selectedChain, chainB, currentBlend, compactView, pluginLevels, deviceInfo, availablePlugins, quickParamValues, pluginPerformance, selectedPlugin, openPluginParameters]);
 
   // Load plugin details when selected
   useEffect(() => {
@@ -1055,6 +1053,16 @@ export default function ChainBuilder() {
       setProcessingSnapshot(false);
     }
   };
+
+  const openPluginParameters = useCallback((plugin: ChainPlugin) => {
+    if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
+      window.location.href = '/mpx1/panel';
+      return;
+    }
+
+    setSelectedPlugin(plugin);
+    setParametersPanelOpen(true);
+  }, []);
 
   const categories = React.useMemo(() => {
     const cats = new Set(availablePlugins.map(p => p.category).filter(Boolean));
@@ -1424,7 +1432,7 @@ export default function ChainBuilder() {
                       }}
                       onNodeClick={(node) => {
                         if (node.type === 'audioPlugin') {
-                          setSelectedPlugin(node.data.plugin);
+                          openPluginParameters(node.data.plugin);
                         }
                       }}
                       onNodeContextMenu={(node) => {
@@ -1473,7 +1481,7 @@ export default function ChainBuilder() {
                       }}
                       onNodeClick={(node) => {
                         if (node.type === 'audioPlugin') {
-                          setSelectedPlugin(node.data.plugin);
+                          openPluginParameters(node.data.plugin);
                         }
                       }}
                       onNodeContextMenu={(node) => {

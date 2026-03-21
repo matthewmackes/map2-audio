@@ -5,7 +5,7 @@
 // sidechain routing handles, latency visualization, and meter panel toggle
 // ============================================================================
 
-import { memo, useState, useEffect, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import {
   Card,
@@ -27,7 +27,6 @@ import {
   Equalizer,
   Meter,
   Power,
-  Settings,
   Timer,
   TrashCan,
   Waveform,
@@ -74,6 +73,66 @@ function ChipGlyph({
   return <Icon size={size} />;
 }
 
+const CARBON_ACTION_BAR_BG = '#000000';
+const CARBON_SELECTED_BORDER = '#0f62fe';
+const CARBON_DELETE = '#da1e28';
+const CARBON_BYPASS = '#f1c21b';
+
+function OverlayActionButton({
+  label,
+  icon: Icon,
+  backgroundColor,
+  color,
+  onClick,
+}: {
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+  backgroundColor: string;
+  color: string;
+  onClick: () => void;
+}) {
+  return (
+    <Box
+      component="button"
+      type="button"
+      onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      sx={{
+        pointerEvents: 'auto',
+        appearance: 'none',
+        border: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.5,
+        minHeight: 28,
+        px: 1,
+        bgcolor: backgroundColor,
+        color,
+        borderRadius: 0.75,
+        fontSize: '0.68rem',
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        cursor: 'pointer',
+        transition: 'transform 120ms ease, filter 120ms ease',
+        '&:hover': {
+          filter: 'brightness(1.05)',
+          transform: 'translateY(-1px)',
+        },
+        '&:focus-visible': {
+          outline: `2px solid ${CARBON_SELECTED_BORDER}`,
+          outlineOffset: 2,
+        },
+      }}
+    >
+      <Icon size={14} />
+      <Box component="span">{label}</Box>
+    </Box>
+  );
+}
+
 const AudioPluginNode = memo(
   ({ data, selected }: NodeProps<AudioPluginNodeData>) => {
     const theme = useTheme();
@@ -92,9 +151,7 @@ const AudioPluginNode = memo(
       onToggleMeterPanel,
       isHardware,
     } = data;
-
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [deleteProgress, setDeleteProgress] = useState(100);
+    const isSelected = selected || data.isSelected;
 
     // Calculate latency info
     const latencyInfo = useMemo(() => {
@@ -121,35 +178,12 @@ const AudioPluginNode = memo(
       }));
     }, [sidechainBuses, sidechainBusNames]);
 
-    useEffect(() => {
-      if (!isDeleting) return;
-
-      const interval = setInterval(() => {
-        setDeleteProgress(prev => {
-          const next = prev - 33.33; // 100 / 3 frames for 300ms
-          if (next <= 0) {
-            clearInterval(interval);
-            setTimeout(() => data.onRemove(), 50);
-            return 0;
-          }
-          return next;
-        });
-      }, 100);
-
-      return () => clearInterval(interval);
-    }, [isDeleting, data]);
-
     // Mini meter bar component
     const meterBar = (value: number | undefined, color: string) => (
       <Box sx={{ flex: 1, height: 6, bgcolor: 'action.hover', borderRadius: 1, overflow: 'hidden' }}>
         <Box sx={{ width: `${Math.min(Math.max((value ?? 0) * 100, 0), 100)}%`, height: '100%', bgcolor: color, transition: 'width 120ms linear' }} />
       </Box>
     );
-
-    const handleDelete = () => {
-      setIsDeleting(true);
-      setDeleteProgress(100);
-    };
 
     return (
       <>
@@ -163,8 +197,6 @@ const AudioPluginNode = memo(
             height: 12,
             background: theme.palette.info.main,
             border: `2px solid ${theme.palette.background.paper}`,
-            opacity: isDeleting ? 0 : 1,
-            transition: 'opacity 300ms ease-out',
             top: '50%',
           }}
         />
@@ -181,54 +213,102 @@ const AudioPluginNode = memo(
                 height: 10,
                 background: theme.palette.secondary.main,
                 border: `2px solid ${theme.palette.background.paper}`,
-                opacity: isDeleting ? 0 : 0.9,
-                transition: 'opacity 300ms ease-out',
+                opacity: 0.9,
                 top: `calc(50% + ${(idx + 1) * 20}px)`,
               }}
             />
           </Tooltip>
         ))}
 
-        {/* Node Card with Deletion Animation */}
         <Card
           sx={{
             width: compact ? 180 : 260,
             minHeight: compact ? 110 : 160,
             border: 2,
-            borderColor: isDeleting ? 'error.main'
-              : isHardware ? '#C8A951'
-              : selected ? 'primary.main' : 'divider',
-            opacity: isDeleting ? 0.3 : isBypassed ? 0.5 : 1,
-            bgcolor: isDeleting ? 'error.dark'
-              : isHardware ? alpha('#C8A951', 0.06)
-              : selected ? alpha(theme.palette.primary.main, 0.1) : 'background.paper',
-            transition: 'all 300ms ease-out',
+            borderColor: isSelected
+              ? CARBON_SELECTED_BORDER
+              : isHardware ? '#C8A951' : 'divider',
+            bgcolor: isHardware
+              ? alpha('#C8A951', 0.06)
+              : isSelected ? '#f4f4f4'
+              : isBypassed ? alpha(theme.palette.action.disabledBackground, 0.4) : 'background.paper',
+            filter: isBypassed ? 'saturate(0.82)' : 'none',
+            transition: 'all 180ms ease-out',
             cursor: 'grab',
+            boxShadow: isSelected ? '0 0 0 1px rgba(15,98,254,0.2), 0 12px 24px rgba(22,22,22,0.12)' : undefined,
             '&:hover': {
-              borderColor: isDeleting ? 'error.main' : isHardware ? '#D4B86A' : 'primary.light',
-              boxShadow: isDeleting ? 2 : isHardware ? '0 0 12px rgba(200,169,81,0.3)' : 4,
+              borderColor: isSelected
+                ? CARBON_SELECTED_BORDER
+                : isHardware ? '#D4B86A' : 'primary.light',
+              boxShadow: isHardware
+                ? '0 0 12px rgba(200,169,81,0.3)'
+                : isSelected ? '0 0 0 1px rgba(15,98,254,0.24), 0 14px 28px rgba(22,22,22,0.16)' : 4,
             },
             '&:active': {
               cursor: 'grabbing',
-              transform: isDeleting ? 'scale(1)' : 'scale(1.02)',
+              transform: 'scale(1.02)',
             },
           }}
         >
-          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, position: 'relative', overflow: 'hidden' }}>
-            {/* Deletion Progress Bar - Shrinks as countdown */}
-            {isDeleting && (
-              <Box
+          <CardContent
+            sx={{
+              p: 1.5,
+              pt: isSelected ? 6.25 : 1.5,
+              '&:last-child': { pb: 1.5 },
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {isSelected && (
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
                 sx={{
                   position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  height: '6px',
-                  backgroundColor: '#ff0000',
-                  width: `${deleteProgress}%`,
-                  transition: 'width 100ms linear',
-                  zIndex: 10,
+                  top: 8,
+                  left: 8,
+                  right: 8,
+                  minHeight: 38,
+                  px: 1,
+                  py: 0.75,
+                  bgcolor: CARBON_ACTION_BAR_BG,
+                  color: '#f4f4f4',
+                  borderRadius: 1,
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.24)',
+                  pointerEvents: 'none',
+                  zIndex: 1,
                 }}
-              />
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#f4f4f4',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Selected
+                </Typography>
+                <Stack direction="row" spacing={0.75} sx={{ pointerEvents: 'auto' }}>
+                  <OverlayActionButton
+                    label={isBypassed ? 'Enable' : 'Bypass'}
+                    icon={Power}
+                    backgroundColor={CARBON_BYPASS}
+                    color="#161616"
+                    onClick={data.onToggleBypass}
+                  />
+                  <OverlayActionButton
+                    label="Remove"
+                    icon={TrashCan}
+                    backgroundColor={CARBON_DELETE}
+                    color="#ffffff"
+                    onClick={data.onRemove}
+                  />
+                </Stack>
+              </Stack>
             )}
 
             {/* Header */}
@@ -408,15 +488,13 @@ const AudioPluginNode = memo(
               </Stack>
             )}
 
-            {/* Action Buttons */}
-            <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
-              {/* Meter panel expand toggle - NEW */}
-              {onToggleMeterPanel && (
-                <Tooltip title={meterPanelExpanded ? "Collapse meters" : "Expand meters"}>
+            {onToggleMeterPanel && (
+              <Stack direction="row" justifyContent="flex-end" alignItems="center">
+                <Tooltip title={meterPanelExpanded ? 'Collapse meters' : 'Expand meters'}>
                   <IconButton
                     size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event) => {
+                      event.stopPropagation();
                       onToggleMeterPanel();
                     }}
                     sx={{ color: meterPanelExpanded ? 'primary.main' : 'text.secondary' }}
@@ -424,47 +502,8 @@ const AudioPluginNode = memo(
                     {meterPanelExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </IconButton>
                 </Tooltip>
-              )}
-
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  data.onToggleBypass();
-                }}
-              >
-                <Box sx={{ color: isBypassed ? 'text.disabled' : 'primary.main', display: 'inline-flex', alignItems: 'center' }}>
-                  <Power size={16} />
-                </Box>
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  data.onOpenParameters();
-                }}
-              >
-                <Settings size={16} />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete();
-                }}
-                disabled={isDeleting}
-                sx={{
-                  color: isDeleting ? 'error.main' : 'error.light',
-                  transition: 'all 200ms ease-out',
-                  '&:hover': {
-                    bgcolor: 'error.dark',
-                    transform: 'scale(1.1)',
-                  },
-                }}
-              >
-                <TrashCan size={16} />
-              </IconButton>
-            </Stack>
+              </Stack>
+            )}
           </CardContent>
         </Card>
 
@@ -478,8 +517,6 @@ const AudioPluginNode = memo(
             height: 12,
             background: theme.palette.success.main,
             border: `2px solid ${theme.palette.background.paper}`,
-            opacity: isDeleting ? 0 : 1,
-            transition: 'opacity 300ms ease-out',
           }}
         />
       </>

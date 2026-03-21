@@ -1,7 +1,7 @@
 import React from 'react'
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { AppShell } from './AppShell'
 
 const mockUpdateSettings = jest.fn()
@@ -59,8 +59,21 @@ jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
 }))
 
 jest.mock('../components/Platform/PlatformModal', () => ({
-  PlatformModalContent: ({ initialLayer, initialPanel }: { initialLayer?: string | null; initialPanel?: string | null }) => (
-    <div data-testid="platform-modal-content">{initialLayer ?? initialPanel ?? 'root'}</div>
+  PlatformModalContent: ({
+    initialLayer,
+    initialPanel,
+    onLaunchRoute,
+  }: {
+    initialLayer?: string | null
+    initialPanel?: string | null
+    onLaunchRoute?: (to: string) => void
+  }) => (
+    <div data-testid="platform-modal-content">
+      <span>{initialLayer ?? initialPanel ?? 'root'}</span>
+      <button type="button" onClick={() => onLaunchRoute?.('/midi-hub')}>
+        launch-midi-hub
+      </button>
+    </div>
   ),
 }))
 
@@ -84,6 +97,11 @@ function renderInRouter(ui: React.ReactNode, initialEntries: string[] = ['/']) {
       {ui}
     </MemoryRouter>,
   )
+}
+
+function LocationProbe() {
+  const location = useLocation()
+  return <div data-testid="route-probe">{`${location.pathname}${location.search}`}</div>
 }
 
 describe('AppShell navigation', () => {
@@ -156,6 +174,22 @@ describe('AppShell navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
 
     expect(screen.getByTestId('platform-modal-content')).toHaveTextContent('overview')
+  })
+
+  it('launches Labs routes from the platform modal host callback', () => {
+    mockSpecialSettings.pinnedRoutes = ['platform:layer:overview']
+
+    renderInRouter(
+      <AppShell>
+        <LocationProbe />
+      </AppShell>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
+    fireEvent.click(screen.getByRole('button', { name: 'launch-midi-hub' }))
+
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/midi-hub')
+    expect(screen.queryByTestId('platform-modal-content')).toBeNull()
   })
 
   it('shows only remaining hardware-submenu items inside the Audio Interfaces submenu', () => {
