@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 17:15 EDT - Codex (Closed the second push/build/restart cycle on port `3000` and started `T258`-`T260` for Juce Grid masthead cleanup and warning reduction.)
+Last updated: 2026-03-21 17:21 EDT - Codex (Completed `T258`-`T260` for Juce Grid masthead cleanup and settled-state warning reduction.)
 
 ## Active Blockers Only
 
@@ -3034,7 +3034,7 @@ Last updated: 2026-03-21 17:08 EDT - Codex
   - Licensing: Reused the repository license/notices scan for the touched MAP2-owned frontend/test/worklist files and found no new AGPL or third-party notice gaps.
 
 ID: T258
-Status: [>] In Progress
+Status: [✓] Done
 Title: Promote Audio Nodes into the primary JUCE Grid masthead action strip
 Description:
 - Goal / acceptance criteria: Move `Audio Nodes` out of the secondary action cluster and into the primary JUCE Grid masthead button strip ahead of routing configuration so node-aware placement controls are visible without opening the overflow path. Keep the existing modal behavior and add focused regression coverage for the new masthead order.
@@ -3044,10 +3044,16 @@ Description:
 - Required outputs: Primary-action `Audio Nodes` placement, preserved modal behavior, focused masthead-order regression coverage, validation notes, and licensing/worklist completion notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-21 17:15 EDT - Codex
+Last updated: 2026-03-21 17:21 EDT - Codex
+- Completion notes:
+  - Moved `Audio Nodes` into the primary JUCE Grid masthead action strip in `web/src/app/pages/JuceGridPage.tsx`, ahead of `Configure routing`, so node-assignment controls now sit with the other live workflow buttons instead of in the secondary action area.
+  - Added matching masthead emphasis styles in `web/src/app/pages/JuceGridPage.css` so the node/routing/add-flow actions read as one cohesive success-toned control cluster.
+  - Extended `web/src/app/pages/JuceGridPage.test.tsx` with an explicit order check that keeps `Audio Nodes` ahead of `Configure routing` in the primary masthead strip.
+  - Validation: `npm --prefix web run typecheck` -> pass; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Classified the touched JUCE Grid/test/worklist files as MAP2-owned AGPL-covered frontend code and reused the repository license/notices scan with no new gaps.
 
 ID: T259
-Status: [>] In Progress
+Status: [✓] Done
 Title: Remove the redundant JUCE Grid masthead Docs button while keeping shortcut-modal docs access
 Description:
 - Goal / acceptance criteria: Remove the standalone `Docs` button from the JUCE Grid masthead and compact overflow so the top bar stays focused on live control actions, while preserving the existing `Open docs` path from the keyboard shortcuts modal. Update focused tests to match the slimmer masthead contract.
@@ -3057,10 +3063,15 @@ Description:
 - Required outputs: Docs removed from masthead/overflow, keyboard-help docs access preserved, focused regression coverage, validation notes, and licensing/worklist completion notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-21 17:15 EDT - Codex
+Last updated: 2026-03-21 17:21 EDT - Codex
+- Completion notes:
+  - Removed the standalone `Docs` button from the JUCE Grid masthead and compact secondary action menu in `web/src/app/pages/JuceGridPage.tsx`, leaving the top bar focused on live control actions.
+  - Preserved docs access through the existing keyboard-shortcuts modal path (`Open docs`) and added focused coverage in `web/src/app/pages/JuceGridPage.test.tsx` that verifies the masthead no longer exposes `Docs` while the shortcut modal still does.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Reused the repository license/notices scan for the touched MAP2-owned JUCE Grid/test/worklist files and found no new AGPL or third-party notice gaps.
 
 ID: T260
-Status: [>] In Progress
+Status: [✓] Done
 Title: Suppress transient JUCE Grid selected-plugin metadata warnings until discovery settles
 Description:
 - Goal / acceptance criteria: Rework the selected-plugin metadata fallback in JUCE Grid so the page does not emit the repeated debug `console.warn` sequence while plugin discovery is still pending or empty during expected test/setup flows. Preserve a debuggable path for genuinely missing metadata once discovery has settled, and add focused regression coverage for the quieter behavior.
@@ -3070,4 +3081,10 @@ Description:
 - Required outputs: Settled-state-only metadata warning behavior, focused regression coverage, cleaner JUCE Grid test output, validation notes, and licensing/worklist completion notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-21 17:15 EDT - Codex
+Last updated: 2026-03-21 17:21 EDT - Codex
+- Completion notes:
+  - Reworked the selected-plugin metadata path in `web/src/app/pages/JuceGridPage.tsx` so the missing-metadata warning no longer fires from render-time memo logic. The page now warns once, only after plugin discovery has settled successfully and the selected block still has no metadata.
+  - Collapsed the old three-line debug warning into a single structured `console.warn` payload and guarded it with a ref-backed once-per-settled-state key so expected discovery latency no longer floods the test output.
+  - Added a focused regression in `web/src/app/pages/JuceGridPage.test.tsx` that proves no warning is emitted while discovery is pending and that a single warning appears only after a settled empty discovery result.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> pass; `npm --prefix web run typecheck` -> pass; `npm --prefix web run build` -> pass (existing Vite dynamic-import and chunk-size warnings only).
+  - Licensing: Reused the repository license/notices scan for the touched MAP2-owned JUCE Grid/test/worklist files and found no new AGPL or third-party notice gaps.
