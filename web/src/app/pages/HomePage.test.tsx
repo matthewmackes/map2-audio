@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
 
@@ -110,10 +110,6 @@ jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: () => mockNodePageContext,
 }))
 
-jest.mock('../components/HeroDotGrid/HeroDotGrid', () => ({
-  HeroDotGrid: () => null,
-}))
-
 function LocationProbe() {
   const location = useLocation()
   return <div data-testid="location-probe">{`${location.pathname}${location.search}`}</div>
@@ -174,31 +170,24 @@ describe('HomePage navigation landing', () => {
     ;(globalThis as { fetch?: typeof fetch }).fetch = originalFetch
   })
 
-  it('renders sectioned navigation cards with detailed feature descriptions', async () => {
+  it('renders the integrated Carbon overview with primary workspace tiles', async () => {
     const { container } = renderHome(
       <Routes>
         <Route path="/" element={<HomePage />} />
       </Routes>,
     )
 
-    await screen.findByText('MAP2-TESTBED')
+    await screen.findByRole('heading', { name: 'MAP2 Integrated Home' })
 
-    expect(screen.queryByText(/MAP2 Node Status/i)).toBeNull()
-    expect(screen.getByLabelText('Node context and cluster status')).toBeTruthy()
-    expect(screen.getByLabelText('Audio Grid interfaces')).toBeTruthy()
-    expect(screen.queryByText(/^AVB$/)).toBeNull()
-    expect(screen.getByText(/^MIDI$/)).toBeTruthy()
-    expect(screen.getByText(/^System$/)).toBeTruthy()
-    expect(screen.getByLabelText('Audio Grid navigation cards')).toBeTruthy()
-    expect(screen.getByLabelText('MIDI navigation cards')).toBeTruthy()
-    expect(screen.getByLabelText('System navigation cards')).toBeTruthy()
-    expect(screen.queryByText(/^Hardware$/)).toBeNull()
-    expect(screen.queryByLabelText('Hardware navigation cards')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'MAP2 Integrated Home' })).toBeTruthy()
+    expect(screen.getByLabelText('Cluster summary')).toBeTruthy()
+    expect(screen.getByLabelText('Workspace overview')).toBeTruthy()
+    expect(screen.getByText('Platforms')).toBeTruthy()
+    expect(screen.getByText('Audio Artifacts')).toBeTruthy()
     expect(screen.getAllByText('Audio Grid').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Platforms and Labs').length).toBeGreaterThan(0)
     expect(screen.getAllByText('MIDI Hub').length).toBeGreaterThan(0)
-    expect(screen.queryByText('LCD Console')).toBeNull()
-    expect(container.querySelector('.hp-hero__brand-mark')).toBeTruthy()
+    expect(screen.getByText('Labs')).toBeTruthy()
+    expect(container.querySelector('.hp-shell__brand-mark')).toBeTruthy()
   })
 
   it('pins a card without navigating away from Home', async () => {
@@ -216,7 +205,7 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByText('MAP2-TESTBED')
+    await screen.findByRole('heading', { name: 'MAP2 Integrated Home' })
 
     fireEvent.click(screen.getByLabelText('Pin Audio Grid'))
 
@@ -224,11 +213,11 @@ describe('HomePage navigation landing', () => {
     expect(screen.getByTestId('location-probe').textContent).toBe('/')
   })
 
-  it('opens Platforms and Labs from the landing card by setting the modal query on Home', async () => {
+  it('opens Platforms from the landing workspace tile using the canonical route', async () => {
     renderHome(
       <Routes>
         <Route
-          path="/"
+          path="*"
           element={(
             <>
               <HomePage />
@@ -239,34 +228,32 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByText('MAP2-TESTBED')
+    await screen.findByRole('heading', { name: 'MAP2 Integrated Home' })
 
-    fireEvent.click(screen.getByRole('listitem', { name: 'Open Platforms and Labs' }))
+    const platformsCard = screen.getByText('Platforms').closest('.hp-workspace-card')
+    expect(platformsCard).toBeTruthy()
+    fireEvent.click(within(platformsCard as HTMLElement).getByRole('button', { name: 'Open' }))
 
-    expect(screen.getByTestId('location-probe').textContent).toBe('/?layer=overview')
+    expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/overview')
   })
 
-  it('places Platforms and Labs before MIDI Hub and renders MIDI Hub as a wide hero card', async () => {
-    const { container } = renderHome(
+  it('orders the primary workspace tiles with Platforms before Labs and MIDI Hub', async () => {
+    renderHome(
       <Routes>
         <Route path="/" element={<HomePage />} />
       </Routes>,
     )
 
-    await screen.findByText('MAP2-TESTBED')
+    await screen.findByRole('heading', { name: 'MAP2 Integrated Home' })
 
-    const overlayGroups = Array.from(container.querySelectorAll('.hp-hero__card-overlay .hp-group')).map((group) =>
-      group.getAttribute('aria-label'),
-    )
-
-    expect(overlayGroups).toEqual([
-      'Audio Grid interfaces',
-      'System interfaces',
-      'MIDI interfaces',
+    const workspaceTitles = Array.from(document.querySelectorAll('.hp-workspace-card__title')).map((node) => node.textContent)
+    expect(workspaceTitles.slice(0, 5)).toEqual([
+      'Platforms',
+      'Audio Artifacts',
+      'Audio Grid',
+      'MIDI Hub',
+      'Labs',
     ])
-
-    expect(screen.getByRole('listitem', { name: 'Open MIDI Hub' }).classList.contains('hp-card--wide')).toBe(true)
-    expect(screen.getByRole('listitem', { name: 'Open Platforms and Labs' }).classList.contains('hp-card--wide')).toBe(false)
   })
 
   it('renders the local node tile from host and network APIs when peers fail', async () => {

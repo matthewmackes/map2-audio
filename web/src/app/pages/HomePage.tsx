@@ -1,29 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { HeroDotGrid } from '../components/HeroDotGrid/HeroDotGrid'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Pin, PinFilled } from '@carbon/icons-react'
-import { ApiActivityOverlay } from '../components/ApiActivityOverlay/ApiActivityOverlay'
+import { useNavigate } from 'react-router-dom'
+import { ArrowRight, Pin, PinFilled } from '@carbon/icons-react'
+import { Button, Column, Grid, InlineLoading, Layer, SkeletonText, Tag, Tile } from '@carbon/react'
 import {
   Map2BrandMark,
   MAP2_PLATFORM_VERSION,
   MAP2_PLATFORM_NAME,
   MAP2_PRIMARY_LABEL,
 } from '../components/branding/map2Branding'
-import { resolveHomeCardProfile } from '../data/homeCardProfiles'
+import { resolveHomeCardProfile, type HomeCardProfile } from '../data/homeCardProfiles'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import {
   allPinnableNavigationItems,
-  homeNavigationTabSections,
+  homeNavigationSections,
   MAX_PINNED_NAV_ITEMS,
   navigationMaturityMeta,
   normalizePinnedRoutes,
-  type AdvancedMenuItem,
   type HardwareInterfaceMenuItem,
-  type NavigationHomeSection,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
 import { useNodePageContext } from '../hooks/useNodePageContext'
-import { isBlockedAdvancedMenuItem } from '../layout/advancedMenuState'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './HomePage.css'
 
@@ -113,8 +109,18 @@ interface DeploymentModeResponse {
   mode?: string
 }
 
-const HERO_SECTION_ORDER: NavigationHomeSection[] = ['Audio Grid', 'AVB', 'System', 'MIDI', 'Hardware']
-const HERO_SECTION_INDEX = new Map(HERO_SECTION_ORDER.map((title, index) => [title, index]))
+const FEATURED_HOME_ROUTES = ['/platform', '/audio-artifacts', '/juce-grid', '/midi-hub'] as const
+const LABS_PROFILE: HomeCardProfile = {
+  summary: 'Dedicated catalog for advanced, experimental, and blocked workflows that should not crowd the default operator shell.',
+  capabilities: [
+    'Route-first catalog of advanced MAP2 destinations',
+    'Clear separation between default workspaces and exploratory tools',
+    'One place to launch experimental or qualification-sensitive surfaces',
+    'Consistent access to the former advanced launcher inventory',
+  ],
+  learnMore: 'Open Labs when you need the advanced route catalog without mixing those destinations into the default operator-first home flow.',
+  bestFor: 'Advanced exploration and lab workflows',
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -140,12 +146,6 @@ function resolvePinnedRoutes(routes: string[] | null | undefined): string[] {
     .filter((item) => item.to !== '/' && requested.includes(item.to))
     .map((item) => item.to)
     .slice(0, MAX_PINNED_NAV_ITEMS)
-}
-
-function isBlockedHomeItem(item: HomeNavigationItem): boolean {
-  return 'includeInAdvancedMenu' in item
-    ? isBlockedAdvancedMenuItem(item as AdvancedMenuItem)
-    : false
 }
 
 function parseLastSeenSeconds(value: string | null | undefined): number {
@@ -319,10 +319,6 @@ function resolveLocalHealthScore(
   return 25
 }
 
-function statusDotClass(status: ClusterTile['status']): string {
-  return `hp-hero__node-dot hp-hero__node-dot--${status}`
-}
-
 function clusterDotClass(status: ClusterTile['status']): string {
   const colors: Record<ClusterTile['status'], string> = {
     online: '#24a148',
@@ -334,15 +330,25 @@ function clusterDotClass(status: ClusterTile['status']): string {
   return colors[status] ?? '#525252'
 }
 
-function sectionSlug(title: NavigationHomeSection): string {
-  return title.toLowerCase().replace(/\s+/g, '-')
+function platformStatusTagType(status: ClusterTile['status']): 'green' | 'warm-gray' | 'red' | 'blue' | 'cool-gray' {
+  switch (status) {
+    case 'online':
+      return 'green'
+    case 'degraded':
+      return 'warm-gray'
+    case 'offline':
+      return 'red'
+    case 'updating':
+      return 'blue'
+    default:
+      return 'cool-gray'
+  }
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function HomePage() {
   const { localNode, topology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.home)
-  const location = useLocation()
   const navigate = useNavigate()
   const {
     settings: specialSettings,
@@ -355,9 +361,6 @@ export function HomePage() {
     [specialSettings?.pinnedRoutes],
   )
   const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
-
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
-  const [overlayVisible, setOverlayVisible] = useState(true)
 
   const [tiles, setTiles] = useState<ClusterTile[]>([])
   const [tilesLoading, setTilesLoading] = useState(true)
@@ -544,275 +547,271 @@ export function HomePage() {
     await updateSpecialSettings({ pinnedRoutes: nextRoutes })
   }
 
-  const openPlatformWindow = useCallback((params: { layer?: string; panel?: string }) => {
-    const nextSearch = new URLSearchParams(location.search)
-    nextSearch.delete('layer')
-    nextSearch.delete('panel')
-    if (params.layer) nextSearch.set('layer', params.layer)
-    if (params.panel) nextSearch.set('panel', params.panel)
-
-    navigate({
-      pathname: location.pathname,
-      search: nextSearch.toString() ? `?${nextSearch.toString()}` : '',
-    })
-  }, [location.pathname, location.search, navigate])
-
   const openHomeItem = useCallback((item: HomeNavigationItem) => {
     if (item.to === '/platform') {
-      openPlatformWindow({ layer: 'overview' })
+      navigate('/platforms/overview')
+      return
+    }
+
+    if (item.to === '/audio-artifacts') {
+      navigate('/artifacts')
       return
     }
 
     navigate(item.to)
-  }, [navigate, openPlatformWindow])
+  }, [navigate])
 
-  // ── Visible sections (non-empty only) ──────────────────────────────────────
+  const featuredItems = useMemo(() => {
+    const items = homeNavigationSections.flatMap((section) => section.items)
+    return FEATURED_HOME_ROUTES
+      .map((route) => items.find((item) => item.to === route) ?? null)
+      .filter((item): item is HomeNavigationItem => Boolean(item))
+  }, [])
 
-  const visibleSections = useMemo(
-    () => homeNavigationTabSections
-      .filter((s) => s.items.length > 0)
-      .sort(
-        (left, right) =>
-          (HERO_SECTION_INDEX.get(left.title) ?? Number.MAX_SAFE_INTEGER) -
-          (HERO_SECTION_INDEX.get(right.title) ?? Number.MAX_SAFE_INTEGER),
-      ),
-    [],
-  )
+  const totalNodes = tiles.length || topology.nodes.length || 1
+  const onlineNodes = tiles.filter((tile) => tile.status === 'online').length
+  const atRiskNodes = tiles.filter((tile) => tile.status !== 'online').length
+  const averageHealth = tiles.length > 0
+    ? Math.round(tiles.reduce((sum, tile) => sum + tile.healthScore, 0) / tiles.length)
+    : 0
+  const selectedNodeLabel = localNode?.hostname ?? clusterName
+  const clusterRole = tiles[0]?.role ?? (localNode?.role ?? 'node').replace(/_/g, '-').toUpperCase()
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="hp-root">
-      {/* ══════════════════════════════════════════════════════════
-          HERO — full-bleed neon grid artwork + scanline effects
-          ══════════════════════════════════════════════════════════ */}
-      <header className="hp-hero">
-        {/* Brand mark artwork — lowest layer, dot grid draws over it */}
-        <div className="hp-hero__img" aria-hidden="true">
-          <Map2BrandMark className="hp-hero__brand-mark" />
-        </div>
+      <Grid condensed className="hp-grid">
+        <Column sm={4} md={8} lg={8} className="hp-column">
+          <Layer className="hp-shell hp-shell--hero">
+            <div className="hp-shell__brand">
+              <Map2BrandMark className="hp-shell__brand-mark" />
+              <div className="hp-shell__brand-copy">
+                <p className="hp-shell__eyebrow">{MAP2_PLATFORM_NAME}</p>
+                <h1 className="hp-shell__title">{MAP2_PRIMARY_LABEL} Integrated Home</h1>
+                <p className="hp-shell__summary">
+                  Carbon-first operator overview for platforms, artifacts, labs, and the highest-signal MAP2 workspaces.
+                </p>
+              </div>
+            </div>
+            <div className="hp-shell__meta">
+              <Tag type="cool-gray">{MAP2_PLATFORM_VERSION}</Tag>
+              <Tag type="green">{clusterRole}</Tag>
+              <Tag type={atRiskNodes > 0 ? 'warm-gray' : 'green'}>
+                {atRiskNodes > 0 ? `${atRiskNodes} nodes need attention` : 'Cluster ready'}
+              </Tag>
+            </div>
+          </Layer>
+        </Column>
 
-        {/* Dot-grid — second layer, sits above brand mark */}
-        <HeroDotGrid />
+        <Column sm={4} md={8} lg={4} className="hp-column">
+          <Tile className="hp-metric-card" aria-label="Cluster summary">
+            <p className="hp-metric-card__eyebrow">Cluster summary</p>
+            <h2 className="hp-metric-card__headline">{selectedNodeLabel}</h2>
+            <p className="hp-metric-card__body">
+              {totalNodes} nodes tracked, {onlineNodes} online, average health {averageHealth}%.
+            </p>
+          </Tile>
+        </Column>
 
-        {/* Vignette overlay */}
-        <div className="hp-hero__vignette" aria-hidden="true" />
+        <Column sm={4} md={8} lg={4} className="hp-column">
+          <Tile className="hp-metric-card" aria-label="Pinned navigation summary">
+            <p className="hp-metric-card__eyebrow">Pinned shell routes</p>
+            <h2 className="hp-metric-card__headline">{pinnedRoutes.length}/{MAX_PINNED_NAV_ITEMS}</h2>
+            <p className="hp-metric-card__body">
+              Promote the workspaces you need in the shell before moving into routed platform and artifact flows.
+            </p>
+          </Tile>
+        </Column>
 
-        {/* Bottom fade to page bg */}
-        <div className="hp-hero__bottom-fade" aria-hidden="true" />
+        <Column sm={4} md={8} lg={16} className="hp-column">
+          <Layer className="hp-section">
+            <div className="hp-section__header">
+              <div>
+                <p className="hp-section__eyebrow">Workspace overview</p>
+                <h2 className="hp-section__title">Start from the canonical routed surfaces</h2>
+              </div>
+            </div>
+            <div className="hp-workspace-grid" role="list" aria-label="Workspace overview">
+              {featuredItems.map((item) => {
+                const Icon = item.icon
+                const profile = resolveHomeCardProfile(item)
+                const maturityMeta = navigationMaturityMeta[item.maturity]
+                const isPinned = pinnedRouteSet.has(item.to)
+                const limitReached = !isPinned && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
+                const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
 
-        {/* Combined controls bar — context picker + node pills in one row */}
-        <div className="hp-hero__controls" aria-label="Node context and cluster status">
-          {tilesLoading && (
-            <>
-              <span className="hp-hero__node hp-hero__node--skeleton" aria-hidden="true" />
-              <span className="hp-hero__node hp-hero__node--skeleton" aria-hidden="true" />
-            </>
-          )}
-
-          {!tilesLoading &&
-            !tilesError &&
-            tiles.map((tile) => (
-              <button
-                key={`hero-node-${tile.id}`}
-                type="button"
-                className="hp-hero__node"
-                onClick={() => openPlatformWindow({ layer: 'cluster-dashboard' })}
-                title={`${tile.hostname} · ${tile.status}`}
-              >
-                <span
-                  className={statusDotClass(tile.status)}
-                  style={{ background: clusterDotClass(tile.status) }}
-                  aria-label={tile.status}
-                />
-                <span className="hp-hero__node-name">{tile.hostname}</span>
-                <span className="hp-hero__node-score">{tile.healthScore}%</span>
-              </button>
-            ))}
-        </div>
-
-        {/* ══════════════════════════════════════════════════════════
-            CARD OVERLAY — wireframe cards float over hero artwork
-            ══════════════════════════════════════════════════════════ */}
-        <div className="hp-hero__card-overlay" aria-label="Navigation cards">
-          {visibleSections.map((section) => {
-            const isWideSingleSection = section.items.length === 1 && section.items[0]?.to === '/midi-hub'
-            const isSingleCardSection = section.items.length === 1
-            const gridClasses = [
-              'hp-card-grid',
-              isWideSingleSection ? 'hp-card-grid--wide-single' : '',
-              !isWideSingleSection && isSingleCardSection ? 'hp-card-grid--single' : '',
-            ].filter(Boolean).join(' ')
-
-            return (
-              <section
-                key={section.title}
-                className={`hp-group hp-group--${sectionSlug(section.title)}`}
-                aria-label={`${section.title} interfaces`}
-              >
-                {/* ── Group heading (hidden in overlay via CSS) ── */}
-                <div className="hp-group__heading">
-                  <h2 className="hp-group__title">{section.title}</h2>
-                  <span className="hp-group__count">{section.items.length}</span>
-                </div>
-
-                {/* ── 4-up card grid ── */}
-                <div className={gridClasses} role="list" aria-label={`${section.title} navigation cards`}>
-                  {section.items.map((item) => {
-                    const cardId = `${item.to}-${item.label}`
-                    const isBlocked = isBlockedHomeItem(item)
-                    const isPinned = pinnedRouteSet.has(item.to)
-                    const limitReached = !isPinned && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
-                    const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
-                    const maturityMeta = navigationMaturityMeta[item.maturity]
-                    const profile = resolveHomeCardProfile(item)
-                    const isExpanded = expandedCardId === cardId
-                    const Icon = item.icon
-                    const isWideCard = item.to === '/juce-grid' || item.to === '/midi-hub'
-
-                    return (
-                      <article
-                        key={cardId}
-                        role="listitem"
-                        className={`hp-card${isBlocked ? ' is-blocked' : ''}${isWideCard ? ' hp-card--wide' : ''}`}
-                        onClick={() => {
-                          if (!isBlocked) openHomeItem(item)
-                        }}
-                        onKeyDown={(e) => {
-                          if ((e.key === 'Enter' || e.key === ' ') && !isBlocked) {
-                            e.preventDefault()
-                            openHomeItem(item)
-                          }
-                        }}
-                        tabIndex={0}
-                        aria-label={`Open ${item.label}`}
-                      >
-                        {item.pinnable ? (
-                          <button
-                            type="button"
-                            className={`hp-card__pin-btn${isPinned ? ' is-pinned' : ''}`}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (!pinDisabled) void handleTogglePin(item, !isPinned)
-                            }}
-                            title={
-                              limitReached
-                                ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned`
-                                : isPinned
-                                  ? 'Unpin from navigation'
-                                  : 'Pin to navigation'
-                            }
-                            aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                            aria-pressed={isPinned}
-                            disabled={pinDisabled}
-                          >
-                            {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
-                          </button>
-                        ) : null}
-
-                        {/* Icon */}
-                        <Icon className="hp-card__icon" aria-hidden />
-
-                        {/* Maturity badge */}
-                        <span
-                          className={`hp-card__maturity hp-card__maturity--${item.maturity}`}
-                          title={maturityMeta.description}
-                        >
+                return (
+                  <Tile key={item.to} className="hp-workspace-card" role="listitem">
+                    <div className="hp-workspace-card__topline">
+                      <span className="hp-workspace-card__icon" aria-hidden>
+                        <Icon size={24} />
+                      </span>
+                      <div className="hp-workspace-card__tags">
+                        <Tag type="cool-gray">{item.homeSection}</Tag>
+                        <Tag type={item.maturity === 'production' ? 'green' : 'warm-gray'} title={maturityMeta.description}>
                           {maturityMeta.label}
-                        </span>
+                        </Tag>
+                      </div>
+                      {item.pinnable ? (
+                        <button
+                          type="button"
+                          className={`hp-workspace-card__pin${isPinned ? ' is-pinned' : ''}`}
+                          onClick={() => {
+                            if (!pinDisabled) void handleTogglePin(item, !isPinned)
+                          }}
+                          aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                          aria-pressed={isPinned}
+                          disabled={pinDisabled}
+                        >
+                          {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
+                        </button>
+                      ) : null}
+                    </div>
+                    <h3 className="hp-workspace-card__title">{item.label === 'Platforms and Labs' ? 'Platforms' : item.label}</h3>
+                    <p className="hp-workspace-card__summary">{profile.summary}</p>
+                    <ul className="hp-workspace-card__capabilities">
+                      {profile.capabilities.slice(0, 3).map((capability) => (
+                        <li key={`${item.to}-${capability}`}>{capability}</li>
+                      ))}
+                    </ul>
+                    <div className="hp-workspace-card__footer">
+                      <span className="hp-workspace-card__best-for">{profile.bestFor}</span>
+                      <Button kind="ghost" size="sm" renderIcon={ArrowRight} onClick={() => openHomeItem(item)}>
+                        Open
+                      </Button>
+                    </div>
+                  </Tile>
+                )
+              })}
 
-                        {/* Label */}
-                        <h3 className="hp-card__label">{item.label}</h3>
-
-                        {/* Description */}
-                        <p className="hp-card__desc">{item.description}</p>
-
-                        {/* Footer actions */}
-                        <div className="hp-card__footer">
-                          <button
-                            type="button"
-                            className="hp-card__open-btn"
-                            disabled={isBlocked}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (!isBlocked) openHomeItem(item)
-                            }}
-                          >
-                            Open Interface
-                          </button>
-
-                          <button
-                            type="button"
-                            className="hp-card__details-btn"
-                            aria-expanded={isExpanded}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setExpandedCardId((current) => (current === cardId ? null : cardId))
-                            }}
-                          >
-                            {isExpanded ? (
-                              <>
-                                <ChevronUp size={14} aria-hidden /> Less
-                              </>
-                            ) : (
-                              <>
-                                <ChevronDown size={14} aria-hidden /> Details
-                              </>
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Expandable detail panel */}
-                        {isExpanded && (
-                          <div className="hp-card__detail-panel" role="note">
-                            <div>
-                              <p className="hp-card__detail-heading">Capabilities</p>
-                              <ul className="hp-card__detail-list">
-                                {profile.capabilities.slice(0, 4).map((cap) => (
-                                  <li key={`${cardId}-${cap}`}>{cap}</li>
-                                ))}
-                              </ul>
-                            </div>
-
-                            <div>
-                              <p className="hp-card__detail-heading">Workflow notes</p>
-                              <p className="hp-card__detail-body">{profile.learnMore}</p>
-                            </div>
-
-                            <div>
-                              <p className="hp-card__best-for-label">Best for</p>
-                              <p className="hp-card__best-for-value">{profile.bestFor}</p>
-                            </div>
-
-                            {item.gatedReason && (
-                              <p className="hp-card__detail-body" style={{ color: '#ffd7d9' }}>
-                                {item.gatedReason}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </article>
-                    )
-                  })}
+              <Tile className="hp-workspace-card" role="listitem">
+                <div className="hp-workspace-card__topline">
+                  <span className="hp-workspace-card__icon" aria-hidden>
+                    <ArrowRight size={24} />
+                  </span>
+                  <div className="hp-workspace-card__tags">
+                    <Tag type="cool-gray">System</Tag>
+                    <Tag type="warm-gray">beta</Tag>
+                  </div>
                 </div>
-              </section>
-            )
-          })}
-        </div>{/* end hp-hero__card-overlay */}
-      </header>
+                <h3 className="hp-workspace-card__title">Labs</h3>
+                <p className="hp-workspace-card__summary">{LABS_PROFILE.summary}</p>
+                <ul className="hp-workspace-card__capabilities">
+                  {LABS_PROFILE.capabilities.slice(0, 3).map((capability) => (
+                    <li key={`labs-${capability}`}>{capability}</li>
+                  ))}
+                </ul>
+                <div className="hp-workspace-card__footer">
+                  <span className="hp-workspace-card__best-for">{LABS_PROFILE.bestFor}</span>
+                  <Button kind="ghost" size="sm" renderIcon={ArrowRight} onClick={() => navigate('/labs')}>
+                    Open
+                  </Button>
+                </div>
+              </Tile>
+            </div>
+          </Layer>
+        </Column>
 
-      {/* ══════════════════════════════════════════════════════════
-          API ACTIVITY OVERLAY — live scrolling request log
-          ══════════════════════════════════════════════════════════ */}
-      <button
-        type="button"
-        className="api-overlay-toggle"
-        onClick={() => setOverlayVisible((v) => !v)}
-        title={overlayVisible ? 'Hide API activity' : 'Show API activity'}
-      >
-        {overlayVisible ? 'API ▶' : 'API ▷'}
-      </button>
-      <ApiActivityOverlay visible={overlayVisible} />
+        <Column sm={4} md={8} lg={16} className="hp-column">
+          <Layer className="hp-section">
+            <div className="hp-section__header">
+              <div>
+                <p className="hp-section__eyebrow">Node overview</p>
+                <h2 className="hp-section__title">Cluster posture and route entry</h2>
+              </div>
+              <Button kind="secondary" size="sm" renderIcon={ArrowRight} onClick={() => navigate('/platforms/cluster-dashboard')}>
+                Open cluster dashboard
+              </Button>
+            </div>
+            <div className="hp-node-grid" aria-label="Node context and cluster status">
+              {tilesLoading ? (
+                <>
+                  <Tile className="hp-node-card hp-node-card--loading"><SkeletonText heading width="60%" /><SkeletonText width="90%" /><SkeletonText width="40%" /></Tile>
+                  <Tile className="hp-node-card hp-node-card--loading"><SkeletonText heading width="55%" /><SkeletonText width="88%" /><SkeletonText width="35%" /></Tile>
+                </>
+              ) : null}
+
+              {!tilesLoading && tilesError ? (
+                <Tile className="hp-node-card hp-node-card--error">
+                  <p className="hp-node-card__title">Cluster status unavailable</p>
+                  <p className="hp-node-card__meta">{tilesError}</p>
+                </Tile>
+              ) : null}
+
+              {!tilesLoading && !tilesError && tiles.map((tile) => (
+                <button
+                  key={`cluster-tile-${tile.id}`}
+                  type="button"
+                  className="hp-node-card"
+                  onClick={() => navigate('/platforms/cluster-dashboard')}
+                >
+                  <div className="hp-node-card__header">
+                    <div>
+                      <p className="hp-node-card__title">{tile.hostname}</p>
+                      <p className="hp-node-card__meta">{tile.ip}</p>
+                    </div>
+                    <Tag type={platformStatusTagType(tile.status)}>
+                      {tile.status}
+                    </Tag>
+                  </div>
+                  <div className="hp-node-card__stats">
+                    <span className="hp-node-card__health">
+                      <span
+                        className="hp-node-card__dot"
+                        style={{ backgroundColor: clusterDotClass(tile.status) }}
+                        aria-hidden="true"
+                      />
+                      {tile.healthScore}% health
+                    </span>
+                    <span>{tile.cpuRam}</span>
+                  </div>
+                  <p className="hp-node-card__devices">{tile.audioDevices.join(' · ')}</p>
+                </button>
+              ))}
+            </div>
+          </Layer>
+        </Column>
+
+        <Column sm={4} md={8} lg={16} className="hp-column">
+          <Layer className="hp-section hp-section--support">
+            <div className="hp-section__header">
+              <div>
+                <p className="hp-section__eyebrow">Platform context</p>
+                <h2 className="hp-section__title">Execution posture</h2>
+              </div>
+            </div>
+            <div className="hp-support-grid">
+              <Tile className="hp-support-card">
+                <p className="hp-support-card__eyebrow">Viewed node</p>
+                <h3 className="hp-support-card__title">{selectedNodeLabel}</h3>
+                <p className="hp-support-card__body">
+                  The home surface is scoped to the same node context used by the operator shell.
+                </p>
+              </Tile>
+              <Tile className="hp-support-card">
+                <p className="hp-support-card__eyebrow">Deployment</p>
+                <h3 className="hp-support-card__title">{clusterRole}</h3>
+                <p className="hp-support-card__body">
+                  Use Platforms for operational work, Artifacts for catalog curation, and Labs for advanced route launch.
+                </p>
+              </Tile>
+              <Tile className="hp-support-card">
+                <p className="hp-support-card__eyebrow">Current state</p>
+                {tilesLoading ? (
+                  <InlineLoading description="Refreshing cluster telemetry" status="active" />
+                ) : (
+                  <p className="hp-support-card__body">
+                    {atRiskNodes > 0
+                      ? `${atRiskNodes} nodes are outside the healthy baseline and should be reviewed in the cluster dashboard.`
+                      : 'No degraded nodes detected in the current telemetry snapshot.'}
+                  </p>
+                )}
+              </Tile>
+            </div>
+          </Layer>
+        </Column>
+      </Grid>
     </div>
   )
 }

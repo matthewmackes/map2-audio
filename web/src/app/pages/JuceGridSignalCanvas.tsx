@@ -35,6 +35,7 @@ export interface JuceGridAudioInterfaceStatus {
 
 export interface JuceGridSignalCanvasProps {
   chain: Chain | null
+  branchId?: string | null
   pluginMeta: Record<string, Plugin>
   selectedPluginUri: string | null
   selectedPluginPosition?: number | null
@@ -55,6 +56,11 @@ export interface JuceGridSignalCanvasProps {
   showEndpoints?: boolean
   onInputPortSelectClick?: () => void
   onOutputPortSelectClick?: () => void
+  tabletMode?: boolean
+  focusedBranchId?: string | null
+  currentBranchPage?: number
+  onBranchPageChange?: (branchId: string, nextPage: number) => void
+  onCanvasEmptyPress?: () => void
 }
 
 export interface JuceGridSignalAutomationSummary {
@@ -103,6 +109,8 @@ interface SignalGridRow {
 const SIGNAL_GRID_CARD_MIN_WIDTH_REM = 9.75
 const SIGNAL_GRID_CARD_GAP_REM = 1
 const SIGNAL_GRID_ROW_MIN_CAPACITY = 1
+const TABLET_BRANCH_PAGE_SIZE = 8
+const TABLET_BRANCH_ROW_CAPACITY = 4
 const SIGNAL_GRID_SLOT_SELECTOR = ".juce-grid-page__signal-grid-item[data-slot-kind='plugin'], .juce-grid-page__signal-grid-item[data-slot-kind='add']"
 
 function getSignalGridFallbackMetrics() {
@@ -154,6 +162,7 @@ function buildSignalGridRows(
   plugins: ChainPlugin[],
   includeAddSlot: boolean,
   rowCapacity: number,
+  alternateDirections = true,
 ): SignalGridRow[] {
   const slots: SignalGridSlot[] = plugins.map((plugin) => ({
     key: `${plugin.uri}:${plugin.position}`,
@@ -176,7 +185,7 @@ function buildSignalGridRows(
     const count = Math.max(SIGNAL_GRID_ROW_MIN_CAPACITY, rowCapacity)
     rows.push({
       key: `row-${rowIndex}`,
-      direction: rowIndex % 2 === 0 ? 'forward' : 'reverse',
+      direction: alternateDirections && rowIndex % 2 === 1 ? 'reverse' : 'forward',
       slots: slots.slice(cursor, cursor + count),
     })
     cursor += count
@@ -372,6 +381,7 @@ function buildRailTooltip(
 
 export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   chain,
+  branchId = null,
   pluginMeta,
   selectedPluginUri,
   selectedPluginPosition = null,
@@ -390,6 +400,11 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   showEndpoints = false,
   onInputPortSelectClick,
   onOutputPortSelectClick,
+  tabletMode = false,
+  focusedBranchId = null,
+  currentBranchPage = 0,
+  onBranchPageChange,
+  onCanvasEmptyPress,
 }: JuceGridSignalCanvasProps) {
   const [draggedPlugin, setDraggedPlugin] = useState<DraggedPluginRef>(null)
   const [dragOverPlugin, setDragOverPlugin] = useState<DraggedPluginRef>(null)
@@ -445,9 +460,38 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
     }
   }, [chain?.id])
 
+  const totalTabletPages = tabletMode
+    ? Math.max(1, Math.ceil((chain?.plugins.length ?? 0) / TABLET_BRANCH_PAGE_SIZE))
+    : 1
+  const resolvedTabletPage = tabletMode
+    ? Math.max(0, Math.min(currentBranchPage, totalTabletPages - 1))
+    : 0
+
+  useEffect(() => {
+    if (!tabletMode || !branchId || !onBranchPageChange || resolvedTabletPage === currentBranchPage) {
+      return
+    }
+
+    onBranchPageChange(branchId, resolvedTabletPage)
+  }, [branchId, currentBranchPage, onBranchPageChange, resolvedTabletPage, tabletMode])
+
+  const pagedPlugins = useMemo(() => {
+    if (!tabletMode) {
+      return chain?.plugins ?? []
+    }
+
+    const startIndex = resolvedTabletPage * TABLET_BRANCH_PAGE_SIZE
+    return (chain?.plugins ?? []).slice(startIndex, startIndex + TABLET_BRANCH_PAGE_SIZE)
+  }, [chain?.plugins, resolvedTabletPage, tabletMode])
+
   const signalRows = useMemo(
-    () => buildSignalGridRows(chain?.plugins ?? [], Boolean(onAddPlugin), rowCapacity),
-    [chain?.plugins, onAddPlugin, rowCapacity],
+    () => buildSignalGridRows(
+      pagedPlugins,
+      tabletMode ? false : Boolean(onAddPlugin),
+      tabletMode ? TABLET_BRANCH_ROW_CAPACITY : rowCapacity,
+      !tabletMode,
+    ),
+    [onAddPlugin, pagedPlugins, rowCapacity, tabletMode],
   )
 
   const isSelectedPlugin = useCallback((plugin: ChainPlugin | undefined) => {
@@ -619,8 +663,13 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
       <div className="juce-grid-page__signal-path">
         <div
           ref={gridRef}
-          className={`juce-grid-page__signal-grid ${selectedPluginUri ? 'has-active-card' : ''}`}
+          className={`juce-grid-page__signal-grid ${selectedPluginUri ? 'has-active-card' : ''} ${tabletMode ? 'is-tablet-mode' : ''} ${focusedBranchId && branchId === focusedBranchId ? 'is-focused-branch' : ''}`}
           data-testid="juce-grid-signal-grid"
+          onClick={() => {
+            if (tabletMode) {
+              onCanvasEmptyPress?.()
+            }
+          }}
         >
           {signalRows.map((row, rowIndex) => {
             const displaySlots = row.direction === 'reverse' ? [...row.slots].reverse() : row.slots
@@ -685,20 +734,37 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                               aria-pressed={isSelected}
                               role="button"
                               tabIndex={0}
-                              draggable
-                              onClick={() => onPluginSelect(plugin.uri, plugin.position)}
+                              draggable={!tabletMode}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                onPluginSelect(plugin.uri, plugin.position)
+                              }}
                               onKeyDown={(event) => {
                                 if (event.key === 'Enter' || event.key === ' ') {
                                   event.preventDefault()
+                                  event.stopPropagation()
                                   onPluginSelect(plugin.uri, plugin.position)
                                 }
                               }}
-                              onDragStart={() => setDraggedPlugin(buildPluginOrderRef(plugin))}
+                              onDragStart={() => {
+                                if (tabletMode) {
+                                  return
+                                }
+                                setDraggedPlugin(buildPluginOrderRef(plugin))
+                              }}
                               onDragOver={(event) => {
+                                if (tabletMode) {
+                                  return
+                                }
                                 event.preventDefault()
                                 setDragOverPlugin(buildPluginOrderRef(plugin))
                               }}
-                              onDrop={() => handleDrop(plugin)}
+                              onDrop={() => {
+                                if (tabletMode) {
+                                  return
+                                }
+                                handleDrop(plugin)
+                              }}
                               onDragEnd={() => {
                                 setDraggedPlugin(null)
                                 setDragOverPlugin(null)
@@ -706,33 +772,35 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                               style={{ '--juce-grid-signal-accent': categoryConfig.color } as CSSProperties}
                             >
                               <div className="juce-grid-page__signal-plugin-face">
-                                <div
-                                  className="juce-grid-page__signal-plugin-actions"
-                                  data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
-                                  onClick={stopPluginCardEvent}
-                                  onMouseDown={stopPluginCardEvent}
-                                  onPointerDown={stopPluginCardEvent}
-                                >
-                                  <OverflowMenu
-                                    ariaLabel={`Actions for ${displayName}`}
-                                    iconDescription={`Actions for ${displayName}`}
-                                    size="sm"
-                                    flipped
+                                {!tabletMode && (
+                                  <div
+                                    className="juce-grid-page__signal-plugin-actions"
+                                    data-testid={`juce-grid-signal-plugin-actions-${plugin.position}`}
+                                    onClick={stopPluginCardEvent}
+                                    onMouseDown={stopPluginCardEvent}
+                                    onPointerDown={stopPluginCardEvent}
                                   >
-                                    <OverflowMenuItem itemText="Inspect block" onClick={() => onPluginSelect(plugin.uri, plugin.position)} />
-                                    <OverflowMenuItem
-                                      itemText={plugin.bypassed ? 'Enable block' : 'Bypass block'}
-                                      onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed, plugin.position)}
-                                    />
-                                    {onDeletePlugin && (
+                                    <OverflowMenu
+                                      ariaLabel={`Actions for ${displayName}`}
+                                      iconDescription={`Actions for ${displayName}`}
+                                      size="sm"
+                                      flipped
+                                    >
+                                      <OverflowMenuItem itemText="Inspect block" onClick={() => onPluginSelect(plugin.uri, plugin.position)} />
                                       <OverflowMenuItem
-                                        itemText="Remove block"
-                                        isDelete
-                                        onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                                        itemText={plugin.bypassed ? 'Enable block' : 'Bypass block'}
+                                        onClick={() => onToggleBypass(plugin.uri, !plugin.bypassed, plugin.position)}
                                       />
-                                    )}
-                                  </OverflowMenu>
-                                </div>
+                                      {onDeletePlugin && (
+                                        <OverflowMenuItem
+                                          itemText="Remove block"
+                                          isDelete
+                                          onClick={() => onDeletePlugin(plugin.uri, plugin.position)}
+                                        />
+                                      )}
+                                    </OverflowMenu>
+                                  </div>
+                                )}
 
                                 <div className="juce-grid-page__signal-plugin-hero" aria-hidden>
                                   <div
@@ -754,7 +822,10 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                           <button
                             type="button"
                             className="juce-grid-page__signal-plugin-add"
-                            onClick={onAddPlugin}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onAddPlugin?.()
+                            }}
                             aria-label="Add effect"
                           >
                             <Add size={20} />

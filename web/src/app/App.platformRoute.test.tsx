@@ -1,5 +1,7 @@
 import React from 'react'
+import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
+
 import { App } from './App'
 
 jest.mock('./layout/AppShell', () => ({
@@ -38,22 +40,41 @@ jest.mock('../map2/hooks/useWebSocket', () => ({
   }),
 }))
 
-jest.mock('./pages/PlatformShellPage', () => ({
-  PlatformShellPage: () => <div data-testid="platform-route">Platform Route</div>,
+jest.mock('./pages/HomePage', () => ({
+  HomePage: () => <div data-testid="home-route">Home Route</div>,
+}))
+
+jest.mock('./pages/PlatformWorkspacePage', () => ({
+  PlatformWorkspacePage: () => {
+    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="platform-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
+jest.mock('./pages/AudioArtifactsPage', () => ({
+  AudioArtifactsPage: ({ discoverMode }: { discoverMode?: boolean }) => {
+    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="artifacts-route">{`${location.pathname}${location.search}|discover=${discoverMode ? 'yes' : 'no'}`}</div>
+  },
 }))
 
 describe('App routing', () => {
-  it('renders platform shell page for /platform', async () => {
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
-    try {
-      window.history.pushState({}, '', '/platform')
+  it('redirects legacy /platform query routes into the canonical /platforms workspace path', async () => {
+    window.history.pushState({}, '', '/platform?layer=overview')
 
-      render(<App />)
+    render(<App />)
 
-      expect(await screen.findByTestId('platform-route')).toBeTruthy()
-      expect(screen.getByTestId('app-shell')).toBeTruthy()
-    } finally {
-      warnSpy.mockRestore()
-    }
+    expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/overview')
+    expect(screen.getByTestId('app-shell')).toBeTruthy()
+  })
+
+  it('redirects legacy /audio-artifacts into the canonical /artifacts route', async () => {
+    window.history.pushState({}, '', '/audio-artifacts?category=lv2-plugins')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('artifacts-route')).toHaveTextContent('/artifacts?category=lv2-plugins|discover=no')
   })
 })

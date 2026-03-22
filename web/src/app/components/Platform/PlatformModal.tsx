@@ -633,6 +633,8 @@ export interface PlatformModalContentProps {
   initialLayer?: PlatformLayerId | null
   /** Initial standalone panel to open (from URL deep-link). */
   initialPanel?: StandalonePanel | null
+  /** Open the Labs workspace as the initial routed destination. */
+  initialLabs?: boolean
   /** Called when the user navigates to a layer/panel (for URL sync). */
   onNavigate?: (params: { layer?: PlatformLayerId; panel?: StandalonePanel } | null) => void
   /** Called when the user launches a Labs route from the unified modal host. */
@@ -641,7 +643,14 @@ export interface PlatformModalContentProps {
   onClose: () => void
 }
 
-export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, onLaunchRoute, onClose }: PlatformModalContentProps) {
+export function PlatformModalContent({
+  initialLayer,
+  initialPanel,
+  initialLabs = false,
+  onNavigate,
+  onLaunchRoute,
+  onClose,
+}: PlatformModalContentProps) {
   const navigate = useNavigate()
   const { settings: specialSettings, isLoading: specialSettingsLoading, updateSettings } = useSpecialSettings()
   const { layers, layerHealth: nextLayerHealth, summaryMetrics: nextSummaryMetrics, alerts: nextAlerts } = usePlatformShellData()
@@ -664,6 +673,13 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
   }, [nextAlerts, nextLayerHealth, nextSummaryMetrics, setAlerts, setLayerHealth, setSummaryMetrics])
 
   useEffect(() => {
+    if (initialLabs) {
+      startTransition(() => closeLayer())
+      setActivePanel(null)
+      setActiveLabs(true)
+      return
+    }
+
     if (initialPanel) {
       setActiveLabs(false)
       setActivePanel(initialPanel)
@@ -681,7 +697,7 @@ export function PlatformModalContent({ initialLayer, initialPanel, onNavigate, o
     if (!activeLabs && activePanel === null && activeLayerId === null) {
       startTransition(() => openLayer(DEFAULT_PLATFORM_LAYER))
     }
-  }, [activeLabs, activeLayerId, activePanel, closeLayer, initialLayer, initialPanel, openLayer])
+  }, [activeLabs, activeLayerId, activePanel, closeLayer, initialLabs, initialLayer, initialPanel, openLayer])
 
   // Animation cleanup
   useEffect(() => {

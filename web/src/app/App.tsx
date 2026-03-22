@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from 'react'
-import { Navigate, Route, Routes, BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Loading } from '@carbon/react'
 import { AppShell } from './layout/AppShell'
@@ -9,6 +9,7 @@ import { MidiLearnProvider } from './hooks/useMidiLearn'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ClusterProvider } from './contexts/ClusterContext'
 import { useWebSocketConnection } from '../map2/hooks/useWebSocket'
+import { buildLegacyPlatformRedirectPath, buildPlatformWorkspacePath } from './platform/routes'
 
 // Lazy-load devtools so they don't bloat the production shell chunk
 const ReactQueryDevtools = lazy(() =>
@@ -23,6 +24,8 @@ const HomePage              = lazy(() => import('./pages/HomePage').then(m => ({
 const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => ({ default: m.ChainsPage })))
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
 const AudioArtifactsPage    = lazy(() => import('./pages/AudioArtifactsPage').then(m => ({ default: m.AudioArtifactsPage })))
+const PlatformWorkspacePage = lazy(() => import('./pages/PlatformWorkspacePage').then(m => ({ default: m.PlatformWorkspacePage })))
+const LabsPage              = lazy(() => import('./pages/LabsPage').then(m => ({ default: m.LabsPage })))
 const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
@@ -71,6 +74,40 @@ function PageLoader() {
       <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Loading…</span>
     </div>
   )
+}
+
+function HomeEntryRoute() {
+  const location = useLocation()
+  const redirectTarget = buildLegacyPlatformRedirectPath(new URLSearchParams(location.search))
+
+  if (redirectTarget) {
+    return <Navigate to={redirectTarget} replace />
+  }
+
+  return <HomePage />
+}
+
+function LegacyPlatformRedirect() {
+  const location = useLocation()
+  const redirectTarget = buildLegacyPlatformRedirectPath(new URLSearchParams(location.search))
+
+  return <Navigate to={redirectTarget ?? buildPlatformWorkspacePath('overview')} replace />
+}
+
+function LegacyArtifactsRedirect({ defaultCategory }: { defaultCategory?: string }) {
+  const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  if (defaultCategory && !searchParams.has('category')) {
+    searchParams.set('category', defaultCategory)
+  }
+  const nextSearch = searchParams.toString()
+  return <Navigate to={nextSearch ? `/artifacts?${nextSearch}` : '/artifacts'} replace />
+}
+
+function LegacyStandalonePanelRedirect({ panel }: { panel: 'host-machine' | 'audio-engine' | 'theme' | 'about' }) {
+  const location = useLocation()
+  const search = location.search || ''
+  return <Navigate to={`${buildPlatformWorkspacePath(panel)}${search}`} replace />
 }
 
 const queryClient = new QueryClient({
@@ -160,15 +197,19 @@ export function App() {
                           <AppShell>
                             <Suspense fallback={<PageLoader />}>
                               <Routes>
-                                <Route path="/" element={<HomePage />} />
-                                <Route path="/platform" element={<Navigate to="/" replace />} />
+                                <Route path="/" element={<HomeEntryRoute />} />
+                                <Route path="/platform" element={<LegacyPlatformRedirect />} />
+                                <Route path="/platforms/:workspace" element={<PlatformWorkspacePage />} />
+                                <Route path="/labs" element={<LabsPage />} />
                                 <Route path="/chains" element={<ChainsPage />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
-                                <Route path="/about" element={<Navigate to="/platform?panel=about" replace />} />
-                                <Route path="/theme" element={<Navigate to="/platform?panel=theme" replace />} />
-                                <Route path="/plugins" element={<Navigate to="/audio-artifacts?category=lv2-plugins" replace />} />
-                                <Route path="/library" element={<Navigate to="/audio-artifacts" replace />} />
-                                <Route path="/audio-artifacts" element={<AudioArtifactsPage />} />
+                                <Route path="/about" element={<LegacyStandalonePanelRedirect panel="about" />} />
+                                <Route path="/theme" element={<LegacyStandalonePanelRedirect panel="theme" />} />
+                                <Route path="/plugins" element={<LegacyArtifactsRedirect defaultCategory="lv2-plugins" />} />
+                                <Route path="/library" element={<LegacyArtifactsRedirect />} />
+                                <Route path="/audio-artifacts" element={<LegacyArtifactsRedirect />} />
+                                <Route path="/artifacts" element={<AudioArtifactsPage />} />
+                                <Route path="/artifacts/discover" element={<AudioArtifactsPage discoverMode />} />
                                 <Route path="/midi" element={<Navigate to="/midi-hub/connections" replace />} />
                                 <Route path="/midi-hub-2" element={<Navigate to="/midi-hub/connections" replace />} />
                                 <Route path="/midi-hub" element={<Navigate to="/midi-hub/connections" replace />} />
@@ -189,9 +230,9 @@ export function App() {
                                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
                                 <Route path="/motu-rme" element={<MOTURMEPage />} />
                                 <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
-                                <Route path="/host-machine" element={<Navigate to="/platform?panel=host-machine" replace />} />
+                                <Route path="/host-machine" element={<LegacyStandalonePanelRedirect panel="host-machine" />} />
                                 <Route path="/cpu-performance" element={<CPUPerformancePage />} />
-                                <Route path="/engine" element={<Navigate to="/platform?panel=audio-engine" replace />} />
+                                <Route path="/engine" element={<LegacyStandalonePanelRedirect panel="audio-engine" />} />
                                 <Route path="/metering" element={<MeteringPage />} />
                                 <Route path="/pipewire" element={<PipeWirePage />} />
                                 <Route path="/welcome" element={<WelcomePage />} />

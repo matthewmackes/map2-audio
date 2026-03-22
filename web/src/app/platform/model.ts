@@ -130,14 +130,11 @@ export function isPlatformLayerId(value: string | null | undefined): value is Pl
 }
 
 export function buildPlatformHref(layerId?: PlatformLayerId | null): string {
-  if (!layerId) {
-    return '/platform'
-  }
-  return `/platform?layer=${encodeURIComponent(layerId)}`
+  return layerId ? `/platforms/${encodeURIComponent(layerId)}` : '/platforms/overview'
 }
 
 export function buildClusterDashboardHref(): string {
-  return '/platform?layer=cluster-dashboard'
+  return '/platforms/cluster-dashboard'
 }
 
 export function makePlatformHealthRecord<T>(valueFactory: (layerId: PlatformLayerId) => T): Record<PlatformLayerId, T> {

@@ -104,6 +104,28 @@ describe('AppShell navigation', () => {
   beforeEach(() => {
     mockUpdateSettings.mockReset()
     mockSpecialSettings.pinnedRoutes = []
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1440,
+    })
+    Object.defineProperty(window.navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 0,
+    })
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      }),
+    })
     for (const key of Object.keys(mockHardwareLocationNotes)) {
       delete mockHardwareLocationNotes[key]
     }
@@ -129,6 +151,35 @@ describe('AppShell navigation', () => {
     expect(container.querySelector('.nav-active-title')).toBeNull()
     expect(container.querySelectorAll('.nav-tabs-center .nav-tab-item').length).toBe(0)
     expect(container.querySelector('.nav-tabs-left')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
+  })
+
+  it('uses the compact shell treatment only for touch-tablet /juce-grid', () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    })
+    Object.defineProperty(window.navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 5,
+    })
+    Object.defineProperty(window, 'ontouchstart', {
+      configurable: true,
+      writable: true,
+      value: true,
+    })
+
+    const { container } = renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/juce-grid'],
+    )
+
+    expect(container.querySelector('.app-shell--juce-grid-tablet')).toBeTruthy()
+    expect(container.querySelector('.topbar-pro--juce-grid-tablet')).toBeTruthy()
+    expect(container.querySelector('.nav-tabs-left')?.contains(screen.getByTestId('shell-latency-pressure-readout'))).toBe(true)
+    expect(container.querySelector('.nav-tabs-right')?.contains(screen.getByTestId('node-nav-bar'))).toBe(true)
   })
 
   it('orders pinned routes by catalog order and caps desktop pins at four items', () => {

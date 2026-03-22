@@ -671,4 +671,83 @@ describe('JuceGridSignalCanvas', () => {
       { uri: duplicateUri, position: 0 },
     ])
   })
+
+  it('pages tablet branches as eight real effect tiles per page without a tablet add tile', () => {
+    const longChain = buildChainWithPluginCount(10)
+    const longMeta = buildPluginMetaForChain(longChain)
+
+    const { rerender } = render(
+      <JuceGridSignalCanvas
+        chain={longChain}
+        branchId="flow-0"
+        pluginMeta={longMeta}
+        selectedPluginUri={longChain.plugins[0].uri}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        onAddPlugin={jest.fn()}
+        tabletMode
+        focusedBranchId="flow-0"
+        currentBranchPage={0}
+        onBranchPageChange={jest.fn()}
+        showEndpoints={false}
+      />,
+    )
+
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-0')).toBeTruthy()
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-7')).toBeTruthy()
+    expect(screen.queryByTestId('juce-grid-signal-plugin-card-8')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Add effect' })).toBeNull()
+
+    rerender(
+      <JuceGridSignalCanvas
+        chain={longChain}
+        branchId="flow-0"
+        pluginMeta={longMeta}
+        selectedPluginUri={longChain.plugins[8].uri}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        onAddPlugin={jest.fn()}
+        tabletMode
+        focusedBranchId="flow-0"
+        currentBranchPage={1}
+        onBranchPageChange={jest.fn()}
+        showEndpoints={false}
+      />,
+    )
+
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-8')).toBeTruthy()
+    expect(screen.getByTestId('juce-grid-signal-plugin-card-9')).toBeTruthy()
+    expect(screen.queryByTestId('juce-grid-signal-plugin-card-7')).toBeNull()
+  })
+
+  it('clears tablet selection from empty grid taps and removes per-tile overflow actions', () => {
+    const handlePluginSelect = jest.fn()
+    const handleCanvasEmptyPress = jest.fn()
+
+    render(
+      <JuceGridSignalCanvas
+        chain={chain}
+        branchId="flow-0"
+        pluginMeta={pluginMeta}
+        selectedPluginUri={pluginUri}
+        onPluginSelect={handlePluginSelect}
+        onToggleBypass={jest.fn()}
+        onReorderPlugins={jest.fn()}
+        tabletMode
+        focusedBranchId="flow-0"
+        currentBranchPage={0}
+        onBranchPageChange={jest.fn()}
+        onCanvasEmptyPress={handleCanvasEmptyPress}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('juce-grid-signal-plugin-card-0'))
+    expect(handlePluginSelect).toHaveBeenCalledWith(pluginUri, 0)
+
+    fireEvent.click(screen.getByTestId('juce-grid-signal-grid'))
+    expect(handleCanvasEmptyPress).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: 'Actions for Studio Compressor' })).toBeNull()
+  })
 })

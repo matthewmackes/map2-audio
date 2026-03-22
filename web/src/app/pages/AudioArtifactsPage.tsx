@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -548,7 +548,12 @@ function SkeletonRows({ columns, count = 8 }: { columns: number; count?: number 
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export function AudioArtifactsPage() {
+interface AudioArtifactsPageProps {
+  discoverMode?: boolean
+}
+
+export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageProps) {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
 
@@ -572,7 +577,6 @@ export function AudioArtifactsPage() {
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<ArtifactRow | null>(null)
   const [syncDrawerOpen, setSyncDrawerOpen] = useState(false)
   const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null)
-  const [downloadModalOpen, setDownloadModalOpen] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
   const [syncJobs, setSyncJobs] = useState<SyncJob[]>(loadSyncQueue)
   const [toasts, setToasts] = useState<ToastMsg[]>([])
@@ -599,6 +603,22 @@ export function AudioArtifactsPage() {
       return next
     }, { replace: true })
   }, [setSearchParams])
+
+  const openDiscoverRoute = useCallback(() => {
+    const currentSearch = searchParams.toString()
+    navigate({
+      pathname: '/artifacts/discover',
+      search: currentSearch ? `?${currentSearch}` : '',
+    })
+  }, [navigate, searchParams])
+
+  const closeDiscoverRoute = useCallback(() => {
+    const currentSearch = searchParams.toString()
+    navigate({
+      pathname: '/artifacts',
+      search: currentSearch ? `?${currentSearch}` : '',
+    }, { replace: true })
+  }, [navigate, searchParams])
 
   const selectCategory = useCallback((id: ArtifactCategory) => {
     setSelectedItem(null)
@@ -1012,14 +1032,14 @@ export function AudioArtifactsPage() {
                 Sync queue
               </Button>
             )}
-            <Button
-              kind="secondary"
-              size="sm"
-              renderIcon={CloudUpload}
-              onClick={() => setDownloadModalOpen(true)}
-            >
-              Download &amp; Discover
-            </Button>
+              <Button
+                kind="secondary"
+                size="sm"
+                renderIcon={CloudUpload}
+                onClick={openDiscoverRoute}
+              >
+                Download &amp; Discover
+              </Button>
             <Button
               kind="primary"
               size="sm"
@@ -1060,7 +1080,7 @@ export function AudioArtifactsPage() {
                         key={c.id}
                         renderIcon={Icon}
                         onClick={(e) => { e.preventDefault(); selectCategory(c.id) }}
-                        href={`/audio-artifacts?category=${c.id}`}
+                        href={`/artifacts?category=${c.id}`}
                         isActive={isActive}
                         className={`aap__sidenav-link${isActive ? ' aap__sidenav-link--active' : ''}`}
                       >
@@ -1126,7 +1146,7 @@ export function AudioArtifactsPage() {
                   const firstRemote = nodes.find((n) => !n.isLocal)
                   if (firstRemote) updateParams({ node: firstRemote.nodeId })
                 }}
-                onOpenDownload={() => setDownloadModalOpen(true)}
+                onOpenDownload={openDiscoverRoute}
                 onScan={handleScan}
                 isScanning={isScanning}
               />
@@ -1325,8 +1345,8 @@ export function AudioArtifactsPage() {
 
       {/* Download & Discover modal */}
       <ArtifactDownloadModal
-        open={downloadModalOpen}
-        onClose={() => setDownloadModalOpen(false)}
+        open={discoverMode}
+        onClose={closeDiscoverRoute}
         nodeId={detailNodeId}
       />
 

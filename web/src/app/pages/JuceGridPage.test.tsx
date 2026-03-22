@@ -494,7 +494,10 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     const { container } = render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <MemoryRouter
+          initialEntries={['/juce-grid']}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <JuceGridPage />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -522,7 +525,10 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     const { container } = render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <MemoryRouter
+          initialEntries={['/juce-grid']}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <JuceGridPage />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -586,7 +592,10 @@ describe('JuceGridPage snapshot modal workflow', () => {
 
     const { container } = render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <MemoryRouter
+          initialEntries={['/juce-grid']}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <JuceGridPage />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -1115,7 +1124,7 @@ describe('JuceGridPage snapshot modal workflow', () => {
     })
   })
 
-  it('uses the iPad touch toolbar flow', async () => {
+  it('uses the tablet launcher and editor sheet flow without reopening the old touch toolbar', async () => {
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
@@ -1211,6 +1220,54 @@ describe('JuceGridPage snapshot modal workflow', () => {
       },
     })
 
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          initialEntries={['/juce-grid']}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(screen.queryByRole('tablist', { name: 'Audio Grid compact workflows' })).toBeNull()
+    expect(screen.queryByText('Audio Grid')).toBeNull()
+    expect(screen.getByLabelText('Tablet workspace launcher')).toBeTruthy()
+    expect(container.querySelector('.juce-grid-page__floating-actions')).toBeNull()
+
+    const selectButton = (await screen.findAllByRole('button', { name: 'Select block' }))[0]
+    fireEvent.click(selectButton)
+
+    expect(screen.queryByLabelText('Block parameter editor')).toBeNull()
+    expect(screen.queryByLabelText('Selected block touch actions')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open editor' }).getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open editor' }))
+
+    await screen.findByLabelText('Block parameter editor')
+    expect(container.querySelector('.juce-grid-page__tablet-editor-shell')).toBeTruthy()
+  }, 15000)
+
+  it('keeps compact workflow tabs for non-touch tablet-width layouts', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    })
+    Object.defineProperty(window.navigator, 'maxTouchPoints', {
+      configurable: true,
+      value: 0,
+    })
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -1219,17 +1276,14 @@ describe('JuceGridPage snapshot modal workflow', () => {
       </QueryClientProvider>,
     )
 
-    const selectButton = (await screen.findAllByRole('button', { name: 'Select block' }))[0]
-    fireEvent.click(selectButton)
-
-    expect(screen.queryByLabelText('Block parameter editor')).toBeNull()
-    expect(await screen.findByLabelText('Selected block touch actions')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open editor' }))
-
-    expect(screen.getByRole('button', { name: 'Close editor' }).getAttribute('aria-expanded')).toBe('true')
-    await screen.findByLabelText('Block parameter editor')
-  }, 15000)
+    await screen.findByText('Audio Grid')
+    const compactTabList = screen.getByRole('tablist', { name: 'Audio Grid compact workflows' })
+    expect(compactTabList).toBeTruthy()
+    expect(within(compactTabList).getByRole('tab', { name: 'Grid' })).toBeTruthy()
+    expect(within(compactTabList).getByRole('tab', { name: 'Editor' })).toBeTruthy()
+    expect(within(compactTabList).getByRole('tab', { name: 'Routing' })).toBeTruthy()
+    expect(within(compactTabList).getByRole('tab', { name: 'Presets' })).toBeTruthy()
+  })
 
   it('uses the live plugin card router with a forced Carbon template when the strategy resolves to template mode', async () => {
     mockResolveLivePluginCardStrategy.mockReturnValue({ renderMode: 'template', template: 'modulation' })

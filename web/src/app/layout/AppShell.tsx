@@ -33,6 +33,7 @@ import { isStandalonePanel, type PlatformPinnedNavItem, type StandalonePanel } f
 import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { isBlockedAdvancedMenuItem } from './advancedMenuState'
+import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
 import './AppShell.css'
 
 interface TopNavItem {
@@ -130,6 +131,7 @@ function maturityTagLabel(maturity: NavigationMaturityState): string {
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
+  const { isTabletTouchRoute } = useTabletTouchRouteLayout(location.pathname)
   const [searchParams, setSearchParams] = useSearchParams()
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
@@ -148,13 +150,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const platformPanelParam = searchParams.get('panel')
   const initialLayer: PlatformLayerId | null = isPlatformLayerId(platformLayerParam) ? platformLayerParam : null
   const initialPanel: StandalonePanel | null = isStandalonePanel(platformPanelParam) ? platformPanelParam : null
-
-  // Open modal automatically when URL carries a deep-link (e.g. /platform?panel=about redirect)
-  useEffect(() => {
-    if (initialLayer || initialPanel) {
-      setPlatformModalOpen(true)
-    }
-  }, [initialLayer, initialPanel])
 
   const {
     state: mpx1State,
@@ -866,14 +861,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [advancedMenuOpen, currentAdvancedCardId])
 
   return (
-    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}`}>
+    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}`}>
       {showMobileConnectionBanner && (
         <div className="mobile-connection-banner" role="status" aria-live="polite">
           <span className="mobile-connection-banner-dot" aria-hidden />
           <span>Connection lost - reconnecting...</span>
         </div>
       )}
-      <Header className="topbar-pro" aria-label="MAP2 primary navigation shell">
+      <Header className={`topbar-pro${isTabletTouchRoute ? ' topbar-pro--juce-grid-tablet' : ''}`} aria-label="MAP2 primary navigation shell">
         <HeaderNavigation className="nav-tabs-left" aria-label="Primary navigation">
           {renderNavItem(heroHomeTopNavItem)}
           <LatencyPressureShellReadout />

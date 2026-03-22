@@ -7,6 +7,10 @@ import { SegmentedLedText } from './Displays/SegmentedLedText'
 import { NODE_PAGE_KEYS, pageKeyFromPathname } from '../utils/nodeDisplay'
 
 function resolveShellLatencyPageKey(pathname: string, panel: string | null): string {
+  if (pathname.startsWith('/platforms/audio-engine')) {
+    return NODE_PAGE_KEYS.audioEngine
+  }
+
   if (pathname.startsWith('/platform') && panel === 'audio-engine') {
     return NODE_PAGE_KEYS.audioEngine
   }

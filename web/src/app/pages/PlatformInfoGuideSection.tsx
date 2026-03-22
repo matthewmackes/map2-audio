@@ -654,7 +654,7 @@ function DocumentLibrary() {
                   size="sm"
                   renderIcon={Launch}
                   onClick={() => {
-                    const href = `/platform?panel=about&doc=${encodeURIComponent(selectedDoc.name)}`
+                    const href = `/platforms/about?doc=${encodeURIComponent(selectedDoc.name)}`
                     window.open(href, '_blank', 'noopener,noreferrer')
                   }}
                 >

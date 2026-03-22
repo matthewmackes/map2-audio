@@ -133,6 +133,9 @@ export function pageKeyFromPathname(pathname: string): string | null {
   if (pathname.startsWith('/engine')) {
     return NODE_PAGE_KEYS.audioEngine
   }
+  if (pathname.startsWith('/artifacts')) {
+    return NODE_PAGE_KEYS.lv2Plugins
+  }
   if (pathname.startsWith('/plugins')) {
     return NODE_PAGE_KEYS.lv2Plugins
   }
@@ -146,6 +149,9 @@ export function pageKeyFromPathname(pathname: string): string | null {
     return NODE_PAGE_KEYS.midiHub
   }
   if (pathname.startsWith('/platform')) {
+    return NODE_PAGE_KEYS.platform
+  }
+  if (pathname.startsWith('/platforms') || pathname.startsWith('/labs')) {
     return NODE_PAGE_KEYS.platform
   }
   if (pathname.startsWith('/nodes')) {

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-21 19:06 EDT - Codex (Completed `T265` to refresh secondary troubleshooting/reference docs and clear stale web-release notes.)
+Last updated: 2026-03-22 06:37 EDT - Codex (Completed `T269-subA`, advanced `T269-subB`, and recorded the integrated-home route, redirect, validation, and licensing evidence.)
 
 ## Active Blockers Only
 
@@ -3204,3 +3204,63 @@ Last updated: 2026-03-21 18:58 EDT - Codex
   - Marked `MIDI Hub` as a wide hero card alongside the existing wide `Audio Grid` treatment and added landing-page regression coverage that checks the new section order plus the wide-card class assignment.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite chunk-size and mixed static/dynamic import warnings only, no new failures).
   - Licensing: Classified `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, `web/src/app/pages/HomePage.test.tsx`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T269
+Status: [>] In Progress
+Title: Refactor Home, Audio Artifacts, and Platforms/Labs into one Carbon-compliant integrated home interface with three release cycles
+Description:
+- Goal / acceptance criteria: Replace the current Home hero/card system, the `Platforms and Labs` mega-modal, and the standalone `Audio Artifacts` subsystem with one deep-linkable Carbon product-style home interface. The finished work must use Carbon shell, grid, tile, table, layer, token, and dialog patterns; keep MAP2 branding restrained; keep only light modals for short tasks such as upload and delete confirmation; preserve existing business/API behavior; and publish verifiable desktop/mobile Carbon conformance evidence.
+- Why it matters: The current implementation splits the highest-traffic operator entry points across a bespoke cinematic landing page, a persistent modal workflow, and a separate purple-themed library route. That creates IA drift, responsive overlap bugs, and an unverifiable Carbon story.
+- Dependencies: T248, T249, T266, `web/src/app/layout/AppShell.tsx`, `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/AudioArtifactsPage.tsx`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Platform/LabsWorkspace.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/data/homeCardProfiles.ts`, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, and `docs/PROJECT_WORKLIST.md`
+- Estimated effort: High
+- Required outputs: Canonical routed IA for overview/platforms/artifacts/labs, legacy redirect coverage, replacement of large modal workflows with routed or embedded workspace content, new Audio Artifacts regression coverage, Carbon conformance evidence doc, completed checklist evidence, and worklist/licensing completion notes.
+- Execution protocol: Execute exactly three cycles in order using the subtasks below. After each cycle is complete: update the active worklist entries, commit all current tracked/untracked repo changes with the cycle commit message, push to both `origin` and `gitlab` on `master`, rebuild/restart the port `3000` server with `npm --prefix web run deploy`, verify with `npm --prefix web run deploy:status`, then begin the next cycle. If the worktree contains conflicting user edits that make a full-tree commit unsafe, stop and ask before committing.
+Subtasks:
+- ID: T269-subA
+  Status: [✓] Done
+  Title: Cycle 1 — Lock the routed IA, redirects, shell baseline, and Carbon overview foundation
+  Description:
+  - Goal / acceptance criteria: Define and implement the canonical route contract for `/`, `/artifacts`, `/artifacts/discover`, `/platforms/:workspace`, and `/labs`; translate legacy `/?layer=...`, `/platform?layer=...`, `/platform?panel=...`, and `/audio-artifacts` entry points into that contract; replace the current Home cinematic hero with a Carbon productive overview using Grid/Column and clickable tiles; and establish the AppShell baseline needed for the integrated route family.
+  - Why it matters: The refactor fails if the new interface is only visual and the navigation model remains modal- and query-driven.
+  - Dependencies: T269
+  - Estimated effort: High
+  - Required outputs: Canonical route map implemented, overview route rebuilt, initial shell integration in place, focused tests for overview/redirect behavior, validation notes, and cycle-1 release loop completion.
+  - Commit message: `T269-subA: build integrated-home routing and Carbon overview foundation`
+  Subtasks: None
+  Assigned to: Any AI
+  Last updated: 2026-03-22 06:37 EDT - Codex
+  - Completion notes:
+    - Added the canonical integrated-home route contract for `/platforms/:workspace`, `/labs`, `/artifacts`, and `/artifacts/discover`, plus shared platform workspace routing helpers in `web/src/app/platform/routes.ts`.
+    - Redirected legacy `/?layer=...`, `/?panel=...`, `/platform?layer=...`, `/platform?panel=...`, `/audio-artifacts`, `/plugins`, `/library`, `/about`, `/theme`, `/host-machine`, and `/engine` entry points onto the new canonical routed contract in `web/src/app/App.tsx`.
+    - Rebuilt `web/src/app/pages/HomePage.tsx` and `web/src/app/pages/HomePage.css` into a Carbon-style productive overview with routed entry tiles for Platforms, Audio Artifacts, and Labs, while preserving cluster telemetry and pin state behavior.
+    - Added routed page wrappers for platform and labs workspaces, updated platform link-generation helpers to emit canonical routes, wired `AudioArtifactsPage` discover behavior to `/artifacts/discover`, and removed the AppShell query-param effect that auto-opened the legacy platform modal.
+    - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx web/src/app/App.platformRoute.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/layout/AppShell.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with existing Vite warnings only.
+    - Licensing: Classified the touched frontend, test, and worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+- ID: T269-subB
+  Status: [>] In Progress
+  Title: Cycle 2 — Migrate Platforms and Labs from modal host to routed Carbon workspaces
+  Description:
+  - Goal / acceptance criteria: Retire the `Platforms and Labs` modal as the primary host; promote platform layers and standalone panels into `/platforms/:workspace`; promote Labs into `/labs`; preserve deep-link access to overview, node, AVB, MIDI, API, cluster, host-machine, audio-engine, theme, and about flows; and migrate pinning/navigation metadata to the routed contract.
+  - Why it matters: Complex, persistent work areas do not fit Carbon dialog guidance and are a primary source of shell inconsistency today.
+  - Dependencies: T269-subA
+  - Estimated effort: High
+  - Required outputs: Routed platform/labs workspaces, legacy query redirects preserved, modal-host behavior removed from these flows, focused route/shell regressions, validation notes, and cycle-2 release loop completion.
+  - Commit message: `T269-subB: route Platforms and Labs into the integrated home shell`
+  Subtasks: None
+  Assigned to: Any AI
+  Last updated: 2026-03-22 06:37 EDT - Codex
+- ID: T269-subC
+  Status: [ ] Todo
+  Title: Cycle 3 — Integrate Audio Artifacts, replace discovery modal, and close conformance
+  Description:
+  - Goal / acceptance criteria: Refactor Audio Artifacts into `/artifacts` with category/search/pagination/node filters preserved; move artifact discovery into `/artifacts/discover`; keep only light modals for upload and delete confirmation; replace fixed drawer/detail overlays with integrated responsive content regions; finish shell/mobile cleanup for the integrated route family; add dedicated Audio Artifacts regression coverage; and publish final Carbon conformance/checklist evidence.
+  - Why it matters: Audio Artifacts is only partially Carbon today and still behaves like a visually separate product, and it currently lacks a dedicated route test suite.
+  - Dependencies: T269-subA, T269-subB
+  - Estimated effort: High
+  - Required outputs: Routed artifacts/discovery surfaces, final responsive cleanup, new artifacts test coverage, `docs/design/CARBON_INTEGRATED_HOME_CONFORMANCE.md`, completed checklist evidence, validation notes, and cycle-3 release loop completion.
+  - Commit message: `T269-subC: integrate Audio Artifacts and close Carbon conformance`
+  Subtasks: None
+  Assigned to: Any AI
+  Last updated: 2026-03-22 06:12 EDT - Codex
+Assigned to: Any AI
+Last updated: 2026-03-22 06:37 EDT - Codex
