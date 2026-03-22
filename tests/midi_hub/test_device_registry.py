@@ -135,6 +135,23 @@ def test_registry_vid_pid_profile_match(tmp_path):
     asyncio.run(_run())
 
 
+def test_registry_builtin_midisport_profile_matches_name(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        hub = MidiHub(auto_discover_alsa=False)
+        registry = MidiDeviceRegistry(hub)
+        hub.register_port(VirtualMidiPort(port_id="p1", name="M-Audio MIDISPORT 4x4 Port A"))
+
+        refreshed = await registry.refresh()
+
+        assert refreshed["count"] == 1
+        assert refreshed["devices"][0]["profile_id"] == "m_audio_midisport_4x4"
+        assert refreshed["devices"][0]["profile_name"] == "M-Audio MIDISPORT 4x4"
+
+    asyncio.run(_run())
+
+
 def test_registry_merge_remote_devices_and_global_snapshot(tmp_path):
     _init_temp_db(tmp_path)
 

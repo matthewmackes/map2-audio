@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-22 18:35 EDT - Codex (Completed `T313`; no remaining software-actionable strict-Carbon compliance tasks found for `/midi-hub/connections` subpages/modals in the current sweep.)
+Last updated: 2026-03-22 19:47 EDT - Codex (Completed `T318` to restore visible file-selection and direct upload paths for the selected-block NAM and IR effect editors.)
 
 ## Active Blockers Only
 
@@ -616,6 +616,63 @@ Last updated: 2026-03-22 18:35 EDT - Codex
   - Updated `web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx` to replace `ContentSwitcher`/`Switch` with Carbon `Tabs` + `TabList` + `Tab` for matrix-versus-patchbay view selection while preserving the same two views and state transitions.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
   - Licensing: Touched route/worklist/version files remain MAP2-owned AGPL-covered artifacts; no new notice updates required.
+
+ID: T314
+Status: [✓] Done
+Title: Restore file-selection workflows for NAM and IR JUCE effect cards
+Description:
+- Goal / acceptance criteria: Fix the Neural Amp Modeler, Cabinet IR, and Reverb IR effect-card asset selectors so the dialog reliably exposes working file-selection and upload controls, and normalize the dialog state so active assets remain visible when the browser opens.
+- Why it matters: These selected-block editors are not practically usable if operators cannot browse or upload NAM and IR assets from the card workflow.
+- Dependencies: `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, focused loader/card tests, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Updated NAM/IR manager dialogs, focused regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 19:16 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/loaders/NAMManagerDialog.tsx` and `web/src/app/components/loaders/IRManagerDialog.tsx` to use Carbon `FileUploaderButton` instead of hidden file inputs with imperative `.click()` triggers, restoring a reliable native file-selection path inside the JUCE effect-card manager dialogs.
+  - Normalized the NAM dialog model grouping so the chooser accepts either `type` or backend-provided `model_type`, and normalized the IR dialog active-state display so it accepts either `loaded_*` or `active_*` status fields.
+  - Added focused regression coverage in `web/src/app/components/loaders/NAMManagerDialog.test.tsx` and `web/src/app/components/loaders/IRManagerDialog.test.tsx` for NAM upload, cabinet IR upload, and active IR fallback handling, while preserving the existing card-open coverage in `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+  - Licensing: Classified the touched frontend/test/worklist files as MAP2-owned AGPL-covered artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T316
+Status: [✓] Done
+Title: Fix JUCE Grid plugin chooser featured-tile height overlap
+Description:
+- Goal / acceptance criteria: Fix the `/juce-grid` Add Plugin chooser so the featured integrated-plugin tiles no longer stretch or overlap subsequent content when taller cards such as Neural Amp Modeler are present, while preserving the current grouping and Add/Details actions.
+- Why it matters: The plugin chooser is visually broken and harder to use when a tall featured card forces overlapping rows in the browser.
+- Dependencies: `web/src/app/pages/JuceGridPage.css`, focused JUCE Grid validation, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Updated chooser layout styling, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 19:16 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.css` so the featured plugin-browser columns top-align instead of stretching to the tallest sibling, preventing the Neural Amp Modeler featured tile from forcing overlapping chooser rows.
+  - Scoped the plugin-browser equal-height behavior back to the real card grids (`native`, `LV2`, and `preset` grids) and removed the global tile `min-height: 100%` that was incorrectly inflating tiles inside the featured flex-column list.
+  - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+  - Licensing: Classified the touched frontend/worklist files as MAP2-owned AGPL-covered artifacts; reused the repository license/notices scan and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T315
+Status: [✓] Done
+Title: Add MIDI Hub device detection and manual assignment support for undiscovered USB-MIDI hardware
+Description:
+- Goal / acceptance criteria: Recognize MIDISPORT-class USB-MIDI hardware in the MIDI Hub registry when ALSA exposes the ports, expose local inventory/profile/manual-assignment APIs for undiscovered devices, and cover the flow with focused backend tests.
+- Why it matters: The current audio-interface path is Hotone/audio-centric and the registry's manual classification logic is not exposed well enough to recover unknown MIDI hardware in a user-directed way.
+- Dependencies: `app/services/midi_hub/device_registry.py`, `app/routes/midi_hub.py`, `web/src/map2/api.ts`, focused MIDI Hub backend tests, and worklist/licensing notes
+- Estimated effort: Medium
+- Required outputs: Updated MIDI Hub registry/profile matching, inventory/profile/assignment routes and client helpers, focused tests, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 19:11 EDT - Codex
+- Completion notes:
+  - Added a built-in `m_audio_midisport_4x4` MIDI Hub device profile in `app/services/midi_hub/device_registry.py` with MIDISPORT name matching and USB VID/PID matching for the live `0763:1020` hardware path.
+  - Exposed local MIDI Hub inventory, profile, and manual-assignment APIs in `app/routes/midi_hub.py`, allowing undiscovered devices to be classified or rebound intentionally instead of relying only on implicit name matching.
+  - Added matching client helpers and typed payloads in `web/src/map2/api.ts` for future UI or operator tooling use.
+  - Added focused coverage in `tests/midi_hub/test_device_registry.py` and `tests/midi_hub/test_routes.py`, including MIDISPORT detection, custom profile upsert/delete, and manual assignment/clear flows.
+  - Validation: `pytest -q tests/midi_hub/test_device_registry.py tests/midi_hub/test_routes.py` -> PASS (`14 passed`); `npm --prefix web run typecheck` -> PASS.
+  - Licensing: Classified the touched backend/frontend/test/worklist files as MAP2-owned AGPL-covered artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
 
 ID: T286
 Status: [✓] Done
@@ -4093,3 +4150,44 @@ Last updated: 2026-03-22 15:12 EDT - Codex
   - Updated `web/src/app/pages/JuceGridPage.css` with supporting heading styles for the parameter editor panels and the selected MIDI row label so the new semantic structure preserves the current visual hierarchy.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridParameterAudit.test.tsx` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
   - Licensing: Classified the touched JUCE Grid/worklist files as MAP2-owned AGPL-covered repository artifacts; reused the current repository license/notices scan and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T317
+Status: [✓] Done
+Title: Simplify the Home landing page into a Carbon-first appliance launcher
+Description:
+- Goal / acceptance criteria: Re-audit the routed `/` landing page against the active Carbon standard and the user requirement that the surface behave like an appliance launcher for average-reading-level operators; remove overly descriptive or duplicated copy, simplify the main launcher cards into clearer single-purpose entry points, tighten the status sections without changing telemetry wiring, and keep focused Home regression coverage passing.
+- Why it matters: `T275` cleaned up the Home route’s remaining bespoke controls, but the page still reads as a dense feature catalog. That weakens Carbon’s productive-product guidance and makes the appliance landing page harder to scan and understand quickly.
+- Dependencies: T275, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, `web/src/app/pages/HomePage.test.tsx`
+- Estimated effort: Medium
+- Required outputs: Simplified Home route markup/styles/copy, focused Home regression updates, audit notes covering remaining exceptions if any, and validation/licensing evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 19:30 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/HomePage.tsx` into a simpler appliance-first launcher with a plain-language hero, status tags, Carbon `ClickableTile` workspaces, and Carbon `ClickableTile` node-status cards while preserving canonical route navigation and scoped cluster telemetry loading.
+  - Simplified `web/src/app/pages/HomePage.css` so the landing page now uses one token-driven tile grammar for workspaces and nodes, removes the prior metric/support-card layers, and keeps the 16-column Carbon grid structure intact with the existing responsive breakpoints.
+  - Updated `web/src/app/pages/HomePage.test.tsx` to cover the new content contract and single-action launcher behavior, and added a `T317` review record to `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md` so the Carbon audit evidence is captured in the standard review artifact.
+  - Carbon audit result: no new exception was required for this slice; the retained MAP2 brand mark is an existing product asset rather than an IBM mark, and the touched landing-route controls are now Carbon primitives.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts` only.
+  - Licensing: Classified `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, `web/src/app/pages/HomePage.test.tsx`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T318
+Status: [✓] Done
+Title: Restore visible file-selection and direct upload flows for selected-block NAM and IR editors
+Description:
+- Goal / acceptance criteria: Make the selected-block Neural Amp Modeler, Cabinet IR, and Reverb IR editors expose an obvious working local-file chooser on the visible card surface and inside the shared manager dialogs, and ensure uploaded assets can be activated immediately instead of requiring a second hidden step.
+- Why it matters: Operators are still unable to reliably pick local `.nam` and `.wav` files from the active JUCE Grid editing workflow, which leaves the selected-block NAM and convolution effects practically unusable.
+- Dependencies: T314, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`, `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, focused loader/card tests, and licensing notes
+- Estimated effort: Medium
+- Required outputs: Updated card/dialog upload controls, immediate activation behavior for uploaded assets, focused regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 19:47 EDT - Codex
+- Completion notes:
+  - Added a reusable direct file-chooser control in `web/src/app/components/loaders/AssetUploadButton.tsx` and `web/src/app/components/loaders/AssetUploadButton.css` that uses a real file input over a Carbon button shell, avoiding the hidden second-step behavior that was leaving NAM and IR uploads effectively inaccessible.
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx` and `web/src/app/components/PluginCards/Layouts/AmplifierCategoryLayout.tsx` so the NAM model selector now appears at the top of the selected-block card with both `Library` and `Upload .nam` actions visible without scrolling, and direct uploads now auto-load the uploaded model.
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`, `web/src/app/components/PluginCards/Layouts/ConvolutionCategoryLayout.tsx`, and `web/src/app/components/PluginCards/Base/carbonCardStyles.css` so the cabinet and reverb IR cards expose top-of-card `Library` plus `Upload WAV` actions and auto-load the uploaded IR immediately.
+  - Updated `web/src/app/components/loaders/NAMManagerDialog.tsx` and `web/src/app/components/loaders/IRManagerDialog.tsx` so the shared manager dialogs use the same direct chooser control and automatically activate newly uploaded assets instead of stopping after upload.
+  - Extended focused coverage in `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, `web/src/app/components/loaders/IRManagerDialog.test.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` for direct upload visibility and auto-load behavior, while `web/src/app/pages/JuceGridPage.test.tsx` continued to pass against the selected-block editor shell.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts` only.
+  - Licensing: Classified the touched selected-block loader/card/style/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.

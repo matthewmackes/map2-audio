@@ -130,6 +130,15 @@ class MidiDeviceRegistry:
                 supports_sysex=False,
                 metadata={"vendor": "MeloAudio", "device_type": "controller"},
             ),
+            "m_audio_midisport_4x4": MidiDeviceProfile(
+                profile_id="m_audio_midisport_4x4",
+                name="M-Audio MIDISPORT 4x4",
+                match_patterns=["midisport 4x4", "midisport"],
+                default_channel=0,
+                supports_sysex=True,
+                usb_vid_pid=["0763:1020"],
+                metadata={"vendor": "M-Audio", "device_type": "adapter", "ports": 4},
+            ),
             "usb_din_adapter": MidiDeviceProfile(
                 profile_id="usb_din_adapter",
                 name="Generic USB-to-DIN Adapter",
@@ -159,20 +168,30 @@ class MidiDeviceRegistry:
     def _all_profiles(self) -> List[MidiDeviceProfile]:
         return list(self._builtins.values()) + list(self._custom_profiles.values())
 
+    @staticmethod
+    def _profile_payload(profile: MidiDeviceProfile, *, is_custom: bool) -> Dict[str, Any]:
+        return {
+            "profile_id": profile.profile_id,
+            "name": profile.name,
+            "match_patterns": list(profile.match_patterns),
+            "default_channel": profile.default_channel,
+            "supports_sysex": profile.supports_sysex,
+            "usb_vid_pid": list(profile.usb_vid_pid),
+            "metadata": dict(profile.metadata),
+            "is_custom": is_custom,
+        }
+
     def list_profiles(self) -> List[Dict[str, Any]]:
         return [
-            {
-                "profile_id": p.profile_id,
-                "name": p.name,
-                "match_patterns": list(p.match_patterns),
-                "default_channel": p.default_channel,
-                "supports_sysex": p.supports_sysex,
-                "usb_vid_pid": list(p.usb_vid_pid),
-                "metadata": dict(p.metadata),
-                "is_custom": p.profile_id in self._custom_profiles,
-            }
+            self._profile_payload(p, is_custom=(p.profile_id in self._custom_profiles))
             for p in self._all_profiles()
         ]
+
+    def get_profile(self, profile_id: str) -> Optional[Dict[str, Any]]:
+        profile = self._custom_profiles.get(profile_id) or self._builtins.get(profile_id)
+        if profile is None:
+            return None
+        return self._profile_payload(profile, is_custom=(profile_id in self._custom_profiles))
 
     def add_custom_profile(self, profile: MidiDeviceProfile, *, replace: bool = True) -> None:
         if not replace and profile.profile_id in self._custom_profiles:

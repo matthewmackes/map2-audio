@@ -1,15 +1,8 @@
 import React from 'react'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
 
-const mockUpdateSettings = jest.fn()
-const mockSpecialSettings = {
-  enabled: true,
-  hiddenPlugins: [],
-  menuLocation: 'hidden' as const,
-  pinnedRoutes: [] as string[],
-}
 const mockNodePageContext = {
   localNode: {
     node_id: 'MANAGEMENT-NODE-1',
@@ -96,16 +89,6 @@ function defaultFetchResponse(input: RequestInfo | URL): Response {
   }
 }
 
-jest.mock('../hooks/useSpecialSettings', () => ({
-  useSpecialSettings: () => ({
-    settings: mockSpecialSettings,
-    isLoading: false,
-    error: null,
-    updateSettings: mockUpdateSettings,
-    reload: jest.fn(),
-  }),
-}))
-
 jest.mock('../hooks/useNodePageContext', () => ({
   useNodePageContext: () => mockNodePageContext,
 }))
@@ -131,8 +114,6 @@ function renderHome(ui: React.ReactNode) {
 
 describe('HomePage navigation landing', () => {
   beforeEach(() => {
-    mockUpdateSettings.mockReset()
-    mockSpecialSettings.pinnedRoutes = []
     mockNodePageContext.localNode = {
       node_id: 'MANAGEMENT-NODE-1',
       hostname: 'MAP2-TESTBED',
@@ -177,41 +158,20 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })
+    await screen.findByRole('heading', { name: 'Open a workspace' })
 
-    expect(screen.getByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })).toBeTruthy()
-    expect(screen.getByLabelText('Cluster summary')).toBeTruthy()
-    expect(screen.getByLabelText('Workspace overview')).toBeTruthy()
-    expect(screen.queryByText('Pinned shell routes')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Open a workspace' })).toBeTruthy()
+    expect(screen.getByText('Choose the part of MAP2 you need for sound, MIDI, files, or system setup.')).toBeTruthy()
+    expect(screen.getByLabelText('Main workspaces')).toBeTruthy()
+    expect(screen.getByLabelText('Node status')).toBeTruthy()
+    expect(screen.queryByLabelText('Cluster summary')).toBeNull()
+    expect(screen.queryByLabelText('Pin Audio Grid')).toBeNull()
     expect(screen.getByText('Platforms')).toBeTruthy()
     expect(screen.getByText('Audio Artifacts')).toBeTruthy()
     expect(screen.getAllByText('Audio Grid').length).toBeGreaterThan(0)
     expect(screen.getAllByText('MIDI Hub').length).toBeGreaterThan(0)
     expect(screen.getByText('Labs')).toBeTruthy()
     expect(container.querySelector('.hp-shell__brand-mark')).toBeTruthy()
-  })
-
-  it('pins a card without navigating away from Home', async () => {
-    renderHome(
-      <Routes>
-        <Route
-          path="/"
-          element={(
-            <>
-              <HomePage />
-              <LocationProbe />
-            </>
-          )}
-        />
-      </Routes>,
-    )
-
-    await screen.findByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })
-
-    fireEvent.click(screen.getByLabelText('Pin Audio Grid'))
-
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ pinnedRoutes: ['/juce-grid'] })
-    expect(screen.getByTestId('location-probe').textContent).toBe('/')
   })
 
   it('opens Platforms from the landing workspace tile using the canonical route', async () => {
@@ -229,11 +189,11 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })
+    await screen.findByRole('heading', { name: 'Open a workspace' })
 
     const platformsCard = screen.getByText('Platforms').closest('.hp-workspace-card')
     expect(platformsCard).toBeTruthy()
-    fireEvent.click(within(platformsCard as HTMLElement).getByRole('button', { name: 'Open' }))
+    fireEvent.click(platformsCard as HTMLElement)
 
     expect(screen.getByTestId('location-probe').textContent).toBe('/platforms/overview')
   })
@@ -245,7 +205,7 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })
+    await screen.findByRole('heading', { name: 'Open a workspace' })
 
     const workspaceTitles = Array.from(document.querySelectorAll('.hp-workspace-card__title')).map((node) => node.textContent)
     expect(workspaceTitles.slice(0, 5)).toEqual([

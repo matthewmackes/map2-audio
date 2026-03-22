@@ -212,6 +212,12 @@
   flex-wrap: wrap;
 }
 
+.carbon-asset-selector-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--carbon-spacing-03);
+}
+
 .carbon-asset-selector-value {
   flex: 1 1 220px;
   min-width: 0;
@@ -235,6 +241,13 @@
   align-items: center;
   gap: var(--carbon-spacing-02);
   flex-shrink: 0;
+}
+
+.carbon-asset-selector-support,
+.carbon-asset-selector-meta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--cds-text-helper, #8d8d8d);
 }
 
 /* ==================== Parameter Grid ==================== */

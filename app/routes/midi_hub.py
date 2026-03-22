@@ -351,6 +351,21 @@ class ShadowStateRequest(BaseModel):
     source: str = Field(default="api", min_length=1, max_length=128)
 
 
+class DeviceProfileUpsertRequest(BaseModel):
+    profile_id: str = Field(..., min_length=1, max_length=128)
+    name: str = Field(..., min_length=1, max_length=255)
+    match_patterns: List[str] = Field(default_factory=list)
+    default_channel: int = Field(default=0, ge=0, le=16)
+    supports_sysex: bool = False
+    usb_vid_pid: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DeviceAssignmentRequest(BaseModel):
+    port_name: str = Field(..., min_length=1, max_length=255)
+    device_id: str = Field(..., min_length=1, max_length=255)
+
+
 def _build_learn_suggestions(parameter_id: str, chain_context: Dict[str, Any]) -> List[Dict[str, Any]]:
     token = str(parameter_id).lower()
     suggestions: List[Dict[str, Any]] = []
@@ -435,6 +450,74 @@ async def stop_hub() -> Dict[str, Any]:
         "running": hub.running,
         "router_running": router_service.running,
     }
+
+
+@router.get("/devices")
+async def get_device_inventory(refresh: bool = Query(default=True)) -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    refreshed: Optional[Dict[str, Any]] = None
+    if refresh:
+        refreshed = await registry.refresh()
+    snapshot = registry.snapshot()
+    if refreshed is not None:
+        snapshot["online_events"] = list(refreshed.get("online_events", []))
+        snapshot["offline_events"] = list(refreshed.get("offline_events", []))
+    return snapshot
+
+
+@router.get("/devices/profiles")
+async def list_device_profiles() -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    profiles = registry.list_profiles()
+    return {"count": len(profiles), "profiles": profiles}
+
+
+@router.get("/devices/profiles/{profile_id}")
+async def get_device_profile(profile_id: str) -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    profile = registry.get_profile(profile_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail=f"Unknown MIDI device profile: {profile_id}")
+    return profile
+
+
+@router.post("/devices/profiles")
+async def upsert_device_profile(req: DeviceProfileUpsertRequest) -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    profile = registry.upsert_custom_profile(
+        profile_id=req.profile_id,
+        name=req.name,
+        match_patterns=req.match_patterns,
+        default_channel=req.default_channel,
+        supports_sysex=req.supports_sysex,
+        usb_vid_pid=req.usb_vid_pid,
+        metadata=req.metadata,
+    )
+    return {"ok": True, "profile": registry.get_profile(profile.profile_id)}
+
+
+@router.delete("/devices/profiles/{profile_id}")
+async def delete_device_profile(profile_id: str) -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    if not registry.remove_custom_profile(profile_id):
+        raise HTTPException(status_code=404, detail=f"Unknown custom MIDI device profile: {profile_id}")
+    return {"ok": True, "profile_id": profile_id}
+
+
+@router.put("/devices/assignments")
+async def assign_device_port(req: DeviceAssignmentRequest) -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    assignment = await registry.assign_port(port_name=req.port_name, device_id=req.device_id)
+    return {"ok": True, **assignment}
+
+
+@router.delete("/devices/assignments/{port_name}")
+async def clear_device_assignment(port_name: str) -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    cleared = await registry.clear_assignment(port_name=port_name)
+    if not cleared:
+        raise HTTPException(status_code=404, detail=f"No MIDI device assignment found for port: {port_name}")
+    return {"ok": True, "port_name": port_name}
 
 
 @router.get("/routes")

@@ -14,23 +14,17 @@
 
 .hp-shell,
 .hp-section,
-.hp-metric-card,
 .hp-workspace-card,
-.hp-node-card,
-.hp-support-card {
+.hp-node-card {
   width: 100%;
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-01);
 }
 
 .hp-shell {
-  display: flex;
-  min-height: 100%;
-  flex-direction: column;
-  justify-content: space-between;
+  display: grid;
   gap: 1.5rem;
   padding: 1.5rem;
-  background: var(--cds-layer-01);
 }
 
 .hp-shell__brand {
@@ -41,8 +35,8 @@
 }
 
 .hp-shell__brand-mark {
-  width: clamp(5rem, 11vw, 7rem);
-  height: clamp(5rem, 11vw, 7rem);
+  width: clamp(4.5rem, 10vw, 6rem);
+  height: clamp(4.5rem, 10vw, 6rem);
 }
 
 .hp-shell__brand-copy {
@@ -52,8 +46,8 @@
 
 .hp-shell__eyebrow,
 .hp-section__eyebrow,
-.hp-metric-card__eyebrow,
-.hp-support-card__eyebrow {
+.hp-workspace-card__eyebrow,
+.hp-node-card__eyebrow {
   margin: 0;
   color: var(--cds-text-secondary);
   font-size: 0.75rem;
@@ -63,44 +57,34 @@
 
 .hp-shell__title,
 .hp-section__title,
-.hp-metric-card__headline,
 .hp-workspace-card__title,
-.hp-support-card__title,
 .hp-node-card__title {
   margin: 0;
 }
 
 .hp-shell__title {
-  font-size: clamp(2rem, 4vw, 3rem);
+  max-width: 24rem;
+  font-size: clamp(2rem, 4vw, 2.75rem);
   line-height: 1.1;
 }
 
 .hp-shell__summary,
-.hp-metric-card__body,
 .hp-workspace-card__summary,
-.hp-support-card__body,
+.hp-workspace-card__helper,
 .hp-node-card__meta,
 .hp-node-card__devices {
   margin: 0;
   color: var(--cds-text-secondary);
 }
 
-.hp-shell__meta,
-.hp-workspace-card__tags {
+.hp-shell__summary {
+  max-width: 48rem;
+}
+
+.hp-shell__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-
-.hp-metric-card,
-.hp-support-card {
-  display: grid;
-  gap: 0.75rem;
-  padding: 1.25rem;
-}
-
-.hp-metric-card__headline {
-  font-size: 2rem;
 }
 
 .hp-section {
@@ -118,7 +102,6 @@
 }
 
 .hp-workspace-grid,
-.hp-support-grid,
 .hp-node-grid {
   display: grid;
   gap: 1rem;
@@ -128,25 +111,28 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.hp-support-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .hp-node-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.hp-workspace-card {
+.hp-workspace-card,
+.hp-node-card {
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.75rem;
+  padding: 1rem 3rem 1rem 1rem;
+  text-align: left;
+  text-decoration: none;
+  color: var(--cds-text-primary);
 }
 
-.hp-workspace-card__topline {
-  display: grid;
+.hp-workspace-card {
+  min-block-size: 12rem;
+}
+
+.hp-workspace-card__header {
+  display: flex;
   align-items: center;
   gap: 0.75rem;
-  grid-template-columns: auto 1fr auto;
 }
 
 .hp-workspace-card__icon {
@@ -159,64 +145,14 @@
   background: var(--cds-layer-02);
 }
 
-.hp-workspace-card__pin {
-  min-inline-size: 2rem;
-  min-block-size: 2rem;
-  padding: 0;
-  border: 1px solid var(--cds-border-subtle-01);
-  background: transparent;
-  color: var(--cds-icon-secondary);
-}
-
-.hp-workspace-card__pin:hover {
-  background: var(--cds-layer-hover-01);
-}
-
-.hp-workspace-card__pin .cds--btn__icon {
-  margin: 0;
-}
-
-.hp-workspace-card__pin.is-pinned {
-  color: var(--cds-icon-primary);
-  border-color: var(--cds-border-interactive);
-}
-
-.hp-workspace-card__pin:disabled {
-  opacity: 0.45;
-}
-
-.hp-workspace-card__capabilities {
-  margin: 0;
-  padding-left: 1rem;
-  color: var(--cds-text-secondary);
-}
-
-.hp-workspace-card__capabilities li + li {
-  margin-top: 0.35rem;
-}
-
-.hp-workspace-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+.hp-workspace-card__helper {
   margin-top: auto;
-}
-
-.hp-workspace-card__best-for {
   color: var(--cds-text-helper);
   font-size: 0.875rem;
 }
 
 .hp-node-card {
-  display: grid;
   gap: 0.875rem;
-  padding: 1rem;
-  text-align: left;
-}
-
-button.hp-node-card {
-  cursor: pointer;
 }
 
 .hp-node-card__header {
@@ -248,11 +184,9 @@ button.hp-node-card {
 
 .hp-node-card--loading,
 .hp-node-card--error {
-  cursor: default;
-}
-
-.hp-section--support {
-  margin-bottom: 0.5rem;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
 }
 
 @media (max-width: 1311px) {
@@ -266,7 +200,6 @@ button.hp-node-card {
 }
 
 @media (max-width: 1055px) {
-  .hp-support-grid,
   .hp-workspace-grid,
   .hp-node-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -283,12 +216,10 @@ button.hp-node-card {
   }
 
   .hp-workspace-grid,
-  .hp-support-grid,
   .hp-node-grid {
     grid-template-columns: 1fr;
   }
 
-  .hp-workspace-card__footer,
   .hp-section__header {
     align-items: stretch;
     flex-direction: column;

@@ -1,20 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Pin, PinFilled } from '@carbon/icons-react'
-import { Button, Column, Grid, InlineLoading, Layer, SkeletonText, Tag, Tile } from '@carbon/react'
+import { ArrowRight } from '@carbon/icons-react'
+import { Button, ClickableTile, Column, Grid, Layer, SkeletonText, Tag, Tile } from '@carbon/react'
 import {
   Map2BrandMark,
   MAP2_PLATFORM_VERSION,
   MAP2_PLATFORM_NAME,
 } from '../components/branding/map2Branding'
-import { resolveHomeCardProfile, type HomeCardProfile } from '../data/homeCardProfiles'
-import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import {
-  allPinnableNavigationItems,
   homeNavigationSections,
-  MAX_PINNED_NAV_ITEMS,
-  navigationMaturityMeta,
-  normalizePinnedRoutes,
   type HardwareInterfaceMenuItem,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
@@ -109,16 +103,27 @@ interface DeploymentModeResponse {
 }
 
 const FEATURED_HOME_ROUTES = ['/platforms/overview', '/artifacts', '/juce-grid', '/midi-hub'] as const
-const LABS_PROFILE: HomeCardProfile = {
-  summary: 'Separate space for advanced tools, test features, and workflows that are not part of the normal daily shell.',
-  capabilities: [
-    'Browse advanced MAP2 tools in one place',
-    'Keep daily work separate from test and lab tools',
-    'Open experimental or limited-use pages from one screen',
-    'Use the same launcher list for older advanced tools',
-  ],
-  learnMore: 'Open Labs when you need advanced tools without mixing them into the main day-to-day workspace.',
-  bestFor: 'Advanced tools and testing',
+const HOME_LAUNCHER_COPY: Record<string, { summary: string; helper: string }> = {
+  '/platforms/overview': {
+    summary: 'Set up the system and check node status.',
+    helper: 'System setup',
+  },
+  '/artifacts': {
+    summary: 'Find plugins, models, impulse responses, and other audio files.',
+    helper: 'Files and plugins',
+  },
+  '/juce-grid': {
+    summary: 'Build audio signal flow, routing, and snapshots.',
+    helper: 'Audio routing',
+  },
+  '/midi-hub': {
+    summary: 'Set up controllers, mappings, and MIDI routing.',
+    helper: 'MIDI control',
+  },
+  '/labs': {
+    summary: 'Open advanced tools that are not part of normal daily use.',
+    helper: 'Advanced tools',
+  },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -139,12 +144,11 @@ async function fetchJsonOrNull<T>(url: string, nodeId?: string | null): Promise<
   }
 }
 
-function resolvePinnedRoutes(routes: string[] | null | undefined): string[] {
-  const requested = normalizePinnedRoutes(routes)
-  return allPinnableNavigationItems
-    .filter((item) => item.to !== '/' && requested.includes(item.to))
-    .map((item) => item.to)
-    .slice(0, MAX_PINNED_NAV_ITEMS)
+function resolveLauncherCopy(route: string): { summary: string; helper: string } {
+  return HOME_LAUNCHER_COPY[route] ?? {
+    summary: 'Open this workspace.',
+    helper: 'Workspace',
+  }
 }
 
 function parseLastSeenSeconds(value: string | null | undefined): number {
@@ -344,22 +348,19 @@ function platformStatusTagType(status: ClusterTile['status']): 'green' | 'warm-g
   }
 }
 
+function formatRoleLabel(role: string): string {
+  return role
+    .toLowerCase()
+    .split('-')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ')
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function HomePage() {
   const { localNode, topology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.home)
   const navigate = useNavigate()
-  const {
-    settings: specialSettings,
-    isLoading: specialSettingsLoading,
-    updateSettings: updateSpecialSettings,
-  } = useSpecialSettings()
-
-  const pinnedRoutes = useMemo(
-    () => resolvePinnedRoutes(specialSettings?.pinnedRoutes),
-    [specialSettings?.pinnedRoutes],
-  )
-  const pinnedRouteSet = useMemo(() => new Set(pinnedRoutes), [pinnedRoutes])
 
   const [tiles, setTiles] = useState<ClusterTile[]>([])
   const [tilesLoading, setTilesLoading] = useState(true)
@@ -529,23 +530,6 @@ export function HomePage() {
     return () => window.clearInterval(timer)
   }, [loadTiles])
 
-  // ── Pin toggling ────────────────────────────────────────────────────────────
-
-  const handleTogglePin = async (item: HomeNavigationItem, checked: boolean) => {
-    if (!item.pinnable) return
-    if (!checked) {
-      await updateSpecialSettings({ pinnedRoutes: pinnedRoutes.filter((r) => r !== item.to) })
-      return
-    }
-    if (!pinnedRouteSet.has(item.to) && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS) return
-    const candidateSet = new Set([...pinnedRoutes, item.to])
-    const nextRoutes = allPinnableNavigationItems
-      .filter((c) => c.to !== '/' && candidateSet.has(c.to))
-      .map((c) => c.to)
-      .slice(0, MAX_PINNED_NAV_ITEMS)
-    await updateSpecialSettings({ pinnedRoutes: nextRoutes })
-  }
-
   const openHomeItem = useCallback((item: HomeNavigationItem) => {
     navigate(item.to)
   }, [navigate])
@@ -560,136 +544,78 @@ export function HomePage() {
   const totalNodes = tiles.length || topology.nodes.length || 1
   const onlineNodes = tiles.filter((tile) => tile.status === 'online').length
   const atRiskNodes = tiles.filter((tile) => tile.status !== 'online').length
-  const averageHealth = tiles.length > 0
-    ? Math.round(tiles.reduce((sum, tile) => sum + tile.healthScore, 0) / tiles.length)
-    : 0
   const selectedNodeLabel = localNode?.hostname ?? clusterName
-  const clusterRole = tiles[0]?.role ?? (localNode?.role ?? 'node').replace(/_/g, '-').toUpperCase()
+  const systemStatusSummary = atRiskNodes > 0
+    ? `${atRiskNodes} of ${totalNodes} nodes need attention`
+    : `${onlineNodes} of ${totalNodes} nodes online`
+  const labsCopy = resolveLauncherCopy('/labs')
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="hp-root">
       <Grid condensed className="hp-grid">
-        <Column sm={4} md={8} lg={12} className="hp-column">
+        <Column sm={4} md={8} lg={16} className="hp-column">
           <Layer className="hp-shell hp-shell--hero">
             <div className="hp-shell__brand">
               <Map2BrandMark className="hp-shell__brand-mark" />
               <div className="hp-shell__brand-copy">
                 <p className="hp-shell__eyebrow">{MAP2_PLATFORM_NAME}</p>
-                <h1 className="hp-shell__title">Modular.. Multi.. Mesh.. Audio Platform</h1>
+                <h1 className="hp-shell__title">Open a workspace</h1>
                 <p className="hp-shell__summary">
-                  MAP2 is a real-time audio platform that turns standard Linux hardware into a powerful music and sound system. Its main features include live audio processing, built-in guitar and effects tools, support for plugins like LV2 and VST3, low-latency performance for fast response, a web dashboard for control, a backend API for system management, and support for networked audio setups so multiple devices or nodes can work together. It is designed to handle routing, monitoring, processing, and recording in one shared system instead of needing a full DAW on every machine.
+                  Choose the part of MAP2 you need for sound, MIDI, files, or system setup.
                 </p>
               </div>
             </div>
             <div className="hp-shell__meta">
               <Tag type="cool-gray">{MAP2_PLATFORM_VERSION}</Tag>
-              <Tag type="green">{clusterRole}</Tag>
+              <Tag type="cool-gray">{selectedNodeLabel}</Tag>
               <Tag type={atRiskNodes > 0 ? 'warm-gray' : 'green'}>
-                {atRiskNodes > 0 ? `${atRiskNodes} nodes need attention` : 'Cluster ready'}
+                {systemStatusSummary}
               </Tag>
             </div>
           </Layer>
         </Column>
 
-        <Column sm={4} md={8} lg={4} className="hp-column">
-          <Tile className="hp-metric-card" aria-label="Cluster summary">
-            <p className="hp-metric-card__eyebrow">Cluster summary</p>
-            <h2 className="hp-metric-card__headline">{selectedNodeLabel}</h2>
-            <p className="hp-metric-card__body">
-              {totalNodes} nodes tracked, {onlineNodes} online, average health {averageHealth}%.
-            </p>
-          </Tile>
-        </Column>
-
         <Column sm={4} md={8} lg={16} className="hp-column">
           <Layer className="hp-section">
             <div className="hp-section__header">
               <div>
-                <p className="hp-section__eyebrow">Workspace overview</p>
-                <h2 className="hp-section__title">Start from the canonical routed surfaces</h2>
+                <p className="hp-section__eyebrow">Main workspaces</p>
+                <h2 className="hp-section__title">Choose where to work</h2>
               </div>
             </div>
-            <div className="hp-workspace-grid" role="list" aria-label="Workspace overview">
+            <div className="hp-workspace-grid" aria-label="Main workspaces">
               {featuredItems.map((item) => {
                 const Icon = item.icon
-                const profile = resolveHomeCardProfile(item)
-                const maturityMeta = navigationMaturityMeta[item.maturity]
-                const isPinned = pinnedRouteSet.has(item.to)
-                const limitReached = !isPinned && pinnedRoutes.length >= MAX_PINNED_NAV_ITEMS
-                const pinDisabled = specialSettingsLoading || !item.pinnable || limitReached
+                const copy = resolveLauncherCopy(item.to)
 
                 return (
-                  <Tile key={item.to} className="hp-workspace-card" role="listitem">
-                    <div className="hp-workspace-card__topline">
+                  <ClickableTile key={item.to} className="hp-workspace-card" onClick={() => openHomeItem(item)}>
+                    <div className="hp-workspace-card__header">
                       <span className="hp-workspace-card__icon" aria-hidden>
                         <Icon size={24} />
                       </span>
-                      <div className="hp-workspace-card__tags">
-                        <Tag type="cool-gray">{item.homeSection}</Tag>
-                        <Tag type={item.maturity === 'production' ? 'green' : 'warm-gray'} title={maturityMeta.description}>
-                          {maturityMeta.label}
-                        </Tag>
-                      </div>
-                      {item.pinnable ? (
-                        <Button
-                          kind="ghost"
-                          size="sm"
-                          className={`hp-workspace-card__pin${isPinned ? ' is-pinned' : ''}`}
-                          renderIcon={isPinned ? PinFilled : Pin}
-                          onClick={() => {
-                            if (!pinDisabled) void handleTogglePin(item, !isPinned)
-                          }}
-                          aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                          iconDescription={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                          aria-pressed={isPinned}
-                          hasIconOnly
-                          disabled={pinDisabled}
-                        />
-                      ) : null}
+                      <p className="hp-workspace-card__eyebrow">{item.homeSection}</p>
                     </div>
                     <h3 className="hp-workspace-card__title">{item.label}</h3>
-                    <p className="hp-workspace-card__summary">{profile.summary}</p>
-                    <ul className="hp-workspace-card__capabilities">
-                      {profile.capabilities.slice(0, 3).map((capability) => (
-                        <li key={`${item.to}-${capability}`}>{capability}</li>
-                      ))}
-                    </ul>
-                    <div className="hp-workspace-card__footer">
-                      <span className="hp-workspace-card__best-for">{profile.bestFor}</span>
-                      <Button kind="ghost" size="sm" renderIcon={ArrowRight} onClick={() => openHomeItem(item)}>
-                        Open
-                      </Button>
-                    </div>
-                  </Tile>
+                    <p className="hp-workspace-card__summary">{copy.summary}</p>
+                    <p className="hp-workspace-card__helper">{copy.helper}</p>
+                  </ClickableTile>
                 )
               })}
 
-              <Tile className="hp-workspace-card" role="listitem">
-                <div className="hp-workspace-card__topline">
+              <ClickableTile className="hp-workspace-card" onClick={() => navigate('/labs')}>
+                <div className="hp-workspace-card__header">
                   <span className="hp-workspace-card__icon" aria-hidden>
                     <ArrowRight size={24} />
                   </span>
-                  <div className="hp-workspace-card__tags">
-                    <Tag type="cool-gray">System</Tag>
-                    <Tag type="warm-gray">beta</Tag>
-                  </div>
+                  <p className="hp-workspace-card__eyebrow">System</p>
                 </div>
                 <h3 className="hp-workspace-card__title">Labs</h3>
-                <p className="hp-workspace-card__summary">{LABS_PROFILE.summary}</p>
-                <ul className="hp-workspace-card__capabilities">
-                  {LABS_PROFILE.capabilities.slice(0, 3).map((capability) => (
-                    <li key={`labs-${capability}`}>{capability}</li>
-                  ))}
-                </ul>
-                <div className="hp-workspace-card__footer">
-                  <span className="hp-workspace-card__best-for">{LABS_PROFILE.bestFor}</span>
-                  <Button kind="ghost" size="sm" renderIcon={ArrowRight} onClick={() => navigate('/labs')}>
-                    Open
-                  </Button>
-                </div>
-              </Tile>
+                <p className="hp-workspace-card__summary">{labsCopy.summary}</p>
+                <p className="hp-workspace-card__helper">{labsCopy.helper}</p>
+              </ClickableTile>
             </div>
           </Layer>
         </Column>
@@ -698,18 +624,26 @@ export function HomePage() {
           <Layer className="hp-section">
             <div className="hp-section__header">
               <div>
-                <p className="hp-section__eyebrow">Node overview</p>
-                <h2 className="hp-section__title">Cluster posture and route entry</h2>
+                <p className="hp-section__eyebrow">System status</p>
+                <h2 className="hp-section__title">Check nodes</h2>
               </div>
               <Button kind="secondary" size="sm" renderIcon={ArrowRight} onClick={() => navigate('/platforms/cluster-dashboard')}>
                 Open cluster dashboard
               </Button>
             </div>
-            <div className="hp-node-grid" aria-label="Node context and cluster status">
+            <div className="hp-node-grid" aria-label="Node status">
               {tilesLoading ? (
                 <>
-                  <Tile className="hp-node-card hp-node-card--loading"><SkeletonText heading width="60%" /><SkeletonText width="90%" /><SkeletonText width="40%" /></Tile>
-                  <Tile className="hp-node-card hp-node-card--loading"><SkeletonText heading width="55%" /><SkeletonText width="88%" /><SkeletonText width="35%" /></Tile>
+                  <Tile className="hp-node-card hp-node-card--loading">
+                    <SkeletonText heading width="60%" />
+                    <SkeletonText width="90%" />
+                    <SkeletonText width="40%" />
+                  </Tile>
+                  <Tile className="hp-node-card hp-node-card--loading">
+                    <SkeletonText heading width="55%" />
+                    <SkeletonText width="88%" />
+                    <SkeletonText width="35%" />
+                  </Tile>
                 </>
               ) : null}
 
@@ -721,9 +655,8 @@ export function HomePage() {
               ) : null}
 
               {!tilesLoading && !tilesError && tiles.map((tile) => (
-                <button
+                <ClickableTile
                   key={`cluster-tile-${tile.id}`}
-                  type="button"
                   className="hp-node-card"
                   onClick={() => navigate('/platforms/cluster-dashboard')}
                 >
@@ -736,6 +669,9 @@ export function HomePage() {
                       {tile.status}
                     </Tag>
                   </div>
+                  <p className="hp-node-card__eyebrow">
+                    {tile.isLocal ? 'Local device' : formatRoleLabel(tile.role)}
+                  </p>
                   <div className="hp-node-card__stats">
                     <span className="hp-node-card__health">
                       <span
@@ -748,47 +684,8 @@ export function HomePage() {
                     <span>{tile.cpuRam}</span>
                   </div>
                   <p className="hp-node-card__devices">{tile.audioDevices.join(' · ')}</p>
-                </button>
+                </ClickableTile>
               ))}
-            </div>
-          </Layer>
-        </Column>
-
-        <Column sm={4} md={8} lg={16} className="hp-column">
-          <Layer className="hp-section hp-section--support">
-            <div className="hp-section__header">
-              <div>
-                <p className="hp-section__eyebrow">Platform context</p>
-                <h2 className="hp-section__title">Execution posture</h2>
-              </div>
-            </div>
-            <div className="hp-support-grid">
-              <Tile className="hp-support-card">
-                <p className="hp-support-card__eyebrow">Viewed node</p>
-                <h3 className="hp-support-card__title">{selectedNodeLabel}</h3>
-                <p className="hp-support-card__body">
-                  The home surface is scoped to the same node context used by the operator shell.
-                </p>
-              </Tile>
-              <Tile className="hp-support-card">
-                <p className="hp-support-card__eyebrow">Deployment</p>
-                <h3 className="hp-support-card__title">{clusterRole}</h3>
-                <p className="hp-support-card__body">
-                  Use Platforms for operational work, Artifacts for catalog curation, and Labs for advanced route launch.
-                </p>
-              </Tile>
-              <Tile className="hp-support-card">
-                <p className="hp-support-card__eyebrow">Current state</p>
-                {tilesLoading ? (
-                  <InlineLoading description="Refreshing cluster telemetry" status="active" />
-                ) : (
-                  <p className="hp-support-card__body">
-                    {atRiskNodes > 0
-                      ? `${atRiskNodes} nodes are outside the healthy baseline and should be reviewed in the cluster dashboard.`
-                      : 'No degraded nodes detected in the current telemetry snapshot.'}
-                  </p>
-                )}
-              </Tile>
             </div>
           </Layer>
         </Column>

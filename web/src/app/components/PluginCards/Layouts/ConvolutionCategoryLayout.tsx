@@ -31,6 +31,8 @@ export interface ConvolutionCategoryLayoutProps {
   onBrowseIR?: () => void
   onPrevIR?: () => void
   onNextIR?: () => void
+  uploadControl?: ReactNode
+  assetSupportText?: ReactNode
 
   /* Mix */
   mix?: ParamSlot
@@ -55,6 +57,8 @@ export function ConvolutionCategoryLayout({
   onBrowseIR,
   onPrevIR,
   onNextIR,
+  uploadControl,
+  assetSupportText,
   mix,
   inputLevel = 0,
   outputLevel = 0,
@@ -99,31 +103,35 @@ export function ConvolutionCategoryLayout({
     >
       {/* IR Browser Section */}
       <CarbonParameterSection title="Impulse Response" accentColor={accentColor}>
-        <div className="carbon-asset-selector">
-          {onPrevIR && (
-            <button type="button" className="carbon-card-icon-btn" onClick={onPrevIR} title="Previous IR">
-              <ChevronLeft size={16} />
-            </button>
-          )}
-          <div
-            className={`carbon-asset-selector-value ${irName ? '' : 'empty'}`}
-            title={irName || 'No IR loaded'}
-          >
-            {irName || 'No IR loaded'}
-          </div>
-          <div className="carbon-asset-selector-actions">
-            {onNextIR && (
-              <button type="button" className="carbon-card-icon-btn" onClick={onNextIR} title="Next IR">
-                <ChevronRight size={16} />
+        <div className="carbon-asset-selector-stack">
+          <div className="carbon-asset-selector">
+            {onPrevIR && (
+              <button type="button" className="carbon-card-icon-btn" onClick={onPrevIR} title="Previous IR">
+                <ChevronLeft size={16} />
               </button>
             )}
-            {onBrowseIR && (
-              <button type="button" className="carbon-toggle-btn" onClick={onBrowseIR}>
-                <FolderOpen size={14} style={{ marginRight: 4 }} />
-                Select...
-              </button>
-            )}
+            <div
+              className={`carbon-asset-selector-value ${irName ? '' : 'empty'}`}
+              title={irName || 'No IR loaded'}
+            >
+              {irName || 'No IR loaded'}
+            </div>
+            <div className="carbon-asset-selector-actions">
+              {onNextIR && (
+                <button type="button" className="carbon-card-icon-btn" onClick={onNextIR} title="Next IR">
+                  <ChevronRight size={16} />
+                </button>
+              )}
+              {onBrowseIR && (
+                <button type="button" className="carbon-toggle-btn" onClick={onBrowseIR}>
+                  <FolderOpen size={14} style={{ marginRight: 4 }} />
+                  Library
+                </button>
+              )}
+              {uploadControl}
+            </div>
           </div>
+          {assetSupportText ? <p className="carbon-asset-selector-support">{assetSupportText}</p> : null}
         </div>
       </CarbonParameterSection>
 

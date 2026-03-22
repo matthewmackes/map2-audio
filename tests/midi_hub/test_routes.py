@@ -116,6 +116,54 @@ async def test_hub_status_route(route_env):
 
 
 @pytest.mark.asyncio
+async def test_device_inventory_profile_and_assignment_routes(route_env):
+    hub = route_env["hub"]
+    _register_virtual_port(hub, "midisport-a", "M-Audio MIDISPORT 4x4 Port A")
+
+    inventory = await midi_hub_routes.get_device_inventory(refresh=True)
+    assert inventory["count"] == 1
+    assert inventory["devices"][0]["profile_id"] == "m_audio_midisport_4x4"
+
+    profiles = await midi_hub_routes.list_device_profiles()
+    assert any(profile["profile_id"] == "m_audio_midisport_4x4" for profile in profiles["profiles"])
+
+    built_in = await midi_hub_routes.get_device_profile("m_audio_midisport_4x4")
+    assert built_in["name"] == "M-Audio MIDISPORT 4x4"
+
+    created = await midi_hub_routes.upsert_device_profile(
+        midi_hub_routes.DeviceProfileUpsertRequest(
+            profile_id="rack_usb_bridge",
+            name="Rack USB Bridge",
+            match_patterns=["rack bridge"],
+            default_channel=0,
+            supports_sysex=True,
+            usb_vid_pid=["0763:1020"],
+            metadata={"device_type": "adapter"},
+        )
+    )
+    assert created["ok"] is True
+    assert created["profile"]["profile_id"] == "rack_usb_bridge"
+
+    assigned = await midi_hub_routes.assign_device_port(
+        midi_hub_routes.DeviceAssignmentRequest(
+            port_name="M-Audio MIDISPORT 4x4 Port A",
+            device_id="rack_usb_bridge:stage_left",
+        )
+    )
+    assert assigned["ok"] is True
+
+    reassigned_inventory = await midi_hub_routes.get_device_inventory(refresh=True)
+    assert reassigned_inventory["devices"][0]["device_id"] == "rack_usb_bridge:stage_left"
+    assert reassigned_inventory["devices"][0]["manual_assignment"] == "M-Audio MIDISPORT 4x4 Port A"
+
+    cleared = await midi_hub_routes.clear_device_assignment("M-Audio MIDISPORT 4x4 Port A")
+    assert cleared["ok"] is True
+
+    deleted = await midi_hub_routes.delete_device_profile("rack_usb_bridge")
+    assert deleted["ok"] is True
+
+
+@pytest.mark.asyncio
 async def test_router_routes_api(route_env):
     hub = route_env["hub"]
     _register_virtual_port(hub, "src", "Source")

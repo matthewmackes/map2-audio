@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -15,9 +15,10 @@ import {
   TableRow,
   Tag,
 } from '@carbon/react'
-import { Renew, Upload, VolumeUp, Waveform } from '@carbon/icons-react'
+import { Renew, VolumeUp, Waveform } from '@carbon/icons-react'
 import { irApi } from '../../../map2/api'
 import type { IRsResponse, IRStatus } from '../../../map2/types'
+import { AssetUploadButton } from './AssetUploadButton'
 import { useToasts } from '../Toasts'
 import './ModelManagerDialogs.css'
 
@@ -92,7 +93,6 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
 
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
   const [uploading, setUploading] = useState(false)
 
@@ -123,26 +123,42 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
       setUploading(true)
       return config.uploadFn(file)
     },
-    onSuccess: (data: { filename?: string }) => {
+    onSuccess: async (data: { filename?: string }) => {
       queryClient.invalidateQueries({ queryKey: ['ir'] })
-      pushToast(`Uploaded: ${data.filename || 'IR file'}`, 'success')
+      const uploadedName = data.filename
+      pushToast(`Uploaded: ${uploadedName || 'IR file'}`, 'success')
+      if (uploadedName) {
+        try {
+          await loadMutation.mutateAsync(uploadedName)
+        } catch {
+          // loadMutation surfaces its own error toast
+        }
+      }
     },
     onError: () => pushToast(`Failed to upload ${type} IR`, 'error'),
     onSettled: () => setUploading(false),
   })
 
   const irs = irsQuery.data?.irs ?? []
-  const loadedIR = statusQuery.data?.[config.loadedKey] as string | undefined
+  const loadedIR = useMemo(() => {
+    const status = statusQuery.data
+    if (!status) {
+      return undefined
+    }
+    const preferredValue = status[config.loadedKey]
+    if (typeof preferredValue === 'string' && preferredValue.length > 0) {
+      return preferredValue
+    }
+    const activeKey = config.loadedKey === 'loaded_cabinet' ? 'active_cabinet' : 'active_reverb'
+    const fallbackValue = (status as IRStatus & { active_cabinet?: string; active_reverb?: string })[activeKey]
+    return typeof fallbackValue === 'string' && fallbackValue.length > 0 ? fallbackValue : undefined
+  }, [config.loadedKey, statusQuery.data])
   const normalizedSearch = search.trim().toLowerCase()
   const filteredIRs = irs.filter((ir) => ir.name.toLowerCase().includes(normalizedSearch))
 
   const handleRefresh = () => {
     void irsQuery.refetch()
     void statusQuery.refetch()
-  }
-
-  const handleUpload = () => {
-    fileInputRef.current?.click()
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,15 +197,15 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
               onChange={(event) => setSearch(event.currentTarget.value)}
               size="md"
             />
-            <Button
+            <AssetUploadButton
               kind="ghost"
               size="md"
-              renderIcon={Upload}
-              onClick={handleUpload}
+              ariaLabel={`Upload ${type} IR file`}
+              label={uploading ? 'Uploading...' : 'Upload WAV'}
+              accept={['.wav']}
+              onChange={handleFileChange}
               disabled={uploading}
-            >
-              {uploading ? 'Uploading...' : 'Upload WAV'}
-            </Button>
+            />
             <Button
               kind="ghost"
               size="md"
@@ -201,15 +217,6 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
             />
           </div>
         </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".wav"
-          onChange={handleFileChange}
-          className="model-manager-dialog__hidden-file-input"
-        />
-
         {loadedIR && (
           <Tag type="green" title="Active IR" size="md">
             Active: {loadedIR}

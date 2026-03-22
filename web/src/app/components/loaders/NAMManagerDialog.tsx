@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -15,9 +15,10 @@ import {
   TableRow,
   Tag,
 } from '@carbon/react'
-import { MachineLearningModel, Renew, StarFilled, Upload } from '@carbon/icons-react'
+import { MachineLearningModel, Renew, StarFilled } from '@carbon/icons-react'
 import { namApi } from '../../../map2/api'
 import type { NAMModelsResponse, NAMStatus } from '../../../map2/types'
+import { AssetUploadButton } from './AssetUploadButton'
 import { useToasts } from '../Toasts'
 import './ModelManagerDialogs.css'
 
@@ -41,7 +42,6 @@ interface Props {
 export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
   const [uploading, setUploading] = useState(false)
 
@@ -84,15 +84,33 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
       setUploading(true)
       return namApi.upload(file)
     },
-    onSuccess: (data: { model?: { name?: string } }) => {
+    onSuccess: async (data: { model?: { name?: string } }) => {
       queryClient.invalidateQueries({ queryKey: ['nam'] })
-      pushToast(`Uploaded: ${data.model?.name || 'NAM model'}`, 'success')
+      const uploadedName = data.model?.name
+      pushToast(`Uploaded: ${uploadedName || 'NAM model'}`, 'success')
+      if (uploadedName) {
+        try {
+          await loadMutation.mutateAsync(uploadedName)
+        } catch {
+          // loadMutation surfaces its own error toast
+        }
+      }
     },
     onError: () => pushToast('Failed to upload NAM model', 'error'),
     onSettled: () => setUploading(false),
   })
 
-  const models = modelsQuery.data?.models ?? []
+  const models = useMemo(
+    () =>
+      (modelsQuery.data?.models ?? []).map((model) => ({
+        ...model,
+        type:
+          'type' in model && typeof model.type === 'string'
+            ? model.type
+            : (model as { model_type?: string }).model_type || 'unknown',
+      })),
+    [modelsQuery.data?.models],
+  )
   const featured = featuredQuery.data?.models ?? []
   const activeModel = statusQuery.data?.activeModel
 
@@ -123,10 +141,6 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
     void modelsQuery.refetch()
     void statusQuery.refetch()
     void featuredQuery.refetch()
-  }
-
-  const handleUpload = () => {
-    fileInputRef.current?.click()
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,15 +186,15 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
               onChange={(event) => setSearch(event.currentTarget.value)}
               size="md"
             />
-            <Button
+            <AssetUploadButton
               kind="ghost"
               size="md"
-              renderIcon={Upload}
-              onClick={handleUpload}
+              ariaLabel="Upload NAM model file"
+              label={uploading ? 'Uploading...' : 'Upload .nam'}
+              accept={['.nam']}
+              onChange={handleFileChange}
               disabled={uploading}
-            >
-              {uploading ? 'Uploading...' : 'Upload .nam'}
-            </Button>
+            />
             <Button
               kind="ghost"
               size="md"
@@ -192,15 +206,6 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
             />
           </div>
         </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".nam"
-          onChange={handleFileChange}
-          className="model-manager-dialog__hidden-file-input"
-        />
-
         {activeModel && (
           <Tag type="green" title="Active NAM model" size="md">
             Active: {activeModel}

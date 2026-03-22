@@ -122,4 +122,32 @@ describe('IRManagerDialog', () => {
     expect(screen.getByText('Cab A')).toBeInTheDocument()
     expect(screen.queryByText('Cab B')).not.toBeInTheDocument()
   })
+
+  it('uploads a cabinet IR from the file chooser control', async () => {
+    renderDialog()
+
+    await screen.findByText('Cab A')
+
+    fireEvent.change(screen.getByLabelText('Upload cabinet IR file'), {
+      target: {
+        files: [new File(['wave-data'], 'new-cab.wav', { type: 'audio/wav' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(mockUploadCabinet).toHaveBeenCalledTimes(1)
+    })
+    expect((mockUploadCabinet.mock.calls[0]?.[0] as File).name).toBe('new-cab.wav')
+    await waitFor(() => {
+      expect(mockLoadCabinet.mock.calls[0]?.[0]).toBe('new-cab.wav')
+    })
+  })
+
+  it('shows the active IR when status uses backend active_* fields', async () => {
+    mockGetStatus.mockResolvedValue({ available: true, active_cabinet: 'Cab B' })
+
+    renderDialog()
+
+    expect(await screen.findByText('Active: Cab B')).toBeInTheDocument()
+  })
 })

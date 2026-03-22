@@ -24,6 +24,7 @@ export interface AmplifierCategoryLayoutProps {
   onOpenMidiMappings?: () => void
 
   visualization?: ReactNode
+  topContent?: ReactNode
 
   /* Input section */
   inputGain?: ParamSlot
@@ -62,6 +63,7 @@ export function AmplifierCategoryLayout({
   onBypassToggle,
   onOpenMidiMappings,
   visualization,
+  topContent,
   inputGain,
   channel,
   bright,
@@ -118,6 +120,8 @@ export function AmplifierCategoryLayout({
       compact={compact}
       cardHeight={560}
     >
+      {topContent}
+
       {/* Input Section */}
       {(inputGain || channel || bright) && (
         <CarbonParameterSection title="Input" accentColor={accentColor}>

@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 20, 2026 (`update` shorthand workflow preference)
+> **Last Updated**: March 22, 2026 (`update` shorthand workflow preference + direct asset upload fix)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1042,6 +1042,14 @@ These files represent best practices and architectural patterns to follow:
 - **Solution**: Use closest match (`MusicNote`) and document it
 - **Code**: `// Note: Phosphor has no Drum icon — MusicNote used as closest match`
 
+**13. Direct Asset Uploads Must Auto-Activate In Selected-Block Editors**
+- **Files**: `web/src/app/components/loaders/AssetUploadButton.tsx`, `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`
+- **Problem**: NAM, Cabinet IR, and Reverb IR looked upload-capable but the active editor surface still hid the actual file chooser behind a second library step, so operators could not reliably pick local `.nam` or `.wav` files.
+- **Root Cause**: The selected-block cards and shared manager dialogs separated upload from activation, which left the visible workflow without an obvious working chooser and required a second hidden selection step after upload.
+- **Fix**: Use a real `<input type="file">` over the visible Carbon button surface and wire the upload success path to immediately activate the returned asset in both the selected-block cards and the shared manager dialogs.
+- **Validation**: `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/pages/JuceGridPage.test.tsx`; `npm --prefix web run build`
+- **Lesson**: For asset-backed effect editors, "upload" is not complete until the newly uploaded asset is both visible on the active surface and selected immediately.
+
 ### JUCE/Audio Gotchas
 
 **13. Debug Build Performance**
@@ -1374,6 +1382,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-22] - Direct Asset Upload Activation for NAM and IR Editors
+- **Section**: Gotchas & Learned Fixes (#13), React/TypeScript Gotchas
+- **Change**: Documented the selected-block asset-upload failure mode and the reusable direct file-chooser pattern that immediately activates uploaded NAM and IR assets.
+- **Reason**: The JUCE Grid selected-block NAM/Cabinet/Reverb editors remained practically unusable until upload and activation were collapsed into one visible workflow.
+- **Impact**: Future asset-backed editor work should preserve a visible local-file chooser on the active card surface and auto-select the uploaded asset instead of requiring a second hidden step.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/components/loaders/AssetUploadButton.tsx`, `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx`
 
 ### [2026-03-20] - Effect Inventory + Duplicate Telemetry Contracts
 - **Section**: Gotchas & Learned Fixes (#18, #19), Worklist Workflow

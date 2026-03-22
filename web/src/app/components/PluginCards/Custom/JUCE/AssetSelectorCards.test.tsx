@@ -54,6 +54,14 @@ jest.mock('../../../loaders/ReverbIRManagerDialog', () => ({
   ReverbIRManagerDialog: ({ open }: { open: boolean }) => (open ? <div>Reverb IR manager open</div> : null),
 }))
 
+const mockPushToast = jest.fn()
+
+jest.mock('../../../Toasts', () => ({
+  useToasts: () => ({
+    pushToast: mockPushToast,
+  }),
+}))
+
 function makeClient() {
   return new QueryClient({
     defaultOptions: {
@@ -116,6 +124,28 @@ describe('JUCE asset selector cards', () => {
         } as Response
       }
 
+      if (url === '/api/nam/upload') {
+        return {
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({
+            model: {
+              name: 'Uploaded NAM',
+            },
+          }),
+        } as Response
+      }
+
+      if (url === '/api/nam/models/Uploaded%20NAM/load') {
+        return {
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({ status: 'ok' }),
+        } as Response
+      }
+
       if (url === '/api/ir/status?type=cabinet') {
         return {
           ok: true,
@@ -138,6 +168,26 @@ describe('JUCE asset selector cards', () => {
           json: async () => ({
             cabinets: [{ name: 'Vintage 4x12', size: '512 KB' }],
           }),
+        } as Response
+      }
+
+      if (url === '/api/ir/cabinets/upload') {
+        return {
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({
+            filename: 'Uploaded Cabinet.wav',
+          }),
+        } as Response
+      }
+
+      if (url === '/api/ir/cabinets/Uploaded%20Cabinet.wav/load') {
+        return {
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({ status: 'ok' }),
         } as Response
       }
 
@@ -167,6 +217,26 @@ describe('JUCE asset selector cards', () => {
         } as Response
       }
 
+      if (url === '/api/ir/reverbs/upload') {
+        return {
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({
+            filename: 'Uploaded Reverb.wav',
+          }),
+        } as Response
+      }
+
+      if (url === '/api/ir/reverbs/Uploaded%20Reverb.wav/load') {
+        return {
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => ({ status: 'ok' }),
+        } as Response
+      }
+
       throw new Error(`Unexpected fetch: ${url}`)
     }) as jest.MockedFunction<typeof fetch>
   })
@@ -186,9 +256,9 @@ describe('JUCE asset selector cards', () => {
       />,
     )
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Select...' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Library' })).toBeEnabled())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Select...' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Library' }))
 
     expect(screen.getByText('NAM manager open')).toBeInTheDocument()
   })
@@ -205,7 +275,7 @@ describe('JUCE asset selector cards', () => {
 
     await waitFor(() => expect(screen.getByText('Vintage 4x12')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Select...' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Library' }))
 
     expect(screen.getByText('Cabinet IR manager open')).toBeInTheDocument()
   })
@@ -222,8 +292,86 @@ describe('JUCE asset selector cards', () => {
 
     await waitFor(() => expect(screen.getByText('Studio Room')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Select...' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Library' }))
 
     expect(screen.getByText('Reverb IR manager open')).toBeInTheDocument()
+  })
+
+  it('uploads a NAM model directly from the selected-block card', async () => {
+    renderCard(
+      <NAMCard
+        plugin={makePlugin('NAM', 'Amplifier')}
+        parameterValues={{}}
+        onParameterChange={jest.fn()}
+        accentColor="#ff6b6b"
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByLabelText('Upload NAM model to selected block')).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText('Upload NAM model to selected block'), {
+      target: {
+        files: [new File(['nam-data'], 'direct-upload.nam', { type: 'application/octet-stream' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/nam/upload', expect.objectContaining({ method: 'POST' }))
+    })
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/nam/models/Uploaded%20NAM/load', expect.objectContaining({ method: 'POST' }))
+    })
+  })
+
+  it('uploads a cabinet IR directly from the selected-block card', async () => {
+    renderCard(
+      <CabinetIRCard
+        plugin={makePlugin('Cabinet IR', 'Convolution')}
+        parameterValues={{}}
+        onParameterChange={jest.fn()}
+        accentColor="#f97316"
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByLabelText('Upload cabinet IR to selected block')).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText('Upload cabinet IR to selected block'), {
+      target: {
+        files: [new File(['wave-data'], 'direct-cab.wav', { type: 'audio/wav' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/ir/cabinets/upload', expect.objectContaining({ method: 'POST' }))
+    })
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/ir/cabinets/Uploaded%20Cabinet.wav/load', expect.objectContaining({ method: 'POST' }))
+    })
+  })
+
+  it('uploads a reverb IR directly from the selected-block card', async () => {
+    renderCard(
+      <ReverbIRCard
+        plugin={makePlugin('Reverb IR', 'Convolution')}
+        parameterValues={{}}
+        onParameterChange={jest.fn()}
+        accentColor="#a855f7"
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByLabelText('Upload reverb IR to selected block')).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText('Upload reverb IR to selected block'), {
+      target: {
+        files: [new File(['wave-data'], 'direct-reverb.wav', { type: 'audio/wav' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/ir/reverbs/upload', expect.objectContaining({ method: 'POST' }))
+    })
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/ir/reverbs/Uploaded%20Reverb.wav/load', expect.objectContaining({ method: 'POST' }))
+    })
   })
 })

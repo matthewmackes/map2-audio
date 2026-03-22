@@ -1,0 +1,26 @@
+.map2-asset-upload-button {
+  position: relative;
+  display: inline-flex;
+  inline-size: fit-content;
+}
+
+.map2-asset-upload-button__input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.map2-asset-upload-button__input:disabled {
+  cursor: not-allowed;
+}
+
+.map2-asset-upload-button__button.cds--btn {
+  pointer-events: none;
+}
+
+.map2-asset-upload-button__input:focus-visible + .map2-asset-upload-button__button {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}

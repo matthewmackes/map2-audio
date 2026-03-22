@@ -13,8 +13,8 @@
  * - Model metadata display
  */
 
-import { useState, useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useCallback, type ChangeEvent } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MachineLearningModel } from '@carbon/icons-react'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { AmplifierCategoryLayout, type ParamSlot } from '../../Layouts/AmplifierCategoryLayout'
@@ -22,6 +22,8 @@ import type { AdvancedSection } from '../../Base/CarbonCardShell'
 import { CarbonParameterSection } from '../../Base/CarbonParameterSection'
 import type { PluginCardProps } from '../../types'
 import { NAMManagerDialog } from '../../../loaders/NAMManagerDialog'
+import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
+import { useToasts } from '../../../Toasts'
 
 // Plugin URI for MIDI mappings
 const NAM_URI = 'map2://juce/nam'
@@ -63,6 +65,7 @@ function NAMCardBase({
 }: NAMCardProps) {
   const queryClient = useQueryClient()
   const [managerOpen, setManagerOpen] = useState(false)
+  const { pushToast } = useToasts()
 
   const statusQuery = useQuery({
     queryKey: ['nam', 'status'],
@@ -108,6 +111,44 @@ function NAMCardBase({
 
   const status = statusQuery.data
   const availableModelCount = status?.availableModels?.length ?? 0
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      const uploadResponse = await fetch('/api/nam/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload NAM model')
+      }
+      const data = await uploadResponse.json() as { model?: { name?: string } }
+      const uploadedName = data.model?.name
+      if (uploadedName) {
+        const loadResponse = await fetch(`/api/nam/models/${encodeURIComponent(uploadedName)}/load`, {
+          method: 'POST',
+        })
+        if (!loadResponse.ok) {
+          throw new Error('Failed to load uploaded NAM model')
+        }
+      }
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['nam'] })
+      pushToast(`Loaded NAM model: ${data.model?.name || 'uploaded model'}`, 'success')
+    },
+    onError: () => pushToast('Failed to upload NAM model', 'error'),
+  })
+
+  const handleUploadChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      uploadMutation.mutate(file)
+    }
+    event.target.value = ''
+  }, [uploadMutation])
 
   // Level meter helper
   const levelToPercent = (db: number) => Math.max(0, Math.min(100, ((db + 60) / 60) * 100))
@@ -250,37 +291,39 @@ function NAMCardBase({
       accentColor={accentColor}
       autoIcon={false}
     >
-      <div className="carbon-asset-selector">
-        <div
-          className={`carbon-asset-selector-value ${status?.activeModel ? '' : 'empty'}`}
-          title={status?.activeModel || 'No model loaded'}
-        >
-          {status?.loading ? 'Loading...' : status?.activeModel || 'No model loaded'}
-        </div>
-        <div className="carbon-asset-selector-actions">
-          <button
-            type="button"
-            className="carbon-toggle-btn"
-            onClick={() => setManagerOpen(true)}
-            disabled={!status?.available}
+      <div className="carbon-asset-selector-stack">
+        <div className="carbon-asset-selector">
+          <div
+            className={`carbon-asset-selector-value ${status?.activeModel ? '' : 'empty'}`}
+            title={status?.activeModel || 'No model loaded'}
           >
-            Select...
-          </button>
+            {status?.loading ? 'Loading...' : status?.activeModel || 'No model loaded'}
+          </div>
+          <div className="carbon-asset-selector-actions">
+            <button
+              type="button"
+              className="carbon-toggle-btn"
+              onClick={() => setManagerOpen(true)}
+              disabled={!status?.available || uploadMutation.isPending}
+            >
+              Library
+            </button>
+            <AssetUploadButton
+              accept={['.nam']}
+              ariaLabel="Upload NAM model to selected block"
+              label={uploadMutation.isPending ? 'Uploading...' : 'Upload .nam'}
+              onChange={handleUploadChange}
+              disabled={!status?.available || uploadMutation.isPending}
+            />
+          </div>
         </div>
+        <p className="carbon-asset-selector-support">Upload a local `.nam` file or open the model library.</p>
+        {availableModelCount > 0 && (
+          <div className="carbon-asset-selector-meta">
+            {availableModelCount} models available
+          </div>
+        )}
       </div>
-      {availableModelCount > 0 && (
-        <div
-          style={{
-            marginTop: 8,
-            fontSize: 10,
-            color: '#8d8d8d',
-            textTransform: 'uppercase',
-            letterSpacing: '0.24px',
-          }}
-        >
-          {availableModelCount} models available
-        </div>
-      )}
     </CarbonParameterSection>
   )
 
@@ -294,12 +337,12 @@ function NAMCardBase({
         onBypassToggle={() => setBypass(!status?.bypass)}
         onOpenMidiMappings={onOpenMidiMappings}
         visualization={visualization}
+        topContent={modelSelector}
         inputGain={inputGainSlot}
         outputGain={outputGainSlot}
         inputLevel={status?.inputLevel ?? 0}
         outputLevel={status?.outputLevel ?? 0}
         advancedSections={advancedSections}
-        extraContent={modelSelector}
       />
       <NAMManagerDialog
         open={managerOpen}

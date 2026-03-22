@@ -1834,6 +1834,49 @@ export interface MidiHubScheduledEntry {
   error?: string | null;
 }
 
+export interface MidiHubDeviceProfile {
+  profile_id: string;
+  name: string;
+  match_patterns: string[];
+  default_channel: number;
+  supports_sysex: boolean;
+  usb_vid_pid: string[];
+  metadata: Record<string, unknown>;
+  is_custom: boolean;
+}
+
+export interface MidiHubDeviceState {
+  device_id: string;
+  profile_id: string;
+  profile_name: string;
+  port_ids: string[];
+  port_names: string[];
+  connected: boolean;
+  responding: boolean;
+  health: string;
+  latency_ms?: number | null;
+  last_seen: string;
+  vendor_id?: string | null;
+  product_id?: string | null;
+  manual_assignment?: string | null;
+  source: string;
+  node_id: string;
+  remote: boolean;
+}
+
+export interface MidiHubDeviceInventory {
+  count: number;
+  devices: MidiHubDeviceState[];
+  remote_device_count: number;
+  remote_devices: MidiHubDeviceState[];
+  global_device_count: number;
+  profiles: MidiHubDeviceProfile[];
+  assignments: Record<string, string>;
+  shadow_state: Record<string, unknown>;
+  online_events?: string[];
+  offline_events?: string[];
+}
+
 // =============================
 // Cluster MIDI (T103)
 // =============================
@@ -2737,6 +2780,60 @@ export const midiHubApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  getDevices: (refresh = true, nodeId?: string | null) =>
+    fetchJson<MidiHubDeviceInventory>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices?refresh=${refresh ? 'true' : 'false'}`, nodeId)
+    ),
+  getDeviceProfiles: (nodeId?: string | null) =>
+    fetchJson<{ count: number; profiles: MidiHubDeviceProfile[] }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices/profiles`, nodeId)
+    ),
+  getDeviceProfile: (profileId: string, nodeId?: string | null) =>
+    fetchJson<MidiHubDeviceProfile>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices/profiles/${encodeURIComponent(profileId)}`, nodeId)
+    ),
+  upsertDeviceProfile: (
+    payload: {
+      profile_id: string;
+      name: string;
+      match_patterns?: string[];
+      default_channel?: number;
+      supports_sysex?: boolean;
+      usb_vid_pid?: string[];
+      metadata?: Record<string, unknown>;
+    },
+    nodeId?: string | null
+  ) =>
+    fetchJson<{ ok: boolean; profile: MidiHubDeviceProfile }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices/profiles`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
+  deleteDeviceProfile: (profileId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; profile_id: string }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices/profiles/${encodeURIComponent(profileId)}`, nodeId),
+      {
+        method: 'DELETE',
+      }
+    ),
+  assignDevicePort: (payload: { port_name: string; device_id: string }, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; port_name: string; device_id: string }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices/assignments`, nodeId),
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }
+    ),
+  clearDeviceAssignment: (portName: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; port_name: string }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices/assignments/${encodeURIComponent(portName)}`, nodeId),
+      {
+        method: 'DELETE',
+      }
+    ),
 
   getDeviceShadow: (limit = 200, nodeId?: string | null) =>
     fetchJson<{ count: number; events: Array<Record<string, unknown>>; shadow_state: Record<string, unknown> }>(

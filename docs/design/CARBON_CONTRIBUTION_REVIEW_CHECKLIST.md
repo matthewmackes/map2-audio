@@ -98,3 +98,17 @@ Source standard: `docs/design/CARBON_CONFORMANCE_STANDARD.md`
   - Pattern conformance: The remaining Theme token editor exception is explicitly documented in `docs/design/CARBON_CONFORMANCE_MATRIX.md` instead of remaining an implicit bespoke control.
   - Accessibility: `web/src/app/pages/ThemePage.tsx` exposes `radiogroup`/`radio` semantics with explicit accessible names for the custom family and shade pickers, and `web/src/app/pages/ThemePage.test.tsx` now asserts those semantics directly.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/pages/ThemePage.test.tsx` -> PASS.
+
+## T317 Review Record
+
+- Contributor: Codex
+- Reviewer: Pending
+- Date: 2026-03-22
+- Task IDs: T317
+- Evidence:
+  - Component selection: `web/src/app/pages/HomePage.tsx` now uses Carbon `ClickableTile` for both workspace launchers and node-status launchers so the page follows Carbon’s navigational-tile pattern instead of combining brochure-style content with internal CTA buttons.
+  - Typography and tokens: `web/src/app/pages/HomePage.css` stays on Carbon text, helper-text, border, layer, and icon tokens while reducing the launcher copy to shorter productive-product wording.
+  - Theme, layering, and grid: The landing page continues to use Carbon `Grid` and `Column` primitives on the 16-column layout while simplifying the page from four sections down to the appliance-critical hero, workspace launcher, and node-status regions.
+  - Pattern conformance: The Home route no longer mixes internal pin/open actions into its main launch cards; each workspace card is now a single-action launcher, which aligns with Carbon clickable-tile guidance for navigation surfaces.
+  - Accessibility and responsive behavior: Focus/keyboard behavior for the primary launcher cards now comes from Carbon `ClickableTile`; focused Home coverage confirms the new launcher and telemetry contracts, and the existing responsive breakpoint structure remains intact in `web/src/app/pages/HomePage.css`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import/chunk warnings only.

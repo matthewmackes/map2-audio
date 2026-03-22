@@ -154,4 +154,24 @@ describe('NAMManagerDialog', () => {
     expect(screen.getByText('Tube Screamer OD')).toBeInTheDocument()
     expect(screen.queryByText('Mesa Mark V')).not.toBeInTheDocument()
   })
+
+  it('uploads a NAM file from the file chooser control', async () => {
+    renderDialog()
+
+    await screen.findByText('Mesa Mark V')
+
+    fireEvent.change(screen.getByLabelText('Upload NAM model file'), {
+      target: {
+        files: [new File(['nam-data'], 'fresh-profile.nam', { type: 'application/octet-stream' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(mockUpload).toHaveBeenCalledTimes(1)
+    })
+    expect((mockUpload.mock.calls[0]?.[0] as File).name).toBe('fresh-profile.nam')
+    await waitFor(() => {
+      expect(mockLoadModel.mock.calls[0]?.[0]).toBe('uploaded.nam')
+    })
+  })
 })
