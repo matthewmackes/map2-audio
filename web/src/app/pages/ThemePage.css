@@ -12,13 +12,7 @@
 .theme-page__category-card,
 .theme-page__slot-card {
   border: 1px solid var(--cds-border-subtle);
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--cds-layer-01) 94%, var(--cds-background) 6%) 0%,
-      color-mix(in srgb, var(--cds-layer-02) 96%, var(--cds-background) 4%) 100%
-    );
-  box-shadow: 0 18px 44px color-mix(in srgb, var(--cds-background-inverse) 10%, transparent);
+  background: var(--cds-layer-01);
 }
 
 .theme-page__hero {
@@ -31,16 +25,7 @@
 }
 
 .theme-page__hero::before {
-  content: '';
-  position: absolute;
-  inset: auto -12% -28% auto;
-  inline-size: 24rem;
-  block-size: 24rem;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle, color-mix(in srgb, var(--primary) 22%, transparent) 0%, transparent 68%),
-    radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 62%);
-  pointer-events: none;
+  content: none;
 }
 
 .theme-page__hero-copy,
@@ -69,10 +54,9 @@
 .theme-page__stat-label {
   margin: 0;
   color: var(--cds-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  line-height: var(--cds-label-01-line-height, 1rem);
 }
 
 .theme-page__hero-title-row {

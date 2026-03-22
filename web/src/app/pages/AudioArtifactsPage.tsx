@@ -5,6 +5,7 @@ import {
   Button,
   DataTable,
   FileUploader,
+  InlineLoading,
   Layer,
   Modal,
   OverflowMenu,
@@ -481,26 +482,35 @@ function ArtifactEmptyState({ category, onUpload, isClusterMode, onBrowseNodes, 
       <p className="aap-empty__subtitle">{category.description}</p>
       <div className="aap-empty__actions">
         {isPluginCategory ? (
-          <div className="aap-empty__scan-wrap">
-            <Button
-              kind="primary"
-              size="md"
-              renderIcon={isScanning ? undefined : Search}
-              onClick={() => onScan('plugins')}
-              disabled={isScanning}
-            >
-              {isScanning ? <><span style={{ marginRight: 8 }}><span className="aap-spin">↻</span></span>Scanning…</> : 'Scan for plugins'}
-            </Button>
-            <OverflowMenu
-              ariaLabel="More scan options"
-              size="md"
-              flipped
-              disabled={isScanning}
-            >
-              <OverflowMenuItem itemText="Scan plugins only" onClick={() => onScan('plugins')} />
-              <OverflowMenuItem itemText="Scan all folders" onClick={() => onScan('folders')} />
-              <OverflowMenuItem itemText="Scan plugins and folders" onClick={() => onScan('both')} />
-            </OverflowMenu>
+          <div className="aap-empty__scan-group">
+            <div className="aap-empty__scan-wrap">
+              <Button
+                kind="primary"
+                size="md"
+                renderIcon={Search}
+                onClick={() => onScan('plugins')}
+                disabled={isScanning}
+              >
+                Scan for plugins
+              </Button>
+              <OverflowMenu
+                ariaLabel="More scan options"
+                size="md"
+                flipped
+                disabled={isScanning}
+              >
+                <OverflowMenuItem itemText="Scan plugins only" onClick={() => onScan('plugins')} />
+                <OverflowMenuItem itemText="Scan all folders" onClick={() => onScan('folders')} />
+                <OverflowMenuItem itemText="Scan plugins and folders" onClick={() => onScan('both')} />
+              </OverflowMenu>
+            </div>
+            {isScanning ? (
+              <InlineLoading
+                className="aap-empty__loading"
+                description="Scanning plugins"
+                status="active"
+              />
+            ) : null}
           </div>
         ) : (
           <Button kind="primary" size="md" renderIcon={Upload} onClick={onUpload}>

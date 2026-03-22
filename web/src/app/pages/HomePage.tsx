@@ -110,15 +110,15 @@ interface DeploymentModeResponse {
 
 const FEATURED_HOME_ROUTES = ['/platforms/overview', '/artifacts', '/juce-grid', '/midi-hub'] as const
 const LABS_PROFILE: HomeCardProfile = {
-  summary: 'Dedicated catalog for advanced, experimental, and blocked workflows that should not crowd the default operator shell.',
+  summary: 'Separate space for advanced tools, test features, and workflows that are not part of the normal daily shell.',
   capabilities: [
-    'Route-first catalog of advanced MAP2 destinations',
-    'Clear separation between default workspaces and exploratory tools',
-    'One place to launch experimental or qualification-sensitive surfaces',
-    'Consistent access to the former advanced launcher inventory',
+    'Browse advanced MAP2 tools in one place',
+    'Keep daily work separate from test and lab tools',
+    'Open experimental or limited-use pages from one screen',
+    'Use the same launcher list for older advanced tools',
   ],
-  learnMore: 'Open Labs when you need the advanced route catalog without mixing those destinations into the default operator-first home flow.',
-  bestFor: 'Advanced exploration and lab workflows',
+  learnMore: 'Open Labs when you need advanced tools without mixing them into the main day-to-day workspace.',
+  bestFor: 'Advanced tools and testing',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -633,18 +633,20 @@ export function HomePage() {
                         </Tag>
                       </div>
                       {item.pinnable ? (
-                        <button
-                          type="button"
+                        <Button
+                          kind="ghost"
+                          size="sm"
                           className={`hp-workspace-card__pin${isPinned ? ' is-pinned' : ''}`}
+                          renderIcon={isPinned ? PinFilled : Pin}
                           onClick={() => {
                             if (!pinDisabled) void handleTogglePin(item, !isPinned)
                           }}
                           aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                          iconDescription={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
                           aria-pressed={isPinned}
+                          hasIconOnly
                           disabled={pinDisabled}
-                        >
-                          {isPinned ? <PinFilled size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
-                        </button>
+                        />
                       ) : null}
                     </div>
                     <h3 className="hp-workspace-card__title">{item.label}</h3>

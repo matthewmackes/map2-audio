@@ -85,3 +85,16 @@ Source standard: `docs/design/CARBON_CONFORMANCE_STANDARD.md`
   - Accessibility and responsive behavior: Added focused route tests in `web/src/app/pages/AudioArtifactsPage.test.tsx`; verified the desktop/mobile route family with screenshot evidence in `docs/design/evidence/t269-home-desktop.png`, `docs/design/evidence/t269-platforms-desktop.png`, `docs/design/evidence/t269-labs-desktop.png`, `docs/design/evidence/t269-artifacts-desktop.png`, `docs/design/evidence/t269-artifacts-discover-desktop.png`, and `docs/design/evidence/t269-artifacts-mobile.png`.
   - AI and branding: No new AI-labelled UI was introduced in T269, so section 7 is not applicable for this route family; restrained MAP2 branding remains intact and no IBM brand assets were added.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx web/src/app/App.platformRoute.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with existing Vite dynamic-import/chunk warnings only.
+
+## T274 Review Record
+
+- Contributor: Codex
+- Reviewer: Pending
+- Date: 2026-03-22
+- Task IDs: T272, T273, T274
+- Evidence:
+  - Component selection: Routed Platforms navigation now uses Carbon `SideNav`, `SideNavItems`, and `SideNavLink` primitives in `web/src/app/components/Platform/PlatformModal.tsx`.
+  - Typography and tokens: `web/src/app/pages/PlatformShellPage.css` and `web/src/app/pages/ThemePage.css` retain Carbon layer, border, and productive text tokens; no new parallel palette was introduced in the audit follow-up.
+  - Pattern conformance: The remaining Theme token editor exception is explicitly documented in `docs/design/CARBON_CONFORMANCE_MATRIX.md` instead of remaining an implicit bespoke control.
+  - Accessibility: `web/src/app/pages/ThemePage.tsx` exposes `radiogroup`/`radio` semantics with explicit accessible names for the custom family and shade pickers, and `web/src/app/pages/ThemePage.test.tsx` now asserts those semantics directly.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/pages/ThemePage.test.tsx` -> PASS.

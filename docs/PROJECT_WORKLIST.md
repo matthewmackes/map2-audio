@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-22 07:17 EDT - Codex (Completed `T269`, closed `T269-subC`, and recorded the integrated Audio Artifacts routing, Carbon conformance evidence, validation, and licensing review.)
+Last updated: 2026-03-22 14:17 EDT - Codex (Closed `T277` after tightening the JUCE Grid route shell onto Carbon tokens for the floating launchers and viewport blocker, continuing the routed-surface audit sequence.)
 
 ## Active Blockers Only
 
@@ -3282,3 +3282,158 @@ Last updated: 2026-03-22 07:17 EDT - Codex
 - Completion notes:
   - Completed the three-cycle integrated-home program: cycle 1 established the canonical route contract and productive Carbon overview, cycle 2 routed Platforms and Labs into the shared shell, and cycle 3 finished the routed Audio Artifacts library/discovery workspaces with conformance evidence and dedicated regression coverage.
   - The integrated home interface is now deep-linkable under one shell contract across `/`, `/platforms/:workspace`, `/labs`, `/artifacts`, and `/artifacts/discover`, with legacy route/query redirects preserved and only short-lived modal flows retained where Carbon dialog guidance allows them.
+
+ID: T270
+Status: [✓] Done
+Title: Audit and extend MIDI Hub connections workspace device reporting
+Description:
+- Goal / acceptance criteria: Audit the `/midi-hub/connections` workspace for Carbon conformance and live wiring, replace any same-surface view toggle pattern that conflicts with Carbon guidance, add a new section that reports current connected MIDI devices plus how each device is applied in routing/timing, and keep focused regression coverage passing.
+- Why it matters: The user asked for a direct Connections-surface audit and the page currently lacks a device-level operational report even though the hub status and route data exist.
+- Dependencies: T202, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx`
+- Estimated effort: Medium
+- Required outputs: Updated Connections workspace implementation/tests, audit notes covering Carbon and feature wiring, and worklist/licensing evidence for the touched files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 08:19 EDT - Codex
+- Completion notes:
+  - Replaced the Connections workspace `Tabs` toggle with a Carbon `ContentSwitcher` because the surface is switching between two views of the same routing workspace rather than navigating between independent content areas.
+  - Added `web/src/app/components/MidiHub/MidiHubConnectedDevicesReport.tsx` and wired `web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx` to show each currently connected MIDI port plus how it is applied through active routes and MIDI clock output assignment.
+  - Extended `useMidiHubOverview` so the page can reuse its existing live route and clock status queries rather than introducing duplicate fetches, and updated `web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx` to cover the new device report plus the content-switcher interaction.
+  - Wiring audit result: the Connections page features remain backed by live `midiHubApi` queries/mutations (`MidiRoutingMatrix`, `MidiPatchbay`, `MidiHubQuickRouter`, and `MidiTrafficMonitor`); no placeholder or disconnected page-level controls were found in this surface.
+  - Carbon audit result: the touched Connections page now aligns more closely with Carbon patterns, but the broader MIDI Hub route shell still carries non-token hard-coded visual styling in `web/src/app/pages/MidiHubPage.css` and `web/src/app/pages/midi-hub/MidiHubAreaPage.css`; that unresolved conformance gap is tracked in `T271`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx` -> PASS.
+  - Licensing: Classified `web/src/app/components/MidiHub/MidiHubConnectedDevicesReport.tsx`, `web/src/app/components/MidiHub/useMidiHubOverview.ts`, `web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx`, `web/src/app/pages/midi-hub/MidiHubConnectionsPage.css`, `web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring additional remediation.
+
+ID: T271
+Status: [✓] Done
+Title: Remove remaining non-token MIDI Hub shell styling from route hero and shared panels
+Description:
+- Goal / acceptance criteria: Refactor the remaining hard-coded colors, shadows, and uppercase hero/panel styling in `web/src/app/pages/MidiHubPage.css` and `web/src/app/pages/midi-hub/MidiHubAreaPage.css` so the shared MIDI Hub route shell uses Carbon tokens, layering, and productive typography only, with any necessary exceptions documented.
+- Why it matters: The Connections audit found that the touched page is improved, but the shared MIDI Hub shell still has visible Carbon conformance debt outside the local device-report patch.
+- Dependencies: T270, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`
+- Estimated effort: Medium
+- Required outputs: Updated shell CSS/markup, refreshed conformance notes, and regression evidence for the shared MIDI Hub shell.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 08:31 EDT - Codex
+- Completion notes:
+  - Replaced the remaining bespoke MIDI Hub shell treatment in `web/src/app/pages/MidiHubPage.css` and `web/src/app/pages/midi-hub/MidiHubAreaPage.css`, removing the prior hard-coded blue translucent borders, decorative shadows, gradient title text, and uppercase hero/panel styling in favor of Carbon layer, border, text, and label tokens.
+  - Preserved the current layout and routed page structure while shifting the hero, shared panel shells, workflow tiles, stat tiles, placeholder surfaces, and port chips onto Carbon-appropriate layer and productive-typography behavior.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/MidiHubPage.test.tsx` -> PASS with existing React Router future-flag warnings only.
+  - Licensing: Classified `web/src/app/pages/MidiHubPage.css`, `web/src/app/pages/midi-hub/MidiHubAreaPage.css`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reused the current repository license/notices evidence from `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T272
+Status: [✓] Done
+Title: Audit and tighten Carbon conformance for Platforms route shell and Theme workspace
+Description:
+- Goal / acceptance criteria: Audit the routed `/platforms/:workspace` shell and `/platforms/theme` workspace for Carbon conformance and live feature wiring, replace the most visible route-shell styling drift with Carbon token/layer behavior, improve any accessibility gaps in the Theme workspace controls, and keep focused regression coverage passing.
+- Why it matters: The user requested the next audit in the same style as MIDI Hub, and these operator surfaces still carry bespoke shell styling and custom control patterns that need explicit review.
+- Dependencies: T269, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/pages/ThemePage.tsx`
+- Estimated effort: Medium
+- Required outputs: Updated platform/theme implementation or documented exceptions, audit notes covering Carbon and feature wiring, and validation/licensing evidence for touched files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 08:49 EDT - Codex
+- Completion notes:
+  - Audited the routed Platforms shell through `web/src/app/components/Platform/PlatformModal.tsx` and `web/src/app/pages/PlatformShellPage.css`; the route remains live-wired for workspace navigation, pinning, and Labs launches, and the focused `PlatformModal.test.tsx` coverage continued to pass after the shell-token cleanup.
+  - Replaced the most visible Platforms route-shell drift in `web/src/app/pages/PlatformShellPage.css`, removing the hard-coded black page background, translucent color-mixed shell panels, and uppercase shell labels in favor of Carbon background, layer, border, and productive label treatment.
+  - Audited the Theme workspace wiring in `web/src/app/pages/ThemePage.tsx`; existing coverage confirms theme save/apply, reduced-effects persistence, category color override persistence, and special-settings launching. Added accessible names to the custom family/shade swatch buttons used by the token picker, and flattened the route shell styling in `web/src/app/pages/ThemePage.css` away from decorative hero gradients toward Carbon layer surfaces.
+  - Carbon exception result at completion time: the Platforms route still used a custom navigation/control-panel composition instead of Carbon `SideNav`, and the Theme workspace still relied on custom swatch buttons plus a native `input[type=color]` because Carbon does not provide a first-class token color editor. Those retained exceptions were carried into `T273`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/pages/ThemePage.test.tsx` -> PASS.
+  - Licensing: Classified `web/src/app/pages/PlatformShellPage.css`, `web/src/app/pages/ThemePage.css`, `web/src/app/pages/ThemePage.tsx`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring additional remediation.
+
+ID: T273
+Status: [✓] Done
+Title: Replace retained custom Platforms navigation and Theme token-editor controls with documented Carbon-aligned patterns
+Description:
+- Goal / acceptance criteria: Rework the routed Platforms workspace navigation/control panel toward Carbon `SideNav`/launcher patterns where feasible, and replace or formally document the retained custom Theme token-editor controls so the route family has an explicit long-term Carbon exception story instead of ad hoc custom UI.
+- Why it matters: `T272` improved the shell styling and accessibility, but the remaining structural conformance gaps still needed either implementation or explicit exception handling.
+- Dependencies: T272, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`
+- Estimated effort: Medium
+- Required outputs: Refactored or explicitly documented navigation/editor patterns, updated tests, and refreshed Carbon conformance notes for Platforms and Theme.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 13:52 EDT - Codex
+- Completion notes:
+  - Reworked the routed Platforms navigation rail in `web/src/app/components/Platform/PlatformModal.tsx` onto Carbon `SideNav`, `SideNavItems`, and `SideNavLink`, preserving live route navigation, pinning, and Labs launching while removing the retained custom control-panel implementation.
+  - Kept the routed shell styling in `web/src/app/pages/PlatformShellPage.css` aligned with the new Carbon navigation structure so the route now uses Carbon navigation primitives rather than a bespoke launcher composition.
+  - Finalized the Theme token-editor accessibility pass in `web/src/app/pages/ThemePage.tsx` by giving the retained family and shade swatch groups radio-group semantics and explicit accessible names; the remaining gap is no longer basic interaction semantics, only the absence of a first-class Carbon token-color editor for freeform color override input.
+  - Split the remaining Theme-only Carbon exception into `T274` so the worklist no longer reports the already-fixed Platforms navigation issue as open debt.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/pages/ThemePage.test.tsx` -> PASS.
+  - Licensing: Classified `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Platform/PlatformModal.test.tsx`, `web/src/app/pages/PlatformShellPage.css`, `web/src/app/pages/ThemePage.tsx`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring additional remediation.
+
+ID: T274
+Status: [✓] Done
+Title: Document or replace the remaining Theme token color editor exception
+Description:
+- Goal / acceptance criteria: Either replace the retained Theme token color override editor with a more Carbon-aligned documented pattern, or publish an explicit exception note covering why the custom swatch groups plus native `input[type=color]` remain necessary for this workflow.
+- Why it matters: `T273` closed the Platforms navigation gap, leaving the Theme token editor as the only known Carbon conformance exception still attached to this audit line.
+- Dependencies: T273, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `web/src/app/pages/ThemePage.tsx`
+- Estimated effort: Small
+- Required outputs: Updated Theme implementation or exception documentation, refreshed conformance notes, and focused validation evidence if the UI changes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 13:56 EDT - Codex
+- Completion notes:
+  - Published the remaining Theme token-editor exception in `docs/design/CARBON_CONFORMANCE_MATRIX.md`, including the rationale for retaining custom family/shade swatches plus native `input[type=color]` for workflow-specific freeform palette overrides.
+  - Added a matching Carbon review record in `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md` so the exception and evidence are visible in the standard review artifact instead of only in worklist prose.
+  - Extended `web/src/app/pages/ThemePage.test.tsx` with a focused regression proving the retained custom picker exposes labeled `radiogroup` and `radio` semantics.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/ThemePage.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx` -> PASS.
+  - Licensing: Classified `web/src/app/pages/ThemePage.test.tsx`, `docs/design/CARBON_CONFORMANCE_MATRIX.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T275
+Status: [✓] Done
+Title: Audit and tighten Carbon conformance for the integrated Home landing route
+Description:
+- Goal / acceptance criteria: Audit the routed `/` landing workspace for Carbon conformance and live feature wiring, replace any remaining bespoke shell controls or typography treatment in the primary workspace cards, and keep focused Home regression coverage passing.
+- Why it matters: MIDI Hub and Platforms/Theme already received post-routing cleanup passes, but the integrated Home route still retains a custom pin control and older uppercase shell-label treatment that diverge from the current Carbon cleanup standard.
+- Dependencies: T269, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`
+- Estimated effort: Low
+- Required outputs: Updated Home route implementation or documented exceptions, wiring audit notes, focused validation evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 13:56 EDT - Codex
+- Completion notes:
+  - Audited the integrated Home landing route in `web/src/app/pages/HomePage.tsx` and confirmed its primary actions remain live-wired for canonical route navigation, pin persistence through `useSpecialSettings`, and scoped node telemetry loading.
+  - Replaced the bespoke featured-card pin control with a Carbon `Button` in `web/src/app/pages/HomePage.tsx`, preserving the existing accessible pin/unpin labels and route-pinning behavior while removing a route-local custom button implementation.
+  - Tightened `web/src/app/pages/HomePage.css` by removing the remaining uppercase eyebrow treatment and aligning the pin control styling with the Carbon button structure.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> PASS.
+  - Licensing: Classified `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T276
+Status: [✓] Done
+Title: Audit and tighten Carbon conformance for the Audio Artifacts route shell
+Description:
+- Goal / acceptance criteria: Audit the routed `/artifacts` and `/artifacts/discover` workspaces for Carbon conformance and live feature wiring, replace any remaining bespoke loading or shell feedback patterns in the integrated route surface, and keep focused regression coverage passing.
+- Why it matters: Audio Artifacts was routed and tokenized under `T269`, but it has not yet received the same post-landing cleanup pass that MIDI Hub, Platforms/Theme, and Home now have.
+- Dependencies: T269, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, `web/src/app/pages/AudioArtifactsPage.tsx`, `web/src/app/pages/AudioArtifactsPage.css`
+- Estimated effort: Low
+- Required outputs: Updated Audio Artifacts implementation or documented exceptions, wiring audit notes, focused validation evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 14:00 EDT - Codex
+- Completion notes:
+  - Audited the routed Audio Artifacts surface in `web/src/app/pages/AudioArtifactsPage.tsx` and confirmed the primary library/discovery flows remain live-wired for inline details, sync queue access, canonical `/artifacts/discover` navigation, and plugin scan actions.
+  - Replaced the plugin empty-state bespoke spinner glyph and inline styling in `web/src/app/pages/AudioArtifactsPage.tsx` with Carbon `InlineLoading`, and updated `web/src/app/pages/AudioArtifactsPage.css` to support the retained layout without the old custom animation.
+  - Extended `web/src/app/pages/AudioArtifactsPage.test.tsx` with a focused regression proving the empty state shows Carbon loading feedback while a scan is in progress.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS.
+  - Licensing: Classified `web/src/app/pages/AudioArtifactsPage.tsx`, `web/src/app/pages/AudioArtifactsPage.css`, `web/src/app/pages/AudioArtifactsPage.test.tsx`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T277
+Status: [✓] Done
+Title: Audit and tighten Carbon conformance for the JUCE Grid route shell chrome
+Description:
+- Goal / acceptance criteria: Audit the routed `/juce-grid` shell-level chrome for Carbon conformance and live feature wiring, replace the most visible hard-coded shell palette treatment in the floating launchers and viewport blocker, and keep focused regression coverage passing.
+- Why it matters: JUCE Grid remains one of the most visible routed surfaces and still carried a parallel teal/purple shell palette in the route chrome even after the earlier control and modal cleanup tasks.
+- Dependencies: T247, T258, T259, T260, `docs/design/CARBON_CONFORMANCE_STANDARD.md`, `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`
+- Estimated effort: Low
+- Required outputs: Updated JUCE Grid shell styling or documented exceptions, wiring audit notes, focused validation evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 14:17 EDT - Codex
+- Completion notes:
+  - Audited the JUCE Grid route shell in `web/src/app/pages/JuceGridPage.tsx` and confirmed the floating Snapshots/MIDI launchers, viewport blocker, and masthead workflows remain live-wired with the existing route behavior unchanged.
+  - Replaced the floating launcher shell palette treatment and viewport blocker hard-coded colors in `web/src/app/pages/JuceGridPage.css` with Carbon background, border, icon, and text tokens, removing the prior bespoke teal/purple shell styling from the route chrome.
+  - Removed the uppercase trigger-label treatment from the floating launcher pill labels so the shell aligns more closely with the productive sentence-case cleanup applied across the other recent route audits.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> PASS.
+  - Licensing: Classified `web/src/app/pages/JuceGridPage.css` and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing`; found no new AGPL or third-party notice gaps requiring follow-up work.

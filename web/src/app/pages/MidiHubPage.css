@@ -11,13 +11,8 @@
 .midi-hub-panel-shell,
 .midi-hub-workbench-card,
 .midi-hub-mini-surface {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(69, 137, 255, 0.18);
-  background: var(--cds-layer, #262626);
-  box-shadow:
-    inset 0 1px 0 rgba(166, 200, 255, 0.08),
-    0 18px 40px rgba(2, 6, 23, 0.18);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
   animation: midi-hub-enter 220ms ease-out both;
 }
 
@@ -87,21 +82,8 @@
 
 .midi-hub-header__title {
   font-size: clamp(1.7rem, 2.8vw, 2.5rem);
-  line-height: 1.05;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: transparent;
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      #d0e2ff 0px,
-      #d0e2ff 2px,
-      rgba(208, 226, 255, 0) 2px,
-      rgba(208, 226, 255, 0) 5px
-    );
-  -webkit-background-clip: text;
-  background-clip: text;
-  filter: drop-shadow(0 0 12px rgba(69, 137, 255, 0.38));
+  line-height: 1.1;
+  color: var(--cds-text-primary);
 }
 
 .midi-hub-header__subtitle,
@@ -112,15 +94,14 @@
 .midi-hub-panel-note,
 .midi-hub-empty-state {
   margin: 0;
-  color: rgba(244, 244, 244, 0.76);
+  color: var(--cds-text-secondary);
   font-size: var(--cds-body-01-font-size, 0.875rem);
   line-height: var(--cds-body-01-line-height, 1.5);
 }
 
 .midi-hub-page-band__header h2,
 .midi-hub-panel-shell h3 {
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  line-height: 1.2;
 }
 
 .midi-hub-header__tags,
@@ -164,8 +145,8 @@
   flex-direction: column;
   gap: var(--cds-spacing-03);
   min-height: 11rem;
-  border: 1px solid rgba(166, 200, 255, 0.16);
-  background: var(--cds-layer-02, #393939);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
   color: var(--cds-text-primary);
 }
 
@@ -177,8 +158,7 @@
 .midi-hub-workflow-tile__eyebrow {
   color: var(--cds-text-helper);
   font-size: var(--cds-label-01-font-size, 0.75rem);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  line-height: var(--cds-label-01-line-height, 1rem);
 }
 
 .midi-hub-page-band {
@@ -275,22 +255,21 @@
   flex-direction: column;
   gap: var(--cds-spacing-02);
   padding: var(--cds-spacing-05);
-  border: 1px solid rgba(166, 200, 255, 0.16);
-  background: var(--cds-layer-02, #393939);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
 }
 
 .midi-hub-stat-tile--hero {
   grid-column: span 2;
   min-height: 100%;
   justify-content: center;
-  background: var(--cds-layer-accent, var(--cds-layer-02, #393939));
+  background: var(--cds-layer-selected-01);
 }
 
 .midi-hub-stat-tile__label {
-  color: rgba(166, 200, 255, 0.78);
+  color: var(--cds-text-helper);
   font-size: var(--cds-label-01-font-size, 0.75rem);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
+  line-height: var(--cds-label-01-line-height, 1rem);
 }
 
 .midi-hub-stat-tile__value {
@@ -327,8 +306,7 @@
   color: var(--cds-text-secondary);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  line-height: var(--cds-label-01-line-height, 1rem);
 }
 
 .midi-hub-port-picker__chips {
@@ -342,9 +320,9 @@
   gap: 0.125rem;
   min-width: 11rem;
   padding: 0.75rem 0.875rem;
-  border: 1px solid rgba(166, 200, 255, 0.18);
+  border: 1px solid var(--cds-border-subtle-01);
   border-radius: 0.75rem;
-  background: var(--cds-layer-02, #393939);
+  background: var(--cds-layer-02);
   color: var(--cds-text-primary);
   text-align: left;
   cursor: pointer;

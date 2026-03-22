@@ -250,30 +250,25 @@
   gap: 0.75rem;
 }
 
+.aap-empty__scan-group {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+}
+
 .aap-empty__scan-wrap {
   display: inline-flex;
   align-items: stretch;
   gap: 0.25rem;
 }
 
+.aap-empty__loading {
+  min-inline-size: 13rem;
+}
+
 .aap-empty__scan-wrap .cds--overflow-menu {
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-02);
-}
-
-.aap-spin {
-  display: inline-block;
-  animation: aap-spin 0.8s linear infinite;
-}
-
-@keyframes aap-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .aap-detail-panel,

@@ -91,6 +91,20 @@ describe('PlatformModalContent', () => {
     mockSetAlerts.mockReset()
     mockSetLayerHealth.mockReset()
     mockSetSummaryMetrics.mockReset()
+
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jest.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      })),
+    })
   })
 
   it('pins platform control-panel items into the main navigation settings', () => {
@@ -124,7 +138,7 @@ describe('PlatformModalContent', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Labs workspace' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Open Labs workspace' }))
 
     expect(screen.getAllByText('Labs').length).toBeGreaterThan(0)
     expect(screen.getByText('MIDI Hub')).toBeTruthy()
@@ -146,7 +160,7 @@ describe('PlatformModalContent', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Labs workspace' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Open Labs workspace' }))
     fireEvent.click(screen.getByRole('button', { name: 'MIDI Hub' }))
 
     expect(handleLaunchRoute).toHaveBeenCalledWith('/midi-hub')

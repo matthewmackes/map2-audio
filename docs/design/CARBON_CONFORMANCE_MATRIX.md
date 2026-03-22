@@ -151,6 +151,7 @@ Date: 2026-03-12 20:27 EDT
 | EX-002 | Deferred high-drift routes (`LCDPage`, `AboutPage`, `LV2PluginsPage`, `ApiObservatoryPage`) | Route-shell migration completed with Carbon `Layer` wrappers/tokenized CSS and focused route validation. | Route-level Carbon consistency restored for deferred bundle. | Completed (`T114-subK`) |
 | EX-003 | Manual contrast/viewport audit debt across full migrated route set | Manual sweep artifact delivered with route-level pass/fail evidence and validation commands. | Responsive/contrast review now explicitly captured and auditable. | Completed (`T114-subM`) |
 | EX-004 | AI label conventions on AI-enabled surfaces | Carbon AI labels now applied on API Observatory, Shopping Search, and MIDI Innovation surfaces; checklist/test gate updated. | AI affordance clarity and assistive naming consistency improved across active AI surfaces. | Completed (`T114-subN`) |
+| EX-005 | Theme workspace token override editor in `web/src/app/pages/ThemePage.tsx` | Retained custom family/shade swatch radiogroups plus native `input[type=color]` are explicitly allowed because Carbon does not provide a first-class token color editor for freeform palette overrides; the custom controls must keep Carbon tokens, sentence-case copy, and explicit accessible names. | Keyboard/screen-reader semantics are preserved for the retained custom picker, and the exception scope is limited to the workflow-specific editor rather than the broader route shell. | Completed (`T274`) |
 
 ## MIDI Hub v2 Conformance Addendum (T203)
 
@@ -172,3 +173,12 @@ Summary:
 - MIDI Hub v2 is now conformant at the route-shell and area-page level.
 - Remaining bespoke visuals are isolated to topology-style signal-path canvases and are tokenized rather than mixed with non-Carbon control systems.
 - AI surfaces now use Carbon `AILabel` conventions on active user-facing assistive workflows.
+
+## Platforms and Theme Audit Addendum (T272-T274)
+
+Date: 2026-03-22 13:52 EDT
+
+| Surface | Carbon pattern outcome | Remaining exception | Evidence |
+| --- | --- | --- | --- |
+| Routed Platforms shell (`/platforms/:workspace`) | Navigation rail migrated to Carbon `SideNav`/`SideNavLink`; shell styling aligned to Carbon layer, border, and productive text tokens | None | `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/components/Platform/PlatformModal.test.tsx` |
+| Theme workspace (`/platforms/theme`) | Theme library, motion controls, font selection, and category color overrides remain live-wired and the custom token palette now exposes radio-group semantics with explicit accessible names | Workflow-specific exception: freeform token override editing still uses custom swatches plus native `input[type=color]` because Carbon has no first-class token-color editor | `web/src/app/pages/ThemePage.tsx`, `web/src/app/pages/ThemePage.test.tsx` |

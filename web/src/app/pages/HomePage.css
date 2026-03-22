@@ -58,8 +58,7 @@
   color: var(--cds-text-secondary);
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .hp-shell__title,
@@ -161,15 +160,20 @@
 }
 
 .hp-workspace-card__pin {
-  display: inline-flex;
-  width: 2rem;
-  height: 2rem;
-  align-items: center;
-  justify-content: center;
+  min-inline-size: 2rem;
+  min-block-size: 2rem;
+  padding: 0;
   border: 1px solid var(--cds-border-subtle-01);
   background: transparent;
   color: var(--cds-icon-secondary);
-  cursor: pointer;
+}
+
+.hp-workspace-card__pin:hover {
+  background: var(--cds-layer-hover-01);
+}
+
+.hp-workspace-card__pin .cds--btn__icon {
+  margin: 0;
 }
 
 .hp-workspace-card__pin.is-pinned {
@@ -178,7 +182,6 @@
 }
 
 .hp-workspace-card__pin:disabled {
-  cursor: not-allowed;
   opacity: 0.45;
 }
 

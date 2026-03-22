@@ -229,7 +229,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     label: 'Audio Grid',
     shortLabel: 'Audio Grid',
     icon: MapAudioGridIcon,
-    description: 'Open the Carbon-first Audio Grid editor for full signal-flow design, routing, automation, snapshots, MIDI mapping, and audio-workflow control.',
+    description: 'Open Audio Grid to build signal flow, set routing, save snapshots, map MIDI, and control audio work from one editor.',
     color: 'var(--cds-link-primary)',
     homeSection: 'Audio Grid',
     includeInAdvancedMenu: false,

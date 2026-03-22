@@ -1080,7 +1080,7 @@ function SlotPalettePicker({ currentValue, onPick, onClose }: SlotPalettePickerP
 
   return (
     <div className="theme-page__picker">
-      <div className="theme-page__picker-families">
+      <div className="theme-page__picker-families" role="radiogroup" aria-label="Color family">
         {CARBON_COLOR_FAMILIES.map((entry) => (
           <button
             key={entry.id}
@@ -1088,12 +1088,15 @@ function SlotPalettePicker({ currentValue, onPick, onClose }: SlotPalettePickerP
             className={`theme-page__picker-family ${selectedFamilyId === entry.id ? 'theme-page__picker-family--active' : ''}`}
             style={{ background: entry.shades[50] }}
             title={entry.name}
+            role="radio"
+            aria-checked={selectedFamilyId === entry.id}
+            aria-label={`Select ${entry.name} family`}
             onClick={() => setSelectedFamilyId(entry.id)}
           />
         ))}
       </div>
 
-      <div className="theme-page__picker-shades">
+      <div className="theme-page__picker-shades" role="radiogroup" aria-label={`${family.name} shades`}>
         {PICKER_SHADES.map((shade) => {
           const shadeValue = family.shades[shade]
           const active = currentValue === shadeValue
@@ -1105,6 +1108,9 @@ function SlotPalettePicker({ currentValue, onPick, onClose }: SlotPalettePickerP
               className={`theme-page__picker-shade ${active ? 'theme-page__picker-shade--active' : ''}`}
               style={{ background: shadeValue }}
               title={`${family.name} ${shade}`}
+              role="radio"
+              aria-checked={active}
+              aria-label={`Select ${family.name} ${shade}`}
               onClick={() => onPick(shadeValue)}
             >
               {active ? (

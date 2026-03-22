@@ -9,6 +9,10 @@
   grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 0.9fr);
 }
 
+.midi-hub-connections-page__device-report .cds--table-container {
+  background: transparent;
+}
+
 .midi-hub-connections-page__workspace-header,
 .midi-hub-connections-page__panel-heading,
 .midi-hub-connections-surface__header,

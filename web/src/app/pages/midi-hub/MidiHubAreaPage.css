@@ -5,16 +5,10 @@
 }
 
 .midi-hub-area-page__hero {
-  position: relative;
-  overflow: hidden;
-  margin: 0 0 1.25rem;
+  margin: 0 0 var(--cds-spacing-06);
   padding: clamp(1.2rem, 2vw, 1.75rem);
-  border: 1px solid rgba(120, 169, 255, 0.2);
-  border-radius: 1.25rem;
-  background: var(--cds-layer, #262626);
-  box-shadow:
-    inset 0 1px 0 rgba(166, 200, 255, 0.08),
-    0 18px 40px rgba(2, 6, 23, 0.22);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
 }
 
 .midi-hub-area-page__hero::before {
@@ -22,48 +16,45 @@
 }
 
 .midi-hub-area-page__hero-grid {
-  position: relative;
-  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1.25rem;
+  gap: var(--cds-spacing-05);
   align-items: center;
 }
 
 .midi-hub-area-page__hero-copy {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--cds-spacing-03);
   min-width: 0;
 }
 
 .midi-hub-area-page__eyebrow {
-  color: #a6c8ff;
-  font-size: 0.72rem;
+  color: var(--cds-text-helper);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  line-height: var(--cds-label-01-line-height, 1rem);
 }
 
 .midi-hub-area-page__hero-copy h2 {
   margin: 0;
   font-size: clamp(1.8rem, 3vw, 2.35rem);
-  line-height: 1;
-  letter-spacing: 0.01em;
+  line-height: 1.1;
+  color: var(--cds-text-primary);
 }
 
 .midi-hub-area-page__hero-copy p {
   max-width: 54rem;
   margin: 0;
-  color: rgba(244, 244, 244, 0.76);
-  font-size: 0.98rem;
-  line-height: 1.55;
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  line-height: var(--cds-body-01-line-height, 1.5);
 }
 
 .midi-hub-area-page__meta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
+  gap: var(--cds-spacing-03);
+  margin-top: var(--cds-spacing-02);
 }
 
 .midi-hub-area-page__hero-emblem {
@@ -76,12 +67,9 @@
   place-items: center;
   width: clamp(5.75rem, 8vw, 7rem);
   height: clamp(5.75rem, 8vw, 7rem);
-  border: 1px solid rgba(166, 200, 255, 0.16);
+  border: 1px solid var(--cds-border-subtle-01);
   border-radius: 1.25rem;
-  background: var(--cds-layer-02, #393939);
-  box-shadow:
-    inset 0 1px 0 rgba(208, 226, 255, 0.14),
-    0 14px 26px rgba(0, 0, 0, 0.18);
+  background: var(--cds-layer-02);
 }
 
 .midi-hub-area-page__hero-mark {
@@ -93,36 +81,34 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: var(--cds-spacing-03);
+  margin-bottom: var(--cds-spacing-05);
 }
 
 .midi-hub-area-page__panel-heading h3 {
   margin: 0;
-  font-size: 1rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  line-height: var(--cds-heading-03-line-height, 1.4);
+  color: var(--cds-text-primary);
 }
 
 .midi-hub-area-page__placeholder {
   display: grid;
-  gap: 1rem;
-  position: relative;
-  overflow: hidden;
-  padding: 1.25rem;
-  border: 1px solid rgba(166, 200, 255, 0.16);
-  background: var(--cds-layer, #262626);
+  gap: var(--cds-spacing-05);
+  padding: var(--cds-spacing-05);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
 }
 
 .midi-hub-area-page__placeholder p {
   margin: 0;
-  color: rgba(244, 244, 244, 0.76);
+  color: var(--cds-text-secondary);
 }
 
 .midi-hub-area-page__cta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--cds-spacing-03);
 }
 
 @media (max-width: 720px) {

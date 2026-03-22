@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
 import { CATEGORY_COLOR_OVERRIDE_STORAGE_KEY } from '../data/categoryStyles'
 import { REDUCED_EFFECTS_STORAGE_KEY, useEffectsSettingsStore } from '../stores/effectsSettingsStore'
@@ -111,5 +111,17 @@ describe('ThemePage', () => {
       expect(window.localStorage.getItem('custom-themes')).toContain('Ops Deck')
       expect(window.localStorage.getItem('theme')).toContain('custom-')
     })
+  })
+
+  it('exposes radio semantics for the custom token palette picker', () => {
+    render(<ThemePage />)
+
+    fireEvent.click(screen.getAllByRole('button', { name: /^Primary\b/i })[0])
+
+    const familyGroup = screen.getByRole('radiogroup', { name: 'Color family' })
+    const shadeGroup = screen.getByRole('radiogroup', { name: /shades$/i })
+
+    expect(within(familyGroup).getAllByRole('radio').length).toBeGreaterThan(0)
+    expect(within(shadeGroup).getAllByRole('radio').length).toBeGreaterThan(0)
   })
 })

@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AudioArtifactsPage } from './AudioArtifactsPage'
@@ -234,5 +234,32 @@ describe('AudioArtifactsPage routed workspace', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Return to library' })[0])
 
     expect(await screen.findByTestId('location-probe')).toHaveTextContent('/artifacts?category=nam-models')
+  })
+
+  it('uses Carbon loading feedback while plugin scans are running from the empty state', async () => {
+    let resolveScan: (() => void) | null = null
+    const scanPromise = new Promise<void>((resolve) => {
+      resolveScan = resolve
+    })
+
+    mockUsePluginBrowser.mockReturnValue({
+      allPlugins: [],
+      isLoading: false,
+      scanPlugins: jest.fn().mockImplementation(() => scanPromise),
+    })
+
+    renderArtifacts('/artifacts?category=lv2-plugins')
+
+    expect(await screen.findByRole('heading', { name: 'Audio Artifacts' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scan for plugins' }))
+
+    expect(await screen.findByText('Scanning plugins')).toBeInTheDocument()
+
+    resolveScan?.()
+
+    await waitFor(() => {
+      expect(screen.queryByText('Scanning plugins')).not.toBeInTheDocument()
+    })
   })
 })

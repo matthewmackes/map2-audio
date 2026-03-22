@@ -58,6 +58,8 @@ export function useMidiHubOverview(apiNodeId: string | null, scopeKey: string) {
 
   const defaultPresetId = String(readRecord(presetsQuery.data?.default).default_preset_id ?? '')
   const activePresetName = defaultPresetId ? presetMap.get(defaultPresetId) ?? defaultPresetId : 'Manual'
+  const routes = routesQuery.data?.routes ?? []
+  const clockStatus = clockQuery.data ?? null
   const routesCount = routesQuery.data?.routes?.length ?? 0
   const connectedDeviceCount = ports.length
   const sessionsCount = sessionsQuery.data?.sessions?.length ?? 0
@@ -75,8 +77,10 @@ export function useMidiHubOverview(apiNodeId: string | null, scopeKey: string) {
     presetsQuery,
     sessionsQuery,
     ports,
+    routes,
     inputPorts,
     outputPorts,
+    clockStatus,
     routesCount,
     connectedDeviceCount,
     sessionsCount,

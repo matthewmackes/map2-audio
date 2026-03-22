@@ -23,6 +23,9 @@ import {
   InlineLoading,
   InlineNotification,
   Pagination,
+  SideNav,
+  SideNavItems,
+  SideNavLink,
   SkeletonPlaceholder,
   SkeletonText,
   Tag,
@@ -85,7 +88,6 @@ const AboutPage       = lazy(() => import('../../pages/AboutPage').then(m => ({ 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 const PAGE_SIZES = [5, 10, 20]
-const PLATFORM_CONTROL_PANEL_ICON_SIZE = 45
 const DEFAULT_PLATFORM_LAYER: PlatformLayerId = 'overview'
 
 const LAYER_ICONS: Record<PlatformLayerId, CarbonIconType> = {
@@ -167,7 +169,13 @@ function SidebarNavigation({
   onTogglePin: (item: PlatformPinnedNavItem, checked: boolean) => void
 }) {
   return (
-    <aside className="platform-shell__sidebar" aria-label="Platforms and Labs navigation">
+    <SideNav
+      className="platform-shell__sidebar"
+      aria-label="Platforms and Labs navigation"
+      expanded
+      isFixedNav={false}
+      isChildOfHeader={false}
+    >
       <div className="platform-shell__sidebar-head">
         <p className="platform-shell__sidebar-eyebrow">Navigation</p>
         <h2 className="platform-shell__sidebar-title">Platforms and Labs</h2>
@@ -176,163 +184,92 @@ function SidebarNavigation({
         </p>
       </div>
 
-      <div className="platform-shell__sidebar-list" role="list">
-        {PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
-          const Icon = item.icon
-          const targetId = item.target.layer ?? item.target.panel ?? null
-          const isSelected = activeId === targetId
-          const isPinned = pinnedRouteSet.has(item.to)
-          const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
-          const pinDisabled = pinningDisabled || limitReached
+      <SideNavItems className="platform-shell__sidebar-nav">
+        <div className="platform-shell__sidebar-list" role="list">
+          {PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
+            const Icon = item.icon
+            const targetId = item.target.layer ?? item.target.panel ?? null
+            const isSelected = activeId === targetId
+            const isPinned = pinnedRouteSet.has(item.to)
+            const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
+            const pinDisabled = pinningDisabled || limitReached
 
-          return (
-            <article
-              key={item.to}
-              role="listitem"
-              className={`platform-shell__nav-item${isSelected ? ' is-selected' : ''}`}
+            return (
+              <article
+                key={item.to}
+                role="listitem"
+                className={`platform-shell__nav-item${isSelected ? ' is-selected' : ''}`}
+              >
+                <SideNavLink
+                  href={item.to}
+                  isActive={isSelected}
+                  className="platform-shell__nav-item-main"
+                  aria-label={`Open ${item.label} workspace`}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    if (item.target.layer) {
+                      onOpenLayer(item.target.layer)
+                      return
+                    }
+                    if (item.target.panel) {
+                      onOpenStandalone(item.target.panel)
+                    }
+                  }}
+                  renderIcon={Icon}
+                >
+                  <span className="platform-shell__nav-item-copy">
+                    <span className="platform-shell__nav-item-label">{item.label}</span>
+                    <span className="platform-shell__nav-item-desc">{item.description}</span>
+                  </span>
+                </SideNavLink>
+                <button
+                  type="button"
+                  className={`platform-shell__nav-item-pin${isPinned ? ' is-pinned' : ''}`}
+                  onClick={() => onTogglePin(item, !isPinned)}
+                  aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+                  title={
+                    limitReached
+                      ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
+                      : isPinned
+                        ? 'Unpin from navigation bar'
+                        : 'Pin to navigation bar'
+                  }
+                  aria-pressed={isPinned}
+                  disabled={pinDisabled}
+                >
+                  {isPinned ? 'PINNED' : 'PIN'}
+                </button>
+              </article>
+            )
+          })}
+        </div>
+
+        <div className="platform-shell__sidebar-footer">
+          <div
+            className={`platform-shell__nav-item platform-shell__nav-item--labs${activeId === 'labs' ? ' is-selected' : ''}`}
+          >
+            <SideNavLink
+              href="/labs"
+              isActive={activeId === 'labs'}
+              className="platform-shell__nav-item-main"
+              aria-label="Open Labs workspace"
+              onClick={(event) => {
+                event.preventDefault()
+                onOpenLabs()
+              }}
+              renderIcon={SettingsAdjust}
             >
-              <button
-                type="button"
-                className="platform-shell__nav-item-main"
-                onClick={() => {
-                  if (item.target.layer) {
-                    onOpenLayer(item.target.layer)
-                    return
-                  }
-                  if (item.target.panel) {
-                    onOpenStandalone(item.target.panel)
-                  }
-                }}
-                aria-label={`Open ${item.label} workspace`}
-              >
-                <span className="platform-shell__nav-item-icon" aria-hidden>
-                  <Icon size={20} />
+              <span className="platform-shell__nav-item-copy">
+                <span className="platform-shell__nav-item-chip">Labs</span>
+                <span className="platform-shell__nav-item-desc">
+                  Advanced and experimental launchers formerly grouped under the old Advanced menu.
                 </span>
-                <span className="platform-shell__nav-item-copy">
-                  <span className="platform-shell__nav-item-label">{item.label}</span>
-                  <span className="platform-shell__nav-item-desc">{item.description}</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                className={`platform-shell__nav-item-pin${isPinned ? ' is-pinned' : ''}`}
-                onClick={() => onTogglePin(item, !isPinned)}
-                aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                title={
-                  limitReached
-                    ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
-                    : isPinned
-                      ? 'Unpin from navigation bar'
-                      : 'Pin to navigation bar'
-                }
-                aria-pressed={isPinned}
-                disabled={pinDisabled}
-              >
-                {isPinned ? 'PINNED' : 'PIN'}
-              </button>
-            </article>
-          )
-        })}
-      </div>
-
-      <div className="platform-shell__sidebar-footer">
-        <button
-          type="button"
-          className={`platform-shell__nav-item platform-shell__nav-item--labs${activeId === 'labs' ? ' is-selected' : ''}`}
-          onClick={onOpenLabs}
-          aria-label="Open Labs workspace"
-        >
-          <span className="platform-shell__nav-item-main">
-            <span className="platform-shell__nav-item-icon" aria-hidden>
-              <SettingsAdjust size={20} />
-            </span>
-            <span className="platform-shell__nav-item-copy">
-              <span className="platform-shell__nav-item-chip">Labs</span>
-              <span className="platform-shell__nav-item-desc">
-                Advanced and experimental launchers formerly grouped under the old Advanced menu.
               </span>
-            </span>
-          </span>
-        </button>
-      </div>
-    </aside>
-  )
-}
-
-// ── Control Panel Grid ───────────────────────────────────────────────────────
-
-function ControlPanelGrid({
-  activeId,
-  pinnedRouteSet,
-  onOpenLayer,
-  onOpenStandalone,
-  onTogglePin,
-  pinningDisabled,
-}: {
-  activeId: string | null
-  pinnedRouteSet: Set<string>
-  onOpenLayer: (id: PlatformLayerId) => void
-  onOpenStandalone: (id: StandalonePanel) => void
-  onTogglePin: (item: PlatformPinnedNavItem, checked: boolean) => void
-  pinningDisabled: boolean
-}) {
-  return (
-    <div className="platform-shell__cp-panel" role="region" aria-label="Platform Control Panel">
-      <h2 className="platform-shell__cp-title">Platform Control Panel</h2>
-      <div className="platform-shell__cp-grid" role="list">
-        {PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
-          const Icon = item.icon
-          const targetId = item.target.layer ?? item.target.panel ?? null
-          const isSelected = activeId === targetId
-          const isPinned = pinnedRouteSet.has(item.to)
-          const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
-          const pinDisabled = pinningDisabled || limitReached
-
-          return (
-            <article
-              key={item.to}
-              role="listitem"
-              className={`platform-shell__cp-item${isSelected ? ' is-selected' : ''}`}
-            >
-              <button
-                type="button"
-                className={`platform-shell__cp-pin-btn${isPinned ? ' is-pinned' : ''}`}
-                onClick={() => onTogglePin(item, !isPinned)}
-                aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                title={
-                  limitReached
-                    ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
-                    : isPinned
-                      ? 'Unpin from navigation bar'
-                      : 'Pin to navigation bar'
-                }
-                aria-pressed={isPinned}
-                disabled={pinDisabled}
-              >
-                {isPinned ? 'PINNED' : 'PIN'}
-              </button>
-              <button
-                type="button"
-                className="platform-shell__cp-item-open"
-                onClick={() => {
-                  if (item.target.layer) {
-                    onOpenLayer(item.target.layer)
-                    return
-                  }
-                  if (item.target.panel) {
-                    onOpenStandalone(item.target.panel)
-                  }
-                }}
-                aria-label={item.label}
-              >
-                <span className="platform-shell__cp-icon" aria-hidden><Icon size={PLATFORM_CONTROL_PANEL_ICON_SIZE} /></span>
-                <span className="platform-shell__cp-label">{item.label}</span>
-              </button>
-            </article>
-          )
-        })}
-      </div>
-    </div>
+            </SideNavLink>
+          </div>
+        </div>
+      </SideNavItems>
+    </SideNav>
   )
 }
 

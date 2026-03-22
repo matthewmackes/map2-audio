@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { InlineNotification, Tab, TabList, Tabs, Tag } from '@carbon/react'
+import { ContentSwitcher, InlineNotification, Switch, Tag } from '@carbon/react'
+import { MidiHubConnectedDevicesReport } from '../../components/MidiHub/MidiHubConnectedDevicesReport'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiPatchbay } from '../../components/MidiHub/MidiPatchbay'
 import { MidiHubQuickRouter } from '../../components/MidiHub/MidiHubQuickRouter'
@@ -15,7 +16,7 @@ type RoutingWorkspaceMode = 'matrix' | 'patchbay'
 export function MidiHubConnectionsPage() {
   const [mode, setMode] = useState<RoutingWorkspaceMode>('matrix')
   const { nodeId, scopeKey } = useMidiHubNodeScope()
-  const { ports } = useMidiHubOverview(nodeId, scopeKey)
+  const { ports, routes, clockStatus } = useMidiHubOverview(nodeId, scopeKey)
 
   return (
     <MidiHubAreaLayout
@@ -49,15 +50,14 @@ export function MidiHubConnectionsPage() {
                     : 'Use the patchbay to inspect topology, fan-out, and route density at a glance.'}
                 </p>
               </div>
-              <Tabs
+              <ContentSwitcher
+                aria-label="Routing workspace view mode"
                 selectedIndex={mode === 'matrix' ? 0 : 1}
-                onChange={({ selectedIndex }) => setMode(selectedIndex === 1 ? 'patchbay' : 'matrix')}
+                onChange={({ name }) => setMode(name === 'patchbay' ? 'patchbay' : 'matrix')}
               >
-                <TabList aria-label="Routing workspace view mode" contained>
-                  <Tab>Port matrix</Tab>
-                  <Tab>Patchbay graph</Tab>
-                </TabList>
-              </Tabs>
+                <Switch name="matrix" text="Port matrix" />
+                <Switch name="patchbay" text="Patchbay graph" />
+              </ContentSwitcher>
             </div>
 
             {mode === 'matrix' ? <MidiRoutingMatrix /> : <MidiPatchbay />}
@@ -72,6 +72,14 @@ export function MidiHubConnectionsPage() {
             <MidiTrafficMonitor limit={500} height={440} />
           </MidiHubPanelShell>
         </div>
+      </section>
+
+      <section className="midi-hub-connections-band midi-hub-connections-page__device-report">
+        <MidiHubConnectedDevicesReport
+          ports={ports}
+          routes={routes}
+          clockOutputPorts={clockStatus?.output_ports ?? []}
+        />
       </section>
     </MidiHubAreaLayout>
   )

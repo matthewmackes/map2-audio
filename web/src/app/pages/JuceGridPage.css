@@ -15,8 +15,8 @@
   justify-content: center;
   gap: 1rem;
   padding: 2rem;
-  background: #000;
-  color: #f4f4f4;
+  background: var(--cds-background-inverse, #161616);
+  color: var(--cds-text-inverse, #f4f4f4);
   text-align: center;
 }
 
@@ -30,9 +30,10 @@
 .juce-grid-page__viewport-block p {
   max-width: 24rem;
   margin: 0;
-  color: #c6c6c6;
+  color: var(--cds-text-inverse, #f4f4f4);
   font-size: 0.95rem;
   line-height: 1.5;
+  opacity: 0.78;
 }
 
 .juce-grid-page__header-shell {
@@ -129,36 +130,23 @@
 
 /* Snapshots pill — teal/cyan accent */
 .snapshot-floating-trigger {
-  background: color-mix(in srgb, #0e6e6e 80%, #161616);
-  border: 1px solid color-mix(in srgb, #08bdba 55%, transparent);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, #08bdba 18%, transparent),
-    0 6px 20px rgba(8, 189, 186, 0.22),
-    0 2px 6px rgba(0, 0, 0, 0.45);
+  background: var(--cds-layer-02, #262626);
+  border: 1px solid var(--cds-border-subtle-01, #525252);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
 }
 
 .snapshot-floating-trigger:hover {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, #08bdba 35%, transparent),
-    0 8px 28px rgba(8, 189, 186, 0.36),
-    0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
 }
 
 /* MIDI pill — purple/violet accent */
 .snapshot-floating-trigger--midi {
-  background: color-mix(in srgb, #491d8b 80%, #161616);
-  border: 1px solid color-mix(in srgb, #a56eff 55%, transparent);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, #a56eff 18%, transparent),
-    0 6px 20px rgba(165, 110, 255, 0.22),
-    0 2px 6px rgba(0, 0, 0, 0.45);
+  background: var(--cds-layer-02, #262626);
+  border-color: var(--cds-border-subtle-01, #525252);
 }
 
 .snapshot-floating-trigger--midi:hover {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, #a56eff 35%, transparent),
-    0 8px 28px rgba(165, 110, 255, 0.36),
-    0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
 }
 
 /* The Carbon Button inside the pill — 48px (lg) icon-only button */
@@ -177,15 +165,15 @@
 /* Snapshots button icon color */
 .snapshot-floating-trigger .snapshot-rail-trigger__button,
 .snapshot-floating-trigger .snapshot-rail-trigger__button svg {
-  color: #08bdba !important;
-  fill: #08bdba !important;
+  color: var(--cds-icon-primary, #f4f4f4) !important;
+  fill: var(--cds-icon-primary, #f4f4f4) !important;
 }
 
 /* MIDI button icon color */
 .snapshot-floating-trigger--midi .snapshot-rail-trigger__button,
 .snapshot-floating-trigger--midi .snapshot-rail-trigger__button svg {
-  color: #be95ff !important;
-  fill: #be95ff !important;
+  color: var(--cds-icon-primary, #f4f4f4) !important;
+  fill: var(--cds-icon-primary, #f4f4f4) !important;
 }
 
 .snapshot-rail-trigger__button svg {
@@ -212,18 +200,17 @@
 .snapshot-rail-trigger__label {
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   line-height: 1;
   white-space: nowrap;
 }
 
 .snapshot-floating-trigger .snapshot-rail-trigger__label {
-  color: #08bdba;
+  color: var(--cds-text-primary, #f4f4f4);
 }
 
 .snapshot-floating-trigger--midi .snapshot-rail-trigger__label {
-  color: #be95ff;
+  color: var(--cds-text-primary, #f4f4f4);
 }
 
 .snapshot-rail-trigger__count {
@@ -231,7 +218,7 @@
   font-weight: 400;
   line-height: 1;
   white-space: nowrap;
-  color: rgba(244, 244, 244, 0.65);
+  color: var(--cds-text-secondary, #c6c6c6);
 }
 
 /* Dirty/learn indicator dot */

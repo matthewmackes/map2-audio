@@ -77,7 +77,25 @@ jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
 
 jest.mock('../../components/MidiHub/useMidiHubOverview', () => ({
   useMidiHubOverview: () => ({
-    ports: [{ port_id: 'usb-in' }, { port_id: 'din-out' }],
+    ports: [
+      { port_id: 'usb-in', name: 'USB In', direction: 'input', kind: 'usb' },
+      { port_id: 'din-out', name: 'DIN Out', direction: 'output', kind: 'din' },
+    ],
+    routes: [
+      {
+        route_id: 'route-1',
+        source_port: 'usb-in',
+        destination_ports: ['din-out'],
+        enabled: true,
+        priority: 100,
+        route_type: 'pass_through',
+        filter: { message_types: [], channels: [] },
+        transform_chain: [],
+      },
+    ],
+    clockStatus: {
+      output_ports: ['din-out'],
+    },
   }),
 }))
 
@@ -134,13 +152,17 @@ describe('MidiHubConnectionsPage', () => {
     })
   })
 
-  it('renders ports, switches workspace tabs, shows traffic data, and opens the route modal', async () => {
+  it('renders ports, switches workspace views, reports connected devices, shows traffic data, and opens the route modal', async () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Connections' })).toBeTruthy()
-    expect(await screen.findAllByText('USB In')).toHaveLength(2)
+    expect(screen.getByText('USB In')).toBeTruthy()
     expect(screen.getAllByText('DIN Out').length).toBeGreaterThan(0)
-    expect(screen.getByText('note_on')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Connected MIDI devices' })).toBeTruthy()
+    expect(screen.getByText('Sends to DIN Out')).toBeTruthy()
+    expect(screen.getByText(/Receives from USB In/)).toBeTruthy()
+    expect(screen.getByText(/Clock output enabled/)).toBeTruthy()
+    expect(await screen.findByText('note_on')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Patchbay graph' }))
     expect(await screen.findByText('Patchbay workflow')).toBeTruthy()
