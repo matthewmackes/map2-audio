@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**796** Python | **1204** TypeScript | **294** C++/H | **122** Docs | **749** total commits | **1** stars | **0** forks | **0** open issues
+**796** Python | **1205** TypeScript | **294** C++/H | **122** Docs | **752** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b102eb8b`](https://github.com/matthewmackes/map2-audio/commit/b102eb8b75c878dcfe5f3f16aa30f3e096406797) | feat: ship home launcher and direct asset upload fixes | Map2 Audio | 2026-03-22 |
+| [`f371173a`](https://github.com/matthewmackes/map2-audio/commit/f371173a93fcda31f9641a0fc82f0f90e43e2166) | chore: refresh build version artifacts | Map2 Audio | 2026-03-22 |
+| [`29317a95`](https://github.com/matthewmackes/map2-audio/commit/29317a95dde9267f810c9a117a522b544d5d81c6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
 | [`408f3937`](https://github.com/matthewmackes/map2-audio/commit/408f3937b51fa25ef00c2e5b9961f21893ddfa32) | feat: complete MIDI Hub Carbon compliance remediation | Map2 Audio | 2026-03-22 |
 | [`232b2b5c`](https://github.com/matthewmackes/map2-audio/commit/232b2b5c39ab25e18d83dcf01460a24497d0b27f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
 | [`53fe7a67`](https://github.com/matthewmackes/map2-audio/commit/53fe7a67ea22e2c791dcc6053b65c78370d09a24) | Refactor JUCE Grid Carbon surfaces and harden route loading | Map2 Audio | 2026-03-22 |
 | [`803258de`](https://github.com/matthewmackes/map2-audio/commit/803258de9f6f5bb10fab347d638f68d4783e0d33) | build: sync version metadata after platforms fix build | Map2 Audio | 2026-03-22 |
 | [`d9a9f1f0`](https://github.com/matthewmackes/map2-audio/commit/d9a9f1f03b8d53273beb3946da42b2bfaf9cb938) | fix: restore platforms route side nav layout | Map2 Audio | 2026-03-22 |
-| [`d16aa053`](https://github.com/matthewmackes/map2-audio/commit/d16aa0539c714da4118db2d8a1b458f5a97ddfe1) | build: sync version metadata after production build | Map2 Audio | 2026-03-22 |
-| [`b13fbd17`](https://github.com/matthewmackes/map2-audio/commit/b13fbd17c2bd49b326e522bad2a8be3cb3732bbf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
-| [`b42a25f6`](https://github.com/matthewmackes/map2-audio/commit/b42a25f66a5fa8eb5037f544bb86703e89416c5c) | T270-T277: complete routed Carbon audit follow-ups | Map2 Audio | 2026-03-22 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
