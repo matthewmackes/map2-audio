@@ -70,3 +70,18 @@ Source standard: `docs/design/CARBON_CONFORMANCE_STANDARD.md`
   - AI surfaces use Carbon `AILabel` with short assistive disclosure copy.
   - Route-local builds validated through `npm --prefix web run typecheck` and `npm --prefix web run build`.
   - Backend service additions validated with dedicated `tests/test_*.py` coverage for Tesira, GPIO, string interface, and OSC namespace.
+
+## T269 Review Record
+
+- Contributor: Codex
+- Reviewer: Pending
+- Date: 2026-03-22
+- Task IDs: T269, T269-subA, T269-subB, T269-subC
+- Evidence:
+  - Component selection: Home, Platforms, Labs, and Audio Artifacts now use Carbon shell, tile, side-nav, table, pagination, overflow-menu, and modal primitives for their primary workflows.
+  - Typography and tokens: `web/src/app/pages/AudioArtifactsPage.css` and `web/src/app/components/artifacts/ArtifactDownloadModal.css` removed the prior purple parallel palette and now use Carbon text, border, layer, and interactive tokens only.
+  - Theme, layering, and grid: The integrated route family is deep-linkable under one shell contract, and the Audio Artifacts context surfaces now render inline as layered workspace regions instead of fixed overlays.
+  - Pattern conformance: Platforms/Labs modal hosting is retired for normal operation, artifact discovery moved to `/artifacts/discover`, and only upload/delete confirmation remain as short-lived dialogs.
+  - Accessibility and responsive behavior: Added focused route tests in `web/src/app/pages/AudioArtifactsPage.test.tsx`; verified the desktop/mobile route family with screenshot evidence in `docs/design/evidence/t269-home-desktop.png`, `docs/design/evidence/t269-platforms-desktop.png`, `docs/design/evidence/t269-labs-desktop.png`, `docs/design/evidence/t269-artifacts-desktop.png`, `docs/design/evidence/t269-artifacts-discover-desktop.png`, and `docs/design/evidence/t269-artifacts-mobile.png`.
+  - AI and branding: No new AI-labelled UI was introduced in T269, so section 7 is not applicable for this route family; restrained MAP2 branding remains intact and no IBM brand assets were added.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx web/src/app/App.platformRoute.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with existing Vite dynamic-import/chunk warnings only.

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-22 06:54 EDT - Codex (Completed `T269-subB`, advanced `T269-subC`, and recorded the routed Platforms/Labs shell, pin migration, validation, and licensing evidence.)
+Last updated: 2026-03-22 07:17 EDT - Codex (Completed `T269`, closed `T269-subC`, and recorded the integrated Audio Artifacts routing, Carbon conformance evidence, validation, and licensing review.)
 
 ## Active Blockers Only
 
@@ -3206,7 +3206,7 @@ Last updated: 2026-03-21 18:58 EDT - Codex
   - Licensing: Classified `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, `web/src/app/pages/HomePage.test.tsx`, and `docs/PROJECT_WORKLIST.md` as MAP2-owned AGPL-covered repository artifacts, reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new AGPL or third-party notice gaps requiring follow-up work.
 
 ID: T269
-Status: [>] In Progress
+Status: [✓] Done
 Title: Refactor Home, Audio Artifacts, and Platforms/Labs into one Carbon-compliant integrated home interface with three release cycles
 Description:
 - Goal / acceptance criteria: Replace the current Home hero/card system, the `Platforms and Labs` mega-modal, and the standalone `Audio Artifacts` subsystem with one deep-linkable Carbon product-style home interface. The finished work must use Carbon shell, grid, tile, table, layer, token, and dialog patterns; keep MAP2 branding restrained; keep only light modals for short tasks such as upload and delete confirmation; preserve existing business/API behavior; and publish verifiable desktop/mobile Carbon conformance evidence.
@@ -3258,7 +3258,7 @@ Subtasks:
     - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/App.platformRoute.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/data/advancedMenuItems.test.ts web/src/app/components/NodeNav/NodeNavChip.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import/chunk warnings only.
     - Licensing: Classified the touched frontend, test, build-log, and worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
 - ID: T269-subC
-  Status: [>] In Progress
+  Status: [✓] Done
   Title: Cycle 3 — Integrate Audio Artifacts, replace discovery modal, and close conformance
   Description:
   - Goal / acceptance criteria: Refactor Audio Artifacts into `/artifacts` with category/search/pagination/node filters preserved; move artifact discovery into `/artifacts/discover`; keep only light modals for upload and delete confirmation; replace fixed drawer/detail overlays with integrated responsive content regions; finish shell/mobile cleanup for the integrated route family; add dedicated Audio Artifacts regression coverage; and publish final Carbon conformance/checklist evidence.
@@ -3269,6 +3269,16 @@ Subtasks:
   - Commit message: `T269-subC: integrate Audio Artifacts and close Carbon conformance`
   Subtasks: None
   Assigned to: Any AI
-  Last updated: 2026-03-22 06:54 EDT - Codex
+  Last updated: 2026-03-22 07:17 EDT - Codex
+  - Completion notes:
+    - Refactored `web/src/app/pages/AudioArtifactsPage.tsx` and `web/src/app/pages/AudioArtifactsPage.css` into a route-native Carbon workspace: `/artifacts` now keeps category/search/pagination/node filters inside the integrated shell, `/artifacts/discover` renders embedded discovery content, the left nav has a first-class discovery route entry, and the old fixed detail/sync drawers were replaced with inline layered context regions.
+    - Updated `web/src/app/components/artifacts/ArtifactDownloadModal.tsx` and `web/src/app/components/artifacts/ArtifactDownloadModal.css` so discovery can render as embedded routed content by default, with Carbon-token styling and only optional modal chrome as a fallback wrapper; upload and delete confirmation remain the only light modal flows on the artifacts surface.
+    - Added dedicated routed regression coverage in `web/src/app/pages/AudioArtifactsPage.test.tsx` for library rendering, inline detail/sync context, canonical `/artifacts/discover` navigation, embedded discovery rendering, contextual tab mapping, and route return behavior.
+    - Published route-family conformance evidence in `docs/design/CARBON_INTEGRATED_HOME_CONFORMANCE.md`, updated `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md` with the T269 review record, and captured desktop/mobile screenshot evidence under `docs/design/evidence/`.
+    - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx web/src/app/App.platformRoute.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import/chunk warnings only.
+    - Licensing: Classified the touched frontend, CSS, screenshot-evidence, test, and design-doc files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
 Assigned to: Any AI
-Last updated: 2026-03-22 06:54 EDT - Codex
+Last updated: 2026-03-22 07:17 EDT - Codex
+- Completion notes:
+  - Completed the three-cycle integrated-home program: cycle 1 established the canonical route contract and productive Carbon overview, cycle 2 routed Platforms and Labs into the shared shell, and cycle 3 finished the routed Audio Artifacts library/discovery workspaces with conformance evidence and dedicated regression coverage.
+  - The integrated home interface is now deep-linkable under one shell contract across `/`, `/platforms/:workspace`, `/labs`, `/artifacts`, and `/artifacts/discover`, with legacy route/query redirects preserved and only short-lived modal flows retained where Carbon dialog guidance allows them.

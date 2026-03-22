@@ -650,59 +650,95 @@ function SoundFontTab() {
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
 interface ArtifactDownloadModalProps {
-  open: boolean
-  onClose: () => void
+  open?: boolean
+  onClose?: () => void
   initialTab?: TabId
   nodeId: string | null
+  surface?: 'embedded' | 'modal'
 }
 
-export function ArtifactDownloadModal({ open, onClose, initialTab = 'plugin-packs', nodeId }: ArtifactDownloadModalProps) {
+export function ArtifactDownloadModal({
+  open = true,
+  onClose,
+  initialTab = 'plugin-packs',
+  nodeId,
+  surface = 'embedded',
+}: ArtifactDownloadModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab)
 
   useEffect(() => {
     if (open) setActiveTab(initialTab)
   }, [open, initialTab])
 
+  const tabContent = (
+    <>
+      <div className="adm-tabs" role="tablist" aria-label="Artifact download categories">
+        {TABS.map((tab) => {
+          const Icon = tab.icon
+          const isActive = tab.id === activeTab
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              className={`adm-tab${isActive ? ' adm-tab--active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <Icon size={16} aria-hidden="true" />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <Layer className="adm-tab-content">
+        {activeTab === 'plugin-packs' ? <PluginPacksTab nodeId={nodeId} /> : null}
+        {activeTab === 'nam' ? <IRDownloadTab type="nam" /> : null}
+        {activeTab === 'cabinet-irs' ? <IRDownloadTab type="cabinet-irs" /> : null}
+        {activeTab === 'reverb-irs' ? <IRDownloadTab type="reverb-irs" /> : null}
+        {activeTab === 'soundfonts' ? <SoundFontTab /> : null}
+      </Layer>
+    </>
+  )
+
+  if (surface === 'embedded') {
+    return (
+      <section className="adm-embedded" aria-label="Artifact discovery workspace">
+        <div className="adm-embedded__header">
+          <div className="adm-embedded__copy">
+            <p className="adm-embedded__eyebrow">Artifacts discovery</p>
+            <h2 className="adm-embedded__title">Download &amp; Discover</h2>
+            <p className="adm-embedded__desc">
+              Browse plugin packs, NAM libraries, impulse-response sources, and SoundFont catalogs without leaving the integrated artifacts workspace.
+            </p>
+          </div>
+          {onClose ? (
+            <Button kind="ghost" size="sm" onClick={onClose}>
+              Return to library
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="adm-embedded__frame">
+          {tabContent}
+        </div>
+      </section>
+    )
+  }
+
   return (
     <ComposedModal
       open={open}
-      onClose={onClose}
+      onClose={onClose ?? (() => undefined)}
       size="lg"
       className="adm-modal"
     >
       <ModalHeader title="Download &amp; Discover" label="Audio Artifacts" />
       <ModalBody className="adm-modal__body" hasScrollingContent>
-        {/* Tab strip */}
-        <div className="adm-tabs" role="tablist" aria-label="Artifact download categories">
-          {TABS.map((tab) => {
-            const Icon = tab.icon
-            const isActive = tab.id === activeTab
-            return (
-              <button
-                key={tab.id}
-                role="tab"
-                aria-selected={isActive}
-                className={`adm-tab${isActive ? ' adm-tab--active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <Icon size={16} aria-hidden="true" />
-                <span>{tab.label}</span>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Tab content */}
-        <Layer className="adm-tab-content">
-          {activeTab === 'plugin-packs' ? <PluginPacksTab nodeId={nodeId} /> : null}
-          {activeTab === 'nam' ? <IRDownloadTab type="nam" /> : null}
-          {activeTab === 'cabinet-irs' ? <IRDownloadTab type="cabinet-irs" /> : null}
-          {activeTab === 'reverb-irs' ? <IRDownloadTab type="reverb-irs" /> : null}
-          {activeTab === 'soundfonts' ? <SoundFontTab /> : null}
-        </Layer>
+        {tabContent}
       </ModalBody>
       <ModalFooter>
-        <Button kind="secondary" onClick={onClose}>Close</Button>
+        <Button kind="secondary" onClick={onClose ?? (() => undefined)}>Close</Button>
       </ModalFooter>
     </ComposedModal>
   )
