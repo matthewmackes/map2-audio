@@ -7,6 +7,11 @@
   flex-direction: column;
 }
 
+.platform-shell-page--route {
+  min-height: auto;
+  background: transparent;
+}
+
 .platform-shell__content {
   flex: 1;
   display: flex;

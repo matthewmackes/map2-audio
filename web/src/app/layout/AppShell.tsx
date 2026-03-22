@@ -1,11 +1,8 @@
 import type { ComponentType, CSSProperties, ReactNode } from 'react'
-import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { useState, useRef, useEffect, useMemo, startTransition } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { ChevronDown, ChevronRight, ChevronUp, Close, Menu, Pin, PinFilled } from '@carbon/icons-react'
 import { Header, HeaderGlobalBar, HeaderMenuButton, HeaderNavigation, Layer, Tag } from '@carbon/react'
-import { PlatformModalContent } from '../components/Platform/PlatformModal'
-import { isPlatformLayerId } from '../platform/model'
-import type { PlatformLayerId } from '../platform/model'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useHardwareMenuLocations } from '../hooks/useDeviceLocation'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
@@ -29,7 +26,7 @@ import {
   type NavigationMaturityState,
   type ShellNavigationItem,
 } from '../data/advancedMenuItems'
-import { isStandalonePanel, type PlatformPinnedNavItem, type StandalonePanel } from '../data/platformMenuItems'
+import type { PlatformPinnedNavItem } from '../data/platformMenuItems'
 import { resolveHomeCardProfile } from '../data/homeCardProfiles'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 import { isBlockedAdvancedMenuItem } from './advancedMenuState'
@@ -46,7 +43,7 @@ interface TopNavItem {
   maturity: NavigationMaturityState
   gatedReason?: string
   deviceType?: string
-  kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu' | 'platform-modal'
+  kind: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
   iconOnly?: boolean
   target?: PlatformPinnedNavItem['target']
 }
@@ -132,7 +129,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { isTabletTouchRoute } = useTabletTouchRouteLayout(location.pathname)
-  const [searchParams, setSearchParams] = useSearchParams()
   const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
   const [advancedMenuOpen, setAdvancedMenuOpen] = useState(false)
@@ -143,13 +139,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [topHardwareSubmenuOpen, setTopHardwareSubmenuOpen] = useState(false)
   const mpx1MenuRef = useRef<HTMLDivElement>(null)
   const topHardwareMenuRef = useRef<HTMLDivElement>(null)
-  const [platformModalOpen, setPlatformModalOpen] = useState(false)
-
-  // Derive initial deep-link params from URL when modal opens
-  const platformLayerParam = searchParams.get('layer')
-  const platformPanelParam = searchParams.get('panel')
-  const initialLayer: PlatformLayerId | null = isPlatformLayerId(platformLayerParam) ? platformLayerParam : null
-  const initialPanel: StandalonePanel | null = isStandalonePanel(platformPanelParam) ? platformPanelParam : null
 
   const {
     state: mpx1State,
@@ -221,7 +210,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const HomeIcon = homeTopNavItem.icon
 
   const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
-  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/juce-grid'
+  const isIntegratedWorkspaceRoute = location.pathname.startsWith('/platforms') || location.pathname === '/labs'
+  const isFullBleedRoute = location.pathname === '/' || location.pathname === '/juce-grid' || isIntegratedWorkspaceRoute
+  const showMobileBottomTabbar = !isIntegratedWorkspaceRoute
   const { locationsByRoute: hardwareLocationNotes } = useHardwareMenuLocations(allRouteNavigationItems)
 
   useEffect(() => {
@@ -261,44 +252,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       setTopHardwareSubmenuOpen(false)
     }
   }, [pinnedRouteSet])
-
-  const handlePlatformModalOpen = () => {
-    startTransition(() => {
-      setAdvancedMenuOpen(false)
-      setNavOpen(false)
-      setMpx1MenuOpen(false)
-      setTopHardwareSubmenuOpen(false)
-      setExpandedAdvancedCardId(null)
-      setPlatformModalOpen(true)
-    })
-  }
-
-  const handlePlatformModalClose = () => {
-    setPlatformModalOpen(false)
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev)
-      next.delete('layer')
-      next.delete('panel')
-      return next
-    }, { replace: true })
-  }
-
-  const handlePlatformRouteLaunch = (to: string) => {
-    setPlatformModalOpen(false)
-    navigate(to)
-  }
-
-  const handlePlatformNavigate = (params: { layer?: PlatformLayerId; panel?: StandalonePanel } | null) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev)
-      next.delete('layer')
-      next.delete('panel')
-      if (params?.layer) next.set('layer', params.layer)
-      if (params?.panel) next.set('panel', params.panel)
-      return next
-    }, { replace: true })
-  }
-
 
   const handleMenuToggle = () => {
     const nextOpen = !navOpen
@@ -433,48 +386,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </span>
         {!item.iconOnly && <span className={`nav-tab-label${isAudioGridTab ? ' nav-tab-label--audio-grid' : ''}`}>{item.label}</span>}
       </NavLink>
-    )
-  }
-
-  const isPlatformTargetActive = (item: TopNavItem) => {
-    if (item.kind !== 'platform-modal' || !item.target || !platformModalOpen) {
-      return false
-    }
-
-    if (item.target.layer) {
-      return searchParams.get('layer') === item.target.layer
-    }
-
-    if (item.target.panel) {
-      return searchParams.get('panel') === item.target.panel
-    }
-
-    return false
-  }
-
-  const renderPlatformPinnedTrigger = (item: TopNavItem) => {
-    const Icon = item.icon
-    const isActive = isPlatformTargetActive(item)
-
-    return (
-      <button
-        key={item.to}
-        type="button"
-        className={`nav-tab-item${isActive ? ' nav-tab-item--menu-active' : ''}`}
-        aria-label={item.label}
-        title={`${item.description} • ${item.maturity}`}
-        style={{ '--tab-color': item.color } as CSSProperties}
-        onClick={() => {
-          closeTransientMenus()
-          handlePlatformModalOpen()
-          handlePlatformNavigate(item.target ?? null)
-        }}
-      >
-        <span className="nav-tab-icon">
-          <Icon size={16} aria-hidden />
-        </span>
-        <span className="nav-tab-label">{item.shortLabel ?? item.label}</span>
-      </button>
     )
   }
 
@@ -882,9 +793,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             if (item.kind === 'hardware-submenu') {
               return renderHardwareSubmenuTrigger(item)
             }
-            if (item.kind === 'platform-modal') {
-              return renderPlatformPinnedTrigger(item)
-            }
             return renderNavItem(item)
           })}
         </HeaderNavigation>
@@ -919,23 +827,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </Header>
 
-      {/* Platform modal overlay — anchored below the nav bar */}
-      {platformModalOpen && (
-        <div className="platform-modal-overlay" role="dialog" aria-modal="true" aria-label="Platforms and Labs window">
-          <PlatformModalContent
-            initialLayer={initialLayer}
-            initialPanel={initialPanel}
-            onNavigate={handlePlatformNavigate}
-            onLaunchRoute={handlePlatformRouteLaunch}
-            onClose={handlePlatformModalClose}
-          />
-        </div>
-      )}
-
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>
         <PageTransition>{children}</PageTransition>
       </main>
-      <nav className="mobile-bottom-tabbar" aria-label="Mobile quick navigation">
+      {showMobileBottomTabbar ? (
+        <nav className="mobile-bottom-tabbar" aria-label="Mobile quick navigation">
         <NavLink
           key="mobile-home"
           to={homeTopNavItem.to}
@@ -977,7 +873,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
           <span>Menu</span>
         </button>
-      </nav>
+        </nav>
+      ) : null}
     </div>
   )
 }

@@ -31,6 +31,10 @@ jest.mock('../../hooks/useNodePageContext', () => ({
   useNodePageContext: (pageKey: string) => mockUseNodePageContext(pageKey),
 }))
 
+jest.mock('../../hooks/useNodeAlertMonitoring', () => ({
+  useNodeAlertMonitoring: () => undefined,
+}))
+
 const baseNode = {
   hostname: 'node-a',
   display_label: null,
@@ -114,7 +118,7 @@ describe('NodeNavChip', () => {
 
   it('routes platform node details into the single-node layer', () => {
     render(
-      <MemoryRouter initialEntries={['/platform?layer=cluster-dashboard']}>
+      <MemoryRouter initialEntries={['/platforms/cluster-dashboard']}>
         <NodeNavBar />
         <LocationProbe />
       </MemoryRouter>,
@@ -124,7 +128,7 @@ describe('NodeNavChip', () => {
     fireEvent.click(screen.getByText('View details'))
 
     expect(useViewedNodeStore.getState().pageNodeMap.nodes).toBe('node-b')
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platform?layer=single-node')
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/single-node')
   })
 
   it('renders a single chip for n=1 mode and shows a skeleton while loading', () => {

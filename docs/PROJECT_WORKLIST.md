@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-22 06:37 EDT - Codex (Completed `T269-subA`, advanced `T269-subB`, and recorded the integrated-home route, redirect, validation, and licensing evidence.)
+Last updated: 2026-03-22 06:54 EDT - Codex (Completed `T269-subB`, advanced `T269-subC`, and recorded the routed Platforms/Labs shell, pin migration, validation, and licensing evidence.)
 
 ## Active Blockers Only
 
@@ -3237,7 +3237,7 @@ Subtasks:
     - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx web/src/app/App.platformRoute.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/layout/AppShell.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with existing Vite warnings only.
     - Licensing: Classified the touched frontend, test, and worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
 - ID: T269-subB
-  Status: [>] In Progress
+  Status: [✓] Done
   Title: Cycle 2 — Migrate Platforms and Labs from modal host to routed Carbon workspaces
   Description:
   - Goal / acceptance criteria: Retire the `Platforms and Labs` modal as the primary host; promote platform layers and standalone panels into `/platforms/:workspace`; promote Labs into `/labs`; preserve deep-link access to overview, node, AVB, MIDI, API, cluster, host-machine, audio-engine, theme, and about flows; and migrate pinning/navigation metadata to the routed contract.
@@ -3248,9 +3248,17 @@ Subtasks:
   - Commit message: `T269-subB: route Platforms and Labs into the integrated home shell`
   Subtasks: None
   Assigned to: Any AI
-  Last updated: 2026-03-22 06:37 EDT - Codex
+  Last updated: 2026-03-22 06:54 EDT - Codex
+  - Completion notes:
+    - Converted platform pin metadata from synthetic modal targets to canonical routed paths in `web/src/app/data/platformMenuItems.ts` and `web/src/app/data/advancedMenuItems.ts`, including backward-compatible alias normalization for legacy `/platform`, `/about`, `/engine`, `/theme`, `/host-machine`, `/audio-artifacts`, and `platform:layer|panel:*` persisted pins.
+    - Retired the AppShell platform modal host in `web/src/app/layout/AppShell.tsx`; pinned platform destinations now render as direct routed links, `/platforms` redirects to `/platforms/overview`, and the mobile bottom tabbar is suppressed on `/platforms/*` and `/labs` to avoid routed-shell overlap.
+    - Updated `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/pages/PlatformWorkspacePage.tsx`, `web/src/app/pages/LabsPage.tsx`, and `web/src/app/pages/PlatformShellPage.css` so the shared Platforms/Labs surface renders route-native content by default while keeping optional modal chrome available only as a fallback wrapper.
+    - Repointed integrated-home metadata and presentation to the routed contract in `web/src/app/data/homeCardProfiles.ts`, `web/src/app/pages/HomePage.tsx`, and `web/src/app/pages/posterManifest.ts`, keeping Platforms as the canonical workspace tile and Labs as the separate routed launcher catalog.
+    - Added or updated route/shell regressions in `web/src/app/App.platformRoute.test.tsx`, `web/src/app/layout/AppShell.test.tsx`, `web/src/app/components/Platform/PlatformModal.test.tsx`, `web/src/app/data/advancedMenuItems.test.ts`, `web/src/app/components/NodeNav/NodeNavChip.test.tsx`, and `web/src/app/pages/HomePage.test.tsx` to cover `/platforms`, `/labs`, canonical platform pin links, hidden mobile tabbar behavior, and legacy pin normalization.
+    - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/App.platformRoute.test.tsx web/src/app/layout/AppShell.test.tsx web/src/app/components/Platform/PlatformModal.test.tsx web/src/app/data/advancedMenuItems.test.ts web/src/app/components/NodeNav/NodeNavChip.test.tsx web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import/chunk warnings only.
+    - Licensing: Classified the touched frontend, test, build-log, and worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
 - ID: T269-subC
-  Status: [ ] Todo
+  Status: [>] In Progress
   Title: Cycle 3 — Integrate Audio Artifacts, replace discovery modal, and close conformance
   Description:
   - Goal / acceptance criteria: Refactor Audio Artifacts into `/artifacts` with category/search/pagination/node filters preserved; move artifact discovery into `/artifacts/discover`; keep only light modals for upload and delete confirmation; replace fixed drawer/detail overlays with integrated responsive content regions; finish shell/mobile cleanup for the integrated route family; add dedicated Audio Artifacts regression coverage; and publish final Carbon conformance/checklist evidence.
@@ -3261,6 +3269,6 @@ Subtasks:
   - Commit message: `T269-subC: integrate Audio Artifacts and close Carbon conformance`
   Subtasks: None
   Assigned to: Any AI
-  Last updated: 2026-03-22 06:12 EDT - Codex
+  Last updated: 2026-03-22 06:54 EDT - Codex
 Assigned to: Any AI
-Last updated: 2026-03-22 06:37 EDT - Codex
+Last updated: 2026-03-22 06:54 EDT - Codex

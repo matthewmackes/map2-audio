@@ -109,7 +109,7 @@ interface DeploymentModeResponse {
   mode?: string
 }
 
-const FEATURED_HOME_ROUTES = ['/platform', '/audio-artifacts', '/juce-grid', '/midi-hub'] as const
+const FEATURED_HOME_ROUTES = ['/platforms/overview', '/artifacts', '/juce-grid', '/midi-hub'] as const
 const LABS_PROFILE: HomeCardProfile = {
   summary: 'Dedicated catalog for advanced, experimental, and blocked workflows that should not crowd the default operator shell.',
   capabilities: [
@@ -548,16 +548,6 @@ export function HomePage() {
   }
 
   const openHomeItem = useCallback((item: HomeNavigationItem) => {
-    if (item.to === '/platform') {
-      navigate('/platforms/overview')
-      return
-    }
-
-    if (item.to === '/audio-artifacts') {
-      navigate('/artifacts')
-      return
-    }
-
     navigate(item.to)
   }, [navigate])
 
@@ -668,7 +658,7 @@ export function HomePage() {
                         </button>
                       ) : null}
                     </div>
-                    <h3 className="hp-workspace-card__title">{item.label === 'Platforms and Labs' ? 'Platforms' : item.label}</h3>
+                    <h3 className="hp-workspace-card__title">{item.label}</h3>
                     <p className="hp-workspace-card__summary">{profile.summary}</p>
                     <ul className="hp-workspace-card__capabilities">
                       {profile.capabilities.slice(0, 3).map((capability) => (

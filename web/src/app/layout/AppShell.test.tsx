@@ -54,25 +54,6 @@ jest.mock('../components/MPX1/MPX1MegaMenu', () => ({
   MPX1MegaMenu: () => <div data-testid="mpx1-mega-menu">MPX1 menu</div>,
 }))
 
-jest.mock('../components/Platform/PlatformModal', () => ({
-  PlatformModalContent: ({
-    initialLayer,
-    initialPanel,
-    onLaunchRoute,
-  }: {
-    initialLayer?: string | null
-    initialPanel?: string | null
-    onLaunchRoute?: (to: string) => void
-  }) => (
-    <div data-testid="platform-modal-content">
-      <span>{initialLayer ?? initialPanel ?? 'root'}</span>
-      <button type="button" onClick={() => onLaunchRoute?.('/midi-hub')}>
-        launch-midi-hub
-      </button>
-    </div>
-  ),
-}))
-
 jest.mock('../components/NodeNav/NodeNavBar', () => ({
   NodeNavBar: () => <div data-testid="node-nav-bar" />,
 }))
@@ -209,22 +190,8 @@ describe('AppShell navigation', () => {
     expect(screen.getAllByText('MPX1 Rack').length).toBeGreaterThan(0)
   })
 
-  it('renders pinned platform deep links in the top nav and opens the requested panel target', () => {
-    mockSpecialSettings.pinnedRoutes = ['platform:layer:overview']
-
-    renderInRouter(
-      <AppShell>
-        <div>shell content</div>
-      </AppShell>,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
-
-    expect(screen.getByTestId('platform-modal-content')).toHaveTextContent('overview')
-  })
-
-  it('launches Labs routes from the platform modal host callback', () => {
-    mockSpecialSettings.pinnedRoutes = ['platform:layer:overview']
+  it('renders pinned platform deep links in the top nav as direct routed links', () => {
+    mockSpecialSettings.pinnedRoutes = ['/platforms/overview']
 
     renderInRouter(
       <AppShell>
@@ -232,11 +199,22 @@ describe('AppShell navigation', () => {
       </AppShell>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
-    fireEvent.click(screen.getByRole('button', { name: 'launch-midi-hub' }))
+    fireEvent.click(screen.getAllByRole('link', { name: 'Overview' })[0])
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/midi-hub')
-    expect(screen.queryByTestId('platform-modal-content')).toBeNull()
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/overview')
+  })
+
+  it('hides the mobile bottom tabbar on integrated platform routes', () => {
+    mockSpecialSettings.pinnedRoutes = ['/platforms/overview']
+
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/platforms/overview'],
+    )
+
+    expect(screen.queryByLabelText('Mobile quick navigation')).toBeNull()
   })
 
   it('shows only remaining hardware-submenu items inside the Audio Interfaces submenu', () => {

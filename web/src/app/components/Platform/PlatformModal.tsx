@@ -1,10 +1,7 @@
 /**
- * PlatformModal — the full platform control-panel and workspace rendered as a
- * near-fullscreen modal overlay anchored below the nav bar.
- *
- * Used by:
- *   - AppShell  (via the Platform nav dropdown trigger)
- *   - PlatformShellPage  (deep-link compatibility: ?layer= / ?panel=)
+ * Shared Platforms/Labs workspace surface used by the routed `/platforms/*`
+ * and `/labs` shells, with optional modal chrome retained for narrow legacy
+ * host flows that still need an overlay wrapper.
  */
 import {
   ChartColumn,
@@ -624,11 +621,13 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   )
 }
 
-// ── Platform Modal Body ──────────────────────────────────────────────────────
-// The scrollable content inside the modal. Shared by both AppShell modal and
-// the standalone /platform page deep-link path.
+// ── Shared Platforms/Labs Surface ────────────────────────────────────────────
+// Route-native by default, with optional modal chrome retained for any narrow
+// legacy host that still needs an overlay wrapper.
 
 export interface PlatformModalContentProps {
+  /** Render the shared workspace as routed page content or modal content. */
+  surface?: 'route' | 'modal'
   /** Initial layer to open (from URL deep-link). Pass null for the grid. */
   initialLayer?: PlatformLayerId | null
   /** Initial standalone panel to open (from URL deep-link). */
@@ -644,6 +643,7 @@ export interface PlatformModalContentProps {
 }
 
 export function PlatformModalContent({
+  surface = 'route',
   initialLayer,
   initialPanel,
   initialLabs = false,
@@ -769,6 +769,60 @@ export function PlatformModalContent({
   const showStandalone = activePanel !== null
   const showLayer = !activeLabs && !showStandalone && activeLayer !== null
   const activeId = activeLabs ? 'labs' : (activePanel ?? activeLayerId)
+  const workspaceShell = (
+    <div className={`platform-shell-page${surface === 'route' ? ' platform-shell-page--route' : ''}`}>
+      <div className="platform-shell__content">
+        <div className="platform-shell__window">
+          <SidebarNavigation
+            activeId={activeId}
+            pinnedRouteSet={pinnedRouteSet}
+            onOpenLayer={handleOpenLayer}
+            onOpenStandalone={handleOpenStandalone}
+            onOpenLabs={handleOpenLabs}
+            onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
+            pinningDisabled={specialSettingsLoading}
+          />
+          <div className="platform-shell__panel">
+            <AnimatePresence mode="wait">
+              {activeLabs && (
+                <LabsWorkspace
+                  key="labs"
+                  pinnedRouteSet={pinnedRouteSet}
+                  pinningDisabled={specialSettingsLoading}
+                  onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
+                  onLaunchRoute={handleLaunchRoute}
+                />
+              )}
+              {showStandalone && activePanel && (
+                <StandaloneWorkspace key={activePanel} panel={activePanel} />
+              )}
+              {showLayer && activeLayer && (
+                <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
+              )}
+              {!activeLabs && !showStandalone && !showLayer && (
+                <motion.section
+                  key="platform-loading"
+                  className="platform-shell__workspace platform-shell__workspace--empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                >
+                  <div className="platform-shell__table-state">
+                    <InlineLoading description="Loading platform workspace" status="active" />
+                  </div>
+                </motion.section>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (surface === 'route') {
+    return workspaceShell
+  }
 
   return (
     <div className="platform-modal__body platform-modal__body--expanded">
@@ -785,54 +839,7 @@ export function PlatformModalContent({
       </div>
 
       <div className="platform-modal__scroll">
-        <div className="platform-shell-page">
-          <div className="platform-shell__content">
-            <div className="platform-shell__window">
-              <SidebarNavigation
-                activeId={activeId}
-                pinnedRouteSet={pinnedRouteSet}
-                onOpenLayer={handleOpenLayer}
-                onOpenStandalone={handleOpenStandalone}
-                onOpenLabs={handleOpenLabs}
-                onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
-                pinningDisabled={specialSettingsLoading}
-              />
-              <div className="platform-shell__panel">
-              <AnimatePresence mode="wait">
-                {activeLabs && (
-                  <LabsWorkspace
-                    key="labs"
-                    pinnedRouteSet={pinnedRouteSet}
-                    pinningDisabled={specialSettingsLoading}
-                    onTogglePin={(item, checked) => { void togglePinnedRoute(item, checked) }}
-                    onLaunchRoute={handleLaunchRoute}
-                  />
-                )}
-                {showStandalone && activePanel && (
-                  <StandaloneWorkspace key={activePanel} panel={activePanel} />
-                )}
-                {showLayer && activeLayer && (
-                  <LayerWorkspace key={activeLayer.id} layer={activeLayer} alerts={visibleAlerts} onDismissAlert={dismissAlert} />
-                )}
-                {!activeLabs && !showStandalone && !showLayer && (
-                  <motion.section
-                    key="platform-loading"
-                    className="platform-shell__workspace platform-shell__workspace--empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.16, ease: 'easeOut' }}
-                  >
-                    <div className="platform-shell__table-state">
-                      <InlineLoading description="Loading platform workspace" status="active" />
-                    </div>
-                  </motion.section>
-                )}
-              </AnimatePresence>
-              </div>
-            </div>
-          </div>
-        </div>
+        {workspaceShell}
       </div>
     </div>
   )

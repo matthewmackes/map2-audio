@@ -14,6 +14,7 @@ export function PlatformWorkspacePage() {
 
   return (
     <PlatformModalContent
+      surface="route"
       initialLayer={target.layer ?? null}
       initialPanel={target.panel ?? null}
       onNavigate={(params) => {

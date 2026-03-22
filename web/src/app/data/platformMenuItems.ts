@@ -28,7 +28,7 @@ export interface PlatformPinnedNavItem {
   color: string
   pinnable: true
   maturity: 'beta'
-  kind: 'platform-modal'
+  kind: 'link'
   target: { layer?: PlatformLayerId; panel?: StandalonePanel }
 }
 
@@ -84,11 +84,11 @@ const STANDALONE_PANEL_ITEMS: Array<{
 ]
 
 function buildPlatformLayerPinnedRoute(layerId: PlatformLayerId): string {
-  return `platform:layer:${layerId}`
+  return `/platforms/${layerId}`
 }
 
 function buildPlatformPanelPinnedRoute(panel: StandalonePanel): string {
-  return `platform:panel:${panel}`
+  return `/platforms/${panel}`
 }
 
 export const platformPinnedItems: PlatformPinnedNavItem[] = [
@@ -101,7 +101,7 @@ export const platformPinnedItems: PlatformPinnedNavItem[] = [
     color: layer.accent,
     pinnable: true as const,
     maturity: 'beta' as const,
-    kind: 'platform-modal' as const,
+    kind: 'link' as const,
     target: { layer: layer.id },
   })),
   ...STANDALONE_PANEL_ITEMS.map((panel) => ({
@@ -113,7 +113,7 @@ export const platformPinnedItems: PlatformPinnedNavItem[] = [
     color: panel.color,
     pinnable: true as const,
     maturity: 'beta' as const,
-    kind: 'platform-modal' as const,
+    kind: 'link' as const,
     target: { panel: panel.id },
   })),
 ]

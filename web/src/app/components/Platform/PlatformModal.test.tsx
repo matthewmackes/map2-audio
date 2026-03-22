@@ -108,7 +108,7 @@ describe('PlatformModalContent', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pin Overview' }))
 
     expect(mockUpdateSettings).toHaveBeenCalledWith({
-      pinnedRoutes: ['platform:layer:overview'],
+      pinnedRoutes: ['/platforms/overview'],
     })
   })
 

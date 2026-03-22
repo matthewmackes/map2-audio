@@ -52,6 +52,14 @@ jest.mock('./pages/PlatformWorkspacePage', () => ({
   },
 }))
 
+jest.mock('./pages/LabsPage', () => ({
+  LabsPage: () => {
+    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="labs-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/AudioArtifactsPage', () => ({
   AudioArtifactsPage: ({ discoverMode }: { discoverMode?: boolean }) => {
     const { useLocation: mockUseLocation } = require('react-router-dom')
@@ -76,5 +84,21 @@ describe('App routing', () => {
     render(<App />)
 
     expect(await screen.findByTestId('artifacts-route')).toHaveTextContent('/artifacts?category=lv2-plugins|discover=no')
+  })
+
+  it('redirects the bare /platforms route into the overview workspace', async () => {
+    window.history.pushState({}, '', '/platforms')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/overview')
+  })
+
+  it('keeps Labs as a first-class routed surface', async () => {
+    window.history.pushState({}, '', '/labs')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('labs-route')).toHaveTextContent('/labs')
   })
 })

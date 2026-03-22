@@ -199,6 +199,7 @@ export function App() {
                               <Routes>
                                 <Route path="/" element={<HomeEntryRoute />} />
                                 <Route path="/platform" element={<LegacyPlatformRedirect />} />
+                                <Route path="/platforms" element={<Navigate to={buildPlatformWorkspacePath('overview')} replace />} />
                                 <Route path="/platforms/:workspace" element={<PlatformWorkspacePage />} />
                                 <Route path="/labs" element={<LabsPage />} />
                                 <Route path="/chains" element={<ChainsPage />} />

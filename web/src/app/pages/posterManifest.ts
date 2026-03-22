@@ -6,7 +6,7 @@ export interface PosterManifestEntry {
 }
 
 export const POSTER_MANIFEST: PosterManifestEntry[] = [
-  { route: '/platforms/overview', label: 'Platforms and Labs', slug: 'platforms-and-labs', temperature: 'warm' },
+  { route: '/platforms/overview', label: 'Platforms', slug: 'platforms', temperature: 'warm' },
   { route: '/platforms/audio-engine', label: 'Audio Engine', slug: 'audio-engine', temperature: 'cool' },
   { route: '/platforms/host-machine', label: 'Host Machine', slug: 'host-machine', temperature: 'warm' },
   { route: '/perform', label: 'Stage Mode', slug: 'stage-mode', temperature: 'warm' },

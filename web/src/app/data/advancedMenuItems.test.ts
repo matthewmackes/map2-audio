@@ -31,7 +31,6 @@ describe('navigation catalog', () => {
       'Audio Grid',
       'MIDI',
       'System',
-      'Hardware',
     ])
   })
 
@@ -54,19 +53,14 @@ describe('navigation catalog', () => {
     }
   })
 
-  it('keeps hardware cards in the Hardware section with real routes', () => {
-    const hardwareSection = homeNavigationSections.find((section) => section.title === 'Hardware')
+  it('keeps hardware routes real while leaving the Home card set hardware-free', () => {
     const systemSection = homeNavigationSections.find((section) => section.title === 'System')
 
-    expect(hardwareSection).toBeDefined()
-    expect(hardwareSection?.items.length).toBeGreaterThan(0)
-    for (const item of hardwareSection?.items ?? []) {
-      expect(item.to.startsWith('/')).toBe(true)
-    }
-    expect(hardwareSection?.items.some((item) => item.to === '/lcd')).toBe(true)
+    expect(homeNavigationSections.some((section) => section.title === 'Hardware')).toBe(false)
     expect(systemSection?.items.some((item) => item.to === '/lcd')).toBe(false)
 
     for (const item of hardwareInterfaceMenuItems) {
+      expect(item.to.startsWith('/')).toBe(true)
       expect(item.maturity).not.toBe('hardware-blocked')
     }
   })
@@ -74,6 +68,10 @@ describe('navigation catalog', () => {
   it('keeps every Home card aligned with an application route', () => {
     const hasRouteRegistration = (route: string) => {
       const pathname = new URL(route, 'https://map2.local').pathname
+      if (pathname.startsWith('/platforms/')) {
+        return appSource.includes('path="/platforms/:workspace"')
+      }
+
       return appSource.includes(`path="${pathname}"`) || appSource.includes(`path="${pathname}/*"`)
     }
 
@@ -96,7 +94,9 @@ describe('navigation catalog', () => {
   it('normalizes pinned routes by trimming, aliasing legacy paths, filtering invalid values, and deduplicating', () => {
     expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/about', '/platform'])).toEqual([
       '/juce-grid',
+      '/platforms/about',
       '/midi-hub',
+      '/platforms/overview',
     ])
   })
 
@@ -142,17 +142,17 @@ describe('navigation catalog', () => {
     ])
   })
 
-  it('keeps Platforms and Labs on Home instead of the removed dedicated cluster pages', () => {
-    const platform = navigationCatalogItems.find((item) => item.to === '/platform')
+  it('keeps Platforms on Home as the routed cluster workspace entry instead of the removed dedicated cluster pages', () => {
+    const platform = navigationCatalogItems.find((item) => item.to === '/platforms/overview')
     expect(platform).toBeDefined()
-    expect(platform?.label).toBe('Platforms and Labs')
+    expect(platform?.label).toBe('Platforms')
     expect(platform?.includeInAdvancedMenu).toBe(false)
     expect(platform?.pinnable).toBe(false)
     expect(platform?.showOnHome).toBe(true)
-    expect(pinnableNavigationItems.some((item) => item.to === '/platform')).toBe(false)
+    expect(pinnableNavigationItems.some((item) => item.to === '/platforms/overview')).toBe(false)
 
     const appearsOnHome = homeNavigationSections.some((section) =>
-      section.items.some((item) => item.to === '/platform'),
+      section.items.some((item) => item.to === '/platforms/overview'),
     )
     expect(appearsOnHome).toBe(true)
   })

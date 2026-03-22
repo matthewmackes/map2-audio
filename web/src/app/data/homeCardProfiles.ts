@@ -11,17 +11,43 @@ export interface HomeCardProfile {
 
 const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
   '/platform': {
-    summary: 'Unified Platforms and Labs window that combines platform workspaces with the relocated advanced launcher surface in one shell entry point.',
+    summary: 'Canonical platform workspace for overview, node, AVB, MIDI cluster, API observatory, and cluster operations from one routed shell surface.',
     capabilities: [
       'Persistent left-rail access to platform workspaces',
       'Unified path across node, AVB, MIDI, API, and fleet views',
-      'Bottom-rail Labs entry for advanced and experimental launchers',
-      'Shared shell window for platform and lab workflows',
+      'Deep-linkable routed workspace per platform destination',
+      'Shared shell treatment across platform surfaces',
       'Consistent icon grammar across platform destinations and labs launchers',
       'Reduced navigation overhead during troubleshooting and exploration',
     ],
-    learnMore: 'Open Platforms and Labs when you need one window that can pivot between the main platform workspaces and the relocated advanced launchers without jumping between separate shell menus.',
-    bestFor: 'Cross-domain operations plus advanced workflow launch',
+    learnMore: 'Open Platforms when you need one routed workspace that can pivot between the main platform destinations without falling back to modal navigation.',
+    bestFor: 'Cross-domain platform operations',
+  },
+  '/platforms/overview': {
+    summary: 'Canonical platform workspace for overview, node, AVB, MIDI cluster, API observatory, and cluster operations from one routed shell surface.',
+    capabilities: [
+      'Persistent left-rail access to platform workspaces',
+      'Unified path across node, AVB, MIDI, API, and fleet views',
+      'Deep-linkable routed workspace per platform destination',
+      'Shared shell treatment across platform surfaces',
+      'Consistent icon grammar across platform destinations and labs launchers',
+      'Reduced navigation overhead during troubleshooting and exploration',
+    ],
+    learnMore: 'Open Platforms when you need one routed workspace that can pivot between the main platform destinations without falling back to modal navigation.',
+    bestFor: 'Cross-domain platform operations',
+  },
+  '/labs': {
+    summary: 'Dedicated routed catalog for advanced, experimental, and blocked workflows that should stay separated from the default operator workspace set.',
+    capabilities: [
+      'Route-first catalog of advanced MAP2 destinations',
+      'Clear separation between default workspaces and exploratory tools',
+      'One place to launch experimental or qualification-sensitive surfaces',
+      'Consistent access to the former advanced launcher inventory',
+      'Pinned-route controls for supported lab destinations',
+      'Hardware-location and maturity context inline with each launcher',
+    ],
+    learnMore: 'Open Labs when you need the advanced route catalog without mixing those destinations into the default operator-first platform workspace.',
+    bestFor: 'Advanced exploration and lab workflows',
   },
   '/engine': {
     summary: 'Realtime engine command surface for core audio runtime state, metering, and processing-path confidence checks.',
@@ -75,6 +101,19 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Platform Guide whenever you need a single place for first-run orientation, document lookup, release provenance, or support escalation context.',
     bestFor: 'Onboarding and support traceability',
   },
+  '/platforms/about': {
+    summary: 'Canonical platform guide that combines MAP2 operating concepts, documentation access, build identity, and support context.',
+    capabilities: [
+      'Workflow onboarding and operator orientation',
+      'Documentation-library access from the shell',
+      'Build and version identity details',
+      'Runtime and deployment verification context',
+      'Support-grade system metadata and credits',
+      'Legal and licensing reference points',
+    ],
+    learnMore: 'Use Platform Guide whenever you need a single place for first-run orientation, document lookup, release provenance, or support escalation context.',
+    bestFor: 'Onboarding and support traceability',
+  },
   'platform:panel:theme': {
     summary: 'Platform appearance workspace for Carbon presets, typography selection, motion reduction, and shared category accent control.',
     capabilities: [
@@ -88,6 +127,45 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Theme when you want to tune the shell’s visual language without hunting through documentation or unrelated support screens.',
     bestFor: 'Platform appearance and operator comfort tuning',
   },
+  '/platforms/theme': {
+    summary: 'Platform appearance workspace for Carbon presets, typography selection, motion reduction, and shared category accent control.',
+    capabilities: [
+      'Carbon theme preset and custom palette access',
+      'Persisted GUI font selection for the shell',
+      'Reduced-effects preference control',
+      'Shared plugin-category accent customization',
+      'Deep-linkable platform appearance window',
+      'Consistent operator-facing visual tuning',
+    ],
+    learnMore: 'Use Theme when you want to tune the shell’s visual language without hunting through documentation or unrelated support screens.',
+    bestFor: 'Platform appearance and operator comfort tuning',
+  },
+  '/platforms/host-machine': {
+    summary: 'System-level machine diagnostics focused on latency-sensitive reliability and host resource headroom.',
+    capabilities: [
+      'CPU and memory readiness visibility',
+      'Storage and machine health context',
+      'Low-latency risk signal detection',
+      'Host stability checks for realtime workloads',
+      'Node-level operating condition snapshots',
+      'Resource-pressure troubleshooting context',
+    ],
+    learnMore: 'Use Host Machine when audio symptoms may be caused by OS/resource pressure rather than plugin or routing changes.',
+    bestFor: 'Host-level performance triage',
+  },
+  '/platforms/audio-engine': {
+    summary: 'Realtime engine command surface for core audio runtime state, metering, and processing-path confidence checks.',
+    capabilities: [
+      'Realtime engine running-state monitoring',
+      'Signal-path health and processing visibility',
+      'Live metering and activity confirmation',
+      'Runtime controls for active processing path',
+      'Operational checks before stage use',
+      'Issue triage for engine-level instability',
+    ],
+    learnMore: 'Open this page whenever audio behavior is uncertain and you need direct confidence in engine state before changing chain content.',
+    bestFor: 'Core audio runtime control',
+  },
   '/plugins': {
     summary: 'LV2 inventory and catalog management surface for understanding and organizing available processing blocks.',
     capabilities: [
@@ -100,6 +178,19 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     ],
     learnMore: 'Use LV2 Plugins when curating your processing toolbox, validating plugin footprint, or planning chain revisions.',
     bestFor: 'Plugin catalog operations',
+  },
+  '/artifacts': {
+    summary: 'Unified audio-artifact library for browsing plugins, models, impulse responses, SoundFonts, and other processing assets across the integrated home shell.',
+    capabilities: [
+      'Browse installed LV2 inventory',
+      'Inspect plugin availability and scope',
+      'Impulse-response and NAM model management',
+      'Node-aware asset catalog visibility',
+      'Validation context for model and plugin footprint',
+      'Consistent artifact lifecycle handling',
+    ],
+    learnMore: 'Use Audio Artifacts to centralize plugin and asset inventory work while keeping the library deep-linkable from the integrated shell.',
+    bestFor: 'Artifact catalog operations',
   },
   '/library': {
     summary: 'IR and NAM asset workflows for acquiring, curating, and validating model-based tone resources.',

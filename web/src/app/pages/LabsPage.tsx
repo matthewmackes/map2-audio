@@ -8,6 +8,7 @@ export function LabsPage() {
 
   return (
     <PlatformModalContent
+      surface="route"
       initialLabs
       onNavigate={(params) => {
         if (!params) {
