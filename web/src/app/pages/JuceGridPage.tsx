@@ -3993,7 +3993,7 @@ export function JuceGridPage() {
                 <div className="juce-grid-page__tablet-flow-summary-main">
                   <div className="juce-grid-page__tablet-flow-summary-copy">
                     <span className="juce-grid-page__flow-card-label">{flowLabel}</span>
-                    <strong>{flowTitle}</strong>
+                    <h3 className="juce-grid-page__flow-card-title-heading">{flowTitle}</h3>
                     <p>
                       <SegmentedLedText value={flowSummary} size="sm" color={FLOW_CARD_LED_COLOR} />
                     </p>
@@ -4116,7 +4116,7 @@ export function JuceGridPage() {
                   <div className="juce-grid-page__flow-card-heading">
                     <span className="juce-grid-page__flow-card-label">{flowLabel}</span>
                     <div className="juce-grid-page__flow-card-copy">
-                      <strong>{flowTitle}</strong>
+                      <h3 className="juce-grid-page__flow-card-title-heading">{flowTitle}</h3>
                       <p>
                         <SegmentedLedText value={flowSummary} size="sm" color={FLOW_CARD_LED_COLOR} />
                       </p>
@@ -4596,7 +4596,7 @@ export function JuceGridPage() {
                 </div>
                 <Tile className="juce-grid-page__effect-modal-placeholder">
                   <div className="juce-grid-page__parameter-editor-copy">
-                    <strong>{selectedPlugin ? 'Selected block ready' : 'No block selected'}</strong>
+                    <h3 className="juce-grid-page__selected-block-placeholder-heading">{selectedPlugin ? 'Selected block ready' : 'No block selected'}</h3>
                     <p>
                       {selectedPlugin
                         ? 'Use the flow card selection to reopen the bottom editor panel.'
@@ -4668,7 +4668,15 @@ export function JuceGridPage() {
                   {selectedPlugin ? <SelectedPluginHeroIcon width={32} height={32} /> : <Edit size={32} />}
                 </div>
                 <div className="juce-grid-page__bottom-editor-copy">
-                  <strong>{bottomEditorOpen && selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}</strong>
+                  <p className="juce-grid-page__bottom-editor-kicker">Selected block</p>
+                  <h2 className="juce-grid-page__bottom-editor-heading">
+                    {bottomEditorOpen && selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}
+                  </h2>
+                  <p className="juce-grid-page__bottom-editor-subtitle">
+                    {bottomEditorOpen && selectedPlugin
+                      ? selectedPluginMeta?.category || 'Processor'
+                      : 'Open the pinned editor to work on the current block.'}
+                  </p>
                 </div>
               </div>
               <div className="juce-grid-page__bottom-editor-actions">
@@ -4685,14 +4693,7 @@ export function JuceGridPage() {
                   className={`juce-grid-page__bottom-editor-toggle ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}
                   style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
                 >
-                  <span className="juce-grid-page__bottom-editor-toggle-copy">
-                    <span className="juce-grid-page__bottom-editor-toggle-kicker" aria-hidden="true">
-                      {bottomEditorOpen ? 'Editor live' : 'Editor panel'}
-                    </span>
-                    <span className="juce-grid-page__bottom-editor-toggle-text">
-                      {bottomEditorOpen ? 'Close editor' : 'Open editor'}
-                    </span>
-                  </span>
+                  {bottomEditorOpen ? 'Close editor' : 'Open editor'}
                 </Button>
               </div>
             </div>
@@ -4724,7 +4725,7 @@ export function JuceGridPage() {
               ) : (
                 <Tile className="juce-grid-page__bottom-editor-placeholder">
                   <div className="juce-grid-page__parameter-editor-copy">
-                    <strong>{selectedPlugin ? 'Selected block ready' : 'No block selected'}</strong>
+                    <h3 className="juce-grid-page__selected-block-placeholder-heading">{selectedPlugin ? 'Selected block ready' : 'No block selected'}</h3>
                     <p>
                       {selectedPlugin
                         ? 'The editor shell stays pinned here. Use Open editor when you want to work on the selected block.'
@@ -4843,7 +4844,7 @@ export function JuceGridPage() {
                         {selectedPlugin ? <SelectedPluginHeroIcon width={28} height={28} /> : <Edit size={28} />}
                       </div>
                       <div className="juce-grid-page__tablet-editor-copy">
-                        <strong>{selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}</strong>
+                        <h2 className="juce-grid-page__tablet-editor-heading">{selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}</h2>
                         <p>{selectedPluginMeta?.category || 'Processor'}</p>
                       </div>
                     </div>
@@ -5062,10 +5063,10 @@ export function JuceGridPage() {
             </div>
             <div className="juce-grid-page__routing-inspector-grid" role="list" aria-label="Routing details">
               {routingInspectorContent.rows.map((row) => (
-                <div key={row.label} className="juce-grid-page__routing-inspector-row" role="listitem">
-                  <span>{row.label}</span>
-                  <strong>{row.value}</strong>
-                </div>
+                <Tile key={row.label} className="juce-grid-page__routing-inspector-row" role="listitem">
+                  <p className="juce-grid-page__routing-inspector-row-label">{row.label}</p>
+                  <h3 className="juce-grid-page__routing-inspector-row-value">{row.value}</h3>
+                </Tile>
               ))}
             </div>
           </div>
@@ -5738,10 +5739,12 @@ export function JuceGridPage() {
       )}
 
       {/* Audio Nodes Modal */}
-      <AudioNodesModal
-        open={showAudioNodesModal}
-        onClose={() => setShowAudioNodesModal(false)}
-      />
+      {showAudioNodesModal && (
+        <AudioNodesModal
+          open={showAudioNodesModal}
+          onClose={() => setShowAudioNodesModal(false)}
+        />
+      )}
 
       {/* Routing Topology Modal */}
       <RoutingTopologyModal

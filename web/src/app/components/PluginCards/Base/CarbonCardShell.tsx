@@ -8,6 +8,7 @@
 
 import { useCallback, type ReactNode } from 'react'
 import {
+  Button,
   Tag,
   Toggle,
   OverflowMenu,
@@ -90,8 +91,9 @@ export function CarbonCardShell({
   const hasOverflowActions = onOpenMidiMappings || onCopyParams || onResetParams
 
   return (
-    <div
+    <section
       className={`carbon-card ${bypassed ? 'bypassed' : ''} ${className}`}
+      aria-labelledby={`carbon-card-title-${plugin.uri}`}
       style={{
         '--accent-color': accentColor,
         '--accent-bg': catConfig.bg,
@@ -115,24 +117,36 @@ export function CarbonCardShell({
               />
             )}
             <div className="carbon-card-header-title">
-              <span className="carbon-card-header-eyebrow">Selected block audio</span>
-              <h3 className="carbon-card-header-name">Audio Parameters</h3>
-              <span className="carbon-card-header-subtitle">
+              <p className="carbon-card-header-eyebrow">Selected block audio</p>
+              <h2 id={`carbon-card-title-${plugin.uri}`} className="carbon-card-header-name">Audio parameters</h2>
+              <p className="carbon-card-header-subtitle">
                 {compact ? displayName : `${displayName} · ${authorLabel}`}
-              </span>
+              </p>
             </div>
           </div>
 
           <div className="carbon-card-header-right">
             {onLoadPreset && (
-              <button className="carbon-card-icon-btn" onClick={onLoadPreset} title="Load Preset">
-                <FolderOpen size={16} />
-              </button>
+              <Button
+                kind="ghost"
+                size="sm"
+                hasIconOnly
+                renderIcon={FolderOpen}
+                iconDescription="Load preset"
+                aria-label="Load preset"
+                onClick={onLoadPreset}
+              />
             )}
             {onSavePreset && (
-              <button className="carbon-card-icon-btn" onClick={onSavePreset} title="Save Preset">
-                <Save size={16} />
-              </button>
+              <Button
+                kind="ghost"
+                size="sm"
+                hasIconOnly
+                renderIcon={Save}
+                iconDescription="Save preset"
+                aria-label="Save preset"
+                onClick={onSavePreset}
+              />
             )}
 
             {hasOverflowActions && (
@@ -212,12 +226,12 @@ export function CarbonCardShell({
       )}
 
       {/* Footer */}
-      {footer && (
+          {footer && (
         <div className="carbon-card-footer">
           {footer}
         </div>
       )}
-    </div>
+    </section>
   )
 }
 

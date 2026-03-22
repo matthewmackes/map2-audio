@@ -200,7 +200,7 @@ export function JuceGridParameterEditor({
         <Tile className="juce-grid-page__parameter-editor-empty">
           <SettingsAdjust size={24} />
           <div className="juce-grid-page__parameter-editor-copy">
-            <strong>Select a block</strong>
+            <h2 className="juce-grid-page__parameter-editor-panel-heading">Select a block</h2>
             <p>Choose a processor in the grid to open its parameter editor.</p>
           </div>
         </Tile>
@@ -214,7 +214,7 @@ export function JuceGridParameterEditor({
         <Tile className="juce-grid-page__parameter-editor-warning">
           <WarningAlt size={24} />
           <div className="juce-grid-page__parameter-editor-copy">
-            <strong>Plugin metadata not found</strong>
+            <h2 className="juce-grid-page__parameter-editor-panel-heading">Plugin metadata not found</h2>
             <p>
               "{plugin.name}" is in the chain but missing from the discovery cache.
             </p>
@@ -243,7 +243,7 @@ export function JuceGridParameterEditor({
         <Tile className="juce-grid-page__parameter-editor-hardware">
           <div className="juce-grid-page__parameter-editor-header">
             <div className="juce-grid-page__parameter-editor-copy">
-              <strong>{meta.name}</strong>
+              <h2 className="juce-grid-page__parameter-editor-panel-heading">{meta.name}</h2>
               <p>Hardware effect routed through the dedicated panel workflow.</p>
             </div>
             <div className="juce-grid-page__parameter-editor-actions">
@@ -258,7 +258,7 @@ export function JuceGridParameterEditor({
           <div className="juce-grid-page__parameter-editor-hardware-body">
             <img src="/img/fx_lexicon.svg" alt="Lexicon MPX-1" width={56} height={56} />
             <div className="juce-grid-page__parameter-editor-copy">
-              <strong>Lexicon MPX-1 Hardware Effect</strong>
+              <h3 className="juce-grid-page__parameter-editor-subheading">Lexicon MPX-1 Hardware Effect</h3>
               <p>601 parameters are managed through the dedicated MIDI/SysEx hardware panel.</p>
             </div>
             <Button
@@ -309,7 +309,7 @@ export function JuceGridParameterEditor({
       {touchMode && parameters.length > 0 && (
         <div className="juce-grid-page__parameter-editor-header">
           <div className="juce-grid-page__parameter-editor-copy">
-            <strong>{showAllParameters ? 'All parameters' : 'Smart controls'}</strong>
+            <h2 className="juce-grid-page__parameter-editor-heading">{showAllParameters ? 'All parameters' : 'Smart controls'}</h2>
             <p>
               {showAllParameters
                 ? 'Full parameter access for the selected block.'
@@ -344,10 +344,10 @@ export function JuceGridParameterEditor({
           <section key={group.id} className="juce-grid-page__parameter-group-card" aria-label={`${group.title} parameters`}>
             <div className="juce-grid-page__parameter-group-header">
               <div>
-                <strong>{group.title}</strong>
+                <h3 className="juce-grid-page__parameter-group-heading">{group.title}</h3>
                 <p>{group.parameters.length} control{group.parameters.length === 1 ? '' : 's'}</p>
               </div>
-              <Tag type="cool-gray">{group.parameters.length}</Tag>
+              <Tag type="cool-gray" size="sm">{group.parameters.length}</Tag>
             </div>
 
             <div className="juce-grid-page__parameter-group-grid">
@@ -359,7 +359,7 @@ export function JuceGridParameterEditor({
                 return (
                   <div key={parameter.symbol} className="juce-grid-page__parameter-control">
                     <div className="juce-grid-page__parameter-control-copy">
-                      <strong>{parameter.name}</strong>
+                      <h4 className="juce-grid-page__parameter-control-heading">{parameter.name}</h4>
                       <span>{formatParameterReadout(parameter, currentValue)}</span>
                     </div>
 
@@ -413,7 +413,7 @@ export function JuceGridParameterEditor({
         {parameters.length === 0 && (
           <Tile className="juce-grid-page__parameter-editor-empty">
             <div className="juce-grid-page__parameter-editor-copy">
-              <strong>No adjustable parameters</strong>
+              <h3 className="juce-grid-page__parameter-editor-empty-heading">No adjustable parameters</h3>
               <p>This processor does not currently expose editable controls.</p>
             </div>
           </Tile>

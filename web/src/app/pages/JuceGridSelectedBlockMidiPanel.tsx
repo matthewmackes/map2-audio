@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Flash, Meter, Music, Save, TrashCan } from '@carbon/icons-react'
-import { Button, Checkbox, InlineLoading, Layer, Tag } from '@carbon/react'
+import { Button, Checkbox, InlineLoading, Layer, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
 import { midiApiV2 } from '../../map2/api'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import type { ChainPlugin, MIDICurveType, MIDILearnTarget, MIDIMappingV2, Plugin, PluginParameter } from '../../map2/types'
@@ -427,32 +427,32 @@ export function JuceGridSelectedBlockMidiPanel({
   }
 
   return (
-    <Layer className="juce-grid-page__selected-midi-panel">
-      <div className="juce-grid-page__selected-midi-panel-header">
+    <div className="juce-grid-page__selected-midi-panel">
+      <header className="juce-grid-page__selected-midi-panel-header">
         <div className="juce-grid-page__selected-midi-panel-copy">
-          <div className="juce-grid-page__selected-midi-panel-title">
+          <p className="juce-grid-page__selected-midi-panel-title">
             <Music size={16} />
             <span>Selected block MIDI</span>
-          </div>
-          <strong>MIDI Parameters</strong>
+          </p>
+          <h2 className="juce-grid-page__selected-midi-panel-heading">MIDI parameters</h2>
           <p>{`${displayPluginName} · Focused mapping, feedback, and controller test rides.`}</p>
         </div>
         <div className="juce-grid-page__selected-midi-panel-tags">
-          <Tag type="blue">{chainId !== null ? `Chain ${chainId}` : 'Global only'}</Tag>
-          <Tag type="cool-gray">{rows.length} parameter{rows.length === 1 ? '' : 's'}</Tag>
-          {lastMidiEvent && <Tag type="purple">{`CC ${lastMidiEvent.cc} · Ch ${lastMidiEvent.channel}`}</Tag>}
-          <Tag type={midiLearnInProgress ? 'green' : 'cool-gray'}>
+          <Tag type="blue" size="sm">{chainId !== null ? `Chain ${chainId}` : 'Global only'}</Tag>
+          <Tag type="cool-gray" size="sm">{rows.length} parameter{rows.length === 1 ? '' : 's'}</Tag>
+          {lastMidiEvent && <Tag type="purple" size="sm">{`CC ${lastMidiEvent.cc} · Ch ${lastMidiEvent.channel}`}</Tag>}
+          <Tag type={midiLearnInProgress ? 'green' : 'cool-gray'} size="sm">
             {midiLearnInProgress ? 'Learn live' : 'Learn idle'}
           </Tag>
         </div>
-      </div>
+      </header>
 
-      <div className="juce-grid-page__selected-midi-shell">
-        <div className="juce-grid-page__selected-midi-grid" role="list" aria-label="Selected block MIDI parameter grid">
+      <Layer className="juce-grid-page__selected-midi-shell">
+        <Tile className="juce-grid-page__selected-midi-grid" role="list" aria-label="Selected block MIDI parameter grid">
           <div className="juce-grid-page__selected-midi-grid-head" aria-hidden="true">
             <span>Parameter</span>
             <span>Value</span>
-            <span>Map</span>
+            <span>Mapping</span>
             <span>Feedback</span>
           </div>
 
@@ -474,7 +474,7 @@ export function JuceGridSelectedBlockMidiPanel({
                 aria-pressed={row.parameter.index === selectedParamIndex}
               >
                 <span className="juce-grid-page__selected-midi-grid-name">
-                  <strong>{row.parameter.name}</strong>
+                  <span className="juce-grid-page__selected-midi-grid-name-heading">{row.parameter.name}</span>
                   <small>{row.parameter.symbol}</small>
                 </span>
                 <span>{formatCurrentValue(row.parameter, row.currentValue)}</span>
@@ -487,31 +487,31 @@ export function JuceGridSelectedBlockMidiPanel({
               </button>
             )
           })}
-        </div>
+        </Tile>
 
         <div className="juce-grid-page__selected-midi-inspector">
           {selectedRow && draft ? (
             <>
-              <div className="juce-grid-page__selected-midi-inspector-hero">
+              <Tile className="juce-grid-page__selected-midi-inspector-hero">
                 <div>
                   <span className="juce-grid-page__selected-midi-eyebrow">Focused parameter</span>
-                  <strong>{selectedParamLabel}</strong>
+                  <h3 className="juce-grid-page__selected-midi-hero-heading">{selectedParamLabel}</h3>
                   <p>{currentValueLabel} live on the visible block.</p>
                 </div>
                 <div className="juce-grid-page__selected-midi-panel-tags">
                   {selectedMapping ? (
                     <>
-                      <Tag type={selectedRow.mappingScope === 'chain' ? 'blue' : 'cool-gray'}>
+                      <Tag type={selectedRow.mappingScope === 'chain' ? 'blue' : 'cool-gray'} size="sm">
                         {selectedRow.mappingScope === 'chain' ? 'Per-chain' : 'Global'}
                       </Tag>
-                      {selectedRow.hasGlobalCompanion && <Tag type="purple">Global companion</Tag>}
+                      {selectedRow.hasGlobalCompanion && <Tag type="purple" size="sm">Global companion</Tag>}
                     </>
                   ) : (
-                    <Tag type="cool-gray">Create mapping</Tag>
+                    <Tag type="cool-gray" size="sm">Create mapping</Tag>
                   )}
-                  {draftDirty && <Tag type="warm-gray">Unsaved</Tag>}
+                  {draftDirty && <Tag type="warm-gray" size="sm">Unsaved</Tag>}
                 </div>
-              </div>
+              </Tile>
 
               <div className="juce-grid-page__selected-midi-action-row">
                 <Button
@@ -554,76 +554,100 @@ export function JuceGridSelectedBlockMidiPanel({
               </div>
 
               <div className="juce-grid-page__selected-midi-card-stack">
-                <section className="juce-grid-page__selected-midi-card">
+                <Tile className="juce-grid-page__selected-midi-card">
                   <div className="juce-grid-page__selected-midi-card-header">
                     <div>
-                      <strong>Control path</strong>
+                      <h3 className="juce-grid-page__selected-midi-card-heading">Control path</h3>
                       <p>Choose the incoming CC, scope, and response curve.</p>
                     </div>
-                    <Tag type="cool-gray">{draft.scope === 'chain' ? 'Per-chain default' : 'Global'}</Tag>
+                    <Tag type="cool-gray" size="sm">{draft.scope === 'chain' ? 'Per-chain default' : 'Global'}</Tag>
                   </div>
 
                   <div className="juce-grid-page__selected-midi-card-body">
                     <div className="juce-grid-page__selected-midi-form-grid">
                       <label>
                         <span>CC</span>
-                        <input
+                        <TextInput
+                          id={`juce-grid-selected-midi-cc-${plugin.position}-${selectedRow.parameter.index}`}
                           type="number"
-                          min={0}
-                          max={127}
                           value={draft.cc}
                           onChange={(event) => handleDraftChange({ cc: event.currentTarget.value })}
+                          min={0}
+                          max={127}
+                          size="md"
+                          hideLabel
+                          labelText="CC"
                         />
                       </label>
                       <label>
                         <span>Channel</span>
-                        <select
+                        <Select
+                          id={`juce-grid-selected-midi-channel-${plugin.position}-${selectedRow.parameter.index}`}
                           value={draft.channel}
                           onChange={(event) => handleDraftChange({ channel: Number(event.currentTarget.value) })}
+                          labelText="Channel"
+                          hideLabel
+                          size="md"
                         >
-                          <option value={0}>Omni</option>
+                          <SelectItem value={0} text="Omni" />
                           {Array.from({ length: 16 }, (_, index) => (
-                            <option key={`channel-${index + 1}`} value={index + 1}>{`Ch ${index + 1}`}</option>
+                            <SelectItem key={`channel-${index + 1}`} value={index + 1} text={`Ch ${index + 1}`} />
                           ))}
-                        </select>
+                        </Select>
                       </label>
                       <label>
                         <span>Scope</span>
-                        <select
+                        <Select
+                          id={`juce-grid-selected-midi-scope-${plugin.position}-${selectedRow.parameter.index}`}
                           value={draft.scope}
                           onChange={(event) => handleDraftChange({ scope: event.currentTarget.value as DraftScope })}
+                          labelText="Scope"
+                          hideLabel
+                          size="md"
                         >
-                          {chainId !== null && <option value="chain">Per-chain</option>}
-                          <option value="global">Global</option>
-                        </select>
+                          {chainId !== null && <SelectItem value="chain" text="Per-chain" />}
+                          <SelectItem value="global" text="Global" />
+                        </Select>
                       </label>
                       <label>
                         <span>Curve</span>
-                        <select
+                        <Select
+                          id={`juce-grid-selected-midi-curve-${plugin.position}-${selectedRow.parameter.index}`}
                           value={draft.curve}
                           onChange={(event) => handleDraftChange({ curve: event.currentTarget.value as MIDICurveType })}
+                          labelText="Curve"
+                          hideLabel
+                          size="md"
                         >
                           {CURVE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
+                            <SelectItem key={option.value} value={option.value} text={option.label} />
                           ))}
-                        </select>
+                        </Select>
                       </label>
                       <label>
                         <span>Min</span>
-                        <input
+                        <TextInput
+                          id={`juce-grid-selected-midi-min-${plugin.position}-${selectedRow.parameter.index}`}
                           type="number"
                           step="0.01"
                           value={draft.min}
                           onChange={(event) => handleDraftChange({ min: event.currentTarget.value })}
+                          size="md"
+                          hideLabel
+                          labelText="Min"
                         />
                       </label>
                       <label>
                         <span>Max</span>
-                        <input
+                        <TextInput
+                          id={`juce-grid-selected-midi-max-${plugin.position}-${selectedRow.parameter.index}`}
                           type="number"
                           step="0.01"
                           value={draft.max}
                           onChange={(event) => handleDraftChange({ max: event.currentTarget.value })}
+                          size="md"
+                          hideLabel
+                          labelText="Max"
                         />
                       </label>
                     </div>
@@ -643,15 +667,15 @@ export function JuceGridSelectedBlockMidiPanel({
                       />
                     </div>
                   </div>
-                </section>
+                </Tile>
 
-                <section className="juce-grid-page__selected-midi-card">
+                <Tile className="juce-grid-page__selected-midi-card">
                   <div className="juce-grid-page__selected-midi-card-header">
                     <div>
-                      <strong>MIDI feedback</strong>
+                      <h3 className="juce-grid-page__selected-midi-card-heading">MIDI feedback</h3>
                       <p>Send the visible parameter state back to the controller.</p>
                     </div>
-                    <Tag type="purple">{`Out Ch ${feedbackOutputChannel(draft.channel)}`}</Tag>
+                    <Tag type="purple" size="sm">{`Out Ch ${feedbackOutputChannel(draft.channel)}`}</Tag>
                   </div>
 
                   <div className="juce-grid-page__selected-midi-card-body">
@@ -674,12 +698,16 @@ export function JuceGridSelectedBlockMidiPanel({
                       <div className="juce-grid-page__selected-midi-form-grid juce-grid-page__selected-midi-form-grid--single">
                         <label>
                           <span>Feedback CC</span>
-                          <input
+                          <TextInput
+                            id={`juce-grid-selected-midi-feedback-cc-${plugin.position}-${selectedRow.parameter.index}`}
                             type="number"
                             min={0}
                             max={127}
                             value={draft.feedbackCc}
                             onChange={(event) => handleDraftChange({ feedbackCc: event.currentTarget.value })}
+                            size="md"
+                            hideLabel
+                            labelText="Feedback CC"
                           />
                         </label>
                       </div>
@@ -694,16 +722,16 @@ export function JuceGridSelectedBlockMidiPanel({
                       </span>
                     </div>
                   </div>
-                </section>
+                </Tile>
 
-                <section className="juce-grid-page__selected-midi-card">
+                <Tile className="juce-grid-page__selected-midi-card">
                   <div className="juce-grid-page__selected-midi-card-header">
                     <div>
-                      <strong>Learn and test ride</strong>
+                      <h3 className="juce-grid-page__selected-midi-card-heading">Learn and test ride</h3>
                       <p>Catch the next pedal move, then send heel, live, or toe feedback out to the board.</p>
                     </div>
                     {lastMidiEvent && (
-                      <Tag type="cool-gray">{`Last in ${lastMidiEvent.value} on CC ${lastMidiEvent.cc}`}</Tag>
+                      <Tag type="cool-gray" size="sm">{`Last in ${lastMidiEvent.value} on CC ${lastMidiEvent.cc}`}</Tag>
                     )}
                   </div>
 
@@ -742,7 +770,7 @@ export function JuceGridSelectedBlockMidiPanel({
                       </div>
                     )}
                   </div>
-                </section>
+                </Tile>
               </div>
 
               {(createMappingMutation.isPending || updateMappingMutation.isPending || deleteMappingMutation.isPending || testMappingMutation.isPending) && (
@@ -754,14 +782,14 @@ export function JuceGridSelectedBlockMidiPanel({
               )}
             </>
           ) : (
-            <div className="juce-grid-page__selected-midi-empty">
-              <strong>No parameter selected</strong>
+            <Tile className="juce-grid-page__selected-midi-empty">
+              <h3 className="juce-grid-page__selected-midi-empty-heading">No parameter selected</h3>
               <p>Choose a parameter in the grid to configure MIDI for the visible block.</p>
-            </div>
+            </Tile>
           )}
         </div>
-      </div>
-    </Layer>
+      </Layer>
+    </div>
   )
 }
 

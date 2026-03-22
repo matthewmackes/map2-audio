@@ -16,14 +16,17 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  width: 100%;
   padding: calc(2rem * var(--platform-menu-scale)) calc(2.5rem * var(--platform-menu-scale));
 }
 
 .platform-shell__window {
   display: grid;
+  width: 100%;
   grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
   gap: calc(1.25rem * var(--platform-menu-scale));
   min-height: 100%;
+  align-items: start;
 }
 
 .platform-modal__body--expanded .platform-shell__window {
@@ -229,6 +232,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 /* ── Control Panel ───────────────────────────────────────── */
@@ -356,6 +360,7 @@
 /* ── Workspace ───────────────────────────────────────────── */
 .platform-shell__workspace {
   display: grid;
+  width: 100%;
   gap: 1rem;
 }
 

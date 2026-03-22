@@ -122,8 +122,9 @@ async function fetchClusterNodes(): Promise<{ nodes: ClusterNode[] }> {
   const res = await fetch(`${API_BASE}/cluster/nodes`)
   if (!res.ok) throw new Error('Failed to fetch cluster nodes')
   const data = await res.json()
+  const rawNodes = Array.isArray(data?.nodes) ? data.nodes : []
   return {
-    nodes: (data.nodes || []).map((node: ClusterNode) => {
+    nodes: rawNodes.map((node: ClusterNode) => {
       const s = (node.status || 'OFFLINE') as string
       const status = s.toLowerCase() === 'maintenance' ? 'maintenance' : (s.toUpperCase() as ClusterNode['status'])
       return { ...node, status }
@@ -1003,4 +1004,3 @@ export function AudioNodesModal({ open, onClose }: AudioNodesModalProps) {
     </Modal>
   )
 }
-
