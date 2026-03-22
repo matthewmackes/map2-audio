@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**796** Python | **1202** TypeScript | **294** C++/H | **122** Docs | **731** total commits | **1** stars | **0** forks | **0** open issues
+**796** Python | **1202** TypeScript | **294** C++/H | **122** Docs | **734** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2f911cf5`](https://github.com/matthewmackes/map2-audio/commit/2f911cf5c11c30f8f646a5a9ebbbbb2b5f01e67b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-22 |
+| [`1f1713ef`](https://github.com/matthewmackes/map2-audio/commit/1f1713ef5bddf9d994e264fb3d5447c124d37d35) | T269-subB: route Platforms and Labs into the integrated h... | Map2 Audio | 2026-03-22 |
+| [`f36bee66`](https://github.com/matthewmackes/map2-audio/commit/f36bee66d36404c532f427404566fb3cc0c27f6d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
 | [`a4255503`](https://github.com/matthewmackes/map2-audio/commit/a4255503b7a0ce0640d83496cf89af19b1bdd5d5) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-22 |
 | [`f6ff979a`](https://github.com/matthewmackes/map2-audio/commit/f6ff979a45353069005eee98fe6e2fcd5a6e1089) | T269-subA: build integrated-home routing and Carbon overv... | Map2 Audio | 2026-03-22 |
 | [`7d85f07b`](https://github.com/matthewmackes/map2-audio/commit/7d85f07b11d22b7cca21b8c726e037c667603e39) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
 | [`1ebb6a2a`](https://github.com/matthewmackes/map2-audio/commit/1ebb6a2ac0c026b3f49e56738546598c29f11a88) | Sync generated deploy metadata | Map2 Audio | 2026-03-21 |
 | [`0d27cc14`](https://github.com/matthewmackes/map2-audio/commit/0d27cc14d561592cbba7931e6a701f996d4b2f36) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
-| [`9f741bd1`](https://github.com/matthewmackes/map2-audio/commit/9f741bd1d7a12e10aa5eb3c4a9c14b2b70c830ed) | Refresh web server docs and sync release metadata | Map2 Audio | 2026-03-21 |
-| [`8648da69`](https://github.com/matthewmackes/map2-audio/commit/8648da69e795d938e82106d257c8c7bf2345876f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
-| [`56fbd83b`](https://github.com/matthewmackes/map2-audio/commit/56fbd83be3bc53a1e808f40b91dedd4fd4981bdb) | Harden deploy restart path and rebalance home hero cards | Map2 Audio | 2026-03-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
