@@ -40,6 +40,27 @@
   background: var(--cds-layer-01);
 }
 
+.platform-shell__sidebar.cds--side-nav {
+  position: relative;
+  z-index: auto;
+  inset: auto;
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: auto;
+  overflow: visible;
+}
+
+.platform-shell__sidebar.cds--side-nav .cds--side-nav__navigation {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 100%;
+}
+
+.platform-shell__sidebar.cds--side-nav .cds--side-nav__items {
+  padding-top: 0;
+}
+
 .platform-shell__sidebar-head {
   display: grid;
   gap: 0.45rem;
