@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**796** Python | **1202** TypeScript | **294** C++/H | **122** Docs | **734** total commits | **1** stars | **0** forks | **0** open issues
+**796** Python | **1203** TypeScript | **294** C++/H | **122** Docs | **737** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`74291c98`](https://github.com/matthewmackes/map2-audio/commit/74291c9810e8b3c538b4db3b52faea25c8a37670) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-22 |
+| [`16a8cac8`](https://github.com/matthewmackes/map2-audio/commit/16a8cac8a90fb215b8fcc5255a23a4c043457ebf) | T269-subC: integrate Audio Artifacts and close Carbon con... | Map2 Audio | 2026-03-22 |
+| [`efca7a04`](https://github.com/matthewmackes/map2-audio/commit/efca7a04b01b92a871795b5d99d5e8c4a41b363c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
 | [`2f911cf5`](https://github.com/matthewmackes/map2-audio/commit/2f911cf5c11c30f8f646a5a9ebbbbb2b5f01e67b) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-22 |
 | [`1f1713ef`](https://github.com/matthewmackes/map2-audio/commit/1f1713ef5bddf9d994e264fb3d5447c124d37d35) | T269-subB: route Platforms and Labs into the integrated h... | Map2 Audio | 2026-03-22 |
 | [`f36bee66`](https://github.com/matthewmackes/map2-audio/commit/f36bee66d36404c532f427404566fb3cc0c27f6d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
 | [`a4255503`](https://github.com/matthewmackes/map2-audio/commit/a4255503b7a0ce0640d83496cf89af19b1bdd5d5) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-22 |
 | [`f6ff979a`](https://github.com/matthewmackes/map2-audio/commit/f6ff979a45353069005eee98fe6e2fcd5a6e1089) | T269-subA: build integrated-home routing and Carbon overv... | Map2 Audio | 2026-03-22 |
-| [`7d85f07b`](https://github.com/matthewmackes/map2-audio/commit/7d85f07b11d22b7cca21b8c726e037c667603e39) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
-| [`1ebb6a2a`](https://github.com/matthewmackes/map2-audio/commit/1ebb6a2ac0c026b3f49e56738546598c29f11a88) | Sync generated deploy metadata | Map2 Audio | 2026-03-21 |
-| [`0d27cc14`](https://github.com/matthewmackes/map2-audio/commit/0d27cc14d561592cbba7931e6a701f996d4b2f36) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
