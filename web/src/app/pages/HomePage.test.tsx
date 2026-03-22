@@ -177,11 +177,12 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByRole('heading', { name: 'MAP2 Integrated Home' })
+    await screen.findByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })
 
-    expect(screen.getByRole('heading', { name: 'MAP2 Integrated Home' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })).toBeTruthy()
     expect(screen.getByLabelText('Cluster summary')).toBeTruthy()
     expect(screen.getByLabelText('Workspace overview')).toBeTruthy()
+    expect(screen.queryByText('Pinned shell routes')).toBeNull()
     expect(screen.getByText('Platforms')).toBeTruthy()
     expect(screen.getByText('Audio Artifacts')).toBeTruthy()
     expect(screen.getAllByText('Audio Grid').length).toBeGreaterThan(0)
@@ -205,7 +206,7 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByRole('heading', { name: 'MAP2 Integrated Home' })
+    await screen.findByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })
 
     fireEvent.click(screen.getByLabelText('Pin Audio Grid'))
 
@@ -228,7 +229,7 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByRole('heading', { name: 'MAP2 Integrated Home' })
+    await screen.findByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })
 
     const platformsCard = screen.getByText('Platforms').closest('.hp-workspace-card')
     expect(platformsCard).toBeTruthy()
@@ -244,7 +245,7 @@ describe('HomePage navigation landing', () => {
       </Routes>,
     )
 
-    await screen.findByRole('heading', { name: 'MAP2 Integrated Home' })
+    await screen.findByRole('heading', { name: 'Modular.. Multi.. Mesh.. Audio Platform' })
 
     const workspaceTitles = Array.from(document.querySelectorAll('.hp-workspace-card__title')).map((node) => node.textContent)
     expect(workspaceTitles.slice(0, 5)).toEqual([

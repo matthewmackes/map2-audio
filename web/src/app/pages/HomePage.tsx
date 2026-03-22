@@ -6,7 +6,6 @@ import {
   Map2BrandMark,
   MAP2_PLATFORM_VERSION,
   MAP2_PLATFORM_NAME,
-  MAP2_PRIMARY_LABEL,
 } from '../components/branding/map2Branding'
 import { resolveHomeCardProfile, type HomeCardProfile } from '../data/homeCardProfiles'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
@@ -572,15 +571,15 @@ export function HomePage() {
   return (
     <div className="hp-root">
       <Grid condensed className="hp-grid">
-        <Column sm={4} md={8} lg={8} className="hp-column">
+        <Column sm={4} md={8} lg={12} className="hp-column">
           <Layer className="hp-shell hp-shell--hero">
             <div className="hp-shell__brand">
               <Map2BrandMark className="hp-shell__brand-mark" />
               <div className="hp-shell__brand-copy">
                 <p className="hp-shell__eyebrow">{MAP2_PLATFORM_NAME}</p>
-                <h1 className="hp-shell__title">{MAP2_PRIMARY_LABEL} Integrated Home</h1>
+                <h1 className="hp-shell__title">Modular.. Multi.. Mesh.. Audio Platform</h1>
                 <p className="hp-shell__summary">
-                  Carbon-first operator overview for platforms, artifacts, labs, and the highest-signal MAP2 workspaces.
+                  MAP2 is a real-time audio platform that turns standard Linux hardware into a powerful music and sound system. Its main features include live audio processing, built-in guitar and effects tools, support for plugins like LV2 and VST3, low-latency performance for fast response, a web dashboard for control, a backend API for system management, and support for networked audio setups so multiple devices or nodes can work together. It is designed to handle routing, monitoring, processing, and recording in one shared system instead of needing a full DAW on every machine.
                 </p>
               </div>
             </div>
@@ -600,16 +599,6 @@ export function HomePage() {
             <h2 className="hp-metric-card__headline">{selectedNodeLabel}</h2>
             <p className="hp-metric-card__body">
               {totalNodes} nodes tracked, {onlineNodes} online, average health {averageHealth}%.
-            </p>
-          </Tile>
-        </Column>
-
-        <Column sm={4} md={8} lg={4} className="hp-column">
-          <Tile className="hp-metric-card" aria-label="Pinned navigation summary">
-            <p className="hp-metric-card__eyebrow">Pinned shell routes</p>
-            <h2 className="hp-metric-card__headline">{pinnedRoutes.length}/{MAX_PINNED_NAV_ITEMS}</h2>
-            <p className="hp-metric-card__body">
-              Promote the workspaces you need in the shell before moving into routed platform and artifact flows.
             </p>
           </Tile>
         </Column>

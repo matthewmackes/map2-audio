@@ -30,9 +30,7 @@
   justify-content: space-between;
   gap: 1.5rem;
   padding: 1.5rem;
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--cds-link-primary) 16%, transparent), transparent 46%),
-    linear-gradient(135deg, color-mix(in srgb, var(--cds-layer-02) 82%, transparent), var(--cds-layer-01));
+  background: var(--cds-layer-01);
 }
 
 .hp-shell__brand {
