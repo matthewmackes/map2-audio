@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import {
   Button,
   DataTable,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -63,13 +65,17 @@ export function ProgramChangeSlots({
           value={programNumber}
           onChange={(event) => setProgramNumber(event.currentTarget.value)}
         />
-        <TextInput
+        <Select
           id="midi-hub-pc-target"
           labelText="Program change target"
           value={targetId}
           onChange={(event) => setTargetId(event.currentTarget.value)}
-          placeholder={targetOptions[0]?.value ?? 'baseline'}
-        />
+        >
+          <SelectItem value="" text="Select target" />
+          {targetOptions.map((target) => (
+            <SelectItem key={target.value} value={target.value} text={target.label} />
+          ))}
+        </Select>
       </div>
 
       <div className="midi-hub-presets-toolbar">

@@ -61,6 +61,12 @@
   gap: 0.125rem;
 }
 
+.midi-hub-connections-cell-title,
+.midi-hub-connections-toggle-card__title {
+  color: var(--cds-text-primary);
+  font-weight: 600;
+}
+
 .midi-hub-connections-cell-copy span,
 .midi-hub-connections-toggle-card__copy span,
 .midi-hub-connections-detail-meta code {
@@ -106,9 +112,31 @@
   overflow: hidden;
 }
 
+.midi-hub-connections-patchbay__route,
+.midi-hub-connections-patchbay__node {
+  cursor: pointer;
+}
+
+.midi-hub-connections-patchbay__node-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .midi-hub-connections-patchbay__stage {
   width: 100%;
   min-height: 42rem;
+}
+
+.midi-hub-connections-table-scroll {
+  overflow-y: auto;
+}
+
+.midi-hub-connections-table-scroll--md {
+  max-height: 26.25rem;
+}
+
+.midi-hub-connections-table-scroll--lg {
+  max-height: 27.5rem;
 }
 
 .midi-hub-connections-detail-grid {
@@ -127,12 +155,14 @@
   align-items: center;
 }
 
+.midi-hub-connections-detail-title {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-weight: 600;
+}
+
 .midi-hub-connections-code-block {
   margin: 0;
-  padding: var(--cds-spacing-05);
-  background: var(--cds-layer-01);
-  color: var(--cds-text-primary);
-  overflow: auto;
 }
 
 @media (max-width: 1056px) {

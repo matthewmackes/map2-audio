@@ -812,8 +812,8 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
                                 </div>
 
                                 <div className="juce-grid-page__signal-plugin-copy">
-                                  <strong className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</strong>
-                                  <span className="juce-grid-page__signal-plugin-category" title={categoryLabel}>{categoryLabel}</span>
+                                  <p className="juce-grid-page__signal-plugin-category" title={categoryLabel}>{categoryLabel}</p>
+                                  <h3 className="juce-grid-page__signal-plugin-title" title={displayName}>{displayName}</h3>
                                 </div>
                               </div>
                             </article>

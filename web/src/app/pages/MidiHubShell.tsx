@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Activity,
   ArrowsHorizontal,
@@ -19,7 +19,6 @@ import {
 } from '@carbon/react'
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import type { ComponentType } from 'react'
-import useMediaQuery from '@mui/material/useMediaQuery'
 import { MidiHubNodeScopeProvider } from '../components/MidiHub/MidiHubNodeScope'
 import { useMidiHubOverview } from '../components/MidiHub/useMidiHubOverview'
 import { useNodePageContext } from '../hooks/useNodePageContext'
@@ -41,9 +40,25 @@ export function MidiHubShell() {
   const { localNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.midiHub)
   const apiNodeId = viewedNodeId === localNode?.node_id ? null : viewedNodeId
   const scopeKey = apiNodeId ?? 'local'
-  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)')
+  const [prefersDark, setPrefersDark] = useState(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
   const { routesCount, sessionsCount, activePresetName, clockQuery } = useMidiHubOverview(apiNodeId, scopeKey)
   const resolvedTheme = prefersDark ? 'g100' : 'white'
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const updatePreference = (event: MediaQueryListEvent) => setPrefersDark(event.matches)
+    setPrefersDark(media.matches)
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', updatePreference)
+      return () => media.removeEventListener('change', updatePreference)
+    }
+    media.addListener(updatePreference)
+    return () => media.removeListener(updatePreference)
+  }, [])
 
   const navItems = useMemo<MidiHubNavItem[]>(() => [
     {

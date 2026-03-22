@@ -14,7 +14,6 @@ import {
   TableRow,
   TableToolbar,
   TableToolbarContent,
-  TableToolbarSearch,
   Tag,
   TextInput,
   Toggle,
@@ -129,11 +128,9 @@ export function EventEditor({ selectedEventListId }: EventEditorProps) {
           >
             <TableToolbar {...getToolbarProps()}>
               <TableToolbarContent>
-                <TableToolbarSearch
-                  persistent
-                  value={selectedEventListId ? `Selected: ${selectedEventListId}` : 'Select an event list to edit'}
-                  onChange={() => undefined}
-                />
+                <Tag type={selectedEventListId ? 'blue' : 'warm-gray'}>
+                  {selectedEventListId ? `Selected list ${selectedEventListId}` : 'Select an event list to edit'}
+                </Tag>
               </TableToolbarContent>
             </TableToolbar>
             <Table {...getTableProps()} aria-label="Event editor">

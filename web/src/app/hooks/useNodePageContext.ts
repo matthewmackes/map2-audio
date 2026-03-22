@@ -5,7 +5,8 @@ import type { NodeIdentity, NodeSummary, NodeTopology } from '../types/node'
 import { useNodeIdentity, useNodeTopology } from './useNodeTopology'
 
 function getLocalTopologyNode(topology: NodeTopology | undefined): NodeSummary | null {
-  return topology?.nodes.find((node) => node.is_local) ?? topology?.nodes[0] ?? null
+  const nodes = Array.isArray(topology?.nodes) ? topology.nodes : []
+  return nodes.find((node) => node.is_local) ?? nodes[0] ?? null
 }
 
 export function useNodePageContext(pageKey: string) {
@@ -31,4 +32,3 @@ export function useNodePageContext(pageKey: string) {
     nodeTopologyQuery,
   }
 }
-

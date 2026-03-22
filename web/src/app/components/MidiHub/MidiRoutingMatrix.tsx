@@ -303,7 +303,7 @@ export function MidiRoutingMatrix() {
                             return (
                               <TableCell key={cell.id}>
                                 <div className="midi-hub-connections-cell-copy">
-                                  <strong>{String(cell.value)}</strong>
+                                  <span className="midi-hub-connections-cell-title">{String(cell.value)}</span>
                                   <span>{sourceRow?.sourceKind}</span>
                                 </div>
                               </TableCell>
@@ -313,7 +313,7 @@ export function MidiRoutingMatrix() {
                             return (
                               <TableCell key={cell.id}>
                                 <div className="midi-hub-connections-cell-copy">
-                                  <strong>{String(cell.value)}</strong>
+                                  <span className="midi-hub-connections-cell-title">{String(cell.value)}</span>
                                   <span>{sourceRow?.destinationKind}</span>
                                 </div>
                               </TableCell>
@@ -442,15 +442,14 @@ export function MidiRoutingMatrix() {
           ) : null}
         </ModalBody>
         <ModalFooter>
+          <Button kind="secondary" onClick={() => setSelection(null)}>
+            Cancel
+          </Button>
           {selection?.route?.route_id ? (
             <Button kind="danger--tertiary" onClick={() => void deleteMutation.mutate(selection.route.route_id)}>
               Delete route
             </Button>
-          ) : (
-            <Button kind="secondary" onClick={() => setSelection(null)}>
-              Cancel
-            </Button>
-          )}
+          ) : null}
           <Button kind="primary" onClick={() => void saveMutation.mutate()}>
             Save route
           </Button>

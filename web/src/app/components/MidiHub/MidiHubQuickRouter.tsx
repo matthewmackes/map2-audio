@@ -155,7 +155,7 @@ export function MidiHubQuickRouter() {
             {destinationPorts.map((port) => (
               <Layer key={port.port_id} className="midi-hub-connections-toggle-card">
                 <div className="midi-hub-connections-toggle-card__copy">
-                  <strong>{port.name}</strong>
+                  <span className="midi-hub-connections-toggle-card__title">{port.name}</span>
                   <span>{port.kind}</span>
                 </div>
                 <Toggle

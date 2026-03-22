@@ -67,7 +67,7 @@ export function AiLearnPanel() {
         {suggestions.map((suggestion, index) => (
           <div key={`${suggestion.cc_number}-${index}`} className="midi-hub-lab-suggestion">
             <div className="midi-hub-record-copy">
-              <strong>{`CC ${suggestion.cc_number} on channel ${suggestion.channel}`}</strong>
+              <span className="midi-hub-lab-suggestion__title">{`CC ${suggestion.cc_number} on channel ${suggestion.channel}`}</span>
               <div className="midi-hub-record-meta">{suggestion.reason}</div>
             </div>
             <ProgressBar

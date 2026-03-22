@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Button,
   DataTable,
+  OverflowMenu,
+  OverflowMenuItem,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -89,13 +93,17 @@ export function PresetChainEditor({
           }}
           placeholder={chainIds[0] ?? 'show-open'}
         />
-        <TextInput
+        <Select
           id="midi-hub-chain-add-preset"
           labelText="Add preset"
           value={newPresetId}
           onChange={(event) => setNewPresetId(event.currentTarget.value)}
-          placeholder={presets[0]?.preset_id ?? 'baseline'}
-        />
+        >
+          <SelectItem value="" text="Select preset" />
+          {presets.map((preset) => (
+            <SelectItem key={preset.preset_id} value={preset.preset_id} text={`${preset.name} (${preset.preset_id})`} />
+          ))}
+        </Select>
         <TextInput
           id="midi-hub-chain-interval"
           labelText="Interval (ms)"
@@ -182,24 +190,23 @@ export function PresetChainEditor({
                         <TableCell key={cell.id}>{String(cell.value)}</TableCell>
                       ))}
                       <TableCell>
-                        <div className="midi-hub-presets-inline-actions">
-                          <Button
-                            size="sm"
-                            kind="ghost"
+                        <OverflowMenu
+                          ariaLabel={`Chain order actions for ${row.id}`}
+                          flipped
+                          iconDescription={`Chain order actions for ${row.id}`}
+                          size="sm"
+                        >
+                          <OverflowMenuItem
                             disabled={index === 0}
+                            itemText="Move up"
                             onClick={() => setWorkingPresetIds((current) => moveItem(current, index, index - 1))}
-                          >
-                            Move up
-                          </Button>
-                          <Button
-                            size="sm"
-                            kind="ghost"
+                          />
+                          <OverflowMenuItem
                             disabled={index === rows.length - 1}
+                            itemText="Move down"
                             onClick={() => setWorkingPresetIds((current) => moveItem(current, index, index + 1))}
-                          >
-                            Move down
-                          </Button>
-                        </div>
+                          />
+                        </OverflowMenu>
                       </TableCell>
                     </TableRow>
                   )

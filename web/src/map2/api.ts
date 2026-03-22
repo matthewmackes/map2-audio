@@ -3668,7 +3668,14 @@ export const getNodeIdentity = (): Promise<NodeIdentity> => fetchJson<NodeIdenti
 
 export const getNodeHealth = (): Promise<NodeHealth> => fetchJson<NodeHealth>(`${API_BASE}/node/health`);
 
-export const getNodeTopology = (): Promise<NodeTopology> => fetchJson<NodeTopology>(`${API_BASE}/node/topology`);
+export const getNodeTopology = async (): Promise<NodeTopology> => {
+  const payload = await fetchJson<Partial<NodeTopology> | null>(`${API_BASE}/node/topology`)
+  return {
+    nodes: Array.isArray(payload?.nodes) ? payload.nodes : [],
+    audio_edges: Array.isArray(payload?.audio_edges) ? payload.audio_edges : [],
+    network_edges: Array.isArray(payload?.network_edges) ? payload.network_edges : [],
+  }
+};
 
 export const patchNodeLabel = (label: string, nodeId?: string | null): Promise<NodeIdentity> =>
   fetchJson<NodeIdentity>(scopedNodePath('/node/identity', nodeId), {

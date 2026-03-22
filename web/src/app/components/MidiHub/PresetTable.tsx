@@ -1,12 +1,17 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import {
   Button,
+  CodeSnippet,
   ComposedModal,
   DataTable,
   FileUploader,
   ModalBody,
   ModalFooter,
   ModalHeader,
+  OverflowMenu,
+  OverflowMenuItem,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -168,20 +173,20 @@ export function PresetTable({
                         return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
                       })}
                       <TableCell>
-                        <div className="midi-hub-presets-inline-actions">
-                          <Button size="sm" kind="primary" onClick={() => void onRecall(row.id)}>
-                            Recall
-                          </Button>
-                          <Button size="sm" kind="secondary" onClick={() => void onExport(row.id)}>
-                            Export
-                          </Button>
-                          <Button size="sm" kind="ghost" onClick={() => void onToggleDefault(row.id)}>
-                            {defaultPresetId === row.id ? 'Unset default' : 'Make default'}
-                          </Button>
-                          <Button size="sm" kind="danger--tertiary" onClick={() => void onDelete(row.id)}>
-                            Delete
-                          </Button>
-                        </div>
+                        <OverflowMenu
+                          ariaLabel={`Preset actions for ${row.id}`}
+                          flipped
+                          iconDescription={`Preset actions for ${row.id}`}
+                          size="sm"
+                        >
+                          <OverflowMenuItem itemText="Recall" onClick={() => void onRecall(row.id)} />
+                          <OverflowMenuItem itemText="Export" onClick={() => void onExport(row.id)} />
+                          <OverflowMenuItem
+                            itemText={defaultPresetId === row.id ? 'Unset default' : 'Make default'}
+                            onClick={() => void onToggleDefault(row.id)}
+                          />
+                          <OverflowMenuItem isDelete itemText="Delete" onClick={() => void onDelete(row.id)} />
+                        </OverflowMenu>
                       </TableCell>
                     </TableRow>
                   )
@@ -219,22 +224,34 @@ export function PresetTable({
         <ModalHeader title="Compare presets" />
         <ModalBody>
           <div className="midi-hub-presets-form-grid">
-            <TextInput
+            <Select
               id="midi-hub-compare-left"
               labelText="Compare left"
               value={leftPresetId}
               onChange={(event) => setLeftPresetId(event.currentTarget.value)}
-              placeholder="baseline"
-            />
-            <TextInput
+            >
+              <SelectItem value="" text="Select left preset" />
+              {presets.map((preset) => (
+                <SelectItem key={`left-${preset.preset_id}`} value={preset.preset_id} text={`${preset.name} (${preset.preset_id})`} />
+              ))}
+            </Select>
+            <Select
               id="midi-hub-compare-right"
               labelText="Compare right"
               value={rightPresetId}
               onChange={(event) => setRightPresetId(event.currentTarget.value)}
-              placeholder="show-a"
-            />
+            >
+              <SelectItem value="" text="Select right preset" />
+              {presets.map((preset) => (
+                <SelectItem key={`right-${preset.preset_id}`} value={preset.preset_id} text={`${preset.name} (${preset.preset_id})`} />
+              ))}
+            </Select>
           </div>
-          {compareResult ? <pre className="midi-hub-presets-code-block">{JSON.stringify(compareResult, null, 2)}</pre> : null}
+          {compareResult ? (
+            <CodeSnippet className="midi-hub-presets-code-block" type="multi">
+              {JSON.stringify(compareResult, null, 2)}
+            </CodeSnippet>
+          ) : null}
         </ModalBody>
         <ModalFooter>
           <Button kind="secondary" onClick={() => setCompareOpen(false)}>

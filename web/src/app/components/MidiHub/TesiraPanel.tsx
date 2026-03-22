@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
+  CodeSnippet,
   DataTable,
   Table,
   TableBody,
@@ -224,7 +225,7 @@ export function TesiraPanel() {
           {(statusQuery.data?.subscriptions ?? []).map((subscription) => (
             <div key={subscription.token} className="midi-hub-record-row">
               <div className="midi-hub-record-copy">
-                <strong>{subscription.token}</strong>
+                <span className="midi-hub-record-title">{subscription.token}</span>
                 <div className="midi-hub-record-meta">{`${subscription.instance_tag} · ${subscription.attribute}`}</div>
               </div>
               <div className="midi-hub-record-actions">
@@ -287,7 +288,9 @@ export function TesiraPanel() {
             Send command
           </Button>
         </div>
-        <pre className="midi-hub-code-block">{JSON.stringify(statusQuery.data?.history ?? [], null, 2)}</pre>
+        <CodeSnippet className="midi-hub-code-block" type="multi">
+          {JSON.stringify(statusQuery.data?.history ?? [], null, 2)}
+        </CodeSnippet>
       </div>
     </div>
   )

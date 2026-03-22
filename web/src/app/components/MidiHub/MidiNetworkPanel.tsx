@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
+  CodeSnippet,
   DataTable,
+  OverflowMenu,
+  OverflowMenuItem,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -163,7 +168,15 @@ export function MidiNetworkPanel() {
             value={port}
             onChange={(event) => setPort(event.currentTarget.value)}
           />
-          <TextInput id="midi-hub-network-mode" labelText="Session mode" value={mode} onChange={(event) => setMode(event.currentTarget.value === 'listen' ? 'listen' : 'send')} />
+          <Select
+            id="midi-hub-network-mode"
+            labelText="Session mode"
+            value={mode}
+            onChange={(event) => setMode(event.currentTarget.value === 'listen' ? 'listen' : 'send')}
+          >
+            <SelectItem value="send" text="Send" />
+            <SelectItem value="listen" text="Listen" />
+          </Select>
         </div>
 
         <div className="midi-hub-actions">
@@ -212,14 +225,15 @@ export function MidiNetworkPanel() {
                         <TableCell key={cell.id}>{String(cell.value)}</TableCell>
                       ))}
                       <TableCell>
-                        <div className="midi-hub-record-actions">
-                          <Button size="sm" kind="ghost" onClick={() => sendTestMidi.mutate(row.id)}>
-                            Test
-                          </Button>
-                          <Button size="sm" kind="ghost" onClick={() => deleteSession.mutate(row.id)}>
-                            Delete
-                          </Button>
-                        </div>
+                        <OverflowMenu
+                          ariaLabel={`Session actions for ${row.id}`}
+                          flipped
+                          iconDescription={`Session actions for ${row.id}`}
+                          size="sm"
+                        >
+                          <OverflowMenuItem itemText="Test" onClick={() => sendTestMidi.mutate(row.id)} />
+                          <OverflowMenuItem isDelete itemText="Delete" onClick={() => deleteSession.mutate(row.id)} />
+                        </OverflowMenu>
                       </TableCell>
                     </TableRow>
                   )
@@ -273,7 +287,9 @@ export function MidiNetworkPanel() {
             Save namespace
           </Button>
         </div>
-        <pre className="midi-hub-code-block">{JSON.stringify(oscMappingsQuery.data?.mappings ?? [], null, 2)}</pre>
+        <CodeSnippet className="midi-hub-code-block" type="multi">
+          {JSON.stringify(oscMappingsQuery.data?.mappings ?? [], null, 2)}
+        </CodeSnippet>
       </div>
 
       <OscNamespaceBrowser />

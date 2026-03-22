@@ -19,7 +19,7 @@ function ChannelTile({
   return (
     <div className="midi-hub-network-gpio-tile">
       <div className="midi-hub-network-gpio-tile__header">
-        <strong>{channel.channel_id}</strong>
+        <span className="midi-hub-network-gpio-tile__title">{channel.channel_id}</span>
         <Tag type={channel.state ? 'green' : 'cool-gray'}>{channel.state ? 'Closed' : 'Open'}</Tag>
       </div>
       <TextInput id={`${channel.channel_id}-label`} labelText="Label" value={label} onChange={(event) => setLabel(event.currentTarget.value)} />

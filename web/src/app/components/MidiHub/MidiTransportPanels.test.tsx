@@ -104,9 +104,9 @@ describe('Midi transport panels', () => {
 
     expect(await screen.findByText('Transport BPM')).toBeTruthy()
     await waitFor(() => expect(screen.getByText('Detected 123.40')).toBeTruthy())
-    await waitFor(() => expect(screen.getByRole('button', { name: /din out/i })).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: /din out/i })).toBeTruthy())
 
-    fireEvent.click(screen.getByRole('button', { name: /usb out/i }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /usb out/i }))
     fireEvent.change(screen.getByLabelText('BPM'), { target: { value: '140' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Clock divider' }), { target: { value: '4' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Clock multiplier' }), { target: { value: '2' } })
@@ -138,7 +138,8 @@ describe('Midi transport panels', () => {
     expect(screen.getByText('Export BPM')).toBeTruthy()
     expect(screen.getByText('Export ticks/quarter')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: /^play$/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Recording actions for take-a' }))
+    fireEvent.click(await screen.findByText('Play'))
     await waitFor(() =>
       expect(mockMidiHubApi.playbackRecording).toHaveBeenCalledWith(
         'take-a',
@@ -151,7 +152,8 @@ describe('Midi transport panels', () => {
       ),
     )
 
-    fireEvent.click(screen.getByRole('button', { name: /export smf/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Recording actions for take-a' }))
+    fireEvent.click(await screen.findByText('Export SMF'))
     await waitFor(() =>
       expect(mockMidiHubApi.exportRecording).toHaveBeenCalledWith(
         'take-a',

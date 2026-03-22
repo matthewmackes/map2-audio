@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
   DataTable,
+  OverflowMenu,
+  OverflowMenuItem,
   Select,
   SelectItem,
   Table,
@@ -200,27 +202,24 @@ export function EventListManager({ selectedEventListId, onSelectEventList }: Eve
                         return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
                       })}
                       <TableCell>
-                        <div className="midi-hub-events-inline-actions">
-                          <Button size="sm" kind="ghost" onClick={() => onSelectEventList(row.id)}>
-                            Open
-                          </Button>
-                          <Button size="sm" kind="secondary" onClick={() => void startMutation.mutate(row.id)}>
-                            Start
-                          </Button>
-                          <Button size="sm" kind="ghost" onClick={() => void stopMutation.mutate(row.id)}>
-                            Stop
-                          </Button>
-                          <Button
-                            size="sm"
-                            kind="danger--tertiary"
+                        <OverflowMenu
+                          ariaLabel={`Event list actions for ${row.id}`}
+                          flipped
+                          iconDescription={`Event list actions for ${row.id}`}
+                          size="sm"
+                        >
+                          <OverflowMenuItem itemText="Open" onClick={() => onSelectEventList(row.id)} />
+                          <OverflowMenuItem itemText="Start" onClick={() => void startMutation.mutate(row.id)} />
+                          <OverflowMenuItem itemText="Stop" onClick={() => void stopMutation.mutate(row.id)} />
+                          <OverflowMenuItem
+                            isDelete
+                            itemText="Delete"
                             onClick={() => {
                               if (selectedEventListId === row.id) onSelectEventList('')
                               void deleteMutation.mutate(row.id)
                             }}
-                          >
-                            Delete
-                          </Button>
-                        </div>
+                          />
+                        </OverflowMenu>
                         {source && selectedEventListId === row.id ? <div className="midi-hub-events-selection">Selected source: {source.source_id}</div> : null}
                       </TableCell>
                     </TableRow>

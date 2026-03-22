@@ -258,24 +258,24 @@ function ClusterNodesTab({
     <div className="audio-nodes-modal__tab-body">
       <div className="audio-nodes-modal__summary-strip">
         <Tile className="audio-nodes-modal__stat-tile">
-          <span className="audio-nodes-modal__stat-label">Total nodes</span>
-          <strong>{nodes.length}</strong>
+          <p className="audio-nodes-modal__stat-label">Total nodes</p>
+          <p className="audio-nodes-modal__stat-value">{nodes.length}</p>
         </Tile>
         <Tile className="audio-nodes-modal__stat-tile">
-          <span className="audio-nodes-modal__stat-label">Online</span>
-          <strong className="audio-nodes-modal__stat--green">
+          <p className="audio-nodes-modal__stat-label">Online</p>
+          <p className="audio-nodes-modal__stat-value audio-nodes-modal__stat--green">
             {nodes.filter((n) => n.status === 'ONLINE').length}
-          </strong>
+          </p>
         </Tile>
         <Tile className="audio-nodes-modal__stat-tile">
-          <span className="audio-nodes-modal__stat-label">Offline</span>
-          <strong className="audio-nodes-modal__stat--red">
+          <p className="audio-nodes-modal__stat-label">Offline</p>
+          <p className="audio-nodes-modal__stat-value audio-nodes-modal__stat--red">
             {nodes.filter((n) => n.status === 'OFFLINE').length}
-          </strong>
+          </p>
         </Tile>
         <Tile className="audio-nodes-modal__stat-tile">
-          <span className="audio-nodes-modal__stat-label">GPU nodes</span>
-          <strong>{nodes.filter((n) => n.has_gpu).length}</strong>
+          <p className="audio-nodes-modal__stat-label">GPU nodes</p>
+          <p className="audio-nodes-modal__stat-value">{nodes.filter((n) => n.has_gpu).length}</p>
         </Tile>
       </div>
 
@@ -422,18 +422,18 @@ function FlowAssignmentsTab({
     <div className="audio-nodes-modal__tab-body">
       <div className="audio-nodes-modal__summary-strip">
         <Tile className="audio-nodes-modal__stat-tile">
-          <span className="audio-nodes-modal__stat-label">Total assignments</span>
-          <strong>{assignments.length}</strong>
+          <p className="audio-nodes-modal__stat-label">Total assignments</p>
+          <p className="audio-nodes-modal__stat-value">{assignments.length}</p>
         </Tile>
         <Tile className="audio-nodes-modal__stat-tile">
-          <span className="audio-nodes-modal__stat-label">Primary</span>
-          <strong className="audio-nodes-modal__stat--green">
+          <p className="audio-nodes-modal__stat-label">Primary</p>
+          <p className="audio-nodes-modal__stat-value audio-nodes-modal__stat--green">
             {assignments.length - standbyCount}
-          </strong>
+          </p>
         </Tile>
         <Tile className="audio-nodes-modal__stat-tile">
-          <span className="audio-nodes-modal__stat-label">Standby</span>
-          <strong>{standbyCount}</strong>
+          <p className="audio-nodes-modal__stat-label">Standby</p>
+          <p className="audio-nodes-modal__stat-value">{standbyCount}</p>
         </Tile>
       </div>
 
@@ -500,7 +500,7 @@ function FlowAssignmentsTab({
         >
           <div className="audio-nodes-modal__reassign-body">
             <p className="audio-nodes-modal__copy">
-              Select a new target node for flow <strong>{reassignFlowId}</strong>.
+              Select a new target node for flow <span className="audio-nodes-modal__copy-emphasis">{reassignFlowId}</span>.
               The flow will be unbound from its current node and rebound immediately.
             </p>
             <Select
@@ -650,7 +650,8 @@ function DeploymentModeSwitcher({
     <div className="audio-nodes-modal__mode-switcher">
       <div className="audio-nodes-modal__mode-header">
         <div>
-          <strong>Deployment mode</strong>
+          <p className="audio-nodes-modal__section-kicker">Deployment</p>
+          <h2 className="audio-nodes-modal__section-heading">Deployment mode</h2>
           <p className="audio-nodes-modal__copy">
             Change the operating mode for this MAP2 Audio Platform instance.
             Switching modes restarts routing services and redistributes flow assignments.
@@ -663,9 +664,9 @@ function DeploymentModeSwitcher({
 
       {/* Idle — show switch button */}
       {switchState.id === 'idle' && (
-        <div className="audio-nodes-modal__mode-action">
+        <Tile className="audio-nodes-modal__mode-action">
           <p className="audio-nodes-modal__copy">
-            Currently running in <strong>{currentMode}</strong> mode.{' '}
+            Currently running in <span className="audio-nodes-modal__copy-emphasis">{currentMode}</span> mode.{' '}
             {isAllInOne
               ? 'Switch to CLUSTER mode to distribute flows across multiple nodes.'
               : 'Switch to ALL-IN-ONE mode to run all audio processing on this device.'}
@@ -677,12 +678,12 @@ function DeploymentModeSwitcher({
           >
             Switch to {isAllInOne ? 'CLUSTER' : 'ALL-IN-ONE'} mode
           </Button>
-        </div>
+        </Tile>
       )}
 
       {/* Warning 1 — first gate */}
       {switchState.id === 'warn1' && (
-        <div className="audio-nodes-modal__warn-panel">
+        <Tile className="audio-nodes-modal__warn-panel">
           <InlineNotification
             kind="warning"
             lowContrast
@@ -693,7 +694,8 @@ function DeploymentModeSwitcher({
           <div className="audio-nodes-modal__warn-detail">
             <WarningAlt size={20} className="audio-nodes-modal__warn-icon" />
             <div>
-              <p className="audio-nodes-modal__copy"><strong>What will happen:</strong></p>
+              <p className="audio-nodes-modal__section-kicker">Impact</p>
+              <h3 className="audio-nodes-modal__warn-heading">What will happen</h3>
               <ul className="audio-nodes-modal__warn-list">
                 {targetMode === 'CLUSTER' ? (
                   <>
@@ -719,12 +721,12 @@ function DeploymentModeSwitcher({
               I understand — continue
             </Button>
           </div>
-        </div>
+        </Tile>
       )}
 
       {/* Warning 2 — second gate with type-to-confirm */}
       {switchState.id === 'warn2' && (
-        <div className="audio-nodes-modal__warn-panel">
+        <Tile className="audio-nodes-modal__warn-panel">
           <InlineNotification
             kind="error"
             lowContrast
@@ -735,7 +737,7 @@ function DeploymentModeSwitcher({
           <div className="audio-nodes-modal__warn-detail">
             <WarningFilled size={20} className="audio-nodes-modal__warn-icon audio-nodes-modal__warn-icon--error" />
             <p className="audio-nodes-modal__copy">
-              This is your second and final warning. The change to <strong>{targetMode}</strong> is
+              This is your second and final warning. The change to <span className="audio-nodes-modal__copy-emphasis">{targetMode}</span> is
               irreversible without another mode switch. All in-flight audio will be interrupted.
             </p>
           </div>
@@ -759,14 +761,14 @@ function DeploymentModeSwitcher({
               Execute mode switch
             </Button>
           </div>
-        </div>
+        </Tile>
       )}
 
       {/* Progress panel */}
       {switchState.id === 'progress' && (
-        <div className="audio-nodes-modal__progress-panel">
+        <Tile className="audio-nodes-modal__progress-panel">
           <p className="audio-nodes-modal__copy">
-            <strong>Switching to {switchState.targetMode}…</strong> Do not close this window.
+            <span className="audio-nodes-modal__copy-emphasis">Switching to {switchState.targetMode}…</span> Do not close this window.
           </p>
           <div className="audio-nodes-modal__progress-steps">
             {switchState.steps.map((step, i) => (
@@ -781,18 +783,18 @@ function DeploymentModeSwitcher({
               </div>
             ))}
           </div>
-        </div>
+        </Tile>
       )}
 
       {/* Done */}
       {switchState.id === 'done' && (
-        <div className="audio-nodes-modal__done-panel">
+        <Tile className="audio-nodes-modal__done-panel">
           <CheckmarkFilled size={20} className="audio-nodes-modal__done-icon" />
           <p className="audio-nodes-modal__copy">
-            Mode switched to <strong>{switchState.newMode}</strong> successfully.
+            Mode switched to <span className="audio-nodes-modal__copy-emphasis">{switchState.newMode}</span> successfully.
           </p>
           <Button kind="ghost" size="sm" onClick={handleReset}>Dismiss</Button>
-        </div>
+        </Tile>
       )}
     </div>
   )

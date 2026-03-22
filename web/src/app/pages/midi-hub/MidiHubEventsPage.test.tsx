@@ -113,6 +113,17 @@ function renderPage() {
     })),
   })
 
+  class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  Object.defineProperty(window, 'ResizeObserver', {
+    writable: true,
+    value: ResizeObserverMock,
+  })
+
   return render(
     <QueryClientProvider client={queryClient}>
       <NotificationProvider>
@@ -135,7 +146,8 @@ describe('MidiHubEventsPage', () => {
     expect(await screen.findByRole('heading', { name: 'Event Lists' })).toBeTruthy()
     expect(await screen.findByText('Show Open')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Event list actions for show-open' }))
+    fireEvent.click(await screen.findByText('Open'))
     fireEvent.click(screen.getByRole('button', { name: 'Save event' }))
     await waitFor(() => expect(mockMidiHubApi.upsertEventListEvent).toHaveBeenCalled())
 

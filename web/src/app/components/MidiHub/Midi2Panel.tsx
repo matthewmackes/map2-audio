@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
   DataTable,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -135,24 +137,32 @@ export function Midi2Panel() {
         <div className="midi-hub-stat-grid">
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">Default protocol</span>
-            <strong className="midi-hub-stat-tile__value">{effectiveStatus?.default_protocol ?? 'midi1'}</strong>
+            <span className="midi-hub-stat-tile__value">{effectiveStatus?.default_protocol ?? 'midi1'}</span>
           </div>
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">Discovered devices</span>
-            <strong className="midi-hub-stat-tile__value">{effectiveStatus?.device_count ?? 0}</strong>
+            <span className="midi-hub-stat-tile__value">{effectiveStatus?.device_count ?? 0}</span>
           </div>
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">Translation</span>
-            <strong className="midi-hub-stat-tile__value">{umpWords.trim() ? 'Ready' : 'Idle'}</strong>
+            <span className="midi-hub-stat-tile__value">{umpWords.trim() ? 'Ready' : 'Idle'}</span>
           </div>
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">MIDI-CI</span>
-            <strong className="midi-hub-stat-tile__value">Available</strong>
+            <span className="midi-hub-stat-tile__value">Available</span>
           </div>
         </div>
 
         <div className="midi-hub-form-grid">
-          <TextInput id="midi-hub-midi2-protocol" labelText="Default protocol" value={protocol} onChange={(event) => setProtocol(event.currentTarget.value === 'midi2' ? 'midi2' : 'midi1')} />
+          <Select
+            id="midi-hub-midi2-protocol"
+            labelText="Default protocol"
+            value={protocol}
+            onChange={(event) => setProtocol(event.currentTarget.value === 'midi2' ? 'midi2' : 'midi1')}
+          >
+            <SelectItem value="midi1" text="MIDI 1.0" />
+            <SelectItem value="midi2" text="MIDI 2.0" />
+          </Select>
         </div>
         <div className="midi-hub-network-panel__toggles">
           <Toggle id="midi-hub-midi2-enabled" labelText="Enable MIDI 2.0 service" labelA="Off" labelB="On" toggled={enabled} onToggle={setEnabled} />

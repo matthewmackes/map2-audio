@@ -2,6 +2,7 @@ import { useDeferredValue, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Button,
+  CodeSnippet,
   ComposedModal,
   DataTable,
   ModalBody,
@@ -146,6 +147,7 @@ export function MidiTrafficMonitor({
   const messageRate = Number((statsQuery.data as { messages_per_second?: number } | undefined)?.messages_per_second ?? 0)
   const capturedTotal = Number((trafficQuery.data as { captured_total?: number } | undefined)?.captured_total ?? 0)
   const visibleCount = Number((trafficQuery.data as { count?: number } | undefined)?.count ?? 0)
+  const tableScrollClass = height >= 440 ? 'midi-hub-connections-table-scroll--lg' : 'midi-hub-connections-table-scroll--md'
 
   return (
     <>
@@ -229,7 +231,7 @@ export function MidiTrafficMonitor({
                 </Button>
               </TableToolbarContent>
             </TableToolbar>
-            <div style={{ maxHeight: height, overflowY: 'auto' }}>
+            <div className={`midi-hub-connections-table-scroll ${tableScrollClass}`}>
               <Table {...getTableProps()} aria-label="MIDI traffic monitor">
                 <TableHead>
                   <TableRow>
@@ -241,6 +243,7 @@ export function MidiTrafficMonitor({
                         </TableHeader>
                       )
                     })}
+                    <TableHeader>Action</TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -248,12 +251,7 @@ export function MidiTrafficMonitor({
                     const { key: _key, ...rowProps } = getRowProps({ row })
                     const source = selectedById.get(row.id)
                     return (
-                      <TableRow
-                        key={row.id}
-                        {...rowProps}
-                        onClick={() => setSelected(source ?? null)}
-                        style={{ cursor: 'pointer' }}
-                      >
+                      <TableRow key={row.id} {...rowProps}>
                         {row.cells.map((cell) => {
                           if (cell.info.header === 'type' && source) {
                             return (
@@ -264,6 +262,11 @@ export function MidiTrafficMonitor({
                           }
                           return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
                         })}
+                        <TableCell>
+                          <Button size="sm" kind="ghost" onClick={() => setSelected(source ?? null)} disabled={!source}>
+                            Inspect
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     )
                   })}
@@ -277,7 +280,11 @@ export function MidiTrafficMonitor({
       <ComposedModal open={Boolean(selected)} size="lg" onClose={() => setSelected(null)}>
         <ModalHeader title="MIDI event detail" />
         <ModalBody>
-          {selected ? <pre className="midi-hub-connections-code-block">{JSON.stringify(selected, null, 2)}</pre> : null}
+          {selected ? (
+            <CodeSnippet className="midi-hub-connections-code-block" type="multi">
+              {JSON.stringify(selected, null, 2)}
+            </CodeSnippet>
+          ) : null}
         </ModalBody>
         <ModalFooter>
           <Button kind="primary" onClick={() => setSelected(null)}>

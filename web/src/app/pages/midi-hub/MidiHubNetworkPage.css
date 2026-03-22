@@ -21,8 +21,8 @@
   flex-direction: column;
   gap: 0.875rem;
   padding: 1rem;
-  border: 1px solid rgba(82, 82, 82, 0.18);
-  background: linear-gradient(180deg, rgba(244, 244, 244, 0.88), rgba(255, 255, 255, 0.96));
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-01);
 }
 
 .midi-hub-network-panel__toolbar {
@@ -43,7 +43,7 @@
 }
 
 .midi-hub-network-table {
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--cds-layer-01);
 }
 
 .midi-hub-network-namespace {
@@ -63,8 +63,8 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid rgba(140, 140, 140, 0.22);
-  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
 }
 
 .midi-hub-network-gpio-tile__header {
@@ -72,6 +72,11 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
+}
+
+.midi-hub-network-gpio-tile__title {
+  color: var(--cds-text-primary);
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {

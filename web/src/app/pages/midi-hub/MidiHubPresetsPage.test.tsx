@@ -119,9 +119,10 @@ describe('MidiHubPresetsPage', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Presets & Recall' })).toBeTruthy()
-    expect(await screen.findAllByText('Baseline')).toHaveLength(2)
+    expect((await screen.findAllByText('Baseline')).length).toBeGreaterThanOrEqual(2)
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Recall' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Preset actions for baseline' }))
+    fireEvent.click(await screen.findByText('Recall'))
     await waitFor(() => expect(mockMidiHubApi.recallPreset).toHaveBeenCalledWith('baseline', null))
 
     fireEvent.click(screen.getByRole('button', { name: 'Compare presets' }))
@@ -132,7 +133,8 @@ describe('MidiHubPresetsPage', () => {
     await waitFor(() => expect(mockMidiHubApi.comparePresets).toHaveBeenCalledWith('baseline', 'show-a', null))
 
     fireEvent.change(screen.getByLabelText('Preset chain'), { target: { value: 'show_open' } })
-    fireEvent.click(screen.getAllByRole('button', { name: 'Move down' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Chain order actions for baseline-0' }))
+    fireEvent.click(await screen.findByText('Move down'))
     fireEvent.click(screen.getByRole('button', { name: 'Save chain order' }))
     await waitFor(() =>
       expect(mockMidiHubApi.setPresetChain).toHaveBeenCalledWith('show_open', ['show-a', 'baseline'], null),

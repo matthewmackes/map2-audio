@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
   DataTable,
+  OverflowMenu,
+  OverflowMenuItem,
   Select,
   SelectItem,
   Table,
@@ -164,14 +166,15 @@ export function MidiMacroPanel() {
                         return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
                       })}
                       <TableCell>
-                        <div className="midi-hub-processing-inline-actions">
-                          <Button size="sm" kind="secondary" onClick={() => triggerMacro.mutate(row.id)}>
-                            Trigger macro
-                          </Button>
-                          <Button size="sm" kind="danger--tertiary" onClick={() => deleteMacro.mutate(row.id)}>
-                            Delete
-                          </Button>
-                        </div>
+                        <OverflowMenu
+                          ariaLabel={`Macro actions for ${row.id}`}
+                          flipped
+                          iconDescription={`Macro actions for ${row.id}`}
+                          size="sm"
+                        >
+                          <OverflowMenuItem itemText="Trigger macro" onClick={() => triggerMacro.mutate(row.id)} />
+                          <OverflowMenuItem isDelete itemText="Delete" onClick={() => deleteMacro.mutate(row.id)} />
+                        </OverflowMenu>
                       </TableCell>
                     </TableRow>
                   )

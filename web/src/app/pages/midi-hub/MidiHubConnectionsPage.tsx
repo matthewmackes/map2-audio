@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ContentSwitcher, InlineNotification, Switch, Tag } from '@carbon/react'
+import { InlineNotification, Tab, TabList, Tabs, Tag } from '@carbon/react'
 import { MidiHubConnectedDevicesReport } from '../../components/MidiHub/MidiHubConnectedDevicesReport'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiPatchbay } from '../../components/MidiHub/MidiPatchbay'
@@ -50,14 +50,15 @@ export function MidiHubConnectionsPage() {
                     : 'Use the patchbay to inspect topology, fan-out, and route density at a glance.'}
                 </p>
               </div>
-              <ContentSwitcher
-                aria-label="Routing workspace view mode"
+              <Tabs
                 selectedIndex={mode === 'matrix' ? 0 : 1}
-                onChange={({ name }) => setMode(name === 'patchbay' ? 'patchbay' : 'matrix')}
+                onChange={({ selectedIndex }) => setMode(selectedIndex === 1 ? 'patchbay' : 'matrix')}
               >
-                <Switch name="matrix" text="Port matrix" />
-                <Switch name="patchbay" text="Patchbay graph" />
-              </ContentSwitcher>
+                <TabList aria-label="Routing workspace view mode" contained>
+                  <Tab>Port matrix</Tab>
+                  <Tab>Patchbay graph</Tab>
+                </TabList>
+              </Tabs>
             </div>
 
             {mode === 'matrix' ? <MidiRoutingMatrix /> : <MidiPatchbay />}

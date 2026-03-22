@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PauseFilled, PlayFilled, PlayOutlineFilled, Touch_1 } from '@carbon/icons-react'
-import { Button, Select, SelectItem, Slider, Tag, TextInput } from '@carbon/react'
+import { Button, Checkbox, Select, SelectItem, Slider, Tag, TextInput } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubOverview } from './useMidiHubOverview'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
@@ -110,24 +110,24 @@ export function MidiClockPanel() {
         <div className="midi-hub-stat-grid">
           <div className="midi-hub-stat-tile midi-hub-stat-tile--hero">
             <span className="midi-hub-stat-tile__label">Transport BPM</span>
-            <strong className="midi-hub-stat-tile__value">{clock?.bpm?.toFixed(2) ?? '120.00'}</strong>
+            <span className="midi-hub-stat-tile__value">{clock?.bpm?.toFixed(2) ?? '120.00'}</span>
             <span className="midi-hub-stat-tile__subvalue">{`Detected ${detectedBpm}`}</span>
           </div>
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">Divider</span>
-            <strong className="midi-hub-stat-tile__value">{clock?.divider ?? 1}</strong>
+            <span className="midi-hub-stat-tile__value">{clock?.divider ?? 1}</span>
           </div>
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">Multiplier</span>
-            <strong className="midi-hub-stat-tile__value">{clock?.multiplier ?? 1}</strong>
+            <span className="midi-hub-stat-tile__value">{clock?.multiplier ?? 1}</span>
           </div>
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">Outputs</span>
-            <strong className="midi-hub-stat-tile__value">{clock?.output_ports?.length ?? 0}</strong>
+            <span className="midi-hub-stat-tile__value">{clock?.output_ports?.length ?? 0}</span>
           </div>
           <div className="midi-hub-stat-tile">
             <span className="midi-hub-stat-tile__label">Song position</span>
-            <strong className="midi-hub-stat-tile__value">{clock?.song_position ?? 0}</strong>
+            <span className="midi-hub-stat-tile__value">{clock?.song_position ?? 0}</span>
           </div>
         </div>
 
@@ -190,24 +190,17 @@ export function MidiClockPanel() {
 
           <div className="midi-hub-port-picker">
             <span className="midi-hub-port-picker__label">Output ports</span>
-            <div className="midi-hub-port-picker__chips">
+            <div className="midi-hub-port-picker__checkboxes">
               {availableOutputPorts.map((port) => {
                 const active = outputPorts.includes(port.port_id)
                 return (
-                  <button
+                  <Checkbox
                     key={port.port_id}
-                    type="button"
-                    className={[
-                      'midi-hub-port-chip',
-                      active ? 'midi-hub-port-chip--active' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    onClick={() => toggleOutputPort(port.port_id)}
-                  >
-                    <strong>{port.name}</strong>
-                    <span>{port.port_id}</span>
-                  </button>
+                    id={`midi-hub-clock-port-${port.port_id}`}
+                    labelText={`${port.name} (${port.port_id})`}
+                    checked={active}
+                    onChange={() => toggleOutputPort(port.port_id)}
+                  />
                 )
               })}
               {availableOutputPorts.length === 0 ? (

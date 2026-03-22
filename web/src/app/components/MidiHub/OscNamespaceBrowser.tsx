@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
+  CodeSnippet,
   DataTable,
   Table,
   TableBody,
@@ -135,7 +136,9 @@ export function OscNamespaceBrowser() {
         )}
       </DataTable>
 
-      <pre className="midi-hub-code-block">{JSON.stringify(namespaceQuery.data?.recent_events ?? [], null, 2)}</pre>
+      <CodeSnippet className="midi-hub-code-block" type="multi">
+        {JSON.stringify(namespaceQuery.data?.recent_events ?? [], null, 2)}
+      </CodeSnippet>
     </div>
   )
 }

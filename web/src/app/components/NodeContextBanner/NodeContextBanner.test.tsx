@@ -64,9 +64,11 @@ describe('NodeContextBanner', () => {
   it('renders local-only context', () => {
     render(<NodeContextBanner pageKey="home" localNode={localNode} />)
 
-    expect(screen.getByText('LOCAL:')).toBeInTheDocument()
-    expect(screen.getByText('node-a')).toBeInTheDocument()
-    expect(screen.getByText('(This machine)')).toBeInTheDocument()
+    expect(screen.getByText('Host')).toBeInTheDocument()
+    expect(screen.getByText('Scope')).toBeInTheDocument()
+    expect(screen.getAllByText('node-a')).toHaveLength(2)
+    expect(screen.getByText('Local engine')).toBeInTheDocument()
+    expect(screen.getByText('Local studio view')).toBeInTheDocument()
   })
 
   it('shows display label in the local chip', () => {
@@ -80,9 +82,9 @@ describe('NodeContextBanner', () => {
 
     render(<NodeContextBanner pageKey="home" localNode={localNode} />)
 
-    expect(screen.getByText('VIEWING:')).toBeInTheDocument()
+    expect(screen.getByText('Scope')).toBeInTheDocument()
     expect(screen.getByText('node-b (Stage Left)')).toBeInTheDocument()
-    expect(screen.getByText('LIVE')).toBeInTheDocument()
+    expect(screen.getByText('Remote live view')).toBeInTheDocument()
   })
 
   it('shows inline loading while topology is loading', () => {
@@ -96,4 +98,3 @@ describe('NodeContextBanner', () => {
     expect(screen.getByText('Loading node context')).toBeInTheDocument()
   })
 })
-

@@ -164,15 +164,14 @@ export function MidiHubFilterPlanner() {
               const channel = index + 1
               const active = filterChannels.includes(channel)
               return (
-                <button
+                <Button
                   key={channel}
-                  type="button"
-                  className="midi-hub-processing-tag-button"
+                  size="sm"
+                  kind={active ? 'primary' : 'ghost'}
                   onClick={() => setFilterChannels((current) => toggleValue(current, channel))}
-                  aria-pressed={active}
                 >
-                  <Tag type={active ? 'green' : 'cool-gray'}>{`Ch ${channel}`}</Tag>
-                </button>
+                  {`Ch ${channel}`}
+                </Button>
               )
             })}
           </div>
@@ -183,15 +182,14 @@ export function MidiHubFilterPlanner() {
             {FILTER_MESSAGE_OPTIONS.map((message) => {
               const active = filterMessages.includes(message)
               return (
-                <button
+                <Button
                   key={message}
-                  type="button"
-                  className="midi-hub-processing-tag-button"
+                  size="sm"
+                  kind={active ? 'secondary' : 'ghost'}
                   onClick={() => setFilterMessages((current) => toggleValue(current, message))}
-                  aria-pressed={active}
                 >
-                  <Tag type={active ? 'blue' : 'cool-gray'}>{message}</Tag>
-                </button>
+                  {message}
+                </Button>
               )
             })}
           </div>

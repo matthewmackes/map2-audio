@@ -48,11 +48,6 @@
 
 .midi-hub-events-code-block {
   margin: 0;
-  padding: var(--cds-spacing-05);
-  background: var(--cds-layer-01);
-  color: var(--cds-text-primary);
-  font-family: var(--cds-code-01-font-family, var(--font-ui));
-  overflow: auto;
 }
 
 @media (max-width: 1056px) {

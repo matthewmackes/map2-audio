@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-22 15:41 EDT - Codex (Closed `T283` after hardening the JUCE Grid cluster-node modal fetch path and removing the route-load crash.)
+Last updated: 2026-03-22 18:35 EDT - Codex (Completed `T313`; no remaining software-actionable strict-Carbon compliance tasks found for `/midi-hub/connections` subpages/modals in the current sweep.)
 
 ## Active Blockers Only
 
@@ -130,6 +130,546 @@ Last updated: 2026-03-16 00:00 - Codex
 ## MIDI
 
 ## In Progress
+
+ID: T287
+Status: [✓] Done
+Title: Refactor JUCE Grid browser cards and flow-assignment chooser onto Carbon support-card patterns
+Description:
+- Goal / acceptance criteria: Simplify the remaining plugin-browser tiles and flow-assignment cards so they use clearer heading hierarchy, token-driven tile surfaces, and reduced bespoke visual treatment while preserving selection/addition workflows.
+- Why it matters: The page shell and modal wrappers are now largely Carbon-aligned, but these data-dense support cards still carry custom route-local styling that weakens strict conformance.
+- Dependencies: T286
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched support-card surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 15:39 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the plugin browser and preset cards use explicit semantic plugin headings and the flow-assignment chooser uses section kickers plus heading-based node titles instead of generic toolbar labels and `strong` text.
+  - Updated `web/src/app/pages/JuceGridPage.css` so browser tiles and assignment cards now use clearer Carbon-like layer and border shells, explicit heading styles, and focus/hover states aligned to interactive tokens instead of lightweight route-local wrappers.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T288
+Status: [✓] Done
+Title: Refactor JUCE Grid specialist modal internals and dense support cards onto Carbon content patterns
+Description:
+- Goal / acceptance criteria: Tighten the remaining JUCE Grid specialist modal internals and dense support-card surfaces so details panes, status rows, and auxiliary chooser content use Carbon-first section hierarchy, tokenized tiles, and minimal bespoke chrome without changing route behavior.
+- Why it matters: The main route shell, browser, and assignment chooser are now materially closer to Carbon, but a few specialist modal internals and dense cards still read as custom route-local UI rather than Carbon-composed content.
+- Dependencies: T287
+- Estimated effort: Low
+- Required outputs: Updated JUCE Grid route/modal files, validation notes, and licensing review notes for the touched specialist surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 15:45 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/AudioNodesModal.tsx` so the cluster-node and assignment stat tiles use explicit value text instead of `strong` labels, and the deployment mode, warning, progress, and completion states use clearer section kickers/headings plus Carbon `Tile` wrappers rather than ad hoc emphasis blocks.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the `AudioNodesModal` stat tiles, mode-action shell, warning panels, progress panel, and done panel use token-driven layer and border surfaces with Carbon-style heading and emphasis rules instead of the previous left-bar and `strong`-centric treatment.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid audio-node modal/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T289
+Status: [✓] Done
+Title: Refactor remaining JUCE Grid dense modal rows and automation support cards onto Carbon content hierarchy
+Description:
+- Goal / acceptance criteria: Tighten the remaining dense JUCE Grid modal rows and support cards, especially MIDI mapping/automation lane rows and other specialist chooser internals, so they use Carbon-first heading/value hierarchy and tokenized tiles without altering workflow behavior.
+- Why it matters: The larger shells and `AudioNodesModal` are now Carbon-aligned, but a few dense row-based interiors still use route-local `strong`/tag-heavy presentation that falls short of strict compliance.
+- Dependencies: T288
+- Estimated effort: Low
+- Required outputs: Updated JUCE Grid route/component files, validation notes, and licensing review notes for the touched dense modal/card surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 15:49 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so dense MIDI mapping rows and automation lane cards use explicit heading classes instead of `strong`, and the automation workspace header now uses a Carbon-style kicker plus section heading rather than generic emphasized text.
+  - Updated `web/src/app/pages/JuceGridPage.css` to add shared dense-card kicker/heading styles and wire the MIDI tile and automation lane selectors onto that content hierarchy, reducing the remaining route-local ad hoc text treatment.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T290
+Status: [✓] Done
+Title: Refactor remaining JUCE Grid specialist chooser and touch/editor support surfaces onto Carbon hierarchy
+Description:
+- Goal / acceptance criteria: Tighten the remaining JUCE Grid specialist chooser and touch/editor support surfaces, especially any leftover touch toolbar/editor placeholders or chooser cards still using route-local emphasis patterns, so they use Carbon-first heading/value hierarchy and tokenized support shells without changing workflow behavior.
+- Why it matters: The major shells, modals, and dense MIDI/automation rows are now materially closer to Carbon, but a few support surfaces still use bespoke route-local typography and emphasis that break strict consistency.
+- Dependencies: T289
+- Estimated effort: Low
+- Required outputs: Updated JUCE Grid route/component files, validation notes, and licensing review notes for the touched support surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:02 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the compact editor placeholder, pinned bottom-editor placeholder, tablet editor header, keyboard shortcut tiles, and automation lane picker tiles all use explicit Carbon-style kicker and heading hierarchy instead of bare heading-only or route-local emphasis patterns.
+  - Updated `web/src/app/pages/JuceGridPage.css` so those support surfaces reuse the shared dense-card kicker/heading system and no longer depend on local one-off heading selectors for their information hierarchy.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T291
+Status: [✓] Done
+Title: Refactor remaining JUCE Grid confirmation and utility modal copy onto Carbon semantics
+Description:
+- Goal / acceptance criteria: Tighten the remaining JUCE Grid confirmation and small utility modal copy so any leftover `strong` emphasis and route-local confirmation phrasing use Carbon-first heading/value semantics and consistent support-surface hierarchy without changing behavior.
+- Why it matters: The main shells, dense rows, and chooser/editor support surfaces are now largely Carbon-aligned, but a few utility modals and confirmation dialogs still carry small pockets of non-Carbon text semantics.
+- Dependencies: T290
+- Estimated effort: Low
+- Required outputs: Updated JUCE Grid route/component files, validation notes, and licensing review notes for the touched utility modal surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:16 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the unsupported-viewport warning uses a semantic heading and the preset-delete confirmation uses named inline emphasis instead of `strong`.
+  - Updated `web/src/app/pages/JuceGridPage.css` with `juce-grid-page__viewport-block-heading` and `juce-grid-page__modal-copy-emphasis` so the remaining utility surfaces follow the Carbon-style type hierarchy and emphasis rules.
+
+ID: T292
+Status: [✓] Done
+Title: Refactor JUCE Grid plugin-browser tiles onto Carbon-style neutral content cards
+Description:
+- Goal / acceptance criteria: Tighten the remaining plugin-browser and preset-browser tiles so native, LV2, and preset cards use a neutral Carbon-style content hierarchy and token-driven interactive states instead of accent bars, decorative color treatments, or route-local card visuals, without changing browser behavior.
+- Why it matters: The last obvious non-Carbon surface on the route is the browser card treatment, which still relies on category-colored accents and bespoke tile framing that reads as custom product chrome rather than Carbon content tiles.
+- Dependencies: T291
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched browser tile surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:27 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so featured native, native, LV2, and preset browser tiles all use explicit kicker/copy/meta wrappers instead of accent-led tile composition and ad hoc tag placement.
+  - Updated `web/src/app/pages/JuceGridPage.css` so browser tiles now use neutral token-driven padding, hover/focus states, and Carbon-style kicker/title/meta hierarchy instead of left accent bars and lighter custom visual framing.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T293
+Status: [✓] Done
+Title: Refactor JUCE Grid live signal plugin cards onto Carbon-style neutral tiles
+Description:
+- Goal / acceptance criteria: Tighten the live signal plugin cards and add-tile treatment so the grid uses neutral Carbon-style tile hierarchy and token-driven selected/hover/bypassed states instead of gradient shells, accent rails, and decorative hero glow, without changing selection, drag, reorder, or overflow behavior.
+- Why it matters: The browser tiles are now materially closer to Carbon, but the live signal cards still use the heaviest bespoke visual treatment on the route and remain the clearest blocker to strict Carbon compliance.
+- Dependencies: T292
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched live-card surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:36 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so live signal cards use semantic heading/copy structure for the category and block title instead of `strong`/`span` emphasis.
+  - Updated `web/src/app/pages/JuceGridPage.css` so live signal cards and add tiles now use neutral token-driven Carbon-style surfaces and interaction states instead of accent rails, gradient shells, and hero glow treatment.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T294
+Status: [✓] Done
+Title: Refactor JUCE Grid page shell onto Carbon-style section framing and spacing
+Description:
+- Goal / acceptance criteria: Tighten the remaining route-level header and workspace framing so the JUCE Grid page uses more consistent Carbon-style centered section gutters, semantic masthead structure, and section spacing instead of bespoke full-bleed shell composition, without changing route behavior.
+- Why it matters: Most specialist cards and modals are now materially closer to Carbon, but the page still reads as a custom app shell because the masthead and workspace framing do not follow a disciplined page-section rhythm.
+- Dependencies: T293
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched shell surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:45 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the masthead now uses a semantic page heading and the header, workspace, and compact panels all sit inside shared centered section frames instead of unrelated bespoke shell wrappers.
+  - Updated `web/src/app/pages/JuceGridPage.css` with reusable section-frame sizing plus tighter Carbon-style shell gutters for the header, workspace, compact panel, and bottom editor so the route reads more like a disciplined page section rather than a full-bleed custom app shell.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T295
+Status: [✓] Done
+Title: Refactor JUCE Grid flow-card routing and action clusters onto Carbon-style support sections
+Description:
+- Goal / acceptance criteria: Tighten the remaining desktop and tablet flow-card routing/action clusters so the routing summary, level control, and utility actions use clearer Carbon-style support-section hierarchy and neutral token-driven grouping instead of accent-heavy dashboard capsules, without changing behavior.
+- Why it matters: After the shell cleanup, the flow-card control region is the most visibly product-specific surface left on the route and still weakens strict Carbon conformance.
+- Dependencies: T294
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched flow-card action surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:53 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the desktop and tablet routing summaries use an explicit routing-copy wrapper, giving the routing section clearer Carbon-style support hierarchy without changing behavior.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the flow-card action groups, routing summary, routing badges/readouts, and tablet detail actions now use neutral token-driven support-section styling instead of accent-heavy dashboard capsules.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T296
+Status: [✓] Done
+Title: Refactor JUCE Grid tablet flow summary and status treatment onto Carbon-style support content
+Description:
+- Goal / acceptance criteria: Tighten the remaining tablet flow summary/status presentation so the summary header, pills, and state label use clearer Carbon-style support hierarchy and neutral token-driven chips instead of rounded product-specific pill chrome, without changing tablet workflow behavior.
+- Why it matters: After the desktop flow-card cleanup, the tablet flow summary remains one of the last route-local product surfaces that still reads more bespoke than Carbon.
+- Dependencies: T295
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched tablet flow surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:59 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the tablet flow summary uses the shared dense-card kicker hierarchy for the flow label instead of route-local emphasis styling.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the tablet summary header, summary chips, and status label now use neutral token-driven support styling instead of rounded pill-heavy product chrome.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T297
+Status: [✓] Done
+Title: Refactor JUCE Grid floating launcher rail and footer/status band onto Carbon-style support actions
+Description:
+- Goal / acceptance criteria: Tighten the remaining floating launcher rail and footer/status band so those controls use neutral Carbon-style support-action surfaces and token-driven hover/focus treatment instead of product-specific pill chrome and heavier shadows, without changing launcher or automation behavior.
+- Why it matters: After the tablet summary cleanup, the launcher rail and footer band are the last clearly bespoke interaction surfaces on the route.
+- Dependencies: T296
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.css` plus any minimal route markup needed, validation notes, and licensing review notes for the touched footer/launcher surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:05 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.css` so the floating snapshot/MIDI launcher rail now uses neutral token-driven support-action surfaces instead of rounded pill chrome, oversized icon motion, and heavier shadows.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the footer automation toggle and status chips use flatter Carbon-style token-driven shells instead of rounded local chrome.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T298
+Status: [✓] Done
+Title: Flatten residual JUCE Grid signal and mobile status chips onto Carbon-style support labels
+Description:
+- Goal / acceptance criteria: Remove the last pill-heavy route-local status treatments in the JUCE Grid signal endpoint rails and compact live-path mobile badges so those summaries use flatter Carbon-style support labels and token-driven surfaces without changing the routing or status information shown.
+- Why it matters: After the launcher and footer cleanup, these dense status chips are the most visible remaining non-Carbon micro-patterns on the route.
+- Dependencies: T297
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.css` and any minimal TSX needed in `web/src/app/pages/JuceGridSignalCanvas.tsx` or `web/src/app/pages/JuceGridPage.tsx`, validation notes, and licensing review notes for the touched signal/mobile status surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:49 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.css` so the JUCE Grid signal-endpoint icon shell and metadata chips now use flatter token-driven bordered labels instead of pill-shaped badges and tinted chrome.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the compact live-path mobile status badges now use square Carbon-style support labels with token-driven state borders instead of rounded pills.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T299
+Status: [✓] Done
+Title: Move the JUCE Grid page shell onto Carbon grid-based section scaffolding
+Description:
+- Goal / acceptance criteria: Replace the remaining custom page-shell section wrappers for the JUCE Grid masthead, workspace, and compact workflow panel with Carbon `Grid`/`Column` scaffolding while preserving the current behavior, responsive layout, and section-width constraints.
+- Why it matters: The route is visually closer to Carbon, but it still falls short of strict compliance until the page shell itself uses Carbon layout primitives instead of custom centering wrappers.
+- Dependencies: T298
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched page-shell layout surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:53 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the masthead, main workspace, and compact workflow panel now sit inside Carbon `Grid` and `Column` scaffolding instead of route-local centering wrappers.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the shared section shell styles support Carbon grid containers while preserving the existing responsive width constraints and tablet sticky-header behavior.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T300
+Status: [✓] Done
+Title: Fix JUCE Grid plugin chooser heading overflow and restyle category filters to Carbon controls
+Description:
+- Goal / acceptance criteria: Remove the vertical crowding/overlap in the plugin chooser where long featured-group titles such as `Linear and Nonlinear Modeling` appear cramped, and replace the current category filter button strip with cleaner Carbon-aligned filter controls while preserving chooser functionality.
+- Why it matters: The plugin chooser remains one of the most visible route surfaces, and its current heading wrapping and filter chrome break both readability and Carbon compliance.
+- Dependencies: T299
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched chooser surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:57 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the plugin chooser category filter now uses a Carbon `Select` control instead of the dense ghost-button strip, and browser section headings use explicit wrapping title spans.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the chooser filter panel, section headers, long section titles, and plugin grids have enough space to wrap cleanly without vertical crowding or overlap.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T301
+Status: [✓] Done
+Title: Tighten JUCE Grid plugin chooser card metadata and action rows onto dedicated browser patterns
+Description:
+- Goal / acceptance criteria: Replace the plugin chooser card use of generic route-level tag and action wrappers with dedicated browser-specific metadata and action rows that read as Carbon-style content tiles, while preserving all chooser actions and plugin information.
+- Why it matters: After the filter and wrapping fixes, the chooser still looks inconsistent because plugin cards inherit generic compact workflow chrome rather than purpose-built browser card structure.
+- Dependencies: T300
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched chooser card surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:01 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the plugin chooser toolbar and plugin cards now use dedicated browser-specific metadata and action row wrappers instead of the route-level compact tag/action wrappers.
+  - Updated `web/src/app/pages/JuceGridPage.css` so chooser metadata rows, toolbar actions, and plugin card action areas now use dedicated Carbon-style browser spacing and a separated action rail rather than generic compact workflow layout.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T302
+Status: [✓] Done
+Title: Harden JUCE Grid cluster-node loading so missing node data cannot crash route startup
+Description:
+- Goal / acceptance criteria: Prevent `/juce-grid` from crashing during initial render when the cluster-node endpoint returns a malformed or empty payload, while preserving the assignment dialog's live node recommendations when that dialog is open.
+- Why it matters: The route was crashing before the user could interact with it because startup mounted a cluster-node query that assumed `data.nodes` existed even when the endpoint was unavailable or returned an unexpected shape.
+- Dependencies: T301
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx`, validation notes, and licensing review notes for the touched cluster-node loading path.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:22 - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the cluster-node query now normalizes `data?.nodes` to an empty array unless it is a real array, which removes the unsafe startup assumption behind the `can't access property "nodes", a is undefined` crash.
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the cluster-node query is only enabled while the assignment dialog is open and only polls in that state, removing unnecessary startup fetching for a dialog-only data source.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T303
+Status: [✓] Done
+Title: Harden shared node-topology loading so malformed topology payloads cannot crash the app shell
+Description:
+- Goal / acceptance criteria: Prevent the shared node-topology consumers used by the app shell and route-level node context from crashing when `/api/node/topology` returns a partial or malformed payload, while preserving existing node-navigation and node-context behavior when valid data is present.
+- Why it matters: After hardening the JUCE Grid assignment query, the same `nodes` crash still occurred because shared shell consumers were receiving a topology object without a guaranteed `nodes` array and then calling `find` or `filter` on it during startup render.
+- Dependencies: T302
+- Estimated effort: Low
+- Required outputs: Updated topology-loading code, validation notes, and licensing review notes for the touched shared shell/topology files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:33 - Codex
+- Completion notes:
+  - Updated `web/src/map2/api.ts` so `getNodeTopology()` now normalizes `nodes`, `audio_edges`, and `network_edges` to arrays even when the backend returns a partial or malformed object.
+  - Updated `web/src/app/hooks/useNodePageContext.ts` so local-node fallback selection uses an explicit array guard instead of assuming `topology.nodes` exists.
+  - Updated `web/src/app/components/NodeContextBanner/NodeContextBanner.test.tsx` so the assertions match the current banner copy and duplicate local-node tag rendering.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, `npm --prefix web test -- --runInBand web/src/app/components/NodeContextBanner/NodeContextBanner.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched shared topology, JUCE Grid, and worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T304
+Status: [✓] Done
+Title: Remove non-Carbon shell dependencies and non-token styling from MIDI Hub route shell, Network, and Lab pages
+Description:
+- Goal / acceptance criteria: Replace the remaining non-Carbon shell dependency (`@mui/material/useMediaQuery`) and the non-token shell/page styling in `MidiHubShell` plus the routed Network/Lab page surfaces so these shared MIDI Hub routes rely on Carbon tokens, Carbon structure, and Carbon state styling only.
+- Why it matters: The strict `/midi-hub/connections` compliance audit found that the shell and sibling subpages still carry mixed design-system dependencies and hard-coded/translucent color treatments that violate strict Carbon conformance.
+- Dependencies: T271
+- Estimated effort: Medium
+- Required outputs: Updated `web/src/app/pages/MidiHubShell.tsx`, `web/src/app/pages/MidiHubShell.css`, `web/src/app/pages/midi-hub/MidiHubNetworkPage.css`, and `web/src/app/pages/midi-hub/MidiHubLabPage.css` with focused validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:25 EDT - Codex
+- Completion notes:
+  - Replaced `@mui/material/useMediaQuery` in `web/src/app/pages/MidiHubShell.tsx` with a local `matchMedia`-based theme-preference listener so the MIDI Hub shell no longer mixes MUI and Carbon dependencies.
+  - Refactored `web/src/app/pages/MidiHubShell.css` to remove hard-coded shell palette values, translucent overlays, and color-mix accents in favor of Carbon layer, text, border, hover, and selected-state tokens.
+  - Refactored `web/src/app/pages/midi-hub/MidiHubNetworkPage.css` and `web/src/app/pages/midi-hub/MidiHubLabPage.css` to remove non-token gradient/translucent panel backgrounds and move those surfaces to Carbon tokenized panel treatment.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/MidiHubPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx` -> PASS.
+
+ID: T305
+Status: [✓] Done
+Title: Replace custom MIDI Hub recorder/clock/filter selector controls with Carbon-native interactive patterns
+Description:
+- Goal / acceptance criteria: Remove route-local custom control wrappers in recorder/clock/filter workflows (custom number stepper and custom chip buttons) and replace them with Carbon-native number, checkbox, and selectable-tag/button patterns while preserving existing behavior and labels.
+- Why it matters: Strict Carbon compliance requires using Carbon components and interaction semantics instead of custom button wrappers around tags and bespoke stepper controls for core transport/processing interactions.
+- Dependencies: T304
+- Estimated effort: Medium
+- Required outputs: Updated `web/src/app/components/MidiHub/MidiRecorderPanel.tsx`, `web/src/app/components/MidiHub/MidiClockPanel.tsx`, `web/src/app/components/MidiHub/MidiHubFilterPlanner.tsx`, supporting CSS updates, and focused validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:27 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/MidiHub/MidiRecorderPanel.tsx` to remove the route-local custom stepper dependency and use Carbon `NumberInput` for export BPM and ticks-per-quarter controls with bounded parsing.
+  - Updated `web/src/app/components/MidiHub/MidiClockPanel.tsx` so output-port selection now uses Carbon `Checkbox` controls instead of custom clickable chip buttons, improving Carbon consistency and interaction semantics.
+  - Updated `web/src/app/components/MidiHub/MidiHubFilterPlanner.tsx` and `web/src/app/pages/midi-hub/MidiHubProcessingPage.css` to replace custom tag-button wrappers with Carbon `Button` toggles for channel/message selection.
+  - Updated `web/src/app/pages/MidiHubPage.css` and `web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` to align layout/test expectations with the new Carbon-native controls.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/MidiHub/MidiTransportPanels.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx` -> PASS.
+
+ID: T306
+Status: [✓] Done
+Title: Close MIDI Hub connections accessibility gaps in patchbay graph actions, traffic-row interaction, and route modal footer actions
+Description:
+- Goal / acceptance criteria: Make patchbay route/node interactions keyboard-accessible with explicit semantics, convert traffic-table row detail opening to explicit Carbon action affordances, and align route-editor modal footer actions with Carbon modal interaction expectations.
+- Why it matters: The compliance audit identified keyboard and action-semantic gaps in high-traffic `/midi-hub/connections` workflows that break Carbon accessibility and interaction standards.
+- Dependencies: T305
+- Estimated effort: Medium
+- Required outputs: Updated `web/src/app/components/MidiHub/MidiPatchbay.tsx`, `web/src/app/components/MidiHub/MidiTrafficMonitor.tsx`, `web/src/app/components/MidiHub/MidiRoutingMatrix.tsx`, related styles/tests, and validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:29 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/MidiHub/MidiPatchbay.tsx` to add keyboard-operable `role="button"` and `tabIndex` semantics for route paths and node controls, with Enter/Space activation support.
+  - Updated `web/src/app/components/MidiHub/MidiTrafficMonitor.tsx` so event-detail opening is now an explicit per-row Carbon action button (`Inspect`) instead of row-level click-only behavior.
+  - Updated `web/src/app/components/MidiHub/MidiRoutingMatrix.tsx` modal footer so `Cancel` is always available, including edit mode where delete/save actions are shown.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx` -> PASS.
+
+ID: T307
+Status: [✓] Done
+Title: Normalize constrained MIDI Hub form/table patterns to Carbon selection and status semantics
+Description:
+- Goal / acceptance criteria: Replace constrained free-text controls with Carbon selects/comboboxes where options are bounded, remove misuse of table search as static status copy, and align dense table action/status affordances to Carbon toolbar and row-action patterns across MIDI Hub subpages/modals.
+- Why it matters: Multiple `/midi-hub` subpages still use non-Carbon data-entry and table semantics that conflict with strict conformance even after shell cleanup.
+- Dependencies: T306
+- Estimated effort: Medium
+- Required outputs: Updated impacted MIDI Hub form/table components plus focused tests and validation/licensing evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:32 EDT - Codex
+- Completion notes:
+  - Replaced constrained free-text controls with bounded Carbon selections in `web/src/app/components/MidiHub/MidiNetworkPanel.tsx` (session mode), `web/src/app/components/MidiHub/Midi2Panel.tsx` (default protocol), `web/src/app/components/MidiHub/ProgramChangeSlots.tsx` (program target), `web/src/app/components/MidiHub/PresetChainEditor.tsx` (add preset), and `web/src/app/components/MidiHub/PresetTable.tsx` (compare-left/right preset picks).
+  - Replaced the static-status `TableToolbarSearch` misuse in `web/src/app/components/MidiHub/EventEditor.tsx` with explicit status `Tag` copy in the table toolbar.
+  - Removed the remaining hard-coded/translucent route-shell color remnants in `web/src/app/pages/MidiHubPage.css`, moving these shared MIDI Hub surfaces to Carbon border/layer/text tokens and removing `color-mix` usage.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx web/src/app/pages/midi-hub/MidiHubTransportPage.test.tsx web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> PASS; targeted rerun `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+  - Licensing: Classified all touched MIDI Hub UI/test/worklist files in this remediation chain as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T308
+Status: [✓] Done
+Title: Replace remaining raw MIDI Hub `<pre>` diagnostics with Carbon code-display components
+Description:
+- Goal / acceptance criteria: Replace remaining raw `<pre>`-based diagnostic payload/rendering in MIDI Hub connections/subpages/modals with Carbon `CodeSnippet` (or equivalent Carbon code-display patterns) while preserving all current payload data and copy.
+- Why it matters: Strict Carbon compliance for these routed operator pages still has drift where raw `<pre>` blocks are used instead of Carbon code-display primitives.
+- Dependencies: T307
+- Estimated effort: Medium
+- Required outputs: Updated MIDI Hub components that still emit raw `<pre>` diagnostics, matching style updates if required, and focused validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:50 EDT - Codex
+- Completion notes:
+  - Replaced all remaining MIDI Hub raw `<pre>` diagnostics with Carbon `CodeSnippet` in `web/src/app/components/MidiHub/OscNamespaceBrowser.tsx`, `MidiNetworkPanel.tsx`, `PresetTable.tsx`, `TesiraPanel.tsx`, `MidiTrafficMonitor.tsx`, `MscCommandBuilder.tsx`, `StringInterfacePanel.tsx`, and `MidiScriptEditor.tsx`.
+  - Updated code-block styling in `web/src/app/pages/MidiHubPage.css`, `web/src/app/pages/midi-hub/MidiHubConnectionsPage.css`, `MidiHubPresetsPage.css`, `MidiHubEventsPage.css`, and `MidiHubProcessingPage.css` to remove custom preformatted block chrome and defer to Carbon `CodeSnippet` presentation.
+  - Added `ResizeObserver` test scaffolding in `web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx` to support Carbon `CodeSnippet` behavior in jsdom.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> PASS.
+
+ID: T309
+Status: [✓] Done
+Title: Refactor dense MIDI Hub table row action clusters to Carbon row-action patterns
+Description:
+- Goal / acceptance criteria: Replace remaining dense multi-button row action clusters in MIDI Hub routed tables with clearer Carbon row-action patterns (overflow/action menu where appropriate) while preserving all existing row operations and labels.
+- Why it matters: The strict compliance sweep still has several routed data tables using ad hoc inline action strips that do not align with Carbon’s denser row-action guidance.
+- Dependencies: T308
+- Estimated effort: Medium
+- Required outputs: Updated affected MIDI Hub table components, adjusted tests for action access, and validation/licensing evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 17:50 EDT - Codex
+- Completion notes:
+  - Converted dense row-level action clusters to Carbon `OverflowMenu` patterns in `web/src/app/components/MidiHub/EventListManager.tsx`, `PresetTable.tsx`, `MidiRecorderPanel.tsx`, `MidiNetworkPanel.tsx`, and `MidiMacroPanel.tsx`, preserving all prior row operations.
+  - Added explicit per-row menu icon descriptions for accessibility clarity and stable test targeting.
+  - Updated row-action tests in `web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx`, `MidiHubPresetsPage.test.tsx`, and `web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` for overflow-menu interaction semantics.
+- Validation: `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx web/src/app/pages/midi-hub/MidiHubTransportPage.test.tsx web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+- Licensing: Classified all touched MIDI Hub UI/test/worklist files as MAP2-owned AGPL-covered artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new notice gaps.
+
+ID: T310
+Status: [✓] Done
+Title: Convert remaining Preset Chain row ordering controls to Carbon row-action overflow pattern
+Description:
+- Goal / acceptance criteria: Replace the remaining inline table-row ordering button cluster in `PresetChainEditor` with a Carbon row-action overflow menu while preserving move-up/move-down behavior and disabled-state safety at list bounds.
+- Why it matters: Strict Carbon row-action consistency still has one residual table row action strip in the presets area.
+- Dependencies: T309
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/components/MidiHub/PresetChainEditor.tsx`, matching presets tests, and focused validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 18:01 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/MidiHub/PresetChainEditor.tsx` to replace inline `Move up`/`Move down` row buttons with Carbon `OverflowMenu` row actions and preserved boundary disable logic.
+  - Updated `web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx` to exercise the new chain-order overflow action flow.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx` -> PASS.
+
+ID: T311
+Status: [✓] Done
+Title: Remove remaining MIDI Hub `strong` emphasis and inline-style residues from strict Carbon surfaces
+Description:
+- Goal / acceptance criteria: Replace remaining `strong`-based emphasis and inline-style residues on strict MIDI Hub Carbon surfaces (connections/network/lab cards and matrix/patchbay metadata areas) with semantic classed typography and stylesheet-defined presentation.
+- Why it matters: The strict compliance sweep still has small non-Carbon semantic/styling remnants that reduce consistency and maintainability.
+- Dependencies: T310
+- Estimated effort: Medium
+- Required outputs: Updated affected MIDI Hub components/stylesheets, adjusted tests if needed, and focused validation/licensing evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 18:08 EDT - Codex
+- Completion notes:
+  - Replaced remaining non-semantic emphasis and inline styling residues across strict MIDI Hub Carbon surfaces in `web/src/app/components/MidiHub/VirtualGpioPanel.tsx`, `AiLearnPanel.tsx`, `MidiHubQuickRouter.tsx`, `TesiraPanel.tsx`, `MidiRoutingMatrix.tsx`, `MidiPatchbay.tsx`, and `MidiTrafficMonitor.tsx`.
+  - Added semantic class-based styling in `web/src/app/pages/MidiHubPage.css`, `web/src/app/pages/midi-hub/MidiHubConnectionsPage.css`, `MidiHubNetworkPage.css`, and `MidiHubLabPage.css` to replace `strong`-specific and inline-style presentation.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx web/src/app/components/MidiHub/MidiTransportPanels.test.tsx web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+  - Licensing: Classified all touched MIDI Hub UI/test/worklist files in this cleanup slice as MAP2-owned AGPL-covered artifacts; reran repository license/notice scans and found no new gaps.
+
+ID: T312
+Status: [✓] Done
+Title: Remove remaining MIDI Hub stat-tile `strong` emphasis from transport/network/presets routed surfaces
+Description:
+- Goal / acceptance criteria: Replace the remaining `strong`-based stat-tile values in routed MIDI Hub transport/network/presets panels with semantic classed value text while preserving all displayed values and status behavior.
+- Why it matters: Strict Carbon compliance and semantic consistency still have a small residue in shared clock and MIDI 2.0 stat tiles used across `/midi-hub` subpages.
+- Dependencies: T311
+- Estimated effort: Low
+- Required outputs: Updated stat-tile components/styles (`MidiClockPanel`, `Midi2Panel`, and shared styles), plus focused validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 18:11 EDT - Codex
+- Completion notes:
+  - Replaced remaining stat-tile `strong` value nodes with semantic `span` value nodes in `web/src/app/components/MidiHub/MidiClockPanel.tsx` and `web/src/app/components/MidiHub/Midi2Panel.tsx` without changing any displayed values or transport/protocol behavior.
+  - Residue verification: `rg -n "<strong>|</strong>" web/src/app/pages/midi-hub web/src/app/components/MidiHub` and `rg -n "style=\\{\\{" web/src/app/pages/midi-hub web/src/app/components/MidiHub` returned no matches.
+- Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/MidiHub/MidiTransportPanels.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+- Licensing: Touched files remain MAP2-owned AGPL-covered repository artifacts; no new third-party notice changes required.
+
+ID: T313
+Status: [✓] Done
+Title: Align `/midi-hub/connections` matrix-versus-patchbay view switch to Carbon Tabs pattern
+Description:
+- Goal / acceptance criteria: Replace the remaining `ContentSwitcher`/`Switch` view selector on `MidiHubConnectionsPage` with Carbon `Tabs`/`TabList`/`Tab` while preserving matrix/patchbay behavior, accessible tab semantics, and existing tests.
+- Why it matters: Strict Carbon compliance for the Connections primary workflow should use the platform’s tab pattern for peer workspace views, and this is the remaining route-level selector still using a less canonical pattern.
+- Dependencies: T312
+- Estimated effort: Low
+- Required outputs: Updated connections page selector implementation, any required test adjustments, and focused validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 18:35 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/midi-hub/MidiHubConnectionsPage.tsx` to replace `ContentSwitcher`/`Switch` with Carbon `Tabs` + `TabList` + `Tab` for matrix-versus-patchbay view selection while preserving the same two views and state transitions.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+  - Licensing: Touched route/worklist/version files remain MAP2-owned AGPL-covered artifacts; no new notice updates required.
+
+ID: T286
+Status: [✓] Done
+Title: Refactor JUCE Grid plugin browser and MIDI mapping modal shells onto Carbon patterns
+Description:
+- Goal / acceptance criteria: Replace the remaining bespoke JUCE Grid browser and MIDI modal chrome with Carbon-aligned modal shells, token-driven panel framing, and clearer section structure while preserving existing plugin browsing and MIDI mapping workflows.
+- Why it matters: The route still uses a custom overlay/header for MIDI mappings and lightweight browser wrapper styling that break strict Carbon consistency even after the main shell cleanup.
+- Dependencies: T285
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched modal surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 16:07 - Codex
+- Completion notes:
+  - Replaced the JUCE Grid custom MIDI mappings overlay in `web/src/app/pages/JuceGridPage.tsx` with a Carbon `Modal` wrapper and tokenized route-local panel shells so the mappings workspace now sits inside Carbon modal chrome instead of `platform-modal` scaffolding.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the plugin browser toolbar, featured groups, and modal content shells use explicit Carbon-like layer and border treatments instead of lightweight wrapper-only styling.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T285
+Status: [✓] Done
+Title: Refactor JUCE Grid compact workflow and modal support surfaces onto Carbon-aligned shells
+Description:
+- Goal / acceptance criteria: Tighten the compact workflow panels, keyboard shortcuts modal content, and automation lane picker onto Carbon-aligned tile/layer treatments, clearer semantic headings, and tokenized spacing without changing user workflows.
+- Why it matters: The main route shell is cleaner now, but compact workflow panels and operator modals still read as ad hoc wrappers rather than Carbon-first support surfaces.
+- Dependencies: T284
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched compact/modal surfaces.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 15:58 - Codex
+- Completion notes:
+  - Added clearer semantic section kickers to the compact workflow panels in `web/src/app/pages/JuceGridPage.tsx` and moved the routing summary tags onto a named class instead of inline styling.
+  - Updated `web/src/app/pages/JuceGridPage.css` so compact workflow panels, shortcut tiles, lane-picker tiles, and modal copy use tokenized Carbon-like layer/border treatments and tighter type hierarchy instead of minimal wrapper styling.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
+
+ID: T284
+Status: [✓] Done
+Title: Refactor JUCE Grid masthead and automation footer onto Carbon-aligned shells
+Description:
+- Goal / acceptance criteria: Simplify the JUCE Grid route masthead and fixed footer so actions, status chips, and automation summary use Carbon-aligned button kinds, token-driven layers, and clearer semantic hierarchy without changing workflow behavior.
+- Why it matters: The remaining page chrome still relies on bespoke success-button variants and a custom black footer/status treatment that conflicts with strict Carbon conformance.
+- Dependencies: T282, T283
+- Estimated effort: Low
+- Required outputs: Updated `web/src/app/pages/JuceGridPage.tsx` and `web/src/app/pages/JuceGridPage.css`, validation notes, and licensing review notes for the touched route-shell files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-22 15:49 - Codex
+- Completion notes:
+  - Replaced the JUCE Grid masthead’s bespoke success-colored action button variants in `web/src/app/pages/JuceGridPage.tsx`/`web/src/app/pages/JuceGridPage.css` with standard Carbon button kinds and a simpler action hierarchy.
+  - Rebuilt the fixed automation footer onto Carbon-aligned layer/border tokens and semantic summary copy so the automation toggle and status chips read as route shell content rather than a custom black status rail.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid route/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and found no new notice or scope gaps.
 
 ID: T283
 Status: [✓] Done

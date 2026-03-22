@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { Button, FormGroup, NumberInput, Select, SelectItem, TextInput } from '@carbon/react'
+import { Button, CodeSnippet, FormGroup, NumberInput, Select, SelectItem, TextInput } from '@carbon/react'
 import { useState } from 'react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
@@ -66,7 +66,11 @@ export function MscCommandBuilder() {
           Send MSC
         </Button>
       </div>
-      {lastHex ? <pre className="midi-hub-events-code-block">{lastHex}</pre> : null}
+      {lastHex ? (
+        <CodeSnippet className="midi-hub-events-code-block" type="multi">
+          {lastHex}
+        </CodeSnippet>
+      ) : null}
     </div>
   )
 }

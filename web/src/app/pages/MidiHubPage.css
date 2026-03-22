@@ -309,46 +309,10 @@
   line-height: var(--cds-label-01-line-height, 1rem);
 }
 
-.midi-hub-port-picker__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--cds-spacing-03);
-}
-
-.midi-hub-port-chip {
+.midi-hub-port-picker__checkboxes {
   display: grid;
-  gap: 0.125rem;
-  min-width: 11rem;
-  padding: 0.75rem 0.875rem;
-  border: 1px solid var(--cds-border-subtle-01);
-  border-radius: 0.75rem;
-  background: var(--cds-layer-02);
-  color: var(--cds-text-primary);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 120ms ease, transform 120ms ease, background-color 120ms ease;
-}
-
-.midi-hub-port-chip:hover,
-.midi-hub-port-chip:focus-visible {
-  border-color: var(--cds-border-interactive);
-  transform: translateY(-1px);
-}
-
-.midi-hub-port-chip strong {
-  font-size: var(--cds-body-compact-02-font-size, 0.875rem);
-}
-
-.midi-hub-port-chip span {
-  color: var(--cds-text-secondary);
-  font-family: var(--cds-code-01-font-family, var(--font-mono));
-  font-size: var(--cds-label-01-font-size, 0.75rem);
-}
-
-.midi-hub-port-chip--active {
-  border-color: color-mix(in srgb, var(--cds-support-info) 70%, white 10%);
-  background: var(--cds-layer-selected-02, var(--cds-layer-selected, #525252));
-  box-shadow: inset 0 0 0 1px rgba(120, 169, 255, 0.2);
+  gap: var(--cds-spacing-03);
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
 
 .midi-hub-record-list {
@@ -363,8 +327,8 @@
   gap: var(--cds-spacing-04);
   align-items: start;
   padding: var(--cds-spacing-05);
-  border: 1px solid rgba(166, 200, 255, 0.16);
-  background: var(--cds-layer-02, #393939);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
 }
 
 .midi-hub-record-copy {
@@ -374,8 +338,9 @@
   min-width: 0;
 }
 
-.midi-hub-record-copy strong {
+.midi-hub-record-title {
   color: var(--cds-text-primary);
+  font-weight: 600;
 }
 
 .midi-hub-record-meta {
@@ -390,8 +355,8 @@
 
 .midi-hub-table-wrap {
   overflow-x: auto;
-  border: 1px solid rgba(166, 200, 255, 0.16);
-  background: var(--cds-layer-02, #393939);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
 }
 
 .midi-hub-table-wrap .cds--data-table-container,
@@ -408,14 +373,6 @@
 
 .midi-hub-code-block {
   margin: 0;
-  padding: var(--cds-spacing-05);
-  overflow: auto;
-  border: 1px solid rgba(166, 200, 255, 0.16);
-  background: var(--cds-layer-02, #393939);
-  color: var(--cds-text-primary);
-  font-size: var(--cds-code-01-font-size, 0.75rem);
-  line-height: 1.5;
-  white-space: pre-wrap;
 }
 
 .midi-hub-choice-grid,
@@ -437,12 +394,12 @@
   gap: var(--cds-spacing-04);
   align-items: center;
   padding: var(--cds-spacing-04);
-  border: 1px solid rgba(166, 200, 255, 0.16);
-  background: var(--cds-layer-02, #393939);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
 }
 
 .midi-hub-router-checkbox__meta {
-  color: rgba(166, 200, 255, 0.78);
+  color: var(--cds-text-helper);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   text-transform: uppercase;
 }
@@ -450,8 +407,8 @@
 .midi-hub-choice-pill {
   min-height: 2.5rem;
   padding: 0.625rem 0.875rem;
-  border: 1px solid rgba(166, 200, 255, 0.18);
-  background: var(--cds-layer-02, #393939);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
   color: var(--cds-text-primary);
   cursor: pointer;
   transition: border-color 120ms ease, background-color 120ms ease, transform 120ms ease;
@@ -558,13 +515,13 @@
 .midi-hub-route-cell--active {
   border-style: solid;
   border-color: var(--cds-support-success);
-  background: color-mix(in srgb, var(--cds-support-success) 10%, var(--cds-layer-01));
+  background: var(--cds-layer-selected-01);
 }
 
 .midi-hub-route-cell--disabled {
   border-style: solid;
   border-color: var(--cds-border-strong-01);
-  background: color-mix(in srgb, var(--cds-layer-03) 60%, var(--cds-layer-01));
+  background: var(--cds-layer-03);
 }
 
 .midi-hub-route-cell--advanced {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { type KeyboardEvent, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, InlineNotification, Layer, Tag, Toggle } from '@carbon/react'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
@@ -21,6 +21,12 @@ function routeColor(route: MidiHubRoute): string {
   if (type === 'program_change') return 'var(--cds-support-info)'
   if (type === 'sysex') return 'var(--cds-support-warning)'
   return route.enabled ? 'var(--cds-support-error)' : 'var(--cds-border-strong-01)'
+}
+
+function handleSvgActionKey(event: KeyboardEvent<SVGElement>, action: () => void) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  action()
 }
 
 export function MidiPatchbay() {
@@ -245,14 +251,18 @@ export function MidiPatchbay() {
               return (
                 <path
                   key={`${route.route_id}-${destination.id}`}
+                  className="midi-hub-connections-patchbay__route"
                   d={`M ${source.x + 72} ${source.y} C ${source.x + 260} ${source.y}, ${destination.x - 260} ${destination.y}, ${destination.x - 72} ${destination.y}`}
                   fill="none"
                   stroke={color}
                   strokeWidth={route.enabled ? 2 + normalized * 4 : 1.5}
                   strokeDasharray={route.enabled ? '0' : '6 4'}
                   markerEnd="url(#patchbayArrow)"
-                  style={{ cursor: 'pointer' }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Select route from ${source.name} to ${destination.name}`}
                   onClick={() => setSelectedRoute(route)}
+                  onKeyDown={(event) => handleSvgActionKey(event, () => setSelectedRoute(route))}
                 />
               )
             })}
@@ -260,7 +270,16 @@ export function MidiPatchbay() {
             {nodes.map((node) => {
               const isPendingSource = pendingSource === node.id
               return (
-                <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
+                <g
+                  key={node.id}
+                  className="midi-hub-connections-patchbay__node"
+                  transform={`translate(${node.x}, ${node.y})`}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Select patchbay node ${node.name}`}
+                  onClick={() => handleNodeClick(node)}
+                  onKeyDown={(event) => handleSvgActionKey(event, () => handleNodeClick(node))}
+                >
                   <rect
                     x={-72}
                     y={-24}
@@ -270,15 +289,13 @@ export function MidiPatchbay() {
                     fill={isPendingSource ? 'var(--cds-layer-selected-02, var(--cds-layer-selected))' : 'var(--cds-layer-01)'}
                     stroke={isPendingSource ? 'var(--cds-border-interactive)' : 'var(--cds-border-strong-01)'}
                     strokeWidth={isPendingSource ? 2.2 : 1.4}
-                    onClick={() => handleNodeClick(node)}
-                    style={{ cursor: 'pointer' }}
                   />
                   <text
+                    className="midi-hub-connections-patchbay__node-label"
                     x={0}
                     y={4}
                     textAnchor="middle"
                     fill="var(--cds-text-primary)"
-                    style={{ fontSize: 12, fontWeight: 700 }}
                   >
                     {node.name}
                   </text>
@@ -291,7 +308,7 @@ export function MidiPatchbay() {
 
       <div className="midi-hub-connections-detail-grid">
         <Layer className="midi-hub-connections-detail-card">
-          <strong>Patchbay workflow</strong>
+          <p className="midi-hub-connections-detail-title">Patchbay workflow</p>
           <p>Select a source node first, then a destination node. Click a route line to inspect or disable it.</p>
           {selectedNode ? (
             <div className="midi-hub-connections-detail-meta">
@@ -306,7 +323,7 @@ export function MidiPatchbay() {
         <Layer className="midi-hub-connections-detail-card">
           {selectedRoute ? (
             <>
-              <strong>Selected route</strong>
+              <p className="midi-hub-connections-detail-title">Selected route</p>
               <code>{selectedRoute.route_id}</code>
               <p>{selectedRoute.source_port} to {selectedRoute.destination_ports.join(', ')}</p>
               <div className="midi-hub-connections-toolbar">

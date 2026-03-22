@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { PlayFilled, RecordingFilled, StopFilled } from '@carbon/icons-react'
+import { RecordingFilled, StopFilled } from '@carbon/icons-react'
 import {
   Button,
   Checkbox,
   DataTable,
+  NumberInput,
+  OverflowMenu,
+  OverflowMenuItem,
   Slider,
   Table,
   TableBody,
@@ -17,9 +20,20 @@ import {
   TextInput,
 } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
-import { NumberInput } from '../Controls/NumberInput'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+
+function parseNumberInput(
+  event: { imaginaryTarget?: { value?: string | number }; currentTarget?: { value?: string | number } },
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  const raw = event.imaginaryTarget?.value ?? event.currentTarget?.value ?? fallback
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.max(min, Math.min(max, parsed))
+}
 
 export function MidiRecorderPanel() {
   const queryClient = useQueryClient()
@@ -158,28 +172,26 @@ export function MidiRecorderPanel() {
             onChange={({ value }) => setPlaybackSpeed(Number(value ?? 1))}
           />
           <NumberInput
+            id="midi-hub-recorder-export-bpm"
             label="Export BPM"
             value={exportBpm}
             min={20}
             max={300}
             step={1}
-            defaultValue={120}
-            onChange={setExportBpm}
-            size="small"
-            fullWidth
-            accentColor="var(--interactive)"
+            hideSteppers={false}
+            size="sm"
+            onChange={(event) => setExportBpm(parseNumberInput(event, exportBpm, 20, 300))}
           />
           <NumberInput
+            id="midi-hub-recorder-ticks-per-quarter"
             label="Export ticks/quarter"
             value={ticksPerQuarter}
             min={24}
             max={1920}
             step={24}
-            defaultValue={480}
-            onChange={setTicksPerQuarter}
-            size="small"
-            fullWidth
-            accentColor="var(--interactive)"
+            hideSteppers={false}
+            size="sm"
+            onChange={(event) => setTicksPerQuarter(parseNumberInput(event, ticksPerQuarter, 24, 1920))}
           />
         </div>
 
@@ -242,20 +254,17 @@ export function MidiRecorderPanel() {
                           <TableCell key={cell.id}>{cell.value}</TableCell>
                         ))}
                         <TableCell>
-                          <div className="midi-hub-record-actions">
-                            <Button size="sm" kind="secondary" renderIcon={PlayFilled} onClick={() => playback.mutate(sessionId)}>
-                              Play
-                            </Button>
-                            <Button size="sm" kind="ghost" renderIcon={StopFilled} onClick={() => stopPlayback.mutate(sessionId)}>
-                              Stop
-                            </Button>
-                            <Button size="sm" kind="ghost" onClick={() => exportRecording.mutate(sessionId)}>
-                              Export SMF
-                            </Button>
-                            <Button size="sm" kind="danger--tertiary" onClick={() => deleteRecording.mutate(sessionId)}>
-                              Delete
-                            </Button>
-                          </div>
+                          <OverflowMenu
+                            ariaLabel={`Recording actions for ${sessionId}`}
+                            flipped
+                            iconDescription={`Recording actions for ${sessionId}`}
+                            size="sm"
+                          >
+                            <OverflowMenuItem itemText="Play" onClick={() => playback.mutate(sessionId)} />
+                            <OverflowMenuItem itemText="Stop" onClick={() => stopPlayback.mutate(sessionId)} />
+                            <OverflowMenuItem itemText="Export SMF" onClick={() => exportRecording.mutate(sessionId)} />
+                            <OverflowMenuItem isDelete itemText="Delete" onClick={() => deleteRecording.mutate(sessionId)} />
+                          </OverflowMenu>
                         </TableCell>
                       </TableRow>
                     )

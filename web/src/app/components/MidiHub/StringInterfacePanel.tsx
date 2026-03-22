@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Tag, TextArea, TextInput, Toggle } from '@carbon/react'
+import { Button, CodeSnippet, Tag, TextArea, TextInput, Toggle } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
@@ -110,7 +110,9 @@ export function StringInterfacePanel() {
         </Button>
       </div>
 
-      <pre className="midi-hub-code-block">{JSON.stringify(statusQuery.data?.logs ?? [], null, 2)}</pre>
+      <CodeSnippet className="midi-hub-code-block" type="multi">
+        {JSON.stringify(statusQuery.data?.logs ?? [], null, 2)}
+      </CodeSnippet>
     </div>
   )
 }

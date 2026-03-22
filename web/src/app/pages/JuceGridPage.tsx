@@ -52,6 +52,8 @@ import {
   AccordionItem,
   Button,
   Checkbox,
+  Column,
+  Grid,
   InlineLoading,
   Layer,
   Modal,
@@ -1069,9 +1071,13 @@ export function JuceGridPage() {
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/cluster/nodes`)
       if (!res.ok) throw new Error('Failed to load cluster nodes')
-      return res.json()
+      const data = await res.json()
+      return {
+        nodes: Array.isArray(data?.nodes) ? data.nodes : [],
+      }
     },
-    refetchInterval: 2000,
+    refetchInterval: assignmentDialogOpen ? 2000 : false,
+    enabled: assignmentDialogOpen,
   })
 
   const assignmentAnalysisQuery = useQuery({
@@ -3341,7 +3347,7 @@ export function JuceGridPage() {
             >
               <div className="juce-grid-page__midi-tile-header">
                 <div className="juce-grid-page__midi-tile-copy">
-                  <strong>{getMidiMappingParameterName(mapping)}</strong>
+                  <h3 className="juce-grid-page__dense-card-heading">{getMidiMappingParameterName(mapping)}</h3>
                   <p>{sanitizeRestrictedDisplayText(getMidiMappingPluginName(mapping.target_plugin_uri)) || 'Processor'}</p>
                 </div>
                 <div className="juce-grid-page__compact-tags">
@@ -3466,7 +3472,8 @@ export function JuceGridPage() {
     <div className={`juce-grid-page__automation-workspace ${options.compact ? 'is-compact' : ''}`}>
       <div className="juce-grid-page__automation-header">
         <div className="juce-grid-page__automation-copy">
-          <strong>Automation</strong>
+          <p className="juce-grid-page__dense-card-kicker">Automation</p>
+          <h2 className="juce-grid-page__dense-section-heading">Automation lanes</h2>
           <p>Transport, lane arming, and envelope previews for the active flow.</p>
         </div>
         <div className="juce-grid-page__compact-tags">
@@ -3589,7 +3596,7 @@ export function JuceGridPage() {
             >
               <div className="juce-grid-page__automation-lane-header">
                 <div className="juce-grid-page__automation-lane-copy">
-                  <strong>{lane.parameterName}</strong>
+                  <h3 className="juce-grid-page__dense-card-heading">{lane.parameterName}</h3>
                   <p>{sanitizeRestrictedDisplayText(lane.pluginName) || 'Processor'}</p>
                 </div>
                 <div className="juce-grid-page__compact-tags">
@@ -3992,7 +3999,7 @@ export function JuceGridPage() {
               >
                 <div className="juce-grid-page__tablet-flow-summary-main">
                   <div className="juce-grid-page__tablet-flow-summary-copy">
-                    <span className="juce-grid-page__flow-card-label">{flowLabel}</span>
+                    <p className="juce-grid-page__dense-card-kicker">{flowLabel}</p>
                     <h3 className="juce-grid-page__flow-card-title-heading">{flowTitle}</h3>
                     <p>
                       <SegmentedLedText value={flowSummary} size="sm" color={FLOW_CARD_LED_COLOR} />
@@ -4027,8 +4034,10 @@ export function JuceGridPage() {
                       title={flowCardRoutingSummary.title}
                     >
                       <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--identity">
-                        <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
-                        <span className="juce-grid-page__flow-card-routing-status">{flowCardRoutingSummary.statusLabel}</span>
+                        <span className="juce-grid-page__flow-card-routing-copy">
+                          <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
+                          <span className="juce-grid-page__flow-card-routing-status">{flowCardRoutingSummary.statusLabel}</span>
+                        </span>
                       </span>
                       <span className="juce-grid-page__flow-card-routing-divider" aria-hidden="true" />
                       <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--metrics">
@@ -4161,8 +4170,10 @@ export function JuceGridPage() {
                         title={flowCardRoutingSummary.title}
                       >
                         <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--identity">
-                          <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
-                          <span className="juce-grid-page__flow-card-routing-status">{flowCardRoutingSummary.statusLabel}</span>
+                          <span className="juce-grid-page__flow-card-routing-copy">
+                            <span className="juce-grid-page__flow-card-routing-label">I/O routing</span>
+                            <span className="juce-grid-page__flow-card-routing-status">{flowCardRoutingSummary.statusLabel}</span>
+                          </span>
                         </span>
                         <span className="juce-grid-page__flow-card-routing-divider" aria-hidden="true" />
                         <span className="juce-grid-page__flow-card-routing-group juce-grid-page__flow-card-routing-group--metrics">
@@ -4367,7 +4378,7 @@ export function JuceGridPage() {
     return (
       <div className="juce-grid-page__viewport-block" role="alert" aria-live="polite">
         <MapAudioGridIcon size={120} />
-        <strong>This experience requires an iPad or larger display</strong>
+        <h1 className="juce-grid-page__viewport-block-heading">This experience requires an iPad or larger display</h1>
         {showViewportRotateHint && (
           <p>Rotate your tablet or exit Split View, then reopen Audio Grid.</p>
         )}
@@ -4378,16 +4389,17 @@ export function JuceGridPage() {
   return (
     <div className={`juce-grid-page ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
       <LandscapePrompt componentId="juce-grid" />
-      <div className="juce-grid-page__header-shell">
-        <Layer className={`juce-grid-page__thin-bar ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
-          <div className="juce-grid-page__thin-bar-main">
-            <div className="juce-grid-page__thin-bar-brand" aria-label="Audio Grid">
-              <MapAudioGridIcon size={isTabletTouchLayout ? 28 : 38} />
-              {!isTabletTouchLayout && <span className="juce-grid-page__thin-bar-title">Audio Grid</span>}
+      <Grid className="juce-grid-page__header-shell juce-grid-page__section-frame juce-grid-page__section-frame--header">
+        <Column sm={4} md={8} lg={16} className="juce-grid-page__section-column">
+          <Layer className={`juce-grid-page__thin-bar ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
+            <div className="juce-grid-page__thin-bar-main">
+              <div className="juce-grid-page__thin-bar-brand" aria-label="Audio Grid">
+                <MapAudioGridIcon size={isTabletTouchLayout ? 28 : 38} />
+                {!isTabletTouchLayout && <h1 className="juce-grid-page__thin-bar-title">Audio Grid</h1>}
+              </div>
             </div>
-          </div>
-          <div className="juce-grid-page__masthead-actions">
-            <div className="juce-grid-page__masthead-primary-actions">
+            <div className="juce-grid-page__masthead-actions">
+              <div className="juce-grid-page__masthead-primary-actions">
               {isTabletTouchLayout ? (
                 <>
                   <Button
@@ -4442,8 +4454,7 @@ export function JuceGridPage() {
                 <>
                   <Button
                     size="sm"
-                    kind="tertiary"
-                    className="juce-grid-page__masthead-button--success-tertiary"
+                    kind="secondary"
                     renderIcon={Network_3}
                     onClick={() => setShowAudioNodesModal(true)}
                   >
@@ -4451,8 +4462,7 @@ export function JuceGridPage() {
                   </Button>
                   <Button
                     size="sm"
-                    kind="tertiary"
-                    className="juce-grid-page__masthead-button--success-tertiary"
+                    kind="secondary"
                     renderIcon={Flow}
                     onClick={() => setShowRoutingTopologyModal(true)}
                   >
@@ -4461,7 +4471,7 @@ export function JuceGridPage() {
                   <Button
                     size="sm"
                     kind="primary"
-                    className="juce-grid-page__masthead-button--success-primary"
+                    renderIcon={Add}
                     onClick={addFlow}
                     disabled={flowSlots.length >= MAX_FLOWS}
                   >
@@ -4480,29 +4490,30 @@ export function JuceGridPage() {
                   </Button>
                 </>
               )}
-            </div>
-            {!isTabletTouchLayout && (
-              <div className="juce-grid-page__masthead-secondary-actions">
-                {!isCompactLayout && (
-                  <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
-                    Shortcuts
-                  </Button>
-                )}
-                {isCompactLayout && (
-                  <OverflowMenu
-                    ariaLabel="Audio Grid secondary actions"
-                    iconDescription="Audio Grid secondary actions"
-                    size="sm"
-                    flipped
-                  >
-                    <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
-                  </OverflowMenu>
-                )}
               </div>
-            )}
-          </div>
-        </Layer>
-      </div>
+              {!isTabletTouchLayout && (
+                <div className="juce-grid-page__masthead-secondary-actions">
+                  {!isCompactLayout && (
+                    <Button size="sm" kind="ghost" onClick={() => setShowKeyboardHelp(true)}>
+                      Shortcuts
+                    </Button>
+                  )}
+                  {isCompactLayout && (
+                    <OverflowMenu
+                      ariaLabel="Audio Grid secondary actions"
+                      iconDescription="Audio Grid secondary actions"
+                      size="sm"
+                      flipped
+                    >
+                      <OverflowMenuItem itemText="Shortcuts" onClick={() => setShowKeyboardHelp(true)} />
+                    </OverflowMenu>
+                  )}
+                </div>
+              )}
+            </div>
+          </Layer>
+        </Column>
+      </Grid>
 
       {showCompactWorkflowPanels && (
         <Layer className="juce-grid-page__compact-tabs">
@@ -4521,81 +4532,89 @@ export function JuceGridPage() {
         </Layer>
       )}
 
-      <div className="juce-grid-page__unified-block">
-        {/* Main content area */}
-        <div className="juce-grid-page__workspace">
-          <main className="juce-grid-page__main">
-          {/* Multi-flow signal grids */}
-          <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
-            {livePathLayout.groups.map((group, groupIndex) => (
-              <Layer
-                key={group.id}
-                className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
-              >
-                <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
-                  {group.flowIds.map((flowId, groupIndex) => {
-                    const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
-                      ? 'Series'
-                      : group.kind === 'morph' && groupIndex === 0 && group.flowIds.length > 1
-                        ? `Morph ${Math.round(routing.morphProgress * 100)}%`
-                        : null
-                    const connectorTone = group.kind === 'morph'
-                      ? routing.morphProgress > 0 ? 'active' : 'dim'
-                      : group.tone === 'active' ? 'active' : 'dim'
-                    const connectorDashed = group.kind === 'morph'
-                      ? routing.morphProgress <= 0
-                      : Boolean(group.dashed)
+      <div className="juce-grid-page__workspace">
+        <Grid className="juce-grid-page__section-frame juce-grid-page__section-frame--workspace">
+          <Column sm={4} md={8} lg={16} className="juce-grid-page__section-column">
+          <div className="juce-grid-page__unified-block">
+            <main className="juce-grid-page__main">
+            {/* Multi-flow signal grids */}
+            <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
+              {livePathLayout.groups.map((group, groupIndex) => (
+                <Layer
+                  key={group.id}
+                  className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
+                >
+                  <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
+                    {group.flowIds.map((flowId, groupIndex) => {
+                      const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
+                        ? 'Series'
+                        : group.kind === 'morph' && groupIndex === 0 && group.flowIds.length > 1
+                          ? `Morph ${Math.round(routing.morphProgress * 100)}%`
+                          : null
+                      const connectorTone = group.kind === 'morph'
+                        ? routing.morphProgress > 0 ? 'active' : 'dim'
+                        : group.tone === 'active' ? 'active' : 'dim'
+                      const connectorDashed = group.kind === 'morph'
+                        ? routing.morphProgress <= 0
+                        : Boolean(group.dashed)
 
-                    return (
-                      <div key={`${group.id}-${flowId}`} className="juce-grid-page__live-path-item">
-                        {renderLivePathFlowCard(flowId, group.kind)}
-                        {connectorLabel && (
-                          <div
-                            className={`juce-grid-page__live-path-connector is-${connectorTone} ${connectorDashed ? 'is-dashed' : ''}`}
-                            aria-hidden
-                          >
-                            <div className="juce-grid-page__live-path-connector-arrow">
-                              <span className="juce-grid-page__live-path-connector-shaft" />
-                              <ArrowDown size={16} />
-                              <span className="juce-grid-page__live-path-connector-shaft" />
+                      return (
+                        <div key={`${group.id}-${flowId}`} className="juce-grid-page__live-path-item">
+                          {renderLivePathFlowCard(flowId, group.kind)}
+                          {connectorLabel && (
+                            <div
+                              className={`juce-grid-page__live-path-connector is-${connectorTone} ${connectorDashed ? 'is-dashed' : ''}`}
+                              aria-hidden
+                            >
+                              <div className="juce-grid-page__live-path-connector-arrow">
+                                <span className="juce-grid-page__live-path-connector-shaft" />
+                                <ArrowDown size={16} />
+                                <span className="juce-grid-page__live-path-connector-shaft" />
+                              </div>
+                              <span>{connectorLabel}</span>
                             </div>
-                            <span>{connectorLabel}</span>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </Layer>
-            ))}
-          </section>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Layer>
+              ))}
+            </section>
 
-          </main>
-        </div>
+            </main>
+          </div>
+          </Column>
+        </Grid>
       </div>
 
       {showCompactWorkflowPanels && (
         <div className="juce-grid-page__compact-shell">
-          <section className="juce-grid-page__compact-panel">
-            {compactTab === 'grid' && (
-              <Layer className="juce-grid-page__compact-layer">
+          <Grid className="juce-grid-page__section-frame juce-grid-page__section-frame--workspace">
+            <Column sm={4} md={8} lg={16} className="juce-grid-page__section-column">
+            <section className="juce-grid-page__compact-panel">
+              {compactTab === 'grid' && (
+                <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
+                  <p className="juce-grid-page__compact-section-kicker">Workspace</p>
                   <h2>Grid workspace</h2>
                   <p>Primary editing remains in the grid above. Use the other tabs for focused workflow panels.</p>
                 </div>
                 <div className="juce-grid-page__compact-stack">
                 </div>
-              </Layer>
-            )}
+                </Layer>
+              )}
 
-            {compactTab === 'editor' && (
-              <Layer className="juce-grid-page__compact-layer">
+              {compactTab === 'editor' && (
+                <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
+                  <p className="juce-grid-page__compact-section-kicker">Selected block</p>
                   <h2>Editor</h2>
                   <p>{selectedPlugin ? 'The selected block editor opens in the bottom panel below the workspace.' : 'Select a block in the grid to open its editor.'}</p>
                 </div>
                 <Tile className="juce-grid-page__effect-modal-placeholder">
                   <div className="juce-grid-page__parameter-editor-copy">
+                    <p className="juce-grid-page__dense-card-kicker">Editor state</p>
                     <h3 className="juce-grid-page__selected-block-placeholder-heading">{selectedPlugin ? 'Selected block ready' : 'No block selected'}</h3>
                     <p>
                       {selectedPlugin
@@ -4609,12 +4628,13 @@ export function JuceGridPage() {
                     </Button>
                   )}
                 </Tile>
-              </Layer>
-            )}
+                </Layer>
+              )}
 
-            {compactTab === 'routing' && (
-              <Layer className="juce-grid-page__compact-layer">
+              {compactTab === 'routing' && (
+                <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
+                  <p className="juce-grid-page__compact-section-kicker">Signal path</p>
                   <h2>Routing topology</h2>
                   <p>Configure how Chains and Flows are routed in reference to one another.</p>
                 </div>
@@ -4628,25 +4648,28 @@ export function JuceGridPage() {
                     Configure routing
                   </Button>
                 </div>
-                <div className="juce-grid-page__compact-tags" style={{ marginTop: '0.75rem' }}>
+                <div className="juce-grid-page__compact-tags juce-grid-page__compact-tags--summary">
                   <Tag type="blue">{activeRoutingMode.label}</Tag>
                   <Tag type="cool-gray">Focus {activeFlowLabel}</Tag>
                   {routing.mode === 'parameter_morph' && (
                     <Tag type="purple">Morph {Math.round(routing.morphProgress * 100)}%</Tag>
                   )}
                 </div>
-              </Layer>
-            )}
+                </Layer>
+              )}
 
-            {compactTab === 'presets' && (
-              <Layer className="juce-grid-page__compact-layer">
+              {compactTab === 'presets' && (
+                <Layer className="juce-grid-page__compact-layer">
                 <div className="juce-grid-page__compact-section-header">
+                  <p className="juce-grid-page__compact-section-kicker">Library</p>
                   <h2>Presets</h2>
                   <p>Preset save/load/import and selected-chain controls now live in the Chains card above.</p>
                 </div>
-              </Layer>
-            )}
-          </section>
+                </Layer>
+              )}
+            </section>
+            </Column>
+          </Grid>
         </div>
       )}
 
@@ -4725,6 +4748,7 @@ export function JuceGridPage() {
               ) : (
                 <Tile className="juce-grid-page__bottom-editor-placeholder">
                   <div className="juce-grid-page__parameter-editor-copy">
+                    <p className="juce-grid-page__dense-card-kicker">Editor state</p>
                     <h3 className="juce-grid-page__selected-block-placeholder-heading">{selectedPlugin ? 'Selected block ready' : 'No block selected'}</h3>
                     <p>
                       {selectedPlugin
@@ -4844,6 +4868,7 @@ export function JuceGridPage() {
                         {selectedPlugin ? <SelectedPluginHeroIcon width={28} height={28} /> : <Edit size={28} />}
                       </div>
                       <div className="juce-grid-page__tablet-editor-copy">
+                        <p className="juce-grid-page__dense-card-kicker">Selected block</p>
                         <h2 className="juce-grid-page__tablet-editor-heading">{selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}</h2>
                         <p>{selectedPluginMeta?.category || 'Processor'}</p>
                       </div>
@@ -4979,7 +5004,7 @@ export function JuceGridPage() {
         >
           <div className="juce-grid-page__form-modal-body">
             <p className="juce-grid-page__modal-copy">
-              Delete <strong>{presetPendingDelete.name}</strong> from the preset library. This action cannot be undone.
+              Delete <span className="juce-grid-page__modal-copy-emphasis">{presetPendingDelete.name}</span> from the preset library. This action cannot be undone.
             </p>
           </div>
         </Modal>
@@ -5013,33 +5038,31 @@ export function JuceGridPage() {
         onSnapshotSave={clearSnapshotsDirty}
       />
       {midiModalOpen && (
-        <div className="platform-modal-overlay" role="dialog" aria-modal="true" aria-label="Audio Grid MIDI mappings" id="juce-grid-midi-modal">
-          <div className="platform-modal__body" style={{ position: 'relative' }}>
-            <div className="platform-modal__header">
-              <span className="platform-modal__header-title">Audio Grid · MIDI Mappings</span>
-              <button
-                type="button"
-                className="platform-modal__close"
-                onClick={() => { setMidiModalOpen(false); setShowExpressionOverlay(false) }}
-                aria-label="Close MIDI mappings"
-              >
-                <Close size={20} aria-hidden />
-              </button>
-            </div>
-            <div className="platform-modal__scroll">
+        <Modal
+          open
+          size="lg"
+          modalHeading="Audio Grid MIDI mappings"
+          primaryButtonText="Close"
+          onRequestClose={() => { setMidiModalOpen(false); setShowExpressionOverlay(false) }}
+          onRequestSubmit={() => { setMidiModalOpen(false); setShowExpressionOverlay(false) }}
+        >
+          <div className="juce-grid-page__modal-stack juce-grid-page__midi-modal-shell" id="juce-grid-midi-modal">
+            <div className="juce-grid-page__midi-modal-panel">
               {renderMidiMappingsWorkspace({ closable: false })}
             </div>
             {showExpressionOverlay && (
-              <ExpressionOverlay
-                onBack={() => setShowExpressionOverlay(false)}
-                highlightedCcPairs={midiMappings.map((m): CcChannelPair => ({ cc: m.cc, channel: m.channel }))}
-                initialCc={midiMappings[0]?.cc ?? null}
-                initialChannel={midiMappings[0]?.channel ?? null}
-                onAssignmentMutated={() => {}}
-              />
+              <div className="juce-grid-page__midi-modal-expression">
+                <ExpressionOverlay
+                  onBack={() => setShowExpressionOverlay(false)}
+                  highlightedCcPairs={midiMappings.map((m): CcChannelPair => ({ cc: m.cc, channel: m.channel }))}
+                  initialCc={midiMappings[0]?.cc ?? null}
+                  initialChannel={midiMappings[0]?.channel ?? null}
+                  onAssignmentMutated={() => {}}
+                />
+              </div>
             )}
           </div>
-        </div>
+        </Modal>
       )}
 
       {routingInspectorContent && (
@@ -5093,29 +5116,33 @@ export function JuceGridPage() {
             />
 
             <div className="juce-grid-page__browser-toolbar">
-              <div className="juce-grid-page__browser-categories">
-                {categories.map((category) => {
-                  return (
-                    <Button
+              <div className="juce-grid-page__browser-filters">
+                <Select
+                  id="juce-grid-plugin-browser-category"
+                  className="juce-grid-page__browser-category-select"
+                  labelText="Category"
+                  size="md"
+                  value={selectedCategory}
+                  onChange={(event) => setSelectedCategory(event.target.value)}
+                >
+                  {categories.map((category) => (
+                    <SelectItem
                       key={category}
-                      size="sm"
-                      kind={selectedCategory === category ? 'secondary' : 'ghost'}
-                      onClick={() => setSelectedCategory(category)}
-                    >
-                      {category === 'all' ? 'All plugins' : category}
-                    </Button>
-                  )
-                })}
+                      value={category}
+                      text={category === 'all' ? 'All plugins' : category}
+                    />
+                  ))}
+                </Select>
               </div>
 
               <div className="juce-grid-page__browser-meta">
-                <div className="juce-grid-page__compact-tags">
+                <div className="juce-grid-page__browser-meta-tags">
                   <Tag type="cool-gray">{nativeProcessors.length} native</Tag>
                   <Tag type="cool-gray">{lv2Plugins.length} LV2</Tag>
                   <Tag type="cool-gray">{favoriteVisibleCount} favorites</Tag>
                   {!currentChain && <Tag type="warm-gray">No active chain</Tag>}
                 </div>
-                <div className="juce-grid-page__compact-actions">
+                <div className="juce-grid-page__browser-toolbar-actions">
                   <Button size="sm" kind="ghost" onClick={expandAllCategories}>
                     Expand all
                   </Button>
@@ -5142,34 +5169,35 @@ export function JuceGridPage() {
                     const GroupIcon = group.icon
 
                     return (
-                      <div key={group.key} className="juce-grid-page__browser-featured-group">
-                        <div className="juce-grid-page__browser-section-header">
-                          <div className="juce-grid-page__browser-section-title">
-                            <GroupIcon size={16} />
-                            <span>{group.title}</span>
+                        <div key={group.key} className="juce-grid-page__browser-featured-group">
+                          <div className="juce-grid-page__browser-section-header">
+                            <div className="juce-grid-page__browser-section-title">
+                              <GroupIcon size={16} />
+                              <span className="juce-grid-page__browser-section-title-text">{group.title}</span>
+                            </div>
+                            <Tag type="cool-gray">{group.plugins.length}</Tag>
                           </div>
-                          <Tag type="cool-gray">{group.plugins.length}</Tag>
-                        </div>
 
                         <div className="juce-grid-page__browser-featured-plugin-list">
                           {group.plugins.map((plugin) => {
-                            const catConfig = getCategoryConfig(plugin.category)
                             const displayName = getDisplayPluginName(plugin.name, plugin.uri)
 
                             return (
                               <Tile
                                 key={plugin.uri}
                                 className="juce-grid-page__browser-plugin-tile juce-grid-page__browser-plugin-tile--native juce-grid-page__browser-plugin-tile--featured"
-                                style={{ '--browser-accent': catConfig.color } as React.CSSProperties}
                               >
                                 <div className="juce-grid-page__browser-plugin-header">
-                                  <div>
-                                    <h3>{displayName}</h3>
+                                  <div className="juce-grid-page__browser-plugin-copy">
+                                    <p className="juce-grid-page__browser-plugin-kicker">Integrated processor</p>
+                                    <h3 className="juce-grid-page__browser-plugin-heading">{displayName}</h3>
                                     <p>{sanitizeRestrictedDisplayText(plugin.author) || 'Integrated JUCE processor'}</p>
                                   </div>
-                                  <Tag type="blue">{plugin.category}</Tag>
+                                  <div className="juce-grid-page__browser-plugin-meta">
+                                    <Tag type="cool-gray">{plugin.category}</Tag>
+                                  </div>
                                 </div>
-                                <div className="juce-grid-page__compact-actions">
+                                <div className="juce-grid-page__browser-card-actions">
                                   <Button
                                     size="sm"
                                     kind="primary"
@@ -5197,31 +5225,32 @@ export function JuceGridPage() {
                   <div className="juce-grid-page__browser-section-header">
                     <div className="juce-grid-page__browser-section-title">
                       <Meter size={16} />
-                      <span>Core integrated</span>
+                      <span className="juce-grid-page__browser-section-title-text">Core integrated</span>
                     </div>
-                    <div className="juce-grid-page__compact-tags">
+                    <div className="juce-grid-page__browser-meta-tags">
                       <Tag type="green">Zero latency</Tag>
                       <Tag type="cool-gray">{remainingNativeProcessors.length} plugins</Tag>
                     </div>
                   </div>
                   <div className="juce-grid-page__browser-native-grid">
                     {remainingNativeProcessors.map((plugin) => {
-                      const catConfig = getCategoryConfig(plugin.category)
                       const displayName = getDisplayPluginName(plugin.name, plugin.uri)
                       return (
                         <Tile
                           key={plugin.uri}
                           className="juce-grid-page__browser-plugin-tile juce-grid-page__browser-plugin-tile--native"
-                          style={{ '--browser-accent': catConfig.color } as React.CSSProperties}
                         >
                           <div className="juce-grid-page__browser-plugin-header">
-                            <div>
-                              <h3>{displayName}</h3>
+                            <div className="juce-grid-page__browser-plugin-copy">
+                              <p className="juce-grid-page__browser-plugin-kicker">Integrated processor</p>
+                              <h3 className="juce-grid-page__browser-plugin-heading">{displayName}</h3>
                               <p>{sanitizeRestrictedDisplayText(plugin.author) || 'Integrated JUCE processor'}</p>
                             </div>
-                            <Tag type="blue">{plugin.category}</Tag>
+                            <div className="juce-grid-page__browser-plugin-meta">
+                              <Tag type="cool-gray">{plugin.category}</Tag>
+                            </div>
                           </div>
-                          <div className="juce-grid-page__compact-actions">
+                          <div className="juce-grid-page__browser-card-actions">
                             <Button
                               size="sm"
                               kind="primary"
@@ -5246,7 +5275,7 @@ export function JuceGridPage() {
                   <div className="juce-grid-page__browser-section-header">
                     <div className="juce-grid-page__browser-section-title">
                       <Flow size={14} />
-                      <span>LV2 plugin library</span>
+                      <span className="juce-grid-page__browser-section-title-text">LV2 plugin library</span>
                     </div>
                     <Tag type="cool-gray">{lv2Plugins.length} plugins</Tag>
                   </div>
@@ -5289,17 +5318,22 @@ export function JuceGridPage() {
                               return (
                                 <Tile key={plugin.uri} className="juce-grid-page__browser-plugin-tile">
                                   <div className="juce-grid-page__browser-plugin-header">
-                                    <div>
-                                      <h3>{getDisplayPluginName(plugin.name, plugin.uri)}</h3>
+                                    <div className="juce-grid-page__browser-plugin-copy">
+                                      <p className="juce-grid-page__browser-plugin-kicker">LV2 processor</p>
+                                      <h3 className="juce-grid-page__browser-plugin-heading">
+                                        {getDisplayPluginName(plugin.name, plugin.uri)}
+                                      </h3>
                                       <p>{plugin.author ? sanitizeRestrictedDisplayText(plugin.author) : 'No author metadata'}</p>
                                     </div>
-                                    {isFavorite && <Tag type="blue">Favorite</Tag>}
+                                    <div className="juce-grid-page__browser-plugin-meta">
+                                      {isFavorite && <Tag type="cool-gray">Favorite</Tag>}
+                                    </div>
                                   </div>
-                                  <div className="juce-grid-page__compact-tags">
+                                  <div className="juce-grid-page__browser-card-meta">
                                     <Tag type="cool-gray">{plugin.category}</Tag>
                                     <Tag type="warm-gray">{plugin.format || 'LV2'}</Tag>
                                   </div>
-                                  <div className="juce-grid-page__compact-actions">
+                                  <div className="juce-grid-page__browser-card-actions">
                                     <Button
                                       size="sm"
                                       kind="primary"
@@ -5380,13 +5414,14 @@ export function JuceGridPage() {
                   {presets.map((preset) => (
                     <Tile key={preset.id} className="juce-grid-page__browser-plugin-tile">
                       <div className="juce-grid-page__browser-plugin-header">
-                        <div>
-                          <h3>{preset.name}</h3>
+                        <div className="juce-grid-page__browser-plugin-copy">
+                          <p className="juce-grid-page__browser-plugin-kicker">Saved preset</p>
+                          <h3 className="juce-grid-page__browser-plugin-heading">{preset.name}</h3>
                           <p>{preset.description || 'Saved chain preset ready for instant recall.'}</p>
                         </div>
-                        <div className="juce-grid-page__compact-tags">
+                        <div className="juce-grid-page__browser-plugin-meta">
                           {preset.category && <Tag type="cool-gray">{preset.category}</Tag>}
-                          {preset.is_favorite && <Tag type="blue">Favorite</Tag>}
+                          {preset.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
                         </div>
                       </div>
 
@@ -5468,7 +5503,7 @@ export function JuceGridPage() {
 
             {recommendedAssignmentNodes.length > 0 && (
               <div className="juce-grid-page__assignment-recommended">
-                <span className="juce-grid-page__toolbar-label">Recommended</span>
+                <p className="juce-grid-page__assignment-section-kicker">Recommended</p>
                 <div className="juce-grid-page__compact-actions">
                   {recommendedAssignmentNodes.slice(0, 3).map((node) => (
                     <Button
@@ -5499,7 +5534,7 @@ export function JuceGridPage() {
                     aria-pressed={isSelected}
                   >
                     <div className="juce-grid-page__assignment-card-header">
-                      <strong>{node.hostname}</strong>
+                      <h3 className="juce-grid-page__assignment-card-heading">{node.hostname}</h3>
                       <div className="juce-grid-page__compact-tags">
                         {node.has_gpu && <Tag type="blue">GPU</Tag>}
                         {!isSuitable && <Tag type="red">Capacity limit</Tag>}
@@ -5518,7 +5553,7 @@ export function JuceGridPage() {
 
             {assignmentAnalysis && (
               <div className="juce-grid-page__assignment-requirements">
-                <span className="juce-grid-page__toolbar-label">Chain requirements</span>
+                <p className="juce-grid-page__assignment-section-kicker">Chain requirements</p>
                 <div className="juce-grid-page__compact-tags">
                   <Tag type="cool-gray">CPU {assignmentAnalysis.estimated_cpu_percent ?? 0}%</Tag>
                   <Tag type="cool-gray">Memory {assignmentAnalysis.estimated_memory_mb ?? 0} MB</Tag>
@@ -5564,7 +5599,8 @@ export function JuceGridPage() {
           <div className="juce-grid-page__shortcut-grid">
             {KEYBOARD_SHORTCUT_SECTIONS.map((section) => (
               <Tile key={section.title} className="juce-grid-page__shortcut-tile">
-                <h3>{section.title}</h3>
+                <p className="juce-grid-page__dense-card-kicker">Shortcuts</p>
+                <h3 className="juce-grid-page__dense-card-heading">{section.title}</h3>
                 <div className="juce-grid-page__shortcut-rows">
                   {section.rows.map((row) => (
                     <div key={`${section.title}-${row.description}`} className="juce-grid-page__shortcut-row">
@@ -5600,7 +5636,10 @@ export function JuceGridPage() {
                 {currentChain.plugins.map((plugin) => (
                   <Tile key={plugin.uri} className="juce-grid-page__lane-picker-tile">
                     <div className="juce-grid-page__lane-picker-header">
-                      <h3>{getDisplayPluginName(plugin.name, plugin.uri)}</h3>
+                      <div className="juce-grid-page__lane-picker-copy">
+                        <p className="juce-grid-page__dense-card-kicker">Processor</p>
+                        <h3 className="juce-grid-page__dense-card-heading">{getDisplayPluginName(plugin.name, plugin.uri)}</h3>
+                      </div>
                       <Tag type="cool-gray">{Object.keys(plugin.parameters || {}).length} params</Tag>
                     </div>
                     <div className="juce-grid-page__lane-picker-params">
@@ -5675,8 +5714,8 @@ export function JuceGridPage() {
           aria-expanded={automationTimelineExpanded}
         >
           <div className="juce-grid-page__automation-footer-copy">
-            <strong>Automation</strong>
-            <span>
+            <p className="juce-grid-page__automation-footer-kicker">Automation</p>
+            <h2 className="juce-grid-page__automation-footer-heading">
               {automationRecording
                 ? 'Recording'
                 : automationPlaying
@@ -5684,7 +5723,7 @@ export function JuceGridPage() {
                   : automationLanes.length > 0
                     ? 'Ready'
                     : 'Idle'}
-            </span>
+            </h2>
           </div>
           <div className="juce-grid-page__automation-footer-meta">
             <span>{formatAutomationTime(automationCurrentTime)} / {formatAutomationTime(automationDuration)}</span>

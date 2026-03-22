@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
+  CodeSnippet,
   DataTable,
   Layer,
   Select,
@@ -277,7 +278,9 @@ export function MidiScriptEditor() {
         <div className="midi-hub-processing-toolbar">
           <Tag type="cool-gray">Console</Tag>
         </div>
-        <pre className="midi-hub-processing-code-block">{(consoleQuery.data?.lines ?? []).join('\n') || 'No output yet.'}</pre>
+        <CodeSnippet className="midi-hub-processing-code-block" type="multi">
+          {(consoleQuery.data?.lines ?? []).join('\n') || 'No output yet.'}
+        </CodeSnippet>
       </Layer>
     </div>
   )
