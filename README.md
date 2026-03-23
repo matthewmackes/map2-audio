@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**801** Python | **1207** TypeScript | **298** C++/H | **122** Docs | **756** total commits | **1** stars | **0** forks | **0** open issues
+**812** Python | **1214** TypeScript | **298** C++/H | **123** Docs | **760** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,12 +169,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Adoption Workflow Runbook](https://github.com/matthewmackes/map2-audio/blob/master/docs/ADOPTION_WORKFLOW_RUNBOOK.md) | 2026-03-23 |
 | [Node Status Grid — Quick Start Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/NODE_STATUS_GRID_QUICK_START.md) | 2026-03-23 |
 | [Node Status Grid Implementation — Complete Summary](https://github.com/matthewmackes/map2-audio/blob/master/docs/NODE_STATUS_GRID_SUMMARY.md) | 2026-03-23 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-23 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-03-21 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-03-21 |
-| [Vite Build & Server Troubleshooting Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/VITE_TROUBLESHOOTING_GUIDE.md) | 2026-03-21 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6653d225`](https://github.com/matthewmackes/map2-audio/commit/6653d225676e30acd7dd6932fa931a3b668db7dc) | Advance platform worklist implementation | Map2 Audio | 2026-03-23 |
+| [`02d8d486`](https://github.com/matthewmackes/map2-audio/commit/02d8d486e268967dd81035fe662625b46d4c5c20) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-23 |
+| [`9598e743`](https://github.com/matthewmackes/map2-audio/commit/9598e743161179bb67cbe696e78fff8eac013708) | chore: refresh build version artifacts | Map2 Audio | 2026-03-23 |
+| [`b062e5e8`](https://github.com/matthewmackes/map2-audio/commit/b062e5e89708ebcb1eeb5eaafaebf13bb22ec843) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-23 |
 | [`4361a3a8`](https://github.com/matthewmackes/map2-audio/commit/4361a3a8fe4f80af629b68ee494bc863d1a2476e) | feat: land cluster, MIDI Hub, and JUCE Grid updates | Map2 Audio | 2026-03-23 |
 | [`351f3c79`](https://github.com/matthewmackes/map2-audio/commit/351f3c79149a5fc0c2807ab4b11b53e940241200) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-23 |
 | [`8dc3c098`](https://github.com/matthewmackes/map2-audio/commit/8dc3c09834f02ebb2341c3963c84cd4bb15ba4c2) | chore: refresh build version artifacts | Map2 Audio | 2026-03-22 |
 | [`dc212a74`](https://github.com/matthewmackes/map2-audio/commit/dc212a7452e8bfe42fb945786bd1c6a0e242360c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
-| [`b102eb8b`](https://github.com/matthewmackes/map2-audio/commit/b102eb8b75c878dcfe5f3f16aa30f3e096406797) | feat: ship home launcher and direct asset upload fixes | Map2 Audio | 2026-03-22 |
-| [`f371173a`](https://github.com/matthewmackes/map2-audio/commit/f371173a93fcda31f9641a0fc82f0f90e43e2166) | chore: refresh build version artifacts | Map2 Audio | 2026-03-22 |
-| [`29317a95`](https://github.com/matthewmackes/map2-audio/commit/29317a95dde9267f810c9a117a522b544d5d81c6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
-| [`408f3937`](https://github.com/matthewmackes/map2-audio/commit/408f3937b51fa25ef00c2e5b9961f21893ddfa32) | feat: complete MIDI Hub Carbon compliance remediation | Map2 Audio | 2026-03-22 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
