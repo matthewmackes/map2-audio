@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**815** Python | **1229** TypeScript | **290** C++/H | **123** Docs | **780** total commits | **2** stars | **0** forks | **0** open issues
+**815** Python | **1229** TypeScript | **290** C++/H | **123** Docs | **782** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0a5032eb`](https://github.com/matthewmackes/map2-audio/commit/0a5032eb26eac6249739aab93de5a43d410e4997) | Track AVDECC controller test follow-up | Map2 Audio | 2026-03-23 |
+| [`fc7d5f41`](https://github.com/matthewmackes/map2-audio/commit/fc7d5f41c532d1198776b5d43a274defa9989cbe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-23 |
 | [`b1cd1baf`](https://github.com/matthewmackes/map2-audio/commit/b1cd1bafa031feab57995f0d35e7e143bd2b6e88) | Remove legacy AVDECC model sources | Map2 Audio | 2026-03-23 |
 | [`762c0332`](https://github.com/matthewmackes/map2-audio/commit/762c03324df6f4e7febb2d982b26b78ca682d6ff) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-23 |
 | [`4f840229`](https://github.com/matthewmackes/map2-audio/commit/4f8402292482d0d33f63c078ceb894c4e78b91ba) | Complete AVB sync, topology guardrails, and TSN evaluation | Map2 Audio | 2026-03-23 |
 | [`ceb8b328`](https://github.com/matthewmackes/map2-audio/commit/ceb8b32800cb0467080d684c919f8575ffd46432) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-23 |
 | [`5ff4eb7c`](https://github.com/matthewmackes/map2-audio/commit/5ff4eb7c9d79825a5d875e4ec6040ec225aeda0f) | chore: refresh build version stamp | Map2 Audio | 2026-03-23 |
 | [`dbbf347d`](https://github.com/matthewmackes/map2-audio/commit/dbbf347d7274173adb054c7ebde4efb268dcd7ba) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-23 |
-| [`7905e66e`](https://github.com/matthewmackes/map2-audio/commit/7905e66e2131d51279d9d21f2a1c1017cdd6c0d2) | Bridge JUCE engine MIDI into MidiHub | Map2 Audio | 2026-03-23 |
-| [`cd7a0e7f`](https://github.com/matthewmackes/map2-audio/commit/cd7a0e7f1ccf109c97a07f0ddfa945404f04206f) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
