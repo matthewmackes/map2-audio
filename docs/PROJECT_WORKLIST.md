@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 20:37 EDT - Codex (Closed `T376` by removing the retired AVDECC model/enumerator sources, simplifying the optional Catch2 target, and verifying a fresh `juce-engine` CMake configure.)
+Last updated: 2026-03-23 20:43 EDT - Codex (Closed `T376`, synced the cleanup commit to both remotes, and added `T388` to replace the deleted legacy AVDECC model tests with controller-path coverage.)
 
 ## Active Blockers Only
 
@@ -711,6 +711,20 @@ Last updated: 2026-03-23 20:37 EDT - Codex
   - Simplified `juce-engine/CMakeLists.txt` so the optional AVDECC path now references only `AvdeccController.cpp/.h`, and `check-avb` no longer tries to build an `avdecc_model_tests` target against removed sources.
   - Added an explicit migration note to `juce-engine/Source/AvdeccController.h` directing future AVDECC work to the `la_avdecc`-backed `Map2AvdeccController` path instead of restoring the retired custom stack.
   - Validation/compliance: confirmed the only remaining `AvdeccEntity`/`AvdeccEntityModel`/`AvdeccEnumerator` mentions are compatibility comments in `AvdeccController.h`, verified a fresh configure with `cmake -S /home/mm/map2-audio/juce-engine -B /tmp/map2-t376-cmake -DUSE_AVDECC=OFF -DUSE_AVB=OFF`, and reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing`; no new remediation task was required.
+- Priority: P2.
+
+ID: T388
+Status: [ ] Todo
+Title: Add replacement coverage for the `Map2AvdeccController` path after legacy model-test removal
+Description:
+- Goal / acceptance criteria: Add focused validation for the supported `la_avdecc`-backed `Map2AvdeccController` path so AVDECC coverage does not rely on the removed `AvdeccEntityModel` / `AvdeccEnumerator` stack. Coverage can be a unit/integration harness, mocked controller tests, or documented Python-binding regression checks, but it must exercise the live controller-facing compatibility surface that remains in production.
+- Why it matters: `T376` intentionally deleted the obsolete AVDECC model/enumerator tests, leaving the supported controller wrapper without direct replacement coverage.
+- Dependencies: T376, `juce-engine/Source/AvdeccController.*`, and a viable AVDECC-enabled or mocked test strategy
+- Estimated effort: Medium
+- Required outputs: Replacement AVDECC controller coverage, validation notes, and updated worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 20:43 EDT - Codex
 - Priority: P2.
 
 ## MIDI
