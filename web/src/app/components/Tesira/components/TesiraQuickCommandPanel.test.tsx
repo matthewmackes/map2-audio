@@ -33,6 +33,35 @@ jest.mock('../hooks/useTesiraApi', () => ({
 }))
 
 describe('TesiraQuickCommandPanel', () => {
+  beforeAll(() => {
+    if (typeof window.matchMedia !== 'function') {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation((query: string) => ({
+          matches: false,
+          media: query,
+          onchange: null,
+          addListener: jest.fn(),
+          removeListener: jest.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+          dispatchEvent: jest.fn(),
+        })),
+      })
+    }
+
+    if (typeof window.ResizeObserver === 'undefined') {
+      Object.defineProperty(window, 'ResizeObserver', {
+        writable: true,
+        value: class ResizeObserver {
+          observe() {}
+          unobserve() {}
+          disconnect() {}
+        },
+      })
+    }
+  })
+
   beforeEach(() => {
     mockMutateAsync.mockReset()
     mockProbeAsync.mockReset()
@@ -60,7 +89,7 @@ describe('TesiraQuickCommandPanel', () => {
     })
 
     await waitFor(() => {
-      const responseField = screen.getByLabelText('Latest response') as HTMLInputElement | HTMLTextAreaElement
+      const responseField = screen.getByDisplayValue(/\+OK value="TesiraFORTE-1"/) as HTMLInputElement | HTMLTextAreaElement
       expect(responseField.value).toContain('+OK value="TesiraFORTE-1"')
       expect(responseField.value).toContain('TesiraFORTE-1')
     })

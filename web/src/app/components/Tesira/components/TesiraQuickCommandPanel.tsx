@@ -1,21 +1,9 @@
 import React, { useMemo, useState } from 'react'
-import { Code, Search } from '@carbon/icons-react'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Code } from '@carbon/icons-react'
+import { Button, InlineLoading, InlineNotification, Tag, TextArea, TextInput, Tile } from '@carbon/react'
 import { useProbeTesiraDsp, useSendTesiraCommand, useTesiraDspBlocks } from '../hooks/useTesiraApi'
 import type { TesiraRawCommandResponse } from '../types'
+import './TesiraCarbonChrome.css'
 
 interface TesiraQuickCommandPanelProps {
   deviceId: string
@@ -57,26 +45,32 @@ export function TesiraQuickCommandPanel({ deviceId }: TesiraQuickCommandPanelPro
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 1.5 }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, mb: 1.25, flexWrap: 'wrap' }}>
-        <Box>
-          <Typography variant="subtitle2" fontWeight={700}>
-            Tesira quick console
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Send recovery or verification commands from the dedicated Tesira route and use discovered instance tags as a command shortcut.
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-          <Button size="small" variant="text" startIcon={<Code size={16} />} onClick={() => setCommand('DEVICE get hostname')}>
+    <div className="tesira-quick-console">
+      <Tile className="tesira-quick-console__panel">
+        <div className="tesira-quick-console__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Quick console</p>
+            <h3 className="tesira-dashboard__title">Tesira recovery and verification commands</h3>
+            <p className="tesira-dashboard__summary">
+              Send recovery or verification commands from the dedicated Tesira route and use discovered instance tags as a command shortcut.
+            </p>
+          </div>
+          <div className="tesira-quick-console__tags">
+            <Tag type="cool-gray" size="sm">TTP</Tag>
+            <Tag type="green" size="sm">On-route</Tag>
+          </div>
+        </div>
+
+        <div className="tesira-quick-console__action-row">
+          <Button size="sm" kind="ghost" renderIcon={Code} onClick={() => setCommand('DEVICE get hostname')}>
             Hostname
           </Button>
-          <Button size="small" variant="text" startIcon={<Code size={16} />} onClick={() => setCommand('SESSION get aliases')}>
+          <Button size="sm" kind="ghost" renderIcon={Code} onClick={() => setCommand('SESSION get aliases')}>
             Aliases
           </Button>
           <Button
-            size="small"
-            variant="outlined"
+            size="sm"
+            kind="secondary"
             onClick={() => {
               void probeDsp.mutateAsync(32)
             }}
@@ -84,116 +78,122 @@ export function TesiraQuickCommandPanel({ deviceId }: TesiraQuickCommandPanelPro
           >
             {probeDsp.isPending ? 'Probing…' : 'Probe tags'}
           </Button>
-        </Box>
-      </Box>
+        </div>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.1fr) minmax(0, 1fr)' }, gap: 1.5 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <TextField
-            label="TTP command"
-            multiline
-            minRows={3}
-            value={command}
-            onChange={(event) => setCommand(event.target.value)}
-            placeholder="SESSION get aliases"
-          />
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button
-              size="small"
-              variant="contained"
-              onClick={() => {
-                void handleSend()
-              }}
-              disabled={sendCommand.isPending}
-            >
-              {sendCommand.isPending ? 'Sending…' : 'Send command'}
-            </Button>
-          </Box>
+        <TextArea
+          labelText="TTP command"
+          rows={4}
+          value={command}
+          onChange={(event) => setCommand(event.target.value)}
+          placeholder="SESSION get aliases"
+        />
 
-          {sendCommand.isError ? (
-            <Alert severity="error">
-              {sendCommand.error instanceof Error ? sendCommand.error.message : 'Command failed'}
-            </Alert>
-          ) : null}
-
-          <TextField
-            label="Latest response"
-            multiline
-            minRows={8}
-            value={
-              response
-                ? `${response.raw || response.message}\n${response.value != null ? `\n${stringifyValue(response.value)}` : ''}`
-                : 'No command sent yet.'
-            }
-            InputProps={{
-              readOnly: true,
-              sx: {
-                fontFamily: 'IBM Plex Mono, monospace',
-                alignItems: 'flex-start',
-              },
+        <div className="tesira-quick-console__action-row">
+          <Button
+            size="sm"
+            kind="primary"
+            onClick={() => {
+              void handleSend()
             }}
-          />
-        </Box>
+            disabled={sendCommand.isPending}
+          >
+            {sendCommand.isPending ? 'Sending…' : 'Send command'}
+          </Button>
+        </div>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <TextField
-            label="Filter discovered instance tags"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="LevelControl, MatrixMixer, SourceSelector…"
-            InputProps={{
-              startAdornment: <Search size={16} />,
-            }}
+        {sendCommand.isError ? (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Command failed"
+            subtitle={sendCommand.error instanceof Error ? sendCommand.error.message : 'Command failed'}
           />
+        ) : null}
 
-          {dspBlocks.isLoading ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 2 }}>
-              <CircularProgress size={18} />
-              <Typography variant="body2" color="text.secondary">
-                Loading instance tags…
-              </Typography>
-            </Box>
-          ) : (
-            <Paper variant="outlined" sx={{ maxHeight: 320, overflow: 'auto' }}>
-              <Table size="small" aria-label="Discovered Tesira instance tags">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Instance tag</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Params</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredBlocks.map((block) => {
-                    const firstParam = Object.keys(block.parameter_map || {})[0] ?? 'level'
-                    return (
-                      <TableRow
-                        key={block.instance_tag}
-                        hover
-                        onClick={() => setCommand(`${block.instance_tag} get ${firstParam}`)}
-                        sx={{ cursor: 'pointer' }}
-                      >
-                        <TableCell>{block.instance_tag}</TableCell>
-                        <TableCell>{block.title ? `${block.title} (${block.block_type})` : block.block_type}</TableCell>
-                        <TableCell>{Object.keys(block.parameter_map || {}).length}</TableCell>
-                      </TableRow>
-                    )
-                  })}
-                  {!filteredBlocks.length ? (
-                    <TableRow>
-                      <TableCell colSpan={3}>
-                        <Typography variant="body2" color="text.secondary">
-                          No instance tags are available yet. Probe tags or open DSP Explorer after the MAP2 layout is deployed.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
-                </TableBody>
-              </Table>
-            </Paper>
-          )}
-        </Box>
-      </Box>
-    </Paper>
+        <TextArea
+          labelText="Latest response"
+          rows={10}
+          readOnly
+          className="tesira-quick-console__response"
+          value={
+            response
+              ? `${response.raw || response.message}\n${response.value != null ? `\n${stringifyValue(response.value)}` : ''}`
+              : 'No command sent yet.'
+          }
+        />
+      </Tile>
+
+      <Tile className="tesira-quick-console__panel">
+        <div className="tesira-quick-console__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Instance tag browser</p>
+            <h3 className="tesira-dashboard__title">Discovered DSP blocks</h3>
+            <p className="tesira-dashboard__summary">
+              Click a discovered instance tag to draft a `get` command for the first available parameter on that block.
+            </p>
+          </div>
+          <div className="tesira-quick-console__tags">
+            <Tag type="cool-gray" size="sm">{filteredBlocks.length} shown</Tag>
+            <Tag type="warm-gray" size="sm">{(dspBlocks.data ?? []).length} total</Tag>
+          </div>
+        </div>
+
+        <TextInput
+          id={`tesira-command-filter-${deviceId}`}
+          labelText="Filter discovered instance tags"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="LevelControl, MatrixMixer, SourceSelector…"
+        />
+
+        {dspBlocks.isLoading ? (
+          <div className="tesira-quick-console__loading">
+            <InlineLoading description="Loading instance tags" />
+          </div>
+        ) : (
+          <div className="tesira-quick-console__table-wrap">
+            <table className="tesira-quick-console__table" aria-label="Discovered Tesira instance tags">
+              <thead>
+                <tr>
+                  <th scope="col">Instance tag</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Params</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBlocks.map((block) => {
+                  const firstParam = Object.keys(block.parameter_map || {})[0] ?? 'level'
+                  return (
+                    <tr key={block.instance_tag}>
+                      <td>
+                        <button
+                          type="button"
+                          className="tesira-quick-console__tag-button"
+                          onClick={() => setCommand(`${block.instance_tag} get ${firstParam}`)}
+                        >
+                          {block.instance_tag}
+                        </button>
+                      </td>
+                      <td>{block.title ? `${block.title} (${block.block_type})` : block.block_type}</td>
+                      <td>{Object.keys(block.parameter_map || {}).length}</td>
+                    </tr>
+                  )
+                })}
+                {!filteredBlocks.length ? (
+                  <tr>
+                    <td colSpan={3}>
+                      <p className="tesira-quick-console__empty">
+                        No instance tags are available yet. Probe tags or open DSP Explorer after the MAP2 layout is deployed.
+                      </p>
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Tile>
+    </div>
   )
 }

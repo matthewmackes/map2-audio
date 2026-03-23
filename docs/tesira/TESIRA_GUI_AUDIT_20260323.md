@@ -1,7 +1,7 @@
 # Tesira GUI Audit
 
 Date: 2026-03-23  
-Canonical tasks: `T350`, `T351`, `T352`
+Canonical tasks: `T350`, `T351`, `T352`, `T353`, `T354`
 
 ## Scope
 
@@ -42,6 +42,12 @@ This audit compares the dedicated MAP2 `/tesira` route against:
   - quick-fill recovery commands
   - discovered instance-tag browser backed by the dedicated Tesira DSP inventory
   - direct use from `/tesira`, without falling back to MIDI Hub
+- Carbon-first route chrome around the high-traffic operator path:
+  - route shell loading/error framing
+  - fleet navigation and device cards
+  - device header/dashboard support surfaces
+  - offline recovery banner
+  - manual SageVue package-export dialog
 
 ### Remaining functional gaps
 
@@ -66,41 +72,48 @@ That is materially closer to Biamp’s documented recovery reality than the prio
 ### Carbon-aligned now
 
 - `TesiraOnboardingWizard.tsx`
+- `TesiraApp.tsx`
+- `TesiraTopBar.tsx`
+- `TesiraFleetPanel.tsx`
+- `TesiraDeviceCard.tsx`
+- `TesiraDeviceHeader.tsx`
+- `TesiraDeviceDashboard.tsx`
+- `TesiraOfflineBanner.tsx`
+- `TesiraQuickCommandPanel.tsx`
+- `TesiraDeployDialog.tsx`
 - route landing experience and step framing for onboarding
-- parts of the compact quick-start/operator messaging added in this slice
+- route shell, fleet, dashboard, and recovery/package workflows added in this slice
 
 ### Still not Carbon-compliant
 
-The dedicated `/tesira` route remains mixed-system and is still predominantly MUI-based.
+The dedicated `/tesira` route is no longer shell-level MUI-heavy, but it still remains mixed-system.
 
 Primary non-compliant surfaces:
 
-- `web/src/app/components/Tesira/TesiraApp.tsx`
-- `web/src/app/components/Tesira/components/TesiraTopBar.tsx`
-- `web/src/app/components/Tesira/components/TesiraFleetPanel.tsx`
-- `web/src/app/components/Tesira/components/TesiraDeviceHeader.tsx`
-- `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`
-- `web/src/app/components/Tesira/components/TesiraDeployDialog.tsx`
-- most device tabs such as levels, presets, DSP explorer, mixer, AVB, faults, loop builder, and settings
+- `web/src/app/components/Tesira/components/DiscoveryDialog.tsx`
+- `web/src/app/components/Tesira/components/ManualAddDialog.tsx`
+- device tabs such as levels, presets, DSP explorer, mixer, AVB, faults, loop builder, EQ, firmware, and settings
+- secondary detail panels such as `TesiraDspBlockPanel.tsx`, `TesiraDspProbeDialog.tsx`, `TesiraFleetHealth.tsx`, and `TesiraPtpTopology.tsx`
 
 ### Compliance assessment
 
-- Route shell: mixed, not compliant
-- Fleet navigation: mixed, not compliant
-- Device dashboard: mixed, not compliant
-- Dialog system: mixed, not compliant
+- Route shell: materially Carbon-aligned
+- Fleet navigation: materially Carbon-aligned
+- Device dashboard: materially Carbon-aligned
+- Dialog system: mixed, partial
 - Device tabs: mostly MUI, not compliant
-- Onboarding landing: materially improved and Carbon-oriented, but not enough to declare the whole route compliant
+- Onboarding landing: Carbon-oriented
+- Overall route: improved substantially, but not yet compliant end to end because the actual control tabs and enrollment dialogs still break the design-system boundary
 
 ## Recommended Next Tasks
 
-1. Convert the `/tesira` shell, top bar, fleet panel, and dashboard framing to Carbon-first structure and tokens.
-2. Convert the deploy dialog and device header/status surfaces away from MUI chips/papers/buttons.
-3. Convert the high-traffic device tabs in this order:
+1. Convert `DiscoveryDialog.tsx` and `ManualAddDialog.tsx` so enrollment and recovery stay Carbon-consistent from the first operator click.
+2. Convert the high-traffic device tabs in this order:
    - levels
    - presets
    - DSP explorer
    - AVB / faults
+3. Fold the secondary detail panels (`FleetHealth`, `PtpTopology`, probe dialogs, DSP block panels) onto the same Carbon token patterns.
 4. Decide whether MAP2 will implement a true serial-console transport or keep serial as an operator-guided physical recovery step only.
 
 ## Bottom Line
@@ -111,4 +124,4 @@ The dedicated Tesira route is now materially better aligned with Tesira onboardi
 - configuration load is treated as mandatory
 - the MIDI-side quick command helper is no longer stranded outside the Tesira route
 
-Carbon compliance is still incomplete. The route now has a Carbon-style onboarding front door, but the rest of the Tesira experience remains a mixed MUI/Carbon surface and needs a dedicated migration pass.
+Carbon compliance is still incomplete, but the route is no longer blocked on shell-level chrome. The remaining work is now concentrated in the actual control tabs and enrollment dialogs, which is a much narrower and more actionable Carbon migration target.

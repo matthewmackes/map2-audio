@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 16:24 EDT - Codex (Closed `T350`, `T351`, and `T352` with the Tesira route audit, serial-first onboarding wizard, offline reconnect banner, and dedicated-route TTP quick console; opened `T353` for the remaining Carbon migration on `/tesira`.)
+Last updated: 2026-03-23 17:08 EDT - Codex (Closed `T353` after Carbonizing the dedicated Tesira route shell, fleet, offline recovery, quick-console, and deployment-package surfaces in cycle 3; opened `T354` as the next Carbon slice for the remaining device tabs and onboarding dialogs.)
 
 ## Active Blockers Only
 
@@ -184,7 +184,7 @@ Last updated: 2026-03-23 16:24 EDT - Codex
   - Validation passed with `pytest tests/tesira/test_routes_tesira_extended.py -q`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraOnboardingWizard.test.tsx web/src/app/components/Tesira/components/TesiraOfflineBanner.test.tsx web/src/app/components/Tesira/components/TesiraQuickCommandPanel.test.tsx`, and `npm --prefix web run build`.
 
 ID: T353
-Status: [>] In Progress
+Status: [✓] Done
 Title: Complete Carbon-first migration for the dedicated Tesira route shell and high-traffic operator surfaces
 Description:
 - Goal / acceptance criteria: Replace the remaining MUI-heavy shell, fleet, dashboard, dialog, and high-traffic device-tab surfaces on `/tesira` with Carbon-first structure, components, and token usage while preserving current behavior.
@@ -194,12 +194,34 @@ Description:
 - Required outputs: Updated `/tesira` shell/dashboard/dialog/tab components, focused validation evidence, and updated audit/worklist notes showing the remaining compliance deltas if any.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 16:30 EDT - Codex
+Last updated: 2026-03-23 17:08 EDT - Codex
 - Progress notes:
   - `docs/tesira/TESIRA_GUI_AUDIT_20260323.md` identifies the shell, fleet panel, top bar, device header/dashboard, deploy dialog, and most device tabs as still MUI-based and therefore not Carbon-compliant.
   - Cycle 2 scope: convert the top bar, device header, and dashboard support surfaces first so the operator-facing chrome around onboarding and quick-console recovery is no longer the biggest Carbon outlier on `/tesira`.
   - Converted `TesiraTopBar.tsx`, `TesiraDeviceHeader.tsx`, and the main dashboard framing in `TesiraDeviceDashboard.tsx` to Carbon buttons/tags/tiles plus token-based CSS in `TesiraCarbonChrome.css`; the deeper dialogs and device tabs remain follow-up work.
   - Validation passed for the current Carbon slice with `npm --prefix web run typecheck` and `npm --prefix web run build`.
+  - Cycle 3 scope: convert the route shell loading/error states, fleet list/device cards, offline reconnect banner, quick-console, and manual deployment dialog so onboarding/recovery/package workflows no longer depend on MUI on the dedicated `/tesira` path.
+- Completion notes:
+  - Converted `TesiraApp.tsx`, `TesiraFleetPanel.tsx`, `TesiraDeviceCard.tsx`, `TesiraOfflineBanner.tsx`, `TesiraQuickCommandPanel.tsx`, and `TesiraDeployDialog.tsx` to Carbon-first structure and tokenized CSS in `TesiraCarbonChrome.css`, removing MUI from the main `/tesira` shell, fleet, dashboard recovery console, and package-export workflow.
+  - Added focused deployment-dialog coverage in `web/src/app/components/Tesira/components/TesiraDeployDialog.test.tsx` and hardened the quick-console test harness for Carbon `matchMedia` / `ResizeObserver` assumptions.
+  - Updated `docs/tesira/TESIRA_GUI_AUDIT_20260323.md` so the remaining Carbon compliance gap now points at the deeper device tabs and onboarding dialogs rather than the route shell.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraQuickCommandPanel.test.tsx web/src/app/components/Tesira/components/TesiraOfflineBanner.test.tsx web/src/app/components/Tesira/components/TesiraFleetPanel.clusterSelection.test.tsx web/src/app/components/Tesira/components/TesiraDeployDialog.test.tsx`, and `npm --prefix web run build`.
+
+ID: T354
+Status: [>] In Progress
+Title: Carbonize the remaining Tesira device tabs and onboarding dialogs
+Description:
+- Goal / acceptance criteria: Replace the remaining MUI-heavy operator tabs and enrollment dialogs on `/tesira`, especially levels, presets, DSP explorer, AVB/faults, settings, discovery, and manual-add flows, with Carbon-first structure and token usage while preserving current behavior.
+- Why it matters: After `T353`, the route shell, fleet, dashboard, recovery banner, quick console, and deployment dialog are Carbon-first, but operators still drop back into mixed-system MUI screens for the actual post-onboarding control and enrollment workflows.
+- Dependencies: T353
+- Estimated effort: Medium
+- Required outputs: Updated device-tab and dialog components, focused validation evidence, and refreshed audit/worklist notes describing the final remaining Carbon deltas if any.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 17:08 EDT - Codex
+- Progress notes:
+  - Remaining MUI surfaces identified from the route audit and code search now cluster around `DiscoveryDialog.tsx`, `ManualAddDialog.tsx`, `TesiraLevelsTab.tsx`, `TesiraPresetsTab.tsx`, `TesiraDspExplorer.tsx`, `TesiraAvbTab.tsx`, `TesiraFaultsTab.tsx`, and `TesiraDeviceSettings.tsx`, with secondary follow-up still possible in EQ, mixer, loop-builder, firmware, and other detail panels.
+  - The next slice should prioritize discovery/manual-add plus levels/presets/DSP explorer because those are the highest-frequency operator surfaces immediately after onboarding and recovery.
 
 ## MIDI
 

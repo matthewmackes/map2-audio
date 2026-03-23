@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { Add, Renew } from '@carbon/icons-react'
-import { Box, Typography, CircularProgress, Alert, Button, Tooltip, IconButton } from '@mui/material'
+import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
 import { useNavigate } from 'react-router-dom'
 import { useTesiraDevices } from '../hooks/useTesiraApi'
 import { useTesiraContext } from '../context/TesiraContext'
 import { TesiraDeviceCard } from './TesiraDeviceCard'
 import { ManualAddDialog } from './ManualAddDialog'
 import { useCluster } from '../../../contexts/ClusterContext'
+import './TesiraCarbonChrome.css'
 
 export function TesiraFleetPanel() {
   const { data: devices, isLoading, isError, refetch } = useTesiraDevices()
@@ -17,76 +18,83 @@ export function TesiraFleetPanel() {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress size={24} />
-      </Box>
+      <div className="tesira-fleet-panel tesira-fleet-panel__loading">
+        <InlineLoading description="Loading Tesira fleet" />
+      </div>
     )
   }
 
   if (isError) {
     return (
-      <Alert
-        severity="error"
-        action={
-          <Button size="small" startIcon={<Renew size={16} />} onClick={() => refetch()}>
-            Retry
-          </Button>
-        }
-        sx={{ m: 1 }}
-      >
-        Failed to load Tesira fleet
-      </Alert>
+      <div className="tesira-fleet-panel">
+        <InlineNotification
+          kind="error"
+          lowContrast
+          hideCloseButton
+          title="Failed to load Tesira fleet"
+          subtitle="The device registry could not be read from the active cluster context."
+        />
+        <Button size="sm" kind="secondary" renderIcon={Renew} onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
     )
   }
 
   return (
     <>
-      <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5 }}>
-          <Typography variant="caption" fontWeight={600} color="text.secondary" textTransform="uppercase" letterSpacing={0.8}>
-            Fleet ({devices?.length ?? 0})
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 0.25 }}>
-            <Tooltip title="Add device by IP address">
-              <IconButton size="small" onClick={() => setManualAddOpen(true)} sx={{ p: 0.25 }}>
-                <Add size={14} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Refresh fleet">
-              <IconButton size="small" onClick={() => refetch()} sx={{ p: 0.25 }}>
-                <Renew size={14} />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Box>
+      <div className="tesira-fleet-panel">
+        <div className="tesira-fleet-panel__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Fleet</p>
+            <h2 className="tesira-device-header__title">Tesira devices</h2>
+          </div>
+          <div className="tesira-fleet-panel__actions">
+            <Tag type="cool-gray" size="sm">{devices?.length ?? 0} configured</Tag>
+            <Button
+              kind="ghost"
+              size="sm"
+              hasIconOnly
+              renderIcon={Add}
+              iconDescription="Add device by IP address"
+              onClick={() => setManualAddOpen(true)}
+            />
+            <Button
+              kind="ghost"
+              size="sm"
+              hasIconOnly
+              renderIcon={Renew}
+              iconDescription="Refresh Tesira fleet"
+              onClick={() => refetch()}
+            />
+          </div>
+        </div>
 
         {(!devices || devices.length === 0) ? (
-          <Box sx={{ p: 1, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No Tesira devices configured.
-            </Typography>
-            <Typography variant="caption" color="text.disabled">
-              Use + to add by IP, or Discover in the toolbar.
-            </Typography>
-          </Box>
+          <Tile className="tesira-fleet-panel__empty">
+            <p className="tesira-dashboard__summary">No Tesira devices configured.</p>
+            <p className="tesira-device-header__details">Use add-device or discovery in the toolbar to begin onboarding.</p>
+          </Tile>
         ) : (
-          devices.map((device) => (
-            <TesiraDeviceCard
-              key={device.device_id}
-              device={device}
-              selected={selectedDeviceId === device.device_id}
-              onSelect={() => {
-                const next = selectedDeviceId === device.device_id ? null : device.device_id
-                const targetNodeId = device.source_node_id ?? null
-                setActiveNode(next && targetNodeId && targetNodeId !== localNodeId ? targetNodeId : null)
-                selectDevice(next)
-                if (next) navigate(`/tesira/${next}/dashboard`)
-                else navigate('/tesira')
-              }}
-            />
-          ))
+          <div className="tesira-fleet-panel__list">
+            {devices.map((device) => (
+              <TesiraDeviceCard
+                key={device.device_id}
+                device={device}
+                selected={selectedDeviceId === device.device_id}
+                onSelect={() => {
+                  const next = selectedDeviceId === device.device_id ? null : device.device_id
+                  const targetNodeId = device.source_node_id ?? null
+                  setActiveNode(next && targetNodeId && targetNodeId !== localNodeId ? targetNodeId : null)
+                  selectDevice(next)
+                  if (next) navigate(`/tesira/${next}/dashboard`)
+                  else navigate('/tesira')
+                }}
+              />
+            ))}
+          </div>
         )}
-      </Box>
+      </div>
 
       <ManualAddDialog open={manualAddOpen} onClose={() => setManualAddOpen(false)} />
     </>

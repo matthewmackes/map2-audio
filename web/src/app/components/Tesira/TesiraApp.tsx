@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Alert, Box, CircularProgress, Typography } from '@mui/material'
+import { InlineLoading, InlineNotification } from '@carbon/react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { TesiraProvider } from './context/TesiraContext'
 import { useTesiraContext } from './context/TesiraContext'
@@ -21,6 +21,7 @@ import { TesiraLoopBuilderTab } from './components/TesiraLoopBuilderTab'
 import { TesiraOnboardingWizard } from './components/TesiraOnboardingWizard'
 import { useTesiraDevice, useTesiraDevices } from './hooks/useTesiraApi'
 import { useCluster } from '../../contexts/ClusterContext'
+import './components/TesiraCarbonChrome.css'
 
 /**
  * TesiraApp — main container for Biamp Tesira Forte AVB fleet management.
@@ -37,49 +38,19 @@ import { useCluster } from '../../contexts/ClusterContext'
 export function TesiraApp() {
   return (
     <TesiraProvider>
-      <Box
-        className="tesira-app-shell"
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          minHeight: 0,
-          bgcolor: 'background.default',
-        }}
-      >
+      <div className="tesira-app-shell">
         <TesiraTopBar />
 
-        <Box
-          className="tesira-main-layout"
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            flex: 1,
-            minHeight: 0,
-          }}
-        >
-          {/* Left: fleet panel (fixed width) */}
-          <Box
-            className="tesira-fleet-column"
-            sx={{
-              width: { xs: '100%', md: 220 },
-              maxHeight: { xs: 260, md: 'none' },
-              flexShrink: 0,
-              borderRight: 1,
-              borderBottom: { xs: 1, md: 0 },
-              borderColor: 'divider',
-              overflow: 'auto',
-            }}
-          >
+        <div className="tesira-main-layout">
+          <div className="tesira-fleet-column">
             <TesiraFleetPanel />
-          </Box>
+          </div>
 
-          {/* Right: device control panel */}
-          <Box className="tesira-content-column" sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <div className="tesira-content-column">
             <TesiraRoutePanel />
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
     </TesiraProvider>
   )
 }
@@ -115,15 +86,9 @@ function FleetLanding() {
   }, [selectDevice, setActiveNode])
 
   return (
-    <Box
-      sx={{
-        flex: 1,
-        minHeight: 0,
-        overflow: 'auto',
-      }}
-    >
+    <div className="tesira-route-view__body">
       <TesiraOnboardingWizard />
-    </Box>
+    </div>
   )
 }
 
@@ -145,20 +110,32 @@ function DeviceRouteView({ render }: { render: (deviceId: string) => React.React
   if (!deviceId) return <FleetLanding />
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress size={24} />
-      </Box>
+      <div className="tesira-route-view__loading">
+        <InlineLoading description="Loading Tesira device" />
+      </div>
     )
   }
-  if (isError || !device) return <Alert severity="error" sx={{ m: 2 }}>Failed to load device details</Alert>
+  if (isError || !device) {
+    return (
+      <div className="tesira-route-view__error">
+        <InlineNotification
+          kind="error"
+          lowContrast
+          hideCloseButton
+          title="Failed to load device details"
+          subtitle="The requested Tesira device could not be loaded from the active cluster context."
+        />
+      </div>
+    )
+  }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+    <div className="tesira-route-view">
       <TesiraDeviceHeader device={device} />
       {!device.connected ? <TesiraOfflineBanner deviceId={deviceId} /> : null}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <div className="tesira-route-view__body">
         {render(deviceId)}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }

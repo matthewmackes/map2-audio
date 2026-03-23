@@ -1,14 +1,11 @@
 import React, { useState, useCallback } from 'react'
 import { Renew, WarningAltFilled, Wifi, WifiOff } from '@carbon/icons-react'
-import {
-  Card, CardActionArea, CardContent, Box, Typography, Chip, Tooltip,
-} from '@mui/material'
+import { ClickableTile, Tag } from '@carbon/react'
 import type { TesiraDeviceSummary } from '../types'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useTesiraDeviceState } from '../hooks/useTesiraWebSocket'
 import { useCluster } from '../../../contexts/ClusterContext'
-
-const BIAMP_RED = '#E31837'
+import './TesiraCarbonChrome.css'
 
 interface TesiraDeviceCardProps {
   device: TesiraDeviceSummary
@@ -40,109 +37,60 @@ export function TesiraDeviceCard({ device, selected, onSelect }: TesiraDeviceCar
   )
 
   return (
-    <Card
-      variant="outlined"
-      sx={{
-        borderColor: selected ? BIAMP_RED : device.connected ? 'divider' : 'warning.dark',
-        borderWidth: selected ? 2 : 1,
-        transition: 'border-color 0.15s',
-      }}
+    <ClickableTile
+      className={[
+        'tesira-device-card',
+        selected ? 'tesira-device-card--selected' : '',
+        device.connected ? 'tesira-device-card--online' : 'tesira-device-card--offline',
+      ].filter(Boolean).join(' ')}
+      onClick={onSelect}
     >
-      <CardActionArea onClick={onSelect}>
-        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MapMatrixProcessorIcon size={18} color={device.connected ? BIAMP_RED : '#888'} />
+      <div className="tesira-device-card__header">
+        <div className="tesira-device-card__identity">
+          <span className="tesira-device-card__icon" aria-hidden>
+            <MapMatrixProcessorIcon
+              size={18}
+              color={device.connected ? 'var(--cds-support-error)' : 'var(--cds-icon-secondary)'}
+            />
+          </span>
+          <div className="tesira-device-card__copy">
+            <h3 className="tesira-device-card__title">{device.name || device.host}</h3>
+            <p className="tesira-device-card__meta">{device.host}:{device.port}</p>
+          </div>
+        </div>
 
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" fontWeight={600} noWrap>
-                {device.name || device.host}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {device.host}:{device.port}
-              </Typography>
-            </Box>
+        <div className="tesira-device-card__signals">
+          {device.connected ? (
+            <Wifi size={14} className="tesira-device-card__signal tesira-device-card__signal--online" />
+          ) : reconnecting ? (
+            <span
+              className="tesira-device-card__signal tesira-device-card__signal--reconnecting"
+              title={nextRetryS != null ? `Retrying in ${nextRetryS}s` : 'Reconnecting…'}
+            >
+              <Renew size={14} />
+            </span>
+          ) : (
+            <WifiOff size={14} className="tesira-device-card__signal tesira-device-card__signal--offline" />
+          )}
+          {device.fault_count > 0 ? (
+            <WarningAltFilled
+              size={14}
+              className="tesira-device-card__signal tesira-device-card__signal--fault"
+              title={`${device.fault_count} fault(s)`}
+            />
+          ) : null}
+        </div>
+      </div>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-              {device.connected ? (
-                <Wifi size={14} style={{ color: 'var(--mui-palette-success-main, #2e7d32)' }} />
-              ) : reconnecting ? (
-                <Tooltip title={nextRetryS != null ? `Retrying in ${nextRetryS}s` : 'Reconnecting…'}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      color: 'warning.main',
-                      animation: 'spin 1.5s linear infinite',
-                      '@keyframes spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } },
-                    }}
-                  >
-                    <Renew size={14} />
-                  </Box>
-                </Tooltip>
-              ) : (
-                <WifiOff size={14} style={{ color: 'var(--mui-palette-error-main, #d32f2f)' }} />
-              )}
-              {device.fault_count > 0 && (
-                <Tooltip title={`${device.fault_count} fault(s)`}>
-                  <WarningAltFilled size={14} style={{ color: 'var(--mui-palette-warning-main, #ed6c02)' }} />
-                </Tooltip>
-              )}
-            </Box>
-          </Box>
-
-          {/* Status chips */}
-          <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
-            {device.connected ? (
-              <Chip label="Online" size="small" color="success" sx={{ height: 18, fontSize: 10 }} />
-            ) : reconnecting ? (
-              <Chip
-                label={nextRetryS != null ? `Retry in ${nextRetryS}s` : 'Reconnecting…'}
-                size="small"
-                color="warning"
-                variant="outlined"
-                sx={{ height: 18, fontSize: 10 }}
-              />
-            ) : (
-              <Chip label="Offline" size="small" color="default" sx={{ height: 18, fontSize: 10 }} />
-            )}
-            {device.avb_stream_count > 0 && (
-              <Chip
-                label={`${device.avb_stream_count} AVB`}
-                size="small"
-                variant="outlined"
-                sx={{ height: 18, fontSize: 10 }}
-              />
-            )}
-            {device.ptp_state && (
-              <Chip
-                label={`PTP ${device.ptp_state}`}
-                size="small"
-                variant="outlined"
-                sx={{
-                  height: 18,
-                  fontSize: 10,
-                  borderColor: device.ptp_state === 'MASTER' ? BIAMP_RED : undefined,
-                }}
-              />
-            )}
-            {discoveryLabel && (
-              <Chip
-                label={`Seen by ${discoveryLabel}`}
-                size="small"
-                variant="outlined"
-                sx={{ height: 18, fontSize: 10 }}
-              />
-            )}
-            {device.firmware_version && (
-              <Chip
-                label={`fw ${device.firmware_version}`}
-                size="small"
-                variant="outlined"
-                sx={{ height: 18, fontSize: 10 }}
-              />
-            )}
-          </Box>
-        </CardContent>
-      </CardActionArea>
-    </Card>
+      <div className="tesira-device-card__tags">
+        <Tag type={device.connected ? 'green' : reconnecting ? 'gray' : 'warm-gray'} size="sm">
+          {device.connected ? 'Online' : reconnecting ? (nextRetryS != null ? `Retry in ${nextRetryS}s` : 'Reconnecting…') : 'Offline'}
+        </Tag>
+        {device.avb_stream_count > 0 ? <Tag type="cool-gray" size="sm">{device.avb_stream_count} AVB</Tag> : null}
+        {device.ptp_state ? <Tag type={device.ptp_state === 'MASTER' ? 'red' : 'cool-gray'} size="sm">PTP {device.ptp_state}</Tag> : null}
+        {discoveryLabel ? <Tag type="purple" size="sm">Seen by {discoveryLabel}</Tag> : null}
+        {device.firmware_version ? <Tag type="warm-gray" size="sm">fw {device.firmware_version}</Tag> : null}
+      </div>
+    </ClickableTile>
   )
 }
