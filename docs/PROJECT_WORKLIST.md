@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 20:18 EDT - Codex (Closed `T372`, `T373`, and `T374` by publishing the advanced TSN evaluation from official IEEE/Linux/Intel sources plus a local NIC capability audit.)
+Last updated: 2026-03-23 20:37 EDT - Codex (Closed `T376` by removing the retired AVDECC model/enumerator sources, simplifying the optional Catch2 target, and verifying a fresh `juce-engine` CMake configure.)
 
 ## Active Blockers Only
 
@@ -695,7 +695,7 @@ Last updated: 2026-03-23 - Codex (AVB audit)
 - Priority: P2.
 
 ID: T376
-Status: [ ] Todo
+Status: [✓] Done
 Title: Clean up legacy AVDECC files (AvdeccEntity, AvdeccEntityModel, AvdeccEnumerator)
 Description:
 - Goal / acceptance criteria: Archive or remove the 6 legacy AVDECC files from juce-engine/Source/ that are kept on disk but not compiled. Add migration note in AvdeccController.h.
@@ -705,7 +705,12 @@ Description:
 - Required outputs: Legacy files removed, migration note added, cmake build unaffected.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-23 20:37 EDT - Codex
+- Completion notes:
+  - Removed the retired `juce-engine/Source/AvdeccEntity.*`, `juce-engine/Source/AvdeccEntityModel.*`, and `juce-engine/Source/AvdeccEnumerator.*` files plus the legacy Catch2 tests `juce-engine/tests/AvdeccEntityModelTests.cpp` and `juce-engine/tests/AvdeccEnumeratorTests.cpp`, which were the only remaining consumers of that custom model/enumerator stack.
+  - Simplified `juce-engine/CMakeLists.txt` so the optional AVDECC path now references only `AvdeccController.cpp/.h`, and `check-avb` no longer tries to build an `avdecc_model_tests` target against removed sources.
+  - Added an explicit migration note to `juce-engine/Source/AvdeccController.h` directing future AVDECC work to the `la_avdecc`-backed `Map2AvdeccController` path instead of restoring the retired custom stack.
+  - Validation/compliance: confirmed the only remaining `AvdeccEntity`/`AvdeccEntityModel`/`AvdeccEnumerator` mentions are compatibility comments in `AvdeccController.h`, verified a fresh configure with `cmake -S /home/mm/map2-audio/juce-engine -B /tmp/map2-t376-cmake -DUSE_AVDECC=OFF -DUSE_AVB=OFF`, and reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing`; no new remediation task was required.
 - Priority: P2.
 
 ## MIDI

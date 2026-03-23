@@ -2,6 +2,12 @@
  * AvdeccController.h
  * Wraps la_avdecc::controller::Controller to provide the same interface as the
  * legacy Map2Audio::AvdeccEntity, preserving all Python binding signatures.
+ *
+ * Migration note:
+ * The retired custom AVDECC stack (`AvdeccEntity*`, `AvdeccEntityModel*`,
+ * `AvdeccEnumerator*`) was removed in T376 after the engine switched to the
+ * `la_avdecc` controller wrapper. New AVDECC work should extend
+ * Map2AvdeccController instead of restoring the legacy model/enumerator path.
  */
 
 #pragma once

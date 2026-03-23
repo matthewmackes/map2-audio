@@ -332,10 +332,6 @@ endif()
 if(AVDECC_AVAILABLE)
     list(APPEND SOURCES
         Source/AvdeccController.cpp   # Wraps la_avdecc_controller
-        # Superseded by la_avdecc (kept on disk for reference):
-        # Source/AvdeccEntity.cpp
-        # Source/AvdeccEntityModel.cpp
-        # Source/AvdeccEnumerator.cpp
     )
 endif()
 
@@ -422,11 +418,6 @@ endif()
 if(AVDECC_AVAILABLE)
     list(APPEND HEADERS
         Source/AvdeccController.h   # New la_avdecc wrapper
-        # Superseded (kept on disk for reference):
-        # Source/AvdeccEntity.h
-        # Source/AvdeccDescriptors.h
-        # Source/AvdeccEntityModel.h
-        # Source/AvdeccEnumerator.h
     )
 endif()
 
@@ -671,44 +662,12 @@ if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
     )
     add_test(NAME avb_tests COMMAND avb_tests)
 
-    if(AVDECC_AVAILABLE)
-        add_executable(avdecc_model_tests
-            Source/AvdeccEntityModel.cpp
-            Source/AvdeccEnumerator.cpp
-            tests/AvdeccEntityModelTests.cpp
-            tests/AvdeccEnumeratorTests.cpp
-        )
-        target_compile_definitions(avdecc_model_tests PRIVATE
-            HAS_AVDECC=1
-            BUILD_AVB_TESTS=1
-            JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
-            JUCE_WEB_BROWSER=0
-            JUCE_USE_CURL=0
-        )
-        target_include_directories(avdecc_model_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Source)
-        target_link_libraries(avdecc_model_tests PRIVATE
-            Catch2::Catch2WithMain
-            juce::juce_core
-        )
-        add_test(NAME avdecc_model_tests COMMAND avdecc_model_tests)
-    endif()
-
-    if(AVDECC_AVAILABLE)
-        add_custom_target(check-avb
-            COMMAND ${CMAKE_CTEST_COMMAND} -R "avb_tests" --output-on-failure
-            COMMAND ${CMAKE_CTEST_COMMAND} -R "avdecc_model_tests" --output-on-failure
-            DEPENDS avb_tests avdecc_model_tests
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMENT "Running AVB Catch2 tests (AVTP and AVDECC model suites)"
-        )
-    else()
-        add_custom_target(check-avb
-            COMMAND ${CMAKE_CTEST_COMMAND} -R "avb_tests" --output-on-failure
-            DEPENDS avb_tests
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMENT "Running AVB Catch2 tests (AVTP suite)"
-        )
-    endif()
+    add_custom_target(check-avb
+        COMMAND ${CMAKE_CTEST_COMMAND} -R "avb_tests" --output-on-failure
+        DEPENDS avb_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running AVB Catch2 tests (AVTP suite)"
+    )
 endif()
 
 if(BUILD_SYNTHFORGE_TESTS)
