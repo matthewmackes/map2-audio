@@ -1,4 +1,6 @@
 import asyncio
+import time
+from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
@@ -6,6 +8,7 @@ import pytest
 from app.services.midi_hub.hub import MidiHub
 from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
 from app.services.midi_broadcast import MidiBroadcastService
+from app.services.midi_hub.router import MidiRouter
 from app.services.midi_engine import MIDIEngineService
 from app.services.midi_learn import MIDILearnManager
 from app.services.midi_service import TesiraMidiDispatcher
@@ -115,6 +118,75 @@ async def test_midi_broadcast_consumes_hub_traffic(monkeypatch):
 
     assert published, "Expected MidiBroadcastService to publish hub traffic"
     assert published[0]["message"]["type"] == "midi_message"
+
+
+@pytest.mark.asyncio
+async def test_midi_broadcast_bridges_engine_monitor_messages_into_hub(monkeypatch, tmp_path: Path):
+    hub = MidiHub(auto_discover_alsa=False)
+    router = MidiRouter(hub=hub, persist_path=tmp_path / "routes.json")
+    router.add_route(
+        {
+            "route_id": "engine_to_destination",
+            "source_port": "consumer:juce_engine_out",
+            "destination_ports": ["virtual:destination"],
+            "enabled": True,
+            "priority": 100,
+        }
+    )
+    router.start()
+
+    destination = VirtualMidiPort(
+        port_id="virtual:destination",
+        name="Virtual Destination",
+        direction="duplex",
+    )
+    hub.register_port(destination, open_now=False)
+
+    observed_inbound: List[MidiMessage] = []
+    hub.subscribe("test_capture", lambda message: observed_inbound.append(message))
+    monkeypatch.setattr("app.services.midi_broadcast.get_midi_hub", lambda: hub)
+
+    published: List[Dict[str, Any]] = []
+
+    async def fake_broadcast_json(message: Dict[str, Any], topic: str) -> None:
+        published.append({"topic": topic, "message": message})
+
+    monkeypatch.setattr("app.services.midi_broadcast.ws_manager.get_subscribers", lambda _topic: {"client-1"})
+    monkeypatch.setattr("app.services.midi_broadcast.ws_manager.broadcast_json", fake_broadcast_json)
+
+    service = MidiBroadcastService()
+    await service.start()
+
+    start_ns = time.perf_counter_ns()
+    service._on_midi_message(
+        {
+            "type": "control_change",
+            "channel": 0,
+            "data1": 7,
+            "data2": 64,
+            "timestamp": 123,
+        }
+    )
+    bridge_overhead_ms = (time.perf_counter_ns() - start_ns) / 1_000_000
+
+    await asyncio.sleep(0.08)
+    transmitted = destination.read_transmitted(max_messages=16)
+    await service.stop()
+    router.stop()
+    hub.stop()
+
+    assert bridge_overhead_ms < 1.0
+    assert observed_inbound
+    assert observed_inbound[0].source_port == "consumer:juce_engine_out"
+    assert observed_inbound[0].data == bytes([0xB0, 0x07, 0x40])
+    assert observed_inbound[0].metadata["bridge"] == "juce_engine_monitor"
+    assert transmitted
+    assert transmitted[0].data == bytes([0xB0, 0x07, 0x40])
+    assert any(
+        row["message"]["type"] == "midi_message"
+        and row["message"]["data"]["source_port"] == "consumer:juce_engine_out"
+        for row in published
+    )
 
 
 def test_midi_broadcast_queue_is_bounded_and_drops_oldest():

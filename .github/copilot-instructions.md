@@ -1120,6 +1120,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest tests/midi_hub/test_script_engine.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py`; `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`.
 - **Lesson**: Before implementing "missing" MIDI behavior, prove whether the current path is live, stubbed, or dead code; audit drift in legacy UI can hide unreachable features behind silently ignored props.
 
+**21. JUCE Engine MIDI Must Enter MidiHub As Real Hub Traffic (Mar 23, 2026)**
+- **Files**: `app/services/midi_broadcast.py`, `app/services/midi_engine.py`, `tests/midi_hub/test_consumer_migration.py`
+- **Problem**: MIDI controllers opened by the JUCE engine were visible to the websocket monitor but invisible to Hub routes, scripts, macros, and other consumers.
+- **Root Cause**: The engine monitor callback stopped at the broadcast layer and never became a `MidiHub` message; only the opposite Hub→engine consumer path already existed.
+- **Fix**: Convert monitor callback payloads to raw MIDI bytes, inject them into MidiHub as source `consumer:juce_engine_out`, ensure the JUCE engine input/output virtual ports exist, and leave `consumer:juce_engine_in` as the Hub→engine feedback path.
+- **Verification**: `pytest tests/midi_hub/test_consumer_migration.py tests/midi_hub/test_script_engine.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py`; in-process probe: `avg_ms=0.002149`, `p95_ms=0.003773`, `max_ms=0.018339` over 200 bridged CC injections.
+- **Lesson**: If a MIDI source needs routing/automation in MAP2, it must enter MidiHub as a real `MidiMessage`, not just as a side-channel websocket event.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1390,6 +1398,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-23] - JUCE Engine Monitor Bridge Into MidiHub
+- **Section**: Gotchas & Learned Fixes (#21)
+- **Change**: Documented the requirement that JUCE-engine monitor callbacks must inject real hub traffic through `consumer:juce_engine_out` so Hub routes/scripts/macros can see engine-opened controllers.
+- **Reason**: The MIDI audit found the largest remaining architecture gap: the engine broadcast layer existed, but the routing matrix still could not consume that traffic.
+- **Impact**: Future engine/MIDI bridge work should treat websocket monitoring as observational only and keep all routable MIDI on the MidiHub message path.
+- **Files**: `.github/copilot-instructions.md`, `app/services/midi_broadcast.py`, `tests/midi_hub/test_consumer_migration.py`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-23] - MIDI Script Sandbox Verification + Legacy Drawer Cleanup
 - **Section**: Gotchas & Learned Fixes (#20), User Preferences

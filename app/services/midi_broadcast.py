@@ -14,6 +14,7 @@ Events:
 
 import asyncio
 import logging
+import time
 from datetime import datetime
 from typing import Dict, Any, Optional, Callable
 from queue import Queue, Empty, Full
@@ -62,6 +63,8 @@ class MidiBroadcastService:
         self._hub = None
         self._hub_subscriber_id = f"midi_broadcast:{id(self)}"
         self._hub_port_id = "consumer:midi_broadcast"
+        self._engine_input_port_id = "consumer:juce_engine_in"
+        self._engine_output_port_id = "consumer:juce_engine_out"
         self._cluster_event_bridge_registered = False
 
         # Topic names
@@ -114,12 +117,32 @@ class MidiBroadcastService:
             return
         try:
             hub = get_midi_hub()
+            if not hub.running:
+                hub.start()
             if hub.resolve_port(self._hub_port_id) is None:
                 hub.register_port(
                     VirtualMidiPort(
                         port_id=self._hub_port_id,
                         name="MIDI Broadcast Sink",
                         direction="input",
+                    ),
+                    open_now=False,
+                )
+            if hub.resolve_port(self._engine_input_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._engine_input_port_id,
+                        name="JUCE Engine Input",
+                        direction="input",
+                    ),
+                    open_now=False,
+                )
+            if hub.resolve_port(self._engine_output_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._engine_output_port_id,
+                        name="JUCE Engine Output",
+                        direction="output",
                     ),
                     open_now=False,
                 )
@@ -134,31 +157,17 @@ class MidiBroadcastService:
             return
         if message.source_port == self._hub_port_id:
             return
-        payload = list(message.data or [])
-        if not payload:
+        activity = self._activity_payload_from_data(
+            message.data,
+            source_port=message.source_port,
+            destination_port=message.destination_port,
+            metadata=message.metadata,
+        )
+        if activity is None:
             return
-        status = int(payload[0]) & 0xFF
-        message_type = "system"
-        if (status & 0xF0) == 0x80:
-            message_type = "note_off"
-        elif (status & 0xF0) == 0x90:
-            message_type = "note_on"
-        elif (status & 0xF0) == 0xB0:
-            message_type = "control_change"
-        elif (status & 0xF0) == 0xC0:
-            message_type = "program_change"
-        elif status == 0xF0:
-            message_type = "sysex"
         self._queue_event(
             "midi_message",
-            {
-                "message_type": message_type,
-                "raw_hex": " ".join(f"{int(byte) & 0xFF:02X}" for byte in payload),
-                "channel": (status & 0x0F) + 1 if status < 0xF0 else None,
-                "source_port": message.source_port,
-                "destination_port": message.destination_port,
-                "metadata": dict(message.metadata or {}),
-            },
+            activity,
         )
 
     def _register_callbacks(self):
@@ -310,7 +319,136 @@ class MidiBroadcastService:
 
     def _on_midi_message(self, msg: Dict[str, Any]):
         """Callback for all MIDI messages (monitoring)"""
-        self._queue_event("midi_message", msg)
+        if self._bridge_engine_message_to_hub(msg):
+            return
+        payload = self._monitor_message_to_bytes(msg)
+        if payload is None:
+            self._queue_event("midi_message", msg)
+            return
+        activity = self._activity_payload_from_data(
+            payload,
+            source_port=self._engine_output_port_id,
+            destination_port=None,
+            metadata=self._engine_message_metadata(msg),
+        )
+        if activity is None:
+            self._queue_event("midi_message", msg)
+            return
+        self._queue_event("midi_message", activity)
+
+    def _bridge_engine_message_to_hub(self, msg: Dict[str, Any]) -> bool:
+        if self._hub is None:
+            return False
+        payload = self._monitor_message_to_bytes(msg)
+        if payload is None:
+            return False
+        try:
+            return self._hub.inject(
+                MidiMessage(
+                    data=payload,
+                    timestamp_ns=self._engine_message_timestamp_ns(msg),
+                    source_port=self._engine_output_port_id,
+                    metadata=self._engine_message_metadata(msg),
+                )
+            )
+        except Exception as exc:
+            logger.debug("Failed bridging JUCE engine MIDI into MidiHub: %s", exc)
+            return False
+
+    @staticmethod
+    def _engine_message_metadata(msg: Dict[str, Any]) -> Dict[str, Any]:
+        metadata: Dict[str, Any] = {
+            "bridge": "juce_engine_monitor",
+        }
+        if "timestamp" in msg:
+            metadata["engine_timestamp"] = msg.get("timestamp")
+        return metadata
+
+    @staticmethod
+    def _engine_message_timestamp_ns(msg: Dict[str, Any]) -> int:
+        timestamp = msg.get("timestamp")
+        try:
+            if timestamp is not None:
+                return int(timestamp)
+        except Exception:
+            pass
+        return time.time_ns()
+
+    @staticmethod
+    def _monitor_message_to_bytes(msg: Dict[str, Any]) -> Optional[bytes]:
+        message_type = str(msg.get("type") or msg.get("message_type") or "").strip().lower()
+        try:
+            channel = int(msg.get("channel", 0)) & 0x0F
+            data1 = int(msg.get("data1", 0)) & 0x7F
+            data2 = int(msg.get("data2", 0)) & 0x7F
+        except Exception:
+            return None
+
+        if message_type == "note_on":
+            return bytes([0x90 | channel, data1, data2])
+        if message_type == "note_off":
+            return bytes([0x80 | channel, data1, data2])
+        if message_type == "control_change":
+            return bytes([0xB0 | channel, data1, data2])
+        if message_type == "program_change":
+            return bytes([0xC0 | channel, data1])
+        if message_type == "pitch_bend":
+            return bytes([0xE0 | channel, data1, data2])
+        if message_type == "channel_pressure":
+            return bytes([0xD0 | channel, data1])
+        if message_type == "clock":
+            return b"\xF8"
+        if message_type == "start":
+            return b"\xFA"
+        if message_type == "continue":
+            return b"\xFB"
+        if message_type == "stop":
+            return b"\xFC"
+        return None
+
+    @staticmethod
+    def _activity_payload_from_data(
+        payload: bytes | bytearray | list[int],
+        *,
+        source_port: str,
+        destination_port: Optional[str],
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        raw = [int(byte) & 0xFF for byte in payload]
+        if not raw:
+            return None
+        status = raw[0] & 0xFF
+        message_type = "system"
+        if (status & 0xF0) == 0x80:
+            message_type = "note_off"
+        elif (status & 0xF0) == 0x90:
+            message_type = "note_on"
+        elif (status & 0xF0) == 0xB0:
+            message_type = "control_change"
+        elif (status & 0xF0) == 0xC0:
+            message_type = "program_change"
+        elif (status & 0xF0) == 0xD0:
+            message_type = "channel_pressure"
+        elif (status & 0xF0) == 0xE0:
+            message_type = "pitch_bend"
+        elif status == 0xF0:
+            message_type = "sysex"
+        elif status == 0xF8:
+            message_type = "clock"
+        elif status == 0xFA:
+            message_type = "start"
+        elif status == 0xFB:
+            message_type = "continue"
+        elif status == 0xFC:
+            message_type = "stop"
+        return {
+            "message_type": message_type,
+            "raw_hex": " ".join(f"{byte:02X}" for byte in raw),
+            "channel": (status & 0x0F) + 1 if status < 0xF0 else None,
+            "source_port": source_port,
+            "destination_port": destination_port,
+            "metadata": dict(metadata or {}),
+        }
 
     def _on_parameter_change(self, plugin_id: int, param_symbol: str, param_index: int, value: float):
         """Callback when CC mapping triggers parameter change"""

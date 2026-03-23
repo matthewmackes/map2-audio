@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 18:30 EDT - Codex (Closed `T383` by proving the MIDI Hub script engine executes backend code inside its existing restricted sandbox and closed `T384` by removing dead legacy MIDI learn/mappings paths plus the redundant JUCE Grid MIDI scope branch before starting the JUCE-engine bridge.)
+Last updated: 2026-03-23 18:40 EDT - Codex (Closed `T382` by bridging JUCE-engine monitor callbacks into MidiHub as `consumer:juce_engine_out`, proving routed/observable hub traffic plus sub-millisecond bridge overhead, and finishing the three requested execution cycles.)
 
 ## Active Blockers Only
 
@@ -5399,7 +5399,7 @@ Last updated: 2026-03-23 18:00 EDT - Codex
   - Python syntax validated
 
 ID: T382
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI audit — Bridge C++ engine MIDI input into Hub routing matrix
 Description:
 - Goal / acceptance criteria: MIDI messages received by the C++ MidiHandler (ALSA) must be forwarded into the MidiHub's routing matrix so they are visible to Hub routes, traffic monitor, scripts, and macros.
@@ -5415,7 +5415,15 @@ Subtasks:
   - [ ] Verify Hub routes can filter/transform engine MIDI
   - [ ] Latency measurement: bridge overhead must be < 1ms
 Assigned to: Codex
-Last updated: 2026-03-23 18:00 EDT - Codex
+Last updated: 2026-03-23 18:40 EDT - Codex
+- Completion notes:
+  - Updated `app/services/midi_broadcast.py` so the JUCE-engine monitor callback now converts engine MIDI payloads into raw bytes and injects them into MidiHub as source port `consumer:juce_engine_out` with bridge metadata instead of leaving the C++ engine isolated from the Hub routing matrix.
+  - Hardened the same bridge registration path to ensure `JUCE Engine Input` and `JUCE Engine Output` virtual ports are present in MidiHub alongside the existing broadcast sink, and start the hub when the broadcast bridge attaches so the engine-originated injection path is active.
+  - Kept the existing Hub→engine feedback path intact: `app/services/midi_engine.py` was already subscribing to `consumer:juce_engine_in`, so this slice closes the missing engine→Hub direction and completes the end-to-end bridge.
+  - Added focused coverage in `tests/midi_hub/test_consumer_migration.py` proving an engine-originated CC becomes inbound hub traffic from `consumer:juce_engine_out`, routes through `MidiRouter` into a virtual destination port, and shows up in broadcast activity payloads.
+  - Validation passed with `pytest tests/midi_hub/test_consumer_migration.py tests/midi_hub/test_script_engine.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py`.
+  - Software-only bridge timing probe on this host measured `avg_ms=0.002149`, `p95_ms=0.003773`, and `max_ms=0.018339` across 200 injected CC messages while routing them through MidiHub, comfortably below the `< 1 ms` acceptance target for bridge overhead.
+  - Licensing review: touched backend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 ID: T383
 Status: [✓] Done
