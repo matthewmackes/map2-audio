@@ -11,17 +11,15 @@ Endpoints for:
 import asyncio
 import logging
 import time
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/peers", tags=["Peer Discovery"])
-
-# Global peer manager (injected by main app)
-peer_manager = None
 
 # Track latency history
 LATENCY_HISTORY: Dict[str, List[Dict]] = {}
@@ -32,6 +30,7 @@ class PeerInfo(BaseModel):
     """Detailed peer information"""
     node_id: str
     node_mode: str
+    hostname: Optional[str] = None
     host: str
     port: int
     api_url: str
@@ -41,6 +40,20 @@ class PeerInfo(BaseModel):
     last_seen: str
     latency_ms: Optional[float] = None
     ssh_trusted: bool = False
+    is_online: bool = True
+    discovery_sources: List[str] = []
+    registered: bool = False
+    registry_status: Optional[str] = None
+    heartbeat_online: Optional[bool] = None
+    visible: bool = True
+    visibility_state: Optional[str] = None
+    registration_required: bool = False
+    routing_ready: bool = False
+    visibility_reason: Optional[str] = None
+    avb_enabled: bool = True
+    discovered_via_mdns: bool = False
+    discovered_via_peer_mdns: bool = False
+    discovered_via_cluster_mdns: bool = False
 
 
 class LatencyEntry(BaseModel):
@@ -90,10 +103,29 @@ class LinkPeerResponse(BaseModel):
 
 def _get_peer_manager():
     """Get peer manager from LCD manager"""
-    from app.services.lcd_manager import lcd_manager as global_lcd_manager
-    if global_lcd_manager and hasattr(global_lcd_manager, 'mdns_discovery'):
-        return global_lcd_manager.mdns_discovery
+    from app.services.lcd_manager import get_lcd_manager
+
+    manager = get_lcd_manager()
+    if manager and hasattr(manager, "mdns_discovery"):
+        return manager.mdns_discovery
     return None
+
+
+def _require_lcd_manager():
+    from app.services.lcd_manager import get_lcd_manager
+
+    manager = get_lcd_manager()
+    if manager is None:
+        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
+    return manager
+
+
+def _require_mdns_discovery():
+    manager = _require_lcd_manager()
+    mdns = getattr(manager, "mdns_discovery", None)
+    if mdns is None:
+        raise HTTPException(status_code=503, detail="mDNS discovery not enabled")
+    return manager, mdns
 
 
 def _record_latency(peer_id: str, latency_ms: float, success: bool = True):
@@ -102,7 +134,7 @@ def _record_latency(peer_id: str, latency_ms: float, success: bool = True):
         LATENCY_HISTORY[peer_id] = []
     
     entry = {
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(timezone.utc).isoformat(),
         'latency_ms': latency_ms,
         'success': success,
     }
@@ -145,6 +177,16 @@ def _calculate_latency_stats(peer_id: str) -> Dict:
     }
 
 
+def _to_isoformat(value: object) -> str:
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, str):
+        normalized = value.strip()
+        if normalized:
+            return normalized
+    return datetime.now(timezone.utc).isoformat()
+
+
 async def _ping_peer(peer_host: str, peer_port: int = 8000) -> Optional[float]:
     """Ping a peer and measure latency"""
     try:
@@ -168,41 +210,40 @@ async def _ping_peer(peer_host: str, peer_port: int = 8000) -> Optional[float]:
 @router.get("", response_model=DiscoveryStatusResponse)
 async def get_peer_discovery_status():
     """Get comprehensive peer discovery status"""
-    from app.services.lcd_manager import lcd_manager as global_lcd_manager
-    
-    if not global_lcd_manager:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-    
-    # Get discovered peers
-    mdns = global_lcd_manager.mdns_discovery
-    if not mdns:
-        raise HTTPException(status_code=503, detail="mDNS discovery not enabled")
-    
-    discovered = mdns.get_discovered_peers() if hasattr(mdns, 'get_discovered_peers') else getattr(mdns, 'discovered_peers', {})
-    
-    # Get connected peers
-    connected = set(global_lcd_manager.event_router.get_connected_peers()) if hasattr(global_lcd_manager.event_router, 'get_connected_peers') else set()
+    global_lcd_manager = _require_lcd_manager()
+    mdns = getattr(global_lcd_manager, "mdns_discovery", None)
+    from app.services.cluster.node_visibility import get_visible_remote_nodes
+
+    _, visible_nodes = get_visible_remote_nodes()
+
+    event_router = getattr(global_lcd_manager, "event_router", None)
+    connected = set(event_router.get_connected_peers()) if event_router and hasattr(event_router, "get_connected_peers") else set()
     
     # Read SSH trust status
-    from app.services.node_identity import NodeIdentity
     from pathlib import Path
     import json
-    
-    identity = NodeIdentity()
+
     trusted_peers = set()
-    
+
     trust_file = Path.home() / ".map2" / "ssh_trust" / "trusted_peers.json"
     if trust_file.exists():
-        with open(trust_file, 'r') as f:
+        with open(trust_file, "r", encoding="utf-8") as f:
             trusted_data = json.load(f)
             trusted_peers = set(trusted_data.keys())
     
     # Build peer list
     peers = []
-    for node_id, peer_data in discovered.items():
+    for node_id in sorted(visible_nodes):
+        peer_data = visible_nodes[node_id]
+        host = getattr(peer_data, "host", None) or getattr(peer_data, "hostname", None) or node_id
+        port = int(getattr(peer_data, "port", 8000) or 8000)
+        is_online = bool(getattr(peer_data, "is_online", True))
+        registered = bool(getattr(peer_data, "registered", False))
+        visibility_state = getattr(peer_data, "visibility_state", None)
+        if visibility_state is None:
+            visibility_state = "managed-online" if registered and is_online else "discovered-unmanaged"
+        routing_ready = bool(getattr(peer_data, "routing_ready", registered and is_online and getattr(peer_data, "api_url", None)))
         # Measure current latency
-        host = peer_data.get('host') or peer_data.get('hostname')
-        port = peer_data.get('port', 8000)
         latency = await _ping_peer(host, port)
         
         if latency is not None:
@@ -212,24 +253,39 @@ async def get_peer_discovery_status():
         
         peer_info = PeerInfo(
             node_id=node_id,
-            node_mode=peer_data.get('mode', 'UNKNOWN'),
+            node_mode=getattr(peer_data, "node_mode", None) or "UNKNOWN",
+            hostname=getattr(peer_data, "hostname", None) or host,
             host=host,
             port=port,
-            api_url=f"http://{host}:{port}",
-            ws_url=f"ws://{host}:{port}/ws",
+            api_url=str(getattr(peer_data, "api_url", None) or f"http://{host}:{port}"),
+            ws_url=str(getattr(peer_data, "ws_url", None) or f"ws://{host}:{port}/api/lcd/ws/events"),
             ssh_url=f"ssh://mm@{host}",
-            discovered_at=peer_data.get('discovered_at', datetime.utcnow().isoformat()),
-            last_seen=peer_data.get('last_seen', datetime.utcnow().isoformat()),
+            discovered_at=_to_isoformat(getattr(peer_data, "discovered_at", None) or getattr(peer_data, "last_seen", None)),
+            last_seen=_to_isoformat(getattr(peer_data, "last_seen", None)),
             latency_ms=latency,
             ssh_trusted=node_id in trusted_peers,
+            is_online=is_online,
+            discovery_sources=sorted(getattr(peer_data, "sources", [])),
+            registered=registered,
+            registry_status=getattr(peer_data, "registry_status", None),
+            heartbeat_online=getattr(peer_data, "heartbeat_online", None),
+            visible=bool(getattr(peer_data, "visible", is_online)),
+            visibility_state=visibility_state,
+            registration_required=bool(getattr(peer_data, "registration_required", not registered)),
+            routing_ready=routing_ready,
+            visibility_reason=getattr(peer_data, "visibility_reason", None),
+            avb_enabled=bool(getattr(peer_data, "avb_enabled", True)),
+            discovered_via_mdns=bool(getattr(peer_data, "discovered_via_mdns", False)),
+            discovered_via_peer_mdns=bool(getattr(peer_data, "discovered_via_peer_mdns", False)),
+            discovered_via_cluster_mdns=bool(getattr(peer_data, "discovered_via_cluster_mdns", False)),
         )
         peers.append(peer_info)
     
     return DiscoveryStatusResponse(
         local_node_id=global_lcd_manager.node_id,
-        discovery_enabled=mdns is not None,
+        discovery_enabled=mdns is not None or bool(visible_nodes),
         discovery_uptime=getattr(mdns, 'discovery_uptime', 'unknown'),
-        peers_discovered=len(discovered),
+        peers_discovered=len(visible_nodes),
         peers_connected=len(connected),
         peers=peers,
     )
@@ -238,39 +294,35 @@ async def get_peer_discovery_status():
 @router.post("/{peer_id}/ping")
 async def ping_peer(peer_id: str):
     """Ping a specific peer and measure latency"""
-    from app.services.lcd_manager import lcd_manager as global_lcd_manager
-    
-    if not global_lcd_manager or not global_lcd_manager.mdns_discovery:
-        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
-    
-    mdns = global_lcd_manager.mdns_discovery
-    discovered = getattr(mdns, 'discovered_peers', {})
-    
-    if peer_id not in discovered:
+    _require_lcd_manager()
+    from app.services.cluster.node_visibility import get_visible_remote_node
+
+    peer = get_visible_remote_node(peer_id)
+
+    if peer is None:
         raise HTTPException(status_code=404, detail=f"Peer {peer_id} not discovered")
-    
-    peer_data = discovered[peer_id]
-    host = peer_data.get('host') or peer_data.get('hostname')
-    port = peer_data.get('port', 8000)
+
+    host = peer.host or peer.hostname
+    port = int(peer.port or 8000)
     
     latency = await _ping_peer(host, port)
     
     if latency is not None:
         _record_latency(peer_id, latency, success=True)
         return {
-            'peer_id': peer_id,
-            'host': host,
-            'latency_ms': latency,
-            'success': True,
+            "peer_id": peer_id,
+            "host": host,
+            "latency_ms": latency,
+            "success": True,
         }
     else:
         _record_latency(peer_id, 0, success=False)
         return {
-            'peer_id': peer_id,
-            'host': host,
-            'latency_ms': None,
-            'success': False,
-            'error': 'Connection timeout',
+            "peer_id": peer_id,
+            "host": host,
+            "latency_ms": None,
+            "success": False,
+            "error": "Connection timeout",
         }
 
 
@@ -312,9 +364,7 @@ async def link_peer(peer_id: str, request: LinkPeerRequest):
     3. Records peer in deployment configuration
     """
     from app.routes.ssh_trust import add_peer_trust
-    from app.services.node_identity import NodeIdentity
-    import subprocess
-    
+
     try:
         logger.info(f"Initiating peer link with {peer_id} at {request.peer_host}")
         
@@ -349,20 +399,24 @@ async def link_peer(peer_id: str, request: LinkPeerRequest):
         # Step 2: LCD Routing setup
         if request.setup_lcd_routing:
             try:
-                # Register peer in LCD event router
-                from app.services.lcd_manager import lcd_manager as global_lcd_manager
-                
-                if global_lcd_manager and hasattr(global_lcd_manager, 'event_router'):
-                    event_router = global_lcd_manager.event_router
-                    
-                    if hasattr(event_router, 'add_remote_peer'):
-                        await event_router.add_remote_peer(
-                            peer_id=peer_id,
-                            host=request.peer_host,
-                            port=8000,
-                        )
-                        lcd_success = True
-                        logger.info(f"LCD routing configured for {peer_id}")
+                global_lcd_manager = _require_lcd_manager()
+                event_router = getattr(global_lcd_manager, "event_router", None)
+
+                if event_router and hasattr(event_router, "connect_to_peer"):
+                    await event_router.connect_to_peer(
+                        peer_id,
+                        f"ws://{request.peer_host}:8000/api/lcd/ws/events",
+                    )
+                    lcd_success = True
+                    logger.info(f"LCD routing configured for {peer_id}")
+                elif event_router and hasattr(event_router, "add_remote_peer"):
+                    await event_router.add_remote_peer(
+                        peer_id=peer_id,
+                        host=request.peer_host,
+                        port=8000,
+                    )
+                    lcd_success = True
+                    logger.info(f"LCD routing configured for {peer_id}")
             except Exception as e:
                 logger.warning(f"Failed to setup LCD routing: {e}")
         

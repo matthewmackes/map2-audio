@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const mockListCabinets = jest.fn()
 const mockListReverbs = jest.fn()
-const mockGetStatus = jest.fn()
+const mockGetTypeStatus = jest.fn()
 const mockLoadCabinet = jest.fn()
+const mockLoadCabinetToInstance = jest.fn()
 const mockLoadReverb = jest.fn()
+const mockLoadReverbToInstance = jest.fn()
 const mockUploadCabinet = jest.fn()
 const mockUploadReverb = jest.fn()
 const mockPushToast = jest.fn()
@@ -16,9 +18,11 @@ jest.mock('../../../map2/api', () => ({
   irApi: {
     listCabinets: (...args: unknown[]) => mockListCabinets(...args),
     listReverbs: (...args: unknown[]) => mockListReverbs(...args),
-    getStatus: (...args: unknown[]) => mockGetStatus(...args),
+    getTypeStatus: (...args: unknown[]) => mockGetTypeStatus(...args),
     loadCabinet: (...args: unknown[]) => mockLoadCabinet(...args),
+    loadCabinetToInstance: (...args: unknown[]) => mockLoadCabinetToInstance(...args),
     loadReverb: (...args: unknown[]) => mockLoadReverb(...args),
+    loadReverbToInstance: (...args: unknown[]) => mockLoadReverbToInstance(...args),
     uploadCabinet: (...args: unknown[]) => mockUploadCabinet(...args),
     uploadReverb: (...args: unknown[]) => mockUploadReverb(...args),
   },
@@ -32,7 +36,7 @@ jest.mock('../Toasts', () => ({
 
 import { IRManagerDialog } from './IRManagerDialog'
 
-function renderDialog() {
+function renderDialog(instanceId?: number) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -42,7 +46,7 @@ function renderDialog() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <IRManagerDialog type="cabinet" open onClose={jest.fn()} />
+      <IRManagerDialog type="cabinet" open onClose={jest.fn()} instanceId={instanceId} />
     </QueryClientProvider>,
   )
 }
@@ -51,9 +55,11 @@ describe('IRManagerDialog', () => {
   beforeEach(() => {
     mockListCabinets.mockReset()
     mockListReverbs.mockReset()
-    mockGetStatus.mockReset()
+    mockGetTypeStatus.mockReset()
     mockLoadCabinet.mockReset()
+    mockLoadCabinetToInstance.mockReset()
     mockLoadReverb.mockReset()
+    mockLoadReverbToInstance.mockReset()
     mockUploadCabinet.mockReset()
     mockUploadReverb.mockReset()
     mockPushToast.mockReset()
@@ -92,8 +98,9 @@ describe('IRManagerDialog', () => {
       ],
       count: 2,
     })
-    mockGetStatus.mockResolvedValue({ available: true, loaded_cabinet: 'Cab B' })
+    mockGetTypeStatus.mockResolvedValue({ available: true, loaded_cabinet: 'Cab B' })
     mockLoadCabinet.mockResolvedValue({})
+    mockLoadCabinetToInstance.mockResolvedValue({})
     mockUploadCabinet.mockResolvedValue({ filename: 'new-cab.wav' })
   })
 
@@ -144,10 +151,25 @@ describe('IRManagerDialog', () => {
   })
 
   it('shows the active IR when status uses backend active_* fields', async () => {
-    mockGetStatus.mockResolvedValue({ available: true, active_cabinet: 'Cab B' })
+    mockGetTypeStatus.mockResolvedValue({ available: true, active_cabinet: 'Cab B' })
 
     renderDialog()
 
     expect(await screen.findByText('Active: Cab B')).toBeInTheDocument()
+  })
+
+  it('uses instance-scoped cabinet load calls when instanceId is provided', async () => {
+    renderDialog(21)
+
+    await screen.findByText('Cab A')
+
+    expect(mockGetTypeStatus).toHaveBeenCalledWith('cabinet', { instanceId: 21 })
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
+
+    await waitFor(() => {
+      expect(mockLoadCabinetToInstance).toHaveBeenCalledWith('Cab A', 21)
+    })
+    expect(mockLoadCabinet).not.toHaveBeenCalled()
   })
 })

@@ -37,9 +37,10 @@ interface Props {
   open: boolean
   onClose: () => void
   onLoadNAM?: (modelName: string) => void
+  instanceId?: number
 }
 
-export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
+export function NAMManagerDialog({ open, onClose, onLoadNAM, instanceId }: Props) {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
@@ -64,13 +65,21 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
   })
 
   const statusQuery = useQuery<NAMStatus>({
-    queryKey: ['nam', 'status'],
-    queryFn: () => namApi.getStatus(),
+    queryKey: ['nam', 'status', instanceId ?? 'global'],
+    queryFn: () => (
+      typeof instanceId === 'number' && instanceId > 0
+        ? namApi.getInstanceStatus(instanceId)
+        : namApi.getStatus()
+    ),
     enabled: open,
   })
 
   const loadMutation = useMutation({
-    mutationFn: (name: string) => namApi.loadModel(name),
+    mutationFn: (name: string) => (
+      typeof instanceId === 'number' && instanceId > 0
+        ? namApi.loadModelToInstance(name, instanceId)
+        : namApi.loadModel(name)
+    ),
     onSuccess: (_, name) => {
       queryClient.invalidateQueries({ queryKey: ['nam'] })
       pushToast(`Loaded NAM model: ${name}`, 'success')

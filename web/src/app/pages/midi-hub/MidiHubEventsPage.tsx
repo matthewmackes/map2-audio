@@ -16,7 +16,7 @@ export function MidiHubEventsPage() {
     <MidiHubAreaLayout
       routeKey="events"
       title="Event Lists"
-      summary="This routed area is reserved for the Net3-style event list engine, MSC builder, learn mode, and timecode workflows."
+      summary="Build and run Net3-style event lists, cue learning, MSC sends, and timecode-driven recall from one show-control workspace."
       tags={[
         { label: 'Cue engine', type: 'green' },
         { label: 'Timecode', type: 'blue' },

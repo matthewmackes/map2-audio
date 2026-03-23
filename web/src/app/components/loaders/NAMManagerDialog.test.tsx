@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const mockListModels = jest.fn()
 const mockGetStatus = jest.fn()
+const mockGetInstanceStatus = jest.fn()
 const mockLoadModel = jest.fn()
+const mockLoadModelToInstance = jest.fn()
 const mockUpload = jest.fn()
 const mockPushToast = jest.fn()
 const mockFetch = jest.fn()
@@ -14,7 +16,9 @@ jest.mock('../../../map2/api', () => ({
   namApi: {
     listModels: (...args: unknown[]) => mockListModels(...args),
     getStatus: (...args: unknown[]) => mockGetStatus(...args),
+    getInstanceStatus: (...args: unknown[]) => mockGetInstanceStatus(...args),
     loadModel: (...args: unknown[]) => mockLoadModel(...args),
+    loadModelToInstance: (...args: unknown[]) => mockLoadModelToInstance(...args),
     upload: (...args: unknown[]) => mockUpload(...args),
   },
 }))
@@ -27,7 +31,7 @@ jest.mock('../Toasts', () => ({
 
 import { NAMManagerDialog } from './NAMManagerDialog'
 
-function renderDialog() {
+function renderDialog(instanceId?: number) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -37,7 +41,7 @@ function renderDialog() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <NAMManagerDialog open onClose={jest.fn()} />
+      <NAMManagerDialog open onClose={jest.fn()} instanceId={instanceId} />
     </QueryClientProvider>,
   )
 }
@@ -46,7 +50,9 @@ describe('NAMManagerDialog', () => {
   beforeEach(() => {
     mockListModels.mockReset()
     mockGetStatus.mockReset()
+    mockGetInstanceStatus.mockReset()
     mockLoadModel.mockReset()
+    mockLoadModelToInstance.mockReset()
     mockUpload.mockReset()
     mockPushToast.mockReset()
     mockFetch.mockReset()
@@ -106,6 +112,18 @@ describe('NAMManagerDialog', () => {
       latency: 0,
       availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
     })
+    mockGetInstanceStatus.mockResolvedValue({
+      available: true,
+      activeModel: 'Mesa Mark V',
+      mix: 1,
+      bypass: false,
+      inputLevel: 0,
+      outputLevel: 0,
+      peakInput: 0,
+      peakOutput: 0,
+      latency: 0,
+      availableModels: ['Mesa Mark V', 'Tube Screamer OD'],
+    })
 
     mockFetch.mockResolvedValue({
       ok: true,
@@ -122,6 +140,7 @@ describe('NAMManagerDialog', () => {
     })
 
     mockLoadModel.mockResolvedValue({})
+    mockLoadModelToInstance.mockResolvedValue({})
     mockUpload.mockResolvedValue({ model: { name: 'uploaded.nam' } })
   })
 
@@ -173,5 +192,20 @@ describe('NAMManagerDialog', () => {
     await waitFor(() => {
       expect(mockLoadModel.mock.calls[0]?.[0]).toBe('uploaded.nam')
     })
+  })
+
+  it('uses instance-scoped NAM status and load calls when instanceId is provided', async () => {
+    renderDialog(17)
+
+    await screen.findByText('Mesa Mark V')
+
+    expect(mockGetInstanceStatus).toHaveBeenCalledWith(17)
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Load' })[0])
+
+    await waitFor(() => {
+      expect(mockLoadModelToInstance).toHaveBeenCalledWith('Tube Screamer OD', 17)
+    })
+    expect(mockLoadModel).not.toHaveBeenCalled()
   })
 })

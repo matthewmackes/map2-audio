@@ -17,6 +17,7 @@ import {
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { readPorts } from './portUtils'
 
 const FILTER_MESSAGE_OPTIONS = ['note_on', 'note_off', 'control_change', 'program_change', 'pitch_bend', 'clock', 'sysex']
 const FILTER_HEADERS = [
@@ -26,25 +27,6 @@ const FILTER_HEADERS = [
   { key: 'channels', header: 'Channels' },
   { key: 'messages', header: 'Messages' },
 ] as const
-
-type PortSummary = {
-  port_id: string
-  name: string
-}
-
-function readPorts(raw: unknown): PortSummary[] {
-  if (!Array.isArray(raw)) return []
-  return raw
-    .map((item) => {
-      if (!item || typeof item !== 'object') return null
-      const candidate = item as Record<string, unknown>
-      const portId = String(candidate.port_id ?? '')
-      const name = String(candidate.name ?? portId)
-      if (!portId) return null
-      return { port_id: portId, name }
-    })
-    .filter((item): item is PortSummary => item !== null)
-}
 
 function toggleValue<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value]

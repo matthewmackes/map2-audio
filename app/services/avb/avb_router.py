@@ -831,29 +831,35 @@ class AvbRouter:
             return
 
         try:
-            from app.services.cluster.registry import get_cluster_registry
+            from app.services.cluster.node_visibility import get_visible_remote_nodes
 
-            registry = get_cluster_registry()
-            nodes = await asyncio.to_thread(registry.get_all_nodes)
+            _, visible_nodes = await asyncio.to_thread(get_visible_remote_nodes)
 
-            for node in nodes:
-                status = str(node.get("status", "")).lower()
-                if status in {"offline", "failed"}:
+            for node_id, visible in visible_nodes.items():
+                routing_ready = getattr(visible, "routing_ready", None)
+                if routing_ready is None:
+                    routing_ready = bool(
+                        getattr(visible, "registered", False)
+                        and getattr(visible, "is_online", False)
+                        and getattr(visible, "api_url", None)
+                    )
+
+                if not routing_ready:
                     continue
 
-                metadata = self._coerce_metadata(node)
+                metadata = self._coerce_metadata(visible.metadata)
                 if metadata.get("avb_enabled") is False:
                     continue
 
-                node_id = str(node.get("id") or node.get("hostname") or "map2-node")
                 entity_id = self._normalize_entity_id(
                     metadata.get("avb_entity_id"),
                     fallback_seed=node_id,
                 )
-                device_name = str(node.get("hostname") or node_id)
-                mac_address = node.get("mac_address") or metadata.get("mac_address")
-                ip_address = node.get("ip_address") or metadata.get("ip_address")
-                node_address = f"http://{ip_address}:8080" if ip_address else None
+                device_name = str(visible.hostname or node_id)
+                mac_address = metadata.get("mac_address")
+                node_address = visible.api_url
+                if not node_address:
+                    continue
 
                 streams = metadata.get("avb_streams") or []
                 if not streams:
@@ -888,7 +894,7 @@ class AvbRouter:
                         mac_address=mac_address,
                         node_id=node_id,
                         node_address=node_address,
-                        host=self._parse_host(node_address),
+                        host=visible.host or self._parse_host(node_address),
                         available=True,
                         last_seen=datetime.now(),
                     )

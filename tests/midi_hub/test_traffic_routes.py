@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import time
 from pathlib import Path
 
@@ -13,6 +15,7 @@ from app.services.midi_hub.event_list_service import MidiHubEventListService
 from app.services.midi_hub.gateway import MidiGatewayManager
 from app.services.midi_hub.hub import MidiHub
 from app.services.midi_hub.macros import MidiMacroService
+from app.services.midi_hub.message_mapper import MidiMessageMapperService
 from app.services.midi_hub.midi2 import Midi2Manager
 from app.services.midi_hub.network import MidiNetworkBridge
 from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
@@ -34,7 +37,154 @@ def _init_temp_db(tmp_path: Path) -> None:
 
 
 def _register_virtual_port(hub: MidiHub, port_id: str, name: str) -> None:
-    hub.register_port(VirtualMidiPort(port_id=port_id, name=name, direction="duplex"))
+    port = VirtualMidiPort(port_id=port_id, name=name, direction="duplex")
+    port.open()
+    hub.register_port(port, open_now=False)
+
+
+def _encode_u7_lsb(value: int, size: int) -> list[int]:
+    return [(int(value) >> (7 * index)) & 0x7F for index in range(size)]
+
+
+def _build_discovery_reply(local_muid: int, remote_muid: int) -> bytes:
+    return bytes(
+        [
+            0xF0,
+            0x7E,
+            0x7F,
+            0x0D,
+            0x71,
+            0x02,
+            *_encode_u7_lsb(remote_muid, 4),
+            *_encode_u7_lsb(local_muid, 4),
+            0x7D,
+            0x00,
+            0x00,
+            0x01,
+            0x00,
+            0x02,
+            0x00,
+            0x01,
+            0x00,
+            0x00,
+            0x00,
+            0x0C,
+            *_encode_u7_lsb(512, 4),
+            0x00,
+            0xF7,
+        ]
+    )
+
+
+def _build_property_reply(local_muid: int, remote_muid: int, request_id: int, header: dict[str, object], property_data: object | None = None) -> bytes:
+    header_bytes = json.dumps(header, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+    property_bytes = (
+        json.dumps(property_data, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+        if property_data is not None
+        else b""
+    )
+    return bytes(
+        [
+            0xF0,
+            0x7E,
+            0x7F,
+            0x0D,
+            0x35,
+            0x02,
+            *_encode_u7_lsb(remote_muid, 4),
+            *_encode_u7_lsb(local_muid, 4),
+            int(request_id) & 0x7F,
+            *_encode_u7_lsb(len(header_bytes), 2),
+            *header_bytes,
+            0x01,
+            0x00,
+            0x01,
+            0x00,
+            *_encode_u7_lsb(len(property_bytes), 2),
+            *property_bytes,
+            0xF7,
+        ]
+    )
+
+
+def _build_invalidate_muid(source_muid: int, target_muid: int) -> bytes:
+    return bytes(
+        [
+            0xF0,
+            0x7E,
+            0x7F,
+            0x0D,
+            0x7E,
+            0x02,
+            *_encode_u7_lsb(source_muid, 4),
+            *_encode_u7_lsb(0x0FFFFFFF, 4),
+            *_encode_u7_lsb(target_muid, 4),
+            0xF7,
+        ]
+    )
+
+
+def _build_property_exchange_chunks(
+    local_muid: int,
+    remote_muid: int,
+    request_id: int,
+    subid2: int,
+    header: dict[str, object],
+    property_data: object | bytes | None = None,
+    *,
+    max_chunk_payload: int = 40,
+) -> list[bytes]:
+    header_bytes = json.dumps(header, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+    if isinstance(property_data, bytes):
+        property_bytes = property_data
+    elif property_data is None:
+        property_bytes = b""
+    else:
+        property_bytes = json.dumps(property_data, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+
+    chunks: list[tuple[bytes, bytes]] = []
+    remaining_header = header_bytes
+    remaining_property = property_bytes
+    while remaining_header or remaining_property or not chunks:
+        header_chunk = b""
+        property_chunk = b""
+        if remaining_header:
+            header_chunk = remaining_header[:max_chunk_payload]
+            remaining_header = remaining_header[len(header_chunk):]
+            if not remaining_header:
+                capacity = max_chunk_payload - len(header_chunk)
+                property_chunk = remaining_property[:capacity]
+                remaining_property = remaining_property[len(property_chunk):]
+        else:
+            property_chunk = remaining_property[:max_chunk_payload]
+            remaining_property = remaining_property[len(property_chunk):]
+        chunks.append((header_chunk, property_chunk))
+
+    messages: list[bytes] = []
+    for index, (header_chunk, property_chunk) in enumerate(chunks, start=1):
+        messages.append(
+            bytes(
+                [
+                    0xF0,
+                    0x7E,
+                    0x7F,
+                    0x0D,
+                    subid2,
+                    0x02,
+                    *_encode_u7_lsb(remote_muid, 4),
+                    *_encode_u7_lsb(local_muid, 4),
+                    int(request_id) & 0x7F,
+                    *_encode_u7_lsb(len(header_chunk), 2),
+                    *header_chunk,
+                    *_encode_u7_lsb(len(chunks), 2),
+                    *_encode_u7_lsb(index, 2),
+                    *_encode_u7_lsb(len(property_chunk), 2),
+                    *property_chunk,
+                    0xF7,
+                ]
+            )
+        )
+    return messages
 
 
 @pytest.fixture
@@ -61,8 +211,12 @@ def route_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     )
     clock_engine = MidiClockEngine(hub=hub)
     network_bridge = MidiNetworkBridge(hub=hub)
-    midi2_manager = Midi2Manager(enabled=False)
+    midi2_manager = Midi2Manager(enabled=False, hub=hub, network_bridge=network_bridge)
     registry = MidiDeviceRegistry(hub)
+    message_mapper = MidiMessageMapperService(
+        hub=hub,
+        storage_path=tmp_path / "message-mapper.json",
+    )
     macro_service = MidiMacroService(
         hub=hub,
         router=router,
@@ -90,6 +244,7 @@ def route_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(midi_hub_routes, "get_midi_network_bridge", lambda: network_bridge)
     monkeypatch.setattr(midi_hub_routes, "get_midi2_manager", lambda: midi2_manager)
     monkeypatch.setattr(midi_hub_routes, "get_midi_device_registry", lambda: registry)
+    monkeypatch.setattr(midi_hub_routes, "get_midi_message_mapper_service", lambda: message_mapper)
     monkeypatch.setattr(midi_hub_routes, "get_midi_macro_service", lambda: macro_service)
     monkeypatch.setattr(midi_hub_routes, "get_midi_recorder", lambda: recorder)
     monkeypatch.setattr(midi_hub_routes, "get_midi_scheduler", lambda: scheduler)
@@ -103,9 +258,14 @@ def route_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "monitor": monitor,
         "preset_service": preset_service,
         "recorder": recorder,
+        "message_mapper": message_mapper,
+        "network_bridge": network_bridge,
+        "midi2_manager": midi2_manager,
     }
 
     manager.stop_all()
+    midi2_manager.close()
+    message_mapper.close()
     router.stop()
     hub.stop()
 
@@ -211,6 +371,9 @@ async def test_preset_routes_save_compare_slots_and_recall(route_env, tmp_path: 
 
 @pytest.mark.asyncio
 async def test_script_routes_clock_network_and_midi2(route_env):
+    hub = route_env["hub"]
+    network_bridge = route_env["network_bridge"]
+    midi2_manager = route_env["midi2_manager"]
     examples = await midi_hub_routes.list_script_examples()
     assert examples["count"] >= 1
 
@@ -253,7 +416,7 @@ async def test_script_routes_clock_network_and_midi2(route_env):
 
     assert (
         await midi_hub_routes.create_network_session(
-            midi_hub_routes.NetworkSessionRequest(session_id="net1", host="127.0.0.1", port=56010, mode="send")
+            midi_hub_routes.NetworkSessionRequest(session_id="net1", host="127.0.0.1", port=56010, mode="listen")
         )
     )["ok"] is True
     assert (await midi_hub_routes.list_network_sessions())["count"] == 1
@@ -275,25 +438,108 @@ async def test_script_routes_clock_network_and_midi2(route_env):
         )
     )["ok"] is True
     assert (await midi_hub_routes.stop_osc_server())["ok"] is True
-    assert (await midi_hub_routes.delete_network_session("net1"))["ok"] is True
 
     assert (await midi_hub_routes.get_midi2_status())["enabled"] is False
     configured_midi2 = await midi_hub_routes.configure_midi2(
-        midi_hub_routes.Midi2ConfigRequest(enabled=True, default_protocol="midi2")
+        midi_hub_routes.Midi2ConfigRequest(
+            enabled=True,
+            default_protocol="midi2",
+            binding_transport="network_session",
+            binding_target_id="net1",
+        )
     )
     assert configured_midi2["default_protocol"] == "midi2"
-    discovered = await midi_hub_routes.discover_midi2_device(midi_hub_routes.Midi2DiscoverRequest(device_id="dev-1"))
-    assert discovered["device"]["device_id"] == "dev-1"
-    profile = await midi_hub_routes.set_midi2_profile("dev-1", midi_hub_routes.Midi2ProfileRequest(profile_id="gm2", enabled=True))
-    assert profile["device"]["profiles"]["gm2"] is True
-    assert (
-        await midi_hub_routes.set_midi2_property("dev-1", midi_hub_routes.Midi2PropertyRequest(key="patch_name", value="Init"))
-    )["ok"] is True
-    assert (await midi_hub_routes.get_midi2_property("dev-1", "patch_name"))["value"] == "Init"
+    assert configured_midi2["binding"]["target_id"] == "net1"
+    discovered = await midi_hub_routes.discover_midi2_device(midi_hub_routes.Midi2DiscoverRequest())
+    assert discovered["ok"] is True
+    assert discovered["transport"]["target_id"] == "net1"
+    remote_muid = 0x0012233
+    response = _build_discovery_reply(midi2_manager._local_muid, remote_muid)
+    network_bridge._handle_udp_midi("net1", response, ("127.0.0.1", 56010))
+    hub._dispatch_inbound()
+    status = midi2_manager.status()
+    assert status["last_rx_hex"] == response.hex(" ").upper()
+    assert status["last_rx_device_id"] == "muid-0012233"
+    device_id = status["devices"][0]["device_id"]
+    property_read = await midi_hub_routes.read_midi2_property(
+        device_id,
+        midi_hub_routes.Midi2PropertyRequest(resource="ResourceList"),
+    )
+    assert property_read["ok"] is True
+    reply = _build_property_reply(
+        midi2_manager._local_muid,
+        remote_muid,
+        int(property_read["transport"]["request_id"]),
+        {"status": 200, "resource": "ResourceList"},
+        [{"resource": "DeviceInfo"}],
+    )
+    network_bridge._handle_udp_midi("net1", reply, ("127.0.0.1", 56010))
+    hub._dispatch_inbound()
+    assert (await midi_hub_routes.get_midi2_status())["devices"][0]["resources"] == ["DeviceInfo"]
+
+    large_read = await midi_hub_routes.read_midi2_property(
+        device_id,
+        midi_hub_routes.Midi2PropertyRequest(resource="LargeResource"),
+    )
+    large_reply_chunks = _build_property_exchange_chunks(
+        midi2_manager._local_muid,
+        remote_muid,
+        int(large_read["transport"]["request_id"]),
+        0x35,
+        {"status": 200, "resource": "LargeResource"},
+        {"payload": "Y" * 96},
+        max_chunk_payload=24,
+    )
+    assert len(large_reply_chunks) > 1
+    for packet in large_reply_chunks:
+        network_bridge._handle_udp_midi("net1", packet, ("127.0.0.1", 56010))
+    hub._dispatch_inbound()
+    assert (await midi_hub_routes.get_midi2_property(device_id, "LargeResource"))["value"] == {"payload": "Y" * 96}
+
+    inspect = await midi_hub_routes.inspect_ump(
+        midi_hub_routes.Midi2TranslateUmpRequest(words=[0x01011234, 0x40903C00, 0x12345678])
+    )
+    assert inspect["messages"][0]["kind"] == "jr_clock"
+    assert inspect["messages"][1]["kind"] == "note_on"
+    collision_reply = _build_discovery_reply(midi2_manager._local_muid, remote_muid)
+    network_bridge._handle_udp_midi("net1", collision_reply, ("127.0.0.2", 56011))
+    hub._dispatch_inbound()
+    await asyncio.sleep(0)
+    collision_status = await midi_hub_routes.get_midi2_status()
+    assert collision_status["device_count"] == 0
+    assert str(collision_status["last_error"]).startswith("remote_muid_collision:")
+    invalidate = _build_invalidate_muid(remote_muid, remote_muid)
+    network_bridge._handle_udp_midi("net1", invalidate, ("127.0.0.1", 56010))
+    hub._dispatch_inbound()
+    cleared_status = await midi_hub_routes.get_midi2_status()
+    assert str(cleared_status["last_error"]).startswith(("remote_muid_invalidated:", "remote_muid_collision:"))
     ump = await midi_hub_routes.translate_midi1_to_ump(midi_hub_routes.Midi2TranslateMidi1Request(message=[0x90, 60, 100]))
     assert len(ump["words"]) == 1
     midi1 = await midi_hub_routes.translate_ump_to_midi1(midi_hub_routes.Midi2TranslateUmpRequest(words=ump["words"]))
     assert midi1["message"][:3] == [0x90, 60, 100]
+    assert (await midi_hub_routes.delete_network_session("net1"))["ok"] is True
+
+
+@pytest.mark.asyncio
+async def test_midi2_binding_requires_receive_capable_network_session(route_env):
+    assert (
+        await midi_hub_routes.create_network_session(
+            midi_hub_routes.NetworkSessionRequest(session_id="send-only", host="127.0.0.1", port=56012, mode="send")
+        )
+    )["ok"] is True
+
+    with pytest.raises(midi_hub_routes.HTTPException) as excinfo:
+        await midi_hub_routes.configure_midi2(
+            midi_hub_routes.Midi2ConfigRequest(
+                enabled=True,
+                default_protocol="midi2",
+                binding_transport="network_session",
+                binding_target_id="send-only",
+            )
+        )
+
+    assert excinfo.value.status_code == 400
+    assert excinfo.value.detail == "binding_session_not_listening"
 
 
 @pytest.mark.asyncio

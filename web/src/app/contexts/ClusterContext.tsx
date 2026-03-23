@@ -27,10 +27,12 @@ type PeersResponse = {
   peers: Array<{
     node_id: string
     node_mode: string
+    hostname?: string
     host: string
     api_url: string
     last_seen: string
     latency_ms?: number | null
+    is_online?: boolean
   }>
 }
 
@@ -68,10 +70,14 @@ function buildNodes(data: PeersResponse | undefined): { nodes: NodeInfo[]; local
 
   for (const peer of data.peers ?? []) {
     const lastSeen = peer.last_seen ? Date.parse(peer.last_seen) : NaN
-    const isOnline = Number.isFinite(lastSeen) ? (now - lastSeen) < 90_000 : true
+    const isOnline = typeof peer.is_online === 'boolean'
+      ? peer.is_online
+      : Number.isFinite(lastSeen)
+        ? (now - lastSeen) < 90_000
+        : true
     nodes.push({
       nodeId: peer.node_id,
-      hostname: peer.host || peer.node_id,
+      hostname: peer.hostname || peer.host || peer.node_id,
       role: peer.node_mode || 'AUDIO-NODE',
       isLocal: peer.node_id === localNodeId,
       isOnline,

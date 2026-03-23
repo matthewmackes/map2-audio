@@ -12,13 +12,13 @@ export interface LivePluginCardContext {
 }
 
 const LIVE_SAFE_CUSTOM_URIS = new Set([
+  'map2://juce/convolution/cabinet',
+  'map2://juce/convolution/reverb',
+  'map2://juce/nam',
   'map2://juce/modulation/intellifx',
 ])
 
 const LIVE_GENERIC_ONLY_URIS = new Set([
-  'map2://juce/convolution/cabinet',
-  'map2://juce/convolution/reverb',
-  'map2://juce/nam',
   'map2://juce/drums',
 ])
 

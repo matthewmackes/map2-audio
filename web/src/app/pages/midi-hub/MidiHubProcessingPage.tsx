@@ -32,7 +32,7 @@ export function MidiHubProcessingPage() {
           <MidiHubPanelShell panelId="mapper">
             <div className="midi-hub-processing-heading">
               <h3>Message Mapper</h3>
-              <Tag type="cool-gray">16 slots</Tag>
+              <Tag type="cool-gray">Node-backed</Tag>
             </div>
             <MidiHubMessageMapper />
           </MidiHubPanelShell>

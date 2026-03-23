@@ -102,7 +102,7 @@ describe('MatrixCell cross-node indicators', () => {
       />
     )
 
-    expect(screen.getByTestId('LinkIcon')).toBeTruthy()
+    expect(screen.getByLabelText('Cross-node route')).toBeTruthy()
   })
 
   it('does not show cross-node link indicator when talker and listener are on the same node', () => {
@@ -131,6 +131,6 @@ describe('MatrixCell cross-node indicators', () => {
       />
     )
 
-    expect(screen.queryByTestId('LinkIcon')).toBeNull()
+    expect(screen.queryByLabelText('Cross-node route')).toBeNull()
   })
 })

@@ -120,6 +120,8 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
   const ptpSynced = node.ptp?.state === 'master' || node.ptp?.state === 'slave';
   const totalEndpoints = node.talker_count + node.listener_count;
   const DeviceIcon = getDeviceIcon(node);
+  const statusLabel =
+    node.status === 'offline' ? 'offline' : node.status === 'degraded' || !ptpSynced ? 'degraded' : 'online';
 
   return (
     <>
@@ -166,7 +168,14 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
               <DeviceIcon size={16} />
 
               {/* Status indicator */}
-              {getStatusIcon(node.status, ptpSynced)}
+              <Box
+                component="span"
+                aria-label={`Node status ${statusLabel}`}
+                data-node-status={statusLabel}
+                sx={{ display: 'inline-flex', alignItems: 'center' }}
+              >
+                {getStatusIcon(node.status, ptpSynced)}
+              </Box>
 
               {/* Node name */}
               <Box

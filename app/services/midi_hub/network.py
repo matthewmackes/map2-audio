@@ -602,6 +602,19 @@ class MidiNetworkBridge:
             )
             return
         source_port = f"network:{session_id}:{addr[0]}:{addr[1]}"
+        self._hub.inject(
+            MidiMessage(
+                data=bytes(data),
+                timestamp_ns=time.time_ns(),
+                source_port=source_port,
+                destination_port=None,
+                metadata={
+                    "network_session_id": session_id,
+                    "network_host": str(addr[0]),
+                    "network_port": int(addr[1]),
+                },
+            )
+        )
         for mapping in self._osc_mappings:
             if mapping.destination_port:
                 self._hub.send(source_port=source_port, destination_port=mapping.destination_port, data=bytes(data))

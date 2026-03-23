@@ -14,12 +14,14 @@
 #include "PhaseCorrelation.h"
 #include "CPUMonitor.h"
 #include "ConvolutionProcessor.h"
+#include "NativeConvolutionPluginProcessor.h"
 #include "DynamicsProcessor.h"
 #include "FilterProcessor.h"
 #include "MidiHandler.h"
 #include "ChorusProcessor.h"
 #include "PhaserProcessor.h"
 #include "PitchShifterProcessor.h"
+#include "NativeNAMPluginProcessor.h"
 #include "DelayProcessor.h"
 #include "IntelliFX8VoiceChorusProcessor.h"
 #include "BossXS1PolyShifterProcessor.h"
@@ -3709,6 +3711,62 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             return irInfoToDict(self.getReverbIRInfo());
         }, "Get reverb IR info")
 
+        .def("load_cabinet_ir_instance", [](Map2AudioEngine& self, InstanceId instanceId, const std::string& path) {
+            auto* processor = dynamic_cast<NativeConvolutionPluginProcessor*>(self.getPluginHost().getProcessor(instanceId));
+            return processor != nullptr ? processor->loadImpulseResponse(path) : false;
+        }, py::arg("instance_id"), py::arg("path"), "Load cabinet IR into a specific native processor instance")
+
+        .def("load_reverb_ir_instance", [](Map2AudioEngine& self, InstanceId instanceId, const std::string& path) {
+            auto* processor = dynamic_cast<NativeConvolutionPluginProcessor*>(self.getPluginHost().getProcessor(instanceId));
+            return processor != nullptr ? processor->loadImpulseResponse(path) : false;
+        }, py::arg("instance_id"), py::arg("path"), "Load reverb IR into a specific native processor instance")
+
+        .def("unload_ir_instance", [](Map2AudioEngine& self, InstanceId instanceId) {
+            if (auto* processor = dynamic_cast<NativeConvolutionPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                processor->unloadImpulseResponse();
+                return true;
+            }
+            return false;
+        }, py::arg("instance_id"), "Unload IR from a specific native processor instance")
+
+        .def("set_ir_mix_instance", [](Map2AudioEngine& self, InstanceId instanceId, float mixPercent) {
+            if (auto* processor = dynamic_cast<NativeConvolutionPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                processor->setMixPercent(mixPercent);
+                return true;
+            }
+            return false;
+        }, py::arg("instance_id"), py::arg("mix_percent"), "Set IR mix on a specific native processor instance")
+
+        .def("set_ir_bypass_instance", [](Map2AudioEngine& self, InstanceId instanceId, bool bypass) {
+            if (auto* processor = dynamic_cast<NativeConvolutionPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                processor->setBypassEnabled(bypass);
+                return true;
+            }
+            return false;
+        }, py::arg("instance_id"), py::arg("bypass"), "Set IR bypass on a specific native processor instance")
+
+        .def("get_ir_info_instance", [](Map2AudioEngine& self, InstanceId instanceId) {
+            py::dict d;
+            if (auto* processor = dynamic_cast<NativeConvolutionPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                auto info = processor->getIRInfo();
+                d = irInfoToDict(info);
+                d["mix"] = processor->getMixPercent();
+                d["bypass"] = processor->isBypassedLocally();
+                d["loaded"] = !info.path.empty();
+                return d;
+            }
+            d["path"] = "";
+            d["name"] = "";
+            d["length_samples"] = 0;
+            d["length_ms"] = 0.0;
+            d["sample_rate"] = 0.0;
+            d["channels"] = 0;
+            d["loaded"] = false;
+            d["mix"] = 0.0;
+            d["bypass"] = false;
+            return d;
+        }, py::arg("instance_id"), "Get IR information for a specific native processor instance")
+
         // ========================================
         // Dynamics - Compressor (NEW)
         // ========================================
@@ -4002,6 +4060,88 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             d["loaded"] = info.loaded;
             return d;
         }, "Get NAM model information")
+
+        .def("load_nam_model_instance", [](Map2AudioEngine& self, InstanceId instanceId, const std::string& path) {
+            auto* processor = dynamic_cast<NativeNAMPluginProcessor*>(self.getPluginHost().getProcessor(instanceId));
+            return processor != nullptr ? processor->loadModel(path) : false;
+        }, py::arg("instance_id"), py::arg("path"), "Load a NAM model into a specific native processor instance")
+
+        .def("unload_nam_model_instance", [](Map2AudioEngine& self, InstanceId instanceId) {
+            if (auto* processor = dynamic_cast<NativeNAMPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                processor->unloadModel();
+                return true;
+            }
+            return false;
+        }, py::arg("instance_id"), "Unload a NAM model from a specific native processor instance")
+
+        .def("get_nam_model_info_instance", [](Map2AudioEngine& self, InstanceId instanceId) {
+            py::dict d;
+            if (auto* processor = dynamic_cast<NativeNAMPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                auto info = processor->getModelInfo();
+                d["path"] = info.path;
+                d["name"] = info.name;
+                d["expected_sample_rate"] = info.expectedSampleRate;
+                d["input_channels"] = info.inputChannels;
+                d["output_channels"] = info.outputChannels;
+                d["has_input_level"] = info.hasInputLevel;
+                d["has_output_level"] = info.hasOutputLevel;
+                d["input_level"] = processor->getInputLevel();
+                d["output_level"] = processor->getOutputLevel();
+                d["loaded"] = info.loaded;
+                d["input_gain"] = processor->getInputGainDb();
+                d["output_gain"] = processor->getOutputGainDb();
+                d["normalize"] = processor->isNormalized();
+                d["bypass"] = processor->isBypassedLocally();
+                return d;
+            }
+            d["path"] = "";
+            d["name"] = "";
+            d["expected_sample_rate"] = 48000.0;
+            d["input_channels"] = 1;
+            d["output_channels"] = 1;
+            d["has_input_level"] = false;
+            d["has_output_level"] = false;
+            d["input_level"] = -100.0f;
+            d["output_level"] = -100.0f;
+            d["loaded"] = false;
+            d["input_gain"] = 0.0f;
+            d["output_gain"] = 0.0f;
+            d["normalize"] = true;
+            d["bypass"] = false;
+            return d;
+        }, py::arg("instance_id"), "Get NAM model information for a specific native processor instance")
+
+        .def("set_nam_input_gain_instance", [](Map2AudioEngine& self, InstanceId instanceId, float db) {
+            if (auto* processor = dynamic_cast<NativeNAMPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                processor->setInputGainDb(db);
+                return true;
+            }
+            return false;
+        }, py::arg("instance_id"), py::arg("db"), "Set NAM input gain on a specific native processor instance")
+
+        .def("set_nam_output_gain_instance", [](Map2AudioEngine& self, InstanceId instanceId, float db) {
+            if (auto* processor = dynamic_cast<NativeNAMPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                processor->setOutputGainDb(db);
+                return true;
+            }
+            return false;
+        }, py::arg("instance_id"), py::arg("db"), "Set NAM output gain on a specific native processor instance")
+
+        .def("set_nam_bypass_instance", [](Map2AudioEngine& self, InstanceId instanceId, bool bypass) {
+            if (auto* processor = dynamic_cast<NativeNAMPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                processor->setBypassEnabled(bypass);
+                return true;
+            }
+            return false;
+        }, py::arg("instance_id"), py::arg("bypass"), "Set NAM bypass on a specific native processor instance")
+
+        .def("set_nam_normalize_instance", [](Map2AudioEngine& self, InstanceId instanceId, bool normalize) {
+            if (auto* processor = dynamic_cast<NativeNAMPluginProcessor*>(self.getPluginHost().getProcessor(instanceId))) {
+                processor->setNormalizeEnabled(normalize);
+                return true;
+            }
+            return false;
+        }, py::arg("instance_id"), py::arg("normalize"), "Set NAM normalization on a specific native processor instance")
 
         .def("set_nam_input_gain", &Map2AudioEngine::setNAMInputGain,
              py::arg("db"),

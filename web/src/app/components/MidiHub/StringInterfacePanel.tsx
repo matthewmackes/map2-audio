@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, CodeSnippet, Tag, TextArea, TextInput, Toggle } from '@carbon/react'
 import { midiHubApi } from '../../../map2/api'
@@ -16,6 +16,7 @@ export function StringInterfacePanel() {
   const [targetPort, setTargetPort] = useState('3037')
   const [outboundCommand, setOutboundCommand] = useState('GO 12')
   const [inboundCommand, setInboundCommand] = useState('MACRO START_SHOW')
+  const [hydratedConfig, setHydratedConfig] = useState(false)
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['midi-hub', scopeKey, 'string-interface'] })
 
@@ -24,6 +25,16 @@ export function StringInterfacePanel() {
     queryFn: () => midiHubApi.getStringInterfaceStatus(nodeId),
     refetchInterval: 3000,
   })
+
+  useEffect(() => {
+    if (hydratedConfig || !statusQuery.data) return
+    setEnabled(Boolean(statusQuery.data.enabled))
+    setListenHost(statusQuery.data.listen_host)
+    setListenPort(String(statusQuery.data.listen_port))
+    setTargetHost(statusQuery.data.target_host)
+    setTargetPort(String(statusQuery.data.target_port))
+    setHydratedConfig(true)
+  }, [hydratedConfig, statusQuery.data])
 
   const configMutation = useMutation({
     mutationFn: async () =>

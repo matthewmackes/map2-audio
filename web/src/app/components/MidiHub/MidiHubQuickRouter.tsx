@@ -12,7 +12,7 @@ import {
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
-import { readPorts } from './MidiHubWorkbenchCards'
+import { readPorts } from './portUtils'
 
 function routePayloadFromExisting(route: MidiHubRoute, destinationPorts: string[]) {
   return {

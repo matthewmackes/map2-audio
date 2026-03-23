@@ -141,29 +141,6 @@ class VirtualMidiPort(MidiPort):
         }
 
 
-class NetworkMidiPort(VirtualMidiPort):
-    """RTP-MIDI placeholder transport.
-
-    Current implementation is in-process only; network transport is introduced
-    in T066-subN.
-    """
-
-    def __init__(self, *, port_id: str, name: str, direction: PortDirection = "duplex", queue_size: int = 4096):
-        super().__init__(port_id=port_id, name=name, direction=direction, queue_size=queue_size)
-        self.kind = "network"
-
-
-class JackMidiPort(VirtualMidiPort):
-    """JACK/engine bridge placeholder using in-process buffers.
-
-    JUCE/JACK transport wiring is introduced in T066-subF.
-    """
-
-    def __init__(self, *, port_id: str, name: str, direction: PortDirection = "duplex", queue_size: int = 4096):
-        super().__init__(port_id=port_id, name=name, direction=direction, queue_size=queue_size)
-        self.kind = "jack"
-
-
 class AlsaMidiPort(MidiPort):
     """ALSA MIDI port backed by python-rtmidi when available."""
 

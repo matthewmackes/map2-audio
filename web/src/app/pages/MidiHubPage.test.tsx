@@ -141,12 +141,6 @@ jest.mock('../components/MidiHub/MidiHubHelpPrimitives', () => ({
   MidiHubPanelShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
-jest.mock('../components/MidiHub/MidiHubWorkbenchCards', () => ({
-  readPorts: (raw: unknown) => (Array.isArray(raw) ? raw : []),
-  MidiHubFilterPlannerCard: () => <div>Filter Planner Mock</div>,
-  MidiHubMapperPlannerCard: () => <div>Mapper Planner Mock</div>,
-}))
-
 jest.mock('../components/MidiHub/MidiHubQuickRouter', () => ({
   MidiHubQuickRouter: () => <div>Quick Router Mock</div>,
 }))

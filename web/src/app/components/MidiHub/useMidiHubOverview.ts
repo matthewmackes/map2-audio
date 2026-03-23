@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { midiHubApi } from '../../../map2/api'
-import { readPorts } from './MidiHubWorkbenchCards'
+import { readPorts } from './portUtils'
 
 function readRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object') {

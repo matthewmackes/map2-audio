@@ -335,6 +335,25 @@ function appendNodeQuery(url: string, nodeId?: string | null): string {
   return `${url}${separator}node_id=${encodeURIComponent(nodeId)}`
 }
 
+function appendQueryParams(
+  url: string,
+  params: Record<string, string | number | boolean | null | undefined>,
+): string {
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === '') {
+      continue
+    }
+    query.set(key, String(value))
+  }
+  const serialized = query.toString()
+  if (!serialized) {
+    return url
+  }
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}${serialized}`
+}
+
 function scopedNodePath(path: string, nodeId?: string | null): string {
   if (!nodeId || nodeId === 'all') {
     return `${API_BASE}${path}`
@@ -1702,12 +1721,100 @@ export interface MidiHubNetworkSession {
   jitter_ms?: number | null;
 }
 
+export interface Midi2TransportBindingState {
+  transport: string;
+  target_id?: string | null;
+  response_port?: string | null;
+  bound_at?: number | null;
+}
+
+export interface Midi2TransportResult {
+  ok: boolean;
+  transport?: string | null;
+  target_id?: string | null;
+  response_port?: string | null;
+  request_kind?: string | null;
+  request_id?: number | null;
+  awaiting_reply?: boolean;
+  payload_hex?: string | null;
+  reason?: string | null;
+}
+
+export interface Midi2ProfileDetailState {
+  profile_id: string;
+  inquiry_target: number;
+  data_hex: string;
+  data_text?: string | null;
+  data?: unknown;
+}
+
+export interface Midi2SubscriptionState {
+  resource?: string | null;
+  res_id?: string | null;
+  active: boolean;
+  last_command?: string | null;
+  last_request_id?: number | null;
+  last_update_at?: number | null;
+  pending_refresh?: boolean;
+}
+
+export interface Midi2UmpInspectionMessage {
+  type: string;
+  group: number;
+  [key: string]: unknown;
+}
+
 export interface Midi2DeviceState {
   device_id: string;
   protocol: string;
+  remote_muid?: string | null;
+  manufacturer_id?: string | null;
+  family_id?: string | null;
+  model_id?: string | null;
+  software_revision?: string | null;
+  supports_profiles?: boolean;
+  supports_property_exchange?: boolean;
+  max_sysex_size?: number | null;
+  discovery_state?: string | null;
+  profile_state?: string | null;
+  property_state?: string | null;
   profiles: Record<string, boolean>;
+  profile_details?: Record<string, Midi2ProfileDetailState>;
   properties: Record<string, unknown>;
+  resources?: string[];
+  subscriptions?: Record<string, Midi2SubscriptionState>;
+  property_exchange_capabilities?: Record<string, unknown>;
   last_discovery_at?: number | null;
+  last_request_at?: number | null;
+  last_request_kind?: string | null;
+  last_request_id?: number | null;
+  pending_request_kind?: string | null;
+  pending_request_id?: number | null;
+  pending_request_deadline?: number | null;
+  last_request_hex?: string | null;
+  last_response_at?: number | null;
+  last_response_hex?: string | null;
+  last_response_source?: string | null;
+  last_response_summary?: string | null;
+}
+
+export interface Midi2Status {
+  enabled: boolean;
+  default_protocol: string;
+  local_muid?: string | null;
+  device_count: number;
+  devices: Midi2DeviceState[];
+  binding: Midi2TransportBindingState;
+  last_error?: string | null;
+  last_tx_at?: number | null;
+  last_tx_hex?: string | null;
+  last_tx_kind?: string | null;
+  last_tx_device_id?: string | null;
+  last_rx_at?: number | null;
+  last_rx_hex?: string | null;
+  last_rx_source?: string | null;
+  last_rx_device_id?: string | null;
+  discovery_pending_until?: number | null;
 }
 
 export interface TesiraAliasState {
@@ -1800,6 +1907,27 @@ export interface MidiHubLearnSuggestion {
   confidence: number;
   reason: string;
   chain_context?: Record<string, unknown>;
+}
+
+export interface MidiHubMessageMapperSlot {
+  slot_id: string;
+  enabled: boolean;
+  source_port: string;
+  message_type: string;
+  channel_min: number;
+  channel_max: number;
+  value_min: number;
+  value_max: number;
+  target: string;
+  curve: string;
+  created_at: number;
+  updated_at: number;
+  match_count: number;
+  last_matched_at?: number | null;
+  last_source_port?: string | null;
+  last_event_hex?: string | null;
+  last_output_hex?: string | null;
+  last_error?: string | null;
 }
 
 export interface MidiHubMacro {
@@ -2439,15 +2567,24 @@ export const midiHubApi = {
     ),
 
   getMidi2Status: (nodeId?: string | null) =>
-    fetchJson<{ enabled: boolean; default_protocol: string; device_count: number; devices: Midi2DeviceState[] }>(
+    fetchJson<Midi2Status>(
       appendNodeQuery(`${API_BASE}/midi/hub/midi2`, nodeId)
     ),
   getMidi2StatusForNode: (nodeId?: string | null) =>
-    fetchJson<{ enabled: boolean; default_protocol: string; device_count: number; devices: Midi2DeviceState[] }>(
+    fetchJson<Midi2Status>(
       appendNodeQuery(`${API_BASE}/midi/hub/midi2`, nodeId)
     ),
-  updateMidi2Config: (payload: { enabled?: boolean; default_protocol?: 'midi1' | 'midi2' }, nodeId?: string | null) =>
-    fetchJson<{ enabled: boolean; default_protocol: string; device_count: number; devices: Midi2DeviceState[] }>(
+  updateMidi2Config: (
+    payload: {
+      enabled?: boolean;
+      default_protocol?: 'midi1' | 'midi2';
+      binding_transport?: 'none' | 'port' | 'network_session';
+      binding_target_id?: string;
+      binding_response_port?: string;
+    },
+    nodeId?: string | null
+  ) =>
+    fetchJson<Midi2Status>(
       appendNodeQuery(`${API_BASE}/midi/hub/midi2`, nodeId),
       {
         method: 'PUT',
@@ -2455,24 +2592,80 @@ export const midiHubApi = {
       }
     ),
   discoverMidi2Device: (deviceId: string, nodeId?: string | null) =>
-    fetchJson<{ ok: boolean; device: Midi2DeviceState; discovery_sysex: number[] }>(appendNodeQuery(`${API_BASE}/midi/hub/midi2/discover`, nodeId), {
+    fetchJson<{ ok: boolean; probe_id: string; discovery_sysex: number[]; transport: Midi2TransportResult }>(appendNodeQuery(`${API_BASE}/midi/hub/midi2/discover`, nodeId), {
       method: 'POST',
-      body: JSON.stringify({ device_id: deviceId }),
+      body: JSON.stringify(deviceId ? { device_id: deviceId } : {}),
     }),
+  inquireMidi2Profiles: (deviceId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; transport?: Midi2TransportResult }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/profiles/inquiry`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }
+    ),
+  inquireMidi2ProfileDetails: (deviceId: string, profileId: string, inquiryTarget = 0, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; transport?: Midi2TransportResult }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/profiles/details`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ profile_id: profileId, inquiry_target: inquiryTarget }),
+      }
+    ),
   setMidi2Profile: (deviceId: string, profileId: string, enabled = true, nodeId?: string | null) =>
-    fetchJson<{ ok: boolean; device: Midi2DeviceState }>(
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; transport?: Midi2TransportResult }>(
       appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/profiles`, nodeId),
       {
         method: 'PUT',
         body: JSON.stringify({ profile_id: profileId, enabled }),
       }
     ),
-  setMidi2Property: (deviceId: string, key: string, value: unknown, nodeId?: string | null) =>
-    fetchJson<{ ok: boolean; device: Midi2DeviceState }>(
+  inquireMidi2PropertyExchangeCapabilities: (deviceId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; transport?: Midi2TransportResult }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/property-exchange/capabilities`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }
+    ),
+  invalidateMidi2Device: (deviceId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; device_id: string; target_muid: string; removed_device_ids: string[]; transport?: Midi2TransportResult }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/invalidate`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }
+    ),
+  subscribeMidi2Property: (deviceId: string, resource: string, resId?: string | null, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; transport?: Midi2TransportResult }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/subscriptions`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ resource, res_id: resId ?? undefined }),
+      }
+    ),
+  endMidi2Subscription: (deviceId: string, subscribeId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; transport?: Midi2TransportResult }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/subscriptions/${encodeURIComponent(subscribeId)}/end`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }
+    ),
+  readMidi2Property: (deviceId: string, resource: string, resId?: string | null, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; transport?: Midi2TransportResult }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/properties/read`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify({ resource, res_id: resId ?? undefined }),
+      }
+    ),
+  setMidi2Property: (deviceId: string, resource: string, value: unknown, resId?: string | null, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; transport?: Midi2TransportResult }>(
       appendNodeQuery(`${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/properties`, nodeId),
       {
         method: 'PUT',
-        body: JSON.stringify({ key, value }),
+        body: JSON.stringify({ resource, res_id: resId ?? undefined, value }),
       }
     ),
   getMidi2Property: (deviceId: string, key: string, nodeId?: string | null) =>
@@ -2486,6 +2679,11 @@ export const midiHubApi = {
     }),
   translateUmpToMidi1: (words: number[], nodeId?: string | null) =>
     fetchJson<{ message: number[] }>(appendNodeQuery(`${API_BASE}/midi/hub/midi2/translate/ump-to-midi1`, nodeId), {
+      method: 'POST',
+      body: JSON.stringify({ words }),
+    }),
+  inspectMidi2Ump: (words: number[], nodeId?: string | null) =>
+    fetchJson<{ messages: Midi2UmpInspectionMessage[] }>(appendNodeQuery(`${API_BASE}/midi/hub/midi2/translate/inspect-ump`, nodeId), {
       method: 'POST',
       body: JSON.stringify({ words }),
     }),
@@ -2625,6 +2823,47 @@ export const midiHubApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  listMessageMapperSlots: (nodeId?: string | null) =>
+    fetchJson<{ count: number; slots: MidiHubMessageMapperSlot[] }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/processing/mappers`, nodeId),
+    ),
+  updateMessageMapperSlot: (
+    slotId: string,
+    payload: {
+      enabled?: boolean;
+      source_port?: string;
+      message_type?: string;
+      channel_min?: number;
+      channel_max?: number;
+      value_min?: number;
+      value_max?: number;
+      target?: string;
+      curve?: string;
+    },
+    nodeId?: string | null,
+  ) =>
+    fetchJson<{ ok: boolean; slot: MidiHubMessageMapperSlot }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/processing/mappers/${encodeURIComponent(slotId)}`, nodeId),
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      },
+    ),
+  clearMessageMapperSlot: (slotId: string, nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; slot: MidiHubMessageMapperSlot }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/processing/mappers/${encodeURIComponent(slotId)}/clear`, nodeId),
+      {
+        method: 'POST',
+      },
+    ),
+  resetMessageMapperSlots: (nodeId?: string | null) =>
+    fetchJson<{ ok: boolean; count: number; slots: MidiHubMessageMapperSlot[] }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/processing/mappers/reset`, nodeId),
+      {
+        method: 'POST',
+      },
+    ),
 
   listMacros: (nodeId?: string | null) =>
     fetchJson<{ count: number; macros: MidiHubMacro[] }>(appendNodeQuery(`${API_BASE}/midi/hub/macros`, nodeId)),
@@ -2891,6 +3130,16 @@ export const midiHubApi = {
 export const irApi = {
   getStatus: (nodeId?: string | null) => fetchJson<IRStatus>(appendNodeQuery(`${API_BASE}/ir/`, nodeId)),
 
+  getTypeStatus: (
+    type: 'cabinet' | 'reverb',
+    options?: { instanceId?: number; nodeId?: string | null },
+  ) => fetchJson<IRStatus>(
+    appendNodeQuery(
+      appendQueryParams(`${API_BASE}/ir/status`, { type, instance_id: options?.instanceId }),
+      options?.nodeId,
+    ),
+  ),
+
   listCabinets: (nodeId?: string | null) => fetchJson<IRsResponse>(appendNodeQuery(`${API_BASE}/ir/cabinets`, nodeId)),
 
   listReverbs: (nodeId?: string | null) => fetchJson<IRsResponse>(appendNodeQuery(`${API_BASE}/ir/reverbs`, nodeId)),
@@ -2904,6 +3153,69 @@ export const irApi = {
   loadReverb: (irName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; ir: string; type: string }>(
       appendNodeQuery(`${API_BASE}/ir/reverbs/${encodeURIComponent(irName)}/load`, nodeId),
+      { method: 'POST' }
+    ),
+
+  loadCabinetToInstance: (irName: string, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; ir: string; type: string }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/ir/cabinets/${encodeURIComponent(irName)}/load`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      { method: 'POST' }
+    ),
+
+  loadReverbToInstance: (irName: string, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; ir: string; type: string }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/ir/reverbs/${encodeURIComponent(irName)}/load`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      { method: 'POST' }
+    ),
+
+  setCabinetMixForInstance: (mix: number, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; mix: number; type: string }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/ir/set-cabinet-mix/${mix}`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      { method: 'POST' }
+    ),
+
+  setReverbMixForInstance: (mix: number, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; mix: number; type: string }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/ir/set-reverb-mix/${mix}`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      { method: 'POST' }
+    ),
+
+  setCabinetBypassForInstance: (bypass: boolean, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; bypass: boolean; type: string }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/ir/set-cabinet-bypass/${bypass}`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      { method: 'POST' }
+    ),
+
+  setReverbBypassForInstance: (bypass: boolean, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; bypass: boolean; type: string }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/ir/set-reverb-bypass/${bypass}`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      { method: 'POST' }
+    ),
+
+  navigateCabinetToInstance: (direction: 'prev' | 'next', instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; ir: string; type: string }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/ir/navigate-cabinet/${direction}`, { instance_id: instanceId }),
+        nodeId,
+      ),
       { method: 'POST' }
     ),
 
@@ -3105,6 +3417,14 @@ export interface NAMCategoriesResponse {
 export const namApi = {
   getStatus: (nodeId?: string | null) => fetchJson<NAMStatus>(appendNodeQuery(`${API_BASE}/nam/status`, nodeId)),
 
+  getInstanceStatus: (instanceId: number, nodeId?: string | null) =>
+    fetchJson<NAMStatus>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/nam/status`, { instance_id: instanceId }),
+        nodeId,
+      )
+    ),
+
   getCategories: () => fetchJson<NAMCategoriesResponse>(`${API_BASE}/nam/categories`),
 
   listModels: (params?: NAMListParams, nodeId?: string | null) => {
@@ -3132,9 +3452,62 @@ export const namApi = {
       method: 'POST',
     }),
 
+  loadModelToInstance: (modelName: string, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; model: string }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/load`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      {
+        method: 'POST',
+      }
+    ),
+
   activateModel: (modelName: string, nodeId?: string | null) =>
     fetchJson<{ status: string; model: string }>(
       appendNodeQuery(`${API_BASE}/nam/models/${encodeURIComponent(modelName)}/activate`, nodeId),
+      { method: 'POST' }
+    ),
+
+  setInputGainForInstance: (gainDb: number, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; input_gain: number }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/nam/input-gain`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      {
+        method: 'POST',
+        body: JSON.stringify({ gain_db: gainDb }),
+      }
+    ),
+
+  setOutputGainForInstance: (gainDb: number, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; output_gain: number }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/nam/output-gain`, { instance_id: instanceId }),
+        nodeId,
+      ),
+      {
+        method: 'POST',
+        body: JSON.stringify({ gain_db: gainDb }),
+      }
+    ),
+
+  setBypassForInstance: (bypass: boolean, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; bypass: boolean }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/nam/bypass`, { bypass, instance_id: instanceId }),
+        nodeId,
+      ),
+      { method: 'POST' }
+    ),
+
+  setNormalizeForInstance: (normalize: boolean, instanceId: number, nodeId?: string | null) =>
+    fetchJson<{ status: string; normalize: boolean }>(
+      appendNodeQuery(
+        appendQueryParams(`${API_BASE}/nam/normalize`, { normalize, instance_id: instanceId }),
+        nodeId,
+      ),
       { method: 'POST' }
     ),
 

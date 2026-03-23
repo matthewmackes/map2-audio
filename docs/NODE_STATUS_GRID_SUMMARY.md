@@ -61,6 +61,8 @@ A professional **Node Status Grid** has been added to the top of the MAP2 welcom
 - Number of peer nodes discovered in cluster
 - Cluster membership indicator
 - Source: `/api/cluster/online-nodes` endpoint
+- Includes peers currently visible through heartbeat or live mDNS discovery
+- mDNS-only peers can appear here before registration; inspect `/api/cluster/discovered` or `/api/peers` for `visibility_state`, `registration_required`, and `routing_ready`
 - Shows "1" if standalone or API unavailable
 
 ### 7. **API Version** 📦

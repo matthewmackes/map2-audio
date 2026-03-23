@@ -26,9 +26,21 @@ describe('resolveLivePluginCardStrategy', () => {
     })
   })
 
-  it('keeps singleton or special-case processors on the generic editor path', () => {
+  it('routes NAM onto the custom live editor card', () => {
     expect(resolveLivePluginCardStrategy('map2://juce/nam', 'Amplifier')).toEqual({
-      renderMode: 'generic',
+      renderMode: 'custom',
+    })
+  })
+
+  it('routes cabinet IR onto the custom live editor card', () => {
+    expect(resolveLivePluginCardStrategy('map2://juce/convolution/cabinet', 'Convolution')).toEqual({
+      renderMode: 'custom',
+    })
+  })
+
+  it('routes reverb IR onto the custom live editor card', () => {
+    expect(resolveLivePluginCardStrategy('map2://juce/convolution/reverb', 'Convolution')).toEqual({
+      renderMode: 'custom',
     })
   })
 })

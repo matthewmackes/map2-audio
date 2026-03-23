@@ -68,9 +68,11 @@ interface ClusterDevicesResponse {
 interface PeerInfoResponse {
   node_id?: string
   node_mode?: string
+  hostname?: string
   host?: string
   last_seen?: string | null
   latency_ms?: number | null
+  is_online?: boolean
 }
 
 interface PeersResponse {
@@ -461,12 +463,16 @@ export function HomePage() {
             discoveredPeer?.capabilities?.audio_interfaces,
           )
           const latency = typeof peer.latency_ms === 'number' ? peer.latency_ms : null
+          const peerIsOnline = typeof peer.is_online === 'boolean'
+            ? peer.is_online
+            : discoveredPeer != null
           const status: ClusterTile['status'] =
-            latency == null ? (discoveredPeer ? 'online' : 'offline') : latency > 180 ? 'degraded' : 'online'
+            !peerIsOnline ? 'offline' : latency != null && latency > 180 ? 'degraded' : 'online'
 
           tileList.push({
             id: nodeId,
             hostname:
+              resolveString(peer.hostname) ??
               resolveString(discoveredPeer?.hostname) ??
               resolveString(peer.host) ??
               nodeId,

@@ -4,7 +4,7 @@ import { Button, InlineNotification, Layer, Tag, Toggle } from '@carbon/react'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
-import { readPorts } from './MidiHubWorkbenchCards'
+import { readPorts } from './portUtils'
 
 type NodeInfo = {
   id: string

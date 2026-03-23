@@ -137,6 +137,8 @@ Your node's network address:
 ### Connected Nodes
 - Number of peer nodes visible to this node
 - Cluster health indicator
+- Includes peers currently visible through heartbeat or live mDNS discovery
+- mDNS-only peers can appear here before registration; check `/api/cluster/discovered` or `/api/peers` for `visibility_state`, `registration_required`, and `routing_ready`
 - Shows "1" if standalone or API unavailable
 
 ### API Version

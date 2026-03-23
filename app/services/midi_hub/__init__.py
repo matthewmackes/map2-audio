@@ -19,9 +19,7 @@ from app.services.midi_hub.ports import (
     MidiPort,
     MidiPortInfo,
     AlsaMidiPort,
-    JackMidiPort,
     VirtualMidiPort,
-    NetworkMidiPort,
 )
 from app.services.midi_hub.ring_buffer import MidiRingBuffer, RingBufferStats
 from app.services.midi_hub.router import MidiRoute, MidiRouter, get_midi_router
@@ -43,6 +41,7 @@ from app.services.midi_hub.cluster_router import MidiClusterConnection, MidiClus
 from app.services.midi_hub.midi_discovery import MidiCapabilities, MidiDiscoveryService, MidiNode, get_midi_discovery_service
 from app.services.midi_hub.network import MidiNetworkBridge, NetworkSession, OscMapping, get_midi_network_bridge
 from app.services.midi_hub.midi2 import Midi2DeviceState, Midi2Manager, get_midi2_manager
+from app.services.midi_hub.message_mapper import MidiMessageMapperService, get_midi_message_mapper_service
 from app.services.midi_hub.macros import MacroAction, MidiMacro, MidiMacroService, get_midi_macro_service
 from app.services.midi_hub.recorder import MidiRecorder, MidiRecordingEvent, MidiRecordingSession, get_midi_recorder
 from app.services.midi_hub.rtp_transport import MidiRtpTransport, RtpMidiSession, get_rtp_transport
@@ -54,9 +53,7 @@ __all__ = [
     "MidiPort",
     "MidiPortInfo",
     "AlsaMidiPort",
-    "JackMidiPort",
     "VirtualMidiPort",
-    "NetworkMidiPort",
     "MidiRingBuffer",
     "RingBufferStats",
     "get_midi_hub",
@@ -108,6 +105,8 @@ __all__ = [
     "Midi2DeviceState",
     "Midi2Manager",
     "get_midi2_manager",
+    "MidiMessageMapperService",
+    "get_midi_message_mapper_service",
     "MacroAction",
     "MidiMacro",
     "MidiMacroService",

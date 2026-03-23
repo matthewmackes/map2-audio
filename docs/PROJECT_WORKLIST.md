@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-22 19:47 EDT - Codex (Completed `T318` to restore visible file-selection and direct upload paths for the selected-block NAM and IR effect editors.)
+Last updated: 2026-03-23 09:52 EDT - Codex (Completed `T334`; `T332` remains the next pending second-node adoption/design slice.)
 
 ## Active Blockers Only
 
@@ -653,6 +653,24 @@ Last updated: 2026-03-22 19:16 EDT - Codex
   - Scoped the plugin-browser equal-height behavior back to the real card grids (`native`, `LV2`, and `preset` grids) and removed the global tile `min-height: 100%` that was incorrectly inflating tiles inside the featured flex-column list.
   - Validation: `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
   - Licensing: Classified the touched frontend/worklist files as MAP2-owned AGPL-covered artifacts; reused the repository license/notices scan and found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T317
+Status: [✓] Done
+Title: Route NAM and IR JUCE live editors onto their custom asset-selector cards
+Description:
+- Goal / acceptance criteria: Fix the `/juce-grid` selected-block live editor so Neural Amp Modeler, Cabinet IR, and Reverb IR no longer fall back to the generic parameter panel and instead render their custom cards with library/file-selection controls.
+- Why it matters: The dialog/browser work in `T314` is ineffective unless the live selected-block editor actually renders those custom cards.
+- Dependencies: `web/src/app/components/PluginCards/liveEditorRouting.ts`, related routing tests, optional JUCE Grid validation, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Updated live-editor routing, regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 08:02 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/PluginCards/liveEditorRouting.ts` so `map2://juce/nam`, `map2://juce/convolution/cabinet`, and `map2://juce/convolution/reverb` are treated as live-safe custom cards instead of generic-only processors; this restores the asset-selector UI in the selected-block editor where the file chooser actually needs to appear.
+  - Updated `web/src/app/components/PluginCards/liveEditorRouting.test.ts` with explicit regression coverage for NAM, cabinet IR, and reverb IR resolving onto the custom live-editor path.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/PluginCards/liveEditorRouting.test.ts web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+  - Licensing review: touched JUCE Grid frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'` and found no new notice or scope gaps requiring follow-up work.
 
 ID: T315
 Status: [✓] Done
@@ -4191,3 +4209,309 @@ Last updated: 2026-03-22 19:47 EDT - Codex
   - Extended focused coverage in `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, `web/src/app/components/loaders/IRManagerDialog.test.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` for direct upload visibility and auto-load behavior, while `web/src/app/pages/JuceGridPage.test.tsx` continued to pass against the selected-block editor shell.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx web/src/app/pages/JuceGridPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts` only.
   - Licensing: Classified the touched selected-block loader/card/style/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T319
+Status: [✓] Done
+Title: Audit routed MIDI Hub areas for purpose and eliminate stubbed processing behavior
+Description:
+- Goal / acceptance criteria: Audit every routed `/midi-hub/*` area (`connections`, `presets`, `transport`, `events`, `processing`, `network`, `lab`) against its stated purpose, verify that each visible workflow is backed by real API/service behavior rather than placeholder state or empty framework code, remove any discovered stubbed behavior, and extend focused frontend/backend regression coverage so the audit is enforceable.
+- Why it matters: The user explicitly requested an extensive audit of MIDI Hub functions and rejected stubs or empty frameworks; earlier UI-focused work allowed at least one local-only planning surface to ship, which now undermines the credibility of the routed MIDI Hub workspace.
+- Dependencies: `docs/PROJECT_WORKLIST.md`, `app/routes/midi_hub.py`, `app/services/midi_hub/*`, `web/src/map2/api.ts`, `web/src/app/pages/midi-hub/*`, `web/src/app/components/MidiHub/*`, and focused MIDI Hub test suites
+- Estimated effort: High
+- Required outputs: Area-by-area audit notes, remediated MIDI Hub implementation where stubbed behavior is found, updated focused frontend/backend tests, and validation evidence covering the touched MIDI Hub routes/services.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 05:09 EDT - Codex
+- Completion notes:
+  - Audited each routed MIDI Hub area and confirmed a concrete purpose plus live backing behavior for `connections` (route graph, traffic, device report), `presets` (preset chains, snapshots, cues), `transport` (clock, recorder, transport fan-out), `events` (event lists, cue learning, MSC/timecode recall), `processing` (filters, scripts, macros, scheduler, mapper), `network` (RTP-MIDI, OSC, MIDI 2.0, Tesira, GPIO, string interface), and `lab` (AI suggestions, mesh, shadow routing); no additional empty route frameworks were found.
+  - Replaced the only discovered stubbed workflow by adding `app/services/midi_hub/message_mapper.py`, exposing mapper CRUD/reset routes in `app/routes/midi_hub.py`, extending `web/src/map2/api.ts`, and rewriting `web/src/app/components/MidiHub/MidiHubMessageMapper.tsx` so the 16 mapper slots are node-backed, persisted, telemetry-aware, and emit real MIDI output through the hub instead of saving to browser `localStorage`.
+  - Tightened purpose accuracy and live configuration behavior by updating `web/src/app/pages/midi-hub/MidiHubEventsPage.tsx` copy to describe the implemented event workspace and hydrating `web/src/app/components/MidiHub/Midi2Panel.tsx`, `web/src/app/components/MidiHub/StringInterfacePanel.tsx`, and `web/src/app/components/MidiHub/TesiraPanel.tsx` from live status rather than hard-coded defaults.
+  - Added focused coverage in `tests/midi_hub/test_routes.py`, `tests/midi_hub/test_traffic_routes.py`, and `web/src/app/components/MidiHub/MidiHubMessageMapper.test.tsx` so the mapper service/API/UI path is enforced, while the routed MIDI Hub page suites continue to verify the audited areas.
+  - Validation: `pytest tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py tests/test_midi_hub_event_lists.py tests/test_string_interface.py tests/test_virtual_gpio.py tests/test_osc_namespace.py` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/MidiHub/MidiHubMessageMapper.test.tsx web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx web/src/app/pages/midi-hub/MidiHubTransportPage.test.tsx web/src/app/pages/midi-hub/MidiHubEventsPage.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubLabPage.test.tsx` -> PASS; prior validation `npm --prefix web run typecheck` -> PASS and `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts` only.
+
+ID: T320
+Status: [✓] Done
+Title: Remove orphaned MIDI Hub workbench planner stubs from the routed-shell codebase
+Description:
+- Goal / acceptance criteria: Remove the unused local-state workbench planner scaffolds left under `web/src/app/components/MidiHub/` after the routed `/midi-hub/*` migration, preserve any shared utility logic still needed by live pages, and keep focused shell/routed MIDI Hub coverage passing.
+- Why it matters: The routed MIDI Hub audit cleared visible page stubs, but `MidiHubWorkbenchCards.tsx` still contains dead quick-router/filter/mapper planner frameworks with local-only state and toast-only actions. Leaving them in-tree undermines the no-stub standard and creates a second misleading implementation path.
+- Dependencies: T319, `web/src/app/components/MidiHub/MidiHubWorkbenchCards.tsx`, live imports of `readPorts`/`HubPort`, `web/src/app/pages/MidiHubPage.test.tsx`, and focused routed MIDI Hub tests
+- Estimated effort: Low
+- Required outputs: Shared port utility extraction if needed, removal of dead workbench planner exports/files, updated imports/tests, focused validation evidence, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 05:31 EDT - Codex
+- Completion notes:
+  - Verified the live routed `/midi-hub/*` pages no longer render `MidiHubQuickRouterCard`, `MidiHubFilterPlannerCard`, or `MidiHubMapperPlannerCard`, then extracted the only shared survivor (`readPorts` plus `HubPort`) into `web/src/app/components/MidiHub/portUtils.ts`.
+  - Updated `web/src/app/components/MidiHub/useMidiHubOverview.ts`, `MidiPatchbay.tsx`, `MidiRoutingMatrix.tsx`, `MidiHubQuickRouter.tsx`, `MidiHubConnectedDevicesReport.tsx`, and `MidiHubFilterPlanner.tsx` to use the new utility, deleted `web/src/app/components/MidiHub/MidiHubWorkbenchCards.tsx`, and removed the stale workbench mock from `web/src/app/pages/MidiHubPage.test.tsx`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/MidiHubPage.test.tsx web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts` only.
+  - Licensing: Classified the touched MIDI Hub frontend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T321
+Status: [✓] Done
+Title: Remove backend MIDI Hub placeholder abstractions and harden live MIDI 2.0 packet helpers
+Description:
+- Goal / acceptance criteria: Eliminate the remaining backend placeholder abstractions found during the continued MIDI Hub audit, specifically by removing unused placeholder port classes and replacing the live MIDI 2.0 helper’s placeholder packing with explicit message-length-aware translation and direct unit coverage.
+- Why it matters: The follow-up audit sweep after `T319` and `T320` still surfaced placeholder residue in `app/services/midi_hub/midi2.py` and `app/services/midi_hub/ports.py`; leaving that code in place would contradict the user’s no-stub requirement for MIDI Hub functions.
+- Dependencies: T319, T320, `app/services/midi_hub/midi2.py`, `app/services/midi_hub/ports.py`, `app/services/midi_hub/__init__.py`, `tests/midi_hub/test_ports.py`, and focused MIDI Hub backend tests
+- Estimated effort: Low
+- Required outputs: Hardened MIDI 2.0 helper logic, removal of unused placeholder port abstractions, updated tests, validation evidence, and explicit follow-up capture for any remaining transport-bound MIDI 2.0 gap.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 05:31 EDT - Codex
+- Completion notes:
+  - Hardened `app/services/midi_hub/midi2.py` so `Midi2Manager` now derives expected MIDI 1.0 message lengths, packs channel-voice and short system messages into explicit 32-bit UMP words, decodes them back with matching length rules, and emits a stable discovery SysEx envelope instead of the earlier placeholder packing comments.
+  - Removed the unused `NetworkMidiPort` and `JackMidiPort` placeholder classes from `app/services/midi_hub/ports.py` and corresponding package exports in `app/services/midi_hub/__init__.py`; the live routed stack already uses `MidiNetworkBridge`, RTP transport, and `VirtualMidiPort`/`AlsaMidiPort`, so these dead placeholder abstractions no longer remain in the package surface.
+  - Expanded `tests/midi_hub/test_ports.py` with direct MIDI 2.0 round-trip assertions and retained focused route coverage in `tests/midi_hub/test_routes.py` and `tests/midi_hub/test_traffic_routes.py` so the live API path continues to pass against the hardened helper.
+  - Validation: `pytest tests/midi_hub/test_ports.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py` -> PASS.
+  - Licensing: Classified the touched MIDI Hub backend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T322
+Status: [✓] Done
+Title: Bind MIDI Hub MIDI 2.0 discovery and property exchange flows to real transport sessions
+Description:
+- Goal / acceptance criteria: Replace the remaining local control-plane-only MIDI 2.0 discovery/property workflow with transport-bound behavior by selecting a concrete MIDI 2.0-capable port or session, transmitting discovery/property traffic on the wire, ingesting responses back into `Midi2Manager`, and exposing the target binding in the routed Network workspace.
+- Why it matters: `T321` removed the placeholder packet packing, but the current `/api/midi/hub/midi2/*` discovery/profile/property endpoints still manage device state locally rather than negotiating with a real MIDI 2.0 transport target.
+- Dependencies: T321, `app/services/midi_hub/midi2.py`, `app/services/midi_hub/network.py`, `app/services/midi_hub/rtp_transport.py`, MIDI Hub routes/UI under `app/routes/midi_hub.py` and `web/src/app/components/MidiHub/Midi2Panel.tsx`, and focused backend/frontend regression coverage
+- Estimated effort: High
+- Required outputs: Transport-bound MIDI-CI/session binding design plus implementation, updated API/UI contracts, response-handling tests, and final validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 05:53 EDT - Codex
+- Completion notes:
+  - Extended `app/services/midi_hub/midi2.py` with real transport bindings (`port` or `network_session`), tracked last TX/RX metadata, and hub subscriber handling so discovery, profile, and property requests now emit bound SysEx payloads and capture responses back into `Midi2Manager` instead of stopping at local control-plane state.
+  - Updated `app/services/midi_hub/network.py` to inject raw incoming UDP MIDI into the hub with transport metadata, and updated `app/routes/midi_hub.py` plus `web/src/map2/api.ts` so the API exposes binding configuration plus request/response telemetry for the routed MIDI 2.0 workspace.
+  - Hardened `web/src/app/components/MidiHub/Midi2Panel.tsx` so operators must choose a real target before discovery/profile/property actions are enabled, saved bindings rehydrate from live status, and transport failures surface in the UI instead of producing false-positive success toasts.
+  - Added focused coverage in `tests/midi_hub/test_routes.py`, `tests/midi_hub/test_traffic_routes.py`, and `web/src/app/components/MidiHub/Midi2Panel.test.tsx` to verify both bound output-port transport and bound network-session transport, including outbound SysEx emission and inbound response capture.
+  - Validation: `pytest tests/midi_hub/test_ports.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py` -> PASS (`14 passed`, existing SQLAlchemy `datetime.utcnow()` deprecation warnings only); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/MidiHub/Midi2Panel.test.tsx web/src/app/pages/MidiHubPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx` -> PASS (`5` suites, `6` tests, existing React Router future-flag warnings only); `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.
+  - Licensing: Classified the touched MIDI Hub backend/frontend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new license-notice gaps requiring remediation.
+
+ID: T323
+Status: [✓] Done
+Title: Replace simplified MIDI Hub MIDI-CI payloads with spec-accurate request and correlation handling
+Description:
+- Goal / acceptance criteria: Replace the current stable but simplified MIDI-CI/profile/property SysEx envelopes with spec-accurate request builders and response correlation, so transport-bound MIDI 2.0 sessions can distinguish discovery, profile, and property-exchange replies per target/device without relying on the last active device heuristic.
+- Why it matters: `T322` bound the MIDI 2.0 workspace to real hub transports, but the current payload builders and response tracking still implement a simplified envelope/correlation model rather than a full MIDI-CI negotiation state machine.
+- Dependencies: T322, `app/services/midi_hub/midi2.py`, routed MIDI 2.0 API/UI flows, and focused backend/frontend regression coverage
+- Estimated effort: Medium
+- Required outputs: Spec-aligned payload builders, request/response correlation state, updated telemetry/UI messaging, and regression tests proving concurrent or repeated MIDI-CI exchanges stay attributable.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 08:18 EDT - Codex
+- Completion notes:
+  - Replaced the remaining ad-hoc MIDI 2.0 control envelope in `app/services/midi_hub/midi2.py` with real MIDI-CI Discovery, Reply to Discovery, Profile Inquiry, Set Profile On/Off, Property Exchange Capabilities, and Get/Set Property message builders plus response parsers keyed by real MUIDs and PE Request IDs instead of the earlier last-active-device heuristic.
+  - Hardened device state semantics so discovery only becomes confirmed on a Reply to Discovery, profile state only changes after Profile Inquiry replies or Profile Enabled/Disabled reports, Property Exchange values only become cached after successful replies, and request timeouts/send failures now surface as explicit pending/error/timeout state instead of optimistic local success.
+  - Expanded the routed API in `app/routes/midi_hub.py` and `web/src/map2/api.ts` with profile inquiry, PE capability inquiry, property reads, and stricter network-session binding rules that require a receive-capable listen session before the MIDI 2.0 workspace can claim round-trip behavior.
+  - Updated `web/src/app/components/MidiHub/Midi2Panel.tsx` so the panel now reflects confirmed discoveries, exposes disable-profile and ResourceList/property-read flows, labels profile IDs as 5-byte hex, filters network bindings to listen sessions, and reports local/remote MUID and reply summaries instead of pretending that outbound requests are completed state changes.
+  - Extended UMP coverage in `app/services/midi_hub/midi2.py` and `tests/midi_hub/test_ports.py` to round-trip SysEx7 between MIDI 1.0 and UMP in addition to the existing short MIDI 1.0 message translation, aligning the translator with the common user expectation that standard SysEx can move between the two representations.
+  - Validation: `pytest tests/midi_hub/test_ports.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py` -> PASS (`16 passed`, existing SQLAlchemy `datetime.utcnow()` deprecation warnings only); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/MidiHub/Midi2Panel.test.tsx web/src/app/pages/MidiHubPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx` -> PASS (`5` suites, `7` tests, existing React Router future-flag warnings only); `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.
+  - Licensing: Classified the touched MIDI Hub backend/frontend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new license-notice gaps requiring remediation.
+
+ID: T324
+Status: [✓] Done
+Title: Refactor NAM and IR asset loading onto instance-aware native processor architecture
+Description:
+- Goal / acceptance criteria: Audit and remediate the NAM, Cabinet IR, and Reverb IR loading stack so file management is centralized and production-grade, selected-block controls target the correct plugin instance, and multiple simultaneous native instances can load different assets at the same time without fighting over global state.
+- Why it matters: The current JUCE native path still exposes singleton NAM/IR processors and legacy global web routes, which causes freezes, incorrect cross-instance behavior, and makes enterprise-grade asset lifecycle guarantees impossible.
+- Dependencies: `web/src/app/components/PluginCards/Custom/JUCE/*`, `web/src/app/components/loaders/*`, `web/src/map2/api.ts`, `app/routes/nam.py`, `app/routes/ir.py`, `app/services/upload_service.py`, `app/services/juce_engine_service.py`, `juce-engine/Source/JucePluginHost.cpp`, `juce-engine/Source/Map2AudioEngine.*`, related processor classes/tests, and worklist/licensing notes
+- Estimated effort: High
+- Required outputs: Architecture audit findings, instance-aware NAM/IR control path, improved file-management/upload plumbing, regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 08:51 EDT - Codex
+- Completion notes:
+  - Audit result: `map2://juce/nam`, `map2://juce/convolution/cabinet`, and `map2://juce/convolution/reverb` were still being instantiated as no-op passthrough processors in `juce-engine/Source/JucePluginHost.cpp`, while the web cards were partly routed through singleton `/api/nam/*` and `/api/ir/*` state. That architecture explains the freeze/cross-instance behavior and could not support simultaneous different assets per block.
+  - Added real per-instance native processors in `juce-engine/Source/NativeNAMPluginProcessor.*` and `juce-engine/Source/NativeConvolutionPluginProcessor.*`, wired them into `juce-engine/CMakeLists.txt`, `juce-engine/Source/JucePluginHost.cpp`, and `juce-engine/Source/PythonBindings.cpp`, and exposed instance-specific load/status/control methods through `app/services/juce_engine_service.py`.
+  - Refactored `app/routes/nam.py` and `app/routes/ir.py` so selected-block NAM/cabinet/reverb requests can target `instance_id`, while global legacy paths remain available for older flows; cabinet/reverb status/load/mix/bypass/navigation are now instance-aware instead of singleton-only.
+  - Hardened `app/services/upload_service.py` into a stricter shared file-management path by rejecting path-bearing filenames, keeping uploads in centralized asset directories, and writing atomically so partially written assets are not observed.
+  - Updated `web/src/map2/api.ts`, `web/src/map2/types.ts`, `web/src/app/components/loaders/NAMManagerDialog.tsx`, `web/src/app/components/loaders/IRManagerDialog.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/NAMCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/CabinetIRCard.tsx`, and `web/src/app/components/PluginCards/Custom/JUCE/ReverbIRCard.tsx` so the selected-block editor always scopes NAM/IR status and control mutations to `plugin.instance_id`.
+  - Added regression coverage in `tests/test_nam_ir_instance_routes.py`, `web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`, `web/src/app/components/loaders/NAMManagerDialog.test.tsx`, and `web/src/app/components/loaders/IRManagerDialog.test.tsx`, including explicit instance-id assertions so selected-block NAM/IR flows cannot silently fall back to global APIs.
+  - Validation: `PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `pytest -q tests/test_nam_ir_instance_routes.py` -> PASS (`3 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/loaders/NAMManagerDialog.test.tsx web/src/app/components/loaders/IRManagerDialog.test.tsx web/src/app/components/PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx` -> PASS (`16 passed`); `cmake --build juce-engine/build -j2` -> PASS; `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+  - Licensing: Classified the touched backend/frontend/native/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T325
+Status: [✓] Done
+Title: Extend MIDI Hub MIDI2 service with profile-details inquiry, MUID invalidation handling, and broader UMP inspection coverage
+Description:
+- Goal / acceptance criteria: Deliver the next advanced MIDI 2.0 slice beyond `T323`, specifically Profile Details Inquiry, explicit MUID invalidation handling on both routed command and inbound transport paths, and broader UMP inspection coverage for MIDI 2.0 Channel Voice, SysEx8, and JR timestamp utility messages, with those capabilities surfaced through the routed API/UI where applicable.
+- Why it matters: `T323` made the routed MIDI 2.0 interface honest and functional for the core discovery/profile/property/resource-list workflow, but operators still lacked access to the next layer of advanced MIDI-CI interrogation and diagnostic visibility needed to validate real devices against the spec.
+- Dependencies: T323, `app/services/midi_hub/midi2.py`, routed MIDI Hub API/UI where new advanced controls are surfaced, and focused backend/frontend regression coverage
+- Estimated effort: Medium
+- Required outputs: Advanced MIDI-CI inquiry/invalidation support, expanded UMP inspection coverage, updated telemetry/UI affordances, regression tests, and refreshed worklist/licensing evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 08:38 EDT - Codex
+- Completion notes:
+  - Extended `app/services/midi_hub/midi2.py` with Profile Details Inquiry request/response handling, cached `profile_details` telemetry, inbound MUID invalidation handling for both local and remote targets, explicit device-cache discard logic, and a broader `inspect_ump()` decoder that now reports JR utility messages, MIDI 2.0 Channel Voice packets, and SysEx8/data packets.
+  - Exposed the advanced backend slice through `app/routes/midi_hub.py` and `web/src/map2/api.ts` with new routed operations for profile-details inquiry, device invalidation, and UMP inspection so these behaviors are not hidden as service-only hooks.
+  - Updated `web/src/app/components/MidiHub/Midi2Panel.tsx` so operators can query profile details, invalidate a discovered device, inspect UMP words directly from the panel, and see cached profile-detail previews instead of relying on backend state only.
+  - Added focused regression coverage in `tests/midi_hub/test_ports.py`, `tests/midi_hub/test_routes.py`, `tests/midi_hub/test_traffic_routes.py`, and `web/src/app/components/MidiHub/Midi2Panel.test.tsx` to prove profile-details replies cache correctly, port-bound and network-bound invalidation paths clear device state, and UMP inspection decodes the new advanced packet families.
+  - Validation: `pytest tests/midi_hub/test_ports.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py` -> PASS (`17 passed`, existing SQLAlchemy `datetime.utcnow()` deprecation warnings only); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/MidiHub/Midi2Panel.test.tsx web/src/app/pages/MidiHubPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx` -> PASS (`5` suites, `7` tests, existing React Router future-flag warnings only); `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.
+  - Licensing: Classified the touched MIDI Hub backend/frontend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new license-notice gaps requiring remediation.
+
+ID: T326
+Status: [✓] Done
+Title: Extend MIDI Hub MIDI2 service with multi-chunk Property Exchange and collision-notification state handling
+Description:
+- Goal / acceptance criteria: Implement the remaining deep-spec MIDI-CI behaviors that are still outside the routed workspace after `T325`, specifically multi-chunk Property Exchange request/reply assembly, Property Exchange notifications/subscriptions where supported, and more complete MUID collision/renegotiation handling beyond simple invalidation cache clears.
+- Why it matters: The routed MIDI 2.0 panel can now interrogate profile details, invalidate devices, and inspect richer UMP packet families, but interoperability against larger Property Exchange payloads and collision-heavy environments still falls short of full advanced-spec behavior.
+- Dependencies: T325, `app/services/midi_hub/midi2.py`, routed MIDI Hub API/UI where advanced transaction state must surface, and focused backend/frontend regression coverage
+- Estimated effort: High
+- Required outputs: Multi-chunk PE transaction support, notification/subscription handling where applicable, stronger MUID collision recovery, regression tests, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 09:13 EDT - Codex
+- Completion notes:
+  - Hardened `app/services/midi_hub/midi2.py` so successful recovery sends no longer erase collision/invalidation errors from MIDI2 status, preserving operator-visible fault context until a real protocol reply supersedes it.
+  - Completed the advanced MIDI-CI test coverage in `tests/midi_hub/test_routes.py` and `tests/midi_hub/test_traffic_routes.py` by delivering full multi-chunk subscription/update/property reply sequences, validating post-collision rediscovery, and locking the remote-collision heuristic against network-source changes.
+  - Validation: `pytest tests/midi_hub/test_ports.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py` -> PASS (`17 passed`, existing SQLAlchemy `datetime.utcnow()` deprecation warnings only); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/components/MidiHub/Midi2Panel.test.tsx web/src/app/pages/MidiHubPage.test.tsx web/src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx web/src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx web/src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx` -> PASS (`5` suites, `7` tests, existing React Router future-flag warnings only); `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.
+  - Licensing: Classified the touched MIDI Hub backend/test/worklist/memory files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" LICENSE README.md docs app web tests .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new license-notice gaps requiring remediation.
+
+ID: T327
+Status: [✓] Done
+Title: Flatten the JUCE Grid selected-branch header and remove remaining pill chrome
+Description:
+- Goal / acceptance criteria: Remove the pill-style badges from the desktop JUCE Grid selected-branch header, render the remaining state/context labels as plain inline status text, and fold the selected-branch title treatment into the same header row as the routing/level/utility groups so the card reads as one compact line where space allows, without changing workflow behavior.
+- Why it matters: The selected-branch card still used custom pill/tag chrome and a separate title strip above the control groups, which made the operator-facing header denser and taller than requested.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, focused JUCE Grid tests, and worklist/licensing notes
+- Estimated effort: Low
+- Required outputs: Updated selected-branch desktop header markup/styling, focused validation evidence, and licensing/worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 08:49 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the desktop selected-branch header now computes plain-text status items, renders them inline instead of Carbon `Tag` pills, and places the selected-branch title kicker inside the same header row as the branch label/name and control groups.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the former title strip is now an inline kicker, the header keeps the title block and action groups on one row where space allows, and the routing mode/AVB context labels render as plain text rather than boxed pills.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx` -> PASS (`26` tests); `npm --prefix web run build` -> PASS (existing Vite dynamic-import warning for `web/src/map2/api.ts` only).
+  - Licensing: Classified the touched JUCE Grid route/style/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T328
+Status: [✓] Done
+Title: Audit second-node behavior on shared AVB and management networks
+Description:
+- Goal / acceptance criteria: Audit what MAP2 should do when a second host with matching software but a different hostname joins the same AVB Ethernet segment and management network as the existing platform, verify the expected discovery/routing/cluster behavior against current implementation and automated evidence, run all locally available verification commands, and clearly separate simulated/software evidence from hardware-only gaps.
+- Why it matters: Multi-node behavior is central to MAP2 AVB and cluster claims, and operators need a concrete expectation for whether a new peer should simply appear, require explicit onboarding, or risk ownership/routing conflicts.
+- Dependencies: `docs/AVB_QUALIFICATION_MATRIX.md`, `docs/AVB_MULTI_NODE_IMPLEMENTATION_SUMMARY.md`, `app/routes/avb.py`, `app/services/avb/avb_service.py`, `app/services/avb/avb_router.py`, `app/services/avb/avb_discovery.py`, cluster discovery/routes under `app/routes/cluster_*.py` and `app/services/cluster/*`, AVB/cluster regression suites, and live host API/service checks where available
+- Estimated effort: Medium
+- Required outputs: Audit summary with expected second-node behavior, command/test evidence, identified gaps or risks, and any follow-up tasks required by the findings
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 09:01 EDT - Codex
+- Completion notes:
+  - Audited the second-node MAP2 behavior across the AVB router, AVB stream ownership, mDNS peer discovery, cluster registry, heartbeat-backed cluster health routes, and the AVB routing frontend. Key implementation references: `app/main.py` cluster startup gating (`MAP2_CLUSTER_ENABLED`) and LCD-backed mDNS startup, `app/services/mdns_discovery.py` peer advertisement/discovery, `app/services/avb/avb_router.py` registry-backed MAP2 endpoint discovery plus remote stream provisioning, `app/services/avb/avb_service.py` deterministic ownership metadata, `app/routes/cluster_health.py` heartbeat-backed `/api/cluster/online-nodes`, and `app/services/cluster/ztp.py` explicit cluster registration path.
+  - Verified current live host state on `MAP2-TESTBED`: `map2-backend`, `map2-ptp4l`, `map2-phc2sys`, and `map2-srpd` are active; `MAP2_DEPLOYMENT_MODE=ALL-IN-ONE`; `/api/avb/status` reports AVB enabled and operational on `enp11s0`; `/api/avb/ptp/status` reports `available=true` but `state=INITIALIZING`; `/api/cluster/status`, `/api/cluster/online-nodes`, `/api/cluster/discovered`, `/api/avb/discovery`, `/api/avb/discovery/nodes`, `/api/avb/router/endpoints`, and `/api/avb/router/connections` all return zero discovered peers/endpoints/connections on this host at audit time.
+  - Backend verification passed with `pytest -q tests/test_avb_service_engine_contract.py tests/test_avb_router_map2.py tests/test_avb_routes_srp.py tests/test_avb_discovery_service.py tests/test_cluster_midi_foundation.py tests/test_cluster_health_extended.py` -> `117 passed`; this confirms deterministic ownership metadata, MAP2-to-MAP2 stream provisioning/rollback, AVB discovery cache behavior, and cluster foundation paths remain covered.
+  - Frontend verification is partially green: the AVB routing state/inspector/node-tree suites pass, but the canonical `npm run test:avb-routing -- --runInBand --silent` run currently fails in `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx` and `web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx` because the tests still expect icon `data-testid`s (`CheckCircleIcon`, `LinkIcon`) that are no longer present in the rendered DOM even though the glyphs still render.
+  - Audit conclusion: if a second host is fully enrolled into the MAP2 cluster registry/heartbeat path, you should expect it to become a remote MAP2 node with talker/listener endpoints, cross-node routes, deterministic ownership metadata, and node-scoped UI/inspector visibility. If it is only placed on the same management network with basic IP connectivity, the current code does not guarantee that AVB router discovery or `/api/cluster/online-nodes` will surface it automatically from raw mDNS alone in `ALL-IN-ONE` mode; explicit cluster registration/onboarding remains the reliable path.
+  - Audit findings requiring follow-up: `/api/peers` is currently broken at runtime with `500 Internal Server Error` because `app/routes/peer_discovery.py` imports `lcd_manager` from `app/services/lcd_manager.py`, but that module does not expose such a global; also, operator-visible peer-count semantics are split between heartbeat-backed `/api/cluster/online-nodes` and mDNS-backed discovery, which leaves single-node/all-in-one deployments without a clear second-node visibility path unless registration occurs.
+
+ID: T329
+Status: [✓] Done
+Title: Repair `/api/peers` runtime wiring to the active LCD/mDNS manager instance
+Description:
+- Goal / acceptance criteria: Make `GET /api/peers` and the related peer-discovery routes resolve the live `LCDManager` instance without import errors, return structured peer discovery payloads in running deployments, and add regression coverage proving the route no longer throws `500` because of missing global-manager symbols.
+- Why it matters: The second-node audit surfaced a live production bug where the intended peer-discovery API is unusable, which blocks operators from confirming management-network discovery even when mDNS is otherwise running.
+- Dependencies: `app/routes/peer_discovery.py`, `app/services/lcd_manager.py`, startup wiring in `app/main.py` and/or `app/routes/lcd_events.py`, plus focused route tests
+- Estimated effort: Medium
+- Required outputs: Runtime fix for manager lookup, passing peer-discovery route tests, and validation against the live backend route
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 09:22 EDT - Codex
+- Completion notes:
+  - Added explicit runtime manager registration in `app/services/lcd_manager.py` and wired it from `app/main.py` lifespan startup/shutdown so the live `LCDManager` instance is available to peer-discovery route consumers instead of relying on an implied missing global.
+  - Updated `app/routes/peer_discovery.py` to resolve the active manager through the shared service lookup, return the correct LCD event WebSocket endpoint in peer payloads, and use the existing `connect_to_peer()` router path for LCD peer-link setup when available.
+  - Reused the same startup pass to actually call `init_lcd_routes()` from lifespan, closing the adjacent LCD-event route injection gap that had been imported but never initialized.
+  - Added focused regression coverage in `tests/test_peer_discovery_routes.py`, including direct route checks plus an HTTP-level `GET /api/peers` assertion proving the route now returns structured payloads instead of failing with `500` due to missing manager symbols.
+  - Validation: `pytest -q tests/test_peer_discovery_routes.py tests/test_node_api.py tests/test_main_cluster_midi_lifecycle.py` -> PASS (`15 passed`, existing deprecation warnings in unrelated node/plugin code only); `PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS.
+  - Licensing: Classified the touched backend/test/worklist/memory files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|SPDX" LICENSE README.md docs app tests .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new notice gaps requiring remediation.
+
+ID: T330
+Status: [✓] Done
+Title: Align second-node operator visibility between mDNS peer discovery and cluster heartbeat views
+Description:
+- Goal / acceptance criteria: Define and implement the intended contract for how a newly reachable MAP2 peer should appear in `ALL-IN-ONE` and non-cluster deployments, specifically reconciling mDNS discovery, `/api/cluster/online-nodes`, `/api/cluster/discovered`, welcome-grid peer counts, and AVB router discovery so operators do not need to guess whether registration is required.
+- Why it matters: The audit showed that a second host on the same networks may be discoverable by mDNS yet still remain invisible to the heartbeat-backed cluster endpoint and AVB router unless explicit registry enrollment happens, which creates a gap between operator expectations and current behavior.
+- Dependencies: `app/main.py`, `app/routes/cluster_health.py`, `app/routes/cluster_admin.py`, `app/services/mdns_discovery.py`, `app/services/cluster/heartbeat_monitor.py`, `app/services/cluster/registry.py`, `app/services/avb/avb_router.py`, welcome-grid docs/scripts, and focused integration tests
+- Estimated effort: High
+- Required outputs: Chosen visibility contract, implementation and/or documentation updates, regression coverage for second-node appearance semantics, and refreshed operator runbook guidance
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 09:44 EDT - Codex
+- Completion notes:
+  - Implemented a shared merged-node visibility contract in `app/services/cluster/node_visibility.py` that unions live basic mDNS peers, enhanced mDNS nodes, registry entries, and heartbeat state into one remote-node snapshot. Operator-visible routes now consume that shared view instead of diverging: `app/routes/peer_discovery.py` (`/api/peers`), `app/routes/cluster_health.py` (`/api/cluster/online-nodes`, `/api/cluster/offline-nodes`, `/api/cluster/health`), and `app/routes/cluster_admin.py` (`/api/cluster/discovered`).
+  - Fixed the cluster heartbeat/runtime side so the monitor can actually read registry rows again by resolving dict-shaped registry entries into real API URLs in `app/services/cluster/heartbeat_monitor.py` instead of assuming object attributes like `.node_id`/`.url`.
+  - Updated `app/services/avb/avb_router.py` to discover MAP2 endpoints from the same merged visibility snapshot, and updated `app/services/node_discovery_service.py` to honor `api_url` from `/api/peers` so node topology lookups no longer assume every remote backend lives on `:8080`.
+  - Updated the operator-facing frontend consumers to use the explicit online contract from `/api/peers`: `web/src/app/contexts/ClusterContext.tsx` now respects `is_online` and remote hostnames, and `web/src/app/pages/HomePage.tsx` now counts peer-only visible nodes as online even when `/api/cluster/discovered` is empty, which aligns welcome-grid node counts with the backend visibility contract.
+  - Added focused regression coverage in `tests/test_cluster_visibility_routes.py`, `tests/test_avb_router_map2.py`, `web/src/app/contexts/ClusterContext.test.tsx`, and `web/src/app/pages/HomePage.test.tsx`, while preserving the earlier peer-route and AVB routing badge coverage.
+  - Validation: `pytest -q tests/test_peer_discovery_routes.py tests/test_cluster_visibility_routes.py tests/test_avb_router_map2.py tests/test_node_api.py` -> PASS (`51 passed`); `PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/contexts/ClusterContext.test.tsx web/src/app/pages/HomePage.test.tsx web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx` -> PASS (`4 suites`, `31 tests`); `npm --prefix web run build` -> PASS.
+  - Licensing: Classified the touched backend/frontend/test/worklist/memory files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|SPDX" LICENSE README.md docs app tests web .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new notice gaps requiring remediation.
+
+ID: T331
+Status: [✓] Done
+Title: Harden AVB routing UI regressions against icon-rendering implementation drift
+Description:
+- Goal / acceptance criteria: Update the failing AVB routing frontend regressions so they assert operator-visible status and cross-node indicators semantically instead of relying on brittle icon `data-testid`s, while preserving coverage for degraded/offline node badges and cross-node route markers.
+- Why it matters: The audit showed the canonical AVB routing Jest run currently fails for two suites even though the UI still renders status/link glyphs, which weakens the release-readiness signal for multi-node operator views.
+- Dependencies: `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`, `web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx`, the related rendered components, and `npm run test:avb-routing`
+- Estimated effort: Low
+- Required outputs: Updated resilient assertions, green AVB routing Jest run, and completion evidence in the worklist
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 09:27 EDT - Codex
+- Completion notes:
+  - Added semantic operator-facing markers in `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx` and `web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.tsx` so node-status and cross-node glyphs expose stable accessibility labels instead of forcing tests to inspect icon implementation internals.
+  - Updated `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx` to assert online/degraded/offline status by accessible label within each node tab, and updated `web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx` to assert the cross-node route indicator semantically instead of checking a Carbon icon `data-testid`.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm run test:avb-routing -- --runInBand --silent` -> PASS (`17 suites`, `232 tests`).
+  - Licensing: Classified the touched frontend/test/worklist/memory files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|SPDX" LICENSE README.md docs app tests web .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new notice gaps requiring remediation.
+
+ID: T332
+Status: [ ] Todo
+Title: Design operator-friendly adoption flows for unmanaged MAP2 instances
+Description:
+- Goal / acceptance criteria: Define practical adoption workflows that let an already-running but not-yet-configured MAP2 node be discovered and adopted from another node with minimal operator friction, covering identity, trust, registration, capability import, and post-adoption feature enablement.
+- Why it matters: The second-node audit showed that basic network reachability alone is not enough to make a peer consistently appear across cluster, AVB, and operator views; a first-class adoption flow would reduce setup ambiguity and make all multi-node features easier to use.
+- Dependencies: `app/services/mdns_discovery.py`, `app/routes/peer_discovery.py`, `app/routes/cluster_health.py`, `app/routes/cluster_admin.py`, `app/services/cluster/ztp.py`, `app/services/cluster/registry.py`, `app/services/avb/avb_router.py`, onboarding/deployment docs, and future UX/API design work
+- Estimated effort: Medium
+- Required outputs: Ranked adoption-flow concepts, recommended direction, implementation notes, and follow-up tasks for the chosen flow
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 09:03 EDT - Codex
+
+ID: T333
+Status: [✓] Done
+Title: Collapse the JUCE Grid desktop branch header into one row above the signal flow
+Description:
+- Goal / acceptance criteria: Update the desktop `/juce-grid` live-path branch card so every control currently rendered above the signal-flow canvas, including the branch title/name, summary/status text, routing group, level control, and utility actions, lives on a single horizontal header row without changing tablet behavior or the underlying workflows.
+- Why it matters: The current selected-branch desktop card still reads as a stacked title strip plus control strip, which wastes vertical space and does not match the requested compact operator layout.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, focused JUCE Grid frontend coverage, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: Updated desktop header markup/styling, focused validation evidence, and licensing/worklist completion notes
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 09:26 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the desktop branch card header now renders the title, loaded-block summary, inline status text, routing group, level control, and utility actions as one flattened header row above the signal canvas, while leaving the tablet detail shell unchanged.
+  - Updated `web/src/app/pages/JuceGridPage.css` so desktop flow-card headers default to a no-wrap horizontal layout with inline summary/meta truncation, and the existing `max-width: 1184px` breakpoint falls back to wrapping for narrower non-tablet layouts.
+  - Added focused coverage in `web/src/app/pages/JuceGridPage.test.tsx` to assert the desktop header keeps the identity block and the routing/level/utility groups together directly above the signal canvas.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/app/pages/JuceGridPage.test.tsx` -> PASS (`27` tests).
+  - Licensing: Classified the touched JUCE Grid frontend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+  - Suggested next tasks: T331, T330, T332
+
+ID: T334
+Status: [✓] Done
+Title: Refactor JUCE Grid desktop flow services into a thin Carbon-compliant bar
+Description:
+- Goal / acceptance criteria: Rework the desktop `/juce-grid` flow-card service controls shown above the signal canvas so the routing summary, level control, and exposed utility actions read as one thin Carbon-aligned services bar instead of three bulky boxed groups, while preserving the existing workflows and responsive fallback behavior.
+- Why it matters: The current header flattening solved the vertical stacking issue, but the service controls still dominate the row visually and do not read like a compact Carbon toolbar.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, focused JUCE Grid frontend coverage, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: Updated desktop service-bar markup/styling, focused regression coverage, and validation evidence
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 09:52 EDT - Codex
+- Completion notes:
+  - Reworked the desktop JUCE Grid flow header in `web/src/app/pages/JuceGridPage.tsx` so the routing summary, level control, edit action, and utility buttons now live inside one shared `role="toolbar"` services bar instead of three separate desktop panels.
+  - Updated `web/src/app/pages/JuceGridPage.css` to style that toolbar as a thinner Carbon-aligned bar with internal dividers, tighter routing readouts, smaller level control chrome, and smaller icon-action sizing, while preserving the existing narrow-layout wrap fallback.
+  - Updated `web/src/app/pages/JuceGridPage.test.tsx` so the desktop regression now asserts the single services toolbar plus its internal routing, level, and utility sections.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/app/pages/JuceGridPage.test.tsx` -> PASS (`27` tests).
+  - Licensing: Classified the touched JUCE Grid frontend/test/worklist/docs files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.

@@ -13,6 +13,7 @@ import type { PluginCardProps } from '../../types'
 import { CabinetIRManagerDialog } from '../../../loaders/CabinetIRManagerDialog'
 import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
+import { irApi } from '../../../../../map2/api'
 
 const CABINET_IR_URI = 'map2://juce/convolution/cabinet'
 
@@ -29,19 +30,6 @@ interface IRStatus {
   availableIRs: Array<{ name: string; size: string; length: number }>
 }
 
-async function fetchCabinetStatus(): Promise<IRStatus> {
-  const res = await fetch('/api/ir/status?type=cabinet')
-  if (!res.ok) throw new Error('Failed to fetch cabinet status')
-  return res.json()
-}
-
-async function fetchCabinetList(): Promise<Array<{ name: string; size: string }>> {
-  const res = await fetch('/api/ir/cabinets')
-  if (!res.ok) throw new Error('Failed to fetch cabinets')
-  const data = await res.json()
-  return data.cabinets || []
-}
-
 interface CabinetIRCardProps extends PluginCardProps {
   onOpenMidiMappings?: () => void
 }
@@ -55,32 +43,59 @@ function CabinetIRCardBase({
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
   const { pushToast } = useToasts()
+  const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
 
   const statusQuery = useQuery({
-    queryKey: ['ir', 'cabinet', 'status'],
-    queryFn: fetchCabinetStatus,
+    queryKey: ['ir', 'cabinet', 'status', instanceId ?? 'global'],
+    queryFn: async () => {
+      const status = await irApi.getTypeStatus('cabinet', { instanceId })
+      return {
+        loaded: status.loaded ?? status.loaded_cabinet ?? status.active_cabinet ?? null,
+        mix: status.mix ?? 100,
+        bypass: status.bypass ?? false,
+        availableIRs: status.availableIRs ?? [],
+      }
+    },
     refetchInterval: 2000,
   })
 
   const listQuery = useQuery({
     queryKey: ['ir', 'cabinet', 'list'],
-    queryFn: fetchCabinetList,
+    queryFn: async () => {
+      const data = await irApi.listCabinets()
+      return (data.irs ?? []).map((ir) => ({
+        name: ir.name,
+        size: `${((ir.size ?? 0) / 1024).toFixed(0)} KB`,
+      }))
+    },
   })
 
   const setMix = useCallback(async (value: number) => {
-    await fetch(`/api/ir/set-cabinet-mix/${value}`, { method: 'POST' })
+    if (instanceId) {
+      await irApi.setCabinetMixForInstance(value, instanceId)
+    } else {
+      await fetch(`/api/ir/set-cabinet-mix/${value}`, { method: 'POST' })
+    }
     queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const setBypass = useCallback(async (bypass: boolean) => {
-    await fetch(`/api/ir/set-cabinet-bypass/${bypass}`, { method: 'POST' })
+    if (instanceId) {
+      await irApi.setCabinetBypassForInstance(bypass, instanceId)
+    } else {
+      await fetch(`/api/ir/set-cabinet-bypass/${bypass}`, { method: 'POST' })
+    }
     queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const navigate = useCallback(async (direction: 'prev' | 'next') => {
-    await fetch(`/api/ir/navigate-cabinet/${direction}`, { method: 'POST' })
+    if (instanceId) {
+      await irApi.navigateCabinetToInstance(direction, instanceId)
+    } else {
+      await fetch(`/api/ir/navigate-cabinet/${direction}`, { method: 'POST' })
+    }
     queryClient.invalidateQueries({ queryKey: ['ir', 'cabinet', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const status = statusQuery.data
   const cabinets = listQuery.data || []
@@ -98,11 +113,15 @@ function CabinetIRCardBase({
       }
       const data = await uploadResponse.json() as { filename?: string }
       if (data.filename) {
-        const loadResponse = await fetch(`/api/ir/cabinets/${encodeURIComponent(data.filename)}/load`, {
-          method: 'POST',
-        })
-        if (!loadResponse.ok) {
-          throw new Error('Failed to load uploaded cabinet IR')
+        if (instanceId) {
+          await irApi.loadCabinetToInstance(data.filename, instanceId)
+        } else {
+          const loadResponse = await fetch(`/api/ir/cabinets/${encodeURIComponent(data.filename)}/load`, {
+            method: 'POST',
+          })
+          if (!loadResponse.ok) {
+            throw new Error('Failed to load uploaded cabinet IR')
+          }
         }
       }
       return data
@@ -163,6 +182,7 @@ function CabinetIRCardBase({
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onLoadCabinetIR={() => setDialogOpen(false)}
+        instanceId={instanceId}
       />
     </>
   )

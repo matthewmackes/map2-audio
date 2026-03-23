@@ -3,6 +3,8 @@
  */
 
 #include "JucePluginHost.h"
+#include "NativeConvolutionPluginProcessor.h"
+#include "NativeNAMPluginProcessor.h"
 #include <sstream>
 #include <thread>
 #include <fstream>
@@ -18,6 +20,19 @@ constexpr std::string_view kMap2NativePrefix = "map2://juce/";
 
 bool isMap2NativeUri(const std::string& pluginId) {
     return pluginId.compare(0, kMap2NativePrefix.size(), kMap2NativePrefix) == 0;
+}
+
+std::unique_ptr<juce::AudioProcessor> createMap2NativeProcessor(const std::string& pluginId) {
+    if (pluginId == "map2://juce/nam") {
+        return std::make_unique<map2::NativeNAMPluginProcessor>();
+    }
+    if (pluginId == "map2://juce/convolution/cabinet") {
+        return std::make_unique<map2::NativeConvolutionPluginProcessor>("Cabinet IR", 100.0f);
+    }
+    if (pluginId == "map2://juce/convolution/reverb") {
+        return std::make_unique<map2::NativeConvolutionPluginProcessor>("Reverb IR", 30.0f);
+    }
+    return nullptr;
 }
 
 std::string titleCaseFromSlug(std::string slug) {
@@ -333,7 +348,10 @@ InstanceId JucePluginHost::loadPlugin(const std::string& pluginId,
 
     if (isMap2NativeUri(pluginId)) {
         auto info = buildNativePluginInfo(pluginId);
-        auto processor = std::make_unique<NativeUriPassthroughProcessor>(info.name);
+        auto processor = createMap2NativeProcessor(pluginId);
+        if (processor == nullptr) {
+            processor = std::make_unique<NativeUriPassthroughProcessor>(info.name);
+        }
         return registerHardwarePlugin(std::move(processor), info);
     }
 

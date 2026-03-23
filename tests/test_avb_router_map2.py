@@ -260,6 +260,85 @@ def test_disconnect_releases_srp_reservation(monkeypatch):
     assert captured["endpoint"] == "router.disconnect"
 
 
+def test_discover_map2_endpoints_uses_visible_remote_nodes(monkeypatch):
+    router = AvbRouter(engine_service=object())
+
+    visible_nodes = {
+        "peer-a": SimpleNamespace(
+            node_id="peer-a",
+            hostname="rack-a",
+            host="10.0.0.50",
+            api_url="http://10.0.0.50:9000",
+            is_online=True,
+            registered=True,
+            routing_ready=True,
+            metadata={
+                "avb_entity_id": "0011223344556677",
+                "avb_streams": [
+                    {"direction": "talker", "unique_id": 1, "channels": 2, "sample_rate": 48000, "format": "24-bit PCM"},
+                    {"direction": "listener", "unique_id": 2, "channels": 2, "sample_rate": 48000, "format": "24-bit PCM"},
+                ],
+            },
+        ),
+        "peer-offline": SimpleNamespace(
+            node_id="peer-offline",
+            hostname="rack-offline",
+            host="10.0.0.51",
+            api_url="http://10.0.0.51:8080",
+            is_online=False,
+            metadata={},
+        ),
+    }
+
+    monkeypatch.setattr(
+        "app.services.cluster.node_visibility.get_visible_remote_nodes",
+        lambda: ("local-node", visible_nodes),
+    )
+
+    asyncio.run(router._discover_map2_endpoints())
+
+    endpoints = sorted(router.endpoints.values(), key=lambda endpoint: endpoint.unique_id)
+    assert len(endpoints) == 2
+    assert {endpoint.direction for endpoint in endpoints} == {
+        StreamDirection.TALKER,
+        StreamDirection.LISTENER,
+    }
+    assert {endpoint.node_id for endpoint in endpoints} == {"peer-a"}
+    assert {endpoint.node_address for endpoint in endpoints} == {"http://10.0.0.50:9000"}
+    assert {endpoint.host for endpoint in endpoints} == {"10.0.0.50"}
+
+
+def test_discover_map2_endpoints_skips_visible_nodes_that_are_not_routing_ready(monkeypatch):
+    router = AvbRouter(engine_service=object())
+
+    visible_nodes = {
+        "peer-unmanaged": SimpleNamespace(
+            node_id="peer-unmanaged",
+            hostname="rack-unmanaged",
+            host="10.0.0.60",
+            api_url="http://10.0.0.60:8080",
+            is_online=True,
+            registered=False,
+            routing_ready=False,
+            metadata={
+                "avb_entity_id": "0011223344556688",
+                "avb_streams": [
+                    {"direction": "talker", "unique_id": 1, "channels": 2, "sample_rate": 48000, "format": "24-bit PCM"},
+                ],
+            },
+        ),
+    }
+
+    monkeypatch.setattr(
+        "app.services.cluster.node_visibility.get_visible_remote_nodes",
+        lambda: ("local-node", visible_nodes),
+    )
+
+    asyncio.run(router._discover_map2_endpoints())
+
+    assert router.endpoints == {}
+
+
 def test_connect_return_details_includes_trace_id_and_stage_outcomes(monkeypatch):
     router = AvbRouter()
     connection = _make_connection()

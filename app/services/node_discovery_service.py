@@ -59,6 +59,7 @@ class PeerRecord:
     node_mode: str
     last_seen: datetime
     latency_ms: Optional[float] = None
+    api_url: Optional[str] = None
 
 
 class NodeDiscoveryService:
@@ -235,6 +236,7 @@ class NodeDiscoveryService:
                     node_mode=str(raw_peer.get("node_mode") or "").strip(),
                     last_seen=_parse_datetime(raw_peer.get("last_seen")),
                     latency_ms=self._coerce_float(raw_peer.get("latency_ms")),
+                    api_url=str(raw_peer.get("api_url") or "").strip() or None,
                 )
             )
         return peers
@@ -302,8 +304,9 @@ class NodeDiscoveryService:
             node_id=peer.node_id,
         )
         try:
+            api_base = (peer.api_url or f"http://{peer.host}:8080").rstrip("/")
             async with httpx.AsyncClient(timeout=self.REMOTE_TIMEOUT_S) as client:
-                response = await client.get(f"http://{peer.host}:8080/api/node/identity")
+                response = await client.get(f"{api_base}/api/node/identity")
                 response.raise_for_status()
             payload = NodeIdentity.model_validate(response.json())
             return payload.model_copy(

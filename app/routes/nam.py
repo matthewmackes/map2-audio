@@ -13,8 +13,6 @@ The Python side handles file management and metadata only.
 """
 
 import logging
-import os
-import hashlib
 from typing import List, Dict, Optional
 from pathlib import Path
 
@@ -26,6 +24,7 @@ try:
     from app.paths import StoragePaths
     from app.database import get_db, get_db_session, NAMModel
     from app.services.juce_engine_service import get_audio_engine
+    from app.services.upload_service import AssetType, get_upload_service
     from sqlalchemy import or_
 
     router = APIRouter(prefix="/api/nam", tags=["nam"])
@@ -121,12 +120,33 @@ try:
         return status
 
     @router.get("/status")
-    async def get_nam_status():
+    async def get_nam_status(instance_id: Optional[int] = Query(None)):
         """Get NAM model status for frontend.
 
         Returns the format expected by the frontend NAMStatus interface.
         """
         engine = get_audio_engine()
+
+        if isinstance(instance_id, int) and instance_id > 0:
+            instance_info = await engine.get_nam_model_info_instance(instance_id)
+            models = _scan_nam_models()
+            model_names = [m['name'] for m in models]
+            return {
+                "available": True,
+                "activeModel": instance_info.get("name") if instance_info.get("loaded") else None,
+                "loading": False,
+                "mix": 100,
+                "bypass": bool(instance_info.get("bypass", False)),
+                "inputLevel": float(instance_info.get("input_level", -100.0)),
+                "outputLevel": float(instance_info.get("output_level", -100.0)),
+                "peakInput": float(instance_info.get("input_level", -100.0)),
+                "peakOutput": float(instance_info.get("output_level", -100.0)),
+                "latency": 0,
+                "availableModels": model_names,
+                "input_gain": float(instance_info.get("input_gain", 0.0)),
+                "output_gain": float(instance_info.get("output_gain", 0.0)),
+                "normalize": bool(instance_info.get("normalize", True)),
+            }
 
         # Get status from JUCE engine
         available = await engine.is_nam_available()
@@ -154,7 +174,10 @@ try:
             "peakInput": input_level,  # Simplified - use same as current
             "peakOutput": output_level,
             "latency": 0,  # NAM models are zero-latency (causal)
-            "availableModels": model_names
+            "availableModels": model_names,
+            "input_gain": await engine.get_nam_input_gain(),
+            "output_gain": await engine.get_nam_output_gain(),
+            "normalize": await engine.is_nam_normalized(),
         }
 
     # ==================== Categories ====================
@@ -335,7 +358,7 @@ try:
     # ==================== Load/Unload (RT-safe via JUCE) ====================
 
     @router.post("/models/{model_name}/load")
-    async def load_nam_model(model_name: str):
+    async def load_nam_model(model_name: str, instance_id: Optional[int] = Query(None)):
         """Load a NAM model via RT-safe JUCE C++ engine.
 
         This is the ONLY way to load NAM models for real-time audio.
@@ -348,7 +371,10 @@ try:
 
         # Load via JUCE engine (RT-safe)
         engine = get_audio_engine()
-        success = await engine.load_nam_model(model_path)
+        if isinstance(instance_id, int) and instance_id > 0:
+            success = await engine.load_nam_model_instance(instance_id, model_path)
+        else:
+            success = await engine.load_nam_model(model_path)
 
         if not success:
             raise HTTPException(status_code=500, detail="Failed to start model loading")
@@ -357,45 +383,70 @@ try:
         return {"status": "loading", "model": model_name, "path": model_path}
 
     @router.post("/models/{model_name}/activate")
-    async def activate_nam_model(model_name: str):
+    async def activate_nam_model(model_name: str, instance_id: Optional[int] = Query(None)):
         """Activate a NAM model (alias for load)."""
-        return await load_nam_model(model_name)
+        return await load_nam_model(model_name, instance_id)
 
     @router.post("/unload")
-    async def unload_nam_model():
+    async def unload_nam_model(instance_id: Optional[int] = Query(None)):
         """Unload the current NAM model."""
         engine = get_audio_engine()
-        await engine.unload_nam_model()
+        if isinstance(instance_id, int) and instance_id > 0:
+            unloaded = await engine.unload_nam_model_instance(instance_id)
+            if not unloaded:
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+        else:
+            await engine.unload_nam_model()
         return {"status": "unloaded"}
 
     # ==================== Controls ====================
 
     @router.post("/bypass")
-    async def set_nam_bypass(bypass: bool = True):
+    async def set_nam_bypass(bypass: bool = True, instance_id: Optional[int] = Query(None)):
         """Set NAM bypass state."""
         engine = get_audio_engine()
-        await engine.set_nam_bypass(bypass)
+        if isinstance(instance_id, int) and instance_id > 0:
+            updated = await engine.set_nam_bypass_instance(instance_id, bypass)
+            if not updated:
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+        else:
+            await engine.set_nam_bypass(bypass)
         return {"status": "ok", "bypass": bypass}
 
     @router.post("/input-gain")
-    async def set_nam_input_gain(request: NAMGainRequest):
+    async def set_nam_input_gain(request: NAMGainRequest, instance_id: Optional[int] = Query(None)):
         """Set NAM input gain in dB."""
         engine = get_audio_engine()
-        await engine.set_nam_input_gain(request.gain_db)
+        if isinstance(instance_id, int) and instance_id > 0:
+            updated = await engine.set_nam_input_gain_instance(instance_id, request.gain_db)
+            if not updated:
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+        else:
+            await engine.set_nam_input_gain(request.gain_db)
         return {"status": "ok", "input_gain": request.gain_db}
 
     @router.post("/output-gain")
-    async def set_nam_output_gain(request: NAMGainRequest):
+    async def set_nam_output_gain(request: NAMGainRequest, instance_id: Optional[int] = Query(None)):
         """Set NAM output gain in dB."""
         engine = get_audio_engine()
-        await engine.set_nam_output_gain(request.gain_db)
+        if isinstance(instance_id, int) and instance_id > 0:
+            updated = await engine.set_nam_output_gain_instance(instance_id, request.gain_db)
+            if not updated:
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+        else:
+            await engine.set_nam_output_gain(request.gain_db)
         return {"status": "ok", "output_gain": request.gain_db}
 
     @router.post("/normalize")
-    async def set_nam_normalize(normalize: bool = True):
+    async def set_nam_normalize(normalize: bool = True, instance_id: Optional[int] = Query(None)):
         """Enable/disable NAM output normalization."""
         engine = get_audio_engine()
-        await engine.set_nam_normalize(normalize)
+        if isinstance(instance_id, int) and instance_id > 0:
+            updated = await engine.set_nam_normalize_instance(instance_id, normalize)
+            if not updated:
+                raise HTTPException(status_code=404, detail=f"NAM instance not found: {instance_id}")
+        else:
+            await engine.set_nam_normalize(normalize)
         return {"status": "ok", "normalize": normalize}
 
     # ==================== Favorites and Ratings ====================
@@ -461,45 +512,43 @@ try:
     async def upload_nam_model(file: UploadFile = File(...)) -> Dict:
         """Upload a NAM model file."""
         try:
-            if not file.filename.lower().endswith('.nam'):
+            if not file.filename or not file.filename.lower().endswith('.nam'):
                 raise HTTPException(status_code=400, detail="File must be a .nam file")
 
-            upload_dir = StoragePaths.get_nam_user_dir()
-            upload_dir.mkdir(parents=True, exist_ok=True)
-
-            safe_name = os.path.basename(file.filename)
-            if not safe_name or safe_name.startswith('.'):
-                raise HTTPException(status_code=400, detail="Invalid filename")
-            file_path = upload_dir / safe_name
             content = await file.read()
+            upload_service = get_upload_service()
+            validation = upload_service.validate_file(file.filename, len(content), asset_type_override=AssetType.NAM.value)
+            if not validation.valid or validation.asset_type != AssetType.NAM:
+                raise HTTPException(status_code=400, detail=validation.message)
 
-            with open(file_path, 'wb') as f:
-                f.write(content)
-
-            file_hash = hashlib.sha256(content).hexdigest()
+            upload_result = await upload_service.save_upload(file.filename, content, AssetType.NAM)
+            if not upload_result.success:
+                raise HTTPException(status_code=400, detail=upload_result.error or upload_result.message)
 
             # Check if already in database
             session = get_db_session()
             try:
-                existing = session.query(NAMModel).filter_by(file_hash=file_hash).first()
+                existing = session.query(NAMModel).filter_by(file_hash=upload_result.file_hash).first()
 
                 if existing:
                     return {
-                        "status": "exists",
+                        "status": "exists" if upload_result.already_exists else "ok",
                         "model": {
                             "id": existing.id,
-                            "name": existing.name
-                        }
+                            "name": existing.name,
+                            "file_path": existing.file_path,
+                        },
+                        "message": upload_result.message,
                     }
 
                 # Create database entry
-                model_name = os.path.splitext(safe_name)[0]
+                model_name = Path(upload_result.filename).stem
 
                 new_model = NAMModel(
                     name=model_name,
-                    file_path=str(file_path),
-                    file_hash=file_hash,
-                    file_size=len(content),
+                    file_path=upload_result.file_path,
+                    file_hash=upload_result.file_hash,
+                    file_size=upload_result.file_size,
                     model_type="unknown",
                     category="User",
                     license="User uploaded"
@@ -519,8 +568,9 @@ try:
                 "model": {
                     "id": model_id,
                     "name": model_name,
-                    "file_path": str(file_path)
-                }
+                    "file_path": upload_result.file_path
+                },
+                "message": upload_result.message,
             }
 
         except HTTPException:

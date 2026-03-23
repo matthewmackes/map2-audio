@@ -1189,6 +1189,74 @@ class JuceEngineService(Singleton):
             }
         return self._engine.get_reverb_ir_info()
 
+    async def load_cabinet_ir_instance(self, instance_id: int, path: str) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.load_cabinet_ir_instance(instance_id, path))
+        except AttributeError:
+            return False
+
+    async def load_reverb_ir_instance(self, instance_id: int, path: str) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.load_reverb_ir_instance(instance_id, path))
+        except AttributeError:
+            return False
+
+    async def unload_ir_instance(self, instance_id: int) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.unload_ir_instance(instance_id))
+        except AttributeError:
+            return False
+
+    async def set_ir_mix_instance(self, instance_id: int, mix_percent: float) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.set_ir_mix_instance(instance_id, mix_percent))
+        except AttributeError:
+            return False
+
+    async def set_ir_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.set_ir_bypass_instance(instance_id, bypass))
+        except AttributeError:
+            return False
+
+    async def get_ir_info_instance(self, instance_id: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "path": "",
+                "name": "",
+                "length_samples": 0,
+                "length_ms": 0.0,
+                "sample_rate": 0.0,
+                "channels": 0,
+                "loaded": False,
+                "mix": 0.0,
+                "bypass": False,
+            }
+        try:
+            return self._engine.get_ir_info_instance(instance_id)
+        except AttributeError:
+            return {
+                "path": "",
+                "name": "",
+                "length_samples": 0,
+                "length_ms": 0.0,
+                "sample_rate": 0.0,
+                "channels": 0,
+                "loaded": False,
+                "mix": 0.0,
+                "bypass": False,
+            }
+
     # ========================================
     # Dynamics - Compressor (NEW)
     # ========================================
@@ -1634,6 +1702,60 @@ class JuceEngineService(Singleton):
                 "loaded": False
             }
 
+    async def load_nam_model_instance(self, instance_id: int, path: str) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.load_nam_model_instance(instance_id, path))
+        except AttributeError:
+            return False
+
+    async def unload_nam_model_instance(self, instance_id: int) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.unload_nam_model_instance(instance_id))
+        except AttributeError:
+            return False
+
+    async def get_nam_model_info_instance(self, instance_id: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "path": "",
+                "name": "",
+                "expected_sample_rate": 48000.0,
+                "input_channels": 1,
+                "output_channels": 1,
+                "has_input_level": False,
+                "has_output_level": False,
+                "input_level": -100.0,
+                "output_level": -100.0,
+                "loaded": False,
+                "input_gain": 0.0,
+                "output_gain": 0.0,
+                "normalize": True,
+                "bypass": False,
+            }
+        try:
+            return self._engine.get_nam_model_info_instance(instance_id)
+        except AttributeError:
+            return {
+                "path": "",
+                "name": "",
+                "expected_sample_rate": 48000.0,
+                "input_channels": 1,
+                "output_channels": 1,
+                "has_input_level": False,
+                "has_output_level": False,
+                "input_level": -100.0,
+                "output_level": -100.0,
+                "loaded": False,
+                "input_gain": 0.0,
+                "output_gain": 0.0,
+                "normalize": True,
+                "bypass": False,
+            }
+
     async def set_nam_input_gain(self, db: float) -> None:
         """Set NAM input gain in dB"""
         if self._engine:
@@ -1641,6 +1763,14 @@ class JuceEngineService(Singleton):
                 self._engine.set_nam_input_gain(db)
             except AttributeError:
                 pass
+
+    async def set_nam_input_gain_instance(self, instance_id: int, db: float) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.set_nam_input_gain_instance(instance_id, db))
+        except AttributeError:
+            return False
 
     async def get_nam_input_gain(self) -> float:
         """Get NAM input gain in dB"""
@@ -1659,6 +1789,14 @@ class JuceEngineService(Singleton):
             except AttributeError:
                 pass
 
+    async def set_nam_output_gain_instance(self, instance_id: int, db: float) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.set_nam_output_gain_instance(instance_id, db))
+        except AttributeError:
+            return False
+
     async def get_nam_output_gain(self) -> float:
         """Get NAM output gain in dB"""
         if not self._engine:
@@ -1676,6 +1814,14 @@ class JuceEngineService(Singleton):
             except AttributeError:
                 pass
 
+    async def set_nam_bypass_instance(self, instance_id: int, bypass: bool) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.set_nam_bypass_instance(instance_id, bypass))
+        except AttributeError:
+            return False
+
     async def is_nam_bypassed(self) -> bool:
         """Check if NAM is bypassed"""
         if not self._engine:
@@ -1692,6 +1838,14 @@ class JuceEngineService(Singleton):
                 self._engine.set_nam_normalize(normalize)
             except AttributeError:
                 pass
+
+    async def set_nam_normalize_instance(self, instance_id: int, normalize: bool) -> bool:
+        if not self._engine:
+            return False
+        try:
+            return bool(self._engine.set_nam_normalize_instance(instance_id, normalize))
+        except AttributeError:
+            return False
 
     async def is_nam_normalized(self) -> bool:
         """Check if NAM normalization is enabled"""

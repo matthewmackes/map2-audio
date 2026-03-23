@@ -1544,6 +1544,78 @@ describe('JuceGridPage snapshot modal workflow', () => {
     expect(screen.queryByText('Inactive branch')).toBeNull()
   })
 
+  it('keeps the desktop branch identity and controls together in the header above the signal canvas', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#0f62fe', muted: false, solo: false, dryWetMix: 77 },
+    ]))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'lead-flow',
+          kind: 'parallel',
+          title: 'Lead flow',
+          flowIds: ['flow-0'],
+          tone: 'active',
+        },
+      ],
+      flowStates: {
+        'flow-0': {
+          flowId: 'flow-0',
+          activeAudio: true,
+          dimmed: false,
+          placeholder: false,
+          annotation: 'Live branch',
+          secondaryAnnotation: 'Lead chain',
+          sidechainKey: false,
+        },
+      },
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await screen.findByText('Song 1')
+
+    const header = container.querySelector('.juce-grid-page__flow-card.is-active .juce-grid-page__flow-card-header') as HTMLElement | null
+    expect(header).toBeTruthy()
+
+    const headerChildren = Array.from(header?.children ?? [])
+    expect(headerChildren).toHaveLength(2)
+    expect(headerChildren[0]?.classList.contains('juce-grid-page__flow-card-heading')).toBe(true)
+    expect(headerChildren[1]?.classList.contains('juce-grid-page__flow-card-service-bar')).toBe(true)
+
+    const serviceBar = headerChildren[1] as HTMLElement
+    expect(serviceBar.getAttribute('role')).toBe('toolbar')
+    expect(serviceBar.getAttribute('aria-label')).toBe('A flow services')
+    expect(serviceBar.querySelector('.juce-grid-page__flow-card-action-group--routing')).toBeTruthy()
+    expect(serviceBar.querySelector('.juce-grid-page__flow-card-action-group--level')).toBeTruthy()
+    expect(serviceBar.querySelector('.juce-grid-page__flow-card-action-group--utility')).toBeTruthy()
+
+    const summaryGroup = within(header as HTMLElement).getByRole('group', { name: 'A summary' })
+    expect(summaryGroup.textContent).toContain('0 loaded blocks')
+    expect(summaryGroup.textContent).toContain('Selected / Live path / Lead chain / 0 blocks')
+    expect((header as HTMLElement).nextElementSibling?.classList.contains('juce-grid-page__flow-card-content')).toBe(true)
+  })
+
   it('closes the plugin chooser immediately when adding a plugin', async () => {
     mockLivePathLayout = {
       status: 'available',

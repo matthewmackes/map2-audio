@@ -24,7 +24,6 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.health_aggregator import get_health_aggregator
-from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
 from app.services.cluster.certificate_authority import get_cluster_ca
 from app.services.cluster.update_orchestrator import get_update_scheduler
 from app.services.cluster.config_pusher import get_config_sync
@@ -35,6 +34,7 @@ from app.services.cluster.disaster_recovery import get_disaster_recovery
 from app.services.cluster.network_topology import get_topology_monitor
 from app.services.cluster.config_manager import get_config_manager
 from app.services.cluster.deployment_manager import get_deployment_manager
+from app.services.cluster.node_visibility import get_visible_cluster_summary
 
 logger = logging.getLogger(__name__)
 
@@ -646,8 +646,7 @@ async def get_discovered_nodes() -> Dict:
         List of discovered nodes with capabilities
     """
     try:
-        discovery = get_enhanced_mdns_discovery()
-        summary = discovery.get_cluster_summary()
+        summary = get_visible_cluster_summary()
 
         return {
             "status": "ok",

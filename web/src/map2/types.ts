@@ -565,8 +565,15 @@ export interface IRFile {
 
 export interface IRStatus {
   available: boolean;
+  loaded?: string | null;
   loaded_cabinet?: string;
   loaded_reverb?: string;
+  active_cabinet?: string;
+  active_reverb?: string;
+  mix?: number;
+  bypass?: boolean;
+  currentDecay?: number;
+  availableIRs?: Array<{ name: string; size?: string; length?: number; type?: string; decay?: number }>;
   error?: string;
 }
 
@@ -583,6 +590,7 @@ export interface NAMModel {
 export interface NAMStatus {
   available: boolean;
   activeModel: string | null;
+  loading?: boolean;
   mix: number;
   bypass: boolean;
   inputLevel: number;
@@ -591,6 +599,9 @@ export interface NAMStatus {
   peakOutput: number;
   latency: number;
   availableModels: string[];
+  input_gain?: number;
+  output_gain?: number;
+  normalize?: boolean;
   error?: string;
 }
 

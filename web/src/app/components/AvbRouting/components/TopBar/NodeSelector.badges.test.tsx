@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { NodeSelector } from './NodeSelector'
 import { NodeTree } from '../NodeTree/NodeTree'
 import type { AvbNode } from '../../types'
@@ -138,11 +138,17 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     render(<NodeSelector />)
 
     expect(screen.getByText('1 / 3 online')).toBeTruthy()
-    expect(screen.getByTestId('CheckCircleIcon')).toBeTruthy()
-    expect(screen.getByTestId('WarningIcon')).toBeTruthy()
-    expect(screen.getByTestId('ErrorIcon')).toBeTruthy()
     expect(screen.getByText('Remote Degraded')).toBeTruthy()
     expect(screen.getByText('Remote Offline')).toBeTruthy()
+    expect(
+      within(screen.getByTestId('node-selector-tab-node-local')).getByLabelText('Node status online')
+    ).toBeTruthy()
+    expect(
+      within(screen.getByTestId('node-selector-tab-node-degraded')).getByLabelText('Node status degraded')
+    ).toBeTruthy()
+    expect(
+      within(screen.getByTestId('node-selector-tab-node-offline')).getByLabelText('Node status offline')
+    ).toBeTruthy()
   })
 
   it('filters degraded/offline node tabs when show_offline is disabled', () => {
@@ -163,8 +169,8 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     expect(screen.getByText('1 / 3 online')).toBeTruthy()
     expect(screen.queryByText('Remote Degraded')).toBeNull()
     expect(screen.queryByText('Remote Offline')).toBeNull()
-    expect(screen.queryByTestId('WarningIcon')).toBeNull()
-    expect(screen.queryByTestId('ErrorIcon')).toBeNull()
+    expect(screen.queryByLabelText('Node status degraded')).toBeNull()
+    expect(screen.queryByLabelText('Node status offline')).toBeNull()
   })
 
   it('falls back to all-nodes view when selected node is filtered out', () => {

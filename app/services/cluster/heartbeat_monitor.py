@@ -6,6 +6,7 @@ and triggers failover events.
 """
 
 import asyncio
+import json
 import logging
 import time
 from datetime import datetime, timedelta
@@ -13,6 +14,7 @@ from typing import Dict, Optional, Set
 from dataclasses import dataclass, field
 
 import httpx
+from urllib.parse import urlparse
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.event_bus import get_event_bus, EventType
@@ -91,7 +93,10 @@ class HeartbeatMonitor:
                 # Check all nodes in parallel
                 tasks = []
                 for node in nodes:
-                    task = self._check_node(node.node_id, node.url)
+                    node_id, node_url = self._resolve_registry_node_endpoint(node)
+                    if not node_id or not node_url:
+                        continue
+                    task = self._check_node(node_id, node_url)
                     tasks.append(task)
                 
                 if tasks:
@@ -109,6 +114,45 @@ class HeartbeatMonitor:
             except Exception as e:
                 logger.error(f"Error in heartbeat monitor loop: {e}", exc_info=True)
                 await asyncio.sleep(1)
+
+    @staticmethod
+    def _resolve_registry_node_endpoint(node) -> tuple[Optional[str], Optional[str]]:
+        """Resolve registry rows into a node id and API URL."""
+        if isinstance(node, dict):
+            node_id = str(node.get("id") or node.get("node_id") or node.get("hostname") or "").strip() or None
+            hostname = str(node.get("hostname") or "").strip() or None
+            ip_address = str(node.get("ip_address") or "").strip() or None
+            metadata = node.get("metadata")
+        else:
+            node_id = str(getattr(node, "node_id", None) or getattr(node, "id", None) or getattr(node, "hostname", "")).strip() or None
+            hostname = str(getattr(node, "hostname", "")).strip() or None
+            ip_address = str(getattr(node, "ip_address", "")).strip() or None
+            metadata = getattr(node, "metadata", None)
+
+        metadata_dict: Dict = {}
+        if isinstance(metadata, dict):
+            metadata_dict = metadata
+        elif isinstance(metadata, str) and metadata.strip():
+            try:
+                parsed = json.loads(metadata)
+                if isinstance(parsed, dict):
+                    metadata_dict = parsed
+            except Exception:
+                metadata_dict = {}
+
+        explicit_url = str(metadata_dict.get("node_url") or metadata_dict.get("url") or "").strip()
+        if explicit_url:
+            parsed = urlparse(explicit_url)
+            if parsed.hostname:
+                port = parsed.port or (443 if parsed.scheme == "https" else 8080)
+                return node_id, f"{parsed.scheme or 'http'}://{parsed.hostname}:{port}"
+
+        host = ip_address or str(metadata_dict.get("ip_address") or "").strip() or hostname
+        if not node_id or not host:
+            return node_id, None
+
+        port = int(metadata_dict.get("api_port") or 8080)
+        return node_id, f"http://{host}:{port}"
     
     async def _check_node(self, node_id: str, node_url: str):
         """Check health of a single node."""

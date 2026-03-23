@@ -24,6 +24,8 @@ import type { PluginCardProps } from '../../types'
 import { NAMManagerDialog } from '../../../loaders/NAMManagerDialog'
 import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
+import { namApi } from '../../../../../map2/api'
+import type { NAMStatus as ApiNAMStatus } from '../../../../../map2/types'
 
 // Plugin URI for MIDI mappings
 const NAM_URI = 'map2://juce/nam'
@@ -47,10 +49,19 @@ interface NAMStatus {
   availableModels: string[]
 }
 
-async function fetchNAMStatus(): Promise<NAMStatus> {
-  const res = await fetch('/api/nam/status')
-  if (!res.ok) throw new Error('Failed to fetch NAM status')
-  return res.json()
+function normalizeNAMStatus(status: ApiNAMStatus): NAMStatus {
+  return {
+    available: status.available,
+    activeModel: status.activeModel,
+    loading: status.loading ?? false,
+    bypass: status.bypass,
+    inputLevel: status.inputLevel,
+    outputLevel: status.outputLevel,
+    inputGain: status.input_gain ?? 0,
+    outputGain: status.output_gain ?? 0,
+    normalize: status.normalize ?? true,
+    availableModels: status.availableModels,
+  }
 }
 
 interface NAMCardProps extends PluginCardProps {
@@ -66,48 +77,67 @@ function NAMCardBase({
   const queryClient = useQueryClient()
   const [managerOpen, setManagerOpen] = useState(false)
   const { pushToast } = useToasts()
+  const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
 
   const statusQuery = useQuery({
-    queryKey: ['nam', 'status'],
-    queryFn: fetchNAMStatus,
+    queryKey: ['nam', 'status', instanceId ?? 'global'],
+    queryFn: async () => normalizeNAMStatus(
+      instanceId ? await namApi.getInstanceStatus(instanceId) : await namApi.getStatus()
+    ),
     refetchInterval: 500, // Fast updates for level meters
   })
 
   const setInputGain = useCallback(async (value: number) => {
-    await fetch('/api/nam/input-gain', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gain_db: value }),
-    })
+    if (instanceId) {
+      await namApi.setInputGainForInstance(value, instanceId)
+    } else {
+      await fetch('/api/nam/input-gain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gain_db: value }),
+      })
+    }
     queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const setOutputGain = useCallback(async (value: number) => {
-    await fetch('/api/nam/output-gain', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gain_db: value }),
-    })
+    if (instanceId) {
+      await namApi.setOutputGainForInstance(value, instanceId)
+    } else {
+      await fetch('/api/nam/output-gain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gain_db: value }),
+      })
+    }
     queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const setNormalize = useCallback(async (normalize: boolean) => {
-    await fetch('/api/nam/normalize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ normalize }),
-    })
+    if (instanceId) {
+      await namApi.setNormalizeForInstance(normalize, instanceId)
+    } else {
+      await fetch('/api/nam/normalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ normalize }),
+      })
+    }
     queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const setBypass = useCallback(async (bypass: boolean) => {
-    await fetch('/api/nam/bypass', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bypass }),
-    })
+    if (instanceId) {
+      await namApi.setBypassForInstance(bypass, instanceId)
+    } else {
+      await fetch('/api/nam/bypass', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bypass }),
+      })
+    }
     queryClient.invalidateQueries({ queryKey: ['nam', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const status = statusQuery.data
   const availableModelCount = status?.availableModels?.length ?? 0
@@ -126,11 +156,15 @@ function NAMCardBase({
       const data = await uploadResponse.json() as { model?: { name?: string } }
       const uploadedName = data.model?.name
       if (uploadedName) {
-        const loadResponse = await fetch(`/api/nam/models/${encodeURIComponent(uploadedName)}/load`, {
-          method: 'POST',
-        })
-        if (!loadResponse.ok) {
-          throw new Error('Failed to load uploaded NAM model')
+        if (instanceId) {
+          await namApi.loadModelToInstance(uploadedName, instanceId)
+        } else {
+          const loadResponse = await fetch(`/api/nam/models/${encodeURIComponent(uploadedName)}/load`, {
+            method: 'POST',
+          })
+          if (!loadResponse.ok) {
+            throw new Error('Failed to load uploaded NAM model')
+          }
         }
       }
       return data
@@ -348,6 +382,7 @@ function NAMCardBase({
         open={managerOpen}
         onClose={() => setManagerOpen(false)}
         onLoadNAM={() => setManagerOpen(false)}
+        instanceId={instanceId}
       />
     </>
   )

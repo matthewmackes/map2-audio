@@ -3870,6 +3870,16 @@ export function JuceGridPage() {
       flowChain ? `${flowChain.plugins.length} blocks` : null,
       flowPageCount > 1 ? `Page ${Math.min(flowCurrentPage, flowPageCount - 1) + 1}/${flowPageCount}` : null,
     ].filter((label): label is string => Boolean(label))
+    const desktopFlowMetaItems = [
+      isActive ? 'Selected' : null,
+      flowState?.activeAudio ? 'Live path' : branchLabel,
+      flowState?.secondaryAnnotation ?? null,
+      flowChain ? `${flowChain.plugins.length} blocks` : null,
+      pluginCpuSum > 0 ? `CPU ${pluginCpuSum.toFixed(0)}%` : null,
+      flow.solo ? 'Solo' : null,
+      flow.muted ? 'Muted' : null,
+    ].filter((label): label is string => Boolean(label))
+    const desktopFlowMetaSummary = desktopFlowMetaItems.join(' / ')
     const signalCanvas = (
       <JuceGridSignalCanvas
         chain={flowChain || null}
@@ -4115,50 +4125,35 @@ export function JuceGridPage() {
             </>
           ) : (
             <>
-              <div className="juce-grid-page__flow-card-title">
-                <Branch size={14} />
-                <span>{flowCardTitle}</span>
-              </div>
-
               <div className="juce-grid-page__flow-card-body">
                 <div className="juce-grid-page__flow-card-header">
                   <div className="juce-grid-page__flow-card-heading">
+                    <div className="juce-grid-page__flow-card-title">
+                      <Branch size={14} />
+                      <span>{flowCardTitle}</span>
+                    </div>
                     <span className="juce-grid-page__flow-card-label">{flowLabel}</span>
                     <div className="juce-grid-page__flow-card-copy">
                       <h3 className="juce-grid-page__flow-card-title-heading">{flowTitle}</h3>
-                      <p>
-                        <SegmentedLedText value={flowSummary} size="sm" color={FLOW_CARD_LED_COLOR} />
-                      </p>
+                      <div className="juce-grid-page__flow-card-copy-status" role="group" aria-label={`${flowLabel} summary`}>
+                        <span className="juce-grid-page__flow-card-summary">
+                          <SegmentedLedText value={flowSummary} size="sm" color={FLOW_CARD_LED_COLOR} />
+                        </span>
+                        {desktopFlowMetaSummary && (
+                          <span className="juce-grid-page__flow-card-meta-line">
+                            {desktopFlowMetaSummary}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="juce-grid-page__flow-card-meta">
-                    {isActive && <Tag type="blue">Selected</Tag>}
-                    {flowState?.activeAudio && <Tag type="green">Live path</Tag>}
-                    {!flowState?.activeAudio && branchLabel && (
-                      <Tag type="cool-gray">{branchLabel}</Tag>
-                    )}
-                    {flowState?.secondaryAnnotation && (
-                      <Tag type="cool-gray">
-                        <SegmentedLedText value={flowState.secondaryAnnotation} size="xs" color={FLOW_CARD_LED_COLOR} />
-                      </Tag>
-                    )}
-                    {flow.solo && <Tag type="warm-gray">Solo</Tag>}
-                    {flow.muted && <Tag type="red">Muted</Tag>}
-                    {flowChain && (
-                      <Tag type="cool-gray">
-                        <SegmentedLedText value={`${flowChain.plugins.length} blocks`} size="xs" color={FLOW_CARD_LED_COLOR} />
-                      </Tag>
-                    )}
-                    {pluginCpuSum > 0 && (
-                      <Tag type={pluginCpuSum >= 50 ? 'red' : 'blue'}>
-                        <SegmentedLedText value={`CPU ${pluginCpuSum.toFixed(0)}%`} size="xs" color={FLOW_CARD_LED_COLOR} />
-                      </Tag>
-                    )}
-                  </div>
-
-                  <div className="juce-grid-page__flow-card-actions">
-                    <Layer className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--routing">
+                  <Layer
+                    className="juce-grid-page__flow-card-service-bar"
+                    role="toolbar"
+                    aria-label={`${flowLabel} flow services`}
+                  >
+                    <div className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--routing">
                       <button
                         type="button"
                         className="juce-grid-page__flow-card-routing-summary"
@@ -4204,9 +4199,11 @@ export function JuceGridPage() {
                           setChainModalFlowId(flow.id)
                         }}
                       />
-                    </Layer>
+                    </div>
 
-                    <Layer className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--level">
+                    <span className="juce-grid-page__flow-card-service-divider" aria-hidden="true" />
+
+                    <div className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--level">
                       <div onClick={(event) => event.stopPropagation()}>
                         <FlowLevelControl
                           flowId={flow.id}
@@ -4216,9 +4213,11 @@ export function JuceGridPage() {
                           onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
                         />
                       </div>
-                    </Layer>
+                    </div>
 
-                    <Layer className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--utility">
+                    <span className="juce-grid-page__flow-card-service-divider" aria-hidden="true" />
+
+                    <div className="juce-grid-page__flow-card-action-group juce-grid-page__flow-card-action-group--utility">
                       <Button
                         type="button"
                         hasIconOnly
@@ -4278,8 +4277,8 @@ export function JuceGridPage() {
                           }}
                         />
                       )}
-                    </Layer>
-                  </div>
+                    </div>
+                  </Layer>
                 </div>
 
                 <div className="juce-grid-page__flow-card-content">

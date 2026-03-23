@@ -244,6 +244,43 @@ describe('HomePage navigation landing', () => {
     expect(calledUrls).toContain('/api/cluster/health/extended/devices')
   })
 
+  it('counts peer-only visible nodes from /api/peers as online in the home summary', async () => {
+    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
+      async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url === '/api/peers') {
+          return makeJsonResponse({
+            local_node_id: 'MANAGEMENT-NODE-1',
+            peers: [
+              {
+                node_id: 'AUDIO-NODE-2',
+                node_mode: 'AUDIO-NODE',
+                hostname: 'MAP2-STAGE-R',
+                host: '10.0.0.22',
+                last_seen: '2026-03-23T09:00:00Z',
+                latency_ms: null,
+                is_online: true,
+              },
+            ],
+          })
+        }
+        if (url === '/api/cluster/discovered') {
+          return makeJsonResponse({ nodes: [] })
+        }
+        return defaultFetchResponse(input)
+      },
+    )
+
+    renderHome(
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>,
+    )
+
+    expect((await screen.findAllByText('MAP2-STAGE-R')).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('2 of 2 nodes online')).toBeTruthy()
+  })
+
   it('proxies home telemetry through the viewed remote node when page scope is remote', async () => {
     mockNodePageContext.topology = {
       nodes: [

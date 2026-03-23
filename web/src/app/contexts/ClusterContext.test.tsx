@@ -187,4 +187,32 @@ describe('ClusterContext', () => {
     expect(window.localStorage.getItem('map2_active_node')).toBe('node-b')
     expect(mockUpdateSettings).not.toHaveBeenCalled()
   })
+
+  it('respects the explicit peer online flag when building node state', async () => {
+    fetchMock.mockResolvedValueOnce(
+      makeJsonResponse({
+        local_node_id: 'node-a',
+        peers: [
+          {
+            node_id: 'node-b',
+            node_mode: 'AUDIO-NODE',
+            hostname: 'rack-b',
+            host: '10.0.0.22',
+            api_url: 'http://10.0.0.22:8080',
+            last_seen: new Date().toISOString(),
+            latency_ms: 9.2,
+            is_online: false,
+          },
+        ],
+      }),
+    )
+
+    const { result } = renderHook(() => useCluster(), { wrapper: makeWrapper() })
+
+    await waitFor(() => expect(result.current.nodes.length).toBe(2))
+
+    const remoteNode = result.current.nodes.find((node) => node.nodeId === 'node-b')
+    expect(remoteNode?.hostname).toBe('rack-b')
+    expect(remoteNode?.isOnline).toBe(false)
+  })
 })

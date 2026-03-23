@@ -218,7 +218,11 @@ export function MatrixCell({
 
         {/* Cross-node indicator (overlay top-left) */}
         {isCrossNode && (isConnected || isConnecting) && (
-          <Box sx={{ position: 'absolute', top: 2, left: 2, color: 'rgba(255, 255, 255, 0.9)' }}>
+          <Box
+            role="img"
+            aria-label="Cross-node route"
+            sx={{ position: 'absolute', top: 2, left: 2, color: 'rgba(255, 255, 255, 0.9)' }}
+          >
             <Link size={12} />
           </Box>
         )}

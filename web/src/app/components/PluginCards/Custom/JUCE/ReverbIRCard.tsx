@@ -14,6 +14,7 @@ import type { PluginCardProps } from '../../types'
 import { ReverbIRManagerDialog } from '../../../loaders/ReverbIRManagerDialog'
 import { AssetUploadButton } from '../../../loaders/AssetUploadButton'
 import { useToasts } from '../../../Toasts'
+import { irApi } from '../../../../../map2/api'
 
 const REVERB_IR_URI = 'map2://juce/convolution/reverb'
 
@@ -31,22 +32,6 @@ interface IRStatus {
   availableIRs: Array<{ name: string; size: string; length: number }>
 }
 
-async function fetchReverbStatus(): Promise<IRStatus> {
-  const res = await fetch('/api/ir/status?type=reverb')
-  if (!res.ok) throw new Error('Failed to fetch reverb status')
-  return res.json()
-}
-
-async function fetchReverbList(): Promise<Array<{ name: string; size: string }>> {
-  const res = await fetch('/api/ir/reverbs')
-  if (!res.ok) throw new Error('Failed to fetch reverbs')
-  const data = await res.json()
-  return (data.irs || []).map((ir: any) => ({
-    name: ir.name,
-    size: `${(ir.size_mb || 0).toFixed(2)} MB`
-  }))
-}
-
 interface ReverbIRCardProps extends PluginCardProps {
   onOpenMidiMappings?: () => void
 }
@@ -60,27 +45,51 @@ function ReverbIRCardBase({
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
   const { pushToast } = useToasts()
+  const instanceId = typeof plugin.instance_id === 'number' && plugin.instance_id > 0 ? plugin.instance_id : undefined
 
   const statusQuery = useQuery({
-    queryKey: ['ir', 'reverb', 'status'],
-    queryFn: fetchReverbStatus,
+    queryKey: ['ir', 'reverb', 'status', instanceId ?? 'global'],
+    queryFn: async () => {
+      const status = await irApi.getTypeStatus('reverb', { instanceId })
+      return {
+        loaded: status.loaded ?? status.loaded_reverb ?? status.active_reverb ?? null,
+        mix: status.mix ?? 30,
+        bypass: status.bypass ?? false,
+        decayTime: typeof status.currentDecay === 'number' ? status.currentDecay / 1000 : undefined,
+        availableIRs: status.availableIRs ?? [],
+      }
+    },
     refetchInterval: 2000,
   })
 
   const listQuery = useQuery({
     queryKey: ['ir', 'reverb', 'list'],
-    queryFn: fetchReverbList,
+    queryFn: async () => {
+      const data = await irApi.listReverbs()
+      return (data.irs ?? []).map((ir) => ({
+        name: ir.name,
+        size: `${((ir.size ?? 0) / 1024).toFixed(0)} KB`,
+      }))
+    },
   })
 
   const setMix = useCallback(async (value: number) => {
-    await fetch(`/api/ir/set-reverb-mix/${value}`, { method: 'POST' })
+    if (instanceId) {
+      await irApi.setReverbMixForInstance(value, instanceId)
+    } else {
+      await fetch(`/api/ir/set-reverb-mix/${value}`, { method: 'POST' })
+    }
     queryClient.invalidateQueries({ queryKey: ['ir', 'reverb', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const setBypass = useCallback(async (bypass: boolean) => {
-    await fetch(`/api/ir/set-reverb-bypass/${bypass}`, { method: 'POST' })
+    if (instanceId) {
+      await irApi.setReverbBypassForInstance(bypass, instanceId)
+    } else {
+      await fetch(`/api/ir/set-reverb-bypass/${bypass}`, { method: 'POST' })
+    }
     queryClient.invalidateQueries({ queryKey: ['ir', 'reverb', 'status'] })
-  }, [queryClient])
+  }, [instanceId, queryClient])
 
   const status = statusQuery.data
   const reverbs = listQuery.data || []
@@ -98,11 +107,15 @@ function ReverbIRCardBase({
       }
       const data = await uploadResponse.json() as { filename?: string }
       if (data.filename) {
-        const loadResponse = await fetch(`/api/ir/reverbs/${encodeURIComponent(data.filename)}/load`, {
-          method: 'POST',
-        })
-        if (!loadResponse.ok) {
-          throw new Error('Failed to load uploaded reverb IR')
+        if (instanceId) {
+          await irApi.loadReverbToInstance(data.filename, instanceId)
+        } else {
+          const loadResponse = await fetch(`/api/ir/reverbs/${encodeURIComponent(data.filename)}/load`, {
+            method: 'POST',
+          })
+          if (!loadResponse.ok) {
+            throw new Error('Failed to load uploaded reverb IR')
+          }
         }
       }
       return data
@@ -171,6 +184,7 @@ function ReverbIRCardBase({
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onLoadReverbIR={() => setDialogOpen(false)}
+        instanceId={instanceId}
       />
     </>
   )

@@ -190,6 +190,18 @@ class UnifiedUploadService:
         }
         return paths[asset_type]
 
+    def sanitize_filename(self, filename: str) -> str:
+        """Return a safe basename for storage or raise on invalid input."""
+        raw_name = (filename or "").strip()
+        safe_name = Path(raw_name).name.strip()
+        if raw_name != safe_name:
+            raise ValueError("Invalid filename")
+        if not safe_name or safe_name in {".", ".."} or safe_name.startswith("."):
+            raise ValueError("Invalid filename")
+        if any(sep in safe_name for sep in ("/", "\\")):
+            raise ValueError("Invalid filename")
+        return safe_name
+
     async def save_upload(
         self,
         filename: str,
@@ -207,6 +219,8 @@ class UnifiedUploadService:
             UploadResult with status and metadata
         """
         try:
+            safe_name = self.sanitize_filename(filename)
+
             # Compute hash for deduplication
             file_hash = hashlib.sha256(content).hexdigest()
 
@@ -216,10 +230,12 @@ class UnifiedUploadService:
 
             # Handle VST3 specially
             if asset_type == AssetType.VST3:
-                return await self._save_vst3(filename, content, dest_dir, file_hash)
+                return await self._save_vst3(safe_name, content, dest_dir, file_hash)
 
             # Regular file save
-            dest_path = dest_dir / filename
+            dest_path = (dest_dir / safe_name).resolve()
+            if dest_path.parent != dest_dir.resolve():
+                raise ValueError("Invalid filename")
 
             # Check for duplicates
             if dest_path.exists():
@@ -228,7 +244,7 @@ class UnifiedUploadService:
                     return UploadResult(
                         success=True,
                         asset_type=asset_type,
-                        filename=filename,
+                        filename=safe_name,
                         file_path=str(dest_path),
                         file_size=len(content),
                         file_hash=file_hash,
@@ -236,21 +252,35 @@ class UnifiedUploadService:
                         already_exists=True
                     )
 
-            # Write file
-            dest_path.write_bytes(content)
+            # Write atomically to avoid partially written assets being observed.
+            temp_path = dest_path.with_name(f".{safe_name}.tmp")
+            temp_path.write_bytes(content)
+            os.replace(temp_path, dest_path)
 
-            logger.info(f"Uploaded {asset_type.value}: {filename} -> {dest_path}")
+            logger.info(f"Uploaded {asset_type.value}: {safe_name} -> {dest_path}")
 
             return UploadResult(
                 success=True,
                 asset_type=asset_type,
-                filename=filename,
+                filename=safe_name,
                 file_path=str(dest_path),
                 file_size=len(content),
                 file_hash=file_hash,
                 message=f"Successfully uploaded {asset_type.value}"
             )
 
+        except ValueError as e:
+            logger.warning("Rejected upload %s: %s", filename, e)
+            return UploadResult(
+                success=False,
+                asset_type=asset_type,
+                filename=filename,
+                file_path="",
+                file_size=len(content),
+                file_hash="",
+                message=str(e),
+                error=str(e),
+            )
         except Exception as e:
             logger.error(f"Upload error for {filename}: {e}")
             return UploadResult(

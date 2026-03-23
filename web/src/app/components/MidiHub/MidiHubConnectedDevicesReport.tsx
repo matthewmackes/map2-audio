@@ -12,7 +12,7 @@ import {
   Tag,
 } from '@carbon/react'
 import type { MidiHubRoute } from '../../../map2/api'
-import type { HubPort } from './MidiHubWorkbenchCards'
+import type { HubPort } from './portUtils'
 
 type MidiHubConnectedDevicesReportProps = {
   ports: HubPort[]

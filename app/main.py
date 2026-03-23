@@ -189,7 +189,7 @@ async def lifespan(app):
         from app.services.metering_broadcast import start_metering_broadcast, stop_metering_broadcast
         from app.services.midi_broadcast import start_midi_broadcast, stop_midi_broadcast
         from app.database import checkpoint_database
-        from app.services.lcd_manager import LCDManager
+        from app.services.lcd_manager import LCDManager, set_lcd_manager as set_global_lcd_manager
         from app.services.event_producers import (
             AudioEventProducer,
             SystemHealthProducer,
@@ -275,6 +275,8 @@ async def lifespan(app):
             mdns_discovery=mdns_discovery,
         )
         await safe_start_service(logger, "LCD Manager", lcd_manager.start)
+        set_global_lcd_manager(lcd_manager)
+        init_lcd_routes(lcd_manager)
         
         # Initialize event producers
         audio_producer = AudioEventProducer(lcd_manager.event_bus)
@@ -503,6 +505,8 @@ async def lifespan(app):
         await safe_stop_service(logger, "System Health Producer", system_producer.stop)
         await safe_stop_service(logger, "Audio Event Producer", audio_producer.stop)
         await safe_stop_service(logger, "LCD Manager", lcd_manager.stop)
+        set_global_lcd_manager(None)
+        init_lcd_routes(None)
         await safe_stop_service(logger, "LCD Event Persistence", lcd_persistence.stop)
         
         # Close database pool

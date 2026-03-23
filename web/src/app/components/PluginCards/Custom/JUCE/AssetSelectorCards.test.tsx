@@ -3,6 +3,30 @@ import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
+const mockNAMGetStatus = jest.fn()
+const mockNAMGetInstanceStatus = jest.fn()
+const mockNAMLoadModelToInstance = jest.fn()
+const mockIRGetTypeStatus = jest.fn()
+const mockListCabinets = jest.fn()
+const mockListReverbs = jest.fn()
+const mockIRLoadCabinetToInstance = jest.fn()
+const mockIRLoadReverbToInstance = jest.fn()
+
+jest.mock('../../../../../map2/api', () => ({
+  namApi: {
+    getStatus: (...args: unknown[]) => mockNAMGetStatus(...args),
+    getInstanceStatus: (...args: unknown[]) => mockNAMGetInstanceStatus(...args),
+    loadModelToInstance: (...args: unknown[]) => mockNAMLoadModelToInstance(...args),
+  },
+  irApi: {
+    getTypeStatus: (...args: unknown[]) => mockIRGetTypeStatus(...args),
+    listCabinets: (...args: unknown[]) => mockListCabinets(...args),
+    listReverbs: (...args: unknown[]) => mockListReverbs(...args),
+    loadCabinetToInstance: (...args: unknown[]) => mockIRLoadCabinetToInstance(...args),
+    loadReverbToInstance: (...args: unknown[]) => mockIRLoadReverbToInstance(...args),
+  },
+}))
+
 import { NAMCard } from './NAMCard'
 import { CabinetIRCard } from './CabinetIRCard'
 import { ReverbIRCard } from './ReverbIRCard'
@@ -89,6 +113,13 @@ function makePlugin(name: string, category: string) {
   }
 }
 
+function makeInstancePlugin(name: string, category: string, instanceId: number) {
+  return {
+    ...makePlugin(name, category),
+    instance_id: instanceId,
+  }
+}
+
 function renderCard(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={makeClient()}>
@@ -101,28 +132,78 @@ describe('JUCE asset selector cards', () => {
   const originalFetch = global.fetch
 
   beforeEach(() => {
+    mockNAMGetStatus.mockReset()
+    mockNAMGetInstanceStatus.mockReset()
+    mockNAMLoadModelToInstance.mockReset()
+    mockIRGetTypeStatus.mockReset()
+    mockListCabinets.mockReset()
+    mockListReverbs.mockReset()
+    mockIRLoadCabinetToInstance.mockReset()
+    mockIRLoadReverbToInstance.mockReset()
+
+    mockNAMGetStatus.mockResolvedValue({
+      available: true,
+      activeModel: 'Edge Crunch',
+      loading: false,
+      bypass: false,
+      inputLevel: -12,
+      outputLevel: -9,
+      input_gain: 0,
+      output_gain: 0,
+      normalize: false,
+      availableModels: ['Edge Crunch', 'Clean Chime'],
+      mix: 100,
+      peakInput: -12,
+      peakOutput: -9,
+      latency: 0,
+    })
+    mockIRGetTypeStatus.mockImplementation(async (type: string) => {
+      if (type === 'cabinet') {
+        return {
+          available: true,
+          loaded: 'Vintage 4x12',
+          mix: 100,
+          bypass: false,
+          availableIRs: [{ name: 'Vintage 4x12', size: '512 KB', length: 1024 }],
+        }
+      }
+      return {
+        available: true,
+        loaded: 'Studio Room',
+        mix: 30,
+        bypass: false,
+        currentDecay: 2400,
+        availableIRs: [{ name: 'Studio Room', size: '1.23 MB', length: 2048 }],
+      }
+    })
+    mockListCabinets.mockResolvedValue({
+      irs: [{ name: 'Vintage 4x12', size: 524288 }],
+    })
+    mockListReverbs.mockResolvedValue({
+      irs: [{ name: 'Studio Room', size: 1289748 }],
+    })
+    mockNAMGetInstanceStatus.mockResolvedValue({
+      available: true,
+      activeModel: 'Instance Crunch',
+      loading: false,
+      bypass: false,
+      inputLevel: -10,
+      outputLevel: -8,
+      input_gain: 1,
+      output_gain: -1,
+      normalize: true,
+      availableModels: ['Instance Crunch'],
+      mix: 100,
+      peakInput: -10,
+      peakOutput: -8,
+      latency: 0,
+    })
+    mockNAMLoadModelToInstance.mockResolvedValue({ status: 'ok' })
+    mockIRLoadCabinetToInstance.mockResolvedValue({ status: 'ok' })
+    mockIRLoadReverbToInstance.mockResolvedValue({ status: 'ok' })
+
     global.fetch = jest.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
-
-      if (url === '/api/nam/status') {
-        return {
-          ok: true,
-          status: 200,
-          statusText: 'OK',
-          json: async () => ({
-            available: true,
-            activeModel: 'Edge Crunch',
-            loading: false,
-            bypass: false,
-            inputLevel: -12,
-            outputLevel: -9,
-            inputGain: 0,
-            outputGain: 0,
-            normalize: false,
-            availableModels: ['Edge Crunch', 'Clean Chime'],
-          }),
-        } as Response
-      }
 
       if (url === '/api/nam/upload') {
         return {
@@ -146,31 +227,6 @@ describe('JUCE asset selector cards', () => {
         } as Response
       }
 
-      if (url === '/api/ir/status?type=cabinet') {
-        return {
-          ok: true,
-          status: 200,
-          statusText: 'OK',
-          json: async () => ({
-            loaded: 'Vintage 4x12',
-            mix: 100,
-            bypass: false,
-            availableIRs: [{ name: 'Vintage 4x12', size: '512 KB', length: 1024 }],
-          }),
-        } as Response
-      }
-
-      if (url === '/api/ir/cabinets') {
-        return {
-          ok: true,
-          status: 200,
-          statusText: 'OK',
-          json: async () => ({
-            cabinets: [{ name: 'Vintage 4x12', size: '512 KB' }],
-          }),
-        } as Response
-      }
-
       if (url === '/api/ir/cabinets/upload') {
         return {
           ok: true,
@@ -188,32 +244,6 @@ describe('JUCE asset selector cards', () => {
           status: 200,
           statusText: 'OK',
           json: async () => ({ status: 'ok' }),
-        } as Response
-      }
-
-      if (url === '/api/ir/status?type=reverb') {
-        return {
-          ok: true,
-          status: 200,
-          statusText: 'OK',
-          json: async () => ({
-            loaded: 'Studio Room',
-            mix: 30,
-            bypass: false,
-            decayTime: 2.4,
-            availableIRs: [{ name: 'Studio Room', size: '1.23 MB', length: 2048 }],
-          }),
-        } as Response
-      }
-
-      if (url === '/api/ir/reverbs') {
-        return {
-          ok: true,
-          status: 200,
-          statusText: 'OK',
-          json: async () => ({
-            irs: [{ name: 'Studio Room', size_mb: 1.23 }],
-          }),
         } as Response
       }
 
@@ -372,6 +402,59 @@ describe('JUCE asset selector cards', () => {
     })
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/api/ir/reverbs/Uploaded%20Reverb.wav/load', expect.objectContaining({ method: 'POST' }))
+    })
+  })
+
+  it('uses instance-scoped load APIs for NAM and IR cards when instance ids are present', async () => {
+    renderCard(
+      <>
+        <NAMCard
+          plugin={makeInstancePlugin('NAM', 'Amplifier', 101)}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#ff6b6b"
+        />
+        <CabinetIRCard
+          plugin={makeInstancePlugin('Cabinet IR', 'Convolution', 202)}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#f97316"
+        />
+        <ReverbIRCard
+          plugin={makeInstancePlugin('Reverb IR', 'Convolution', 303)}
+          parameterValues={{}}
+          onParameterChange={jest.fn()}
+          accentColor="#a855f7"
+        />
+      </>,
+    )
+
+    await waitFor(() => {
+      expect(mockNAMGetInstanceStatus).toHaveBeenCalledWith(101)
+      expect(mockIRGetTypeStatus).toHaveBeenCalledWith('cabinet', { instanceId: 202 })
+      expect(mockIRGetTypeStatus).toHaveBeenCalledWith('reverb', { instanceId: 303 })
+    })
+
+    fireEvent.change(screen.getByLabelText('Upload NAM model to selected block'), {
+      target: {
+        files: [new File(['nam-data'], 'instance-upload.nam', { type: 'application/octet-stream' })],
+      },
+    })
+    fireEvent.change(screen.getByLabelText('Upload cabinet IR to selected block'), {
+      target: {
+        files: [new File(['wave-data'], 'instance-cab.wav', { type: 'audio/wav' })],
+      },
+    })
+    fireEvent.change(screen.getByLabelText('Upload reverb IR to selected block'), {
+      target: {
+        files: [new File(['wave-data'], 'instance-reverb.wav', { type: 'audio/wav' })],
+      },
+    })
+
+    await waitFor(() => {
+      expect(mockNAMLoadModelToInstance).toHaveBeenCalledWith('Uploaded NAM', 101)
+      expect(mockIRLoadCabinetToInstance).toHaveBeenCalledWith('Uploaded Cabinet.wav', 202)
+      expect(mockIRLoadReverbToInstance).toHaveBeenCalledWith('Uploaded Reverb.wav', 303)
     })
   })
 })

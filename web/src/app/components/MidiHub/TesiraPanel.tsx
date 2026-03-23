@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -45,6 +45,7 @@ export function TesiraPanel() {
   const [presetId, setPresetId] = useState('1001')
   const [subscriptionTag, setSubscriptionTag] = useState('Level1')
   const [subscriptionAttribute, setSubscriptionAttribute] = useState('level')
+  const [hydratedConfig, setHydratedConfig] = useState(false)
 
   const refresh = async () => {
     await Promise.all([
@@ -64,6 +65,22 @@ export function TesiraPanel() {
     queryKey: ['midi-hub', scopeKey, 'tesira-aliases'],
     queryFn: () => midiHubApi.listTesiraAliases(nodeId),
   })
+
+  useEffect(() => {
+    if (hydratedConfig || !statusQuery.data) return
+    setHost(statusQuery.data.host || '192.168.10.55')
+    setPort(String(statusQuery.data.port || 23))
+    setUsername(statusQuery.data.username || '')
+    setSecured(Boolean(statusQuery.data.secured))
+    setAutoReconnect(Boolean(statusQuery.data.auto_reconnect))
+    if (statusQuery.data.aliases[0]?.instance_tag) {
+      const aliasTag = statusQuery.data.aliases[0].instance_tag
+      setLevelTag(aliasTag)
+      setMuteTag(aliasTag)
+      setSubscriptionTag(aliasTag)
+    }
+    setHydratedConfig(true)
+  }, [hydratedConfig, statusQuery.data])
 
   const connectMutation = useMutation({
     mutationFn: async () =>

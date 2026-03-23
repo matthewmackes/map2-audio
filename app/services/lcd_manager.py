@@ -24,6 +24,21 @@ from app.lcd_models.lcd_event import LCDEvent
 logger = logging.getLogger(__name__)
 
 
+# Active LCD manager instance for routes/services that need runtime access.
+lcd_manager: Optional["LCDManager"] = None
+
+
+def set_lcd_manager(manager: Optional["LCDManager"]) -> None:
+    """Register or clear the active LCD manager instance."""
+    global lcd_manager
+    lcd_manager = manager
+
+
+def get_lcd_manager() -> Optional["LCDManager"]:
+    """Return the active LCD manager instance, if one is registered."""
+    return lcd_manager
+
+
 class LCDManager:
     """
     Main coordinator for the distributed LCD event system.

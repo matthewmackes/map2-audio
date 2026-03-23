@@ -14,6 +14,7 @@ from app.services.midi_hub.device_registry import get_midi_device_registry
 from app.services.midi_hub.event_list_service import get_midi_hub_event_list_service
 from app.services.midi_hub.gateway import get_midi_gateway_manager
 from app.services.midi_hub.macros import get_midi_macro_service
+from app.services.midi_hub.message_mapper import get_midi_message_mapper_service
 from app.services.midi_hub.midi2 import get_midi2_manager
 from app.services.midi_hub.network import get_midi_network_bridge
 from app.services.midi_hub.osc_namespace import get_osc_namespace_router
@@ -194,10 +195,13 @@ class OscNamespaceDispatchRequest(BaseModel):
 class Midi2ConfigRequest(BaseModel):
     enabled: Optional[bool] = None
     default_protocol: Optional[str] = Field(default=None, pattern="^(midi1|midi2)$")
+    binding_transport: Optional[str] = Field(default=None, pattern="^(none|port|network_session)$")
+    binding_target_id: Optional[str] = Field(default=None, max_length=255)
+    binding_response_port: Optional[str] = Field(default=None, max_length=255)
 
 
 class Midi2DiscoverRequest(BaseModel):
-    device_id: str = Field(..., min_length=1, max_length=128)
+    device_id: Optional[str] = Field(default=None, max_length=128)
 
 
 class Midi2ProfileRequest(BaseModel):
@@ -205,9 +209,34 @@ class Midi2ProfileRequest(BaseModel):
     enabled: bool = True
 
 
+class Midi2ProfileDetailsRequest(BaseModel):
+    profile_id: str = Field(..., min_length=1, max_length=128)
+    inquiry_target: int = Field(default=0, ge=0, le=127)
+
+
 class Midi2PropertyRequest(BaseModel):
-    key: str = Field(..., min_length=1, max_length=255)
+    resource: Optional[str] = Field(default=None, max_length=255)
+    key: Optional[str] = Field(default=None, max_length=255)
+    res_id: Optional[str] = Field(default=None, max_length=255)
     value: Any = None
+
+    def normalized_resource(self) -> str:
+        target = str(self.resource or self.key or "").strip()
+        if not target:
+            raise ValueError("property_resource_required")
+        return target
+
+
+class Midi2SubscriptionRequest(BaseModel):
+    resource: Optional[str] = Field(default=None, max_length=255)
+    key: Optional[str] = Field(default=None, max_length=255)
+    res_id: Optional[str] = Field(default=None, max_length=255)
+
+    def normalized_resource(self) -> str:
+        target = str(self.resource or self.key or "").strip()
+        if not target:
+            raise ValueError("property_resource_required")
+        return target
 
 
 class Midi2TranslateMidi1Request(BaseModel):
@@ -274,6 +303,18 @@ class StringInterfaceCommandRequest(BaseModel):
 class LearnSuggestRequest(BaseModel):
     parameter_id: str = Field(..., min_length=1, max_length=255)
     chain_context: Dict[str, Any] = Field(default_factory=dict)
+
+
+class MessageMapperSlotRequest(BaseModel):
+    enabled: bool = False
+    source_port: str = Field(default="", max_length=255)
+    message_type: str = Field(default="control_change", max_length=64)
+    channel_min: int = Field(default=1, ge=1, le=16)
+    channel_max: int = Field(default=16, ge=1, le=16)
+    value_min: int = Field(default=0, ge=0, le=127)
+    value_max: int = Field(default=127, ge=0, le=127)
+    target: str = Field(default="", max_length=255)
+    curve: str = Field(default="linear", max_length=64)
 
 
 class MacroUpsertRequest(BaseModel):
@@ -1086,17 +1127,22 @@ async def get_midi2_status() -> Dict[str, Any]:
 @router.put("/midi2")
 async def configure_midi2(req: Midi2ConfigRequest) -> Dict[str, Any]:
     manager = get_midi2_manager()
-    if req.enabled is not None:
-        manager.set_enabled(req.enabled)
-    if req.default_protocol is not None:
-        manager.set_default_protocol(req.default_protocol)
-    return manager.status()
+    try:
+        if req.enabled is not None:
+            manager.set_enabled(req.enabled)
+        if req.default_protocol is not None:
+            manager.set_default_protocol(req.default_protocol)
+        if any(value is not None for value in (req.binding_transport, req.binding_target_id, req.binding_response_port)):
+            manager.set_binding(req.binding_transport, req.binding_target_id, req.binding_response_port)
+        return manager.status()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/midi2/discover")
 async def discover_midi2_device(req: Midi2DiscoverRequest) -> Dict[str, Any]:
     manager = get_midi2_manager()
-    return manager.discover(req.device_id)
+    return await manager.discover(req.device_id)
 
 
 @router.post("/midi2/translate/midi1-to-ump")
@@ -1113,24 +1159,129 @@ async def translate_ump_to_midi1(req: Midi2TranslateUmpRequest) -> Dict[str, Any
     return {"message": [int(byte) & 0xFF for byte in midi1]}
 
 
+@router.post("/midi2/translate/inspect-ump")
+async def inspect_ump(req: Midi2TranslateUmpRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    return {"messages": manager.inspect_ump([int(word) for word in req.words])}
+
+
 @router.put("/midi2/{device_id}/profiles")
 async def set_midi2_profile(device_id: str, req: Midi2ProfileRequest) -> Dict[str, Any]:
     manager = get_midi2_manager()
-    device = manager.enable_profile(device_id, req.profile_id, req.enabled)
-    return {"ok": True, "device": device}
+    try:
+        payload = await manager.enable_profile(device_id, req.profile_id, req.enabled)
+        device = payload["device"]
+        return {"ok": bool(payload.get("transport", {}).get("ok")), "device": device, "transport": payload.get("transport")}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/midi2/{device_id}/profiles/inquiry")
+async def inquire_midi2_profiles(device_id: str) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    try:
+        payload = await manager.inquire_profiles(device_id)
+        device = payload["device"]
+        return {"ok": bool(payload.get("transport", {}).get("ok")), "device": device, "transport": payload.get("transport")}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/midi2/{device_id}/profiles/details")
+async def inquire_midi2_profile_details(device_id: str, req: Midi2ProfileDetailsRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    try:
+        payload = await manager.inquire_profile_details(device_id, req.profile_id, req.inquiry_target)
+        device = payload["device"]
+        return {"ok": bool(payload.get("transport", {}).get("ok")), "device": device, "transport": payload.get("transport")}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/midi2/{device_id}/property-exchange/capabilities")
+async def inquire_midi2_property_exchange_capabilities(device_id: str) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    try:
+        payload = await manager.inquire_property_exchange_capabilities(device_id)
+        device = payload["device"]
+        return {"ok": bool(payload.get("transport", {}).get("ok")), "device": device, "transport": payload.get("transport")}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/midi2/{device_id}/invalidate")
+async def invalidate_midi2_device(device_id: str) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    try:
+        return await manager.invalidate_device(device_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/midi2/{device_id}/subscriptions")
+async def subscribe_midi2_property(device_id: str, req: Midi2SubscriptionRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    try:
+        payload = await manager.subscribe_property(
+            device_id,
+            req.normalized_resource(),
+            res_id=req.res_id,
+        )
+        device = payload["device"]
+        return {"ok": bool(payload.get("transport", {}).get("ok")), "device": device, "transport": payload.get("transport")}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/midi2/{device_id}/subscriptions/{subscribe_id}/end")
+async def end_midi2_subscription(device_id: str, subscribe_id: str) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    try:
+        payload = await manager.end_subscription(device_id, subscribe_id)
+        device = payload["device"]
+        return {"ok": bool(payload.get("transport", {}).get("ok")), "device": device, "transport": payload.get("transport")}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.put("/midi2/{device_id}/properties")
 async def set_midi2_property(device_id: str, req: Midi2PropertyRequest) -> Dict[str, Any]:
     manager = get_midi2_manager()
-    device = manager.set_property(device_id, req.key, req.value)
-    return {"ok": True, "device": device}
+    try:
+        payload = await manager.set_property(
+            device_id,
+            req.normalized_resource(),
+            req.value,
+            res_id=req.res_id,
+        )
+        device = payload["device"]
+        return {"ok": bool(payload.get("transport", {}).get("ok")), "device": device, "transport": payload.get("transport")}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/midi2/{device_id}/properties/read")
+async def read_midi2_property(device_id: str, req: Midi2PropertyRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    try:
+        payload = await manager.query_property(
+            device_id,
+            req.normalized_resource(),
+            res_id=req.res_id,
+        )
+        device = payload["device"]
+        return {"ok": bool(payload.get("transport", {}).get("ok")), "device": device, "transport": payload.get("transport")}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/midi2/{device_id}/properties/{key}")
 async def get_midi2_property(device_id: str, key: str) -> Dict[str, Any]:
     manager = get_midi2_manager()
-    return {"ok": True, "device_id": device_id, "key": key, "value": manager.get_property(device_id, key)}
+    try:
+        return {"ok": True, "device_id": device_id, "key": key, "value": manager.get_property(device_id, key)}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/tesira")
@@ -1291,6 +1442,40 @@ async def get_learn_suggestions(req: LearnSuggestRequest) -> Dict[str, Any]:
         },
         "split_suggestions": plugin_splits,
     }
+
+
+@router.get("/processing/mappers")
+async def list_message_mapper_slots() -> Dict[str, Any]:
+    service = get_midi_message_mapper_service()
+    slots = service.list_slots()
+    return {"count": len(slots), "slots": slots}
+
+
+@router.put("/processing/mappers/{slot_id}")
+async def upsert_message_mapper_slot(slot_id: str, req: MessageMapperSlotRequest) -> Dict[str, Any]:
+    service = get_midi_message_mapper_service()
+    try:
+        slot = service.upsert_slot(slot_id=slot_id, **req.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True, "slot": slot}
+
+
+@router.post("/processing/mappers/{slot_id}/clear")
+async def clear_message_mapper_slot(slot_id: str) -> Dict[str, Any]:
+    service = get_midi_message_mapper_service()
+    try:
+        slot = service.clear_slot(slot_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True, "slot": slot}
+
+
+@router.post("/processing/mappers/reset")
+async def reset_message_mapper_slots() -> Dict[str, Any]:
+    service = get_midi_message_mapper_service()
+    slots = service.reset_slots()
+    return {"ok": True, "count": len(slots), "slots": slots}
 
 
 @router.get("/macros")

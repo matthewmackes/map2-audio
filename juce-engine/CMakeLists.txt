@@ -248,6 +248,8 @@ set(SOURCES
     Source/JuceAudioIO.cpp
     Source/JucePluginHost.cpp
     Source/JuceAudioGraph.cpp
+    Source/NativeConvolutionPluginProcessor.cpp
+    Source/NativeNAMPluginProcessor.cpp
 
     # Enhanced audio processing (new)
     Source/ConvolutionProcessor.cpp
