@@ -36,7 +36,6 @@ import {
   ChartLine,
   Close,
   Delete,
-  Music,
   PlayFilled,
   Redo,
   Renew,
@@ -85,7 +84,7 @@ import { NumberInput } from './NumberInput';
 // Import JUCE integration components
 import { LatencyOverlay, SnapshotBar as EnhancedSnapshotBar } from './ChainBuilder';
 import { AudioConfigDialog } from './Audio';
-import { MidiLearnButton, MidiMappingsPanel } from './MIDI';
+import { MidiLearnButton } from './MIDI';
 import { AutomationTimeline } from './Automation';
 
 function Glyph({
@@ -275,7 +274,6 @@ export default function ChainBuilder() {
   // JUCE Integration Feature State
   const [audioConfigDialogOpen, setAudioConfigDialogOpen] = useState(false);
   const [midiLearnMode, setMidiLearnMode] = useState(false);
-  const [midiMappingsPanelOpen, setMidiMappingsPanelOpen] = useState(false);
   const [automationTimelineExpanded, setAutomationTimelineExpanded] = useState(false);
   const [automationPlaying, setAutomationPlaying] = useState(false);
   const [automationRecording, setAutomationRecording] = useState(false);
@@ -1168,9 +1166,8 @@ export default function ChainBuilder() {
 
           {/* JUCE Integration Controls */}
           <MidiLearnButton
-            isLearning={midiLearnMode}
+            isActive={midiLearnMode}
             onToggle={() => setMidiLearnMode(!midiLearnMode)}
-            onOpenMappings={() => setMidiMappingsPanelOpen(true)}
           />
 
           <Tooltip title="Audio Configuration">
@@ -1846,42 +1843,6 @@ export default function ChainBuilder() {
           }
         }}
       />
-
-      {/* MIDI Mappings Panel (Drawer) */}
-      <Drawer
-        anchor="right"
-        open={midiMappingsPanelOpen}
-        onClose={() => setMidiMappingsPanelOpen(false)}
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: 400,
-          },
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Glyph icon={Music} color="primary.main" />
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              MIDI Mappings
-            </Typography>
-            <IconButton onClick={() => setMidiMappingsPanelOpen(false)} size="small">
-              <Close size={18} />
-            </IconButton>
-          </Box>
-          <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-            <MidiMappingsPanel
-              mappings={[]}
-              onEditMapping={() => {}}
-              onDeleteMapping={() => {}}
-              onLearnMapping={() => {
-                setMidiLearnMode(true);
-                setMidiMappingsPanelOpen(false);
-              }}
-            />
-          </Box>
-        </Box>
-      </Drawer>
-
       {/* Automation Lane Parameter Selector Dialog */}
       <Dialog
         open={automationLaneDialogOpen}

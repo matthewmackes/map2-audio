@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 18:19 EDT - Codex (Closed `T354` by Carbonizing `TesiraLoopBuilderTab.tsx`, adding focused loop-builder coverage, and eliminating the equivalent-query render loop in insertion draft hydration; the dedicated `/tesira` route now no longer has a remaining MUI-heavy operator surface.)
+Last updated: 2026-03-23 18:30 EDT - Codex (Closed `T383` by proving the MIDI Hub script engine executes backend code inside its existing restricted sandbox and closed `T384` by removing dead legacy MIDI learn/mappings paths plus the redundant JUCE Grid MIDI scope branch before starting the JUCE-engine bridge.)
 
 ## Active Blockers Only
 
@@ -5418,7 +5418,7 @@ Assigned to: Codex
 Last updated: 2026-03-23 18:00 EDT - Codex
 
 ID: T383
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI audit — Script engine execution sandbox verification
 Description:
 - Goal / acceptance criteria: Verify that `MidiScriptEditor.tsx` Python/Lua scripts actually execute in the backend, not just CRUD stubs. If stubs, implement the execution sandbox.
@@ -5428,10 +5428,15 @@ Description:
 - Required outputs: Verified script execution or implemented sandbox with security constraints.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 18:00 EDT - Codex
+Last updated: 2026-03-23 18:30 EDT - Codex
+- Completion notes:
+  - Verified `app/services/midi_hub/script_engine.py` already provides real backend execution for `run_script`/`trigger_script` with a restricted `SAFE_BUILTINS` sandbox, `midi`/`state`/`hub`/`log`/`timer` bridges, and console logging; the MIDI Hub scripting UI is not CRUD-only.
+  - Added focused backend coverage in `tests/midi_hub/test_script_engine.py` proving scripts can mutate persisted state, emit MIDI through `MidiHub`, log to the console, and reject unsafe imports because `__import__` is not exposed in the sandbox.
+  - Revalidated the existing route-level execution coverage in `tests/midi_hub/test_routes.py` and `tests/midi_hub/test_traffic_routes.py`, which already exercise script upsert, run, trigger, console, enable/disable, and stop flows from the exposed API handlers.
+  - Validation passed with `pytest tests/midi_hub/test_script_engine.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py`.
 
 ID: T384
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI audit — Remove deprecated/dead MIDI code
 Description:
 - Goal / acceptance criteria: Clean up deprecated MIDI components and dead code paths identified during audit.
@@ -5441,4 +5446,11 @@ Description:
 - Required outputs: Remove or mark deprecated: `useMidiLearn.tsx` (deprecated hook), `MidiMappingsPanel.tsx` (deprecated legacy panel), redundant scope branch in `midiMappingsQuery` (lines 1019-1021 of JuceGridPage), `JuceGridSelectedBlockMidiPanel.test.tsx` (uses jest.fn instead of vi.fn — fix or remove).
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 18:00 EDT - Codex
+Last updated: 2026-03-23 18:30 EDT - Codex
+- Completion notes:
+  - Removed the unused deprecated provider/hook by deleting `web/src/app/hooks/useMidiLearn.tsx`, removing the `MidiLearnProvider` wrapper from `web/src/app/App.tsx`, and dropping the stale provider mock from `web/src/app/App.platformRoute.test.tsx`; repo search confirmed the hook had no remaining consumers.
+  - Removed the dead legacy MIDI mappings drawer path by deleting `web/src/map2/components/MIDI/MidiMappingsPanel.tsx`, removing its export from `web/src/map2/components/MIDI/index.ts`, and trimming the unreachable state/props from `web/src/map2/components/ChainBuilder.tsx`; the old button wiring never consumed `onOpenMappings`, so the drawer could not be opened in practice.
+  - Simplified `web/src/app/pages/JuceGridPage.tsx` by deleting the redundant `selected-plugin` fallback branch in `midiMappingsQuery`, and corrected the legacy `MidiLearnButton` call site to use its actual `isActive` prop while preserving the remaining learn toggle behavior.
+  - Audited `web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`; no `vi.fn` migration was needed because this repo's web test stack is still Jest-based, so the earlier audit note was stale rather than an active defect.
+  - Validation passed with `npm --prefix web run typecheck` and `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`.
+  - Licensing review: touched frontend/backend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.

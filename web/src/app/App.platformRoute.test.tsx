@@ -18,10 +18,6 @@ jest.mock('./components/Toasts', () => ({
   }),
 }))
 
-jest.mock('./hooks/useMidiLearn', () => ({
-  MidiLearnProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
-
 jest.mock('./contexts/ClusterContext', () => ({
   ClusterProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))

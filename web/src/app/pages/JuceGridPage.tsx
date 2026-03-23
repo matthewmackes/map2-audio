@@ -1016,10 +1016,6 @@ export function JuceGridPage() {
         return midiApiV2.getMappings({ chain_id: activeFlowChainId })
       }
 
-      if (midiScope === 'selected-plugin' && activeFlowChainId !== null) {
-        return midiApiV2.getMappings({ chain_id: activeFlowChainId })
-      }
-
       return midiApiV2.getMappings()
     },
     refetchInterval: 5000,

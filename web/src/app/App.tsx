@@ -5,7 +5,6 @@ import { Loading } from '@carbon/react'
 import { AppShell } from './layout/AppShell'
 import { Map2BrandMark } from './components/branding/map2Branding'
 import { ToastProvider, useToasts } from './components/Toasts'
-import { MidiLearnProvider } from './hooks/useMidiLearn'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ClusterProvider } from './contexts/ClusterContext'
 import { useWebSocketConnection } from '../map2/hooks/useWebSocket'
@@ -173,30 +172,29 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ClusterProvider>
-          <MidiLearnProvider>
-            <ToastProvider>
-              <BackendConnectionMonitor />
-              <ErrorBoundary title="MAP2 UI crashed" actionLabel="Try again">
-                <div className="platform-brand-frame">
-                  <div className="platform-brand-backdrop" aria-hidden="true">
-                    <Map2BrandMark className="platform-brand-backdrop__mark platform-brand-backdrop__mark--primary" />
-                    <Map2BrandMark className="platform-brand-backdrop__mark platform-brand-backdrop__mark--secondary" />
-                  </div>
-                  <div className="platform-brand-frame__content">
-                    <Routes>
-                      {/* Full-window routes — no AppShell chrome */}
-                      <Route path="/perform" element={
-                        <Suspense fallback={<PageLoader />}>
-                          <PerformPage />
-                        </Suspense>
-                      } />
-                      {/* All standard routes wrapped in AppShell */}
-                      <Route
-                        path="/*"
-                        element={
-                          <AppShell>
-                            <Suspense fallback={<PageLoader />}>
-                              <Routes>
+          <ToastProvider>
+            <BackendConnectionMonitor />
+            <ErrorBoundary title="MAP2 UI crashed" actionLabel="Try again">
+              <div className="platform-brand-frame">
+                <div className="platform-brand-backdrop" aria-hidden="true">
+                  <Map2BrandMark className="platform-brand-backdrop__mark platform-brand-backdrop__mark--primary" />
+                  <Map2BrandMark className="platform-brand-backdrop__mark platform-brand-backdrop__mark--secondary" />
+                </div>
+                <div className="platform-brand-frame__content">
+                  <Routes>
+                    {/* Full-window routes — no AppShell chrome */}
+                    <Route path="/perform" element={
+                      <Suspense fallback={<PageLoader />}>
+                        <PerformPage />
+                      </Suspense>
+                    } />
+                    {/* All standard routes wrapped in AppShell */}
+                    <Route
+                      path="/*"
+                      element={
+                        <AppShell>
+                          <Suspense fallback={<PageLoader />}>
+                            <Routes>
                                 <Route path="/" element={<HomeEntryRoute />} />
                                 <Route path="/platform" element={<LegacyPlatformRedirect />} />
                                 <Route path="/platforms" element={<Navigate to={buildPlatformWorkspacePath('overview')} replace />} />
@@ -277,17 +275,16 @@ export function App() {
                                   />
                                 </Route>
                                 <Route path="*" element={<Navigate to="/" replace />} />
-                              </Routes>
-                            </Suspense>
-                          </AppShell>
-                        }
-                      />
-                    </Routes>
-                  </div>
+                            </Routes>
+                          </Suspense>
+                        </AppShell>
+                      }
+                    />
+                  </Routes>
                 </div>
-              </ErrorBoundary>
-            </ToastProvider>
-          </MidiLearnProvider>
+              </div>
+            </ErrorBoundary>
+          </ToastProvider>
         </ClusterProvider>
       </BrowserRouter>
       <Suspense fallback={null}>

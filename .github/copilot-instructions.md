@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 22, 2026 (`update` shorthand workflow preference + direct asset upload fix)
+> **Last Updated**: March 23, 2026 (MIDI script sandbox verification + dead legacy MIDI drawer cleanup)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1112,6 +1112,14 @@ These files represent best practices and architectural patterns to follow:
 - **Verification**: `pytest -q tests/test_plugin_profiler_identity.py tests/test_juce_engine_service_instance_resolution.py tests/test_plugin_telemetry_identity.py`; `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand web/src/map2/utils/pluginTelemetry.test.ts`.
 - **Lesson**: Once duplicate plugins are allowed in the chain, every runtime telemetry path must be identity-aware end to end or the UI will silently recombine distinct instances.
 
+**20. Verify Live MIDI Paths Before Reimplementation (Mar 23, 2026)**
+- **Files**: `app/services/midi_hub/script_engine.py`, `tests/midi_hub/test_script_engine.py`, `web/src/app/App.tsx`, `web/src/map2/components/ChainBuilder.tsx`, `web/src/map2/components/MIDI/MidiLearnButton.tsx`
+- **Problem**: The MIDI audit could easily misclassify the Midi Hub script editor as CRUD-only and the legacy ChainBuilder mappings drawer as a still-live feature.
+- **Root Cause**: Backend script execution already existed but lacked focused proof, while the old ChainBuilder MIDI path had silently drifted into dead code: `useMidiLearn.tsx` had no consumers, the deleted mappings panel was only reachable through unsupported props, and `MidiLearnButton` only responds to `isActive`, not `isLearning`/`onOpenMappings`.
+- **Fix**: Add focused backend sandbox coverage for state/MIDI/log/import-rejection behavior, delete the dead provider/panel path, and keep any remaining legacy learn toggle wired through `isActive`.
+- **Verification**: `pytest tests/midi_hub/test_script_engine.py tests/midi_hub/test_routes.py tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py`; `npm --prefix web run typecheck`; `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`.
+- **Lesson**: Before implementing "missing" MIDI behavior, prove whether the current path is live, stubbed, or dead code; audit drift in legacy UI can hide unreachable features behind silently ignored props.
+
 ---
 
 ## 5-Question Clarification Protocol
@@ -1383,6 +1391,13 @@ Target: < 5 ms total
 
 ## Update Log
 
+### [2026-03-23] - MIDI Script Sandbox Verification + Legacy Drawer Cleanup
+- **Section**: Gotchas & Learned Fixes (#20), User Preferences
+- **Change**: Documented that the Midi Hub script editor already runs backend code inside the restricted sandbox and that the old ChainBuilder MIDI mappings drawer had become dead legacy UI because its provider/panel path had no real consumers.
+- **Reason**: The current MIDI audit surfaced the risk of re-implementing an already-live backend feature while leaving an unreachable legacy frontend path in place.
+- **Impact**: Future MIDI audits should verify runtime execution and prop contracts first, then delete dead compatibility paths instead of building around them.
+- **Files**: `.github/copilot-instructions.md`, `tests/midi_hub/test_script_engine.py`, `web/src/app/App.tsx`, `web/src/map2/components/ChainBuilder.tsx`, `docs/PROJECT_WORKLIST.md`
+
 ### [2026-03-22] - Direct Asset Upload Activation for NAM and IR Editors
 - **Section**: Gotchas & Learned Fixes (#13), React/TypeScript Gotchas
 - **Change**: Documented the selected-block asset-upload failure mode and the reusable direct file-chooser pattern that immediately activates uploaded NAM and IR assets.
@@ -1641,5 +1656,5 @@ See `docs/PROJECT_WORKLIST.md` for full details. Build order: all at once. Tesir
 ---
 
 **For Questions**: Consult the documentation files listed in Additional Resources
-**Last Updated**: March 18, 2026
+**Last Updated**: March 23, 2026
 **Maintained by**: GitHub Copilot AI Assistants
