@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 
 import pytest
+from fastapi import Response
 
 from app.routes import plugins as plugins_routes
 
@@ -61,6 +62,13 @@ def _plugin(uri: str) -> dict:
     }
 
 
+def _bucket(store, uri: str):
+    bucket = store.get(uri, [])
+    if isinstance(bucket, dict):
+        return [bucket]
+    return list(bucket)
+
+
 @pytest.mark.asyncio
 async def test_unload_parks_plugin_when_residency_enabled(monkeypatch):
     uri = "map2://juce/dynamics/compressor"
@@ -72,12 +80,12 @@ async def test_unload_parks_plugin_when_residency_enabled(monkeypatch):
 
     assert payload["status"] == "parked"
     assert uri not in plugins_routes._loaded_plugins
-    assert uri in plugins_routes._resident_plugins
+    assert len(_bucket(plugins_routes._resident_plugins, uri)) == 1
     assert plugins_routes._residency_stats["parked"] == 1
 
     reloaded = await plugins_routes.load_plugin(uri=uri)
     assert reloaded["engine_resident_reused"] is True
-    assert uri in plugins_routes._loaded_plugins
+    assert len(_bucket(plugins_routes._loaded_plugins, uri)) == 1
     assert uri not in plugins_routes._resident_plugins
     assert plugins_routes._residency_stats["reused"] == 1
 
@@ -112,3 +120,87 @@ async def test_load_plugin_refreshes_discovery_when_in_memory_cache_is_empty(mon
 
     assert payload["status"] == "loaded"
     assert payload["plugin"]["uri"] == uri
+
+
+@pytest.mark.asyncio
+async def test_duplicate_uri_residency_moves_only_one_instance(monkeypatch):
+    uri = "map2://juce/dynamics/compressor"
+    monkeypatch.setattr(plugins_routes, "_is_effect_residency_enabled", lambda: True)
+    monkeypatch.setattr(
+        plugins_routes,
+        "_loaded_plugins",
+        {
+            uri: [
+                {**_plugin(uri), "instance_id": 11, "engine_loaded": True, "engine_deferred": False},
+                {**_plugin(uri), "instance_id": 22, "engine_loaded": True, "engine_deferred": False},
+            ]
+        },
+    )
+
+    parked = await plugins_routes.unload_plugin(
+        uri=uri,
+        destroy_instance=False,
+        instance_id=22,
+    )
+
+    assert parked["status"] == "parked"
+    assert len(_bucket(plugins_routes._loaded_plugins, uri)) == 1
+    assert len(_bucket(plugins_routes._resident_plugins, uri)) == 1
+
+    remaining_loaded = _bucket(plugins_routes._loaded_plugins, uri)[0]
+    resident_entry = _bucket(plugins_routes._resident_plugins, uri)[0]
+    assert remaining_loaded.get("instance_id") == 11
+    assert resident_entry.get("instance_id") == 22
+
+
+@pytest.mark.asyncio
+async def test_duplicate_uri_destroy_unloads_only_selected_instance(monkeypatch):
+    uri = "map2://juce/dynamics/limiter"
+    monkeypatch.setattr(
+        plugins_routes,
+        "_loaded_plugins",
+        {
+            uri: [
+                {**_plugin(uri), "instance_id": 31, "engine_loaded": False, "engine_deferred": False},
+                {**_plugin(uri), "instance_id": 32, "engine_loaded": False, "engine_deferred": False},
+            ]
+        },
+    )
+
+    payload = await plugins_routes.unload_plugin(uri=uri, destroy_instance=True, instance_id=32)
+
+    assert payload["status"] == "unloaded"
+    assert payload["instance_id"] == 32
+    assert [entry.get("instance_id") for entry in _bucket(plugins_routes._loaded_plugins, uri)] == [31]
+
+
+@pytest.mark.asyncio
+async def test_list_plugins_flattens_duplicate_uri_buckets(monkeypatch):
+    loaded_uri = "map2://juce/nam"
+    parked_uri = "map2://juce/convolution/cabinet"
+    monkeypatch.setattr(
+        plugins_routes,
+        "_loaded_plugins",
+        {
+            loaded_uri: [
+                {**_plugin(loaded_uri), "instance_id": 101},
+                {**_plugin(loaded_uri), "instance_id": 202},
+            ]
+        },
+    )
+    monkeypatch.setattr(
+        plugins_routes,
+        "_resident_plugins",
+        {
+            parked_uri: [
+                {**_plugin(parked_uri), "instance_id": 303},
+            ]
+        },
+    )
+
+    payload = await plugins_routes.list_plugins(Response())
+
+    assert payload["count"] == 2
+    assert payload["parked_count"] == 1
+    assert [entry["instance_id"] for entry in payload["loaded"]] == [101, 202]
+    assert payload["parked"][0]["instance_id"] == 303

@@ -4531,61 +4531,57 @@ export function JuceGridPage() {
         </Layer>
       )}
 
-      <div className="juce-grid-page__workspace">
-        <Grid className="juce-grid-page__section-frame juce-grid-page__section-frame--workspace">
-          <Column sm={4} md={8} lg={16} className="juce-grid-page__section-column">
-          <div className="juce-grid-page__unified-block">
-            <main className="juce-grid-page__main">
-            {/* Multi-flow signal grids */}
-            <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
-              {livePathLayout.groups.map((group, groupIndex) => (
-                <Layer
-                  key={group.id}
-                  className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
-                >
-                  <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
-                    {group.flowIds.map((flowId, groupIndex) => {
-                      const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
-                        ? 'Series'
-                        : group.kind === 'morph' && groupIndex === 0 && group.flowIds.length > 1
-                          ? `Morph ${Math.round(routing.morphProgress * 100)}%`
-                          : null
-                      const connectorTone = group.kind === 'morph'
-                        ? routing.morphProgress > 0 ? 'active' : 'dim'
-                        : group.tone === 'active' ? 'active' : 'dim'
-                      const connectorDashed = group.kind === 'morph'
-                        ? routing.morphProgress <= 0
-                        : Boolean(group.dashed)
+      <section className="juce-grid-page__signal-flow-shell" aria-label="Signal flow workspace">
+        <div className="juce-grid-page__unified-block">
+          <main className="juce-grid-page__main">
+          {/* Multi-flow signal grids */}
+          <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
+            {livePathLayout.groups.map((group, groupIndex) => (
+              <Layer
+                key={group.id}
+                className={`juce-grid-page__live-path-group juce-grid-page__live-path-group--${group.kind} ${group.tone === 'dim' ? 'is-dim' : ''}`}
+              >
+                <div className={`juce-grid-page__live-path-flow-stack juce-grid-page__live-path-flow-stack--${group.kind} ${group.dashed ? 'is-dashed' : ''}`}>
+                  {group.flowIds.map((flowId, groupIndex) => {
+                    const connectorLabel = group.kind === 'series' && groupIndex < group.flowIds.length - 1
+                      ? 'Series'
+                      : group.kind === 'morph' && groupIndex === 0 && group.flowIds.length > 1
+                        ? `Morph ${Math.round(routing.morphProgress * 100)}%`
+                        : null
+                    const connectorTone = group.kind === 'morph'
+                      ? routing.morphProgress > 0 ? 'active' : 'dim'
+                      : group.tone === 'active' ? 'active' : 'dim'
+                    const connectorDashed = group.kind === 'morph'
+                      ? routing.morphProgress <= 0
+                      : Boolean(group.dashed)
 
-                      return (
-                        <div key={`${group.id}-${flowId}`} className="juce-grid-page__live-path-item">
-                          {renderLivePathFlowCard(flowId, group.kind)}
-                          {connectorLabel && (
-                            <div
-                              className={`juce-grid-page__live-path-connector is-${connectorTone} ${connectorDashed ? 'is-dashed' : ''}`}
-                              aria-hidden
-                            >
-                              <div className="juce-grid-page__live-path-connector-arrow">
-                                <span className="juce-grid-page__live-path-connector-shaft" />
-                                <ArrowDown size={16} />
-                                <span className="juce-grid-page__live-path-connector-shaft" />
-                              </div>
-                              <span>{connectorLabel}</span>
+                    return (
+                      <div key={`${group.id}-${flowId}`} className="juce-grid-page__live-path-item">
+                        {renderLivePathFlowCard(flowId, group.kind)}
+                        {connectorLabel && (
+                          <div
+                            className={`juce-grid-page__live-path-connector is-${connectorTone} ${connectorDashed ? 'is-dashed' : ''}`}
+                            aria-hidden
+                          >
+                            <div className="juce-grid-page__live-path-connector-arrow">
+                              <span className="juce-grid-page__live-path-connector-shaft" />
+                              <ArrowDown size={16} />
+                              <span className="juce-grid-page__live-path-connector-shaft" />
                             </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </Layer>
-              ))}
-            </section>
+                            <span>{connectorLabel}</span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </Layer>
+            ))}
+          </section>
 
-            </main>
-          </div>
-          </Column>
-        </Grid>
-      </div>
+          </main>
+        </div>
+      </section>
 
       {showCompactWorkflowPanels && (
         <div className="juce-grid-page__compact-shell">

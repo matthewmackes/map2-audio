@@ -37,25 +37,25 @@ async def realtime_websocket_endpoint(
     JSON Protocol Messages (client -> server):
     ```
     // Update a parameter
-    {"action": "param_update", "plugin_uri": "...", "param_index": 0, "value": 0.5}
+    {"action": "param_update", "plugin_uri": "...", "param_index": 0, "value": 0.5, "plugin_position": 1}
 
     // Batch update multiple parameters
     {"action": "param_batch", "updates": [
-        {"plugin_uri": "...", "param_index": 0, "value": 0.5},
-        {"plugin_uri": "...", "param_index": 1, "value": 0.8}
+        {"plugin_uri": "...", "param_index": 0, "value": 0.5, "plugin_position": 1},
+        {"plugin_uri": "...", "param_index": 1, "value": 0.8, "plugin_position": 1}
     ]}
 
     // Subscribe to parameter changes
-    {"action": "subscribe", "plugin_uri": "...", "param_index": 0}
+    {"action": "subscribe", "plugin_uri": "...", "param_index": 0, "plugin_position": 1}
 
     // Subscribe to all params for a plugin
-    {"action": "subscribe_all", "plugin_uri": "...", "param_count": 10}
+    {"action": "subscribe_all", "plugin_uri": "...", "param_count": 10, "plugin_position": 1}
 
     // Unsubscribe from parameter
-    {"action": "unsubscribe", "plugin_uri": "...", "param_index": 0}
+    {"action": "unsubscribe", "plugin_uri": "...", "param_index": 0, "plugin_position": 1}
 
     // Get current cached value
-    {"action": "get_value", "plugin_uri": "...", "param_index": 0}
+    {"action": "get_value", "plugin_uri": "...", "param_index": 0, "plugin_position": 1}
 
     // Keepalive ping
     {"action": "ping"}
@@ -67,10 +67,10 @@ async def realtime_websocket_endpoint(
     {"type": "rt_welcome", "client_id": "...", "protocol": "json", ...}
 
     // Parameter update
-    {"type": "param_update", "plugin_uri": "...", "param_index": 0, "value": 0.5, "source": "midi", "timestamp": ...}
+    {"type": "param_update", "plugin_uri": "...", "param_index": 0, "plugin_position": 1, "value": 0.5, "source": "midi", "timestamp": ...}
 
     // Cached value response
-    {"type": "value", "plugin_uri": "...", "param_index": 0, "value": 0.5}
+    {"type": "value", "plugin_uri": "...", "param_index": 0, "plugin_position": 1, "value": 0.5}
 
     // Pong response
     {"type": "pong"}

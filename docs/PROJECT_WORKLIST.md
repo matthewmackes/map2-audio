@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 09:52 EDT - Codex (Completed `T334`; `T332` remains the next pending second-node adoption/design slice.)
+Last updated: 2026-03-23 16:24 EDT - Codex (Closed `T350`, `T351`, and `T352` with the Tesira route audit, serial-first onboarding wizard, offline reconnect banner, and dedicated-route TTP quick console; opened `T353` for the remaining Carbon migration on `/tesira`.)
 
 ## Active Blockers Only
 
@@ -126,6 +126,77 @@ Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Manual-package deployment runner and runbook are complete in the archive.
   - Remaining blocker is the real two-unit Tesira deployment session.
+
+ID: T350
+Status: [✓] Done
+Title: Audit Tesira GUI parity, migrate serial onboarding into the dedicated Tesira route, and plan Carbon compliance remediation
+Description:
+- Goal / acceptance criteria: Audit the current Tesira GUI surfaces against the shipped MAP2 Tesira implementation and official Biamp Tesira materials, identify the existing MIDI-side onboarding/helper capability relevant to serial-driven Tesira setup, define how that capability should move into the dedicated `/tesira` route for auto onboarding/configuration, and record the resulting implementation plan plus open questions in the canonical worklist.
+- Why it matters: The dedicated Tesira route is the operator-facing surface for Tesira fleet management, but the user-visible TTP/helper workflow is still split across routes and the current page appears to lag both the product’s own Tesira scope and the repo’s Carbon-first UI bar.
+- Dependencies: Current Tesira web route/components, MIDI Hub Tesira/onboarding helpers, official Biamp Tesira materials, Carbon Design guidance, and user answers to the staged planning questions
+- Estimated effort: Medium
+- Required outputs: Feature-gap audit, serial/onboarding migration plan, Carbon compliance audit summary, explicit follow-up implementation tasks, and updated worklist notes capturing the planning decisions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 16:24 EDT - Codex
+- Progress notes:
+  - Confirmed the dedicated Tesira route remains primarily MUI-based while the MIDI Hub Tesira panel already uses Carbon primitives and exposes a compact TTP/operator workflow that the full page does not currently surface.
+  - Confirmed the dedicated Tesira route already has fleet discovery/manual-add primitives (`DiscoveryDialog`, `ManualAddDialog`), so the likely gap is onboarding depth and transport/configuration guidance rather than the total absence of add-device entry points.
+  - Audited external reference project `enp6s0/pytesira`: it provides a small MIT-licensed Python library centered on Tesira Text Protocol over SSH, with a reusable TTP response parser, block-map caching, subscriptions/callbacks, and wrappers for a limited set of DSP block types; current constraints are important for MAP2 planning because it is explicitly WIP, only advertises SSH transport despite an abstract transport layer, has narrow automated test coverage, and does not by itself solve MAP2's GUI, Carbon, fleet, or serial-onboarding requirements.
+  - Product decision captured from the user: deliver the Tesira onboarding flow as a dedicated wizard that exposes all supported onboarding methods, but treats serial as the primary path and explicitly guides operators through the used-device recovery flow that starts with a factory reset.
+  - Published the audit artifact in `docs/tesira/TESIRA_GUI_AUDIT_20260323.md`, capturing the Biamp feature comparison, the route-level parity findings, and the remaining Carbon compliance gaps.
+  - Decomposed the implementation follow-up into `T351` (wizard/process), `T352` (quick console migration), and `T353` (remaining Carbon migration on the dedicated route).
+
+ID: T351
+Status: [✓] Done
+Title: Implement Tesira serial-first onboarding wizard and used-device onboarding process
+Description:
+- Goal / acceptance criteria: Add a dedicated Tesira Onboarding Wizard to the `/tesira` experience that presents all supported onboarding methods, defaults to a serial-first path, explicitly walks a user through recovering and onboarding a used device that must be factory-reset first, and reuses the existing Tesira discovery/manual-add/reconnect capabilities where appropriate.
+- Why it matters: Tesira onboarding is currently fragmented across hidden helpers, transport-specific dialogs, and route-local knowledge; operators need one guided flow that matches real field recovery for used units instead of a scattered set of controls.
+- Dependencies: T350 findings, existing Tesira web components/hooks, Tesira discovery/manual-add/reconnect APIs, Carbon route conventions, and a canonical operator process artifact in `docs/tesira/`
+- Estimated effort: Medium
+- Required outputs: Wizard UI integrated into the dedicated Tesira route, serial-first onboarding flow copy/state model, operator process documentation for used-device recovery/onboarding, validation notes, and updated worklist/licensing notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 16:24 EDT - Codex
+- Progress notes:
+  - Confirmed the current backend/API surface is sufficient for a useful first-pass wizard without inventing new backend endpoints: `startDiscovery`, `getDiscoveryStatus`, `adoptDevice`, `addDevice`, `connectDevice`, `disconnectDevice`, and `reconnectDevice` already exist in the dedicated Tesira path.
+  - Implementation approach in progress: put the wizard into the dedicated `/tesira` landing surface, default the method to serial, provide an operator checklist for factory reset plus serial console work, and then hand off to discovery/manual-add/adopt/verify actions from the same flow.
+  - Implemented the dedicated `TesiraOnboardingWizard` landing experience, integrated it into `/tesira`, added the operator process artifact in `docs/tesira/TESIRA_ONBOARDING_WIZARD_PROCESS.md`, and surfaced the offline reconnect banner on the real device route instead of leaving it stranded in the unused legacy control panel.
+  - Validation passed for the current slice with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraOnboardingWizard.test.tsx web/src/app/components/Tesira/components/TesiraOfflineBanner.test.tsx`, and `npm --prefix web run build`.
+
+ID: T352
+Status: [✓] Done
+Title: Move the MIDI-side Tesira quick console into the dedicated Tesira route for onboarding and recovery
+Description:
+- Goal / acceptance criteria: Add a dedicated-route Tesira quick console that exposes the useful onboarding/recovery affordances currently isolated in the MIDI Hub Tesira panel, including a raw TTP command path, discovered-instance visibility, and quick operator guidance from the main `/tesira` experience.
+- Why it matters: Operators should not have to leave the Tesira route and jump into MIDI Hub just to send discovery/recovery commands or inspect tags while onboarding a recovered unit.
+- Dependencies: T350, T351, dedicated Tesira API/device hooks, and the existing MIDI Hub Tesira panel behavior as the migration reference.
+- Estimated effort: Medium
+- Required outputs: Dedicated Tesira raw-command API surface, dashboard/onboarding quick-console UI, focused frontend/backend validation, and worklist notes documenting what capability was migrated versus still deferred.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 16:24 EDT - Codex
+- Progress notes:
+  - Audited the existing MIDI Hub `TesiraPanel` and confirmed the dedicated route still lacks its free-text TTP helper despite already covering levels, presets, DSP browsing, and reconnect.
+  - Added a dedicated raw-command API path on `/api/tesira/devices/{id}/command` and hardened the shared Telnet/SSH transport clients so two-token commands such as `DEVICE reboot` no longer serialize with a bogus empty attribute segment.
+  - Added `TesiraQuickCommandPanel` to the dedicated Tesira dashboard so operators can send raw TTP commands, quick-fill common recovery queries, probe instance tags, and use discovered DSP tags as command shortcuts without leaving `/tesira`.
+  - Validation passed with `pytest tests/tesira/test_routes_tesira_extended.py -q`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraOnboardingWizard.test.tsx web/src/app/components/Tesira/components/TesiraOfflineBanner.test.tsx web/src/app/components/Tesira/components/TesiraQuickCommandPanel.test.tsx`, and `npm --prefix web run build`.
+
+ID: T353
+Status: [ ] Todo
+Title: Complete Carbon-first migration for the dedicated Tesira route shell and high-traffic operator surfaces
+Description:
+- Goal / acceptance criteria: Replace the remaining MUI-heavy shell, fleet, dashboard, dialog, and high-traffic device-tab surfaces on `/tesira` with Carbon-first structure, components, and token usage while preserving current behavior.
+- Why it matters: The onboarding front door is now Carbon-oriented, but the route is still a mixed-system UI and cannot honestly be called Carbon-compliant end to end.
+- Dependencies: T350 audit artifact, T351, T352
+- Estimated effort: Medium
+- Required outputs: Updated `/tesira` shell/dashboard/dialog/tab components, focused validation evidence, and updated audit/worklist notes showing the remaining compliance deltas if any.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 16:24 EDT - Codex
+- Progress notes:
+  - `docs/tesira/TESIRA_GUI_AUDIT_20260323.md` identifies the shell, fleet panel, top bar, device header/dashboard, deploy dialog, and most device tabs as still MUI-based and therefore not Carbon-compliant.
 
 ## MIDI
 
@@ -4465,7 +4536,7 @@ Last updated: 2026-03-23 09:27 EDT - Codex
   - Licensing: Classified the touched frontend/test/worklist/memory files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|SPDX" LICENSE README.md docs app tests web .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new notice gaps requiring remediation.
 
 ID: T332
-Status: [ ] Todo
+Status: [✓] Done
 Title: Design operator-friendly adoption flows for unmanaged MAP2 instances
 Description:
 - Goal / acceptance criteria: Define practical adoption workflows that let an already-running but not-yet-configured MAP2 node be discovered and adopted from another node with minimal operator friction, covering identity, trust, registration, capability import, and post-adoption feature enablement.
@@ -4475,7 +4546,15 @@ Description:
 - Required outputs: Ranked adoption-flow concepts, recommended direction, implementation notes, and follow-up tasks for the chosen flow
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 09:03 EDT - Codex
+Last updated: 2026-03-23 11:30 EDT - Codex
+- Completion notes:
+  - Ranked adoption concepts and selected direction: `Approve Discovered Node` as the primary operator UX, `Pairing Code Claim` as the default trust bootstrap, `Standby Then Promote` as the safety model, `Adopt And Clone Profile` as the first operator-speed multiplier, and `Signed Bootstrap Token` as the scale-out/field-install accelerator.
+  - Recommended canonical lifecycle: `candidate -> claimable -> adopted -> ready -> active`, with one shared node record carrying identity, addresses, software version, capabilities, trust state, readiness state, activation state, and stable cluster/node ownership metadata.
+  - Recommended platform contract: discovery, cluster, onboarding, and AVB features should all consume the same adoption state instead of separately interpreting mDNS visibility, heartbeat state, and registry enrollment.
+  - Recommended v1 backend API shape: `GET /api/adoption/candidates`, `GET /api/adoption/candidates/{id}/readiness`, `POST /api/adoption/candidates/{id}/claim`, `POST /api/adoption/candidates/{id}/adopt`, and `POST /api/adoption/nodes/{id}/promote`.
+  - Recommended readiness gates before activation: version compatibility, hostname/node-id conflict checks, management API reachability, AVB interface presence, PTP readiness, and role/capability compatibility.
+  - Recommended rollout boundary: v1 should ship discovery, claim, adoption, readiness reporting, standby activation, and operator promotion; profile cloning and signed-token zero-touch adoption should follow as v2 accelerators after the base lifecycle is stable.
+  - Follow-up implementation tasks were split into backend, operator UI, and v2 accelerators so the chosen adoption model can move directly into delivery.
 
 ID: T333
 Status: [✓] Done
@@ -4515,3 +4594,287 @@ Last updated: 2026-03-23 09:52 EDT - Codex
   - Updated `web/src/app/pages/JuceGridPage.test.tsx` so the desktop regression now asserts the single services toolbar plus its internal routing, level, and utility sections.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/app/pages/JuceGridPage.test.tsx` -> PASS (`27` tests).
   - Licensing: Classified the touched JUCE Grid frontend/test/worklist/docs files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T335
+Status: [✓] Done
+Title: Widen the JUCE Grid desktop signal-chain cards to match the lower editor footprint
+Description:
+- Goal / acceptance criteria: Adjust the desktop `/juce-grid` live-path layout so the signal-chain cards consume materially more horizontal space and visually align with the wider selected-block attribute/MIDI editor area below, without breaking the branch state rails, routing arrows, or tablet/mobile behavior.
+- Why it matters: After the desktop header/service-bar compaction work, the flow cards still read narrower than the lower editor workspace, which makes the main signal-chain surface feel constrained relative to the attribute and MIDI panels.
+- Dependencies: `web/src/app/pages/JuceGridPage.css`, any focused JUCE Grid regression coverage if structure changes, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: Updated desktop live-path width styling, validation evidence, and licensing/worklist completion notes
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 10:16 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.css` so desktop live-path rows now use slimmer side/arrow gutter tracks and let each `.juce-grid-page__flow-card` span across the arrow columns, materially widening the visible signal-chain card without removing the state rails or branch arrows.
+  - Added responsive resets so the new grid-column span only applies on the desktop multi-column layout; tablet-mode and narrow one-column live-path layouts continue to fall back to the existing single-column behavior.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/JuceGridPage.test.tsx` -> PASS (`27` tests); `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.
+  - Licensing: Classified the touched JUCE Grid CSS/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T336
+Status: [✓] Done
+Title: Move the JUCE Grid signal-flow workspace onto a dedicated full-width shell
+Description:
+- Goal / acceptance criteria: Replace the desktop `/juce-grid` signal-flow workspace wrapper with a dedicated shell that uses the same width model as the lower selected-block editor, so the signal-chain cards align with the lower attribute/MIDI footprint without relying on row-span hacks or disturbing tablet/mobile behavior.
+- Why it matters: The first width attempt did not produce the intended visual result because the real bottleneck is the Carbon `Grid`/`Column` wrapper and its surrounding gutter stack, not only the inner live-path row CSS.
+- Dependencies: `web/src/app/pages/JuceGridPage.tsx`, `web/src/app/pages/JuceGridPage.css`, focused JUCE Grid frontend validation, and licensing/worklist notes
+- Estimated effort: Low
+- Required outputs: Dedicated signal-flow shell layout, rollback of the earlier unsuccessful row-span tweak, validation evidence, and licensing/worklist completion notes
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 10:26 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridPage.tsx` so the signal-flow workspace now renders inside a dedicated `juce-grid-page__signal-flow-shell` instead of the Carbon `Grid`/`Column` wrapper that was adding extra outer gutters to the live-path cards.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the new shell uses the same `min(100%, 118rem)` width model and outer padding pattern as the lower selected-block editor shell, and rolled back the earlier row-span/gutter tweak so this change is driven by the wrapper geometry rather than by overlapping the live-path rows.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/JuceGridPage.test.tsx` -> PASS (`27` tests); `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning for `web/src/map2/api.ts`.
+  - Licensing: Classified the touched JUCE Grid TS/CSS/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T337
+Status: [✓] Done
+Title: Restore duplicate-instance runtime identity in native pedalboard state for NAM and IR editors
+Description:
+- Goal / acceptance criteria: Ensure the live engine pedalboard payload exposes `uri`, `position`, and `instance_id` for each chain item so duplicate native processors such as NAM, Cabinet IR, and Reverb IR can be matched back to the correct selected-block editor instance instead of collapsing onto global state.
+- Why it matters: `T324` made the NAM/IR APIs instance-aware, but the runtime chain payload still returned only bare instance IDs, so chain serialization could not reattach those identities and duplicate selected-block editors still fell back to shared NAM state.
+- Dependencies: T324, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`, `app/services/chain_service.py`, focused engine/runtime identity tests, and worklist/licensing notes
+- Estimated effort: Medium
+- Required outputs: Native pedalboard identity payload fix, regression coverage proving duplicate native chain items retain distinct runtime metadata, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 10:52 EDT - Codex
+- Completion notes:
+  - Updated `juce-engine/Source/PythonBindings.cpp` so `get_current_pedalboard()` now enriches each chain item from `JucePluginHost::getLoadedPlugins()`, exposing `uri`, `name`, `bypassed`, `position`, and `plugin_position` alongside `instance_id` for every runtime item.
+  - This repairs the instance-identity bridge used by `app/services/juce_engine_service.py` and `app/services/chain_service.py`, allowing duplicate `map2://juce/nam` blocks to serialize back to the web editor with distinct `plugin.instance_id` values instead of silently falling back to the global NAM routes.
+  - Added regression coverage in `tests/test_juce_engine_current_pedalboard_identity.py` to prove two native NAM instances loaded into the chain surface distinct `instance_id`/`position` pairs through the real pybind engine payload, while `tests/test_juce_engine_service_instance_resolution.py` and `tests/test_chain_service_runtime_mapping.py` continued to pass against the repaired identity contract.
+  - Validation: `cmake --build juce-engine/build -j2` -> PASS; `pytest -q tests/test_juce_engine_current_pedalboard_identity.py tests/test_juce_engine_service_instance_resolution.py tests/test_chain_service_runtime_mapping.py` -> PASS (`8 passed`); direct live sanity check via `python3` + `map2_audio_engine.create_engine()` confirmed `get_current_pedalboard()` returns two `map2://juce/nam` items with distinct `instance_id` values and positions.
+  - Licensing: Classified the touched native/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T338
+Status: [✓] Done
+Title: Refactor `/api/plugins` residency/load caches to preserve duplicate URI instances
+Description:
+- Goal / acceptance criteria: Replace the URI-keyed `_loaded_plugins` / `_resident_plugins` bookkeeping in `app/routes/plugins.py` with an instance-safe representation that can track multiple loaded copies of the same plugin URI without overwriting instance metadata or confusing unload/residency flows.
+- Why it matters: The selected-block NAM regression exposed that `/api/plugins` still collapses duplicate loads by URI, which is a correctness risk for other multi-instance workflows even after the native pedalboard identity bridge is repaired.
+- Dependencies: T317, T318, T324, T337, `app/routes/plugins.py`, related engine-op/residency tests, and worklist/licensing notes
+- Estimated effort: Medium
+- Required outputs: Duplicate-safe plugin residency cache design/implementation, regression coverage for repeated identical plugin URIs, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 11:19 EDT - Codex
+- Completion notes:
+  - Refactored `app/routes/plugins.py` so `_loaded_plugins` and `_resident_plugins` now behave as multi-entry buckets per URI instead of singleton URI slots, with helper accessors for append/select/remove/flatten operations. This preserves repeated identical loads rather than overwriting them.
+  - Updated the route-level residency and unload flow so `/api/plugins/load` can reuse one parked duplicate instance at a time, `/api/plugins/unload` can target a specific `instance_id`, and load/residency status counting now reflects total cached instances rather than unique URIs only.
+  - Updated `/api/plugins/list` to flatten the duplicate-instance buckets and include `instance_id` in the returned loaded/parked entries so callers can distinguish repeated identical plugin URIs without changing existing list consumers, and updated `web/src/map2/api.ts` so the frontend helper can pass `instance_id` through `pluginsApi.unload()` and type the parked-list payload explicitly.
+  - Hardened the deferred engine-op helpers so duplicate deferred loads of the same URI update the correct pending cache entry instead of racing to overwrite one shared `_loaded_plugins[uri]` record.
+  - Extended regression coverage in `tests/test_plugins_residency.py` and `tests/test_plugins_engine_op_pipeline.py` to prove duplicate URI instances survive deferred load, unload-by-instance only removes the targeted duplicate, list output flattens duplicate buckets, residency parking only moves the selected instance, and the existing engine-op parameter paths remain intact.
+  - Validation: `python3 -m py_compile app/routes/plugins.py` -> PASS; `pytest -q tests/test_plugins_residency.py tests/test_plugins_engine_op_pipeline.py` -> PASS (`13 passed`, existing `ServiceManager` deprecation warning only); `pytest -q tests/test_plugins_residency.py tests/test_plugins_engine_op_pipeline.py tests/test_nam_ir_instance_routes.py tests/test_juce_engine_current_pedalboard_identity.py tests/test_juce_engine_service_instance_resolution.py tests/test_chain_service_runtime_mapping.py` -> PASS (`22 passed`, same existing warning only); `npm --prefix web run typecheck` -> PASS.
+  - Licensing: Classified the touched backend/frontend-api/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T339
+Status: [✓] Done
+Title: Implement adoption candidate/readiness backend APIs and shared node state
+Description:
+- Goal / acceptance criteria: Build the v1 backend adoption contract so running unmanaged MAP2 peers can be listed as candidates, inspected for readiness, claimed, adopted into the registry, and promoted from standby using one shared node-state model that discovery, cluster, and AVB services consume.
+- Why it matters: The design work for `T332` is only useful once the platform has one real backend lifecycle for unmanaged peers instead of fragmented mDNS, cluster, and AVB interpretations.
+- Dependencies: T329, T330, T332, `app/routes/peer_discovery.py`, `app/routes/cluster_health.py`, `app/routes/cluster_admin.py`, `app/services/cluster/registry.py`, `app/services/cluster/ztp.py`, `app/services/avb/avb_router.py`, and new adoption service/routes/tests
+- Estimated effort: High
+- Required outputs: Shared adoption-state model, `GET /api/adoption/candidates`, `GET /api/adoption/candidates/{id}/readiness`, `POST /api/adoption/candidates/{id}/claim`, `POST /api/adoption/candidates/{id}/adopt`, `POST /api/adoption/nodes/{id}/promote`, regression coverage, and updated operator/deployment docs
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 13:10 EDT - Codex
+- Completion notes:
+  - Added the backend adoption service in `app/services/cluster/adoption.py` with SQLite-backed adoption records and event history, readiness evaluation, candidate reconciliation against `node_visibility`, and claim/adopt/promote lifecycle methods exposed through a singleton service for route/runtime consumers.
+  - Added operator-facing adoption APIs in `app/routes/adoption.py` for candidate listing/detail/readiness plus claim, adopt, promote, and forget actions, and registered the route in `app/main.py`.
+  - Extended `app/services/cluster/node_visibility.py`, `app/routes/peer_discovery.py`, and `app/routes/cluster_health.py` so discovery and cluster-facing payloads now expose `trust_state`, `adoption_state`, `activation_state`, `readiness_status`, and `adoption_candidate_id`, with the visibility overlay also gating `routing_ready`.
+  - Hardened `app/services/avb/avb_router.py` so the MAP2 endpoint discovery fallback no longer treats adopted standby nodes as routable when `routing_ready` is absent and `activation_state` is not active.
+  - Added focused regression coverage in `tests/test_adoption_routes.py` and extended `tests/test_avb_router_map2.py`; validation passed with `python3 -m py_compile app/services/cluster/adoption.py app/routes/adoption.py app/services/cluster/node_visibility.py app/routes/peer_discovery.py app/routes/cluster_health.py app/services/avb/avb_router.py` and `pytest -q tests/test_adoption_routes.py tests/test_peer_discovery_routes.py tests/test_cluster_visibility_routes.py tests/test_avb_router_map2.py` -> PASS (`48 passed`).
+  - Residual risk recorded for follow-up: the claim step currently validates pairing-code shape locally but does not yet perform a live remote bootstrap challenge/response handshake, so security-grade pairing verification still needs a dedicated bootstrap surface.
+
+ID: T340
+Status: [✓] Done
+Title: Build operator adoption inbox and standby-promotion workflow
+Description:
+- Goal / acceptance criteria: Add the frontend/operator experience for unmanaged-node adoption, including an adoption inbox, candidate detail/readiness views, claim/adopt actions, and explicit standby-to-active promotion controls that reflect the shared backend adoption state.
+- Why it matters: Even with the backend contract in place, multi-node setup will remain ambiguous unless operators have one obvious surface that shows which peers are merely discovered, which are adopted, and which are safe to activate.
+- Dependencies: T332, T339, `web/src/app/contexts/ClusterContext.tsx`, Home/welcome/cluster operator surfaces, AVB routing entry points, and focused frontend tests
+- Estimated effort: High
+- Required outputs: Candidate/adoption UI flows, readiness and blocking-state presentation, standby promotion controls, regression coverage, and operator-facing copy/runbook updates
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 13:10 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/HomePage.tsx` and `web/src/app/pages/HomePage.css` to add an operator-facing adoption queue section on the landing page with readiness/status tags, inline pairing-code entry, `Claim`, `Adopt to standby`, and `Promote to active` actions wired to the new backend adoption routes.
+  - Kept the UI scope intentionally narrow so operators have one obvious place to act on unmanaged peers without waiting for a broader cluster-dashboard redesign; the queue hides fully active nodes and focuses on candidates, claimable peers, standby adopted nodes, and blocked cases.
+  - Extended `web/src/app/pages/HomePage.test.tsx` to cover the end-to-end queue lifecycle and reran the cluster context coverage to confirm the new home-page surface did not regress peer-aware routing behavior.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx web/src/app/contexts/ClusterContext.test.tsx` -> PASS (`11` tests).
+
+ID: T341
+Status: [✓] Done
+Title: Add adoption accelerators for profile cloning and signed bootstrap tokens
+Description:
+- Goal / acceptance criteria: Extend the base adoption workflow with operator-speed and scale-out accelerators, specifically selective config/profile cloning from an existing node and signed bootstrap-token onboarding for repeated installs or field deployment.
+- Why it matters: The base claim/adopt/promote lifecycle removes ambiguity, but the real payoff for feature velocity comes when operators can bring matching nodes online with minimal repetitive configuration work.
+- Dependencies: T332, T339, T340, deployment/onboarding docs, secret-management primitives, and any config-export/import surfaces needed for safe cloning
+- Estimated effort: Medium
+- Required outputs: Selective clone model and UI, signed bootstrap-token issuance/validation flow, regression coverage, and rollout/runbook documentation for accelerated adoption
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 13:41 EDT - Codex
+- Completion notes:
+  - Completed the signed bootstrap-token accelerator in `T343`, giving operators a short-lived unattended claim path that still verifies the issuer explicitly before a remote node accepts the claim.
+  - Completed the selective profile-clone accelerator in `T344`, giving adopted standby nodes a preview-and-apply workflow for safe deployment/runtime/clock/AVB defaults without copying identity or trust material.
+  - The adoption accelerator umbrella is now closed because both v2 speed-paths originally scoped under this task have been delivered with backend routes, operator UI, and focused regression coverage.
+
+ID: T342
+Status: [✓] Done
+Title: Add remote bootstrap pairing-code verification for adoption claims
+Description:
+- Goal / acceptance criteria: Replace the current local-format-only claim validation with a real remote bootstrap handshake so unmanaged nodes issue pairing codes, verify claims live, and only transition to `claimable` after the controller proves possession of the correct code against the remote node.
+- Why it matters: `T339` delivered the shared adoption lifecycle, but the current claim step is not yet a secure onboarding primitive because it does not perform a live challenge/response with the remote peer.
+- Dependencies: T339, `app/services/cluster/adoption.py`, new bootstrap route/service work on each node, focused adoption-route tests, and operator-facing messaging for pairing-code failures
+- Estimated effort: Medium
+- Required outputs: Remote bootstrap status/claim endpoints, adoption-service integration, regression coverage proving bad codes are rejected by the remote peer, and worklist completion evidence
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 13:10 EDT - Codex
+- Completion notes:
+  - Added `app/services/cluster/adoption_bootstrap.py` and `app/routes/bootstrap.py` so every MAP2 node now exposes a remote bootstrap surface with one-time pairing codes, short-lived claim tokens, and explicit finalize semantics for claim consumption.
+  - Registered the bootstrap routes in `app/main.py`, and updated `app/services/cluster/adoption.py` so `claim_candidate()` now performs a live remote `/api/bootstrap/claim` request and stores the returned claim token/fingerprint, while `adopt_candidate()` finalizes that remote claim through `/api/bootstrap/finalize` before the node is treated as adopted.
+  - Added focused regression coverage in `tests/test_bootstrap_routes.py` and updated `tests/test_adoption_routes.py` to reflect the new remote verification contract. Validation passed with `python3 -m py_compile app/services/cluster/adoption_bootstrap.py app/routes/bootstrap.py app/services/cluster/adoption.py` and `pytest -q tests/test_bootstrap_routes.py tests/test_adoption_routes.py tests/test_peer_discovery_routes.py tests/test_cluster_visibility_routes.py tests/test_avb_router_map2.py` -> PASS (`51 passed`).
+
+ID: T343
+Status: [✓] Done
+Title: Add signed bootstrap-token accelerator for unattended adoption
+Description:
+- Goal / acceptance criteria: Extend the bootstrap/adoption flow so a controller node can issue short-lived signed bootstrap tokens that let a fresh node self-present as trusted or pre-claimed without requiring manual pairing-code entry, while preserving the existing readiness and promotion gates.
+- Why it matters: Pairing codes solve secure interactive onboarding, but repeated installs and field deployment still need a low-friction accelerator that does not require live manual code exchange for every node.
+- Dependencies: T339, T342, `app/services/cluster/adoption_bootstrap.py`, `app/routes/bootstrap.py`, operator adoption UI surfaces, and focused token-validation tests
+- Estimated effort: Medium
+- Required outputs: Token issuance/validation primitives, bootstrap route updates, adoption-service integration, regression coverage, and operator-facing workflow notes
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 14:07 EDT - Codex
+- Completion notes:
+  - Extended `app/services/cluster/adoption_bootstrap.py` and `app/routes/bootstrap.py` so controller nodes can issue short-lived signed bootstrap tokens, issuer nodes can verify them explicitly through `/api/bootstrap/tokens/verify`, and remote nodes can accept a verified token through the existing `/api/bootstrap/claim` flow without requiring manual pairing-code entry.
+  - Updated `app/services/cluster/adoption.py` and `app/routes/adoption.py` so adoption claims now accept either a live pairing code or a signed bootstrap token, while preserving the existing readiness, remote-claim finalization, and promotion gates.
+  - Extended the Home-page adoption inbox in `web/src/app/pages/HomePage.tsx` with a `Claim with token` action that issues a token from the controller node and immediately uses it for the remote claim path.
+  - Added regression coverage in `tests/test_bootstrap_routes.py`, `tests/test_adoption_routes.py`, and `web/src/app/pages/HomePage.test.tsx` to prove token issue/verify, remote token claim/finalize, adoption-route token claims, and the operator token-claim UI all work end to end.
+  - Validation: `python3 -m py_compile app/services/cluster/adoption_bootstrap.py app/routes/bootstrap.py app/routes/adoption.py app/services/cluster/adoption.py` -> PASS; `pytest -q tests/test_bootstrap_routes.py tests/test_adoption_routes.py tests/test_peer_discovery_routes.py tests/test_cluster_visibility_routes.py tests/test_avb_router_map2.py` -> PASS (`54 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx web/src/app/contexts/ClusterContext.test.tsx` -> PASS (`12` tests).
+
+ID: T344
+Status: [✓] Done
+Title: Add selective profile-clone accelerator for adopted nodes
+Description:
+- Goal / acceptance criteria: Let operators adopt a node and selectively clone safe subsets of configuration from an existing managed node, including role/profile defaults and other non-identity settings, with explicit preview/selection instead of all-or-nothing copying.
+- Why it matters: Once secure adoption is in place, reducing repetitive configuration work is the next biggest speed multiplier for matching hardware rollouts.
+- Dependencies: T339, T340, future config export/import primitives, and safe clone-boundary design
+- Estimated effort: Medium
+- Required outputs: Cloneable-profile model, API/UI workflow for selective cloning, regression coverage, and operator runbook updates
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 13:41 EDT - Codex
+- Completion notes:
+  - Extended `app/services/cluster/adoption.py` and `app/routes/adoption.py` with clone-source discovery plus preview/apply endpoints for adopted nodes: `GET /api/adoption/nodes/{id}/clone/sources`, `GET /api/adoption/nodes/{id}/clone/preview`, and `POST /api/adoption/nodes/{id}/clone`.
+  - Implemented safe clone groups backed by real source-node APIs instead of static templates: role/deployment mode via `/api/deployment/mode`, runtime profile via `/api/runtime-profiles/status`, clock/sync defaults via `/api/audio/source-of-truth`, and AVB defaults via `/api/avb/status`.
+  - Clone application now writes the selected settings back through the target node’s own management APIs, records `profile_clone` metadata in both the adoption record and cluster registry, and preserves the existing readiness/promotion gates instead of silently activating the node.
+  - Updated `web/src/app/pages/HomePage.tsx` and `web/src/app/pages/HomePage.css` so adopted standby nodes automatically surface clone sources, clone-group previews with explicit selection checkboxes, and an `Apply selected clone` action before promotion.
+  - Added regression coverage in `tests/test_adoption_routes.py` and `web/src/app/pages/HomePage.test.tsx` to prove clone-source listing, preview generation, remote apply behavior, registry metadata persistence, and the Home-page clone workflow all work end to end.
+  - Validation: `python3 -m py_compile app/services/cluster/adoption.py app/routes/adoption.py app/services/cluster/adoption_bootstrap.py app/routes/bootstrap.py` -> PASS; `pytest -q tests/test_bootstrap_routes.py tests/test_adoption_routes.py tests/test_peer_discovery_routes.py tests/test_cluster_visibility_routes.py tests/test_avb_router_map2.py` -> PASS (`55 passed`); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx web/src/app/contexts/ClusterContext.test.tsx` -> PASS (`13` tests).
+
+ID: T345
+Status: [✓] Done
+Title: Publish adoption workflow runbook and operator troubleshooting guide
+Description:
+- Goal / acceptance criteria: Document the delivered adoption lifecycle, token-claim flow, selective clone workflow, API surfaces, and failure-state troubleshooting so operators and future engineers have one canonical runbook for bringing unmanaged nodes online safely.
+- Why it matters: The adoption backend/UI work is now shipped, but it is still hard to operate or extend safely unless discovery, trust, readiness, promotion, token bootstrap, and clone boundaries are written down in one place.
+- Dependencies: T339, T340, T342, T343, T344, `docs/`, `.gemini/instructions.md`
+- Estimated effort: Low
+- Required outputs: A canonical adoption runbook in `docs/`, troubleshooting guidance for claim/adopt/promote/clone failures, and a shared learned-fix entry in `.gemini/instructions.md`
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 13:41 EDT - Codex
+- Completion notes:
+  - Added [docs/ADOPTION_WORKFLOW_RUNBOOK.md](/home/mm/map2-audio/docs/ADOPTION_WORKFLOW_RUNBOOK.md) as the canonical operator and engineering guide for the shipped adoption lifecycle, including pairing-code claims, signed-token claims, standby promotion, clone boundaries, API references, readiness interpretation, troubleshooting, and focused validation commands.
+  - Updated `.gemini/instructions.md` with a new learned-fix rule that preserves the `candidate -> claimable -> adopted -> ready -> active` lifecycle split and explicitly warns future work not to collapse discovery, trust, readiness, and activation into one state.
+
+ID: T346
+Status: [✓] Done
+Title: Make flow snapshot capture and apply paths duplicate-instance safe
+Description:
+- Goal / acceptance criteria: Ensure flow snapshot parameter capture and snapshot apply logic target the correct runtime plugin instance when a chain contains duplicate plugin URIs by threading chain position through engine lookups instead of relying on URI-only resolution.
+- Why it matters: The NAM/IR multi-instance refactor is incomplete if snapshot save/load can still read from or write to the wrong duplicate instance, because recalling a snapshot would silently cross-wire processors that are supposed to own different files.
+- Dependencies: T324, T337, T338, `app/routes/flow_snapshots.py`, `app/services/juce_engine_service.py`, focused snapshot-route tests, and worklist/licensing notes
+- Estimated effort: Medium
+- Required outputs: Position-aware snapshot capture/apply implementation, regression coverage for duplicate URI plugins, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 13:58 EDT - Codex
+- Completion notes:
+  - Updated `app/routes/flow_snapshots.py` so snapshot enrichment and apply paths derive `plugin_position` from each plugin payload and thread that position through every engine lookup instead of relying on URI-only matching.
+  - Extended `app/services/juce_engine_service.py` so `get_parameter()` accepts the same `plugin_position` hint already supported by `set_parameter()`, allowing snapshot capture to read from the correct duplicate runtime instance instead of silently collapsing onto the first matching URI.
+  - Added focused regression coverage in `tests/test_flow_snapshots_routes.py` proving two duplicate `urn:test:duplicate` plugins at positions `0` and `1` capture distinct parameter values and apply bypass/parameter changes to distinct runtime instances resolved by position.
+  - Validation: `PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `pytest -q tests/test_flow_snapshots_routes.py tests/test_juce_engine_service_instance_resolution.py tests/test_chain_service_runtime_mapping.py tests/test_nam_ir_instance_routes.py tests/test_plugins_residency.py tests/test_plugins_engine_op_pipeline.py` -> PASS (`27 passed`, existing `ServiceManager` and `datetime.utcnow()` deprecation warnings only).
+  - Licensing: Classified the touched backend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T347
+Status: [✓] Done
+Title: Refactor chain A/B compare and morph routes to preserve duplicate plugin identities
+Description:
+- Goal / acceptance criteria: Replace URI-only plugin matching in `app/routes/chains_ab_mode.py` so compare and morph operations distinguish duplicate plugin instances by chain position, report duplicate-aware diffs, and apply morphed parameters to the correct runtime plugin instance.
+- Why it matters: Duplicate NAM/IR blocks are now a supported workflow, but the A/B tooling still collapses repeated URIs into one logical plugin, which can hide real chain differences and push morph values into the wrong processor instance.
+- Dependencies: T324, T337, T338, T346, `app/routes/chains_ab_mode.py`, new route-level tests, and worklist/licensing notes
+- Estimated effort: Medium
+- Required outputs: Duplicate-safe compare/morph implementation, regression tests covering repeated identical plugin URIs, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 13:58 EDT - Codex
+- Completion notes:
+  - Refactored `app/routes/chains_ab_mode.py` to identify plugins by `(uri, plugin_position)` instead of URI alone, so compare and morph flows no longer collapse duplicate NAM/IR or other repeated plugin instances into one logical entry.
+  - Compare responses now report duplicate-aware `common_plugin_refs`, preserve unmatched duplicate plugins in `only_in_a`/`only_in_b`, and compute `plugin_count_diff` from the actual chain plugin lists rather than the number of unique URIs.
+  - Morph responses now preserve `plugin_position` for each interpolated plugin and pass that position through `engine.set_parameter(...)`, ensuring morphed values are applied to the correct runtime instance when identical plugin URIs appear multiple times in a chain.
+  - Added `tests/test_chains_ab_mode_identity.py` to prove duplicate compare counts and duplicate morph application both preserve position identity, and fixed the adjacent route/runtime defect by adding the missing `CHAIN_MORPHED` member to `app/services/event_publisher.py`.
+  - Validation: `PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `pytest -q tests/test_chains_ab_mode_identity.py tests/test_flow_snapshots_routes.py tests/test_juce_engine_service_instance_resolution.py tests/test_chain_service_runtime_mapping.py tests/test_nam_ir_instance_routes.py tests/test_plugins_residency.py tests/test_plugins_engine_op_pipeline.py` -> PASS (`29 passed`, existing `ServiceManager` and `datetime.utcnow()` deprecation warnings only).
+  - Licensing: Classified the touched backend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T348
+Status: [✓] Done
+Title: Extend realtime parameter routing to preserve duplicate plugin identities
+Description:
+- Goal / acceptance criteria: Upgrade the realtime websocket parameter bridge, frontend RT client/hooks, and engine callback routing so parameter updates can carry `plugin_position` / `instance_id` all the way to the audio engine, preventing duplicate plugin URIs from collapsing onto the first loaded instance during live websocket control.
+- Why it matters: The NAM/IR multi-instance fixes now cover chain serialization, plugin residency, flow snapshots, and A/B morphing, but the dedicated realtime websocket control path still modeled a plugin as `(plugin_uri, param_index)` only, which is not sufficient once multiple identical plugin URIs are loaded simultaneously.
+- Dependencies: T324, T337, T338, T346, T347, `app/services/realtime_parameter_bridge.py`, `app/services/parameter_routing.py`, `web/src/map2/realtimeParams.ts`, `web/src/map2/hooks/useRTParameter.ts`, focused routing tests, and worklist/licensing notes
+- Estimated effort: High
+- Required outputs: Position-aware realtime websocket update contract, end-to-end routing changes for frontend RT producers and engine callback consumers, regression coverage for duplicate URI live-control paths, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 14:11 EDT - Codex
+- Completion notes:
+  - Extended `app/services/realtime_parameter_bridge.py` so cache keys, subscriptions, update coalescing, JSON websocket payloads, and engine callbacks can all carry `instance_id` / `plugin_position` instead of collapsing duplicate plugins to `(plugin_uri, param_index)` only.
+  - Updated `app/services/parameter_routing.py` so realtime engine callbacks now pass explicit identity through to the engine; JUCE updates with a resolved position/instance bypass the URI-only dispatcher and route directly to the correct runtime instance.
+  - Updated `web/src/map2/realtimeParams.ts`, `web/src/map2/hooks/useRTParameter.ts`, and `web/src/app/hooks/useJucePluginRT.ts` so realtime frontend subscriptions, cached-value lookups, optimistic sends, reconnect resubscribe, and plugin RT hooks all preserve duplicate-safe identity via optional `plugin_position` / `instance_id`.
+  - Updated `app/routes/websocket_rt.py` protocol examples to document the new optional identity fields, keeping the websocket contract aligned with the delivered implementation.
+  - Added regression coverage in `tests/test_realtime_parameter_bridge_identity.py`, `tests/test_parameter_routing_identity.py`, and `web/src/map2/realtimeParams.test.ts` to prove duplicate websocket subscriptions remain isolated by `plugin_position`, engine callbacks receive explicit identity, JUCE instance-resolved updates avoid URI-only dispatch, and frontend RT handlers do not cross-talk between duplicate plugin positions.
+  - Validation: `PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `pytest -q tests/test_realtime_parameter_bridge_identity.py tests/test_parameter_routing_identity.py` -> PASS (`3 passed`); `pytest -q tests/test_realtime_parameter_bridge_identity.py tests/test_parameter_routing_identity.py tests/test_chains_ab_mode_identity.py tests/test_flow_snapshots_routes.py` -> PASS (`9 passed`, existing `ServiceManager` / `datetime.utcnow()` deprecation warnings only); `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/map2/realtimeParams.test.ts` -> PASS (`1 passed`).
+  - Licensing: Classified the touched backend/frontend/test/worklist files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+ID: T349
+Status: [✓] Done
+Title: Persist duplicate-safe target identity for MIDI learn and automation lanes
+Description:
+- Goal / acceptance criteria: Extend persisted MIDI learn/mapping and automation lane targets so they can store and reload `plugin_position` or another stable instance discriminator, allowing duplicate plugin URIs to receive deterministic live-control updates after restart or when mappings are created outside the websocket UI path.
+- Why it matters: `T348` fixed the live websocket transport, but MIDI mappings, learn state, and automation lanes still persist targets as `plugin_uri:param_index` only, so duplicate-instance live control is not restart-safe for those producer paths yet.
+- Dependencies: T348, `app/database.py`, `app/services/midi_engine.py`, `app/services/midi_service.py`, `app/services/automation_engine.py`, any required persistence/backfill helpers, focused migration/tests, and worklist/licensing notes
+- Estimated effort: High
+- Required outputs: Persisted duplicate-safe MIDI/automation target identity model, runtime loader/writer updates, regression coverage, validation evidence, and licensing review notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 15:44 EDT - Codex
+- Completion notes:
+  - Added additive SQLite schema upgrades in `app/database.py` so existing databases gain `midi_mappings.target_plugin_position`, `midi_learn_state.target_plugin_position`, and `automation_lanes.plugin_position` without destructive migration work.
+  - Extended `app/services/midi_engine.py`, `app/services/midi_service.py`, `app/services/midi_mapping_service.py`, `app/services/command_queue.py`, `app/routes/midi.py`, and `app/routes/midi_v2.py` so legacy MIDI mappings, MIDI v2 mappings, learn targets, and related API payloads persist and reload duplicate-safe `plugin_position` identity instead of collapsing back to URI-only targets.
+  - Extended `app/services/juce_engine_service.py` to resolve duplicate-safe runtime instance IDs for `midi_set_all_cc_mappings`, single-mapping sync, live learn start, and parameter reads, so the native JUCE MIDI path now targets the correct duplicate instance as well.
+  - Extended `app/services/automation_engine.py` to persist/export `plugin_position`, build duplicate-safe parameter IDs (`plugin_uri:param_index@position`), dispatch callbacks with explicit identity, and provide compatibility helpers used by `app/routes/automation.py`, removing the stale route/engine API mismatch discovered during the audit.
+  - Added regression coverage in `tests/test_midi_automation_identity_persistence.py` for additive schema upgrade, legacy MIDI engine persistence/rehydration, MIDI v2 mapping + learn persistence/sync, automation lane save/load/export identity, and JUCE binding resolution.
+  - Validation: `PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `git diff --check -- app/database.py app/services/automation_engine.py app/services/midi_engine.py app/services/midi_service.py app/services/juce_engine_service.py app/routes/midi.py app/routes/midi_v2.py app/routes/automation.py app/services/midi_mapping_service.py app/services/command_queue.py app/response_models.py tests/test_midi_automation_identity_persistence.py docs/PROJECT_WORKLIST.md` -> PASS; `pytest -q tests/test_midi_automation_identity_persistence.py tests/test_parameter_routing_identity.py tests/test_realtime_parameter_bridge_identity.py tests/test_chains_ab_mode_identity.py tests/test_flow_snapshots_routes.py tests/test_juce_engine_service_instance_resolution.py tests/test_chain_service_runtime_mapping.py tests/test_plugins_residency.py tests/test_plugins_engine_op_pipeline.py tests/test_nam_ir_instance_routes.py tests/test_juce_engine_current_pedalboard_identity.py` -> PASS (`38 passed`, existing `ServiceManager` / `datetime.utcnow()` deprecation warnings only).
+  - Licensing: Classified the touched backend/test/worklist/instructions files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .gemini/instructions.md` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.

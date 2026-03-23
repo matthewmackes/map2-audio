@@ -105,6 +105,7 @@ import type {
   TesiraMeterHistoryResponse,
   TesiraMeterPeakResponse,
   TesiraMutationResponse,
+  TesiraRawCommandResponse,
   TesiraLayoutArtifact,
   TesiraLayoutListResponse,
   TesiraSageVueStatus,
@@ -1074,7 +1075,7 @@ export const pluginsApi = {
     return response;
   },
 
-  list: () => fetchJson<{ loaded: Plugin[]; count: number }>(`${API_BASE}/plugins/list`),
+  list: () => fetchJson<{ loaded: Plugin[]; count: number; parked?: Plugin[]; parked_count?: number }>(`${API_BASE}/plugins/list`),
 
   load: async (uri: string) => {
     const response = await fetchJson<{ status: string; plugin: Plugin }>(`${API_BASE}/plugins/load?uri=${encodeURIComponent(uri)}`, {
@@ -1084,8 +1085,12 @@ export const pluginsApi = {
     return response;
   },
 
-  unload: async (uri: string) => {
-    const response = await fetchJson<{ status: string; uri: string }>(`${API_BASE}/plugins/unload?uri=${encodeURIComponent(uri)}`, {
+  unload: async (uri: string, instanceId?: number) => {
+    const params = new URLSearchParams({ uri })
+    if (typeof instanceId === 'number' && Number.isFinite(instanceId) && instanceId > 0) {
+      params.set('instance_id', String(Math.trunc(instanceId)))
+    }
+    const response = await fetchJson<{ status: string; uri: string; instance_id?: number }>(`${API_BASE}/plugins/unload?${params.toString()}`, {
       method: 'POST',
     });
     notifyPluginInventoryChanged();
@@ -6110,6 +6115,13 @@ export const tesiraApi = {
 
   disconnectDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/disconnect`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  sendCommand: (deviceId: string, command: string): Promise<TesiraRawCommandResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command }),
+    }).then((r) => _json<TesiraRawCommandResponse>(r)),
 
   getFaults: (deviceId: string): Promise<{ device_id: string; faults: string[] }> =>
     fetch(`${BASE}/devices/${deviceId}/faults`).then((r) => _json<{ device_id: string; faults: string[] }>(r)),

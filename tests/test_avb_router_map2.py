@@ -339,6 +339,38 @@ def test_discover_map2_endpoints_skips_visible_nodes_that_are_not_routing_ready(
     assert router.endpoints == {}
 
 
+def test_discover_map2_endpoints_respects_activation_state_when_routing_flag_missing(monkeypatch):
+    router = AvbRouter(engine_service=object())
+
+    visible_nodes = {
+        "peer-standby": SimpleNamespace(
+            node_id="peer-standby",
+            hostname="rack-standby",
+            host="10.0.0.61",
+            api_url="http://10.0.0.61:8080",
+            is_online=True,
+            registered=True,
+            routing_ready=None,
+            activation_state="standby",
+            metadata={
+                "avb_entity_id": "0011223344556699",
+                "avb_streams": [
+                    {"direction": "talker", "unique_id": 1, "channels": 2, "sample_rate": 48000, "format": "24-bit PCM"},
+                ],
+            },
+        ),
+    }
+
+    monkeypatch.setattr(
+        "app.services.cluster.node_visibility.get_visible_remote_nodes",
+        lambda: ("local-node", visible_nodes),
+    )
+
+    asyncio.run(router._discover_map2_endpoints())
+
+    assert router.endpoints == {}
+
+
 def test_connect_return_details_includes_trace_id_and_stage_outcomes(monkeypatch):
     router = AvbRouter()
     connection = _make_connection()

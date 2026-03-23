@@ -54,6 +54,11 @@ class PeerInfo(BaseModel):
     discovered_via_mdns: bool = False
     discovered_via_peer_mdns: bool = False
     discovered_via_cluster_mdns: bool = False
+    trust_state: Optional[str] = None
+    adoption_state: Optional[str] = None
+    activation_state: Optional[str] = None
+    readiness_status: Optional[str] = None
+    adoption_candidate_id: Optional[str] = None
 
 
 class LatencyEntry(BaseModel):
@@ -278,6 +283,11 @@ async def get_peer_discovery_status():
             discovered_via_mdns=bool(getattr(peer_data, "discovered_via_mdns", False)),
             discovered_via_peer_mdns=bool(getattr(peer_data, "discovered_via_peer_mdns", False)),
             discovered_via_cluster_mdns=bool(getattr(peer_data, "discovered_via_cluster_mdns", False)),
+            trust_state=getattr(peer_data, "trust_state", None),
+            adoption_state=getattr(peer_data, "adoption_state", None),
+            activation_state=getattr(peer_data, "activation_state", None),
+            readiness_status=getattr(peer_data, "readiness_status", None),
+            adoption_candidate_id=getattr(peer_data, "adoption_candidate_id", None),
         )
         peers.append(peer_info)
     

@@ -11,6 +11,8 @@ export interface RTParameterUpdate {
   plugin_uri: string;
   param_index: number;
   value: number;
+  instance_id?: number;
+  plugin_position?: number;
   source?: string;
   timestamp?: number;
 }
@@ -24,6 +26,19 @@ export interface RTClientConfig {
   reconnectDelay?: number;
   maxReconnectDelay?: number;
   maxReconnectAttempts?: number;
+}
+
+export interface RTParameterIdentity {
+  instance_id?: number;
+  plugin_position?: number;
+}
+
+interface RTSubscription {
+  plugin_uri: string;
+  param_index: number;
+  instance_id?: number;
+  plugin_position?: number;
+  handlers: Set<RTParameterHandler>;
 }
 
 /**
@@ -40,7 +55,7 @@ export class RTParameterClient {
   private config: Required<RTClientConfig>;
   private status: RTConnectionStatus = 'disconnected';
   private statusHandlers = new Set<(status: RTConnectionStatus) => void>();
-  private paramHandlers = new Map<string, Set<RTParameterHandler>>();
+  private paramSubscriptions = new Map<string, RTSubscription>();
   private globalHandlers = new Set<RTParameterHandler>();
   private reconnectAttempts = 0;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -64,6 +79,46 @@ export class RTParameterClient {
       maxReconnectDelay: config.maxReconnectDelay ?? 10000,
       maxReconnectAttempts: config.maxReconnectAttempts ?? 10,
     };
+  }
+
+  private static normalizePositiveInt(value: unknown): number | undefined {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return undefined
+    }
+    const normalized = Math.trunc(value)
+    return normalized > 0 ? normalized : undefined
+  }
+
+  private static normalizeNonNegativeInt(value: unknown): number | undefined {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return undefined
+    }
+    const normalized = Math.trunc(value)
+    return normalized >= 0 ? normalized : undefined
+  }
+
+  private static identityKey(update: Pick<RTParameterUpdate, 'plugin_uri' | 'param_index' | 'instance_id' | 'plugin_position'>): string {
+    const instanceId = RTParameterClient.normalizePositiveInt(update.instance_id)
+    if (instanceId !== undefined) {
+      return `instance:${instanceId}:${update.param_index}`
+    }
+
+    const pluginPosition = RTParameterClient.normalizeNonNegativeInt(update.plugin_position)
+    if (pluginPosition !== undefined) {
+      return `position:${update.plugin_uri}:${pluginPosition}:${update.param_index}`
+    }
+
+    return `uri:${update.plugin_uri}:${update.param_index}`
+  }
+
+  private static identityPayload(identity: RTParameterIdentity = {}): RTParameterIdentity {
+    const instanceId = RTParameterClient.normalizePositiveInt(identity.instance_id)
+    const pluginPosition = RTParameterClient.normalizeNonNegativeInt(identity.plugin_position)
+
+    return {
+      ...(instanceId !== undefined ? { instance_id: instanceId } : {}),
+      ...(pluginPosition !== undefined ? { plugin_position: pluginPosition } : {}),
+    }
   }
 
   /**
@@ -141,7 +196,12 @@ export class RTParameterClient {
    * @param paramIndex - Parameter index
    * @param value - New parameter value
    */
-  sendParameterUpdate(pluginUri: string, paramIndex: number, value: number): void {
+  sendParameterUpdate(
+    pluginUri: string,
+    paramIndex: number,
+    value: number,
+    identity: RTParameterIdentity = {},
+  ): void {
     if (!this.isConnected()) {
       console.warn('[RT] Cannot send: not connected');
       return;
@@ -152,6 +212,7 @@ export class RTParameterClient {
       plugin_uri: pluginUri,
       param_index: paramIndex,
       value,
+      ...RTParameterClient.identityPayload(identity),
     };
 
     this.ws!.send(JSON.stringify(message));
@@ -173,6 +234,7 @@ export class RTParameterClient {
         plugin_uri: u.plugin_uri,
         param_index: u.param_index,
         value: u.value,
+        ...RTParameterClient.identityPayload(u),
       })),
     };
 
@@ -190,12 +252,23 @@ export class RTParameterClient {
   subscribeToParameter(
     pluginUri: string,
     paramIndex: number,
-    handler: RTParameterHandler
+    handler: RTParameterHandler,
+    identity: RTParameterIdentity = {},
   ): () => void {
-    const key = `${pluginUri}:${paramIndex}`;
+    const normalizedIdentity = RTParameterClient.identityPayload(identity)
+    const key = RTParameterClient.identityKey({
+      plugin_uri: pluginUri,
+      param_index: paramIndex,
+      ...normalizedIdentity,
+    });
 
-    if (!this.paramHandlers.has(key)) {
-      this.paramHandlers.set(key, new Set());
+    if (!this.paramSubscriptions.has(key)) {
+      this.paramSubscriptions.set(key, {
+        plugin_uri: pluginUri,
+        param_index: paramIndex,
+        ...normalizedIdentity,
+        handlers: new Set(),
+      });
 
       // Tell server we want updates for this parameter
       if (this.isConnected()) {
@@ -203,24 +276,26 @@ export class RTParameterClient {
           action: 'subscribe',
           plugin_uri: pluginUri,
           param_index: paramIndex,
+          ...normalizedIdentity,
         }));
       }
     }
 
-    this.paramHandlers.get(key)!.add(handler);
+    this.paramSubscriptions.get(key)!.handlers.add(handler);
 
     return () => {
-      const handlers = this.paramHandlers.get(key);
-      if (handlers) {
-        handlers.delete(handler);
-        if (handlers.size === 0) {
-          this.paramHandlers.delete(key);
+      const subscription = this.paramSubscriptions.get(key);
+      if (subscription) {
+        subscription.handlers.delete(handler);
+        if (subscription.handlers.size === 0) {
+          this.paramSubscriptions.delete(key);
           // Unsubscribe from server
           if (this.isConnected()) {
             this.ws!.send(JSON.stringify({
               action: 'unsubscribe',
               plugin_uri: pluginUri,
               param_index: paramIndex,
+              ...normalizedIdentity,
             }));
           }
         }
@@ -239,21 +314,24 @@ export class RTParameterClient {
   subscribeToPlugin(
     pluginUri: string,
     paramCount: number,
-    handler: RTParameterHandler
+    handler: RTParameterHandler,
+    identity: RTParameterIdentity = {},
   ): () => void {
+    const normalizedIdentity = RTParameterClient.identityPayload(identity)
     // Subscribe to all params
     if (this.isConnected()) {
       this.ws!.send(JSON.stringify({
         action: 'subscribe_all',
         plugin_uri: pluginUri,
         param_count: paramCount,
+        ...normalizedIdentity,
       }));
     }
 
     // Add handler for each param
     const unsubscribes: (() => void)[] = [];
     for (let i = 0; i < paramCount; i++) {
-      unsubscribes.push(this.subscribeToParameter(pluginUri, i, handler));
+      unsubscribes.push(this.subscribeToParameter(pluginUri, i, handler, normalizedIdentity));
     }
 
     return () => unsubscribes.forEach(unsub => unsub());
@@ -276,19 +354,33 @@ export class RTParameterClient {
    * @param pluginUri - Plugin URI
    * @param paramIndex - Parameter index
    */
-  async getCachedValue(pluginUri: string, paramIndex: number): Promise<number | null> {
+  async getCachedValue(
+    pluginUri: string,
+    paramIndex: number,
+    identity: RTParameterIdentity = {},
+  ): Promise<number | null> {
     if (!this.isConnected()) {
       return null;
     }
 
     return new Promise((resolve) => {
+      const normalizedIdentity = RTParameterClient.identityPayload(identity)
+      const requestedKey = RTParameterClient.identityKey({
+        plugin_uri: pluginUri,
+        param_index: paramIndex,
+        ...normalizedIdentity,
+      })
       const handler = (event: MessageEvent) => {
         try {
           const msg = JSON.parse(event.data);
           if (
             msg.type === 'value' &&
-            msg.plugin_uri === pluginUri &&
-            msg.param_index === paramIndex
+            RTParameterClient.identityKey({
+              plugin_uri: msg.plugin_uri,
+              param_index: msg.param_index,
+              instance_id: msg.instance_id,
+              plugin_position: msg.plugin_position,
+            }) === requestedKey
           ) {
             this.ws!.removeEventListener('message', handler);
             resolve(msg.value);
@@ -303,6 +395,7 @@ export class RTParameterClient {
         action: 'get_value',
         plugin_uri: pluginUri,
         param_index: paramIndex,
+        ...normalizedIdentity,
       }));
 
       // Timeout after 1 second
@@ -352,12 +445,12 @@ export class RTParameterClient {
         console.log('[RT] Client ID:', this.clientId, 'Protocol:', msg.protocol);
 
         // Resubscribe to all parameters after reconnect
-        this.paramHandlers.forEach((_, key) => {
-          const [pluginUri, paramIndex] = key.split(':');
+        this.paramSubscriptions.forEach((subscription) => {
           this.ws!.send(JSON.stringify({
             action: 'subscribe',
-            plugin_uri: pluginUri,
-            param_index: parseInt(paramIndex, 10),
+            plugin_uri: subscription.plugin_uri,
+            param_index: subscription.param_index,
+            ...RTParameterClient.identityPayload(subscription),
           }));
         });
         return;
@@ -374,15 +467,17 @@ export class RTParameterClient {
           plugin_uri: msg.plugin_uri,
           param_index: msg.param_index,
           value: msg.value,
+          instance_id: RTParameterClient.normalizePositiveInt(msg.instance_id),
+          plugin_position: RTParameterClient.normalizeNonNegativeInt(msg.plugin_position),
           source: msg.source,
           timestamp: msg.timestamp,
         };
 
         // Dispatch to specific handlers
-        const key = `${msg.plugin_uri}:${msg.param_index}`;
-        const handlers = this.paramHandlers.get(key);
-        if (handlers) {
-          handlers.forEach(handler => {
+        const key = RTParameterClient.identityKey(update);
+        const subscription = this.paramSubscriptions.get(key);
+        if (subscription) {
+          subscription.handlers.forEach(handler => {
             try {
               handler(update);
             } catch (e) {

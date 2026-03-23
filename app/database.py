@@ -85,6 +85,7 @@ def init_db(database_url: str = None) -> None:
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
     Base.metadata.create_all(bind=_engine)
     _ensure_special_settings_schema_sync()
+    _ensure_midi_automation_identity_schema_sync()
     logger.info("Database initialized with WAL mode and power-failure resilience")
 
 
@@ -198,6 +199,31 @@ def _ensure_special_settings_schema_sync() -> None:
             logger.info("Added special_settings.last_active_node schema upgrade")
 
 
+def _sqlite_columns(conn, table_name: str) -> set[str]:
+    result = conn.execute(text(f"PRAGMA table_info({table_name})"))
+    return {str(row[1]) for row in result.fetchall()}
+
+
+def _add_sqlite_column_if_missing(conn, table_name: str, column_name: str, column_sql: str) -> bool:
+    columns = _sqlite_columns(conn, table_name)
+    if columns and column_name not in columns:
+        conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}"))
+        logger.info("Added %s.%s schema upgrade", table_name, column_name)
+        return True
+    return False
+
+
+def _ensure_midi_automation_identity_schema_sync() -> None:
+    """Apply additive schema upgrades for duplicate-safe MIDI and automation identity."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        _add_sqlite_column_if_missing(conn, "midi_mappings", "target_plugin_position", "INTEGER")
+        _add_sqlite_column_if_missing(conn, "midi_learn_state", "target_plugin_position", "INTEGER")
+        _add_sqlite_column_if_missing(conn, "automation_lanes", "plugin_position", "INTEGER")
+
+
 async def _ensure_special_settings_schema_async(conn) -> None:
     """Apply additive schema upgrades for special_settings in async SQLite sessions."""
     if conn.dialect.name != "sqlite":
@@ -233,6 +259,30 @@ async def _ensure_special_settings_schema_async(conn) -> None:
         logger.info("Added async special_settings.last_active_node schema upgrade")
 
 
+async def _sqlite_columns_async(conn, table_name: str) -> set[str]:
+    result = await conn.execute(text(f"PRAGMA table_info({table_name})"))
+    return {str(row[1]) for row in result.fetchall()}
+
+
+async def _add_sqlite_column_if_missing_async(conn, table_name: str, column_name: str, column_sql: str) -> bool:
+    columns = await _sqlite_columns_async(conn, table_name)
+    if columns and column_name not in columns:
+        await conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}"))
+        logger.info("Added async %s.%s schema upgrade", table_name, column_name)
+        return True
+    return False
+
+
+async def _ensure_midi_automation_identity_schema_async(conn) -> None:
+    """Apply additive async schema upgrades for duplicate-safe MIDI and automation identity."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    await _add_sqlite_column_if_missing_async(conn, "midi_mappings", "target_plugin_position", "INTEGER")
+    await _add_sqlite_column_if_missing_async(conn, "midi_learn_state", "target_plugin_position", "INTEGER")
+    await _add_sqlite_column_if_missing_async(conn, "automation_lanes", "plugin_position", "INTEGER")
+
+
 async def _ensure_tables_created() -> None:
     """Create tables once if they don't exist (called only once per startup)."""
     global _tables_created, _pragmas_set
@@ -251,6 +301,7 @@ async def _ensure_tables_created() -> None:
                 logger.info("Async database PRAGMAs applied (WAL mode enabled)")
             await conn.run_sync(Base.metadata.create_all)
             await _ensure_special_settings_schema_async(conn)
+            await _ensure_midi_automation_identity_schema_async(conn)
         _tables_created = True
 
 
@@ -677,6 +728,7 @@ class MIDIMapping(Base):
     # Target (Per-Chain Scope)
     chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"), nullable=True)
     target_plugin_uri = Column(String(255))  # No FK - plugins discovered at runtime
+    target_plugin_position = Column(Integer, nullable=True)
     target_param_index = Column(Integer)
     target_param_symbol = Column(String(100))  # Parameter symbol for name-based access
 
@@ -1257,6 +1309,7 @@ class AutomationLane(Base):
     # Target identification
     parameter_id = Column(String(255), unique=True, nullable=False)  # plugin_uri:param_index
     plugin_uri = Column(String(255), nullable=False)
+    plugin_position = Column(Integer, nullable=True)
     param_index = Column(Integer, nullable=False)
     param_name = Column(String(255))  # Cached parameter name
 
@@ -1300,6 +1353,7 @@ class MIDILearnState(Base):
 
     # Target being learned
     target_plugin_uri = Column(String(255), nullable=False)
+    target_plugin_position = Column(Integer, nullable=True)
     target_param_index = Column(Integer, nullable=False)
     target_param_name = Column(String(255))
 

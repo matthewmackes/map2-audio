@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <unordered_map>
 
 #ifdef HAS_AVDECC
 #include "AvdeccController.h"
@@ -5309,19 +5310,38 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         // Pedalboard State (Legacy Compatibility)
         // ========================================
 
-        .def("get_current_pedalboard", [](const Map2AudioEngine& self) {
+        .def("get_current_pedalboard", [](Map2AudioEngine& self) {
             py::dict d;
             d["name"] = "Current Chain";
             d["input_volume_db"] = 0.0;
             d["output_volume_db"] = 0.0;
 
+            std::unordered_map<InstanceId, PluginInstance> loadedById;
+            for (const auto& plugin : self.getPluginHost().getLoadedPlugins()) {
+                loadedById.emplace(plugin.id, plugin);
+            }
+
             py::list items;
             auto chain = self.getChainOrder();
             for (size_t i = 0; i < chain.size(); i++) {
                 py::dict item;
-                item["instance_id"] = chain[i];
+                const auto instanceId = chain[i];
+                item["instance_id"] = instanceId;
+                item["position"] = static_cast<int>(i);
+                item["plugin_position"] = static_cast<int>(i);
                 item["is_enabled"] = true;
                 item["controls"] = py::list();
+
+                const auto loadedIt = loadedById.find(instanceId);
+                if (loadedIt != loadedById.end()) {
+                    item["uri"] = loadedIt->second.uri;
+                    item["name"] = loadedIt->second.name;
+                    item["bypassed"] = loadedIt->second.bypassed;
+                } else {
+                    item["uri"] = "";
+                    item["name"] = "";
+                    item["bypassed"] = false;
+                }
                 items.append(item);
             }
             d["items"] = items;

@@ -71,6 +71,7 @@ def test_dsp_probe_route(client):
 class _GpioResp:
     ok: bool
     value: object = None
+    raw: str = ""
     error_code: str | None = None
     error_detail: str | None = None
 
@@ -85,6 +86,54 @@ def test_gpio_set_route(client):
 
     assert response.status_code == 200
     assert response.json()["ok"] is True
+
+
+def test_raw_ttp_command_route(client):
+    device = _make_device()
+    device._client = MagicMock()
+    device._client.send = AsyncMock(return_value=_GpioResp(ok=True, value="TesiraFORTE-1", error_code=None, error_detail=None, raw='+OK value="TesiraFORTE-1"'))
+
+    with patch("app.routes.tesira._get_device", return_value=device):
+        response = client.post(
+            "/api/tesira/devices/tesira_dev_1/command",
+            json={"command": "DEVICE get hostname"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is True
+    assert body["value"] == "TesiraFORTE-1"
+    device._client.send.assert_awaited_once_with("DEVICE", "get", "hostname")
+
+
+def test_raw_ttp_command_route_accepts_two_token_command(client):
+    device = _make_device()
+    device._client = MagicMock()
+    device._client.send = AsyncMock(return_value=_GpioResp(ok=True, value=None, error_code=None, error_detail=None, raw="+OK"))
+
+    with patch("app.routes.tesira._get_device", return_value=device):
+        response = client.post(
+            "/api/tesira/devices/tesira_dev_1/command",
+            json={"command": "DEVICE reboot"},
+        )
+
+    assert response.status_code == 200
+    device._client.send.assert_awaited_once_with("DEVICE", "reboot", "")
+
+
+def test_raw_ttp_command_route_rejects_short_command(client):
+    device = _make_device()
+    device._client = MagicMock()
+    device._client.send = AsyncMock()
+
+    with patch("app.routes.tesira._get_device", return_value=device):
+        response = client.post(
+            "/api/tesira/devices/tesira_dev_1/command",
+            json={"command": "DEVICE"},
+        )
+
+    assert response.status_code == 400
+    device._client.send.assert_not_called()
 
 
 def test_layout_catalog_routes(client):

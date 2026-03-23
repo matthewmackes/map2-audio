@@ -11,6 +11,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   RTParameterClient,
   getRTParameterClient,
+  RTParameterIdentity,
   RTParameterUpdate,
   RTConnectionStatus,
 } from '../realtimeParams';
@@ -60,8 +61,11 @@ export function useRTConnection() {
 export function useRTParameter(
   pluginUri: string,
   paramIndex: number,
-  initialValue: number = 0
+  initialValue: number = 0,
+  identity: RTParameterIdentity = {},
 ) {
+  const instanceId = identity.instance_id
+  const pluginPosition = identity.plugin_position
   const [value, setValue] = useState(initialValue);
   const [remoteValue, setRemoteValue] = useState(initialValue);
   const [isDragging, setIsDragging] = useState(false);
@@ -81,11 +85,12 @@ export function useRTParameter(
         if (!isDragging) {
           setValue(update.value);
         }
-      }
+      },
+      { instance_id: instanceId, plugin_position: pluginPosition },
     );
 
     // Get initial cached value
-    client.getCachedValue(pluginUri, paramIndex).then(cached => {
+    client.getCachedValue(pluginUri, paramIndex, { instance_id: instanceId, plugin_position: pluginPosition }).then(cached => {
       if (cached !== null) {
         setValue(cached);
         setRemoteValue(cached);
@@ -93,7 +98,7 @@ export function useRTParameter(
     });
 
     return unsubscribe;
-  }, [client, pluginUri, paramIndex, isDragging]);
+  }, [client, instanceId, isDragging, pluginPosition, pluginUri, paramIndex]);
 
   // Send value update to server (debounced)
   const sendUpdate = useCallback(
@@ -103,9 +108,12 @@ export function useRTParameter(
         return;
       }
       lastSentValue.current = newValue;
-      client.sendParameterUpdate(pluginUri, paramIndex, newValue);
+      client.sendParameterUpdate(pluginUri, paramIndex, newValue, {
+        instance_id: instanceId,
+        plugin_position: pluginPosition,
+      });
     },
-    [client, pluginUri, paramIndex]
+    [client, instanceId, pluginPosition, pluginUri, paramIndex]
   );
 
   // Update value and send to server
@@ -148,8 +156,11 @@ export function useRTParameter(
 export function useRTPluginParameters(
   pluginUri: string,
   paramCount: number,
-  initialValues?: number[]
+  initialValues?: number[],
+  identity: RTParameterIdentity = {},
 ) {
+  const instanceId = identity.instance_id
+  const pluginPosition = identity.plugin_position
   const [values, setValues] = useState<number[]>(
     initialValues || new Array(paramCount).fill(0)
   );
@@ -170,11 +181,12 @@ export function useRTPluginParameters(
           next[update.param_index] = update.value;
           return next;
         });
-      }
+      },
+      { instance_id: instanceId, plugin_position: pluginPosition },
     );
 
     return unsubscribe;
-  }, [client, pluginUri, paramCount]);
+  }, [client, instanceId, pluginPosition, pluginUri, paramCount]);
 
   // Update a single parameter
   const updateParameter = useCallback(
@@ -184,9 +196,12 @@ export function useRTPluginParameters(
         next[paramIndex] = value;
         return next;
       });
-      client.sendParameterUpdate(pluginUri, paramIndex, value);
+      client.sendParameterUpdate(pluginUri, paramIndex, value, {
+        instance_id: instanceId,
+        plugin_position: pluginPosition,
+      });
     },
-    [client, pluginUri]
+    [client, instanceId, pluginPosition, pluginUri]
   );
 
   // Batch update multiple parameters
@@ -205,10 +220,12 @@ export function useRTPluginParameters(
           plugin_uri: pluginUri,
           param_index: u.index,
           value: u.value,
+          ...(instanceId !== undefined ? { instance_id: instanceId } : {}),
+          ...(pluginPosition !== undefined ? { plugin_position: pluginPosition } : {}),
         }))
       );
     },
-    [client, pluginUri]
+    [client, instanceId, pluginPosition, pluginUri]
   );
 
   return {

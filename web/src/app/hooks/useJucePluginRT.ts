@@ -27,6 +27,10 @@ export interface JuceParamDef {
 export interface JucePluginRTConfig {
   /** Plugin URI, e.g. "map2://juce/amp/peavey5150" */
   pluginUri: string
+  /** Optional explicit plugin instance id for duplicate-safe RT updates */
+  instanceId?: number
+  /** Optional chain/plugin position for duplicate-safe RT updates */
+  pluginPosition?: number
   /** Ordered parameter definitions (index = RT param index) */
   params: JuceParamDef[]
   /** REST endpoint for metering data */
@@ -59,6 +63,8 @@ export interface JucePluginRTResult {
 export function useJucePluginRT(config: JucePluginRTConfig): JucePluginRTResult {
   const {
     pluginUri,
+    instanceId,
+    pluginPosition,
     params,
     meteringEndpoint,
     meteringInterval = 500,
@@ -69,9 +75,22 @@ export function useJucePluginRT(config: JucePluginRTConfig): JucePluginRTResult 
     [params]
   )
 
+  const rtIdentity = useMemo(
+    () => ({
+      ...(instanceId !== undefined ? { instance_id: instanceId } : {}),
+      ...(pluginPosition !== undefined ? { plugin_position: pluginPosition } : {}),
+    }),
+    [instanceId, pluginPosition],
+  )
+
   // RT WebSocket for parameter control (optimistic local state, no polling)
   const { values: rawValues, updateParameter, isConnected } =
-    useRTPluginParameters(pluginUri, params.length, initialValues)
+    useRTPluginParameters(
+      pluginUri,
+      params.length,
+      initialValues,
+      rtIdentity,
+    )
 
   // Symbol → index lookup (memoized)
   const symbolToIndex = useMemo(() => {

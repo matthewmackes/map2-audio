@@ -46,6 +46,8 @@ class ParameterUpdate:
     plugin_uri: str
     param_index: int
     value: float
+    instance_id: Optional[int] = None
+    plugin_position: Optional[int] = None
     source: ParameterSource = ParameterSource.UI
     timestamp: float = field(default_factory=time.time)
 
@@ -83,13 +85,18 @@ class ParameterUpdate:
 
     def to_json(self) -> dict:
         """Convert to JSON-serializable dict."""
-        return {
+        payload = {
             'plugin_uri': self.plugin_uri,
             'param_index': self.param_index,
             'value': self.value,
             'source': self.source.name.lower(),
             'timestamp': self.timestamp
         }
+        if isinstance(self.instance_id, int) and self.instance_id > 0:
+            payload['instance_id'] = self.instance_id
+        if isinstance(self.plugin_position, int) and self.plugin_position >= 0:
+            payload['plugin_position'] = self.plugin_position
+        return payload
 
 
 @dataclass
@@ -99,7 +106,7 @@ class RTClient:
     websocket: WebSocket
     connected_at: float = field(default_factory=time.time)
     last_activity: float = field(default_factory=time.time)
-    subscribed_params: Set[Tuple[str, int]] = field(default_factory=set)
+    subscribed_params: Set[Tuple[Any, ...]] = field(default_factory=set)
     use_binary: bool = False
     pending_updates: List[ParameterUpdate] = field(default_factory=list)
 
@@ -122,13 +129,15 @@ class RealTimeParameterBridge:
         self._clients: Dict[str, RTClient] = {}
 
         # Parameter value cache for instant reads
-        self._param_cache: Dict[Tuple[str, int], float] = {}
+        self._param_cache: Dict[Tuple[Any, ...], float] = {}
 
-        # Subscriptions: (plugin_uri, param_index) -> set of client_ids
-        self._subscriptions: Dict[Tuple[str, int], Set[str]] = defaultdict(set)
+        # Subscriptions: keyed by instance_id, plugin_position, or URI fallback
+        self._subscriptions: Dict[Tuple[Any, ...], Set[str]] = defaultdict(set)
 
         # Callback to audio engine for parameter changes
-        self._engine_callback: Optional[Callable[[str, int, float], None]] = None
+        self._engine_callback: Optional[
+            Callable[[str, int, float, Optional[int], Optional[int]], None]
+        ] = None
 
         # Lock-free update queue for engine integration
         self._update_queue: asyncio.Queue[ParameterUpdate] = asyncio.Queue(maxsize=10000)
@@ -156,12 +165,49 @@ class RealTimeParameterBridge:
         self._latency_samples: List[float] = []
         self._max_latency_samples = 1000
 
-    def set_engine_callback(self, callback: Callable[[str, int, float], None]):
+    @staticmethod
+    def _normalize_positive_int(value: Any) -> Optional[int]:
+        try:
+            normalized = int(value)
+        except (TypeError, ValueError):
+            return None
+        return normalized if normalized > 0 else None
+
+    @staticmethod
+    def _normalize_non_negative_int(value: Any) -> Optional[int]:
+        try:
+            normalized = int(value)
+        except (TypeError, ValueError):
+            return None
+        return normalized if normalized >= 0 else None
+
+    @classmethod
+    def _parameter_key(
+        cls,
+        plugin_uri: str,
+        param_index: int,
+        instance_id: Any = None,
+        plugin_position: Any = None,
+    ) -> Tuple[Any, ...]:
+        normalized_instance_id = cls._normalize_positive_int(instance_id)
+        if normalized_instance_id is not None:
+            return ("instance", normalized_instance_id, int(param_index))
+
+        normalized_plugin_position = cls._normalize_non_negative_int(plugin_position)
+        if normalized_plugin_position is not None:
+            return ("position", plugin_uri, normalized_plugin_position, int(param_index))
+
+        return ("uri", plugin_uri, int(param_index))
+
+    def set_engine_callback(
+        self,
+        callback: Callable[[str, int, float, Optional[int], Optional[int]], None],
+    ):
         """
         Set callback for routing parameters to audio engine.
 
         The callback should be non-blocking and thread-safe.
-        Signature: callback(plugin_uri: str, param_index: int, value: float)
+        Signature: callback(plugin_uri: str, param_index: int, value: float, instance_id: int | None, plugin_position: int | None)
         """
         self._engine_callback = callback
         logger.info("Audio engine callback registered")
@@ -308,6 +354,8 @@ class RealTimeParameterBridge:
                 plugin_uri=msg['plugin_uri'],
                 param_index=msg['param_index'],
                 value=msg['value'],
+                instance_id=self._normalize_positive_int(msg.get('instance_id')),
+                plugin_position=self._normalize_non_negative_int(msg.get('plugin_position')),
                 source=ParameterSource.UI
             )
             await self._process_update(update, client.client_id)
@@ -319,6 +367,8 @@ class RealTimeParameterBridge:
                     plugin_uri=u['plugin_uri'],
                     param_index=u['param_index'],
                     value=u['value'],
+                    instance_id=self._normalize_positive_int(u.get('instance_id')),
+                    plugin_position=self._normalize_non_negative_int(u.get('plugin_position')),
                     source=ParameterSource.UI
                 )
                 await self._process_update(update, client.client_id)
@@ -327,14 +377,18 @@ class RealTimeParameterBridge:
             await self._subscribe_param(
                 client.client_id,
                 msg['plugin_uri'],
-                msg['param_index']
+                msg['param_index'],
+                instance_id=msg.get('instance_id'),
+                plugin_position=msg.get('plugin_position'),
             )
 
         elif action == 'unsubscribe':
             await self._unsubscribe_param(
                 client.client_id,
                 msg['plugin_uri'],
-                msg['param_index']
+                msg['param_index'],
+                instance_id=msg.get('instance_id'),
+                plugin_position=msg.get('plugin_position'),
             )
 
         elif action == 'subscribe_all':
@@ -342,25 +396,54 @@ class RealTimeParameterBridge:
             plugin_uri = msg['plugin_uri']
             param_count = msg.get('param_count', 0)
             for idx in range(param_count):
-                await self._subscribe_param(client.client_id, plugin_uri, idx)
+                await self._subscribe_param(
+                    client.client_id,
+                    plugin_uri,
+                    idx,
+                    instance_id=msg.get('instance_id'),
+                    plugin_position=msg.get('plugin_position'),
+                )
 
         elif action == 'ping':
             await client.websocket.send_text(json.dumps({'type': 'pong'}))
 
         elif action == 'get_value':
             # Instant value read from cache
-            key = (msg['plugin_uri'], msg['param_index'])
+            key = self._parameter_key(
+                msg['plugin_uri'],
+                msg['param_index'],
+                instance_id=msg.get('instance_id'),
+                plugin_position=msg.get('plugin_position'),
+            )
             value = self._param_cache.get(key)
+            payload = ParameterUpdate(
+                plugin_uri=msg['plugin_uri'],
+                param_index=msg['param_index'],
+                value=value,
+                instance_id=self._normalize_positive_int(msg.get('instance_id')),
+                plugin_position=self._normalize_non_negative_int(msg.get('plugin_position')),
+            ).to_json()
             await client.websocket.send_text(json.dumps({
                 'type': 'value',
-                'plugin_uri': msg['plugin_uri'],
-                'param_index': msg['param_index'],
-                'value': value
+                **payload,
             }))
 
-    async def _subscribe_param(self, client_id: str, plugin_uri: str, param_index: int):
+    async def _subscribe_param(
+        self,
+        client_id: str,
+        plugin_uri: str,
+        param_index: int,
+        *,
+        instance_id: Any = None,
+        plugin_position: Any = None,
+    ):
         """Subscribe client to parameter updates."""
-        key = (plugin_uri, param_index)
+        key = self._parameter_key(
+            plugin_uri,
+            param_index,
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+        )
         self._subscriptions[key].add(client_id)
 
         if client_id in self._clients:
@@ -371,12 +454,27 @@ class RealTimeParameterBridge:
             await self._send_to_client(client_id, ParameterUpdate(
                 plugin_uri=plugin_uri,
                 param_index=param_index,
-                value=self._param_cache[key]
+                value=self._param_cache[key],
+                instance_id=self._normalize_positive_int(instance_id),
+                plugin_position=self._normalize_non_negative_int(plugin_position),
             ))
 
-    async def _unsubscribe_param(self, client_id: str, plugin_uri: str, param_index: int):
+    async def _unsubscribe_param(
+        self,
+        client_id: str,
+        plugin_uri: str,
+        param_index: int,
+        *,
+        instance_id: Any = None,
+        plugin_position: Any = None,
+    ):
         """Unsubscribe client from parameter updates."""
-        key = (plugin_uri, param_index)
+        key = self._parameter_key(
+            plugin_uri,
+            param_index,
+            instance_id=instance_id,
+            plugin_position=plugin_position,
+        )
         self._subscriptions[key].discard(client_id)
 
         if client_id in self._clients:
@@ -395,7 +493,12 @@ class RealTimeParameterBridge:
         self._stats['updates_received'] += 1
 
         # Update cache
-        key = (update.plugin_uri, update.param_index)
+        key = self._parameter_key(
+            update.plugin_uri,
+            update.param_index,
+            instance_id=update.instance_id,
+            plugin_position=update.plugin_position,
+        )
         self._param_cache[key] = update.value
 
         # Queue for engine (non-blocking)
@@ -432,7 +535,13 @@ class RealTimeParameterBridge:
 
         try:
             if client.use_binary:
-                await client.websocket.send_bytes(update.to_binary())
+                if client.use_binary and update.instance_id is None and update.plugin_position is None:
+                    await client.websocket.send_bytes(update.to_binary())
+                else:
+                    await client.websocket.send_text(json.dumps({
+                        'type': 'param_update',
+                        **update.to_json()
+                    }))
             else:
                 await client.websocket.send_text(json.dumps({
                     'type': 'param_update',
@@ -448,7 +557,7 @@ class RealTimeParameterBridge:
 
         Coalesces updates to reduce engine calls while maintaining low latency.
         """
-        pending: Dict[Tuple[str, int], ParameterUpdate] = {}
+        pending: Dict[Tuple[Any, ...], ParameterUpdate] = {}
         last_flush = time.time()
 
         while self._running:
@@ -460,7 +569,12 @@ class RealTimeParameterBridge:
                         timeout=self._coalesce_interval_ms / 1000
                     )
                     # Coalesce: keep only latest value per parameter
-                    key = (update.plugin_uri, update.param_index)
+                    key = self._parameter_key(
+                        update.plugin_uri,
+                        update.param_index,
+                        instance_id=update.instance_id,
+                        plugin_position=update.plugin_position,
+                    )
                     if key in pending:
                         self._stats['coalesced_updates'] += 1
                     pending[key] = update
@@ -476,9 +590,15 @@ class RealTimeParameterBridge:
                 )
 
                 if should_flush and pending and self._engine_callback:
-                    for (plugin_uri, param_idx), update in pending.items():
+                    for update in pending.values():
                         try:
-                            self._engine_callback(plugin_uri, param_idx, update.value)
+                            self._engine_callback(
+                                update.plugin_uri,
+                                update.param_index,
+                                update.value,
+                                update.instance_id,
+                                update.plugin_position,
+                            )
                             self._stats['updates_to_engine'] += 1
                         except Exception as e:
                             logger.error(f"Engine callback error: {e}")
@@ -491,7 +611,15 @@ class RealTimeParameterBridge:
                 logger.error(f"Error in RT parameter processing loop: {e}")
                 await asyncio.sleep(0.001)
 
-    async def update_from_engine(self, plugin_uri: str, param_index: int, value: float):
+    async def update_from_engine(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        value: float,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ):
         """
         Called by engine when parameter changes internally.
 
@@ -501,11 +629,18 @@ class RealTimeParameterBridge:
             plugin_uri=plugin_uri,
             param_index=param_index,
             value=value,
+            instance_id=self._normalize_positive_int(instance_id),
+            plugin_position=self._normalize_non_negative_int(plugin_position),
             source=ParameterSource.INTERNAL
         )
 
         # Update cache
-        key = (plugin_uri, param_index)
+        key = self._parameter_key(
+            plugin_uri,
+            param_index,
+            instance_id=update.instance_id,
+            plugin_position=update.plugin_position,
+        )
         self._param_cache[key] = value
 
         # Broadcast to all subscribers
@@ -513,33 +648,82 @@ class RealTimeParameterBridge:
         for client_id in subscribers:
             await self._send_to_client(client_id, update)
 
-    async def update_from_midi(self, plugin_uri: str, param_index: int, value: float):
+    async def update_from_midi(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        value: float,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ):
         """Called when MIDI controller changes a parameter."""
         update = ParameterUpdate(
             plugin_uri=plugin_uri,
             param_index=param_index,
             value=value,
+            instance_id=self._normalize_positive_int(instance_id),
+            plugin_position=self._normalize_non_negative_int(plugin_position),
             source=ParameterSource.MIDI
         )
         await self._process_update(update, source_client=None)
 
-    async def update_from_automation(self, plugin_uri: str, param_index: int, value: float):
+    async def update_from_automation(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        value: float,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ):
         """Called when automation (LFO, envelope) changes a parameter."""
         update = ParameterUpdate(
             plugin_uri=plugin_uri,
             param_index=param_index,
             value=value,
+            instance_id=self._normalize_positive_int(instance_id),
+            plugin_position=self._normalize_non_negative_int(plugin_position),
             source=ParameterSource.AUTOMATION
         )
         await self._process_update(update, source_client=None)
 
-    def get_cached_value(self, plugin_uri: str, param_index: int) -> Optional[float]:
+    def get_cached_value(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> Optional[float]:
         """Get current cached value for a parameter."""
-        return self._param_cache.get((plugin_uri, param_index))
+        return self._param_cache.get(
+            self._parameter_key(
+                plugin_uri,
+                param_index,
+                instance_id=instance_id,
+                plugin_position=plugin_position,
+            )
+        )
 
-    def set_cached_value(self, plugin_uri: str, param_index: int, value: float):
+    def set_cached_value(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        value: float,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ):
         """Set cached value without triggering updates (for initialization)."""
-        self._param_cache[(plugin_uri, param_index)] = value
+        self._param_cache[
+            self._parameter_key(
+                plugin_uri,
+                param_index,
+                instance_id=instance_id,
+                plugin_position=plugin_position,
+            )
+        ] = value
 
     def get_stats(self) -> Dict[str, Any]:
         """Get bridge statistics."""

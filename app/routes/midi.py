@@ -119,7 +119,13 @@ try:
         return {"mappings": mappings, "count": len(mappings)}
 
     @router.post("/mappings")
-    async def add_mapping(channel: int, cc: int, target_uri: str, param_index: int):
+    async def add_mapping(
+        channel: int,
+        cc: int,
+        target_uri: str,
+        param_index: int,
+        plugin_position: Optional[int] = None,
+    ):
         """Add MIDI CC to parameter mapping.
         
         Query Parameters:
@@ -127,19 +133,38 @@ try:
             cc: MIDI CC number 0-127
             target_uri: Plugin URI string
             param_index: Parameter index >= 0
+            plugin_position: Optional duplicate-safe chain position
         """
-        success = await midi_service.add_cc_mapping(channel, cc, target_uri, param_index)
+        success = await midi_service.add_cc_mapping(
+            channel,
+            cc,
+            target_uri,
+            param_index,
+            plugin_position=plugin_position,
+        )
         if not success:
             raise HTTPException(status_code=400, detail="Invalid MIDI parameters: channel must be 1-16, CC must be 0-127, param_index >= 0")
-        return {"status": "mapped", "channel": channel, "cc": cc, "target": target_uri, "param": param_index}
+        return {
+            "status": "mapped",
+            "channel": channel,
+            "cc": cc,
+            "target": target_uri,
+            "plugin_position": plugin_position,
+            "param": param_index,
+        }
 
     @router.post("/learn")
-    async def midi_learn(target_uri: str, param_index: int):
+    async def midi_learn(target_uri: str, param_index: int, plugin_position: Optional[int] = None):
         """Enable MIDI learn mode for parameter."""
-        success = await midi_service.midi_learn(target_uri, param_index)
+        success = await midi_service.midi_learn(target_uri, param_index, plugin_position=plugin_position)
         if not success:
             raise HTTPException(status_code=400, detail="Learn failed")
-        return {"status": "learn_mode", "target": target_uri, "param": param_index}
+        return {
+            "status": "learn_mode",
+            "target": target_uri,
+            "plugin_position": plugin_position,
+            "param": param_index,
+        }
 
     @router.delete("/mappings/{mapping_id}")
     async def delete_mapping(mapping_id: int):

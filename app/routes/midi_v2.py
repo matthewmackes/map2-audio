@@ -52,6 +52,7 @@ class MappingCreateRequest(BaseModel):
     cc: int = Field(..., ge=0, le=127, description="MIDI CC number 0-127")
     chain_id: Optional[int] = Field(None, description="Chain ID (null=global, int=per-chain)")
     target_plugin_uri: str = Field(..., description="Target plugin URI")
+    target_plugin_position: Optional[int] = Field(None, ge=0, description="Optional chain position for duplicate-safe instance targeting")
     target_param_index: int = Field(..., ge=0, description="Parameter index")
     target_param_symbol: str = Field("", description="Parameter symbol for name-based access")
     min_val: float = Field(0.0, description="Minimum parameter value")
@@ -69,6 +70,7 @@ class MappingUpdateRequest(BaseModel):
     channel: Optional[int] = Field(None, ge=0, le=16)
     cc: Optional[int] = Field(None, ge=0, le=127)
     chain_id: Optional[int] = None
+    target_plugin_position: Optional[int] = Field(None, ge=0)
     min_val: Optional[float] = None
     max_val: Optional[float] = None
     curve_type: Optional[str] = None
@@ -103,6 +105,7 @@ class LearnStartRequest(BaseModel):
     """Request body for starting MIDI learn mode."""
     chain_id: Optional[int] = Field(None, description="Chain ID (null=global, int=per-chain)")
     plugin_uri: str = Field(..., description="Target plugin URI")
+    plugin_position: Optional[int] = Field(None, ge=0, description="Optional chain position for duplicate-safe instance targeting")
     param_index: int = Field(..., ge=0, description="Parameter index")
     param_symbol: str = Field("", description="Parameter symbol")
     min_val: float = Field(0.0, description="Minimum value")
@@ -136,12 +139,13 @@ class GroupCreateRequest(BaseModel):
 async def list_mappings(
     chain_id: Optional[int] = Query(None, description="Filter by chain ID"),
     plugin_uri: Optional[str] = Query(None, description="Filter by plugin URI"),
+    plugin_position: Optional[int] = Query(None, ge=0, description="Filter duplicate plugin mappings by chain position"),
     enabled_only: bool = Query(False, description="Only return enabled mappings"),
 ):
     """List all MIDI CC mappings with optional filters."""
     async with get_session() as session:
         if plugin_uri:
-            mappings = await midi_service.get_mappings_for_plugin(plugin_uri, session)
+            mappings = await midi_service.get_mappings_for_plugin(plugin_uri, session, plugin_position=plugin_position)
         else:
             mappings = await midi_service.get_all_mappings(session, chain_id=chain_id)
 
@@ -173,6 +177,7 @@ async def create_mapping(request: MappingCreateRequest):
         cc=request.cc,
         chain_id=request.chain_id,
         target_plugin_uri=request.target_plugin_uri,
+        target_plugin_position=request.target_plugin_position,
         target_param_index=request.target_param_index,
         target_param_symbol=request.target_param_symbol,
         min_val=request.min_val,
@@ -336,6 +341,7 @@ async def start_learn(request: LearnStartRequest):
     success = await midi_service.start_learn(
         chain_id=request.chain_id,
         plugin_uri=request.plugin_uri,
+        plugin_position=request.plugin_position,
         param_index=request.param_index,
         param_symbol=request.param_symbol,
         min_val=request.min_val,
@@ -348,6 +354,7 @@ async def start_learn(request: LearnStartRequest):
         "target": {
             "chain_id": request.chain_id,
             "plugin_uri": request.plugin_uri,
+            "plugin_position": request.plugin_position,
             "parameter_index": request.param_index,
             "parameter_symbol": request.param_symbol,
             "min_value": request.min_val,
@@ -374,6 +381,7 @@ async def get_learn_status():
         normalized_target = {
             "chain_id": target.get("chain_id"),
             "plugin_uri": target.get("plugin_uri"),
+            "plugin_position": target.get("plugin_position"),
             "parameter_index": target.get("param_index"),
             "parameter_symbol": target.get("param_symbol"),
             "min_value": target.get("min_val"),

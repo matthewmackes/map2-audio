@@ -15,6 +15,7 @@ import io
 import json
 import logging
 import re
+import shlex
 import uuid
 import zipfile
 from pathlib import Path
@@ -174,6 +175,10 @@ class TesiraDeploymentRollbackRequest(BaseModel):
     layout_version: Optional[str] = Field(default=None, max_length=64)
 
 
+class TesiraRawCommandRequest(BaseModel):
+    command: str = Field(..., min_length=2, max_length=512)
+
+
 class TesiraDesignCreateRequest(BaseModel):
     design_id: Optional[str] = Field(default=None, max_length=128)
     name: str = Field(..., min_length=1, max_length=255)
@@ -255,6 +260,25 @@ def _get_design_workspace():
 
 def _get_design_compiler():
     return get_tesira_design_compiler()
+
+
+def _parse_ttp_command(command: str) -> tuple[str, str, str, List[str]]:
+    try:
+        parts = shlex.split(command.strip())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid command: {exc}")
+
+    if len(parts) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="TTP command must include at least an instance tag and service",
+        )
+
+    instance_tag = parts[0]
+    service = parts[1]
+    attribute = parts[2] if len(parts) > 2 else ""
+    args = parts[3:] if len(parts) > 3 else []
+    return instance_tag, service, attribute, args
 
 
 _SAGEVUE_DIRECT_DEPLOY_REMOVED = (
@@ -553,6 +577,32 @@ async def disconnect_device(device_id: str):
         return {"ok": True}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/devices/{device_id}/command", summary="Send a raw Tesira Text Protocol command")
+async def send_ttp_command(device_id: str, req: TesiraRawCommandRequest):
+    """
+    Send a raw TTP command to a connected Tesira device.
+
+    This endpoint exists so the dedicated `/tesira` route can expose the same
+    quick recovery/operator helper that previously lived only in the MIDI Hub
+    Tesira panel.
+    """
+    device = _get_device(device_id)
+    _require_connected(device)
+
+    instance_tag, service, attribute, args = _parse_ttp_command(req.command)
+    response = await device._client.send(instance_tag, service, attribute, *args)
+
+    return {
+        "ok": bool(response.ok),
+        "command": req.command.strip(),
+        "raw": response.raw,
+        "value": response.value,
+        "error_code": response.error_code,
+        "error_detail": response.error_detail,
+        "message": "Command succeeded" if response.ok else "Command failed",
+    }
 
 
 @router.get("/devices/{device_id}/faults", summary="Get device fault list")

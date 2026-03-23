@@ -466,6 +466,16 @@ export interface TesiraMutationResponse {
   message: string;
 }
 
+export interface TesiraRawCommandResponse {
+  ok: boolean;
+  command: string;
+  raw: string;
+  value: unknown;
+  error_code?: string | null;
+  error_detail?: string | null;
+  message: string;
+}
+
 export interface TesiraPTPEvent {
   device_id: string;
   state: string;

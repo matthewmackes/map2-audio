@@ -635,6 +635,7 @@ class CommandQueue(Singleton):
         channel = params.get("channel", 0)
         cc = params.get("cc")
         target_plugin_uri = params.get("target_plugin_uri")
+        target_plugin_position = params.get("target_plugin_position")
         target_param_index = params.get("target_param_index")
 
         if cc is None or not target_plugin_uri or target_param_index is None:
@@ -645,6 +646,7 @@ class CommandQueue(Singleton):
                 channel=channel,
                 cc=cc,
                 target_plugin_uri=target_plugin_uri,
+                target_plugin_position=target_plugin_position,
                 target_param_index=target_param_index,
                 min_val=params.get("min_val", 0.0),
                 max_val=params.get("max_val", 1.0),
@@ -681,6 +683,7 @@ class CommandQueue(Singleton):
                 "channel": mapping.channel,
                 "cc": mapping.cc,
                 "target_plugin_uri": mapping.target_plugin_uri,
+                "target_plugin_position": mapping.target_plugin_position,
                 "target_param_index": mapping.target_param_index,
                 "min_val": mapping.min_val,
                 "max_val": mapping.max_val,

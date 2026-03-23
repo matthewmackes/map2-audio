@@ -34,6 +34,7 @@ import type {
   TesiraPTPStatus,
   TesiraLayoutArtifact,
   TesiraLayoutListResponse,
+  TesiraRawCommandResponse,
   TesiraSageVueStatus,
   TesiraStreamInfo,
   PresetInterlockRule,
@@ -246,6 +247,15 @@ export function useSetMute() {
     mutationFn: ({ deviceId, tag, channel, muted }: {
       deviceId: string; tag: string; channel: number; muted: boolean
     }) => tesiraApi.setMute(deviceId, tag, channel, muted),
+  })
+}
+
+export function useSendTesiraCommand() {
+  return useMutation<TesiraRawCommandResponse, Error, {
+    deviceId: string;
+    command: string;
+  }>({
+    mutationFn: ({ deviceId, command }) => tesiraApi.sendCommand(deviceId, command),
   })
 }
 

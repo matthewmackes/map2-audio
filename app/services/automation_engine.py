@@ -143,6 +143,7 @@ class AutomationLaneState:
     """Full automation lane with modulation configuration."""
     parameter_id: str  # plugin_uri:param_index
     plugin_uri: str = ""
+    plugin_position: Optional[int] = None
     param_index: int = 0
     param_name: str = ""
 
@@ -220,7 +221,7 @@ class AutomationEngine:
         self._sidechain_buffer: Optional[np.ndarray] = None
 
         # Parameter callback
-        self._parameter_callback: Optional[Callable[[str, int, float], Awaitable[None]]] = None
+        self._parameter_callback: Optional[Callable[..., Awaitable[None]]] = None
 
         # Processing task
         self._process_task: Optional[asyncio.Task] = None
@@ -231,7 +232,58 @@ class AutomationEngine:
 
         logger.info(f"Automation engine initialized (SR: {sample_rate}, buffer: {buffer_size})")
 
-    def set_parameter_callback(self, callback: Callable[[str, int, float], Awaitable[None]]) -> None:
+    @staticmethod
+    def build_parameter_id(plugin_uri: str, param_index: int, plugin_position: Optional[int] = None) -> str:
+        """Build a duplicate-safe automation target identifier."""
+        base_id = f"{plugin_uri}:{param_index}"
+        if isinstance(plugin_position, int) and plugin_position >= 0:
+            return f"{base_id}@{plugin_position}"
+        return base_id
+
+    @staticmethod
+    def parse_parameter_id(parameter_id: str) -> Tuple[str, int, Optional[int]]:
+        """Parse a duplicate-safe automation target identifier."""
+        raw = str(parameter_id or "")
+        plugin_position: Optional[int] = None
+        base = raw
+        if "@" in raw:
+            candidate_base, _, candidate_position = raw.rpartition("@")
+            try:
+                parsed_position = int(candidate_position)
+            except (TypeError, ValueError):
+                parsed_position = None
+            if parsed_position is not None and parsed_position >= 0:
+                base = candidate_base
+                plugin_position = parsed_position
+
+        plugin_uri, separator, raw_index = base.rpartition(":")
+        if not separator:
+            raise ValueError(f"Invalid automation parameter_id: {parameter_id}")
+        return plugin_uri, int(raw_index), plugin_position
+
+    async def _dispatch_parameter_callback(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        value: float,
+        plugin_position: Optional[int] = None,
+        instance_id: Optional[int] = None,
+    ) -> None:
+        """Call the configured parameter callback with duplicate-safe identity when supported."""
+        if not self._parameter_callback:
+            return
+        try:
+            await self._parameter_callback(
+                plugin_uri,
+                param_index,
+                value,
+                plugin_position,
+                instance_id,
+            )
+        except TypeError:
+            await self._parameter_callback(plugin_uri, param_index, value)
+
+    def set_parameter_callback(self, callback: Callable[..., Awaitable[None]]) -> None:
         """Set callback for parameter value changes."""
         self._parameter_callback = callback
 
@@ -299,12 +351,12 @@ class AutomationEngine:
                     lane.last_update_time = self.current_time
 
                     # Send parameter update
-                    if self._parameter_callback:
-                        await self._parameter_callback(
-                            lane.plugin_uri,
-                            lane.param_index,
-                            new_value
-                        )
+                    await self._dispatch_parameter_callback(
+                        lane.plugin_uri,
+                        lane.param_index,
+                        new_value,
+                        plugin_position=lane.plugin_position,
+                    )
 
             except Exception as e:
                 logger.error(f"Error processing lane {lane.parameter_id}: {e}")
@@ -525,11 +577,12 @@ class AutomationEngine:
         self,
         plugin_uri: str,
         param_index: int,
+        plugin_position: Optional[int] = None,
         param_name: str = "",
         modulation_source: ModulationSource = ModulationSource.TIMELINE,
     ) -> AutomationLaneState:
         """Add new automation lane."""
-        parameter_id = f"{plugin_uri}:{param_index}"
+        parameter_id = self.build_parameter_id(plugin_uri, param_index, plugin_position)
 
         with self._lock:
             if parameter_id in self.lanes:
@@ -538,6 +591,7 @@ class AutomationEngine:
             lane = AutomationLaneState(
                 parameter_id=parameter_id,
                 plugin_uri=plugin_uri,
+                plugin_position=plugin_position,
                 param_index=param_index,
                 param_name=param_name or f"Param {param_index}",
                 modulation_source=modulation_source,
@@ -564,6 +618,100 @@ class AutomationEngine:
     def get_all_automated_parameters(self) -> List[str]:
         """Get list of all automated parameter IDs."""
         return list(self.lanes.keys())
+
+    def add_automation_point(
+        self,
+        parameter_id: str,
+        time: float,
+        value: float,
+        curve: CurveType = CurveType.LINEAR,
+    ) -> bool:
+        """Compatibility helper for route-driven point insertion."""
+        with self._lock:
+            lane = self.lanes.get(parameter_id)
+            if not lane:
+                return False
+            lane.add_point(time, value, curve)
+            return True
+
+    def remove_automation_point(self, parameter_id: str, time: float) -> bool:
+        """Compatibility helper for route-driven point removal."""
+        with self._lock:
+            lane = self.lanes.get(parameter_id)
+            if not lane:
+                return False
+            return lane.remove_point(time)
+
+    def export_automation(self, parameter_id: str) -> Optional[Dict[str, Any]]:
+        """Export a single automation lane as a JSON-serializable payload."""
+        lane = self.get_lane(parameter_id)
+        if not lane:
+            return None
+        return {
+            "parameter_id": lane.parameter_id,
+            "plugin_uri": lane.plugin_uri,
+            "plugin_position": lane.plugin_position,
+            "param_index": lane.param_index,
+            "param_name": lane.param_name,
+            "enabled": lane.enabled,
+            "modulation_source": lane.modulation_source.value,
+            "points": [
+                {"time": point.time, "value": point.value, "curve": point.curve.value}
+                for point in lane.points
+            ],
+            "loop_enabled": lane.loop_enabled,
+            "loop_start": lane.loop_start,
+            "loop_end": lane.loop_end,
+        }
+
+    def get_parameter_value(self, parameter_id: str, time: Optional[float] = None) -> Optional[float]:
+        """Get the value a lane would produce at a given time."""
+        lane = self.get_lane(parameter_id)
+        if not lane:
+            return None
+        sample_time = self.current_time if time is None else max(0.0, float(time))
+        return self._calculate_lane_value(lane, sample_time)
+
+    def import_automation(self, data: Dict[str, Any]) -> bool:
+        """Import or replace a single automation lane from JSON-serializable data."""
+        if not isinstance(data, dict):
+            return False
+        parameter_id = str(data.get("parameter_id") or "")
+        if not parameter_id:
+            plugin_uri = str(data.get("plugin_uri") or "")
+            param_index = int(data.get("param_index") or 0)
+            plugin_position = data.get("plugin_position")
+            parameter_id = self.build_parameter_id(plugin_uri, param_index, plugin_position)
+        plugin_uri, param_index, plugin_position = self.parse_parameter_id(parameter_id)
+
+        modulation_raw = data.get("modulation_source", ModulationSource.TIMELINE.value)
+        try:
+            modulation_source = ModulationSource(modulation_raw)
+        except ValueError:
+            modulation_source = ModulationSource.TIMELINE
+
+        lane = self.add_lane(
+            plugin_uri=plugin_uri,
+            param_index=param_index,
+            plugin_position=plugin_position,
+            param_name=str(data.get("param_name") or ""),
+            modulation_source=modulation_source,
+        )
+        lane.enabled = bool(data.get("enabled", True))
+        lane.loop_enabled = bool(data.get("loop_enabled", False))
+        lane.loop_start = float(data.get("loop_start", 0.0))
+        lane.loop_end = float(data.get("loop_end", 4.0))
+        lane.points.clear()
+        for point in data.get("points", []):
+            try:
+                lane.add_point(
+                    float(point["time"]),
+                    float(point["value"]),
+                    CurveType(point.get("curve", CurveType.LINEAR.value)),
+                )
+            except (KeyError, TypeError, ValueError):
+                continue
+        return True
 
     def configure_lfo(
         self,
@@ -608,6 +756,16 @@ class AutomationEngine:
             logger.info(f"Configured LFO for {parameter_id}: {rate_hz}Hz {waveform}")
             return True
 
+    def remove_lfo(self, parameter_id: str) -> bool:
+        """Disable LFO modulation and fall back to timeline mode."""
+        with self._lock:
+            lane = self.lanes.get(parameter_id)
+            if not lane:
+                return False
+            lane.modulation_source = ModulationSource.TIMELINE
+            lane.lfo = LFOState()
+            return True
+
     def configure_envelope_follower(
         self,
         parameter_id: str,
@@ -639,6 +797,16 @@ class AutomationEngine:
                 f"Configured envelope follower for {parameter_id}: "
                 f"A={attack_ms}ms R={release_ms}ms"
             )
+            return True
+
+    def remove_envelope_follower(self, parameter_id: str) -> bool:
+        """Disable envelope follower modulation and fall back to timeline mode."""
+        with self._lock:
+            lane = self.lanes.get(parameter_id)
+            if not lane:
+                return False
+            lane.modulation_source = ModulationSource.TIMELINE
+            lane.envelope = EnvelopeFollowerState()
             return True
 
     # ==========================================================================
@@ -691,6 +859,7 @@ class AutomationEngine:
                 db_lane = AutomationLaneModel(
                     parameter_id=lane.parameter_id,
                     plugin_uri=lane.plugin_uri,
+                    plugin_position=lane.plugin_position,
                     param_index=lane.param_index,
                     param_name=lane.param_name,
                     points=json.dumps([
@@ -736,8 +905,14 @@ class AutomationEngine:
 
                 for db_lane in db_lanes:
                     lane = AutomationLaneState(
-                        parameter_id=db_lane.parameter_id,
+                        parameter_id=db_lane.parameter_id
+                        or self.build_parameter_id(
+                            db_lane.plugin_uri,
+                            db_lane.param_index,
+                            db_lane.plugin_position,
+                        ),
                         plugin_uri=db_lane.plugin_uri,
+                        plugin_position=db_lane.plugin_position,
                         param_index=db_lane.param_index,
                         param_name=db_lane.param_name or "",
                         enabled=db_lane.enabled,
@@ -794,6 +969,7 @@ class AutomationEngine:
                 {
                     "parameter_id": lane.parameter_id,
                     "plugin_uri": lane.plugin_uri,
+                    "plugin_position": lane.plugin_position,
                     "param_index": lane.param_index,
                     "param_name": lane.param_name,
                     "enabled": lane.enabled,

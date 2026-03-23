@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { NetworkTimeProtocol, Search } from '@carbon/icons-react'
 import { Box, Typography, Chip, Tooltip, Button } from '@mui/material'
+import { Link as RouterLink } from 'react-router-dom'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useTesiraDevices, useDiscoveryStatus } from '../hooks/useTesiraApi'
 import { DiscoveryDialog } from './DiscoveryDialog'
@@ -39,6 +40,22 @@ export function TesiraTopBar() {
         <Box sx={{ flex: 1 }} />
 
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Button
+            size="small"
+            component={RouterLink}
+            to="/tesira"
+            variant="contained"
+            sx={{
+              fontSize: 11,
+              py: 0.25,
+              px: 1,
+              bgcolor: BIAMP_RED,
+              '&:hover': { bgcolor: '#c01530' },
+            }}
+          >
+            Onboarding wizard
+          </Button>
+
           <Chip
             label={`${connectedCount}/${totalCount} online`}
             size="small"

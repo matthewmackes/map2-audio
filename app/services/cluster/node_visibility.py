@@ -177,6 +177,11 @@ class VisibleRemoteNode:
     visibility_reason: str = ""
     routing_ready: bool = False
     avb_enabled: bool = True
+    trust_state: Optional[str] = None
+    adoption_state: Optional[str] = None
+    activation_state: Optional[str] = None
+    readiness_status: Optional[str] = None
+    adoption_candidate_id: Optional[str] = None
 
     def apply_host(self, host: Optional[str], port: Optional[int] = None) -> None:
         normalized_host = _normalize_text(host)
@@ -186,6 +191,16 @@ class VisibleRemoteNode:
             self.port = port
         if normalized_host and normalized_host not in self.addresses:
             self.addresses.append(normalized_host)
+
+    def recompute_state(self) -> None:
+        if not self.trust_state:
+            self.trust_state = "trusted" if self.registered else "unknown"
+        if not self.adoption_state:
+            self.adoption_state = "ready" if self.registered else "candidate"
+        if not self.activation_state:
+            self.activation_state = "active" if self.registered and self.visible else "standby"
+        base_routing_ready = bool(self.registered and self.visible and self.api_url and self.avb_enabled)
+        self.routing_ready = bool(base_routing_ready and self.activation_state == "active")
 
     def finalize(self) -> None:
         if self.host and not self.api_url:
@@ -214,8 +229,8 @@ class VisibleRemoteNode:
             self.is_online = self.discovered_via_mdns or bool(self.heartbeat_online)
 
         self.visible = self.visibility_state != "managed-offline"
-        self.routing_ready = bool(self.registered and self.visible and self.api_url and self.avb_enabled)
         self.visibility_reason = _build_visibility_reason(self)
+        self.recompute_state()
 
     def to_discovered_dict(self) -> Dict[str, Any]:
         payload = {
@@ -247,6 +262,11 @@ class VisibleRemoteNode:
             "registration_required": self.registration_required,
             "routing_ready": self.routing_ready,
             "visibility_reason": self.visibility_reason,
+            "trust_state": self.trust_state,
+            "adoption_state": self.adoption_state,
+            "activation_state": self.activation_state,
+            "readiness_status": self.readiness_status,
+            "adoption_candidate_id": self.adoption_candidate_id,
         }
         return payload
 
@@ -483,6 +503,13 @@ def get_visible_remote_nodes() -> tuple[str, Dict[str, VisibleRemoteNode]]:
             node.addresses.append(node.host)
         node.finalize()
         finalized_nodes[node_id] = node
+
+    try:
+        from app.services.cluster.adoption import get_adoption_service
+
+        get_adoption_service().apply_visibility_overlay(finalized_nodes)
+    except Exception:
+        pass
 
     return local_node_id, finalized_nodes
 

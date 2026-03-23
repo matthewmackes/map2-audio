@@ -91,6 +91,15 @@ class PreviewSnapshotRequest(BaseModel):
     snapshot_data: SnapshotData
 
 
+def _snapshot_plugin_position(plugin: Dict[str, Any]) -> Optional[int]:
+    raw_position = plugin.get("plugin_position", plugin.get("position"))
+    try:
+        position = int(raw_position)
+    except (TypeError, ValueError):
+        return None
+    return position if position >= 0 else None
+
+
 async def _enrich_snapshot_data(snapshot_data: Dict[str, Any]) -> Dict[str, Any]:
     """Refresh plugin parameter snapshots from the running engine when available."""
     from app.services.juce_engine_service import get_audio_engine
@@ -105,6 +114,7 @@ async def _enrich_snapshot_data(snapshot_data: Dict[str, Any]) -> Dict[str, Any]
             plugin_uri = plugin.get("uri", "")
             if not plugin_uri:
                 continue
+            plugin_position = _snapshot_plugin_position(plugin)
 
             plugin_info = next(
                 (item for item in _discovered_plugins if item["uri"] == plugin_uri),
@@ -119,7 +129,11 @@ async def _enrich_snapshot_data(snapshot_data: Dict[str, Any]) -> Dict[str, Any]
                 if not symbol:
                     continue
                 try:
-                    value = await engine.get_parameter(plugin_uri, symbol)
+                    value = await engine.get_parameter(
+                        plugin_uri,
+                        symbol,
+                        plugin_position=plugin_position,
+                    )
                     param_values[str(idx)] = value
                 except Exception as exc:
                     logger.debug("Could not get param %s for %s: %s", symbol, plugin_uri, exc)
@@ -198,10 +212,11 @@ async def _apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int,
             plugin_uri = plugin.get("uri", "")
             if not plugin_uri:
                 continue
+            plugin_position = _snapshot_plugin_position(plugin)
 
             bypass = plugin.get("bypass", False)
             try:
-                instance_id = engine._get_instance_id_for_uri(plugin_uri)
+                instance_id = engine._get_instance_id_for_uri(plugin_uri, plugin_position)
                 if instance_id is not None:
                     await engine.set_bypass(instance_id, bypass)
                     bypass_applied += 1
@@ -226,7 +241,12 @@ async def _apply_snapshot_to_engine(snapshot_data: Dict[str, Any]) -> tuple[int,
                     if idx < len(param_list):
                         symbol = param_list[idx].get("symbol", "")
                         if symbol:
-                            await engine.set_parameter(plugin_uri, symbol, value)
+                            await engine.set_parameter(
+                                plugin_uri,
+                                symbol,
+                                value,
+                                plugin_position=plugin_position,
+                            )
                             params_applied += 1
                 except (ValueError, IndexError, Exception) as exc:
                     logger.debug("Could not set param %s for %s: %s", idx_str, plugin_uri, exc)

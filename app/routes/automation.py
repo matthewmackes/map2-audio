@@ -23,7 +23,11 @@ class AutomationPoint(BaseModel):
 
 class AutomationLaneCreate(BaseModel):
     """Create automation lane request"""
-    parameter_id: str
+    parameter_id: Optional[str] = None
+    plugin_uri: Optional[str] = None
+    plugin_position: Optional[int] = None
+    param_index: Optional[int] = None
+    param_name: str = ""
     points: List[AutomationPoint] = []
     enabled: bool = True
     modulation_source: str = "timeline"
@@ -76,37 +80,48 @@ async def create_lane(request: AutomationLaneCreate) -> Dict[str, str]:
         Success message
     """
     try:
-        # Create lane
-        from app.services.automation_engine import AutomationLane, CurveType, ModulationSource
+        if request.parameter_id:
+            plugin_uri, param_index, plugin_position = automation_engine.parse_parameter_id(request.parameter_id)
+            parameter_id = request.parameter_id
+        else:
+            if request.plugin_uri is None or request.param_index is None:
+                raise ValueError("parameter_id or plugin_uri + param_index are required")
+            plugin_uri = request.plugin_uri
+            param_index = request.param_index
+            plugin_position = request.plugin_position
+            parameter_id = automation_engine.build_parameter_id(
+                plugin_uri,
+                param_index,
+                plugin_position,
+            )
 
-        lane = AutomationLane(
-            parameter_id=request.parameter_id,
-            enabled=request.enabled,
+        lane = automation_engine.add_lane(
+            plugin_uri=plugin_uri,
+            param_index=param_index,
+            plugin_position=plugin_position,
+            param_name=request.param_name,
             modulation_source=ModulationSource(request.modulation_source),
-            loop_start=request.loop_start,
-            loop_end=request.loop_end
         )
+        lane.enabled = request.enabled
+        lane.loop_enabled = request.loop_start is not None or request.loop_end is not None
+        lane.loop_start = request.loop_start or 0.0
+        lane.loop_end = request.loop_end or 4.0
+        lane.points.clear()
 
         # Add points
         for point in request.points:
-            lane.add_point(
-                time=point.time,
-                value=point.value,
-                curve=CurveType(point.curve)
-            )
-
-        automation_engine.add_lane(request.parameter_id, lane)
+            lane.add_point(time=point.time, value=point.value, curve=CurveType(point.curve))
 
         # Publish automation lane added event
         await event_publisher.publish(
             "automation",
             EventType.AUTOMATION_LANE_ADDED,
-            {"parameter_id": request.parameter_id, "points_count": len(request.points)}
+            {"parameter_id": parameter_id, "points_count": len(request.points)}
         )
 
         return {
             "status": "success",
-            "message": f"Created automation lane for {request.parameter_id}"
+            "message": f"Created automation lane for {parameter_id}"
         }
 
     except Exception as e:
@@ -695,5 +710,4 @@ async def remove_envelope(parameter_id: str) -> Dict[str, str]:
         "status": "success",
         "message": f"Envelope follower removed from {parameter_id}"
     }
-
 

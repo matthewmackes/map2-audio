@@ -6,7 +6,7 @@ Support for simultaneous chain processing, blending, and A/B comparison
 try:
     from fastapi import APIRouter, HTTPException, Query
     from pydantic import BaseModel
-    from typing import List, Optional, Dict
+    from typing import Any, List, Optional, Dict
     from app.services.chain_service import ChainService
     from app.services.event_publisher import event_publisher, EventType
 
@@ -24,6 +24,42 @@ try:
         """Request to duplicate a chain"""
         name: str
         include_settings: bool = True
+
+    def _plugin_position(plugin: Dict[str, Any], fallback_index: int) -> Optional[int]:
+        """Extract a stable chain position for duplicate-safe plugin matching."""
+        for key in ("plugin_position", "position", "chain_position", "slot_index", "order", "index"):
+            raw_position = plugin.get(key)
+            try:
+                position = int(raw_position)
+            except (TypeError, ValueError):
+                continue
+            if position >= 0:
+                return position
+        return fallback_index if fallback_index >= 0 else None
+
+    def _plugin_identity(plugin: Dict[str, Any], fallback_index: int) -> Optional[tuple[str, int]]:
+        uri = plugin.get("uri")
+        if not isinstance(uri, str) or not uri:
+            return None
+        position = _plugin_position(plugin, fallback_index)
+        if position is None:
+            return None
+        return (uri, position)
+
+    def _plugin_ref_payload(identity: tuple[str, int]) -> Dict[str, Any]:
+        uri, plugin_position = identity
+        return {"uri": uri, "plugin_position": plugin_position}
+
+    def _plugins_by_identity(chain: Dict[str, Any]) -> Dict[tuple[str, int], Dict[str, Any]]:
+        plugins: Dict[tuple[str, int], Dict[str, Any]] = {}
+        for index, plugin in enumerate(chain.get("plugins", [])):
+            if not isinstance(plugin, dict):
+                continue
+            identity = _plugin_identity(plugin, index)
+            if identity is None:
+                continue
+            plugins[identity] = plugin
+        return plugins
 
     @router.post("/{chain_id}/duplicate")
     async def duplicate_chain(chain_id: int, request: DuplicateChainRequest):
@@ -137,12 +173,12 @@ try:
                 raise HTTPException(status_code=404, detail="One or both chains not found")
             
             # Calculate differences
-            plugins_a = {p["uri"]: p for p in chain_a.get("plugins", [])}
-            plugins_b = {p["uri"]: p for p in chain_b.get("plugins", [])}
+            plugins_a = _plugins_by_identity(chain_a)
+            plugins_b = _plugins_by_identity(chain_b)
             
-            only_in_a = [p for uri, p in plugins_a.items() if uri not in plugins_b]
-            only_in_b = [p for uri, p in plugins_b.items() if uri not in plugins_a]
-            common = [uri for uri in plugins_a if uri in plugins_b]
+            only_in_a = [p for identity, p in plugins_a.items() if identity not in plugins_b]
+            only_in_b = [p for identity, p in plugins_b.items() if identity not in plugins_a]
+            common = [identity for identity in plugins_a if identity in plugins_b]
             
             return {
                 "chain_a": chain_a,
@@ -151,7 +187,8 @@ try:
                     "only_in_a": only_in_a,
                     "only_in_b": only_in_b,
                     "common_plugins": len(common),
-                    "plugin_count_diff": len(plugins_a) - len(plugins_b),
+                    "common_plugin_refs": [_plugin_ref_payload(identity) for identity in common],
+                    "plugin_count_diff": len(chain_a.get("plugins", [])) - len(chain_b.get("plugins", [])),
                 },
                 "estimated_latency_diff": abs(
                     sum(p.get("latency_samples", 0) for p in chain_a["plugins"]) -
@@ -187,15 +224,19 @@ try:
                 raise HTTPException(status_code=404, detail="Source or target chain not found")
             
             # Find common plugins between source and target chains
-            source_plugins = {p["uri"]: p for p in source.get("plugins", [])}
-            target_plugins = {p["uri"]: p for p in target.get("plugins", [])}
-            common_uris = set(source_plugins.keys()) & set(target_plugins.keys())
+            source_plugins = _plugins_by_identity(source)
+            target_plugins = _plugins_by_identity(target)
+            common_identities = [
+                identity for identity in source_plugins
+                if identity in target_plugins
+            ]
             
             # Interpolate parameters for common plugins
             morphed_plugins = []
-            for uri in common_uris:
-                src_plugin = source_plugins[uri]
-                tgt_plugin = target_plugins[uri]
+            for identity in common_identities:
+                uri, plugin_position = identity
+                src_plugin = source_plugins[identity]
+                tgt_plugin = target_plugins[identity]
                 
                 # Get parameters from both plugins
                 src_params = {p["symbol"]: p for p in src_plugin.get("parameters", [])}
@@ -222,6 +263,7 @@ try:
                 
                 morphed_plugins.append({
                     "uri": uri,
+                    "plugin_position": plugin_position,
                     "name": src_plugin.get("name", uri),
                     "parameters": interpolated_params,
                     "param_count": len(interpolated_params),
@@ -233,11 +275,20 @@ try:
                 "target_chain_id": target_chain_id,
                 "progress": progress,
                 "status": "morphed",
-                "common_plugins": len(common_uris),
+                "common_plugins": len(common_identities),
+                "common_plugin_refs": [_plugin_ref_payload(identity) for identity in common_identities],
                 "morphed_plugins": morphed_plugins,
                 "total_interpolated_params": sum(p["param_count"] for p in morphed_plugins),
-                "source_only_plugins": list(set(source_plugins.keys()) - common_uris),
-                "target_only_plugins": list(set(target_plugins.keys()) - common_uris),
+                "source_only_plugins": [
+                    _plugin_ref_payload(identity)
+                    for identity in source_plugins
+                    if identity not in target_plugins
+                ],
+                "target_only_plugins": [
+                    _plugin_ref_payload(identity)
+                    for identity in target_plugins
+                    if identity not in source_plugins
+                ],
             }
             
             # Apply morphed parameters to active chain if source is active
@@ -250,7 +301,8 @@ try:
                             await engine.set_parameter(
                                 plugin["uri"],
                                 param["symbol"],
-                                param["morphed_value"]
+                                param["morphed_value"],
+                                plugin_position=plugin.get("plugin_position"),
                             )
                     morphed_state["applied_to_engine"] = True
             except Exception as e:

@@ -18,7 +18,14 @@ class MIDIMappingService:
         """Initialize MIDI mapping service with optional database session."""
         self.session = session
 
-    async def add_mapping(self, channel: int, cc: int, target_uri: str, param_index: int) -> Optional[Dict[str, Any]]:
+    async def add_mapping(
+        self,
+        channel: int,
+        cc: int,
+        target_uri: str,
+        param_index: int,
+        plugin_position: Optional[int] = None,
+    ) -> Optional[Dict[str, Any]]:
         """Add MIDI CC to parameter mapping.
         
         Args:
@@ -60,6 +67,7 @@ class MIDIMappingService:
             if existing_mapping:
                 # Update existing mapping
                 existing_mapping.target_plugin_uri = target_uri
+                existing_mapping.target_plugin_position = plugin_position
                 existing_mapping.target_param_index = param_index
                 await self.session.flush()
                 logger.info(f"Updated MIDI mapping: CH{channel} CC{cc} -> {target_uri}")
@@ -69,6 +77,7 @@ class MIDIMappingService:
                     channel=channel,
                     cc=cc,
                     target_plugin_uri=target_uri,
+                    target_plugin_position=plugin_position,
                     target_param_index=param_index
                 )
                 self.session.add(mapping)
@@ -81,6 +90,7 @@ class MIDIMappingService:
                 "channel": channel,
                 "cc": cc,
                 "target": target_uri,
+                "target_plugin_position": plugin_position,
                 "param": param_index
             }
         except Exception as e:
@@ -115,6 +125,7 @@ class MIDIMappingService:
                 "channel": mapping.channel,
                 "cc": mapping.cc,
                 "target": mapping.target_plugin_uri,
+                "target_plugin_position": mapping.target_plugin_position,
                 "param": mapping.target_param_index,
                 "min": mapping.min_val,
                 "max": mapping.max_val
@@ -144,6 +155,7 @@ class MIDIMappingService:
                     "channel": m.channel,
                     "cc": m.cc,
                     "target": m.target_plugin_uri,
+                    "target_plugin_position": m.target_plugin_position,
                     "param": m.target_param_index,
                     "min": m.min_val,
                     "max": m.max_val
@@ -218,6 +230,7 @@ class MIDIMappingService:
                 "channel": mapping.channel,
                 "cc": mapping.cc,
                 "target": mapping.target_plugin_uri,
+                "target_plugin_position": mapping.target_plugin_position,
                 "param": mapping.target_param_index,
                 "min": mapping.min_val,
                 "max": mapping.max_val

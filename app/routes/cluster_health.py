@@ -59,6 +59,11 @@ async def get_cluster_health():
                     "api_url": node.api_url,
                     "host": node.host,
                     "hostname": node.hostname,
+                    "trust_state": node.trust_state,
+                    "adoption_state": node.adoption_state,
+                    "activation_state": node.activation_state,
+                    "readiness_status": node.readiness_status,
+                    "adoption_candidate_id": node.adoption_candidate_id,
                     "discovered_via_mdns": node.discovered_via_mdns,
                     "discovered_via_peer_mdns": node.discovered_via_peer_mdns,
                     "discovered_via_cluster_mdns": node.discovered_via_cluster_mdns,
@@ -106,6 +111,11 @@ async def get_node_health(node_id: str):
             "api_url": visible.api_url if visible is not None else None,
             "host": visible.host if visible is not None else None,
             "hostname": visible.hostname if visible is not None else None,
+            "trust_state": visible.trust_state if visible is not None else None,
+            "adoption_state": visible.adoption_state if visible is not None else None,
+            "activation_state": visible.activation_state if visible is not None else None,
+            "readiness_status": visible.readiness_status if visible is not None else None,
+            "adoption_candidate_id": visible.adoption_candidate_id if visible is not None else None,
             "discovered_via_mdns": visible.discovered_via_mdns if visible is not None else False,
             "discovered_via_peer_mdns": visible.discovered_via_peer_mdns if visible is not None else False,
             "discovered_via_cluster_mdns": visible.discovered_via_cluster_mdns if visible is not None else False,
@@ -132,6 +142,11 @@ async def get_online_nodes():
                 "routing_ready": node.routing_ready,
                 "visibility_reason": node.visibility_reason,
                 "api_url": node.api_url,
+                "trust_state": node.trust_state,
+                "adoption_state": node.adoption_state,
+                "activation_state": node.activation_state,
+                "readiness_status": node.readiness_status,
+                "adoption_candidate_id": node.adoption_candidate_id,
             }
             for node_id, node in visible_nodes.items()
             if node.is_online
@@ -158,6 +173,11 @@ async def get_offline_nodes():
                 "routing_ready": node.routing_ready,
                 "visibility_reason": node.visibility_reason,
                 "api_url": node.api_url,
+                "trust_state": node.trust_state,
+                "adoption_state": node.adoption_state,
+                "activation_state": node.activation_state,
+                "readiness_status": node.readiness_status,
+                "adoption_candidate_id": node.adoption_candidate_id,
             }
             for node_id, node in visible_nodes.items()
             if not node.is_online

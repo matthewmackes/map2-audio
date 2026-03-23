@@ -176,6 +176,7 @@ class MIDIMappingInfo(BaseModel):
     channel: int
     cc_number: int
     plugin_uri: str
+    plugin_position: Optional[int] = None
     parameter_index: int
     parameter_name: Optional[str] = None
     min_value: float = 0.0

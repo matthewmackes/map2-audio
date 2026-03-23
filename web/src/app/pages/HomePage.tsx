@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from '@carbon/icons-react'
-import { Button, ClickableTile, Column, Grid, Layer, SkeletonText, Tag, Tile } from '@carbon/react'
+import { Button, Checkbox, ClickableTile, Column, Grid, Layer, Select, SelectItem, SkeletonText, Tag, TextInput, Tile } from '@carbon/react'
 import {
   Map2BrandMark,
   MAP2_PLATFORM_VERSION,
@@ -102,6 +102,70 @@ interface ClusterDiscoveredResponse {
 
 interface DeploymentModeResponse {
   mode?: string
+}
+
+interface AdoptionReadinessSummary {
+  status?: string
+  blocking_count?: number
+  warning_count?: number
+  computed_at?: string | null
+}
+
+interface AdoptionCandidateResponse {
+  candidate_id?: string
+  remote_node_id?: string | null
+  node_id?: string | null
+  hostname?: string
+  display_name?: string | null
+  api_url?: string | null
+  trust_state?: string
+  adoption_state?: string
+  activation_state?: string
+  readiness?: AdoptionReadinessSummary | null
+  registered?: boolean
+  visible?: boolean
+  routing_ready?: boolean
+}
+
+interface AdoptionCandidatesResponse {
+  items?: AdoptionCandidateResponse[]
+}
+
+interface BootstrapTokenIssueResponse {
+  bootstrap_token?: string
+}
+
+interface CloneSourceResponse {
+  node_id?: string
+  hostname?: string
+  display_name?: string | null
+  role?: string | null
+  deployment_mode?: string | null
+  api_url?: string | null
+  is_local?: boolean
+}
+
+interface CloneSourceListResponse {
+  items?: CloneSourceResponse[]
+}
+
+interface ClonePreviewItemResponse {
+  key?: string
+  label?: string
+  value?: string
+}
+
+interface ClonePreviewGroupResponse {
+  id?: string
+  label?: string
+  description?: string
+  default_selected?: boolean
+  items?: ClonePreviewItemResponse[]
+}
+
+interface ClonePreviewResponse {
+  source?: CloneSourceResponse | null
+  groups?: ClonePreviewGroupResponse[]
 }
 
 const FEATURED_HOME_ROUTES = ['/platforms/overview', '/artifacts', '/juce-grid', '/midi-hub'] as const
@@ -358,6 +422,61 @@ function formatRoleLabel(role: string): string {
     .join(' ')
 }
 
+function adoptionTagType(state: string | null | undefined): 'green' | 'warm-gray' | 'red' | 'blue' | 'cool-gray' {
+  switch (resolveString(state)?.toLowerCase()) {
+    case 'ready':
+      return 'green'
+    case 'claimable':
+    case 'adopted':
+      return 'blue'
+    case 'blocked':
+    case 'orphaned':
+      return 'red'
+    case 'candidate':
+      return 'warm-gray'
+    default:
+      return 'cool-gray'
+  }
+}
+
+function formatAdoptionLabel(state: string | null | undefined): string {
+  return resolveString(state)
+    ?.replace(/_/g, ' ')
+    .split('-')
+    .flatMap((token) => token.split(' '))
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ') ?? 'Unknown'
+}
+
+function formatReadinessSummary(readiness: AdoptionReadinessSummary | null | undefined): string {
+  if (!readiness) return 'Readiness not checked'
+
+  const status = formatAdoptionLabel(readiness.status)
+  const blocking = typeof readiness.blocking_count === 'number' ? readiness.blocking_count : 0
+  const warnings = typeof readiness.warning_count === 'number' ? readiness.warning_count : 0
+
+  if (blocking > 0) {
+    return `${status} · ${blocking} blocking issue${blocking === 1 ? '' : 's'}`
+  }
+  if (warnings > 0) {
+    return `${status} · ${warnings} warning${warnings === 1 ? '' : 's'}`
+  }
+  return status
+}
+
+function needsAdoptionAction(candidate: AdoptionCandidateResponse): boolean {
+  const activationState = resolveString(candidate.activation_state)?.toLowerCase()
+  const adoptionState = resolveString(candidate.adoption_state)?.toLowerCase()
+  return !(activationState === 'active' && adoptionState === 'ready')
+}
+
+function canCloneCandidate(candidate: AdoptionCandidateResponse): boolean {
+  const nodeId = resolveString(candidate.node_id)
+  const activationState = resolveString(candidate.activation_state)?.toLowerCase()
+  const adoptionState = resolveString(candidate.adoption_state)?.toLowerCase()
+  return Boolean(nodeId && activationState !== 'active' && (adoptionState === 'adopted' || adoptionState === 'blocked'))
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function HomePage() {
@@ -365,8 +484,16 @@ export function HomePage() {
   const navigate = useNavigate()
 
   const [tiles, setTiles] = useState<ClusterTile[]>([])
+  const [adoptionCandidates, setAdoptionCandidates] = useState<AdoptionCandidateResponse[]>([])
   const [tilesLoading, setTilesLoading] = useState(true)
   const [tilesError, setTilesError] = useState<string | null>(null)
+  const [adoptionActionError, setAdoptionActionError] = useState<string | null>(null)
+  const [adoptionActionId, setAdoptionActionId] = useState<string | null>(null)
+  const [claimCodes, setClaimCodes] = useState<Record<string, string>>({})
+  const [cloneSourcesByNode, setCloneSourcesByNode] = useState<Record<string, CloneSourceResponse[]>>({})
+  const [clonePreviewByNode, setClonePreviewByNode] = useState<Record<string, ClonePreviewResponse>>({})
+  const [selectedCloneSourceByNode, setSelectedCloneSourceByNode] = useState<Record<string, string>>({})
+  const [selectedCloneGroupsByNode, setSelectedCloneGroupsByNode] = useState<Record<string, Record<string, boolean>>>({})
   const [clusterName, setClusterName] = useState('Local Node')
   const apiNodeId = viewedNodeId === localNode?.node_id ? null : viewedNodeId
 
@@ -376,13 +503,14 @@ export function HomePage() {
     setTilesLoading(true)
     setTilesError(null)
     try {
-      const [hostInfo, networkStatus, devices, peers, discovered, deploymentMode] = await Promise.all([
+      const [hostInfo, networkStatus, devices, peers, discovered, deploymentMode, adoption] = await Promise.all([
         fetchJsonOrNull<HostMachineInfoResponse>('/api/system/host-machine-info', apiNodeId),
         fetchJsonOrNull<NetworkStatusResponse>('/api/network/status', apiNodeId),
         fetchJsonOrNull<ClusterDevicesResponse>('/api/cluster/health/extended/devices', apiNodeId),
         fetchJsonOrNull<PeersResponse>('/api/peers', apiNodeId),
         fetchJsonOrNull<ClusterDiscoveredResponse>('/api/cluster/discovered', apiNodeId),
         fetchJsonOrNull<DeploymentModeResponse>('/api/deployment/mode', apiNodeId),
+        fetchJsonOrNull<AdoptionCandidatesResponse>('/api/adoption/candidates', apiNodeId),
       ])
 
       const discoveredNodes = Array.isArray(discovered?.nodes) ? discovered.nodes : []
@@ -427,6 +555,9 @@ export function HomePage() {
         null
 
       setClusterName(localHostname)
+      setAdoptionCandidates(
+        Array.isArray(adoption?.items) ? adoption.items.filter(needsAdoptionAction) : [],
+      )
 
       const tileList: ClusterTile[] = [
         {
@@ -536,6 +667,292 @@ export function HomePage() {
     return () => window.clearInterval(timer)
   }, [loadTiles])
 
+  const performAdoptionAction = useCallback(async (
+    actionId: string,
+    path: string,
+    payload: Record<string, unknown>,
+  ) => {
+    setAdoptionActionId(actionId)
+    setAdoptionActionError(null)
+    try {
+      const response = await fetch(scopedHomeApiPath(path, apiNodeId), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+      if (!response.ok) {
+        let detail = `Request failed with status ${response.status}`
+        try {
+          const body = await response.json() as { detail?: unknown; message?: unknown }
+          detail = resolveString(body.detail) ?? resolveString(body.message) ?? detail
+        } catch {
+          // Keep the fallback error.
+        }
+        throw new Error(detail)
+      }
+      await loadTiles()
+    } catch (error) {
+      setAdoptionActionError(error instanceof Error ? error.message : 'Adoption action failed')
+    } finally {
+      setAdoptionActionId(null)
+    }
+  }, [apiNodeId, loadTiles])
+
+  const handleClaimCodeChange = useCallback((candidateId: string, value: string) => {
+    setClaimCodes((current) => ({
+      ...current,
+      [candidateId]: value,
+    }))
+  }, [])
+
+  const handleClaimCandidate = useCallback(async (candidateId: string) => {
+    const pairingCode = resolveString(claimCodes[candidateId]) ?? ''
+    if (!pairingCode) {
+      setAdoptionActionError('Enter a pairing code before claiming a node.')
+      return
+    }
+    await performAdoptionAction(
+      `claim:${candidateId}`,
+      `/api/adoption/candidates/${encodeURIComponent(candidateId)}/claim`,
+      {
+        pairing_code: pairingCode,
+        requested_by: localNode?.node_id ?? null,
+      },
+    )
+    setClaimCodes((current) => ({
+      ...current,
+      [candidateId]: '',
+    }))
+  }, [claimCodes, localNode?.node_id, performAdoptionAction])
+
+  const handleTokenClaimCandidate = useCallback(async (candidate: AdoptionCandidateResponse) => {
+    const candidateId = resolveString(candidate.candidate_id)
+    if (!candidateId) return
+
+    setAdoptionActionId(`token-claim:${candidateId}`)
+    setAdoptionActionError(null)
+    try {
+      const issueResponse = await fetch(scopedHomeApiPath('/api/bootstrap/tokens/issue', apiNodeId), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target_node_id: resolveString(candidate.remote_node_id) ?? resolveString(candidate.node_id),
+          target_hostname: resolveString(candidate.hostname),
+          target_api_url: resolveString(candidate.api_url),
+        }),
+      })
+      if (!issueResponse.ok) {
+        throw new Error(`Token issue failed with status ${issueResponse.status}`)
+      }
+      const issuePayload = await issueResponse.json() as BootstrapTokenIssueResponse
+      const bootstrapToken = resolveString(issuePayload.bootstrap_token)
+      if (!bootstrapToken) {
+        throw new Error('Issued bootstrap token payload is missing the token value')
+      }
+
+      await performAdoptionAction(
+        `token-claim:${candidateId}`,
+        `/api/adoption/candidates/${encodeURIComponent(candidateId)}/claim`,
+        {
+          bootstrap_token: bootstrapToken,
+          requested_by: localNode?.node_id ?? null,
+        },
+      )
+    } catch (error) {
+      setAdoptionActionError(error instanceof Error ? error.message : 'Bootstrap token claim failed')
+      setAdoptionActionId(null)
+    }
+  }, [apiNodeId, localNode?.node_id, performAdoptionAction])
+
+  const handleAdoptCandidate = useCallback(async (candidate: AdoptionCandidateResponse) => {
+    const candidateId = resolveString(candidate.candidate_id)
+    if (!candidateId) return
+    await performAdoptionAction(
+      `adopt:${candidateId}`,
+      `/api/adoption/candidates/${encodeURIComponent(candidateId)}/adopt`,
+      {
+        display_name: resolveString(candidate.display_name) ?? resolveString(candidate.hostname),
+        role: 'AUDIO-NODE',
+        activation_mode: 'standby',
+      },
+    )
+  }, [performAdoptionAction])
+
+  const handlePromoteCandidate = useCallback(async (candidate: AdoptionCandidateResponse) => {
+    const nodeId = resolveString(candidate.node_id)
+    if (!nodeId) return
+    await performAdoptionAction(
+      `promote:${nodeId}`,
+      `/api/adoption/nodes/${encodeURIComponent(nodeId)}/promote`,
+      {
+        activation_scope: 'all',
+        requested_by: localNode?.node_id ?? null,
+      },
+    )
+  }, [localNode?.node_id, performAdoptionAction])
+
+  const loadCloneSources = useCallback(async (nodeId: string) => {
+    setAdoptionActionId(`clone-sources:${nodeId}`)
+    setAdoptionActionError(null)
+    try {
+      const response = await fetch(scopedHomeApiPath(`/api/adoption/nodes/${encodeURIComponent(nodeId)}/clone/sources`, apiNodeId))
+      if (!response.ok) {
+        throw new Error(`Clone source discovery failed with status ${response.status}`)
+      }
+      const payload = await response.json() as CloneSourceListResponse
+      const items = Array.isArray(payload.items) ? payload.items : []
+      setCloneSourcesByNode((current) => ({
+        ...current,
+        [nodeId]: items,
+      }))
+      setSelectedCloneSourceByNode((current) => {
+        if (current[nodeId] || items.length === 0) return current
+        return {
+          ...current,
+          [nodeId]: resolveString(items[0]?.node_id) ?? '',
+        }
+      })
+    } catch (error) {
+      setAdoptionActionError(error instanceof Error ? error.message : 'Failed to load clone sources')
+    } finally {
+      setAdoptionActionId(null)
+    }
+  }, [apiNodeId])
+
+  const handleCloneSourceChange = useCallback((nodeId: string, sourceNodeId: string) => {
+    setSelectedCloneSourceByNode((current) => ({
+      ...current,
+      [nodeId]: sourceNodeId,
+    }))
+    setClonePreviewByNode((current) => {
+      const next = { ...current }
+      delete next[nodeId]
+      return next
+    })
+    setSelectedCloneGroupsByNode((current) => {
+      const next = { ...current }
+      delete next[nodeId]
+      return next
+    })
+  }, [])
+
+  const handlePreviewCloneCandidate = useCallback(async (nodeId: string, sourceNodeId: string) => {
+    if (!nodeId || !sourceNodeId) return
+    setAdoptionActionId(`clone-preview:${nodeId}`)
+    setAdoptionActionError(null)
+    try {
+      const response = await fetch(
+        scopedHomeApiPath(
+          `/api/adoption/nodes/${encodeURIComponent(nodeId)}/clone/preview?source_node_id=${encodeURIComponent(sourceNodeId)}`,
+          apiNodeId,
+        ),
+      )
+      if (!response.ok) {
+        throw new Error(`Clone preview failed with status ${response.status}`)
+      }
+      const payload = await response.json() as ClonePreviewResponse
+      const groups = Array.isArray(payload.groups) ? payload.groups : []
+      setClonePreviewByNode((current) => ({
+        ...current,
+        [nodeId]: payload,
+      }))
+      setSelectedCloneGroupsByNode((current) => ({
+        ...current,
+        [nodeId]: groups.reduce<Record<string, boolean>>((next, group) => {
+          const groupId = resolveString(group.id)
+          if (groupId) {
+            next[groupId] = group.default_selected !== false
+          }
+          return next
+        }, {}),
+      }))
+    } catch (error) {
+      setAdoptionActionError(error instanceof Error ? error.message : 'Failed to preview clone profile')
+    } finally {
+      setAdoptionActionId(null)
+    }
+  }, [apiNodeId])
+
+  const handleCloneGroupToggle = useCallback((nodeId: string, groupId: string, checked: boolean) => {
+    setSelectedCloneGroupsByNode((current) => ({
+      ...current,
+      [nodeId]: {
+        ...(current[nodeId] ?? {}),
+        [groupId]: checked,
+      },
+    }))
+  }, [])
+
+  const handleApplyCloneCandidate = useCallback(async (candidate: AdoptionCandidateResponse) => {
+    const nodeId = resolveString(candidate.node_id)
+    if (!nodeId) return
+    const sourceNodeId = resolveString(selectedCloneSourceByNode[nodeId])
+    if (!sourceNodeId) {
+      setAdoptionActionError('Select a clone source before applying a profile clone.')
+      return
+    }
+    const selectedGroupIds = Object.entries(selectedCloneGroupsByNode[nodeId] ?? {})
+      .filter(([, enabled]) => Boolean(enabled))
+      .map(([groupId]) => groupId)
+    if (selectedGroupIds.length === 0) {
+      setAdoptionActionError('Select at least one clone profile group before applying the clone.')
+      return
+    }
+    await performAdoptionAction(
+      `clone-apply:${nodeId}`,
+      `/api/adoption/nodes/${encodeURIComponent(nodeId)}/clone`,
+      {
+        source_node_id: sourceNodeId,
+        group_ids: selectedGroupIds,
+        requested_by: localNode?.node_id ?? null,
+      },
+    )
+    await handlePreviewCloneCandidate(nodeId, sourceNodeId)
+  }, [handlePreviewCloneCandidate, localNode?.node_id, performAdoptionAction, selectedCloneGroupsByNode, selectedCloneSourceByNode])
+
+  const pendingAdoptionCandidates = useMemo(
+    () => adoptionCandidates.filter(needsAdoptionAction),
+    [adoptionCandidates],
+  )
+
+  useEffect(() => {
+    pendingAdoptionCandidates
+      .filter(canCloneCandidate)
+      .forEach((candidate) => {
+        const nodeId = resolveString(candidate.node_id)
+        if (!nodeId || cloneSourcesByNode[nodeId] != null) return
+        void loadCloneSources(nodeId)
+      })
+  }, [cloneSourcesByNode, loadCloneSources, pendingAdoptionCandidates])
+
+  useEffect(() => {
+    pendingAdoptionCandidates
+      .filter(canCloneCandidate)
+      .forEach((candidate) => {
+        const nodeId = resolveString(candidate.node_id)
+        if (!nodeId || clonePreviewByNode[nodeId] != null) return
+        const sourceNodeId = resolveString(selectedCloneSourceByNode[nodeId])
+        if (!sourceNodeId) return
+        void handlePreviewCloneCandidate(nodeId, sourceNodeId)
+      })
+  }, [clonePreviewByNode, handlePreviewCloneCandidate, pendingAdoptionCandidates, selectedCloneSourceByNode])
+
+  useEffect(() => {
+    const activeNodeIds = new Set(
+      pendingAdoptionCandidates
+        .map((candidate) => resolveString(candidate.node_id))
+        .filter((nodeId): nodeId is string => Boolean(nodeId)),
+    )
+    setCloneSourcesByNode((current) => Object.fromEntries(Object.entries(current).filter(([nodeId]) => activeNodeIds.has(nodeId))))
+    setClonePreviewByNode((current) => Object.fromEntries(Object.entries(current).filter(([nodeId]) => activeNodeIds.has(nodeId))))
+    setSelectedCloneSourceByNode((current) => Object.fromEntries(Object.entries(current).filter(([nodeId]) => activeNodeIds.has(nodeId))))
+    setSelectedCloneGroupsByNode((current) => Object.fromEntries(Object.entries(current).filter(([nodeId]) => activeNodeIds.has(nodeId))))
+  }, [pendingAdoptionCandidates])
+
   const openHomeItem = useCallback((item: HomeNavigationItem) => {
     navigate(item.to)
   }, [navigate])
@@ -622,6 +1039,233 @@ export function HomePage() {
                 <p className="hp-workspace-card__summary">{labsCopy.summary}</p>
                 <p className="hp-workspace-card__helper">{labsCopy.helper}</p>
               </ClickableTile>
+            </div>
+          </Layer>
+        </Column>
+
+        <Column sm={4} md={8} lg={16} className="hp-column">
+          <Layer className="hp-section">
+            <div className="hp-section__header">
+              <div>
+                <p className="hp-section__eyebrow">Node adoption</p>
+                <h2 className="hp-section__title">Adopt discovered nodes</h2>
+              </div>
+            </div>
+
+            {adoptionActionError ? (
+              <Tile className="hp-adoption-card hp-adoption-card--error">
+                <p className="hp-node-card__title">Adoption action failed</p>
+                <p className="hp-node-card__meta">{adoptionActionError}</p>
+              </Tile>
+            ) : null}
+
+            <div className="hp-adoption-grid" aria-label="Adoption queue">
+              {tilesLoading ? (
+                <Tile className="hp-adoption-card hp-adoption-card--loading">
+                  <SkeletonText heading width="55%" />
+                  <SkeletonText width="90%" />
+                  <SkeletonText width="72%" />
+                </Tile>
+              ) : null}
+
+              {!tilesLoading && pendingAdoptionCandidates.length === 0 ? (
+                <Tile className="hp-adoption-card hp-adoption-card--empty">
+                  <p className="hp-node-card__title">No nodes are waiting for adoption</p>
+                  <p className="hp-node-card__meta">
+                    Discovered unmanaged peers, standby nodes, and blocked adoption candidates will appear here.
+                  </p>
+                </Tile>
+              ) : null}
+
+              {!tilesLoading && pendingAdoptionCandidates.map((candidate) => {
+                const candidateId =
+                  resolveString(candidate.candidate_id) ??
+                  resolveString(candidate.remote_node_id) ??
+                  resolveString(candidate.node_id) ??
+                  resolveString(candidate.hostname) ??
+                  'candidate'
+                const nodeId = resolveString(candidate.node_id)
+                const adoptionState = resolveString(candidate.adoption_state) ?? 'candidate'
+                const activationState = resolveString(candidate.activation_state) ?? 'standby'
+                const readinessText = formatReadinessSummary(candidate.readiness)
+                const isClaimBusy = adoptionActionId === `claim:${candidateId}`
+                const isTokenClaimBusy = adoptionActionId === `token-claim:${candidateId}`
+                const isAdoptBusy = adoptionActionId === `adopt:${candidateId}`
+                const isPromoteBusy = nodeId != null && adoptionActionId === `promote:${nodeId}`
+                const isCloneSourceBusy = nodeId != null && adoptionActionId === `clone-sources:${nodeId}`
+                const isClonePreviewBusy = nodeId != null && adoptionActionId === `clone-preview:${nodeId}`
+                const isCloneApplyBusy = nodeId != null && adoptionActionId === `clone-apply:${nodeId}`
+                const cloneSources = nodeId != null ? (cloneSourcesByNode[nodeId] ?? []) : []
+                const selectedCloneSource = nodeId != null ? (selectedCloneSourceByNode[nodeId] ?? '') : ''
+                const clonePreview = nodeId != null ? clonePreviewByNode[nodeId] : undefined
+                const cloneGroups = Array.isArray(clonePreview?.groups) ? clonePreview.groups : []
+                const cloneSelections = nodeId != null ? (selectedCloneGroupsByNode[nodeId] ?? {}) : {}
+                const showCloneControls = Boolean(nodeId && canCloneCandidate(candidate))
+
+                return (
+                  <Tile key={candidateId} className="hp-adoption-card">
+                    <div className="hp-adoption-card__header">
+                      <div>
+                        <p className="hp-node-card__title">
+                          {resolveString(candidate.display_name) ?? resolveString(candidate.hostname) ?? candidateId}
+                        </p>
+                        <p className="hp-node-card__meta">
+                          {resolveString(candidate.hostname) ?? candidateId}
+                        </p>
+                      </div>
+                      <div className="hp-adoption-card__tags">
+                        <Tag type={adoptionTagType(adoptionState)}>{formatAdoptionLabel(adoptionState)}</Tag>
+                        <Tag type={adoptionTagType(candidate.readiness?.status)}>{readinessText}</Tag>
+                      </div>
+                    </div>
+
+                    <div className="hp-adoption-card__meta-row">
+                      <span>Trust: {formatAdoptionLabel(candidate.trust_state)}</span>
+                      <span>Activation: {formatAdoptionLabel(activationState)}</span>
+                    </div>
+
+                    {adoptionState === 'candidate' ? (
+                      <div className="hp-adoption-card__actions">
+                        <TextInput
+                          id={`claim-code-${candidateId}`}
+                          size="sm"
+                          labelText="Pairing code"
+                          hideLabel
+                          placeholder="Enter pairing code"
+                          value={claimCodes[candidateId] ?? ''}
+                          onChange={(event) => handleClaimCodeChange(candidateId, event.target.value)}
+                        />
+                        <Button
+                          kind="secondary"
+                          size="sm"
+                          disabled={isClaimBusy}
+                          onClick={() => void handleClaimCandidate(candidateId)}
+                        >
+                          {isClaimBusy ? 'Claiming…' : 'Claim'}
+                        </Button>
+                        <Button
+                          kind="ghost"
+                          size="sm"
+                          disabled={isTokenClaimBusy}
+                          onClick={() => void handleTokenClaimCandidate(candidate)}
+                        >
+                          {isTokenClaimBusy ? 'Issuing token…' : 'Claim with token'}
+                        </Button>
+                      </div>
+                    ) : null}
+
+                    {adoptionState === 'claimable' ? (
+                      <div className="hp-adoption-card__actions">
+                        <Button
+                          kind="primary"
+                          size="sm"
+                          disabled={isAdoptBusy}
+                          onClick={() => void handleAdoptCandidate(candidate)}
+                        >
+                          {isAdoptBusy ? 'Adopting…' : 'Adopt to standby'}
+                        </Button>
+                      </div>
+                    ) : null}
+
+                    {showCloneControls ? (
+                      <div className="hp-clone-panel">
+                        <p className="hp-clone-panel__title">Clone safe settings from another node</p>
+                        <p className="hp-node-card__meta">
+                          Select a managed source node, review the clone groups, then apply the chosen defaults before promotion.
+                        </p>
+
+                        {cloneSources.length > 0 ? (
+                          <div className="hp-clone-panel__controls">
+                            <Select
+                              id={`clone-source-${nodeId}`}
+                              size="sm"
+                              labelText="Clone source"
+                              value={selectedCloneSource}
+                              onChange={(event) => handleCloneSourceChange(nodeId, event.target.value)}
+                            >
+                              {cloneSources.map((source) => {
+                                const sourceNodeId = resolveString(source.node_id) ?? ''
+                                const sourceLabel = resolveString(source.display_name) ?? resolveString(source.hostname) ?? sourceNodeId
+                                const sourceMeta = resolveString(source.hostname) ?? sourceNodeId
+                                return (
+                                  <SelectItem
+                                    key={sourceNodeId}
+                                    value={sourceNodeId}
+                                    text={sourceMeta && sourceMeta !== sourceLabel ? `${sourceLabel} (${sourceMeta})` : sourceLabel}
+                                  />
+                                )
+                              })}
+                            </Select>
+                            <Button
+                              kind="ghost"
+                              size="sm"
+                              disabled={isCloneSourceBusy || isClonePreviewBusy || !selectedCloneSource}
+                              onClick={() => nodeId && selectedCloneSource ? void handlePreviewCloneCandidate(nodeId, selectedCloneSource) : undefined}
+                            >
+                              {isCloneSourceBusy || isClonePreviewBusy ? 'Refreshing clone preview…' : 'Refresh clone preview'}
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="hp-node-card__meta">
+                            {isCloneSourceBusy ? 'Loading clone sources…' : 'No managed clone sources are available yet.'}
+                          </p>
+                        )}
+
+                        {cloneGroups.length > 0 ? (
+                          <div className="hp-clone-panel__groups">
+                            {cloneGroups.map((group) => {
+                              const groupId = resolveString(group.id)
+                              if (!groupId) return null
+                              return (
+                                <div key={groupId} className="hp-clone-group">
+                                  <Checkbox
+                                    id={`clone-group-${nodeId}-${groupId}`}
+                                    labelText={resolveString(group.label) ?? groupId}
+                                    checked={cloneSelections[groupId] !== false}
+                                    onChange={(_, { checked }) => handleCloneGroupToggle(nodeId, groupId, Boolean(checked))}
+                                  />
+                                  <p className="hp-node-card__meta">{resolveString(group.description)}</p>
+                                  <div className="hp-clone-group__items">
+                                    {(group.items ?? []).map((item) => {
+                                      const itemKey = resolveString(item.key) ?? resolveString(item.label) ?? 'item'
+                                      return (
+                                        <span key={itemKey} className="hp-clone-group__item">
+                                          {resolveString(item.label) ?? itemKey}: {resolveString(item.value) ?? 'n/a'}
+                                        </span>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {(adoptionState === 'adopted' || adoptionState === 'blocked') && nodeId ? (
+                      <div className="hp-adoption-card__actions">
+                        <Button
+                          kind="secondary"
+                          size="sm"
+                          disabled={isCloneApplyBusy || cloneGroups.length === 0}
+                          onClick={() => void handleApplyCloneCandidate(candidate)}
+                        >
+                          {isCloneApplyBusy ? 'Applying clone…' : 'Apply selected clone'}
+                        </Button>
+                        <Button
+                          kind="primary"
+                          size="sm"
+                          disabled={isPromoteBusy || candidate.readiness?.status === 'blocked'}
+                          onClick={() => void handlePromoteCandidate(candidate)}
+                        >
+                          {isPromoteBusy ? 'Promoting…' : 'Promote to active'}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </Tile>
+                )
+              })}
             </div>
           </Layer>
         </Column>

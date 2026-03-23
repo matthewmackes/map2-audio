@@ -36,8 +36,20 @@ async def connect_parameter_routing():
             midi_engine = MIDIEngineService()
             MIDIEngineService._instance = midi_engine
 
-        async def midi_to_rt(plugin_uri: str, param_index: int, value: float):
-            await rt_parameter_bridge.update_from_midi(plugin_uri, param_index, value)
+        async def midi_to_rt(
+            plugin_uri: str,
+            param_index: int,
+            value: float,
+            plugin_position: int | None = None,
+            instance_id: int | None = None,
+        ):
+            await rt_parameter_bridge.update_from_midi(
+                plugin_uri,
+                param_index,
+                value,
+                plugin_position=plugin_position,
+                instance_id=instance_id,
+            )
 
         midi_engine.set_parameter_callback(midi_to_rt)
         logger.info("MIDI Engine -> RT Parameter Bridge connected")
@@ -51,8 +63,20 @@ async def connect_parameter_routing():
         from app.services.automation_engine import automation_engine
 
         if automation_engine:
-            async def automation_to_rt(plugin_uri: str, param_index: int, value: float):
-                await rt_parameter_bridge.update_from_automation(plugin_uri, param_index, value)
+            async def automation_to_rt(
+                plugin_uri: str,
+                param_index: int,
+                value: float,
+                plugin_position: int | None = None,
+                instance_id: int | None = None,
+            ):
+                await rt_parameter_bridge.update_from_automation(
+                    plugin_uri,
+                    param_index,
+                    value,
+                    plugin_position=plugin_position,
+                    instance_id=instance_id,
+                )
 
             automation_engine.set_parameter_callback(automation_to_rt)
             logger.info("Automation Engine -> RT Parameter Bridge connected")
@@ -72,7 +96,13 @@ async def connect_parameter_routing():
             juce_rt_dispatcher.load()
             juce_rt_dispatcher.set_engine(engine)
 
-            def rt_to_engine(plugin_uri: str, param_index: int, value: float):
+            def rt_to_engine(
+                plugin_uri: str,
+                param_index: int,
+                value: float,
+                instance_id: int | None = None,
+                plugin_position: int | None = None,
+            ):
                 """
                 Non-blocking callback to audio engine.
                 Routes through JUCE RT dispatcher for native plugins,
@@ -80,13 +110,19 @@ async def connect_parameter_routing():
                 """
                 try:
                     # Try JUCE native dispatch first
-                    if plugin_uri.startswith("map2://juce/"):
+                    if (
+                        plugin_uri.startswith("map2://juce/")
+                        and instance_id is None
+                        and plugin_position is None
+                    ):
                         juce_rt_dispatcher.dispatch(plugin_uri, param_index, value)
                     else:
-                        # Generic LV2 plugin path
-                        instance_id = engine._get_instance_id_for_uri(plugin_uri)
-                        if instance_id:
-                            engine._engine.set_parameter(instance_id, param_index, value)
+                        # Generic path for LV2 and instance-resolved JUCE updates.
+                        resolved_instance_id = instance_id
+                        if resolved_instance_id is None:
+                            resolved_instance_id = engine._get_instance_id_for_uri(plugin_uri, plugin_position)
+                        if resolved_instance_id:
+                            engine._engine.set_parameter(resolved_instance_id, param_index, value)
                 except Exception as e:
                     logger.debug(f"Engine parameter set error: {e}")
 

@@ -69,6 +69,7 @@ class MIDIMappingDTO:
     cc: int = 0
     chain_id: Optional[int] = None
     target_plugin_uri: str = ""
+    target_plugin_position: Optional[int] = None
     target_param_index: int = 0
     target_param_symbol: str = ""
     min_val: float = 0.0
@@ -220,16 +221,20 @@ class MIDIService:
         normalized = (float(value) - float(min_val)) / (float(max_val) - float(min_val))
         return max(0.0, min(1.0, normalized))
 
-    async def _call_engine_method(self, *method_names: str, args: tuple = ()) -> Any:
+    async def _call_engine_method(self, *method_names: str, args: tuple = (), kwargs: Optional[Dict[str, Any]] = None) -> Any:
         """Call the first available engine method, handling sync and async implementations."""
         if not self._engine:
             return None
+        call_kwargs = kwargs or {}
 
         for method_name in method_names:
             method = getattr(self._engine, method_name, None)
             if not callable(method):
                 continue
-            result = method(*args)
+            try:
+                result = method(*args, **call_kwargs)
+            except TypeError:
+                result = method(*args)
             if inspect.isawaitable(result):
                 return await result
             return result
@@ -248,6 +253,7 @@ class MIDIService:
                 cc=mapping.cc,
                 chain_id=mapping.chain_id,
                 target_plugin_uri=mapping.target_plugin_uri,
+                target_plugin_position=mapping.target_plugin_position,
                 target_param_index=mapping.target_param_index,
                 target_param_symbol=mapping.target_param_symbol,
                 min_val=mapping.min_val,
@@ -385,6 +391,7 @@ class MIDIService:
             current_value = await self._call_engine_method(
                 "get_plugin_parameter",
                 args=(mapping["target_plugin_uri"], mapping["target_param_index"]),
+                kwargs={"plugin_position": mapping.get("target_plugin_position")},
             )
             if current_value is None:
                 raise RuntimeError("The engine did not return a current parameter value")
@@ -443,14 +450,20 @@ class MIDIService:
             logger.error(f"Error getting MIDI mappings: {e}")
             return []
 
-    async def get_mappings_for_plugin(self, plugin_uri: str, session: AsyncSession) -> List[Dict[str, Any]]:
+    async def get_mappings_for_plugin(
+        self,
+        plugin_uri: str,
+        session: AsyncSession,
+        plugin_position: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
         """Get mappings for a specific plugin."""
         try:
             from app.database import MIDIMapping
 
-            result = await session.execute(
-                select(MIDIMapping).filter(MIDIMapping.target_plugin_uri == plugin_uri)
-            )
+            query = select(MIDIMapping).filter(MIDIMapping.target_plugin_uri == plugin_uri)
+            if plugin_position is not None:
+                query = query.filter(MIDIMapping.target_plugin_position == plugin_position)
+            result = await session.execute(query)
             mappings = result.scalars().all()
             return [self._mapping_to_dict(m) for m in mappings]
 
@@ -748,6 +761,7 @@ class MIDIService:
         chain_id: int,
         plugin_uri: str,
         param_index: int,
+        plugin_position: Optional[int] = None,
         param_symbol: str = "",
         min_val: float = 0.0,
         max_val: float = 1.0,
@@ -758,6 +772,7 @@ class MIDIService:
         self._learn_target = {
             "chain_id": chain_id,
             "plugin_uri": plugin_uri,
+            "plugin_position": plugin_position,
             "param_index": param_index,
             "param_symbol": param_symbol,
             "min_val": min_val,
@@ -767,7 +782,16 @@ class MIDIService:
 
         # Tell JUCE to listen
         if self._engine:
-            await self._engine.start_midi_learn(plugin_uri, param_index)
+            await self._engine.start_midi_learn(
+                plugin_uri,
+                param_index,
+                chain_id=chain_id or 0,
+                plugin_position=plugin_position,
+                param_symbol=param_symbol,
+                min_val=min_val,
+                max_val=max_val,
+                curve=curve.value if isinstance(curve, CurveType) else str(curve),
+            )
 
         logger.info(f"Started MIDI learn for {plugin_uri}:{param_index}")
         await self._broadcast_event("midi_learn_started", self._learn_target)
@@ -798,6 +822,7 @@ class MIDIService:
             cc=cc,
             chain_id=target["chain_id"],
             target_plugin_uri=target["plugin_uri"],
+            target_plugin_position=target.get("plugin_position"),
             target_param_index=target["param_index"],
             target_param_symbol=target.get("param_symbol", ""),
             min_val=target.get("min_val", 0.0),
@@ -1003,6 +1028,7 @@ class MIDIService:
             channel=m.channel,
             cc=m.cc,
             plugin_uri=m.target_plugin_uri,
+            plugin_position=m.target_plugin_position,
             param_index=m.target_param_index,
             param_symbol=m.target_param_symbol or "",
             min_val=m.min_val,
@@ -1010,6 +1036,9 @@ class MIDIService:
             curve=m.curve_type,
             invert=m.invert,
             enabled=m.is_enabled,
+            feedback_enabled=m.feedback_enabled,
+            feedback_cc=m.feedback_cc,
+            chain_id=m.chain_id,
         )
 
     async def _sync_command_to_engine(self, command_id: int, session: AsyncSession):
@@ -1069,6 +1098,7 @@ class MIDIService:
             value = await self._call_engine_method(
                 "get_plugin_parameter",
                 args=(mapping["target_plugin_uri"], mapping["target_param_index"]),
+                kwargs={"plugin_position": mapping.get("target_plugin_position")},
             )
 
             if value is not None:
@@ -1118,6 +1148,7 @@ class MIDIService:
             "cc": m.cc,
             "chain_id": m.chain_id,
             "target_plugin_uri": m.target_plugin_uri,
+            "target_plugin_position": m.target_plugin_position,
             "target_param_index": m.target_param_index,
             "target_param_symbol": m.target_param_symbol or "",
             "min_val": m.min_val,

@@ -60,6 +60,13 @@ class _FakeEngine:
         return self._uri_to_instance.get(uri)
 
 
+def _bucket(store, uri: str):
+    bucket = store.get(uri, [])
+    if isinstance(bucket, dict):
+        return [bucket]
+    return list(bucket)
+
+
 async def _await_worker() -> None:
     worker = getattr(plugins_routes, "_engine_op_worker_task", None)
     if worker is not None:
@@ -125,10 +132,31 @@ async def test_deferred_load_runs_via_engine_worker(monkeypatch):
     await _await_worker()
 
     assert fake_engine.loaded_uris == [uri]
-    loaded = plugins_routes._loaded_plugins[uri]
+    loaded = _bucket(plugins_routes._loaded_plugins, uri)[-1]
     assert loaded["instance_id"] > 0
     assert loaded["engine_loaded"] is True
     assert loaded["engine_deferred"] is False
+
+
+@pytest.mark.asyncio
+async def test_deferred_duplicate_loads_preserve_multiple_instances(monkeypatch):
+    uri = "urn:test:plugin:duplicate-load"
+    fake_engine = _FakeEngine()
+
+    monkeypatch.setattr(juce_engine_service, "get_audio_engine", lambda: fake_engine)
+    monkeypatch.setattr(plugins_routes, "_discovered_plugins", [_plugin_definition(uri)])
+
+    first = await plugins_routes.load_plugin(uri=uri)
+    second = await plugins_routes.load_plugin(uri=uri)
+    assert first["engine_deferred"] is True
+    assert second["engine_deferred"] is True
+
+    await _await_worker()
+
+    bucket = _bucket(plugins_routes._loaded_plugins, uri)
+    assert len(bucket) == 2
+    assert len({entry["instance_id"] for entry in bucket}) == 2
+    assert all(entry["engine_loaded"] is True for entry in bucket)
 
 
 @pytest.mark.asyncio
@@ -142,7 +170,7 @@ async def test_deferred_unload_runs_via_engine_worker(monkeypatch):
         plugins_routes,
         "_loaded_plugins",
         {
-            uri: {
+            uri: [{
                 "uri": uri,
                 "name": "Unit Test Plugin",
                 "category": "Utility",
@@ -150,7 +178,7 @@ async def test_deferred_unload_runs_via_engine_worker(monkeypatch):
                 "engine_loaded": True,
                 "engine_deferred": False,
                 "parameters": [{"index": 0, "name": "Gain", "symbol": "gain"}],
-            }
+            }]
         },
     )
 
@@ -175,7 +203,7 @@ async def test_batch_parameters_deferred_queue_applies_updates(monkeypatch):
         plugins_routes,
         "_loaded_plugins",
         {
-            uri: {
+            uri: [{
                 "uri": uri,
                 "name": "Unit Test Plugin",
                 "category": "Utility",
@@ -183,7 +211,7 @@ async def test_batch_parameters_deferred_queue_applies_updates(monkeypatch):
                 "engine_loaded": True,
                 "engine_deferred": False,
                 "parameters": [{"index": 0, "name": "Gain", "symbol": "gain"}],
-            }
+            }]
         },
     )
 
@@ -210,7 +238,7 @@ async def test_batch_parameters_sync_mode_applies_inline(monkeypatch):
         plugins_routes,
         "_loaded_plugins",
         {
-            uri: {
+            uri: [{
                 "uri": uri,
                 "name": "Unit Test Plugin",
                 "category": "Utility",
@@ -218,7 +246,7 @@ async def test_batch_parameters_sync_mode_applies_inline(monkeypatch):
                 "engine_loaded": True,
                 "engine_deferred": False,
                 "parameters": [{"index": 0, "name": "Gain", "symbol": "gain"}],
-            }
+            }]
         },
     )
 
@@ -241,7 +269,7 @@ async def test_batch_parameters_keeps_duplicate_uri_instances_separate(monkeypat
         plugins_routes,
         "_loaded_plugins",
         {
-            uri: {
+            uri: [{
                 "uri": uri,
                 "name": "Duplicate Plugin",
                 "category": "Utility",
@@ -249,7 +277,7 @@ async def test_batch_parameters_keeps_duplicate_uri_instances_separate(monkeypat
                 "engine_loaded": True,
                 "engine_deferred": False,
                 "parameters": [{"index": 0, "name": "Gain", "symbol": "gain"}],
-            }
+            }]
         },
     )
 

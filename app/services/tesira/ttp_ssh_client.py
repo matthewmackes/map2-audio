@@ -167,7 +167,9 @@ class TTPSSHClient:
                 logger.warning("SSH reconnect attempt %d failed: %s", attempt, exc)
 
     async def send(self, instance_tag: str, service: str, attribute: str, *args: Any) -> TTPResponse:
-        parts = [instance_tag, service, attribute]
+        parts = [instance_tag, service]
+        if attribute:
+            parts.append(attribute)
         for arg in args:
             parts.append(str(arg).lower() if isinstance(arg, bool) else str(arg))
         command = " ".join(parts)

@@ -80,6 +80,7 @@ class MIDIMapping:
     cc_number: int  # For CC messages (0-127), or note number for note messages
     cc_msb: Optional[int] = None  # For CC14: MSB controller number
     target_plugin_uri: str = ""
+    target_plugin_position: Optional[int] = None
     target_param_index: int = 0
     target_param_name: str = ""
     min_value: float = 0.0
@@ -94,6 +95,7 @@ class MIDIMapping:
 class MIDILearnSession:
     """Active MIDI learn session state."""
     target_plugin_uri: str
+    target_plugin_position: Optional[int]
     target_param_index: int
     target_param_name: str
     started_at: float
@@ -121,7 +123,7 @@ class MIDIEngineService:
         self._process_task: Optional[asyncio.Task] = None
         self._learn_session: Optional[MIDILearnSession] = None
         self._learn_lock = asyncio.Lock()
-        self._parameter_callback: Optional[Callable[[str, int, float], Awaitable[None]]] = None
+        self._parameter_callback: Optional[Callable[..., Awaitable[None]]] = None
         self._cc14_state: Dict[int, int] = {}  # Store MSB values for CC14
 
         # Expression pedal calibration
@@ -304,7 +306,29 @@ class MIDIEngineService:
             ],
         }
 
-    def set_parameter_callback(self, callback: Callable[[str, int, float], Awaitable[None]]) -> None:
+    async def _dispatch_parameter_callback(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        value: float,
+        plugin_position: Optional[int] = None,
+        instance_id: Optional[int] = None,
+    ) -> None:
+        """Call the configured parameter callback with duplicate-safe identity when supported."""
+        if not self._parameter_callback:
+            return
+        try:
+            await self._parameter_callback(
+                plugin_uri,
+                param_index,
+                value,
+                plugin_position,
+                instance_id,
+            )
+        except TypeError:
+            await self._parameter_callback(plugin_uri, param_index, value)
+
+    def set_parameter_callback(self, callback: Callable[..., Awaitable[None]]) -> None:
         """Set callback for parameter changes from MIDI.
 
         Args:
@@ -387,13 +411,21 @@ class MIDIEngineService:
 
         logger.info("MIDI engine stopped")
 
-    async def add_cc_mapping(self, channel: int, cc: int, target_uri: str, param_index: int) -> bool:
+    async def add_cc_mapping(
+        self,
+        channel: int,
+        cc: int,
+        target_uri: str,
+        param_index: int,
+        plugin_position: Optional[int] = None,
+    ) -> bool:
         """Compatibility wrapper used by legacy MIDI routes."""
         mapping = await self.add_mapping(
             channel=channel,
             message_type="cc",
             cc_number=cc,
             target_plugin_uri=target_uri,
+            target_plugin_position=plugin_position,
             target_param_index=param_index,
             target_param_name="",
         )
@@ -407,9 +439,20 @@ class MIDIEngineService:
         self._rebuild_lookup()
         return True
 
-    async def midi_learn(self, target_uri: str, param_index: int, timeout: float = 10.0) -> bool:
+    async def midi_learn(
+        self,
+        target_uri: str,
+        param_index: int,
+        timeout: float = 10.0,
+        plugin_position: Optional[int] = None,
+    ) -> bool:
         """Compatibility wrapper used by legacy MIDI routes."""
-        return await self.start_learn(target_uri, param_index, timeout=timeout)
+        return await self.start_learn(
+            target_uri,
+            param_index,
+            target_plugin_position=plugin_position,
+            timeout=timeout,
+        )
 
     async def _process_loop(self) -> None:
         """Main MIDI processing loop."""
@@ -567,10 +610,11 @@ class MIDIEngineService:
         # Call parameter callback
         if self._parameter_callback:
             try:
-                await self._parameter_callback(
+                await self._dispatch_parameter_callback(
                     mapping.target_plugin_uri,
                     mapping.target_param_index,
-                    param_value
+                    param_value,
+                    plugin_position=mapping.target_plugin_position,
                 )
             except Exception as e:
                 logger.error(f"Error applying MIDI mapping: {e}")
@@ -631,6 +675,7 @@ class MIDIEngineService:
                     message_type=midi_type,
                     cc_number=number,
                     target_plugin_uri=session.target_plugin_uri,
+                    target_plugin_position=session.target_plugin_position,
                     target_param_index=session.target_param_index,
                     target_param_name=session.target_param_name,
                     is_learned=True,
@@ -662,6 +707,7 @@ class MIDIEngineService:
                 result = await db_session.execute(
                     select(MIDILearnState).where(
                         MIDILearnState.target_plugin_uri == session.target_plugin_uri,
+                        MIDILearnState.target_plugin_position == session.target_plugin_position,
                         MIDILearnState.target_param_index == session.target_param_index,
                         MIDILearnState.completed == False,
                     )
@@ -681,6 +727,7 @@ class MIDIEngineService:
         self,
         target_plugin_uri: str,
         target_param_index: int,
+        target_plugin_position: Optional[int] = None,
         target_param_name: str = "",
         timeout: float = 30.0,
         callback: Optional[Callable[[int, int, int], Awaitable[None]]] = None,
@@ -704,6 +751,7 @@ class MIDIEngineService:
 
             self._learn_session = MIDILearnSession(
                 target_plugin_uri=target_plugin_uri,
+                target_plugin_position=target_plugin_position,
                 target_param_index=target_param_index,
                 target_param_name=target_param_name or f"Param {target_param_index}",
                 started_at=time.time(),
@@ -731,6 +779,7 @@ class MIDIEngineService:
             async with get_session() as db_session:
                 learn_state = MIDILearnState(
                     target_plugin_uri=self._learn_session.target_plugin_uri,
+                    target_plugin_position=self._learn_session.target_plugin_position,
                     target_param_index=self._learn_session.target_param_index,
                     target_param_name=self._learn_session.target_param_name,
                     timeout_seconds=self._learn_session.timeout_seconds,
@@ -765,6 +814,7 @@ class MIDIEngineService:
             remaining = max(0, self._learn_session.timeout_seconds - elapsed)
             return {
                 "plugin_uri": self._learn_session.target_plugin_uri,
+                "plugin_position": self._learn_session.target_plugin_position,
                 "param_index": self._learn_session.target_param_index,
                 "param_name": self._learn_session.target_param_name,
                 "elapsed_seconds": elapsed,
@@ -779,12 +829,14 @@ class MIDIEngineService:
         cc_number: int,
         target_plugin_uri: str,
         target_param_index: int,
+        target_plugin_position: Optional[int] = None,
         target_param_name: str = "",
         min_value: float = 0.0,
         max_value: float = 1.0,
         curve: str = "linear",
         is_learned: bool = False,
         cc_msb: Optional[int] = None,
+        persist: bool = True,
     ) -> int:
         """Add MIDI to parameter mapping.
 
@@ -825,6 +877,7 @@ class MIDIEngineService:
             cc_number=cc_number,
             cc_msb=cc_msb,
             target_plugin_uri=target_plugin_uri,
+            target_plugin_position=target_plugin_position,
             target_param_index=target_param_index,
             target_param_name=target_param_name,
             min_value=min_value,
@@ -839,8 +892,9 @@ class MIDIEngineService:
         key = (channel, message_type, cc_number)
         self._mapping_lookup[key] = mapping_id
 
-        # Persist to database
-        await self._persist_mapping(mapping)
+        # Persist to database unless we are rehydrating from storage.
+        if persist:
+            await self._persist_mapping(mapping)
 
         logger.info(
             f"Added MIDI mapping {mapping_id}: CH{channel} {message_type.upper()} {cc_number} "
@@ -859,6 +913,7 @@ class MIDIEngineService:
                     channel=mapping.channel,
                     cc=mapping.cc_number,
                     target_plugin_uri=mapping.target_plugin_uri,
+                    target_plugin_position=mapping.target_plugin_position,
                     target_param_index=mapping.target_param_index,
                     min_val=mapping.min_value,
                     max_val=mapping.max_value,
@@ -903,6 +958,7 @@ class MIDIEngineService:
                         MIDIMappingModel.channel == mapping.channel,
                         MIDIMappingModel.cc == mapping.cc_number,
                         MIDIMappingModel.target_plugin_uri == mapping.target_plugin_uri,
+                        MIDIMappingModel.target_plugin_position == mapping.target_plugin_position,
                         MIDIMappingModel.target_param_index == mapping.target_param_index,
                     )
                 )
@@ -918,6 +974,7 @@ class MIDIEngineService:
                 "message_type": m.message_type,
                 "cc_number": m.cc_number,
                 "target_plugin_uri": m.target_plugin_uri,
+                "target_plugin_position": m.target_plugin_position,
                 "target_param_index": m.target_param_index,
                 "target_param_name": m.target_param_name,
                 "min_value": m.min_value,
@@ -949,10 +1006,12 @@ class MIDIEngineService:
                         message_type="cc",  # Default to CC
                         cc_number=db_m.cc,
                         target_plugin_uri=db_m.target_plugin_uri,
+                        target_plugin_position=db_m.target_plugin_position,
                         target_param_index=db_m.target_param_index,
                         min_value=db_m.min_val,
                         max_value=db_m.max_val,
                         is_learned=db_m.is_learned,
+                        persist=False,
                     )
 
                 logger.info(f"Loaded {len(db_mappings)} MIDI mappings from database")
@@ -987,10 +1046,20 @@ class MIDIEngineService:
 
 
 # Backwards compatibility alias
-async def midi_learn(target_uri: str, param_index: int, timeout: float = 10.0) -> bool:
+async def midi_learn(
+    target_uri: str,
+    param_index: int,
+    timeout: float = 10.0,
+    plugin_position: Optional[int] = None,
+) -> bool:
     """Legacy wrapper for MIDI learn."""
     from app.services import service_manager
     midi = service_manager.get_midi_engine()
     if midi:
-        return await midi.start_learn(target_uri, param_index, timeout=timeout)
+        return await midi.start_learn(
+            target_uri,
+            param_index,
+            target_plugin_position=plugin_position,
+            timeout=timeout,
+        )
     return False

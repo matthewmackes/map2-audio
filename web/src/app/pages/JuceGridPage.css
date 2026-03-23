@@ -75,8 +75,9 @@
   padding-bottom: 1rem;
 }
 
-.juce-grid-page__workspace {
-  display: block;
+.juce-grid-page__signal-flow-shell {
+  inline-size: min(100%, 118rem);
+  margin-inline: auto;
   padding: 0 1rem 1rem;
 }
 
@@ -2551,7 +2552,7 @@
 }
 
 .juce-grid-page.is-tablet-mode .juce-grid-page__unified-block,
-.juce-grid-page.is-tablet-mode .juce-grid-page__workspace {
+.juce-grid-page.is-tablet-mode .juce-grid-page__signal-flow-shell {
   min-width: 0;
 }
 

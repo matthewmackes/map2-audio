@@ -219,9 +219,11 @@ class TTPClient:
             if resp.ok:
                 level_db = float(resp.value)
         """
-        parts = [instance_tag, service, attribute]
+        parts = [instance_tag, service]
         if instance_tag.lower() == "device":
             parts[0] = "DEVICE"
+        if attribute:
+            parts.append(attribute)
         for a in args:
             parts.append(str(a).lower() if isinstance(a, bool) else str(a))
         command = ' '.join(parts)

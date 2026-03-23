@@ -590,17 +590,30 @@ class JuceEngineService(Singleton):
             return 0
         return await asyncio.to_thread(self._set_parameter_batch_direct_sync, updates)
 
-    async def get_parameter(self, plugin_uri: str, param_name: str) -> float:
+    async def get_parameter(
+        self,
+        plugin_uri: str,
+        param_name: str,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> float:
         """Get a plugin parameter value"""
         if not self._engine:
             return 0.0
-        instance_id = await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri)
-        if instance_id is None:
-            logger.error(f"Plugin not found in chain: {plugin_uri}")
+        resolved_instance_id = instance_id
+        if not isinstance(resolved_instance_id, int) or resolved_instance_id <= 0:
+            resolved_instance_id = await asyncio.to_thread(
+                self._get_instance_id_for_uri,
+                plugin_uri,
+                plugin_position,
+            )
+        if resolved_instance_id is None:
+            logger.error("Plugin not found in chain: %s (position=%s)", plugin_uri, plugin_position)
             return 0.0
         return await asyncio.to_thread(
             self._engine.get_parameter_by_name,
-            instance_id,
+            resolved_instance_id,
             param_name,
         )
 
@@ -756,6 +769,70 @@ class JuceEngineService(Singleton):
             logger.warning("JUCE engine does not support add_cc_mapping")
             return False
 
+    async def set_midi_cc_mapping(
+        self,
+        *,
+        mapping_id: int,
+        channel: int,
+        cc: int,
+        plugin_uri: str,
+        param_index: int,
+        param_symbol: str = "",
+        min_val: float = 0.0,
+        max_val: float = 1.0,
+        curve: str = "linear",
+        invert: bool = False,
+        enabled: bool = True,
+        plugin_position: Optional[int] = None,
+        feedback_enabled: bool = True,
+        feedback_cc: Optional[int] = None,
+        chain_id: Optional[int] = None,
+    ) -> bool:
+        """Create or update a duplicate-safe JUCE MIDI CC mapping."""
+        if not self._engine:
+            return False
+
+        instance_id = await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri, plugin_position)
+        if not isinstance(instance_id, int) or instance_id <= 0:
+            logger.warning(
+                "Cannot sync MIDI CC mapping %s: plugin not resolved for %s (position=%s)",
+                mapping_id,
+                plugin_uri,
+                plugin_position,
+            )
+            return False
+
+        mapping_payload = {
+            "id": mapping_id,
+            "channel": channel,
+            "cc_number": cc,
+            "target_plugin": instance_id,
+            "parameter_symbol": param_symbol or "",
+            "parameter_index": param_index,
+            "min_value": min_val,
+            "max_value": max_val,
+            "curve": curve,
+            "invert": invert,
+            "active": enabled,
+            "feedback_enabled": feedback_enabled,
+            "feedback_cc": feedback_cc if feedback_cc is not None else -1,
+            "chain_id": chain_id if chain_id is not None else 0,
+        }
+
+        update_handler = getattr(self._engine, "midi_update_cc_mapping", None)
+        add_handler = getattr(self._engine, "midi_add_cc_mapping", None)
+
+        if callable(update_handler):
+            updated = await asyncio.to_thread(update_handler, mapping_id, mapping_payload)
+            if updated:
+                return True
+        if callable(add_handler):
+            created_id = await asyncio.to_thread(add_handler, mapping_payload)
+            return bool(created_id)
+
+        logger.warning("JUCE engine does not support duplicate-safe MIDI CC mapping sync")
+        return False
+
     async def remove_midi_cc_mapping(self, channel: int, cc_number: int) -> bool:
         """Remove MIDI CC mapping via JUCE"""
         if not self._engine:
@@ -773,6 +850,9 @@ class JuceEngineService(Singleton):
         try:
             return self._engine.get_cc_mappings()
         except AttributeError:
+            handler = getattr(self._engine, "midi_get_all_cc_mappings", None)
+            if callable(handler):
+                return list(await asyncio.to_thread(handler))
             return []
 
     async def clear_midi_cc_mappings(self) -> bool:
@@ -782,14 +862,128 @@ class JuceEngineService(Singleton):
         try:
             return self._engine.clear_cc_mappings()
         except AttributeError:
+            handler = getattr(self._engine, "midi_clear_cc_mappings", None)
+            if callable(handler):
+                await asyncio.to_thread(handler)
+                return True
             return False
+
+    async def set_all_midi_mappings(self, mappings: List[Dict[str, Any]]) -> bool:
+        """Replace all JUCE MIDI CC mappings with duplicate-safe instance resolution."""
+        if not self._engine:
+            return False
+
+        native_mappings: List[Dict[str, Any]] = []
+        for mapping in mappings:
+            plugin_uri = str(mapping.get("target_plugin_uri") or "")
+            if plugin_uri.startswith("tesira://"):
+                continue
+            plugin_position = mapping.get("target_plugin_position")
+            instance_id = await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri, plugin_position)
+            if not isinstance(instance_id, int) or instance_id <= 0:
+                logger.warning(
+                    "Skipping unresolved MIDI mapping %s for %s (position=%s)",
+                    mapping.get("id"),
+                    plugin_uri,
+                    plugin_position,
+                )
+                continue
+            native_mappings.append(
+                {
+                    "id": int(mapping.get("id") or 0),
+                    "channel": int(mapping.get("channel") or 0),
+                    "cc_number": int(mapping.get("cc") or 0),
+                    "target_plugin": instance_id,
+                    "parameter_symbol": str(mapping.get("target_param_symbol") or ""),
+                    "parameter_index": int(mapping.get("target_param_index") or 0),
+                    "min_value": float(mapping.get("min_val") or 0.0),
+                    "max_value": float(mapping.get("max_val") or 1.0),
+                    "curve": str(mapping.get("curve_type") or "linear"),
+                    "invert": bool(mapping.get("invert", False)),
+                    "active": bool(mapping.get("is_enabled", True)),
+                    "feedback_enabled": bool(mapping.get("feedback_enabled", True)),
+                    "feedback_cc": int(mapping["feedback_cc"]) if mapping.get("feedback_cc") is not None else -1,
+                    "chain_id": int(mapping.get("chain_id") or 0),
+                }
+            )
+
+        handler = getattr(self._engine, "midi_set_all_cc_mappings", None)
+        if callable(handler):
+            await asyncio.to_thread(handler, native_mappings)
+            return True
+
+        await self.clear_midi_cc_mappings()
+        for mapping in native_mappings:
+            add_handler = getattr(self._engine, "midi_add_cc_mapping", None)
+            if callable(add_handler):
+                await asyncio.to_thread(add_handler, mapping)
+        return True
+
+    async def get_plugin_parameter(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        *,
+        instance_id: Optional[int] = None,
+        plugin_position: Optional[int] = None,
+    ) -> Optional[float]:
+        """Get a plugin parameter value by index with duplicate-safe instance resolution."""
+        if not self._engine:
+            return None
+
+        resolved_instance_id = instance_id
+        if not isinstance(resolved_instance_id, int) or resolved_instance_id <= 0:
+            resolved_instance_id = await asyncio.to_thread(
+                self._get_instance_id_for_uri,
+                plugin_uri,
+                plugin_position,
+            )
+        if not isinstance(resolved_instance_id, int) or resolved_instance_id <= 0:
+            return None
+
+        handler = getattr(self._engine, "get_parameter", None)
+        if callable(handler):
+            return float(await asyncio.to_thread(handler, resolved_instance_id, param_index))
+        return None
 
     # MIDI Learn (JUCE)
 
-    async def start_midi_learn(self, plugin_uri: str, param_index: int) -> bool:
+    async def start_midi_learn(
+        self,
+        plugin_uri: str,
+        param_index: int,
+        *,
+        chain_id: int = 0,
+        plugin_position: Optional[int] = None,
+        param_symbol: str = "",
+        min_val: float = 0.0,
+        max_val: float = 1.0,
+        curve: str = "linear",
+    ) -> bool:
         """Start MIDI learn mode for a parameter via JUCE"""
         if not self._engine:
             return False
+        handler = getattr(self._engine, "midi_start_learn", None)
+        if callable(handler):
+            instance_id = await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri, plugin_position)
+            if not isinstance(instance_id, int) or instance_id <= 0:
+                logger.warning(
+                    "Cannot start MIDI learn: plugin not resolved for %s (position=%s)",
+                    plugin_uri,
+                    plugin_position,
+                )
+                return False
+            await asyncio.to_thread(
+                handler,
+                int(chain_id or 0),
+                instance_id,
+                param_symbol or "",
+                param_index,
+                min_val,
+                max_val,
+                curve,
+            )
+            return True
         try:
             return self._engine.start_midi_learn(plugin_uri, param_index)
         except AttributeError:
@@ -800,6 +994,10 @@ class JuceEngineService(Singleton):
         """Stop MIDI learn mode via JUCE"""
         if not self._engine:
             return False
+        handler = getattr(self._engine, "midi_stop_learn", None)
+        if callable(handler):
+            await asyncio.to_thread(handler)
+            return True
         try:
             return self._engine.stop_midi_learn()
         except AttributeError:
@@ -809,6 +1007,9 @@ class JuceEngineService(Singleton):
         """Check if MIDI learn is active via JUCE"""
         if not self._engine:
             return False
+        handler = getattr(self._engine, "midi_is_learning", None)
+        if callable(handler):
+            return bool(await asyncio.to_thread(handler))
         try:
             return self._engine.is_midi_learning()
         except AttributeError:
@@ -818,6 +1019,12 @@ class JuceEngineService(Singleton):
         """Get MIDI learn status from JUCE"""
         if not self._engine:
             return {"active": False, "target_plugin": None, "target_param": None}
+        active_handler = getattr(self._engine, "midi_is_learning", None)
+        target_handler = getattr(self._engine, "midi_get_learn_target", None)
+        if callable(active_handler) and callable(target_handler):
+            active = bool(await asyncio.to_thread(active_handler))
+            target = dict(await asyncio.to_thread(target_handler)) if active else {}
+            return {"active": active, "target": target}
         try:
             return self._engine.get_midi_learn_status()
         except AttributeError:

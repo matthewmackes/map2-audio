@@ -6,6 +6,7 @@ import { useTesiraContext } from './context/TesiraContext'
 import { TesiraTopBar } from './components/TesiraTopBar'
 import { TesiraFleetPanel } from './components/TesiraFleetPanel'
 import { TesiraDeviceHeader } from './components/TesiraDeviceHeader'
+import { TesiraOfflineBanner } from './components/TesiraOfflineBanner'
 import { TesiraDeviceDashboard } from './components/TesiraDeviceDashboard'
 import { TesiraDspExplorer } from './components/TesiraDspExplorer'
 import { TesiraDesignCanvas } from './components/TesiraDesignCanvas'
@@ -17,6 +18,7 @@ import { TesiraPresetsTab } from './components/TesiraPresetsTab'
 import { TesiraAvbTab } from './components/TesiraAvbTab'
 import { TesiraFaultsTab } from './components/TesiraFaultsTab'
 import { TesiraLoopBuilderTab } from './components/TesiraLoopBuilderTab'
+import { TesiraOnboardingWizard } from './components/TesiraOnboardingWizard'
 import { useTesiraDevice, useTesiraDevices } from './hooks/useTesiraApi'
 import { useCluster } from '../../contexts/ClusterContext'
 
@@ -104,17 +106,23 @@ function TesiraRoutePanel() {
 }
 
 function FleetLanding() {
+  const { selectDevice } = useTesiraContext()
+  const { setActiveNode } = useCluster()
+
+  useEffect(() => {
+    selectDevice(null)
+    setActiveNode(null)
+  }, [selectDevice, setActiveNode])
+
   return (
     <Box
       sx={{
         flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'text.disabled',
+        minHeight: 0,
+        overflow: 'auto',
       }}
     >
-      <Typography variant="body2">Select a Tesira device from the fleet panel.</Typography>
+      <TesiraOnboardingWizard />
     </Box>
   )
 }
@@ -147,6 +155,7 @@ function DeviceRouteView({ render }: { render: (deviceId: string) => React.React
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <TesiraDeviceHeader device={device} />
+      {!device.connected ? <TesiraOfflineBanner deviceId={deviceId} /> : null}
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {render(deviceId)}
       </Box>

@@ -5,6 +5,7 @@ import { useTesiraDevice } from '../hooks/useTesiraApi'
 import { TesiraFleetHealth } from './TesiraFleetHealth'
 import { TesiraPtpTopology } from './TesiraPtpTopology'
 import { TesiraDeployDialog } from './TesiraDeployDialog'
+import { TesiraQuickCommandPanel } from './TesiraQuickCommandPanel'
 import { buildPlatformHref } from '../../../platform/model'
 
 interface TesiraDeviceDashboardProps {
@@ -80,6 +81,8 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
           </Button>
         </Box>
       </Paper>
+
+      <TesiraQuickCommandPanel deviceId={deviceId} />
 
       <Grid container spacing={1.5}>
         <Grid item xs={12} md={5}>

@@ -838,10 +838,12 @@ class AvbRouter:
             for node_id, visible in visible_nodes.items():
                 routing_ready = getattr(visible, "routing_ready", None)
                 if routing_ready is None:
+                    activation_state = getattr(visible, "activation_state", None)
                     routing_ready = bool(
                         getattr(visible, "registered", False)
                         and getattr(visible, "is_online", False)
                         and getattr(visible, "api_url", None)
+                        and (activation_state in (None, "active"))
                     )
 
                 if not routing_ready:

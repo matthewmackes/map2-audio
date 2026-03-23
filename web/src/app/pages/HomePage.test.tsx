@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { HomePage } from './HomePage'
 
@@ -84,6 +84,8 @@ function defaultFetchResponse(input: RequestInfo | URL): Response {
       return makeJsonResponse({ nodes: [] })
     case '/api/deployment/mode':
       return makeJsonResponse({ mode: 'ALL-IN-ONE' })
+    case '/api/adoption/candidates':
+      return makeJsonResponse({ items: [] })
     default:
       return makeJsonResponse({})
   }
@@ -279,6 +281,235 @@ describe('HomePage navigation landing', () => {
 
     expect((await screen.findAllByText('MAP2-STAGE-R')).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('2 of 2 nodes online')).toBeTruthy()
+  })
+
+  it('shows the adoption queue and drives claim, adopt, and promote actions', async () => {
+    let adoptionItems = [
+      {
+        candidate_id: 'cand_peer-unmanaged',
+        remote_node_id: 'peer-unmanaged',
+        hostname: 'MAP2-STAGE-R',
+        trust_state: 'unknown',
+        adoption_state: 'candidate',
+        activation_state: 'standby',
+        readiness: { status: 'warning', blocking_count: 0, warning_count: 1 },
+        registered: false,
+        visible: true,
+        routing_ready: false,
+      },
+    ]
+
+    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url === '/api/adoption/candidates') {
+          return makeJsonResponse({ items: adoptionItems })
+        }
+        if (url === '/api/adoption/candidates/cand_peer-unmanaged/claim' && init?.method === 'POST') {
+          adoptionItems = [
+            {
+              ...adoptionItems[0],
+              trust_state: 'claimed',
+              adoption_state: 'claimable',
+            },
+          ]
+          return makeJsonResponse({ status: 'ok' })
+        }
+        if (url === '/api/adoption/candidates/cand_peer-unmanaged/adopt' && init?.method === 'POST') {
+          adoptionItems = [
+            {
+              ...adoptionItems[0],
+              node_id: 'peer-unmanaged',
+              trust_state: 'trusted',
+              adoption_state: 'adopted',
+              activation_state: 'standby',
+              registered: true,
+              readiness: { status: 'ready', blocking_count: 0, warning_count: 0 },
+            },
+          ]
+          return makeJsonResponse({ status: 'ok' })
+        }
+        if (url === '/api/adoption/nodes/peer-unmanaged/promote' && init?.method === 'POST') {
+          adoptionItems = [
+            {
+              ...adoptionItems[0],
+              node_id: 'peer-unmanaged',
+              trust_state: 'trusted',
+              adoption_state: 'ready',
+              activation_state: 'active',
+              registered: true,
+              readiness: { status: 'ready', blocking_count: 0, warning_count: 0 },
+              routing_ready: true,
+            },
+          ]
+          return makeJsonResponse({ status: 'ok' })
+        }
+        return defaultFetchResponse(input)
+      },
+    )
+
+    renderHome(
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>,
+    )
+
+    await screen.findByRole('heading', { name: 'Adopt discovered nodes' })
+    await screen.findByRole('button', { name: 'Claim' })
+    expect((await screen.findAllByText('MAP2-STAGE-R')).length).toBeGreaterThan(0)
+
+    fireEvent.change(screen.getByLabelText('Pairing code'), { target: { value: '123456' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Claim' }))
+
+    await screen.findByRole('button', { name: 'Adopt to standby' })
+    fireEvent.click(screen.getByRole('button', { name: 'Adopt to standby' }))
+
+    await screen.findByRole('button', { name: 'Promote to active' })
+    fireEvent.click(screen.getByRole('button', { name: 'Promote to active' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('No nodes are waiting for adoption')).toBeTruthy()
+    })
+  })
+
+  it('can issue a bootstrap token and claim a candidate without manual pairing-code entry', async () => {
+    let adoptionItems = [
+      {
+        candidate_id: 'cand_peer-unmanaged',
+        remote_node_id: 'peer-unmanaged',
+        hostname: 'MAP2-STAGE-R',
+        api_url: 'http://10.0.0.60:8080',
+        trust_state: 'unknown',
+        adoption_state: 'candidate',
+        activation_state: 'standby',
+        readiness: { status: 'warning', blocking_count: 0, warning_count: 1 },
+        registered: false,
+        visible: true,
+        routing_ready: false,
+      },
+    ]
+
+    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url === '/api/adoption/candidates') {
+          return makeJsonResponse({ items: adoptionItems })
+        }
+        if (url === '/api/bootstrap/tokens/issue' && init?.method === 'POST') {
+          return makeJsonResponse({ bootstrap_token: 'signed-bootstrap-token' })
+        }
+        if (url === '/api/adoption/candidates/cand_peer-unmanaged/claim' && init?.method === 'POST') {
+          adoptionItems = [
+            {
+              ...adoptionItems[0],
+              trust_state: 'claimed',
+              adoption_state: 'claimable',
+            },
+          ]
+          return makeJsonResponse({ status: 'ok' })
+        }
+        return defaultFetchResponse(input)
+      },
+    )
+
+    renderHome(
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>,
+    )
+
+    await screen.findByRole('button', { name: 'Claim with token' })
+    fireEvent.click(screen.getByRole('button', { name: 'Claim with token' }))
+
+    await screen.findByRole('button', { name: 'Adopt to standby' })
+
+    const calledUrls = (global.fetch as jest.MockedFunction<typeof fetch>).mock.calls.map(([input]) => String(input))
+    expect(calledUrls).toContain('/api/bootstrap/tokens/issue')
+    expect(calledUrls).toContain('/api/adoption/candidates/cand_peer-unmanaged/claim')
+  })
+
+  it('loads clone options for an adopted standby node and applies the selected clone groups', async () => {
+    const adoptionItems = [
+      {
+        candidate_id: 'cand_peer-unmanaged',
+        remote_node_id: 'peer-unmanaged',
+        node_id: 'peer-unmanaged',
+        hostname: 'MAP2-STAGE-R',
+        trust_state: 'trusted',
+        adoption_state: 'adopted',
+        activation_state: 'standby',
+        readiness: { status: 'ready', blocking_count: 0, warning_count: 0 },
+        registered: true,
+        visible: true,
+        routing_ready: false,
+      },
+    ]
+
+    ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url === '/api/adoption/candidates') {
+          return makeJsonResponse({ items: adoptionItems })
+        }
+        if (url === '/api/adoption/nodes/peer-unmanaged/clone/sources') {
+          return makeJsonResponse({
+            items: [
+              {
+                node_id: 'source-node',
+                hostname: 'MAP2-SOURCE',
+                display_name: 'This node',
+              },
+            ],
+          })
+        }
+        if (url === '/api/adoption/nodes/peer-unmanaged/clone/preview?source_node_id=source-node') {
+          return makeJsonResponse({
+            source: {
+              node_id: 'source-node',
+              hostname: 'MAP2-SOURCE',
+            },
+            groups: [
+              {
+                id: 'role_profile',
+                label: 'Role and deployment mode',
+                description: 'Copy deployment mode.',
+                default_selected: true,
+                items: [{ key: 'deployment.mode', label: 'Deployment mode', value: 'AUDIO-NODE' }],
+              },
+              {
+                id: 'avb_defaults',
+                label: 'AVB defaults',
+                description: 'Copy AVB defaults.',
+                default_selected: true,
+                items: [{ key: 'avb.interface', label: 'AVB interface', value: 'enp11s0' }],
+              },
+            ],
+          })
+        }
+        if (url === '/api/adoption/nodes/peer-unmanaged/clone' && init?.method === 'POST') {
+          return makeJsonResponse({ status: 'ok' })
+        }
+        return defaultFetchResponse(input)
+      },
+    )
+
+    renderHome(
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>,
+    )
+
+    await screen.findByText('Clone safe settings from another node')
+    await screen.findByRole('button', { name: 'Apply selected clone' })
+    expect(await screen.findByLabelText('Role and deployment mode')).toBeTruthy()
+    expect(await screen.findByText('AVB defaults')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply selected clone' }))
+
+    await waitFor(() => {
+      const calledUrls = (global.fetch as jest.MockedFunction<typeof fetch>).mock.calls.map(([input]) => String(input))
+      expect(calledUrls).toContain('/api/adoption/nodes/peer-unmanaged/clone')
+    })
   })
 
   it('proxies home telemetry through the viewed remote node when page scope is remote', async () => {

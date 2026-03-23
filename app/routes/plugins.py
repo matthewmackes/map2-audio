@@ -314,6 +314,96 @@ try:
         snapshot["max_retries"] = _ENGINE_OP_MAX_RETRIES
         return snapshot
 
+    def _get_plugin_bucket(store: Dict[str, Any], uri: str) -> List[Dict[str, Any]]:
+        existing = store.get(uri)
+        if isinstance(existing, list):
+            return existing
+        if isinstance(existing, dict):
+            normalized = [existing]
+            store[uri] = normalized
+            return normalized
+        return []
+
+    def _flatten_plugin_store(store: Dict[str, Any]) -> List[tuple[str, Dict[str, Any]]]:
+        flattened: List[tuple[str, Dict[str, Any]]] = []
+        for uri in list(store.keys()):
+            for entry in _get_plugin_bucket(store, uri):
+                if isinstance(entry, dict):
+                    flattened.append((uri, entry))
+        return flattened
+
+    def _plugin_store_entry_count(store: Dict[str, Any]) -> int:
+        return sum(len(_get_plugin_bucket(store, uri)) for uri in list(store.keys()))
+
+    def _append_plugin_entry(store: Dict[str, Any], uri: str, entry: Dict[str, Any]) -> None:
+        bucket = _get_plugin_bucket(store, uri)
+        instance_id = _normalize_positive_int(entry.get("instance_id"))
+        if instance_id is not None:
+            for index, existing in enumerate(bucket):
+                if _normalize_positive_int(existing.get("instance_id")) == instance_id:
+                    bucket[index] = dict(entry)
+                    break
+            else:
+                bucket.append(dict(entry))
+        else:
+            bucket.append(dict(entry))
+        if bucket:
+            store[uri] = bucket
+
+    def _remove_plugin_bucket_entry(
+        store: Dict[str, Any],
+        uri: str,
+        *,
+        instance_id: Optional[int] = None,
+    ) -> Optional[Dict[str, Any]]:
+        bucket = _get_plugin_bucket(store, uri)
+        if not bucket:
+            return None
+
+        normalized_instance_id = _normalize_positive_int(instance_id)
+        remove_index: Optional[int] = None
+        if normalized_instance_id is not None:
+            for index in range(len(bucket) - 1, -1, -1):
+                if _normalize_positive_int(bucket[index].get("instance_id")) == normalized_instance_id:
+                    remove_index = index
+                    break
+            if remove_index is None:
+                return None
+        else:
+            remove_index = len(bucket) - 1
+
+        removed = dict(bucket.pop(remove_index))
+        if bucket:
+            store[uri] = bucket
+        else:
+            store.pop(uri, None)
+        return removed
+
+    def _select_plugin_bucket_entry(
+        store: Dict[str, Any],
+        uri: str,
+        *,
+        instance_id: Optional[int] = None,
+        prefer_pending: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+        bucket = _get_plugin_bucket(store, uri)
+        if not bucket:
+            return None
+
+        normalized_instance_id = _normalize_positive_int(instance_id)
+        if normalized_instance_id is not None:
+            for entry in reversed(bucket):
+                if _normalize_positive_int(entry.get("instance_id")) == normalized_instance_id:
+                    return entry
+            return None
+
+        if prefer_pending:
+            for entry in reversed(bucket):
+                if bool(entry.get("engine_deferred")) and _normalize_positive_int(entry.get("instance_id")) is None:
+                    return entry
+
+        return bucket[-1]
+
     def _schedule_engine_op_worker() -> None:
         global _engine_op_worker_task
         worker = _engine_op_worker_task
@@ -323,7 +413,7 @@ try:
 
     def _mark_loaded_plugin_engine_error(uri: str, error: str) -> None:
         with _plugin_cache_lock:
-            loaded = _loaded_plugins.get(uri)
+            loaded = _select_plugin_bucket_entry(_loaded_plugins, uri, prefer_pending=True)
             if loaded is None:
                 return
             loaded["engine_loaded"] = False
@@ -332,7 +422,7 @@ try:
 
     def _mark_loaded_plugin_engine_loaded(uri: str, instance_id: int) -> None:
         with _plugin_cache_lock:
-            loaded = _loaded_plugins.get(uri)
+            loaded = _select_plugin_bucket_entry(_loaded_plugins, uri, prefer_pending=True)
             if loaded is None:
                 return
             loaded["instance_id"] = instance_id
@@ -399,7 +489,7 @@ try:
         allow_refresh: bool = False,
     ) -> Dict[str, Any]:
         with _plugin_cache_lock:
-            loaded_entry = dict(_loaded_plugins.get(plugin_uri, {}))
+            loaded_entry = dict(_select_plugin_bucket_entry(_loaded_plugins, plugin_uri) or {})
             discovered_snapshot = list(_discovered_plugins)
 
         if loaded_entry:
@@ -427,9 +517,9 @@ try:
 
         if plugin_position is None:
             with _plugin_cache_lock:
-                loaded = _loaded_plugins.get(plugin_uri)
-                if loaded:
-                    cached_instance = _normalize_positive_int(loaded.get("instance_id"))
+                loaded_bucket = _get_plugin_bucket(_loaded_plugins, plugin_uri)
+                if len(loaded_bucket) == 1:
+                    cached_instance = _normalize_positive_int(loaded_bucket[0].get("instance_id"))
                     if cached_instance is not None:
                         return cached_instance
 
@@ -1076,13 +1166,14 @@ try:
         ensure_plugin_route_ready("/api/plugins/list")
         response.headers["Cache-Control"] = "public, max-age=60"
         with _plugin_cache_lock:
-            loaded_entries = list(_loaded_plugins.items())
-            parked_entries = list(_resident_plugins.items())
+            loaded_entries = _flatten_plugin_store(_loaded_plugins)
+            parked_entries = _flatten_plugin_store(_resident_plugins)
         loaded = [
             {
                 "uri": uri,
                 "name": info.get("name", uri),
-                "category": info.get("category", "Unknown")
+                "category": info.get("category", "Unknown"),
+                "instance_id": _normalize_positive_int(info.get("instance_id")),
             }
             for uri, info in loaded_entries
         ]
@@ -1091,6 +1182,7 @@ try:
                 "uri": uri,
                 "name": info.get("name", uri),
                 "category": info.get("category", "Unknown"),
+                "instance_id": _normalize_positive_int(info.get("instance_id")),
             }
             for uri, info in parked_entries
         ]
@@ -1110,8 +1202,8 @@ try:
     async def get_residency_status():
         status = _runtime_profile_status()
         with _plugin_cache_lock:
-            parked_count = len(_resident_plugins)
-            loaded_count = len(_loaded_plugins)
+            parked_count = _plugin_store_entry_count(_resident_plugins)
+            loaded_count = _plugin_store_entry_count(_loaded_plugins)
         return {
             "enabled": _is_effect_residency_enabled(),
             "current_profile": status.get("current_profile"),
@@ -1130,11 +1222,12 @@ try:
         # In performance mode, reuse parked plugin instances to avoid churn.
         if _is_effect_residency_enabled():
             with _plugin_cache_lock:
-                parked_entry = _resident_plugins.pop(uri, None)
+                parked_entry = _remove_plugin_bucket_entry(_resident_plugins, uri)
                 if parked_entry is not None:
+                    parked_entry.pop("engine_parked", None)
                     parked_entry["engine_deferred"] = False
                     parked_entry["engine_last_error"] = None
-                    _loaded_plugins[uri] = parked_entry
+                    _append_plugin_entry(_loaded_plugins, uri, parked_entry)
                     _residency_stats["reused"] += 1
                     return {
                         "status": "loaded",
@@ -1184,7 +1277,7 @@ try:
         loaded_plugin["engine_last_error"] = None
 
         with _plugin_cache_lock:
-            _loaded_plugins[uri] = loaded_plugin
+            _append_plugin_entry(_loaded_plugins, uri, loaded_plugin)
         return {
             "status": "loaded",
             "plugin": loaded_plugin,
@@ -1199,14 +1292,18 @@ try:
             False,
             description="Force plugin destruction instead of residency parking.",
         ),
+        instance_id: Optional[int] = Query(
+            None,
+            description="Specific instance to unload when duplicate URI instances are loaded.",
+        ),
     ):
         """Unload a plugin."""
         ensure_plugin_route_ready("/api/plugins/unload")
         global _loaded_plugins
 
         with _plugin_cache_lock:
-            existing_entry = _loaded_plugins.get(uri)
-            loaded_entry = dict(existing_entry) if isinstance(existing_entry, dict) else None
+            selected_loaded_entry = _select_plugin_bucket_entry(_loaded_plugins, uri, instance_id=instance_id)
+            loaded_entry = dict(selected_loaded_entry) if isinstance(selected_loaded_entry, dict) else None
         if loaded_entry is None:
             # Idempotent unload keeps high-frequency churn from surfacing benign 404 races.
             return {"status": "not_loaded", "uri": uri, "engine_unloaded": False}
@@ -1215,12 +1312,19 @@ try:
             loaded_entry["engine_parked"] = True
             loaded_entry["engine_deferred"] = False
             with _plugin_cache_lock:
-                _loaded_plugins.pop(uri, None)
-                _resident_plugins[uri] = loaded_entry
+                removed = _remove_plugin_bucket_entry(
+                    _loaded_plugins,
+                    uri,
+                    instance_id=_normalize_positive_int(loaded_entry.get("instance_id")) or instance_id,
+                )
+                if removed is not None:
+                    loaded_entry = removed
+                _append_plugin_entry(_resident_plugins, uri, loaded_entry)
                 _residency_stats["parked"] += 1
             return {
                 "status": "parked",
                 "uri": uri,
+                "instance_id": _normalize_positive_int(loaded_entry.get("instance_id")),
                 "engine_unloaded": False,
                 "engine_deferred": False,
                 "engine_parked": True,
@@ -1265,12 +1369,22 @@ try:
             logger.debug("Skipping engine plugin unload (MAP2_ENABLE_ENGINE_PLUGIN_OPS disabled)")
 
         with _plugin_cache_lock:
-            _loaded_plugins.pop(uri, None)
-            _resident_plugins.pop(uri, None)
+            normalized_loaded_instance_id = _normalize_positive_int(loaded_entry.get("instance_id"))
+            _remove_plugin_bucket_entry(
+                _loaded_plugins,
+                uri,
+                instance_id=normalized_loaded_instance_id,
+            )
+            _remove_plugin_bucket_entry(
+                _resident_plugins,
+                uri,
+                instance_id=normalized_loaded_instance_id,
+            )
             _residency_stats["destroyed"] += 1
         return {
             "status": "unloaded",
             "uri": uri,
+            "instance_id": _normalize_positive_int(loaded_entry.get("instance_id")),
             "engine_unloaded": engine_unloaded,
             "engine_deferred": engine_deferred,
         }
@@ -1407,7 +1521,7 @@ try:
     async def get_parameters(uri: str):
         """Get plugin parameters."""
         with _plugin_cache_lock:
-            loaded_exists = uri in _loaded_plugins
+            loaded_exists = bool(_get_plugin_bucket(_loaded_plugins, uri))
             discovered_snapshot = list(_discovered_plugins)
         if not loaded_exists:
             raise HTTPException(status_code=404, detail="Plugin not loaded")
@@ -1566,7 +1680,11 @@ try:
         unique_updates = list(deduped_updates.values())
 
         with _plugin_cache_lock:
-            loaded_snapshot = {uri: dict(info) for uri, info in _loaded_plugins.items()}
+            loaded_snapshot = {
+                uri: dict(entries[-1])
+                for uri in list(_loaded_plugins.keys())
+                if (entries := _get_plugin_bucket(_loaded_plugins, uri))
+            }
             discovered_snapshot = list(_discovered_plugins)
 
         discovered_lookup = {
