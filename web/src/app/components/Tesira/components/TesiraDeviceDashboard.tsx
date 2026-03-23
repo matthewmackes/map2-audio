@@ -1,26 +1,28 @@
 import React, { useState } from 'react'
-import { Box, Paper, Typography, Grid, CircularProgress, Button, Chip } from '@mui/material'
-import { Link as RouterLink } from 'react-router-dom'
+import { Button, InlineLoading, Tag, Tile } from '@carbon/react'
+import { useNavigate } from 'react-router-dom'
 import { useTesiraDevice } from '../hooks/useTesiraApi'
 import { TesiraFleetHealth } from './TesiraFleetHealth'
 import { TesiraPtpTopology } from './TesiraPtpTopology'
 import { TesiraDeployDialog } from './TesiraDeployDialog'
 import { TesiraQuickCommandPanel } from './TesiraQuickCommandPanel'
 import { buildPlatformHref } from '../../../platform/model'
+import './TesiraCarbonChrome.css'
 
 interface TesiraDeviceDashboardProps {
   deviceId: string
 }
 
 export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) {
+  const navigate = useNavigate()
   const { data: device, isLoading } = useTesiraDevice(deviceId)
   const [deployOpen, setDeployOpen] = useState(false)
 
   if (isLoading || !device) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress size={24} />
-      </Box>
+      <div className="tesira-dashboard__loading">
+        <InlineLoading description="Loading Tesira dashboard" />
+      </div>
     )
   }
 
@@ -33,71 +35,90 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
   const talkers = device.avb_streams.filter((stream) => stream.direction === 'talker').length
   const listeners = device.avb_streams.filter((stream) => stream.direction === 'listener').length
   const streamHealth = device.connected ? 'Healthy' : 'Offline'
+  const quickRoutes = [
+    { label: 'Levels', to: `/tesira/${deviceId}/levels` },
+    { label: 'Mixer', to: `/tesira/${deviceId}/mixer` },
+    { label: 'EQ', to: `/tesira/${deviceId}/eq` },
+    { label: 'Presets', to: `/tesira/${deviceId}/presets` },
+    { label: 'Design', to: `/tesira/${deviceId}/design` },
+    { label: 'DSP', to: `/tesira/${deviceId}/dsp` },
+    { label: 'Settings', to: `/tesira/${deviceId}/settings` },
+  ]
 
   return (
-    <Box className="tesira-device-dashboard" sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="subtitle1" fontWeight={700}>
-        {device.name || device.host}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {device.host}:{device.port} {device.firmware_version ? ` · fw ${device.firmware_version}` : ''}
-      </Typography>
+    <div className="tesira-dashboard">
+      <div className="tesira-dashboard__hero">
+        <div className="tesira-dashboard__hero-meta">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Operator dashboard</p>
+            <h2 className="tesira-dashboard__title">{device.name || device.host}</h2>
+            <p className="tesira-dashboard__summary">
+              {device.host}:{device.port}
+              {device.firmware_version ? ` · fw ${device.firmware_version}` : ''}
+            </p>
+          </div>
+          <div className="tesira-dashboard__hero-meta">
+            <Tag type={device.connected ? 'green' : 'warm-gray'}>{device.connected ? 'Runtime ready' : 'Needs reconnect'}</Tag>
+            {device.transport ? <Tag type="cool-gray">{device.transport.toUpperCase()}</Tag> : null}
+          </div>
+        </div>
 
-      <Grid container spacing={1.5}>
-        {cards.map((card) => (
-          <Grid key={card.label} item xs={12} sm={6} md={3}>
-            <Paper variant="outlined" sx={{ p: 1.25 }}>
-              <Typography variant="caption" color="text.secondary">{card.label}</Typography>
-              <Typography variant="body2" fontWeight={700}>{card.value}</Typography>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
+        <div className="tesira-dashboard__summary-grid">
+          {cards.map((card) => (
+            <Tile key={card.label} className="tesira-dashboard__summary-tile">
+              <p className="tesira-dashboard__stat-label">{card.label}</p>
+              <p className="tesira-dashboard__stat-value">{card.value}</p>
+            </Tile>
+          ))}
+        </div>
 
-      <Box className="tesira-dashboard-actions" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/levels`} variant="outlined">Levels</Button>
-        <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/mixer`} variant="outlined">Mixer</Button>
-        <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/eq`} variant="outlined">EQ</Button>
-        <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/presets`} variant="outlined">Presets</Button>
-        <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/design`} variant="outlined">Design</Button>
-        <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/dsp`} variant="outlined">DSP</Button>
-        <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/settings`} variant="outlined">Settings</Button>
-        <Button size="small" onClick={() => setDeployOpen(true)} variant="outlined">Export for SageVue</Button>
-        <Button size="small" component={RouterLink} to={buildPlatformHref('avb-routing')} variant="outlined">AVB Routing</Button>
-      </Box>
-
-      <Paper variant="outlined" sx={{ p: 1.25 }}>
-        <Typography variant="caption" color="text.secondary">AVB Stream Health</Typography>
-        <Box sx={{ mt: 0.75, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Chip
-            size="small"
-            color={streamHealth === 'Healthy' ? 'success' : 'default'}
-            label={streamHealth}
-          />
-          <Typography variant="caption" color="text.secondary">Talkers: {talkers}</Typography>
-          <Typography variant="caption" color="text.secondary">Listeners: {listeners}</Typography>
-          <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/avb`} variant="text">
-            View Streams
+        <div className="tesira-dashboard__actions">
+          {quickRoutes.map((route) => (
+            <Button key={route.to} size="sm" kind="secondary" onClick={() => navigate(route.to)}>
+              {route.label}
+            </Button>
+          ))}
+          <Button size="sm" kind="secondary" onClick={() => setDeployOpen(true)}>
+            Export for SageVue
           </Button>
-        </Box>
-      </Paper>
+          <Button size="sm" kind="tertiary" onClick={() => window.location.assign(buildPlatformHref('avb-routing'))}>
+            AVB Routing
+          </Button>
+        </div>
+      </div>
+
+      <Tile className="tesira-dashboard__stream-tile">
+        <div className="tesira-dashboard__stream-copy">
+          <p className="tesira-dashboard__stat-label">AVB stream health</p>
+          <div className="tesira-dashboard__stream-meta">
+            <div className="tesira-dashboard__hero-meta">
+              <Tag type={streamHealth === 'Healthy' ? 'green' : 'warm-gray'}>{streamHealth}</Tag>
+              <Tag type="cool-gray">Talkers {talkers}</Tag>
+              <Tag type="cool-gray">Listeners {listeners}</Tag>
+            </div>
+            <Button size="sm" kind="tertiary" onClick={() => navigate(`/tesira/${deviceId}/avb`)}>
+              View streams
+            </Button>
+          </div>
+        </div>
+      </Tile>
 
       <TesiraQuickCommandPanel deviceId={deviceId} />
 
-      <Grid container spacing={1.5}>
-        <Grid item xs={12} md={5}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '1rem' }}>
+        <div>
           <TesiraFleetHealth />
-        </Grid>
-        <Grid item xs={12} md={7}>
+        </div>
+        <div>
           <TesiraPtpTopology />
-        </Grid>
-      </Grid>
+        </div>
+      </div>
 
       <TesiraDeployDialog
         deviceId={deviceId}
         open={deployOpen}
         onClose={() => setDeployOpen(false)}
       />
-    </Box>
+    </div>
   )
 }

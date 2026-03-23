@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
-import { NetworkTimeProtocol, Search } from '@carbon/icons-react'
-import { Box, Typography, Chip, Tooltip, Button } from '@mui/material'
-import { Link as RouterLink } from 'react-router-dom'
+import { Search } from '@carbon/icons-react'
+import { Button, InlineLoading, Tag } from '@carbon/react'
+import { useNavigate } from 'react-router-dom'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useTesiraDevices, useDiscoveryStatus } from '../hooks/useTesiraApi'
 import { DiscoveryDialog } from './DiscoveryDialog'
+import './TesiraCarbonChrome.css'
 
 const BIAMP_RED = '#E31837'
 
 export function TesiraTopBar() {
+  const navigate = useNavigate()
   const { data: devices } = useTesiraDevices()
   const { data: discoveryStatus } = useDiscoveryStatus()
   const [discoveryOpen, setDiscoveryOpen] = useState(false)
@@ -20,85 +22,36 @@ export function TesiraTopBar() {
 
   return (
     <>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          px: 2,
-          py: 1,
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-        }}
-      >
-        <MapMatrixProcessorIcon size={22} color={BIAMP_RED} />
-        <Typography variant="subtitle1" fontWeight={700}>
-          Tesira AVB Fleet
-        </Typography>
+      <div className="tesira-carbon-bar">
+        <div className="tesira-carbon-bar__brand">
+          <MapMatrixProcessorIcon size={22} color={BIAMP_RED} />
+          <div className="tesira-carbon-bar__copy">
+            <p className="tesira-carbon-bar__eyebrow">Biamp control</p>
+            <h1 className="tesira-carbon-bar__title">Tesira AVB Fleet</h1>
+          </div>
+        </div>
 
-        <Box sx={{ flex: 1 }} />
-
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Button
-            size="small"
-            component={RouterLink}
-            to="/tesira"
-            variant="contained"
-            sx={{
-              fontSize: 11,
-              py: 0.25,
-              px: 1,
-              bgcolor: BIAMP_RED,
-              '&:hover': { bgcolor: '#c01530' },
-            }}
-          >
+        <div className="tesira-carbon-bar__meta">
+          <Button size="sm" kind="primary" onClick={() => navigate('/tesira')}>
             Onboarding wizard
           </Button>
 
-          <Chip
-            label={`${connectedCount}/${totalCount} online`}
-            size="small"
-            color={connectedCount === totalCount && totalCount > 0 ? 'success' : connectedCount > 0 ? 'warning' : 'default'}
-            sx={{ fontSize: 11 }}
-          />
+          <Tag type={connectedCount === totalCount && totalCount > 0 ? 'green' : connectedCount > 0 ? 'warm-gray' : 'red'}>
+            {connectedCount}/{totalCount} online
+          </Tag>
 
-          {anyMaster && (
-            <Tooltip title="A Tesira unit is PTP Master — MAP2 ptp4l will be demoted to SLAVE">
-              <Chip
-                icon={<NetworkTimeProtocol size={12} />}
-                label="PTP Slaved"
-                size="small"
-                variant="outlined"
-                sx={{ fontSize: 11, borderColor: BIAMP_RED, color: BIAMP_RED }}
-              />
-            </Tooltip>
-          )}
+          {anyMaster ? (
+            <Tag type="red" title="A Tesira unit is PTP master, so MAP2 must slave to it.">
+              PTP slaved
+            </Tag>
+          ) : null}
 
-          <Tooltip title="Auto-discover Biamp Tesira Forte AVB units on the local network">
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={
-                isScanning
-                  ? <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: BIAMP_RED, animation: 'tesiraTopPulse 1s ease-in-out infinite', '@keyframes tesiraTopPulse': { '0%,100%': { opacity: 0.4 }, '50%': { opacity: 1 } } }} />
-                  : <Search size={14} />
-              }
-              onClick={() => setDiscoveryOpen(true)}
-              sx={{
-                borderColor: BIAMP_RED,
-                color: BIAMP_RED,
-                fontSize: 11,
-                py: 0.25,
-                px: 1,
-                '&:hover': { borderColor: '#c01530', bgcolor: 'rgba(227,24,55,0.04)' },
-              }}
-            >
-              {isScanning ? 'Scanning…' : 'Discover'}
-            </Button>
-          </Tooltip>
-        </Box>
-      </Box>
+          <Button size="sm" kind="ghost" renderIcon={Search} onClick={() => setDiscoveryOpen(true)}>
+            {isScanning ? 'Scanning…' : 'Discover'}
+          </Button>
+          {isScanning ? <InlineLoading description="" status="active" /> : null}
+        </div>
+      </div>
 
       <DiscoveryDialog open={discoveryOpen} onClose={() => setDiscoveryOpen(false)} />
     </>

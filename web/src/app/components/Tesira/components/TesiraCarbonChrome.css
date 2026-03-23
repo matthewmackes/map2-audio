@@ -1,0 +1,159 @@
+.tesira-carbon-bar,
+.tesira-device-header,
+.tesira-dashboard__hero {
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer);
+}
+
+.tesira-carbon-bar,
+.tesira-device-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.tesira-carbon-bar {
+  border-width: 0 0 1px;
+}
+
+.tesira-carbon-bar__brand,
+.tesira-device-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.tesira-carbon-bar__copy,
+.tesira-device-header__copy {
+  min-width: 0;
+}
+
+.tesira-carbon-bar__eyebrow,
+.tesira-device-header__eyebrow,
+.tesira-dashboard__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--cds-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tesira-carbon-bar__title,
+.tesira-device-header__title,
+.tesira-dashboard__title {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.tesira-device-header__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tesira-carbon-bar__meta,
+.tesira-device-header__meta,
+.tesira-dashboard__hero-meta,
+.tesira-dashboard__actions,
+.tesira-dashboard__stream-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tesira-carbon-bar__meta {
+  margin-left: auto;
+}
+
+.tesira-device-header {
+  justify-content: space-between;
+  border-width: 0 0 1px;
+}
+
+.tesira-device-header__details,
+.tesira-dashboard__summary {
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.tesira-device-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tesira-dashboard {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-dashboard__loading {
+  padding: 1.5rem;
+}
+
+.tesira-dashboard__hero {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-dashboard__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+}
+
+.tesira-dashboard__summary-tile,
+.tesira-dashboard__stream-tile {
+  min-height: 100%;
+}
+
+.tesira-dashboard__stat-label {
+  margin: 0 0 0.25rem;
+  color: var(--cds-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tesira-dashboard__stat-value {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.tesira-dashboard__stream-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tesira-dashboard__stream-meta {
+  justify-content: space-between;
+}
+
+@media (max-width: 900px) {
+  .tesira-carbon-bar,
+  .tesira-device-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tesira-carbon-bar__meta,
+  .tesira-device-header__actions,
+  .tesira-dashboard__stream-meta {
+    width: 100%;
+  }
+}

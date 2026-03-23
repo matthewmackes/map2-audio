@@ -184,7 +184,7 @@ Last updated: 2026-03-23 16:24 EDT - Codex
   - Validation passed with `pytest tests/tesira/test_routes_tesira_extended.py -q`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraOnboardingWizard.test.tsx web/src/app/components/Tesira/components/TesiraOfflineBanner.test.tsx web/src/app/components/Tesira/components/TesiraQuickCommandPanel.test.tsx`, and `npm --prefix web run build`.
 
 ID: T353
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Complete Carbon-first migration for the dedicated Tesira route shell and high-traffic operator surfaces
 Description:
 - Goal / acceptance criteria: Replace the remaining MUI-heavy shell, fleet, dashboard, dialog, and high-traffic device-tab surfaces on `/tesira` with Carbon-first structure, components, and token usage while preserving current behavior.
@@ -194,9 +194,12 @@ Description:
 - Required outputs: Updated `/tesira` shell/dashboard/dialog/tab components, focused validation evidence, and updated audit/worklist notes showing the remaining compliance deltas if any.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 16:24 EDT - Codex
+Last updated: 2026-03-23 16:30 EDT - Codex
 - Progress notes:
   - `docs/tesira/TESIRA_GUI_AUDIT_20260323.md` identifies the shell, fleet panel, top bar, device header/dashboard, deploy dialog, and most device tabs as still MUI-based and therefore not Carbon-compliant.
+  - Cycle 2 scope: convert the top bar, device header, and dashboard support surfaces first so the operator-facing chrome around onboarding and quick-console recovery is no longer the biggest Carbon outlier on `/tesira`.
+  - Converted `TesiraTopBar.tsx`, `TesiraDeviceHeader.tsx`, and the main dashboard framing in `TesiraDeviceDashboard.tsx` to Carbon buttons/tags/tiles plus token-based CSS in `TesiraCarbonChrome.css`; the deeper dialogs and device tabs remain follow-up work.
+  - Validation passed for the current Carbon slice with `npm --prefix web run typecheck` and `npm --prefix web run build`.
 
 ## MIDI
 

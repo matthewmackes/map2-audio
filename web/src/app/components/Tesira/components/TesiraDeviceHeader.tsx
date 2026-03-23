@@ -1,10 +1,11 @@
 import React from 'react'
 import { Connect, Unlink } from '@carbon/icons-react'
-import { Box, Typography, Chip, Button, Tooltip } from '@mui/material'
+import { Button, Tag } from '@carbon/react'
 import type { TesiraDeviceDetail } from '../types'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import { useConnectDevice, useDisconnectDevice } from '../hooks/useTesiraApi'
 import { useCluster } from '../../../contexts/ClusterContext'
+import './TesiraCarbonChrome.css'
 
 const BIAMP_RED = '#E31837'
 
@@ -21,81 +22,53 @@ export function TesiraDeviceHeader({ device }: TesiraDeviceHeaderProps) {
     .join(', ')
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderBottom: 1, borderColor: 'divider' }}>
-      <MapMatrixProcessorIcon size={24} color={device.connected ? BIAMP_RED : '#666'} />
+    <div className="tesira-device-header">
+      <div className="tesira-device-header__brand">
+        <MapMatrixProcessorIcon size={24} color={device.connected ? BIAMP_RED : '#666'} />
+        <div className="tesira-device-header__copy">
+          <p className="tesira-device-header__eyebrow">{device.connected ? 'Connected unit' : 'Offline unit'}</p>
+          <h2 className="tesira-device-header__title">{device.name || device.host}</h2>
+          <p className="tesira-device-header__details">
+            {device.host}:{device.port}
+            {device.transport ? ` · ${device.transport.toUpperCase()}${device.transport_port ? `:${device.transport_port}` : ''}` : ''}
+            {device.serial_number && ` · S/N ${device.serial_number}`}
+            {device.firmware_version && ` · fw ${device.firmware_version}`}
+          </p>
+        </div>
+      </div>
 
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="subtitle1" fontWeight={700} noWrap>
-          {device.name || device.host}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {device.host}:{device.port}
-          {device.transport ? ` · ${device.transport.toUpperCase()}${device.transport_port ? `:${device.transport_port}` : ''}` : ''}
-          {device.serial_number && ` · S/N ${device.serial_number}`}
-          {device.firmware_version && ` · fw ${device.firmware_version}`}
-        </Typography>
-      </Box>
-
-      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-        {device.ptp_state && (
-          <Tooltip title={`PTP: ${device.ptp_state}`}>
-            <Chip
-              label={`PTP ${device.ptp_state}`}
-              size="small"
-              sx={{
-                height: 20,
-                fontSize: 10,
-                borderColor: device.ptp_state === 'MASTER' ? BIAMP_RED : undefined,
-                color: device.ptp_state === 'MASTER' ? BIAMP_RED : undefined,
-              }}
-              variant="outlined"
-            />
-          </Tooltip>
-        )}
-
-        {device.fault_count > 0 && (
-          <Chip
-            label={`${device.fault_count} fault${device.fault_count > 1 ? 's' : ''}`}
-            size="small"
-            color="warning"
-            sx={{ height: 20, fontSize: 10 }}
-          />
-        )}
-
-        {discoveryLabel && (
-          <Chip
-            label={`Discovered by ${discoveryLabel}`}
-            size="small"
-            variant="outlined"
-            sx={{ height: 20, fontSize: 10 }}
-          />
-        )}
+      <div className="tesira-device-header__actions">
+        <Tag type={device.connected ? 'green' : 'warm-gray'}>{device.connected ? 'Online' : 'Offline'}</Tag>
+        {device.ptp_state ? <Tag type={device.ptp_state === 'MASTER' ? 'red' : 'blue'}>PTP {device.ptp_state}</Tag> : null}
+        {device.fault_count > 0 ? (
+          <Tag type="red">
+            {device.fault_count} fault{device.fault_count > 1 ? 's' : ''}
+          </Tag>
+        ) : null}
+        {discoveryLabel ? <Tag type="cool-gray">Discovered by {discoveryLabel}</Tag> : null}
 
         {device.connected ? (
           <Button
-            size="small"
-            variant="outlined"
-            color="error"
-            startIcon={<Unlink size={16} />}
+            size="sm"
+            kind="danger--tertiary"
+            renderIcon={Unlink}
             onClick={() => disconnect.mutate(device.device_id)}
             disabled={disconnect.isPending}
-            sx={{ height: 28, fontSize: 11 }}
           >
             Disconnect
           </Button>
         ) : (
           <Button
-            size="small"
-            variant="contained"
-            startIcon={<Connect size={16} />}
+            size="sm"
+            kind="primary"
+            renderIcon={Connect}
             onClick={() => connect.mutate(device.device_id)}
             disabled={connect.isPending}
-            sx={{ height: 28, fontSize: 11, bgcolor: BIAMP_RED, '&:hover': { bgcolor: '#b5122a' } }}
           >
             Connect
           </Button>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
