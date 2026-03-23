@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**812** Python | **1214** TypeScript | **298** C++/H | **123** Docs | **760** total commits | **1** stars | **0** forks | **0** open issues
+**812** Python | **1214** TypeScript | **298** C++/H | **123** Docs | **762** total commits | **1** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`be0d8c3c`](https://github.com/matthewmackes/map2-audio/commit/be0d8c3cdac3c4e2780af654bef548c79810cd48) | Carbonize Tesira route chrome | Map2 Audio | 2026-03-23 |
+| [`a93ea644`](https://github.com/matthewmackes/map2-audio/commit/a93ea6449e76e426e734c0b444bd1eb8e2401c1a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-23 |
 | [`6653d225`](https://github.com/matthewmackes/map2-audio/commit/6653d225676e30acd7dd6932fa931a3b668db7dc) | Advance platform worklist implementation | Map2 Audio | 2026-03-23 |
 | [`02d8d486`](https://github.com/matthewmackes/map2-audio/commit/02d8d486e268967dd81035fe662625b46d4c5c20) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-23 |
 | [`9598e743`](https://github.com/matthewmackes/map2-audio/commit/9598e743161179bb67cbe696e78fff8eac013708) | chore: refresh build version artifacts | Map2 Audio | 2026-03-23 |
 | [`b062e5e8`](https://github.com/matthewmackes/map2-audio/commit/b062e5e89708ebcb1eeb5eaafaebf13bb22ec843) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-23 |
 | [`4361a3a8`](https://github.com/matthewmackes/map2-audio/commit/4361a3a8fe4f80af629b68ee494bc863d1a2476e) | feat: land cluster, MIDI Hub, and JUCE Grid updates | Map2 Audio | 2026-03-23 |
 | [`351f3c79`](https://github.com/matthewmackes/map2-audio/commit/351f3c79149a5fc0c2807ab4b11b53e940241200) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-23 |
-| [`8dc3c098`](https://github.com/matthewmackes/map2-audio/commit/8dc3c09834f02ebb2341c3963c84cd4bb15ba4c2) | chore: refresh build version artifacts | Map2 Audio | 2026-03-22 |
-| [`dc212a74`](https://github.com/matthewmackes/map2-audio/commit/dc212a7452e8bfe42fb945786bd1c6a0e242360c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-22 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
