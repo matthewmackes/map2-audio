@@ -32,6 +32,35 @@ jest.mock('./TesiraDspBlockPanel', () => ({
 }))
 
 describe('TesiraDspExplorer', () => {
+  beforeAll(() => {
+    if (typeof window.matchMedia !== 'function') {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation((query: string) => ({
+          matches: false,
+          media: query,
+          onchange: null,
+          addListener: jest.fn(),
+          removeListener: jest.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+          dispatchEvent: jest.fn(),
+        })),
+      })
+    }
+
+    if (typeof window.ResizeObserver === 'undefined') {
+      Object.defineProperty(window, 'ResizeObserver', {
+        writable: true,
+        value: class ResizeObserver {
+          observe() {}
+          unobserve() {}
+          disconnect() {}
+        },
+      })
+    }
+  })
+
   it('renders discovered blocks and selects a block', () => {
     render(<TesiraDspExplorer deviceId="tesira_1" />)
 

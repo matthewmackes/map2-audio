@@ -1,118 +1,114 @@
 import React from 'react'
 import { Launch } from '@carbon/icons-react'
-import {
-  Box, Typography, Table, TableHead, TableRow, TableCell, TableBody,
-  Chip, Button, Tooltip,
-} from '@mui/material'
-import { Link as RouterLink } from 'react-router-dom'
+import { Button, Tag, Tile } from '@carbon/react'
+import { useNavigate } from 'react-router-dom'
 import { useTesiraAvbStreams, useTesiraPTP } from '../hooks/useTesiraApi'
+import './TesiraCarbonChrome.css'
 
 interface TesiraAvbTabProps {
   deviceId: string
 }
 
+function ptpTagType(state: string | null | undefined): 'red' | 'green' | 'cool-gray' {
+  if (state === 'MASTER') return 'red'
+  if (state === 'SLAVE') return 'green'
+  return 'cool-gray'
+}
+
 export function TesiraAvbTab({ deviceId }: TesiraAvbTabProps) {
+  const navigate = useNavigate()
   const { data: streams } = useTesiraAvbStreams(deviceId)
   const { data: ptp } = useTesiraPTP(deviceId)
 
   return (
-    <Box sx={{ p: 1.5 }}>
-      {/* PTP status */}
-      {ptp && (
-        <Box sx={{ mb: 2, p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-          <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-            PTP STATUS
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Chip
-              label={`State: ${ptp.state ?? 'unknown'}`}
-              size="small"
-              color={ptp.state === 'MASTER' ? 'error' : ptp.state === 'SLAVE' ? 'success' : 'default'}
-              sx={{ fontSize: 11 }}
-            />
-            {ptp.offset_ns != null && (
-              <Chip
-                label={`Offset: ${ptp.offset_ns} ns`}
-                size="small"
-                variant="outlined"
-                sx={{ fontSize: 11 }}
-              />
-            )}
-            {ptp.grandmaster_id && (
-              <Chip
-                label={`GM: ${ptp.grandmaster_id}`}
-                size="small"
-                variant="outlined"
-                sx={{ fontSize: 10 }}
-              />
-            )}
-          </Box>
-        </Box>
-      )}
+    <div className="tesira-avb-tab">
+      {ptp ? (
+        <Tile className="tesira-avb-tab__tile">
+          <div className="tesira-avb-tab__header">
+            <div>
+              <p className="tesira-dashboard__eyebrow">PTP status</p>
+              <h3 className="tesira-dashboard__title">Clock state and grandmaster visibility</h3>
+              <p className="tesira-dashboard__summary">
+                Use this view to confirm whether the Tesira unit is the PTP master, a slave, or still unaligned before opening AVB routing.
+              </p>
+            </div>
+            <div className="tesira-avb-tab__tags">
+              <Tag type={ptpTagType(ptp.state ?? null)} size="sm">
+                {`State ${ptp.state ?? 'unknown'}`}
+              </Tag>
+              {ptp.offset_ns != null ? <Tag type="cool-gray" size="sm">{`Offset ${ptp.offset_ns} ns`}</Tag> : null}
+              {ptp.grandmaster_id ? <Tag type="blue" size="sm">{`GM ${ptp.grandmaster_id}`}</Tag> : null}
+            </div>
+          </div>
+        </Tile>
+      ) : null}
 
-      {/* AVB streams */}
-      <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-        AVB STREAMS
-      </Typography>
+      <Tile className="tesira-avb-tab__tile">
+        <div className="tesira-avb-tab__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">AVB streams</p>
+            <h3 className="tesira-dashboard__title">Inspect routable streams from this unit</h3>
+            <p className="tesira-dashboard__summary">
+              Review talker and listener streams before jumping into the shared AVB routing page with the selected Tesira entity in focus.
+            </p>
+          </div>
+          <div className="tesira-avb-tab__tags">
+            <Tag type="cool-gray" size="sm">{`${streams?.length ?? 0} streams`}</Tag>
+          </div>
+        </div>
 
-      {!streams || (streams as any[]).length === 0 ? (
-        <Typography variant="body2" color="text.secondary">No AVB streams discovered.</Typography>
-      ) : (
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontSize: 11 }}>#</TableCell>
-              <TableCell sx={{ fontSize: 11 }}>Name</TableCell>
-              <TableCell sx={{ fontSize: 11 }}>Direction</TableCell>
-              <TableCell sx={{ fontSize: 11 }}>Channels</TableCell>
-              <TableCell sx={{ fontSize: 11 }}>Entity ID</TableCell>
-              <TableCell sx={{ fontSize: 11 }}>Health</TableCell>
-              <TableCell sx={{ fontSize: 11 }}></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(streams as any[]).map((s: any) => (
-              <TableRow key={`${s.stream_index}-${s.direction}`}>
-                <TableCell sx={{ fontSize: 11 }}>{s.stream_index}</TableCell>
-                <TableCell sx={{ fontSize: 11 }}>{s.name}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={s.direction}
-                    size="small"
-                    color={s.direction === 'talker' ? 'primary' : 'secondary'}
-                    sx={{ fontSize: 10, height: 18 }}
-                  />
-                </TableCell>
-                <TableCell sx={{ fontSize: 11 }}>{s.channels}</TableCell>
-                <TableCell sx={{ fontSize: 10, fontFamily: 'var(--font-ui-tight)' }}>
-                  {s.entity_id?.substring(0, 12)}…
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={s.entity_id ? 'Ready' : 'Unknown'}
-                    size="small"
-                    color={s.entity_id ? 'success' : 'default'}
-                    sx={{ fontSize: 10, height: 18 }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Tooltip title="View in AVB Routing">
-                    <Button
-                      size="small"
-                      component={RouterLink}
-                      to={`/avb-routing?focusTesiraDevice=${encodeURIComponent(deviceId)}&focusEntity=${encodeURIComponent(String(s.entity_id || ''))}`}
-                      endIcon={<Launch size={12} />}
-                      sx={{ fontSize: 10, minWidth: 0, p: 0.5 }}
-                    >
-                      Route
-                    </Button>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </Box>
+        {!streams || streams.length === 0 ? (
+          <p className="tesira-presets-tab__empty">No AVB streams discovered.</p>
+        ) : (
+          <div className="tesira-avb-tab__table-wrap">
+            <table className="tesira-quick-console__table" aria-label="Tesira AVB streams">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Direction</th>
+                  <th scope="col">Channels</th>
+                  <th scope="col">Entity ID</th>
+                  <th scope="col">Health</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {streams.map((stream) => (
+                  <tr key={`${stream.stream_index}-${stream.direction}`}>
+                    <td>{stream.stream_index}</td>
+                    <td>{stream.name}</td>
+                    <td>
+                      <Tag type={stream.direction === 'talker' ? 'blue' : 'teal'} size="sm">
+                        {stream.direction}
+                      </Tag>
+                    </td>
+                    <td>{stream.channels}</td>
+                    <td>{stream.entity_id ? `${stream.entity_id.substring(0, 12)}…` : '—'}</td>
+                    <td>
+                      <Tag type={stream.entity_id ? 'green' : 'cool-gray'} size="sm">
+                        {stream.entity_id ? 'Ready' : 'Unknown'}
+                      </Tag>
+                    </td>
+                    <td>
+                      <Button
+                        size="sm"
+                        kind="ghost"
+                        renderIcon={Launch}
+                        onClick={() => navigate(
+                          `/avb-routing?focusTesiraDevice=${encodeURIComponent(deviceId)}&focusEntity=${encodeURIComponent(String(stream.entity_id || ''))}`,
+                        )}
+                      >
+                        Route
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Tile>
+    </div>
   )
 }

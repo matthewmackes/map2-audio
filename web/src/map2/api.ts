@@ -120,6 +120,13 @@ import type {
 import type { ParameterDescriptor, ParameterRegistry } from '../app/data/parameterSchema';
 import type { NodeHealth, NodeIdentity, NodeTopology } from '../app/types/node';
 import { sanitizeDisplayPayload } from './displayNames';
+import {
+  getChainReorderCompatibilityKey,
+  getLegacyUriOnlyPluginOrder,
+  isLegacyUriOnlyReorderValidationError,
+  normalizeReorderPluginsResponse,
+  type RawReorderPluginsResponse,
+} from './reorderPluginsCompat';
 
 const RAW_API_BASE = (() => {
   // Check for explicit environment variable
@@ -334,6 +341,20 @@ function appendNodeQuery(url: string, nodeId?: string | null): string {
   if (!nodeId || nodeId === 'all') return url
   const separator = url.includes('?') ? '&' : '?'
   return `${url}${separator}node_id=${encodeURIComponent(nodeId)}`
+}
+
+const legacyUriOnlyChainReorderNodes = new Set<string>()
+
+async function postLegacyUriOnlyChainReorder(
+  url: string,
+  pluginOrder: PluginOrderRef[],
+): Promise<{ status: string; chain_id: number; plugins: PluginOrderRef[] }> {
+  const response = await fetchJson<RawReorderPluginsResponse>(url, {
+    method: 'POST',
+    body: JSON.stringify(getLegacyUriOnlyPluginOrder(pluginOrder)),
+  })
+
+  return normalizeReorderPluginsResponse(response, pluginOrder)
 }
 
 function appendQueryParams(
@@ -819,14 +840,29 @@ export const chainsApi = {
     )
   },
 
-  reorderPlugins: (chainId: number, pluginOrder: PluginOrderRef[], nodeId?: string | null) =>
-    fetchJson<{ status: string; chain_id: number; plugins: PluginOrderRef[] }>(
-      appendNodeQuery(`${API_BASE}/chains/${chainId}/reorder`, nodeId),
-      {
+  reorderPlugins: async (chainId: number, pluginOrder: PluginOrderRef[], nodeId?: string | null) => {
+    const url = appendNodeQuery(`${API_BASE}/chains/${chainId}/reorder`, nodeId)
+    const compatibilityKey = getChainReorderCompatibilityKey(nodeId)
+
+    if (legacyUriOnlyChainReorderNodes.has(compatibilityKey)) {
+      return postLegacyUriOnlyChainReorder(url, pluginOrder)
+    }
+
+    try {
+      const response = await fetchJson<RawReorderPluginsResponse>(url, {
         method: 'POST',
         body: JSON.stringify(pluginOrder),
+      })
+      return normalizeReorderPluginsResponse(response, pluginOrder)
+    } catch (error) {
+      if (!isLegacyUriOnlyReorderValidationError(error)) {
+        throw error
       }
-    ),
+
+      legacyUriOnlyChainReorderNodes.add(compatibilityKey)
+      return postLegacyUriOnlyChainReorder(url, pluginOrder)
+    }
+  },
 
   togglePluginBypass: (chainId: number, pluginUri: string, bypass: boolean, pluginPosition?: number, nodeId?: string | null) => {
     const params = new URLSearchParams({ bypass: String(bypass) })

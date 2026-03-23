@@ -9,16 +9,20 @@
  * until TTP is enabled in Tesira Software (Device Maintenance → Network Settings).
  */
 import React, { useState } from 'react'
-import { Add, ChevronDown, Close } from '@carbon/icons-react'
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Box, TextField, Alert, CircularProgress, Typography, IconButton,
-  Collapse,
-} from '@mui/material'
-import { MapMatrixProcessorIcon } from '../../icons/map'
+  Button,
+  ComposedModal,
+  InlineNotification,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Tag,
+  TextInput,
+  Tile,
+} from '@carbon/react'
+import { Add } from '@carbon/icons-react'
 import { useAddDevice } from '../hooks/useTesiraApi'
-
-const BIAMP_RED = '#E31837'
+import './TesiraCarbonChrome.css'
 
 interface ManualAddDialogProps {
   open: boolean
@@ -35,149 +39,155 @@ export function ManualAddDialog({ open, onClose }: ManualAddDialogProps) {
 
   const addDevice = useAddDevice()
 
+  const resetForm = () => {
+    setHost('')
+    setPort('23')
+    setName('')
+    setError(null)
+    setSuccess(false)
+    setShowAdvanced(false)
+  }
+
   const handleAdd = async () => {
     const trimmedHost = host.trim()
     if (!trimmedHost) {
       setError('IP address is required')
       return
     }
-    const portNum = parseInt(port, 10)
-    if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+
+    const portNum = Number.parseInt(port, 10)
+    if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) {
       setError('Port must be between 1 and 65535')
       return
     }
+
     setError(null)
     try {
       await addDevice.mutateAsync({ host: trimmedHost, port: portNum, name: name.trim() || undefined })
       setSuccess(true)
       setTimeout(() => {
-        setSuccess(false)
-        setHost('')
-        setPort('23')
-        setName('')
-        setShowAdvanced(false)
+        resetForm()
         onClose()
       }, 900)
-    } catch (err: any) {
-      setError(err?.message ?? 'Failed to add device')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add device')
     }
   }
 
   const handleClose = () => {
     if (!addDevice.isPending) {
-      setHost('')
-      setPort('23')
-      setName('')
-      setError(null)
-      setSuccess(false)
-      setShowAdvanced(false)
+      resetForm()
       onClose()
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleAdd()
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      void handleAdd()
+    }
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-        <MapMatrixProcessorIcon size={18} color={BIAMP_RED} />
-        <Typography variant="h6" component="span">Add Tesira Device</Typography>
-        <Box sx={{ flex: 1 }} />
-        <IconButton size="small" onClick={handleClose} disabled={addDevice.isPending}>
-          <Close size={16} />
-        </IconButton>
-      </DialogTitle>
+    <ComposedModal open={open} onClose={handleClose} size="sm" className="tesira-manual-add-modal">
+      <ModalHeader
+        title="Add Tesira Device"
+        label="Tesira enrollment"
+        closeModal={handleClose}
+      />
+      <ModalBody className="tesira-manual-add-modal__body">
+        <Tile className="tesira-manual-add-modal__tile">
+          <div className="tesira-deploy-modal__section-header">
+            <div>
+              <p className="tesira-dashboard__eyebrow">Known IP path</p>
+              <h3 className="tesira-dashboard__title">Enroll by control address</h3>
+              <p className="tesira-dashboard__summary">
+                Enter the control IP of a Tesira unit. MAP2 adds it to the fleet even if TTP is still disabled, and the device can be reconnected once Telnet or SSH is enabled in Tesira Software.
+              </p>
+            </div>
+            <Tag type="cool-gray" size="sm">Fallback path</Tag>
+          </div>
 
-      <DialogContent sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          Enter the IP address of a Biamp Tesira Forte unit on the network.
-          The device will be added to the fleet and shown as{' '}
-          <strong>Offline</strong> until TTP is enabled in Tesira Software
-          (Device Maintenance → Network Settings → Enable Telnet).
-        </Typography>
+          {error ? (
+            <InlineNotification
+              kind="error"
+              lowContrast
+              hideCloseButton
+              title="Unable to add device"
+              subtitle={error}
+            />
+          ) : null}
 
-        {error && <Alert severity="error" sx={{ py: 0 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ py: 0 }}>Device added to fleet</Alert>}
+          {success ? (
+            <InlineNotification
+              kind="success"
+              lowContrast
+              hideCloseButton
+              title="Device added to fleet"
+              subtitle="MAP2 stored the device and will attempt runtime control once the transport is reachable."
+            />
+          ) : null}
 
-        <TextField
-          label="IP Address"
-          placeholder="192.168.1.100"
-          value={host}
-          onChange={(e) => { setHost(e.target.value); setError(null) }}
-          disabled={addDevice.isPending || success}
-          size="small"
-          fullWidth
-          autoFocus
-          onKeyDown={handleKeyDown}
-          inputProps={{ spellCheck: false }}
-        />
+          <TextInput
+            id="tesira-manual-add-host"
+            labelText="IP Address"
+            placeholder="192.168.1.100"
+            value={host}
+            onChange={(event) => {
+              setHost(event.target.value)
+              setError(null)
+            }}
+            disabled={addDevice.isPending || success}
+            onKeyDown={handleKeyDown}
+          />
 
-        {/* Advanced: name + port */}
-        <Box>
           <Button
-            size="small"
-            onClick={() => setShowAdvanced((v) => !v)}
-            sx={{ fontSize: 11, color: 'text.secondary', p: 0, minWidth: 0 }}
-            endIcon={
-              <Box sx={{ display: 'flex', transition: 'transform 0.2s', transform: showAdvanced ? 'rotate(180deg)' : 'none' }}>
-                <ChevronDown size={14} />
-              </Box>
-            }
+            kind="ghost"
+            size="sm"
+            onClick={() => setShowAdvanced((value) => !value)}
+            disabled={addDevice.isPending || success}
           >
-            Advanced
+            {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
           </Button>
-          <Collapse in={showAdvanced}>
-            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-              <TextField
-                label="Name (optional)"
+
+          {showAdvanced ? (
+            <div className="tesira-manual-add-modal__grid">
+              <TextInput
+                id="tesira-manual-add-name"
+                labelText="Name (optional)"
                 placeholder="Main Hall DSP"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(event) => setName(event.target.value)}
                 disabled={addDevice.isPending || success}
-                size="small"
-                sx={{ flex: 1 }}
                 onKeyDown={handleKeyDown}
               />
-              <TextField
-                label="TTP Port"
+              <TextInput
+                id="tesira-manual-add-port"
+                labelText="TTP Port"
                 value={port}
-                onChange={(e) => setPort(e.target.value)}
+                onChange={(event) => setPort(event.target.value.replace(/[^0-9]/g, ''))}
                 disabled={addDevice.isPending || success}
-                size="small"
-                sx={{ width: 90 }}
-                inputProps={{ spellCheck: false }}
                 onKeyDown={handleKeyDown}
+                inputMode="numeric"
               />
-            </Box>
-          </Collapse>
-        </Box>
-      </DialogContent>
-
-      <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-        <Button onClick={handleClose} disabled={addDevice.isPending} color="inherit">
+            </div>
+          ) : null}
+        </Tile>
+      </ModalBody>
+      <ModalFooter>
+        <Button kind="secondary" onClick={handleClose} disabled={addDevice.isPending}>
           Cancel
         </Button>
-        <Box sx={{ flex: 1 }} />
         <Button
-          variant="contained"
-          startIcon={
-            addDevice.isPending
-              ? <CircularProgress size={14} sx={{ color: '#fff' }} />
-              : <Add size={16} />
-          }
-          onClick={handleAdd}
-          disabled={addDevice.isPending || success || !host.trim()}
-          sx={{
-            bgcolor: BIAMP_RED,
-            '&:hover': { bgcolor: '#c01530' },
-            '&.Mui-disabled': { bgcolor: 'rgba(227,24,55,0.3)', color: 'rgba(255,255,255,0.4)' },
+          kind="primary"
+          renderIcon={Add}
+          onClick={() => {
+            void handleAdd()
           }}
+          disabled={addDevice.isPending || success || !host.trim()}
         >
           {addDevice.isPending ? 'Adding…' : 'Add Device'}
         </Button>
-      </DialogActions>
-    </Dialog>
+      </ModalFooter>
+    </ComposedModal>
   )
 }

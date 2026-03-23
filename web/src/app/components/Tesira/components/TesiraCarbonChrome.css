@@ -426,6 +426,649 @@
   min-height: 100%;
 }
 
+.tesira-discovery-modal__body,
+.tesira-manual-add-modal__body,
+.tesira-dsp-probe-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-discovery-modal__tile,
+.tesira-manual-add-modal__tile,
+.tesira-dsp-probe-modal__tile,
+.tesira-levels-tab__tile,
+.tesira-dsp-explorer__tile,
+.tesira-dsp-panel__tile,
+.tesira-faults-tab__tile,
+.tesira-presets-tab__tile {
+  min-height: 100%;
+}
+
+.tesira-discovery-modal__header,
+.tesira-presets-tab__header,
+.tesira-discovery-modal__device-header,
+.tesira-discovery-modal__device-title-row,
+.tesira-discovery-modal__device-actions,
+.tesira-presets-tab__preset-row,
+.tesira-presets-tab__tags,
+.tesira-manual-add-modal__grid,
+.tesira-presets-tab__form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.tesira-discovery-modal__header,
+.tesira-presets-tab__header,
+.tesira-discovery-modal__device-header,
+.tesira-presets-tab__preset-row {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.tesira-discovery-modal__results,
+.tesira-discovery-modal__device,
+.tesira-presets-tab,
+.tesira-presets-tab__tile,
+.tesira-presets-tab__list,
+.tesira-presets-tab__preset-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-discovery-modal__device-tags,
+.tesira-discovery-modal__device-actions,
+.tesira-presets-tab__tags {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tesira-discovery-modal__device-meta,
+.tesira-discovery-modal__device-note,
+.tesira-presets-tab__preset-meta,
+.tesira-presets-tab__empty {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.tesira-discovery-modal__device-title,
+.tesira-presets-tab__preset-title {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.tesira-discovery-modal__device-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.tesira-discovery-modal__device-error {
+  margin: 0;
+  color: var(--cds-support-error);
+  font-size: 0.875rem;
+}
+
+.tesira-manual-add-modal__grid,
+.tesira-presets-tab__form {
+  align-items: flex-end;
+}
+
+.tesira-levels-tab,
+.tesira-dsp-explorer,
+.tesira-avb-tab,
+.tesira-firmware-tab,
+.tesira-device-settings,
+.tesira-faults-tab,
+.tesira-dsp-panel {
+  padding: 1.5rem;
+}
+
+.tesira-levels-tab,
+.tesira-dsp-explorer,
+.tesira-avb-tab,
+.tesira-firmware-tab,
+.tesira-device-settings,
+.tesira-faults-tab,
+.tesira-dsp-panel,
+.tesira-dsp-panel__tile,
+.tesira-avb-tab__tile,
+.tesira-firmware-tab__tile,
+.tesira-device-settings__tile,
+.tesira-dsp-panel__params,
+.tesira-faults-tab__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-levels-tab__header,
+.tesira-levels-tab__tags,
+.tesira-levels-tab__channel-header,
+.tesira-levels-tab__actions,
+.tesira-dsp-explorer__header,
+.tesira-dsp-explorer__tags,
+.tesira-dsp-explorer__toolbar,
+.tesira-avb-tab__header,
+.tesira-avb-tab__tags,
+.tesira-firmware-tab__header,
+.tesira-firmware-tab__actions,
+.tesira-firmware-tab__meta,
+.tesira-firmware-tab__guide-toggle,
+.tesira-device-settings__header,
+.tesira-device-settings__tags,
+.tesira-device-settings__actions,
+.tesira-device-settings__scene-form,
+.tesira-device-settings__table-actions,
+.tesira-dsp-panel__header,
+.tesira-dsp-panel__tags,
+.tesira-dsp-panel__crosspoint-header,
+.tesira-dsp-panel__crosspoint-form,
+.tesira-dsp-panel__param-header,
+.tesira-dsp-panel__param-editor,
+.tesira-faults-tab__header,
+.tesira-faults-tab__actions,
+.tesira-faults-tab__meter-toolbar,
+.tesira-faults-tab__ok,
+.tesira-faults-tab__list-item {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.tesira-levels-tab__header,
+.tesira-levels-tab__channel-header,
+.tesira-dsp-explorer__header,
+.tesira-avb-tab__header,
+.tesira-firmware-tab__header,
+.tesira-device-settings__header,
+.tesira-dsp-panel__header,
+.tesira-dsp-panel__crosspoint-header,
+.tesira-dsp-panel__param-header,
+.tesira-faults-tab__header {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.tesira-levels-tab__tags,
+.tesira-levels-tab__actions,
+.tesira-dsp-explorer__tags,
+.tesira-avb-tab__tags,
+.tesira-firmware-tab__actions,
+.tesira-firmware-tab__meta,
+.tesira-device-settings__tags,
+.tesira-device-settings__actions,
+.tesira-device-settings__table-actions,
+.tesira-dsp-panel__tags,
+.tesira-faults-tab__actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tesira-control-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.tesira-control-panel__tabs,
+.tesira-control-panel__empty-wrap,
+.tesira-control-panel__loading,
+.tesira-control-panel__error {
+  padding: 1.5rem;
+}
+
+.tesira-control-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tesira-control-panel__empty,
+.tesira-control-panel__loading,
+.tesira-control-panel__error {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-avb-tab__table-wrap {
+  border: 1px solid var(--cds-border-subtle);
+  overflow: auto;
+}
+
+.tesira-firmware-tab--embedded {
+  padding: 0;
+}
+
+.tesira-firmware-tab__table-wrap,
+.tesira-device-settings__table-wrap {
+  border: 1px solid var(--cds-border-subtle);
+  overflow: auto;
+}
+
+.tesira-firmware-tab__loading,
+.tesira-device-settings__loading {
+  padding: 1rem 0;
+}
+
+.tesira-firmware-tab__row--selected td {
+  background: var(--cds-layer-selected-hover);
+}
+
+.tesira-firmware-tab__device-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tesira-firmware-tab__device-name {
+  color: var(--cds-text-primary);
+  font-weight: 600;
+}
+
+.tesira-firmware-tab__device-meta {
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.tesira-firmware-tab__row-loading {
+  padding: 0.75rem 0;
+}
+
+.tesira-firmware-tab__stats,
+.tesira-device-settings__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+}
+
+.tesira-firmware-tab__stat,
+.tesira-device-settings__stat {
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer-accent);
+}
+
+.tesira-firmware-tab__guide {
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer-accent);
+}
+
+.tesira-firmware-tab__guide-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--cds-text-primary);
+}
+
+.tesira-device-settings__scene-form,
+.tesira-device-settings__table-actions {
+  align-items: flex-end;
+}
+
+.tesira-device-settings__scene-form > :first-child {
+  flex: 1;
+}
+
+.tesira-levels-tab__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.tesira-levels-tab__channel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.tesira-levels-tab__channel-title,
+.tesira-dsp-panel__param-title {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.tesira-levels-tab__channel-meta,
+.tesira-dsp-panel__param-meta,
+.tesira-faults-tab__ok-copy {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.tesira-levels-tab__meter-shell {
+  position: relative;
+  height: 7rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: linear-gradient(180deg, var(--cds-layer-accent), var(--cds-layer));
+  overflow: hidden;
+}
+
+.tesira-levels-tab__meter-fill {
+  position: absolute;
+  inset: auto 0 0;
+  transition: height 0.08s ease-out;
+}
+
+.tesira-levels-tab__range,
+.tesira-dsp-panel__range {
+  width: 100%;
+  accent-color: var(--cds-link-primary);
+}
+
+.tesira-levels-tab__actions {
+  flex-wrap: wrap;
+}
+
+.tesira-dsp-explorer__toolbar,
+.tesira-dsp-panel__crosspoint-form,
+.tesira-faults-tab__meter-toolbar {
+  align-items: flex-end;
+}
+
+.tesira-dsp-explorer__toolbar > :first-child,
+.tesira-faults-tab__meter-toolbar > :first-child {
+  flex: 1;
+}
+
+.tesira-dsp-explorer__loading,
+.tesira-dsp-panel__loading,
+.tesira-faults-tab__loading {
+  padding: 1rem 0;
+}
+
+.tesira-dsp-explorer__table-wrap {
+  border: 1px solid var(--cds-border-subtle);
+  overflow: auto;
+}
+
+.tesira-dsp-explorer__row {
+  cursor: pointer;
+}
+
+.tesira-dsp-explorer__row--selected td {
+  background: var(--cds-layer-selected-hover);
+}
+
+.tesira-dsp-panel__crosspoint {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer-accent);
+}
+
+.tesira-dsp-panel__crosspoint-form > * {
+  flex: 1;
+}
+
+.tesira-dsp-panel__param {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+}
+
+.tesira-dsp-panel__param-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tesira-dsp-panel__param-editor {
+  align-items: flex-end;
+}
+
+.tesira-dsp-panel__param-editor > :first-child {
+  flex: 1;
+}
+
+.tesira-faults-tab__ok,
+.tesira-faults-tab__list-item {
+  align-items: center;
+}
+
+.tesira-faults-tab__ok {
+  padding: 0.75rem 0;
+  color: var(--cds-support-success);
+}
+
+.tesira-faults-tab__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--cds-border-subtle);
+}
+
+.tesira-faults-tab__list-item {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--cds-border-subtle);
+}
+
+.tesira-faults-tab__list-item:last-child {
+  border-bottom: 0;
+}
+
+.tesira-faults-tab__list-item svg {
+  color: var(--cds-support-warning);
+  flex-shrink: 0;
+}
+
+.tesira-faults-tab__chart {
+  width: 100%;
+  height: 14rem;
+}
+
+.tesira-loop-builder {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-loop-builder__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tesira-loop-builder__grid--inventory {
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+
+.tesira-loop-builder__tile,
+.tesira-loop-builder__inventory-card,
+.tesira-loop-builder__insertion-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-loop-builder__header,
+.tesira-loop-builder__tags,
+.tesira-loop-builder__actions,
+.tesira-loop-builder__inventory-card-header,
+.tesira-loop-builder__inventory-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tesira-loop-builder__header,
+.tesira-loop-builder__inventory-card-header {
+  justify-content: space-between;
+}
+
+.tesira-loop-builder__tags,
+.tesira-loop-builder__actions,
+.tesira-loop-builder__inventory-card-tags {
+  flex-wrap: wrap;
+}
+
+.tesira-loop-builder__form-grid,
+.tesira-loop-builder__insertion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.tesira-loop-builder__number-field {
+  min-width: 0;
+}
+
+.tesira-loop-builder__loading {
+  padding: 1rem 0;
+}
+
+.tesira-loop-builder__empty {
+  margin: 0;
+  color: var(--cds-text-secondary);
+}
+
+.tesira-loop-builder__inventory-list,
+.tesira-loop-builder__insertion-list,
+.tesira-loop-builder__inspector-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-loop-builder__inventory-card {
+  cursor: pointer;
+  border: 1px solid var(--cds-border-subtle);
+  transition: background 120ms ease, outline-color 120ms ease;
+}
+
+.tesira-loop-builder__inventory-card:hover,
+.tesira-loop-builder__inventory-card:focus-visible {
+  outline: 2px solid var(--cds-border-interactive);
+  outline-offset: -2px;
+}
+
+.tesira-loop-builder__inventory-card--selected {
+  background: var(--cds-layer-selected-hover);
+  outline: 2px solid var(--cds-border-interactive);
+  outline-offset: -2px;
+}
+
+.tesira-loop-builder__inventory-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tesira-loop-builder__inventory-card-title {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.tesira-loop-builder__inventory-card-meta {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.tesira-loop-builder__route {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: linear-gradient(180deg, var(--cds-layer-accent), var(--cds-layer));
+}
+
+.tesira-loop-builder__route-path {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.tesira-loop-builder__route-node {
+  min-width: 0;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer);
+  color: var(--cds-text-primary);
+  font-size: 0.875rem;
+  word-break: break-word;
+}
+
+.tesira-loop-builder__route-node--accent {
+  border-color: var(--cds-border-interactive);
+  background: var(--cds-layer-selected-hover);
+}
+
+.tesira-loop-builder__route-arrow {
+  color: var(--cds-text-secondary);
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.tesira-loop-builder__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+}
+
+.tesira-loop-builder__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer-accent);
+}
+
+.tesira-manual-add-modal__grid > *,
+.tesira-presets-tab__form > * {
+  flex: 1;
+}
+
+.tesira-presets-tab {
+  padding: 1.5rem;
+}
+
+.tesira-presets-tab__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tesira-presets-tab__list {
+  gap: 0;
+  border: 1px solid var(--cds-border-subtle);
+}
+
+.tesira-presets-tab__preset-row {
+  padding: 1rem;
+  border-bottom: 1px solid var(--cds-border-subtle);
+}
+
+.tesira-presets-tab__preset-row:last-child {
+  border-bottom: 0;
+}
+
+.tesira-presets-tab__table-wrap {
+  border: 1px solid var(--cds-border-subtle);
+  overflow: auto;
+}
+
 .tesira-deploy-modal__asset-list,
 .tesira-deploy-modal__steps {
   margin: 0;
@@ -455,6 +1098,256 @@
   flex-direction: column;
   gap: 0.75rem;
   color: var(--cds-text-primary);
+}
+
+.tesira-eq-tab,
+.tesira-mixer-tab,
+.tesira-fleet-health,
+.tesira-ptp-topology,
+.tesira-design-canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-eq-tab__tile,
+.tesira-mixer-tab__tile,
+.tesira-fleet-health__tile,
+.tesira-ptp-topology__tile,
+.tesira-design-canvas__sidebar,
+.tesira-design-canvas__canvas-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tesira-eq-tab__header,
+.tesira-eq-tab__tags,
+.tesira-mixer-tab__header,
+.tesira-mixer-tab__tags,
+.tesira-mixer-tab__actions,
+.tesira-mixer-tab__cell-header,
+.tesira-mixer-tab__cell-actions,
+.tesira-fleet-health__header,
+.tesira-fleet-health__actions,
+.tesira-ptp-topology__header,
+.tesira-ptp-topology__actions,
+.tesira-design-canvas__header,
+.tesira-design-canvas__status,
+.tesira-design-canvas__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tesira-eq-tab__header,
+.tesira-mixer-tab__header,
+.tesira-fleet-health__header,
+.tesira-ptp-topology__header,
+.tesira-design-canvas__header {
+  justify-content: space-between;
+}
+
+.tesira-eq-tab__tags,
+.tesira-mixer-tab__tags,
+.tesira-mixer-tab__actions,
+.tesira-fleet-health__actions,
+.tesira-ptp-topology__actions,
+.tesira-mixer-tab__cell-header,
+.tesira-mixer-tab__cell-actions,
+.tesira-design-canvas__status,
+.tesira-design-canvas__actions {
+  flex-wrap: wrap;
+}
+
+.tesira-eq-tab__preview {
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: linear-gradient(180deg, var(--cds-layer-accent), var(--cds-layer));
+}
+
+.tesira-eq-tab__preview svg {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.tesira-eq-tab__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.tesira-eq-tab__band {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.tesira-eq-tab__band-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tesira-eq-tab__control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tesira-eq-tab__label {
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.tesira-eq-tab__range,
+.tesira-mixer-tab__range {
+  width: 100%;
+  accent-color: var(--cds-link-primary);
+}
+
+.tesira-mixer-tab__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(7rem, 1fr) minmax(7rem, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.tesira-mixer-tab__loading,
+.tesira-fleet-health__loading,
+.tesira-ptp-topology__loading {
+  padding: 1rem 0;
+}
+
+.tesira-mixer-tab__table-wrap,
+.tesira-ptp-topology__table-wrap {
+  border: 1px solid var(--cds-border-subtle);
+  overflow: auto;
+}
+
+.tesira-mixer-tab__table {
+  min-width: 44rem;
+}
+
+.tesira-mixer-tab__table th:first-child,
+.tesira-mixer-tab__table td:first-child {
+  white-space: nowrap;
+}
+
+.tesira-mixer-tab__cell {
+  min-width: 10.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tesira-fleet-health__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+}
+
+.tesira-fleet-health__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer-accent);
+}
+
+.tesira-ptp-topology__device-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.tesira-ptp-topology__device-name {
+  color: var(--cds-text-primary);
+  font-weight: 600;
+}
+
+.tesira-ptp-topology__device-meta {
+  color: var(--cds-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.tesira-design-canvas {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.tesira-design-canvas__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tesira-design-canvas__form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.tesira-design-canvas__loading {
+  padding: 1rem 0;
+}
+
+.tesira-design-canvas__workspace-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cds-border-subtle);
+  background: var(--cds-layer-accent);
+}
+
+.tesira-design-canvas__workspace-button {
+  padding: 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--cds-border-subtle);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.tesira-design-canvas__workspace-button:last-child {
+  border-bottom: 0;
+}
+
+.tesira-design-canvas__workspace-button:hover,
+.tesira-design-canvas__workspace-button:focus-visible {
+  background: var(--cds-layer-selected-hover);
+}
+
+.tesira-design-canvas__workspace-button--selected {
+  background: var(--cds-layer-selected-hover);
+}
+
+.tesira-design-canvas__workspace-name {
+  color: var(--cds-text-primary);
+  font-weight: 600;
+}
+
+.tesira-design-canvas__workspace-meta {
+  color: var(--cds-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.tesira-design-canvas__notice-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tesira-design-canvas__canvas-shell {
+  min-height: 35rem;
+  border: 1px solid var(--cds-border-subtle);
+  overflow: hidden;
 }
 
 @keyframes tesira-spin {
@@ -491,7 +1384,60 @@
   }
 
   .tesira-quick-console,
-  .tesira-deploy-modal__grid {
+  .tesira-deploy-modal__grid,
+  .tesira-presets-tab__grid,
+  .tesira-levels-tab__grid,
+  .tesira-loop-builder__grid,
+  .tesira-loop-builder__grid--inventory,
+  .tesira-loop-builder__form-grid,
+  .tesira-loop-builder__insertion-grid,
+  .tesira-loop-builder__route-path {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tesira-discovery-modal__header,
+  .tesira-presets-tab__header,
+  .tesira-discovery-modal__device-header,
+  .tesira-discovery-modal__device-actions,
+  .tesira-manual-add-modal__grid,
+  .tesira-presets-tab__form,
+  .tesira-presets-tab__preset-row,
+  .tesira-levels-tab__header,
+  .tesira-levels-tab__channel-header,
+  .tesira-levels-tab__actions,
+  .tesira-dsp-explorer__header,
+  .tesira-dsp-explorer__toolbar,
+  .tesira-avb-tab__header,
+  .tesira-firmware-tab__header,
+  .tesira-firmware-tab__meta,
+  .tesira-firmware-tab__actions,
+  .tesira-device-settings__header,
+  .tesira-device-settings__scene-form,
+  .tesira-device-settings__table-actions,
+  .tesira-dsp-panel__header,
+  .tesira-dsp-panel__param-header,
+  .tesira-dsp-panel__param-editor,
+  .tesira-dsp-panel__crosspoint-header,
+  .tesira-dsp-panel__crosspoint-form,
+  .tesira-faults-tab__header,
+  .tesira-faults-tab__meter-toolbar,
+  .tesira-eq-tab__header,
+  .tesira-loop-builder__header,
+  .tesira-loop-builder__inventory-card-header,
+  .tesira-mixer-tab__header,
+  .tesira-mixer-tab__controls,
+  .tesira-fleet-health__header,
+  .tesira-ptp-topology__header,
+  .tesira-design-canvas__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tesira-loop-builder__route-arrow {
+    display: none;
+  }
+
+  .tesira-design-canvas {
     grid-template-columns: minmax(0, 1fr);
   }
 }

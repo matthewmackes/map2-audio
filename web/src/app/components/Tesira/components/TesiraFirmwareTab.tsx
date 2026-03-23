@@ -9,100 +9,117 @@ import {
   Renew,
   WarningAlt,
 } from '@carbon/icons-react'
-import {
-  Box, Typography, Table, TableHead, TableRow, TableCell, TableBody,
-  Chip, Button, CircularProgress, Alert, Divider, Paper, Tooltip,
-  Collapse, IconButton, Stack, Link,
-} from '@mui/material'
-import { useTesiraDevices, useFirmwareLatest, useDeviceFirmware, useRebootDevice } from '../hooks/useTesiraApi'
-import type { TesiraFirmwareStatus } from '../types'
-
-const BIAMP_RED = '#E31837'
+import { Button, InlineLoading, InlineNotification, Link, Tag, Tile } from '@carbon/react'
+import { useDeviceFirmware, useFirmwareLatest, useRebootDevice, useTesiraDevices } from '../hooks/useTesiraApi'
+import type { TesiraFirmwareStatus, TesiraLatestFirmware } from '../types'
+import './TesiraCarbonChrome.css'
 
 interface TesiraFirmwareTabProps {
-  /** Currently-selected device (for the detail pane). */
   deviceId: string
+  embedded?: boolean
 }
 
-export function TesiraFirmwareTab({ deviceId }: TesiraFirmwareTabProps) {
+type RebootNotice = {
+  kind: 'success' | 'error'
+  message: string
+}
+
+function firmwareStatusTag(firmware: TesiraFirmwareStatus): React.ReactNode {
+  if (!firmware.connected) {
+    return <Tag type="cool-gray" size="sm">Offline</Tag>
+  }
+  if (firmware.update_available) {
+    return <Tag type="red" size="sm">Update available</Tag>
+  }
+  return <Tag type="green" size="sm">Up to date</Tag>
+}
+
+export function TesiraFirmwareTab({ deviceId, embedded = false }: TesiraFirmwareTabProps) {
   const { data: devices = [], isLoading: devicesLoading } = useTesiraDevices()
   const { data: latest, isLoading: latestLoading, refetch: refetchLatest } = useFirmwareLatest()
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {/* ── Fleet status table ── */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="subtitle2" fontWeight={700} color="text.primary">
-          Fleet Firmware Status
-        </Typography>
-        <Tooltip title="Refresh latest version from Biamp">
-          <span>
-            <IconButton
-              size="small"
-              onClick={() => refetchLatest()}
+    <div className={embedded ? 'tesira-firmware-tab tesira-firmware-tab--embedded' : 'tesira-firmware-tab'}>
+      <Tile className="tesira-firmware-tab__tile">
+        <div className="tesira-firmware-tab__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Fleet firmware</p>
+            <h3 className="tesira-dashboard__title">Compare installed and latest Tesira releases</h3>
+            <p className="tesira-dashboard__summary">
+              Review firmware posture across the fleet before package deployment, scene capture, or recovery work on a used unit.
+            </p>
+          </div>
+          <div className="tesira-firmware-tab__actions">
+            <Button
+              size="sm"
+              kind="ghost"
+              renderIcon={Renew}
+              onClick={() => {
+                refetchLatest().catch(() => undefined)
+              }}
               disabled={latestLoading}
             >
-              {latestLoading ? <CircularProgress size={14} /> : <Renew size={16} />}
-            </IconButton>
-          </span>
-        </Tooltip>
-      </Box>
+              Refresh latest
+            </Button>
+          </div>
+        </div>
 
-      {latest && (
-        <Typography variant="caption" color="text.secondary">
-          Latest available: <strong style={{ color: '#f1f5f9' }}>{latest.version ?? '—'}</strong>
-          {latest.fetched_at && ` · checked ${new Date(latest.fetched_at).toLocaleTimeString()}`}
-        </Typography>
-      )}
+        {latest ? (
+          <div className="tesira-firmware-tab__meta">
+            <Tag type="blue" size="sm">{`Latest ${latest.version ?? '—'}`}</Tag>
+            {latest.fetched_at ? (
+              <Tag type="cool-gray" size="sm">
+                {`Checked ${new Date(latest.fetched_at).toLocaleTimeString()}`}
+              </Tag>
+            ) : null}
+            {latest.release_notes_url ? (
+              <Link href={latest.release_notes_url} target="_blank" rel="noopener noreferrer">
+                Release notes
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
 
-      {devicesLoading ? (
-        <CircularProgress size={24} />
-      ) : (
-        <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ '& th': { fontSize: 11, fontWeight: 700, color: 'text.secondary', py: 0.75 } }}>
-                <TableCell>Device</TableCell>
-                <TableCell>Current</TableCell>
-                <TableCell>Latest</TableCell>
-                <TableCell>Status</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {devices.map((d) => (
-                <DeviceRow
-                  key={d.device_id}
-                  deviceId={d.device_id}
-                  latestVersion={latest?.version ?? null}
-                  selected={d.device_id === deviceId}
-                />
-              ))}
-              {devices.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} sx={{ color: 'text.disabled', fontSize: 12, textAlign: 'center' }}>
-                    No devices in fleet
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Paper>
-      )}
+        {devicesLoading ? (
+          <div className="tesira-firmware-tab__loading">
+            <InlineLoading description="Loading firmware fleet status" />
+          </div>
+        ) : devices.length === 0 ? (
+          <p className="tesira-presets-tab__empty">No devices in fleet.</p>
+        ) : (
+          <div className="tesira-firmware-tab__table-wrap">
+            <table className="tesira-quick-console__table" aria-label="Tesira fleet firmware status">
+              <thead>
+                <tr>
+                  <th scope="col">Device</th>
+                  <th scope="col">Current</th>
+                  <th scope="col">Latest</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {devices.map((device) => (
+                  <DeviceRow
+                    key={device.device_id}
+                    deviceId={device.device_id}
+                    latestVersion={latest?.version ?? null}
+                    selected={device.device_id === deviceId}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Tile>
 
-      {/* ── Per-device detail pane ── */}
-      {deviceId && (
-        <>
-          <Divider />
+      {deviceId ? (
+        <Tile className="tesira-firmware-tab__tile">
           <DeviceDetail deviceId={deviceId} latestVersion={latest?.version ?? null} latestFirmware={latest} />
-        </>
-      )}
-    </Box>
+        </Tile>
+      ) : null}
+    </div>
   )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Fleet table row — fetches firmware status per device
-// ─────────────────────────────────────────────────────────────────────────────
 
 function DeviceRow({
   deviceId,
@@ -113,75 +130,38 @@ function DeviceRow({
   latestVersion: string | null
   selected: boolean
 }) {
-  const { data: fw, isLoading } = useDeviceFirmware(deviceId)
+  const { data: firmware, isLoading } = useDeviceFirmware(deviceId)
 
   if (isLoading) {
     return (
-      <TableRow selected={selected}>
-        <TableCell colSpan={4}><CircularProgress size={12} /></TableCell>
-      </TableRow>
+      <tr>
+        <td colSpan={4}>
+          <div className="tesira-firmware-tab__row-loading">
+            <InlineLoading description="Loading device firmware" />
+          </div>
+        </td>
+      </tr>
     )
   }
 
-  if (!fw) return null
+  if (!firmware) {
+    return null
+  }
 
   return (
-    <TableRow
-      selected={selected}
-      sx={{
-        '&.Mui-selected': { bgcolor: 'rgba(227,24,55,0.06)' },
-        '& td': { fontSize: 12, py: 0.75 },
-      }}
-    >
-      <TableCell>
-        <Typography variant="caption" fontWeight={600} noWrap sx={{ maxWidth: 140, display: 'block' }}>
-          {fw.name || fw.host}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-          {fw.host}
-        </Typography>
-      </TableCell>
-      <TableCell>{fw.connected ? (fw.current_version ?? '—') : '—'}</TableCell>
-      <TableCell>{latestVersion ?? '—'}</TableCell>
-      <TableCell>
-        <FirmwareStatusChip fw={fw} />
-      </TableCell>
-    </TableRow>
+    <tr className={selected ? 'tesira-firmware-tab__row tesira-firmware-tab__row--selected' : 'tesira-firmware-tab__row'}>
+      <td>
+        <div className="tesira-firmware-tab__device-copy">
+          <span className="tesira-firmware-tab__device-name">{firmware.name || firmware.host}</span>
+          <span className="tesira-firmware-tab__device-meta">{firmware.host}</span>
+        </div>
+      </td>
+      <td>{firmware.connected ? (firmware.current_version ?? '—') : '—'}</td>
+      <td>{latestVersion ?? '—'}</td>
+      <td>{firmwareStatusTag(firmware)}</td>
+    </tr>
   )
 }
-
-function FirmwareStatusChip({ fw }: { fw: TesiraFirmwareStatus }) {
-  if (!fw.connected) {
-    return (
-      <Chip label="Offline" size="small" sx={{ height: 18, fontSize: 10, bgcolor: 'rgba(255,255,255,0.06)' }} />
-    )
-  }
-  if (fw.update_available) {
-    return (
-      <Chip
-        icon={<WarningAlt size={11} />}
-        label="Update available"
-        size="small"
-        color="warning"
-        sx={{ height: 18, fontSize: 10 }}
-      />
-    )
-  }
-  return (
-    <Chip
-      icon={<CheckmarkOutline size={11} />}
-      label="Up to date"
-      size="small"
-      color="success"
-      variant="outlined"
-      sx={{ height: 18, fontSize: 10 }}
-    />
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Per-device detail panel
-// ─────────────────────────────────────────────────────────────────────────────
 
 function DeviceDetail({
   deviceId,
@@ -190,168 +170,159 @@ function DeviceDetail({
 }: {
   deviceId: string
   latestVersion: string | null
-  latestFirmware: { download_url: string; update_path_url: string; release_notes_url: string } | undefined
+  latestFirmware: TesiraLatestFirmware | undefined
 }) {
-  const { data: fw, isLoading } = useDeviceFirmware(deviceId)
+  const { data: firmware, isLoading } = useDeviceFirmware(deviceId)
   const reboot = useRebootDevice()
   const [guideOpen, setGuideOpen] = useState(false)
-  const [rebootResult, setRebootResult] = useState<string | null>(null)
+  const [rebootNotice, setRebootNotice] = useState<RebootNotice | null>(null)
 
   const handleReboot = async () => {
-    setRebootResult(null)
+    setRebootNotice(null)
     try {
       const result = await reboot.mutateAsync(deviceId)
-      setRebootResult(result.message || 'Reboot command sent. Device will reconnect shortly.')
-    } catch (err: unknown) {
-      setRebootResult(`Error: ${err instanceof Error ? err.message : String(err)}`)
+      setRebootNotice({
+        kind: 'success',
+        message: result.message || 'Reboot command sent. Device will reconnect shortly.',
+      })
+    } catch (error: unknown) {
+      setRebootNotice({
+        kind: 'error',
+        message: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 
-  if (isLoading) return <CircularProgress size={20} />
-  if (!fw) return null
+  if (isLoading) {
+    return (
+      <div className="tesira-firmware-tab__loading">
+        <InlineLoading description="Loading firmware detail" />
+      </div>
+    )
+  }
+
+  if (!firmware) {
+    return <p className="tesira-presets-tab__empty">Firmware detail unavailable.</p>
+  }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <Typography variant="subtitle2" fontWeight={700}>
-        {fw.name || fw.host} — Firmware Detail
-      </Typography>
+    <div className="tesira-firmware-tab__detail">
+      <div className="tesira-firmware-tab__header">
+        <div>
+          <p className="tesira-dashboard__eyebrow">Selected device</p>
+          <h3 className="tesira-dashboard__title">{`${firmware.name || firmware.host} firmware detail`}</h3>
+          <p className="tesira-dashboard__summary">
+            Tesira firmware updates still require Tesira Software on Windows or macOS. MAP2 surfaces the current version, latest release, download path, and reboot control.
+          </p>
+        </div>
+        <div className="tesira-firmware-tab__actions">
+          {firmwareStatusTag(firmware)}
+          {latestVersion ? <Tag type="cool-gray" size="sm">{`Latest ${latestVersion}`}</Tag> : null}
+        </div>
+      </div>
 
-      {/* Version comparison */}
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Box>
-          <Typography variant="caption" color="text.secondary">Current</Typography>
-          <Typography variant="body2" fontWeight={600}>
-            {fw.connected ? (fw.current_version ?? '—') : '—'}
-          </Typography>
-        </Box>
-        <Box>
-          <Typography variant="caption" color="text.secondary">Latest</Typography>
-          <Typography variant="body2" fontWeight={600} color={fw.update_available ? 'warning.main' : 'text.primary'}>
-            {latestVersion ?? '—'}
-          </Typography>
-        </Box>
-        {fw.update_available && (
-          <Chip
-            icon={<WarningAlt size={13} />}
-            label="Update available"
-            size="small"
-            color="warning"
-          />
-        )}
-        {fw.connected && !fw.update_available && fw.current_version && (
-          <Chip
-            icon={<CheckmarkOutline size={13} />}
-            label="Up to date"
-            size="small"
-            color="success"
-            variant="outlined"
-          />
-        )}
-      </Stack>
+      <div className="tesira-firmware-tab__stats">
+        <div className="tesira-firmware-tab__stat">
+          <p className="tesira-dashboard__stat-label">Current</p>
+          <p className="tesira-dashboard__stat-value">{firmware.connected ? (firmware.current_version ?? '—') : '—'}</p>
+        </div>
+        <div className="tesira-firmware-tab__stat">
+          <p className="tesira-dashboard__stat-label">Latest</p>
+          <p className="tesira-dashboard__stat-value">{latestVersion ?? '—'}</p>
+        </div>
+        <div className="tesira-firmware-tab__stat">
+          <p className="tesira-dashboard__stat-label">Connectivity</p>
+          <p className="tesira-dashboard__stat-value">{firmware.connected ? 'Online' : 'Offline'}</p>
+        </div>
+      </div>
 
-      {/* Action buttons */}
-      <Stack direction="row" spacing={1} flexWrap="wrap">
-        <Tooltip title={fw.connected ? 'Send DEVICE reboot via TTP' : 'Device must be online to reboot'}>
-          <span>
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              startIcon={reboot.isPending ? <CircularProgress size={14} color="inherit" /> : <Power size={16} />}
-              disabled={!fw.connected || reboot.isPending}
-              onClick={handleReboot}
-              sx={{ fontSize: 12 }}
-            >
-              {reboot.isPending ? 'Rebooting…' : 'Reboot device'}
-            </Button>
-          </span>
-        </Tooltip>
+      <div className="tesira-firmware-tab__actions">
+        <Button
+          size="sm"
+          kind="secondary"
+          renderIcon={Power}
+          disabled={!firmware.connected || reboot.isPending}
+          onClick={() => {
+            void handleReboot()
+          }}
+        >
+          {reboot.isPending ? 'Rebooting…' : 'Reboot device'}
+        </Button>
 
-        {latestFirmware?.download_url && (
+        {latestFirmware?.download_url ? (
           <Button
-            size="small"
-            variant="outlined"
-            startIcon={<Download size={16} />}
-            endIcon={<Launch size={12} />}
+            size="sm"
+            kind="primary"
             href={latestFirmware.download_url}
             target="_blank"
             rel="noopener noreferrer"
-            sx={{ fontSize: 12 }}
+            renderIcon={Download}
           >
             Download firmware
           </Button>
-        )}
+        ) : null}
 
-        {latestFirmware?.update_path_url && (
+        {latestFirmware?.update_path_url ? (
           <Button
-            size="small"
-            variant="text"
-            endIcon={<Launch size={12} />}
+            size="sm"
+            kind="ghost"
             href={latestFirmware.update_path_url}
             target="_blank"
             rel="noopener noreferrer"
-            sx={{ fontSize: 12 }}
+            renderIcon={Launch}
           >
             Update path guide
           </Button>
-        )}
-      </Stack>
+        ) : null}
+      </div>
 
-      {rebootResult && (
-        <Alert
-          severity={rebootResult.startsWith('Error') ? 'error' : 'success'}
-          onClose={() => setRebootResult(null)}
-          sx={{ py: 0.5, fontSize: 12 }}
-        >
-          {rebootResult}
-        </Alert>
-      )}
+      {rebootNotice ? (
+        <InlineNotification
+          kind={rebootNotice.kind === 'error' ? 'error' : 'success'}
+          lowContrast
+          hideCloseButton
+          title={rebootNotice.kind === 'error' ? 'Reboot failed' : 'Reboot command sent'}
+          subtitle={rebootNotice.message}
+        />
+      ) : null}
 
-      {/* How-to guide (collapsible) */}
-      <Box>
+      <div className="tesira-firmware-tab__guide-toggle">
         <Button
-          size="small"
-          variant="text"
-          sx={{ fontSize: 11, color: 'text.secondary', p: 0, textTransform: 'none' }}
-          endIcon={guideOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          onClick={() => setGuideOpen((v) => !v)}
+          size="sm"
+          kind="ghost"
+          renderIcon={guideOpen ? ChevronUp : ChevronDown}
+          onClick={() => setGuideOpen((value) => !value)}
         >
           How to update firmware
         </Button>
-        <Collapse in={guideOpen}>
-          <Paper variant="outlined" sx={{ mt: 1, p: 1.5, bgcolor: 'rgba(255,255,255,0.02)' }}>
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 2, display: 'block' }}>
-              Biamp Tesira firmware is updated through <strong>Tesira Software</strong> (Windows/macOS) —
-              firmware cannot be flashed remotely via TTP.
-            </Typography>
-            <Box component="ol" sx={{ m: 0, pl: 2.5, mt: 1 }}>
-              {[
-                <>Download the <code>.tfa2</code> firmware file from{' '}
-                  <Link href={latestFirmware?.download_url} target="_blank" rel="noopener noreferrer" sx={{ color: BIAMP_RED }}>
-                    Biamp support
-                  </Link>
-                </>,
-                'Open Tesira Software on a Windows/macOS computer',
-                'Connect to the device: System → Connect',
-                'Go to System → Device Maintenance',
-                'Click "Update Firmware", select the .tfa2 file, select target devices',
-                'Do NOT disconnect power during update (~10 min)',
-                'After update completes, use "Reboot device" above if needed',
-              ].map((step, i) => (
-                <Typography
-                  key={i}
-                  component="li"
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ mb: 0.25, lineHeight: 1.8 }}
-                >
-                  {step}
-                </Typography>
-              ))}
-            </Box>
-          </Paper>
-        </Collapse>
-      </Box>
-    </Box>
+      </div>
+
+      {guideOpen ? (
+        <div className="tesira-firmware-tab__guide">
+          <p className="tesira-dashboard__summary">
+            Biamp Tesira firmware is updated through <strong>Tesira Software</strong>. MAP2 can guide the workflow, but it does not flash firmware over TTP.
+          </p>
+          <ol className="tesira-firmware-tab__guide-list">
+            <li>
+              Download the `.tfa2` firmware package from{' '}
+              {latestFirmware?.download_url ? (
+                <Link href={latestFirmware.download_url} target="_blank" rel="noopener noreferrer">
+                  Biamp support
+                </Link>
+              ) : (
+                'Biamp support'
+              )}
+              .
+            </li>
+            <li>Open Tesira Software on a Windows or macOS computer.</li>
+            <li>Connect to the device in Tesira Software.</li>
+            <li>Open Device Maintenance and choose Update Firmware.</li>
+            <li>Select the `.tfa2` package and target the Tesira units that need the update.</li>
+            <li>Do not interrupt power during the update window.</li>
+            <li>Use the reboot control above if Tesira Software requests a restart.</li>
+          </ol>
+        </div>
+      ) : null}
+    </div>
   )
 }

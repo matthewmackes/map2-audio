@@ -1,21 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  Divider,
-  FormControl,
-  InputLabel,
-  List,
-  ListItemButton,
-  ListItemText,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Button, Checkbox, InlineLoading, InlineNotification, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
 import ReactFlow, {
   addEdge,
   Background,
@@ -44,6 +28,7 @@ import {
   useUpdateTesiraDesign,
   useValidateTesiraDesign,
 } from '../hooks/useTesiraApi'
+import './TesiraCarbonChrome.css'
 
 interface TesiraDesignCanvasProps {
   deviceId: string
@@ -74,6 +59,22 @@ function toFlowEdge(edge: any, index: number): Edge {
     animated: false,
     type: 'smoothstep',
   }
+}
+
+function compileStatusTag(status: string | null | undefined) {
+  const value = status || 'UNCOMPILED'
+  const normalized = value.toLowerCase()
+  if (normalized.includes('compiled') || normalized.includes('success')) {
+    return <Tag type="green" size="sm">{value}</Tag>
+  }
+  if (normalized.includes('fail') || normalized.includes('error')) {
+    return <Tag type="red" size="sm">{value}</Tag>
+  }
+  return <Tag type="warm-gray" size="sm">{value}</Tag>
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
 }
 
 export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
@@ -130,7 +131,7 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
   const blockOptions = useMemo(() => library?.blocks ?? [], [library])
 
   const selectedBlock = useMemo(
-    () => blockOptions.find((b) => b.block_type === blockType) ?? null,
+    () => blockOptions.find((block) => block.block_type === blockType) ?? null,
     [blockOptions, blockType],
   )
 
@@ -243,7 +244,7 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
       deviceId,
       designId: selectedDesignId,
     })
-    const remaining = (designs?.designs || []).filter((d) => d.design_id !== selectedDesignId)
+    const remaining = (designs?.designs || []).filter((design) => design.design_id !== selectedDesignId)
     setSelectedDesignId(remaining[0]?.design_id || '')
   }
 
@@ -262,177 +263,240 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
         io: selectedBlock.io || { inputs: [], outputs: [] },
       },
     }
-    setNodes((prev) => [...prev, newNode])
+    setNodes((previous) => [...previous, newNode])
   }
 
+  const designErrors = [
+    createDesign.error,
+    updateDesign.error,
+    deleteDesign.error,
+    compileDesign.error,
+    recompileDesign.error,
+    compileActive.error,
+    compileAll.error,
+    compileUncompiled.error,
+    diagnosticsQuery.error,
+    selectedDesignQuery.error,
+  ].filter(Boolean)
+
   return (
-    <Box className="tesira-design-canvas" sx={{ p: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '280px 1fr' }, gap: 2 }}>
+    <div className="tesira-design-canvas">
       <LandscapePrompt componentId={`tesira-design-${deviceId}`} />
-      <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography variant="subtitle2" fontWeight={700}>Design Workspaces</Typography>
-        <List dense sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-          {(designs?.designs || []).map((design) => (
-            <ListItemButton
-              key={design.design_id}
-              selected={design.design_id === selectedDesignId}
-              onClick={() => setSelectedDesignId(design.design_id)}
-            >
-              <ListItemText primary={design.name} secondary={design.design_id} />
-            </ListItemButton>
-          ))}
-          {!designsLoading && (designs?.designs || []).length === 0 && (
-            <ListItemText sx={{ px: 1.5, py: 1 }} primary="No designs yet" />
+
+      <Tile className="tesira-design-canvas__sidebar">
+        <div className="tesira-design-canvas__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Design workspaces</p>
+            <h3 className="tesira-dashboard__title">Tesira graph editor</h3>
+            <p className="tesira-dashboard__summary">
+              Build or revise MAP2-compatible Tesira design workspaces, then validate and compile them before deployment.
+            </p>
+          </div>
+          <div className="tesira-design-canvas__status">
+            {compileStatusTag(selectedDesign?.compile_status)}
+            <Tag type="cool-gray" size="sm">{`Rev ${selectedDesign?.compile_revision ?? 0}`}</Tag>
+          </div>
+        </div>
+
+        <div className="tesira-design-canvas__section">
+          <p className="tesira-dashboard__stat-label">Saved workspaces</p>
+          {designsLoading ? (
+            <div className="tesira-design-canvas__loading">
+              <InlineLoading description="Loading design workspaces" />
+            </div>
+          ) : (
+            <div className="tesira-design-canvas__workspace-list" role="list" aria-label="Tesira design workspaces">
+              {(designs?.designs || []).map((design) => (
+                <button
+                  key={design.design_id}
+                  type="button"
+                  className={
+                    design.design_id === selectedDesignId
+                      ? 'tesira-design-canvas__workspace-button tesira-design-canvas__workspace-button--selected'
+                      : 'tesira-design-canvas__workspace-button'
+                  }
+                  onClick={() => setSelectedDesignId(design.design_id)}
+                >
+                  <span className="tesira-design-canvas__workspace-name">{design.name}</span>
+                  <span className="tesira-design-canvas__workspace-meta">{design.design_id}</span>
+                </button>
+              ))}
+              {!designsLoading && (designs?.designs || []).length === 0 ? (
+                <p className="tesira-presets-tab__empty">No designs yet.</p>
+              ) : null}
+            </div>
           )}
-        </List>
+        </div>
 
-        <TextField
-          size="small"
-          label="New design name"
-          value={newDesignName}
-          onChange={(event) => setNewDesignName(event.target.value)}
-        />
-        <Button variant="outlined" onClick={handleCreateDesign} disabled={createDesign.isPending}>
-          {createDesign.isPending ? 'Creating…' : 'Create Design'}
-        </Button>
+        <div className="tesira-design-canvas__section">
+          <p className="tesira-dashboard__stat-label">Create workspace</p>
+          <div className="tesira-design-canvas__form-grid">
+            <TextInput
+              id={`tesira-design-name-${deviceId}`}
+              labelText="New design name"
+              value={newDesignName}
+              onChange={(event) => setNewDesignName(event.target.value)}
+            />
+            <Button kind="primary" size="sm" disabled={createDesign.isPending} onClick={() => void handleCreateDesign()}>
+              {createDesign.isPending ? 'Creating…' : 'Create design'}
+            </Button>
+          </div>
+        </div>
 
-        <Divider />
+        <div className="tesira-design-canvas__section">
+          <p className="tesira-dashboard__stat-label">Library and graph tools</p>
+          <div className="tesira-design-canvas__form-grid">
+            <Select
+              id={`tesira-design-profile-${deviceId}`}
+              size="sm"
+              labelText="Profile"
+              value={libraryProfile}
+              onChange={(event) => setLibraryProfile(String(event.target.value))}
+            >
+              {(library?.available_profiles || [libraryProfile]).map((profile) => (
+                <SelectItem key={profile} value={profile} text={profile} />
+              ))}
+            </Select>
+            <Select
+              id={`tesira-design-block-${deviceId}`}
+              size="sm"
+              labelText="Block"
+              value={blockType}
+              onChange={(event) => setBlockType(String(event.target.value))}
+            >
+              <SelectItem
+                value=""
+                text={blockOptions.length > 0 ? 'Select a block' : 'No library blocks available'}
+              />
+              {blockOptions.map((block) => (
+                <SelectItem
+                  key={block.block_type}
+                  value={block.block_type}
+                  text={`${block.title} (${block.block_type})`}
+                />
+              ))}
+            </Select>
+          </div>
+          <div className="tesira-design-canvas__actions">
+            <Button kind="secondary" size="sm" disabled={!selectedBlock} onClick={addBlock}>
+              Add block
+            </Button>
+          </div>
+        </div>
 
-        <FormControl size="small" fullWidth>
-          <InputLabel id="tesira-design-profile-label">Profile</InputLabel>
-          <Select
-            labelId="tesira-design-profile-label"
-            value={libraryProfile}
-            label="Profile"
-            onChange={(event) => setLibraryProfile(String(event.target.value))}
-          >
-            {(library?.available_profiles || [libraryProfile]).map((profile) => (
-              <MenuItem key={profile} value={profile}>
-                {profile}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <div className="tesira-design-canvas__section">
+          <p className="tesira-dashboard__stat-label">Workspace actions</p>
+          <div className="tesira-design-canvas__actions">
+            <Button kind="primary" size="sm" disabled={!selectedDesignId || updateDesign.isPending} onClick={() => void handleSaveDesign()}>
+              Save
+            </Button>
+            <Button kind="secondary" size="sm" disabled={!selectedDesignId || validateDesign.isPending} onClick={() => void handleValidate()}>
+              Validate
+            </Button>
+            <Button kind="danger--tertiary" size="sm" disabled={!selectedDesignId || deleteDesign.isPending} onClick={() => void handleDeleteDesign()}>
+              Delete
+            </Button>
+          </div>
+        </div>
 
-        <FormControl size="small" fullWidth>
-          <InputLabel id="tesira-design-block-label">Block</InputLabel>
-          <Select
-            labelId="tesira-design-block-label"
-            value={blockType}
-            label="Block"
-            onChange={(event) => setBlockType(String(event.target.value))}
-          >
-            {blockOptions.map((block) => (
-              <MenuItem key={block.block_type} value={block.block_type}>
-                {block.title} ({block.block_type})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <div className="tesira-design-canvas__section">
+          <p className="tesira-dashboard__stat-label">Compile controls</p>
+          <Checkbox
+            id={`tesira-design-optimize-${deviceId}`}
+            labelText="Optimize compile output"
+            checked={optimizeCompile}
+            onChange={(_, { checked }) => setOptimizeCompile(Boolean(checked))}
+          />
+          <div className="tesira-design-canvas__actions">
+            <Button kind="secondary" size="sm" disabled={!selectedDesignId || compileDesign.isPending} onClick={() => void handleCompileDesign()}>
+              Compile
+            </Button>
+            <Button kind="ghost" size="sm" disabled={!selectedDesignId || recompileDesign.isPending} onClick={() => void handleRecompileDesign()}>
+              Recompile
+            </Button>
+            <Button kind="ghost" size="sm" disabled={compileActive.isPending} onClick={() => void handleCompileActive()}>
+              Compile active
+            </Button>
+            <Button kind="ghost" size="sm" disabled={compileAll.isPending} onClick={() => void handleCompileAll()}>
+              Compile all
+            </Button>
+            <Button kind="ghost" size="sm" disabled={compileUncompiled.isPending} onClick={() => void handleCompileUncompiled()}>
+              Compile uncompiled
+            </Button>
+          </div>
+        </div>
+      </Tile>
 
-        <Button variant="outlined" onClick={addBlock} disabled={!selectedBlock} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          Add Block
-        </Button>
+      <Tile className="tesira-design-canvas__canvas-panel">
+        <div className="tesira-design-canvas__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Canvas</p>
+            <h3 className="tesira-dashboard__title">{selectedDesign?.name || 'Canvas'}</h3>
+            <p className="tesira-dashboard__summary">
+              Drag nodes and connect edges to define the signal-chain graph before validating and compiling the selected workspace.
+            </p>
+          </div>
+          <div className="tesira-design-canvas__status">
+            {selectedDesign?.design_id ? <Tag type="blue" size="sm">{selectedDesign.design_id}</Tag> : null}
+            <Tag type="cool-gray" size="sm">{`${nodes.length} nodes`}</Tag>
+            <Tag type="cool-gray" size="sm">{`${edges.length} edges`}</Tag>
+          </div>
+        </div>
 
-        <Divider />
+        <div className="tesira-design-canvas__notice-stack">
+          {validateDesign.data ? (
+            <InlineNotification
+              kind={validateDesign.data.validation.ok ? 'success' : 'error'}
+              lowContrast
+              hideCloseButton
+              title={validateDesign.data.validation.ok ? 'Validation passed' : 'Validation failed'}
+              subtitle={
+                validateDesign.data.validation.ok
+                  ? `${validateDesign.data.validation.counts.nodes} nodes validated.`
+                  : `${validateDesign.data.validation.errors.length} validation errors returned.`
+              }
+            />
+          ) : null}
+          {!!validateDesign.data?.validation.warnings?.length ? (
+            <InlineNotification
+              kind="warning"
+              lowContrast
+              hideCloseButton
+              title="Validation warning"
+              subtitle={validateDesign.data.validation.warnings[0]}
+            />
+          ) : null}
+          {compileSummary ? (
+            <InlineNotification
+              kind="info"
+              lowContrast
+              hideCloseButton
+              title="Compile summary"
+              subtitle={compileSummary}
+            />
+          ) : null}
+          {diagnosticsQuery.data ? (
+            <InlineNotification
+              kind="info"
+              lowContrast
+              hideCloseButton
+              title="Diagnostics"
+              subtitle={`Status ${diagnosticsQuery.data.compile_status}, rev ${diagnosticsQuery.data.compile_revision}`}
+            />
+          ) : null}
+          {designErrors.map((error, index) => (
+            <InlineNotification
+              key={`design-error-${index}`}
+              kind="error"
+              lowContrast
+              hideCloseButton
+              title="Design action failed"
+              subtitle={errorMessage(error)}
+            />
+          ))}
+        </div>
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          <Button variant="contained" onClick={handleSaveDesign} disabled={!selectedDesignId || updateDesign.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            Save
-          </Button>
-          <Button variant="outlined" onClick={handleValidate} disabled={!selectedDesignId || validateDesign.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            Validate
-          </Button>
-          <Button color="error" variant="text" onClick={handleDeleteDesign} disabled={!selectedDesignId || deleteDesign.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            Delete
-          </Button>
-        </Stack>
-
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" useFlexGap>
-          <Button
-            variant="outlined"
-            onClick={handleCompileDesign}
-            disabled={!selectedDesignId || compileDesign.isPending}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            Compile
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={handleRecompileDesign}
-            disabled={!selectedDesignId || recompileDesign.isPending}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            Recompile
-          </Button>
-          <Button
-            variant="text"
-            onClick={() => setOptimizeCompile((prev) => !prev)}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            Optimize: {optimizeCompile ? 'On' : 'Off'}
-          </Button>
-        </Stack>
-
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" useFlexGap>
-          <Button variant="text" onClick={handleCompileActive} disabled={compileActive.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            Compile Active
-          </Button>
-          <Button variant="text" onClick={handleCompileAll} disabled={compileAll.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            Compile All
-          </Button>
-          <Button variant="text" onClick={handleCompileUncompiled} disabled={compileUncompiled.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            Compile Uncompiled
-          </Button>
-        </Stack>
-
-        <Typography variant="caption" color="text.secondary">
-          Status: {selectedDesign?.compile_status || 'UNCOMPILED'} · Revision: {selectedDesign?.compile_revision ?? 0}
-        </Typography>
-
-        {validateDesign.data && (
-          <Alert severity={validateDesign.data.validation.ok ? 'success' : 'error'}>
-            {validateDesign.data.validation.ok
-              ? `Validation passed (${validateDesign.data.validation.counts.nodes} nodes)`
-              : `Validation failed (${validateDesign.data.validation.errors.length} errors)`}
-          </Alert>
-        )}
-
-        {!!validateDesign.data?.validation.warnings?.length && (
-          <Alert severity="warning">
-            {validateDesign.data.validation.warnings[0]}
-          </Alert>
-        )}
-
-        {compileSummary && <Alert severity="info">{compileSummary}</Alert>}
-
-        {diagnosticsQuery.data && (
-          <Alert severity="info">
-            Diagnostics: status {diagnosticsQuery.data.compile_status}, rev {diagnosticsQuery.data.compile_revision}
-          </Alert>
-        )}
-
-        {createDesign.error && <Alert severity="error">{createDesign.error.message}</Alert>}
-        {updateDesign.error && <Alert severity="error">{updateDesign.error.message}</Alert>}
-        {deleteDesign.error && <Alert severity="error">{deleteDesign.error.message}</Alert>}
-        {compileDesign.error && <Alert severity="error">{compileDesign.error.message}</Alert>}
-        {recompileDesign.error && <Alert severity="error">{recompileDesign.error.message}</Alert>}
-        {compileActive.error && <Alert severity="error">{compileActive.error.message}</Alert>}
-        {compileAll.error && <Alert severity="error">{compileAll.error.message}</Alert>}
-        {compileUncompiled.error && <Alert severity="error">{compileUncompiled.error.message}</Alert>}
-        {diagnosticsQuery.error && <Alert severity="error">{diagnosticsQuery.error.message}</Alert>}
-        {selectedDesignQuery.error && <Alert severity="error">{selectedDesignQuery.error.message}</Alert>}
-      </Paper>
-
-      <Paper variant="outlined" sx={{ minHeight: 620 }}>
-        <Box sx={{ px: 2, pt: 1.25, pb: 0.5 }}>
-          <Typography variant="subtitle2" fontWeight={700}>
-            {selectedDesign?.name || 'Canvas'}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Drag nodes and connect edges to build the signal chain graph.
-          </Typography>
-        </Box>
-        <Box sx={{ height: 560 }}>
+        <div className="tesira-design-canvas__canvas-shell">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -445,8 +509,8 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
             <MiniMap />
             <Controls />
           </ReactFlow>
-        </Box>
-      </Paper>
-    </Box>
+        </div>
+      </Tile>
+    </div>
   )
 }

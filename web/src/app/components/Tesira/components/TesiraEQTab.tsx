@@ -1,9 +1,7 @@
 import React, { useState } from 'react'
-import {
-  Box, Typography, TextField, Slider, Grid,
-  Table, TableHead, TableRow, TableCell, TableBody, Button,
-} from '@mui/material'
+import { Tag, TextInput, Tile } from '@carbon/react'
 import { tesiraApi } from '../../../../map2/api'
+import './TesiraCarbonChrome.css'
 
 interface TesiraEQTabProps {
   deviceId: string
@@ -20,7 +18,7 @@ function buildEqPath(bands: Array<{ freq: number; gain: number; q: number }>, wi
   const points: string[] = []
   for (let i = 0; i <= 96; i += 1) {
     const t = i / 96
-    const freq = 20 * Math.pow(1000, t) // log scale: 20Hz..20kHz
+    const freq = 20 * Math.pow(1000, t)
     let gain = 0
     for (const band of bands) {
       const ratio = Math.log2(Math.max(freq, 1) / Math.max(band.freq, 1))
@@ -37,115 +35,128 @@ function buildEqPath(bands: Array<{ freq: number; gain: number; q: number }>, wi
 
 export function TesiraEQTab({ deviceId }: TesiraEQTabProps) {
   const [instanceTag, setInstanceTag] = useState('EQControl1')
-
   const [bandState, setBandState] = useState<Array<{ freq: number; gain: number; q: number }>>(
-    BANDS.map((b) => ({ freq: b.defaultFreq, gain: 0, q: 1.0 }))
+    BANDS.map((band) => ({ freq: band.defaultFreq, gain: 0, q: 1.0 })),
   )
 
   function handleFreq(bandIdx: number, freq: number) {
-    setBandState((s) => s.map((b, i) => i === bandIdx ? { ...b, freq } : b))
+    setBandState((state) => state.map((band, index) => (index === bandIdx ? { ...band, freq } : band)))
     tesiraApi.setEQBandFreq(deviceId, instanceTag, bandIdx, freq).catch(() => undefined)
   }
 
   function handleGain(bandIdx: number, gain: number) {
-    setBandState((s) => s.map((b, i) => i === bandIdx ? { ...b, gain } : b))
+    setBandState((state) => state.map((band, index) => (index === bandIdx ? { ...band, gain } : band)))
     tesiraApi.setEQBandGain(deviceId, instanceTag, bandIdx, gain).catch(() => undefined)
   }
 
   function handleQ(bandIdx: number, q: number) {
-    setBandState((s) => s.map((b, i) => i === bandIdx ? { ...b, q } : b))
+    setBandState((state) => state.map((band, index) => (index === bandIdx ? { ...band, q } : band)))
     tesiraApi.setEQBandQ(deviceId, instanceTag, bandIdx, q).catch(() => undefined)
   }
 
   return (
-    <Box sx={{ p: 1.5 }}>
-      <Box sx={{ mb: 2 }}>
-        <TextField
-          label="EQ Instance Tag"
-          size="small"
+    <div className="tesira-eq-tab">
+      <Tile className="tesira-eq-tab__tile">
+        <div className="tesira-eq-tab__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Equalizer</p>
+            <h3 className="tesira-dashboard__title">Tune a Tesira EQ block</h3>
+            <p className="tesira-dashboard__summary">
+              Adjust frequency, gain, and Q per band while previewing the combined response curve from the dedicated Tesira route.
+            </p>
+          </div>
+          <div className="tesira-eq-tab__tags">
+            <Tag type="cool-gray" size="sm">{instanceTag}</Tag>
+            <Tag type="warm-gray" size="sm">{`${BANDS.length} bands`}</Tag>
+          </div>
+        </div>
+
+        <TextInput
+          id={`tesira-eq-instance-${deviceId}`}
+          labelText="EQ instance tag"
           value={instanceTag}
-          onChange={(e) => setInstanceTag(e.target.value)}
-          sx={{ width: 220 }}
-          inputProps={{ style: { fontSize: 12 } }}
+          onChange={(event) => setInstanceTag(event.target.value)}
         />
-      </Box>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-              EQ Response Preview
-            </Typography>
-            <svg width="100%" height="120" viewBox="0 0 720 120" preserveAspectRatio="none">
-              <line x1="0" y1="60" x2="720" y2="60" stroke="rgba(255,255,255,0.2)" strokeDasharray="4 4" />
-              <path
-                d={buildEqPath(bandState, 720, 120)}
-                fill="none"
-                stroke="#E31837"
-                strokeWidth="2.2"
-              />
-            </svg>
-          </Box>
-        </Grid>
-        {BANDS.map((band, idx) => (
-          <Grid item xs={6} md={3} key={band.band}>
-            <Box
-              sx={{
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 1,
-                p: 1.5,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-              }}
-            >
-              <Typography variant="caption" fontWeight={600} color="text.secondary">
-                {band.label}
-              </Typography>
+        <div className="tesira-eq-tab__preview">
+          <p className="tesira-dashboard__stat-label">EQ response preview</p>
+          <svg width="100%" height="140" viewBox="0 0 720 140" preserveAspectRatio="none">
+            <line x1="0" y1="70" x2="720" y2="70" stroke="var(--cds-border-subtle)" strokeDasharray="4 4" />
+            <path
+              d={buildEqPath(bandState, 720, 140)}
+              fill="none"
+              stroke="var(--cds-link-primary)"
+              strokeWidth="2.2"
+            />
+          </svg>
+        </div>
+      </Tile>
 
-              <Typography variant="caption" sx={{ fontSize: 10 }}>
-                Freq: {bandState[idx].freq} Hz
-              </Typography>
-              <Slider
-                size="small"
+      <div className="tesira-eq-tab__grid">
+        {BANDS.map((band, index) => (
+          <Tile key={band.band} className="tesira-eq-tab__band">
+            <div className="tesira-eq-tab__band-header">
+              <h4 className="tesira-levels-tab__channel-title">{band.label}</h4>
+              <div className="tesira-eq-tab__tags">
+                <Tag type="blue" size="sm">{`${bandState[index].freq} Hz`}</Tag>
+                <Tag type="cool-gray" size="sm">{`${bandState[index].gain.toFixed(1)} dB`}</Tag>
+                <Tag type="warm-gray" size="sm">{`Q ${bandState[index].q.toFixed(2)}`}</Tag>
+              </div>
+            </div>
+
+            <div className="tesira-eq-tab__control">
+              <label htmlFor={`tesira-eq-freq-${band.band}`} className="tesira-eq-tab__label">
+                Frequency
+              </label>
+              <input
+                id={`tesira-eq-freq-${band.band}`}
+                className="tesira-eq-tab__range"
+                type="range"
                 min={20}
                 max={20000}
                 step={10}
-                value={bandState[idx].freq}
-                onChange={(_e, val) => handleFreq(idx, val as number)}
-                sx={{ color: '#E31837' }}
+                value={bandState[index].freq}
+                aria-label={`Frequency for ${band.label}`}
+                onChange={(event) => handleFreq(index, Number(event.currentTarget.value))}
               />
+            </div>
 
-              <Typography variant="caption" sx={{ fontSize: 10 }}>
-                Gain: {bandState[idx].gain.toFixed(1)} dB
-              </Typography>
-              <Slider
-                size="small"
+            <div className="tesira-eq-tab__control">
+              <label htmlFor={`tesira-eq-gain-${band.band}`} className="tesira-eq-tab__label">
+                Gain
+              </label>
+              <input
+                id={`tesira-eq-gain-${band.band}`}
+                className="tesira-eq-tab__range"
+                type="range"
                 min={-15}
                 max={15}
                 step={0.5}
-                value={bandState[idx].gain}
-                onChange={(_e, val) => handleGain(idx, val as number)}
-                sx={{ color: '#E31837' }}
+                value={bandState[index].gain}
+                aria-label={`Gain for ${band.label}`}
+                onChange={(event) => handleGain(index, Number(event.currentTarget.value))}
               />
+            </div>
 
-              <Typography variant="caption" sx={{ fontSize: 10 }}>
-                Q: {bandState[idx].q.toFixed(2)}
-              </Typography>
-              <Slider
-                size="small"
+            <div className="tesira-eq-tab__control">
+              <label htmlFor={`tesira-eq-q-${band.band}`} className="tesira-eq-tab__label">
+                Q
+              </label>
+              <input
+                id={`tesira-eq-q-${band.band}`}
+                className="tesira-eq-tab__range"
+                type="range"
                 min={0.1}
                 max={10}
                 step={0.05}
-                value={bandState[idx].q}
-                onChange={(_e, val) => handleQ(idx, val as number)}
-                sx={{ color: '#E31837' }}
+                value={bandState[index].q}
+                aria-label={`Q for ${band.label}`}
+                onChange={(event) => handleQ(index, Number(event.currentTarget.value))}
               />
-            </Box>
-          </Grid>
+            </div>
+          </Tile>
         ))}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   )
 }

@@ -1,22 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
 import { TesiraDspProbeDialog } from './TesiraDspProbeDialog'
 import { TesiraDspBlockPanel } from './TesiraDspBlockPanel'
 import { useProbeTesiraDsp, useTesiraDspBlocks } from '../hooks/useTesiraApi'
+import './TesiraCarbonChrome.css'
 
 interface TesiraDspExplorerProps {
   deviceId: string
@@ -38,7 +25,7 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
       block.instance_tag.toLowerCase().includes(needle) ||
       block.block_type.toLowerCase().includes(needle) ||
       String(block.title || '').toLowerCase().includes(needle) ||
-      String(block.category || '').toLowerCase().includes(needle)
+      String(block.category || '').toLowerCase().includes(needle),
     )
   }, [blocks, search])
 
@@ -46,7 +33,7 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
     if (!selectedTag && filteredBlocks.length > 0) {
       setSelectedTag(filteredBlocks[0].instance_tag)
     }
-    if (selectedTag && !filteredBlocks.some((b) => b.instance_tag === selectedTag)) {
+    if (selectedTag && !filteredBlocks.some((block) => block.instance_tag === selectedTag)) {
       setSelectedTag(filteredBlocks[0]?.instance_tag ?? null)
     }
   }, [filteredBlocks, selectedTag])
@@ -58,100 +45,126 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
   }
 
   return (
-    <Box className="tesira-dsp-explorer" sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} flexWrap="wrap">
-        <Typography variant="subtitle2" fontWeight={700}>DSP Blocks</Typography>
-        <TextField
-          size="small"
-          placeholder="Filter blocks…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          sx={{ minWidth: 220 }}
-          inputProps={{ style: { fontSize: 12 } }}
-        />
-        <Button size="small" variant="outlined" onClick={() => setProbeOpen(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>Probe</Button>
-        <Button
-          size="small"
-          variant="text"
-          onClick={() => {
-            dspBlocks.refetch().catch(() => undefined)
-          }}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
-          Refresh
-        </Button>
-      </Stack>
+    <div className="tesira-dsp-explorer">
+      <Tile className="tesira-dsp-explorer__tile">
+        <div className="tesira-dsp-explorer__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">DSP explorer</p>
+            <h3 className="tesira-dashboard__title">Inspect live Tesira blocks</h3>
+            <p className="tesira-dashboard__summary">
+              Filter the discovered runtime block list, probe for additional families, and hand off a selected block into the parameter editor.
+            </p>
+          </div>
+          <div className="tesira-dsp-explorer__tags">
+            <Tag type="cool-gray" size="sm">{blocks.length} blocks</Tag>
+            <Tag type="warm-gray" size="sm">{filteredBlocks.length} visible</Tag>
+          </div>
+        </div>
 
-      {dspBlocks.error && (
-        <Alert severity="warning">
-          {(dspBlocks.error as Error).message || 'Failed to load DSP block list'}
-        </Alert>
-      )}
+        <div className="tesira-dsp-explorer__toolbar">
+          <TextInput
+            id={`tesira-dsp-search-${deviceId}`}
+            labelText="Filter blocks"
+            placeholder="Level, mixer, router, category..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <Button size="sm" kind="secondary" onClick={() => setProbeOpen(true)}>
+            Probe
+          </Button>
+          <Button
+            size="sm"
+            kind="ghost"
+            onClick={() => {
+              dspBlocks.refetch().catch(() => undefined)
+            }}
+          >
+            Refresh
+          </Button>
+        </div>
 
-      {probeMutation.isError && (
-        <Alert severity="warning">
-          {(probeMutation.error as Error).message || 'Probe failed'}
-        </Alert>
-      )}
+        {dspBlocks.error ? (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Failed to load DSP block list"
+            subtitle={(dspBlocks.error as Error).message || 'The DSP block inventory could not be read.'}
+          />
+        ) : null}
 
-      {probeMutation.data?.errors?.length ? (
-        <Alert severity="info">
-          Probe completed with {probeMutation.data.errors.length} warning(s). Showing discovered blocks.
-        </Alert>
-      ) : null}
+        {probeMutation.isError ? (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Probe failed"
+            subtitle={(probeMutation.error as Error).message || 'The runtime probe did not complete.'}
+          />
+        ) : null}
 
-      {dspBlocks.isLoading ? (
-        <CircularProgress size={20} />
-      ) : (
-        <Box className="tesira-table-scroll-wrap">
-          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-            <Table size="small" className="tesira-table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Instance Tag</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Family</TableCell>
-                <TableCell>Channels</TableCell>
-                <TableCell>Params</TableCell>
-                <TableCell>Source</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredBlocks.map((block) => (
-                <TableRow
-                  key={block.instance_tag}
-                  hover
-                  selected={selectedTag === block.instance_tag}
-                  onClick={() => setSelectedTag(block.instance_tag)}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <TableCell>{block.instance_tag}</TableCell>
-                  <TableCell>{block.title ? `${block.title} (${block.block_type})` : block.block_type}</TableCell>
-                  <TableCell>{block.category || 'processing'}</TableCell>
-                  <TableCell>{block.channel_count}</TableCell>
-                  <TableCell>{Object.keys(block.parameter_map || {}).length}</TableCell>
-                  <TableCell>{block.is_probed ? 'Probed' : 'Declared'}</TableCell>
-                </TableRow>
-              ))}
-              {filteredBlocks.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6}>
-                    <Typography variant="body2" color="text.secondary">
-                      No DSP blocks matched this filter.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-            </Table>
-          </Paper>
-          <Box className="tesira-table-scroll-hint" aria-hidden="true" />
-        </Box>
-      )}
+        {probeMutation.data?.errors?.length ? (
+          <InlineNotification
+            kind="info"
+            lowContrast
+            hideCloseButton
+            title="Probe completed with warnings"
+            subtitle={`Warnings returned: ${probeMutation.data.errors.length}. Showing discovered blocks.`}
+          />
+        ) : null}
 
-      {selectedTag && (
+        {dspBlocks.isLoading ? (
+          <div className="tesira-dsp-explorer__loading">
+            <InlineLoading description="Loading DSP blocks" />
+          </div>
+        ) : (
+          <div className="tesira-dsp-explorer__table-wrap">
+            <table className="tesira-quick-console__table" aria-label="Tesira DSP blocks">
+              <thead>
+                <tr>
+                  <th scope="col">Instance Tag</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Family</th>
+                  <th scope="col">Channels</th>
+                  <th scope="col">Params</th>
+                  <th scope="col">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBlocks.map((block) => (
+                  <tr
+                    key={block.instance_tag}
+                    className={selectedTag === block.instance_tag ? 'tesira-dsp-explorer__row tesira-dsp-explorer__row--selected' : 'tesira-dsp-explorer__row'}
+                    onClick={() => setSelectedTag(block.instance_tag)}
+                  >
+                    <td>{block.instance_tag}</td>
+                    <td>{block.title ? `${block.title} (${block.block_type})` : block.block_type}</td>
+                    <td>{block.category || 'processing'}</td>
+                    <td>{block.channel_count}</td>
+                    <td>{Object.keys(block.parameter_map || {}).length}</td>
+                    <td>
+                      <Tag type={block.is_probed ? 'blue' : 'cool-gray'} size="sm">
+                        {block.is_probed ? 'Probed' : 'Declared'}
+                      </Tag>
+                    </td>
+                  </tr>
+                ))}
+                {filteredBlocks.length === 0 ? (
+                  <tr>
+                    <td colSpan={6}>
+                      <p className="tesira-presets-tab__empty">No DSP blocks matched this filter.</p>
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Tile>
+
+      {selectedTag ? (
         <TesiraDspBlockPanel deviceId={deviceId} instanceTag={selectedTag} />
-      )}
+      ) : null}
 
       <TesiraDspProbeDialog
         open={probeOpen}
@@ -159,6 +172,6 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
         onClose={() => setProbeOpen(false)}
         onProbe={probe}
       />
-    </Box>
+    </div>
   )
 }

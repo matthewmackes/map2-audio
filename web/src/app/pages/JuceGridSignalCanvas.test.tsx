@@ -161,6 +161,7 @@ describe('JuceGridSignalCanvas', () => {
     const handleInputPorts = jest.fn()
     const handleOutputPorts = jest.fn()
     const handlePluginSelect = jest.fn()
+    const handleDeletePlugin = jest.fn()
 
     render(
       <JuceGridSignalCanvas
@@ -169,6 +170,7 @@ describe('JuceGridSignalCanvas', () => {
         selectedPluginUri={pluginUri}
         onPluginSelect={handlePluginSelect}
         onToggleBypass={jest.fn()}
+        onDeletePlugin={handleDeletePlugin}
         onReorderPlugins={jest.fn()}
         onAddPlugin={jest.fn()}
         audioStatus={buildInputStatus()}
@@ -208,13 +210,11 @@ describe('JuceGridSignalCanvas', () => {
     expect(outputRail.getAttribute('title')).toContain('Main Room Listener')
 
     const pluginTitle = within(pluginCard).getByText('Studio Compressor')
-    const pluginCategory = within(pluginCard).getByText('Dynamics')
-
     expect(pluginTitle).toBeTruthy()
     expect(pluginTitle.getAttribute('title')).toBe('Studio Compressor')
-    expect(pluginCategory).toBeTruthy()
-    expect(pluginCategory.getAttribute('title')).toBe('Dynamics')
+    expect(pluginCard.getAttribute('aria-label')).toContain('Dynamics')
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-face')).toBeTruthy()
+    expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-copy')).toBeTruthy()
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-info')).toBeNull()
     expect(pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-outline')).toBeNull()
     const heroImage = pluginCard.querySelector('.juce-grid-page__signal-plugin-hero-image')
@@ -224,12 +224,19 @@ describe('JuceGridSignalCanvas', () => {
     expect(heroSvg).toBeTruthy()
     expect(heroSvg?.getAttribute('class')).toContain('is-outline')
     expect(within(pluginCard).getByTestId('juce-grid-signal-plugin-actions-0')).toBeTruthy()
-    expect(within(pluginCard).getByRole('button', { name: 'Actions for Studio Compressor' })).toBeTruthy()
+    const deleteButton = within(pluginCard).getByRole('button', { name: 'Remove Studio Compressor from chain' })
+    expect(deleteButton).toBeTruthy()
+    expect(within(pluginCard).queryByRole('button', { name: 'Actions for Studio Compressor' })).toBeNull()
     expect(within(pluginCard).queryByText('CPU')).toBeNull()
     expect(within(pluginCard).queryByText('12.4%')).toBeNull()
     expect(within(pluginCard).queryByText('Latency')).toBeNull()
     expect(within(pluginCard).queryByText('SC')).toBeNull()
     expect(within(pluginCard).queryByText('Auto')).toBeNull()
+
+    fireEvent.click(deleteButton)
+
+    expect(handleDeletePlugin).toHaveBeenCalledWith(pluginUri, 0)
+    expect(handlePluginSelect).not.toHaveBeenCalled()
 
     fireEvent.click(pluginCard)
 
@@ -371,6 +378,7 @@ describe('JuceGridSignalCanvas', () => {
     expect(firstRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(4)
     expect(secondRow.querySelectorAll('[data-testid^="juce-grid-signal-plugin-card-"]')).toHaveLength(3)
     expect(within(secondRow).getByRole('button', { name: 'Add effect' })).toBeTruthy()
+    expect(secondRow.querySelector('.juce-grid-page__signal-plugin-add-band')).toBeTruthy()
   })
 
   it('expands the row capacity from measured lane width without ResizeObserver support', async () => {
@@ -605,6 +613,54 @@ describe('JuceGridSignalCanvas', () => {
     expect(handlePluginSelect).toHaveBeenCalledWith(duplicateUri, 0)
   })
 
+  it('shows the delete glyph only on the selected card when deletion is available', () => {
+    const twoPluginChain: Chain = {
+      ...chain,
+      plugins: [
+        chain.plugins[0],
+        {
+          ...chain.plugins[0],
+          uri: 'plugin://chorus',
+          name: 'Studio Chorus',
+          position: 1,
+        },
+      ],
+    }
+    const twoPluginMeta: Record<string, Plugin> = {
+      ...pluginMeta,
+      'plugin://chorus': {
+        ...pluginMeta[pluginUri],
+        uri: 'plugin://chorus',
+        name: 'Studio Chorus',
+        category: 'Modulation',
+        class_label: 'Modulation',
+      },
+    }
+    const handleDeletePlugin = jest.fn()
+
+    render(
+      <JuceGridSignalCanvas
+        chain={twoPluginChain}
+        pluginMeta={twoPluginMeta}
+        selectedPluginUri="plugin://chorus"
+        selectedPluginPosition={1}
+        onPluginSelect={jest.fn()}
+        onToggleBypass={jest.fn()}
+        onDeletePlugin={handleDeletePlugin}
+        onReorderPlugins={jest.fn()}
+        showEndpoints={false}
+      />,
+    )
+
+    expect(screen.queryByTestId('juce-grid-signal-plugin-delete-0')).toBeNull()
+
+    const selectedDeleteButton = screen.getByRole('button', { name: 'Remove Studio Chorus from chain' })
+    expect(selectedDeleteButton).toBeTruthy()
+
+    fireEvent.click(selectedDeleteButton)
+    expect(handleDeletePlugin).toHaveBeenCalledWith('plugin://chorus', 1)
+  })
+
   it('reorders duplicate-uri cards by position instead of collapsing them by URI', () => {
     const duplicateUri = 'plugin://duplicate-delay'
     const duplicateChain: Chain = {
@@ -722,7 +778,7 @@ describe('JuceGridSignalCanvas', () => {
     expect(screen.queryByTestId('juce-grid-signal-plugin-card-7')).toBeNull()
   })
 
-  it('clears tablet selection from empty grid taps and removes per-tile overflow actions', () => {
+  it('clears tablet selection from empty grid taps and keeps the selected-only delete glyph hidden when deletion is unavailable', () => {
     const handlePluginSelect = jest.fn()
     const handleCanvasEmptyPress = jest.fn()
 
@@ -748,6 +804,6 @@ describe('JuceGridSignalCanvas', () => {
 
     fireEvent.click(screen.getByTestId('juce-grid-signal-grid'))
     expect(handleCanvasEmptyPress).toHaveBeenCalledTimes(1)
-    expect(screen.queryByRole('button', { name: 'Actions for Studio Compressor' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Remove Studio Compressor from chain' })).toBeNull()
   })
 })

@@ -297,6 +297,196 @@ async def delete_command(command_id: int):
         return {"status": "deleted", "command_id": command_id}
 
 
+class CommandUpdateRequest(BaseModel):
+    """Request body for updating a MIDI command trigger."""
+    command_type: Optional[str] = None
+    channel: Optional[int] = Field(None, ge=0, le=16)
+    data1: Optional[int] = Field(None, ge=0, le=127)
+    data2: Optional[int] = Field(None, ge=0, le=127)
+    action_type: Optional[str] = None
+    target_chain_id: Optional[int] = None
+    target_plugin_uri: Optional[str] = None
+    name: Optional[str] = None
+    action_data: Optional[Dict] = None
+    is_enabled: Optional[bool] = None
+
+
+@router.patch("/commands/{command_id}")
+async def update_command(command_id: int, request: CommandUpdateRequest):
+    """Update a MIDI command trigger."""
+    async with get_session() as session:
+        from app.database import MIDICommand
+        stmt = select(MIDICommand).where(MIDICommand.id == command_id)
+        result = await session.execute(stmt)
+        command = result.scalar_one_or_none()
+        if not command:
+            raise HTTPException(status_code=404, detail="Command not found")
+
+        updates = request.model_dump(exclude_none=True)
+        for key, value in updates.items():
+            if hasattr(command, key):
+                setattr(command, key, value)
+
+        await session.commit()
+        return {"status": "updated", "command_id": command_id}
+
+
+# ==================== Routing Rules ====================
+
+class RoutingRuleRequest(BaseModel):
+    """Request body for creating a MIDI routing rule."""
+    chain_id: int = Field(..., description="Chain this rule belongs to")
+    name: Optional[str] = Field(None, max_length=255)
+    trigger_type: str = Field(..., description="Trigger: program_change, note_on, cc_toggle")
+    channel: int = Field(0, ge=0, le=16)
+    data1: int = Field(0, ge=0, le=127)
+    from_flow_index: int = Field(0, ge=0)
+    to_flow_index: int = Field(0, ge=0)
+    is_enabled: bool = True
+
+
+def _routing_rule_to_dict(r) -> Dict[str, Any]:
+    """Map DB MIDIRoutingRule to frontend contract."""
+    routing_data = r.routing_data or {}
+    return {
+        "id": r.id,
+        "chain_id": r.chain_id,
+        "name": r.name,
+        "trigger_type": r.routing_type or "cc_toggle",
+        "channel": r.channel,
+        "data1": r.cc,
+        "from_flow_index": routing_data.get("from_flow_index", 0),
+        "to_flow_index": routing_data.get("to_flow_index", 0),
+        "is_enabled": r.is_enabled,
+    }
+
+
+@router.get("/routing-rules")
+async def list_routing_rules(
+    chain_id: Optional[int] = Query(None, description="Filter by chain ID"),
+):
+    """List MIDI routing rules."""
+    async with get_session() as session:
+        from app.database import MIDIRoutingRule
+        stmt = select(MIDIRoutingRule)
+        if chain_id is not None:
+            stmt = stmt.where(MIDIRoutingRule.chain_id == chain_id)
+        result = await session.execute(stmt)
+        rules = result.scalars().all()
+        rule_list = [_routing_rule_to_dict(r) for r in rules]
+        return {"routing_rules": rule_list, "count": len(rule_list)}
+
+
+@router.post("/routing-rules")
+async def create_routing_rule(request: RoutingRuleRequest):
+    """Create a MIDI routing rule."""
+    async with get_session() as session:
+        from app.database import MIDIRoutingRule
+        rule = MIDIRoutingRule(
+            chain_id=request.chain_id,
+            name=request.name,
+            routing_type=request.trigger_type,
+            channel=request.channel,
+            cc=request.data1,
+            routing_data={
+                "from_flow_index": request.from_flow_index,
+                "to_flow_index": request.to_flow_index,
+            },
+            is_enabled=request.is_enabled,
+        )
+        session.add(rule)
+        await session.commit()
+        await session.refresh(rule)
+        return {
+            "routing_rule": _routing_rule_to_dict(rule),
+            "message": "Routing rule created",
+        }
+
+
+@router.delete("/routing-rules/{rule_id}")
+async def delete_routing_rule(rule_id: int):
+    """Delete a MIDI routing rule."""
+    async with get_session() as session:
+        from app.database import MIDIRoutingRule
+        stmt = delete(MIDIRoutingRule).where(MIDIRoutingRule.id == rule_id)
+        result = await session.execute(stmt)
+        await session.commit()
+        return {"success": result.rowcount > 0, "message": "Routing rule deleted" if result.rowcount else "Not found"}
+
+
+# ==================== MIDI Output ====================
+
+class SendCCRequest(BaseModel):
+    channel: int = Field(..., ge=0, le=16)
+    cc: int = Field(..., ge=0, le=127)
+    value: int = Field(..., ge=0, le=127)
+
+
+class SendProgramChangeRequest(BaseModel):
+    channel: int = Field(..., ge=0, le=16)
+    program: int = Field(..., ge=0, le=127)
+
+
+class SendNoteRequest(BaseModel):
+    channel: int = Field(..., ge=1, le=16)
+    note: int = Field(..., ge=0, le=127)
+    velocity: int = Field(..., ge=0, le=127)
+    on: bool = True
+
+
+@router.post("/send/cc")
+async def send_cc(req: SendCCRequest):
+    """Send a MIDI CC message."""
+    if not midi_service._engine:
+        raise HTTPException(status_code=503, detail="MIDI engine not available")
+    try:
+        result = midi_service._engine.midi_send_cc(req.channel, req.cc, req.value)
+        return {"success": bool(result)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/send/program-change")
+async def send_program_change(req: SendProgramChangeRequest):
+    """Send a MIDI Program Change message."""
+    if not midi_service._engine:
+        raise HTTPException(status_code=503, detail="MIDI engine not available")
+    try:
+        result = midi_service._engine.midi_send_program_change(req.channel, req.program)
+        return {"success": bool(result)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/send/note")
+async def send_note(req: SendNoteRequest):
+    """Send a MIDI Note On/Off message."""
+    if not midi_service._engine:
+        raise HTTPException(status_code=503, detail="MIDI engine not available")
+    try:
+        if req.on:
+            result = midi_service._engine.midi_send_note_on(req.channel, req.note, req.velocity)
+        else:
+            result = midi_service._engine.midi_send_note_off(req.channel, req.note, req.velocity)
+        return {"success": bool(result)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sync")
+async def sync_to_controller():
+    """Sync all active mappings to the MIDI controller (send feedback for all)."""
+    if not midi_service._engine:
+        raise HTTPException(status_code=503, detail="MIDI engine not available")
+    try:
+        midi_service._engine.midi_sync_all_mappings_to_controller()
+        async with get_session() as session:
+            mappings = await midi_service.get_all_mappings(session)
+            return {"success": True, "mappings_synced": len(mappings)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== Chain MIDI Config ====================
 
 @router.post("/chains/{chain_id}/program")
@@ -495,6 +685,8 @@ async def get_midi_status():
 
     return {
         "enabled": engine_status.get("enabled", False),
+        "input_open": engine_status.get("input_open", False),
+        "output_open": engine_status.get("output_open", False),
         "input_device": engine_status.get("input_device"),
         "output_device": engine_status.get("output_device"),
         "learning": learn_status["active"],
@@ -502,6 +694,9 @@ async def get_midi_status():
         "active_chain_id": midi_service._active_chain_id,
         "mappings_count": len(mappings),
         "commands_count": len(commands),
+        "last_channel": engine_status.get("last_channel", 0),
+        "last_cc": engine_status.get("last_cc", 0),
+        "last_value": engine_status.get("last_value", 0),
     }
 
 
@@ -550,9 +745,56 @@ async def get_midi_devices():
     }
 
 
+class DeviceOpenRequest(BaseModel):
+    device_name: str = Field(..., min_length=1, max_length=255)
+
+
+def _resolve_device_index(ports: list, device_name: str) -> Optional[int]:
+    """Resolve a device name to its index in the port list."""
+    for i, port in enumerate(ports):
+        name = port.name if hasattr(port, "name") else (port.get("name") if isinstance(port, dict) else str(port))
+        if name == device_name:
+            return i
+    return None
+
+
+@router.post("/devices/input")
+async def open_input_device_by_name(req: DeviceOpenRequest):
+    """Open a MIDI input device by name (used by JUCE-GRID GUI)."""
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            if not hub.running:
+                hub.start()
+            ports = [port for port in hub.list_ports() if port.direction in ("input", "duplex")]
+            idx = _resolve_device_index(ports, req.device_name)
+            if idx is not None:
+                return {"success": True, "device": req.device_name, "port_id": ports[idx].port_id}
+        except Exception as e:
+            logger.debug(f"MidiHub input open fallback to engine: {e}")
+
+    if not midi_service._engine:
+        raise HTTPException(status_code=503, detail="MIDI engine not available")
+
+    try:
+        devices = await midi_service._engine.get_midi_input_devices()
+        idx = _resolve_device_index(devices, req.device_name)
+        if idx is None:
+            raise HTTPException(status_code=404, detail=f"Input device not found: {req.device_name}")
+        success = await midi_service._engine.open_midi_input(idx)
+        if not success:
+            raise HTTPException(status_code=400, detail=f"Failed to open input device: {req.device_name}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"success": True, "device": req.device_name}
+
+
 @router.post("/devices/input/{device_index}")
 async def open_input_device(device_index: int):
-    """Open a MIDI input device."""
+    """Open a MIDI input device by index (legacy)."""
     if MIDI_HUB_AVAILABLE:
         try:
             hub = get_midi_hub()
@@ -574,9 +816,43 @@ async def open_input_device(device_index: int):
     return {"status": "opened", "device_index": device_index}
 
 
+@router.post("/devices/output")
+async def open_output_device_by_name(req: DeviceOpenRequest):
+    """Open a MIDI output device by name (used by JUCE-GRID GUI)."""
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            if not hub.running:
+                hub.start()
+            ports = [port for port in hub.list_ports() if port.direction in ("output", "duplex")]
+            idx = _resolve_device_index(ports, req.device_name)
+            if idx is not None:
+                return {"success": True, "device": req.device_name, "port_id": ports[idx].port_id}
+        except Exception as e:
+            logger.debug(f"MidiHub output open fallback to engine: {e}")
+
+    if not midi_service._engine:
+        raise HTTPException(status_code=503, detail="MIDI engine not available")
+
+    try:
+        devices = await midi_service._engine.get_midi_output_devices()
+        idx = _resolve_device_index(devices, req.device_name)
+        if idx is None:
+            raise HTTPException(status_code=404, detail=f"Output device not found: {req.device_name}")
+        success = await midi_service._engine.open_midi_output(idx)
+        if not success:
+            raise HTTPException(status_code=400, detail=f"Failed to open output device: {req.device_name}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"success": True, "device": req.device_name}
+
+
 @router.post("/devices/output/{device_index}")
 async def open_output_device(device_index: int):
-    """Open a MIDI output device."""
+    """Open a MIDI output device by index (legacy)."""
     if MIDI_HUB_AVAILABLE:
         try:
             hub = get_midi_hub()
@@ -596,6 +872,40 @@ async def open_output_device(device_index: int):
         raise HTTPException(status_code=400, detail="Failed to open output device")
 
     return {"status": "opened", "device_index": device_index}
+
+
+@router.delete("/devices/input")
+async def close_input_device():
+    """Close the active MIDI input device."""
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            # Hub manages ports lifecycle; closing input specifically isn't typical
+            # but we signal intent
+        except Exception as e:
+            logger.debug(f"MidiHub input close: {e}")
+    if midi_service._engine:
+        try:
+            await midi_service._engine.close_midi_devices()
+        except Exception as e:
+            logger.debug(f"Engine close input: {e}")
+    return {"success": True}
+
+
+@router.delete("/devices/output")
+async def close_output_device():
+    """Close the active MIDI output device."""
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+        except Exception as e:
+            logger.debug(f"MidiHub output close: {e}")
+    if midi_service._engine:
+        try:
+            await midi_service._engine.close_midi_devices()
+        except Exception as e:
+            logger.debug(f"Engine close output: {e}")
+    return {"success": True}
 
 
 @router.post("/devices/close")

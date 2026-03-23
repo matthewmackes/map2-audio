@@ -92,6 +92,7 @@ import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useFlowSnapshots } from '../hooks/useFlowSnapshots'
+import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { getEffectIcon } from '../components/icons/effectIcons'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
@@ -827,6 +828,7 @@ export function JuceGridPage() {
   const [routingInspectorId, setRoutingInspectorId] = useState<JuceGridRoutingMarkerId | null>(null)
   const bottomEditorRef = useRef<HTMLElement | null>(null)
   const midiLearnWasInProgressRef = useRef(false)
+  const [lastMidiActivityWs, setLastMidiActivityWs] = useState<{ cc: number; value: number; channel: number } | null>(null)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
   const [automationLoopEnabled, setAutomationLoopEnabled] = useState(false)
@@ -1550,17 +1552,16 @@ export function JuceGridPage() {
   const midiLearnStatus = midiLearnStatusQuery.data
   const midiMappings = midiMappingsQuery.data?.mappings ?? []
   const midiLearnInProgress = midiLearnStatus?.learning ?? false
+  // WebSocket-primary MIDI activity, polled status as fallback
   const lastMidiEvent = useMemo(() => {
-    if (!midiStatus || midiStatus.last_channel <= 0) {
-      return null
-    }
-
+    if (lastMidiActivityWs) return lastMidiActivityWs
+    if (!midiStatus || midiStatus.last_channel <= 0) return null
     return {
       cc: midiStatus.last_cc,
       value: midiStatus.last_value,
       channel: midiStatus.last_channel,
     }
-  }, [midiStatus])
+  }, [lastMidiActivityWs, midiStatus])
 
   const midiScopeLabel = useMemo(() => {
     switch (midiScope) {
@@ -1667,6 +1668,30 @@ export function JuceGridPage() {
     })
   }, [midiMappings])
 
+  // Primary: WebSocket-driven instant learn completion
+  useWebSocketTopic('midi_learn', useCallback((_data: { channel: number; cc: number }, message) => {
+    if (message.type === 'midi_learn_completed') {
+      setMidiLearnActive(false)
+      midiLearnWasInProgressRef.current = false
+      void queryClient.invalidateQueries({ queryKey: ['midi'] })
+      void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings', 'juce-grid'] })
+      pushToast(`MIDI mapped: CC ${_data.cc} Ch ${_data.channel || 'Omni'}`, 'success')
+    }
+  }, [queryClient, pushToast]))
+
+  // Primary: WebSocket-driven instant MIDI activity (CC knob/fader feedback)
+  useWebSocketTopic('midi_activity', useCallback((data: Record<string, any>) => {
+    const msgType = data.message_type ?? data.type
+    if (msgType === 'control_change') {
+      setLastMidiActivityWs({
+        cc: data.data1 ?? parseInt(data.raw_hex?.split(' ')[1] ?? '0', 16),
+        value: data.data2 ?? parseInt(data.raw_hex?.split(' ')[2] ?? '0', 16),
+        channel: data.channel ?? 0,
+      })
+    }
+  }, []))
+
+  // Fallback: poll-based learn completion (covers missed WebSocket events)
   useEffect(() => {
     const learning = midiLearnStatus?.learning ?? false
     if (midiLearnWasInProgressRef.current && !learning) {

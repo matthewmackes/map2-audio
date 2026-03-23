@@ -1,21 +1,8 @@
-import React, { useMemo, useState } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Slider,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Renew } from '@carbon/icons-react'
+import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
 import { useSetCrosspoint, useSetCrosspointMute, useTesiraCrosspointMatrix } from '../hooks/useTesiraApi'
-import { NumberInput } from '../../Controls/NumberInput'
+import './TesiraCarbonChrome.css'
 
 interface TesiraMixerTabProps {
   deviceId: string
@@ -24,140 +11,225 @@ interface TesiraMixerTabProps {
 const DEFAULT_ROWS = 4
 const DEFAULT_COLS = 4
 
+function clampMatrixSize(value: string, fallback: number) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) {
+    return fallback
+  }
+  return Math.min(32, Math.max(1, Math.round(parsed)))
+}
+
+function crosspointKey(row: number, col: number) {
+  return `${row}:${col}`
+}
+
 export function TesiraMixerTab({ deviceId }: TesiraMixerTabProps) {
   const [instanceTag, setInstanceTag] = useState('RouterControl1')
   const [rows, setRows] = useState(DEFAULT_ROWS)
   const [cols, setCols] = useState(DEFAULT_COLS)
+  const [gainDrafts, setGainDrafts] = useState<Record<string, number>>({})
 
   const matrix = useTesiraCrosspointMatrix(deviceId, instanceTag, rows, cols)
   const setCrosspoint = useSetCrosspoint()
   const setCrosspointMute = useSetCrosspointMute()
 
   const matrixRows = useMemo(() => matrix.data?.matrix ?? [], [matrix.data])
+  const remoteGainDrafts = useMemo(() => {
+    const next: Record<string, number> = {}
+    for (let rowIdx = 0; rowIdx < rows; rowIdx += 1) {
+      for (let colIdx = 0; colIdx < cols; colIdx += 1) {
+        const cell = matrixRows[rowIdx]?.[colIdx]
+        next[crosspointKey(rowIdx, colIdx)] = typeof cell?.gain_db === 'number' ? cell.gain_db : -60
+      }
+    }
+    return next
+  }, [matrixRows, rows, cols])
+  const remoteGainSignature = useMemo(() => JSON.stringify(remoteGainDrafts), [remoteGainDrafts])
+
+  useEffect(() => {
+    setGainDrafts(remoteGainDrafts)
+  }, [remoteGainSignature])
+
+  const applyGain = (rowIdx: number, colIdx: number) => {
+    const key = crosspointKey(rowIdx, colIdx)
+    setCrosspoint.mutate({
+      deviceId,
+      tag: instanceTag,
+      row: rowIdx + 1,
+      col: colIdx + 1,
+      gainDb: gainDrafts[key] ?? -60,
+      rows,
+      cols,
+    })
+  }
+
+  const toggleMute = (rowIdx: number, colIdx: number, muted: boolean) => {
+    setCrosspointMute.mutate({
+      deviceId,
+      tag: instanceTag,
+      row: rowIdx + 1,
+      col: colIdx + 1,
+      muted: !muted,
+      rows,
+      cols,
+    })
+  }
 
   return (
-    <Box sx={{ p: 1.5 }}>
-      <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-        <TextField
-          label="Router tag"
-          size="small"
-          value={instanceTag}
-          onChange={(event) => setInstanceTag(event.target.value)}
-          sx={{ width: 220 }}
-          inputProps={{ style: { fontSize: 12 } }}
-        />
-        <NumberInput
-          label="Inputs"
-          value={rows}
-          min={1}
-          max={32}
-          step={1}
-          size="small"
-          showBounds={false}
-          style={{ width: 80 }}
-          onChange={(value) => setRows(Math.min(32, Math.max(1, Math.round(value))))}
-        />
-        <NumberInput
-          label="Outputs"
-          value={cols}
-          min={1}
-          max={32}
-          step={1}
-          size="small"
-          showBounds={false}
-          style={{ width: 80 }}
-          onChange={(value) => setCols(Math.min(32, Math.max(1, Math.round(value))))}
-        />
-        <Button
-          size="small"
-          variant="outlined"
-          onClick={() => {
-            matrix.refetch().catch(() => undefined)
-          }}
-        >
-          Refresh
-        </Button>
-      </Box>
+    <div className="tesira-mixer-tab">
+      <Tile className="tesira-mixer-tab__tile">
+        <div className="tesira-mixer-tab__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Crosspoint router</p>
+            <h3 className="tesira-dashboard__title">Trim and mute Tesira matrix routes</h3>
+            <p className="tesira-dashboard__summary">
+              Inspect the live crosspoint matrix, stage gain trims per route, and toggle mutes without leaving the dedicated Tesira control path.
+            </p>
+          </div>
+          <div className="tesira-mixer-tab__tags">
+            <Tag type="cool-gray" size="sm">{instanceTag}</Tag>
+            <Tag type="warm-gray" size="sm">{`${rows} × ${cols} routes`}</Tag>
+          </div>
+        </div>
 
-      {matrix.error && (
-        <Alert severity="warning" sx={{ mb: 1 }}>
-          {(matrix.error as Error).message || 'Failed to read crosspoint matrix'}
-        </Alert>
-      )}
+        <div className="tesira-mixer-tab__controls">
+          <TextInput
+            id={`tesira-mixer-tag-${deviceId}`}
+            labelText="Router tag"
+            value={instanceTag}
+            onChange={(event) => setInstanceTag(event.target.value)}
+          />
+          <TextInput
+            id={`tesira-mixer-rows-${deviceId}`}
+            type="number"
+            labelText="Inputs"
+            value={String(rows)}
+            onChange={(event) => setRows(clampMatrixSize(event.target.value, rows))}
+          />
+          <TextInput
+            id={`tesira-mixer-cols-${deviceId}`}
+            type="number"
+            labelText="Outputs"
+            value={String(cols)}
+            onChange={(event) => setCols(clampMatrixSize(event.target.value, cols))}
+          />
+          <div className="tesira-mixer-tab__actions">
+            <Button
+              size="sm"
+              kind="ghost"
+              renderIcon={Renew}
+              onClick={() => {
+                matrix.refetch().catch(() => undefined)
+              }}
+              disabled={matrix.isLoading}
+            >
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </Tile>
 
-      {matrix.isLoading ? (
-        <CircularProgress size={20} />
-      ) : (
-        <Box sx={{ overflowX: 'auto' }}>
-          <Table size="small" sx={{ tableLayout: 'fixed', minWidth: cols * 152 + 84 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontSize: 11, width: 84 }}>In \ Out</TableCell>
-                {Array.from({ length: cols }, (_, c) => (
-                  <TableCell key={c} align="center" sx={{ fontSize: 11, width: 152 }}>
-                    Out {c + 1}
-                  </TableCell>
+      {matrix.error ? (
+        <InlineNotification
+          kind="warning"
+          lowContrast
+          hideCloseButton
+          title="Matrix query failed"
+          subtitle={(matrix.error as Error).message || 'Failed to read the Tesira crosspoint matrix.'}
+        />
+      ) : null}
+
+      <Tile className="tesira-mixer-tab__tile">
+        <div className="tesira-mixer-tab__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Matrix</p>
+            <h3 className="tesira-dashboard__title">Crosspoint gain and mute map</h3>
+            <p className="tesira-dashboard__summary">
+              Each cell reflects one input-to-output route. Stage the gain locally, then apply it to the Tesira runtime and mute or unmute the route directly.
+            </p>
+          </div>
+        </div>
+
+        {matrix.isLoading && !matrix.data ? (
+          <div className="tesira-mixer-tab__loading">
+            <InlineLoading description="Loading Tesira crosspoint matrix" />
+          </div>
+        ) : (
+          <div className="tesira-mixer-tab__table-wrap">
+            <table className="tesira-quick-console__table tesira-mixer-tab__table" aria-label="Tesira crosspoint matrix">
+              <thead>
+                <tr>
+                  <th scope="col">In \ Out</th>
+                  {Array.from({ length: cols }, (_, colIdx) => (
+                    <th key={colIdx} scope="col">{`Out ${colIdx + 1}`}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: rows }, (_, rowIdx) => (
+                  <tr key={rowIdx}>
+                    <th scope="row">{`In ${rowIdx + 1}`}</th>
+                    {Array.from({ length: cols }, (_, colIdx) => {
+                      const key = crosspointKey(rowIdx, colIdx)
+                      const cell = matrixRows[rowIdx]?.[colIdx]
+                      const gain = gainDrafts[key] ?? (typeof cell?.gain_db === 'number' ? cell.gain_db : -60)
+                      const muted = Boolean(cell?.muted)
+                      const inputNumber = rowIdx + 1
+                      const outputNumber = colIdx + 1
+                      return (
+                        <td key={key}>
+                          <div className="tesira-mixer-tab__cell">
+                            <div className="tesira-mixer-tab__cell-header">
+                              <Tag type="blue" size="sm">{`${gain.toFixed(1)} dB`}</Tag>
+                              <Tag type={muted ? 'red' : 'green'} size="sm">
+                                {muted ? 'Muted' : 'Live'}
+                              </Tag>
+                            </div>
+                            <input
+                              id={`tesira-mixer-gain-${inputNumber}-${outputNumber}`}
+                              className="tesira-mixer-tab__range"
+                              type="range"
+                              min={-60}
+                              max={12}
+                              step={0.5}
+                              value={gain}
+                              aria-label={`Gain from input ${inputNumber} to output ${outputNumber}`}
+                              onChange={(event) => {
+                                const next = Number(event.currentTarget.value)
+                                setGainDrafts((state) => ({ ...state, [key]: next }))
+                              }}
+                            />
+                            <div className="tesira-mixer-tab__cell-actions">
+                              <Button
+                                size="sm"
+                                kind="ghost"
+                                aria-label={`Apply gain for input ${inputNumber} to output ${outputNumber}`}
+                                disabled={setCrosspoint.isPending}
+                                onClick={() => applyGain(rowIdx, colIdx)}
+                              >
+                                Apply
+                              </Button>
+                              <Button
+                                size="sm"
+                                kind={muted ? 'secondary' : 'tertiary'}
+                                aria-label={`${muted ? 'Unmute' : 'Mute'} input ${inputNumber} to output ${outputNumber}`}
+                                disabled={setCrosspointMute.isPending}
+                                onClick={() => toggleMute(rowIdx, colIdx, muted)}
+                              >
+                                {muted ? 'Unmute' : 'Mute'}
+                              </Button>
+                            </div>
+                          </div>
+                        </td>
+                      )
+                    })}
+                  </tr>
                 ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {Array.from({ length: rows }, (_, rowIdx) => (
-                <TableRow key={rowIdx}>
-                  <TableCell sx={{ fontSize: 11 }}>In {rowIdx + 1}</TableCell>
-                  {Array.from({ length: cols }, (_, colIdx) => {
-                    const cell = matrixRows[rowIdx]?.[colIdx]
-                    const gain = typeof cell?.gain_db === 'number' ? cell.gain_db : -60
-                    const muted = Boolean(cell?.muted)
-                    return (
-                      <TableCell key={`${rowIdx}-${colIdx}`} align="center" sx={{ px: 0.75 }}>
-                        <Slider
-                          size="small"
-                          min={-60}
-                          max={12}
-                          step={0.5}
-                          value={gain}
-                          sx={{ color: '#E31837', width: 96 }}
-                          onChangeCommitted={(_event, value) => {
-                            setCrosspoint.mutate({
-                              deviceId,
-                              tag: instanceTag,
-                              row: rowIdx + 1,
-                              col: colIdx + 1,
-                              gainDb: Number(value),
-                              rows,
-                              cols,
-                            })
-                          }}
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                          <Switch
-                            size="small"
-                            checked={muted}
-                            onChange={(_event, checked) => {
-                              setCrosspointMute.mutate({
-                                deviceId,
-                                tag: instanceTag,
-                                row: rowIdx + 1,
-                                col: colIdx + 1,
-                                muted: checked,
-                                rows,
-                                cols,
-                              })
-                            }}
-                          />
-                          <Typography variant="caption" sx={{ fontSize: 10 }}>
-                            {gain.toFixed(1)} dB
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    )
-                  })}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Box>
-      )}
-    </Box>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Tile>
+    </div>
   )
 }

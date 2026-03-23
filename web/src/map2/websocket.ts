@@ -31,6 +31,7 @@ export type WebSocketTopic =
   | 'latency'
   // MIDI monitor topics
   | 'midi_activity'
+  | 'midi_learn'
   | 'midi_cluster'
   | 'midi_cluster_nodes'
   | 'midi_cluster_connections'

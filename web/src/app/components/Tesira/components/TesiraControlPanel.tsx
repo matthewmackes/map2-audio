@@ -1,7 +1,5 @@
 import React from 'react'
-import {
-  Box, Tabs, Tab, Typography, CircularProgress, Alert,
-} from '@mui/material'
+import { InlineLoading, InlineNotification, Tab, TabList, Tabs, Tile } from '@carbon/react'
 import { useTesiraDevice } from '../hooks/useTesiraApi'
 import { useTesiraContext } from '../context/TesiraContext'
 import { TesiraDeviceHeader } from './TesiraDeviceHeader'
@@ -14,6 +12,7 @@ import { TesiraAvbTab } from './TesiraAvbTab'
 import { TesiraFaultsTab } from './TesiraFaultsTab'
 import { TesiraFirmwareTab } from './TesiraFirmwareTab'
 import { TesiraLoopBuilderTab } from './TesiraLoopBuilderTab'
+import './TesiraCarbonChrome.css'
 
 const TABS = ['Levels', 'Mixer', 'EQ', 'Presets', 'AVB Streams', 'Faults', 'Firmware', 'Loops']
 
@@ -22,17 +21,15 @@ export function TesiraControlPanel() {
 
   if (!selectedDeviceId) {
     return (
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'text.disabled',
-        }}
-      >
-        <Typography variant="body2">Select a device from the fleet panel</Typography>
-      </Box>
+      <div className="tesira-control-panel__empty-wrap">
+        <Tile className="tesira-control-panel__empty">
+          <p className="tesira-dashboard__eyebrow">Tesira fleet</p>
+          <h3 className="tesira-dashboard__title">Select a device from the fleet panel</h3>
+          <p className="tesira-dashboard__summary">
+            Choose a Tesira unit to open its Carbon-aligned control tabs, onboarding helpers, and recovery views.
+          </p>
+        </Tile>
+      </div>
     )
   }
 
@@ -44,7 +41,7 @@ export function TesiraControlPanel() {
 interface DevicePanelProps {
   deviceId: string
   tab: number
-  onTabChange: (n: number) => void
+  onTabChange: (index: number) => void
 }
 
 function DevicePanel({ deviceId, tab, onTabChange }: DevicePanelProps) {
@@ -52,49 +49,52 @@ function DevicePanel({ deviceId, tab, onTabChange }: DevicePanelProps) {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress size={28} />
-      </Box>
+      <div className="tesira-control-panel__loading">
+        <InlineLoading description="Loading device details" />
+      </div>
     )
   }
 
   if (isError || !device) {
-    return <Alert severity="error" sx={{ m: 2 }}>Failed to load device details</Alert>
+    return (
+      <div className="tesira-control-panel__error">
+        <InlineNotification
+          kind="error"
+          lowContrast
+          hideCloseButton
+          title="Failed to load device details"
+          subtitle="Retry after confirming the Tesira device is still reachable from the fleet panel."
+        />
+      </div>
+    )
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+    <div className="tesira-control-panel">
       <TesiraDeviceHeader device={device} />
 
       {!device.connected ? <TesiraOfflineBanner deviceId={deviceId} /> : null}
 
-      <Tabs
-        value={tab}
-        onChange={(_e, v) => onTabChange(v)}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 36 }}
-        TabIndicatorProps={{ style: { backgroundColor: '#E31837' } }}
-      >
-        {TABS.map((label) => (
-          <Tab
-            key={label}
-            label={label}
-            sx={{ fontSize: 12, minHeight: 36, py: 0.5 }}
-          />
-        ))}
-      </Tabs>
+      <div className="tesira-control-panel__tabs">
+        <Tabs selectedIndex={tab} onChange={({ selectedIndex }) => onTabChange(selectedIndex)}>
+          <TabList aria-label="Tesira device tabs" contained>
+            {TABS.map((label) => (
+              <Tab key={label}>{label}</Tab>
+            ))}
+          </TabList>
+        </Tabs>
+      </div>
 
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {tab === 0 && <TesiraLevelsTab deviceId={deviceId} />}
-        {tab === 1 && <TesiraMixerTab deviceId={deviceId} />}
-        {tab === 2 && <TesiraEQTab deviceId={deviceId} />}
-        {tab === 3 && <TesiraPresetsTab deviceId={deviceId} />}
-        {tab === 4 && <TesiraAvbTab deviceId={deviceId} />}
-        {tab === 5 && <TesiraFaultsTab deviceId={deviceId} />}
-        {tab === 6 && <TesiraFirmwareTab deviceId={deviceId} />}
-        {tab === 7 && <TesiraLoopBuilderTab deviceId={deviceId} />}
-      </Box>
-    </Box>
+      <div className="tesira-control-panel__body">
+        {tab === 0 ? <TesiraLevelsTab deviceId={deviceId} /> : null}
+        {tab === 1 ? <TesiraMixerTab deviceId={deviceId} /> : null}
+        {tab === 2 ? <TesiraEQTab deviceId={deviceId} /> : null}
+        {tab === 3 ? <TesiraPresetsTab deviceId={deviceId} /> : null}
+        {tab === 4 ? <TesiraAvbTab deviceId={deviceId} /> : null}
+        {tab === 5 ? <TesiraFaultsTab deviceId={deviceId} /> : null}
+        {tab === 6 ? <TesiraFirmwareTab deviceId={deviceId} /> : null}
+        {tab === 7 ? <TesiraLoopBuilderTab deviceId={deviceId} /> : null}
+      </div>
+    </div>
   )
 }

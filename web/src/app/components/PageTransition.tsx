@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
+import { MapClusterFabricIcon } from './icons/map'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import './PageTransition.css'
 
@@ -132,7 +133,9 @@ export function PageTransition({ children }: PageTransitionProps) {
                     '--landing-route-transition-mobile-column': block.mobileColumn,
                     '--landing-route-transition-mobile-row': block.mobileRow,
                   } as CSSProperties}
-                />
+                >
+                  <MapClusterFabricIcon className="landing-route-transition__block-icon" aria-hidden />
+                </span>
               ))}
             </div>
           ) : (

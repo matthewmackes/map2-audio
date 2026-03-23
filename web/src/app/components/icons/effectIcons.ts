@@ -30,7 +30,7 @@ import FxPhaser from '../HorizontalSignalChain/icons/fx_phaser.svg?react'
 import FxPitch from '../HorizontalSignalChain/icons/fx_pitch.svg?react'
 import FxPlugin from './noun/multi-effect/fx-plugin.svg?react'
 import FxRack from './noun/multi-effect/fx-rack.svg?react'
-import FxReverb from './noun/reverb/fx-reverb-category.svg?react'
+import FxReverb from './noun/reverb/fx-reverb.svg?react'
 import FxSimulator from '../HorizontalSignalChain/icons/fx_simulator.svg?react'
 import FxUtility from './noun/utility/fx-utility.svg?react'
 

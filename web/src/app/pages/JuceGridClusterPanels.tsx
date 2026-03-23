@@ -47,9 +47,10 @@ async function fetchClusterNodes(): Promise<{ nodes: ClusterNode[] }> {
   const res = await fetch(`${API_BASE}/cluster/nodes`)
   if (!res.ok) throw new Error('Failed to fetch cluster nodes')
   const data = await res.json()
+  const rawNodes = Array.isArray(data?.nodes) ? data.nodes : []
 
   return {
-    nodes: (data.nodes || []).map((node: ClusterNode) => {
+    nodes: rawNodes.map((node: ClusterNode) => {
       const statusRaw = (node.status || 'OFFLINE') as string
       const status = statusRaw.toLowerCase() === 'maintenance'
         ? 'maintenance'

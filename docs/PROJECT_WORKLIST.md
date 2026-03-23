@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 17:08 EDT - Codex (Closed `T353` after Carbonizing the dedicated Tesira route shell, fleet, offline recovery, quick-console, and deployment-package surfaces in cycle 3; opened `T354` as the next Carbon slice for the remaining device tabs and onboarding dialogs.)
+Last updated: 2026-03-23 18:19 EDT - Codex (Closed `T354` by Carbonizing `TesiraLoopBuilderTab.tsx`, adding focused loop-builder coverage, and eliminating the equivalent-query render loop in insertion draft hydration; the dedicated `/tesira` route now no longer has a remaining MUI-heavy operator surface.)
 
 ## Active Blockers Only
 
@@ -208,7 +208,7 @@ Last updated: 2026-03-23 17:08 EDT - Codex
   - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraQuickCommandPanel.test.tsx web/src/app/components/Tesira/components/TesiraOfflineBanner.test.tsx web/src/app/components/Tesira/components/TesiraFleetPanel.clusterSelection.test.tsx web/src/app/components/Tesira/components/TesiraDeployDialog.test.tsx`, and `npm --prefix web run build`.
 
 ID: T354
-Status: [>] In Progress
+Status: [✓] Done
 Title: Carbonize the remaining Tesira device tabs and onboarding dialogs
 Description:
 - Goal / acceptance criteria: Replace the remaining MUI-heavy operator tabs and enrollment dialogs on `/tesira`, especially levels, presets, DSP explorer, AVB/faults, settings, discovery, and manual-add flows, with Carbon-first structure and token usage while preserving current behavior.
@@ -218,10 +218,429 @@ Description:
 - Required outputs: Updated device-tab and dialog components, focused validation evidence, and refreshed audit/worklist notes describing the final remaining Carbon deltas if any.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 17:08 EDT - Codex
+Last updated: 2026-03-23 18:19 EDT - Codex
 - Progress notes:
   - Remaining MUI surfaces identified from the route audit and code search now cluster around `DiscoveryDialog.tsx`, `ManualAddDialog.tsx`, `TesiraLevelsTab.tsx`, `TesiraPresetsTab.tsx`, `TesiraDspExplorer.tsx`, `TesiraAvbTab.tsx`, `TesiraFaultsTab.tsx`, and `TesiraDeviceSettings.tsx`, with secondary follow-up still possible in EQ, mixer, loop-builder, firmware, and other detail panels.
   - The next slice should prioritize discovery/manual-add plus levels/presets/DSP explorer because those are the highest-frequency operator surfaces immediately after onboarding and recovery.
+  - Converted `DiscoveryDialog.tsx`, `ManualAddDialog.tsx`, `TesiraPresetsTab.tsx`, `TesiraLevelsTab.tsx`, `TesiraDspExplorer.tsx`, `TesiraDspBlockPanel.tsx`, `TesiraDspProbeDialog.tsx`, and `TesiraFaultsTab.tsx` to Carbon-first structure and tokenized CSS in `TesiraCarbonChrome.css`, removing the biggest post-onboarding MUI drop-backs from the dedicated Tesira route.
+  - Functional upgrade inside the Carbon slice: `TesiraLevelsTab.tsx` now follows the currently selected instance tag for live meter subscriptions instead of staying pinned to the first discovered stream, and it exposes explicit mute plus unmute actions per channel.
+  - Follow-up Carbon slice completed in the same pass: converted `TesiraAvbTab.tsx` and `TesiraControlPanel.tsx` so the AVB view and the dedicated device-tab shell no longer depend on MUI, then added focused tab-shell coverage in `web/src/app/components/Tesira/components/TesiraControlPanel.test.tsx`.
+  - Validation build was briefly blocked by a pre-existing compatibility typing issue in `web/src/map2/reorderPluginsCompat.ts`; added explicit type guards for legacy `plugin_uri` / `plugin_position` payloads so the project-reference build succeeds again without changing reorder behavior.
+  - Converted `TesiraDeviceSettings.tsx` and `TesiraFirmwareTab.tsx` to Carbon-first tiles, tables, toggles, and operator messaging so the dedicated `/tesira/:deviceId/settings` route no longer falls back to MUI for firmware posture, GPIO, or scene-snapshot workflows.
+  - Functional upgrade inside the settings slice: the firmware surface now exposes release notes, download/update-path links, and the reboot/how-to guide in the Carbon shell, while device settings now present capabilities, GPIO state, and scene capture/recall/delete through the same Carbon table patterns used elsewhere on the route.
+  - Added focused regression coverage in `web/src/app/components/Tesira/components/TesiraFirmwareTab.test.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceSettings.test.tsx`, `web/src/app/components/Tesira/components/ManualAddDialog.test.tsx`, `web/src/app/components/Tesira/components/TesiraPresetsTab.test.tsx`, `web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx`, `web/src/app/components/Tesira/components/TesiraControlPanel.test.tsx`, and hardened `web/src/app/components/Tesira/components/TesiraDspExplorer.test.tsx` for Carbon browser APIs.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraFirmwareTab.test.tsx web/src/app/components/Tesira/components/TesiraDeviceSettings.test.tsx web/src/app/components/Tesira/components/TesiraControlPanel.test.tsx web/src/app/components/Tesira/components/ManualAddDialog.test.tsx web/src/app/components/Tesira/components/TesiraPresetsTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspExplorer.test.tsx`, and `npm --prefix web run build`.
+  - Continued the Carbon migration into the remaining detail layer by converting `TesiraEQTab.tsx`, `TesiraMixerTab.tsx`, `TesiraFleetHealth.tsx`, and `TesiraPtpTopology.tsx` to Carbon-first tiles, tables, tags, inline loading/error states, and tokenized CSS patterns in `TesiraCarbonChrome.css`.
+  - Functional upgrade inside the mixer slice: `TesiraMixerTab.tsx` now supports locally staged crosspoint gain trims with explicit apply actions and direct mute/unmute controls per route, which avoids noisy per-drag writes while keeping the route-level matrix accessible from the dedicated Tesira page.
+  - Added focused regression coverage in `web/src/app/components/Tesira/components/TesiraEQTab.test.tsx`, `web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx`, `web/src/app/components/Tesira/components/TesiraFleetHealth.test.tsx`, and `web/src/app/components/Tesira/components/TesiraPtpTopology.test.tsx`.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraEQTab.test.tsx web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx web/src/app/components/Tesira/components/TesiraFleetHealth.test.tsx web/src/app/components/Tesira/components/TesiraPtpTopology.test.tsx web/src/app/components/Tesira/components/TesiraFirmwareTab.test.tsx web/src/app/components/Tesira/components/TesiraDeviceSettings.test.tsx web/src/app/components/Tesira/components/TesiraControlPanel.test.tsx web/src/app/components/Tesira/components/ManualAddDialog.test.tsx web/src/app/components/Tesira/components/TesiraPresetsTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspExplorer.test.tsx`, and `npm --prefix web run build`.
+  - Follow-up Carbon slice completed in the same pass: converted `TesiraDesignCanvas.tsx` to Carbon-first workspace controls, status tags, notifications, and canvas framing while retaining React Flow as the graph engine for Tesira design editing.
+  - Added focused regression coverage in `web/src/app/components/Tesira/components/TesiraDesignCanvas.test.tsx` to verify block insertion and save behavior through the Carbonized design-workspace shell.
+  - Validation passed again with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraDesignCanvas.test.tsx web/src/app/components/Tesira/components/TesiraEQTab.test.tsx web/src/app/components/Tesira/components/TesiraMixerTab.test.tsx web/src/app/components/Tesira/components/TesiraFleetHealth.test.tsx web/src/app/components/Tesira/components/TesiraPtpTopology.test.tsx web/src/app/components/Tesira/components/TesiraFirmwareTab.test.tsx web/src/app/components/Tesira/components/TesiraDeviceSettings.test.tsx web/src/app/components/Tesira/components/TesiraControlPanel.test.tsx web/src/app/components/Tesira/components/ManualAddDialog.test.tsx web/src/app/components/Tesira/components/TesiraPresetsTab.test.tsx web/src/app/components/Tesira/components/TesiraLevelsTab.test.tsx web/src/app/components/Tesira/components/TesiraDspExplorer.test.tsx`, and `npm --prefix web run build`.
+  - Remaining MUI-heavy Tesira surface is now limited to one deep editor workflow: `TesiraLoopBuilderTab.tsx`.
+- Completion notes:
+  - Converted `web/src/app/components/Tesira/components/TesiraLoopBuilderTab.tsx` to Carbon-first tiles, selects, text inputs, tags, inline notifications, and token-driven layout in `web/src/app/components/Tesira/components/TesiraCarbonChrome.css`, removing the last MUI-heavy operator workflow from the dedicated `/tesira` route.
+  - Added `web/src/app/components/Tesira/components/TesiraLoopBuilderTab.test.tsx` to cover the new Carbon shell’s create-loop, chain-insert, and inspector-selection flows, and kept `web/src/app/components/Tesira/components/TesiraControlPanel.test.tsx` green against the completed device-tab shell.
+  - Hardened insertion-draft hydration in `web/src/app/components/Tesira/components/TesiraLoopBuilderTab.tsx` so equivalent query payloads no longer trigger a `Maximum update depth exceeded` render loop when the loop builder rehydrates insertion state.
+  - Updated `docs/tesira/TESIRA_GUI_AUDIT_20260323.md` so the audit now records the dedicated `/tesira` route as Carbon-aligned end to end, with remaining follow-up limited to product-parity decisions rather than design-system migration.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/Tesira/components/TesiraLoopBuilderTab.test.tsx web/src/app/components/Tesira/components/TesiraControlPanel.test.tsx`, and `npm --prefix web run build`.
+
+ID: T355
+Status: [✓] Done
+Title: Restyle JUCE Grid live signal cards around a Windows-inspired Carbon-compliant template
+Description:
+- Goal / acceptance criteria: Update the live `JUCE-GRID` signal cards so each card adopts the user-approved template direction: Windows-like overall proportions with up to ~20% growth, a large Carbon-compliant light hero field that gives the line-art icon as much room as practical, and a thin uniform gray title band carrying the block name while preserving existing selection, bypass, overflow actions, add-tile behavior, and row-capacity measurement.
+- Why it matters: The current live signal cards are flatter and more Carbon-aligned than before, but they no longer provide the stronger icon visibility and title/hero separation the operator explicitly requested for faster scanning.
+- Dependencies: T246, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`, and the user-approved layout answers from 2026-03-23.
+- Estimated effort: Low
+- Required outputs: Updated signal-card/add-card markup and token-driven styling, focused regression coverage for the new title-band/hero structure, validation evidence, and licensing/worklist notes for the touched MAP2-owned frontend files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 15:37 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so live effect cards now expose the block name inside a thin lower title band, move category context into accessibility labeling instead of a second visible line, and give the hero field the full interior footprint while preserving selection, bypass, overflow actions, and add-slot behavior.
+  - Updated `web/src/app/pages/JuceGridPage.css` so the live and add cards adopt the Windows-inspired proportions within the allowed growth budget, use an inverse Carbon-safe hero field plus a uniform gray title band, reveal the line-art icon at a larger scale, and keep the interaction treatment token-driven instead of adding custom glow or retro-heavy framing.
+  - Updated `web/src/app/components/icons/effectIcons.ts` and `web/src/app/components/icons/noun/reverb/fx-reverb.svg` so reverb-class blocks now use a detailed line-art icon consistent with the amplifier and rack cards instead of the previous dense filled glyph.
+  - Added focused regression coverage in `web/src/app/pages/JuceGridSignalCanvas.test.tsx` for the new title-band/add-tile structure while preserving the existing row-capacity and icon-tone assertions.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid and icon files remain MAP2-owned AGPL-covered frontend assets; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T356
+Status: [✓] Done
+Title: Refine JUCE Grid amplifier and multi-effect hero icons for the Windows-inspired signal-card template
+Description:
+- Goal / acceptance criteria: Tighten the remaining most-visible JUCE Grid line-art hero icons, especially amplifier and multi-effect, so they use the enlarged signal-card hero field more effectively, carry detail comparable to the updated reverb icon, and preserve the current icon mapping/tone behavior across the route.
+- Why it matters: The card shell now reads correctly, but the first-row icons in the user’s reference set still have inconsistent density and whitespace, which weakens the stronger card template that was just shipped.
+- Dependencies: T355, `web/src/app/components/icons/effectIcons.ts`, `web/src/app/components/icons/noun/amplifier/fx-amplifier.svg`, `web/src/app/components/icons/noun/multi-effect/fx-rack.svg`, and the same focused JUCE Grid validation surface.
+- Estimated effort: Low
+- Required outputs: Updated SVG line art for the targeted categories, any focused regression adjustments if needed, validation evidence, and licensing/worklist notes for the touched MAP2-owned icon assets.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 15:43 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/icons/noun/amplifier/fx-amplifier.svg` so the amplifier art now uses more of the 64px frame, adds denser grille/control detail, and better matches the Windows-inspired hero-box composition without changing the icon’s line-art character.
+  - Updated `web/src/app/components/icons/noun/multi-effect/fx-rack.svg` so the multi-effect rack icon has fuller-width rack units, denser display/control detail, and less dead whitespace inside the enlarged hero field.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched icon assets remain MAP2-owned AGPL-covered repository files; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T359
+Status: [✓] Done
+Title: Replace selected JUCE Grid signal-card actions with an immediate delete glyph and enlarge the hero/title treatment
+Description:
+- Goal / acceptance criteria: Update the live `JUCE-GRID` signal cards so the selected card replaces the top-right overflow menu with a red Nerd Font close glyph that immediately removes the effect from the chain, enlarge the hero icon by roughly 50% while keeping a small safe margin, and increase the title text by roughly 20% while allowing the title band to wrap to two lines.
+- Why it matters: The user approved the Windows-inspired shell but wants the active-card affordance simplified into a direct delete action and the hero/title emphasis pushed further for faster scanning.
+- Dependencies: T355, T356, `web/src/app/pages/JuceGridSignalCanvas.tsx`, `web/src/app/pages/JuceGridPage.css`, `web/src/app/pages/JuceGridSignalCanvas.test.tsx`, the approved `BlexMono Nerd Font` glyph set, and the user answers from 2026-03-23.
+- Estimated effort: Low
+- Required outputs: Updated signal-card action markup/CSS, selected-only immediate delete behavior, larger hero/title treatment, focused regression coverage, validation evidence, and licensing/worklist notes for the touched MAP2-owned frontend files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 16:28 EDT - Codex
+- Completion notes:
+  - Replaced the selected-card overflow affordance in `web/src/app/pages/JuceGridSignalCanvas.tsx` with an immediate-delete button that renders only for the selected card, uses the approved BlexMono Nerd Font `cod-close` glyph (`U+EA76`), and calls `onDeletePlugin(uri, position)` without a confirmation step.
+  - Retuned `web/src/app/pages/JuceGridPage.css` so the signal card grows vertically for the larger hero field, the icon frame uses a tighter safe margin inside the Carbon-compliant inverse hero field, and the bottom title band now renders at roughly 120% of the old type size with two-line wrapping support.
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.test.tsx` to cover the new selected-only delete affordance, immediate removal behavior, the removal of the old overflow button, and the no-delete state when deletion is unavailable.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T377
+Status: [✓] Done
+Title: Stop the JUCE Grid selected-card render loop introduced by the signal-card delete/hero-title refresh
+Description:
+- Goal / acceptance criteria: Reproduce and fix the post-`T359` JUCE Grid render crash showing React minified error `#185` (`Maximum update depth exceeded`), with the likely focus on the live signal-grid measurement/update path so the page renders normally again without regressing row-capacity, tablet paging, or selected-card behavior.
+- Why it matters: The latest card refresh shipped the intended visual changes, but the user immediately hit a production render crash, so the page is not operable until the loop is removed.
+- Dependencies: T359, `web/src/app/pages/JuceGridSignalCanvas.tsx`, any affected JUCE Grid page integration/tests, and the user-provided crash evidence from 2026-03-23.
+- Estimated effort: Low
+- Required outputs: Root-cause fix, focused regression coverage for the loop condition, validation evidence, and licensing/worklist notes for the touched MAP2-owned frontend files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 17:26 EDT - Codex
+- Completion notes:
+  - Crash evidence pointed to React minified error `#185`, which decodes to `Maximum update depth exceeded`; the highest-probability regression in the touched JUCE Grid code was the `ResizeObserver`-driven row-capacity path repeatedly enqueueing updates after the refreshed card dimensions and two-line titles increased layout churn.
+  - Updated `web/src/app/pages/JuceGridSignalCanvas.tsx` so the live signal-grid measurement path records a width/card/gap signature and skips `setRowCapacity` entirely when the observer reports the same effective measurement and capacity, preventing redundant observer-triggered update cascades.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridSignalCanvas.test.tsx web/src/app/pages/JuceGridPage.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T385
+Status: [✓] Done
+Title: Guard JUCE Grid cluster-node normalization against undefined API payloads
+Description:
+- Goal / acceptance criteria: Reproduce and fix the follow-up JUCE Grid crash showing `can't access property "nodes", r is undefined` by hardening the cluster-node normalization path so an empty or malformed `/cluster/nodes` response degrades to an empty list instead of throwing.
+- Why it matters: The prior render-loop fix removed one crash, but the route still fails during cluster summary loading when the node payload is missing, so the page remains unstable.
+- Dependencies: T377, `web/src/app/pages/JuceGridClusterPanels.tsx`, any focused regression coverage added for the cluster summary fetch path, and the user-provided crash evidence from 2026-03-23.
+- Estimated effort: Low
+- Required outputs: Root-cause guard fix, focused regression coverage for undefined cluster payloads, validation evidence, and licensing/worklist notes for the touched MAP2-owned frontend files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 17:56 EDT - Codex
+- Completion notes:
+  - The concrete fault site was `fetchClusterNodes()` in `web/src/app/pages/JuceGridClusterPanels.tsx`, which normalized `data.nodes` without guarding `data` first; that matches the runtime message shown after `/cluster/nodes` returned an undefined payload.
+  - Updated `web/src/app/pages/JuceGridClusterPanels.tsx` so cluster-node normalization now uses `Array.isArray(data?.nodes) ? data.nodes : []`, allowing the summary bar to degrade cleanly to the existing empty-node copy instead of throwing.
+  - Added `web/src/app/pages/JuceGridClusterPanels.test.tsx` to prove the summary bar renders `No cluster nodes detected.` when `/cluster/nodes` returns `undefined`.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridClusterPanels.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/app/pages/JuceGridSignalCanvas.test.tsx`, and `npm --prefix web run build`.
+  - Licensing review: touched JUCE Grid cluster-panel/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T357
+Status: [✓] Done
+Title: Replace the landing-route transition block object with the Platforms hero icon
+Description:
+- Goal / acceptance criteria: Review the shared landing-route transition implementation and swap the repeated animated block object so it uses the existing Platforms hero icon while preserving current route scope, timing, and reduced-effects fallback behavior.
+- Why it matters: The transition already fires on the right routes, but the current generic block tile does not match the Platforms visual language the user wants carried into the motion system.
+- Dependencies: T247, `web/src/app/components/PageTransition.tsx`, `web/src/app/components/PageTransition.css`, `web/src/app/components/PageTransition.test.tsx`, the shared MAP icon set under `web/src/app/components/icons/map/**`, and the user request from 2026-03-23.
+- Estimated effort: Low
+- Required outputs: Updated transition markup/styles using the Platforms hero icon, focused regression coverage, validation evidence, and licensing/worklist notes for the touched MAP2-owned frontend files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 15:49 EDT - Codex
+- Completion notes:
+  - Reviewed the scoped landing-route transition and kept the existing route-family matching, timing, and reduced-effects fallback intact so the change stays limited to the animated object itself.
+  - Updated `web/src/app/components/PageTransition.tsx` to replace the plain repeated block content with the existing `MapClusterFabricIcon`, which is the Platforms hero icon already used in the shared MAP icon set.
+  - Updated `web/src/app/components/PageTransition.css` so each animated block now centers and lights the Platforms icon cleanly inside the current block-reveal choreography instead of rendering only the generic tile face.
+  - Added focused regression coverage in `web/src/app/components/PageTransition.test.tsx` so eligible landing-route transitions now assert that the Platforms hero icon is present during the block animation.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/PageTransition.test.tsx`, and `npm --prefix web run build` (existing Vite dynamic-import warning only).
+  - Licensing review: touched transition/worklist files remain MAP2-owned AGPL-covered frontend artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T358
+Status: [✓] Done
+Title: Make JUCE Grid reorder actions tolerate legacy URI-only backend contracts
+Description:
+- Goal / acceptance criteria: Fix `/juce-grid` reorder failures from the selected-block move controls and other chain reorder surfaces when the running backend still exposes the older `/api/chains/{chain_id}/reorder` contract that only accepts URI arrays, while preserving positioned-ref support on upgraded backends and refusing unsafe duplicate-plugin fallback on legacy servers.
+- Why it matters: The frontend now sends `{ uri, position }` reorder refs for duplicate-plugin safety, but the currently running local backend can still answer `422 Unprocessable Entity` with `string_type` validation when directional move buttons are used, breaking a basic operator flow.
+- Dependencies: `web/src/map2/api.ts`, JUCE Grid/chain reorder callers, the live local backend contract on 2026-03-23, and focused frontend regression coverage.
+- Estimated effort: Low
+- Required outputs: Backward-compatible reorder client logic, focused compatibility tests, validation evidence, and licensing/worklist notes for the touched MAP2-owned frontend files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 16:01 EDT - Codex
+- Completion notes:
+  - Reproduced the live mismatch directly against `http://localhost:8080`: OpenAPI still advertises `/api/chains/{chain_id}/reorder` as `string[]`, and a positioned-ref reorder request returned `422` with FastAPI `string_type` validation for body index `0`.
+  - Updated `web/src/map2/api.ts` so chain reorders now attempt the positioned-ref payload first, automatically downgrade to the legacy URI-array contract when that specific validation failure is detected, cache that compatibility mode per node key, and normalize both backend response shapes back into the frontend `PluginOrderRef` shape.
+  - Added `web/src/map2/reorderPluginsCompat.ts` plus `web/src/map2/reorderPluginsCompat.test.ts` to cover legacy-validation detection, response normalization across both contract shapes, and the duplicate-URI safety guard that blocks unsafe legacy fallback.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/map2/reorderPluginsCompat.test.ts`, and `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridPage.test.tsx`.
+  - Licensing review: touched reorder compatibility/test/worklist files remain MAP2-owned AGPL-covered frontend artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+## AVB Audit Remediation
+
+Source: [AVB Full-Stack Audit Report (2026-03-23)](avb/AVB_FULL_STACK_AUDIT_20260323.md)
+
+ID: T360
+Status: [✗] Blocked
+Title: Connect AVB-capable hardware and achieve PTP grandmaster lock
+Description:
+- Goal / acceptance criteria: Install AVB-capable NIC (Intel I210/I225), connect to TSN switch, run setup_avb.sh, achieve PTP SLAVE or MASTER state with offset_ns < 1000.
+- Why it matters: Blocks ALL downstream AVB validation — every audit finding depends on live hardware.
+- Dependencies: Lab hardware procurement (NIC + switch + peer node or Tesira unit)
+- Estimated effort: Medium
+- Required outputs: PTP status showing locked state, setup evidence, marker file updated.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - No AVB-capable NIC currently connected to testbed.
+  - PTP stuck in INITIALIZING with no peer.
+  - Priority: P0 — blocks basic AVB functionality.
+
+ID: T361
+Status: [✗] Blocked
+Title: Discover at least one AVDECC entity and verify AEM enumeration
+Description:
+- Goal / acceptance criteria: Enable USE_AVDECC=ON, connect AVB device, verify entity appears in /api/avb/avdecc/entities with has_model=true and complete AEM descriptor tree.
+- Why it matters: Without entity discovery, no AVDECC-managed connections can be established.
+- Dependencies: T360
+- Estimated effort: Medium
+- Required outputs: AVDECC entity list, AEM model JSON, entity metadata validation.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - USE_AVDECC=OFF by default in CMakeLists.txt:205.
+  - No AVDECC entities ever discovered on testbed.
+  - Priority: P0.
+
+ID: T362
+Status: [✗] Blocked
+Title: Establish end-to-end MAP2 AVB audio stream (talker -> listener)
+Description:
+- Goal / acceptance criteria: Create talker + listener streams, inject test signal, verify audio passes end-to-end with zero sequence/decode errors and stream stats confirming frames transferred.
+- Why it matters: The core AVB product claim — sharing audio between MAP2 nodes — is completely unproven.
+- Dependencies: T360, T361
+- Estimated effort: High
+- Required outputs: Stream stats showing framesSent/framesReceived > 0, zero errors, audio capture evidence.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - No AVB streams have ever carried audio on this testbed.
+  - Priority: P0.
+
+ID: T363
+Status: [✗] Blocked
+Title: Measure and document round-trip latency and jitter on live AVB stream
+Description:
+- Goal / acceptance criteria: Establish loopback stream, measure one-way latency via AVTP timestamps, measure round-trip via impulse injection, calculate jitter (p50/p95/p99/max) over 10-minute window, document methodology. Target: < 10ms one-way, < 500us p99 jitter.
+- Why it matters: Cannot make any latency claims without real measurements.
+- Dependencies: T362
+- Estimated effort: Medium
+- Required outputs: Latency/jitter report with methodology, avb_capture_clock_drift.sh output, stream stats.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - AvbStreamStats maxLatencyNs/minLatencyNs always zero (no streams).
+  - Priority: P0.
+
+ID: T364
+Status: [✗] Blocked
+Title: Execute 24-hour AVB soak test with zero xruns
+Description:
+- Goal / acceptance criteria: Start 2+ AVB streams, run run_avb_24h_soak.sh for 24 hours, collect hourly checkpoints, verify zero xruns, zero sequence error growth, stable latency. Archive evidence.
+- Why it matters: Cannot claim production stability without sustained operation evidence.
+- Dependencies: T362
+- Estimated effort: High (24h wall-clock)
+- Required outputs: Soak test output, hourly checkpoint data, evidence archive.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - run_avb_24h_soak.sh exists but has never produced results; Q06 gate permanently BLOCKED.
+  - Priority: P0.
+
+ID: T365
+Status: [✗] Blocked
+Title: Verify Biamp Tesira AVB interoperability (discover + stream + control)
+Description:
+- Goal / acceptance criteria: Connect Tesira Forte AVB unit, verify TTP discovery, AVDECC entity discovery with correct AEM, bidirectional audio stream subscription, PTP coordination, and DSP control during active streaming.
+- Why it matters: Biamp Tesira interoperability is a stated product goal.
+- Dependencies: T360
+- Estimated effort: High
+- Required outputs: Bidirectional audio evidence, AVDECC entity data, TTP control validation during streaming.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - No Tesira hardware connected; T030 and T072 also BLOCKED on same hardware.
+  - Priority: P0.
+
+ID: T366
+Status: [ ] Todo
+Title: Add /api/avb/* client functions to web/src/map2/api.ts
+Description:
+- Goal / acceptance criteria: Add typed TypeScript functions for all core AVB API endpoints (streams, router, PTP, AVDECC, discovery) with TanStack Query hooks. Migrate AvbRouting hooks to use shared api.ts functions.
+- Why it matters: Core AVB API bypasses shared api.ts layer; inconsistent access patterns and missing type safety.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Typed api.ts functions, updated AvbRouting hooks, typecheck + existing tests pass.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Priority: P1.
+
+ID: T367
+Status: [ ] Todo
+Title: Add WebSocket push for AVB stream state changes
+Description:
+- Goal / acceptance criteria: Add WS namespace for AVB events (stream state, AVDECC entity online/offline, PTP transitions). Update frontend to subscribe with polling fallback. Stream state changes visible in UI within 200ms.
+- Why it matters: 2s HTTP polling delays operator visibility during critical routing operations.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: WS namespace, frontend subscription, fallback to polling if WS unavailable.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Priority: P1.
+
+ID: T368
+Status: [✗] Blocked
+Title: Verify multi-stream scaling (4+ simultaneous AVB streams)
+Description:
+- Goal / acceptance criteria: Create 4+ simultaneous streams, monitor CPU/ring buffers/sequence errors, verify no cross-stream interference. Document scaling limits.
+- Why it matters: Production use requires multiple simultaneous streams.
+- Dependencies: T362
+- Estimated effort: Medium
+- Required outputs: Scaling test report with CPU usage, error rates, and documented limits.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - No streams can be created until T362.
+  - Priority: P1.
+
+ID: T369
+Status: [✗] Blocked
+Title: Verify stream persistence and recovery after network drop
+Description:
+- Goal / acceptance criteria: Establish streams, disconnect/reconnect network, verify automatic recovery within 10s and PTP re-lock within 30s. Test with 1s/10s/60s/5min interruptions.
+- Why it matters: Production AVB must survive transient network issues.
+- Dependencies: T362
+- Estimated effort: Medium
+- Required outputs: Recovery time measurements, PTP re-lock evidence, audio glitch documentation.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - No streams exist to test recovery.
+  - Priority: P1.
+
+ID: T370
+Status: [✗] Blocked
+Title: Verify simultaneous talker + listener + AVDECC controller roles on same node
+Description:
+- Goal / acceptance criteria: Configure one MAP2 node as talker AND listener AND AVDECC controller, operate all three roles simultaneously for 1 hour with zero errors.
+- Why it matters: Real-world use requires multi-role operation.
+- Dependencies: T362
+- Estimated effort: Medium
+- Required outputs: Multi-role operation evidence, stream stats, AVDECC entity list during test.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - Multi-role operation never tested.
+  - Priority: P1.
+
+ID: T371
+Status: [✗] Blocked
+Title: Execute Q04/Q05/Q06 HIL qualification gates
+Description:
+- Goal / acceptance criteria: Run run_avb_hil_qualification.sh with all three gates passing (Q04 pytest, Q05 clock drift, Q06 24h soak). Archive all evidence under docs/fit-for-purpose-evidence/.
+- Why it matters: Release gates cannot pass without HIL qualification evidence.
+- Dependencies: T360, T362
+- Estimated effort: High
+- Required outputs: summary.txt with 3x PASS, archived q04/q05/q06 logs, matrix_update.md.
+Subtasks: None
+Assigned to: Lab + Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Blocked notes:
+  - All gates permanently BLOCKED since creation; run_avb_hil_qualification.sh framework ready.
+  - Priority: P1.
+
+ID: T372
+Status: [ ] Todo
+Title: Evaluate IEEE 802.1Qbv (Time-Aware Shaper) need and feasibility for MAP2
+Description:
+- Goal / acceptance criteria: Research TAS requirements for professional audio AVB, evaluate Linux tc-taprio support on target NICs, write recommendation document.
+- Why it matters: TAS may improve worst-case latency guarantees beyond CBS-only.
+- Dependencies: None (evaluation only)
+- Estimated effort: Low
+- Required outputs: Written evaluation with implement/defer recommendation and rationale.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Priority: P2.
+
+ID: T373
+Status: [ ] Todo
+Title: Evaluate IEEE 802.1Qbu (Frame Preemption) need and feasibility for MAP2
+Description:
+- Goal / acceptance criteria: Evaluate whether frame preemption adds value for audio-only AVB use case, check NIC hardware support, document recommendation.
+- Why it matters: Low impact for audio-only but may benefit mixed networks.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Written evaluation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Priority: P2.
+
+ID: T374
+Status: [ ] Todo
+Title: Evaluate IEEE 802.1CB (Frame Replication/Elimination) for AVB redundancy
+Description:
+- Goal / acceptance criteria: Evaluate FRER requirements for MAP2 deployment scenarios, assess kernel and switch support, document redundancy strategy recommendation.
+- Why it matters: No redundancy path exists for AVB streams — single point of failure.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Written evaluation with deployment scenarios.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Priority: P2.
+
+ID: T375
+Status: [ ] Todo
+Title: Add AVTP CRF (Clock Reference Format) subtype support
+Description:
+- Goal / acceptance criteria: Evaluate CRF need for MAP2 multi-stream use cases. If needed, add CRF stream type to AvbStream with dedicated send/receive and clock recovery logic.
+- Why it matters: Multi-stream sync currently relies solely on PTP; CRF provides additional synchronization.
+- Dependencies: T362
+- Estimated effort: Medium
+- Required outputs: CRF evaluation; if implemented, interoperability test with Tesira.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Priority: P2.
+
+ID: T376
+Status: [ ] Todo
+Title: Clean up legacy AVDECC files (AvdeccEntity, AvdeccEntityModel, AvdeccEnumerator)
+Description:
+- Goal / acceptance criteria: Archive or remove the 6 legacy AVDECC files from juce-engine/Source/ that are kept on disk but not compiled. Add migration note in AvdeccController.h.
+- Why it matters: Dead code adds confusion and maintenance burden.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Legacy files removed, migration note added, cmake build unaffected.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 - Codex (AVB audit)
+- Priority: P2.
 
 ## MIDI
 
@@ -4903,3 +5322,123 @@ Last updated: 2026-03-23 15:44 EDT - Codex
   - Added regression coverage in `tests/test_midi_automation_identity_persistence.py` for additive schema upgrade, legacy MIDI engine persistence/rehydration, MIDI v2 mapping + learn persistence/sync, automation lane save/load/export identity, and JUCE binding resolution.
   - Validation: `PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY' ... ast.parse(...) ... PY` -> PASS; `git diff --check -- app/database.py app/services/automation_engine.py app/services/midi_engine.py app/services/midi_service.py app/services/juce_engine_service.py app/routes/midi.py app/routes/midi_v2.py app/routes/automation.py app/services/midi_mapping_service.py app/services/command_queue.py app/response_models.py tests/test_midi_automation_identity_persistence.py docs/PROJECT_WORKLIST.md` -> PASS; `pytest -q tests/test_midi_automation_identity_persistence.py tests/test_parameter_routing_identity.py tests/test_realtime_parameter_bridge_identity.py tests/test_chains_ab_mode_identity.py tests/test_flow_snapshots_routes.py tests/test_juce_engine_service_instance_resolution.py tests/test_chain_service_runtime_mapping.py tests/test_plugins_residency.py tests/test_plugins_engine_op_pipeline.py tests/test_nam_ir_instance_routes.py tests/test_juce_engine_current_pedalboard_identity.py` -> PASS (`38 passed`, existing `ServiceManager` / `datetime.utcnow()` deprecation warnings only).
   - Licensing: Classified the touched backend/test/worklist/instructions files as MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing .gemini/instructions.md` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`; found no new AGPL or third-party notice gaps requiring follow-up work.
+
+## MIDI Integration Audit (2026-03-23)
+
+ID: T378
+Status: [✓] Done
+Title: MIDI audit — JUCE-GRID WebSocket learn completion and real-time CC activity
+Description:
+- Goal / acceptance criteria: Replace polling-only MIDI learn completion and CC activity display with WebSocket-primary delivery for instant feedback.
+- Why it matters: 500ms learn latency and 2s CC activity latency are below industry standard for a pro audio MIDI controller interface.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: WebSocket-driven learn completion + CC activity in JuceGridPage.tsx
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 18:00 EDT - Codex
+- Completion notes:
+  - Added `midi_learn` to `WebSocketTopic` union in `web/src/map2/websocket.ts`
+  - Added `useWebSocketTopic('midi_learn', ...)` handler in `JuceGridPage.tsx` for instant learn completion with toast confirmation
+  - Added `useWebSocketTopic('midi_activity', ...)` handler for instant CC activity display (handles both C++ engine and Hub payload formats)
+  - Modified `lastMidiEvent` memo to prefer WebSocket data over polled status
+  - Polling retained as fallback for resilience
+  - TypeScript clean, build passes
+
+ID: T379
+Status: [✓] Done
+Title: MIDI audit — Fix broken device open/close API contract between frontend and backend
+Description:
+- Goal / acceptance criteria: Frontend calls `POST /v2/midi/devices/input` with `{device_name}` and `DELETE /v2/midi/devices/input` — backend must implement these endpoints.
+- Why it matters: Every MIDI device open/close attempt from JUCE-GRID was returning 404 due to API contract mismatch (frontend sends name, backend expected index path param).
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Name-based device open endpoints + individual close endpoints in midi_v2.py
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 18:00 EDT - Codex
+- Completion notes:
+  - Added `POST /devices/input` and `POST /devices/output` with `DeviceOpenRequest(device_name)` body, resolving name to index via `_resolve_device_index()`
+  - Added `DELETE /devices/input` and `DELETE /devices/output` for individual device close
+  - Response shape `{success: true, device: "..."}` matches frontend expectations
+  - Kept legacy index-based endpoints for backward compatibility
+  - Python syntax validated
+
+ID: T380
+Status: [✓] Done
+Title: MIDI audit — Fix missing status fields (input_open, output_open, last_cc/channel/value)
+Description:
+- Goal / acceptance criteria: `GET /v2/midi/status` must return all fields the frontend `MIDIStatus` type expects.
+- Why it matters: Frontend displays device open state and last CC activity from status — missing fields caused undefined renders.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Status endpoint returns `input_open`, `output_open`, `last_channel`, `last_cc`, `last_value` from engine status dict.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 18:00 EDT - Codex
+- Completion notes:
+  - Added `input_open`, `output_open`, `last_channel`, `last_cc`, `last_value` to status response, forwarded from `engine_status` dict (populated by C++ `midiStatusToDict`)
+
+ID: T381
+Status: [✓] Done
+Title: MIDI audit — Add missing PATCH /commands, routing-rules CRUD, send CC/PC/Note, and sync endpoints
+Description:
+- Goal / acceptance criteria: All endpoints defined in frontend `midiApiV2` must have corresponding backend handlers.
+- Why it matters: Multiple frontend API calls were hitting 404: command update, routing rules CRUD, MIDI send CC/PC/Note, and controller sync.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Backend route handlers in midi_v2.py for all orphaned frontend endpoints.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 18:00 EDT - Codex
+- Completion notes:
+  - Added `PATCH /commands/{command_id}` with `CommandUpdateRequest` — updates any command field
+  - Added `GET/POST/DELETE /routing-rules` with DB model mapping (`MIDIRoutingRule.cc` → frontend `data1`, `routing_data` → `from_flow_index`/`to_flow_index`)
+  - Added `POST /send/cc`, `POST /send/program-change`, `POST /send/note` — delegates to C++ engine `midi_send_cc/program_change/note_on/note_off`
+  - Added `POST /sync` — calls `midi_sync_all_mappings_to_controller()`
+  - Python syntax validated
+
+ID: T382
+Status: [ ] Todo
+Title: MIDI audit — Bridge C++ engine MIDI input into Hub routing matrix
+Description:
+- Goal / acceptance criteria: MIDI messages received by the C++ MidiHandler (ALSA) must be forwarded into the MidiHub's routing matrix so they are visible to Hub routes, traffic monitor, scripts, and macros.
+- Why it matters: Currently the C++ engine and Python MidiHub are two siloed MIDI stacks. A MIDI controller opened by the engine is invisible to Hub routing. This is the single largest architectural gap in the MIDI implementation.
+- Dependencies: `juce-engine/Source/MidiHandler.cpp` (monitor callback), `app/services/midi_broadcast.py` (bridge point), `app/services/midi_hub/hub.py` (publish method)
+- Estimated effort: High
+- Required outputs: Bridge service that publishes C++ engine MIDI messages into MidiHub as a virtual port, and optionally routes Hub output back to the engine for MIDI output. Must not introduce latency > 1ms.
+Subtasks:
+  - [ ] Register a virtual "JUCE Engine Input" port in MidiHub on startup
+  - [ ] In `midi_broadcast.py._on_midi_message()`, publish raw MIDI bytes to Hub via the virtual port
+  - [ ] Register a virtual "JUCE Engine Output" port for Hub→Engine feedback path
+  - [ ] Verify Hub traffic monitor shows engine-originated messages
+  - [ ] Verify Hub routes can filter/transform engine MIDI
+  - [ ] Latency measurement: bridge overhead must be < 1ms
+Assigned to: Codex
+Last updated: 2026-03-23 18:00 EDT - Codex
+
+ID: T383
+Status: [ ] Todo
+Title: MIDI audit — Script engine execution sandbox verification
+Description:
+- Goal / acceptance criteria: Verify that `MidiScriptEditor.tsx` Python/Lua scripts actually execute in the backend, not just CRUD stubs. If stubs, implement the execution sandbox.
+- Why it matters: The Hub GUI exposes a full script editor with run/trigger buttons — if the backend only does CRUD without execution, the feature is non-functional.
+- Dependencies: `app/services/midi_hub/script_engine.py`
+- Estimated effort: Medium
+- Required outputs: Verified script execution or implemented sandbox with security constraints.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 18:00 EDT - Codex
+
+ID: T384
+Status: [ ] Todo
+Title: MIDI audit — Remove deprecated/dead MIDI code
+Description:
+- Goal / acceptance criteria: Clean up deprecated MIDI components and dead code paths identified during audit.
+- Why it matters: Multiple deprecated components and redundant code paths add confusion and maintenance burden.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Remove or mark deprecated: `useMidiLearn.tsx` (deprecated hook), `MidiMappingsPanel.tsx` (deprecated legacy panel), redundant scope branch in `midiMappingsQuery` (lines 1019-1021 of JuceGridPage), `JuceGridSelectedBlockMidiPanel.test.tsx` (uses jest.fn instead of vi.fn — fix or remove).
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 18:00 EDT - Codex

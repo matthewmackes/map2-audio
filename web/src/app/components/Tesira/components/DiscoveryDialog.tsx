@@ -13,13 +13,19 @@
  *   - WebSocket push via useTesiraDiscoveryEvents (live device-found events)
  */
 import React, { useState, useCallback, useEffect } from 'react'
-import { CheckmarkFilled, Close, ErrorOutline, Search } from '@carbon/icons-react'
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Box, Typography, Chip, CircularProgress,
-  TextField, Divider, Alert, LinearProgress, Tooltip,
-  IconButton,
-} from '@mui/material'
+  Button,
+  ComposedModal,
+  InlineLoading,
+  InlineNotification,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Tag,
+  TextInput,
+  Tile,
+} from '@carbon/react'
+import { Search } from '@carbon/icons-react'
 import { MapMatrixProcessorIcon } from '../../icons/map'
 import {
   useStartDiscovery,
@@ -29,8 +35,8 @@ import {
 } from '../hooks/useTesiraApi'
 import { useTesiraDiscoveryEvents } from '../hooks/useTesiraWebSocket'
 import type { DiscoveredTesiraDevice } from '../types'
+import './TesiraCarbonChrome.css'
 
-const BIAMP_RED = '#E31837'
 const DEFAULT_TIMEOUT = 8
 
 interface DiscoveryDialogProps {
@@ -38,7 +44,6 @@ interface DiscoveryDialogProps {
   onClose: () => void
 }
 
-/** Derive model variant label from model string */
 function modelVariant(model: string | null): 'CI' | 'VI' | null {
   if (!model) return null
   const upper = model.toUpperCase()
@@ -47,51 +52,27 @@ function modelVariant(model: string | null): 'CI' | 'VI' | null {
   return null
 }
 
-function ModelBadge({ model }: { model: string | null }) {
+function DeviceModelTag({ model }: { model: string | null }) {
   const variant = modelVariant(model)
   if (!variant) return null
+
   return (
-    <Chip
-      label={variant}
-      size="small"
-      sx={{
-        bgcolor: variant === 'CI' ? '#b45309' : '#1d4ed8',
-        color: '#fff',
-        fontWeight: 700,
-        fontSize: 10,
-        height: 18,
-        minWidth: 24,
-        px: 0.5,
-      }}
-    />
+    <Tag type={variant === 'CI' ? 'teal' : 'blue'} size="sm">
+      {variant}
+    </Tag>
   )
 }
 
-function ScanAnimation() {
-  return (
-    <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', py: 0.5 }}>
-      {[0, 150, 300].map((delay) => (
-        <Box
-          key={delay}
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            bgcolor: BIAMP_RED,
-            animation: 'tesiraPulse 1.2s ease-in-out infinite',
-            animationDelay: `${delay}ms`,
-            '@keyframes tesiraPulse': {
-              '0%, 80%, 100%': { opacity: 0.2, transform: 'scale(0.8)' },
-              '40%': { opacity: 1, transform: 'scale(1.2)' },
-            },
-          }}
-        />
-      ))}
-    </Box>
-  )
+function deviceMeta(device: DiscoveredTesiraDevice): string {
+  return [
+    `${device.host}:${device.port}`,
+    device.serial_number ? `SN ${device.serial_number}` : null,
+    device.firmware_version ? `FW ${device.firmware_version}` : null,
+    device.mac_address ? `MAC ${device.mac_address}` : null,
+  ].filter(Boolean).join(' · ')
 }
 
-interface DeviceCardProps {
+interface DiscoveryDeviceTileProps {
   device: DiscoveredTesiraDevice
   nameValue: string
   onNameChange: (name: string) => void
@@ -101,94 +82,73 @@ interface DeviceCardProps {
   adoptError: string | null
 }
 
-function DeviceCard({
-  device, nameValue, onNameChange, onAdopt,
-  adopted, adopting, adoptError,
-}: DeviceCardProps) {
-  const ttpEnabled = device.ttp_enabled !== false  // default true for old responses
+function DiscoveryDeviceTile({
+  device,
+  nameValue,
+  onNameChange,
+  onAdopt,
+  adopted,
+  adopting,
+  adoptError,
+}: DiscoveryDeviceTileProps) {
+  const ttpEnabled = device.ttp_enabled !== false
+  const hostId = device.host.replace(/[^a-z0-9_-]/gi, '-')
 
   return (
-    <Box
-      sx={{
-        border: 1,
-        borderColor: adopted ? 'success.main' : 'divider',
-        borderRadius: 1,
-        p: 1.5,
-        bgcolor: adopted ? 'success.dark' : 'background.default',
-        transition: 'all 0.2s',
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-        <MapMatrixProcessorIcon size={14} color={BIAMP_RED} />
-        <Typography variant="body2" fontWeight={700} sx={{ flex: 1 }}>
-          {device.model ?? device.mdns_name}
-        </Typography>
-        <ModelBadge model={device.model} />
-        {!ttpEnabled && (
-          <Tooltip title="Port 23 (TTP) is disabled — found via Biamp port 61451. Enable TTP in Tesira Software to connect.">
-            <Chip
-              label="TTP off"
-              size="small"
-              variant="outlined"
-              sx={{ fontSize: 10, height: 18, borderColor: 'warning.main', color: 'warning.main' }}
-            />
-          </Tooltip>
-        )}
-        {device.already_configured && (
-          <Chip label="Already configured" size="small" variant="outlined" sx={{ fontSize: 10, height: 18 }} />
-        )}
-        {adopted && (
-          <Tooltip title={ttpEnabled ? 'Adopted' : 'Added to fleet'}>
-            <CheckmarkFilled size={18} style={{ color: 'var(--mui-palette-success-light, #66bb6a)' }} />
-          </Tooltip>
-        )}
-      </Box>
+    <Tile className="tesira-discovery-modal__device">
+      <div className="tesira-discovery-modal__device-header">
+        <div>
+          <div className="tesira-discovery-modal__device-title-row">
+            <span className="tesira-discovery-modal__device-icon" aria-hidden>
+              <MapMatrixProcessorIcon size={16} color="var(--cds-support-error)" />
+            </span>
+            <h3 className="tesira-discovery-modal__device-title">
+              {device.model ?? device.hostname ?? device.mdns_name ?? device.host}
+            </h3>
+          </div>
+          <p className="tesira-discovery-modal__device-meta">{deviceMeta(device)}</p>
+        </div>
 
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-        {device.host}:{device.port}
-        {device.serial_number && ` · SN: ${device.serial_number}`}
-        {device.firmware_version && ` · FW: ${device.firmware_version}`}
-        {device.mac_address && ` · MAC: ${device.mac_address}`}
-      </Typography>
+        <div className="tesira-discovery-modal__device-tags">
+          <DeviceModelTag model={device.model} />
+          {!ttpEnabled ? <Tag type="warm-gray" size="sm">TTP off</Tag> : null}
+          {device.already_configured ? <Tag type="cool-gray" size="sm">Already configured</Tag> : null}
+          {adopted ? <Tag type="green" size="sm">Added to fleet</Tag> : null}
+        </div>
+      </div>
 
-      {!ttpEnabled && (
-        <Typography variant="caption" color="warning.main" sx={{ display: 'block', mb: 1 }}>
-          Detected via port 61451 (Biamp discovery). Enable TTP in Tesira Software to establish control.
-        </Typography>
-      )}
+      {!ttpEnabled ? (
+        <p className="tesira-discovery-modal__device-note">
+          Detected via port 61451. Enable TTP in Tesira Software before MAP2 can establish full runtime control.
+        </p>
+      ) : null}
 
-      {adoptError && (
-        <Alert severity="error" sx={{ py: 0, mb: 1, fontSize: 11 }}>{adoptError}</Alert>
-      )}
+      {adoptError ? <p className="tesira-discovery-modal__device-error">{adoptError}</p> : null}
 
-      {!adopted && (
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <TextField
-            size="small"
-            label="Name"
+      {!adopted ? (
+        <div className="tesira-discovery-modal__device-actions">
+          <TextInput
+            id={`tesira-discovery-name-${hostId}`}
+            labelText="Name"
             value={nameValue}
-            onChange={(e) => onNameChange(e.target.value)}
+            onChange={(event) => onNameChange(event.target.value)}
             disabled={adopting || device.already_configured}
-            sx={{ flex: 1, '& input': { fontSize: 12 } }}
           />
           <Button
-            variant="contained"
-            size="small"
+            size="sm"
+            kind={ttpEnabled ? 'primary' : 'secondary'}
             onClick={onAdopt}
             disabled={adopting || device.already_configured}
-            sx={{
-              bgcolor: BIAMP_RED,
-              '&:hover': { bgcolor: '#c01530' },
-              minWidth: 72,
-            }}
           >
-            {adopting
-              ? <CircularProgress size={14} sx={{ color: '#fff' }} />
-              : ttpEnabled ? 'Adopt' : 'Add'}
+            {adopting ? 'Working…' : ttpEnabled ? 'Adopt' : 'Add'}
           </Button>
-        </Box>
+        </div>
+      ) : (
+        <p className="tesira-discovery-modal__device-note">
+          This device is now tracked in the Tesira fleet. Continue from the onboarding wizard or the device dashboard.
+        </p>
       )}
-    </Box>
+    </Tile>
   )
 }
 
@@ -208,18 +168,24 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
   const devices = status?.devices ?? []
   const scanError = status?.error ?? null
 
-  // Live WS events — the status poll also picks these up, but WS makes it feel instant
   useTesiraDiscoveryEvents(useCallback((event) => {
     if (event.event === 'device_found' && event.device) {
-      const d = event.device
-      setNames((prev) => prev[d.host] !== undefined ? prev : { ...prev, [d.host]: d.hostname ?? d.mdns_name ?? d.host })
+      const discovered = event.device
+      setNames((prev) => (
+        prev[discovered.host] !== undefined
+          ? prev
+          : { ...prev, [discovered.host]: discovered.hostname ?? discovered.mdns_name ?? discovered.host }
+      ))
     }
   }, []))
 
-  // Sync names when devices arrive via poll too
   useEffect(() => {
-    devices.forEach((d) => {
-      setNames((prev) => prev[d.host] !== undefined ? prev : { ...prev, [d.host]: d.hostname ?? d.mdns_name ?? d.host })
+    devices.forEach((device) => {
+      setNames((prev) => (
+        prev[device.host] !== undefined
+          ? prev
+          : { ...prev, [device.host]: device.hostname ?? device.mdns_name ?? device.host }
+      ))
     })
   }, [devices])
 
@@ -235,15 +201,14 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
     setAdoptErrors((prev) => ({ ...prev, [device.host]: '' }))
     try {
       if (device.ttp_enabled === false) {
-        // TTP disabled — use the no-probe endpoint
         await addDevice.mutateAsync({ host: device.host, port: device.port, name: names[device.host] })
       } else {
         await adoptDevice.mutateAsync({ host: device.host, name: names[device.host] })
       }
       setAdopted((prev) => ({ ...prev, [device.host]: true }))
-    } catch (err: any) {
-      const msg = err?.message ?? 'Failed'
-      setAdoptErrors((prev) => ({ ...prev, [device.host]: msg }))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to add device'
+      setAdoptErrors((prev) => ({ ...prev, [device.host]: message }))
     } finally {
       setAdoptingHost(null)
     }
@@ -254,100 +219,115 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-        <MapMatrixProcessorIcon size={20} color={BIAMP_RED} />
-        <Typography variant="h6" component="span">Discover Tesira Devices</Typography>
-        <Box sx={{ flex: 1 }} />
-        {isScanning && <ScanAnimation />}
-        <IconButton size="small" onClick={handleClose} disabled={isScanning}>
-          <Close size={16} />
-        </IconButton>
-      </DialogTitle>
+    <ComposedModal open={open} onClose={handleClose} size="lg" className="tesira-discovery-modal">
+      <ModalHeader
+        title="Discover Tesira Devices"
+        label="Tesira enrollment"
+        closeModal={handleClose}
+      />
+      <ModalBody hasScrollingContent className="tesira-discovery-modal__body">
+        <Tile className="tesira-discovery-modal__tile">
+          <div className="tesira-discovery-modal__header">
+            <div>
+              <p className="tesira-dashboard__eyebrow">Discovery scan</p>
+              <h3 className="tesira-dashboard__title">Find factory-reset Tesira units on the LAN</h3>
+              <p className="tesira-dashboard__summary">
+                MAP2 scans mDNS plus Biamp discovery visibility for Tesira Forte units. The scan runs for {DEFAULT_TIMEOUT} seconds and can add units even before TTP is enabled.
+              </p>
+            </div>
+            <div className="tesira-discovery-modal__device-tags">
+              <Tag type="blue" size="sm">Factory reset</Tag>
+              <Tag type="cool-gray" size="sm">mDNS + port 61451</Tag>
+              <Tag type="green" size="sm">MAP2 fleet handoff</Tag>
+            </div>
+          </div>
+        </Tile>
 
-      {isScanning && <LinearProgress sx={{ '& .MuiLinearProgress-bar': { bgcolor: BIAMP_RED } }} />}
+        {startDiscovery.isError ? (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Failed to start discovery scan"
+            subtitle={String(startDiscovery.error)}
+          />
+        ) : null}
 
-      <DialogContent sx={{ pt: 2 }}>
-        {/* Scan description */}
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Scans the local network for Biamp Tesira Forte CI and VI units at factory reset
-          (mDNS + TTP port 23, no password required). The scan runs for {DEFAULT_TIMEOUT} seconds.
-        </Typography>
+        {scanError && !isScanning ? (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Discovery scan finished with a warning"
+            subtitle={scanError}
+          />
+        ) : null}
 
-        {startDiscovery.isError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            Failed to start scan: {String(startDiscovery.error)}
-          </Alert>
-        )}
+        <Tile className="tesira-discovery-modal__tile">
+          <div className="tesira-discovery-modal__header">
+            <div>
+              <p className="tesira-dashboard__eyebrow">Scan status</p>
+              <h3 className="tesira-dashboard__title">
+                {isScanning ? 'Scanning the network now' : hasScanned ? 'Latest scan complete' : 'No scan started yet'}
+              </h3>
+              <p className="tesira-dashboard__summary">
+                {isScanning
+                  ? devices.length > 0
+                    ? `${devices.length} device${devices.length === 1 ? '' : 's'} found so far.`
+                    : 'Looking for Tesira units that are visible from the current network segment.'
+                  : hasScanned
+                    ? `${devices.length} device${devices.length === 1 ? '' : 's'} found in the latest discovery run.`
+                    : 'Run a discovery scan to populate this dialog with adoptable Tesira devices.'}
+              </p>
+            </div>
+            <div className="tesira-discovery-modal__device-tags">
+              <Tag type={isScanning ? 'blue' : hasScanned ? 'cool-gray' : 'warm-gray'} size="sm">
+                {isScanning ? 'Scanning' : hasScanned ? 'Scan complete' : 'Idle'}
+              </Tag>
+              {devices.length > 0 ? (
+                <Tag type="green" size="sm">
+                  {devices.length} found
+                </Tag>
+              ) : null}
+            </div>
+          </div>
 
-        {scanError && !isScanning && (
-          <Alert severity="warning" sx={{ mb: 2 }}>Scan error: {scanError}</Alert>
-        )}
+          {isScanning ? <InlineLoading description="Scanning Tesira discovery sources" /> : null}
+        </Tile>
 
-        {/* Status line */}
-        {isScanning && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <CircularProgress size={14} sx={{ color: BIAMP_RED }} />
-            <Typography variant="body2">
-              Scanning… {devices.length > 0 ? `${devices.length} unit${devices.length !== 1 ? 's' : ''} found so far` : 'looking for Tesira units'}
-            </Typography>
-          </Box>
-        )}
-
-        {/* Results */}
-        {devices.length > 0 && (
-          <>
-            <Divider sx={{ mb: 1.5 }}>
-              <Typography variant="caption" color="text.secondary">
-                Found {devices.length} unit{devices.length !== 1 ? 's' : ''}
-              </Typography>
-            </Divider>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {devices.map((dev) => (
-                <DeviceCard
-                  key={dev.host}
-                  device={dev}
-                  nameValue={names[dev.host] ?? ''}
-                  onNameChange={(name) => setNames((prev) => ({ ...prev, [dev.host]: name }))}
-                  onAdopt={() => handleAdopt(dev)}
-                  adopted={adopted[dev.host] ?? false}
-                  adopting={adoptingHost === dev.host}
-                  adoptError={adoptErrors[dev.host] || null}
-                />
-              ))}
-            </Box>
-          </>
-        )}
-
-        {/* No results after scan */}
-        {hasScanned && !isScanning && devices.length === 0 && !scanError && (
-          <Box sx={{ textAlign: 'center', py: 3, color: 'text.secondary' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1, opacity: 0.4 }}>
-              <ErrorOutline size={40} />
-            </Box>
-            <Typography variant="body2">
-              No Tesira units found. Check that units are on the same L2 segment
-              and advertising via mDNS, or verify TTP port 23 is reachable.
-            </Typography>
-          </Box>
-        )}
-      </DialogContent>
-
-      <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-        <Button
-          variant="outlined"
-          startIcon={<Search size={16} />}
-          onClick={handleScan}
-          disabled={isScanning}
-          sx={{ borderColor: BIAMP_RED, color: BIAMP_RED, '&:hover': { borderColor: '#c01530', bgcolor: 'rgba(227,24,55,0.04)' } }}
-        >
-          {hasScanned ? 'Scan Again' : 'Start Scan'}
+        {devices.length > 0 ? (
+          <div className="tesira-discovery-modal__results">
+            {devices.map((device) => (
+              <DiscoveryDeviceTile
+                key={device.host}
+                device={device}
+                nameValue={names[device.host] ?? ''}
+                onNameChange={(name) => setNames((prev) => ({ ...prev, [device.host]: name }))}
+                onAdopt={() => {
+                  void handleAdopt(device)
+                }}
+                adopted={adopted[device.host] ?? false}
+                adopting={adoptingHost === device.host}
+                adoptError={adoptErrors[device.host] || null}
+              />
+            ))}
+          </div>
+        ) : hasScanned && !isScanning ? (
+          <Tile className="tesira-discovery-modal__tile">
+            <p className="tesira-dashboard__summary">
+              No Tesira devices were discovered on the current network segment. Fall back to manual IP enrollment if the unit is reachable but blocked from discovery.
+            </p>
+          </Tile>
+        ) : null}
+      </ModalBody>
+      <ModalFooter>
+        <Button kind="secondary" onClick={handleClose} disabled={isScanning}>
+          Close
         </Button>
-        <Box sx={{ flex: 1 }} />
-        <Button onClick={handleClose} disabled={isScanning} variant="contained" color="inherit">
-          Done
+        <Button kind="primary" renderIcon={Search} onClick={handleScan} disabled={isScanning}>
+          {isScanning ? 'Scanning…' : 'Start discovery scan'}
         </Button>
-      </DialogActions>
-    </Dialog>
+      </ModalFooter>
+    </ComposedModal>
   )
 }

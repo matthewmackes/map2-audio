@@ -78,6 +78,7 @@ describe('PageTransition', () => {
 
     expect(screen.getByTestId('transition-pathname')).toHaveTextContent('/audio-artifacts')
     expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--block')
+    expect(document.querySelectorAll('.landing-route-transition__block-icon').length).toBeGreaterThan(0)
 
     act(() => {
       jest.advanceTimersByTime(900)

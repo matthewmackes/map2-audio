@@ -1,18 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { CheckmarkFilled, Renew, WarningAltFilled } from '@carbon/icons-react'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Paper,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile } from '@carbon/react'
 import {
   Line,
   LineChart,
@@ -22,6 +10,7 @@ import {
   YAxis,
 } from 'recharts'
 import { useTesiraFaults, useTesiraMeterHistory, useTesiraMeterPeak } from '../hooks/useTesiraApi'
+import './TesiraCarbonChrome.css'
 
 interface TesiraFaultsTabProps {
   deviceId: string
@@ -42,108 +31,129 @@ export function TesiraFaultsTab({ deviceId }: TesiraFaultsTabProps) {
     [meterHistory.data],
   )
 
-  if (isLoading) return <Box sx={{ p: 2 }}><CircularProgress size={20} /></Box>
+  if (isLoading) {
+    return (
+      <div className="tesira-faults-tab__loading">
+        <InlineLoading description="Loading Tesira faults" />
+      </div>
+    )
+  }
 
   return (
-    <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {isError ? (
-        <Alert
-          severity="error"
-          action={<Button size="small" onClick={() => refetch()}>Retry</Button>}
-        >
-          Failed to load fault list
-        </Alert>
-      ) : (
-        <Paper variant="outlined" sx={{ p: 1.25 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="caption" fontWeight={600} color="text.secondary">
-              ACTIVE FAULTS ({faults.length})
-            </Typography>
+    <div className="tesira-faults-tab">
+      <Tile className="tesira-faults-tab__tile">
+        <div className="tesira-faults-tab__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Active faults</p>
+            <h3 className="tesira-dashboard__title">Surface device health issues quickly</h3>
+            <p className="tesira-dashboard__summary">
+              Review current Tesira fault strings before reconnecting or changing the signal chain.
+            </p>
+          </div>
+          <div className="tesira-faults-tab__actions">
+            <Tag type={faults.length > 0 ? 'red' : 'green'} size="sm">
+              {faults.length === 0 ? 'Healthy' : `${faults.length} active`}
+            </Tag>
             <Button
-              size="small"
-              startIcon={<Renew size={16} />}
+              size="sm"
+              kind="ghost"
+              renderIcon={Renew}
               onClick={() => {
                 refetch().catch(() => undefined)
               }}
-              sx={{ fontSize: 11 }}
             >
               Refresh
             </Button>
-          </Box>
+          </div>
+        </div>
 
-          {faults.length === 0 ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.5 }}>
-              <CheckmarkFilled size={18} style={{ color: 'var(--mui-palette-success-main, #2e7d32)' }} />
-              <Typography variant="body2" color="success.main">No active faults</Typography>
-            </Box>
-          ) : (
-            <List dense disablePadding>
-              {faults.map((fault, idx) => (
-                <ListItem key={`${idx}-${fault}`} divider sx={{ py: 0.5 }}>
-                  <ListItemIcon sx={{ minWidth: 28 }}>
-                    <WarningAltFilled size={16} style={{ color: 'var(--mui-palette-warning-main, #ed6c02)' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={fault}
-                    primaryTypographyProps={{ variant: 'body2', sx: { fontSize: 12 } }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </Paper>
-      )}
+        {isError ? (
+          <InlineNotification
+            kind="error"
+            lowContrast
+            hideCloseButton
+            title="Failed to load fault list"
+            subtitle="Retry after confirming the Tesira unit is reachable."
+          />
+        ) : faults.length === 0 ? (
+          <div className="tesira-faults-tab__ok">
+            <CheckmarkFilled size={18} aria-hidden="true" />
+            <p className="tesira-faults-tab__ok-copy">No active faults</p>
+          </div>
+        ) : (
+          <ul className="tesira-faults-tab__list">
+            {faults.map((fault, index) => (
+              <li key={`${index}-${fault}`} className="tesira-faults-tab__list-item">
+                <WarningAltFilled size={16} aria-hidden="true" />
+                <span>{fault}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Tile>
 
-      <Paper variant="outlined" sx={{ p: 1.25 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, gap: 1, flexWrap: 'wrap' }}>
-          <Typography variant="caption" fontWeight={600} color="text.secondary">
-            METER HISTORY
-          </Typography>
-          <TextField
-            size="small"
-            label="Instance Tag"
+      <Tile className="tesira-faults-tab__tile">
+        <div className="tesira-faults-tab__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Meter history</p>
+            <h3 className="tesira-dashboard__title">Inspect recent signal peaks</h3>
+            <p className="tesira-dashboard__summary">
+              Pull recent meter history for a live instance tag to correlate overloads with fault activity.
+            </p>
+          </div>
+          <div className="tesira-faults-tab__actions">
+            <Tag type="cool-gray" size="sm">
+              {meterPeak.data?.peak_dbu != null ? `Peak ${meterPeak.data.peak_dbu.toFixed(2)} dBu` : 'Peak unavailable'}
+            </Tag>
+          </div>
+        </div>
+
+        <div className="tesira-faults-tab__meter-toolbar">
+          <TextInput
+            id={`tesira-faults-meter-tag-${deviceId}`}
+            labelText="Instance tag"
             value={meterTag}
             onChange={(event) => setMeterTag(event.target.value)}
-            sx={{ width: 220 }}
-            inputProps={{ style: { fontSize: 12 } }}
           />
           <Button
-            size="small"
-            variant="outlined"
+            size="sm"
+            kind="secondary"
             onClick={() => {
               meterHistory.refetch().catch(() => undefined)
               meterPeak.refetch().catch(() => undefined)
             }}
           >
-            Refresh
+            Refresh meter data
           </Button>
-        </Box>
+        </div>
 
         {meterHistory.error ? (
-          <Alert severity="warning">{(meterHistory.error as Error).message || 'Meter history unavailable'}</Alert>
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Meter history unavailable"
+            subtitle={(meterHistory.error as Error).message || 'No history could be returned for this tag.'}
+          />
         ) : meterHistory.isLoading ? (
-          <CircularProgress size={18} />
+          <div className="tesira-faults-tab__loading">
+            <InlineLoading description="Loading meter history" />
+          </div>
         ) : chartData.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No meter samples available for this tag.
-          </Typography>
+          <p className="tesira-presets-tab__empty">No meter samples available for this tag.</p>
         ) : (
-          <Box sx={{ width: '100%', height: 220 }}>
+          <div className="tesira-faults-tab__chart">
             <ResponsiveContainer>
               <LineChart data={chartData}>
                 <XAxis dataKey="t" hide />
                 <YAxis domain={[-80, 20]} width={36} />
                 <ChartTooltip />
-                <Line type="monotone" dataKey="peak" stroke="#E31837" dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="peak" stroke="var(--cds-support-error)" dot={false} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
-          </Box>
+          </div>
         )}
-
-        <Typography variant="caption" color="text.secondary">
-          Peak: {meterPeak.data?.peak_dbu != null ? `${meterPeak.data.peak_dbu.toFixed(2)} dBu` : '—'}
-        </Typography>
-      </Paper>
-    </Box>
+      </Tile>
+    </div>
   )
 }

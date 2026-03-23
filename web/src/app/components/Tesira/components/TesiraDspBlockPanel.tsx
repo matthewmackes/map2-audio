@@ -1,18 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Slider,
-  Stack,
-  Switch,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Button, InlineLoading, InlineNotification, Tag, TextInput, Tile, Toggle } from '@carbon/react'
 import { useSetTesiraDspParam, useTesiraDspBlock, useTesiraDspParams } from '../hooks/useTesiraApi'
-import { NumberInput } from '../../Controls/NumberInput'
+import './TesiraCarbonChrome.css'
 
 interface TesiraDspBlockPanelProps {
   deviceId: string
@@ -31,6 +20,20 @@ function coerceDraftValue(raw: string): unknown {
   return raw
 }
 
+function normalizeNumericInput(value: string): string {
+  return value.replace(/[^0-9.\-]/g, '')
+}
+
+function normalizePositiveIntegerInput(value: string): string {
+  return value.replace(/[^0-9]/g, '')
+}
+
+function parsePositiveInteger(value: string, fallback: number): number {
+  const parsed = Number.parseInt(value, 10)
+  if (Number.isNaN(parsed)) return fallback
+  return Math.max(1, parsed)
+}
+
 export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPanelProps) {
   const block = useTesiraDspBlock(deviceId, instanceTag)
   const params = useTesiraDspParams(deviceId, instanceTag)
@@ -38,19 +41,21 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
 
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [localError, setLocalError] = useState<string | null>(null)
-  const [matrixInput, setMatrixInput] = useState<number>(1)
-  const [matrixOutput, setMatrixOutput] = useState<number>(1)
-  const [matrixGain, setMatrixGain] = useState<string>('0')
-  const [matrixMute, setMatrixMute] = useState<boolean>(false)
+  const [matrixInput, setMatrixInput] = useState('1')
+  const [matrixOutput, setMatrixOutput] = useState('1')
+  const [matrixGain, setMatrixGain] = useState('0')
+  const [matrixMute, setMatrixMute] = useState(false)
 
   const values = useMemo(
     () => ((params.data?.values || {}) as ParamValues),
-    [params.data?.values]
+    [params.data?.values],
   )
+
   const editorFamily = useMemo(() => {
     const family = (block.data?.editor as Record<string, unknown> | undefined)?.family
     return typeof family === 'string' && family.trim() ? family : 'generic'
   }, [block.data?.editor])
+
   const sortedKeys = useMemo(() => {
     const keys = Object.keys(values)
     const familyOrder: Record<string, string[]> = {
@@ -64,34 +69,36 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
       selector: ['sourceSelection', 'mute'],
     }
     const ordered = familyOrder[editorFamily] ?? []
-    return keys.sort((a, b) => {
-      const ai = ordered.indexOf(a)
-      const bi = ordered.indexOf(b)
-      if (ai >= 0 || bi >= 0) {
-        if (ai < 0) return 1
-        if (bi < 0) return -1
-        return ai - bi
+    return keys.sort((left, right) => {
+      const leftIndex = ordered.indexOf(left)
+      const rightIndex = ordered.indexOf(right)
+      if (leftIndex >= 0 || rightIndex >= 0) {
+        if (leftIndex < 0) return 1
+        if (rightIndex < 0) return -1
+        return leftIndex - rightIndex
       }
-      return a.localeCompare(b)
+      return left.localeCompare(right)
     })
   }, [editorFamily, values])
+
   const matrixArgs = useMemo(
-    () => [Math.max(1, Math.floor(matrixInput)), Math.max(1, Math.floor(matrixOutput))],
-    [matrixInput, matrixOutput]
+    () => [parsePositiveInteger(matrixInput, 1), parsePositiveInteger(matrixOutput, 1)],
+    [matrixInput, matrixOutput],
   )
+
   const supportsCrosspoint = useMemo(
     () =>
       sortedKeys.includes('crosspointLevelOut') ||
       sortedKeys.includes('crosspointMute') ||
       Boolean((block.data?.parameter_map as Record<string, unknown> | undefined)?.crosspointLevelOut),
-    [block.data?.parameter_map, sortedKeys]
+    [block.data?.parameter_map, sortedKeys],
   )
 
   useEffect(() => {
     setDrafts(
       Object.fromEntries(
-        Object.entries(values).map(([key, value]) => [key, String(value ?? '')])
-      )
+        Object.entries(values).map(([key, value]) => [key, String(value ?? '')]),
+      ),
     )
   }, [values])
 
@@ -100,187 +107,212 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
     try {
       await setParam.mutateAsync({ deviceId, instanceTag, attribute, value, args })
       await params.refetch()
-    } catch (err: unknown) {
-      setLocalError(err instanceof Error ? err.message : String(err))
+    } catch (error: unknown) {
+      setLocalError(error instanceof Error ? error.message : String(error))
     }
   }
 
-  if (params.isLoading || block.isLoading) return <CircularProgress size={18} />
+  if (params.isLoading || block.isLoading) {
+    return (
+      <div className="tesira-dsp-panel__loading">
+        <InlineLoading description="Loading block parameters" />
+      </div>
+    )
+  }
 
   return (
-    <Paper variant="outlined" sx={{ p: 1.5 }}>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="caption" fontWeight={700}>
-          Block Parameters
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {instanceTag}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Editor: {editorFamily}
-        </Typography>
-        <Button
-          size="small"
-          variant="text"
-          onClick={() => {
-            params.refetch().catch(() => undefined)
-          }}
-        >
-          Refresh
-        </Button>
-      </Stack>
-
-      {localError && <Alert severity="warning" sx={{ mb: 1 }}>{localError}</Alert>}
-      {params.error && (
-        <Alert severity="warning" sx={{ mb: 1 }}>
-          {(params.error as Error).message || 'Failed to read block parameters'}
-        </Alert>
-      )}
-
-      {(editorFamily === 'matrix' || editorFamily === 'router') && supportsCrosspoint ? (
-        <Paper variant="outlined" sx={{ p: 1, mb: 1, background: '#fafafa' }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap' }}>
-            <Typography variant="caption" fontWeight={700}>
-              Crosspoint Helper
-            </Typography>
-            <NumberInput
-              label="Input"
-              value={matrixInput}
-              min={1}
-              max={128}
-              step={1}
-              showBounds={false}
-              size="small"
-              style={{ width: 90 }}
-              onChange={(value) => setMatrixInput(Math.max(1, Math.round(value) || 1))}
-            />
-            <NumberInput
-              label="Output"
-              value={matrixOutput}
-              min={1}
-              max={128}
-              step={1}
-              showBounds={false}
-              size="small"
-              style={{ width: 90 }}
-              onChange={(value) => setMatrixOutput(Math.max(1, Math.round(value) || 1))}
-            />
-            <TextField
-              label="Gain dB"
-              size="small"
-              value={matrixGain}
-              onChange={(event) => setMatrixGain(event.target.value)}
-              sx={{ width: 110 }}
-            />
+    <div className="tesira-dsp-panel">
+      <Tile className="tesira-dsp-panel__tile">
+        <div className="tesira-dsp-panel__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">Block parameters</p>
+            <h3 className="tesira-dashboard__title">{instanceTag}</h3>
+            <p className="tesira-dashboard__summary">
+              Inspect the current parameter map and write back individual values without leaving the Tesira dashboard.
+            </p>
+          </div>
+          <div className="tesira-dsp-panel__tags">
+            <Tag type="cool-gray" size="sm">{editorFamily}</Tag>
+            <Tag type="warm-gray" size="sm">{sortedKeys.length} params</Tag>
             <Button
-              size="small"
-              variant="outlined"
-              disabled={setParam.isPending}
+              size="sm"
+              kind="ghost"
               onClick={() => {
-                const parsed = Number(matrixGain)
-                if (!Number.isFinite(parsed)) return
-                applyOne('crosspointLevelOut', parsed, matrixArgs).catch(() => undefined)
+                params.refetch().catch(() => undefined)
               }}
             >
-              Apply Gain
+              Refresh
             </Button>
-            <Switch
-              size="small"
-              checked={matrixMute}
-              onChange={(_event, checked) => {
+          </div>
+        </div>
+
+        {localError ? (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Parameter write failed"
+            subtitle={localError}
+          />
+        ) : null}
+
+        {params.error ? (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="Failed to read block parameters"
+            subtitle={(params.error as Error).message || 'The block parameter map could not be read.'}
+          />
+        ) : null}
+
+        {(editorFamily === 'matrix' || editorFamily === 'router') && supportsCrosspoint ? (
+          <div className="tesira-dsp-panel__crosspoint">
+            <div className="tesira-dsp-panel__crosspoint-header">
+              <div>
+                <h4 className="tesira-dsp-panel__param-title">Crosspoint helper</h4>
+                <p className="tesira-dsp-panel__param-meta">Apply a gain or mute change to a specific matrix crosspoint.</p>
+              </div>
+              <Tag type="blue" size="sm">{`${matrixArgs[0]} → ${matrixArgs[1]}`}</Tag>
+            </div>
+
+            <div className="tesira-dsp-panel__crosspoint-form">
+              <TextInput
+                id={`tesira-dsp-matrix-input-${instanceTag}`}
+                labelText="Input"
+                value={matrixInput}
+                onChange={(event) => setMatrixInput(normalizePositiveIntegerInput(event.target.value))}
+                inputMode="numeric"
+              />
+              <TextInput
+                id={`tesira-dsp-matrix-output-${instanceTag}`}
+                labelText="Output"
+                value={matrixOutput}
+                onChange={(event) => setMatrixOutput(normalizePositiveIntegerInput(event.target.value))}
+                inputMode="numeric"
+              />
+              <TextInput
+                id={`tesira-dsp-matrix-gain-${instanceTag}`}
+                labelText="Gain dB"
+                value={matrixGain}
+                onChange={(event) => setMatrixGain(normalizeNumericInput(event.target.value))}
+                inputMode="decimal"
+              />
+              <Button
+                size="sm"
+                kind="secondary"
+                disabled={setParam.isPending}
+                onClick={() => {
+                  const parsed = Number(matrixGain)
+                  if (!Number.isFinite(parsed)) return
+                  void applyOne('crosspointLevelOut', parsed, matrixArgs)
+                }}
+              >
+                Apply gain
+              </Button>
+            </div>
+
+            <Toggle
+              id={`tesira-dsp-matrix-mute-${instanceTag}`}
+              labelText="Crosspoint mute"
+              labelA="Off"
+              labelB="On"
+              toggled={matrixMute}
+              onToggle={(checked) => {
                 setMatrixMute(checked)
-                applyOne('crosspointMute', checked, matrixArgs).catch(() => undefined)
+                void applyOne('crosspointMute', checked, matrixArgs)
               }}
             />
-          </Stack>
-        </Paper>
-      ) : null}
+          </div>
+        ) : null}
 
-      <Stack spacing={1}>
-        {sortedKeys.map((key) => {
-          const value = values[key]
-          const definition = (block.data?.parameter_map?.[key] ?? {}) as Record<string, unknown>
-          const valueType = String(definition['value_type'] ?? '')
-          const unit = String(definition['unit'] ?? '')
-          const isBool = typeof value === 'boolean' || valueType.toUpperCase() === 'BOOL'
-          const min = typeof definition['min_value'] === 'number' ? (definition['min_value'] as number) : undefined
-          const max = typeof definition['max_value'] === 'number' ? (definition['max_value'] as number) : undefined
-          const step = typeof definition['step'] === 'number' ? (definition['step'] as number) : 0.1
-          const numeric = typeof value === 'number' ? value : Number(drafts[key])
-          const useSlider = Number.isFinite(numeric) && min != null && max != null
+        <div className="tesira-dsp-panel__params">
+          {sortedKeys.map((key) => {
+            const value = values[key]
+            const definition = (block.data?.parameter_map?.[key] ?? {}) as Record<string, unknown>
+            const valueType = String(definition.value_type ?? '')
+            const unit = String(definition.unit ?? '')
+            const isBool = typeof value === 'boolean' || valueType.toUpperCase() === 'BOOL'
+            const min = typeof definition.min_value === 'number' ? (definition.min_value as number) : undefined
+            const max = typeof definition.max_value === 'number' ? (definition.max_value as number) : undefined
+            const step = typeof definition.step === 'number' ? (definition.step as number) : 0.1
+            const numeric = typeof value === 'number' ? value : Number(drafts[key])
+            const useSlider = Number.isFinite(numeric) && min != null && max != null
 
-          return (
-            <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="caption"
-                sx={{ width: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                title={key}
-              >
-                {key}
-              </Typography>
-              {isBool ? (
-                <Switch
-                  size="small"
-                  checked={Boolean(value)}
-                  disabled={setParam.isPending}
-                  onChange={(_, checked) => {
-                    applyOne(key, checked).catch(() => undefined)
-                  }}
-                />
-              ) : (
-                <>
-                  <TextField
-                    size="small"
-                    value={drafts[key] ?? ''}
-                    onChange={(event) => setDrafts((prev) => ({ ...prev, [key]: event.target.value }))}
-                    sx={{ minWidth: 180 }}
-                    inputProps={{ style: { fontSize: 12 } }}
-                  />
-                  <Button
-                    size="small"
-                    variant="outlined"
+            return (
+              <div key={key} className="tesira-dsp-panel__param">
+                <div className="tesira-dsp-panel__param-header">
+                  <div>
+                    <h4 className="tesira-dsp-panel__param-title" title={key}>{key}</h4>
+                    <p className="tesira-dsp-panel__param-meta">
+                      {unit ? `${unit} · ` : ''}
+                      {valueType || typeof value || 'unknown'}
+                    </p>
+                  </div>
+                  <Tag type="cool-gray" size="sm">{String(value ?? '—')}</Tag>
+                </div>
+
+                {isBool ? (
+                  <Toggle
+                    id={`tesira-dsp-param-${instanceTag}-${key}`}
+                    labelText={`Boolean value for ${key}`}
+                    labelA="Off"
+                    labelB="On"
+                    toggled={Boolean(value)}
                     disabled={setParam.isPending}
-                    onClick={() => {
-                      applyOne(key, coerceDraftValue(drafts[key] ?? '')).catch(() => undefined)
+                    onToggle={(checked) => {
+                      void applyOne(key, checked)
                     }}
-                  >
-                    Apply
-                  </Button>
-                  {useSlider ? (
-                    <Slider
-                      size="small"
-                      value={Number.isFinite(numeric) ? (numeric as number) : (min as number)}
-                      min={min}
-                      max={max}
-                      step={step}
-                      sx={{ width: 180, color: '#E31837' }}
-                      onChange={(_event, next) => {
-                        const nextNumber = Number(next)
-                        if (Number.isFinite(nextNumber)) {
-                          setDrafts((prev) => ({ ...prev, [key]: String(nextNumber) }))
-                        }
-                      }}
-                      onChangeCommitted={(_event, next) => {
-                        applyOne(key, Number(next)).catch(() => undefined)
-                      }}
+                  />
+                ) : (
+                  <div className="tesira-dsp-panel__param-editor">
+                    <TextInput
+                      id={`tesira-dsp-value-${instanceTag}-${key}`}
+                      labelText={`Value for ${key}`}
+                      value={drafts[key] ?? ''}
+                      onChange={(event) => setDrafts((prev) => ({
+                        ...prev,
+                        [key]: event.target.value,
+                      }))}
+                      inputMode={useSlider ? 'decimal' : undefined}
                     />
-                  ) : null}
-                </>
-              )}
-              {unit ? (
-                <Typography variant="caption" color="text.secondary">
-                  {unit}
-                </Typography>
-              ) : null}
-            </Box>
-          )
-        })}
-        {sortedKeys.length === 0 && (
-          <Typography variant="body2" color="text.secondary">
-            No readable parameters returned.
-          </Typography>
-        )}
-      </Stack>
-    </Paper>
+                    <Button
+                      size="sm"
+                      kind="secondary"
+                      disabled={setParam.isPending}
+                      onClick={() => {
+                        void applyOne(key, coerceDraftValue(drafts[key] ?? ''))
+                      }}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                )}
+
+                {useSlider ? (
+                  <input
+                    className="tesira-dsp-panel__range"
+                    type="range"
+                    value={Number.isFinite(numeric) ? Number(numeric) : min}
+                    min={min}
+                    max={max}
+                    step={step}
+                    onChange={(event) => setDrafts((prev) => ({
+                      ...prev,
+                      [key]: event.currentTarget.value,
+                    }))}
+                    aria-label={`Slider for ${key}`}
+                  />
+                ) : null}
+              </div>
+            )
+          })}
+
+          {sortedKeys.length === 0 ? (
+            <p className="tesira-presets-tab__empty">No readable parameters returned.</p>
+          ) : null}
+        </div>
+      </Tile>
+    </div>
   )
 }

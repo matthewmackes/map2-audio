@@ -1,52 +1,102 @@
 import React from 'react'
-import { Box, CircularProgress, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
+import { Renew } from '@carbon/icons-react'
+import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
 import { useTesiraPtpTopology } from '../hooks/useTesiraApi'
+import './TesiraCarbonChrome.css'
+
+function ptpStateTag(state: string) {
+  const normalized = state.toLowerCase()
+  if (normalized.includes('master') || normalized.includes('slave') || normalized.includes('locked')) {
+    return <Tag type="green" size="sm">{state}</Tag>
+  }
+  if (normalized.includes('listen') || normalized.includes('acquiring')) {
+    return <Tag type="warm-gray" size="sm">{state}</Tag>
+  }
+  return <Tag type="red" size="sm">{state}</Tag>
+}
 
 export function TesiraPtpTopology() {
-  const { data, isLoading: loading } = useTesiraPtpTopology()
+  const { data, error, isLoading: loading, refetch } = useTesiraPtpTopology()
 
   return (
-    <Paper variant="outlined" sx={{ p: 1.25 }}>
-      <Typography variant="caption" color="text.secondary">PTP Topology</Typography>
-      {loading && !data ? (
-        <Box sx={{ mt: 0.5 }}><CircularProgress size={14} /></Box>
-      ) : (
-        <Table size="small" sx={{ mt: 0.5 }}>
-          <TableHead>
-            <TableRow>
-              <TableCell>Device</TableCell>
-              <TableCell>Node</TableCell>
-              <TableCell>State</TableCell>
-              <TableCell>Offset (ns)</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(data?.nodes || []).map((node) => (
-              <TableRow key={node.device_id}>
-                <TableCell>
-                  <Typography variant="caption">{node.name || node.host}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="caption">{node.source_node_id ?? 'local'}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="caption">{node.ptp_state}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="caption">{node.offset_ns ?? '—'}</Typography>
-                </TableCell>
-              </TableRow>
-            ))}
-            {(!data?.nodes || data.nodes.length === 0) && (
-              <TableRow>
-                <TableCell colSpan={4}>
-                  <Typography variant="caption" color="text.secondary">No topology data.</Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      )}
-    </Paper>
+    <div className="tesira-ptp-topology">
+      <Tile className="tesira-ptp-topology__tile">
+        <div className="tesira-ptp-topology__header">
+          <div>
+            <p className="tesira-dashboard__eyebrow">PTP topology</p>
+            <h3 className="tesira-dashboard__title">Fleet timing map</h3>
+            <p className="tesira-dashboard__summary">
+              Review node source, lock state, and offset to confirm the Tesira fleet is time-aligned before AVB routing or compile/deploy work.
+            </p>
+          </div>
+          <div className="tesira-ptp-topology__actions">
+            <Tag type="cool-gray" size="sm">{`${data?.node_count ?? 0} nodes`}</Tag>
+            <Tag type="warm-gray" size="sm">{`${data?.grandmaster_ids.length ?? 0} grandmasters`}</Tag>
+            <Button
+              size="sm"
+              kind="ghost"
+              renderIcon={Renew}
+              onClick={() => {
+                refetch().catch(() => undefined)
+              }}
+              disabled={loading}
+            >
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {error ? (
+          <InlineNotification
+            kind="warning"
+            lowContrast
+            hideCloseButton
+            title="PTP topology unavailable"
+            subtitle={(error as Error).message || 'Unable to read PTP topology from the Tesira fleet.'}
+          />
+        ) : null}
+
+        {loading && !data ? (
+          <div className="tesira-ptp-topology__loading">
+            <InlineLoading description="Loading PTP topology" />
+          </div>
+        ) : (
+          <div className="tesira-ptp-topology__table-wrap">
+            <table className="tesira-quick-console__table" aria-label="Tesira PTP topology">
+              <thead>
+                <tr>
+                  <th scope="col">Device</th>
+                  <th scope="col">Node</th>
+                  <th scope="col">State</th>
+                  <th scope="col">Offset (ns)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.nodes ?? []).map((node) => (
+                  <tr key={node.device_id}>
+                    <td>
+                      <div className="tesira-ptp-topology__device-copy">
+                        <span className="tesira-ptp-topology__device-name">{node.name || node.host}</span>
+                        <span className="tesira-ptp-topology__device-meta">{node.host}</span>
+                      </div>
+                    </td>
+                    <td>{node.source_node_id ?? 'local'}</td>
+                    <td>{ptpStateTag(node.ptp_state)}</td>
+                    <td>{node.offset_ns ?? '—'}</td>
+                  </tr>
+                ))}
+                {(!data?.nodes || data.nodes.length === 0) ? (
+                  <tr>
+                    <td colSpan={4}>
+                      <p className="tesira-presets-tab__empty">No topology data.</p>
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Tile>
+    </div>
   )
 }

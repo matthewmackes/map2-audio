@@ -1,8 +1,9 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TesiraDeviceSettings } from './TesiraDeviceSettings'
 
-const mockMutateAsync = jest.fn().mockResolvedValue(undefined)
+const mockSetGpioMutateAsync = jest.fn().mockResolvedValue(undefined)
+const mockCaptureSceneMutateAsync = jest.fn().mockResolvedValue(undefined)
 
 jest.mock('../hooks/useTesiraApi', () => ({
   useTesiraCapabilities: () => ({
@@ -21,7 +22,7 @@ jest.mock('../hooks/useTesiraApi', () => ({
   }),
   useSetTesiraGpioPin: () => ({
     isPending: false,
-    mutateAsync: mockMutateAsync,
+    mutateAsync: mockSetGpioMutateAsync,
   }),
   useTesiraScenes: () => ({
     isLoading: false,
@@ -33,7 +34,7 @@ jest.mock('../hooks/useTesiraApi', () => ({
   }),
   useCaptureTesiraScene: () => ({
     isPending: false,
-    mutateAsync: mockMutateAsync,
+    mutateAsync: mockCaptureSceneMutateAsync,
   }),
   useRecallTesiraScene: () => ({
     isPending: false,
@@ -50,12 +51,58 @@ jest.mock('./TesiraFirmwareTab', () => ({
 }))
 
 describe('TesiraDeviceSettings', () => {
-  it('renders gpio and scene management sections', () => {
+  beforeAll(() => {
+    if (typeof window.matchMedia !== 'function') {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation((query: string) => ({
+          matches: false,
+          media: query,
+          onchange: null,
+          addListener: jest.fn(),
+          removeListener: jest.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+          dispatchEvent: jest.fn(),
+        })),
+      })
+    }
+
+    if (typeof window.ResizeObserver === 'undefined') {
+      Object.defineProperty(window, 'ResizeObserver', {
+        writable: true,
+        value: class ResizeObserver {
+          observe() {}
+          unobserve() {}
+          disconnect() {}
+        },
+      })
+    }
+  })
+
+  beforeEach(() => {
+    mockSetGpioMutateAsync.mockReset()
+    mockCaptureSceneMutateAsync.mockReset()
+  })
+
+  it('renders gpio and scene management sections and captures a scene', async () => {
     render(<TesiraDeviceSettings deviceId="tesira_1" />)
 
     expect(screen.getByTestId('firmware-tab')).toBeTruthy()
-    expect(screen.getByText('GPIO')).toBeTruthy()
-    expect(screen.getByText('Scene Snapshots')).toBeTruthy()
+    expect(screen.getByText('Toggle Tesira GPIO pins')).toBeTruthy()
+    expect(screen.getByText('Capture and replay runtime scene state')).toBeTruthy()
     expect(screen.getByText('Startup')).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Scene name'), {
+      target: { value: 'After Reset' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Capture scene' }))
+
+    await waitFor(() => {
+      expect(mockCaptureSceneMutateAsync).toHaveBeenCalledWith({
+        deviceId: 'tesira_1',
+        name: 'After Reset',
+      })
+    })
   })
 })
