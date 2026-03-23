@@ -29,7 +29,7 @@ import {
   normalizeClusterMetrics,
   summarizeClusterMetrics,
 } from './clusterData'
-import { useAVBStatus, useAVBStreams, useAVBDiscovery, usePTPStatus, useTsnStatus } from '../../hooks/useAvbStatus'
+import { useAVBStatus, useAVBStreams, useAVBDiscovery, usePTPStatus, useTsnStatus, useAvbRealtimeSync } from '../../hooks/useAvbStatus'
 import { useAvbDevices, useAvdeccEntities, useAvdeccStats } from '../AvbRouting/hooks/useAvbApi'
 import './AVBNetworkTab.css'
 
@@ -131,6 +131,7 @@ export function AVBNetworkTab() {
   const { data: avbStatus, error: avbStatusError } = useAVBStatus()
   const avbRuntimeEnabled = avbStatus?.enabled === true
   const avbRuntimeAvailable = avbStatus?.available === true
+  useAvbRealtimeSync(avbRuntimeEnabled)
 
   const { data: avbStreamsPayload } = useAVBStreams(avbRuntimeEnabled)
   const { data: avbDiscoveryPayload } = useAVBDiscovery(avbRuntimeEnabled)

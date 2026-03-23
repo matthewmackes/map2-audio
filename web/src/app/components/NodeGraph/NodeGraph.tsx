@@ -17,7 +17,7 @@ import { getNodePresence } from '../../utils/nodeDisplay'
 import { NodeGraphCard, type NodeGraphCardData } from './NodeGraphCard'
 
 interface NodeGraphProps {
-  topology: NodeTopology
+  topology: NodeTopology | undefined
   viewedNodeId?: string | null
   onNodeClick: (nodeId: string) => void
 }
@@ -61,8 +61,12 @@ function layoutGraph(nodes: Node<NodeGraphCardData>[], edges: Edge[]) {
 }
 
 export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProps) {
+  const nodeRecords = Array.isArray(topology?.nodes) ? topology.nodes : []
+  const audioEdges = Array.isArray(topology?.audio_edges) ? topology.audio_edges : []
+  const networkEdges = Array.isArray(topology?.network_edges) ? topology.network_edges : []
+
   const nodes = useMemo<Node<NodeGraphCardData>[]>(() => {
-    const draftNodes = topology.nodes.map((node) => ({
+    const draftNodes = nodeRecords.map((node) => ({
       id: node.node_id,
       type: 'nodeCard',
       position: { x: 0, y: 0 },
@@ -76,7 +80,7 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
     }))
 
     const draftEdges: Edge[] = [
-      ...topology.audio_edges.map((edge) => ({
+      ...audioEdges.map((edge) => ({
         id: `audio:${edge.source_node_id}:${edge.dest_node_id}:${edge.stream_type}`,
         source: edge.source_node_id,
         target: edge.dest_node_id,
@@ -87,7 +91,7 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
         style: { stroke: '#0f62fe', strokeWidth: 2 },
         labelStyle: { fill: '#0f62fe', fontWeight: 600 },
       })),
-      ...topology.network_edges.map((edge) => ({
+      ...networkEdges.map((edge) => ({
         id: `network:${edge.source_node_id}:${edge.dest_node_id}`,
         source: edge.source_node_id,
         target: edge.dest_node_id,
@@ -99,11 +103,11 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
     ]
 
     return layoutGraph(draftNodes, draftEdges)
-  }, [onNodeClick, topology, viewedNodeId])
+  }, [audioEdges, networkEdges, nodeRecords, onNodeClick, viewedNodeId])
 
   const edges = useMemo<Edge[]>(() => {
     return [
-      ...topology.audio_edges.map((edge) => ({
+      ...audioEdges.map((edge) => ({
         id: `audio:${edge.source_node_id}:${edge.dest_node_id}:${edge.stream_type}`,
         source: edge.source_node_id,
         target: edge.dest_node_id,
@@ -114,7 +118,7 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
         style: { stroke: '#0f62fe', strokeWidth: 2 },
         labelStyle: { fill: '#0f62fe', fontWeight: 600 },
       })),
-      ...topology.network_edges.map((edge) => ({
+      ...networkEdges.map((edge) => ({
         id: `network:${edge.source_node_id}:${edge.dest_node_id}`,
         source: edge.source_node_id,
         target: edge.dest_node_id,
@@ -124,7 +128,7 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
         labelStyle: { fill: '#8d8d8d', fontWeight: 500 },
       })),
     ]
-  }, [topology.audio_edges, topology.network_edges])
+  }, [audioEdges, networkEdges])
 
   return (
     <div className="node-graph">
@@ -143,4 +147,3 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
     </div>
   )
 }
-

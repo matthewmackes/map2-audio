@@ -102,11 +102,11 @@ export function ChainsPage() {
   const [searchValue, setSearchValue] = useState('')
   const { pushToast } = useToasts()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const { localNode: pageLocalNode, topology: nodeTopology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.chains)
+  const { localNode: pageLocalNode, viewedNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.chains)
   const { activeNodeId, nodes: clusterNodes, localNodeId, setActiveNode, isClusterMode } = useCluster()
 
   const allNodesSelected = activeNodeId === 'all'
-  const selectedNode = nodeTopology?.nodes.find((node) => node.node_id === viewedNodeId)
+  const selectedNode = (viewedNode?.node_id === viewedNodeId ? viewedNode : null)
     ?? clusterNodes.find((node) => node.nodeId === viewedNodeId)
     ?? clusterNodes.find((node) => node.nodeId === activeNodeId)
   const resolvedLocalNodeId = pageLocalNode?.node_id ?? localNodeId

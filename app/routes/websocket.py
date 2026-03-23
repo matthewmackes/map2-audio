@@ -69,6 +69,9 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 "avb:router:connection_state", # AVB per-route connection state updates
                 "avb:router:endpoints", # AVB endpoint discovery snapshots
                 "avb:router:connections", # AVB routing connection snapshots
+                "avb:streams",     # AVB stream lifecycle snapshots
+                "avb:ptp",         # AVB PTP transition snapshots
+                "avb:avdecc",      # AVDECC entity online/offline snapshots
                 "spectrum",         # FFT spectrum data (30fps)
                 "lufs",             # LUFS loudness levels (10fps)
                 "cpu",              # CPU metrics (2fps)

@@ -20,17 +20,18 @@ type NodePickerItem = {
 
 export function NodeContextPicker({ pageKey, topology }: NodeContextPickerProps) {
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const localNode = topology?.nodes.find((node) => node.is_local) ?? topology?.nodes[0] ?? null
+  const nodes = Array.isArray(topology?.nodes) ? topology.nodes : []
+  const localNode = nodes.find((node) => node.is_local) ?? nodes[0] ?? null
   const fallbackLocalId = localNode?.node_id ?? 'local'
   const selectedNodeId = useViewedNode(pageKey, fallbackLocalId)
 
   const items = useMemo<NodePickerItem[]>(() => {
-    return (topology?.nodes ?? []).map((node) => ({
+    return nodes.map((node) => ({
       id: node.node_id,
       label: formatNodeDisplayName(node),
       status: getNodeStatusLabel(node.status),
     }))
-  }, [topology?.nodes])
+  }, [nodes])
 
   const selectedItem = items.find((item) => item.id === selectedNodeId) ?? items.find((item) => item.id === fallbackLocalId) ?? null
   const disabled = !topology || items.length <= 1
@@ -65,4 +66,3 @@ export function NodeContextPicker({ pageKey, topology }: NodeContextPickerProps)
 }
 
 export type { NodeContextPickerProps }
-

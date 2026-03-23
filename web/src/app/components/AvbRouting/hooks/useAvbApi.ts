@@ -32,29 +32,10 @@ import type {
   AvbAvdeccEntitiesResponse,
   AvbAvdeccStats,
 } from '../types';
+import { avbApi, type AvbClusterFanoutResponse } from '../../../../map2/api';
 import { normalizeEndpointsResponse, normalizeStreamPayload } from '../utils/endpointSchema';
-import { safeFetchJson } from '../utils/safeJsonFetch';
-import { apiUrl } from '../../../utils/apiTarget';
 
-const API_BASE = apiUrl('/api/avb');
-const CLUSTER_NODE_ID = 'all';
-
-type ClusterFanoutNodeResult<T> = {
-  status_code?: number;
-  body?: T;
-};
-
-type ClusterFanoutResponse<T> = {
-  nodes?: Record<string, ClusterFanoutNodeResult<T>>;
-};
-
-function appendNodeQuery(url: string, nodeId?: string | null): string {
-  if (!nodeId) {
-    return url;
-  }
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}node_id=${encodeURIComponent(nodeId)}`;
-}
+type ClusterFanoutResponse<T> = AvbClusterFanoutResponse<T>;
 
 function isClusterFanoutResponse<T>(payload: unknown): payload is ClusterFanoutResponse<T> {
   return Boolean(
@@ -293,86 +274,6 @@ function mergeClusterAvdeccEntities(
   };
 }
 
-function extractRemediationHint(detailObj: Record<string, unknown>): string | null {
-  const remediation = detailObj.remediation;
-
-  if (typeof remediation === 'string' && remediation.trim()) {
-    return remediation.trim();
-  }
-
-  if (Array.isArray(remediation)) {
-    const firstHint = remediation.find(
-      (item): item is string => typeof item === 'string' && item.trim().length > 0
-    );
-    if (firstHint) {
-      return firstHint.trim();
-    }
-  }
-
-  return null;
-}
-
-function appendRemediation(message: string, remediationHint: string | null): string {
-  if (!remediationHint) {
-    return message;
-  }
-
-  const normalizedMessage = message.toLowerCase();
-  const normalizedHint = remediationHint.toLowerCase();
-  if (normalizedMessage.includes(normalizedHint)) {
-    return message;
-  }
-
-  const separator = message.endsWith('.') ? '' : '.';
-  return `${message}${separator} Remediation: ${remediationHint}`;
-}
-
-function extractErrorMessage(errorData: unknown, fallback: string): string {
-  if (typeof errorData === 'string' && errorData.trim()) {
-    return errorData;
-  }
-
-  if (errorData && typeof errorData === 'object') {
-    const payload = errorData as Record<string, unknown>;
-
-    const directError = payload.error;
-    if (typeof directError === 'string' && directError.trim()) {
-      return directError;
-    }
-
-    const detail = payload.detail;
-    if (typeof detail === 'string' && detail.trim()) {
-      return detail;
-    }
-
-    if (detail && typeof detail === 'object') {
-      const detailObj = detail as Record<string, unknown>;
-      const code = typeof detailObj.code === 'string' ? detailObj.code : null;
-      const message = typeof detailObj.message === 'string' ? detailObj.message : null;
-      const reason = typeof detailObj.reason === 'string' ? detailObj.reason : null;
-      const remediationHint = extractRemediationHint(detailObj);
-
-      if (message && code) {
-        return appendRemediation(`${message} (${code})`, remediationHint);
-      }
-      if (message) {
-        return appendRemediation(message, remediationHint);
-      }
-      if (reason && code) {
-        return appendRemediation(`${reason} (${code})`, remediationHint);
-      }
-      if (reason) {
-        return appendRemediation(reason, remediationHint);
-      }
-      if (code) {
-        return appendRemediation(code, remediationHint);
-      }
-    }
-  }
-
-  return fallback;
-}
-
 /**
  * Fetch endpoints (talkers and/or listeners)
  */
@@ -380,13 +281,7 @@ export function useEndpoints(direction?: StreamDirection) {
   return useQuery<EndpointsResponse>({
     queryKey: ['avb', 'endpoints', direction ?? 'all-directions', 'cluster'],
     queryFn: async () => {
-      const params = direction ? `?direction=${direction}` : '';
-      const json = await safeFetchJson<EndpointsResponse | ClusterFanoutResponse<EndpointsResponse>>(
-        appendNodeQuery(`${API_BASE}/router/endpoints${params}`, CLUSTER_NODE_ID),
-        undefined,
-        { fallbackError: 'Failed to fetch endpoints' }
-      );
-      return mergeClusterEndpoints(json);
+      return mergeClusterEndpoints(await avbApi.getClusterEndpoints(direction));
     },
     refetchInterval: 5000, // Poll every 5 seconds for discovery updates
     staleTime: 2000,       // Consider data stale after 2s
@@ -400,12 +295,7 @@ export function useConnections() {
   return useQuery<ConnectionsResponse>({
     queryKey: ['avb', 'connections', 'cluster'],
     queryFn: async () => {
-      const json = await safeFetchJson<ConnectionsResponse | ClusterFanoutResponse<ConnectionsResponse>>(
-        appendNodeQuery(`${API_BASE}/router/connections`, CLUSTER_NODE_ID),
-        undefined,
-        { fallbackError: 'Failed to fetch connections' }
-      );
-      return mergeClusterConnections(json);
+      return mergeClusterConnections(await avbApi.getClusterConnections());
     },
     refetchInterval: 2000, // Poll every 2s for connection state changes
     staleTime: 1000,
@@ -418,13 +308,7 @@ export function useConnections() {
 export function useRoutingMatrix() {
   return useQuery<RoutingMatrixResponse>({
     queryKey: ['avb', 'matrix'],
-    queryFn: async () => {
-      return safeFetchJson<RoutingMatrixResponse>(
-        `${API_BASE}/router/matrix`,
-        undefined,
-        { fallbackError: 'Failed to fetch routing matrix' }
-      );
-    },
+    queryFn: () => avbApi.getRoutingMatrix(),
     refetchInterval: 3000,
     staleTime: 1500,
   });
@@ -436,13 +320,7 @@ export function useRoutingMatrix() {
 export function useRouterStats() {
   return useQuery({
     queryKey: ['avb', 'stats'],
-    queryFn: async () => {
-      return safeFetchJson<Record<string, unknown>>(
-        `${API_BASE}/router/stats`,
-        undefined,
-        { fallbackError: 'Failed to fetch router stats' }
-      );
-    },
+    queryFn: () => avbApi.getRouterStats(),
     refetchInterval: 5000,
   });
 }
@@ -454,12 +332,7 @@ export function useAvbStreams() {
   return useQuery<AvbStreamsResponse>({
     queryKey: ['avb', 'streams', 'cluster'],
     queryFn: async () => {
-      const json = await safeFetchJson<AvbStreamsResponse | ClusterFanoutResponse<AvbStreamsResponse>>(
-        appendNodeQuery(`${API_BASE}/streams`, CLUSTER_NODE_ID),
-        undefined,
-        { fallbackError: 'Failed to fetch AVB streams' }
-      );
-      return mergeClusterStreams(json);
+      return mergeClusterStreams(await avbApi.getClusterStreams());
     },
     refetchInterval: 5000,
     staleTime: 2000,
@@ -473,12 +346,7 @@ export function useAvbDevices() {
   return useQuery<AvbDevicesResponse>({
     queryKey: ['avb', 'devices', 'cluster'],
     queryFn: async () => {
-      const json = await safeFetchJson<AvbDevicesResponse | ClusterFanoutResponse<AvbDevicesResponse>>(
-        appendNodeQuery(`${API_BASE}/devices`, CLUSTER_NODE_ID),
-        undefined,
-        { fallbackError: 'Failed to fetch AVB devices' }
-      );
-      return mergeClusterDevices(json);
+      return mergeClusterDevices(await avbApi.getClusterDevices());
     },
     refetchInterval: 5000,
     staleTime: 2000,
@@ -491,11 +359,7 @@ export function useAvbDevices() {
 export function useAvbChannelCapabilities() {
   return useQuery<AvbChannelCapabilitiesResponse>({
     queryKey: ['avb', 'capabilities', 'channels'],
-    queryFn: async () => safeFetchJson<AvbChannelCapabilitiesResponse>(
-      `${API_BASE}/capabilities/channels`,
-      undefined,
-      { fallbackError: 'Failed to fetch AVB channel capabilities' }
-    ),
+    queryFn: () => avbApi.getChannelCapabilities(),
     refetchInterval: 5000,
     staleTime: 2000,
   });
@@ -508,12 +372,7 @@ export function useAvdeccEntities() {
   return useQuery<AvbAvdeccEntitiesResponse>({
     queryKey: ['avb', 'avdecc', 'entities', 'cluster'],
     queryFn: async () => {
-      const json = await safeFetchJson<AvbAvdeccEntitiesResponse | ClusterFanoutResponse<AvbAvdeccEntitiesResponse>>(
-        appendNodeQuery(`${API_BASE}/avdecc/entities`, CLUSTER_NODE_ID),
-        undefined,
-        { fallbackError: 'Failed to fetch AVDECC entities' }
-      );
-      return mergeClusterAvdeccEntities(json);
+      return mergeClusterAvdeccEntities(await avbApi.getClusterAvdeccEntities());
     },
     refetchInterval: 10000,
     staleTime: 5000,
@@ -526,13 +385,7 @@ export function useAvdeccEntities() {
 export function useAvdeccStats() {
   return useQuery<AvbAvdeccStats>({
     queryKey: ['avb', 'avdecc', 'stats'],
-    queryFn: async () => {
-      return safeFetchJson<AvbAvdeccStats>(
-        `${API_BASE}/avdecc/stats`,
-        undefined,
-        { fallbackError: 'Failed to fetch AVDECC stats' }
-      );
-    },
+    queryFn: () => avbApi.getAvdeccStats(),
     refetchInterval: 10000,
     staleTime: 5000,
   });
@@ -547,20 +400,7 @@ export function usePatchMutation() {
   return useMutation({
     mutationFn: async (payload: { talker_id: string; listener_id: string; node_id?: string | null }) => {
       const { node_id, ...body } = payload;
-      return safeFetchJson<Record<string, unknown>>(
-        appendNodeQuery(`${API_BASE}/router/connect`, node_id),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(body),
-        },
-        {
-          fallbackError: 'Connection failed',
-          errorMessageExtractor: extractErrorMessage,
-        }
-      );
+      return avbApi.connect(body, node_id);
     },
     onSuccess: () => {
       // Invalidate relevant queries to trigger refetch
@@ -579,20 +419,7 @@ export function useUnpatchMutation() {
   return useMutation({
     mutationFn: async (payload: { talker_id: string; listener_id: string; node_id?: string | null }) => {
       const { node_id, ...body } = payload;
-      return safeFetchJson<Record<string, unknown>>(
-        appendNodeQuery(`${API_BASE}/router/disconnect`, node_id),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(body),
-        },
-        {
-          fallbackError: 'Disconnection failed',
-          errorMessageExtractor: extractErrorMessage,
-        }
-      );
+      return avbApi.disconnect(body, node_id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avb', 'connections'] });
@@ -615,24 +442,13 @@ export function useBatchPatchMutation() {
       const results = [];
 
       for (const op of operations) {
-        const endpoint = op.action === 'connect' ? '/router/connect' : '/router/disconnect';
-        const result = await safeFetchJson<Record<string, unknown>>(
-          appendNodeQuery(`${API_BASE}${endpoint}`, op.node_id),
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              talker_id: op.talker_id,
-              listener_id: op.listener_id,
-            }),
-          },
-          {
-            fallbackError: 'Batch operation failed',
-            errorMessageExtractor: extractErrorMessage,
-          }
-        ).catch((error: unknown) => {
+        const request = {
+          talker_id: op.talker_id,
+          listener_id: op.listener_id,
+        };
+        const result = await (op.action === 'connect'
+          ? avbApi.connect(request, op.node_id)
+          : avbApi.disconnect(request, op.node_id)).catch((error: unknown) => {
           const message = error instanceof Error ? error.message : 'Unknown batch operation error';
           throw new Error(`Batch operation failed: ${message}`);
         });
@@ -718,14 +534,7 @@ export function usePrefetchEndpoints() {
   return () => {
     queryClient.prefetchQuery({
       queryKey: ['avb', 'endpoints', 'all-directions', 'cluster'],
-      queryFn: async () => {
-        const json = await safeFetchJson<EndpointsResponse | ClusterFanoutResponse<EndpointsResponse>>(
-          appendNodeQuery(`${API_BASE}/router/endpoints`, CLUSTER_NODE_ID),
-          undefined,
-          { fallbackError: 'Failed to prefetch AVB endpoints' }
-        );
-        return mergeClusterEndpoints(json);
-      },
+      queryFn: async () => mergeClusterEndpoints(await avbApi.getClusterEndpoints()),
     });
   };
 }

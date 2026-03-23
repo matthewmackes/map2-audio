@@ -5,8 +5,10 @@
  * Includes graceful degradation when AVB is disabled (503 responses).
  */
 
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { API_BASE as MAP2_API_BASE } from '@/map2/api'
+import { useWebSocketConnection, useWebSocketTopic } from '../../map2/hooks/useWebSocket';
 
 // ============================================================================
 // TypeScript Interfaces
@@ -214,6 +216,61 @@ async function fetchTsnStatus(): Promise<TsnStatus> {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
   return response.json();
+}
+
+function invalidateQueryKeys(
+  queryClient: ReturnType<typeof useQueryClient>,
+  queryKeys: ReadonlyArray<readonly unknown[]>,
+) {
+  queryKeys.forEach((queryKey) => {
+    void queryClient.invalidateQueries({ queryKey: [...queryKey] });
+  });
+}
+
+/**
+ * Subscribe to AVB websocket topics and invalidate the polling-backed queries.
+ *
+ * Polling remains enabled as a fallback when websocket transport is unavailable.
+ */
+export function useAvbRealtimeSync(enabled: boolean = true): void {
+  useWebSocketConnection();
+
+  const queryClient = useQueryClient();
+  const invalidate = useCallback(
+    (queryKeys: ReadonlyArray<readonly unknown[]>) => {
+      if (!enabled) {
+        return;
+      }
+      invalidateQueryKeys(queryClient, queryKeys);
+    },
+    [enabled, queryClient],
+  );
+
+  useWebSocketTopic('avb:streams', () => {
+    invalidate([
+      ['avb', 'streams'],
+      ['avb', 'status'],
+      ['avb', 'devices'],
+      ['avb', 'avdecc'],
+      ['avb', 'topology'],
+    ]);
+  });
+
+  useWebSocketTopic('avb:ptp', () => {
+    invalidate([
+      ['avb', 'ptp'],
+      ['avb', 'status'],
+      ['avb', 'topology'],
+    ]);
+  });
+
+  useWebSocketTopic('avb:avdecc', () => {
+    invalidate([
+      ['avb', 'avdecc'],
+      ['avb', 'devices'],
+      ['avb', 'status'],
+    ]);
+  });
 }
 
 // ============================================================================

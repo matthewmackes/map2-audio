@@ -117,8 +117,25 @@ import type {
   TesiraSceneListResponse,
   TesiraStreamInfo,
 } from '../app/components/Tesira/types';
+import type {
+  AvbAvdeccEntitiesResponse,
+  AvbAvdeccEntity,
+  AvbAvdeccStats,
+  AvbChannelCapabilitiesResponse,
+  AvbDevicesResponse,
+  AvbNode,
+  AvbReadinessContract,
+  AvbStreamDiagnostics,
+  AvbStreamPayload,
+  AvbStreamsResponse,
+  ConnectionsResponse,
+  EndpointsResponse,
+  RoutingMatrixResponse,
+  StreamDirection,
+} from '../app/components/AvbRouting/types';
 import type { ParameterDescriptor, ParameterRegistry } from '../app/data/parameterSchema';
 import type { NodeHealth, NodeIdentity, NodeTopology } from '../app/types/node';
+import { safeFetchJson } from '../app/components/AvbRouting/utils/safeJsonFetch';
 import { sanitizeDisplayPayload } from './displayNames';
 import {
   getChainReorderCompatibilityKey,
@@ -382,6 +399,228 @@ function scopedNodePath(path: string, nodeId?: string | null): string {
   }
   const normalizedPath = path.startsWith('/') ? path.slice(1) : path
   return `${API_BASE}/node/${encodeURIComponent(nodeId)}/proxy/${normalizedPath}`
+}
+
+const AVB_API_BASE = `${API_BASE}/avb`
+const AVB_CLUSTER_NODE_ID = 'all'
+
+export type AvbClusterFanoutNodeResult<T> = {
+  status_code?: number
+  body?: T
+}
+
+export type AvbClusterFanoutResponse<T> = {
+  nodes?: Record<string, AvbClusterFanoutNodeResult<T>>
+}
+
+export interface AvbDiscoveryNodePayload {
+  node_id: string
+  name?: string
+  hostname?: string
+  type?: string
+  status?: string
+  address?: string
+  addresses?: string[]
+  port?: number
+  api_url?: string | null
+  entity_id?: string | null
+  talker_count?: number
+  listener_count?: number
+  discovered_at?: string
+  last_seen: string
+  capabilities?: Partial<AvbNode['capabilities']>
+  avb_capabilities?: {
+    talker_streams?: number
+    listener_streams?: number
+    ptp_synced?: boolean
+    ptp_offset_ns?: number
+    sample_rate?: number
+    channels?: number
+  }
+  ptp?: Partial<NonNullable<AvbNode['ptp']>>
+  health?: Partial<NonNullable<AvbNode['health']>>
+  version?: string | null
+  manufacturer?: string | null
+  model?: string | null
+}
+
+export interface AvbDiscoverySummaryResponse {
+  enabled: boolean
+  total_discovered: number
+  talker_nodes: number
+  listener_nodes: number
+  nodes: AvbDiscoveryNodePayload[]
+  error?: string
+}
+
+export interface AvbDiscoveryNodesResponse {
+  enabled: boolean
+  nodes: AvbDiscoveryNodePayload[]
+  error?: string
+}
+
+export interface AvbPtpStatusResponse {
+  available?: boolean
+  enabled?: boolean
+  state: string
+  domain: number
+  is_master: boolean
+  master_clock_id: string | null
+  grandmaster_id?: string | null
+  offset_ns: number | null
+  mean_path_delay_ns?: number | null
+  last_sync: string | null
+  gptp_supported: boolean
+  readiness?: AvbReadinessContract
+  error?: string
+}
+
+export interface AvbStatusResponse {
+  enabled: boolean
+  configured: boolean
+  operational: boolean
+  degraded: boolean
+  available: boolean
+  interface: string
+  interface_source: string
+  state: string
+  ptp: AvbPtpStatusResponse
+  reason?: string | null
+  readiness?: AvbReadinessContract
+  compatibility?: Record<string, unknown>
+  config?: Record<string, unknown>
+}
+
+export interface AvbConnectionEndpointPayload {
+  endpoint_id?: string
+  node_id?: string | null
+  node_address?: string | null
+  device_name?: string
+}
+
+export type AvbRouterConnectionPayload = Omit<ConnectionsResponse['connections'][number], 'talker' | 'listener'> & {
+  talker: ConnectionsResponse['connections'][number]['talker'] & AvbConnectionEndpointPayload
+  listener: ConnectionsResponse['connections'][number]['listener'] & AvbConnectionEndpointPayload
+  bandwidth_mbps?: number
+  connection_role?: string
+  loop_id?: string | null
+}
+
+export interface AvbRouterConnectionsResponse {
+  connections: AvbRouterConnectionPayload[]
+  count: number
+  error?: string
+  source_node_id?: string
+}
+
+export type AvbRouterStatsResponse = Record<string, unknown>
+
+export interface AvbRouterPatchRequest {
+  talker_id: string
+  listener_id: string
+  connection_role?: string
+  loop_id?: string | null
+}
+
+export interface AvbRouterPatchResponse {
+  success: boolean
+  connection_id: string
+  message: string
+  connection_role?: string
+  loop_id?: string | null
+  trace_id?: string
+  stages?: unknown
+  srp_admission?: unknown
+  srp_release?: unknown
+  srp_release_warning?: unknown
+}
+
+function appendAvbNodeQuery(url: string, nodeId?: string | null): string {
+  if (!nodeId) {
+    return url
+  }
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}node_id=${encodeURIComponent(nodeId)}`
+}
+
+function extractAvbRemediationHint(detailObj: Record<string, unknown>): string | null {
+  const remediation = detailObj.remediation
+
+  if (typeof remediation === 'string' && remediation.trim()) {
+    return remediation.trim()
+  }
+
+  if (Array.isArray(remediation)) {
+    const firstHint = remediation.find(
+      (item): item is string => typeof item === 'string' && item.trim().length > 0
+    )
+    if (firstHint) {
+      return firstHint.trim()
+    }
+  }
+
+  return null
+}
+
+function appendAvbRemediation(message: string, remediationHint: string | null): string {
+  if (!remediationHint) {
+    return message
+  }
+
+  const normalizedMessage = message.toLowerCase()
+  const normalizedHint = remediationHint.toLowerCase()
+  if (normalizedMessage.includes(normalizedHint)) {
+    return message
+  }
+
+  const separator = message.endsWith('.') ? '' : '.'
+  return `${message}${separator} Remediation: ${remediationHint}`
+}
+
+function extractAvbErrorMessage(errorData: unknown, fallback: string): string {
+  if (typeof errorData === 'string' && errorData.trim()) {
+    return errorData
+  }
+
+  if (errorData && typeof errorData === 'object') {
+    const payload = errorData as Record<string, unknown>
+
+    const directError = payload.error
+    if (typeof directError === 'string' && directError.trim()) {
+      return directError
+    }
+
+    const detail = payload.detail
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail
+    }
+
+    if (detail && typeof detail === 'object') {
+      const detailObj = detail as Record<string, unknown>
+      const code = typeof detailObj.code === 'string' ? detailObj.code : null
+      const message = typeof detailObj.message === 'string' ? detailObj.message : null
+      const reason = typeof detailObj.reason === 'string' ? detailObj.reason : null
+      const remediationHint = extractAvbRemediationHint(detailObj)
+
+      if (message && code) {
+        return appendAvbRemediation(`${message} (${code})`, remediationHint)
+      }
+      if (message) {
+        return appendAvbRemediation(message, remediationHint)
+      }
+      if (reason && code) {
+        return appendAvbRemediation(`${reason} (${code})`, remediationHint)
+      }
+      if (reason) {
+        return appendAvbRemediation(reason, remediationHint)
+      }
+      if (code) {
+        return appendAvbRemediation(code, remediationHint)
+      }
+    }
+  }
+
+  return fallback
 }
 
 // ==================== Audio API ====================
@@ -4201,6 +4440,183 @@ export const nodeApi = {
   patchLabel: patchNodeLabel,
 };
 
+// ==================== AVB API ====================
+
+export const avbApi = {
+  getStatus: (nodeId?: string | null) =>
+    safeFetchJson<AvbStatusResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/status`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch AVB status',
+    }),
+
+  getPtpStatus: (nodeId?: string | null) =>
+    safeFetchJson<AvbPtpStatusResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/ptp/status`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch AVB PTP status',
+    }),
+
+  getDiscovery: (nodeId?: string | null) =>
+    safeFetchJson<AvbDiscoverySummaryResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/discovery`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch AVB discovery summary',
+    }),
+
+  getDiscoveredNodes: (nodeId?: string | null) =>
+    safeFetchJson<AvbDiscoveryNodesResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/discovery/nodes`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch discovered AVB nodes',
+    }),
+
+  getDiscoveredNode: (discoveredNodeId: string, nodeId?: string | null) =>
+    safeFetchJson<AvbDiscoveryNodePayload>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/discovery/nodes/${encodeURIComponent(discoveredNodeId)}`, nodeId),
+      undefined,
+      { fallbackError: `Failed to fetch node ${discoveredNodeId}` }
+    ),
+
+  getEndpoints: (direction?: StreamDirection, nodeId?: string | null) =>
+    safeFetchJson<EndpointsResponse>(
+      appendAvbNodeQuery(appendQueryParams(`${AVB_API_BASE}/router/endpoints`, { direction }), nodeId),
+      undefined,
+      { fallbackError: 'Failed to fetch endpoints' }
+    ),
+
+  getClusterEndpoints: (direction?: StreamDirection) =>
+    safeFetchJson<AvbClusterFanoutResponse<EndpointsResponse>>(
+      appendAvbNodeQuery(appendQueryParams(`${AVB_API_BASE}/router/endpoints`, { direction }), AVB_CLUSTER_NODE_ID),
+      undefined,
+      { fallbackError: 'Failed to fetch endpoints' }
+    ),
+
+  getConnections: (nodeId?: string | null) =>
+    safeFetchJson<AvbRouterConnectionsResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/router/connections`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch connections',
+    }),
+
+  getClusterConnections: () =>
+    safeFetchJson<AvbClusterFanoutResponse<AvbRouterConnectionsResponse>>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/router/connections`, AVB_CLUSTER_NODE_ID),
+      undefined,
+      { fallbackError: 'Failed to fetch connections' }
+    ),
+
+  getRoutingMatrix: (nodeId?: string | null) =>
+    safeFetchJson<RoutingMatrixResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/router/matrix`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch routing matrix',
+    }),
+
+  getRouterStats: (nodeId?: string | null) =>
+    safeFetchJson<AvbRouterStatsResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/router/stats`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch router stats',
+    }),
+
+  connect: (payload: AvbRouterPatchRequest, nodeId?: string | null) =>
+    safeFetchJson<AvbRouterPatchResponse>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/router/connect`, nodeId),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      },
+      {
+        fallbackError: 'Connection failed',
+        errorMessageExtractor: extractAvbErrorMessage,
+      }
+    ),
+
+  disconnect: (payload: AvbRouterPatchRequest, nodeId?: string | null) =>
+    safeFetchJson<AvbRouterPatchResponse>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/router/disconnect`, nodeId),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      },
+      {
+        fallbackError: 'Disconnection failed',
+        errorMessageExtractor: extractAvbErrorMessage,
+      }
+    ),
+
+  getStreams: (nodeId?: string | null) =>
+    safeFetchJson<AvbStreamsResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/streams`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch AVB streams',
+    }),
+
+  getClusterStreams: () =>
+    safeFetchJson<AvbClusterFanoutResponse<AvbStreamsResponse>>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/streams`, AVB_CLUSTER_NODE_ID),
+      undefined,
+      { fallbackError: 'Failed to fetch AVB streams' }
+    ),
+
+  getStream: (streamId: string, nodeId?: string | null) =>
+    safeFetchJson<AvbStreamPayload>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/streams/${encodeURIComponent(streamId)}`, nodeId),
+      undefined,
+      { fallbackError: `Failed to fetch AVB stream ${streamId}` }
+    ),
+
+  getStreamDiagnostics: (streamId: string, nodeId?: string | null) =>
+    safeFetchJson<AvbStreamDiagnostics>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/streams/${encodeURIComponent(streamId)}/diagnostics`, nodeId),
+      undefined,
+      { fallbackError: `Failed to fetch AVB stream diagnostics for ${streamId}` }
+    ),
+
+  getStreamStats: (streamId: string, nodeId?: string | null) =>
+    safeFetchJson<Record<string, unknown>>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/streams/${encodeURIComponent(streamId)}/stats`, nodeId),
+      undefined,
+      { fallbackError: `Failed to fetch AVB stream stats for ${streamId}` }
+    ),
+
+  getDevices: (nodeId?: string | null) =>
+    safeFetchJson<AvbDevicesResponse>(appendAvbNodeQuery(`${AVB_API_BASE}/devices`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch AVB devices',
+    }),
+
+  getClusterDevices: () =>
+    safeFetchJson<AvbClusterFanoutResponse<AvbDevicesResponse>>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/devices`, AVB_CLUSTER_NODE_ID),
+      undefined,
+      { fallbackError: 'Failed to fetch AVB devices' }
+    ),
+
+  getChannelCapabilities: (nodeId?: string | null) =>
+    safeFetchJson<AvbChannelCapabilitiesResponse>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/capabilities/channels`, nodeId),
+      undefined,
+      { fallbackError: 'Failed to fetch AVB channel capabilities' }
+    ),
+
+  getAvdeccEntities: (nodeId?: string | null) =>
+    safeFetchJson<AvbAvdeccEntitiesResponse>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/avdecc/entities`, nodeId),
+      undefined,
+      { fallbackError: 'Failed to fetch AVDECC entities' }
+    ),
+
+  getClusterAvdeccEntities: () =>
+    safeFetchJson<AvbClusterFanoutResponse<AvbAvdeccEntitiesResponse>>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/avdecc/entities`, AVB_CLUSTER_NODE_ID),
+      undefined,
+      { fallbackError: 'Failed to fetch AVDECC entities' }
+    ),
+
+  getAvdeccEntity: (entityId: string, nodeId?: string | null) =>
+    safeFetchJson<AvbAvdeccEntity>(
+      appendAvbNodeQuery(`${AVB_API_BASE}/avdecc/entities/${encodeURIComponent(entityId)}`, nodeId),
+      undefined,
+      { fallbackError: `Failed to fetch AVDECC entity ${entityId}` }
+    ),
+
+  getAvdeccStats: (nodeId?: string | null) =>
+    safeFetchJson<AvbAvdeccStats>(appendAvbNodeQuery(`${AVB_API_BASE}/avdecc/stats`, nodeId), undefined, {
+      fallbackError: 'Failed to fetch AVDECC stats',
+    }),
+};
+
 // ==================== Network API ====================
 
 export const networkApi = {
@@ -5846,6 +6262,7 @@ export const shoppingApi = {
 
 export const map2Api = {
   audio: audioApi,
+  avb: avbApi,
   chains: chainsApi,
   plugins: pluginsApi,
   snapshots: snapshotsApi,

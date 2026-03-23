@@ -23,6 +23,9 @@ export type WebSocketTopic =
   | 'avb:router:endpoints'
   | 'avb:router:connections'
   | 'avb:router:connection_state'
+  | 'avb:streams'
+  | 'avb:ptp'
+  | 'avb:avdecc'
   // JUCE metering topics
   | 'spectrum'
   | 'lufs'

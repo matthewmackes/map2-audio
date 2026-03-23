@@ -65,10 +65,10 @@ export function DSPPage() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('all')
   const navigate = useNavigate()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const { localNode: pageLocalNode, topology: nodeTopology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.dsp)
+  const { localNode: pageLocalNode, viewedNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.dsp)
   const { activeNodeId, nodes, localNodeId, setActiveNode } = useCluster()
   const allNodesSelected = activeNodeId === 'all'
-  const selectedNode = nodeTopology?.nodes.find((node) => node.node_id === viewedNodeId)
+  const selectedNode = (viewedNode?.node_id === viewedNodeId ? viewedNode : null)
     ?? nodes.find((node) => node.nodeId === viewedNodeId)
     ?? nodes.find((node) => node.nodeId === activeNodeId)
   const resolvedLocalNodeId = pageLocalNode?.node_id ?? localNodeId

@@ -457,7 +457,7 @@ function RoutingTable({
 export function AudioEnginePage() {
   const { activeNodeId, nodes, localNodeId, isClusterMode, setActiveNode } = useCluster()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const { localNode: pageLocalNode, topology: nodeTopology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.audioEngine)
+  const { localNode: pageLocalNode, viewedNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.audioEngine)
   const isMobile = useIsMobile()
   const localNode = nodes.find((node) => node.nodeId === localNodeId) ?? {
     nodeId: localNodeId,
@@ -481,7 +481,7 @@ export function AudioEnginePage() {
   const selectedClusterOption = clusterOptions.find((option) => option.id === selectedOptionId) ?? clusterOptions[0]
   const detailNode = activeNodeId === 'all'
     ? localNode
-    : nodeTopology?.nodes.find((node) => node.node_id === viewedNodeId)
+    : (viewedNode?.node_id === viewedNodeId ? viewedNode : null)
       ?? nodes.find((node) => node.nodeId === viewedNodeId)
       ?? localNode
   const detailNodeMeta = 'node_id' in detailNode

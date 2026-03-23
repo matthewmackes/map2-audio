@@ -964,7 +964,7 @@ export function HomePage() {
       .filter((item): item is HomeNavigationItem => Boolean(item))
   }, [])
 
-  const totalNodes = tiles.length || topology.nodes.length || 1
+  const totalNodes = tiles.length || (Array.isArray(topology?.nodes) ? topology.nodes.length : 0) || 1
   const onlineNodes = tiles.filter((tile) => tile.status === 'online').length
   const atRiskNodes = tiles.filter((tile) => tile.status !== 'online').length
   const selectedNodeLabel = localNode?.hostname ?? clusterName

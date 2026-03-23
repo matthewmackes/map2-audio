@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 18:40 EDT - Codex (Closed `T382` by bridging JUCE-engine monitor callbacks into MidiHub as `consumer:juce_engine_out`, proving routed/observable hub traffic plus sub-millisecond bridge overhead, and finishing the three requested execution cycles.)
+Last updated: 2026-03-23 20:18 EDT - Codex (Closed `T372`, `T373`, and `T374` by publishing the advanced TSN evaluation from official IEEE/Linux/Intel sources plus a local NIC capability audit.)
 
 ## Active Blockers Only
 
@@ -339,6 +339,43 @@ Last updated: 2026-03-23 17:56 EDT - Codex
   - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/JuceGridClusterPanels.test.tsx web/src/app/pages/JuceGridPage.test.tsx web/src/app/pages/JuceGridSignalCanvas.test.tsx`, and `npm --prefix web run build`.
   - Licensing review: touched JUCE Grid cluster-panel/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
+ID: T386
+Status: [✓] Done
+Title: Harden remaining malformed-`nodes` shell consumers so frontend routes degrade instead of crashing
+Description:
+- Goal / acceptance criteria: Eliminate the remaining `can't access property "nodes"` crash class after the JUCE Grid directional-button fix by guarding shared shell and route-level frontend consumers that still assumed topology/discovery payloads always exposed a `nodes` array.
+- Why it matters: Even after the JUCE Grid-specific cluster-node guard landed, the app could still crash if later polls or adjacent route consumers received partial payloads, so operators could continue hitting the same failure family outside the original fetch site.
+- Dependencies: T385, the user-provided follow-up crash evidence from 2026-03-23, and the current MAP2 frontend shell/node-context consumers.
+- Estimated effort: Low
+- Required outputs: Guard fixes for the remaining malformed-`nodes` frontend reads, focused regression coverage for the home/node-context surfaces, validation evidence, and updated licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 19:11 EDT - Codex
+- Completion notes:
+  - Hardened the remaining direct/implicit `nodes` consumers in `web/src/app/pages/HomePage.tsx`, `web/src/app/components/NodeContextBanner/NodeContextBanner.tsx`, `web/src/app/components/NodeContextPicker/NodeContextPicker.tsx`, `web/src/app/components/NodeGraph/NodeGraph.tsx`, `web/src/app/hooks/usePlatformShellData.ts`, `web/src/app/components/UpdateProgressViewer.tsx`, and `web/src/app/components/OnboardingWizard.tsx` so malformed topology/discovery payloads normalize to empty arrays before any `find`, `map`, `filter`, or `length` access.
+  - Added focused regression coverage in `web/src/app/pages/HomePage.test.tsx`, `web/src/app/components/NodeContextBanner/NodeContextBanner.test.tsx`, and `web/src/app/components/NodeContextPicker/NodeContextPicker.test.tsx` proving those surfaces stay mounted when topology payloads omit `nodes`.
+  - Validation passed with `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx web/src/app/components/NodeContextBanner/NodeContextBanner.test.tsx web/src/app/components/NodeContextPicker/NodeContextPicker.test.tsx`, `npm --prefix web run typecheck`, and `npm --prefix web run build`.
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T387
+Status: [✓] Done
+Title: Normalize shared node-page topology selection so malformed payloads cannot crash nav or route pages
+Description:
+- Goal / acceptance criteria: Eliminate the remaining shared node-page crash path by normalizing `useNodePageContext` and the route/nav consumers that still assumed `topology.nodes` existed whenever a topology object was present, while preserving local/remote node selection behavior.
+- Why it matters: After `T386`, adjacent route pages could still throw during page-node selection or node-chip rendering if a later topology poll returned a partial object without a `nodes` array.
+- Dependencies: T386, the shared node-page shell/hooks under `web/src/app/hooks/useNodePageContext.ts`, the node-nav shell, affected node-scoped pages, and focused frontend regressions.
+- Estimated effort: Low
+- Required outputs: Guarded node-page selection logic, focused regression coverage for the shared nav and node-scoped pages, validation evidence, and updated licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 19:38 EDT - Codex
+- Completion notes:
+  - Normalized `web/src/app/hooks/useNodePageContext.ts` so malformed topology objects now expose a stable empty `topologyNodes` list, local-node fallback, and safe viewed-node resolution instead of assuming `data.nodes` is always an array.
+  - Updated `web/src/app/components/NodeNav/NodeNavBar.tsx`, `web/src/app/pages/AudioEnginePage.tsx`, `web/src/app/pages/ChainsPage.tsx`, `web/src/app/pages/DSPPage.tsx`, and `web/src/app/pages/LV2PluginsPage.tsx` to consume the normalized node-page selection path instead of reading `topology.nodes` directly.
+  - Added focused regressions in `web/src/app/hooks/useNodePageContext.test.tsx`, `web/src/app/components/NodeNav/NodeNavChip.test.tsx`, `web/src/app/pages/AudioEnginePage.test.tsx`, and `web/src/app/pages/LV2PluginsPage.test.tsx` covering malformed topology payloads plus remote-node fallback behavior.
+  - Validation passed with `npm --prefix web test -- --runInBand web/src/app/hooks/useNodePageContext.test.tsx web/src/app/components/NodeNav/NodeNavChip.test.tsx web/src/app/pages/AudioEnginePage.test.tsx web/src/app/pages/LV2PluginsPage.test.tsx`, `npm --prefix web run typecheck`, and `npm --prefix web run build` (existing Vite dynamic-import warning only).
+  - Licensing review: touched node-page frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
 ID: T357
 Status: [✓] Done
 Title: Replace the landing-route transition block object with the Platforms hero icon
@@ -481,7 +518,7 @@ Last updated: 2026-03-23 - Codex (AVB audit)
   - Priority: P0.
 
 ID: T366
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add /api/avb/* client functions to web/src/map2/api.ts
 Description:
 - Goal / acceptance criteria: Add typed TypeScript functions for all core AVB API endpoints (streams, router, PTP, AVDECC, discovery) with TanStack Query hooks. Migrate AvbRouting hooks to use shared api.ts functions.
@@ -491,11 +528,17 @@ Description:
 - Required outputs: Typed api.ts functions, updated AvbRouting hooks, typecheck + existing tests pass.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-23 19:09 EDT - Codex
+- Completion notes:
+  - Added a shared `avbApi` surface in `web/src/map2/api.ts` for AVB status, discovery, PTP, router, streams, devices, channel capabilities, and AVDECC endpoints, including cluster fan-out helpers and centralized AVB error-contract formatting for router connect/disconnect mutations.
+  - Migrated `web/src/app/components/AvbRouting/hooks/useAvbApi.ts` and `web/src/app/components/AvbRouting/hooks/useNodeApi.ts` off route-local `fetch`/`safeFetchJson` wiring so the TanStack Query hooks now consume the shared `map2/api.ts` client instead of rebuilding AVB request logic inline.
+  - Updated focused AVB hook tests to validate the new `avbApi` boundary directly (`web/src/app/components/AvbRouting/hooks/useAvbApi.clusterFanout.test.ts`, `web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts`, `web/src/app/components/AvbRouting/hooks/useNodeApi.test.ts`) while preserving the cluster merge and mutation contract coverage.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/components/AvbRouting/hooks/useAvbApi.clusterFanout.test.ts web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts web/src/app/components/AvbRouting/hooks/useNodeApi.test.ts`, and `npm --prefix web run build`.
+  - Licensing review: touched AVB frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and found no new notice or ownership gap requiring follow-up work.
 - Priority: P1.
 
 ID: T367
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add WebSocket push for AVB stream state changes
 Description:
 - Goal / acceptance criteria: Add WS namespace for AVB events (stream state, AVDECC entity online/offline, PTP transitions). Update frontend to subscribe with polling fallback. Stream state changes visible in UI within 200ms.
@@ -505,7 +548,15 @@ Description:
 - Required outputs: WS namespace, frontend subscription, fallback to polling if WS unavailable.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-23 19:28 EDT - Codex
+- Completion notes:
+  - Added `app/services/avb_event_sync.py`, a lightweight AVB websocket sync service that fingerprints stream, PTP, and AVDECC snapshots, publishes new topics (`avb:streams`, `avb:ptp`, `avb:avdecc`) only when their meaningful state changes, and runs in the background after startup.
+  - Wired successful AVB stream and router mutations in `app/routes/avb.py` to trigger immediate runtime snapshot checks, so operator-visible stream/PTP/entity updates no longer wait for the existing 2s/5s polling intervals during create/start/stop/delete/connect/disconnect flows.
+  - Extended the websocket contract in `app/services/event_publisher.py`, `app/routes/websocket.py`, and `web/src/map2/websocket.ts` with explicit AVB stream/PTP/AVDECC event types and supported-topic declarations.
+  - Added `useAvbRealtimeSync()` in `web/src/app/hooks/useAvbStatus.ts` and mounted it from both `web/src/app/hooks/usePlatformShellData.ts` and `web/src/app/components/ClusterDashboard/AVBNetworkTab.tsx`, so the frontend keeps its polling fallback but invalidates/refetches AVB query groups as soon as the websocket topics arrive.
+  - Added focused regression coverage in `tests/test_avb_event_sync.py` and `web/src/app/hooks/useAvbStatus.test.tsx`, and updated `web/src/app/components/ClusterDashboard/AVBNetworkTab.test.tsx` for the new realtime hook dependency.
+  - Validation passed with `pytest tests/test_avb_event_sync.py`, `npm --prefix web test -- --runInBand web/src/app/hooks/useAvbStatus.test.tsx web/src/app/components/ClusterDashboard/AVBNetworkTab.test.tsx`, `npm --prefix web run typecheck`, and `npm --prefix web run build`.
+  - Licensing review: touched AVB backend/frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and found no new notice or ownership gap requiring follow-up work.
 - Priority: P1.
 
 ID: T368
@@ -573,7 +624,7 @@ Last updated: 2026-03-23 - Codex (AVB audit)
   - Priority: P1.
 
 ID: T372
-Status: [ ] Todo
+Status: [✓] Done
 Title: Evaluate IEEE 802.1Qbv (Time-Aware Shaper) need and feasibility for MAP2
 Description:
 - Goal / acceptance criteria: Research TAS requirements for professional audio AVB, evaluate Linux tc-taprio support on target NICs, write recommendation document.
@@ -583,11 +634,16 @@ Description:
 - Required outputs: Written evaluation with implement/defer recommendation and rationale.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-23 20:18 EDT - Codex
+- Completion notes:
+  - Published `docs/avb/ADVANCED_TSN_EVALUATION_20260323.md`, grounding the TAS recommendation in the official IEEE 802.1 TSN, 802.1Qav, and 802.1Qbv pages plus Intel ECI TSN documentation and a local MAP2 host audit.
+  - Recorded the current-host feasibility evidence: `enp11s0` is an Intel I210 on `igb` with 4 combined queues and working TAPRIO userspace, while `enp0s25` is an I217-LM on `e1000e`, so current TAS feasibility is partial rather than fleet-wide.
+  - Recommendation: defer 802.1Qbv for current audio-first CBS deployments and revisit only if measured CBS latency is insufficient or MAP2 must operate on an engineered mixed-criticality TSN fabric.
+  - Validation/compliance: documented the audit commands in the new AVB evaluation artifact and reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing`; no new licensing remediation task was required.
 - Priority: P2.
 
 ID: T373
-Status: [ ] Todo
+Status: [✓] Done
 Title: Evaluate IEEE 802.1Qbu (Frame Preemption) need and feasibility for MAP2
 Description:
 - Goal / acceptance criteria: Evaluate whether frame preemption adds value for audio-only AVB use case, check NIC hardware support, document recommendation.
@@ -597,11 +653,16 @@ Description:
 - Required outputs: Written evaluation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-23 20:18 EDT - Codex
+- Completion notes:
+  - Captured the frame-preemption evaluation in `docs/avb/ADVANCED_TSN_EVALUATION_20260323.md` using the official IEEE 802.1Qbu page, Linux kernel ethtool MAC Merge documentation, and Intel ECI TSN guidance.
+  - Documented the key host evidence that both `ethtool --show-mm enp11s0` and `ethtool --show-mm enp0s25` currently return `Operation not supported`, so the present MAP2 host does not expose a usable MAC Merge path for confident Qbu bring-up.
+  - Recommendation: defer 802.1Qbu because current MAP2 scope is audio-first and CBS-first, and revisit only if MAP2 later adopts TAS on hardware that proves end-to-end MAC Merge support.
+  - Validation/compliance: documented the local audit commands and source set in the new AVB evaluation artifact and reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing`; no new licensing remediation task was required.
 - Priority: P2.
 
 ID: T374
-Status: [ ] Todo
+Status: [✓] Done
 Title: Evaluate IEEE 802.1CB (Frame Replication/Elimination) for AVB redundancy
 Description:
 - Goal / acceptance criteria: Evaluate FRER requirements for MAP2 deployment scenarios, assess kernel and switch support, document redundancy strategy recommendation.
@@ -611,7 +672,12 @@ Description:
 - Required outputs: Written evaluation with deployment scenarios.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-23 20:18 EDT - Codex
+- Completion notes:
+  - Captured the FRER evaluation in `docs/avb/ADVANCED_TSN_EVALUATION_20260323.md` using the official IEEE 802.1CB project page plus a local MAP2 code audit of the current AVB failover fields.
+  - Documented that current MAP2 AVB code stores `failover_policy` and `failover_interfaces` metadata in `app/config.py`, `app/routes/avb.py`, and `app/services/avb/avb_service.py`, but does not implement stream replication or duplicate elimination, so present behavior must not be described as FRER.
+  - Recommendation: defer 802.1CB as a separate hardware-first redundancy program that would require dual-path architecture, switch qualification, and new endpoint replication/sequence-recovery logic.
+  - Validation/compliance: documented the local audit plus official-source review in the new AVB evaluation artifact and reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing`; no new licensing remediation task was required.
 - Priority: P2.
 
 ID: T375

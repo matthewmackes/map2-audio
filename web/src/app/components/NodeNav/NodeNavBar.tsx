@@ -15,17 +15,17 @@ export function NodeNavBar() {
   const location = useLocation()
   const [openNodeId, setOpenNodeId] = useState<string | null>(null)
   const pageKey = pageKeyFromPathname(location.pathname)
-  const { topology, localNode, viewedNodeId, nodeTopologyQuery } = useNodePageContext(pageKey ?? 'global')
+  const { topologyNodes, localNode, viewedNodeId, nodeTopologyQuery } = useNodePageContext(pageKey ?? 'global')
 
   useNodeAlertMonitoring()
 
   const nodes = useMemo(() => {
-    return [...(topology?.nodes ?? [])].sort((left, right) => {
+    return [...topologyNodes].sort((left, right) => {
       if (left.is_local) return -1
       if (right.is_local) return 1
       return left.hostname.localeCompare(right.hostname)
     })
-  }, [topology?.nodes])
+  }, [topologyNodes])
 
   if (nodeTopologyQuery.isLoading && nodes.length === 0) {
     return (

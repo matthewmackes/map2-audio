@@ -16,8 +16,9 @@ interface NodeContextBannerProps {
 export function NodeContextBanner({ pageKey, localNode, topology: providedTopology }: NodeContextBannerProps) {
   const topologyQuery = useNodeTopology()
   const topology = providedTopology ?? topologyQuery.data
+  const nodes = Array.isArray(topology?.nodes) ? topology.nodes : []
   const viewedNodeId = useViewedNode(pageKey, localNode.node_id)
-  const viewedNode = topology?.nodes.find((node) => node.node_id === viewedNodeId) ?? topology?.nodes.find((node) => node.is_local) ?? null
+  const viewedNode = nodes.find((node) => node.node_id === viewedNodeId) ?? nodes.find((node) => node.is_local) ?? null
   const isViewingRemote = Boolean(viewedNode && viewedNode.node_id !== localNode.node_id)
   const localLabel = formatNodeDisplayName(localNode)
   const viewedLabel = viewedNode ? formatNodeDisplayName(viewedNode) : localLabel

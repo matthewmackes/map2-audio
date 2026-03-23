@@ -8,6 +8,7 @@ const mockUseAVBStreams = jest.fn()
 const mockUseAVBDiscovery = jest.fn()
 const mockUsePTPStatus = jest.fn()
 const mockUseTsnStatus = jest.fn()
+const mockUseAvbRealtimeSync = jest.fn()
 
 const mockUseAvbDevices = jest.fn()
 const mockUseAvdeccEntities = jest.fn()
@@ -25,6 +26,7 @@ jest.mock('../../hooks/useAvbStatus', () => ({
   useAVBDiscovery: (...args: unknown[]) => mockUseAVBDiscovery(...args),
   usePTPStatus: (...args: unknown[]) => mockUsePTPStatus(...args),
   useTsnStatus: (...args: unknown[]) => mockUseTsnStatus(...args),
+  useAvbRealtimeSync: (...args: unknown[]) => mockUseAvbRealtimeSync(...args),
 }))
 
 jest.mock('../AvbRouting/hooks/useAvbApi', () => ({
@@ -56,6 +58,7 @@ describe('AVBNetworkTab', () => {
     mockUseAVBDiscovery.mockReset()
     mockUsePTPStatus.mockReset()
     mockUseTsnStatus.mockReset()
+    mockUseAvbRealtimeSync.mockReset()
     mockUseAvbDevices.mockReset()
     mockUseAvdeccEntities.mockReset()
     mockUseAvdeccStats.mockReset()

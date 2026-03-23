@@ -13,81 +13,12 @@ import type {
   NodeStatus,
   PtpState,
 } from '../types';
-import { safeFetchJson } from '../utils/safeJsonFetch';
-import { apiUrl } from '../../../utils/apiTarget';
-
-// ============================================================================
-// API Response Interfaces
-// ============================================================================
-
-interface NodesResponse {
-  enabled: boolean;
-  nodes: Array<NodeResponse>;
-  error?: string;
-}
-
-interface NodeResponse {
-  node_id: string;
-  name?: string;
-  hostname?: string;
-  type?: string;
-  status?: string;
-  address?: string;
-  addresses?: string[];
-  port?: number;
-  api_url?: string | null;
-  entity_id?: string | null;
-  talker_count?: number;
-  listener_count?: number;
-  discovered_at?: string;
-  last_seen: string;
-  capabilities?: Partial<AvbNode['capabilities']>;
-  avb_capabilities?: {
-    talker_streams?: number;
-    listener_streams?: number;
-    ptp_synced?: boolean;
-    ptp_offset_ns?: number;
-    sample_rate?: number;
-    channels?: number;
-  };
-  ptp?: Partial<AvbNode['ptp']>;
-  health?: Partial<AvbNode['health']>;
-  version?: string | null;
-  manufacturer?: string | null;
-  model?: string | null;
-}
-
-interface PtpStatusResponse {
-  enabled: boolean;
-  state: string;
-  domain: number;
-  is_master: boolean;
-  master_clock_id: string | null;
-  offset_ns: number | null;
-  last_sync: string | null;
-  gptp_supported: boolean;
-}
-
-interface ConnectionEndpointResponse {
-  endpoint_id?: string;
-  node_id?: string | null;
-  node_address?: string | null;
-  device_name?: string;
-}
-
-interface RouterConnectionResponse {
-  connection_id?: string;
-  talker?: ConnectionEndpointResponse;
-  listener?: ConnectionEndpointResponse;
-  state?: string;
-  bandwidth_mbps?: number;
-}
-
-interface RouterConnectionsResponse {
-  connections?: RouterConnectionResponse[];
-  count?: number;
-  error?: string;
-}
+import {
+  avbApi,
+  type AvbDiscoveryNodePayload,
+  type AvbPtpStatusResponse,
+  type AvbRouterConnectionPayload,
+} from '../../../../map2/api';
 
 // ============================================================================
 // Color Assignment
@@ -143,7 +74,7 @@ function normalizePtpState(value: unknown, fallback: PtpState = 'unknown'): PtpS
 // Transform Functions
 // ============================================================================
 
-function transformNodeResponse(raw: NodeResponse, index: number): AvbNode {
+function transformNodeResponse(raw: AvbDiscoveryNodePayload, index: number): AvbNode {
   const fallbackAddress = raw.addresses?.[0] || '';
   const address = raw.address || fallbackAddress;
   const apiUrl = raw.api_url ?? (address ? `http://${address}:${raw.port ?? 8080}` : null);
@@ -240,7 +171,7 @@ function isSyncedState(state: string | null | undefined): boolean {
   return state === 'master' || state === 'slave';
 }
 
-export function calculateSyncStatus(nodes: AvbNode[], ptpStatus: PtpStatusResponse): NetworkSyncStatus {
+export function calculateSyncStatus(nodes: AvbNode[], ptpStatus: AvbPtpStatusResponse): NetworkSyncStatus {
   const totalNodes = nodes.length;
   const syncedFromNodes = nodes.filter((node) => isSyncedState(node.ptp?.state ?? null)).length;
   const fallbackSynced = isSyncedState(ptpStatus.state) ? 1 : 0;
@@ -267,7 +198,7 @@ function endpointEntityId(endpointId: string | undefined): string | null {
 }
 
 function resolveNodeId(
-  endpoint: ConnectionEndpointResponse | undefined,
+  endpoint: AvbRouterConnectionPayload['talker'] | AvbRouterConnectionPayload['listener'] | undefined,
   nodes: Map<string, AvbNode>,
   entityToNode: Map<string, string>,
   hostToNode: Map<string, string>,
@@ -300,7 +231,7 @@ function resolveNodeId(
 
 export function buildTopologyEdges(
   nodes: AvbNode[],
-  connections: RouterConnectionResponse[],
+  connections: AvbRouterConnectionPayload[],
   ptpMasterId: string | null
 ): NetworkTopology['edges'] {
   const nodeMap = new Map(nodes.map((node) => [node.node_id, node]));
@@ -441,17 +372,13 @@ export function useNodes(): UseQueryResult<AvbNode[]> {
   return useQuery({
     queryKey: ['avb', 'nodes'],
     queryFn: async () => {
-      const data = await safeFetchJson<NodesResponse>(
-        apiUrl('/api/avb/discovery/nodes'),
-        undefined,
-        { fallbackError: 'Failed to fetch discovered AVB nodes' }
-      );
+      const data = await avbApi.getDiscoveredNodes();
 
       if (!data.enabled) {
         return [];
       }
 
-      return data.nodes.map((node, index) => transformNodeResponse(node as NodeResponse, index));
+      return data.nodes.map((node, index) => transformNodeResponse(node, index));
     },
     refetchInterval: 5000, // Poll every 5s for node discovery
     staleTime: 3000,
@@ -468,11 +395,7 @@ export function useNode(nodeId: string | null): UseQueryResult<AvbNode | null> {
       if (!nodeId) return null;
 
       try {
-        const data = await safeFetchJson<NodeResponse>(
-          apiUrl(`/api/avb/discovery/nodes/${nodeId}`),
-          undefined,
-          { fallbackError: `Failed to fetch node ${nodeId}` }
-        );
+        const data = await avbApi.getDiscoveredNode(nodeId);
         return transformNodeResponse(data, 0);
       } catch (error) {
         const message = error instanceof Error ? error.message.toLowerCase() : '';
@@ -497,11 +420,7 @@ export function usePtpStatus(): UseQueryResult<NetworkSyncStatus> {
   return useQuery({
     queryKey: ['avb', 'ptp', 'status', nodes.length],
     queryFn: async () => {
-      const data = await safeFetchJson<PtpStatusResponse>(
-        apiUrl('/api/avb/ptp/status'),
-        undefined,
-        { fallbackError: 'Failed to fetch AVB PTP status' }
-      );
+      const data = await avbApi.getPtpStatus();
       return calculateSyncStatus(nodes, data);
     },
     refetchInterval: 5000,
@@ -519,14 +438,10 @@ export function useNetworkTopology(): UseQueryResult<NetworkTopology> {
   return useQuery({
     queryKey: ['avb', 'topology', nodes.length, ptpStatus?.master_node_id],
     queryFn: async () => {
-      let connections: RouterConnectionResponse[] = [];
+      let connections: AvbRouterConnectionPayload[] = [];
 
       try {
-        const data = await safeFetchJson<RouterConnectionsResponse>(
-          apiUrl('/api/avb/router/connections'),
-          undefined,
-          { fallbackError: 'Failed to fetch AVB routing connections for topology' }
-        );
+        const data = await avbApi.getConnections();
         connections = Array.isArray(data.connections) ? data.connections : [];
       } catch (_error) {
         // Topology can still render nodes/PTP edges when connection snapshot fetch fails.

@@ -1850,6 +1850,7 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
 
+        await _broadcast_avb_runtime_updates()
         return result
 
     except HTTPException:
@@ -1903,6 +1904,7 @@ async def delete_stream(stream_id: str) -> Dict[str, Any]:
                     detail=exc,
                 )
 
+        await _broadcast_avb_runtime_updates()
         return result
 
     except HTTPException:
@@ -2020,6 +2022,7 @@ async def start_stream(stream_id: str) -> Dict[str, Any]:
         if admission_payload:
             result["srp_admission"] = admission_payload
 
+        await _broadcast_avb_runtime_updates()
         return result
 
     except HTTPException:
@@ -2122,6 +2125,7 @@ async def stop_stream(stream_id: str) -> Dict[str, Any]:
                     detail=release_exc,
                 )
 
+        await _broadcast_avb_runtime_updates()
         return result
 
     except HTTPException:
@@ -2815,6 +2819,26 @@ async def _broadcast_router_connection_state(
         logger.warning(f"Failed to publish AVB connection state websocket update: {e}")
 
 
+async def _broadcast_avb_runtime_updates(
+    *,
+    streams: bool = True,
+    ptp: bool = True,
+    avdecc: bool = True,
+) -> None:
+    """Publish AVB runtime websocket snapshots when stream/PTP/entity state changes."""
+    try:
+        from app.services.avb_event_sync import get_avb_event_sync_service
+
+        await get_avb_event_sync_service().publish_runtime_snapshots(
+            streams=streams,
+            ptp=ptp,
+            avdecc=avdecc,
+            force=False,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to publish AVB runtime websocket updates: {e}")
+
+
 @router.post("/router/connect")
 async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -2986,6 +3010,7 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
                 loop_id=loop_id,
             )
         await _broadcast_router_state_updates()
+        await _broadcast_avb_runtime_updates()
 
         return response
 
@@ -3100,6 +3125,7 @@ async def disconnect_streams(disconnection_request: Dict[str, Any]) -> Dict[str,
             loop_id=response.get("loop_id"),
         )
         await _broadcast_router_state_updates()
+        await _broadcast_avb_runtime_updates()
 
         return response
 

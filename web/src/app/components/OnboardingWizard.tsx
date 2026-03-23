@@ -105,7 +105,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
       const response = await fetch('/api/cluster/discovery/scan', { method: 'POST' })
       if (!response.ok) throw new Error('Discovery failed')
       const result = await response.json()
-      setDiscoveredNodes(result.nodes || [])
+      setDiscoveredNodes(Array.isArray(result?.nodes) ? result.nodes : [])
     } catch (e: any) {
       setErrors([e.message || 'Discovery failed'])
     }

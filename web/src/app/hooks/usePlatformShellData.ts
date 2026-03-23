@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { getTrafficStats } from '../pages/ApiObservatory/api'
-import { type AVBNode, type AVBStream, useAVBDiscovery, useAVBStatus, useAVBStreams, usePTPStatus, useTsnStatus } from './useAvbStatus'
+import { type AVBNode, type AVBStream, useAVBDiscovery, useAVBStatus, useAVBStreams, useAvbRealtimeSync, usePTPStatus, useTsnStatus } from './useAvbStatus'
 import { useCPUMetrics } from './useCPUMetrics'
 import {
   useMidiClusterClock,
@@ -249,6 +249,7 @@ export function usePlatformShellData(): PlatformShellData {
 
   const avbStatusQuery = useAVBStatus()
   const avbStreamsEnabled = avbStatusQuery.data?.enabled !== false
+  useAvbRealtimeSync(avbStreamsEnabled)
   const avbStreamsQuery = useAVBStreams(avbStreamsEnabled)
   const avbDiscoveryQuery = useAVBDiscovery(avbStreamsEnabled)
   const ptpStatusQuery = usePTPStatus(avbStreamsEnabled)
@@ -294,17 +295,20 @@ export function usePlatformShellData(): PlatformShellData {
   })
 
   const topology = topologyQuery.data
-  const localNode = topology?.nodes.find((node) => node.is_local) ?? topology?.nodes[0]
+  const topologyNodes = Array.isArray(topology?.nodes) ? topology.nodes : []
+  const topologyAudioEdges = Array.isArray(topology?.audio_edges) ? topology.audio_edges : []
+  const topologyNetworkEdges = Array.isArray(topology?.network_edges) ? topology.network_edges : []
+  const localNode = topologyNodes.find((node) => node.is_local) ?? topologyNodes[0]
   const platformViewedNodeId = useViewedNode(NODE_PAGE_KEYS.platform, localNode?.node_id ?? 'local')
-  const platformViewedNode = topology?.nodes.find((node) => node.node_id === platformViewedNodeId) ?? localNode
+  const platformViewedNode = topologyNodes.find((node) => node.node_id === platformViewedNodeId) ?? localNode
   const platformNode = platformViewedNode ?? localNode
   const platformNodeIsRemote = Boolean(platformNode && localNode && platformNode.node_id !== localNode.node_id)
-  const onlineNodes = topology?.nodes.filter((node) => node.status !== 'offline').length ?? 0
-  const totalNodes = topology?.nodes.length ?? 0
-  const criticalNodes = topology?.nodes.filter((node) => node.status === 'critical' || node.status === 'offline').length ?? 0
-  const warningNodes = topology?.nodes.filter((node) => node.status === 'warn').length ?? 0
-  const activeAudioEdges = topology?.audio_edges.filter((edge) => edge.active).length ?? 0
-  const activeNetworkEdges = topology?.network_edges.filter((edge) => edge.latency_ms !== null).length ?? 0
+  const onlineNodes = topologyNodes.filter((node) => node.status !== 'offline').length
+  const totalNodes = topologyNodes.length
+  const criticalNodes = topologyNodes.filter((node) => node.status === 'critical' || node.status === 'offline').length
+  const warningNodes = topologyNodes.filter((node) => node.status === 'warn').length
+  const activeAudioEdges = topologyAudioEdges.filter((edge) => edge.active).length
+  const activeNetworkEdges = topologyNetworkEdges.filter((edge) => edge.latency_ms !== null).length
   const deploymentMode = deploymentModeQuery.data?.mode ?? 'Unknown'
   const clusterHealthScore = clusterStatusQuery.data?.aggregate_health_score
 
@@ -369,7 +373,7 @@ export function usePlatformShellData(): PlatformShellData {
         : clusterHealthScore < 80
           ? 'warning'
           : 'healthy'
-      : worstHealth(...(topology?.nodes.map((node) => statusToHealth(node)) ?? ['unknown']))
+      : worstHealth(...(topologyNodes.map((node) => statusToHealth(node)) || ['unknown']))
 
     if (clusterStatusQuery.error) {
       pushNotification(
@@ -634,7 +638,7 @@ export function usePlatformShellData(): PlatformShellData {
         { key: 'metric2', header: 'Memory' },
         { key: 'alerts', header: 'Alerts' },
       ] satisfies PlatformTableColumn[],
-      tableRows: (topology?.nodes ?? []).map((node) => ({
+      tableRows: topologyNodes.map((node) => ({
         id: node.node_id,
         name: node.display_label ? `${node.hostname} (${node.display_label})` : node.hostname,
         status: node.status,
@@ -649,7 +653,7 @@ export function usePlatformShellData(): PlatformShellData {
     } satisfies PlatformLayerData
 
     const localInterfaces = (networkQuery.data?.ethernet.length ?? 0) + (networkQuery.data?.wifi.length ?? 0)
-    const platformNodeStreamCount = (topology?.audio_edges ?? []).filter((edge) => edge.source_node_id === platformNode?.node_id || edge.dest_node_id === platformNode?.node_id).length
+    const platformNodeStreamCount = topologyAudioEdges.filter((edge) => edge.source_node_id === platformNode?.node_id || edge.dest_node_id === platformNode?.node_id).length
     const platformNodeDisplayName = platformNode?.display_label ? `${platformNode.hostname} (${platformNode.display_label})` : (platformNode?.hostname ?? 'pending')
 
     const nodeLayer = {
@@ -1079,7 +1083,7 @@ export function usePlatformShellData(): PlatformShellData {
           id: 'cluster-workload',
           title: 'Cluster Workload',
           eyebrow: 'Pressure',
-          metric: formatPercent(topology?.nodes.reduce((sum, node) => sum + node.cpu_percent, 0) ?? 0 / Math.max(totalNodes, 1), 0),
+          metric: formatPercent(topologyNodes.reduce((sum, node) => sum + node.cpu_percent, 0) / Math.max(totalNodes, 1), 0),
           helper: `${activeAudioEdges + runningAvbStreams.length} streams active`,
           status: clusterHealth,
         },
@@ -1092,13 +1096,13 @@ export function usePlatformShellData(): PlatformShellData {
         { key: 'workloads', header: 'Workloads' },
         { key: 'alerts', header: 'Alerts' },
       ] satisfies PlatformTableColumn[],
-      tableRows: (topology?.nodes ?? []).map((node) => ({
+      tableRows: topologyNodes.map((node) => ({
         id: node.node_id,
         node: node.display_label ? `${node.hostname} (${node.display_label})` : node.hostname,
         status: node.status,
         cpu: formatPercent(node.cpu_percent, 0),
         memory: formatPercent(node.memory_percent, 0),
-        workloads: `${(topology?.audio_edges ?? []).filter((edge) => edge.source_node_id === node.node_id || edge.dest_node_id === node.node_id).length} streams`,
+        workloads: `${topologyAudioEdges.filter((edge) => edge.source_node_id === node.node_id || edge.dest_node_id === node.node_id).length} streams`,
         alerts: node.xrun_count > 0 ? `${node.xrun_count} xruns` : statusToHealth(node) === 'healthy' ? 'Clear' : `Last seen ${formatLastSeen(node.last_seen)}`,
       })),
       tableTitle: 'Cluster node workloads',

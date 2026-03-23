@@ -1,8 +1,8 @@
 import type { AvbNode } from '../types'
 import { buildTopologyEdges, calculateSyncStatus, inferLocalNodeId } from './useNodeApi'
 
-jest.mock('../../../utils/apiTarget', () => ({
-  apiUrl: (path: string) => path,
+jest.mock('../../../../map2/api', () => ({
+  avbApi: {},
 }))
 
 function makeNode(overrides: Partial<AvbNode>): AvbNode {

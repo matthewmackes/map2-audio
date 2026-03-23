@@ -78,6 +78,19 @@ describe('NodeNavChip', () => {
         audio_edges: [],
         network_edges: [],
       },
+      topologyNodes: [
+        baseNode,
+        {
+          ...baseNode,
+          hostname: 'node-b',
+          display_label: 'Stage Left',
+          role: 'audio_node',
+          node_id: 'node-b',
+          is_local: false,
+          is_viewed: false,
+          status: 'warn',
+        },
+      ],
       viewedNodeId: 'node-a',
       nodeTopologyQuery: { isLoading: false, isError: false },
     })
@@ -135,6 +148,7 @@ describe('NodeNavChip', () => {
     mockUseNodePageContext.mockReturnValueOnce({
       localNode: { hostname: 'node-a', display_label: null, role: 'all_in_one', node_id: 'node-a' },
       topology: { nodes: [baseNode], audio_edges: [], network_edges: [] },
+      topologyNodes: [baseNode],
       viewedNodeId: 'node-a',
       nodeTopologyQuery: { isLoading: false, isError: false },
     })
@@ -150,6 +164,7 @@ describe('NodeNavChip', () => {
     mockUseNodePageContext.mockReturnValueOnce({
       localNode: null,
       topology: undefined,
+      topologyNodes: [],
       viewedNodeId: 'node-a',
       nodeTopologyQuery: { isLoading: true, isError: false },
     })
@@ -161,5 +176,23 @@ describe('NodeNavChip', () => {
     )
 
     expect(container.querySelector('.node-nav-bar__skeleton')).toBeInTheDocument()
+  })
+
+  it('ignores malformed topology payloads without crashing the nav shell', () => {
+    mockUseNodePageContext.mockReturnValueOnce({
+      localNode: { hostname: 'node-a', display_label: null, role: 'all_in_one', node_id: 'node-a' },
+      topology: { audio_edges: [], network_edges: [] },
+      topologyNodes: [],
+      viewedNodeId: 'node-a',
+      nodeTopologyQuery: { isLoading: false, isError: false },
+    })
+
+    render(
+      <MemoryRouter>
+        <NodeNavBar />
+      </MemoryRouter>,
+    )
+
+    expect(screen.queryByRole('button', { name: /node /i })).not.toBeInTheDocument()
   })
 })

@@ -219,6 +219,18 @@ describe('HomePage navigation landing', () => {
     ])
   })
 
+  it('renders without crashing when topology nodes are unavailable', async () => {
+    mockNodePageContext.topology = {} as typeof mockNodePageContext.topology
+
+    renderHome(
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Open a workspace' })).toBeTruthy()
+  })
+
   it('renders the local node tile from host and network APIs when peers fail', async () => {
     ;(global.fetch as jest.MockedFunction<typeof fetch>).mockImplementation(
       async (input: RequestInfo | URL) => {

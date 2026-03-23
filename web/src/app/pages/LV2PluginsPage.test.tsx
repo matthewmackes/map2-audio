@@ -172,4 +172,24 @@ describe('LV2PluginsPage', () => {
 
     expect(screen.getByText(/Switch to that node/i)).toBeInTheDocument()
   })
+
+  it('falls back to cluster nodes when topology omits nodes for remote plugin management', async () => {
+    mockUseNodePageContext.mockReturnValue({
+      localNode: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true },
+      topology: { audio_edges: [], network_edges: [] },
+      viewedNode: null,
+      viewedNodeId: 'node-b',
+      nodeIdentityQuery: { data: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true } },
+      nodeTopologyQuery: { data: { audio_edges: [], network_edges: [] } },
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Cluster target')).toBeInTheDocument()
+    })
+
+    expect(screen.getByText('Managing rack-b')).toBeInTheDocument()
+    expect(screen.getByText('Remote actions enabled')).toBeInTheDocument()
+  })
 })

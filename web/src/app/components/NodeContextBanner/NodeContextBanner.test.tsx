@@ -97,4 +97,16 @@ describe('NodeContextBanner', () => {
 
     expect(screen.getByText('Loading node context')).toBeInTheDocument()
   })
+
+  it('falls back to the local label when topology is malformed', () => {
+    mockUseNodeTopology.mockReturnValue({
+      data: {} as typeof topology,
+      isLoading: false,
+    })
+
+    render(<NodeContextBanner pageKey="home" localNode={localNode} />)
+
+    expect(screen.getAllByText('node-a')).toHaveLength(2)
+    expect(screen.getByText('Local studio view')).toBeInTheDocument()
+  })
 })

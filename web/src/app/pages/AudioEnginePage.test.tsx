@@ -285,6 +285,35 @@ describe('AudioEnginePage', () => {
     expect(container.querySelector('.segmented-led')?.getAttribute('aria-label')).toBe('09')
   })
 
+  it('falls back to cluster nodes when topology omits nodes for a remote detail selection', async () => {
+    mockUseCluster.mockReturnValue({
+      activeNodeId: null,
+      nodes: [
+        { nodeId: 'node-local', hostname: 'local-rack', role: 'LOCAL', isLocal: true, isOnline: true, latencyMs: 0, lastSeen: null },
+        { nodeId: 'node-b', hostname: 'rack-b', role: 'REMOTE', isLocal: false, isOnline: true, latencyMs: 5, lastSeen: null },
+      ],
+      localNodeId: 'node-local',
+      isClusterMode: true,
+      setActiveNode: jest.fn(),
+    })
+    mockUseNodePageContext.mockReturnValue({
+      localNode: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true },
+      topology: { audio_edges: [], network_edges: [] },
+      viewedNode: null,
+      viewedNodeId: 'node-b',
+      nodeIdentityQuery: { data: { node_id: 'node-local', hostname: 'local-rack', role: 'LOCAL', is_local: true } },
+      nodeTopologyQuery: { data: { audio_edges: [], network_edges: [] } },
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Cluster mode')).toBeInTheDocument()
+    })
+
+    expect(screen.getAllByText('rack-b').length).toBeGreaterThan(0)
+  })
+
   it('contains no Phosphor icon imports', () => {
     const fileContent = fs.readFileSync(path.join(__dirname, 'AudioEnginePage.tsx'), 'utf8')
     expect(fileContent).not.toMatch(/@phosphor-icons\/react/)

@@ -101,5 +101,10 @@ describe('NodeContextPicker', () => {
 
     expect(screen.getByTestId('node-context-picker-chains')).toBeDisabled()
   })
-})
 
+  it('disables itself when topology is malformed', () => {
+    render(<NodeContextPicker pageKey="chains" topology={{} as typeof topology} />)
+
+    expect(screen.getByTestId('node-context-picker-chains')).toBeDisabled()
+  })
+})

@@ -31,7 +31,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
         if (!response.ok) throw new Error('Failed to fetch status')
         const data = await response.json()
 
-        const nodes: NodeProgress[] = (data.nodes || []).map((node: any) => ({
+        const nodes: NodeProgress[] = (Array.isArray(data?.nodes) ? data.nodes : []).map((node: any) => ({
           node_id: node.node_id || 'unknown',
           status: node.status || 'idle',
           current_stage: node.current_stage || '',

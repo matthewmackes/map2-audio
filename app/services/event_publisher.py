@@ -43,6 +43,9 @@ class EventType(str, Enum):
     AVB_ENDPOINTS_UPDATED = "avb_endpoints_updated"
     AVB_CONNECTIONS_UPDATED = "avb_connections_updated"
     AVB_CONNECTION_STATE_CHANGED = "avb_connection_state_changed"
+    AVB_STREAMS_UPDATED = "avb_streams_updated"
+    AVB_PTP_UPDATED = "avb_ptp_updated"
+    AVB_AVDECC_ENTITIES_UPDATED = "avb_avdecc_entities_updated"
 
     # Effects loop events
     EFFECTS_LOOP_STATE = "effects_loop_state"

@@ -120,7 +120,7 @@ function inventoryHeaders(clusterViewActive: boolean) {
 export function LV2PluginsPage() {
   const { activeNodeId, nodes, localNodeId, isClusterMode, setActiveNode } = useCluster()
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const { localNode: pageLocalNode, topology: nodeTopology, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.lv2Plugins)
+  const { localNode: pageLocalNode, viewedNode, viewedNodeId } = useNodePageContext(NODE_PAGE_KEYS.lv2Plugins)
   const queryClient = useQueryClient()
   const [pluginPacks, setPluginPacks] = useState<PluginPack[]>([])
   const [loadingPacks, setLoadingPacks] = useState(true)
@@ -135,7 +135,7 @@ export function LV2PluginsPage() {
 
   const resolvedLocalNodeId = pageLocalNode?.node_id ?? localNodeId
   const detailNodeId = activeNodeId === 'all' ? null : (viewedNodeId === resolvedLocalNodeId ? null : viewedNodeId)
-  const selectedNode = nodeTopology?.nodes.find((node) => node.node_id === viewedNodeId)
+  const selectedNode = (viewedNode?.node_id === viewedNodeId ? viewedNode : null)
     ?? nodes.find((node) => node.nodeId === viewedNodeId)
     ?? nodes.find((node) => node.nodeId === activeNodeId)
   const remoteSelected = Boolean(detailNodeId)

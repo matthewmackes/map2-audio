@@ -206,6 +206,7 @@ async def lifespan(app):
         cluster_midi_services = None
         config_reloader = None
         openapi_schema_sync = None
+        avb_event_sync = None
 
         # Initialize deployment configuration
         logger.info("Initializing deployment configuration...")
@@ -313,6 +314,13 @@ async def lifespan(app):
         orchestrator.set_websocket_manager(ws_manager)
         # Start all services in dependency order
         results = await orchestrator.start_all()
+        try:
+            from app.services.avb_event_sync import get_avb_event_sync_service
+
+            avb_event_sync = get_avb_event_sync_service()
+            await safe_start_service(logger, "AVB websocket sync", avb_event_sync.start)
+        except Exception as e:
+            logger.warning(f"Failed to initialize AVB websocket sync: {e}")
 
         # Start real-time parameter bridge
         await safe_start_service(logger, "Real-time parameter bridge", rt_parameter_bridge.start)
@@ -451,6 +459,8 @@ async def lifespan(app):
             await safe_stop_service(logger, "Tesira PTP Coordinator", tesira_ptp.stop)
         if tesira_fleet is not None:
             await safe_stop_service(logger, "Tesira Fleet", tesira_fleet.stop)
+        if avb_event_sync is not None:
+            await safe_stop_service(logger, "AVB websocket sync", avb_event_sync.stop)
         if openapi_schema_sync is not None:
             await safe_stop_service(logger, "OpenAPI schema sync", openapi_schema_sync.stop)
 
