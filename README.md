@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**816** Python | **1234** TypeScript | **290** C++/H | **123** Docs | **813** total commits | **2** stars | **0** forks | **0** open issues
+**816** Python | **1234** TypeScript | **290** C++/H | **123** Docs | **816** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -187,7 +187,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`29f6d369`](https://github.com/matthewmackes/map2-audio/commit/29f6d36901269c62704d50bf515b5412cc0c011f) | feat: add drum step ratchets | Map2 Audio | 2026-03-24 |
+| [`f838e504`](https://github.com/matthewmackes/map2-audio/commit/f838e504358b641986664084c2b139d22c33f15b) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
+| [`b0781bf6`](https://github.com/matthewmackes/map2-audio/commit/b0781bf63ec860d284d45321e2b6933360abc147) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
 | [`dcb3f803`](https://github.com/matthewmackes/map2-audio/commit/dcb3f803609b748f7d03c115a42a84161e846947) | feat: add drum step probability | Map2 Audio | 2026-03-24 |
 | [`2faf7e5e`](https://github.com/matthewmackes/map2-audio/commit/2faf7e5e51cf982929646bce94f426001db59563) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
 | [`3b1856e0`](https://github.com/matthewmackes/map2-audio/commit/3b1856e0ef3faa4101bde77775bbfdf11ede730c) | fix: align drum micro timing build types | Map2 Audio | 2026-03-24 |
 | [`97b95c42`](https://github.com/matthewmackes/map2-audio/commit/97b95c424540e9d155be8f463fa5a578bf257e44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
 | [`23df46b0`](https://github.com/matthewmackes/map2-audio/commit/23df46b04e481d2b4bcc4d4598260e44e9374e0b) | feat: add drum step micro timing | Map2 Audio | 2026-03-24 |
-| [`78b07f81`](https://github.com/matthewmackes/map2-audio/commit/78b07f81dfaa3d89eccd78203ddd4b5c100a207d) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
-| [`808fa451`](https://github.com/matthewmackes/map2-audio/commit/808fa451447bd819ab406ab75506482951e96573) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
-| [`89e148a7`](https://github.com/matthewmackes/map2-audio/commit/89e148a7908d4d69d8937f7ca8c77f9b46a50e71) | feat: add drum step parameter locks | Map2 Audio | 2026-03-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
