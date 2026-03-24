@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 20:49 EDT - Codex (Closed `T390` after normalizing the remaining AVB/MIDI raw `nodes` readers, adding focused regressions, and rerunning frontend validation/licensing scans.)
+Last updated: 2026-03-23 20:56 EDT - Codex (Closed `T388` after adding replacement AVDECC controller-path contract coverage and rerunning the focused backend mock-harness suite.)
 
 ## Active Blockers Only
 
@@ -754,7 +754,7 @@ Last updated: 2026-03-23 20:37 EDT - Codex
 - Priority: P2.
 
 ID: T388
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add replacement coverage for the `Map2AvdeccController` path after legacy model-test removal
 Description:
 - Goal / acceptance criteria: Add focused validation for the supported `la_avdecc`-backed `Map2AvdeccController` path so AVDECC coverage does not rely on the removed `AvdeccEntityModel` / `AvdeccEnumerator` stack. Coverage can be a unit/integration harness, mocked controller tests, or documented Python-binding regression checks, but it must exercise the live controller-facing compatibility surface that remains in production.
@@ -764,7 +764,13 @@ Description:
 - Required outputs: Replacement AVDECC controller coverage, validation notes, and updated worklist/licensing notes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 20:43 EDT - Codex
+Last updated: 2026-03-23 20:56 EDT - Codex
+- Completion notes:
+  - Added `tests/test_avdecc_controller_contract.py`, a focused backend regression that exercises the supported AVDECC compatibility surface rather than the retired `AvdeccEntityModel`/`AvdeccEnumerator` stack.
+  - Covered the controller-facing callable names that production still supports after `T376`: `getDiscoveredEntities`, `getActiveConnections`, `connectStream`, and `disconnectStream`, including both `AvbRouter` usage and the `/api/avb/avdecc/entities`, `/api/avb/avdecc/entities/{entity_id}`, and `/api/avb/avdecc/stats` route fallbacks.
+  - Kept the existing mocked engine/AEM-cache path as the complementary validation layer for the snake_case pybind engine API (`get_avdecc_entities`, `get_avdecc_entity_model`, `connect_stream`, `disconnect_stream`, `get_active_connections`, `get_stream_format`, `set_stream_format`) instead of inventing a second legacy-model harness.
+  - Validation passed with `pytest -q tests/test_avdecc_controller_contract.py tests/test_avdecc_aem_cache.py tests/test_avdecc_mock_integration.py` (`15 passed, 1 skipped`).
+  - Licensing review: touched backend test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 - Priority: P2.
 
 ## MIDI
