@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**816** Python | **1234** TypeScript | **290** C++/H | **123** Docs | **800** total commits | **2** stars | **0** forks | **0** open issues
+**816** Python | **1234** TypeScript | **290** C++/H | **123** Docs | **803** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7eafd7ff`](https://github.com/matthewmackes/map2-audio/commit/7eafd7ff7b7fe269863fa888a9201b97053326e7) | feat: add per-track drum loop lengths | Map2 Audio | 2026-03-24 |
+| [`3520bf2b`](https://github.com/matthewmackes/map2-audio/commit/3520bf2bd834e09406613d36bf48659687f7b7ef) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
+| [`9ca045c2`](https://github.com/matthewmackes/map2-audio/commit/9ca045c2437ac8550a80b574aa9c99810e01b8b1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
 | [`65e25370`](https://github.com/matthewmackes/map2-audio/commit/65e253707ec75e8533430636e72a756e37ea6688) | feat: add per-track drum swing controls | Map2 Audio | 2026-03-24 |
 | [`2030f30e`](https://github.com/matthewmackes/map2-audio/commit/2030f30e1b33e7cbd9366abafb504561de1aa753) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
 | [`450aeb7d`](https://github.com/matthewmackes/map2-audio/commit/450aeb7d827bfbc14508d645d570d9ec9437169a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
 | [`ff88a84b`](https://github.com/matthewmackes/map2-audio/commit/ff88a84b434b60bdb3e93497ecfc225b77b8143f) | feat: add quantized drum pattern switching | Map2 Audio | 2026-03-24 |
 | [`6824d4c8`](https://github.com/matthewmackes/map2-audio/commit/6824d4c8b6755573742ebbf825b5df1901013200) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
-| [`6db9626b`](https://github.com/matthewmackes/map2-audio/commit/6db9626b94c9f838586b5226ca9de5dcda2647d7) | chore: sync release loop cycle 1 | Map2 Audio | 2026-03-24 |
-| [`c73cb059`](https://github.com/matthewmackes/map2-audio/commit/c73cb059c044685438dcfff998679f85c8b560a5) | Update generated platform version metadata | Map2 Audio | 2026-03-24 |
-| [`df33bb57`](https://github.com/matthewmackes/map2-audio/commit/df33bb57af37c8fcbc575dc4baecdb4232b0a6d7) | Move About legal disclaimer to top | Map2 Audio | 2026-03-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
