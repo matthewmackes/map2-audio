@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**816** Python | **1234** TypeScript | **290** C++/H | **123** Docs | **806** total commits | **2** stars | **0** forks | **0** open issues
+**816** Python | **1234** TypeScript | **290** C++/H | **123** Docs | **809** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`23df46b0`](https://github.com/matthewmackes/map2-audio/commit/23df46b04e481d2b4bcc4d4598260e44e9374e0b) | feat: add drum step micro timing | Map2 Audio | 2026-03-24 |
+| [`78b07f81`](https://github.com/matthewmackes/map2-audio/commit/78b07f81dfaa3d89eccd78203ddd4b5c100a207d) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
+| [`808fa451`](https://github.com/matthewmackes/map2-audio/commit/808fa451447bd819ab406ab75506482951e96573) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
 | [`89e148a7`](https://github.com/matthewmackes/map2-audio/commit/89e148a7908d4d69d8937f7ca8c77f9b46a50e71) | feat: add drum step parameter locks | Map2 Audio | 2026-03-24 |
 | [`3fc9a9ad`](https://github.com/matthewmackes/map2-audio/commit/3fc9a9ad545fd018140c0c3ddf03a7d35576046d) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
 | [`995b7f66`](https://github.com/matthewmackes/map2-audio/commit/995b7f666bba640c06c59d8610d65769c0b927ca) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
 | [`7eafd7ff`](https://github.com/matthewmackes/map2-audio/commit/7eafd7ff7b7fe269863fa888a9201b97053326e7) | feat: add per-track drum loop lengths | Map2 Audio | 2026-03-24 |
 | [`3520bf2b`](https://github.com/matthewmackes/map2-audio/commit/3520bf2bd834e09406613d36bf48659687f7b7ef) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
-| [`9ca045c2`](https://github.com/matthewmackes/map2-audio/commit/9ca045c2437ac8550a80b574aa9c99810e01b8b1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
-| [`65e25370`](https://github.com/matthewmackes/map2-audio/commit/65e253707ec75e8533430636e72a756e37ea6688) | feat: add per-track drum swing controls | Map2 Audio | 2026-03-24 |
-| [`2030f30e`](https://github.com/matthewmackes/map2-audio/commit/2030f30e1b33e7cbd9366abafb504561de1aa753) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
