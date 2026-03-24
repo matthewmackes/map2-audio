@@ -219,6 +219,20 @@ describe('HomePage navigation landing', () => {
     ])
   })
 
+  it('keeps the Audio Grid tile marked for persistent emphasis without changing its route', async () => {
+    renderHome(
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>,
+    )
+
+    await screen.findByRole('heading', { name: 'Open a workspace' })
+
+    const audioGridCard = document.querySelector('[data-home-route="/juce-grid"]')
+    expect(audioGridCard).toBeTruthy()
+    expect(audioGridCard?.classList.contains('hp-workspace-card--audio-grid-focus')).toBe(true)
+  })
+
   it('renders without crashing when topology nodes are unavailable', async () => {
     mockNodePageContext.topology = {} as typeof mockNodePageContext.topology
 

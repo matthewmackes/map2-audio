@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight } from '@carbon/icons-react'
+import { ArrowRight, Chemistry } from '@carbon/icons-react'
 import { Button, Checkbox, ClickableTile, Column, Grid, Layer, Select, SelectItem, SkeletonText, Tag, TextInput, Tile } from '@carbon/react'
 import {
   Map2BrandMark,
@@ -1012,9 +1012,18 @@ export function HomePage() {
               {featuredItems.map((item) => {
                 const Icon = item.icon
                 const copy = resolveLauncherCopy(item.to)
+                const isAudioGridCard = item.to === '/juce-grid'
+                const cardClassName = isAudioGridCard
+                  ? 'hp-workspace-card hp-workspace-card--audio-grid-focus'
+                  : 'hp-workspace-card'
 
                 return (
-                  <ClickableTile key={item.to} className="hp-workspace-card" onClick={() => openHomeItem(item)}>
+                  <ClickableTile
+                    key={item.to}
+                    className={cardClassName}
+                    data-home-route={item.to}
+                    onClick={() => openHomeItem(item)}
+                  >
                     <div className="hp-workspace-card__header">
                       <span className="hp-workspace-card__icon" aria-hidden>
                         <Icon size={24} />
@@ -1028,10 +1037,10 @@ export function HomePage() {
                 )
               })}
 
-              <ClickableTile className="hp-workspace-card" onClick={() => navigate('/labs')}>
+              <ClickableTile className="hp-workspace-card" data-home-route="/labs" onClick={() => navigate('/labs')}>
                 <div className="hp-workspace-card__header">
                   <span className="hp-workspace-card__icon" aria-hidden>
-                    <ArrowRight size={24} />
+                    <Chemistry size={24} />
                   </span>
                   <p className="hp-workspace-card__eyebrow">System</p>
                 </div>

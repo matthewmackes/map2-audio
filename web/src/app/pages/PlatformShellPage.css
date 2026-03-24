@@ -377,7 +377,16 @@
 }
 
 .platform-shell__workspace--labs .platform-shell__cp-title {
+  border-bottom: 0;
   padding-bottom: calc(0.375rem * var(--platform-menu-scale));
+}
+
+.platform-shell__workspace--labs .platform-shell__ws-header {
+  border-bottom: 0;
+}
+
+.platform-shell__workspace--labs .advanced-menu-control-panel__item-footer {
+  border-top: 0;
 }
 
 .platform-shell__workspace--empty {

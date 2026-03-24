@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 21:01 EDT - Codex (Closed `T388`, then marked `T375` blocked because its `T362` dependency is still unresolved and no further unblocked tasks remain.)
+Last updated: 2026-03-24 07:54 EDT - Codex (Closed `T387` after removing the routed Labs workspace horizontal divider lines.)
 
 ## Active Blockers Only
 
@@ -5595,3 +5595,59 @@ Last updated: 2026-03-23 18:30 EDT - Codex
   - Audited `web/src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`; no `vi.fn` migration was needed because this repo's web test stack is still Jest-based, so the earlier audit note was stale rather than an active defect.
   - Validation passed with `npm --prefix web run typecheck` and `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/pages/JuceGridSelectedBlockMidiPanel.test.tsx`.
   - Licensing review: touched frontend/backend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T385
+Status: [✓] Done
+Title: Home landing-page desktop card emphasis and Labs icon follow-up
+Description:
+- Goal / acceptance criteria: On the Home landing-page main workspace cards, make the card titles 50% larger on desktop only, replace the Labs tile icon with a simple beaker-style Carbon icon, and give the Audio Grid card a persistent desktop-only emphasis through a distinct slightly thicker border without changing card size or affecting tablet/mobile layouts.
+- Why it matters: The user wants clearer visual hierarchy on the desktop launcher while keeping tablet and desktop treatments distinct and preserving the current card layout.
+- Dependencies: `web/src/app/pages/HomePage.tsx`, `web/src/app/pages/HomePage.css`, `web/src/app/pages/HomePage.test.tsx`, and licensing/worklist updates
+- Estimated effort: Low
+- Required outputs: Updated Home page component/styles/tests, focused validation evidence, and completion notes with licensing review.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 07:10 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/HomePage.tsx` so the Labs tile now uses Carbon's simple `Chemistry` beaker icon, all workspace tiles expose stable `data-home-route` markers, and the Audio Grid tile receives a dedicated `hp-workspace-card--audio-grid-focus` class without changing its route or footprint.
+  - Updated `web/src/app/pages/HomePage.css` so workspace card titles scale to 150% of the current heading token only at the desktop breakpoint (`min-width: 1312px`), and the Audio Grid card gets desktop-only persistent emphasis through a stronger interactive border treatment while tablet/mobile styling remains unchanged.
+  - Added focused regression coverage in `web/src/app/pages/HomePage.test.tsx` asserting the Audio Grid tile keeps its persistent emphasis hook.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx`, and `npm --prefix web run build` (existing Vite dynamic/static import warning only, no new build failures).
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T386
+Status: [✓] Done
+Title: Reduce Home landing-page desktop card title scale from the first emphasis pass
+Description:
+- Goal / acceptance criteria: Reduce the Home landing-page workspace card title font size by 15% from the current desktop-only emphasized value while keeping the existing desktop/tablet separation intact and leaving all non-desktop breakpoints unchanged.
+- Why it matters: The first emphasis pass overshot the preferred desktop launcher hierarchy, so the follow-up needs to soften title prominence without undoing the layout and emphasis structure the user already approved.
+- Dependencies: `T385`, `web/src/app/pages/HomePage.css`, focused frontend validation, and licensing/worklist updates
+- Estimated effort: Low
+- Required outputs: Updated desktop-only title scale rule, validation evidence, and completion notes with licensing review.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 07:29 EDT - Codex
+- Completion notes:
+  - Updated the desktop-only title rule in `web/src/app/pages/HomePage.css` so the workspace card title scale drops from `1.5x` to `1.275x` the base heading token, which is a 15% reduction from the previously shipped emphasized size while keeping the breakpoint at `min-width: 1312px`.
+  - Left the Audio Grid border emphasis, Labs beaker icon, and every tablet/mobile rule untouched so the desktop/tablet separation remains intact.
+  - Validation passed with `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx` and `npm --prefix web run build` (existing Vite dynamic/static import warning only, no new failures).
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T387
+Status: [✓] Done
+Title: Remove routed Labs workspace horizontal divider lines
+Description:
+- Goal / acceptance criteria: Remove the visible horizontal divider lines from the routed `/labs` workspace, including the header separator, section-title rules, and launcher-tile footer dividers shown in the current Labs GUI, without changing non-Labs platform shells.
+- Why it matters: The user wants a cleaner Labs catalog surface without the extra horizontal rule treatment that currently cuts across the routed workspace.
+- Dependencies: `web/src/app/pages/PlatformShellPage.css`, `web/src/app/layout/AppShell.css`, focused frontend validation, and licensing/worklist updates
+- Estimated effort: Low
+- Required outputs: Scoped Labs styling updates, validation evidence, and completion notes with licensing review.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 07:54 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/pages/PlatformShellPage.css` with routed Labs-only overrides so the workspace header divider, section-title underline rules, and launcher-tile footer dividers are removed only inside `.platform-shell__workspace--labs`.
+  - Left shared advanced-menu and non-Labs platform shell styles untouched, so the change stays local to the routed `/labs` GUI rather than altering the broader platform shell or topbar menu surfaces.
+  - Validation passed with `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx` and `npm --prefix web run build` (existing Vite dynamic/static import warning only, no new build failures).
+  - Exploratory run `npm --prefix web test -- --runInBand src/app/App.platformRoute.test.tsx src/app/pages/PlatformShellPage.test.tsx` still hit pre-existing failures in `src/app/pages/PlatformShellPage.test.tsx` around legacy “Unified Platform Stack” expectations; left unchanged because they are unrelated to this Labs CSS slice.
+  - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.

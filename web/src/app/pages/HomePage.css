@@ -157,6 +157,18 @@
   font-size: 0.875rem;
 }
 
+@media (min-width: 1312px) {
+  .hp-workspace-card__title {
+    font-size: calc(var(--cds-heading-03-font-size, 1.25rem) * 1.275);
+    line-height: 1.1;
+  }
+
+  .hp-workspace-card--audio-grid-focus {
+    border-color: var(--cds-border-interactive);
+    box-shadow: inset 0 0 0 1px var(--cds-border-interactive);
+  }
+}
+
 .hp-node-card {
   gap: 0.875rem;
 }
