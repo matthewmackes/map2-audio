@@ -4,10 +4,15 @@ import { renderHook, waitFor } from '@testing-library/react'
 
 import { drumsApi } from '@/map2/api'
 import {
+  useDrumCcMappings,
+  useDrumMasterFx,
+  useDrumPadFilter,
   useDrumKits,
   useDrumMidiLearn,
   useDrumMixer,
   useDrumPattern,
+  useDrumSampleEditor,
+  useDrumSynthParams,
   usePatchDrumKitInstrument,
 } from './useDrumMachine'
 
@@ -38,11 +43,15 @@ jest.mock('@/map2/api', () => ({
     setBusMixer: jest.fn(),
     getMasterVolume: jest.fn(),
     setMasterVolume: jest.fn(),
+    getMasterFx: jest.fn(),
+    getPadSampleWaveform: jest.fn(),
     getMetering: jest.fn(),
     getMidiMapping: jest.fn(),
     setMidiMapping: jest.fn(),
     getVelocityCurves: jest.fn(),
     setVelocityCurve: jest.fn(),
+    getCcMappings: jest.fn(),
+    getCcLearnStatus: jest.fn(),
     startMidiLearn: jest.fn(),
     stopMidiLearn: jest.fn(),
     getMidiLearnStatus: jest.fn(),
@@ -125,6 +134,95 @@ describe('useDrumMachine hooks', () => {
     expect(result.current.master.data?.volume).toBe(75)
   })
 
+  it('loads selected-pad synth params through the dedicated selector hook', async () => {
+    mockDrumsApi.getState.mockResolvedValue({
+      pad_synth_params: Array.from({ length: 16 }, (_, index) => ({
+        oscillator_type: index === 5 ? 'metallic' : 'triangle',
+        pitch_envelope_start_hz: 180 + index,
+        pitch_envelope_end_hz: 48,
+        pitch_envelope_decay_ms: 120,
+        noise_level: 0.15,
+        noise_decay_ms: 90,
+        body_decay_ms: 240,
+        tone_amount: 0.5,
+      })),
+      pad_filters: Array.from({ length: 16 }, () => ({
+        type: 'lowpass',
+        cutoff_hz: 20000,
+        resonance: 0.2,
+        env_amount: 0,
+        env_decay_ms: 120,
+      })),
+    } as Awaited<ReturnType<typeof drumsApi.getState>>)
+
+    const { result } = renderHook(() => useDrumSynthParams(5), { wrapper: makeWrapper() })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data?.oscillator_type).toBe('metallic')
+  })
+
+  it('loads selected-pad filter settings through the dedicated selector hook', async () => {
+    mockDrumsApi.getState.mockResolvedValue({
+      pad_synth_params: Array.from({ length: 16 }, () => ({
+        oscillator_type: 'triangle',
+        pitch_envelope_start_hz: 180,
+        pitch_envelope_end_hz: 48,
+        pitch_envelope_decay_ms: 120,
+        noise_level: 0.15,
+        noise_decay_ms: 90,
+        body_decay_ms: 240,
+        tone_amount: 0.5,
+      })),
+      pad_filters: Array.from({ length: 16 }, (_, index) => ({
+        type: index === 3 ? 'bandpass' : 'lowpass',
+        cutoff_hz: 1200 + index,
+        resonance: 0.4,
+        env_amount: 0.25,
+        env_decay_ms: 180,
+      })),
+    } as Awaited<ReturnType<typeof drumsApi.getState>>)
+
+    const { result } = renderHook(() => useDrumPadFilter(3), { wrapper: makeWrapper() })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data?.type).toBe('bandpass')
+    expect(result.current.data?.cutoff_hz).toBe(1203)
+  })
+
+  it('loads master FX and sample-editor data through dedicated hooks', async () => {
+    mockDrumsApi.getMasterFx.mockResolvedValue({
+      drive: 14,
+      reverb_amount: 22,
+      compressor_amount: 31,
+      limiter_ceiling_db: -0.3,
+    })
+    mockDrumsApi.getPadSampleWaveform.mockResolvedValue({
+      pad: 4,
+      kit_id: 'studio',
+      kit_source: 'user',
+      root_path: '/kits/studio',
+      sfz_path: '/kits/studio/pad5.sfz',
+      sample_path: '/kits/studio/pad5.wav',
+      sample_rate: 48000,
+      channel_count: 1,
+      sample_count: 24000,
+      duration_seconds: 0.5,
+      points: 4,
+      peaks: [0.1, 0.8, 0.4, 0.2],
+    })
+
+    const masterFx = renderHook(() => useDrumMasterFx(), { wrapper: makeWrapper() })
+    const sampleEditor = renderHook(() => useDrumSampleEditor(4, 4), { wrapper: makeWrapper() })
+
+    await waitFor(() => expect(masterFx.result.current.isSuccess).toBe(true))
+    await waitFor(() => expect(sampleEditor.result.current.waveform.isSuccess).toBe(true))
+
+    expect(masterFx.result.current.data?.drive).toBe(14)
+    expect(sampleEditor.result.current.waveform.data?.sample_path).toContain('pad5.wav')
+  })
+
   it('loads MIDI learn status and presets together', async () => {
     mockDrumsApi.getMidiLearnStatus.mockResolvedValue({
       active: true,
@@ -148,6 +246,26 @@ describe('useDrumMachine hooks', () => {
 
     expect(result.current.status.data?.active_pad_id).toBe(3)
     expect(result.current.presets.data?.[0].preset_id).toBe('roland-vad')
+  })
+
+  it('loads CC mappings through the pluralized dedicated hook', async () => {
+    mockDrumsApi.getCcMappings.mockResolvedValue({
+      mappings: Array.from({ length: 32 }, (_, slot) => ({
+        slot,
+        cc_number: slot,
+        channel: 0,
+        min_value: 0,
+        max_value: 127,
+        target: 'swing',
+      })),
+    })
+
+    const { result } = renderHook(() => useDrumCcMappings(), { wrapper: makeWrapper() })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data?.mappings[0]?.target).toBe('swing')
+    expect(mockDrumsApi.getCcMappings).toHaveBeenCalledTimes(1)
   })
 
   it('patches a kit instrument through the dedicated mutation hook', async () => {

@@ -3069,7 +3069,6 @@ export function DrumsPage() {
   const position = positionQuery.data
   const metering = meteringQuery.data
   const selectedPadSample = sampleEditor.waveform.data
-  const sampleRecordingActive = sampleRecordingPad === selectedPad
   const songTransport = songTransportQuery.data ?? {
     is_playing: false,
     current_entry_index: -1,
@@ -3101,6 +3100,7 @@ export function DrumsPage() {
   const [sampleScroll, setSampleScroll] = useState(0)
   const [sampleTrimStart, setSampleTrimStart] = useState(0)
   const [sampleTrimEnd, setSampleTrimEnd] = useState(1)
+  const sampleRecordingActive = sampleRecordingPad === selectedPad
   const sequencerRef = useRef<HTMLDivElement | null>(null)
   const packLists = {
     factory: packs.factory.data ?? [],

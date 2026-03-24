@@ -112,3 +112,18 @@ Source standard: `docs/design/CARBON_CONFORMANCE_STANDARD.md`
   - Pattern conformance: The Home route no longer mixes internal pin/open actions into its main launch cards; each workspace card is now a single-action launcher, which aligns with Carbon clickable-tile guidance for navigation surfaces.
   - Accessibility and responsive behavior: Focus/keyboard behavior for the primary launcher cards now comes from Carbon `ClickableTile`; focused Home coverage confirms the new launcher and telemetry contracts, and the existing responsive breakpoint structure remains intact in `web/src/app/pages/HomePage.css`.
   - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import/chunk warnings only.
+
+## T391-P Review Record
+
+- Contributor: Codex
+- Reviewer: Pending
+- Date: 2026-03-24
+- Task IDs: T391-P
+- Evidence:
+  - Component selection: `web/src/app/pages/DrumsPage.tsx` uses Carbon `Tabs`, `Tile`, `Accordion`, `Button`, `Slider`, `Toggle`, `Dropdown`, `Select`, `InlineLoading`, `Tag`, `Modal`, and `ProgressBar` primitives for transport, sequencer, mixer, MIDI, sample-editor, and backing-track workflows; the retained bespoke sequencer grid and waveform bars are domain-specific visualizers without direct Carbon equivalents.
+  - Typography and tokens: the drum workspace keeps IBM Plex typography through Carbon components and reuses Carbon surface structure while retaining localized inline layout styles for the dense editor grid; no new third-party UI layer or parallel palette was introduced in the completion slice.
+  - Theme, layering, and grid: the page is organized as Carbon tabs with progressive disclosure across practice, advanced, and backing-track modes, which keeps the expanded phase-1 through phase-4 controls from collapsing into one overwhelming surface.
+  - Pattern conformance: transport controls, pattern management, song arrangement, pad editing, mixer, MIDI mapping, CC learn, and sample editing all live inside Carbon-aligned tiles/forms/tables with sentence-case operator copy and explicit action labels.
+  - Accessibility and responsive behavior: `web/src/app/pages/DrumsPage.tsx` includes skip links, a live region, labeled transport controls, accessible grid/button titles for sequencer steps, and focused tests that exercise the expanded drum workspace surface.
+  - AI and branding: no AI-labelled workflow was introduced for the drum workspace, so Carbon for AI labelling is not applicable to `T391-P`; no IBM brand assets were added or modified.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/pages/DrumsPage.test.tsx src/app/hooks/useDrumMachine.test.tsx src/map2/drumMachineState.test.ts` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import/chunk warnings only.

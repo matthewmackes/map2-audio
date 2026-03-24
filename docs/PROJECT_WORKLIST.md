@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-24 - Completed T392 DrumSequencer native crash fix after T391-O sample editor delivery
+Last updated: 2026-03-24 - Completed T391-P DrumsPage GUI expansion and Carbon review closure after T392
 
 ## Active Blockers Only
 
@@ -3538,7 +3538,7 @@ Assigned to: Codex
 Last updated: 2026-03-24 18:18 EDT - Codex
 
 ID: T391-P
-Status: [ ] Todo
+Status: [✓] Done
 Title: DrumsPage GUI Expansion — surface all new features in Carbon UI
 Description:
 - Goal / acceptance criteria: Extend `web/src/app/pages/DrumsPage.tsx` to surface all Phase 1–4 features in a coherent, Carbon-compliant interface. The page must not become overwhelming — use progressive disclosure via tabs, expandable panels, and context-sensitive controls. Must pass Carbon conformance review per `docs/design/CARBON_CONFORMANCE_STANDARD.md`.
@@ -3556,10 +3556,15 @@ Description:
 - Estimated effort: Very High
 - Required outputs: Extended DrumsPage, new hooks, API bindings, types, component tests, Carbon conformance.
 Subtasks: None
-Assigned to: Unassigned
-
-Assigned to: Unassigned
-Last updated: 2026-03-24
+Assigned to: Codex
+Last updated: 2026-03-24 18:39 EDT - Codex
+- Completion notes:
+  - Audited `web/src/app/pages/DrumsPage.tsx` against the Phase 1 through Phase 4 acceptance list and confirmed the page now surfaces the previously delivered drum-machine features in one Carbon-organized workflow: transport switch quantization and MIDI out, enhanced step-grid overlays and per-track loop/swing controls, pattern plus song tools, pad sample/synth/filter/CV-Gate editing, mixer/master-FX routing, and MIDI plus CC mapping tables.
+  - Added the remaining named convenience hooks from the task contract in `web/src/app/hooks/useDrumMachine.ts`, specifically `useDrumSynthParams`, `useDrumPadFilter`, and `useDrumCcMappings`, while keeping the existing grouped drum hooks intact.
+  - Added focused hook coverage in `web/src/app/hooks/useDrumMachine.test.tsx` for the new synth/filter/master-FX/sample-editor/CC-mapping hook surfaces and retained the expanded page/state coverage in `web/src/app/pages/DrumsPage.test.tsx` and `web/src/map2/drumMachineState.test.ts`.
+  - Recorded the required Carbon sign-off evidence in `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`, explicitly documenting the retained bespoke sequencer-grid and waveform visualizers as domain-specific visual surfaces wrapped by Carbon navigation/forms/tables rather than stray non-Carbon CRUD controls.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/pages/DrumsPage.test.tsx src/app/hooks/useDrumMachine.test.tsx src/map2/drumMachineState.test.ts`, and `npm --prefix web run build`.
+  - Licensing review: touched worklist/design/test/hook/frontend files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 ID: T392
 Status: [✓] Done

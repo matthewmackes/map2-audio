@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 24, 2026 (DrumSequencer stack-overflow test fix)
+> **Last Updated**: March 24, 2026 (frontend rebuild gate after drum GUI closure)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1009,6 +1009,12 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Move the large pattern store to heap-backed ownership and keep the public behavior unchanged; then rerun the isolated case and the full `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` gate.
 - **Lesson**: For large native state containers used by test-local objects, prefer heap ownership over giant stack-resident aggregates even when the class is otherwise logically value-like.
 
+**9. Full Frontend Build Is The Real Restart Gate**
+- **Problem**: Focused frontend validation (`typecheck` plus route-level tests) can still miss production-build failures that only appear during the full `npm --prefix web run build` path.
+- **Root Cause**: The drum GUI closure exposed two issues outside the earlier narrow checks: a `DrumsPage.tsx` declaration-order bug (`sampleRecordingPad` used before declaration) and stale default-state shape in `web/src/map2/drumMachineState.ts` that only blocked the production build contract.
+- **Fix**: Before any user-requested rebuild/restart on port `3000`, always run the full production build and treat that as the authoritative gate; if it fails, repair the build blockers before touching the live web server.
+- **Lesson**: Route-local tests and `tsc --noEmit` are necessary but not sufficient for deployment. The deployment contract is `npm --prefix web run build`, then restart `serve_web_dist.mjs`.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1404,6 +1410,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-24] - Frontend Rebuild Gate After Drum GUI Closure
+- **Section**: Gotchas & Learned Fixes (#9), User Preferences
+- **Change**: Documented that full `npm --prefix web run build` is the authoritative pre-restart gate because focused typecheck/tests can miss production-build blockers such as declaration-order mistakes and stale generated/default state contracts.
+- **Reason**: The cycle-1 rebuild for the drum-machine work caught real deployment blockers that were invisible to the earlier scoped validation commands.
+- **Impact**: Future `update` or restart requests should always run the full web build before replacing the live `3000` listener.
+- **Files**: `.github/copilot-instructions.md`, `web/src/app/pages/DrumsPage.tsx`, `web/src/map2/drumMachineState.ts`, `web/src/map2/drumMachineState.test.ts`
 
 ### [2026-03-24] - DrumSequencer Stack-Overflow Test Fix
 - **Section**: Gotchas & Learned Fixes (#8)

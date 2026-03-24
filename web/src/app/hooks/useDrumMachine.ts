@@ -143,6 +143,30 @@ export function useDrumMasterFx() {
   })
 }
 
+export function useDrumSynthParams(padId: number) {
+  return useQuery({
+    queryKey: ['drums', 'state', 'pad-synth-params', padId],
+    queryFn: async () => {
+      const state = await drumsApi.getState()
+      return state.pad_synth_params[padId]
+    },
+    enabled: Number.isFinite(padId) && padId >= 0,
+    staleTime: 5_000,
+  })
+}
+
+export function useDrumPadFilter(padId: number) {
+  return useQuery({
+    queryKey: ['drums', 'state', 'pad-filter', padId],
+    queryFn: async () => {
+      const state = await drumsApi.getState()
+      return state.pad_filters[padId]
+    },
+    enabled: Number.isFinite(padId) && padId >= 0,
+    staleTime: 5_000,
+  })
+}
+
 export function useDrumSampleEditor(padId: number, points = 256) {
   const queryClient = useQueryClient()
 
@@ -253,10 +277,7 @@ export function useDrumMidiLearn() {
 }
 
 export function useDrumCcMapping() {
-  const mappings = useQuery({
-    queryKey: ['drums', 'midi', 'cc-mappings'],
-    queryFn: drumsApi.getCcMappings,
-  })
+  const mappings = useDrumCcMappings()
 
   const learn = useQuery({
     queryKey: ['drums', 'midi', 'cc-learn'],
@@ -266,6 +287,13 @@ export function useDrumCcMapping() {
   })
 
   return { mappings, learn }
+}
+
+export function useDrumCcMappings() {
+  return useQuery({
+    queryKey: ['drums', 'midi', 'cc-mappings'],
+    queryFn: drumsApi.getCcMappings,
+  })
 }
 
 export function useUpdateDrumMachineState() {
