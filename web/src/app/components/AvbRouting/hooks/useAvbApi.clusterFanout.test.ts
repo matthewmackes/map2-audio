@@ -196,4 +196,41 @@ describe('useAvbApi cluster fan-out', () => {
       'node-a'
     )
   })
+
+  it('tolerates malformed cluster fan-out payloads by returning empty endpoint and device lists', async () => {
+    mockAvbApi.getClusterEndpoints.mockResolvedValueOnce({
+      nodes: ['bad'],
+    })
+    mockAvbApi.getClusterDevices.mockResolvedValueOnce({
+      nodes: ['bad'],
+    })
+
+    const endpointsQuery = useEndpoints() as {
+      queryFn: () => Promise<{
+        endpoints: Array<{ endpoint_id: string; node_id: string }>
+        count: number
+      }>
+    }
+    const devicesQuery = useAvbDevices() as {
+      queryFn: () => Promise<{
+        device_names: string[]
+        discovered_count: number
+        discovered_devices: Array<{ endpoint_id: string; source_node_id?: string | null }>
+      }>
+    }
+
+    const endpoints = await endpointsQuery.queryFn()
+    const devices = await devicesQuery.queryFn()
+
+    expect(endpoints).toEqual({ endpoints: [], count: 0 })
+    expect(devices).toEqual({
+      available: false,
+      readiness: undefined,
+      count: 0,
+      device_names: [],
+      discovered_count: 0,
+      discovered_devices: [],
+      error: undefined,
+    })
+  })
 })

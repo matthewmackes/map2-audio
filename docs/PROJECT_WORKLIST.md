@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 20:43 EDT - Codex (Closed `T376`, synced the cleanup commit to both remotes, and added `T388` to replace the deleted legacy AVDECC model tests with controller-path coverage.)
+Last updated: 2026-03-23 20:49 EDT - Codex (Closed `T390` after normalizing the remaining AVB/MIDI raw `nodes` readers, adding focused regressions, and rerunning frontend validation/licensing scans.)
 
 ## Active Blockers Only
 
@@ -375,6 +375,46 @@ Last updated: 2026-03-23 19:38 EDT - Codex
   - Added focused regressions in `web/src/app/hooks/useNodePageContext.test.tsx`, `web/src/app/components/NodeNav/NodeNavChip.test.tsx`, `web/src/app/pages/AudioEnginePage.test.tsx`, and `web/src/app/pages/LV2PluginsPage.test.tsx` covering malformed topology payloads plus remote-node fallback behavior.
   - Validation passed with `npm --prefix web test -- --runInBand web/src/app/hooks/useNodePageContext.test.tsx web/src/app/components/NodeNav/NodeNavChip.test.tsx web/src/app/pages/AudioEnginePage.test.tsx web/src/app/pages/LV2PluginsPage.test.tsx`, `npm --prefix web run typecheck`, and `npm --prefix web run build` (existing Vite dynamic-import warning only).
   - Licensing review: touched node-page frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T389
+Status: [✓] Done
+Title: Harden remaining shared alert and fanout `nodes` readers against malformed payloads
+Description:
+- Goal / acceptance criteria: Eliminate the next shared malformed-`nodes` crash paths by guarding the node-alert topology readers plus the unmodified Host Machine and Tesira fanout readers that still assume `nodes` exists and has the expected iterable/record shape.
+- Why it matters: After `T387`, the most likely remaining crashes are no longer page-local selectors but shared shell hooks and fanout helpers that can still throw when a backend poll returns a partial payload.
+- Dependencies: T386, T387, the shared alert flow under `web/src/app/hooks/useNodeAlertMonitoring.ts` / `web/src/app/components/NodeAlerts/NodeAlertMonitor.tsx`, Host Machine cluster fanout hooks, Tesira cluster fanout hooks, and focused regression coverage.
+- Estimated effort: Low
+- Required outputs: Guarded alert/fanout readers, focused regressions for malformed payloads, validation evidence, and updated licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 20:45 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/utils/nodeAlertSync.ts` and switched both `web/src/app/hooks/useNodeAlertMonitoring.ts` and `web/src/app/components/NodeAlerts/NodeAlertMonitor.tsx` to normalize malformed topology payloads before syncing alert state, so truthy non-array `nodes` values no longer throw inside the shared shell alert flow.
+  - Hardened `web/src/app/hooks/useHostMachine.ts` so malformed cluster fanout/device payloads now normalize to empty node records instead of assuming `payload.nodes` exists and is an object map.
+  - Hardened Tesira fanout/topology reads in `web/src/app/components/Tesira/hooks/useTesiraApi.ts` and `web/src/app/components/Tesira/components/TesiraPtpTopology.tsx` so malformed cluster fanout and non-array topology `nodes` payloads degrade to empty results instead of throwing during merge/render.
+  - Added focused regressions in `web/src/app/utils/nodeAlertSync.test.ts`, `web/src/app/components/NodeAlerts/NodeAlertBar.test.tsx`, `web/src/app/hooks/useHostMachine.test.tsx`, `web/src/app/components/Tesira/hooks/useTesiraApi.clusterFanout.test.tsx`, and `web/src/app/components/Tesira/components/TesiraPtpTopology.test.tsx`.
+  - Validation passed with `npm --prefix web test -- --runInBand web/src/app/utils/nodeAlertSync.test.ts web/src/app/components/NodeAlerts/NodeAlertBar.test.tsx web/src/app/hooks/useHostMachine.test.tsx web/src/app/components/Tesira/hooks/useTesiraApi.clusterFanout.test.tsx web/src/app/components/Tesira/components/TesiraPtpTopology.test.tsx`, `npm --prefix web run typecheck`, and `npm --prefix web run build` (existing Vite dynamic-import warning only).
+  - Licensing review: touched alert/fanout/frontend test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+
+ID: T390
+Status: [✓] Done
+Title: Normalize the remaining AVB and MIDI raw `nodes` readers after the shared fanout hardening pass
+Description:
+- Goal / acceptance criteria: Remove the last obvious raw `nodes` assumptions still flagged by repo search, specifically the AVB routing readers in `web/src/app/components/AvbRouting/hooks/useAvbApi.ts` and `web/src/app/components/AvbRouting/hooks/useNodeApi.ts` plus the topology cast in `web/src/app/components/MidiHub/MidiPatchbay.tsx`, with focused regressions proving malformed payloads no longer crash those surfaces.
+- Why it matters: `T389` closed the shared shell, Host Machine, and Tesira readers, but the remaining AVB/MIDI readers can still throw on malformed payloads and are the next concrete crash-family follow-up.
+- Dependencies: T389, current AVB routing work already in flight elsewhere in the worktree, and focused AVB/MIDI regression coverage.
+- Estimated effort: Low
+- Required outputs: Guard fixes for the remaining AVB/MIDI raw `nodes` readers, focused regressions, validation evidence, and updated licensing/worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-23 20:49 EDT - Codex
+- Completion notes:
+  - Hardened `web/src/app/components/AvbRouting/hooks/useAvbApi.ts` so malformed cluster fanout payloads only treat plain object `nodes` maps as valid remote-node records instead of iterating truthy arrays or other unexpected values.
+  - Hardened `web/src/app/components/AvbRouting/hooks/useNodeApi.ts` so discovered-node polling now normalizes `data.nodes` to an array before mapping, which keeps malformed AVB discovery payloads from throwing inside the query function.
+  - Added `web/src/app/components/MidiHub/patchbayTopology.ts` and switched `web/src/app/components/MidiHub/MidiPatchbay.tsx` to normalize topology node ids before building the source/destination lists, falling back to live port ids when the topology payload is missing or malformed.
+  - Added focused regressions in `web/src/app/components/AvbRouting/hooks/useAvbApi.clusterFanout.test.ts`, `web/src/app/components/AvbRouting/hooks/useNodeApi.test.ts`, and `web/src/app/components/MidiHub/patchbayTopology.test.ts`.
+  - Validation passed with `npm --prefix web test -- --runInBand web/src/app/components/AvbRouting/hooks/useAvbApi.clusterFanout.test.ts web/src/app/components/AvbRouting/hooks/useNodeApi.test.ts web/src/app/components/MidiHub/patchbayTopology.test.ts`, `npm --prefix web run typecheck`, and `npm --prefix web run build` (existing Vite dynamic-import warning only).
+  - Licensing review: touched AVB/MIDI frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 ID: T357
 Status: [✓] Done

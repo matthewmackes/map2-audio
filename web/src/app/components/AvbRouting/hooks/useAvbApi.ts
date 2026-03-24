@@ -37,6 +37,12 @@ import { normalizeEndpointsResponse, normalizeStreamPayload } from '../utils/end
 
 type ClusterFanoutResponse<T> = AvbClusterFanoutResponse<T>;
 
+function asClusterNodeRecord<T>(value: unknown): Record<string, { status_code?: number; body?: T }> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, { status_code?: number; body?: T }>
+    : {};
+}
+
 function isClusterFanoutResponse<T>(payload: unknown): payload is ClusterFanoutResponse<T> {
   return Boolean(
     payload &&
@@ -51,7 +57,7 @@ function clusterEntries<T>(payload: T | ClusterFanoutResponse<T>): Array<[string
     return [['local', payload]];
   }
 
-  return Object.entries(payload.nodes ?? {})
+  return Object.entries(asClusterNodeRecord<T>(payload.nodes))
     .filter(([, result]) => (result?.status_code ?? 200) < 400 && Boolean(result?.body))
     .map(([nodeId, result]) => [nodeId, result?.body as T]);
 }

@@ -4,6 +4,7 @@ import { Button, InlineNotification, Layer, Tag, Toggle } from '@carbon/react'
 import { midiHubApi, type MidiHubRoute } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
 import { useToasts } from '../Toasts'
+import { normalizePatchbayTopologyNodeIds } from './patchbayTopology'
 import { readPorts } from './portUtils'
 
 type NodeInfo = {
@@ -71,7 +72,10 @@ export function MidiPatchbay() {
   )
 
   const nodes = useMemo(() => {
-    const topologyNodes = (topologyQuery.data?.nodes as string[] | undefined) ?? ports.map((row) => row.port_id)
+    const topologyNodes = normalizePatchbayTopologyNodeIds(
+      topologyQuery.data?.nodes,
+      ports.map((row) => row.port_id),
+    )
     const byId = new Map(ports.map((row) => [row.port_id, row]))
     const sources = topologyNodes.filter((id) => {
       const direction = byId.get(id)?.direction ?? 'duplex'

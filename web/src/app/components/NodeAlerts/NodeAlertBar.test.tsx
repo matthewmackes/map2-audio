@@ -107,4 +107,15 @@ describe('NodeAlertBar', () => {
     rerender(<AlertHarness />)
     expect(useNodeAlertStore.getState().alerts).toHaveLength(0)
   })
+
+  it('ignores malformed topology node payloads without crashing the alert monitor', () => {
+    mockUseNodeTopology.mockReturnValue({
+      data: { nodes: { bad: true }, audio_edges: [], network_edges: [] },
+    })
+
+    render(<AlertHarness />)
+
+    expect(useNodeAlertStore.getState().alerts).toEqual([])
+    expect(screen.queryByRole('region', { name: 'Node alerts' })).not.toBeInTheDocument()
+  })
 })

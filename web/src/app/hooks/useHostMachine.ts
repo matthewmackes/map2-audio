@@ -45,6 +45,10 @@ const CACHE_DURATIONS = {
   BRANDING: 24 * 60 * 60 * 1000, // 24 hours - static branding
 }
 
+function asNodeRecord<T>(value: unknown): Record<string, T> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, T> : {}
+}
+
 async function fetchFanout<T>(path: string): Promise<Record<string, FanoutNodeBody<T>>> {
   const separator = path.includes('?') ? '&' : '?'
   const response = await fetch(`${path}${separator}node_id=all`)
@@ -52,7 +56,7 @@ async function fetchFanout<T>(path: string): Promise<Record<string, FanoutNodeBo
     throw new Error(`Failed to fetch cluster data: ${response.status}`)
   }
   const payload = await response.json() as FanoutResponse<T>
-  return payload.nodes ?? {}
+  return asNodeRecord<FanoutNodeBody<T>>(payload?.nodes)
 }
 
 async function fetchClusterComparison(): Promise<HostMachineComparisonNode[]> {
@@ -68,7 +72,7 @@ async function fetchClusterComparison(): Promise<HostMachineComparisonNode[]> {
     }),
   ])
 
-  const deviceNodes = devicesPayload.nodes ?? {}
+  const deviceNodes = asNodeRecord<ClusterHardwareNode>(devicesPayload?.nodes)
   const nodeIds = new Set<string>([
     ...Object.keys(hostNodes),
     ...Object.keys(diskNodes),

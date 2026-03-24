@@ -308,4 +308,43 @@ describe('useTesiraApi cluster fan-out', () => {
       ]),
     )
   })
+
+  it('tolerates malformed Tesira fanout payloads by returning empty device and topology lists', async () => {
+    fetchMock.mockImplementation((input) => {
+      const url = String(input)
+      if (url === '/api/tesira/devices?node_id=all') {
+        return Promise.resolve(makeJsonResponse(undefined))
+      }
+
+      if (url === '/api/tesira/fleet/ptp-topology?node_id=all') {
+        return Promise.resolve(
+          makeJsonResponse({
+            nodes: {
+              'node-a': {
+                status_code: 200,
+                body: {
+                  nodes: { bad: true },
+                },
+              },
+            },
+          }),
+        )
+      }
+
+      throw new Error(`Unexpected fetch URL: ${url}`)
+    })
+
+    const devices = renderHook(() => useTesiraDevices(), { wrapper: makeWrapper() })
+    const topology = renderHook(() => useTesiraPtpTopology(), { wrapper: makeWrapper() })
+
+    await waitFor(() => expect(devices.result.current.isSuccess).toBe(true))
+    await waitFor(() => expect(topology.result.current.isSuccess).toBe(true))
+
+    expect(devices.result.current.data).toEqual([])
+    expect(topology.result.current.data).toEqual({
+      nodes: [],
+      grandmaster_ids: [],
+      node_count: 0,
+    })
+  })
 })

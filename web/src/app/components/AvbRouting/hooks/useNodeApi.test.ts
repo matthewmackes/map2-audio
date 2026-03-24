@@ -1,9 +1,21 @@
 import type { AvbNode } from '../types'
-import { buildTopologyEdges, calculateSyncStatus, inferLocalNodeId } from './useNodeApi'
+import { buildTopologyEdges, calculateSyncStatus, inferLocalNodeId, normalizeDiscoveredNodesPayload, useNodes } from './useNodeApi'
+
+const mockUseQuery = jest.fn((options: unknown) => options)
 
 jest.mock('../../../../map2/api', () => ({
-  avbApi: {},
+  avbApi: {
+    getDiscoveredNodes: jest.fn(),
+  },
 }))
+
+jest.mock('@tanstack/react-query', () => ({
+  useQuery: (options: unknown) => mockUseQuery(options),
+  useMutation: jest.fn(),
+  useQueryClient: jest.fn(),
+}))
+
+const { avbApi: mockAvbApi } = require('../../../../map2/api')
 
 function makeNode(overrides: Partial<AvbNode>): AvbNode {
   return {
@@ -43,6 +55,11 @@ function makeNode(overrides: Partial<AvbNode>): AvbNode {
 }
 
 describe('useNodeApi helpers', () => {
+  beforeEach(() => {
+    mockUseQuery.mockClear()
+    mockAvbApi.getDiscoveredNodes.mockReset()
+  })
+
   afterEach(() => {
     window.localStorage.removeItem('map2.node_id')
   })
@@ -200,5 +217,19 @@ describe('useNodeApi helpers', () => {
 
     window.localStorage.setItem('map2.node_id', 'node-b')
     expect(inferLocalNodeId(nodes)).toBe('node-b')
+  })
+
+  it('normalizes malformed discovery node payloads to an empty list', async () => {
+    expect(normalizeDiscoveredNodesPayload({ bad: true })).toEqual([])
+
+    mockAvbApi.getDiscoveredNodes.mockResolvedValueOnce({
+      enabled: true,
+      nodes: { bad: true },
+    })
+
+    const query = useNodes() as { queryFn: () => Promise<AvbNode[]> }
+    const result = await query.queryFn()
+
+    expect(result).toEqual([])
   })
 })

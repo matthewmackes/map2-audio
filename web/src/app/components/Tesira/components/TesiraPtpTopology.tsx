@@ -17,6 +17,7 @@ function ptpStateTag(state: string) {
 
 export function TesiraPtpTopology() {
   const { data, error, isLoading: loading, refetch } = useTesiraPtpTopology()
+  const topologyNodes = Array.isArray(data?.nodes) ? data.nodes : []
 
   return (
     <div className="tesira-ptp-topology">
@@ -72,7 +73,7 @@ export function TesiraPtpTopology() {
                 </tr>
               </thead>
               <tbody>
-                {(data?.nodes ?? []).map((node) => (
+                {topologyNodes.map((node) => (
                   <tr key={node.device_id}>
                     <td>
                       <div className="tesira-ptp-topology__device-copy">
@@ -85,7 +86,7 @@ export function TesiraPtpTopology() {
                     <td>{node.offset_ns ?? '—'}</td>
                   </tr>
                 ))}
-                {(!data?.nodes || data.nodes.length === 0) ? (
+                {topologyNodes.length === 0 ? (
                   <tr>
                     <td colSpan={4}>
                       <p className="tesira-presets-tab__empty">No topology data.</p>

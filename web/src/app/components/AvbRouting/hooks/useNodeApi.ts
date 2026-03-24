@@ -147,6 +147,10 @@ function transformNodeResponse(raw: AvbDiscoveryNodePayload, index: number): Avb
   };
 }
 
+export function normalizeDiscoveredNodesPayload(value: unknown): AvbDiscoveryNodePayload[] {
+  return Array.isArray(value) ? value : [];
+}
+
 function normalizeEntityId(raw: string | null | undefined): string | null {
   if (typeof raw !== 'string') return null;
   const value = raw.toLowerCase().replace(/^0x/, '').trim();
@@ -374,11 +378,11 @@ export function useNodes(): UseQueryResult<AvbNode[]> {
     queryFn: async () => {
       const data = await avbApi.getDiscoveredNodes();
 
-      if (!data.enabled) {
+      if (!data?.enabled) {
         return [];
       }
 
-      return data.nodes.map((node, index) => transformNodeResponse(node, index));
+      return normalizeDiscoveredNodesPayload(data.nodes).map((node, index) => transformNodeResponse(node, index));
     },
     refetchInterval: 5000, // Poll every 5s for node discovery
     staleTime: 3000,

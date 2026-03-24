@@ -54,6 +54,14 @@ type FanoutPayload<T> = {
   nodes?: Record<string, FanoutNodeResponse<T>>
 }
 
+function asFanoutNodeRecord<T>(value: unknown): Record<string, FanoutNodeResponse<T>> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, FanoutNodeResponse<T>> : {}
+}
+
+function asTopologyRows(value: unknown): TesiraPtpTopologyResponse['nodes'] {
+  return Array.isArray(value) ? value : []
+}
+
 // ── Query keys ────────────────────────────────────────────────────────────────
 export const TESIRA_KEYS = {
   devices:        ['tesira', 'devices'] as const,
@@ -110,7 +118,7 @@ async function fetchTesiraFanout<T>(path: string): Promise<Record<string, Fanout
     throw new Error(`Failed to fetch Tesira cluster data: ${response.status}`)
   }
   const payload = await response.json() as FanoutPayload<T>
-  return payload.nodes ?? {}
+  return asFanoutNodeRecord<T>(payload?.nodes)
 }
 
 async function fetchTesiraJson<T>(path: string, nodeId?: string | null): Promise<T> {
@@ -478,7 +486,7 @@ export function useTesiraPtpTopology() {
     queryFn: async () => {
       const nodes = await fetchTesiraFanout<TesiraPtpTopologyResponse>('/api/tesira/fleet/ptp-topology')
       const mergedNodes = Object.entries(nodes).flatMap(([nodeId, response]) =>
-        (response.body?.nodes ?? []).map((row) => ({
+        asTopologyRows(response.body?.nodes).map((row) => ({
           ...row,
           source_node_id: nodeId,
         }))
