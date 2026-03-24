@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-24 - Started T393 platform version artifact stabilization after repeated rebuild/restart loops
+Last updated: 2026-03-24 - Completed T393 platform version artifact stabilization after clean rebuild proof
 
 ## Active Blockers Only
 
@@ -3590,7 +3590,7 @@ Description:
 Subtasks: None
 
 ID: T393
-Status: [>] In Progress
+Status: [✓] Done
 Title: Stabilize platform version generation so clean rebuild/restart loops do not dirty tracked artifacts
 Description:
 - Goal / acceptance criteria: Make the required frontend rebuild/restart workflow safe to run repeatedly from a clean checkout without leaving `VERSION` and `version.json` dirty after every successful `npm --prefix web run build`. Runtime version payloads must still expose accurate live `commit`/`dirty` metadata for API/UI consumers, and existing build/version tests must remain green.
@@ -3600,9 +3600,13 @@ Description:
 - Required outputs: Updated version-generation/runtime helpers, regression tests for clean-rebuild reuse behavior and live runtime metadata, updated worklist/memory notes if needed, and a clean post-build git status from a clean repo.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-24 18:46 EDT - Codex
-- Progress notes:
-  - Scoped the root cause to `scripts/generate_platform_version.py` and `app/utils/platform_version.py`: the prebuild step always stamps a fresh wall-clock version and persists unstable `commit`/`dirty` metadata into tracked files, guaranteeing a dirty tree after any clean rebuild.
+Last updated: 2026-03-24 19:56 EDT - Codex
+- Completion notes:
+  - Updated `app/utils/platform_version.py` so tracked version artifacts persist only the stable build identity while runtime `commit`/`dirty` metadata is refreshed from git on load, ignoring churn in `VERSION` and `version.json` themselves.
+  - Updated `scripts/generate_platform_version.py` so clean rebuilds reuse the current stable version instead of minting a fresh wall-clock timestamp every time the frontend bundle is rebuilt.
+  - Added regression coverage in `tests/test_platform_version.py` for stable artifact persistence and live runtime git-state refresh in a temporary git repository.
+  - Validation passed with `pytest -q tests/test_platform_version.py` and `npm --prefix web run build`; after committing and pushing the fix, a second clean `npm --prefix web run build` left `git status --short` empty, proving the rebuild/restart loop no longer dirties tracked version artifacts.
+  - Licensing review: touched Python/script/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 Assigned to: Codex
 Last updated: 2026-03-24 18:27 EDT - Codex
 

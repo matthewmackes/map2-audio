@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 24, 2026 (frontend rebuild gate after drum GUI closure)
+> **Last Updated**: March 24, 2026 (stable platform version artifacts after rebuild loops)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1015,6 +1015,12 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Before any user-requested rebuild/restart on port `3000`, always run the full production build and treat that as the authoritative gate; if it fails, repair the build blockers before touching the live web server.
 - **Lesson**: Route-local tests and `tsc --noEmit` are necessary but not sufficient for deployment. The deployment contract is `npm --prefix web run build`, then restart `serve_web_dist.mjs`.
 
+**10. Tracked Version Artifacts Must Stay Stable Across Clean Rebuilds**
+- **Problem**: The required commit/push/rebuild/restart loop used to dirty `VERSION` and `version.json` after every successful clean rebuild, even when no source files changed.
+- **Root Cause**: The prebuild step both minted a new wall-clock version on every run and persisted unstable runtime git metadata (`commit`/`dirty`) into tracked artifacts, which can never stay aligned across commit boundaries.
+- **Fix**: Persist only the stable build identity in tracked version artifacts, refresh runtime `commit`/`dirty` from git when loading the version payload, and reuse the existing version during clean rebuilds instead of stamping a new timestamp.
+- **Lesson**: Build identity and live repo state are different contracts. Track the stable version in files; compute runtime git state dynamically.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1410,6 +1416,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-24] - Stable Platform Version Artifacts Across Rebuild Loops
+- **Section**: Gotchas & Learned Fixes (#10), Build & Deployment Workflow
+- **Change**: Documented the split between stable tracked build identity and live runtime git metadata so clean rebuilds on port `3000` no longer re-dirty `VERSION` and `version.json`.
+- **Reason**: Repeated user-requested deploy loops were leaving the repo dirty immediately after a successful restart, which broke clean-handoff expectations.
+- **Impact**: Future rebuild/restart cycles can be validated from a clean tree without forcing a follow-up commit that only captures version-file churn.
+- **Files**: `.github/copilot-instructions.md`, `app/utils/platform_version.py`, `scripts/generate_platform_version.py`, `tests/test_platform_version.py`
 
 ### [2026-03-24] - Frontend Rebuild Gate After Drum GUI Closure
 - **Section**: Gotchas & Learned Fixes (#9), User Preferences
