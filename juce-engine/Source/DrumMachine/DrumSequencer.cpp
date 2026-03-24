@@ -49,7 +49,17 @@ void DrumSequencer::setDrumMachine(DrumMachineProcessor* processor) {
     drumMachine_ = processor;
 }
 
-bool DrumSequencer::setStep(int patternIndex, int instrumentIndex, int stepIndex, uint8_t velocity, bool accent) {
+bool DrumSequencer::setStep(
+    int patternIndex,
+    int instrumentIndex,
+    int stepIndex,
+    uint8_t velocity,
+    bool accent,
+    std::optional<float> lockPitch,
+    std::optional<float> lockFilterCutoff,
+    std::optional<float> lockDecay,
+    std::optional<float> lockPan,
+    std::optional<float> lockVolume) {
     if (!isValidPatternIndex(patternIndex) || !isValidInstrumentIndex(instrumentIndex) || !isValidStepIndex(stepIndex)) {
         return false;
     }
@@ -59,6 +69,11 @@ bool DrumSequencer::setStep(int patternIndex, int instrumentIndex, int stepIndex
         [static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
     step.velocity = velocity;
     step.accent = accent;
+    step.lockPitch = lockPitch;
+    step.lockFilterCutoff = lockFilterCutoff;
+    step.lockDecay = lockDecay;
+    step.lockPan = lockPan;
+    step.lockVolume = lockVolume;
     return true;
 }
 
@@ -592,7 +607,13 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
             const int maxOffset = std::max(0, samplesPerBlock_.load(std::memory_order_relaxed) - 1);
             trackSampleOffset = std::clamp(sampleOffset + swingOffset, 0, maxOffset);
         }
-        drumMachine_->triggerNote(instrumentIndex, velocity, trackSampleOffset);
+        DrumMachineProcessor::StepLockOverrides overrides;
+        overrides.volume = step.lockVolume;
+        overrides.pan = step.lockPan;
+        overrides.tuneSemitones = step.lockPitch;
+        overrides.filterCutoffHz = step.lockFilterCutoff;
+        overrides.decayMs = step.lockDecay;
+        drumMachine_->triggerNote(instrumentIndex, velocity, trackSampleOffset, overrides);
     }
 }
 

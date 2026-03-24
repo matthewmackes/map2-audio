@@ -21,6 +21,11 @@ public:
     struct Step {
         uint8_t velocity = 0;
         bool accent = false;
+        std::optional<float> lockPitch;
+        std::optional<float> lockFilterCutoff;
+        std::optional<float> lockDecay;
+        std::optional<float> lockPan;
+        std::optional<float> lockVolume;
     };
 
     using StepLane = std::array<Step, kMaxSteps>;
@@ -51,7 +56,17 @@ public:
     void prepare(double sampleRate, int samplesPerBlock);
     void setDrumMachine(DrumMachineProcessor* processor);
 
-    bool setStep(int patternIndex, int instrumentIndex, int stepIndex, uint8_t velocity, bool accent = false);
+    bool setStep(
+        int patternIndex,
+        int instrumentIndex,
+        int stepIndex,
+        uint8_t velocity,
+        bool accent = false,
+        std::optional<float> lockPitch = std::nullopt,
+        std::optional<float> lockFilterCutoff = std::nullopt,
+        std::optional<float> lockDecay = std::nullopt,
+        std::optional<float> lockPan = std::nullopt,
+        std::optional<float> lockVolume = std::nullopt);
     Step getStep(int patternIndex, int instrumentIndex, int stepIndex) const;
     bool clearPattern(int patternIndex);
     bool copyPattern(int sourcePatternIndex, int destinationPatternIndex);

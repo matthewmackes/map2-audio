@@ -8,6 +8,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -60,6 +61,22 @@ public:
         std::string name;
     };
 
+    struct StepLockOverrides {
+        std::optional<float> volume;
+        std::optional<float> pan;
+        std::optional<float> tuneSemitones;
+        std::optional<float> filterCutoffHz;
+        std::optional<float> decayMs;
+
+        bool hasAny() const {
+            return volume.has_value()
+                || pan.has_value()
+                || tuneSemitones.has_value()
+                || filterCutoffHz.has_value()
+                || decayMs.has_value();
+        }
+    };
+
     struct PadZoneConfig {
         PadZoneKind kind = PadZoneKind::Head;
         int triggerNote = -1;
@@ -99,7 +116,7 @@ public:
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
     void processBlock(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midiBuffer);
-    bool triggerNote(int padIndex, int velocity, int sampleOffset = 0);
+    bool triggerNote(int padIndex, int velocity, int sampleOffset = 0, const StepLockOverrides& overrides = {});
 
     PadConfig getPadConfig(int padIndex) const;
     bool setPadConfig(int padIndex, const PadConfig& config);
@@ -188,6 +205,7 @@ private:
     std::array<int, 128> noteToZone_{};
     std::array<juce::MidiBuffer, kPadCount> padMidiBuffers_{};
     juce::MidiBuffer triggeredMidiBuffer_;
+    std::array<std::optional<StepLockOverrides>, kPadCount> pendingStepOverrides_{};
     DrumMachineMixer mixer_;
     juce::AudioBuffer<float> busBuffer_;
     juce::AudioBuffer<float> stereoMixBuffer_;

@@ -29,9 +29,29 @@ class _FakeSequencerEngine:
         pattern["track_lengths"][instrument] = steps
         return True
 
-    def set_drum_step(self, pattern_id, instrument, step, velocity, accent=False):
+    def set_drum_step(
+        self,
+        pattern_id,
+        instrument,
+        step,
+        velocity,
+        accent=False,
+        lock_pitch=None,
+        lock_filter_cutoff=None,
+        lock_decay=None,
+        lock_pan=None,
+        lock_volume=None,
+    ):
         pattern = self.patterns.setdefault(pattern_id, self._default_pattern(pattern_id))
-        pattern["steps"][instrument][step] = {"velocity": velocity, "accent": accent}
+        pattern["steps"][instrument][step] = {
+            "velocity": velocity,
+            "accent": accent,
+            "lock_pitch": lock_pitch,
+            "lock_filter_cutoff": lock_filter_cutoff,
+            "lock_decay": lock_decay,
+            "lock_pan": lock_pan,
+            "lock_volume": lock_volume,
+        }
         return True
 
     def get_drum_song(self):
@@ -76,7 +96,7 @@ class _FakeSequencerEngine:
             "length": 16,
             "track_lengths": [0] * 16,
             "steps": [
-                [{"velocity": 0, "accent": False} for _ in range(64)]
+                [{"velocity": 0, "accent": False, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
                 for _ in range(16)
             ],
             "pattern_id": pattern_id,
@@ -144,6 +164,33 @@ def test_drum_sequencer_service_sets_track_length(tmp_path, monkeypatch):
 
     assert updated["track_lengths"][4] == 11
     assert fake_engine.get_drum_pattern_data(5)["track_lengths"][4] == 11
+
+
+def test_drum_sequencer_service_persists_step_parameter_locks(tmp_path, monkeypatch):
+    service, _, fake_engine, patterns_dir, _, _ = _build_service(tmp_path, monkeypatch)
+
+    updated = service.set_step(
+        3,
+        1,
+        7,
+        96,
+        True,
+        lock_pitch=3.0,
+        lock_filter_cutoff=4200.0,
+        lock_decay=280.0,
+        lock_pan=-0.2,
+        lock_volume=0.72,
+    )
+
+    step = updated["steps"][1][7]
+    assert step["lock_pitch"] == 3.0
+    assert step["lock_filter_cutoff"] == 4200.0
+    assert step["lock_decay"] == 280.0
+    assert step["lock_pan"] == -0.2
+    assert step["lock_volume"] == 0.72
+    persisted = json.loads((patterns_dir / "pattern-003.json").read_text())
+    assert persisted["steps"][1][7]["lock_filter_cutoff"] == 4200.0
+    assert fake_engine.get_drum_pattern_data(3)["steps"][1][7]["lock_volume"] == 0.72
 
 
 def test_drum_sequencer_service_round_trips_bundle_and_song(tmp_path, monkeypatch):

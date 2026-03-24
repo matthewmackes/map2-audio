@@ -211,9 +211,29 @@ class _FakeDrumService:
         self.patterns[pattern_id] = pattern
         return dict(pattern)
 
-    def set_step(self, pattern_id, instrument, step, velocity, accent=False):
+    def set_step(
+        self,
+        pattern_id,
+        instrument,
+        step,
+        velocity,
+        accent=False,
+        lock_pitch=None,
+        lock_filter_cutoff=None,
+        lock_decay=None,
+        lock_pan=None,
+        lock_volume=None,
+    ):
         pattern = self.patterns.setdefault(pattern_id, self._default_pattern(pattern_id))
-        pattern["steps"][instrument][step] = {"velocity": velocity, "accent": accent}
+        pattern["steps"][instrument][step] = {
+            "velocity": velocity,
+            "accent": accent,
+            "lock_pitch": lock_pitch,
+            "lock_filter_cutoff": lock_filter_cutoff,
+            "lock_decay": lock_decay,
+            "lock_pan": lock_pan,
+            "lock_volume": lock_volume,
+        }
         return dict(pattern)
 
     def set_track_length(self, pattern_id, instrument, length):
@@ -307,7 +327,7 @@ class _FakeDrumService:
             "length": 16,
             "track_lengths": [0] * 16,
             "steps": [
-                [{"velocity": 0, "accent": False} for _ in range(64)]
+                [{"velocity": 0, "accent": False, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
                 for _ in range(16)
             ],
         }
@@ -691,6 +711,33 @@ def test_drum_pattern_step_route_updates_single_step(monkeypatch):
     assert response.status_code == 200
     assert response.json()["pattern_id"] == 9
     assert response.json()["steps"][2][5]["velocity"] == 110
+
+
+def test_drum_pattern_step_route_accepts_parameter_locks(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/pattern/9/step",
+        json={
+            "instrument": 2,
+            "step": 5,
+            "velocity": 110,
+            "accent": True,
+            "lock_pitch": 2,
+            "lock_filter_cutoff": 4200,
+            "lock_decay": 250,
+            "lock_pan": -0.15,
+            "lock_volume": 0.68,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()["steps"][2][5]
+    assert payload["lock_pitch"] == 2
+    assert payload["lock_filter_cutoff"] == 4200
+    assert payload["lock_decay"] == 250
+    assert payload["lock_pan"] == -0.15
+    assert payload["lock_volume"] == 0.68
 
 
 def test_drum_pattern_step_route_rejects_invalid_velocity(monkeypatch):

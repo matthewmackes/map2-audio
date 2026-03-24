@@ -278,8 +278,41 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
     for (int padIndex = 0; padIndex < kPadCount; ++padIndex) {
         auto& part = pads_[static_cast<size_t>(padIndex)];
         auto& padMidi = padMidiBuffers_[static_cast<size_t>(padIndex)];
+        const auto pendingOverride = pendingStepOverrides_[static_cast<size_t>(padIndex)];
+        const auto originalConfig = pendingOverride.has_value() ? std::optional(part.getConfig()) : std::nullopt;
+        const auto originalParameters = pendingOverride.has_value() ? std::optional(part.getParameters()) : std::nullopt;
+        if (pendingOverride.has_value()) {
+            auto lockedConfig = *originalConfig;
+            if (pendingOverride->volume.has_value()) {
+                lockedConfig.level = std::clamp(*pendingOverride->volume, 0.0f, 1.0f);
+            }
+            if (pendingOverride->pan.has_value()) {
+                lockedConfig.pan = std::clamp(*pendingOverride->pan, -1.0f, 1.0f);
+            }
+            part.setConfig(lockedConfig);
+            if (pendingOverride->tuneSemitones.has_value()) {
+                part.setParameter("global.transpose", std::clamp(*pendingOverride->tuneSemitones, -24.0f, 24.0f));
+            }
+            if (pendingOverride->filterCutoffHz.has_value()) {
+                part.setParameter("filter1.cutoff", std::clamp(*pendingOverride->filterCutoffHz, 20.0f, 20000.0f));
+            }
+            if (pendingOverride->decayMs.has_value()) {
+                part.setParameter("amp.decay", std::clamp(*pendingOverride->decayMs, 1.0f, 5000.0f));
+            }
+        }
         part.processMidi(padMidi);
         part.processAudio(busBuffer_, padMidi, soloActive);
+        if (pendingOverride.has_value()) {
+            part.setConfig(*originalConfig);
+            const auto restoreParameter = [&](const char* name, float fallback) {
+                const auto found = originalParameters->find(name);
+                part.setParameter(name, found != originalParameters->end() ? found->second : fallback);
+            };
+            restoreParameter("global.transpose", padConfigs_[static_cast<size_t>(padIndex)].tuneSemitones);
+            restoreParameter("filter1.cutoff", 12000.0f);
+            restoreParameter("amp.decay", 120.0f);
+            pendingStepOverrides_[static_cast<size_t>(padIndex)].reset();
+        }
 
         const int busBaseChannel = static_cast<int>(padConfigs_[static_cast<size_t>(padIndex)].bus) * 2;
         padPeakMeters_[static_cast<size_t>(padIndex)] = std::max(
@@ -298,7 +331,7 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
     }
 }
 
-bool DrumMachineProcessor::triggerNote(int padIndex, int velocity, int sampleOffset) {
+bool DrumMachineProcessor::triggerNote(int padIndex, int velocity, int sampleOffset, const StepLockOverrides& overrides) {
     if (!isValidPadIndex(padIndex)) {
         return false;
     }
@@ -309,6 +342,9 @@ bool DrumMachineProcessor::triggerNote(int padIndex, int velocity, int sampleOff
     triggeredMidiBuffer_.addEvent(
         juce::MidiMessage::noteOn(1, config.midiNote, static_cast<juce::uint8>(clampedVelocity)),
         clampedSampleOffset);
+    if (overrides.hasAny()) {
+        pendingStepOverrides_[static_cast<size_t>(padIndex)] = overrides;
+    }
     return true;
 }
 

@@ -689,6 +689,11 @@ function buildPatternPayload(patternId: number, pattern: DrumPattern | undefined
           active: (step?.velocity ?? 0) > 0,
           velocity: step?.velocity ?? 0,
           accent: Boolean(step?.accent),
+          lock_pitch: step?.lock_pitch ?? null,
+          lock_filter_cutoff: step?.lock_filter_cutoff ?? null,
+          lock_decay: step?.lock_decay ?? null,
+          lock_pan: step?.lock_pan ?? null,
+          lock_volume: step?.lock_volume ?? null,
         }
       }),
     ),
@@ -706,12 +711,27 @@ function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number,
     velocity: step?.velocity ?? 0,
     accent: Boolean(step?.accent),
     active: (step?.velocity ?? 0) > 0,
+    lock_pitch: step?.lock_pitch ?? null,
+    lock_filter_cutoff: step?.lock_filter_cutoff ?? null,
+    lock_decay: step?.lock_decay ?? null,
+    lock_pan: step?.lock_pan ?? null,
+    lock_volume: step?.lock_volume ?? null,
   }
 }
 
 function resolvedTrackLength(pattern: DrumPattern | undefined, instrumentIndex: number) {
   const trackLength = pattern?.track_lengths?.[instrumentIndex] ?? 0
   return Math.max(0, Math.min(64, trackLength))
+}
+
+function stepHasLocks(step: ReturnType<typeof resolvedStep>) {
+  return [
+    step.lock_pitch,
+    step.lock_filter_cutoff,
+    step.lock_decay,
+    step.lock_pan,
+    step.lock_volume,
+  ].some((value) => value !== null && value !== undefined)
 }
 
 function resolvedPadControl(
@@ -944,6 +964,13 @@ function advancedPanel(
   onUpdateTrackSwing: (instrumentIndex: number, swing: number) => void,
   onUpdateTrackLength: (instrumentIndex: number, length: number) => void,
   onToggleStep: (instrumentIndex: number, stepIndex: number, nextVelocity: number, accent: boolean) => void,
+  selectedStep: { instrumentIndex: number; stepIndex: number } | null,
+  onSelectStep: (instrumentIndex: number, stepIndex: number) => void,
+  onUpdateStepLocks: (
+    instrumentIndex: number,
+    stepIndex: number,
+    locks: Partial<Pick<DrumPattern['steps'][number][number], 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
+  ) => void,
   selectedPatternSlot: number,
   selectedPatternPage: number,
   patternClipboard: number | null,
@@ -1023,6 +1050,9 @@ function advancedPanel(
   const selectedMidiPad = resolvedMidiPad(midiMapping, selectedPad)
   const selectedVelocityCurve = resolvedVelocityCurve(velocityCurves, selectedPad)
   const selectedZoneConfig = resolvedZones(midiZones, selectedPad)
+  const selectedStepState = selectedStep
+    ? resolvedStep(pattern, selectedStep.instrumentIndex, selectedStep.stepIndex)
+    : null
 
   return (
     <div style={shellStyle.modeShell}>
@@ -1208,6 +1238,7 @@ function advancedPanel(
 
                   {Array.from({ length: visibleSteps }, (_, stepIndex) => {
                     const step = resolvedStep(pattern, instrumentIndex, stepIndex)
+                    const hasLocks = stepHasLocks(step)
                     const isCurrent = stepIndex === currentStep
                     return (
                       <button
@@ -1221,6 +1252,10 @@ function advancedPanel(
                         aria-colindex={stepIndex + 1}
                         onClick={(event) => {
                           onSelectPad(instrumentIndex)
+                          onSelectStep(instrumentIndex, stepIndex)
+                          if (event.shiftKey) {
+                            return
+                          }
                           const nextVelocity = step.active ? 0 : 100
                           const nextAccent = step.active ? false : event.shiftKey || step.accent
                           onToggleStep(instrumentIndex, stepIndex, nextVelocity, nextAccent)
@@ -1275,10 +1310,26 @@ function advancedPanel(
                                 ? `inset 0 -3px 0 ${instrument.color}`
                                 : 'none',
                           transform: isCurrent ? 'translateY(-1px)' : 'none',
+                          position: 'relative',
                         }}
                         title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}${effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1 ? ' • loop point' : ''}`}
                       >
-                        {step.active ? (step.accent ? 'A' : step.velocity) : ''}
+                        {step.active ? (step.accent ? 'A' : step.velocity) : hasLocks ? '•' : ''}
+                        {hasLocks ? (
+                          <span
+                            aria-hidden
+                            style={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 5,
+                              width: 7,
+                              height: 7,
+                              borderRadius: '50%',
+                              background: '#ff832b',
+                              boxShadow: '0 0 0 1px rgba(0,0,0,0.35)',
+                            }}
+                          />
+                        ) : null}
                       </button>
                     )
                   })}
@@ -1720,6 +1771,60 @@ function advancedPanel(
               </div>
             </div>
           </Tile>
+          <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #ff832b' }}>
+            <div style={shellStyle.tileHeader}>
+              <h3 style={shellStyle.tileTitle}>Parameter Locks</h3>
+              <Tag type="warm-gray">
+                {selectedStep ? `Step ${selectedStep.stepIndex + 1}` : 'Select Step'}
+              </Tag>
+            </div>
+            <p style={shellStyle.tileText}>
+              Shift-click a sequencer cell to focus its per-hit parameter locks. Any locked value only applies on that step trigger.
+            </p>
+            {selectedStep ? (
+              <div style={shellStyle.fieldGrid}>
+                {[
+                  { key: 'lock_pitch', label: 'Pitch', min: -24, max: 24, step: 1, value: selectedStepState?.lock_pitch ?? null },
+                  { key: 'lock_filter_cutoff', label: 'Filter', min: 20, max: 20000, step: 10, value: selectedStepState?.lock_filter_cutoff ?? null },
+                  { key: 'lock_decay', label: 'Decay', min: 1, max: 5000, step: 10, value: selectedStepState?.lock_decay ?? null },
+                  { key: 'lock_pan', label: 'Pan', min: -1, max: 1, step: 0.01, value: selectedStepState?.lock_pan ?? null },
+                  { key: 'lock_volume', label: 'Volume', min: 0, max: 1, step: 0.01, value: selectedStepState?.lock_volume ?? null },
+                ].map((control) => (
+                  <label key={control.key} style={shellStyle.fieldStack}>
+                    <div style={shellStyle.sliderValue}>
+                      <span>{control.label}</span>
+                      <strong>{control.value === null ? 'Off' : control.value}</strong>
+                    </div>
+                    <input
+                      aria-label={`Step lock ${control.label}`}
+                      type="range"
+                      min={control.min}
+                      max={control.max}
+                      step={control.step}
+                      value={control.value ?? control.min}
+                      onChange={(event) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                        [control.key]: Number(event.currentTarget.value),
+                      })}
+                      style={shellStyle.compactRange}
+                    />
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      onClick={() => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                        [control.key]: null,
+                      })}
+                    >
+                      Clear {control.label}
+                    </Button>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <div style={shellStyle.fieldStack}>
+                <span style={shellStyle.inspectorValue}>Select a step in the sequencer to edit its p-locks.</span>
+              </div>
+            )}
+          </Tile>
           <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #be95ff' }}>
             <div style={shellStyle.tileHeader}>
               <h3 style={shellStyle.tileTitle}>MIDI Configuration</h3>
@@ -2149,6 +2254,7 @@ export function DrumsPage() {
   const [pendingKitId, setPendingKitId] = useState<string | null>(null)
   const [kitModalOpen, setKitModalOpen] = useState(false)
   const [draftNames, setDraftNames] = useState<string[]>(Array.from({ length: 16 }, (_, index) => `Pad ${index + 1}`))
+  const [selectedStep, setSelectedStep] = useState<{ instrumentIndex: number; stepIndex: number } | null>(null)
   const [selectedMidiPreset, setSelectedMidiPreset] = useState('')
   const [backingTrackSearch, setBackingTrackSearch] = useState('')
   const [selectedBackingTrackId, setSelectedBackingTrackId] = useState(BACKING_TRACK_LIBRARY[0]?.id ?? '')
@@ -2551,6 +2657,36 @@ export function DrumsPage() {
                 })
                 announce(
                   `${activeKit?.instruments?.[instrumentIndex]?.name ?? `Pad ${instrumentIndex + 1}`} step ${stepIndex + 1} ${nextVelocity > 0 ? `set to velocity ${nextVelocity}${accentEnabled ? ' with accent' : ''}` : 'cleared'}.`,
+                )
+              },
+              selectedStep,
+              (instrumentIndex, stepIndex) => {
+                setSelectedStep({ instrumentIndex, stepIndex })
+              },
+              (instrumentIndex, stepIndex, locks) => {
+                const existingStep = resolvedStep(pattern, instrumentIndex, stepIndex)
+                const nextLocks = {
+                  lock_pitch: 'lock_pitch' in locks ? (locks.lock_pitch ?? null) : existingStep.lock_pitch,
+                  lock_filter_cutoff: 'lock_filter_cutoff' in locks ? (locks.lock_filter_cutoff ?? null) : existingStep.lock_filter_cutoff,
+                  lock_decay: 'lock_decay' in locks ? (locks.lock_decay ?? null) : existingStep.lock_decay,
+                  lock_pan: 'lock_pan' in locks ? (locks.lock_pan ?? null) : existingStep.lock_pan,
+                  lock_volume: 'lock_volume' in locks ? (locks.lock_volume ?? null) : existingStep.lock_volume,
+                }
+                const nextVelocity = existingStep.active
+                  ? existingStep.velocity
+                  : Object.values(nextLocks).some((value) => value !== null && value !== undefined)
+                    ? 100
+                    : 0
+                setStep.mutate({
+                  patternId: transport.pattern,
+                  instrument: instrumentIndex,
+                  step: stepIndex,
+                  velocity: nextVelocity,
+                  accent: existingStep.accent,
+                  ...nextLocks,
+                })
+                announce(
+                  `${activeKit?.instruments?.[instrumentIndex]?.name ?? `Pad ${instrumentIndex + 1}`} step ${stepIndex + 1} parameter locks updated.`,
                 )
               },
               selectedPatternSlot,

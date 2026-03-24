@@ -63,6 +63,11 @@ class DrumPatternStepUpdateModel(BaseModel):
     step: int = Field(..., ge=0, le=63)
     velocity: int = Field(..., ge=0, le=127)
     accent: bool = False
+    lock_pitch: float | None = Field(default=None, ge=-24.0, le=24.0)
+    lock_filter_cutoff: float | None = Field(default=None, ge=20.0, le=20000.0)
+    lock_decay: float | None = Field(default=None, ge=1.0, le=5000.0)
+    lock_pan: float | None = Field(default=None, ge=-1.0, le=1.0)
+    lock_volume: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 class DrumTrackSwingUpdateModel(BaseModel):
@@ -220,6 +225,11 @@ def set_drum_pattern_step(pattern_id: int, update: DrumPatternStepUpdateModel) -
             update.step,
             update.velocity,
             update.accent,
+            update.lock_pitch,
+            update.lock_filter_cutoff,
+            update.lock_decay,
+            update.lock_pan,
+            update.lock_volume,
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))

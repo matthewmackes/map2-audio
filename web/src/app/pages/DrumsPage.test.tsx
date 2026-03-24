@@ -562,13 +562,13 @@ describe('DrumsPage', () => {
 
     fireEvent.click(screen.getByRole('gridcell', { name: 'Kick step 2' }), { shiftKey: true })
 
-    expect(mockSetStepMutate).toHaveBeenCalledWith({
+    expect(mockSetStepMutate).not.toHaveBeenCalledWith(expect.objectContaining({
       patternId: 7,
       instrument: 0,
       step: 1,
       velocity: 100,
-      accent: true,
-    })
+    }))
+    expect(screen.getByText('Parameter Locks')).toBeInTheDocument()
   })
 
   it('moves keyboard focus across the sequencer grid with arrow keys', () => {
@@ -604,6 +604,21 @@ describe('DrumsPage', () => {
       instrument: 0,
       length: 9,
     })
+  })
+
+  it('updates parameter locks from the step editor', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('gridcell', { name: 'Kick step 2' }), { shiftKey: true })
+    fireEvent.change(screen.getByLabelText('Step lock Pitch'), { target: { value: '4' } })
+
+    expect(mockSetStepMutate).toHaveBeenCalledWith(expect.objectContaining({
+      patternId: 7,
+      instrument: 0,
+      step: 1,
+      velocity: 100,
+      lock_pitch: 4,
+    }))
   })
 
   it('commits renamed instrument labels through the kit patch mutation', () => {

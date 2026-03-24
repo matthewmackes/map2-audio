@@ -3000,15 +3000,35 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             const auto config = self.getDrumMachine().getPadConfig(padIndex);
             return self.injectMidiNoteOn(1, config.midiNote, std::clamp(static_cast<int>(std::round(velocity * 127.0f)), 1, 127));
         }, py::arg("pad"), py::arg("velocity"), "Trigger a software drum hit via the MIDI injection path")
-        .def("set_drum_step", [](Map2AudioEngine& self, int patternIndex, int instrumentIndex, int stepIndex, int velocity, bool accent) {
+        .def("set_drum_step", [](Map2AudioEngine& self,
+                                 int patternIndex,
+                                 int instrumentIndex,
+                                 int stepIndex,
+                                 int velocity,
+                                 bool accent,
+                                 std::optional<float> lockPitch,
+                                 std::optional<float> lockFilterCutoff,
+                                 std::optional<float> lockDecay,
+                                 std::optional<float> lockPan,
+                                 std::optional<float> lockVolume) {
             return self.getDrumSequencer().setStep(
                 patternIndex,
                 instrumentIndex,
                 stepIndex,
                 static_cast<uint8_t>(std::clamp(velocity, 0, 127)),
-                accent);
+                accent,
+                lockPitch,
+                lockFilterCutoff,
+                lockDecay,
+                lockPan,
+                lockVolume);
         }, py::arg("pattern"), py::arg("instrument"), py::arg("step"), py::arg("velocity"), py::arg("accent") = false,
-           "Set a sequencer step velocity and accent state")
+           py::arg("lock_pitch") = py::none(),
+           py::arg("lock_filter_cutoff") = py::none(),
+           py::arg("lock_decay") = py::none(),
+           py::arg("lock_pan") = py::none(),
+           py::arg("lock_volume") = py::none(),
+           "Set a sequencer step velocity, accent state, and optional parameter locks")
         .def("get_drum_step", [](const Map2AudioEngine& self, int patternIndex, int instrumentIndex, int stepIndex) {
             const auto step = self.getDrumSequencer().getStep(patternIndex, instrumentIndex, stepIndex);
             py::dict result;
@@ -3016,6 +3036,18 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result["accent"] = step.accent;
             return result;
         }, py::arg("pattern"), py::arg("instrument"), py::arg("step"), "Get a sequencer step payload")
+        .def("get_drum_step_extended", [](const Map2AudioEngine& self, int patternIndex, int instrumentIndex, int stepIndex) {
+            const auto step = self.getDrumSequencer().getStep(patternIndex, instrumentIndex, stepIndex);
+            py::dict result;
+            result["velocity"] = step.velocity;
+            result["accent"] = step.accent;
+            result["lock_pitch"] = step.lockPitch ? py::cast(*step.lockPitch) : py::none();
+            result["lock_filter_cutoff"] = step.lockFilterCutoff ? py::cast(*step.lockFilterCutoff) : py::none();
+            result["lock_decay"] = step.lockDecay ? py::cast(*step.lockDecay) : py::none();
+            result["lock_pan"] = step.lockPan ? py::cast(*step.lockPan) : py::none();
+            result["lock_volume"] = step.lockVolume ? py::cast(*step.lockVolume) : py::none();
+            return result;
+        }, py::arg("pattern"), py::arg("instrument"), py::arg("step"), "Get a sequencer step payload with parameter locks")
         .def("clear_drum_pattern", [](Map2AudioEngine& self, int patternIndex) {
             return self.getDrumSequencer().clearPattern(patternIndex);
         }, py::arg("pattern"), "Clear all steps in a drum pattern")
@@ -3042,6 +3074,11 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                     py::dict payload;
                     payload["velocity"] = step.velocity;
                     payload["accent"] = step.accent;
+                    payload["lock_pitch"] = step.lockPitch ? py::cast(*step.lockPitch) : py::none();
+                    payload["lock_filter_cutoff"] = step.lockFilterCutoff ? py::cast(*step.lockFilterCutoff) : py::none();
+                    payload["lock_decay"] = step.lockDecay ? py::cast(*step.lockDecay) : py::none();
+                    payload["lock_pan"] = step.lockPan ? py::cast(*step.lockPan) : py::none();
+                    payload["lock_volume"] = step.lockVolume ? py::cast(*step.lockVolume) : py::none();
                     steps.append(payload);
                 }
                 instruments.append(steps);

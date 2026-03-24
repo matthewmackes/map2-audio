@@ -1473,6 +1473,11 @@ export interface DrumPatternStep {
   active: boolean;
   velocity: number;
   accent: boolean;
+  lock_pitch?: number | null;
+  lock_filter_cutoff?: number | null;
+  lock_decay?: number | null;
+  lock_pan?: number | null;
+  lock_volume?: number | null;
 }
 
 export interface DrumPattern {

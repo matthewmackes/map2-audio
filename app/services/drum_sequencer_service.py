@@ -28,6 +28,11 @@ _AUTOSAVE_PATH = Path(os.environ.get("MAP2_DRUMS_AUTOSAVE_PATH", _DEFAULT_DRUMS_
 class DrumSequencerStepModel(BaseModel):
     velocity: int = Field(0, ge=0, le=127)
     accent: bool = False
+    lock_pitch: float | None = Field(default=None, ge=-24.0, le=24.0)
+    lock_filter_cutoff: float | None = Field(default=None, ge=20.0, le=20000.0)
+    lock_decay: float | None = Field(default=None, ge=1.0, le=5000.0)
+    lock_pan: float | None = Field(default=None, ge=-1.0, le=1.0)
+    lock_volume: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 class DrumPatternModel(BaseModel):
@@ -129,6 +134,11 @@ class DrumSequencerService(Singleton):
                     {
                         "velocity": int(step.get("velocity", 0)),
                         "accent": bool(step.get("accent", False)),
+                        "lock_pitch": step.get("lock_pitch"),
+                        "lock_filter_cutoff": step.get("lock_filter_cutoff"),
+                        "lock_decay": step.get("lock_decay"),
+                        "lock_pan": step.get("lock_pan"),
+                        "lock_volume": step.get("lock_volume"),
                     }
                 )
             steps.append(row_payload)
@@ -165,8 +175,29 @@ class DrumSequencerService(Singleton):
         for instrument_index, row in enumerate(pattern.steps):
             for step_index, step in enumerate(row):
                 if step.velocity == 0 and not step.accent:
-                    continue
-                set_step(pattern.pattern_id, instrument_index, step_index, step.velocity, step.accent)
+                    if not any(
+                        value is not None
+                        for value in (
+                            step.lock_pitch,
+                            step.lock_filter_cutoff,
+                            step.lock_decay,
+                            step.lock_pan,
+                            step.lock_volume,
+                        )
+                    ):
+                        continue
+                set_step(
+                    pattern.pattern_id,
+                    instrument_index,
+                    step_index,
+                    step.velocity,
+                    step.accent,
+                    step.lock_pitch,
+                    step.lock_filter_cutoff,
+                    step.lock_decay,
+                    step.lock_pan,
+                    step.lock_volume,
+                )
 
     def _read_song_from_engine(self) -> List[DrumSongEntryModel]:
         engine = self._engine()
@@ -256,9 +287,29 @@ class DrumSequencerService(Singleton):
         path.write_text(json.dumps(pattern.model_dump(), indent=2, sort_keys=True))
         return pattern.model_dump()
 
-    def set_step(self, pattern_id: int, instrument: int, step: int, velocity: int, accent: bool = False) -> Dict[str, Any]:
+    def set_step(
+        self,
+        pattern_id: int,
+        instrument: int,
+        step: int,
+        velocity: int,
+        accent: bool = False,
+        lock_pitch: float | None = None,
+        lock_filter_cutoff: float | None = None,
+        lock_decay: float | None = None,
+        lock_pan: float | None = None,
+        lock_volume: float | None = None,
+    ) -> Dict[str, Any]:
         pattern = DrumPatternModel.model_validate(self.get_pattern(pattern_id))
-        pattern.steps[instrument][step] = DrumSequencerStepModel(velocity=velocity, accent=accent)
+        pattern.steps[instrument][step] = DrumSequencerStepModel(
+            velocity=velocity,
+            accent=accent,
+            lock_pitch=lock_pitch,
+            lock_filter_cutoff=lock_filter_cutoff,
+            lock_decay=lock_decay,
+            lock_pan=lock_pan,
+            lock_volume=lock_volume,
+        )
         return self.save_pattern(pattern_id, pattern.model_dump())
 
     def set_track_length(self, pattern_id: int, instrument: int, length: int) -> Dict[str, Any]:

@@ -3183,7 +3183,7 @@ Subtasks:
 #### Phase 1 — Advanced Sequencer (Features 2, 3, 4, 5, 6, 8, 20)
 
 ID: T391-A
-Status: [ ] Todo
+Status: [✓] Done
 Title: Parameter Locking (p-locks) — per-step sound parameter overrides
 Description:
 - Goal / acceptance criteria: Extend the `Step` struct to carry optional per-step overrides for pitch, filter cutoff, decay, pan, and volume. When a step fires, locked parameters temporarily override the pad's global settings for that hit only. The DrumsPage step grid must surface p-lock editing (shift+click or long-press a step to open a parameter lock editor).
@@ -3196,7 +3196,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Extended Step struct, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 11:16 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/DrumMachine/DrumSequencer.h`, `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.h`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.cpp`, and `juce-engine/Source/PythonBindings.cpp` so each step can carry optional pitch/filter/decay/pan/volume locks and pass them into a temporary per-hit override layer during the next audio block.
+  - Updated `app/services/drum_sequencer_service.py` and `app/routes/drums.py` so step payloads persist the new lock fields, validate them, and accept them through the existing step-update endpoint while adding `get_drum_step_extended` in the native bindings for full lock inspection.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, and `web/src/app/pages/DrumsPage.tsx` so the sequencer now shows p-lock indicators on step cells and exposes a dedicated Parameter Locks editor sidebar focused via shift-click.
+  - Validation passed with `pytest tests/test_drum_sequencer_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-B
 Status: [ ] Todo
