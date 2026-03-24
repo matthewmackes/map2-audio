@@ -3029,6 +3029,11 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             py::dict result;
             result["length"] = pattern.length;
             result["variation"] = activeVariation;
+            py::list trackLengths;
+            for (const auto trackLength : pattern.trackLengths) {
+                trackLengths.append(trackLength);
+            }
+            result["track_lengths"] = trackLengths;
 
             py::list instruments;
             for (const auto& instrumentSteps : stepGrid) {
@@ -3050,6 +3055,12 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_drum_pattern_length", [](const Map2AudioEngine& self, int patternIndex) {
             return self.getDrumSequencer().getPatternLength(patternIndex);
         }, py::arg("pattern"), "Get drum pattern length")
+        .def("set_drum_track_length", [](Map2AudioEngine& self, int patternIndex, int instrumentIndex, int steps) {
+            return self.getDrumSequencer().setTrackLength(patternIndex, instrumentIndex, steps);
+        }, py::arg("pattern"), py::arg("instrument"), py::arg("steps"), "Set per-track drum loop length")
+        .def("get_drum_track_length", [](const Map2AudioEngine& self, int patternIndex, int instrumentIndex) {
+            return self.getDrumSequencer().getTrackLength(patternIndex, instrumentIndex);
+        }, py::arg("pattern"), py::arg("instrument"), "Get per-track drum loop length")
         .def("set_drum_swing", [](Map2AudioEngine& self, float percent) {
             self.getDrumSequencer().setSwing(percent);
             return true;

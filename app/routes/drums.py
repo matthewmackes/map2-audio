@@ -69,6 +69,10 @@ class DrumTrackSwingUpdateModel(BaseModel):
     swing: int = Field(..., ge=0, le=100)
 
 
+class DrumTrackLengthUpdateModel(BaseModel):
+    length: int = Field(..., ge=0, le=64)
+
+
 class DrumSongUpdateResponse(BaseModel):
     song: List[DrumSongEntryModel]
     song_loop: bool
@@ -227,8 +231,21 @@ def clear_drum_pattern(pattern_id: int) -> Dict[str, Any]:
     try:
         pattern = DrumPatternModel.model_validate(service.get_pattern(pattern_id))
         pattern.length = 16
+        pattern.track_lengths = [0] * 16
         pattern.steps = [[DrumSequencerStepModel() for _ in range(64)] for _ in range(16)]
         return service.save_pattern(pattern_id, pattern.model_dump(exclude={"pattern_id"}))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pattern/{pattern_id}/track/{instrument}/length", response_model=DrumPatternModel)
+def set_drum_track_length(
+    pattern_id: int,
+    update: DrumTrackLengthUpdateModel,
+    instrument: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_sequencer_service().set_track_length(pattern_id, instrument, update.length)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

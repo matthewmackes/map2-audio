@@ -210,6 +210,18 @@ export function useSetDrumTrackSwing() {
   })
 }
 
+export function useSetDrumTrackLength() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ patternId, instrument, length }: { patternId: number; instrument: number; length: number }) =>
+      drumsApi.setTrackLength(patternId, instrument, length),
+    onSuccess: (_pattern, variables) => {
+      invalidateDrumPattern(queryClient, variables.patternId)
+    },
+  })
+}
+
 export function useSetDrumPattern() {
   const queryClient = useQueryClient()
 

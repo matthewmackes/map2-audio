@@ -28,6 +28,7 @@ public:
 
     struct Pattern {
         int length = 16;
+        std::array<int, kInstrumentCount> trackLengths{};
         std::array<StepGrid, kVariationCount> variations{};
         int fillVariationIndex = 1;
         int fillLengthBeats = 1;
@@ -56,6 +57,8 @@ public:
     bool copyPattern(int sourcePatternIndex, int destinationPatternIndex);
     bool setPatternLength(int patternIndex, int length);
     int getPatternLength(int patternIndex) const;
+    bool setTrackLength(int patternIndex, int instrumentIndex, int length);
+    int getTrackLength(int patternIndex, int instrumentIndex) const;
     Pattern getPattern(int patternIndex) const;
 
     bool setTempo(double bpm);

@@ -1480,6 +1480,7 @@ export interface DrumPattern {
   steps: DrumPatternStep[][];
   length: number;
   variation: number;
+  track_lengths: number[];
 }
 
 export interface DrumSongEntry {

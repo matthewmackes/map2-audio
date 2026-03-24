@@ -5750,6 +5750,13 @@ export const drumsApi = {
       body: JSON.stringify({ swing }),
     }),
 
+  /** Set per-track loop length */
+  setTrackLength: (patternId: number, instrument: number, length: number) =>
+    fetchJson<import('./types').DrumPattern>(`${API_BASE}/engine/drums/pattern/${patternId}/track/${instrument}/length`, {
+      method: 'POST',
+      body: JSON.stringify({ length }),
+    }),
+
   /** Record a tap-tempo event */
   tapTempo: (timestamp?: number) =>
     fetchJson<{ tempo: number | null; taps: number }>(`${API_BASE}/engine/drums/transport/tap-tempo`, {

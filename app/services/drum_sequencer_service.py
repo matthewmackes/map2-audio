@@ -33,6 +33,7 @@ class DrumSequencerStepModel(BaseModel):
 class DrumPatternModel(BaseModel):
     pattern_id: int = Field(0, ge=0, le=127)
     length: int = Field(16, ge=1, le=64)
+    track_lengths: List[int] = Field(default_factory=lambda: [0] * 16, min_length=16, max_length=16)
     steps: List[List[DrumSequencerStepModel]]
 
     @model_validator(mode="after")
@@ -42,6 +43,9 @@ class DrumPatternModel(BaseModel):
         for row in self.steps:
             if len(row) != 64:
                 raise ValueError("each instrument row must contain exactly 64 steps")
+        for track_length in self.track_lengths:
+            if track_length < 0 or track_length > 64:
+                raise ValueError("track_lengths entries must be between 0 and 64")
         return self
 
 
@@ -134,6 +138,7 @@ class DrumSequencerService(Singleton):
                 {
                     "pattern_id": pattern_id,
                     "length": int(raw.get("length", 16)),
+                    "track_lengths": [int(value) for value in raw.get("track_lengths", [0] * 16)],
                     "steps": steps,
                 }
             )
@@ -147,12 +152,16 @@ class DrumSequencerService(Singleton):
 
         clear = getattr(engine, "clear_drum_pattern", None)
         set_length = getattr(engine, "set_drum_pattern_length", None)
+        set_track_length = getattr(engine, "set_drum_track_length", None)
         set_step = getattr(engine, "set_drum_step", None)
         if not callable(clear) or not callable(set_length) or not callable(set_step):
             return
 
         clear(pattern.pattern_id)
         set_length(pattern.pattern_id, pattern.length)
+        if callable(set_track_length):
+            for instrument_index, track_length in enumerate(pattern.track_lengths):
+                set_track_length(pattern.pattern_id, instrument_index, track_length)
         for instrument_index, row in enumerate(pattern.steps):
             for step_index, step in enumerate(row):
                 if step.velocity == 0 and not step.accent:
@@ -234,6 +243,7 @@ class DrumSequencerService(Singleton):
                 {
                     "pattern_id": pattern_id,
                     "length": 16,
+                    "track_lengths": [0] * 16,
                     "steps": [list(zero_row) for _ in range(16)],
                 }
             )
@@ -249,6 +259,11 @@ class DrumSequencerService(Singleton):
     def set_step(self, pattern_id: int, instrument: int, step: int, velocity: int, accent: bool = False) -> Dict[str, Any]:
         pattern = DrumPatternModel.model_validate(self.get_pattern(pattern_id))
         pattern.steps[instrument][step] = DrumSequencerStepModel(velocity=velocity, accent=accent)
+        return self.save_pattern(pattern_id, pattern.model_dump())
+
+    def set_track_length(self, pattern_id: int, instrument: int, length: int) -> Dict[str, Any]:
+        pattern = DrumPatternModel.model_validate(self.get_pattern(pattern_id))
+        pattern.track_lengths[instrument] = length
         return self.save_pattern(pattern_id, pattern.model_dump())
 
     def save_bundle(self, bundle_id: str, kit_path: Optional[str] = None) -> Dict[str, Any]:

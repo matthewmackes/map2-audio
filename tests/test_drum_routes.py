@@ -206,6 +206,7 @@ class _FakeDrumService:
     def save_pattern(self, pattern_id, payload):
         pattern = self._default_pattern(pattern_id)
         pattern["length"] = payload["length"]
+        pattern["track_lengths"] = payload.get("track_lengths", [0] * 16)
         pattern["steps"] = payload["steps"]
         self.patterns[pattern_id] = pattern
         return dict(pattern)
@@ -213,6 +214,11 @@ class _FakeDrumService:
     def set_step(self, pattern_id, instrument, step, velocity, accent=False):
         pattern = self.patterns.setdefault(pattern_id, self._default_pattern(pattern_id))
         pattern["steps"][instrument][step] = {"velocity": velocity, "accent": accent}
+        return dict(pattern)
+
+    def set_track_length(self, pattern_id, instrument, length):
+        pattern = self.patterns.setdefault(pattern_id, self._default_pattern(pattern_id))
+        pattern["track_lengths"][instrument] = length
         return dict(pattern)
 
     def get_song(self):
@@ -299,6 +305,7 @@ class _FakeDrumService:
         return {
             "pattern_id": pattern_id,
             "length": 16,
+            "track_lengths": [0] * 16,
             "steps": [
                 [{"velocity": 0, "accent": False} for _ in range(64)]
                 for _ in range(16)
@@ -526,6 +533,16 @@ def test_drum_fill_and_song_transport_routes(monkeypatch):
     stop = client.post("/api/engine/drums/song/transport/stop")
     assert stop.status_code == 200
     assert stop.json()["is_playing"] is False
+
+
+def test_drum_pattern_track_length_route_updates_pattern(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post("/api/engine/drums/pattern/7/track/3/length", json={"length": 12})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["track_lengths"][3] == 12
 
 
 def test_drum_midi_mapping_routes_round_trip_mapping(monkeypatch):

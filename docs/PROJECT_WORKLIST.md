@@ -3215,7 +3215,7 @@ Subtasks: None
 Assigned to: Unassigned
 
 ID: T391-C
-Status: [ ] Todo
+Status: [✓] Done
 Title: Polyrhythms — per-instrument track loop length
 Description:
 - Goal / acceptance criteria: Allow each of the 16 instrument tracks within a pattern to have an independent loop length (1–64 steps), enabling polyrhythmic patterns where e.g. kick loops every 16 steps while hi-hat loops every 12. When a track's length is 0, it inherits the pattern's global length.
@@ -3228,7 +3228,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Per-track length storage, wrap logic, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 09:50 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/DrumMachine/DrumSequencer.h`, `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, and `juce-engine/Source/PythonBindings.cpp` with `trackLengths` storage, per-track loop-length setters/getters, and per-row step wrapping so each instrument can cycle against its own effective pattern length while `0` still inherits the pattern length.
+  - Updated `app/services/drum_sequencer_service.py` and `app/routes/drums.py` so pattern payloads now persist `track_lengths`, clear/reset them correctly, and expose `POST /api/engine/drums/pattern/{pattern_id}/track/{instrument}/length` for row-level loop edits.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, and `web/src/app/pages/DrumsPage.tsx` so the advanced sequencer rows now expose loop-length controls, show inherited-vs-local loop values, and mark visible row loop points directly on the step grid.
+  - Validation passed with `pytest tests/test_drum_sequencer_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-D
 Status: [ ] Todo

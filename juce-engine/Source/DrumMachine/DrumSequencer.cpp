@@ -113,6 +113,23 @@ int DrumSequencer::getPatternLength(int patternIndex) const {
     return patterns_[static_cast<size_t>(patternIndex)].length;
 }
 
+bool DrumSequencer::setTrackLength(int patternIndex, int instrumentIndex, int length) {
+    if (!isValidPatternIndex(patternIndex) || !isValidInstrumentIndex(instrumentIndex) || length < 0 || length > kMaxSteps) {
+        return false;
+    }
+
+    patterns_[static_cast<size_t>(patternIndex)].trackLengths[static_cast<size_t>(instrumentIndex)] = length;
+    return true;
+}
+
+int DrumSequencer::getTrackLength(int patternIndex, int instrumentIndex) const {
+    if (!isValidPatternIndex(patternIndex) || !isValidInstrumentIndex(instrumentIndex)) {
+        return 0;
+    }
+
+    return patterns_[static_cast<size_t>(patternIndex)].trackLengths[static_cast<size_t>(instrumentIndex)];
+}
+
 DrumSequencer::Pattern DrumSequencer::getPattern(int patternIndex) const {
     if (!isValidPatternIndex(patternIndex)) {
         return {};
@@ -555,7 +572,10 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
     const double straightStepSamples = quarterNoteSamples() / 4.0;
     const bool swungEighthOffbeat = ((stepIndex / 2) % 2 == 0) && (stepIndex % 2 == 1);
     for (int instrumentIndex = 0; instrumentIndex < kInstrumentCount; ++instrumentIndex) {
-        const auto& step = stepGrid[static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
+        const int trackLength = std::clamp(pattern.trackLengths[static_cast<size_t>(instrumentIndex)], 0, kMaxSteps);
+        const int effectiveTrackLength = trackLength > 0 ? trackLength : std::max(1, pattern.length);
+        const int trackStepIndex = stepIndex % effectiveTrackLength;
+        const auto& step = stepGrid[static_cast<size_t>(instrumentIndex)][static_cast<size_t>(trackStepIndex)];
         if (step.velocity == 0) {
             continue;
         }

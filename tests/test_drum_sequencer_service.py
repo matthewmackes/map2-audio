@@ -24,6 +24,11 @@ class _FakeSequencerEngine:
         pattern["length"] = steps
         return True
 
+    def set_drum_track_length(self, pattern_id, instrument, steps):
+        pattern = self.patterns.setdefault(pattern_id, self._default_pattern(pattern_id))
+        pattern["track_lengths"][instrument] = steps
+        return True
+
     def set_drum_step(self, pattern_id, instrument, step, velocity, accent=False):
         pattern = self.patterns.setdefault(pattern_id, self._default_pattern(pattern_id))
         pattern["steps"][instrument][step] = {"velocity": velocity, "accent": accent}
@@ -69,6 +74,7 @@ class _FakeSequencerEngine:
     def _default_pattern(pattern_id):
         return {
             "length": 16,
+            "track_lengths": [0] * 16,
             "steps": [
                 [{"velocity": 0, "accent": False} for _ in range(64)]
                 for _ in range(16)
@@ -110,6 +116,7 @@ def test_drum_sequencer_service_persists_pattern_edits(tmp_path, monkeypatch):
         7,
         {
             "length": 32,
+            "track_lengths": [0, 12] + [0] * 14,
             "steps": [
                 [{"velocity": 0, "accent": False} for _ in range(64)]
                 for _ in range(16)
@@ -122,10 +129,21 @@ def test_drum_sequencer_service_persists_pattern_edits(tmp_path, monkeypatch):
     assert updated["steps"][3][12]["velocity"] == 99
     assert updated["steps"][3][12]["accent"] is True
     assert fake_engine.get_drum_pattern_data(7)["steps"][3][12]["velocity"] == 99
+    assert fake_engine.get_drum_pattern_data(7)["track_lengths"][1] == 12
 
     persisted = json.loads((patterns_dir / "pattern-007.json").read_text())
     assert persisted["steps"][3][12]["velocity"] == 99
     assert persisted["length"] == 32
+    assert persisted["track_lengths"][1] == 12
+
+
+def test_drum_sequencer_service_sets_track_length(tmp_path, monkeypatch):
+    service, _, fake_engine, _, _, _ = _build_service(tmp_path, monkeypatch)
+
+    updated = service.set_track_length(5, 4, 11)
+
+    assert updated["track_lengths"][4] == 11
+    assert fake_engine.get_drum_pattern_data(5)["track_lengths"][4] == 11
 
 
 def test_drum_sequencer_service_round_trips_bundle_and_song(tmp_path, monkeypatch):

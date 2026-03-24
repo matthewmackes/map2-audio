@@ -127,6 +127,14 @@ TEST_CASE("DrumSequencer stores per-track swing overrides", "[drums][sequencer]"
     REQUIRE_FALSE(sequencer.setTrackSwing(-1, 50.0f));
 }
 
+TEST_CASE("DrumSequencer stores per-track loop lengths", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+
+    REQUIRE(sequencer.setTrackLength(2, 5, 12));
+    REQUIRE(sequencer.getTrackLength(2, 5) == 12);
+    REQUIRE_FALSE(sequencer.setTrackLength(2, 5, 65));
+}
+
 TEST_CASE("DrumSequencer manages song entries and reordering", "[drums][sequencer]") {
     DrumSequencer sequencer;
 

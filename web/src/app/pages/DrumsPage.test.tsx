@@ -21,6 +21,7 @@ const mockSetMidiMappingMutate = jest.fn()
 const mockSetMidiZonesMutate = jest.fn()
 const mockSetVelocityCurveMutate = jest.fn()
 const mockSetTrackSwingMutate = jest.fn()
+const mockSetTrackLengthMutate = jest.fn()
 const mockSetSongMutate = jest.fn()
 const mockStartMidiLearnMutate = jest.fn()
 const mockUpdateStateMutate = jest.fn()
@@ -54,6 +55,7 @@ const mockUseSetDrumMidiMapping = jest.fn()
 const mockUseSetDrumMidiZones = jest.fn()
 const mockUseSetDrumVelocityCurve = jest.fn()
 const mockUseSetDrumTrackSwing = jest.fn()
+const mockUseSetDrumTrackLength = jest.fn()
 const mockUseSetDrumPattern = jest.fn()
 const mockUseStartDrumMidiLearn = jest.fn()
 const mockUseAddDrumSongEntry = jest.fn()
@@ -193,6 +195,7 @@ jest.mock('@/app/hooks/useDrumMachine', () => ({
   useSetDrumMidiZones: () => mockUseSetDrumMidiZones(),
   useSetDrumVelocityCurve: () => mockUseSetDrumVelocityCurve(),
   useSetDrumTrackSwing: () => mockUseSetDrumTrackSwing(),
+  useSetDrumTrackLength: () => mockUseSetDrumTrackLength(),
   useSetDrumPattern: () => mockUseSetDrumPattern(),
   useStartDrumMidiLearn: () => mockUseStartDrumMidiLearn(),
   useAddDrumSongEntry: () => mockUseAddDrumSongEntry(),
@@ -213,6 +216,7 @@ function makePattern() {
     pattern_id: 7,
     length: 16,
     variation: 1,
+    track_lengths: [0, 12, ...Array(14).fill(0)],
     steps: Array.from({ length: 16 }, () =>
       Array.from({ length: 16 }, () => ({
         active: false,
@@ -273,6 +277,7 @@ function primeHooks() {
       swing: 12,
       pending_pattern: -1,
       switch_quantization_beats: 4,
+      track_swing: Array(16).fill(0),
     },
   })
   mockUseDrumPosition.mockReturnValue({
@@ -408,6 +413,7 @@ function primeHooks() {
   mockUseSetDrumMidiZones.mockReturnValue({ mutate: mockSetMidiZonesMutate })
   mockUseSetDrumVelocityCurve.mockReturnValue({ mutate: mockSetVelocityCurveMutate })
   mockUseSetDrumTrackSwing.mockReturnValue({ mutate: mockSetTrackSwingMutate })
+  mockUseSetDrumTrackLength.mockReturnValue({ mutate: mockSetTrackLengthMutate })
   mockUseSetDrumPattern.mockReturnValue({ mutate: mockSetPatternMutate })
   mockUseStartDrumMidiLearn.mockReturnValue({ mutate: mockStartMidiLearnMutate })
   mockUseAddDrumSongEntry.mockReturnValue({ mutate: mockAddSongEntryMutate })
@@ -484,6 +490,7 @@ describe('DrumsPage', () => {
     mockSetVelocityCurveMutate.mockReset()
     mockSetSongMutate.mockReset()
     mockSetTrackSwingMutate.mockReset()
+    mockSetTrackLengthMutate.mockReset()
     mockSetStepMutate.mockReset()
     mockStartMidiLearnMutate.mockReset()
     mockStopSongTransportMutate.mockReset()
@@ -516,6 +523,7 @@ describe('DrumsPage', () => {
     mockUseSetDrumMidiZones.mockReset()
     mockUseSetDrumVelocityCurve.mockReset()
     mockUseSetDrumTrackSwing.mockReset()
+    mockUseSetDrumTrackLength.mockReset()
     mockUseSetDrumPattern.mockReset()
     mockUseStartDrumMidiLearn.mockReset()
     mockUseAddDrumSongEntry.mockReset()
@@ -583,6 +591,18 @@ describe('DrumsPage', () => {
     expect(mockSetPadControlMutate).toHaveBeenCalledWith({
       padId: 0,
       params: { mute: true },
+    })
+  })
+
+  it('updates per-row loop length through the track length mutation', () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Kick loop length'), { target: { value: '9' } })
+
+    expect(mockSetTrackLengthMutate).toHaveBeenCalledWith({
+      patternId: 7,
+      instrument: 0,
+      length: 9,
     })
   })
 

@@ -53,6 +53,7 @@ import {
   useSetDrumMasterVolume,
   useSetDrumMidiMapping,
   useSetDrumMidiZones,
+  useSetDrumTrackLength,
   useSetDrumVelocityCurve,
   useAddDrumSongEntry,
   usePlayDrumSongTransport,
@@ -677,6 +678,10 @@ function buildPatternPayload(patternId: number, pattern: DrumPattern | undefined
     pattern_id: patternId,
     variation: pattern?.variation ?? 0,
     length: boundedLength,
+    track_lengths: Array.from({ length: 16 }, (_, instrumentIndex) => {
+      const trackLength = pattern?.track_lengths?.[instrumentIndex] ?? 0
+      return Math.max(0, Math.min(64, trackLength))
+    }),
     steps: Array.from({ length: 16 }, (_, instrumentIndex) =>
       Array.from({ length: 64 }, (_, stepIndex) => {
         const step = pattern?.steps?.[instrumentIndex]?.[stepIndex]
@@ -702,6 +707,11 @@ function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number,
     accent: Boolean(step?.accent),
     active: (step?.velocity ?? 0) > 0,
   }
+}
+
+function resolvedTrackLength(pattern: DrumPattern | undefined, instrumentIndex: number) {
+  const trackLength = pattern?.track_lengths?.[instrumentIndex] ?? 0
+  return Math.max(0, Math.min(64, trackLength))
 }
 
 function resolvedPadControl(
@@ -932,6 +942,7 @@ function advancedPanel(
   onUpdatePadControl: (padId: number, params: Partial<DrumPadControl>) => void,
   trackSwing: number[],
   onUpdateTrackSwing: (instrumentIndex: number, swing: number) => void,
+  onUpdateTrackLength: (instrumentIndex: number, length: number) => void,
   onToggleStep: (instrumentIndex: number, stepIndex: number, nextVelocity: number, accent: boolean) => void,
   selectedPatternSlot: number,
   selectedPatternPage: number,
@@ -1057,10 +1068,12 @@ function advancedPanel(
                     {stepIndex + 1}
                   </Tag>
                 ))}
-                <span style={shellStyle.clusterLabel}>Level</span>
+                <span style={shellStyle.clusterLabel}>Level / Loop</span>
               </div>
 
               {instruments.map((instrument, instrumentIndex) => {
+                const trackLength = resolvedTrackLength(pattern, instrumentIndex)
+                const effectiveTrackLength = trackLength || clampPatternLength(pattern)
                 const rowActive =
                   (currentStep < visibleSteps && resolvedStep(pattern, instrumentIndex, currentStep).active) ||
                   (metering?.per_pad_peak?.[instrumentIndex] ?? 0) > 0.05
@@ -1156,11 +1169,12 @@ function advancedPanel(
                           { label: 'Pan', min: -100, max: 100, value: instrument.pan, key: 'pan' },
                           { label: 'Tune', min: -24, max: 24, value: instrument.tune, key: 'tune' },
                           { label: 'Swing', min: 0, max: 100, value: trackSwing[instrumentIndex] ?? 0, key: 'track_swing' },
+                          { label: 'Loop', min: 0, max: 64, value: trackLength, key: 'track_length' },
                         ].map((control) => (
                           <div key={control.key} style={shellStyle.compactRangeCard}>
                             <div style={shellStyle.compactRangeLabel}>
                               <span>{control.label}</span>
-                              <strong>{control.value}</strong>
+                              <strong>{control.key === 'track_length' && control.value === 0 ? 'Global' : control.value}</strong>
                             </div>
                             <input
                               type="range"
@@ -1173,6 +1187,10 @@ function advancedPanel(
                                 const value = Number(event.currentTarget.value)
                                 if (control.key === 'track_swing') {
                                   onUpdateTrackSwing(instrumentIndex, value)
+                                  return
+                                }
+                                if (control.key === 'track_length') {
+                                  onUpdateTrackLength(instrumentIndex, value)
                                   return
                                 }
                                 onUpdatePadControl(instrumentIndex, {
@@ -1250,10 +1268,15 @@ function advancedPanel(
                               : step.active
                                 ? '#a7f0ba'
                                 : '#6f6f6f',
-                          boxShadow: isCurrent ? `0 0 0 2px ${accent}, 0 0 0 4px rgba(255,255,255,0.18)` : 'none',
+                          boxShadow:
+                            isCurrent
+                              ? `0 0 0 2px ${accent}, 0 0 0 4px rgba(255,255,255,0.18)`
+                              : effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1
+                                ? `inset 0 -3px 0 ${instrument.color}`
+                                : 'none',
                           transform: isCurrent ? 'translateY(-1px)' : 'none',
                         }}
-                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}`}
+                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}${effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1 ? ' • loop point' : ''}`}
                       >
                         {step.active ? (step.accent ? 'A' : step.velocity) : ''}
                       </button>
@@ -1262,16 +1285,16 @@ function advancedPanel(
 
                   <div style={shellStyle.sliderWrap}>
                     <div style={shellStyle.sliderValue}>
-                      <span>Vol</span>
-                      <strong>{instrument.volume}</strong>
+                      <span>Loop</span>
+                      <strong>{trackLength === 0 ? `Global ${clampPatternLength(pattern)}` : trackLength}</strong>
                     </div>
                     <input
                       type="range"
                       min={0}
-                      max={100}
-                      value={instrument.volume}
-                      readOnly
-                      aria-label={`${instrument.name} level`}
+                      max={64}
+                      value={trackLength}
+                      onChange={(event) => onUpdateTrackLength(instrumentIndex, Number(event.currentTarget.value))}
+                      aria-label={`${instrument.name} loop length`}
                       style={shellStyle.rowSlider}
                     />
                   </div>
@@ -2065,6 +2088,7 @@ export function DrumsPage() {
   const loadKit = useLoadDrumKit()
   const setPadControl = useSetDrumPadControl()
   const setTrackSwing = useSetDrumTrackSwing()
+  const setTrackLength = useSetDrumTrackLength()
   const setBusMixer = useSetDrumBusMixer()
   const setMasterVolume = useSetDrumMasterVolume()
   const setMidiMapping = useSetDrumMidiMapping()
@@ -2509,6 +2533,12 @@ export function DrumsPage() {
                 setTrackSwing.mutate({ instrument: instrumentIndex, swing })
                 announce(
                   `${activeKit?.instruments?.[instrumentIndex]?.name ?? `Pad ${instrumentIndex + 1}`} swing set to ${swing} percent.`,
+                )
+              },
+              (instrumentIndex, length) => {
+                setTrackLength.mutate({ patternId: transport.pattern, instrument: instrumentIndex, length })
+                announce(
+                  `${activeKit?.instruments?.[instrumentIndex]?.name ?? `Pad ${instrumentIndex + 1}`} loop length ${length === 0 ? `inherits pattern length ${clampPatternLength(pattern)}` : `set to ${length} steps`}.`,
                 )
               },
               (instrumentIndex, stepIndex, nextVelocity, accentEnabled) => {
