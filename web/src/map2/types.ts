@@ -1455,6 +1455,8 @@ export interface DrumTransportState {
   pattern: number;
   variation: number;
   swing: number;
+  pending_pattern: number;
+  switch_quantization_beats: number;
 }
 
 export interface DrumTransportUpdate {
@@ -1463,6 +1465,7 @@ export interface DrumTransportUpdate {
   pattern?: number;
   variation?: number;
   swing?: number;
+  switch_quantization_beats?: number;
 }
 
 export interface DrumPatternStep {
@@ -1496,6 +1499,8 @@ export interface DrumSequencerPosition {
   pattern_id: number;
   variation: number;
   is_playing: boolean;
+  pending_pattern: number;
+  switch_quantization_beats: number;
   updated_at: string | null;
 }
 

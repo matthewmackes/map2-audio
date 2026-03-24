@@ -33,6 +33,8 @@ class _FakeDrumService:
             "pattern_id": 0,
             "variation": 0,
             "is_playing": False,
+            "pending_pattern": -1,
+            "switch_quantization_beats": 4,
             "updated_at": None,
         }
         self.song = []
@@ -91,6 +93,8 @@ class _FakeDrumService:
             "pattern": self.state["pattern"],
             "variation": self.state["variation"],
             "swing": self.state["swing"],
+            "pending_pattern": self.position["pending_pattern"],
+            "switch_quantization_beats": self.position["switch_quantization_beats"],
         }
 
     def update_transport(self, patch):
@@ -99,6 +103,8 @@ class _FakeDrumService:
         for key in ("bpm", "pattern", "variation", "swing"):
             if key in patch:
                 self.state[key] = patch[key]
+        if "switch_quantization_beats" in patch:
+            self.position["switch_quantization_beats"] = patch["switch_quantization_beats"]
         return self.get_transport()
 
     def get_metering(self):
@@ -455,6 +461,8 @@ def test_drum_transport_route_updates_transport_projection(monkeypatch):
         "pattern": 0,
         "variation": 0,
         "swing": 12,
+        "pending_pattern": -1,
+        "switch_quantization_beats": 4,
     }
     history = ws_manager.get_event_history("drums:transport")
     assert history["events"][-1]["type"] == "drum_transport"
@@ -475,6 +483,8 @@ def test_drum_position_route_returns_typed_position(monkeypatch):
         "pattern_id": 0,
         "variation": 0,
         "is_playing": False,
+        "pending_pattern": -1,
+        "switch_quantization_beats": 4,
         "updated_at": None,
     }
 

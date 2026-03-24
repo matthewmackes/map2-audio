@@ -31,8 +31,11 @@ class _FakeIntegratedDrumEngine:
             "pattern_id": 0,
             "variation": 0,
             "is_playing": False,
+            "pending_pattern": -1,
+            "switch_quantization_beats": 4,
         }
         self.metering = self._silent_metering()
+        self.queued_pattern = -1
 
     @staticmethod
     def _default_pattern(pattern_id):
@@ -175,8 +178,24 @@ class _FakeIntegratedDrumEngine:
     def set_drum_current_pattern(self, pattern):
         self.position["pattern"] = pattern
         self.position["pattern_id"] = pattern
+        self.position["pending_pattern"] = -1
         self._refresh_metering()
         return True
+
+    def queue_drum_pattern_switch(self, pattern):
+        self.queued_pattern = pattern
+        self.position["pending_pattern"] = pattern
+        return True
+
+    def get_drum_pending_pattern_switch(self):
+        return self.position["pending_pattern"]
+
+    def set_drum_pattern_switch_quantization(self, beats):
+        self.position["switch_quantization_beats"] = beats
+        return True
+
+    def get_drum_pattern_switch_quantization(self):
+        return self.position["switch_quantization_beats"]
 
     def set_drum_variation(self, pattern, variation):
         self.position["pattern"] = pattern

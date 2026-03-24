@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-24 07:54 EDT - Codex (Closed `T387` after removing the routed Labs workspace horizontal divider lines.)
+Last updated: 2026-03-24 - Added Drum Machine Pro epic (T391 with 16 subtasks covering 20 high-end features)
 
 ## Active Blockers Only
 
@@ -3135,6 +3135,327 @@ Last updated: 2026-03-20 17:01 - Codex
   - Validation: `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` -> pass.
   - Validation: `pytest -q tests/test_drum_integration.py` -> pass.
   - Validation: `pytest -q tests/test_juce_engine_drum_native_stability.py` -> pass.
+
+---
+
+### Drum Machine Pro — High-End Feature Expansion (T391)
+
+#### Gap Analysis: 20 Industry-Standard Features vs. Current State
+
+| # | Feature | Status | Evidence |
+|---|---------|--------|----------|
+| 1 | Step Sequencing (16-step grid) | **DONE** | Full 16×64 grid, all layers wired (T213) |
+| 2 | Parameter Locking (per-step p-locks) | **NEW** | `Step` struct has only velocity + accent |
+| 3 | Micro-Timing / Unquantized (off-grid hits) | **NEW** | No per-step timing offset field |
+| 4 | Polyrhythms (per-track loop lengths) | **PARTIAL** | `Pattern::length` is global, not per-instrument |
+| 5 | Step Probability (% chance to fire) | **NEW** | No probability field in `Step` |
+| 6 | Ratchet / Sub-division (flams, rolls) | **NEW** | No sub-step concept in sequencer |
+| 7 | Song Mode (pattern chaining) | **DONE** | Full CRUD + loop + transport (T213-C) |
+| 8 | Shuffle/Swing per Track | **PARTIAL** | Global swing only, not per-instrument |
+| 9 | Hybrid Sound Engines (synth + samples) | **PARTIAL** | Sample playback via SFZ only, no VA synth |
+| 10 | Sample Import & Manipulation | **PARTIAL** | Kit load/import yes, waveform edit/record no |
+| 11 | Multi-Layered Sampling (round-robin) | **DONE** | GroupedSampler RR + velocity layers (T212) |
+| 12 | Virtual Analog Modeling (808/909 synth) | **NEW** | No oscillator-based drum synthesis |
+| 13 | Per-Track Filters (HP/LP per drum) | **PARTIAL** | Per-bus EQ only, not per-pad filter |
+| 14 | Individual Audio Outputs | **PARTIAL** | 8 internal buses, all fold to stereo — no external breakout |
+| 15 | Velocity-Sensitive Pads | **DONE** | 5 curves, 3 zones, MIDI learn (T211, T215) |
+| 16 | CV/Gate Outputs | **NEW** | Nothing exists |
+| 17 | Full MIDI I/O (clock out, note out) | **PARTIAL** | MIDI input done, no clock/note output from sequencer |
+| 18 | Assignable Knobs (CC mapping) | **NEW** | No CC-to-drum-parameter mapping |
+| 19 | Onboard Master Effects (reverb, distortion) | **PARTIAL** | Per-bus EQ + comp only, no master FX chain |
+| 20 | Real-Time Pattern Switching (quantized) | **PARTIAL** | Immediate switch, no bar-boundary queuing |
+
+**Summary**: 4 DONE, 8 PARTIAL, 8 NEW
+
+---
+
+ID: T391
+Status: [>] In Progress
+Title: Drum Machine Pro — High-End Feature Expansion (Epic)
+Description:
+- Goal / acceptance criteria: Elevate the drum machine from a capable TR-style sample player to a high-end instrument matching or exceeding the feature sets of Elektron Digitakt, Roland TR-8S, and Arturia DrumBrute Impact across all 20 industry-standard categories. Every feature must be surfaced in the DrumsPage GUI via Carbon Design System components.
+- Why it matters: The drum machine is already one of MAP2's most mature subsystems (T211–T219). This expansion closes the remaining gaps to make it a flagship feature competitive with dedicated hardware drum machines.
+- Dependencies: T211 (processor), T212 (SFZ), T213 (sequencer), T214 (kits), T215–T219 (existing feature slices)
+- Estimated effort: Very High (4 phases, 16 subtasks)
+- Required outputs: C++ engine additions, Python bindings, services, REST endpoints, WebSocket events, DrumsPage UI panels, tests at all layers.
+Subtasks:
+
+#### Phase 1 — Advanced Sequencer (Features 2, 3, 4, 5, 6, 8, 20)
+
+ID: T391-A
+Status: [ ] Todo
+Title: Parameter Locking (p-locks) — per-step sound parameter overrides
+Description:
+- Goal / acceptance criteria: Extend the `Step` struct to carry optional per-step overrides for pitch, filter cutoff, decay, pan, and volume. When a step fires, locked parameters temporarily override the pad's global settings for that hit only. The DrumsPage step grid must surface p-lock editing (shift+click or long-press a step to open a parameter lock editor).
+- C++ changes: Extend `DrumSequencer::Step` with `std::optional<float>` fields for `lockPitch`, `lockFilterCutoff`, `lockDecay`, `lockPan`, `lockVolume`. Modify `triggerCurrentStep()` to apply locks before triggering and restore after.
+- Python bindings: Extend `set_drum_step` with optional kwargs; add `get_drum_step_extended` returning full lock state.
+- Python service: Extend `DrumSequencerStepModel` with optional lock fields. Extend pattern persistence.
+- REST: Extend `DrumPatternStepUpdateModel` with optional lock fields.
+- Frontend: Add p-lock indicator dots on step grid cells; add p-lock editor panel (overlay or sidebar).
+- Dependencies: T213 (sequencer exists)
+- Estimated effort: Medium
+- Required outputs: Extended Step struct, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-B
+Status: [ ] Todo
+Title: Micro-Timing — per-step timing offset for humanized feel
+Description:
+- Goal / acceptance criteria: Add a signed timing offset field to each step (-48 to +48 ticks at 96ppqn resolution). Offsets shift the trigger point earlier or later relative to the quantized grid position. The UI must show a micro-timing slider or nudge control per step.
+- C++ changes: Add `int8_t microTimingTicks` to `Step`. Modify `triggerCurrentStep()` to convert ticks to sample offset and add to the trigger's `sampleOffset`. Clamp to stay within the current step's sample duration.
+- Python bindings: Extend `set_drum_step` with `micro_timing` kwarg.
+- Python service: Extend `DrumSequencerStepModel` with `micro_timing: int = 0`.
+- REST: Extend step update payload.
+- Frontend: Add micro-timing offset indicator on step cells; add nudge buttons (±1, ±6 ticks) in step detail view.
+- Dependencies: T391-A (Step struct already being extended)
+- Estimated effort: Low
+- Required outputs: Extended step timing, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-C
+Status: [ ] Todo
+Title: Polyrhythms — per-instrument track loop length
+Description:
+- Goal / acceptance criteria: Allow each of the 16 instrument tracks within a pattern to have an independent loop length (1–64 steps), enabling polyrhythmic patterns where e.g. kick loops every 16 steps while hi-hat loops every 12. When a track's length is 0, it inherits the pattern's global length.
+- C++ changes: Add `std::array<int, kInstrumentCount> trackLengths{}` to `Pattern`. Modify step advancement to wrap per-track independently. `triggerCurrentStep()` checks each instrument's effective length.
+- Python bindings: `set_drum_track_length(pattern, instrument, length)`, `get_drum_track_length(pattern, instrument)`.
+- Python service: Extend `DrumPatternModel` with `track_lengths: List[int]`.
+- REST: `POST /api/engine/drums/pattern/{id}/track/{instrument}/length`.
+- Frontend: Per-instrument length selector in sequencer track header row. Visual indication of track loop points on the grid.
+- Dependencies: T213 (sequencer)
+- Estimated effort: Medium
+- Required outputs: Per-track length storage, wrap logic, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-D
+Status: [ ] Todo
+Title: Step Probability — percentage chance each step fires
+Description:
+- Goal / acceptance criteria: Add a probability field (0.0–1.0, default 1.0) to each step. On each playback pass, generate a random value; only trigger the step if `random < probability`. The UI must show probability as a visual indicator (e.g., opacity or percentage overlay) on each active step.
+- C++ changes: Add `float probability = 1.0f` to `Step`. In `triggerCurrentStep()`, use a fast PRNG to check probability before triggering. Use `juce::Random` or a lock-free xorshift.
+- Python bindings: Extend `set_drum_step` with `probability` kwarg.
+- Python service: Extend `DrumSequencerStepModel` with `probability: float = 1.0`.
+- REST: Extend step update payload.
+- Frontend: Probability percentage overlay on step cells; probability slider in step detail view.
+- Dependencies: T391-A (Step struct extension)
+- Estimated effort: Low
+- Required outputs: Probability field, PRNG in trigger, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-E
+Status: [ ] Todo
+Title: Ratchet / Sub-division — per-step rapid-fire hits (flams, rolls)
+Description:
+- Goal / acceptance criteria: Add a ratchet count (1–8, default 1) and velocity decay (0–100%) per step. When ratchet > 1, the step's time slot is subdivided into N evenly-spaced triggers with progressively decaying velocity. This enables flams (ratchet=2), rolls (ratchet=4–8), and grace notes.
+- C++ changes: Add `uint8_t ratchetCount = 1` and `uint8_t ratchetDecay = 0` to `Step`. In `triggerCurrentStep()`, when ratchet > 1, calculate sub-step sample intervals and schedule N triggers with decaying velocity within the step's duration.
+- Python bindings: Extend `set_drum_step` with `ratchet_count` and `ratchet_decay` kwargs.
+- Python service: Extend model.
+- REST: Extend step update payload.
+- Frontend: Ratchet count selector on step right-click/long-press menu; visual ratchet indicator (subdivided cell).
+- Dependencies: T391-A (Step struct extension)
+- Estimated effort: Medium
+- Required outputs: Ratchet scheduling logic, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-F
+Status: [ ] Todo
+Title: Per-Track Swing — individual shuffle/groove per instrument
+Description:
+- Goal / acceptance criteria: Allow each of the 16 instrument tracks to have an independent swing percentage (0–100%), falling back to the global swing when set to 0. This enables e.g., heavy swing on hats with straight kick.
+- C++ changes: Add `std::array<std::atomic<float>, kInstrumentCount> perTrackSwing_{}` to `DrumSequencer`. Modify `samplesForStep()` to accept instrument index and use per-track swing when non-zero. Add `setTrackSwing(int, float)` / `getTrackSwing(int)`.
+- Python bindings: `set_drum_track_swing(instrument, percent)`, `get_drum_track_swing(instrument)`.
+- Python service: Extend state model with per-track swing array.
+- REST: `POST /api/engine/drums/track/{instrument}/swing`.
+- Frontend: Per-track swing knob in sequencer track header.
+- Dependencies: T213 (existing global swing)
+- Estimated effort: Low
+- Required outputs: Per-track swing storage, modified timing calc, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-G
+Status: [✓] Done
+Title: Quantized Pattern Switching — bar-boundary queued transitions
+Description:
+- Goal / acceptance criteria: Add a "queue next pattern" mechanism so pattern switches happen at the next bar boundary (or configurable quantization: 1 beat, 1 bar, 2 bars, 4 bars) instead of immediately. The UI must show a "pending pattern" indicator in the transport bar.
+- C++ changes: Add `std::atomic<int> pendingPatternIndex_{-1}` and `std::atomic<int> switchQuantizationSteps_{0}` to `DrumSequencer`. In `advanceStep()`, at the quantization boundary, check and apply the pending pattern. Add `queuePatternSwitch(int)` and `setPatternSwitchQuantization(int beats)`.
+- Python bindings: `queue_drum_pattern_switch(pattern_id)`, `set_drum_pattern_switch_quantization(beats)`.
+- Python service: Extend transport model.
+- REST: `POST /api/engine/drums/pattern/queue`, `POST /api/engine/drums/pattern/switch-quantization`.
+- Frontend: "Next" pattern queue indicator in transport bar; quantization selector in transport settings.
+- Dependencies: T213 (sequencer)
+- Estimated effort: Medium
+- Required outputs: Queued switch logic, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 09:31 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/DrumMachine/DrumSequencer.h`, `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, and `juce-engine/Source/PythonBindings.cpp` with quantized queued-pattern switching, exposed pending-pattern / quantization state through native bindings, and compiled the updated engine successfully.
+  - Updated `app/services/drum_machine_service.py` so user-driven pattern changes queue while transport is running, song-mode internal handoffs still switch immediately, and transport/position payloads now surface `pending_pattern` plus `switch_quantization_beats`.
+  - Updated `web/src/map2/types.ts` and `web/src/app/pages/DrumsPage.tsx` so the Drums transport bar shows queued-pattern state, lets users choose 1 beat / 1 bar / 2 bars / 4 bars quantization, and announces queued pattern changes accessibly.
+  - Validation passed with `pytest tests/test_drum_machine_service.py tests/test_drum_routes.py tests/test_drum_integration.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
+
+#### Phase 2 — Sound Engine Expansion (Features 9, 12, 13)
+
+ID: T391-H
+Status: [ ] Todo
+Title: Virtual Analog Drum Synthesis Engine — 808/909-style synth voices
+Description:
+- Goal / acceptance criteria: Create a `DrumSynthVoice` class providing virtual analog drum synthesis (sine body + noise transient + pitch envelope for kicks, noise + resonant filter for snares, band-pass noise for hats). Each pad can be set to Sample, Synth, or Hybrid (layered) mode. Classic circuit models: TR-808 kick (sine + pitch sweep), TR-909 snare (noise + tone), CR-78 hats (metallic ring).
+- C++ changes: New `juce-engine/Source/DrumMachine/DrumSynthVoice.h/cpp`. Add `enum class SoundSource { Sample, Synth, Hybrid }` to `PadConfig`. Add `std::array<DrumSynthVoice, kPadCount> synthVoices_` to `DrumMachineProcessor`. Route processBlock through sample, synth, or both based on pad source. Synth parameters: oscillator type, pitch envelope (start/end/decay), noise level, noise decay, body decay, tone amount.
+- Python bindings: `set_drum_pad_sound_source(pad, source)`, `set_drum_synth_param(pad, param_name, value)`, `get_drum_synth_params(pad)`.
+- Python service: New `DrumSynthParamModel` in `drum_machine_service.py`.
+- REST: `POST /api/engine/drums/pad/{id}/source`, `POST /api/engine/drums/pad/{id}/synth`.
+- Frontend: Source selector toggle (Sample/Synth/Hybrid) per pad; synth editor panel with oscillator type, pitch envelope, noise mix, body decay knobs.
+- Dependencies: T211 (processor)
+- Estimated effort: High
+- Required outputs: DrumSynthVoice class, hybrid routing, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-I
+Status: [ ] Todo
+Title: Per-Pad Dedicated Filters — runtime-controllable HP/LP/BP per drum
+Description:
+- Goal / acceptance criteria: Add a dedicated state-variable filter per pad (LP, HP, BP, Notch) with cutoff, resonance, envelope amount, and envelope decay. Filters process each pad's audio individually before routing to the bus mixer. This is distinct from bus-level EQ — it's a per-drum sound-shaping tool.
+- C++ changes: New `struct PadFilterConfig { FilterType type; float cutoffHz; float resonance; float envAmount; float envDecay; }`. Add `std::array<juce::dsp::StateVariableTPTFilter<float>, kPadCount> padFilters_` to `DrumMachineProcessor`. Process each pad's output through its filter in processBlock before bus routing. Add `setPadFilter(int, PadFilterConfig)`, `getPadFilter(int)`.
+- Python bindings: `set_drum_pad_filter(pad, type, cutoff, resonance, env_amount, env_decay)`, `get_drum_pad_filter(pad)`.
+- Python service: New `DrumPadFilterModel`.
+- REST: `POST /api/engine/drums/pad/{id}/filter`, `GET /api/engine/drums/pad/{id}/filter`.
+- Frontend: Per-pad filter controls: type selector, cutoff knob, resonance knob, env amount/decay.
+- Dependencies: T211 (processor)
+- Estimated effort: Medium
+- Required outputs: Per-pad filter processing, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+#### Phase 3 — Connectivity & Control (Features 14, 16, 17, 18)
+
+ID: T391-J
+Status: [ ] Todo
+Title: Individual Audio Outputs — route drum buses to separate physical outputs
+Description:
+- Goal / acceptance criteria: Add a multi-output mode where each of the 8 drum buses can be routed to a separate stereo pair on a multi-channel audio interface (e.g., Edirol UA-1000 outputs 3-4 through 17-18), in addition to the existing stereo master fold-down. This enables external mixing and per-bus outboard processing.
+- C++ changes: Modify `DrumMachineMixer::process()` to optionally write each bus to separate channel pairs in a multi-channel output buffer. Add output routing configuration: per-bus output pair assignment. Modify `Map2AudioEngine` to allocate wider output buffers when multi-output mode is active.
+- Python bindings: `set_drum_bus_output_pair(bus, output_pair)`, `get_drum_bus_output_pair(bus)`, `set_drum_multi_output_enabled(bool)`.
+- Python service: Extend bus config model.
+- REST: `POST /api/engine/drums/bus/{id}/output`, `POST /api/engine/drums/multi-output`.
+- Frontend: Bus output assignment matrix in mixer panel; multi-output enable toggle.
+- Dependencies: T211 (mixer), multi-channel audio device support in JuceAudioIO
+- Estimated effort: High
+- Required outputs: Multi-channel routing, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-K
+Status: [ ] Todo
+Title: CV/Gate Outputs — control modular synths from drum sequencer
+Description:
+- Goal / acceptance criteria: Generate CV/Gate signals on dedicated audio output channels for controlling modular or vintage analog synthesizers. Gate signals go high (1.0) on note-on and low (0.0) on note-off. Pitch CV follows 1V/oct standard mapped to float range. Configurable per-pad: enable CV/Gate output, assign output channel pair, set pitch CV range.
+- C++ changes: New `juce-engine/Source/DrumMachine/DrumCvGateOutput.h/cpp`. Generate DC signals on assigned output channels during processBlock. Support gate length (ms) per pad. Integrate with DrumMachineProcessor note trigger path.
+- Python bindings: `set_drum_cv_gate_config(pad, enabled, output_pair, gate_length_ms)`.
+- Python service: New `DrumCvGateConfigModel`.
+- REST: `POST /api/engine/drums/pad/{id}/cv-gate`.
+- Frontend: CV/Gate configuration panel per pad; output assignment; gate length control.
+- Dependencies: T391-J (multi-output infrastructure), DC-coupled audio interface
+- Estimated effort: Medium
+- Required outputs: CV/Gate signal generation, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-L
+Status: [ ] Todo
+Title: Full MIDI Output — clock, note output, and program change from sequencer
+Description:
+- Goal / acceptance criteria: The drum sequencer sends MIDI output in addition to receiving MIDI input. Capabilities: (a) MIDI clock output at 24ppqn synchronized to sequencer tempo, (b) MIDI note messages for each sequencer step (drive external drum modules or DAWs), (c) MIDI Start/Stop/Continue messages aligned with transport, (d) pattern changes via incoming MIDI Program Change messages.
+- C++ changes: Add MIDI output generation to `DrumSequencer::processBlock()`. Emit 24ppqn clock ticks based on tempo. Emit note-on/off for each triggered step on configurable MIDI channel. Wire through `MidiHandler` output path. Add Program Change listener for pattern switching.
+- Python bindings: `set_drum_midi_output_enabled(bool)`, `set_drum_midi_clock_output_enabled(bool)`, `set_drum_midi_output_channel(channel)`, `set_drum_program_change_enabled(bool)`.
+- Python service: Extend transport config model.
+- REST: `POST /api/engine/drums/midi/output`.
+- Frontend: MIDI output configuration panel: clock out toggle, note out toggle, channel selector, program change toggle.
+- Dependencies: T213 (sequencer), MidiHandler output path
+- Estimated effort: Medium
+- Required outputs: MIDI output generation, clock sync, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-M
+Status: [ ] Todo
+Title: Assignable CC Mapping — MIDI CC to drum machine parameters
+Description:
+- Goal / acceptance criteria: Map incoming MIDI CC messages to any drum machine parameter for hands-on control from MIDI controllers. Support learning mode (wiggle a knob to assign), per-mapping CC number + MIDI channel + target parameter + target index. Targets: pad volume/pan/tune/filter cutoff, bus level/pan, master volume, tempo, swing, and any synth parameter.
+- C++ changes: New `juce-engine/Source/DrumMachine/DrumCcMapper.h/cpp`. `struct CcMapping { int ccNumber; int midiChannel; DrumParamTarget target; int targetIndex; }`. `enum class DrumParamTarget { PadVolume, PadPan, PadTune, PadFilterCutoff, BusLevel, BusPan, MasterVolume, Tempo, Swing, ... }`. Process incoming CC in `processBlock` MIDI scan. MIDI learn integration using existing `MidiLearnState` pattern.
+- Python bindings: `set_drum_cc_mapping(slot, cc, channel, target, target_index)`, `get_drum_cc_mappings()`, `start_drum_cc_learn(slot)`, `stop_drum_cc_learn()`.
+- Python service: New `DrumCcMappingModel`, persistence to `~/.map2/drums/cc_mappings.json`.
+- REST: `GET/POST /api/engine/drums/midi/cc-mappings`, `POST /api/engine/drums/midi/cc-learn/start`, `POST /api/engine/drums/midi/cc-learn/stop`.
+- Frontend: CC mapping table with learn button, target selector, CC/channel display. Visual feedback when CC received.
+- Dependencies: T211 (processor), MidiHandler input path
+- Estimated effort: Medium
+- Required outputs: CC mapper class, learn mode, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+#### Phase 4 — Master Effects & Sample Tools (Features 10, 19)
+
+ID: T391-N
+Status: [ ] Todo
+Title: Onboard Master Effects Chain — reverb, distortion, and send effects
+Description:
+- Goal / acceptance criteria: Add a master effects chain inserted after bus summing and before master volume in `DrumMachineMixer`. Chain order: Saturator/Distortion -> Compressor (upgrade existing bus comp) -> Reverb (algorithmic or convolution) -> Limiter. Per-bus send levels for reverb. All FX must be RT-safe with pre-allocated buffers.
+- C++ changes: New `juce-engine/Source/DrumMachine/DrumMasterFx.h/cpp`. Insert into `DrumMachineMixer::process()` after bus summing. Saturator: soft-clip with drive knob. Reverb: reuse engine's convolution IR infrastructure or add JUCE `dsp::Reverb`. Limiter: brickwall with threshold/release. Per-bus send: route portion of bus output to reverb input.
+- Python bindings: `set_drum_master_fx(param, value)`, `get_drum_master_fx()`, `set_drum_bus_reverb_send(bus, level)`.
+- Python service: New `DrumMasterFxModel`.
+- REST: `POST /api/engine/drums/master-fx`, `POST /api/engine/drums/bus/{id}/reverb-send`.
+- Frontend: Master FX panel with drive, reverb mix, limiter threshold, compressor controls. Per-bus reverb send knob in mixer panel.
+- Dependencies: T211 (mixer)
+- Estimated effort: High
+- Required outputs: Master FX chain, RT-safe processing, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-O
+Status: [ ] Todo
+Title: Sample Import, Recording, and Waveform Editing
+Description:
+- Goal / acceptance criteria: Enable users to (a) import individual WAV/FLAC/AIFF samples into pads via file upload, (b) record audio from the system input directly into a pad, (c) view sample waveforms with zoom/scroll, (d) set start/end trim points, (e) normalize, reverse, and fade samples. Edited samples are saved as new WAV files in the user kit directory.
+- C++ changes: Add `DrumMachineProcessor::recordPadFromInput(int padIndex, bool start)` that captures audio callback input into a pre-allocated ring buffer. Add waveform peak data export for UI rendering. Sample manipulation (trim, normalize, reverse, fade) can be Python-side using numpy/scipy on WAV files.
+- Python service: New `app/services/drum_sample_editor.py` with trim, normalize, reverse, fade operations. Recording service manages start/stop and writes WAV. Waveform analysis returns peak envelope data for rendering.
+- REST: `POST /api/engine/drums/pad/{id}/sample/upload`, `POST /api/engine/drums/pad/{id}/record/start`, `POST /api/engine/drums/pad/{id}/record/stop`, `POST /api/engine/drums/pad/{id}/sample/trim`, `POST /api/engine/drums/pad/{id}/sample/normalize`, `POST /api/engine/drums/pad/{id}/sample/reverse`, `GET /api/engine/drums/pad/{id}/sample/waveform`.
+- Frontend: Sample browser/upload panel per pad; record button with level meter; waveform display with draggable start/end markers; normalize/reverse/fade buttons; waveform zoom/scroll.
+- Dependencies: T214 (kit management for sample file organization)
+- Estimated effort: High
+- Required outputs: Sample import, recording, editing tools, waveform display, bindings, service, routes, UI, tests.
+Subtasks: None
+Assigned to: Unassigned
+
+ID: T391-P
+Status: [ ] Todo
+Title: DrumsPage GUI Expansion — surface all new features in Carbon UI
+Description:
+- Goal / acceptance criteria: Extend `web/src/app/pages/DrumsPage.tsx` to surface all Phase 1–4 features in a coherent, Carbon-compliant interface. The page must not become overwhelming — use progressive disclosure via tabs, expandable panels, and context-sensitive controls. Must pass Carbon conformance review per `docs/design/CARBON_CONFORMANCE_STANDARD.md`.
+- UI layout additions:
+  - **Step Grid enhancements**: p-lock dots, probability opacity overlay, ratchet subdivision indicators, micro-timing offset ticks, per-track length markers, polyrhythm loop-point indicators
+  - **Track Header row**: per-track length selector, per-track swing knob
+  - **Transport bar enhancements**: queued pattern indicator, pattern switch quantization selector, MIDI clock out indicator
+  - **Pad Editor panel** (new tab or expandable): sound source selector (Sample/Synth/Hybrid), synth parameter knobs, per-pad filter controls (type/cutoff/resonance/env), sample waveform display with trim markers, record button, CV/Gate config
+  - **Mixer Panel enhancements**: per-bus reverb send knob, multi-output assignment matrix, master FX controls (drive, reverb, limiter)
+  - **MIDI Panel enhancements**: CC mapping table with learn, MIDI output config, program change toggle
+  - **New hooks**: `useDrumSynthParams`, `useDrumPadFilter`, `useDrumCcMappings`, `useDrumMasterFx`, `useDrumSampleEditor`
+  - **New API surface**: Extend `drumsApi` in `web/src/map2/api.ts` for all new endpoints
+  - **New types**: Extend drum types in `web/src/map2/types.ts`
+- Dependencies: T391-A through T391-O (all feature work must be API-complete before final UI integration)
+- Estimated effort: Very High
+- Required outputs: Extended DrumsPage, new hooks, API bindings, types, component tests, Carbon conformance.
+Subtasks: None
+Assigned to: Unassigned
+
+Assigned to: Unassigned
+Last updated: 2026-03-24
 
 ---
 

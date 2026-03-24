@@ -268,6 +268,8 @@ function primeHooks() {
       pattern: 7,
       variation: 1,
       swing: 12,
+      pending_pattern: -1,
+      switch_quantization_beats: 4,
     },
   })
   mockUseDrumPosition.mockReturnValue({
@@ -279,6 +281,8 @@ function primeHooks() {
       pattern_id: 7,
       variation: 1,
       is_playing: true,
+      pending_pattern: -1,
+      switch_quantization_beats: 4,
       updated_at: '2026-03-20T18:00:00Z',
     },
   })

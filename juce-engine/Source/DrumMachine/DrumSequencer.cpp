@@ -11,6 +11,22 @@ namespace {
 constexpr double kMinBpm = 40.0;
 constexpr double kMaxBpm = 300.0;
 
+int quantizationStepsForBeats(int beats, int patternLength) {
+    const int clampedPatternLength = std::max(1, patternLength);
+    switch (beats) {
+        case 1:
+            return 4;
+        case 4:
+            return clampedPatternLength;
+        case 8:
+            return clampedPatternLength * 2;
+        case 16:
+            return clampedPatternLength * 4;
+        default:
+            return clampedPatternLength;
+    }
+}
+
 }
 
 void DrumSequencer::prepare(double sampleRate, int samplesPerBlock) {
@@ -24,6 +40,8 @@ void DrumSequencer::prepare(double sampleRate, int samplesPerBlock) {
     countInQuarterIndex_ = 0;
     countInSamplesUntilNextClick_ = 0.0;
     manualFillBar_ = -1;
+    pendingPatternIndex_.store(-1, std::memory_order_relaxed);
+    pendingPatternCountdownSteps_ = 0;
     prepared_.store(true, std::memory_order_release);
 }
 
@@ -141,6 +159,8 @@ bool DrumSequencer::setCurrentPattern(int patternIndex) {
     activeSongEntryIndex_ = -1;
     activeSongRepeat_ = 0;
     manualFillBar_ = -1;
+    pendingPatternIndex_.store(-1, std::memory_order_relaxed);
+    pendingPatternCountdownSteps_ = 0;
     triggerStepAtBlockStart_ = true;
     samplesUntilNextStep_ = 0.0;
     return true;
@@ -150,12 +170,62 @@ int DrumSequencer::getCurrentPattern() const {
     return currentPatternIndex_.load(std::memory_order_relaxed);
 }
 
+bool DrumSequencer::queuePatternSwitch(int patternIndex) {
+    if (!isValidPatternIndex(patternIndex)) {
+        return false;
+    }
+
+    if (!playing_.load(std::memory_order_relaxed)) {
+        return setCurrentPattern(patternIndex);
+    }
+
+    const int quantizationBeats = getPatternSwitchQuantization();
+    const auto& pattern = patterns_[static_cast<size_t>(currentPatternIndex_.load(std::memory_order_relaxed))];
+    const int patternLength = std::max(1, pattern.length);
+    const int currentStep = std::clamp(currentStepIndex_.load(std::memory_order_relaxed), 0, patternLength - 1);
+    int countdownSteps = quantizationStepsForBeats(quantizationBeats, patternLength);
+
+    if (quantizationBeats == 1) {
+        const int stepInBeat = currentStep % 4;
+        countdownSteps = 4 - stepInBeat;
+    } else {
+        countdownSteps = (patternLength - currentStep) + std::max(0, (countdownSteps / patternLength) - 1) * patternLength;
+    }
+
+    pendingPatternIndex_.store(patternIndex, std::memory_order_relaxed);
+    pendingPatternCountdownSteps_ = std::max(1, countdownSteps);
+    return true;
+}
+
+int DrumSequencer::getPendingPatternSwitch() const {
+    return pendingPatternIndex_.load(std::memory_order_relaxed);
+}
+
+bool DrumSequencer::setPatternSwitchQuantization(int beats) {
+    switch (beats) {
+        case 1:
+        case 4:
+        case 8:
+        case 16:
+            switchQuantizationBeats_.store(beats, std::memory_order_relaxed);
+            return true;
+        default:
+            return false;
+    }
+}
+
+int DrumSequencer::getPatternSwitchQuantization() const {
+    return switchQuantizationBeats_.load(std::memory_order_relaxed);
+}
+
 DrumSequencer::Position DrumSequencer::getPosition() const {
     return Position{
         .patternIndex = currentPatternIndex_.load(std::memory_order_relaxed),
         .stepIndex = currentStepIndex_.load(std::memory_order_relaxed),
         .barCount = barCount_.load(std::memory_order_relaxed),
         .isPlaying = playing_.load(std::memory_order_relaxed),
+        .pendingPatternIndex = pendingPatternIndex_.load(std::memory_order_relaxed),
+        .switchQuantizationBeats = switchQuantizationBeats_.load(std::memory_order_relaxed),
     };
 }
 
@@ -346,6 +416,8 @@ void DrumSequencer::stop() {
     countInQuarterIndex_ = 0;
     countInSamplesUntilNextClick_ = 0.0;
     manualFillBar_ = -1;
+    pendingPatternIndex_.store(-1, std::memory_order_relaxed);
+    pendingPatternCountdownSteps_ = 0;
 }
 
 void DrumSequencer::pause() {
@@ -489,6 +561,20 @@ void DrumSequencer::triggerCountInClick(int sampleOffset) {
 }
 
 void DrumSequencer::advanceStep() {
+    if (pendingPatternIndex_.load(std::memory_order_relaxed) >= 0 && pendingPatternCountdownSteps_ > 0) {
+        --pendingPatternCountdownSteps_;
+        if (pendingPatternCountdownSteps_ == 0) {
+            const int pendingPattern = pendingPatternIndex_.exchange(-1, std::memory_order_relaxed);
+            currentPatternIndex_.store(pendingPattern, std::memory_order_relaxed);
+            currentStepIndex_.store(0, std::memory_order_relaxed);
+            barCount_.store(1, std::memory_order_relaxed);
+            activeSongEntryIndex_ = -1;
+            activeSongRepeat_ = 0;
+            manualFillBar_ = -1;
+            return;
+        }
+    }
+
     const auto& pattern = patterns_[static_cast<size_t>(currentPatternIndex_.load(std::memory_order_relaxed))];
     const int length = std::max(1, pattern.length);
     const int nextStep = currentStepIndex_.load(std::memory_order_relaxed) + 1;

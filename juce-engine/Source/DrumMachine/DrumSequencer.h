@@ -38,6 +38,8 @@ public:
         int stepIndex = 0;
         int barCount = 1;
         bool isPlaying = false;
+        int pendingPatternIndex = -1;
+        int switchQuantizationBeats = 4;
     };
 
     struct SongEntry {
@@ -65,6 +67,10 @@ public:
 
     bool setCurrentPattern(int patternIndex);
     int getCurrentPattern() const;
+    bool queuePatternSwitch(int patternIndex);
+    int getPendingPatternSwitch() const;
+    bool setPatternSwitchQuantization(int beats);
+    int getPatternSwitchQuantization() const;
     Position getPosition() const;
     bool addSongEntry(int patternIndex, int repeatCount, int position = -1);
     bool removeSongEntry(int position);
@@ -127,6 +133,8 @@ private:
     std::atomic<bool> songLoopEnabled_{false};
     std::atomic<int> autoFillEveryBars_{0};
     std::atomic<int> countInBars_{0};
+    std::atomic<int> pendingPatternIndex_{-1};
+    std::atomic<int> switchQuantizationBeats_{4};
 
     double samplesUntilNextStep_ = 0.0;
     bool triggerStepAtBlockStart_ = true;
@@ -141,6 +149,7 @@ private:
     std::optional<std::chrono::steady_clock::time_point> lastTapAt_{};
     std::array<double, 6> recentTapIntervals_{};
     size_t recentTapCount_ = 0;
+    int pendingPatternCountdownSteps_ = 0;
 };
 
 }  // namespace map2::drummachine

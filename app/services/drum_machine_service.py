@@ -70,6 +70,8 @@ class DrumTransportStateModel(BaseModel):
     pattern: int = Field(0, ge=0, le=127)
     variation: int = Field(0, ge=0, le=10)
     swing: int = Field(0, ge=0, le=100)
+    pending_pattern: int = Field(-1, ge=-1, le=127)
+    switch_quantization_beats: int = Field(4, ge=1, le=16)
 
 
 class DrumTransportUpdateModel(BaseModel):
@@ -78,6 +80,7 @@ class DrumTransportUpdateModel(BaseModel):
     pattern: Optional[int] = Field(None, ge=0, le=127)
     variation: Optional[int] = Field(None, ge=0, le=10)
     swing: Optional[int] = Field(None, ge=0, le=100)
+    switch_quantization_beats: Optional[int] = Field(None, ge=1, le=16)
 
 
 class DrumMeteringModel(BaseModel):
@@ -99,6 +102,8 @@ class DrumSequencerPositionModel(BaseModel):
     pattern_id: int = Field(0, ge=0, le=127)
     variation: int = Field(0, ge=0, le=10)
     is_playing: bool = False
+    pending_pattern: int = Field(-1, ge=-1, le=127)
+    switch_quantization_beats: int = Field(4, ge=1, le=16)
     updated_at: Optional[str] = None
 
 
@@ -247,28 +252,44 @@ class DrumMachineService(Singleton):
         return self.get_state()
 
     def get_transport(self) -> Dict[str, Any]:
+        self._refresh_transport_from_engine()
         return DrumTransportStateModel(
             is_playing=self._state.transport,
             bpm=self._state.bpm,
             pattern=self._state.pattern,
             variation=self._state.variation,
             swing=self._state.swing,
+            pending_pattern=self._position.pending_pattern,
+            switch_quantization_beats=self._position.switch_quantization_beats,
         ).model_dump()
 
     def update_transport(self, patch: Dict[str, Any]) -> Dict[str, Any]:
+        immediate_pattern = bool(patch.pop("_immediate_pattern", False))
         payload: Dict[str, Any] = {}
+        queue_pattern = (
+            "pattern" in patch
+            and patch.get("pattern") is not None
+            and not immediate_pattern
+            and bool(self._state.transport)
+            and int(patch["pattern"]) != self._state.pattern
+        )
         if "is_playing" in patch:
             payload["transport"] = patch["is_playing"]
         for source, target in (
             ("bpm", "bpm"),
-            ("pattern", "pattern"),
             ("variation", "variation"),
             ("swing", "swing"),
         ):
             if source in patch:
                 payload[target] = patch[source]
+        if "pattern" in patch and not queue_pattern:
+            payload["pattern"] = patch["pattern"]
         self.update_state(payload)
-        self._sync_transport_patch_to_engine(patch)
+        engine_patch = dict(patch)
+        if queue_pattern:
+            engine_patch["queued_pattern"] = patch["pattern"]
+            engine_patch.pop("pattern", None)
+        self._sync_transport_patch_to_engine(engine_patch)
         if patch.get("is_playing") is False:
             try:
                 from app.services.drum_sequencer_service import DrumSequencerService, get_drum_sequencer_service
@@ -771,6 +792,16 @@ class DrumMachineService(Singleton):
                 }
             )
 
+        if "queued_pattern" in patch:
+            setter = getattr(engine, "queue_drum_pattern_switch", None)
+            if callable(setter):
+                setter(int(patch["queued_pattern"]))
+
+        if "switch_quantization_beats" in patch:
+            setter = getattr(engine, "set_drum_pattern_switch_quantization", None)
+            if callable(setter):
+                setter(int(patch["switch_quantization_beats"]))
+
         if "variation" in patch:
             setter = getattr(engine, "set_drum_variation", None)
             if callable(setter):
@@ -858,12 +889,50 @@ class DrumMachineService(Singleton):
         payload.setdefault("variation", self._state.variation)
         payload.setdefault("is_playing", self._state.transport)
         payload.setdefault("beat", min(4, (int(payload.get("step", 0)) // 4) + 1))
+        payload.setdefault("pending_pattern", self._position.pending_pattern)
+        payload.setdefault("switch_quantization_beats", self._position.switch_quantization_beats)
+
+        state_changed = False
+        if int(payload["pattern"]) != self._state.pattern or int(payload["variation"]) != self._state.variation:
+            self._state = DrumMachineStateModel.model_validate(
+                {
+                    **self._state.model_dump(),
+                    "pattern": int(payload["pattern"]),
+                    "variation": int(payload["variation"]),
+                }
+            )
+            self._persist_state()
+            state_changed = True
 
         current_snapshot = self._position.model_dump(exclude={"updated_at"})
         updated = self.update_position(payload)
         updated_snapshot = {key: value for key, value in updated.items() if key != "updated_at"}
         self._advance_song_transport(updated_snapshot)
-        return updated_snapshot != current_snapshot
+        return state_changed or updated_snapshot != current_snapshot
+
+    def _refresh_transport_from_engine(self) -> None:
+        engine = self._engine()
+        if engine is None:
+            return
+
+        pending_getter = getattr(engine, "get_drum_pending_pattern_switch", None)
+        quantization_getter = getattr(engine, "get_drum_pattern_switch_quantization", None)
+        patch: Dict[str, Any] = {}
+
+        if callable(pending_getter):
+            try:
+                patch["pending_pattern"] = int(pending_getter())
+            except Exception:
+                pass
+
+        if callable(quantization_getter):
+            try:
+                patch["switch_quantization_beats"] = int(quantization_getter())
+            except Exception:
+                pass
+
+        if patch:
+            self.update_position(patch)
 
     def _get_song_entries(self) -> List[Dict[str, Any]]:
         try:
@@ -948,7 +1017,7 @@ class DrumMachineService(Singleton):
                         "active_pattern": next_pattern,
                     }
                 )
-                self.update_transport({"pattern": next_pattern})
+                self.update_transport({"pattern": next_pattern, "_immediate_pattern": True})
 
         self._refresh_song_transport_metadata()
         self._last_polled_step = current_step

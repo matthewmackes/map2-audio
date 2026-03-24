@@ -3137,6 +3137,18 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("set_drum_current_pattern", [](Map2AudioEngine& self, int patternIndex) {
             return self.getDrumSequencer().setCurrentPattern(patternIndex);
         }, py::arg("pattern"), "Set the active drum sequencer pattern")
+        .def("queue_drum_pattern_switch", [](Map2AudioEngine& self, int patternIndex) {
+            return self.getDrumSequencer().queuePatternSwitch(patternIndex);
+        }, py::arg("pattern"), "Queue a quantized drum pattern switch")
+        .def("get_drum_pending_pattern_switch", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().getPendingPatternSwitch();
+        }, "Get the queued drum pattern switch target")
+        .def("set_drum_pattern_switch_quantization", [](Map2AudioEngine& self, int beats) {
+            return self.getDrumSequencer().setPatternSwitchQuantization(beats);
+        }, py::arg("beats"), "Set drum pattern switch quantization in beats")
+        .def("get_drum_pattern_switch_quantization", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().getPatternSwitchQuantization();
+        }, "Get drum pattern switch quantization in beats")
         .def("set_drum_transport_playing", [](Map2AudioEngine& self, bool isPlaying) {
             if (isPlaying) {
                 self.getDrumSequencer().play();
@@ -3158,6 +3170,8 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result["pattern"] = position.patternIndex;
             result["pattern_id"] = position.patternIndex;
             result["is_playing"] = position.isPlaying;
+            result["pending_pattern"] = position.pendingPatternIndex;
+            result["switch_quantization_beats"] = position.switchQuantizationBeats;
             return result;
         }, "Get the current drum sequencer playback position")
 

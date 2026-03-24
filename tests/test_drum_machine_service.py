@@ -61,7 +61,11 @@ class _FakeDrumEngine:
             "pattern": 0,
             "pattern_id": 0,
             "is_playing": False,
+            "pending_pattern": -1,
+            "switch_quantization_beats": 4,
         }
+        self.queued_pattern_calls = []
+        self.switch_quantization_calls = []
 
     def set_drum_master_volume(self, value):
         self.master_volume_calls.append(value)
@@ -80,7 +84,24 @@ class _FakeDrumEngine:
         self.pattern_calls.append(pattern)
         self.position["pattern"] = pattern
         self.position["pattern_id"] = pattern
+        self.position["pending_pattern"] = -1
         return True
+
+    def queue_drum_pattern_switch(self, pattern):
+        self.queued_pattern_calls.append(pattern)
+        self.position["pending_pattern"] = pattern
+        return True
+
+    def get_drum_pending_pattern_switch(self):
+        return self.position["pending_pattern"]
+
+    def set_drum_pattern_switch_quantization(self, beats):
+        self.switch_quantization_calls.append(beats)
+        self.position["switch_quantization_beats"] = beats
+        return True
+
+    def get_drum_pattern_switch_quantization(self):
+        return self.position["switch_quantization_beats"]
 
     def set_drum_swing(self, swing):
         self.swing_calls.append(swing)
@@ -313,8 +334,24 @@ def test_drum_machine_service_transport_projection(tmp_path, monkeypatch):
         "pattern": 0,
         "variation": 3,
         "swing": 22,
+        "pending_pattern": -1,
+        "switch_quantization_beats": 4,
     }
     assert service.get_state()["transport"] is True
+
+
+def test_drum_machine_service_queues_pattern_switch_while_playing(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    service.update_transport({"is_playing": True, "pattern": 2})
+    transport = service.update_transport({"pattern": 9, "switch_quantization_beats": 8})
+
+    assert transport["pattern"] == 2
+    assert transport["pending_pattern"] == 9
+    assert transport["switch_quantization_beats"] == 8
+    assert fake_engine.pattern_calls[-1] == 2
+    assert fake_engine.queued_pattern_calls[-1] == 9
+    assert fake_engine.switch_quantization_calls[-1] == 8
 
 
 def test_drum_machine_service_tracks_sequencer_position(tmp_path, monkeypatch):

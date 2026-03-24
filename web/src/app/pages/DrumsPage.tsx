@@ -2197,6 +2197,14 @@ export function DrumsPage() {
   const announce = (message: string) => {
     setLiveMessage(message)
   }
+  const patternSwitchLabel =
+    transport.switch_quantization_beats === 1
+      ? '1 beat'
+      : transport.switch_quantization_beats === 4
+        ? '1 bar'
+        : transport.switch_quantization_beats === 8
+          ? '2 bars'
+          : '4 bars'
 
   return (
     <main className="drums-page" style={shellStyle.page}>
@@ -2253,6 +2261,8 @@ export function DrumsPage() {
           {transportTag(transport.is_playing)}
           <Tag type="cool-gray">Kit: {activeKitName}</Tag>
           <Tag type="warm-gray">Pattern {transport.pattern}</Tag>
+          <Tag type="teal">Switch {patternSwitchLabel}</Tag>
+          {transport.pending_pattern >= 0 ? <Tag type="purple">Queued {transport.pending_pattern}</Tag> : null}
         </div>
 
         <div style={shellStyle.transportRow}>
@@ -2318,11 +2328,49 @@ export function DrumsPage() {
               step={1}
               defaultValue={0}
               profile="integer"
-              onChange={(value) => updateTransport.mutate({ pattern: value })}
+              onChange={(value) => {
+                updateTransport.mutate({ pattern: value })
+                announce(
+                  transport.is_playing
+                    ? `Pattern ${value} queued for the next ${patternSwitchLabel}.`
+                    : `Pattern ${value} selected.`,
+                )
+              }}
               size="small"
               fullWidth
               accentColor={activeModeMeta.accent}
             />
+          </div>
+
+          <div style={shellStyle.transportCluster}>
+            <span style={shellStyle.clusterLabel}>Pattern Switch</span>
+            <select
+              aria-label="Pattern switch quantization"
+              value={transport.switch_quantization_beats}
+              onChange={(event) => {
+                const value = Number(event.currentTarget.value)
+                updateTransport.mutate({ switch_quantization_beats: value })
+                announce(
+                  value === 1
+                    ? 'Pattern switch quantization set to 1 beat.'
+                    : `Pattern switch quantization set to ${value / 4} bar${value === 4 ? '' : 's'}.`,
+                )
+              }}
+              style={{
+                width: '100%',
+                minHeight: 40,
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.16)',
+                background: 'rgba(22,22,22,0.9)',
+                color: '#f4f4f4',
+                padding: '0 12px',
+              }}
+            >
+              <option value={1}>1 beat</option>
+              <option value={4}>1 bar</option>
+              <option value={8}>2 bars</option>
+              <option value={16}>4 bars</option>
+            </select>
           </div>
 
           <div style={shellStyle.transportCluster}>
