@@ -3249,7 +3249,7 @@ Last updated: 2026-03-24 09:50 EDT - Codex
   - Validation passed with `pytest tests/test_drum_sequencer_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-D
-Status: [ ] Todo
+Status: [✓] Done
 Title: Step Probability — percentage chance each step fires
 Description:
 - Goal / acceptance criteria: Add a probability field (0.0–1.0, default 1.0) to each step. On each playback pass, generate a random value; only trigger the step if `random < probability`. The UI must show probability as a visual indicator (e.g., opacity or percentage overlay) on each active step.
@@ -3262,7 +3262,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: Probability field, PRNG in trigger, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 11:41 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/DrumMachine/DrumSequencer.h`, `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, and `juce-engine/Source/PythonBindings.cpp` with a per-step `probability` field, deterministic xorshift trigger gating in `triggerCurrentStep()`, and updated native step payloads/bindings.
+  - Updated `app/services/drum_sequencer_service.py` and `app/routes/drums.py` so step probability now persists through pattern saves, inactive-step detail edits survive round trips, and the REST step update payload accepts `probability`.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, and `web/src/app/pages/DrumsPage.tsx` so the advanced step editor exposes a probability slider/reset control while active steps show probability as both opacity and a percentage badge.
+  - Validation passed with `pytest tests/test_drum_sequencer_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-E
 Status: [ ] Todo

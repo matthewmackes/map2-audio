@@ -690,6 +690,7 @@ function buildPatternPayload(patternId: number, pattern: DrumPattern | undefined
           velocity: step?.velocity ?? 0,
           accent: Boolean(step?.accent),
           micro_timing: step?.micro_timing ?? 0,
+          probability: step?.probability ?? 1,
           lock_pitch: step?.lock_pitch ?? null,
           lock_filter_cutoff: step?.lock_filter_cutoff ?? null,
           lock_decay: step?.lock_decay ?? null,
@@ -713,6 +714,7 @@ function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number,
     accent: Boolean(step?.accent),
     active: (step?.velocity ?? 0) > 0,
     micro_timing: step?.micro_timing ?? 0,
+    probability: step?.probability ?? 1,
     lock_pitch: step?.lock_pitch ?? null,
     lock_filter_cutoff: step?.lock_filter_cutoff ?? null,
     lock_decay: step?.lock_decay ?? null,
@@ -734,6 +736,14 @@ function stepHasLocks(step: ReturnType<typeof resolvedStep>) {
     step.lock_pan,
     step.lock_volume,
   ].some((value) => value !== null && value !== undefined)
+}
+
+function stepHasProbabilityOverride(step: ReturnType<typeof resolvedStep>) {
+  return Math.abs((step.probability ?? 1) - 1) > 0.0001
+}
+
+function stepHasDetailEdits(step: ReturnType<typeof resolvedStep>) {
+  return step.micro_timing !== 0 || stepHasProbabilityOverride(step) || stepHasLocks(step)
 }
 
 function resolvedPadControl(
@@ -971,7 +981,7 @@ function advancedPanel(
   onUpdateStepLocks: (
     instrumentIndex: number,
     stepIndex: number,
-    locks: Partial<Pick<DrumPattern['steps'][number][number], 'micro_timing' | 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
+    locks: Partial<Pick<DrumPattern['steps'][number][number], 'micro_timing' | 'probability' | 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
   ) => void,
   selectedPatternSlot: number,
   selectedPatternPage: number,
@@ -1241,6 +1251,7 @@ function advancedPanel(
                   {Array.from({ length: visibleSteps }, (_, stepIndex) => {
                     const step = resolvedStep(pattern, instrumentIndex, stepIndex)
                     const hasLocks = stepHasLocks(step)
+                    const hasProbabilityOverride = stepHasProbabilityOverride(step)
                     const isCurrent = stepIndex === currentStep
                     return (
                       <button
@@ -1298,6 +1309,7 @@ function advancedPanel(
                               ? 'linear-gradient(180deg, #78a9ff, #0f62fe)'
                               : 'linear-gradient(180deg, #42be65, #198038)'
                             : '#262626',
+                          opacity: step.active ? Math.max(0.35, step.probability ?? 1) : 1,
                           borderColor: isCurrent
                             ? '#ffffff'
                             : step.accent
@@ -1314,9 +1326,27 @@ function advancedPanel(
                           transform: isCurrent ? 'translateY(-1px)' : 'none',
                           position: 'relative',
                         }}
-                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}${step.micro_timing ? ` • micro ${step.micro_timing > 0 ? '+' : ''}${step.micro_timing}` : ''}${effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1 ? ' • loop point' : ''}`}
+                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}${step.micro_timing ? ` • micro ${step.micro_timing > 0 ? '+' : ''}${step.micro_timing}` : ''}${hasProbabilityOverride ? ` • ${Math.round((step.probability ?? 1) * 100)}%` : ''}${effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1 ? ' • loop point' : ''}`}
                       >
                         {step.active ? (step.accent ? 'A' : step.velocity) : hasLocks ? '•' : ''}
+                        {step.active && hasProbabilityOverride ? (
+                          <span
+                            aria-hidden
+                            style={{
+                              position: 'absolute',
+                              left: 4,
+                              bottom: 4,
+                              padding: '1px 4px',
+                              borderRadius: 999,
+                              background: 'rgba(0, 0, 0, 0.45)',
+                              color: '#f4f4f4',
+                              fontSize: 10,
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {Math.round((step.probability ?? 1) * 100)}%
+                          </span>
+                        ) : null}
                         {hasLocks ? (
                           <span
                             aria-hidden
@@ -1813,6 +1843,32 @@ function advancedPanel(
                     </Button>
                   </div>
                 </div>
+                <label style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Probability</span>
+                  <div style={shellStyle.sliderValue}>
+                    <span>Chance</span>
+                    <strong>{Math.round((selectedStepState?.probability ?? 1) * 100)}%</strong>
+                  </div>
+                  <input
+                    aria-label="Step probability"
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={selectedStepState?.probability ?? 1}
+                    onChange={(event) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                      probability: Number(event.currentTarget.value),
+                    })}
+                    style={shellStyle.compactRange}
+                  />
+                  <Button
+                    size="sm"
+                    kind="ghost"
+                    onClick={() => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, { probability: 1 })}
+                  >
+                    Reset Probability
+                  </Button>
+                </label>
                 {[
                   { key: 'lock_pitch', label: 'Pitch', min: -24, max: 24, step: 1, value: selectedStepState?.lock_pitch ?? null },
                   { key: 'lock_filter_cutoff', label: 'Filter', min: 20, max: 20000, step: 10, value: selectedStepState?.lock_filter_cutoff ?? null },
@@ -2697,6 +2753,7 @@ export function DrumsPage() {
                 const existingStep = resolvedStep(pattern, instrumentIndex, stepIndex)
                 const nextLocks: {
                   micro_timing: number
+                  probability: number
                   lock_pitch: number | null
                   lock_filter_cutoff: number | null
                   lock_decay: number | null
@@ -2704,6 +2761,7 @@ export function DrumsPage() {
                   lock_volume: number | null
                 } = {
                   micro_timing: 'micro_timing' in locks ? (locks.micro_timing ?? 0) : existingStep.micro_timing,
+                  probability: 'probability' in locks ? Math.max(0, Math.min(1, locks.probability ?? 1)) : existingStep.probability,
                   lock_pitch: 'lock_pitch' in locks ? (locks.lock_pitch ?? null) : existingStep.lock_pitch,
                   lock_filter_cutoff: 'lock_filter_cutoff' in locks ? (locks.lock_filter_cutoff ?? null) : existingStep.lock_filter_cutoff,
                   lock_decay: 'lock_decay' in locks ? (locks.lock_decay ?? null) : existingStep.lock_decay,
@@ -2712,7 +2770,10 @@ export function DrumsPage() {
                 }
                 const nextVelocity = existingStep.active
                   ? existingStep.velocity
-                  : Object.values(nextLocks).some((value) => value !== null && value !== undefined)
+                  : stepHasDetailEdits({
+                    ...existingStep,
+                    ...nextLocks,
+                  })
                     ? 100
                     : 0
                 setStep.mutate({

@@ -37,6 +37,7 @@ class _FakeSequencerEngine:
         velocity,
         accent=False,
         micro_timing=0,
+        probability=1.0,
         lock_pitch=None,
         lock_filter_cutoff=None,
         lock_decay=None,
@@ -48,6 +49,7 @@ class _FakeSequencerEngine:
             "velocity": velocity,
             "accent": accent,
             "micro_timing": micro_timing,
+            "probability": probability,
             "lock_pitch": lock_pitch,
             "lock_filter_cutoff": lock_filter_cutoff,
             "lock_decay": lock_decay,
@@ -98,7 +100,7 @@ class _FakeSequencerEngine:
             "length": 16,
             "track_lengths": [0] * 16,
             "steps": [
-                [{"velocity": 0, "accent": False, "micro_timing": 0, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
+                [{"velocity": 0, "accent": False, "micro_timing": 0, "probability": 1.0, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
                 for _ in range(16)
             ],
             "pattern_id": pattern_id,
@@ -204,6 +206,17 @@ def test_drum_sequencer_service_persists_step_micro_timing(tmp_path, monkeypatch
     persisted = json.loads((patterns_dir / "pattern-004.json").read_text())
     assert persisted["steps"][0][3]["micro_timing"] == -6
     assert fake_engine.get_drum_pattern_data(4)["steps"][0][3]["micro_timing"] == -6
+
+
+def test_drum_sequencer_service_persists_step_probability(tmp_path, monkeypatch):
+    service, _, fake_engine, patterns_dir, _, _ = _build_service(tmp_path, monkeypatch)
+
+    updated = service.set_step(6, 2, 9, 94, False, probability=0.42)
+
+    assert updated["steps"][2][9]["probability"] == 0.42
+    persisted = json.loads((patterns_dir / "pattern-006.json").read_text())
+    assert persisted["steps"][2][9]["probability"] == 0.42
+    assert fake_engine.get_drum_pattern_data(6)["steps"][2][9]["probability"] == 0.42
 
 
 def test_drum_sequencer_service_round_trips_bundle_and_song(tmp_path, monkeypatch):

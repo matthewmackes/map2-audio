@@ -635,6 +635,21 @@ describe('DrumsPage', () => {
     }))
   })
 
+  it('updates step probability from the step editor', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('gridcell', { name: 'Kick step 2' }), { shiftKey: true })
+    fireEvent.change(screen.getByLabelText('Step probability'), { target: { value: '0.35' } })
+
+    expect(mockSetStepMutate).toHaveBeenCalledWith(expect.objectContaining({
+      patternId: 7,
+      instrument: 0,
+      step: 1,
+      probability: 0.35,
+      velocity: 100,
+    }))
+  })
+
   it('commits renamed instrument labels through the kit patch mutation', () => {
     renderPage()
 

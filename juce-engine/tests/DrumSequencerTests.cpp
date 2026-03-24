@@ -241,6 +241,13 @@ TEST_CASE("DrumSequencer edits and reads back per-pattern variations", "[drums][
     REQUIRE(sequencer.getStep(4, 3, 8).velocity == 0);
 }
 
+TEST_CASE("DrumSequencer stores per-step probability", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+
+    REQUIRE(sequencer.setStep(2, 1, 7, 96, false, 0, 0.35f));
+    REQUIRE(sequencer.getStep(2, 1, 7).probability == Catch::Approx(0.35f));
+}
+
 TEST_CASE("DrumSequencer uses fill variation on the last beat when a fill is triggered", "[drums][sequencer]") {
     DrumSequencer sequencer;
     sequencer.prepare(48000.0, 16384);

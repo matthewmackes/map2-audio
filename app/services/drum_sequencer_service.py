@@ -29,6 +29,7 @@ class DrumSequencerStepModel(BaseModel):
     velocity: int = Field(0, ge=0, le=127)
     accent: bool = False
     micro_timing: int = Field(0, ge=-48, le=48)
+    probability: float = Field(1.0, ge=0.0, le=1.0)
     lock_pitch: float | None = Field(default=None, ge=-24.0, le=24.0)
     lock_filter_cutoff: float | None = Field(default=None, ge=20.0, le=20000.0)
     lock_decay: float | None = Field(default=None, ge=1.0, le=5000.0)
@@ -136,6 +137,7 @@ class DrumSequencerService(Singleton):
                         "velocity": int(step.get("velocity", 0)),
                         "accent": bool(step.get("accent", False)),
                         "micro_timing": int(step.get("micro_timing", 0)),
+                        "probability": float(step.get("probability", 1.0)),
                         "lock_pitch": step.get("lock_pitch"),
                         "lock_filter_cutoff": step.get("lock_filter_cutoff"),
                         "lock_decay": step.get("lock_decay"),
@@ -178,8 +180,10 @@ class DrumSequencerService(Singleton):
             for step_index, step in enumerate(row):
                 if step.velocity == 0 and not step.accent:
                     if not any(
-                        value is not None
+                        value
                         for value in (
+                            step.micro_timing != 0,
+                            step.probability != 1.0,
                             step.lock_pitch,
                             step.lock_filter_cutoff,
                             step.lock_decay,
@@ -195,6 +199,7 @@ class DrumSequencerService(Singleton):
                     step.velocity,
                     step.accent,
                     step.micro_timing,
+                    step.probability,
                     step.lock_pitch,
                     step.lock_filter_cutoff,
                     step.lock_decay,
@@ -298,6 +303,7 @@ class DrumSequencerService(Singleton):
         velocity: int,
         accent: bool = False,
         micro_timing: int = 0,
+        probability: float = 1.0,
         lock_pitch: float | None = None,
         lock_filter_cutoff: float | None = None,
         lock_decay: float | None = None,
@@ -309,6 +315,7 @@ class DrumSequencerService(Singleton):
             velocity=velocity,
             accent=accent,
             micro_timing=micro_timing,
+            probability=probability,
             lock_pitch=lock_pitch,
             lock_filter_cutoff=lock_filter_cutoff,
             lock_decay=lock_decay,

@@ -3007,6 +3007,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                                  int velocity,
                                  bool accent,
                                  int microTiming,
+                                 float probability,
                                  std::optional<float> lockPitch,
                                  std::optional<float> lockFilterCutoff,
                                  std::optional<float> lockDecay,
@@ -3019,6 +3020,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 static_cast<uint8_t>(std::clamp(velocity, 0, 127)),
                 accent,
                 static_cast<int8_t>(std::clamp(microTiming, -48, 48)),
+                std::clamp(probability, 0.0f, 1.0f),
                 lockPitch,
                 lockFilterCutoff,
                 lockDecay,
@@ -3026,6 +3028,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 lockVolume);
         }, py::arg("pattern"), py::arg("instrument"), py::arg("step"), py::arg("velocity"), py::arg("accent") = false,
            py::arg("micro_timing") = 0,
+           py::arg("probability") = 1.0f,
            py::arg("lock_pitch") = py::none(),
            py::arg("lock_filter_cutoff") = py::none(),
            py::arg("lock_decay") = py::none(),
@@ -3038,6 +3041,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result["velocity"] = step.velocity;
             result["accent"] = step.accent;
             result["micro_timing"] = step.microTimingTicks;
+            result["probability"] = step.probability;
             return result;
         }, py::arg("pattern"), py::arg("instrument"), py::arg("step"), "Get a sequencer step payload")
         .def("get_drum_step_extended", [](const Map2AudioEngine& self, int patternIndex, int instrumentIndex, int stepIndex) {
@@ -3046,6 +3050,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result["velocity"] = step.velocity;
             result["accent"] = step.accent;
             result["micro_timing"] = step.microTimingTicks;
+            result["probability"] = step.probability;
             result["lock_pitch"] = step.lockPitch ? py::cast(*step.lockPitch) : py::none();
             result["lock_filter_cutoff"] = step.lockFilterCutoff ? py::cast(*step.lockFilterCutoff) : py::none();
             result["lock_decay"] = step.lockDecay ? py::cast(*step.lockDecay) : py::none();
@@ -3080,6 +3085,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                     payload["velocity"] = step.velocity;
                     payload["accent"] = step.accent;
                     payload["micro_timing"] = step.microTimingTicks;
+                    payload["probability"] = step.probability;
                     payload["lock_pitch"] = step.lockPitch ? py::cast(*step.lockPitch) : py::none();
                     payload["lock_filter_cutoff"] = step.lockFilterCutoff ? py::cast(*step.lockFilterCutoff) : py::none();
                     payload["lock_decay"] = step.lockDecay ? py::cast(*step.lockDecay) : py::none();

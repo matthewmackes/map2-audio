@@ -219,6 +219,7 @@ class _FakeDrumService:
         velocity,
         accent=False,
         micro_timing=0,
+        probability=1.0,
         lock_pitch=None,
         lock_filter_cutoff=None,
         lock_decay=None,
@@ -230,6 +231,7 @@ class _FakeDrumService:
             "velocity": velocity,
             "accent": accent,
             "micro_timing": micro_timing,
+            "probability": probability,
             "lock_pitch": lock_pitch,
             "lock_filter_cutoff": lock_filter_cutoff,
             "lock_decay": lock_decay,
@@ -329,7 +331,7 @@ class _FakeDrumService:
             "length": 16,
             "track_lengths": [0] * 16,
             "steps": [
-                [{"velocity": 0, "accent": False, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
+                [{"velocity": 0, "accent": False, "micro_timing": 0, "probability": 1.0, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
                 for _ in range(16)
             ],
         }
@@ -752,6 +754,18 @@ def test_drum_pattern_step_route_accepts_micro_timing(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["steps"][1][2]["micro_timing"] == 6
+
+
+def test_drum_pattern_step_route_accepts_probability(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/pattern/9/step",
+        json={"instrument": 1, "step": 2, "velocity": 96, "accent": False, "probability": 0.35},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["steps"][1][2]["probability"] == 0.35
 
 
 def test_drum_pattern_step_route_rejects_invalid_velocity(monkeypatch):

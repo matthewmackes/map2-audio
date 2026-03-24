@@ -56,6 +56,7 @@ bool DrumSequencer::setStep(
     uint8_t velocity,
     bool accent,
     int8_t microTimingTicks,
+    float probability,
     std::optional<float> lockPitch,
     std::optional<float> lockFilterCutoff,
     std::optional<float> lockDecay,
@@ -71,6 +72,7 @@ bool DrumSequencer::setStep(
     step.velocity = velocity;
     step.accent = accent;
     step.microTimingTicks = static_cast<int8_t>(std::clamp<int>(microTimingTicks, -48, 48));
+    step.probability = std::clamp(probability, 0.0f, 1.0f);
     step.lockPitch = lockPitch;
     step.lockFilterCutoff = lockFilterCutoff;
     step.lockDecay = lockDecay;
@@ -596,6 +598,12 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
         if (step.velocity == 0) {
             continue;
         }
+        if (step.probability <= 0.0f) {
+            continue;
+        }
+        if (step.probability < 1.0f && nextRandomFloat() >= step.probability) {
+            continue;
+        }
 
         const int velocity = step.accent
             ? static_cast<int>(accentVelocity_.load(std::memory_order_relaxed))
@@ -624,6 +632,13 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
         overrides.decayMs = step.lockDecay;
         drumMachine_->triggerNote(instrumentIndex, velocity, trackSampleOffset, overrides);
     }
+}
+
+float DrumSequencer::nextRandomFloat() {
+    randomState_ ^= randomState_ << 13;
+    randomState_ ^= randomState_ >> 17;
+    randomState_ ^= randomState_ << 5;
+    return static_cast<float>(randomState_ & 0x00ffffffu) / static_cast<float>(0x01000000u);
 }
 
 void DrumSequencer::triggerCountInClick(int sampleOffset) {

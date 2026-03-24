@@ -22,6 +22,7 @@ public:
         uint8_t velocity = 0;
         bool accent = false;
         int8_t microTimingTicks = 0;
+        float probability = 1.0f;
         std::optional<float> lockPitch;
         std::optional<float> lockFilterCutoff;
         std::optional<float> lockDecay;
@@ -64,6 +65,7 @@ public:
         uint8_t velocity,
         bool accent = false,
         int8_t microTimingTicks = 0,
+        float probability = 1.0f,
         std::optional<float> lockPitch = std::nullopt,
         std::optional<float> lockFilterCutoff = std::nullopt,
         std::optional<float> lockDecay = std::nullopt,
@@ -136,6 +138,7 @@ private:
     double samplesForStep(int stepIndex) const;
     double quarterNoteSamples() const;
     bool applySongEntry(int songPosition, bool resetBarCount);
+    float nextRandomFloat();
 
     std::array<Pattern, kPatternCount> patterns_{};
     std::array<int, kPatternCount> selectedVariationIndices_{};
@@ -173,6 +176,7 @@ private:
     std::array<double, 6> recentTapIntervals_{};
     size_t recentTapCount_ = 0;
     int pendingPatternCountdownSteps_ = 0;
+    uint32_t randomState_ = 0x12345678u;
 };
 
 }  // namespace map2::drummachine
