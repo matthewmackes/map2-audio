@@ -971,7 +971,7 @@ function advancedPanel(
   onUpdateStepLocks: (
     instrumentIndex: number,
     stepIndex: number,
-    locks: Partial<Pick<DrumPattern['steps'][number][number], 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
+    locks: Partial<Pick<DrumPattern['steps'][number][number], 'micro_timing' | 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
   ) => void,
   selectedPatternSlot: number,
   selectedPatternPage: number,
@@ -2695,7 +2695,14 @@ export function DrumsPage() {
               },
               (instrumentIndex, stepIndex, locks) => {
                 const existingStep = resolvedStep(pattern, instrumentIndex, stepIndex)
-                const nextLocks = {
+                const nextLocks: {
+                  micro_timing: number
+                  lock_pitch: number | null
+                  lock_filter_cutoff: number | null
+                  lock_decay: number | null
+                  lock_pan: number | null
+                  lock_volume: number | null
+                } = {
                   micro_timing: 'micro_timing' in locks ? (locks.micro_timing ?? 0) : existingStep.micro_timing,
                   lock_pitch: 'lock_pitch' in locks ? (locks.lock_pitch ?? null) : existingStep.lock_pitch,
                   lock_filter_cutoff: 'lock_filter_cutoff' in locks ? (locks.lock_filter_cutoff ?? null) : existingStep.lock_filter_cutoff,
