@@ -1457,6 +1457,7 @@ export interface DrumTransportState {
   swing: number;
   pending_pattern: number;
   switch_quantization_beats: number;
+  track_swing: number[];
 }
 
 export interface DrumTransportUpdate {

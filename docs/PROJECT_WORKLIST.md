@@ -3263,7 +3263,7 @@ Subtasks: None
 Assigned to: Unassigned
 
 ID: T391-F
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-Track Swing — individual shuffle/groove per instrument
 Description:
 - Goal / acceptance criteria: Allow each of the 16 instrument tracks to have an independent swing percentage (0–100%), falling back to the global swing when set to 0. This enables e.g., heavy swing on hats with straight kick.
@@ -3276,7 +3276,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: Per-track swing storage, modified timing calc, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 09:38 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/DrumMachine/DrumSequencer.h`, `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, and `juce-engine/Source/PythonBindings.cpp` with per-track swing storage/bindings so each drum row can override swing independently while still falling back to the global swing setting when left at `0`.
+  - Updated `app/services/drum_machine_service.py` and `app/routes/drums.py` to persist `track_swing`, expose it in the transport payload, and add dedicated `GET/POST /api/engine/drums/track/{instrument}/swing` endpoints for row-level swing edits.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, and `web/src/app/pages/DrumsPage.tsx` so the advanced sequencer rows now expose a Swing control beside Vol/Pan/Tune and mutate the new per-track swing API path.
+  - Validation passed with `pytest tests/test_drum_machine_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-G
 Status: [✓] Done

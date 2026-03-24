@@ -5739,6 +5739,17 @@ export const drumsApi = {
       method: 'POST', body: JSON.stringify(state),
     }),
 
+  /** Get per-track swing state */
+  getTrackSwing: (instrument: number) =>
+    fetchJson<{ instrument: number; swing: number; track_swing: number[] }>(`${API_BASE}/engine/drums/track/${instrument}/swing`),
+
+  /** Set per-track swing */
+  setTrackSwing: (instrument: number, swing: number) =>
+    fetchJson<{ instrument: number; swing: number; track_swing: number[] }>(`${API_BASE}/engine/drums/track/${instrument}/swing`, {
+      method: 'POST',
+      body: JSON.stringify({ swing }),
+    }),
+
   /** Record a tap-tempo event */
   tapTempo: (timestamp?: number) =>
     fetchJson<{ tempo: number | null; taps: number }>(`${API_BASE}/engine/drums/transport/tap-tempo`, {

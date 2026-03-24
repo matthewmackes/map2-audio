@@ -199,6 +199,17 @@ export function useUpdateDrumTransport() {
   })
 }
 
+export function useSetDrumTrackSwing() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ instrument, swing }: { instrument: number; swing: number }) => drumsApi.setTrackSwing(instrument, swing),
+    onSuccess: () => {
+      invalidateDrumState(queryClient)
+    },
+  })
+}
+
 export function useSetDrumPattern() {
   const queryClient = useQueryClient()
 

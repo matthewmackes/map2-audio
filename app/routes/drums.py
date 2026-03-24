@@ -65,6 +65,10 @@ class DrumPatternStepUpdateModel(BaseModel):
     accent: bool = False
 
 
+class DrumTrackSwingUpdateModel(BaseModel):
+    swing: int = Field(..., ge=0, le=100)
+
+
 class DrumSongUpdateResponse(BaseModel):
     song: List[DrumSongEntryModel]
     song_loop: bool
@@ -225,6 +229,27 @@ def clear_drum_pattern(pattern_id: int) -> Dict[str, Any]:
         pattern.length = 16
         pattern.steps = [[DrumSequencerStepModel() for _ in range(64)] for _ in range(16)]
         return service.save_pattern(pattern_id, pattern.model_dump(exclude={"pattern_id"}))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/engine/drums/track/{instrument}/swing")
+def get_drum_track_swing(instrument: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
+    transport = _get_service().get_transport()
+    return {
+        "instrument": instrument,
+        "swing": int(transport["track_swing"][instrument]),
+        "track_swing": transport["track_swing"],
+    }
+
+
+@router.post("/api/engine/drums/track/{instrument}/swing")
+def set_drum_track_swing(
+    update: DrumTrackSwingUpdateModel,
+    instrument: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_service().set_track_swing(instrument, update.swing)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

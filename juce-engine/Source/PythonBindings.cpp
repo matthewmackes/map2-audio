@@ -3149,6 +3149,12 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_drum_pattern_switch_quantization", [](const Map2AudioEngine& self) {
             return self.getDrumSequencer().getPatternSwitchQuantization();
         }, "Get drum pattern switch quantization in beats")
+        .def("set_drum_track_swing", [](Map2AudioEngine& self, int instrumentIndex, float percent) {
+            return self.getDrumSequencer().setTrackSwing(instrumentIndex, percent);
+        }, py::arg("instrument"), py::arg("percent"), "Set per-track drum swing percentage")
+        .def("get_drum_track_swing", [](const Map2AudioEngine& self, int instrumentIndex) {
+            return self.getDrumSequencer().getTrackSwing(instrumentIndex);
+        }, py::arg("instrument"), "Get per-track drum swing percentage")
         .def("set_drum_transport_playing", [](Map2AudioEngine& self, bool isPlaying) {
             if (isPlaying) {
                 self.getDrumSequencer().play();

@@ -119,6 +119,14 @@ TEST_CASE("DrumSequencer swing delays offbeats relative to straight timing", "[d
     REQUIRE(swungPosition.stepIndex == 0);
 }
 
+TEST_CASE("DrumSequencer stores per-track swing overrides", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+
+    REQUIRE(sequencer.setTrackSwing(3, 67.0f));
+    REQUIRE(sequencer.getTrackSwing(3) == Catch::Approx(67.0f));
+    REQUIRE_FALSE(sequencer.setTrackSwing(-1, 50.0f));
+}
+
 TEST_CASE("DrumSequencer manages song entries and reordering", "[drums][sequencer]") {
     DrumSequencer sequencer;
 

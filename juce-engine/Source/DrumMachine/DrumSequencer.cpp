@@ -218,6 +218,21 @@ int DrumSequencer::getPatternSwitchQuantization() const {
     return switchQuantizationBeats_.load(std::memory_order_relaxed);
 }
 
+bool DrumSequencer::setTrackSwing(int instrumentIndex, float percent) {
+    if (!isValidInstrumentIndex(instrumentIndex)) {
+        return false;
+    }
+    perTrackSwing_[static_cast<size_t>(instrumentIndex)].store(std::clamp(percent, 0.0f, 100.0f), std::memory_order_relaxed);
+    return true;
+}
+
+float DrumSequencer::getTrackSwing(int instrumentIndex) const {
+    if (!isValidInstrumentIndex(instrumentIndex)) {
+        return 0.0f;
+    }
+    return perTrackSwing_[static_cast<size_t>(instrumentIndex)].load(std::memory_order_relaxed);
+}
+
 DrumSequencer::Position DrumSequencer::getPosition() const {
     return Position{
         .patternIndex = currentPatternIndex_.load(std::memory_order_relaxed),
@@ -537,6 +552,8 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
         ? std::clamp(pattern.fillVariationIndex, 0, kVariationCount - 1)
         : resolvedVariationIndex(currentPatternIndex_.load(std::memory_order_relaxed));
     const auto& stepGrid = pattern.variations[static_cast<size_t>(variationIndex)];
+    const double straightStepSamples = quarterNoteSamples() / 4.0;
+    const bool swungEighthOffbeat = ((stepIndex / 2) % 2 == 0) && (stepIndex % 2 == 1);
     for (int instrumentIndex = 0; instrumentIndex < kInstrumentCount; ++instrumentIndex) {
         const auto& step = stepGrid[static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
         if (step.velocity == 0) {
@@ -546,7 +563,16 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
         const int velocity = step.accent
             ? static_cast<int>(accentVelocity_.load(std::memory_order_relaxed))
             : static_cast<int>(step.velocity);
-        drumMachine_->triggerNote(instrumentIndex, velocity, sampleOffset);
+        int trackSampleOffset = sampleOffset;
+        const float trackSwing = getTrackSwing(instrumentIndex);
+        const float effectiveSwing = trackSwing > 0.0f ? trackSwing : swingPercent_.load(std::memory_order_relaxed);
+        if (swungEighthOffbeat && effectiveSwing > 0.0f) {
+            const double swingRatio = std::clamp(static_cast<double>(effectiveSwing) / 100.0, 0.0, 1.0) / 3.0;
+            const int swingOffset = static_cast<int>(std::llround(straightStepSamples * swingRatio));
+            const int maxOffset = std::max(0, samplesPerBlock_.load(std::memory_order_relaxed) - 1);
+            trackSampleOffset = std::clamp(sampleOffset + swingOffset, 0, maxOffset);
+        }
+        drumMachine_->triggerNote(instrumentIndex, velocity, trackSampleOffset);
     }
 }
 

@@ -46,6 +46,7 @@ class DrumMachineStateModel(BaseModel):
     practice_change_quantization: int = Field(1, ge=1, le=8)
     practice_count_in_bars: int = Field(1, ge=0, le=4)
     practice_auto_fill: bool = False
+    track_swing: List[int] = Field(default_factory=lambda: [0] * 16, min_length=16, max_length=16)
 
 
 class DrumMachineStateUpdateModel(BaseModel):
@@ -62,6 +63,7 @@ class DrumMachineStateUpdateModel(BaseModel):
     practice_change_quantization: Optional[int] = Field(None, ge=1, le=8)
     practice_count_in_bars: Optional[int] = Field(None, ge=0, le=4)
     practice_auto_fill: Optional[bool] = None
+    track_swing: Optional[List[int]] = Field(default=None, min_length=16, max_length=16)
 
 
 class DrumTransportStateModel(BaseModel):
@@ -72,6 +74,7 @@ class DrumTransportStateModel(BaseModel):
     swing: int = Field(0, ge=0, le=100)
     pending_pattern: int = Field(-1, ge=-1, le=127)
     switch_quantization_beats: int = Field(4, ge=1, le=16)
+    track_swing: List[int] = Field(default_factory=lambda: [0] * 16, min_length=16, max_length=16)
 
 
 class DrumTransportUpdateModel(BaseModel):
@@ -261,6 +264,7 @@ class DrumMachineService(Singleton):
             swing=self._state.swing,
             pending_pattern=self._position.pending_pattern,
             switch_quantization_beats=self._position.switch_quantization_beats,
+            track_swing=list(self._state.track_swing),
         ).model_dump()
 
     def update_transport(self, patch: Dict[str, Any]) -> Dict[str, Any]:
@@ -337,6 +341,28 @@ class DrumMachineService(Singleton):
             "status": "ok",
             "pattern": self._state.pattern,
             "variation": self._state.variation,
+        }
+
+    def set_track_swing(self, instrument: int, swing: int) -> Dict[str, Any]:
+        if instrument < 0 or instrument >= 16:
+            raise ValueError("instrument must be between 0 and 15")
+        next_track_swing = list(self._state.track_swing)
+        next_track_swing[instrument] = max(0, min(100, int(swing)))
+        self._state = DrumMachineStateModel.model_validate(
+            {
+                **self._state.model_dump(),
+                "track_swing": next_track_swing,
+            }
+        )
+        self._persist_state()
+        engine = self._engine()
+        setter = getattr(engine, "set_drum_track_swing", None) if engine is not None else None
+        if callable(setter):
+            setter(instrument, float(next_track_swing[instrument]))
+        return {
+            "instrument": instrument,
+            "swing": next_track_swing[instrument],
+            "track_swing": next_track_swing,
         }
 
     def start_song_playback(self) -> Dict[str, Any]:
@@ -758,6 +784,8 @@ class DrumMachineService(Singleton):
 
     def _sync_static_state_to_engine(self) -> None:
         self._sync_state_patch_to_engine({"volume": self._state.volume})
+        for instrument, swing in enumerate(self._state.track_swing):
+            self.set_track_swing(instrument, swing)
         self._refresh_metering_from_engine()
         self._refresh_position_from_engine()
 

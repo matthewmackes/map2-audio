@@ -20,6 +20,7 @@ const mockSetMasterVolumeMutate = jest.fn()
 const mockSetMidiMappingMutate = jest.fn()
 const mockSetMidiZonesMutate = jest.fn()
 const mockSetVelocityCurveMutate = jest.fn()
+const mockSetTrackSwingMutate = jest.fn()
 const mockSetSongMutate = jest.fn()
 const mockStartMidiLearnMutate = jest.fn()
 const mockUpdateStateMutate = jest.fn()
@@ -52,6 +53,7 @@ const mockUseSetDrumMasterVolume = jest.fn()
 const mockUseSetDrumMidiMapping = jest.fn()
 const mockUseSetDrumMidiZones = jest.fn()
 const mockUseSetDrumVelocityCurve = jest.fn()
+const mockUseSetDrumTrackSwing = jest.fn()
 const mockUseSetDrumPattern = jest.fn()
 const mockUseStartDrumMidiLearn = jest.fn()
 const mockUseAddDrumSongEntry = jest.fn()
@@ -190,6 +192,7 @@ jest.mock('@/app/hooks/useDrumMachine', () => ({
   useSetDrumMidiMapping: () => mockUseSetDrumMidiMapping(),
   useSetDrumMidiZones: () => mockUseSetDrumMidiZones(),
   useSetDrumVelocityCurve: () => mockUseSetDrumVelocityCurve(),
+  useSetDrumTrackSwing: () => mockUseSetDrumTrackSwing(),
   useSetDrumPattern: () => mockUseSetDrumPattern(),
   useStartDrumMidiLearn: () => mockUseStartDrumMidiLearn(),
   useAddDrumSongEntry: () => mockUseAddDrumSongEntry(),
@@ -404,6 +407,7 @@ function primeHooks() {
   mockUseSetDrumMidiMapping.mockReturnValue({ mutate: mockSetMidiMappingMutate })
   mockUseSetDrumMidiZones.mockReturnValue({ mutate: mockSetMidiZonesMutate })
   mockUseSetDrumVelocityCurve.mockReturnValue({ mutate: mockSetVelocityCurveMutate })
+  mockUseSetDrumTrackSwing.mockReturnValue({ mutate: mockSetTrackSwingMutate })
   mockUseSetDrumPattern.mockReturnValue({ mutate: mockSetPatternMutate })
   mockUseStartDrumMidiLearn.mockReturnValue({ mutate: mockStartMidiLearnMutate })
   mockUseAddDrumSongEntry.mockReturnValue({ mutate: mockAddSongEntryMutate })
@@ -479,6 +483,7 @@ describe('DrumsPage', () => {
     mockSetMidiZonesMutate.mockReset()
     mockSetVelocityCurveMutate.mockReset()
     mockSetSongMutate.mockReset()
+    mockSetTrackSwingMutate.mockReset()
     mockSetStepMutate.mockReset()
     mockStartMidiLearnMutate.mockReset()
     mockStopSongTransportMutate.mockReset()
@@ -510,6 +515,7 @@ describe('DrumsPage', () => {
     mockUseSetDrumMidiMapping.mockReset()
     mockUseSetDrumMidiZones.mockReset()
     mockUseSetDrumVelocityCurve.mockReset()
+    mockUseSetDrumTrackSwing.mockReset()
     mockUseSetDrumPattern.mockReset()
     mockUseStartDrumMidiLearn.mockReset()
     mockUseAddDrumSongEntry.mockReset()

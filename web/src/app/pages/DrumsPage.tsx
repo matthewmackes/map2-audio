@@ -59,6 +59,7 @@ import {
   useRemoveDrumSongEntry,
   useSetDrumSong,
   useSetDrumStep,
+  useSetDrumTrackSwing,
   useStartDrumMidiLearn,
   useStopDrumSongTransport,
   useStopDrumMidiLearn,
@@ -929,6 +930,8 @@ function advancedPanel(
   onRenameDraft: (padId: number, value: string) => void,
   onCommitName: (padId: number) => void,
   onUpdatePadControl: (padId: number, params: Partial<DrumPadControl>) => void,
+  trackSwing: number[],
+  onUpdateTrackSwing: (instrumentIndex: number, swing: number) => void,
   onToggleStep: (instrumentIndex: number, stepIndex: number, nextVelocity: number, accent: boolean) => void,
   selectedPatternSlot: number,
   selectedPatternPage: number,
@@ -1152,6 +1155,7 @@ function advancedPanel(
                           { label: 'Vol', min: 0, max: 100, value: instrument.volume, key: 'volume' },
                           { label: 'Pan', min: -100, max: 100, value: instrument.pan, key: 'pan' },
                           { label: 'Tune', min: -24, max: 24, value: instrument.tune, key: 'tune' },
+                          { label: 'Swing', min: 0, max: 100, value: trackSwing[instrumentIndex] ?? 0, key: 'track_swing' },
                         ].map((control) => (
                           <div key={control.key} style={shellStyle.compactRangeCard}>
                             <div style={shellStyle.compactRangeLabel}>
@@ -1165,11 +1169,16 @@ function advancedPanel(
                               step={1}
                               value={control.value}
                               onClick={(event) => event.stopPropagation()}
-                              onChange={(event) =>
+                              onChange={(event) => {
+                                const value = Number(event.currentTarget.value)
+                                if (control.key === 'track_swing') {
+                                  onUpdateTrackSwing(instrumentIndex, value)
+                                  return
+                                }
                                 onUpdatePadControl(instrumentIndex, {
-                                  [control.key]: Number(event.currentTarget.value),
+                                  [control.key]: value,
                                 })
-                              }
+                              }}
                               style={shellStyle.compactRange}
                               aria-label={`${instrument.name} ${control.label}`}
                             />
@@ -2055,6 +2064,7 @@ export function DrumsPage() {
   const copyPattern = useCopyDrumPattern()
   const loadKit = useLoadDrumKit()
   const setPadControl = useSetDrumPadControl()
+  const setTrackSwing = useSetDrumTrackSwing()
   const setBusMixer = useSetDrumBusMixer()
   const setMasterVolume = useSetDrumMasterVolume()
   const setMidiMapping = useSetDrumMidiMapping()
@@ -2493,6 +2503,13 @@ export function DrumsPage() {
                   padId,
                   params,
                 })
+              },
+              transport.track_swing ?? [],
+              (instrumentIndex, swing) => {
+                setTrackSwing.mutate({ instrument: instrumentIndex, swing })
+                announce(
+                  `${activeKit?.instruments?.[instrumentIndex]?.name ?? `Pad ${instrumentIndex + 1}`} swing set to ${swing} percent.`,
+                )
               },
               (instrumentIndex, stepIndex, nextVelocity, accentEnabled) => {
                 setStep.mutate({

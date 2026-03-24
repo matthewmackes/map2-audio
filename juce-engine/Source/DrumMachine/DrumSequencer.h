@@ -71,6 +71,8 @@ public:
     int getPendingPatternSwitch() const;
     bool setPatternSwitchQuantization(int beats);
     int getPatternSwitchQuantization() const;
+    bool setTrackSwing(int instrumentIndex, float percent);
+    float getTrackSwing(int instrumentIndex) const;
     Position getPosition() const;
     bool addSongEntry(int patternIndex, int repeatCount, int position = -1);
     bool removeSongEntry(int position);
@@ -135,6 +137,7 @@ private:
     std::atomic<int> countInBars_{0};
     std::atomic<int> pendingPatternIndex_{-1};
     std::atomic<int> switchQuantizationBeats_{4};
+    std::array<std::atomic<float>, kInstrumentCount> perTrackSwing_{};
 
     double samplesUntilNextStep_ = 0.0;
     bool triggerStepAtBlockStart_ = true;

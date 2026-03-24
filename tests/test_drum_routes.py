@@ -24,6 +24,7 @@ class _FakeDrumService:
             "practice_change_quantization": 1,
             "practice_count_in_bars": 1,
             "practice_auto_fill": False,
+            "track_swing": [0] * 16,
         }
         self.position = {
             "step": 0,
@@ -95,6 +96,7 @@ class _FakeDrumService:
             "swing": self.state["swing"],
             "pending_pattern": self.position["pending_pattern"],
             "switch_quantization_beats": self.position["switch_quantization_beats"],
+            "track_swing": list(self.state["track_swing"]),
         }
 
     def update_transport(self, patch):
@@ -106,6 +108,14 @@ class _FakeDrumService:
         if "switch_quantization_beats" in patch:
             self.position["switch_quantization_beats"] = patch["switch_quantization_beats"]
         return self.get_transport()
+
+    def set_track_swing(self, instrument, swing):
+        self.state["track_swing"][instrument] = swing
+        return {
+            "instrument": instrument,
+            "swing": swing,
+            "track_swing": list(self.state["track_swing"]),
+        }
 
     def get_metering(self):
         return {
@@ -463,6 +473,7 @@ def test_drum_transport_route_updates_transport_projection(monkeypatch):
         "swing": 12,
         "pending_pattern": -1,
         "switch_quantization_beats": 4,
+        "track_swing": [0] * 16,
     }
     history = ws_manager.get_event_history("drums:transport")
     assert history["events"][-1]["type"] == "drum_transport"

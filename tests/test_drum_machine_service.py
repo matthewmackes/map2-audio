@@ -18,6 +18,7 @@ class _FakeDrumEngine:
         self.bpm_calls = []
         self.pattern_calls = []
         self.swing_calls = []
+        self.track_swing_calls = []
         self.variation_calls = []
         self.fill_trigger_calls = 0
         self.global_midi_channel = 0
@@ -105,6 +106,10 @@ class _FakeDrumEngine:
 
     def set_drum_swing(self, swing):
         self.swing_calls.append(swing)
+        return True
+
+    def set_drum_track_swing(self, instrument, swing):
+        self.track_swing_calls.append((instrument, swing))
         return True
 
     def set_drum_variation(self, pattern, variation):
@@ -336,6 +341,7 @@ def test_drum_machine_service_transport_projection(tmp_path, monkeypatch):
         "swing": 22,
         "pending_pattern": -1,
         "switch_quantization_beats": 4,
+        "track_swing": [0] * 16,
     }
     assert service.get_state()["transport"] is True
 
@@ -352,6 +358,17 @@ def test_drum_machine_service_queues_pattern_switch_while_playing(tmp_path, monk
     assert fake_engine.pattern_calls[-1] == 2
     assert fake_engine.queued_pattern_calls[-1] == 9
     assert fake_engine.switch_quantization_calls[-1] == 8
+
+
+def test_drum_machine_service_sets_per_track_swing(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    payload = service.set_track_swing(3, 67)
+
+    assert payload["instrument"] == 3
+    assert payload["swing"] == 67
+    assert payload["track_swing"][3] == 67
+    assert fake_engine.track_swing_calls[-1] == (3, 67.0)
 
 
 def test_drum_machine_service_tracks_sequencer_position(tmp_path, monkeypatch):
