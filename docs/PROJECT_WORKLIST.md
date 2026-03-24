@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-23 20:56 EDT - Codex (Closed `T388` after adding replacement AVDECC controller-path contract coverage and rerunning the focused backend mock-harness suite.)
+Last updated: 2026-03-23 21:01 EDT - Codex (Closed `T388`, then marked `T375` blocked because its `T362` dependency is still unresolved and no further unblocked tasks remain.)
 
 ## Active Blockers Only
 
@@ -721,7 +721,7 @@ Last updated: 2026-03-23 20:18 EDT - Codex
 - Priority: P2.
 
 ID: T375
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Add AVTP CRF (Clock Reference Format) subtype support
 Description:
 - Goal / acceptance criteria: Evaluate CRF need for MAP2 multi-stream use cases. If needed, add CRF stream type to AvbStream with dedicated send/receive and clock recovery logic.
@@ -731,7 +731,9 @@ Description:
 - Required outputs: CRF evaluation; if implemented, interoperability test with Tesira.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-23 - Codex (AVB audit)
+Last updated: 2026-03-23 21:01 EDT - Codex
+- Blocked notes:
+  - `T362` remains blocked because no end-to-end MAP2 AVB audio stream has ever carried live audio on this testbed, so CRF work would be speculative until the base talker/listener path exists.
 - Priority: P2.
 
 ID: T376
