@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**816** Python | **1234** TypeScript | **290** C++/H | **123** Docs | **816** total commits | **2** stars | **0** forks | **0** open issues
+**818** Python | **1234** TypeScript | **298** C++/H | **123** Docs | **819** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`855f62f9`](https://github.com/matthewmackes/map2-audio/commit/855f62f9efdeb7dba8b6bc637a8c072ee466ca0d) | Complete drum machine pro milestones through T392 | Map2 Audio | 2026-03-24 |
+| [`2afac73d`](https://github.com/matthewmackes/map2-audio/commit/2afac73db6848b896e52a286ac28bee4091f1a73) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
+| [`9632c673`](https://github.com/matthewmackes/map2-audio/commit/9632c67383f194132e9fd5a2ef443b65e7cb9862) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
 | [`29f6d369`](https://github.com/matthewmackes/map2-audio/commit/29f6d36901269c62704d50bf515b5412cc0c011f) | feat: add drum step ratchets | Map2 Audio | 2026-03-24 |
 | [`f838e504`](https://github.com/matthewmackes/map2-audio/commit/f838e504358b641986664084c2b139d22c33f15b) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
 | [`b0781bf6`](https://github.com/matthewmackes/map2-audio/commit/b0781bf63ec860d284d45321e2b6933360abc147) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
 | [`dcb3f803`](https://github.com/matthewmackes/map2-audio/commit/dcb3f803609b748f7d03c115a42a84161e846947) | feat: add drum step probability | Map2 Audio | 2026-03-24 |
 | [`2faf7e5e`](https://github.com/matthewmackes/map2-audio/commit/2faf7e5e51cf982929646bce94f426001db59563) | chore: sync generated version metadata | Map2 Audio | 2026-03-24 |
-| [`3b1856e0`](https://github.com/matthewmackes/map2-audio/commit/3b1856e0ef3faa4101bde77775bbfdf11ede730c) | fix: align drum micro timing build types | Map2 Audio | 2026-03-24 |
-| [`97b95c42`](https://github.com/matthewmackes/map2-audio/commit/97b95c424540e9d155be8f463fa5a578bf257e44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-24 |
-| [`23df46b0`](https://github.com/matthewmackes/map2-audio/commit/23df46b04e481d2b4bcc4d4598260e44e9374e0b) | feat: add drum step micro timing | Map2 Audio | 2026-03-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
