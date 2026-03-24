@@ -71,4 +71,27 @@ describe('AboutPage', () => {
     expect(screen.getByText(/help me find hardware/i)).toBeTruthy()
     expect(screen.queryByRole('button', { name: /choose theme/i })).toBeNull()
   })
+
+  it('shows the legal disclaimer first with the AGPL section visible', async () => {
+    render(
+      <MemoryRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <AboutPage />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(4))
+
+    const disclaimerHeading = screen.getByRole('heading', { name: /legal disclaimer/i })
+    const pageHeading = screen.getByRole('heading', { name: /map2 platform guide/i })
+    const agplHeading = screen.getByRole('heading', { name: /gnu affero general public license v3\.0 \(agpl-3\.0-only\)/i })
+
+    expect(disclaimerHeading.compareDocumentPosition(pageHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(disclaimerHeading.compareDocumentPosition(agplHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /legal disclaimer/i })).toBeNull()
+  })
 })

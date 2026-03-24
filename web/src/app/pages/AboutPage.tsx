@@ -24,8 +24,6 @@ import {
   UserFavorite,
 } from '@carbon/icons-react'
 import {
-  Accordion,
-  AccordionItem,
   DataTable,
   Layer,
   Table,
@@ -578,6 +576,85 @@ export function AboutPage() {
   return (
     <section className="about-page">
       <Layer className="about-page__surface">
+        {/* ── Legal Disclaimer ────────────────────────────────────────────── */}
+        <section
+          aria-label="Legal disclaimer"
+          style={{
+            marginBottom: 32,
+            paddingBottom: 20,
+            borderBottom: '1px solid var(--cds-border-subtle)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Scales size={16} style={{ color: 'var(--cds-link-primary)', flexShrink: 0 }} />
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--cds-text-primary)' }}>
+              Legal Disclaimer — Important Notice
+            </h2>
+          </div>
+
+          <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 13 }}>
+            MAP2 is maintained as an educational and research-focused project for learning, teaching, experimentation, and technical study in real-time audio systems.
+          </p>
+
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 16,
+              background: 'var(--cds-layer-01)',
+              border: '1px solid var(--cds-border-subtle)',
+              borderRadius: 4,
+            }}
+          >
+            <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: 'var(--cds-text-primary)' }}>
+              GNU Affero General Public License v3.0 (AGPL-3.0-only)
+            </h3>
+            <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+              MAP2-owned code in this repository is licensed under the <strong>GNU Affero General Public License v3.0 (AGPL-3.0-only)</strong>. Educational intent statements describe project goals and do not add restrictions beyond AGPLv3.
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+              Source availability path for MAP2-owned code is this repository. Modified networked deployments should provide corresponding source in an accessible location for their users.
+            </p>
+          </div>
+
+          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            Third-party components remain under their original licenses and are not relicensed by MAP2.
+          </p>
+
+          <h3 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>No Affiliation or Endorsement</h3>
+          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            This software, source code, documentation, presets, examples, impulse responses, UI text, comments, demo files, and related materials are{' '}
+            <strong>not affiliated with, endorsed by, sponsored by, or officially connected to</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder.
+          </p>
+
+          <h3 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>Trademarks and Product Names</h3>
+          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            All trademarks, service marks, trade names, brand names, product names, model designations, logos, and related intellectual property are the{' '}
+            <strong>property of their respective owners</strong>. References are used for educational, historical, descriptive, comparative, referential, and interoperability purposes only. No trademark rights are granted by this repository license, documentation, or code.
+          </p>
+
+          <h3 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>No Warranty</h3>
+          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            This project and all associated materials are provided <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong>, without warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.
+          </p>
+
+          <h3 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>Your Responsibility</h3>
+          <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            By accessing, studying, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
+          </p>
+          <ol style={{ margin: '0 0 12px', paddingLeft: 24, fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            <li style={{ marginBottom: 4 }}>Comply with AGPLv3 requirements for MAP2-owned code.</li>
+            <li style={{ marginBottom: 4 }}>Comply with all applicable third-party licenses for included dependencies.</li>
+            <li style={{ marginBottom: 4 }}>Avoid representing this project as officially affiliated with third-party brands or products.</li>
+            <li>Comply with applicable trademark, copyright, and other IP laws in your jurisdiction.</li>
+          </ol>
+
+          <p style={{ margin: '12px 0 4px', fontStyle: 'italic', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
+            This project continues to prioritize education, transparency, and respectful attribution.
+          </p>
+          <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--cds-text-placeholder)' }}>
+            Last updated: 2026-02-22
+          </p>
+        </section>
 
         {/* Page header */}
         <header style={{ marginBottom: 32, paddingBottom: 20, borderBottom: '1px solid var(--cds-border-subtle)' }}>
@@ -944,71 +1021,6 @@ export function AboutPage() {
             </TableContainer>
           )}
         </DataTable>
-
-        {/* ── Legal Disclaimer ────────────────────────────────────────────── */}
-        <div style={{ marginBottom: 24 }}>
-          <Accordion align="start">
-            <AccordionItem
-              title={
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Scales size={16} />
-                  Legal Disclaimer — Important Notice
-                </span>
-              }
-            >
-              <p style={{ marginTop: 0, fontWeight: 600, fontSize: 13 }}>
-                MAP2 is maintained as an educational and research-focused project for learning, teaching, experimentation, and technical study in real-time audio systems.
-              </p>
-
-              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>License</h4>
-              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                MAP2-owned code in this repository is licensed under the{' '}
-                <strong>GNU Affero General Public License v3.0 (AGPL-3.0-only)</strong>. Educational intent statements describe project goals and do not add restrictions beyond AGPLv3.
-              </p>
-              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                Source availability path for MAP2-owned code is this repository. Modified networked deployments should provide corresponding source in an accessible location for their users.
-              </p>
-              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                Third-party components remain under their original licenses and are not relicensed by MAP2.
-              </p>
-
-              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>No Affiliation or Endorsement</h4>
-              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                This software, source code, documentation, presets, examples, impulse responses, UI text, comments, demo files, and related materials are{' '}
-                <strong>not affiliated with, endorsed by, sponsored by, or officially connected to</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder.
-              </p>
-
-              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>Trademarks and Product Names</h4>
-              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                All trademarks, service marks, trade names, brand names, product names, model designations, logos, and related intellectual property are the{' '}
-                <strong>property of their respective owners</strong>. References are used for educational, historical, descriptive, comparative, referential, and interoperability purposes only. No trademark rights are granted by this repository license, documentation, or code.
-              </p>
-
-              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>No Warranty</h4>
-              <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                This project and all associated materials are provided <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong>, without warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.
-              </p>
-
-              <h4 style={{ marginTop: 20, marginBottom: 6, fontSize: 13 }}>Your Responsibility</h4>
-              <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                By accessing, studying, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
-              </p>
-              <ol style={{ margin: '0 0 12px', paddingLeft: 24, fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                <li style={{ marginBottom: 4 }}>Comply with AGPLv3 requirements for MAP2-owned code.</li>
-                <li style={{ marginBottom: 4 }}>Comply with all applicable third-party licenses for included dependencies.</li>
-                <li style={{ marginBottom: 4 }}>Avoid representing this project as officially affiliated with third-party brands or products.</li>
-                <li>Comply with applicable trademark, copyright, and other IP laws in your jurisdiction.</li>
-              </ol>
-
-              <p style={{ margin: '12px 0 4px', fontStyle: 'italic', fontSize: 12, color: 'var(--cds-text-secondary)' }}>
-                This project continues to prioritize education, transparency, and respectful attribution.
-              </p>
-              <p style={{ margin: '8px 0 0', fontSize: 11, color: 'var(--cds-text-placeholder)' }}>
-                Last updated: 2026-02-22
-              </p>
-            </AccordionItem>
-          </Accordion>
-        </div>
 
         {/* ── Help Me Find Hardware ────────────────────────────────────────── */}
         <div style={{ marginBottom: 32 }}>
