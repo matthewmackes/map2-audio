@@ -1486,6 +1486,7 @@ private:
     // Lock-free MIDI handoff from MIDI thread to audio callback.
     void enqueueMidiEvent(const MidiMessage& msg);
     void drainMidiEvents(juce::MidiBuffer& midiBuffer, int numSamples);
+    void sendDrumSequencerMidiEvent(const drummachine::DrumSequencer::MidiOutputEvent& event);
 
     static constexpr int MIDI_RING_SIZE = 512;
     struct QueuedMidiEvent {

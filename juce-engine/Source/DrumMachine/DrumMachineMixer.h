@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DrumMachine/DrumMasterFx.h"
+
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_dsp/juce_dsp.h>
 
@@ -33,7 +35,11 @@ public:
         float pan = 0.0f;
         bool mute = false;
         bool solo = false;
+        int outputPair = 0;
+        float reverbSend = 0.0f;
     };
+
+    using MasterFxConfig = DrumMasterFx::Config;
 
     struct Metering {
         std::array<float, kBusCount> busPeak{};
@@ -47,7 +53,7 @@ public:
     DrumMachineMixer();
 
     void prepare(double sampleRate, int samplesPerBlock);
-    void process(const juce::AudioBuffer<float>& busInput, juce::AudioBuffer<float>& stereoOutput);
+    void process(const juce::AudioBuffer<float>& busInput, juce::AudioBuffer<float>& outputBuffer);
 
     bool setBusEq(int busIndex, const BusEqConfig& config);
     bool setBusComp(int busIndex, const BusCompConfig& config);
@@ -56,10 +62,14 @@ public:
     bool setBusPan(int busIndex, float pan);
     bool setBusMute(int busIndex, bool mute);
     bool setBusSolo(int busIndex, bool solo);
+    bool setBusOutputPair(int busIndex, int outputPair);
+    bool setBusReverbSend(int busIndex, float reverbSend);
 
     BusEqConfig getBusEq(int busIndex) const;
     BusCompConfig getBusComp(int busIndex) const;
     BusOutputConfig getBusOutput(int busIndex) const;
+    void setMasterFx(const MasterFxConfig& config);
+    MasterFxConfig getMasterFx() const;
 
     void setMasterVolume(float volume);
     float getMasterVolume() const;
@@ -97,6 +107,9 @@ private:
     std::atomic<float> masterRmsLeft_{0.0f};
     std::atomic<float> masterRmsRight_{0.0f};
     juce::AudioBuffer<float> scratchBuffer_;
+    juce::AudioBuffer<float> masterBuffer_;
+    juce::AudioBuffer<float> reverbSendBuffer_;
+    DrumMasterFx masterFx_;
     std::atomic<int> scratchBufferResizeCount_{0};
     double sampleRate_ = 44100.0;
     int samplesPerBlock_ = 512;

@@ -145,6 +145,22 @@ void* operator new[](std::size_t size) {
     throw std::bad_alloc();
 }
 
+void* operator new(std::size_t size, std::align_val_t alignment) {
+    const std::size_t alignedSize = (size + static_cast<std::size_t>(alignment) - 1u)
+        & ~(static_cast<std::size_t>(alignment) - 1u);
+    if (auto* ptr = std::aligned_alloc(static_cast<std::size_t>(alignment), alignedSize)) {
+        if (gTrackAllocationsForCurrentThread) {
+            gTrackedAllocations.fetch_add(1, std::memory_order_relaxed);
+        }
+        return ptr;
+    }
+    throw std::bad_alloc();
+}
+
+void* operator new[](std::size_t size, std::align_val_t alignment) {
+    return ::operator new(size, alignment);
+}
+
 void operator delete(void* ptr) noexcept {
     std::free(ptr);
 }
@@ -158,6 +174,22 @@ void operator delete(void* ptr, std::size_t) noexcept {
 }
 
 void operator delete[](void* ptr, std::size_t) noexcept {
+    std::free(ptr);
+}
+
+void operator delete(void* ptr, std::align_val_t) noexcept {
+    std::free(ptr);
+}
+
+void operator delete[](void* ptr, std::align_val_t) noexcept {
+    std::free(ptr);
+}
+
+void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept {
+    std::free(ptr);
+}
+
+void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept {
     std::free(ptr);
 }
 
@@ -204,6 +236,31 @@ TEST_CASE("DrumMachineProcessor maps velocity curves per pad", "[drums][processo
     REQUIRE(preview[64] == Catch::Approx(processor.mapVelocityForPad(0, 64.0f / 127.0f)));
 }
 
+TEST_CASE("DrumMachineProcessor captures hardware input for pad recording", "[drums][processor]") {
+    DrumMachineProcessor processor;
+    processor.prepare(48000.0, 64, 2);
+
+    juce::AudioBuffer<float> input(2, 64);
+    input.clear();
+    for (int sample = 0; sample < input.getNumSamples(); ++sample) {
+        input.setSample(0, sample, sample == 0 ? 0.8f : 0.1f);
+        input.setSample(1, sample, sample == 0 ? 0.4f : -0.1f);
+    }
+
+    juce::MidiBuffer midi;
+    REQUIRE(processor.startPadInputRecording(3));
+    processor.processBlock(input, midi);
+    const auto recorded = processor.stopPadInputRecording();
+
+    REQUIRE(recorded.padIndex == 3);
+    REQUIRE(recorded.channelCount == 1);
+    REQUIRE(recorded.sampleRate == Catch::Approx(48000.0));
+    REQUIRE(recorded.truncated == false);
+    REQUIRE(recorded.samples.size() == 64);
+    REQUIRE(recorded.samples.front() == Catch::Approx(0.6f));
+    REQUIRE(recorded.samples[1] == Catch::Approx(0.0f));
+}
+
 TEST_CASE("DrumMachineProcessor applies per-pad control setters through pad config", "[drums][processor]") {
     DrumMachineProcessor processor;
 
@@ -221,6 +278,200 @@ TEST_CASE("DrumMachineProcessor applies per-pad control setters through pad conf
     REQUIRE(config.mute);
     REQUIRE(config.solo);
     REQUIRE(config.bus == DrumMachineProcessor::BusId::Room);
+}
+
+TEST_CASE("DrumMachineProcessor renders synth-only and hybrid pad sources", "[drums][processor][synth]") {
+    ScopedTempDir tempDir;
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 128, 2);
+
+    REQUIRE(processor.setPadSoundSource(0, DrumMachineProcessor::SoundSource::Synth));
+    auto synthParams = processor.getPadSynthParams(0);
+    synthParams.oscillatorType = DrumSynthVoice::OscillatorType::Metallic;
+    synthParams.noiseLevel = 0.45f;
+    synthParams.bodyDecayMs = 320.0f;
+    REQUIRE(processor.setPadSynthParams(0, synthParams));
+
+    auto synthOnly = renderTriggeredPads(processor, {0}, 127, 128, 3);
+    REQUIRE(stereoPeak(synthOnly.audio) > 0.001f);
+
+    const auto wavFile = makeTempWavFile(tempDir.dir, "kick.wav", 4.0f);
+    const auto sfzFile = makeTempSfzFile(tempDir.dir, "kick.sfz", wavFile.getFileName(), 36);
+    REQUIRE(processor.loadPadSfz(0, sfzFile.getFullPathName().toStdString()));
+    REQUIRE(processor.setPadSoundSource(0, DrumMachineProcessor::SoundSource::Hybrid));
+
+    auto hybrid = renderTriggeredPads(processor, {0}, 127, 128, 3);
+    REQUIRE(stereoPeak(hybrid.audio) > 0.001f);
+    REQUIRE(processor.getPadActiveVoices(0) >= 1);
+}
+
+TEST_CASE("DrumMachineProcessor applies per-pad filters on rendered pad audio", "[drums][processor][filter]") {
+    ScopedTempDir tempDir;
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 256, 2);
+
+    const auto wavFile = makeTempWavFile(tempDir.dir, "filter.wav", 32.0f);
+    const auto sfzFile = makeTempSfzFile(tempDir.dir, "filter.sfz", wavFile.getFileName(), 36);
+    REQUIRE(processor.loadPadSfz(0, sfzFile.getFullPathName().toStdString()));
+    REQUIRE(processor.setPadSoundSource(0, DrumMachineProcessor::SoundSource::Sample));
+
+    auto baseline = renderTriggeredPads(processor, {0}, 127, 256, 4);
+    REQUIRE(stereoPeak(baseline.audio) > 0.001f);
+
+    REQUIRE(processor.setPadFilter(0, {
+        DrumMachineProcessor::PadFilterType::BandPass,
+        1200.0f,
+        4.0f,
+        0.6f,
+        240.0f,
+    }));
+    auto filtered = renderTriggeredPads(processor, {0}, 127, 256, 4);
+    REQUIRE(stereoPeak(filtered.audio) > 0.001f);
+    REQUIRE(stereoPeak(filtered.audio) != Catch::Approx(stereoPeak(baseline.audio)));
+}
+
+TEST_CASE("DrumMachineProcessor routes drum buses to dedicated output pairs", "[drums][processor][outputs]") {
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 128, 8);
+
+    REQUIRE(processor.setPadSoundSource(0, DrumMachineProcessor::SoundSource::Synth));
+    REQUIRE(processor.setPadSoundSource(1, DrumMachineProcessor::SoundSource::Synth));
+    REQUIRE(processor.setBusOutputPair(0, 1));
+    REQUIRE(processor.setBusOutputPair(1, 3));
+    REQUIRE(processor.triggerNote(0, 127));
+    REQUIRE(processor.triggerNote(1, 127));
+
+    juce::AudioBuffer<float> output(8, 128);
+    output.clear();
+    juce::MidiBuffer midi;
+    processor.processBlock(output, midi);
+
+    REQUIRE(output.getMagnitude(0, 0, output.getNumSamples()) < 0.0001f);
+    REQUIRE(output.getMagnitude(1, 0, output.getNumSamples()) < 0.0001f);
+    REQUIRE(output.getMagnitude(2, 0, output.getNumSamples()) > 0.0001f);
+    REQUIRE(output.getMagnitude(3, 0, output.getNumSamples()) > 0.0001f);
+    REQUIRE(output.getMagnitude(6, 0, output.getNumSamples()) > 0.0001f);
+    REQUIRE(output.getMagnitude(7, 0, output.getNumSamples()) > 0.0001f);
+}
+
+TEST_CASE("DrumMachineProcessor emits per-pad CV/Gate on assigned output pairs", "[drums][processor][cv]") {
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 128, 8);
+
+    REQUIRE(processor.setPadCvGateConfig(0, {
+        true,
+        2,
+        40.0f,
+        36,
+        84,
+        1.0f,
+        6.0f,
+    }));
+    REQUIRE(processor.triggerNote(0, 127));
+
+    juce::AudioBuffer<float> output(8, 128);
+    output.clear();
+    juce::MidiBuffer midi;
+    processor.processBlock(output, midi);
+
+    REQUIRE(output.getMagnitude(4, 0, output.getNumSamples()) > 0.9f);
+    REQUIRE(output.getMagnitude(5, 0, output.getNumSamples()) > 0.0001f);
+    REQUIRE(output.getMagnitude(6, 0, output.getNumSamples()) < 0.0001f);
+    REQUIRE(output.getMagnitude(7, 0, output.getNumSamples()) < 0.0001f);
+}
+
+TEST_CASE("DrumMachineProcessor exposes master FX controls and bus reverb send", "[drums][processor][masterfx]") {
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 128, 2);
+
+    REQUIRE(processor.setBusReverbSend(0, 0.6f));
+    processor.setMasterFx({
+        12.0f,
+        -20.0f,
+        3.5f,
+        8.0f,
+        110.0f,
+        2.0f,
+        0.35f,
+        0.6f,
+        0.25f,
+        1.0f,
+        -1.5f,
+        90.0f,
+    });
+
+    const auto busOutput = processor.getBusOutput(0);
+    const auto masterFx = processor.getMasterFx();
+    REQUIRE(busOutput.reverbSend == Catch::Approx(0.6f));
+    REQUIRE(masterFx.driveDb == Catch::Approx(12.0f));
+    REQUIRE(masterFx.reverbMix == Catch::Approx(0.35f));
+    REQUIRE(masterFx.limiterThresholdDb == Catch::Approx(-1.5f));
+}
+
+TEST_CASE("DrumMachineProcessor learns and applies CC mappings from incoming MIDI", "[drums][processor][cc]") {
+    DrumMachineProcessor processor;
+    processor.prepare(44100.0, 64, 2);
+
+    float tempoFromCc = 0.0f;
+    float swingFromCc = 0.0f;
+    processor.setTempoCcCallback([&tempoFromCc](float value) { tempoFromCc = value; });
+    processor.setSwingCcCallback([&swingFromCc](float value) { swingFromCc = value; });
+
+    REQUIRE(processor.startCcLearn(0, 10));
+
+    juce::AudioBuffer<float> learnBuffer(2, 64);
+    learnBuffer.clear();
+    juce::MidiBuffer learnMidi;
+    learnMidi.addEvent(juce::MidiMessage::controllerEvent(3, 74, 96), 0);
+    processor.processBlock(learnBuffer, learnMidi);
+
+    const auto learnState = processor.getCcLearnState();
+    REQUIRE_FALSE(learnState.active);
+    REQUIRE(learnState.lastCc == 74);
+    REQUIRE(learnState.lastChannel == 3);
+
+    const auto learnedMapping = processor.getCcMappings().at(0);
+    REQUIRE(learnedMapping.slot == 0);
+    REQUIRE(learnedMapping.ccNumber == 74);
+    REQUIRE(learnedMapping.midiChannel == 3);
+    REQUIRE(learnedMapping.active);
+
+    REQUIRE(processor.setCcMapping(0, {
+        .slot = 0,
+        .ccNumber = 74,
+        .midiChannel = 3,
+        .target = DrumMachineProcessor::CcTarget::PadVolume,
+        .targetIndex = 0,
+        .active = true,
+    }));
+    REQUIRE(processor.setCcMapping(1, {
+        .slot = 1,
+        .ccNumber = 71,
+        .midiChannel = 3,
+        .target = DrumMachineProcessor::CcTarget::Tempo,
+        .targetIndex = 0,
+        .active = true,
+    }));
+    REQUIRE(processor.setCcMapping(2, {
+        .slot = 2,
+        .ccNumber = 72,
+        .midiChannel = 3,
+        .target = DrumMachineProcessor::CcTarget::Swing,
+        .targetIndex = 0,
+        .active = true,
+    }));
+
+    juce::AudioBuffer<float> applyBuffer(2, 64);
+    applyBuffer.clear();
+    juce::MidiBuffer applyMidi;
+    applyMidi.addEvent(juce::MidiMessage::controllerEvent(3, 74, 64), 0);
+    applyMidi.addEvent(juce::MidiMessage::controllerEvent(3, 71, 127), 0);
+    applyMidi.addEvent(juce::MidiMessage::controllerEvent(3, 72, 32), 0);
+    processor.processBlock(applyBuffer, applyMidi);
+
+    REQUIRE(processor.getPadConfig(0).volume == Catch::Approx(64.0f / 127.0f).margin(0.001f));
+    REQUIRE(tempoFromCc == Catch::Approx(300.0f).margin(0.001f));
+    REQUIRE(swingFromCc == Catch::Approx((32.0f / 127.0f) * 100.0f).margin(0.001f));
 }
 
 TEST_CASE("DrumMachineProcessor routes midi note-ons to the matching pad", "[drums][processor]") {

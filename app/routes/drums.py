@@ -28,8 +28,15 @@ from app.services.drum_sequencer_service import (
     get_drum_sequencer_service,
 )
 from app.services.drum_machine_service import (
+    DrumBusMixerModel,
+    DrumCcLearnStateModel,
+    DrumCcMappingModel,
+    DrumCompModel,
+    DrumCvGateConfigModel,
+    DrumEqModel,
     DrumMidiLearnStateModel,
     DrumMidiMappingModel,
+    DrumMidiOutputConfigModel,
     DrumMidiPresetListModel,
     DrumMidiVelocityCurvesModel,
     DrumMidiZonesModel,
@@ -37,11 +44,20 @@ from app.services.drum_machine_service import (
     DrumMachineStateUpdateModel,
     DrumMachineService,
     DrumMeteringModel,
+    DrumMasterFxModel,
+    DrumPadFilterModel,
+    DrumPadControlModel,
     DrumSequencerPositionModel,
     DrumSongTransportStateModel,
+    DrumSynthParamModel,
     DrumTransportStateModel,
     DrumTransportUpdateModel,
     get_drum_machine_service,
+)
+from app.services.drum_sample_editor import (
+    DrumPadRecordingStateModel,
+    DrumPadSampleWaveformModel,
+    get_drum_sample_editor_service,
 )
 
 router = APIRouter()
@@ -143,6 +159,81 @@ class DrumMidiPresetLoadRequest(BaseModel):
     preset_name: str
 
 
+class DrumCcLearnStartRequest(BaseModel):
+    slot: int = Field(..., ge=0, le=31)
+    timeout_seconds: int = Field(10, ge=1, le=60)
+
+
+class DrumPadSoundSourceModel(BaseModel):
+    pad: int = Field(..., ge=0, le=15)
+    source: str
+
+
+class DrumPadSoundSourceUpdateModel(BaseModel):
+    source: str
+
+
+class DrumPadSynthParamsResponseModel(BaseModel):
+    pad: int = Field(..., ge=0, le=15)
+    params: DrumSynthParamModel
+
+
+class DrumPadFilterResponseModel(BaseModel):
+    pad: int = Field(..., ge=0, le=15)
+    filter: DrumPadFilterModel
+
+
+class DrumPadCvGateResponseModel(BaseModel):
+    pad: int = Field(..., ge=0, le=15)
+    config: DrumCvGateConfigModel
+
+
+class DrumPadControlUpdateModel(BaseModel):
+    volume: float | None = Field(default=None, ge=0.0, le=100.0)
+    pan: float | None = Field(default=None, ge=-100.0, le=100.0)
+    tune: float | None = Field(default=None, ge=-24.0, le=24.0)
+    mute: bool | None = None
+    solo: bool | None = None
+    bus_assignment: int | None = Field(default=None, ge=0, le=7)
+
+
+class DrumPadSampleTrimModel(BaseModel):
+    start_sample: int = Field(..., ge=0)
+    end_sample: int = Field(..., ge=1)
+
+
+class DrumPadSampleNormalizeModel(BaseModel):
+    target_peak: float = Field(0.99, gt=0.0, le=1.0)
+
+
+class DrumPadSampleFadeModel(BaseModel):
+    fade_in_ms: float = Field(0.0, ge=0.0, le=60000.0)
+    fade_out_ms: float = Field(0.0, ge=0.0, le=60000.0)
+
+
+class DrumBusMixerUpdateModel(BaseModel):
+    eq: DrumEqModel | None = None
+    comp: DrumCompModel | None = None
+    level: float | None = Field(default=None, ge=0.0, le=100.0)
+    pan: float | None = Field(default=None, ge=-100.0, le=100.0)
+    mute: bool | None = None
+    solo: bool | None = None
+    output_pair: int | None = Field(default=None, ge=0)
+    reverb_send: float | None = Field(default=None, ge=0.0, le=100.0)
+
+
+class DrumMasterVolumeResponseModel(BaseModel):
+    volume: int = Field(..., ge=0, le=100)
+
+
+class DrumMasterVolumeUpdateModel(BaseModel):
+    volume: int = Field(..., ge=0, le=100)
+
+
+class DrumBusReverbSendUpdateModel(BaseModel):
+    level: float = Field(..., ge=0.0, le=100.0)
+
+
 def _get_service() -> DrumMachineService:
     return get_drum_machine_service()
 
@@ -153,6 +244,10 @@ def _get_sequencer_service() -> DrumSequencerService:
 
 def _get_kit_service() -> DrumKitService:
     return get_drum_kit_service()
+
+
+def _get_sample_editor_service():
+    return get_drum_sample_editor_service()
 
 
 @router.get("/api/engine/drums/state", response_model=DrumMachineStateModel)
@@ -170,6 +265,175 @@ async def set_drum_machine_state(state: DrumMachineStateUpdateModel) -> DrumStat
 @router.get("/api/engine/drums/transport", response_model=DrumTransportStateModel)
 def get_drum_transport() -> Dict[str, Any]:
     return _get_service().get_transport()
+
+
+@router.get("/api/engine/drums/pad/{pad}/source", response_model=DrumPadSoundSourceModel)
+def get_drum_pad_sound_source(pad: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
+    try:
+        return _get_service().get_pad_sound_source(pad)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/source", response_model=DrumPadSoundSourceModel)
+def set_drum_pad_sound_source(
+    payload: DrumPadSoundSourceUpdateModel,
+    pad: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_service().set_pad_sound_source(pad, payload.source)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/engine/drums/pad/{pad}/synth", response_model=DrumPadSynthParamsResponseModel)
+def get_drum_pad_synth_params(pad: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
+    try:
+        return _get_service().get_pad_synth_params(pad)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/synth", response_model=DrumPadSynthParamsResponseModel)
+def set_drum_pad_synth_params(
+    payload: DrumSynthParamModel,
+    pad: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_service().set_pad_synth_params(pad, payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/engine/drums/pad/{pad}/filter", response_model=DrumPadFilterResponseModel)
+def get_drum_pad_filter(pad: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
+    try:
+        return _get_service().get_pad_filter(pad)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/filter", response_model=DrumPadFilterResponseModel)
+def set_drum_pad_filter(
+    payload: DrumPadFilterModel,
+    pad: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_service().set_pad_filter(pad, payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/engine/drums/pad/{pad}/cv-gate", response_model=DrumPadCvGateResponseModel)
+def get_drum_pad_cv_gate_config(pad: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
+    try:
+        return _get_service().get_pad_cv_gate_config(pad)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/cv-gate", response_model=DrumPadCvGateResponseModel)
+def set_drum_pad_cv_gate_config(
+    payload: DrumCvGateConfigModel,
+    pad: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_service().set_pad_cv_gate_config(pad, payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/engine/drums/pad/{pad}/sample/waveform", response_model=DrumPadSampleWaveformModel)
+def get_drum_pad_sample_waveform(
+    pad: int = Path(..., ge=0, le=15),
+    points: int = 256,
+) -> Dict[str, Any]:
+    try:
+        return _get_sample_editor_service().get_waveform(pad, points=points)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/sample/upload", response_model=DrumPadSampleWaveformModel)
+async def upload_drum_pad_sample(
+    pad: int = Path(..., ge=0, le=15),
+    file: UploadFile = File(...),
+) -> Dict[str, Any]:
+    try:
+        return _get_sample_editor_service().upload_sample(pad, file.filename or "sample.wav", await file.read())
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/record/start", response_model=DrumPadRecordingStateModel)
+def start_drum_pad_recording(pad: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
+    try:
+        return _get_sample_editor_service().start_recording(pad)
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/record/stop", response_model=DrumPadSampleWaveformModel)
+def stop_drum_pad_recording(pad: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
+    try:
+        return _get_sample_editor_service().stop_recording(pad)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/sample/trim", response_model=DrumPadSampleWaveformModel)
+def trim_drum_pad_sample(
+    payload: DrumPadSampleTrimModel,
+    pad: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_sample_editor_service().trim_sample(pad, payload.start_sample, payload.end_sample)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/sample/normalize", response_model=DrumPadSampleWaveformModel)
+def normalize_drum_pad_sample(
+    payload: DrumPadSampleNormalizeModel,
+    pad: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_sample_editor_service().normalize_sample(pad, payload.target_peak)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/sample/reverse", response_model=DrumPadSampleWaveformModel)
+def reverse_drum_pad_sample(pad: int = Path(..., ge=0, le=15)) -> Dict[str, Any]:
+    try:
+        return _get_sample_editor_service().reverse_sample(pad)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/pad/{pad}/sample/fade", response_model=DrumPadSampleWaveformModel)
+def fade_drum_pad_sample(
+    payload: DrumPadSampleFadeModel,
+    pad: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_sample_editor_service().fade_sample(pad, payload.fade_in_ms, payload.fade_out_ms)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.post("/api/engine/drums/transport", response_model=DrumTransportStateModel)
@@ -362,6 +626,69 @@ def get_drum_metering() -> Dict[str, Any]:
     return _get_service().get_metering()
 
 
+@router.get("/api/engine/drums/mixer/pads", response_model=List[DrumPadControlModel])
+def get_drum_pad_controls() -> List[Dict[str, Any]]:
+    return _get_service().get_pad_controls()
+
+
+@router.patch("/api/engine/drums/mixer/pads/{pad}", response_model=DrumPadControlModel)
+def set_drum_pad_control(
+    payload: DrumPadControlUpdateModel,
+    pad: int = Path(..., ge=0, le=15),
+) -> Dict[str, Any]:
+    try:
+        return _get_service().set_pad_control(pad, payload.model_dump(exclude_unset=True))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/engine/drums/mixer/buses", response_model=List[DrumBusMixerModel])
+def get_drum_bus_mixers() -> List[Dict[str, Any]]:
+    return _get_service().get_bus_mixers()
+
+
+@router.patch("/api/engine/drums/mixer/buses/{bus}", response_model=DrumBusMixerModel)
+def set_drum_bus_mixer(
+    payload: DrumBusMixerUpdateModel,
+    bus: int = Path(..., ge=0, le=7),
+) -> Dict[str, Any]:
+    try:
+        return _get_service().set_bus_mixer(bus, payload.model_dump(exclude_unset=True))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/engine/drums/mixer/master", response_model=DrumMasterVolumeResponseModel)
+def get_drum_master_volume() -> Dict[str, Any]:
+    return _get_service().get_master_volume()
+
+
+@router.post("/api/engine/drums/mixer/master", response_model=DrumMasterVolumeResponseModel)
+def set_drum_master_volume(payload: DrumMasterVolumeUpdateModel) -> Dict[str, Any]:
+    return _get_service().set_master_volume(payload.volume)
+
+
+@router.get("/api/engine/drums/master-fx", response_model=DrumMasterFxModel)
+def get_drum_master_fx() -> Dict[str, Any]:
+    return _get_service().get_master_fx()
+
+
+@router.post("/api/engine/drums/master-fx", response_model=DrumMasterFxModel)
+def set_drum_master_fx(payload: DrumMasterFxModel) -> Dict[str, Any]:
+    return _get_service().set_master_fx(payload.model_dump())
+
+
+@router.post("/api/engine/drums/bus/{bus}/reverb-send", response_model=DrumBusMixerModel)
+def set_drum_bus_reverb_send(
+    payload: DrumBusReverbSendUpdateModel,
+    bus: int = Path(..., ge=0, le=7),
+) -> Dict[str, Any]:
+    try:
+        return _get_service().set_bus_reverb_send(bus, payload.level)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.get("/api/engine/drums/midi/mapping", response_model=DrumMidiMappingModel)
 def get_drum_midi_mapping() -> Dict[str, Any]:
     return _get_service().get_midi_mapping()
@@ -390,6 +717,44 @@ def get_drum_midi_zones() -> Dict[str, Any]:
 @router.post("/api/engine/drums/midi/zones", response_model=DrumMidiZonesModel)
 def set_drum_midi_zones(payload: DrumMidiZonesModel) -> Dict[str, Any]:
     return _get_service().update_midi_zones(payload.model_dump())
+
+
+@router.get("/api/engine/drums/midi/output", response_model=DrumMidiOutputConfigModel)
+def get_drum_midi_output_config() -> Dict[str, Any]:
+    return _get_service().get_midi_output_config()
+
+
+@router.post("/api/engine/drums/midi/output", response_model=DrumMidiOutputConfigModel)
+def set_drum_midi_output_config(payload: DrumMidiOutputConfigModel) -> Dict[str, Any]:
+    return _get_service().update_midi_output_config(payload.model_dump())
+
+
+@router.get("/api/engine/drums/midi/cc-mappings", response_model=DrumCcMappingModel)
+def get_drum_cc_mappings() -> Dict[str, Any]:
+    return _get_service().get_cc_mappings()
+
+
+@router.post("/api/engine/drums/midi/cc-mappings", response_model=DrumCcMappingModel)
+def set_drum_cc_mappings(payload: DrumCcMappingModel) -> Dict[str, Any]:
+    return _get_service().update_cc_mappings(payload.model_dump())
+
+
+@router.post("/api/engine/drums/midi/cc-learn/start", response_model=DrumCcLearnStateModel)
+def start_drum_cc_learn(payload: DrumCcLearnStartRequest) -> Dict[str, Any]:
+    try:
+        return _get_service().start_cc_learn(payload.slot, payload.timeout_seconds)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/api/engine/drums/midi/cc-learn/stop", response_model=DrumCcLearnStateModel)
+def stop_drum_cc_learn() -> Dict[str, Any]:
+    return _get_service().stop_cc_learn()
+
+
+@router.get("/api/engine/drums/midi/cc-learn/status", response_model=DrumCcLearnStateModel)
+def get_drum_cc_learn_status() -> Dict[str, Any]:
+    return _get_service().get_cc_learn_state()
 
 
 @router.post("/api/engine/drums/midi/learn/start", response_model=DrumMidiLearnStateModel)

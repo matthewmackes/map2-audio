@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 23, 2026 (MIDI script sandbox verification + dead legacy MIDI drawer cleanup)
+> **Last Updated**: March 24, 2026 (DrumSequencer stack-overflow test fix)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1003,6 +1003,12 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Verify every migrated icon against `@carbon/icons-react` exports, remove unsupported `weight` props from Carbon components, and re-run `npm --prefix web run build`, not just `typecheck`.
 - **Lesson**: Treat icon-library migration as a build-level contract change, not a search-and-replace task.
 
+**8. Large Native Fixture State Can Blow Test Stack**
+- **Problem**: Standalone `synthforge_tests` could segfault before assertions when constructing `DrumSequencer` in `DrumSequencerTests.cpp`.
+- **Root Cause**: `DrumSequencer` stored its full 128-pattern state inline by value, making constructor-time stack usage large enough to overflow the test process stack.
+- **Fix**: Move the large pattern store to heap-backed ownership and keep the public behavior unchanged; then rerun the isolated case and the full `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` gate.
+- **Lesson**: For large native state containers used by test-local objects, prefer heap ownership over giant stack-resident aggregates even when the class is otherwise logically value-like.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1398,6 +1404,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-03-24] - DrumSequencer Stack-Overflow Test Fix
+- **Section**: Gotchas & Learned Fixes (#8)
+- **Change**: Documented the standalone native-test crash caused by `DrumSequencer` carrying its full pattern store inline by value and the fix to move that storage to heap-backed ownership.
+- **Reason**: The `T392` crash only reproduced in the native harness constructor path, and without recording the cause it is easy to regress by reintroducing large stack-resident aggregates in real-time classes.
+- **Impact**: Future drum/native test work should treat very large state containers as heap-backed by default and use full `ctest` as the sign-off gate after native layout changes.
+- **Files**: `.github/copilot-instructions.md`, `juce-engine/Source/DrumMachine/DrumSequencer.h`, `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, `docs/PROJECT_WORKLIST.md`
 
 ### [2026-03-23] - JUCE Engine Monitor Bridge Into MidiHub
 - **Section**: Gotchas & Learned Fixes (#21)

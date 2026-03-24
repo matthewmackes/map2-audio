@@ -322,3 +322,77 @@ TEST_CASE("DrumSequencer clears and copies edited patterns", "[drums][sequencer]
     REQUIRE(sequencer.getPatternLength(13) == 16);
     REQUIRE(sequencer.getStep(13, 4, 15).velocity == 0);
 }
+
+TEST_CASE("DrumSequencer emits MIDI note, clock, and transport events", "[drums][sequencer]") {
+    DrumMachineProcessor processor;
+    processor.prepare(48000.0, 8192, 2);
+
+    DrumSequencer sequencer;
+    std::vector<DrumSequencer::MidiOutputEvent> events;
+    sequencer.setDrumMachine(&processor);
+    sequencer.setMidiOutputEnabled(true);
+    sequencer.setMidiClockOutputEnabled(true);
+    REQUIRE(sequencer.setMidiOutputChannel(5));
+    sequencer.setMidiOutputCallback([&events](const DrumSequencer::MidiOutputEvent& event) {
+        events.push_back(event);
+    });
+    sequencer.prepare(48000.0, 8192);
+    REQUIRE(sequencer.setTempo(120.0));
+    REQUIRE(sequencer.setStep(0, 0, 0, 96));
+
+    sequencer.play();
+    sequencer.processBlock(6000);
+    sequencer.stop();
+
+    REQUIRE(std::any_of(events.begin(), events.end(), [](const auto& event) {
+        return event.type == DrumSequencer::MidiOutputEventType::Start;
+    }));
+    REQUIRE(std::any_of(events.begin(), events.end(), [](const auto& event) {
+        return event.type == DrumSequencer::MidiOutputEventType::Clock;
+    }));
+    REQUIRE(std::any_of(events.begin(), events.end(), [](const auto& event) {
+        return event.type == DrumSequencer::MidiOutputEventType::NoteOn
+            && event.channel == 5
+            && event.data1 == 36
+            && event.data2 == 96;
+    }));
+    REQUIRE(std::any_of(events.begin(), events.end(), [](const auto& event) {
+        return event.type == DrumSequencer::MidiOutputEventType::NoteOff
+            && event.channel == 5
+            && event.data1 == 36;
+    }));
+    REQUIRE(std::any_of(events.begin(), events.end(), [](const auto& event) {
+        return event.type == DrumSequencer::MidiOutputEventType::Stop;
+    }));
+}
+
+TEST_CASE("DrumSequencer emits Continue after pause and handles Program Change pattern switching", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+    std::vector<DrumSequencer::MidiOutputEvent> events;
+    sequencer.setMidiOutputEnabled(true);
+    sequencer.setMidiOutputCallback([&events](const DrumSequencer::MidiOutputEvent& event) {
+        events.push_back(event);
+    });
+    sequencer.prepare(48000.0, 256);
+    REQUIRE(sequencer.setTempo(120.0));
+
+    sequencer.play();
+    sequencer.pause();
+    sequencer.play();
+
+    REQUIRE(std::any_of(events.begin(), events.end(), [](const auto& event) {
+        return event.type == DrumSequencer::MidiOutputEventType::Start;
+    }));
+    REQUIRE(std::any_of(events.begin(), events.end(), [](const auto& event) {
+        return event.type == DrumSequencer::MidiOutputEventType::Continue;
+    }));
+
+    sequencer.stop();
+    sequencer.setProgramChangeEnabled(true);
+    REQUIRE(sequencer.handleIncomingProgramChange(12));
+    REQUIRE(sequencer.getCurrentPattern() == 12);
+
+    sequencer.play();
+    REQUIRE(sequencer.handleIncomingProgramChange(7));
+    REQUIRE(sequencer.getPendingPatternSwitch() == 7);
+}

@@ -14,6 +14,10 @@ const DRUM_MACHINE_DEFAULTS: DrumMachineState = {
   practice_change_quantization: 1,
   practice_count_in_bars: 1,
   practice_auto_fill: false,
+  midi_output_enabled: false,
+  midi_clock_output_enabled: false,
+  midi_output_channel: 9,
+  program_change_enabled: false,
 }
 
 export function normalizeDrumMachineState(

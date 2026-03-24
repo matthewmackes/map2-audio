@@ -352,6 +352,110 @@ py::dict synthForgeMpeConfigToDict(const synthforge::MpeConfig& config) {
     return d;
 }
 
+std::string drumSoundSourceToString(map2::drummachine::DrumMachineProcessor::SoundSource source) {
+    switch (source) {
+        case map2::drummachine::DrumMachineProcessor::SoundSource::Synth:
+            return "synth";
+        case map2::drummachine::DrumMachineProcessor::SoundSource::Hybrid:
+            return "hybrid";
+        case map2::drummachine::DrumMachineProcessor::SoundSource::Sample:
+        default:
+            return "sample";
+    }
+}
+
+map2::drummachine::DrumMachineProcessor::SoundSource drumSoundSourceFromString(const std::string& source) {
+    if (source == "synth") {
+        return map2::drummachine::DrumMachineProcessor::SoundSource::Synth;
+    }
+    if (source == "hybrid") {
+        return map2::drummachine::DrumMachineProcessor::SoundSource::Hybrid;
+    }
+    return map2::drummachine::DrumMachineProcessor::SoundSource::Sample;
+}
+
+std::string drumSynthOscillatorToString(map2::drummachine::DrumSynthVoice::OscillatorType type) {
+    switch (type) {
+        case map2::drummachine::DrumSynthVoice::OscillatorType::Triangle:
+            return "triangle";
+        case map2::drummachine::DrumSynthVoice::OscillatorType::Saw:
+            return "saw";
+        case map2::drummachine::DrumSynthVoice::OscillatorType::Square:
+            return "square";
+        case map2::drummachine::DrumSynthVoice::OscillatorType::Metallic:
+            return "metallic";
+        case map2::drummachine::DrumSynthVoice::OscillatorType::Sine:
+        default:
+            return "sine";
+    }
+}
+
+map2::drummachine::DrumSynthVoice::OscillatorType drumSynthOscillatorFromString(const std::string& type) {
+    if (type == "triangle") {
+        return map2::drummachine::DrumSynthVoice::OscillatorType::Triangle;
+    }
+    if (type == "saw") {
+        return map2::drummachine::DrumSynthVoice::OscillatorType::Saw;
+    }
+    if (type == "square") {
+        return map2::drummachine::DrumSynthVoice::OscillatorType::Square;
+    }
+    if (type == "metallic") {
+        return map2::drummachine::DrumSynthVoice::OscillatorType::Metallic;
+    }
+    return map2::drummachine::DrumSynthVoice::OscillatorType::Sine;
+}
+
+py::dict drumSynthParamsToDict(const map2::drummachine::DrumMachineProcessor::DrumSynthParams& params) {
+    py::dict d;
+    d["oscillator_type"] = drumSynthOscillatorToString(params.oscillatorType);
+    d["pitch_envelope_start_hz"] = params.pitchEnvelopeStartHz;
+    d["pitch_envelope_end_hz"] = params.pitchEnvelopeEndHz;
+    d["pitch_envelope_decay_ms"] = params.pitchEnvelopeDecayMs;
+    d["noise_level"] = params.noiseLevel;
+    d["noise_decay_ms"] = params.noiseDecayMs;
+    d["body_decay_ms"] = params.bodyDecayMs;
+    d["tone_amount"] = params.toneAmount;
+    return d;
+}
+
+std::string drumPadFilterTypeToString(map2::drummachine::DrumMachineProcessor::PadFilterType type) {
+    switch (type) {
+        case map2::drummachine::DrumMachineProcessor::PadFilterType::HighPass:
+            return "highpass";
+        case map2::drummachine::DrumMachineProcessor::PadFilterType::BandPass:
+            return "bandpass";
+        case map2::drummachine::DrumMachineProcessor::PadFilterType::Notch:
+            return "notch";
+        case map2::drummachine::DrumMachineProcessor::PadFilterType::LowPass:
+        default:
+            return "lowpass";
+    }
+}
+
+map2::drummachine::DrumMachineProcessor::PadFilterType drumPadFilterTypeFromString(const std::string& type) {
+    if (type == "highpass") {
+        return map2::drummachine::DrumMachineProcessor::PadFilterType::HighPass;
+    }
+    if (type == "bandpass") {
+        return map2::drummachine::DrumMachineProcessor::PadFilterType::BandPass;
+    }
+    if (type == "notch") {
+        return map2::drummachine::DrumMachineProcessor::PadFilterType::Notch;
+    }
+    return map2::drummachine::DrumMachineProcessor::PadFilterType::LowPass;
+}
+
+py::dict drumPadFilterConfigToDict(const map2::drummachine::DrumMachineProcessor::PadFilterConfig& config) {
+    py::dict d;
+    d["type"] = drumPadFilterTypeToString(config.type);
+    d["cutoff_hz"] = config.cutoffHz;
+    d["resonance"] = config.resonance;
+    d["env_amount"] = config.envAmount;
+    d["env_decay_ms"] = config.envDecayMs;
+    return d;
+}
+
 py::dict synthForgeModMatrixRouteToDict(const synthforge::ModMatrixRoute& route) {
     py::dict d;
     d["source"] = route.source;
@@ -2958,9 +3062,142 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result["timeout_seconds"] = state.timeoutSeconds;
             return result;
         }, "Get current drum MIDI learn status")
+        .def("set_drum_cc_mapping", [](Map2AudioEngine& self, int slot, int ccNumber, int midiChannel, const std::string& target, int targetIndex, bool active) {
+            drummachine::DrumCcMapper::Target resolvedTarget;
+            if (!drummachine::DrumCcMapper::targetFromString(target, resolvedTarget)) {
+                return false;
+            }
+            return self.getDrumMachine().setCcMapping(slot, {
+                .slot = slot,
+                .ccNumber = ccNumber,
+                .midiChannel = midiChannel,
+                .target = resolvedTarget,
+                .targetIndex = targetIndex,
+                .active = active,
+            });
+        }, py::arg("slot"), py::arg("cc_number"), py::arg("midi_channel"), py::arg("target"), py::arg("target_index"), py::arg("active") = true,
+           "Set a drum CC mapping slot")
+        .def("get_drum_cc_mappings", [](const Map2AudioEngine& self) {
+            py::list mappings;
+            for (const auto& mapping : self.getDrumMachine().getCcMappings()) {
+                py::dict item;
+                item["slot"] = mapping.slot;
+                item["cc_number"] = mapping.ccNumber;
+                item["midi_channel"] = mapping.midiChannel;
+                item["target"] = drummachine::DrumCcMapper::targetToString(mapping.target);
+                item["target_index"] = mapping.targetIndex;
+                item["active"] = mapping.active;
+                mappings.append(item);
+            }
+            return mappings;
+        }, "Get all drum CC mappings")
+        .def("start_drum_cc_learn", [](Map2AudioEngine& self, int slot, int timeoutSeconds) {
+            return self.getDrumMachine().startCcLearn(slot, timeoutSeconds);
+        }, py::arg("slot"), py::arg("timeout_seconds") = 10, "Start drum CC learn mode")
+        .def("stop_drum_cc_learn", [](Map2AudioEngine& self) {
+            self.getDrumMachine().stopCcLearn();
+            return true;
+        }, "Stop drum CC learn mode")
+        .def("get_drum_cc_learn_state", [](const Map2AudioEngine& self) {
+            const auto state = self.getDrumMachine().getCcLearnState();
+            py::dict result;
+            result["active"] = state.active;
+            result["slot"] = state.slot;
+            result["last_cc"] = state.lastCc;
+            result["last_channel"] = state.lastChannel;
+            result["timeout_seconds"] = state.timeoutSeconds;
+            return result;
+        }, "Get current drum CC learn state")
         .def("set_drum_pad_midi_channel", [](Map2AudioEngine& self, int padIndex, int midiChannel) {
             return self.getDrumMachine().setPadMidiChannel(padIndex, midiChannel);
         }, py::arg("pad"), py::arg("channel"), "Set drum pad MIDI channel")
+        .def("set_drum_pad_sound_source", [](Map2AudioEngine& self, int padIndex, const std::string& source) {
+            return self.getDrumMachine().setPadSoundSource(padIndex, drumSoundSourceFromString(source));
+        }, py::arg("pad"), py::arg("source"), "Set drum pad sound source: sample, synth, or hybrid")
+        .def("get_drum_pad_sound_source", [](const Map2AudioEngine& self, int padIndex) {
+            return drumSoundSourceToString(self.getDrumMachine().getPadSoundSource(padIndex));
+        }, py::arg("pad"), "Get drum pad sound source")
+        .def("start_drum_pad_recording", [](Map2AudioEngine& self, int padIndex) {
+            return self.getDrumMachine().startPadInputRecording(padIndex);
+        }, py::arg("pad"), "Start recording hardware input into a drum pad capture buffer")
+        .def("stop_drum_pad_recording", [](Map2AudioEngine& self) {
+            const auto recorded = self.getDrumMachine().stopPadInputRecording();
+            py::dict result;
+            result["pad"] = recorded.padIndex;
+            result["sample_rate"] = recorded.sampleRate;
+            result["channel_count"] = recorded.channelCount;
+            result["truncated"] = recorded.truncated;
+            py::list samples;
+            for (const auto value : recorded.samples) {
+                samples.append(value);
+            }
+            result["samples"] = samples;
+            return result;
+        }, "Stop drum pad recording and return the captured mono sample buffer")
+        .def("get_drum_pad_recording_active", [](const Map2AudioEngine& self) {
+            return self.getDrumMachine().isPadInputRecording();
+        }, "Report whether drum pad input recording is currently active")
+        .def("set_drum_synth_param", [](Map2AudioEngine& self, int padIndex, const std::string& paramName, py::object value) {
+            auto params = self.getDrumMachine().getPadSynthParams(padIndex);
+            if (paramName == "oscillator_type") {
+                params.oscillatorType = drumSynthOscillatorFromString(value.cast<std::string>());
+            } else if (paramName == "pitch_envelope_start_hz") {
+                params.pitchEnvelopeStartHz = value.cast<float>();
+            } else if (paramName == "pitch_envelope_end_hz") {
+                params.pitchEnvelopeEndHz = value.cast<float>();
+            } else if (paramName == "pitch_envelope_decay_ms") {
+                params.pitchEnvelopeDecayMs = value.cast<float>();
+            } else if (paramName == "noise_level") {
+                params.noiseLevel = value.cast<float>();
+            } else if (paramName == "noise_decay_ms") {
+                params.noiseDecayMs = value.cast<float>();
+            } else if (paramName == "body_decay_ms") {
+                params.bodyDecayMs = value.cast<float>();
+            } else if (paramName == "tone_amount") {
+                params.toneAmount = value.cast<float>();
+            } else {
+                return false;
+            }
+            return self.getDrumMachine().setPadSynthParams(padIndex, params);
+        }, py::arg("pad"), py::arg("param_name"), py::arg("value"), "Set one drum synth parameter by name")
+        .def("get_drum_synth_params", [](const Map2AudioEngine& self, int padIndex) {
+            return drumSynthParamsToDict(self.getDrumMachine().getPadSynthParams(padIndex));
+        }, py::arg("pad"), "Get drum synth parameters for one pad")
+        .def("set_drum_pad_filter", [](Map2AudioEngine& self, int padIndex, const std::string& type, float cutoffHz, float resonance, float envAmount, float envDecayMs) {
+            return self.getDrumMachine().setPadFilter(padIndex, {
+                drumPadFilterTypeFromString(type),
+                cutoffHz,
+                resonance,
+                envAmount,
+                envDecayMs,
+            });
+        }, py::arg("pad"), py::arg("type"), py::arg("cutoff_hz"), py::arg("resonance"), py::arg("env_amount"), py::arg("env_decay_ms"), "Set per-pad filter parameters")
+        .def("get_drum_pad_filter", [](const Map2AudioEngine& self, int padIndex) {
+            return drumPadFilterConfigToDict(self.getDrumMachine().getPadFilter(padIndex));
+        }, py::arg("pad"), "Get per-pad filter parameters")
+        .def("set_drum_cv_gate_config", [](Map2AudioEngine& self, int padIndex, bool enabled, int outputPair, float gateLengthMs, int noteMin, int noteMax, float pitchMinVolts, float pitchMaxVolts) {
+            return self.getDrumMachine().setPadCvGateConfig(padIndex, {
+                enabled,
+                outputPair,
+                gateLengthMs,
+                noteMin,
+                noteMax,
+                pitchMinVolts,
+                pitchMaxVolts,
+            });
+        }, py::arg("pad"), py::arg("enabled"), py::arg("output_pair"), py::arg("gate_length_ms"), py::arg("note_min") = 36, py::arg("note_max") = 84, py::arg("pitch_min_volts") = 0.0f, py::arg("pitch_max_volts") = 5.0f, "Set per-pad CV/Gate output configuration")
+        .def("get_drum_cv_gate_config", [](const Map2AudioEngine& self, int padIndex) {
+            const auto config = self.getDrumMachine().getPadCvGateConfig(padIndex);
+            py::dict result;
+            result["enabled"] = config.enabled;
+            result["output_pair"] = config.outputPair;
+            result["gate_length_ms"] = config.gateLengthMs;
+            result["note_min"] = config.noteMin;
+            result["note_max"] = config.noteMax;
+            result["pitch_min_volts"] = config.pitchMinVolts;
+            result["pitch_max_volts"] = config.pitchMaxVolts;
+            return result;
+        }, py::arg("pad"), "Get per-pad CV/Gate output configuration")
 
         .def("set_drum_bus_eq", [](Map2AudioEngine& self, int busIndex, float lowGain, float midGain, float midFreq, float highGain) {
             return self.getDrumMachine().setBusEq(busIndex, {lowGain, midGain, midFreq, highGain});
@@ -2979,10 +3216,81 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("set_drum_bus_solo", [](Map2AudioEngine& self, int busIndex, bool solo) {
             return self.getDrumMachine().setBusSolo(busIndex, solo);
         }, py::arg("bus"), py::arg("solo"), "Solo or unsolo a drum bus")
+        .def("set_drum_bus_output_pair", [](Map2AudioEngine& self, int busIndex, int outputPair) {
+            return self.getDrumMachine().setBusOutputPair(busIndex, outputPair);
+        }, py::arg("bus"), py::arg("output_pair"), "Route a drum bus to a physical output pair")
+        .def("set_drum_bus_reverb_send", [](Map2AudioEngine& self, int busIndex, float reverbSend) {
+            return self.getDrumMachine().setBusReverbSend(busIndex, reverbSend);
+        }, py::arg("bus"), py::arg("reverb_send"), "Set per-bus reverb send level")
+        .def("get_drum_bus_mixer_state", [](const Map2AudioEngine& self, int busIndex) {
+            py::dict result;
+            const auto eq = self.getDrumMachine().getBusEq(busIndex);
+            const auto comp = self.getDrumMachine().getBusComp(busIndex);
+            const auto output = self.getDrumMachine().getBusOutput(busIndex);
+            py::dict eqDict;
+            eqDict["low_gain"] = eq.lowGainDb;
+            eqDict["mid_gain"] = eq.midGainDb;
+            eqDict["mid_freq"] = eq.midFrequencyHz;
+            eqDict["high_gain"] = eq.highGainDb;
+            py::dict compDict;
+            compDict["threshold"] = comp.thresholdDb;
+            compDict["ratio"] = comp.ratio;
+            compDict["attack"] = comp.attackMs;
+            compDict["release"] = comp.releaseMs;
+            compDict["makeup"] = comp.makeupGainDb;
+            result["bus"] = busIndex;
+            result["eq"] = eqDict;
+            result["comp"] = compDict;
+            result["level"] = output.level;
+            result["pan"] = output.pan;
+            result["mute"] = output.mute;
+            result["solo"] = output.solo;
+            result["output_pair"] = output.outputPair;
+            result["reverb_send"] = output.reverbSend;
+            return result;
+        }, py::arg("bus"), "Get drum bus mixer/routing state")
+        .def("set_drum_master_fx", [](Map2AudioEngine& self, const std::string& parameter, float value) {
+            auto config = self.getDrumMachine().getMasterFx();
+            if (parameter == "drive_db") config.driveDb = value;
+            else if (parameter == "compressor_threshold") config.compressorThresholdDb = value;
+            else if (parameter == "compressor_ratio") config.compressorRatio = value;
+            else if (parameter == "compressor_attack") config.compressorAttackMs = value;
+            else if (parameter == "compressor_release") config.compressorReleaseMs = value;
+            else if (parameter == "compressor_makeup") config.compressorMakeupGainDb = value;
+            else if (parameter == "reverb_mix") config.reverbMix = value;
+            else if (parameter == "reverb_size") config.reverbSize = value;
+            else if (parameter == "reverb_damping") config.reverbDamping = value;
+            else if (parameter == "reverb_width") config.reverbWidth = value;
+            else if (parameter == "limiter_threshold") config.limiterThresholdDb = value;
+            else if (parameter == "limiter_release") config.limiterReleaseMs = value;
+            else return false;
+            self.getDrumMachine().setMasterFx(config);
+            return true;
+        }, py::arg("parameter"), py::arg("value"), "Set a drum master FX parameter")
+        .def("get_drum_master_fx", [](const Map2AudioEngine& self) {
+            const auto config = self.getDrumMachine().getMasterFx();
+            py::dict result;
+            result["drive_db"] = config.driveDb;
+            result["compressor_threshold"] = config.compressorThresholdDb;
+            result["compressor_ratio"] = config.compressorRatio;
+            result["compressor_attack"] = config.compressorAttackMs;
+            result["compressor_release"] = config.compressorReleaseMs;
+            result["compressor_makeup"] = config.compressorMakeupGainDb;
+            result["reverb_mix"] = config.reverbMix;
+            result["reverb_size"] = config.reverbSize;
+            result["reverb_damping"] = config.reverbDamping;
+            result["reverb_width"] = config.reverbWidth;
+            result["limiter_threshold"] = config.limiterThresholdDb;
+            result["limiter_release"] = config.limiterReleaseMs;
+            return result;
+        }, "Get drum master FX state")
         .def("set_drum_master_volume", [](Map2AudioEngine& self, float volume) {
             self.getDrumMachine().setMasterVolume(volume);
             return true;
         }, py::arg("volume"), "Set drum machine master volume")
+        .def("get_drum_master_volume", [](const Map2AudioEngine& self) {
+            return self.getDrumMachine().getMasterVolume();
+        }, "Get drum machine master volume")
         .def("get_drum_metering", [](const Map2AudioEngine& self) {
             const auto metering = self.getDrumMachine().getMetering();
             py::dict result;
@@ -3227,6 +3535,33 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_drum_track_swing", [](const Map2AudioEngine& self, int instrumentIndex) {
             return self.getDrumSequencer().getTrackSwing(instrumentIndex);
         }, py::arg("instrument"), "Get per-track drum swing percentage")
+        .def("set_drum_midi_output_enabled", [](Map2AudioEngine& self, bool enabled) {
+            self.getDrumSequencer().setMidiOutputEnabled(enabled);
+            return true;
+        }, py::arg("enabled"), "Enable or disable drum sequencer MIDI note output")
+        .def("get_drum_midi_output_enabled", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().isMidiOutputEnabled();
+        }, "Get drum sequencer MIDI note output state")
+        .def("set_drum_midi_clock_output_enabled", [](Map2AudioEngine& self, bool enabled) {
+            self.getDrumSequencer().setMidiClockOutputEnabled(enabled);
+            return true;
+        }, py::arg("enabled"), "Enable or disable drum sequencer MIDI clock output")
+        .def("get_drum_midi_clock_output_enabled", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().isMidiClockOutputEnabled();
+        }, "Get drum sequencer MIDI clock output state")
+        .def("set_drum_midi_output_channel", [](Map2AudioEngine& self, int channel) {
+            return self.getDrumSequencer().setMidiOutputChannel(channel);
+        }, py::arg("channel"), "Set drum sequencer MIDI output channel (0-15)")
+        .def("get_drum_midi_output_channel", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().getMidiOutputChannel();
+        }, "Get drum sequencer MIDI output channel (0-15)")
+        .def("set_drum_program_change_enabled", [](Map2AudioEngine& self, bool enabled) {
+            self.getDrumSequencer().setProgramChangeEnabled(enabled);
+            return true;
+        }, py::arg("enabled"), "Enable or disable incoming Program Change pattern switching")
+        .def("get_drum_program_change_enabled", [](const Map2AudioEngine& self) {
+            return self.getDrumSequencer().isProgramChangeEnabled();
+        }, "Get incoming Program Change pattern switching state")
         .def("set_drum_transport_playing", [](Map2AudioEngine& self, bool isPlaying) {
             if (isPlaying) {
                 self.getDrumSequencer().play();

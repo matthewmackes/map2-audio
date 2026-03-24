@@ -70,3 +70,39 @@ TEST_CASE("DrumMachineMixer bus solo and mute gates are respected", "[drums][mix
     REQUIRE(stereoOut.getMagnitude(0, 0, 32) > 0.0f);
     REQUIRE(mixer.getMetering().busPeak[1] > 0.0f);
 }
+
+TEST_CASE("DrumMachineMixer applies master FX and bus reverb send on the master pair", "[drums][mixer]") {
+    DrumMachineMixer mixer;
+    mixer.prepare(48000.0, 64);
+    mixer.setMasterFx({
+        18.0f,
+        -24.0f,
+        4.0f,
+        5.0f,
+        80.0f,
+        3.0f,
+        0.45f,
+        0.75f,
+        0.2f,
+        1.0f,
+        -1.0f,
+        60.0f,
+    });
+    REQUIRE(mixer.setBusReverbSend(0, 0.7f));
+
+    juce::AudioBuffer<float> busInput(DrumMachineMixer::kBusChannels, 64);
+    busInput.clear();
+    for (int sample = 0; sample < 64; ++sample) {
+        busInput.setSample(0, sample, sample == 0 ? 0.8f : 0.0f);
+        busInput.setSample(1, sample, sample == 0 ? 0.8f : 0.0f);
+    }
+
+    juce::AudioBuffer<float> stereoOut(2, 64);
+    stereoOut.clear();
+    mixer.process(busInput, stereoOut);
+
+    REQUIRE(mixer.getBusOutput(0).reverbSend == Catch::Approx(0.7f));
+    REQUIRE(stereoOut.getMagnitude(0, 0, 64) > 0.0f);
+    REQUIRE(stereoOut.getMagnitude(1, 0, 64) > 0.0f);
+    REQUIRE(stereoOut.getRMSLevel(0, 1, 63) > 0.0f);
+}

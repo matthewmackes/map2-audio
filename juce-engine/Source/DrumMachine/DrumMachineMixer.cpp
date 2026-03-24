@@ -34,7 +34,11 @@ void DrumMachineMixer::prepare(double sampleRate, int samplesPerBlock) {
     sampleRate_ = std::max(1.0, sampleRate);
     samplesPerBlock_ = std::max(1, samplesPerBlock);
     scratchBuffer_.setSize(2, samplesPerBlock_, false, false, true);
+    masterBuffer_.setSize(2, samplesPerBlock_, false, false, true);
+    reverbSendBuffer_.setSize(2, samplesPerBlock_, false, false, true);
     scratchBuffer_.clear();
+    masterBuffer_.clear();
+    reverbSendBuffer_.clear();
 
     const juce::dsp::ProcessSpec spec{
         sampleRate_,
@@ -52,26 +56,37 @@ void DrumMachineMixer::prepare(double sampleRate, int samplesPerBlock) {
         refreshBusComp(busIndex);
     }
 
+    masterFx_.prepare(sampleRate_, samplesPerBlock_);
+
     prepared_ = true;
 }
 
 void DrumMachineMixer::resetProcessDiagnostics() {
     scratchBufferResizeCount_.store(0, std::memory_order_relaxed);
+    masterFx_.resetProcessDiagnostics();
 }
 
-void DrumMachineMixer::process(const juce::AudioBuffer<float>& busInput, juce::AudioBuffer<float>& stereoOutput) {
-    if (!prepared_ || stereoOutput.getNumChannels() < 2 || stereoOutput.getNumSamples() <= 0) {
+void DrumMachineMixer::process(const juce::AudioBuffer<float>& busInput, juce::AudioBuffer<float>& outputBuffer) {
+    if (!prepared_ || outputBuffer.getNumChannels() < 2 || outputBuffer.getNumSamples() <= 0) {
         return;
     }
 
-    stereoOutput.clear();
+    outputBuffer.clear();
+    if (masterBuffer_.getNumSamples() < outputBuffer.getNumSamples()) {
+        scratchBufferResizeCount_.fetch_add(1, std::memory_order_relaxed);
+    }
+    masterBuffer_.setSize(2, outputBuffer.getNumSamples(), false, false, true);
+    reverbSendBuffer_.setSize(2, outputBuffer.getNumSamples(), false, false, true);
+    masterBuffer_.clear();
+    reverbSendBuffer_.clear();
 
     const bool soloActive = std::any_of(
         buses_.begin(),
         buses_.end(),
         [](const BusState& bus) { return bus.output.solo; });
 
-    const int numSamples = std::min(busInput.getNumSamples(), stereoOutput.getNumSamples());
+    const int numSamples = std::min(busInput.getNumSamples(), outputBuffer.getNumSamples());
+    const int maxOutputPair = std::max(0, (outputBuffer.getNumChannels() / 2) - 1);
     for (int busIndex = 0; busIndex < kBusCount; ++busIndex) {
         const int leftChannel = busIndex * 2;
         const int rightChannel = leftChannel + 1;
@@ -108,18 +123,44 @@ void DrumMachineMixer::process(const juce::AudioBuffer<float>& busInput, juce::A
         }
 
         const float panNorm = (clampPan(bus.output.pan) + 1.0f) * 0.5f;
-        const float level = clampLevel(bus.output.level) * clampLevel(masterVolume_.load(std::memory_order_relaxed));
+        const float level = clampLevel(bus.output.level);
         const float leftGain = std::cos(panNorm * juce::MathConstants<float>::halfPi) * level;
         const float rightGain = std::sin(panNorm * juce::MathConstants<float>::halfPi) * level;
+        const int outputPair = std::clamp(bus.output.outputPair, 0, maxOutputPair);
+        const int outputLeftChannel = outputPair * 2;
+        const int outputRightChannel = outputLeftChannel + 1;
 
-        stereoOutput.addFrom(0, 0, scratchBuffer_, 0, 0, numSamples, leftGain);
-        stereoOutput.addFrom(1, 0, scratchBuffer_, 1, 0, numSamples, rightGain);
+        outputBuffer.addFrom(outputLeftChannel, 0, scratchBuffer_, 0, 0, numSamples, leftGain);
+        if (outputRightChannel < outputBuffer.getNumChannels()) {
+            outputBuffer.addFrom(outputRightChannel, 0, scratchBuffer_, 1, 0, numSamples, rightGain);
+        } else {
+            outputBuffer.addFrom(outputLeftChannel, 0, scratchBuffer_, 1, 0, numSamples, rightGain);
+        }
+
+        const float sendGain = clampLevel(bus.output.reverbSend);
+        if (sendGain > 0.0f) {
+            reverbSendBuffer_.addFrom(0, 0, scratchBuffer_, 0, 0, numSamples, sendGain);
+            reverbSendBuffer_.addFrom(1, 0, scratchBuffer_, 1, 0, numSamples, sendGain);
+        }
     }
 
-    masterPeakLeft_.store(computePeak(stereoOutput, 0), std::memory_order_relaxed);
-    masterPeakRight_.store(computePeak(stereoOutput, 1), std::memory_order_relaxed);
-    masterRmsLeft_.store(computeRms(stereoOutput, 0), std::memory_order_relaxed);
-    masterRmsRight_.store(computeRms(stereoOutput, 1), std::memory_order_relaxed);
+    if (numSamples > 0 && outputBuffer.getNumChannels() >= 2) {
+        masterBuffer_.copyFrom(0, 0, outputBuffer, 0, 0, numSamples);
+        masterBuffer_.copyFrom(1, 0, outputBuffer, 1, 0, numSamples);
+        masterFx_.process(masterBuffer_, reverbSendBuffer_);
+        outputBuffer.copyFrom(0, 0, masterBuffer_, 0, 0, numSamples);
+        outputBuffer.copyFrom(1, 0, masterBuffer_, 1, 0, numSamples);
+    }
+
+    const float masterGain = clampLevel(masterVolume_.load(std::memory_order_relaxed));
+    for (int channel = 0; channel < outputBuffer.getNumChannels(); ++channel) {
+        outputBuffer.applyGain(channel, 0, numSamples, masterGain);
+    }
+
+    masterPeakLeft_.store(computePeak(outputBuffer, 0), std::memory_order_relaxed);
+    masterPeakRight_.store(computePeak(outputBuffer, 1), std::memory_order_relaxed);
+    masterRmsLeft_.store(computeRms(outputBuffer, 0), std::memory_order_relaxed);
+    masterRmsRight_.store(computeRms(outputBuffer, 1), std::memory_order_relaxed);
 }
 
 bool DrumMachineMixer::setBusEq(int busIndex, const BusEqConfig& config) {
@@ -161,6 +202,8 @@ bool DrumMachineMixer::setBusOutput(int busIndex, const BusOutputConfig& config)
     output.pan = clampPan(config.pan);
     output.mute = config.mute;
     output.solo = config.solo;
+    output.outputPair = std::max(0, config.outputPair);
+    output.reverbSend = clampLevel(config.reverbSend);
     return true;
 }
 
@@ -188,6 +231,18 @@ bool DrumMachineMixer::setBusSolo(int busIndex, bool solo) {
     return setBusOutput(busIndex, output);
 }
 
+bool DrumMachineMixer::setBusOutputPair(int busIndex, int outputPair) {
+    auto output = getBusOutput(busIndex);
+    output.outputPair = outputPair;
+    return setBusOutput(busIndex, output);
+}
+
+bool DrumMachineMixer::setBusReverbSend(int busIndex, float reverbSend) {
+    auto output = getBusOutput(busIndex);
+    output.reverbSend = reverbSend;
+    return setBusOutput(busIndex, output);
+}
+
 DrumMachineMixer::BusEqConfig DrumMachineMixer::getBusEq(int busIndex) const {
     if (!isValidBusIndex(busIndex)) {
         return {};
@@ -207,6 +262,14 @@ DrumMachineMixer::BusOutputConfig DrumMachineMixer::getBusOutput(int busIndex) c
         return {};
     }
     return buses_[static_cast<size_t>(busIndex)].output;
+}
+
+void DrumMachineMixer::setMasterFx(const MasterFxConfig& config) {
+    masterFx_.setConfig(config);
+}
+
+DrumMachineMixer::MasterFxConfig DrumMachineMixer::getMasterFx() const {
+    return masterFx_.getConfig();
 }
 
 void DrumMachineMixer::setMasterVolume(float volume) {

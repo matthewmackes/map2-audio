@@ -3,9 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { drumsApi } from '@/map2/api'
 import type {
   DrumBusMixerUpdate,
+  DrumCcLearnStatus,
+  DrumCcMapping,
   DrumKitInstrumentPatch,
   DrumMachineStateUpdate,
+  DrumMasterFxState,
   DrumMidiMapping,
+  DrumMidiOutputConfig,
   DrumMidiZones,
   DrumSong,
   DrumSongEntry,
@@ -132,6 +136,77 @@ export function useDrumMixer() {
   return { pads, buses, master }
 }
 
+export function useDrumMasterFx() {
+  return useQuery({
+    queryKey: ['drums', 'master-fx'],
+    queryFn: drumsApi.getMasterFx,
+  })
+}
+
+export function useDrumSampleEditor(padId: number, points = 256) {
+  const queryClient = useQueryClient()
+
+  const waveform = useQuery({
+    queryKey: ['drums', 'sample-editor', padId, points],
+    queryFn: () => drumsApi.getPadSampleWaveform(padId, points),
+    enabled: Number.isFinite(padId) && padId >= 0,
+  })
+
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ['drums', 'sample-editor', padId] })
+    void queryClient.invalidateQueries({ queryKey: ['drums', 'kits', 'active'] })
+    void queryClient.invalidateQueries({ queryKey: ['drums', 'kits'] })
+  }
+
+  const upload = useMutation({
+    mutationFn: ({ padId: nextPadId, file }: { padId: number; file: File }) => drumsApi.uploadPadSample(nextPadId, file),
+    onSuccess: invalidate,
+  })
+
+  const startRecording = useMutation({
+    mutationFn: (nextPadId: number) => drumsApi.startPadRecording(nextPadId),
+  })
+
+  const stopRecording = useMutation({
+    mutationFn: (nextPadId: number) => drumsApi.stopPadRecording(nextPadId),
+    onSuccess: invalidate,
+  })
+
+  const trim = useMutation({
+    mutationFn: ({ padId: nextPadId, startSample, endSample }: { padId: number; startSample: number; endSample: number }) =>
+      drumsApi.trimPadSample(nextPadId, startSample, endSample),
+    onSuccess: invalidate,
+  })
+
+  const normalize = useMutation({
+    mutationFn: ({ padId: nextPadId, targetPeak }: { padId: number; targetPeak?: number }) =>
+      drumsApi.normalizePadSample(nextPadId, targetPeak),
+    onSuccess: invalidate,
+  })
+
+  const reverse = useMutation({
+    mutationFn: (nextPadId: number) => drumsApi.reversePadSample(nextPadId),
+    onSuccess: invalidate,
+  })
+
+  const fade = useMutation({
+    mutationFn: ({ padId: nextPadId, fadeInMs, fadeOutMs }: { padId: number; fadeInMs: number; fadeOutMs: number }) =>
+      drumsApi.fadePadSample(nextPadId, fadeInMs, fadeOutMs),
+    onSuccess: invalidate,
+  })
+
+  return {
+    waveform,
+    upload,
+    startRecording,
+    stopRecording,
+    trim,
+    normalize,
+    reverse,
+    fade,
+  }
+}
+
 export function useDrumMetering() {
   return useQuery({
     queryKey: ['drums', 'metering'],
@@ -177,6 +252,22 @@ export function useDrumMidiLearn() {
   return { status, presets }
 }
 
+export function useDrumCcMapping() {
+  const mappings = useQuery({
+    queryKey: ['drums', 'midi', 'cc-mappings'],
+    queryFn: drumsApi.getCcMappings,
+  })
+
+  const learn = useQuery({
+    queryKey: ['drums', 'midi', 'cc-learn'],
+    queryFn: drumsApi.getCcLearnStatus,
+    refetchInterval: (query) => (query.state.data?.active ? 500 : false),
+    staleTime: 250,
+  })
+
+  return { mappings, learn }
+}
+
 export function useUpdateDrumMachineState() {
   const queryClient = useQueryClient()
 
@@ -195,6 +286,101 @@ export function useUpdateDrumTransport() {
     mutationFn: (payload: DrumTransportUpdate) => drumsApi.setTransport(payload),
     onSuccess: () => {
       invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function useSetDrumPadSoundSource() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ padId, source }: { padId: number; source: Parameters<typeof drumsApi.setPadSoundSource>[1] }) =>
+      drumsApi.setPadSoundSource(padId, source),
+    onSuccess: () => {
+      invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function useSetDrumPadSynthParams() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ padId, params }: { padId: number; params: Parameters<typeof drumsApi.setPadSynthParams>[1] }) =>
+      drumsApi.setPadSynthParams(padId, params),
+    onSuccess: () => {
+      invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function useSetDrumPadFilter() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ padId, filter }: { padId: number; filter: Parameters<typeof drumsApi.setPadFilter>[1] }) =>
+      drumsApi.setPadFilter(padId, filter),
+    onSuccess: () => {
+      invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function useSetDrumPadCvGateConfig() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ padId, config }: { padId: number; config: Parameters<typeof drumsApi.setPadCvGateConfig>[1] }) =>
+      drumsApi.setPadCvGateConfig(padId, config),
+    onSuccess: () => {
+      invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function useSetDrumMidiOutputConfig() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: DrumMidiOutputConfig) => drumsApi.setMidiOutputConfig(payload),
+    onSuccess: () => {
+      invalidateDrumState(queryClient)
+    },
+  })
+}
+
+export function useSetDrumCcMappings() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: DrumCcMapping) => drumsApi.setCcMappings(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'cc-mappings'] })
+    },
+  })
+}
+
+export function useStartDrumCcLearn() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ slot, timeoutSeconds = 10 }: { slot: number; timeoutSeconds?: number }) =>
+      drumsApi.startCcLearn(slot, timeoutSeconds),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'cc-learn'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'cc-mappings'] })
+    },
+  })
+}
+
+export function useStopDrumCcLearn() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (): Promise<DrumCcLearnStatus> => drumsApi.stopCcLearn(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'cc-learn'] })
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'midi', 'cc-mappings'] })
     },
   })
 }
@@ -433,6 +619,17 @@ export function useSetDrumMasterVolume() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['drums', 'mixer', 'master'] })
       void queryClient.invalidateQueries({ queryKey: ['drums', 'state'] })
+    },
+  })
+}
+
+export function useSetDrumMasterFx() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: DrumMasterFxState) => drumsApi.setMasterFx(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['drums', 'master-fx'] })
     },
   })
 }

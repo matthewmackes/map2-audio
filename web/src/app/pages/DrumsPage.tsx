@@ -31,11 +31,14 @@ import { NumberInput } from '@/app/components/Controls/NumberInput'
 import './DrumsPage.css'
 import {
   useDrumActiveKit,
+  useDrumCcMapping,
   useDrumKits,
+  useDrumMasterFx,
   useDrumMidiMapping,
   useLoadDrumKit,
   useLoadDrumMidiPreset,
   useDrumMetering,
+  useDrumSampleEditor,
   useDrumPosition,
   useDrumSong,
   useDrumSongTransport,
@@ -48,10 +51,17 @@ import {
   useDrumPattern,
   useDrumPacks,
   useSetDrumPattern,
+  useSetDrumPadSoundSource,
+  useSetDrumPadSynthParams,
+  useSetDrumPadFilter,
+  useSetDrumPadCvGateConfig,
   useSetDrumPadControl,
   useSetDrumBusMixer,
+  useSetDrumCcMappings,
+  useSetDrumMasterFx,
   useSetDrumMasterVolume,
   useSetDrumMidiMapping,
+  useSetDrumMidiOutputConfig,
   useSetDrumMidiZones,
   useSetDrumTrackLength,
   useSetDrumVelocityCurve,
@@ -61,7 +71,9 @@ import {
   useSetDrumSong,
   useSetDrumStep,
   useSetDrumTrackSwing,
+  useStartDrumCcLearn,
   useStartDrumMidiLearn,
+  useStopDrumCcLearn,
   useStopDrumSongTransport,
   useStopDrumMidiLearn,
   useTriggerDrumFill,
@@ -73,13 +85,22 @@ import { drumsApi } from '@/map2/api'
 import { normalizeDrumMachineState } from '@/map2/drumMachineState'
 import type {
   DrumBusMixer,
+  DrumCcMapping,
+  DrumCcTarget,
   DrumInstrument,
   DrumKit,
   DrumMachineState,
+  DrumMasterFxState,
   DrumMidiMapping,
   DrumMidiZones,
+  DrumMidiOutputConfig,
+  DrumCvGateConfig,
   DrumPadControl,
+  DrumPadFilter,
+  DrumPadSampleWaveform,
+  DrumPadSoundSource,
   DrumPattern,
+  DrumSynthParams,
   DrumVelocityCurve,
 } from '@/map2/types'
 
@@ -129,6 +150,25 @@ const VELOCITY_CURVE_OPTIONS: Array<{ value: DrumVelocityCurve['curve_type']; la
   { value: 2, label: 'Exp' },
   { value: 3, label: 'S-Curve' },
   { value: 4, label: 'Fixed' },
+]
+
+const CC_TARGET_OPTIONS: Array<{ value: DrumCcTarget; label: string }> = [
+  { value: 'pad_volume', label: 'Pad Volume' },
+  { value: 'pad_pan', label: 'Pad Pan' },
+  { value: 'pad_tune', label: 'Pad Tune' },
+  { value: 'pad_filter_cutoff', label: 'Pad Filter Cutoff' },
+  { value: 'bus_level', label: 'Bus Level' },
+  { value: 'bus_pan', label: 'Bus Pan' },
+  { value: 'master_volume', label: 'Master Volume' },
+  { value: 'tempo', label: 'Tempo' },
+  { value: 'swing', label: 'Swing' },
+  { value: 'synth_pitch_start_hz', label: 'Synth Pitch Start' },
+  { value: 'synth_pitch_end_hz', label: 'Synth Pitch End' },
+  { value: 'synth_pitch_decay_ms', label: 'Synth Pitch Decay' },
+  { value: 'synth_noise_level', label: 'Synth Noise Level' },
+  { value: 'synth_noise_decay_ms', label: 'Synth Noise Decay' },
+  { value: 'synth_body_decay_ms', label: 'Synth Body Decay' },
+  { value: 'synth_tone_amount', label: 'Synth Tone' },
 ]
 
 const shellStyle: Record<string, React.CSSProperties> = {
@@ -504,6 +544,13 @@ const shellStyle: Record<string, React.CSSProperties> = {
     display: 'grid',
     gap: 6,
   },
+  checkboxRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    color: '#f4f4f4',
+    fontSize: 13,
+  },
   input: {
     width: '100%',
     borderRadius: 8,
@@ -709,6 +756,29 @@ function meterPercent(level: number | undefined) {
   return Math.max(0, Math.min(100, Math.round(value * 100)))
 }
 
+function waveformWindow(
+  waveform: DrumPadSampleWaveform | undefined,
+  zoomPercent: number,
+  scrollPercent: number,
+) {
+  if (!waveform || waveform.peaks.length === 0) {
+    return { peaks: [], startSample: 0, endSample: 0 }
+  }
+
+  const totalPoints = waveform.peaks.length
+  const visiblePoints = Math.max(16, Math.min(totalPoints, Math.round(totalPoints * (zoomPercent / 100))))
+  const maxOffset = Math.max(0, totalPoints - visiblePoints)
+  const startPoint = Math.round((scrollPercent / 100) * maxOffset)
+  const endPoint = Math.min(totalPoints, startPoint + visiblePoints)
+  const samplesPerPoint = waveform.sample_count / totalPoints
+
+  return {
+    peaks: waveform.peaks.slice(startPoint, endPoint),
+    startSample: Math.round(startPoint * samplesPerPoint),
+    endSample: Math.round(endPoint * samplesPerPoint),
+  }
+}
+
 function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number, stepIndex: number) {
   const step = pattern?.steps?.[instrumentIndex]?.[stepIndex]
   return {
@@ -787,6 +857,17 @@ function resolvedVelocityCurve(curves: { pads: DrumVelocityCurve[] } | undefined
 
 function resolvedZones(zones: DrumMidiZones | undefined, pad: number) {
   return zones?.pads?.find((entry) => entry.pad === pad) ?? { pad, zones: [] }
+}
+
+function resolvedCcMapping(mapping: DrumCcMapping | undefined, slot: number) {
+  return mapping?.mappings?.find((entry) => entry.slot === slot) ?? {
+    slot,
+    cc_number: 0,
+    midi_channel: 0,
+    target: 'pad_volume' as DrumCcTarget,
+    target_index: 0,
+    active: false,
+  }
 }
 
 function padAccent(index: number) {
@@ -970,6 +1051,16 @@ function advancedPanel(
   accent: string,
   pattern: DrumPattern | undefined,
   activeKit: DrumKit | null | undefined,
+  padSoundSources: DrumPadSoundSource[],
+  padSynthParams: DrumSynthParams[],
+  padFilters: DrumPadFilter[],
+  padCvGateConfigs: DrumCvGateConfig[],
+  selectedPadSample: DrumPadSampleWaveform | undefined,
+  sampleRecordingActive: boolean,
+  sampleZoom: number,
+  sampleScroll: number,
+  sampleTrimStart: number,
+  sampleTrimEnd: number,
   padControls: DrumPadControl[] | undefined,
   currentStep: number,
   selectedPad: number,
@@ -978,6 +1069,21 @@ function advancedPanel(
   onRenameDraft: (padId: number, value: string) => void,
   onCommitName: (padId: number) => void,
   onUpdatePadControl: (padId: number, params: Partial<DrumPadControl>) => void,
+  onUpdatePadSoundSource: (padId: number, source: DrumPadSoundSource) => void,
+  onUpdatePadSynthParams: (padId: number, params: DrumSynthParams) => void,
+  onUpdatePadFilter: (padId: number, filter: DrumPadFilter) => void,
+  onUpdatePadCvGateConfig: (padId: number, config: DrumCvGateConfig) => void,
+  onUploadSample: (padId: number, file: File) => void,
+  onStartSampleRecording: (padId: number) => void,
+  onStopSampleRecording: (padId: number) => void,
+  onChangeSampleZoom: (value: number) => void,
+  onChangeSampleScroll: (value: number) => void,
+  onChangeSampleTrimStart: (value: number) => void,
+  onChangeSampleTrimEnd: (value: number) => void,
+  onTrimSample: (padId: number, startSample: number, endSample: number) => void,
+  onNormalizeSample: (padId: number) => void,
+  onReverseSample: (padId: number) => void,
+  onFadeSample: (padId: number, fadeInMs: number, fadeOutMs: number) => void,
   trackSwing: number[],
   onUpdateTrackSwing: (instrumentIndex: number, swing: number) => void,
   onUpdateTrackLength: (instrumentIndex: number, length: number) => void,
@@ -1019,6 +1125,7 @@ function advancedPanel(
   kits: DrumKit[],
   busMixers: DrumBusMixer[],
   masterVolume: number,
+  masterFx: DrumMasterFxState | undefined,
   metering: {
     per_pad_peak: number[]
     per_bus_peak: number[]
@@ -1032,7 +1139,10 @@ function advancedPanel(
   onConfirmLoadKit: () => void,
   onUpdateBusMixer: (busId: number, params: Partial<DrumBusMixer>) => void,
   onUpdateMasterVolume: (volume: number) => void,
+  onUpdateMasterFx: (patch: Partial<DrumMasterFxState>) => void,
   midiMapping: DrumMidiMapping | undefined,
+  ccMapping: DrumCcMapping | undefined,
+  ccLearnState: { active: boolean; slot: number; last_cc: number; last_channel: number } | undefined,
   velocityCurves: { pads: DrumVelocityCurve[] } | undefined,
   midiZones: DrumMidiZones | undefined,
   midiLearnState: { active: boolean; active_pad_index: number; learn_all: boolean; last_received_note: number; last_received_channel: number } | undefined,
@@ -1040,8 +1150,11 @@ function advancedPanel(
   selectedMidiPreset: string,
   onSelectMidiPreset: (presetName: string) => void,
   onUpdateMidiPad: (padId: number, patch: { notes?: number[]; midi_channel?: number }) => void,
+  onUpdateCcMapping: (slot: number, patch: Partial<DrumCcMapping['mappings'][number]>) => void,
   onUpdateVelocityCurve: (padId: number, patch: Partial<DrumVelocityCurve>) => void,
   onUpdateMidiZones: (padId: number, zones: DrumMidiZones['pads'][number]['zones']) => void,
+  onStartCcLearn: (slot: number) => void,
+  onStopCcLearn: () => void,
   onStartMidiLearn: (padId?: number) => void,
   onStopMidiLearn: () => void,
   onLoadMidiPreset: () => void,
@@ -1068,6 +1181,48 @@ function advancedPanel(
   const selectedMidiPad = resolvedMidiPad(midiMapping, selectedPad)
   const selectedVelocityCurve = resolvedVelocityCurve(velocityCurves, selectedPad)
   const selectedZoneConfig = resolvedZones(midiZones, selectedPad)
+  const selectedPadSoundSource = padSoundSources[selectedPad] ?? 'sample'
+  const selectedPadSynth = padSynthParams[selectedPad] ?? {
+    oscillator_type: 'sine',
+    pitch_envelope_start_hz: 160,
+    pitch_envelope_end_hz: 50,
+    pitch_envelope_decay_ms: 180,
+    noise_level: 0.2,
+    noise_decay_ms: 120,
+    body_decay_ms: 420,
+    tone_amount: 0.55,
+  }
+  const selectedPadFilter = padFilters[selectedPad] ?? {
+    type: 'lowpass',
+    cutoff_hz: 12000,
+    resonance: 0.35,
+    env_amount: 0,
+    env_decay_ms: 180,
+  }
+  const selectedPadCvGate = padCvGateConfigs[selectedPad] ?? {
+    enabled: false,
+    output_pair: 0,
+    gate_length_ms: 25,
+    note_min: 36,
+    note_max: 84,
+    pitch_min_volts: 0,
+    pitch_max_volts: 5,
+  }
+  const selectedSampleWindow = waveformWindow(selectedPadSample, sampleZoom, sampleScroll)
+  const resolvedMasterFx = masterFx ?? {
+    drive_db: 0,
+    compressor_threshold: -18,
+    compressor_ratio: 2,
+    compressor_attack: 10,
+    compressor_release: 80,
+    compressor_makeup: 0,
+    reverb_mix: 0.18,
+    reverb_size: 0.45,
+    reverb_damping: 0.35,
+    reverb_width: 1,
+    limiter_threshold: -0.5,
+    limiter_release: 60,
+  }
   const selectedStepState = selectedStep
     ? resolvedStep(pattern, selectedStep.instrumentIndex, selectedStep.stepIndex)
     : null
@@ -1687,7 +1842,7 @@ function advancedPanel(
               </div>
               <p style={shellStyle.tileText}>
                 Bus strips now expose EQ, compressor, mute/solo, level, and live peak metering,
-                with master output control and stereo peak readout alongside them.
+                with master output control, direct physical-output routing, and stereo peak readout alongside them.
               </p>
               <div style={shellStyle.fieldGrid}>
                 <label style={shellStyle.fieldStack}>
@@ -1713,6 +1868,63 @@ function advancedPanel(
                     <span style={shellStyle.statValue}>{meterPercent(metering?.master_peak_right)}%</span>
                   </div>
                 </div>
+              </div>
+              <div style={shellStyle.fieldGrid}>
+                {[
+                  {
+                    label: 'Drive',
+                    aria: 'Master FX drive',
+                    min: 0,
+                    max: 24,
+                    step: 1,
+                    value: resolvedMasterFx.drive_db,
+                    patch: (value: number) => ({ drive_db: value }),
+                  },
+                  {
+                    label: 'Reverb Mix',
+                    aria: 'Master FX reverb mix',
+                    min: 0,
+                    max: 100,
+                    step: 1,
+                    value: Math.round(resolvedMasterFx.reverb_mix * 100),
+                    patch: (value: number) => ({ reverb_mix: value / 100 }),
+                  },
+                  {
+                    label: 'Comp Ratio',
+                    aria: 'Master FX compressor ratio',
+                    min: 1,
+                    max: 20,
+                    step: 1,
+                    value: resolvedMasterFx.compressor_ratio,
+                    patch: (value: number) => ({ compressor_ratio: value }),
+                  },
+                  {
+                    label: 'Limiter Threshold',
+                    aria: 'Master FX limiter threshold',
+                    min: -12,
+                    max: 0,
+                    step: 0.5,
+                    value: resolvedMasterFx.limiter_threshold,
+                    patch: (value: number) => ({ limiter_threshold: value }),
+                  },
+                ].map((control) => (
+                  <label key={control.aria} style={shellStyle.fieldStack}>
+                    <div style={shellStyle.sliderValue}>
+                      <span>{control.label}</span>
+                      <strong>{control.value}</strong>
+                    </div>
+                    <input
+                      aria-label={control.aria}
+                      type="range"
+                      min={control.min}
+                      max={control.max}
+                      step={control.step}
+                      value={control.value}
+                      onChange={(event) => onUpdateMasterFx(control.patch(Number(event.currentTarget.value)))}
+                      style={shellStyle.compactRange}
+                    />
+                  </label>
+                ))}
               </div>
               <div style={shellStyle.busStripGrid}>
                 {busMixers.map((bus) => (
@@ -1751,8 +1963,28 @@ function advancedPanel(
                         Solo
                       </button>
                     </div>
+                    <label style={shellStyle.fieldStack}>
+                      <div style={shellStyle.sliderValue}>
+                        <span>Output Pair</span>
+                        <strong>{bus.output_pair + 1}</strong>
+                      </div>
+                      <select
+                        aria-label={`${bus.name} output pair`}
+                        value={bus.output_pair}
+                        onChange={(event) => onUpdateBusMixer(bus.bus_id, { output_pair: Number(event.currentTarget.value) })}
+                        style={shellStyle.inspectorSelect}
+                      >
+                        {bus.available_output_pairs.map((pairIndex) => (
+                          <option key={`${bus.bus_id}-pair-${pairIndex}`} value={pairIndex}>
+                            Pair {pairIndex + 1} ({pairIndex * 2 + 1}/{pairIndex * 2 + 2})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     {[
                       { label: 'Level', min: 0, max: 100, value: bus.level, update: (value: number) => ({ level: value }) },
+                      { label: 'Send', min: 0, max: 100, value: bus.reverb_send, update: (value: number) => ({ reverb_send: value }) },
+                      { label: 'Pan', min: -100, max: 100, value: bus.pan, update: (value: number) => ({ pan: value }) },
                       { label: 'Low', min: -24, max: 24, value: bus.eq.low_gain, update: (value: number) => ({ eq: { ...bus.eq, low_gain: value } }) },
                       { label: 'Mid', min: -24, max: 24, value: bus.eq.mid_gain, update: (value: number) => ({ eq: { ...bus.eq, mid_gain: value } }) },
                       { label: 'High', min: -24, max: 24, value: bus.eq.high_gain, update: (value: number) => ({ eq: { ...bus.eq, high_gain: value } }) },
@@ -1819,11 +2051,348 @@ function advancedPanel(
                 </select>
               </div>
               <div style={shellStyle.inspectorSection}>
-                <span style={shellStyle.clusterLabel}>Sample Source</span>
+                <span style={shellStyle.clusterLabel}>Sound Source</span>
+                <select
+                  aria-label="Selected pad sound source"
+                  value={selectedPadSoundSource}
+                  onChange={(event) => onUpdatePadSoundSource(selectedPad, event.currentTarget.value as DrumPadSoundSource)}
+                  style={shellStyle.inspectorSelect}
+                >
+                  <option value="sample">Sample</option>
+                  <option value="synth">Synth</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
                 <span style={shellStyle.inspectorValue}>{selectedInstrument?.sfz_path ?? 'Factory assignment'}</span>
                 <div style={shellStyle.toggleRow}>
-                  <Tag type="cool-gray">MIDI reassign queued for `T217-K`</Tag>
-                  <Tag type="cool-gray">Sample swap queued for kit browser flow</Tag>
+                  <Tag type={selectedPadSoundSource === 'sample' ? 'green' : 'cool-gray'}>
+                    {selectedPadSoundSource === 'sample' ? 'Sample path active' : 'Sample layer optional'}
+                  </Tag>
+                  <Tag type={selectedPadSoundSource === 'synth' ? 'cyan' : selectedPadSoundSource === 'hybrid' ? 'teal' : 'cool-gray'}>
+                    {selectedPadSoundSource === 'sample' ? 'Synth layer bypassed' : selectedPadSoundSource === 'synth' ? 'Synth only' : 'Hybrid layered'}
+                  </Tag>
+                </div>
+              </div>
+              <div style={shellStyle.inspectorSection}>
+                <div style={shellStyle.tileHeader}>
+                  <span style={shellStyle.clusterLabel}>Sample Layer</span>
+                  <Tag type={selectedPadSample ? 'green' : 'cool-gray'}>
+                    {selectedPadSample ? `${selectedPadSample.sample_rate} Hz` : 'No waveform'}
+                  </Tag>
+                </div>
+                <div style={shellStyle.fieldGrid}>
+                  <label style={shellStyle.fieldStack}>
+                    <span style={shellStyle.clusterLabel}>Import Sample</span>
+                    <input
+                      aria-label="Selected pad sample upload"
+                      type="file"
+                      accept=".wav,.aiff,.aif,.flac"
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0]
+                        if (!file) {
+                          return
+                        }
+                        onUploadSample(selectedPad, file)
+                        event.currentTarget.value = ''
+                      }}
+                      style={shellStyle.miniInput}
+                    />
+                  </label>
+                  <div style={shellStyle.fieldStack}>
+                    <span style={shellStyle.clusterLabel}>Capture</span>
+                    <div style={shellStyle.buttonRow}>
+                      <Button
+                        size="sm"
+                        kind={sampleRecordingActive ? 'danger' : 'secondary'}
+                        onClick={() => (sampleRecordingActive ? onStopSampleRecording(selectedPad) : onStartSampleRecording(selectedPad))}
+                      >
+                        {sampleRecordingActive ? 'Stop Record' : 'Record Input'}
+                      </Button>
+                      <Button size="sm" kind="ghost" onClick={() => onNormalizeSample(selectedPad)}>
+                        Normalize
+                      </Button>
+                      <Button size="sm" kind="ghost" onClick={() => onReverseSample(selectedPad)}>
+                        Reverse
+                      </Button>
+                      <Button size="sm" kind="ghost" onClick={() => onFadeSample(selectedPad, 5, 5)}>
+                        Fade 5ms
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div style={shellStyle.waveform} aria-label="Selected pad sample waveform">
+                  <div
+                    style={{
+                      ...shellStyle.waveformBars,
+                      gridTemplateColumns: `repeat(${Math.max(1, selectedSampleWindow.peaks.length)}, 1fr)`,
+                    }}
+                  >
+                    {selectedSampleWindow.peaks.length > 0
+                      ? selectedSampleWindow.peaks.map((peak, index) => (
+                          <div
+                            key={`selected-pad-waveform-${index}`}
+                            style={{
+                              ...shellStyle.waveformBar,
+                              minHeight: 8,
+                              height: `${Math.max(8, Math.round(peak * 90))}px`,
+                            }}
+                          />
+                        ))
+                      : <p style={shellStyle.tileText}>Upload or record a sample to view the waveform.</p>}
+                  </div>
+                </div>
+                <div style={shellStyle.fieldGrid}>
+                  <label style={shellStyle.fieldStack}>
+                    <div style={shellStyle.sliderValue}>
+                      <span>Zoom</span>
+                      <strong>{sampleZoom}%</strong>
+                    </div>
+                    <input
+                      aria-label="Selected pad waveform zoom"
+                      type="range"
+                      min={10}
+                      max={100}
+                      step={5}
+                      value={sampleZoom}
+                      onChange={(event) => onChangeSampleZoom(Number(event.currentTarget.value))}
+                      style={shellStyle.compactRange}
+                    />
+                  </label>
+                  <label style={shellStyle.fieldStack}>
+                    <div style={shellStyle.sliderValue}>
+                      <span>Scroll</span>
+                      <strong>{sampleScroll}%</strong>
+                    </div>
+                    <input
+                      aria-label="Selected pad waveform scroll"
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={sampleScroll}
+                      onChange={(event) => onChangeSampleScroll(Number(event.currentTarget.value))}
+                      style={shellStyle.compactRange}
+                    />
+                  </label>
+                  <label style={shellStyle.fieldStack}>
+                    <div style={shellStyle.sliderValue}>
+                      <span>Trim Start</span>
+                      <strong>{sampleTrimStart}</strong>
+                    </div>
+                    <input
+                      aria-label="Selected pad sample trim start"
+                      type="range"
+                      min={0}
+                      max={Math.max(1, selectedPadSample?.sample_count ?? 1)}
+                      step={1}
+                      value={Math.min(sampleTrimStart, Math.max(0, sampleTrimEnd - 1))}
+                      onChange={(event) => onChangeSampleTrimStart(Number(event.currentTarget.value))}
+                      style={shellStyle.compactRange}
+                    />
+                  </label>
+                  <label style={shellStyle.fieldStack}>
+                    <div style={shellStyle.sliderValue}>
+                      <span>Trim End</span>
+                      <strong>{sampleTrimEnd}</strong>
+                    </div>
+                    <input
+                      aria-label="Selected pad sample trim end"
+                      type="range"
+                      min={1}
+                      max={Math.max(1, selectedPadSample?.sample_count ?? 1)}
+                      step={1}
+                      value={Math.max(1, sampleTrimEnd)}
+                      onChange={(event) => onChangeSampleTrimEnd(Number(event.currentTarget.value))}
+                      style={shellStyle.compactRange}
+                    />
+                  </label>
+                </div>
+                <div style={shellStyle.buttonRow}>
+                  <Button
+                    size="sm"
+                    kind="tertiary"
+                    disabled={!selectedPadSample || sampleTrimEnd <= sampleTrimStart}
+                    onClick={() => onTrimSample(selectedPad, sampleTrimStart, sampleTrimEnd)}
+                  >
+                    Apply Trim
+                  </Button>
+                  <Tag type="warm-gray">
+                    {selectedPadSample
+                      ? `${selectedPadSample.sample_count} samples • ${selectedSampleWindow.startSample}-${selectedSampleWindow.endSample} in view`
+                      : 'Sample editor idle'}
+                  </Tag>
+                </div>
+              </div>
+              <div style={shellStyle.inspectorSection}>
+                <span style={shellStyle.clusterLabel}>Synth Voice</span>
+                <div style={shellStyle.fieldGrid}>
+                  <label style={shellStyle.fieldStack}>
+                    <span style={shellStyle.clusterLabel}>Oscillator</span>
+                    <select
+                      aria-label="Selected pad synth oscillator"
+                      value={selectedPadSynth.oscillator_type}
+                      onChange={(event) => onUpdatePadSynthParams(selectedPad, {
+                        ...selectedPadSynth,
+                        oscillator_type: event.currentTarget.value as DrumSynthParams['oscillator_type'],
+                      })}
+                      style={shellStyle.inspectorSelect}
+                    >
+                      <option value="sine">Sine</option>
+                      <option value="triangle">Triangle</option>
+                      <option value="saw">Saw</option>
+                      <option value="square">Square</option>
+                      <option value="metallic">Metallic</option>
+                    </select>
+                  </label>
+                  {[
+                    { key: 'pitch_envelope_start_hz', label: 'Pitch Start', min: 20, max: 4000, step: 1 },
+                    { key: 'pitch_envelope_end_hz', label: 'Pitch End', min: 20, max: 4000, step: 1 },
+                    { key: 'pitch_envelope_decay_ms', label: 'Pitch Decay', min: 1, max: 5000, step: 1 },
+                    { key: 'noise_level', label: 'Noise', min: 0, max: 1, step: 0.01 },
+                    { key: 'noise_decay_ms', label: 'Noise Decay', min: 1, max: 5000, step: 1 },
+                    { key: 'body_decay_ms', label: 'Body Decay', min: 1, max: 5000, step: 1 },
+                    { key: 'tone_amount', label: 'Tone', min: 0, max: 1, step: 0.01 },
+                  ].map((control) => (
+                    <label key={control.key} style={shellStyle.fieldStack}>
+                      <div style={shellStyle.sliderValue}>
+                        <span>{control.label}</span>
+                        <strong>{Number(selectedPadSynth[control.key as keyof DrumSynthParams]).toFixed(control.step < 1 ? 2 : 0)}</strong>
+                      </div>
+                      <input
+                        aria-label={`Selected pad ${control.label}`}
+                        type="range"
+                        min={control.min}
+                        max={control.max}
+                        step={control.step}
+                        value={selectedPadSynth[control.key as keyof DrumSynthParams] as number}
+                        onChange={(event) => onUpdatePadSynthParams(selectedPad, {
+                          ...selectedPadSynth,
+                          [control.key]: Number(event.currentTarget.value),
+                        })}
+                        style={shellStyle.compactRange}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={shellStyle.inspectorSection}>
+                <span style={shellStyle.clusterLabel}>Per-Pad Filter</span>
+                <div style={shellStyle.fieldGrid}>
+                  <label style={shellStyle.fieldStack}>
+                    <span style={shellStyle.clusterLabel}>Type</span>
+                    <select
+                      aria-label="Selected pad filter type"
+                      value={selectedPadFilter.type}
+                      onChange={(event) => onUpdatePadFilter(selectedPad, {
+                        ...selectedPadFilter,
+                        type: event.currentTarget.value as DrumPadFilter['type'],
+                      })}
+                      style={shellStyle.inspectorSelect}
+                    >
+                      <option value="lowpass">Low-pass</option>
+                      <option value="highpass">High-pass</option>
+                      <option value="bandpass">Band-pass</option>
+                      <option value="notch">Notch</option>
+                    </select>
+                  </label>
+                  {[
+                    { key: 'cutoff_hz', label: 'Cutoff', min: 20, max: 20000, step: 10 },
+                    { key: 'resonance', label: 'Resonance', min: 0.1, max: 10, step: 0.01 },
+                    { key: 'env_amount', label: 'Env Amt', min: -1, max: 1, step: 0.01 },
+                    { key: 'env_decay_ms', label: 'Env Decay', min: 1, max: 5000, step: 1 },
+                  ].map((control) => (
+                    <label key={control.key} style={shellStyle.fieldStack}>
+                      <div style={shellStyle.sliderValue}>
+                        <span>{control.label}</span>
+                        <strong>{Number(selectedPadFilter[control.key as keyof DrumPadFilter]).toFixed(control.step < 1 ? 2 : 0)}</strong>
+                      </div>
+                      <input
+                        aria-label={`Selected pad filter ${control.label}`}
+                        type="range"
+                        min={control.min}
+                        max={control.max}
+                        step={control.step}
+                        value={selectedPadFilter[control.key as keyof DrumPadFilter] as number}
+                        onChange={(event) => onUpdatePadFilter(selectedPad, {
+                          ...selectedPadFilter,
+                          [control.key]: Number(event.currentTarget.value),
+                        })}
+                        style={shellStyle.compactRange}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={shellStyle.inspectorSection}>
+                <span style={shellStyle.clusterLabel}>CV / Gate Output</span>
+                <div style={shellStyle.fieldGrid}>
+                  <label style={shellStyle.fieldStack}>
+                    <span style={shellStyle.clusterLabel}>Enabled</span>
+                    <select
+                      aria-label="Selected pad CV/Gate enabled"
+                      value={selectedPadCvGate.enabled ? 'on' : 'off'}
+                      onChange={(event) => onUpdatePadCvGateConfig(selectedPad, {
+                        ...selectedPadCvGate,
+                        enabled: event.currentTarget.value === 'on',
+                      })}
+                      style={shellStyle.inspectorSelect}
+                    >
+                      <option value="off">Off</option>
+                      <option value="on">On</option>
+                    </select>
+                  </label>
+                  <label style={shellStyle.fieldStack}>
+                    <span style={shellStyle.clusterLabel}>Output Pair</span>
+                    <select
+                      aria-label="Selected pad CV/Gate output pair"
+                      value={selectedPadCvGate.output_pair}
+                      onChange={(event) => onUpdatePadCvGateConfig(selectedPad, {
+                        ...selectedPadCvGate,
+                        output_pair: Number(event.currentTarget.value),
+                      })}
+                      style={shellStyle.inspectorSelect}
+                    >
+                      {Array.from({ length: 8 }, (_, pairIndex) => (
+                        <option key={`cv-pair-${pairIndex}`} value={pairIndex}>
+                          Pair {pairIndex + 1} ({pairIndex * 2 + 1}/{pairIndex * 2 + 2})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {[
+                    { key: 'gate_length_ms', label: 'Gate Length', min: 1, max: 5000, step: 1 },
+                    { key: 'note_min', label: 'Note Min', min: 0, max: 126, step: 1 },
+                    { key: 'note_max', label: 'Note Max', min: 1, max: 127, step: 1 },
+                    { key: 'pitch_min_volts', label: 'Pitch Min V', min: -10, max: 10, step: 0.1 },
+                    { key: 'pitch_max_volts', label: 'Pitch Max V', min: -10, max: 10, step: 0.1 },
+                  ].map((control) => (
+                    <label key={control.key} style={shellStyle.fieldStack}>
+                      <div style={shellStyle.sliderValue}>
+                        <span>{control.label}</span>
+                        <strong>{Number(selectedPadCvGate[control.key as keyof DrumCvGateConfig]).toFixed(control.step < 1 ? 1 : 0)}</strong>
+                      </div>
+                      <input
+                        aria-label={`Selected pad CV/Gate ${control.label}`}
+                        type="range"
+                        min={control.min}
+                        max={control.max}
+                        step={control.step}
+                        value={selectedPadCvGate[control.key as keyof DrumCvGateConfig] as number}
+                        onChange={(event) => onUpdatePadCvGateConfig(selectedPad, {
+                          ...selectedPadCvGate,
+                          [control.key]: Number(event.currentTarget.value),
+                        })}
+                        style={shellStyle.compactRange}
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div style={shellStyle.toggleRow}>
+                  <Tag type={selectedPadCvGate.enabled ? 'cyan' : 'cool-gray'}>
+                    {selectedPadCvGate.enabled ? 'Gate on left, pitch CV on right' : 'CV/Gate disabled'}
+                  </Tag>
+                  <Tag type="warm-gray">
+                    {`${selectedPadCvGate.pitch_min_volts.toFixed(1)}V to ${selectedPadCvGate.pitch_max_volts.toFixed(1)}V`}
+                  </Tag>
                 </div>
               </div>
             </div>
@@ -2153,6 +2722,109 @@ function advancedPanel(
                 />
               </label>
             </div>
+            <div style={shellStyle.tileHeader}>
+              <h4 style={shellStyle.tileTitle}>CC Mapping</h4>
+              <Tag type={ccLearnState?.active ? 'cyan' : 'cool-gray'}>
+                {ccLearnState?.active ? `Learning Slot ${ccLearnState.slot + 1}` : 'Idle'}
+              </Tag>
+            </div>
+            <div style={shellStyle.statGrid}>
+              <div style={shellStyle.statCard}>
+                <span style={shellStyle.statLabel}>Last CC</span>
+                <span style={shellStyle.statValue}>{ccLearnState && ccLearnState.last_cc >= 0 ? ccLearnState.last_cc : '--'}</span>
+              </div>
+              <div style={shellStyle.statCard}>
+                <span style={shellStyle.statLabel}>Last CC Channel</span>
+                <span style={shellStyle.statValue}>{ccLearnState && ccLearnState.last_channel >= 0 ? ccLearnState.last_channel : '--'}</span>
+              </div>
+            </div>
+            <div style={shellStyle.midiTableWrap}>
+              <table style={shellStyle.midiTable} aria-label="Drum CC mapping table">
+                <thead>
+                  <tr>
+                    {['Slot', 'CC', 'Channel', 'Target', 'Index', 'State'].map((heading) => (
+                      <th key={heading} style={{ ...shellStyle.trackCell, textAlign: 'left', color: '#a8a8a8' }}>{heading}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 8 }, (_, slot) => {
+                    const mapping = resolvedCcMapping(ccMapping, slot)
+                    return (
+                      <tr key={`cc-slot-${slot}`}>
+                        <td style={shellStyle.trackCell}>Slot {slot + 1}</td>
+                        <td style={shellStyle.trackCell}>
+                          <input
+                            aria-label={`CC slot ${slot + 1} number`}
+                            type="number"
+                            min={0}
+                            max={127}
+                            value={mapping.cc_number}
+                            onChange={(event) => onUpdateCcMapping(slot, { cc_number: Number(event.currentTarget.value), active: true })}
+                            style={shellStyle.miniInput}
+                          />
+                        </td>
+                        <td style={shellStyle.trackCell}>
+                          <select
+                            aria-label={`CC slot ${slot + 1} channel`}
+                            value={mapping.midi_channel}
+                            onChange={(event) => onUpdateCcMapping(slot, { midi_channel: Number(event.currentTarget.value), active: true })}
+                            style={shellStyle.miniInput}
+                          >
+                            <option value={0}>Omni</option>
+                            {Array.from({ length: 16 }, (_, channel) => (
+                              <option key={`cc-slot-${slot}-channel-${channel + 1}`} value={channel + 1}>{channel + 1}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={shellStyle.trackCell}>
+                          <select
+                            aria-label={`CC slot ${slot + 1} target`}
+                            value={mapping.target}
+                            onChange={(event) => onUpdateCcMapping(slot, { target: event.currentTarget.value as DrumCcTarget, active: true })}
+                            style={shellStyle.miniInput}
+                          >
+                            {CC_TARGET_OPTIONS.map((option) => (
+                              <option key={`cc-slot-${slot}-target-${option.value}`} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={shellStyle.trackCell}>
+                          <input
+                            aria-label={`CC slot ${slot + 1} target index`}
+                            type="number"
+                            min={0}
+                            max={15}
+                            value={mapping.target_index}
+                            onChange={(event) => onUpdateCcMapping(slot, { target_index: Number(event.currentTarget.value), active: true })}
+                            style={shellStyle.miniInput}
+                          />
+                        </td>
+                        <td style={shellStyle.trackCell}>
+                          <div style={shellStyle.buttonRow}>
+                            <Button size="sm" kind="secondary" onClick={() => onStartCcLearn(slot)}>
+                              Learn
+                            </Button>
+                            <Button
+                              size="sm"
+                              kind="tertiary"
+                              onClick={() => onUpdateCcMapping(slot, { active: !mapping.active })}
+                            >
+                              {mapping.active ? 'Disable' : 'Enable'}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div style={shellStyle.buttonRow}>
+              <Button size="sm" kind="tertiary" onClick={onStopCcLearn}>
+                Stop CC Learn
+              </Button>
+            </div>
           </Tile>
         </div>
       </div>
@@ -2327,27 +2999,39 @@ export function DrumsPage() {
   const positionQuery = useDrumPosition()
   const activeKitQuery = useDrumActiveKit()
   const kitsQuery = useDrumKits()
+  const masterFx = useDrumMasterFx()
   const midiMapping = useDrumMidiMapping()
+  const ccMapping = useDrumCcMapping()
   const songQuery = useDrumSong()
   const songTransportQuery = useDrumSongTransport()
   const meteringQuery = useDrumMetering()
   const mixer = useDrumMixer()
   const packs = useDrumPacks()
   const midiLearn = useDrumMidiLearn()
+  const [selectedPad, setSelectedPad] = useState(0)
+  const sampleEditor = useDrumSampleEditor(selectedPad, 256)
   const patternQuery = useDrumPattern(transportQuery.data?.pattern ?? 0)
   const patchInstrument = usePatchDrumKitInstrument()
   const clearPattern = useClearDrumPattern()
   const copyPattern = useCopyDrumPattern()
   const loadKit = useLoadDrumKit()
   const setPadControl = useSetDrumPadControl()
+  const setPadSoundSource = useSetDrumPadSoundSource()
+  const setPadSynthParams = useSetDrumPadSynthParams()
+  const setPadFilter = useSetDrumPadFilter()
+  const setPadCvGateConfig = useSetDrumPadCvGateConfig()
   const setTrackSwing = useSetDrumTrackSwing()
   const setTrackLength = useSetDrumTrackLength()
   const setBusMixer = useSetDrumBusMixer()
+  const setMasterFx = useSetDrumMasterFx()
   const setMasterVolume = useSetDrumMasterVolume()
   const setMidiMapping = useSetDrumMidiMapping()
+  const setCcMappings = useSetDrumCcMappings()
+  const setMidiOutputConfig = useSetDrumMidiOutputConfig()
   const setMidiZones = useSetDrumMidiZones()
   const setVelocityCurve = useSetDrumVelocityCurve()
   const setPattern = useSetDrumPattern()
+  const startCcLearn = useStartDrumCcLearn()
   const startMidiLearn = useStartDrumMidiLearn()
   const addSongEntry = useAddDrumSongEntry()
   const loadMidiPreset = useLoadDrumMidiPreset()
@@ -2356,6 +3040,7 @@ export function DrumsPage() {
   const setSong = useSetDrumSong()
   const setStep = useSetDrumStep()
   const stopMidiLearn = useStopDrumMidiLearn()
+  const stopCcLearn = useStopDrumCcLearn()
   const stopSongTransport = useStopDrumSongTransport()
   const triggerFill = useTriggerDrumFill()
   const updateState = useUpdateDrumMachineState()
@@ -2383,6 +3068,8 @@ export function DrumsPage() {
   const song = songQuery.data ?? { entries: [], loop: false }
   const position = positionQuery.data
   const metering = meteringQuery.data
+  const selectedPadSample = sampleEditor.waveform.data
+  const sampleRecordingActive = sampleRecordingPad === selectedPad
   const songTransport = songTransportQuery.data ?? {
     is_playing: false,
     current_entry_index: -1,
@@ -2392,7 +3079,6 @@ export function DrumsPage() {
     active_pattern: transport?.pattern ?? 0,
   }
   const midiLearnState = midiLearn.status.data
-  const [selectedPad, setSelectedPad] = useState(0)
   const [selectedPatternSlot, setSelectedPatternSlot] = useState(transport?.pattern ?? 0)
   const [selectedPatternPage, setSelectedPatternPage] = useState(Math.floor((transport?.pattern ?? 0) / 32))
   const [patternClipboard, setPatternClipboard] = useState<number | null>(null)
@@ -2410,6 +3096,11 @@ export function DrumsPage() {
   const [backingTrackTempoShift, setBackingTrackTempoShift] = useState(0)
   const [backingTrackPitchShift, setBackingTrackPitchShift] = useState(0)
   const [liveMessage, setLiveMessage] = useState('Drum machine workspace ready.')
+  const [sampleRecordingPad, setSampleRecordingPad] = useState<number | null>(null)
+  const [sampleZoom, setSampleZoom] = useState(100)
+  const [sampleScroll, setSampleScroll] = useState(0)
+  const [sampleTrimStart, setSampleTrimStart] = useState(0)
+  const [sampleTrimEnd, setSampleTrimEnd] = useState(1)
   const sequencerRef = useRef<HTMLDivElement | null>(null)
   const packLists = {
     factory: packs.factory.data ?? [],
@@ -2437,6 +3128,14 @@ export function DrumsPage() {
       setSelectedMidiPreset(presets[0])
     }
   }, [midiLearn.presets.data, selectedMidiPreset])
+
+  useEffect(() => {
+    const sampleCount = sampleEditor.waveform.data?.sample_count ?? 1
+    setSampleTrimStart(0)
+    setSampleTrimEnd(sampleCount)
+    setSampleScroll(0)
+    setSampleZoom(100)
+  }, [selectedPad, sampleEditor.waveform.data?.sample_count])
 
   if (stateQuery.isLoading && !state) {
     return (
@@ -2493,6 +3192,16 @@ export function DrumsPage() {
         : transport.switch_quantization_beats === 8
           ? '2 bars'
           : '4 bars'
+  const updateMidiOutput = (patch: Partial<DrumMidiOutputConfig>, message: string) => {
+    setMidiOutputConfig.mutate({
+      midi_output_enabled: transport.midi_output_enabled,
+      midi_clock_output_enabled: transport.midi_clock_output_enabled,
+      midi_output_channel: transport.midi_output_channel,
+      program_change_enabled: transport.program_change_enabled,
+      ...patch,
+    })
+    announce(message)
+  }
 
   return (
     <main className="drums-page" style={shellStyle.page}>
@@ -2695,6 +3404,71 @@ export function DrumsPage() {
             />
           </div>
 
+          <div style={shellStyle.transportCluster}>
+            <span style={shellStyle.clusterLabel}>Sequencer MIDI Out</span>
+            <div style={shellStyle.fieldStack}>
+              <label style={shellStyle.checkboxRow}>
+                <input
+                  aria-label="Sequencer MIDI note output enabled"
+                  type="checkbox"
+                  checked={transport.midi_output_enabled}
+                  onChange={(event) => {
+                    updateMidiOutput(
+                      { midi_output_enabled: event.currentTarget.checked },
+                      event.currentTarget.checked ? 'Sequencer MIDI note output enabled.' : 'Sequencer MIDI note output disabled.',
+                    )
+                  }}
+                />
+                <span>Send notes</span>
+              </label>
+              <label style={shellStyle.checkboxRow}>
+                <input
+                  aria-label="Sequencer MIDI clock output enabled"
+                  type="checkbox"
+                  checked={transport.midi_clock_output_enabled}
+                  onChange={(event) => {
+                    updateMidiOutput(
+                      { midi_clock_output_enabled: event.currentTarget.checked },
+                      event.currentTarget.checked ? 'Sequencer MIDI clock output enabled.' : 'Sequencer MIDI clock output disabled.',
+                    )
+                  }}
+                />
+                <span>Send clock + Start/Stop</span>
+              </label>
+              <label style={shellStyle.checkboxRow}>
+                <input
+                  aria-label="Sequencer Program Change input enabled"
+                  type="checkbox"
+                  checked={transport.program_change_enabled}
+                  onChange={(event) => {
+                    updateMidiOutput(
+                      { program_change_enabled: event.currentTarget.checked },
+                      event.currentTarget.checked ? 'Program Change pattern switching enabled.' : 'Program Change pattern switching disabled.',
+                    )
+                  }}
+                />
+                <span>Accept Program Change</span>
+              </label>
+            </div>
+          </div>
+
+          <div style={shellStyle.transportCluster}>
+            <span style={shellStyle.clusterLabel}>MIDI Channel</span>
+            <select
+              aria-label="Sequencer MIDI output channel"
+              value={transport.midi_output_channel}
+              onChange={(event) => {
+                const value = Number(event.currentTarget.value)
+                updateMidiOutput({ midi_output_channel: value }, `Sequencer MIDI output channel set to ${value + 1}.`)
+              }}
+              style={shellStyle.input}
+            >
+              {Array.from({ length: 16 }, (_, channel) => (
+                <option key={`transport-midi-channel-${channel}`} value={channel}>{channel + 1}</option>
+              ))}
+            </select>
+          </div>
+
           <div style={shellStyle.sliderWrap}>
             <span style={shellStyle.clusterLabel}>Master Volume</span>
             <div style={shellStyle.sliderValue}>
@@ -2744,6 +3518,16 @@ export function DrumsPage() {
               MODE_META.advanced.accent,
               pattern,
               activeKit,
+              state.pad_sound_sources ?? [],
+              state.pad_synth_params ?? [],
+              state.pad_filters ?? [],
+              state.pad_cv_gate_configs ?? [],
+              selectedPadSample,
+              sampleRecordingActive,
+              sampleZoom,
+              sampleScroll,
+              sampleTrimStart,
+              sampleTrimEnd,
               padControls,
               currentStep,
               selectedPad,
@@ -2781,6 +3565,53 @@ export function DrumsPage() {
                   padId,
                   params,
                 })
+              },
+              (padId, source) => {
+                setPadSoundSource.mutate({ padId, source })
+                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} sound source set to ${source}.`)
+              },
+              (padId, params) => {
+                setPadSynthParams.mutate({ padId, params })
+              },
+              (padId, filter) => {
+                setPadFilter.mutate({ padId, filter })
+              },
+              (padId, config) => {
+                setPadCvGateConfig.mutate({ padId, config })
+              },
+              (padId, file) => {
+                sampleEditor.upload.mutate({ padId, file })
+                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} sample upload started.`)
+              },
+              (padId) => {
+                setSampleRecordingPad(padId)
+                sampleEditor.startRecording.mutate(padId)
+                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} input recording armed.`)
+              },
+              (padId) => {
+                setSampleRecordingPad(null)
+                sampleEditor.stopRecording.mutate(padId)
+                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} input recording captured.`)
+              },
+              (value) => setSampleZoom(value),
+              (value) => setSampleScroll(value),
+              (value) => setSampleTrimStart(Math.min(value, Math.max(0, sampleTrimEnd - 1))),
+              (value) => setSampleTrimEnd(Math.max(value, sampleTrimStart + 1)),
+              (padId, startSample, endSample) => {
+                sampleEditor.trim.mutate({ padId, startSample, endSample })
+                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} trim applied.`)
+              },
+              (padId) => {
+                sampleEditor.normalize.mutate({ padId, targetPeak: 0.99 })
+                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} normalized.`)
+              },
+              (padId) => {
+                sampleEditor.reverse.mutate(padId)
+                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} reversed.`)
+              },
+              (padId, fadeInMs, fadeOutMs) => {
+                sampleEditor.fade.mutate({ padId, fadeInMs, fadeOutMs })
+                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} faded.`)
               },
               transport.track_swing ?? [],
               (instrumentIndex, swing) => {
@@ -2957,6 +3788,7 @@ export function DrumsPage() {
               kits,
               busMixers,
               masterVolume,
+              masterFx.data,
               metering
                 ? {
                     per_pad_peak: metering.per_pad_peak,
@@ -2986,17 +3818,41 @@ export function DrumsPage() {
                   busId,
                   params: {
                     level: params.level,
+                    pan: params.pan,
                     mute: params.mute,
                     solo: params.solo,
                     eq: params.eq,
                     comp: params.comp,
+                    output_pair: params.output_pair,
+                    reverb_send: params.reverb_send,
                   },
                 })
               },
               (volume) => {
                 setMasterVolume.mutate(volume)
               },
+              (patch) => {
+                setMasterFx.mutate({
+                  ...(masterFx.data ?? {
+                    drive_db: 0,
+                    compressor_threshold: -18,
+                    compressor_ratio: 2,
+                    compressor_attack: 10,
+                    compressor_release: 80,
+                    compressor_makeup: 0,
+                    reverb_mix: 0.18,
+                    reverb_size: 0.45,
+                    reverb_damping: 0.35,
+                    reverb_width: 1,
+                    limiter_threshold: -0.5,
+                    limiter_release: 60,
+                  }),
+                  ...patch,
+                })
+              },
               midiMapping.mapping.data,
+              ccMapping.mappings.data,
+              ccMapping.learn.data,
               midiMapping.velocityCurves.data,
               midiMapping.zones.data,
               midiLearnState,
@@ -3020,6 +3876,14 @@ export function DrumsPage() {
                   pads: nextPads,
                 })
               },
+              (slot, patch) => {
+                const current = ccMapping.mappings.data ?? { mappings: [] }
+                const nextMappings = Array.from({ length: 32 }, (_, index) => {
+                  const existing = resolvedCcMapping(current, index)
+                  return index === slot ? { ...existing, ...patch, slot: index } : existing
+                })
+                setCcMappings.mutate({ mappings: nextMappings })
+              },
               (padId, patch) => {
                 const existing = resolvedVelocityCurve(midiMapping.velocityCurves.data, padId)
                 setVelocityCurve.mutate({
@@ -3037,6 +3901,14 @@ export function DrumsPage() {
                   index === padId ? { pad: index, zones } : resolvedZones(current, index)
                 ))
                 setMidiZones.mutate({ pads: nextPads })
+              },
+              (slot) => {
+                startCcLearn.mutate({ slot })
+                announce(`CC learn armed for slot ${slot + 1}.`)
+              },
+              () => {
+                stopCcLearn.mutate()
+                announce('CC learn stopped.')
               },
               (padId) => {
                 startMidiLearn.mutate(padId)

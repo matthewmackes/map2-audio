@@ -1,13 +1,19 @@
 #pragma once
 
+#include "DrumMachine/DrumCcMapper.h"
+#include "DrumMachine/DrumCvGateOutput.h"
 #include "DrumMachine/DrumMachineMixer.h"
+#include "DrumMachine/DrumSynthVoice.h"
 #include "SynthForge/Core/Part.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
+#include <juce_dsp/juce_dsp.h>
 
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <functional>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -44,6 +50,19 @@ public:
         Edge,
     };
 
+    enum class SoundSource {
+        Sample = 0,
+        Synth,
+        Hybrid,
+    };
+
+    enum class PadFilterType {
+        LowPass = 0,
+        HighPass,
+        BandPass,
+        Notch,
+    };
+
     struct PadConfig {
         float volume = 1.0f;
         float pan = 0.0f;
@@ -58,8 +77,24 @@ public:
         float outputCeiling = 1.0f;
         int midiChannel = 0;  // 0 = OMNI
         BusId bus = BusId::Kick;
+        SoundSource soundSource = SoundSource::Sample;
         std::string name;
     };
+
+    using DrumSynthParams = DrumSynthVoice::Params;
+
+    struct PadFilterConfig {
+        PadFilterType type = PadFilterType::LowPass;
+        float cutoffHz = 12000.0f;
+        float resonance = 0.35f;
+        float envAmount = 0.0f;
+        float envDecayMs = 180.0f;
+    };
+
+    using PadCvGateConfig = DrumCvGateOutput::Config;
+    using CcMapping = DrumCcMapper::Mapping;
+    using CcTarget = DrumCcMapper::Target;
+    using CcLearnState = DrumCcMapper::LearnState;
 
     struct StepLockOverrides {
         std::optional<float> volume;
@@ -112,6 +147,14 @@ public:
         int mixerScratchBufferResizes = 0;
     };
 
+    struct RecordedPadSample {
+        int padIndex = -1;
+        double sampleRate = 44100.0;
+        int channelCount = 1;
+        bool truncated = false;
+        std::vector<float> samples;
+    };
+
     DrumMachineProcessor();
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
@@ -142,6 +185,14 @@ public:
         float outputFloor = 0.0f,
         float outputCeiling = 1.0f);
     bool setPadMidiChannel(int padIndex, int midiChannel);
+    bool setPadSoundSource(int padIndex, SoundSource source);
+    SoundSource getPadSoundSource(int padIndex) const;
+    bool setPadSynthParams(int padIndex, const DrumSynthParams& params);
+    DrumSynthParams getPadSynthParams(int padIndex) const;
+    bool setPadFilter(int padIndex, const PadFilterConfig& config);
+    PadFilterConfig getPadFilter(int padIndex) const;
+    bool setPadCvGateConfig(int padIndex, const PadCvGateConfig& config);
+    PadCvGateConfig getPadCvGateConfig(int padIndex) const;
 
     bool loadPadSfz(int padIndex, const std::string& sfzPath);
     bool loadKitSfz(const std::string& sfzPath);
@@ -167,10 +218,29 @@ public:
     bool setBusEq(int busIndex, const DrumMachineMixer::BusEqConfig& config);
     bool setBusComp(int busIndex, const DrumMachineMixer::BusCompConfig& config);
     bool setBusLevel(int busIndex, float level);
+    bool setBusPan(int busIndex, float pan);
     bool setBusMute(int busIndex, bool mute);
     bool setBusSolo(int busIndex, bool solo);
+    bool setBusOutputPair(int busIndex, int outputPair);
+    bool setBusReverbSend(int busIndex, float reverbSend);
+    DrumMachineMixer::BusEqConfig getBusEq(int busIndex) const;
+    DrumMachineMixer::BusCompConfig getBusComp(int busIndex) const;
+    DrumMachineMixer::BusOutputConfig getBusOutput(int busIndex) const;
+    void setMasterFx(const DrumMachineMixer::MasterFxConfig& config);
+    DrumMachineMixer::MasterFxConfig getMasterFx() const;
     void setMasterVolume(float volume);
     float getMasterVolume() const;
+    bool setCcMapping(int slot, const CcMapping& mapping);
+    std::vector<CcMapping> getCcMappings() const;
+    bool startCcLearn(int slot, int timeoutSeconds = 10);
+    void stopCcLearn();
+    CcLearnState getCcLearnState() const;
+    using TransportValueCallback = std::function<void(float)>;
+    void setTempoCcCallback(TransportValueCallback callback);
+    void setSwingCcCallback(TransportValueCallback callback);
+    bool startPadInputRecording(int padIndex);
+    RecordedPadSample stopPadInputRecording();
+    bool isPadInputRecording() const;
     Metering getMetering() const;
     RtProcessDiagnostics getRtProcessDiagnostics() const;
     void resetRtProcessDiagnostics();
@@ -196,9 +266,17 @@ private:
     void advanceMidiLearn();
     void unassignTriggerNote(int midiNote);
     void applyPadConfigToPart(int padIndex);
+    void applyCcMapping(const CcMapping& mapping, float normalizedValue);
+    void resetPadFilterState(int padIndex);
+    void processPadFilter(int padIndex, juce::AudioBuffer<float>& buffer, int busBaseChannel);
+    void captureInputForRecording(const juce::AudioBuffer<float>& inputBuffer);
 
     std::array<synthforge::Part, kPadCount> pads_;
+    std::array<DrumSynthVoice, kPadCount> synthVoices_{};
     std::array<PadConfig, kPadCount> padConfigs_{};
+    std::array<DrumSynthParams, kPadCount> padSynthParams_{};
+    std::array<PadFilterConfig, kPadCount> padFilterConfigs_{};
+    std::array<PadCvGateConfig, kPadCount> padCvGateConfigs_{};
     std::array<std::array<PadZoneConfig, 3>, kPadCount> padZones_{};
     std::array<std::array<bool, 128>, kPadCount> padNoteAssignments_{};
     std::array<int, 128> noteToPad_{};
@@ -208,10 +286,19 @@ private:
     std::array<std::optional<StepLockOverrides>, kPadCount> pendingStepOverrides_{};
     DrumMachineMixer mixer_;
     juce::AudioBuffer<float> busBuffer_;
-    juce::AudioBuffer<float> stereoMixBuffer_;
+    juce::AudioBuffer<float> padScratchBuffer_;
+    juce::AudioBuffer<float> outputMixBuffer_;
+    std::array<juce::dsp::StateVariableTPTFilter<float>, kPadCount> padFilterL_{};
+    std::array<juce::dsp::StateVariableTPTFilter<float>, kPadCount> padFilterR_{};
+    std::array<juce::dsp::StateVariableTPTFilter<float>, kPadCount> padFilterNotchL_{};
+    std::array<juce::dsp::StateVariableTPTFilter<float>, kPadCount> padFilterNotchR_{};
+    std::array<float, kPadCount> padFilterEnvelope_{};
+    std::array<float, kPadCount> padFilterDecayRate_{};
     std::array<float, kPadCount> padPeakMeters_{};
     std::array<float, kPadCount> padRmsMeters_{};
     std::array<float, kPadCount> lastMappedVelocity_{};
+    std::array<DrumCvGateOutput, kPadCount> cvGateOutputs_{};
+    DrumCcMapper ccMapper_{};
     mutable MidiLearnState midiLearnState_{};
     mutable std::chrono::steady_clock::time_point midiLearnDeadline_{};
 
@@ -220,6 +307,15 @@ private:
     std::atomic<int> numChannels_{2};
     std::atomic<int> globalMidiChannel_{0};
     std::atomic<bool> prepared_{false};
+    juce::AudioBuffer<float> inputRecordBuffer_;
+    std::atomic<bool> recordingActive_{false};
+    std::atomic<int> recordingPadIndex_{-1};
+    std::atomic<int> recordingWritePosition_{0};
+    std::atomic<int> recordingCapacitySamples_{0};
+    std::atomic<bool> recordingTruncated_{false};
+    mutable std::mutex recordingResultMutex_;
+    TransportValueCallback tempoCcCallback_{};
+    TransportValueCallback swingCcCallback_{};
 };
 
 }  // namespace map2::drummachine

@@ -2,10 +2,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 
 namespace map2::drummachine {
 
 namespace {
+
+constexpr double kMaxPadRecordingSeconds = 30.0;
 
 constexpr std::array<int, DrumMachineProcessor::kPadCount> kDefaultMidiNotes = {
     36, 38, 42, 46, 41, 43, 45, 49, 51, 57, 39, 37, 56, 47, 50, 48,
@@ -28,6 +31,55 @@ DrumMachineProcessor::PadZoneConfig makeZoneConfig(DrumMachineProcessor::PadZone
     DrumMachineProcessor::PadZoneConfig config;
     config.kind = kind;
     return config;
+}
+
+DrumMachineProcessor::DrumSynthParams defaultSynthParamsForPad(int padIndex) {
+    using Osc = DrumSynthVoice::OscillatorType;
+    DrumMachineProcessor::DrumSynthParams params;
+    switch (padIndex) {
+        case 0:
+            params.oscillatorType = Osc::Sine;
+            params.pitchEnvelopeStartHz = 180.0f;
+            params.pitchEnvelopeEndHz = 42.0f;
+            params.pitchEnvelopeDecayMs = 140.0f;
+            params.noiseLevel = 0.06f;
+            params.noiseDecayMs = 35.0f;
+            params.bodyDecayMs = 560.0f;
+            params.toneAmount = 0.3f;
+            break;
+        case 1:
+            params.oscillatorType = Osc::Triangle;
+            params.pitchEnvelopeStartHz = 320.0f;
+            params.pitchEnvelopeEndHz = 180.0f;
+            params.pitchEnvelopeDecayMs = 90.0f;
+            params.noiseLevel = 0.7f;
+            params.noiseDecayMs = 220.0f;
+            params.bodyDecayMs = 210.0f;
+            params.toneAmount = 0.55f;
+            break;
+        case 2:
+        case 3:
+            params.oscillatorType = Osc::Metallic;
+            params.pitchEnvelopeStartHz = 640.0f;
+            params.pitchEnvelopeEndHz = 380.0f;
+            params.pitchEnvelopeDecayMs = 45.0f;
+            params.noiseLevel = 0.48f;
+            params.noiseDecayMs = 90.0f;
+            params.bodyDecayMs = 120.0f;
+            params.toneAmount = 0.9f;
+            break;
+        default:
+            params.oscillatorType = Osc::Sine;
+            params.pitchEnvelopeStartHz = 280.0f;
+            params.pitchEnvelopeEndHz = 110.0f;
+            params.pitchEnvelopeDecayMs = 110.0f;
+            params.noiseLevel = 0.22f;
+            params.noiseDecayMs = 150.0f;
+            params.bodyDecayMs = 260.0f;
+            params.toneAmount = 0.6f;
+            break;
+    }
+    return params;
 }
 
 const std::vector<PresetDefinition>& drumMidiPresets() {
@@ -98,6 +150,19 @@ float computeRms(const juce::AudioBuffer<float>& buffer, int channel) {
         return 0.0f;
     }
     return buffer.getRMSLevel(channel, 0, buffer.getNumSamples());
+}
+
+juce::dsp::StateVariableTPTFilterType filterTypeToJuce(DrumMachineProcessor::PadFilterType type) {
+    switch (type) {
+        case DrumMachineProcessor::PadFilterType::HighPass:
+            return juce::dsp::StateVariableTPTFilterType::highpass;
+        case DrumMachineProcessor::PadFilterType::BandPass:
+            return juce::dsp::StateVariableTPTFilterType::bandpass;
+        case DrumMachineProcessor::PadFilterType::Notch:
+        case DrumMachineProcessor::PadFilterType::LowPass:
+        default:
+            return juce::dsp::StateVariableTPTFilterType::lowpass;
+    }
 }
 
 void routeMidiToPads(
@@ -187,6 +252,7 @@ DrumMachineProcessor::DrumMachineProcessor() {
     for (int i = 0; i < kPadCount; ++i) {
         pads_[static_cast<size_t>(i)].setPartIndex(i);
         pads_[static_cast<size_t>(i)].setMidiChannel(1);
+        padSynthParams_[static_cast<size_t>(i)] = defaultSynthParamsForPad(i);
 
         padConfigs_[static_cast<size_t>(i)].midiNote = defaultMidiNoteForPad(i);
         padConfigs_[static_cast<size_t>(i)].bus = defaultBusForPad(i);
@@ -199,6 +265,7 @@ DrumMachineProcessor::DrumMachineProcessor() {
         };
         addPadMidiNote(i, padConfigs_[static_cast<size_t>(i)].midiNote);
         applyPadConfigToPart(i);
+        padCvGateConfigs_[static_cast<size_t>(i)].outputPair = 0;
     }
     midiLearnDeadline_ = std::chrono::steady_clock::now();
 }
@@ -209,8 +276,16 @@ void DrumMachineProcessor::prepare(double sampleRate, int samplesPerBlock, int n
     numChannels_.store(std::max(1, numChannels), std::memory_order_relaxed);
     busBuffer_.setSize(DrumMachineMixer::kBusChannels, std::max(1, samplesPerBlock), false, false, true);
     busBuffer_.clear();
-    stereoMixBuffer_.setSize(std::max(2, numChannels), std::max(1, samplesPerBlock), false, false, true);
-    stereoMixBuffer_.clear();
+    padScratchBuffer_.setSize(DrumMachineMixer::kBusChannels, std::max(1, samplesPerBlock), false, false, true);
+    padScratchBuffer_.clear();
+    outputMixBuffer_.setSize(std::max(2, numChannels), std::max(1, samplesPerBlock), false, false, true);
+    outputMixBuffer_.clear();
+    const int recordCapacity = std::max(1, static_cast<int>(std::ceil(sampleRate * kMaxPadRecordingSeconds)));
+    inputRecordBuffer_.setSize(1, recordCapacity, false, false, true);
+    inputRecordBuffer_.clear();
+    recordingCapacitySamples_.store(recordCapacity, std::memory_order_relaxed);
+    recordingWritePosition_.store(0, std::memory_order_relaxed);
+    recordingTruncated_.store(false, std::memory_order_relaxed);
     mixer_.prepare(sampleRate, samplesPerBlock);
 
     const int reserveBytes = std::max(1024, samplesPerBlock * 12);
@@ -224,6 +299,9 @@ void DrumMachineProcessor::prepare(double sampleRate, int samplesPerBlock, int n
     for (int i = 0; i < kPadCount; ++i) {
         pads_[static_cast<size_t>(i)].resetVoices();
         pads_[static_cast<size_t>(i)].prepare(sampleRate, samplesPerBlock, numChannels);
+        synthVoices_[static_cast<size_t>(i)].prepare(sampleRate);
+        cvGateOutputs_[static_cast<size_t>(i)].prepare(sampleRate);
+        resetPadFilterState(i);
         applyPadConfigToPart(i);
     }
 
@@ -235,13 +313,18 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
     for (const auto metadata : midiBuffer) {
         handleMidiLearnMessage(metadata.getMessage());
     }
+    ccMapper_.processMidiBuffer(midiBuffer, [this](const CcMapping& mapping, float normalizedValue) {
+        applyCcMapping(mapping, normalizedValue);
+    });
 
     if (!prepared_.load(std::memory_order_acquire)) {
         return;
     }
 
+    captureInputForRecording(buffer);
+
     busBuffer_.clear();
-    stereoMixBuffer_.clear();
+    outputMixBuffer_.clear();
 
     for (auto& padBuffer : padMidiBuffers_) {
         padBuffer.clear();
@@ -277,10 +360,14 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
 
     for (int padIndex = 0; padIndex < kPadCount; ++padIndex) {
         auto& part = pads_[static_cast<size_t>(padIndex)];
+        auto& synthVoice = synthVoices_[static_cast<size_t>(padIndex)];
         auto& padMidi = padMidiBuffers_[static_cast<size_t>(padIndex)];
         const auto pendingOverride = pendingStepOverrides_[static_cast<size_t>(padIndex)];
         const auto originalConfig = pendingOverride.has_value() ? std::optional(part.getConfig()) : std::nullopt;
         const auto originalParameters = pendingOverride.has_value() ? std::optional(part.getParameters()) : std::nullopt;
+        const auto& padConfig = padConfigs_[static_cast<size_t>(padIndex)];
+        padScratchBuffer_.clear();
+        const int busBase = static_cast<int>(padConfig.bus) * 2;
         if (pendingOverride.has_value()) {
             auto lockedConfig = *originalConfig;
             if (pendingOverride->volume.has_value()) {
@@ -300,8 +387,82 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
                 part.setParameter("amp.decay", std::clamp(*pendingOverride->decayMs, 1.0f, 5000.0f));
             }
         }
-        part.processMidi(padMidi);
-        part.processAudio(busBuffer_, padMidi, soloActive);
+        if (padConfig.soundSource != SoundSource::Synth) {
+            part.processMidi(padMidi);
+            part.processAudio(padScratchBuffer_, padMidi, soloActive);
+        }
+
+        if (padConfig.soundSource != SoundSource::Sample && !padConfig.mute && (!soloActive || padConfig.solo)) {
+            int renderedSamples = 0;
+            bool synthTriggered = false;
+            for (const auto metadata : padMidi) {
+                const int eventSample = std::clamp(metadata.samplePosition, 0, busBuffer_.getNumSamples());
+                if (eventSample > renderedSamples) {
+                    synthVoice.render(padScratchBuffer_, busBase, busBase + 1, renderedSamples, eventSample - renderedSamples);
+                    renderedSamples = eventSample;
+                }
+                const auto message = metadata.getMessage();
+                if (message.isNoteOn()) {
+                    padFilterEnvelope_[static_cast<size_t>(padIndex)] = 1.0f;
+                    auto synthParams = padSynthParams_[static_cast<size_t>(padIndex)];
+                    if (pendingOverride.has_value() && pendingOverride->decayMs.has_value()) {
+                        const float decayMs = std::clamp(*pendingOverride->decayMs, 1.0f, 5000.0f);
+                        synthParams.bodyDecayMs = decayMs;
+                        synthParams.noiseDecayMs = std::max(5.0f, decayMs * 0.4f);
+                    }
+                    const float synthLevel = pendingOverride.has_value() && pendingOverride->volume.has_value()
+                        ? std::clamp(*pendingOverride->volume, 0.0f, 1.0f)
+                        : padConfig.volume;
+                    const float synthPan = pendingOverride.has_value() && pendingOverride->pan.has_value()
+                        ? std::clamp(*pendingOverride->pan, -1.0f, 1.0f)
+                        : padConfig.pan;
+                    const float synthTune = pendingOverride.has_value() && pendingOverride->tuneSemitones.has_value()
+                        ? std::clamp(*pendingOverride->tuneSemitones, -24.0f, 24.0f)
+                        : padConfig.tuneSemitones;
+                    const float synthCutoff = pendingOverride.has_value() && pendingOverride->filterCutoffHz.has_value()
+                        ? std::clamp(*pendingOverride->filterCutoffHz, 20.0f, 20000.0f)
+                        : 0.0f;
+                    synthVoice.noteOn(
+                        mapVelocityForPad(padIndex, message.getFloatVelocity()),
+                        synthParams,
+                        synthLevel,
+                        synthPan,
+                        synthTune,
+                        synthCutoff);
+                    synthTriggered = true;
+                }
+            }
+            if (renderedSamples < busBuffer_.getNumSamples() && (synthVoice.isActive() || synthTriggered)) {
+                synthVoice.render(
+                    padScratchBuffer_,
+                    busBase,
+                    busBase + 1,
+                    renderedSamples,
+                    padScratchBuffer_.getNumSamples() - renderedSamples);
+            }
+        }
+        for (const auto metadata : padMidi) {
+            const auto message = metadata.getMessage();
+            if (!padCvGateConfigs_[static_cast<size_t>(padIndex)].enabled) {
+                continue;
+            }
+            if (message.isNoteOn()) {
+                cvGateOutputs_[static_cast<size_t>(padIndex)].noteOn(
+                    message.getNoteNumber(),
+                    padCvGateConfigs_[static_cast<size_t>(padIndex)]);
+            } else if (message.isNoteOff()) {
+                cvGateOutputs_[static_cast<size_t>(padIndex)].noteOff();
+            }
+        }
+        for (const auto metadata : padMidi) {
+            if (metadata.getMessage().isNoteOn()) {
+                padFilterEnvelope_[static_cast<size_t>(padIndex)] = 1.0f;
+                break;
+            }
+        }
+        processPadFilter(padIndex, padScratchBuffer_, busBase);
+        busBuffer_.addFrom(busBase, 0, padScratchBuffer_, busBase, 0, padScratchBuffer_.getNumSamples());
+        busBuffer_.addFrom(busBase + 1, 0, padScratchBuffer_, busBase + 1, 0, padScratchBuffer_.getNumSamples());
         if (pendingOverride.has_value()) {
             part.setConfig(*originalConfig);
             const auto restoreParameter = [&](const char* name, float fallback) {
@@ -316,19 +477,79 @@ void DrumMachineProcessor::processBlock(juce::AudioBuffer<float>& buffer, const 
 
         const int busBaseChannel = static_cast<int>(padConfigs_[static_cast<size_t>(padIndex)].bus) * 2;
         padPeakMeters_[static_cast<size_t>(padIndex)] = std::max(
-            computePeak(busBuffer_, busBaseChannel),
-            computePeak(busBuffer_, busBaseChannel + 1));
+            computePeak(padScratchBuffer_, busBaseChannel),
+            computePeak(padScratchBuffer_, busBaseChannel + 1));
         padRmsMeters_[static_cast<size_t>(padIndex)] = 0.5f * (
-            computeRms(busBuffer_, busBaseChannel) +
-            computeRms(busBuffer_, busBaseChannel + 1));
+            computeRms(padScratchBuffer_, busBaseChannel) +
+            computeRms(padScratchBuffer_, busBaseChannel + 1));
     }
 
-    mixer_.process(busBuffer_, stereoMixBuffer_);
-    const int outputChannels = std::min(buffer.getNumChannels(), stereoMixBuffer_.getNumChannels());
-    const int outputSamples = std::min(buffer.getNumSamples(), stereoMixBuffer_.getNumSamples());
-    for (int channel = 0; channel < outputChannels; ++channel) {
-        buffer.addFrom(channel, 0, stereoMixBuffer_, channel, 0, outputSamples);
+    mixer_.process(busBuffer_, outputMixBuffer_);
+    for (int padIndex = 0; padIndex < kPadCount; ++padIndex) {
+        const auto& cvConfig = padCvGateConfigs_[static_cast<size_t>(padIndex)];
+        if (!cvConfig.enabled) {
+            continue;
+        }
+        const int gateChannel = cvConfig.outputPair * 2;
+        const int cvChannel = gateChannel + 1;
+        cvGateOutputs_[static_cast<size_t>(padIndex)].render(
+            outputMixBuffer_,
+            gateChannel,
+            cvChannel,
+            0,
+            outputMixBuffer_.getNumSamples());
     }
+    const int outputChannels = std::min(buffer.getNumChannels(), outputMixBuffer_.getNumChannels());
+    const int outputSamples = std::min(buffer.getNumSamples(), outputMixBuffer_.getNumSamples());
+    for (int channel = 0; channel < outputChannels; ++channel) {
+        buffer.addFrom(channel, 0, outputMixBuffer_, channel, 0, outputSamples);
+    }
+}
+
+bool DrumMachineProcessor::startPadInputRecording(int padIndex) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+    if (!prepared_.load(std::memory_order_acquire)) {
+        return false;
+    }
+
+    std::scoped_lock lock(recordingResultMutex_);
+    inputRecordBuffer_.clear();
+    recordingPadIndex_.store(padIndex, std::memory_order_release);
+    recordingWritePosition_.store(0, std::memory_order_release);
+    recordingTruncated_.store(false, std::memory_order_release);
+    recordingActive_.store(true, std::memory_order_release);
+    return true;
+}
+
+DrumMachineProcessor::RecordedPadSample DrumMachineProcessor::stopPadInputRecording() {
+    const int padIndex = recordingPadIndex_.exchange(-1, std::memory_order_acq_rel);
+    recordingActive_.store(false, std::memory_order_release);
+
+    RecordedPadSample result;
+    result.padIndex = padIndex;
+    result.sampleRate = sampleRate_.load(std::memory_order_relaxed);
+    result.channelCount = inputRecordBuffer_.getNumChannels();
+    result.truncated = recordingTruncated_.load(std::memory_order_relaxed);
+
+    const int sampleCount = std::clamp(
+        recordingWritePosition_.exchange(0, std::memory_order_acq_rel),
+        0,
+        inputRecordBuffer_.getNumSamples());
+    if (padIndex < 0 || sampleCount <= 0) {
+        return result;
+    }
+
+    std::scoped_lock lock(recordingResultMutex_);
+    result.samples.resize(static_cast<size_t>(sampleCount));
+    std::copy_n(inputRecordBuffer_.getReadPointer(0), sampleCount, result.samples.begin());
+    inputRecordBuffer_.clear();
+    return result;
+}
+
+bool DrumMachineProcessor::isPadInputRecording() const {
+    return recordingActive_.load(std::memory_order_acquire);
 }
 
 bool DrumMachineProcessor::triggerNote(int padIndex, int velocity, int sampleOffset, const StepLockOverrides& overrides) {
@@ -538,6 +759,85 @@ bool DrumMachineProcessor::setPadMidiChannel(int padIndex, int midiChannel) {
     return setPadConfig(padIndex, config);
 }
 
+bool DrumMachineProcessor::setPadSoundSource(int padIndex, SoundSource source) {
+    auto config = getPadConfig(padIndex);
+    config.soundSource = source;
+    return setPadConfig(padIndex, config);
+}
+
+DrumMachineProcessor::SoundSource DrumMachineProcessor::getPadSoundSource(int padIndex) const {
+    if (!isValidPadIndex(padIndex)) {
+        return SoundSource::Sample;
+    }
+    return padConfigs_[static_cast<size_t>(padIndex)].soundSource;
+}
+
+bool DrumMachineProcessor::setPadSynthParams(int padIndex, const DrumSynthParams& params) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+    auto clamped = params;
+    clamped.pitchEnvelopeStartHz = std::clamp(clamped.pitchEnvelopeStartHz, 20.0f, 4000.0f);
+    clamped.pitchEnvelopeEndHz = std::clamp(clamped.pitchEnvelopeEndHz, 20.0f, 4000.0f);
+    clamped.pitchEnvelopeDecayMs = std::clamp(clamped.pitchEnvelopeDecayMs, 1.0f, 5000.0f);
+    clamped.noiseLevel = std::clamp(clamped.noiseLevel, 0.0f, 1.0f);
+    clamped.noiseDecayMs = std::clamp(clamped.noiseDecayMs, 1.0f, 5000.0f);
+    clamped.bodyDecayMs = std::clamp(clamped.bodyDecayMs, 1.0f, 5000.0f);
+    clamped.toneAmount = std::clamp(clamped.toneAmount, 0.0f, 1.0f);
+    padSynthParams_[static_cast<size_t>(padIndex)] = clamped;
+    return true;
+}
+
+DrumMachineProcessor::DrumSynthParams DrumMachineProcessor::getPadSynthParams(int padIndex) const {
+    if (!isValidPadIndex(padIndex)) {
+        return {};
+    }
+    return padSynthParams_[static_cast<size_t>(padIndex)];
+}
+
+bool DrumMachineProcessor::setPadFilter(int padIndex, const PadFilterConfig& config) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+    auto clamped = config;
+    clamped.cutoffHz = std::clamp(clamped.cutoffHz, 20.0f, 20000.0f);
+    clamped.resonance = std::clamp(clamped.resonance, 0.1f, 10.0f);
+    clamped.envAmount = std::clamp(clamped.envAmount, -1.0f, 1.0f);
+    clamped.envDecayMs = std::clamp(clamped.envDecayMs, 1.0f, 5000.0f);
+    padFilterConfigs_[static_cast<size_t>(padIndex)] = clamped;
+    resetPadFilterState(padIndex);
+    return true;
+}
+
+DrumMachineProcessor::PadFilterConfig DrumMachineProcessor::getPadFilter(int padIndex) const {
+    if (!isValidPadIndex(padIndex)) {
+        return {};
+    }
+    return padFilterConfigs_[static_cast<size_t>(padIndex)];
+}
+
+bool DrumMachineProcessor::setPadCvGateConfig(int padIndex, const PadCvGateConfig& config) {
+    if (!isValidPadIndex(padIndex)) {
+        return false;
+    }
+    auto clamped = config;
+    clamped.outputPair = std::max(0, clamped.outputPair);
+    clamped.gateLengthMs = std::clamp(clamped.gateLengthMs, 1.0f, 5000.0f);
+    clamped.noteMin = std::clamp(clamped.noteMin, 0, 126);
+    clamped.noteMax = std::clamp(clamped.noteMax, clamped.noteMin + 1, 127);
+    clamped.pitchMinVolts = std::clamp(clamped.pitchMinVolts, -10.0f, 10.0f);
+    clamped.pitchMaxVolts = std::clamp(clamped.pitchMaxVolts, clamped.pitchMinVolts, 10.0f);
+    padCvGateConfigs_[static_cast<size_t>(padIndex)] = clamped;
+    return true;
+}
+
+DrumMachineProcessor::PadCvGateConfig DrumMachineProcessor::getPadCvGateConfig(int padIndex) const {
+    if (!isValidPadIndex(padIndex)) {
+        return {};
+    }
+    return padCvGateConfigs_[static_cast<size_t>(padIndex)];
+}
+
 bool DrumMachineProcessor::loadPadSfz(int padIndex, const std::string& sfzPath) {
     if (!isValidPadIndex(padIndex)) {
         return false;
@@ -575,7 +875,8 @@ int DrumMachineProcessor::getPadActiveVoices(int padIndex) const {
     if (!isValidPadIndex(padIndex)) {
         return 0;
     }
-    return pads_[static_cast<size_t>(padIndex)].getActiveVoices();
+    return pads_[static_cast<size_t>(padIndex)].getActiveVoices()
+        + (synthVoices_[static_cast<size_t>(padIndex)].isActive() ? 1 : 0);
 }
 
 float DrumMachineProcessor::mapVelocityForPad(int padIndex, float rawVelocity) const {
@@ -759,6 +1060,10 @@ bool DrumMachineProcessor::setBusLevel(int busIndex, float level) {
     return mixer_.setBusLevel(busIndex, level);
 }
 
+bool DrumMachineProcessor::setBusPan(int busIndex, float pan) {
+    return mixer_.setBusPan(busIndex, pan);
+}
+
 bool DrumMachineProcessor::setBusMute(int busIndex, bool mute) {
     return mixer_.setBusMute(busIndex, mute);
 }
@@ -767,12 +1072,68 @@ bool DrumMachineProcessor::setBusSolo(int busIndex, bool solo) {
     return mixer_.setBusSolo(busIndex, solo);
 }
 
+bool DrumMachineProcessor::setBusOutputPair(int busIndex, int outputPair) {
+    return mixer_.setBusOutputPair(busIndex, outputPair);
+}
+
+bool DrumMachineProcessor::setBusReverbSend(int busIndex, float reverbSend) {
+    return mixer_.setBusReverbSend(busIndex, reverbSend);
+}
+
+DrumMachineMixer::BusEqConfig DrumMachineProcessor::getBusEq(int busIndex) const {
+    return mixer_.getBusEq(busIndex);
+}
+
+DrumMachineMixer::BusCompConfig DrumMachineProcessor::getBusComp(int busIndex) const {
+    return mixer_.getBusComp(busIndex);
+}
+
+DrumMachineMixer::BusOutputConfig DrumMachineProcessor::getBusOutput(int busIndex) const {
+    return mixer_.getBusOutput(busIndex);
+}
+
+void DrumMachineProcessor::setMasterFx(const DrumMachineMixer::MasterFxConfig& config) {
+    mixer_.setMasterFx(config);
+}
+
+DrumMachineMixer::MasterFxConfig DrumMachineProcessor::getMasterFx() const {
+    return mixer_.getMasterFx();
+}
+
 void DrumMachineProcessor::setMasterVolume(float volume) {
     mixer_.setMasterVolume(volume);
 }
 
 float DrumMachineProcessor::getMasterVolume() const {
     return mixer_.getMasterVolume();
+}
+
+bool DrumMachineProcessor::setCcMapping(int slot, const CcMapping& mapping) {
+    return ccMapper_.setMapping(slot, mapping);
+}
+
+std::vector<DrumMachineProcessor::CcMapping> DrumMachineProcessor::getCcMappings() const {
+    return ccMapper_.getMappings();
+}
+
+bool DrumMachineProcessor::startCcLearn(int slot, int timeoutSeconds) {
+    return ccMapper_.startLearn(slot, timeoutSeconds);
+}
+
+void DrumMachineProcessor::stopCcLearn() {
+    ccMapper_.stopLearn();
+}
+
+DrumMachineProcessor::CcLearnState DrumMachineProcessor::getCcLearnState() const {
+    return ccMapper_.getLearnState();
+}
+
+void DrumMachineProcessor::setTempoCcCallback(TransportValueCallback callback) {
+    tempoCcCallback_ = std::move(callback);
+}
+
+void DrumMachineProcessor::setSwingCcCallback(TransportValueCallback callback) {
+    swingCcCallback_ = std::move(callback);
 }
 
 DrumMachineProcessor::Metering DrumMachineProcessor::getMetering() const {
@@ -981,6 +1342,199 @@ void DrumMachineProcessor::applyPadConfigToPart(int padIndex) {
     partConfig.solo = config.solo;
     part.setConfig(partConfig);
     part.setParameter("global.transpose", std::clamp(config.tuneSemitones, -24.0f, 24.0f));
+}
+
+void DrumMachineProcessor::applyCcMapping(const CcMapping& mapping, float normalizedValue) {
+    const float normalized = std::clamp(normalizedValue, 0.0f, 1.0f);
+    switch (mapping.target) {
+        case CcTarget::PadVolume:
+            setPadVolume(mapping.targetIndex, normalized);
+            return;
+        case CcTarget::PadPan:
+            setPadPan(mapping.targetIndex, (normalized * 2.0f) - 1.0f);
+            return;
+        case CcTarget::PadTune:
+            setPadTune(mapping.targetIndex, -24.0f + (normalized * 48.0f));
+            return;
+        case CcTarget::PadFilterCutoff: {
+            auto filter = getPadFilter(mapping.targetIndex);
+            filter.cutoffHz = 20.0f + (normalized * (20000.0f - 20.0f));
+            setPadFilter(mapping.targetIndex, filter);
+            return;
+        }
+        case CcTarget::BusLevel:
+            setBusLevel(mapping.targetIndex, normalized);
+            return;
+        case CcTarget::BusPan:
+            setBusPan(mapping.targetIndex, (normalized * 2.0f) - 1.0f);
+            return;
+        case CcTarget::MasterVolume:
+            setMasterVolume(normalized);
+            return;
+        case CcTarget::Tempo:
+            if (tempoCcCallback_) {
+                tempoCcCallback_(40.0f + (normalized * 260.0f));
+            }
+            return;
+        case CcTarget::Swing:
+            if (swingCcCallback_) {
+                swingCcCallback_(normalized * 100.0f);
+            }
+            return;
+        case CcTarget::SynthPitchStartHz: {
+            auto params = getPadSynthParams(mapping.targetIndex);
+            params.pitchEnvelopeStartHz = 20.0f + (normalized * (4000.0f - 20.0f));
+            setPadSynthParams(mapping.targetIndex, params);
+            return;
+        }
+        case CcTarget::SynthPitchEndHz: {
+            auto params = getPadSynthParams(mapping.targetIndex);
+            params.pitchEnvelopeEndHz = 20.0f + (normalized * (4000.0f - 20.0f));
+            setPadSynthParams(mapping.targetIndex, params);
+            return;
+        }
+        case CcTarget::SynthPitchDecayMs: {
+            auto params = getPadSynthParams(mapping.targetIndex);
+            params.pitchEnvelopeDecayMs = 1.0f + (normalized * (5000.0f - 1.0f));
+            setPadSynthParams(mapping.targetIndex, params);
+            return;
+        }
+        case CcTarget::SynthNoiseLevel: {
+            auto params = getPadSynthParams(mapping.targetIndex);
+            params.noiseLevel = normalized;
+            setPadSynthParams(mapping.targetIndex, params);
+            return;
+        }
+        case CcTarget::SynthNoiseDecayMs: {
+            auto params = getPadSynthParams(mapping.targetIndex);
+            params.noiseDecayMs = 1.0f + (normalized * (5000.0f - 1.0f));
+            setPadSynthParams(mapping.targetIndex, params);
+            return;
+        }
+        case CcTarget::SynthBodyDecayMs: {
+            auto params = getPadSynthParams(mapping.targetIndex);
+            params.bodyDecayMs = 1.0f + (normalized * (5000.0f - 1.0f));
+            setPadSynthParams(mapping.targetIndex, params);
+            return;
+        }
+        case CcTarget::SynthToneAmount: {
+            auto params = getPadSynthParams(mapping.targetIndex);
+            params.toneAmount = normalized;
+            setPadSynthParams(mapping.targetIndex, params);
+            return;
+        }
+    }
+}
+
+void DrumMachineProcessor::resetPadFilterState(int padIndex) {
+    auto& left = padFilterL_[static_cast<size_t>(padIndex)];
+    auto& right = padFilterR_[static_cast<size_t>(padIndex)];
+    auto& notchLeft = padFilterNotchL_[static_cast<size_t>(padIndex)];
+    auto& notchRight = padFilterNotchR_[static_cast<size_t>(padIndex)];
+    left.reset();
+    right.reset();
+    notchLeft.reset();
+    notchRight.reset();
+    const auto& config = padFilterConfigs_[static_cast<size_t>(padIndex)];
+    left.setType(filterTypeToJuce(config.type));
+    right.setType(filterTypeToJuce(config.type));
+    notchLeft.setType(juce::dsp::StateVariableTPTFilterType::highpass);
+    notchRight.setType(juce::dsp::StateVariableTPTFilterType::highpass);
+    left.setCutoffFrequency(config.cutoffHz);
+    right.setCutoffFrequency(config.cutoffHz);
+    notchLeft.setCutoffFrequency(config.cutoffHz);
+    notchRight.setCutoffFrequency(config.cutoffHz);
+    left.setResonance(config.resonance);
+    right.setResonance(config.resonance);
+    notchLeft.setResonance(config.resonance);
+    notchRight.setResonance(config.resonance);
+    padFilterEnvelope_[static_cast<size_t>(padIndex)] = 0.0f;
+    const double sampleRate = sampleRate_.load(std::memory_order_relaxed);
+    padFilterDecayRate_[static_cast<size_t>(padIndex)] = std::exp(
+        -1.0f / static_cast<float>(std::max(1.0, sampleRate) * std::max(0.001f, config.envDecayMs / 1000.0f)));
+}
+
+void DrumMachineProcessor::processPadFilter(int padIndex, juce::AudioBuffer<float>& buffer, int busBaseChannel) {
+    if (!isValidPadIndex(padIndex) || busBaseChannel < 0 || busBaseChannel + 1 >= buffer.getNumChannels()) {
+        return;
+    }
+    auto& left = padFilterL_[static_cast<size_t>(padIndex)];
+    auto& right = padFilterR_[static_cast<size_t>(padIndex)];
+    auto& notchLeft = padFilterNotchL_[static_cast<size_t>(padIndex)];
+    auto& notchRight = padFilterNotchR_[static_cast<size_t>(padIndex)];
+    const auto& config = padFilterConfigs_[static_cast<size_t>(padIndex)];
+    auto* leftData = buffer.getWritePointer(busBaseChannel);
+    auto* rightData = buffer.getWritePointer(busBaseChannel + 1);
+    float envelope = padFilterEnvelope_[static_cast<size_t>(padIndex)];
+    const float decayRate = padFilterDecayRate_[static_cast<size_t>(padIndex)];
+    const float baseCutoff = std::clamp(config.cutoffHz, 20.0f, 20000.0f);
+
+    for (int sample = 0; sample < buffer.getNumSamples(); ++sample) {
+        const float envCutoff = std::clamp(
+            baseCutoff * std::pow(2.0f, config.envAmount * envelope * 2.0f),
+            20.0f,
+            20000.0f);
+        left.setCutoffFrequency(envCutoff);
+        right.setCutoffFrequency(envCutoff);
+        notchLeft.setCutoffFrequency(envCutoff);
+        notchRight.setCutoffFrequency(envCutoff);
+        left.setResonance(config.resonance);
+        right.setResonance(config.resonance);
+        notchLeft.setResonance(config.resonance);
+        notchRight.setResonance(config.resonance);
+
+        const float inputL = leftData[sample];
+        const float inputR = rightData[sample];
+        switch (config.type) {
+            case PadFilterType::HighPass:
+            case PadFilterType::BandPass:
+            case PadFilterType::LowPass:
+                leftData[sample] = left.processSample(0, inputL);
+                rightData[sample] = right.processSample(0, inputR);
+                break;
+            case PadFilterType::Notch:
+                leftData[sample] = left.processSample(0, inputL) + notchLeft.processSample(0, inputL);
+                rightData[sample] = right.processSample(0, inputR) + notchRight.processSample(0, inputR);
+                break;
+        }
+        envelope *= decayRate;
+    }
+    padFilterEnvelope_[static_cast<size_t>(padIndex)] = envelope;
+}
+
+void DrumMachineProcessor::captureInputForRecording(const juce::AudioBuffer<float>& inputBuffer) {
+    if (!recordingActive_.load(std::memory_order_acquire)) {
+        return;
+    }
+
+    const int writePosition = recordingWritePosition_.load(std::memory_order_relaxed);
+    const int capacity = recordingCapacitySamples_.load(std::memory_order_relaxed);
+    if (writePosition >= capacity || inputBuffer.getNumSamples() <= 0 || inputRecordBuffer_.getNumChannels() <= 0) {
+        recordingTruncated_.store(true, std::memory_order_relaxed);
+        return;
+    }
+
+    const int channels = std::max(1, inputBuffer.getNumChannels());
+    const int samplesToCopy = std::min(inputBuffer.getNumSamples(), capacity - writePosition);
+
+    {
+        std::scoped_lock lock(recordingResultMutex_);
+        auto* writePtr = inputRecordBuffer_.getWritePointer(0, writePosition);
+        const float* left = inputBuffer.getReadPointer(0);
+        const float* right = inputBuffer.getNumChannels() > 1 ? inputBuffer.getReadPointer(1) : nullptr;
+
+        for (int sample = 0; sample < samplesToCopy; ++sample) {
+            const float mixed = channels > 1 && right != nullptr
+                ? 0.5f * (left[sample] + right[sample])
+                : left[sample];
+            writePtr[sample] = mixed;
+        }
+    }
+
+    recordingWritePosition_.store(writePosition + samplesToCopy, std::memory_order_relaxed);
+    if (samplesToCopy < inputBuffer.getNumSamples()) {
+        recordingTruncated_.store(true, std::memory_order_relaxed);
+    }
 }
 
 }  // namespace map2::drummachine

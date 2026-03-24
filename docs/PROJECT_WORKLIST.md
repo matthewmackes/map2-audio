@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-24 - Added Drum Machine Pro epic (T391 with 16 subtasks covering 20 high-end features)
+Last updated: 2026-03-24 - Completed T392 DrumSequencer native crash fix after T391-O sample editor delivery
 
 ## Active Blockers Only
 
@@ -3339,7 +3339,7 @@ Last updated: 2026-03-24 09:31 EDT - Codex
 #### Phase 2 — Sound Engine Expansion (Features 9, 12, 13)
 
 ID: T391-H
-Status: [ ] Todo
+Status: [✓] Done
 Title: Virtual Analog Drum Synthesis Engine — 808/909-style synth voices
 Description:
 - Goal / acceptance criteria: Create a `DrumSynthVoice` class providing virtual analog drum synthesis (sine body + noise transient + pitch envelope for kicks, noise + resonant filter for snares, band-pass noise for hats). Each pad can be set to Sample, Synth, or Hybrid (layered) mode. Classic circuit models: TR-808 kick (sine + pitch sweep), TR-909 snare (noise + tone), CR-78 hats (metallic ring).
@@ -3352,10 +3352,18 @@ Description:
 - Estimated effort: High
 - Required outputs: DrumSynthVoice class, hybrid routing, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 15:07 EDT - Codex
+- Completion notes:
+  - Added `juce-engine/Source/DrumMachine/DrumSynthVoice.h` and `juce-engine/Source/DrumMachine/DrumSynthVoice.cpp`, then integrated per-pad `Sample` / `Synth` / `Hybrid` routing plus synth parameter storage into `juce-engine/Source/DrumMachine/DrumMachineProcessor.h`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.cpp`, and `juce-engine/Source/PythonBindings.cpp`.
+  - Extended `app/services/drum_machine_service.py` and `app/routes/drums.py` with persistent per-pad sound-source and synth-parameter models plus `GET/POST /api/engine/drums/pad/{id}/source` and `GET/POST /api/engine/drums/pad/{id}/synth`.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/DrumsPage.test.tsx` so the Instrument Inspector now exposes Sample/Synth/Hybrid selection and live synth-voice controls from the Carbon drum page.
+  - Added focused coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp`, `tests/test_drum_machine_service.py`, and `tests/test_drum_routes.py`.
+  - Validation passed with `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`, `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"`, and `./juce-engine/build-synthforge-tests/synthforge_tests "DrumMachineProcessor renders synth-only and hybrid pad sources"`.
+  - Validation gap discovered during sign-off: full `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` still fails on an apparently unrelated `DrumSequencer` default-state SIGSEGV; tracked separately as `T392`.
 
 ID: T391-I
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-Pad Dedicated Filters — runtime-controllable HP/LP/BP per drum
 Description:
 - Goal / acceptance criteria: Add a dedicated state-variable filter per pad (LP, HP, BP, Notch) with cutoff, resonance, envelope amount, and envelope decay. Filters process each pad's audio individually before routing to the bus mixer. This is distinct from bus-level EQ — it's a per-drum sound-shaping tool.
@@ -3368,12 +3376,21 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Per-pad filter processing, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 15:18 EDT - Codex
+- Completion notes:
+  - Reworked `juce-engine/Source/DrumMachine/DrumMachineProcessor.h` and `juce-engine/Source/DrumMachine/DrumMachineProcessor.cpp` so each pad now renders into a reusable scratch bus before accumulation, enabling true per-pad filter processing without faking it as bus EQ.
+  - Added per-pad filter configuration and JUCE `StateVariableTPTFilter` processing for low-pass, high-pass, band-pass, and notch behavior, including envelope amount and decay modulation, then exposed the contract via `juce-engine/Source/PythonBindings.cpp`.
+  - Extended `app/services/drum_machine_service.py` and `app/routes/drums.py` with persistent `pad_filters` state plus `GET/POST /api/engine/drums/pad/{id}/filter`.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/DrumsPage.test.tsx` so the Instrument Inspector now exposes per-pad filter type, cutoff, resonance, env amount, and env decay controls alongside the synth editor.
+  - Added focused regression coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp`, `tests/test_drum_machine_service.py`, and `tests/test_drum_routes.py`.
+  - Validation passed with `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`, `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"`, and `./juce-engine/build-synthforge-tests/synthforge_tests "DrumMachineProcessor applies per-pad filters on rendered pad audio"`.
+  - Licensing review: touched native/backend/frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 #### Phase 3 — Connectivity & Control (Features 14, 16, 17, 18)
 
 ID: T391-J
-Status: [ ] Todo
+Status: [✓] Done
 Title: Individual Audio Outputs — route drum buses to separate physical outputs
 Description:
 - Goal / acceptance criteria: Add a multi-output mode where each of the 8 drum buses can be routed to a separate stereo pair on a multi-channel audio interface (e.g., Edirol UA-1000 outputs 3-4 through 17-18), in addition to the existing stereo master fold-down. This enables external mixing and per-bus outboard processing.
@@ -3386,10 +3403,18 @@ Description:
 - Estimated effort: High
 - Required outputs: Multi-channel routing, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 17:04 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/DrumMachine/DrumMachineMixer.h`, `juce-engine/Source/DrumMachine/DrumMachineMixer.cpp`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.h`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.cpp`, and `juce-engine/Source/Map2AudioEngine.cpp` so drum buses can target dedicated physical output pairs in multi-channel callback buffers while preserving the stereo master pair as pair 1.
+  - Added native routing/control bindings in `juce-engine/Source/PythonBindings.cpp`, then completed the persistence/API surface in `app/services/drum_machine_service.py` and `app/routes/drums.py` with mixer pad, bus, and master endpoints that expose per-bus output-pair availability based on the current engine output-channel count.
+  - Updated `web/src/map2/types.ts`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/DrumsPage.test.tsx` so each drum bus strip exposes physical output-pair assignment directly in the mixer UI alongside the existing level/EQ/comp controls.
+  - Added focused regression coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp`, `tests/test_drum_machine_service.py`, and `tests/test_drum_routes.py`.
+  - Validation passed with `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`, and `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"`.
+  - Licensing review: touched native/backend/frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 ID: T391-K
-Status: [ ] Todo
+Status: [✓] Done
 Title: CV/Gate Outputs — control modular synths from drum sequencer
 Description:
 - Goal / acceptance criteria: Generate CV/Gate signals on dedicated audio output channels for controlling modular or vintage analog synthesizers. Gate signals go high (1.0) on note-on and low (0.0) on note-off. Pitch CV follows 1V/oct standard mapped to float range. Configurable per-pad: enable CV/Gate output, assign output channel pair, set pitch CV range.
@@ -3402,10 +3427,18 @@ Description:
 - Estimated effort: Medium
 - Required outputs: CV/Gate signal generation, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 17:34 EDT - Codex
+- Completion notes:
+  - Added `juce-engine/Source/DrumMachine/DrumCvGateOutput.h` and `juce-engine/Source/DrumMachine/DrumCvGateOutput.cpp`, then integrated per-pad CV/Gate configuration and rendering into `juce-engine/Source/DrumMachine/DrumMachineProcessor.h`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.cpp`, `juce-engine/Source/PythonBindings.cpp`, and `juce-engine/CMakeLists.txt`.
+  - Extended `app/services/drum_machine_service.py` and `app/routes/drums.py` with persisted `pad_cv_gate_configs` state plus `GET/POST /api/engine/drums/pad/{id}/cv-gate`.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/DrumsPage.test.tsx` so the Instrument Inspector now exposes per-pad CV/Gate enable, output pair, gate length, note range, and pitch voltage range controls.
+  - Added focused regression coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp`, `tests/test_drum_machine_service.py`, and `tests/test_drum_routes.py`.
+  - Validation passed with `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`, and `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"`.
+  - Licensing review: touched native/backend/frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 ID: T391-L
-Status: [ ] Todo
+Status: [✓] Done
 Title: Full MIDI Output — clock, note output, and program change from sequencer
 Description:
 - Goal / acceptance criteria: The drum sequencer sends MIDI output in addition to receiving MIDI input. Capabilities: (a) MIDI clock output at 24ppqn synchronized to sequencer tempo, (b) MIDI note messages for each sequencer step (drive external drum modules or DAWs), (c) MIDI Start/Stop/Continue messages aligned with transport, (d) pattern changes via incoming MIDI Program Change messages.
@@ -3418,10 +3451,20 @@ Description:
 - Estimated effort: Medium
 - Required outputs: MIDI output generation, clock sync, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 20:42 EDT - Codex
+- Completion notes:
+  - Added sequencer MIDI-event generation in `juce-engine/Source/DrumMachine/DrumSequencer.h` and `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, including 24ppqn clock output, note on/off emission on a configurable output channel, Start/Stop/Continue transport messages, and incoming Program Change pattern switching.
+  - Wired the native output path through `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/MidiHandler.cpp`, and `juce-engine/Source/PythonBindings.cpp` so sequencer MIDI is forwarded through the existing `MidiHandler` ALSA output path and exposed to Python.
+  - Extended persisted transport state plus the API surface in `app/services/drum_machine_service.py` and `app/routes/drums.py`, including `GET/POST /api/engine/drums/midi/output`.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/drumMachineState.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/DrumsPage.test.tsx` so the transport panel now exposes note output, clock output, channel selection, and Program Change pattern switching controls.
+  - Added focused regression coverage in `juce-engine/tests/DrumSequencerTests.cpp`, `tests/test_drum_machine_service.py`, and `tests/test_drum_routes.py`.
+  - Validation passed with `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`, `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j4`, and `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"`.
+  - Validation gap: standalone `DrumSequencer`-targeted runs still crash with the pre-existing `T392` SIGSEGV blocker in `synthforge_tests`, so focused native runtime assertions for the new sequencer MIDI path remain blocked by that existing harness instability.
+  - Licensing review: touched native/backend/frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "AGPL|GNU Affero|license|LICENSE|THIRD_PARTY_NOTICES|SPDX|non-commercial|source-available|Proprietary|MIT" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 ID: T391-M
-Status: [ ] Todo
+Status: [✓] Done
 Title: Assignable CC Mapping — MIDI CC to drum machine parameters
 Description:
 - Goal / acceptance criteria: Map incoming MIDI CC messages to any drum machine parameter for hands-on control from MIDI controllers. Support learning mode (wiggle a knob to assign), per-mapping CC number + MIDI channel + target parameter + target index. Targets: pad volume/pan/tune/filter cutoff, bus level/pan, master volume, tempo, swing, and any synth parameter.
@@ -3434,12 +3477,20 @@ Description:
 - Estimated effort: Medium
 - Required outputs: CC mapper class, learn mode, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 17:05 EDT - Codex
+- Completion notes:
+  - Added the native CC-mapping slice in `juce-engine/Source/DrumMachine/DrumCcMapper.h`, `juce-engine/Source/DrumMachine/DrumCcMapper.cpp`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.h`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.cpp`, `juce-engine/Source/Map2AudioEngine.cpp`, and `juce-engine/Source/PythonBindings.cpp`, covering 32 mapping slots, CC learn state, per-target application, and tempo/swing transport callbacks.
+  - Added persistence and API coverage in `app/services/drum_machine_service.py`, `app/routes/drums.py`, `tests/test_drum_machine_service.py`, and `tests/test_drum_routes.py`, including saved CC mappings plus learn-state round trips.
+  - Finished the frontend slice in `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/DrumsPage.test.tsx`, including the CC mapping table, learn-state feedback, and regression coverage for per-slot edits plus CC learn controls.
+  - Added focused native regression coverage in `juce-engine/tests/DrumMachineProcessorTests.cpp` for CC learn plus incoming-controller application, and fixed the `synthforge_tests` target in `juce-engine/CMakeLists.txt` so `DrumCcMapper.cpp` is linked during clean test builds.
+  - Validation passed with `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/pages/DrumsPage.test.tsx`, `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`, and `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"`.
+  - Licensing review: touched native/backend/frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 #### Phase 4 — Master Effects & Sample Tools (Features 10, 19)
 
 ID: T391-N
-Status: [ ] Todo
+Status: [✓] Done
 Title: Onboard Master Effects Chain — reverb, distortion, and send effects
 Description:
 - Goal / acceptance criteria: Add a master effects chain inserted after bus summing and before master volume in `DrumMachineMixer`. Chain order: Saturator/Distortion -> Compressor (upgrade existing bus comp) -> Reverb (algorithmic or convolution) -> Limiter. Per-bus send levels for reverb. All FX must be RT-safe with pre-allocated buffers.
@@ -3452,10 +3503,19 @@ Description:
 - Estimated effort: High
 - Required outputs: Master FX chain, RT-safe processing, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 17:46 EDT - Codex
+- Completion notes:
+  - Added the native master-FX stage in `juce-engine/Source/DrumMachine/DrumMasterFx.h`, `juce-engine/Source/DrumMachine/DrumMasterFx.cpp`, `juce-engine/Source/DrumMachine/DrumMachineMixer.h`, `juce-engine/Source/DrumMachine/DrumMachineMixer.cpp`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.h`, and `juce-engine/Source/DrumMachine/DrumMachineProcessor.cpp`, covering saturation, stereo compressor, reverb return fed by per-bus sends, limiter, and processor/mixer accessors for the new state.
+  - Exposed the new controls through `juce-engine/Source/PythonBindings.cpp`, including `set_drum_master_fx`, `get_drum_master_fx`, `set_drum_bus_reverb_send`, and the extended bus mixer payload with `reverb_send`.
+  - Added persistence and API support in `app/services/drum_machine_service.py` and `app/routes/drums.py`, including the new `master_fx` model, dedicated `GET/POST /api/engine/drums/master-fx`, and `POST /api/engine/drums/bus/{id}/reverb-send`.
+  - Surfaced the controls in `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/DrumsPage.test.tsx`, adding master-FX sliders in the mixer tile and per-bus reverb-send control without regressing the existing bus/master workflows.
+  - Added focused coverage in `juce-engine/tests/DrumMachineMixerTests.cpp`, `juce-engine/tests/DrumMachineProcessorTests.cpp`, `tests/test_drum_machine_service.py`, and `tests/test_drum_routes.py`, and linked the new native source into both the engine and `synthforge_tests` targets in `juce-engine/CMakeLists.txt`.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/pages/DrumsPage.test.tsx`, `pytest -q tests/test_drum_machine_service.py tests/test_drum_routes.py`, `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`, `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor],[drums][mixer]"`, and `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j4`.
+  - Licensing review: touched native/backend/frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 
 ID: T391-O
-Status: [ ] Todo
+Status: [✓] Done
 Title: Sample Import, Recording, and Waveform Editing
 Description:
 - Goal / acceptance criteria: Enable users to (a) import individual WAV/FLAC/AIFF samples into pads via file upload, (b) record audio from the system input directly into a pad, (c) view sample waveforms with zoom/scroll, (d) set start/end trim points, (e) normalize, reverse, and fade samples. Edited samples are saved as new WAV files in the user kit directory.
@@ -3466,8 +3526,16 @@ Description:
 - Dependencies: T214 (kit management for sample file organization)
 - Estimated effort: High
 - Required outputs: Sample import, recording, editing tools, waveform display, bindings, service, routes, UI, tests.
+- Completion notes:
+  - Added native pad-input capture in `juce-engine/Source/DrumMachine/DrumMachineProcessor.h`, `juce-engine/Source/DrumMachine/DrumMachineProcessor.cpp`, `juce-engine/Source/PythonBindings.cpp`, and `juce-engine/tests/DrumMachineProcessorTests.cpp`, with a preallocated mono callback buffer and Python-accessible `start_drum_pad_recording` / `stop_drum_pad_recording` hooks.
+  - Added backend sample editing in `app/services/drum_sample_editor.py` and exposed it through `app/routes/drums.py`, covering upload, waveform analysis, trim, normalize, reverse, fade, and record start/stop while auto-cloning factory kits into writable `_editable` user-kit copies before destructive edits.
+  - Added focused backend coverage in `tests/test_drum_sample_editor.py` and `tests/test_drum_routes.py`, including editable-kit cloning, waveform payloads, trim/normalize/reverse/fade flows, and recording round trips.
+  - Extended the drum page in `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, `web/src/app/pages/DrumsPage.tsx`, and `web/src/app/pages/DrumsPage.test.tsx` with a per-pad sample editor surface: file upload, input recording toggle, waveform display, zoom/scroll, trim range, normalize/reverse/fade actions, and regression coverage.
+  - Validation passed with `pytest -q tests/test_drum_sample_editor.py tests/test_drum_routes.py tests/test_drum_kit_service.py`, `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/pages/DrumsPage.test.tsx`, `cmake --build juce-engine/build-synthforge-tests --target synthforge_tests -j4`, `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][processor]"`, and `cmake --build juce-engine/build-synthforge-tests --target map2_audio_engine -j4`.
+  - Licensing review: touched native/backend/frontend/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 18:18 EDT - Codex
 
 ID: T391-P
 Status: [ ] Todo
@@ -3492,6 +3560,24 @@ Assigned to: Unassigned
 
 Assigned to: Unassigned
 Last updated: 2026-03-24
+
+ID: T392
+Status: [✓] Done
+Title: Root-cause and fix standalone DrumSequencer native test SIGSEGV in synthforge_tests
+Description:
+- Goal / acceptance criteria: Restore the previously green native `DrumSequencer` coverage by root-causing and fixing the crash in `juce-engine/build-synthforge-tests/synthforge_tests`, specifically the case `DrumSequencer exposes 128 patterns with 16-step defaults`, and re-establish a passing full `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` run.
+- Why it matters: `T391-H` targeted validation passed, but the canonical native test suite is no longer clean, which weakens confidence in future drum-machine slices and blocks using full `ctest` as the sign-off gate.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Root-cause analysis, native fix if needed, updated regression coverage or harness stabilization, and a clean full `synthforge_tests` ctest run.
+- Completion notes:
+  - Root cause was stack exhaustion in `juce-engine/tests/DrumSequencerTests.cpp` during default `DrumSequencer` construction because the sequencer stored its full 128-pattern data set inline by value.
+  - Fixed the crash by moving the large pattern store onto the heap in `juce-engine/Source/DrumMachine/DrumSequencer.h` and `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, preserving existing behavior while eliminating constructor-time stack overflow in standalone tests.
+  - Validation passed with `./juce-engine/build-synthforge-tests/synthforge_tests "DrumSequencer exposes 128 patterns with 16-step defaults" --reporter compact`, `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][sequencer]"`, and `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure`.
+  - Licensing review: touched native/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 18:27 EDT - Codex
 
 ---
 

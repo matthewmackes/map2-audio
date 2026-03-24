@@ -294,7 +294,11 @@ set(SOURCES
     Source/SynthForge/Core/VoiceAllocator.cpp
     Source/SynthForge/Core/MidiRouter.cpp
     Source/DrumMachine/DrumMachineMixer.cpp
+    Source/DrumMachine/DrumMasterFx.cpp
     Source/DrumMachine/DrumMachineProcessor.cpp
+    Source/DrumMachine/DrumCcMapper.cpp
+    Source/DrumMachine/DrumCvGateOutput.cpp
+    Source/DrumMachine/DrumSynthVoice.cpp
     Source/DrumMachine/DrumSequencer.cpp
     Source/SynthForge/Sampler/GroupedSampler.cpp
     Source/SynthForge/Sampler/SfzLoader.cpp
@@ -685,7 +689,11 @@ if(BUILD_SYNTHFORGE_TESTS)
         tests/DrumSequencerTests.cpp
         tests/SynthForgeSfzTests.cpp
         Source/DrumMachine/DrumMachineMixer.cpp
+        Source/DrumMachine/DrumMasterFx.cpp
         Source/DrumMachine/DrumMachineProcessor.cpp
+        Source/DrumMachine/DrumCcMapper.cpp
+        Source/DrumMachine/DrumCvGateOutput.cpp
+        Source/DrumMachine/DrumSynthVoice.cpp
         Source/DrumMachine/DrumSequencer.cpp
         Source/SynthForge/Core/Part.cpp
         Source/SynthForge/Core/VoiceAllocator.cpp

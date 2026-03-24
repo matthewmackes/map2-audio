@@ -5739,6 +5739,140 @@ export const drumsApi = {
       method: 'POST', body: JSON.stringify(state),
     }),
 
+  /** Get drum sequencer MIDI output configuration */
+  getMidiOutputConfig: () =>
+    fetchJson<import('./types').DrumMidiOutputConfig>(`${API_BASE}/engine/drums/midi/output`),
+
+  /** Update drum sequencer MIDI output configuration */
+  setMidiOutputConfig: (state: import('./types').DrumMidiOutputConfig) =>
+    fetchJson<import('./types').DrumMidiOutputConfig>(`${API_BASE}/engine/drums/midi/output`, {
+      method: 'POST', body: JSON.stringify(state),
+    }),
+
+  /** Get drum CC mappings */
+  getCcMappings: () =>
+    fetchJson<import('./types').DrumCcMapping>(`${API_BASE}/engine/drums/midi/cc-mappings`),
+
+  /** Update drum CC mappings */
+  setCcMappings: (state: import('./types').DrumCcMapping) =>
+    fetchJson<import('./types').DrumCcMapping>(`${API_BASE}/engine/drums/midi/cc-mappings`, {
+      method: 'POST', body: JSON.stringify(state),
+    }),
+
+  /** Start drum CC learn */
+  startCcLearn: (slot: number, timeoutSeconds = 10) =>
+    fetchJson<import('./types').DrumCcLearnStatus>(`${API_BASE}/engine/drums/midi/cc-learn/start`, {
+      method: 'POST',
+      body: JSON.stringify({ slot, timeout_seconds: timeoutSeconds }),
+    }),
+
+  /** Stop drum CC learn */
+  stopCcLearn: () =>
+    fetchJson<import('./types').DrumCcLearnStatus>(`${API_BASE}/engine/drums/midi/cc-learn/stop`, {
+      method: 'POST',
+    }),
+
+  /** Get drum CC learn status */
+  getCcLearnStatus: () =>
+    fetchJson<import('./types').DrumCcLearnStatus>(`${API_BASE}/engine/drums/midi/cc-learn/status`),
+
+  /** Get a pad sound source */
+  getPadSoundSource: (padId: number) =>
+    fetchJson<{ pad: number; source: import('./types').DrumPadSoundSource }>(`${API_BASE}/engine/drums/pad/${padId}/source`),
+
+  /** Set a pad sound source */
+  setPadSoundSource: (padId: number, source: import('./types').DrumPadSoundSource) =>
+    fetchJson<{ pad: number; source: import('./types').DrumPadSoundSource }>(`${API_BASE}/engine/drums/pad/${padId}/source`, {
+      method: 'POST',
+      body: JSON.stringify({ source }),
+    }),
+
+  /** Get synth parameters for one pad */
+  getPadSynthParams: (padId: number) =>
+    fetchJson<{ pad: number; params: import('./types').DrumSynthParams }>(`${API_BASE}/engine/drums/pad/${padId}/synth`),
+
+  /** Set synth parameters for one pad */
+  setPadSynthParams: (padId: number, params: import('./types').DrumSynthParams) =>
+    fetchJson<{ pad: number; params: import('./types').DrumSynthParams }>(`${API_BASE}/engine/drums/pad/${padId}/synth`, {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }),
+
+  /** Get filter parameters for one pad */
+  getPadFilter: (padId: number) =>
+    fetchJson<{ pad: number; filter: import('./types').DrumPadFilter }>(`${API_BASE}/engine/drums/pad/${padId}/filter`),
+
+  /** Set filter parameters for one pad */
+  setPadFilter: (padId: number, filter: import('./types').DrumPadFilter) =>
+    fetchJson<{ pad: number; filter: import('./types').DrumPadFilter }>(`${API_BASE}/engine/drums/pad/${padId}/filter`, {
+      method: 'POST',
+      body: JSON.stringify(filter),
+    }),
+
+  /** Get CV/Gate parameters for one pad */
+  getPadCvGateConfig: (padId: number) =>
+    fetchJson<{ pad: number; config: import('./types').DrumCvGateConfig }>(`${API_BASE}/engine/drums/pad/${padId}/cv-gate`),
+
+  /** Set CV/Gate parameters for one pad */
+  setPadCvGateConfig: (padId: number, config: import('./types').DrumCvGateConfig) =>
+    fetchJson<{ pad: number; config: import('./types').DrumCvGateConfig }>(`${API_BASE}/engine/drums/pad/${padId}/cv-gate`, {
+      method: 'POST',
+      body: JSON.stringify(config),
+    }),
+
+  /** Get waveform analysis for one pad sample */
+  getPadSampleWaveform: (padId: number, points = 256) =>
+    fetchJson<import('./types').DrumPadSampleWaveform>(`${API_BASE}/engine/drums/pad/${padId}/sample/waveform?points=${points}`),
+
+  /** Upload a new sample into one pad */
+  uploadPadSample: async (padId: number, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return fetchJson<import('./types').DrumPadSampleWaveform>(`${API_BASE}/engine/drums/pad/${padId}/sample/upload`, {
+      method: 'POST',
+      body: form,
+    })
+  },
+
+  /** Start recording hardware input into one pad */
+  startPadRecording: (padId: number) =>
+    fetchJson<import('./types').DrumPadRecordingState>(`${API_BASE}/engine/drums/pad/${padId}/record/start`, {
+      method: 'POST',
+    }),
+
+  /** Stop recording hardware input into one pad */
+  stopPadRecording: (padId: number) =>
+    fetchJson<import('./types').DrumPadSampleWaveform>(`${API_BASE}/engine/drums/pad/${padId}/record/stop`, {
+      method: 'POST',
+    }),
+
+  /** Trim one pad sample to the selected range */
+  trimPadSample: (padId: number, startSample: number, endSample: number) =>
+    fetchJson<import('./types').DrumPadSampleWaveform>(`${API_BASE}/engine/drums/pad/${padId}/sample/trim`, {
+      method: 'POST',
+      body: JSON.stringify({ start_sample: startSample, end_sample: endSample }),
+    }),
+
+  /** Normalize one pad sample to the requested peak */
+  normalizePadSample: (padId: number, targetPeak = 0.99) =>
+    fetchJson<import('./types').DrumPadSampleWaveform>(`${API_BASE}/engine/drums/pad/${padId}/sample/normalize`, {
+      method: 'POST',
+      body: JSON.stringify({ target_peak: targetPeak }),
+    }),
+
+  /** Reverse one pad sample */
+  reversePadSample: (padId: number) =>
+    fetchJson<import('./types').DrumPadSampleWaveform>(`${API_BASE}/engine/drums/pad/${padId}/sample/reverse`, {
+      method: 'POST',
+    }),
+
+  /** Apply fades to one pad sample */
+  fadePadSample: (padId: number, fadeInMs: number, fadeOutMs: number) =>
+    fetchJson<import('./types').DrumPadSampleWaveform>(`${API_BASE}/engine/drums/pad/${padId}/sample/fade`, {
+      method: 'POST',
+      body: JSON.stringify({ fade_in_ms: fadeInMs, fade_out_ms: fadeOutMs }),
+    }),
+
   /** Get per-track swing state */
   getTrackSwing: (instrument: number) =>
     fetchJson<{ instrument: number; swing: number; track_swing: number[] }>(`${API_BASE}/engine/drums/track/${instrument}/swing`),
@@ -5963,6 +6097,24 @@ export const drumsApi = {
     fetchJson<import('./types').DrumMasterVolumeState>(`${API_BASE}/engine/drums/mixer/master`, {
       method: 'POST',
       body: JSON.stringify({ volume }),
+    }),
+
+  /** Get drum master FX */
+  getMasterFx: () =>
+    fetchJson<import('./types').DrumMasterFxState>(`${API_BASE}/engine/drums/master-fx`),
+
+  /** Set drum master FX */
+  setMasterFx: (state: import('./types').DrumMasterFxState) =>
+    fetchJson<import('./types').DrumMasterFxState>(`${API_BASE}/engine/drums/master-fx`, {
+      method: 'POST',
+      body: JSON.stringify(state),
+    }),
+
+  /** Set a bus reverb send */
+  setBusReverbSend: (busId: number, level: number) =>
+    fetchJson<import('./types').DrumBusMixer>(`${API_BASE}/engine/drums/bus/${busId}/reverb-send`, {
+      method: 'POST',
+      body: JSON.stringify({ level }),
     }),
 
   /** Get MIDI note mapping */

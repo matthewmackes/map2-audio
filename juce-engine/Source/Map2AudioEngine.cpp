@@ -316,6 +316,9 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
 
     // Forward MIDI note/control/program events into the audio callback via lock-free queue.
     midiHandler_.setMidiCallback([this](const MidiMessage& msg) {
+        if (msg.type == MidiMessageType::ProgramChange) {
+            drumSequencer_.handleIncomingProgramChange(msg.data1);
+        }
         enqueueMidiEvent(msg);
     });
 
@@ -363,8 +366,17 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     peavey5150_.prepare(sampleRate_, bufferSize_, 2);
     tweedBassman_.prepare(sampleRate_, bufferSize_, 2);
     passionFX_.prepare(sampleRate_, bufferSize_, 2);
-    drumMachine_.prepare(sampleRate_, bufferSize_, 2);
+    drumMachine_.prepare(sampleRate_, bufferSize_, std::max(2, numOutputChannels_));
+    drumMachine_.setTempoCcCallback([this](float bpm) {
+        drumSequencer_.setTempo(bpm);
+    });
+    drumMachine_.setSwingCcCallback([this](float swing) {
+        drumSequencer_.setSwing(swing);
+    });
     drumSequencer_.setDrumMachine(&drumMachine_);
+    drumSequencer_.setMidiOutputCallback([this](const drummachine::DrumSequencer::MidiOutputEvent& event) {
+        sendDrumSequencerMidiEvent(event);
+    });
     drumSequencer_.prepare(sampleRate_, bufferSize_);
     synthForge_.prepare(sampleRate_, bufferSize_, 2);
     std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX" << std::endl;
@@ -1745,6 +1757,45 @@ void Map2AudioEngine::drainMidiEvents(juce::MidiBuffer& midiBuffer, int numSampl
     }
 }
 
+void Map2AudioEngine::sendDrumSequencerMidiEvent(const drummachine::DrumSequencer::MidiOutputEvent& event) {
+    MidiMessage msg;
+    msg.channel = std::clamp(event.channel, 0, 15);
+    msg.data1 = std::clamp(event.data1, 0, 127);
+    msg.data2 = std::clamp(event.data2, 0, 127);
+    msg.timestamp = 0.0;
+
+    switch (event.type) {
+        case drummachine::DrumSequencer::MidiOutputEventType::NoteOn:
+            msg.type = MidiMessageType::NoteOn;
+            break;
+        case drummachine::DrumSequencer::MidiOutputEventType::NoteOff:
+            msg.type = MidiMessageType::NoteOff;
+            break;
+        case drummachine::DrumSequencer::MidiOutputEventType::Clock:
+            msg.type = MidiMessageType::Clock;
+            msg.data1 = 0;
+            msg.data2 = 0;
+            break;
+        case drummachine::DrumSequencer::MidiOutputEventType::Start:
+            msg.type = MidiMessageType::Start;
+            msg.data1 = 0;
+            msg.data2 = 0;
+            break;
+        case drummachine::DrumSequencer::MidiOutputEventType::Stop:
+            msg.type = MidiMessageType::Stop;
+            msg.data1 = 0;
+            msg.data2 = 0;
+            break;
+        case drummachine::DrumSequencer::MidiOutputEventType::Continue:
+            msg.type = MidiMessageType::Continue;
+            msg.data1 = 0;
+            msg.data2 = 0;
+            break;
+    }
+
+    midiHandler_.sendMessage(msg);
+}
+
 // ========================================
 // Configuration
 // ========================================
@@ -1846,6 +1897,15 @@ void Map2AudioEngine::prepareAllProcessors(double sampleRate, int bufferSize, in
     lexiLove_.prepare(sampleRate, bufferSize, numChannels);
     drumMachine_.prepare(sampleRate, bufferSize, numChannels);
     drumSequencer_.setDrumMachine(&drumMachine_);
+    drumMachine_.setTempoCcCallback([this](float bpm) {
+        drumSequencer_.setTempo(bpm);
+    });
+    drumMachine_.setSwingCcCallback([this](float swing) {
+        drumSequencer_.setSwing(swing);
+    });
+    drumSequencer_.setMidiOutputCallback([this](const drummachine::DrumSequencer::MidiOutputEvent& event) {
+        sendDrumSequencerMidiEvent(event);
+    });
     drumSequencer_.prepare(sampleRate, bufferSize);
     synthForge_.prepare(sampleRate, bufferSize, numChannels);
 }

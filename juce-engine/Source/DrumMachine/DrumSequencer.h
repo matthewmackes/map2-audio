@@ -6,6 +6,8 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <functional>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -56,6 +58,27 @@ public:
         int patternIndex = 0;
         int repeatCount = 1;
     };
+
+    enum class MidiOutputEventType {
+        NoteOn,
+        NoteOff,
+        Clock,
+        Start,
+        Stop,
+        Continue,
+    };
+
+    struct MidiOutputEvent {
+        MidiOutputEventType type = MidiOutputEventType::NoteOn;
+        int sampleOffset = 0;
+        int channel = 9;
+        int data1 = 0;
+        int data2 = 0;
+    };
+
+    using MidiOutputCallback = std::function<void(const MidiOutputEvent&)>;
+
+    DrumSequencer();
 
     void prepare(double sampleRate, int samplesPerBlock);
     void setDrumMachine(DrumMachineProcessor* processor);
@@ -118,6 +141,16 @@ public:
     int getAutoFillBars() const;
     void setCountInBars(int bars);
     int getCountInBars() const;
+    void setMidiOutputEnabled(bool enabled);
+    bool isMidiOutputEnabled() const;
+    void setMidiClockOutputEnabled(bool enabled);
+    bool isMidiClockOutputEnabled() const;
+    bool setMidiOutputChannel(int channel);
+    int getMidiOutputChannel() const;
+    void setProgramChangeEnabled(bool enabled);
+    bool isProgramChangeEnabled() const;
+    bool handleIncomingProgramChange(int programNumber);
+    void setMidiOutputCallback(MidiOutputCallback callback);
 
     void play();
     void stop();
@@ -135,7 +168,7 @@ private:
     static bool isValidVariationIndex(int variationIndex);
     static bool isValidSongPosition(int position, size_t songSize);
     int resolvedVariationIndex(int patternIndex) const;
-    void triggerCurrentStep(int sampleOffset);
+    void triggerCurrentStep(int sampleOffset, int numSamples);
     void triggerCountInClick(int sampleOffset);
     void advanceStep();
     bool processCountInBlock(int numSamples);
@@ -143,8 +176,14 @@ private:
     double quarterNoteSamples() const;
     bool applySongEntry(int songPosition, bool resetBarCount);
     float nextRandomFloat();
+    void emitMidiOutputEvent(MidiOutputEventType type, int sampleOffset, int data1 = 0, int data2 = 0);
+    void processMidiClock(int numSamples);
+    void processPendingMidiNoteOffs(int numSamples);
+    void flushPendingMidiNoteOffs();
+    int noteForInstrument(int instrumentIndex) const;
+    int midiGateSamplesForStep() const;
 
-    std::array<Pattern, kPatternCount> patterns_{};
+    std::unique_ptr<std::array<Pattern, kPatternCount>> patterns_;
     std::array<int, kPatternCount> selectedVariationIndices_{};
     std::vector<SongEntry> songEntries_{};
     DrumMachineProcessor* drumMachine_ = nullptr;
@@ -181,6 +220,19 @@ private:
     size_t recentTapCount_ = 0;
     int pendingPatternCountdownSteps_ = 0;
     uint32_t randomState_ = 0x12345678u;
+    std::atomic<bool> midiOutputEnabled_{false};
+    std::atomic<bool> midiClockOutputEnabled_{false};
+    std::atomic<int> midiOutputChannel_{9};
+    std::atomic<bool> programChangeEnabled_{false};
+    MidiOutputCallback midiOutputCallback_{};
+    struct PendingMidiNoteOff {
+        int samplesUntilEvent = 0;
+        int channel = 9;
+        int note = 0;
+    };
+    std::vector<PendingMidiNoteOff> pendingMidiNoteOffs_{};
+    double samplesUntilNextClock_ = 0.0;
+    bool continueOnNextPlay_ = false;
 };
 
 }  // namespace map2::drummachine

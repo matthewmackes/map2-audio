@@ -1374,6 +1374,40 @@ export interface ParallelBranch {
 
 // ==================== Drum Machine Types ====================
 
+export type DrumPadSoundSource = 'sample' | 'synth' | 'hybrid';
+export type DrumSynthOscillatorType = 'sine' | 'triangle' | 'saw' | 'square' | 'metallic';
+
+export interface DrumSynthParams {
+  oscillator_type: DrumSynthOscillatorType;
+  pitch_envelope_start_hz: number;
+  pitch_envelope_end_hz: number;
+  pitch_envelope_decay_ms: number;
+  noise_level: number;
+  noise_decay_ms: number;
+  body_decay_ms: number;
+  tone_amount: number;
+}
+
+export type DrumPadFilterType = 'lowpass' | 'highpass' | 'bandpass' | 'notch';
+
+export interface DrumPadFilter {
+  type: DrumPadFilterType;
+  cutoff_hz: number;
+  resonance: number;
+  env_amount: number;
+  env_decay_ms: number;
+}
+
+export interface DrumCvGateConfig {
+  enabled: boolean;
+  output_pair: number;
+  gate_length_ms: number;
+  note_min: number;
+  note_max: number;
+  pitch_min_volts: number;
+  pitch_max_volts: number;
+}
+
 export interface DrumMachineState {
   ui_mode: 'practice' | 'advanced' | 'backing_tracks';
   bpm: number;
@@ -1388,6 +1422,15 @@ export interface DrumMachineState {
   practice_change_quantization: number;
   practice_count_in_bars: number;
   practice_auto_fill: boolean;
+  midi_output_enabled: boolean;
+  midi_clock_output_enabled: boolean;
+  midi_output_channel: number;
+  program_change_enabled: boolean;
+  track_swing: number[];
+  pad_sound_sources: DrumPadSoundSource[];
+  pad_synth_params: DrumSynthParams[];
+  pad_filters: DrumPadFilter[];
+  pad_cv_gate_configs: DrumCvGateConfig[];
 }
 
 export interface DrumMachineStateUpdate {
@@ -1404,6 +1447,15 @@ export interface DrumMachineStateUpdate {
   practice_change_quantization?: number;
   practice_count_in_bars?: number;
   practice_auto_fill?: boolean;
+  midi_output_enabled?: boolean;
+  midi_clock_output_enabled?: boolean;
+  midi_output_channel?: number;
+  program_change_enabled?: boolean;
+  track_swing?: number[];
+  pad_sound_sources?: DrumPadSoundSource[];
+  pad_synth_params?: DrumSynthParams[];
+  pad_filters?: DrumPadFilter[];
+  pad_cv_gate_configs?: DrumCvGateConfig[];
 }
 
 export type DrumVelocityCurveType = 0 | 1 | 2 | 3 | 4;
@@ -1446,7 +1498,30 @@ export interface DrumKit {
   description: string;
   author: string;
   category: string;
+  source?: 'factory' | 'user';
+  root_path?: string;
   instruments: DrumInstrument[];
+}
+
+export interface DrumPadSampleWaveform {
+  pad: number;
+  kit_id: string;
+  kit_source: 'factory' | 'user';
+  root_path: string;
+  sfz_path: string;
+  sample_path: string;
+  sample_rate: number;
+  channel_count: number;
+  sample_count: number;
+  duration_seconds: number;
+  points: number;
+  peaks: number[];
+}
+
+export interface DrumPadRecordingState {
+  pad: number;
+  active: boolean;
+  max_duration_seconds: number;
 }
 
 export interface DrumTransportState {
@@ -1457,6 +1532,10 @@ export interface DrumTransportState {
   swing: number;
   pending_pattern: number;
   switch_quantization_beats: number;
+  midi_output_enabled: boolean;
+  midi_clock_output_enabled: boolean;
+  midi_output_channel: number;
+  program_change_enabled: boolean;
   track_swing: number[];
 }
 
@@ -1467,6 +1546,17 @@ export interface DrumTransportUpdate {
   variation?: number;
   swing?: number;
   switch_quantization_beats?: number;
+  midi_output_enabled?: boolean;
+  midi_clock_output_enabled?: boolean;
+  midi_output_channel?: number;
+  program_change_enabled?: boolean;
+}
+
+export interface DrumMidiOutputConfig {
+  midi_output_enabled: boolean;
+  midi_clock_output_enabled: boolean;
+  midi_output_channel: number;
+  program_change_enabled: boolean;
 }
 
 export interface DrumPatternStep {
@@ -1545,8 +1635,13 @@ export interface DrumBusMixer {
   eq: DrumEqState;
   comp: DrumCompressorState;
   level: number;
+  pan: number;
   mute: boolean;
   solo: boolean;
+  output_pair: number;
+  reverb_send: number;
+  output_channel_count: number;
+  available_output_pairs: number[];
 }
 
 export interface DrumPadControlUpdate {
@@ -1572,12 +1667,30 @@ export interface DrumBusMixerUpdate {
   eq?: Partial<DrumEqState>;
   comp?: Partial<DrumCompressorState>;
   level?: number;
+  pan?: number;
   mute?: boolean;
   solo?: boolean;
+  output_pair?: number;
+  reverb_send?: number;
 }
 
 export interface DrumMasterVolumeState {
   volume: number;
+}
+
+export interface DrumMasterFxState {
+  drive_db: number;
+  compressor_threshold: number;
+  compressor_ratio: number;
+  compressor_attack: number;
+  compressor_release: number;
+  compressor_makeup: number;
+  reverb_mix: number;
+  reverb_size: number;
+  reverb_damping: number;
+  reverb_width: number;
+  limiter_threshold: number;
+  limiter_release: number;
 }
 
 export interface DrumMetering {
@@ -1652,6 +1765,45 @@ export interface DrumMidiLearnStatus {
 
 export interface DrumMidiPresetList {
   presets: string[];
+}
+
+export type DrumCcTarget =
+  | 'pad_volume'
+  | 'pad_pan'
+  | 'pad_tune'
+  | 'pad_filter_cutoff'
+  | 'bus_level'
+  | 'bus_pan'
+  | 'master_volume'
+  | 'tempo'
+  | 'swing'
+  | 'synth_pitch_start_hz'
+  | 'synth_pitch_end_hz'
+  | 'synth_pitch_decay_ms'
+  | 'synth_noise_level'
+  | 'synth_noise_decay_ms'
+  | 'synth_body_decay_ms'
+  | 'synth_tone_amount'
+
+export interface DrumCcMappingEntry {
+  slot: number;
+  cc_number: number;
+  midi_channel: number;
+  target: DrumCcTarget;
+  target_index: number;
+  active: boolean;
+}
+
+export interface DrumCcMapping {
+  mappings: DrumCcMappingEntry[];
+}
+
+export interface DrumCcLearnStatus {
+  active: boolean;
+  slot: number;
+  last_cc: number;
+  last_channel: number;
+  timeout_seconds: number;
 }
 
 // ==================== Sidechain Types ====================

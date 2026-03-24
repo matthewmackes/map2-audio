@@ -927,6 +927,22 @@ bool MidiHandler::sendMessage(const MidiMessage& msg) {
         case MidiMessageType::ProgramChange:
             snd_seq_ev_set_pgmchange(&ev, msg.channel, msg.data1);
             break;
+        case MidiMessageType::Clock:
+            snd_seq_ev_set_fixed(&ev);
+            ev.type = SND_SEQ_EVENT_CLOCK;
+            break;
+        case MidiMessageType::Start:
+            snd_seq_ev_set_fixed(&ev);
+            ev.type = SND_SEQ_EVENT_START;
+            break;
+        case MidiMessageType::Stop:
+            snd_seq_ev_set_fixed(&ev);
+            ev.type = SND_SEQ_EVENT_STOP;
+            break;
+        case MidiMessageType::Continue:
+            snd_seq_ev_set_fixed(&ev);
+            ev.type = SND_SEQ_EVENT_CONTINUE;
+            break;
         default:
             return false;
     }

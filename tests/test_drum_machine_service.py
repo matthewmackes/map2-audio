@@ -14,6 +14,7 @@ from app.services import drum_machine_service as drum_service_module
 class _FakeDrumEngine:
     def __init__(self):
         self.master_volume_calls = []
+        self.master_fx_calls = []
         self.transport_playing_calls = []
         self.bpm_calls = []
         self.pattern_calls = []
@@ -67,9 +68,102 @@ class _FakeDrumEngine:
         }
         self.queued_pattern_calls = []
         self.switch_quantization_calls = []
+        self.midi_output_enabled = False
+        self.midi_clock_output_enabled = False
+        self.midi_output_channel = 9
+        self.program_change_enabled = False
+        self.midi_output_enabled_calls = []
+        self.midi_clock_output_enabled_calls = []
+        self.midi_output_channel_calls = []
+        self.program_change_enabled_calls = []
+        self.cc_mappings = [
+            {
+                "slot": slot,
+                "cc_number": 0,
+                "midi_channel": 0,
+                "target": "pad_volume",
+                "target_index": 0,
+                "active": False,
+            }
+            for slot in range(32)
+        ]
+        self.cc_learn_state = {
+            "active": False,
+            "slot": -1,
+            "last_cc": -1,
+            "last_channel": -1,
+            "timeout_seconds": 10,
+        }
+        self.pad_sound_source_calls = []
+        self.pad_sound_sources = {pad: "sample" for pad in range(16)}
+        self.pad_synth_params = {
+            pad: {
+                "oscillator_type": "sine",
+                "pitch_envelope_start_hz": 160.0,
+                "pitch_envelope_end_hz": 50.0,
+                "pitch_envelope_decay_ms": 180.0,
+                "noise_level": 0.2,
+                "noise_decay_ms": 120.0,
+                "body_decay_ms": 420.0,
+                "tone_amount": 0.55,
+            }
+            for pad in range(16)
+        }
+        self.pad_filter_calls = []
+        self.pad_filters = {
+            pad: {
+                "type": "lowpass",
+                "cutoff_hz": 12000.0,
+                "resonance": 0.35,
+                "env_amount": 0.0,
+                "env_decay_ms": 180.0,
+            }
+            for pad in range(16)
+        }
+        self.pad_cv_gate_calls = []
+        self.pad_cv_gate_configs = {
+            pad: {
+                "enabled": False,
+                "output_pair": 0,
+                "gate_length_ms": 25.0,
+                "note_min": 36,
+                "note_max": 84,
+                "pitch_min_volts": 0.0,
+                "pitch_max_volts": 5.0,
+            }
+            for pad in range(16)
+        }
+        self.pad_control_calls = []
+        self.bus_eq_calls = []
+        self.bus_comp_calls = []
+        self.bus_level_calls = []
+        self.bus_mute_calls = []
+        self.bus_solo_calls = []
+        self.bus_output_pair_calls = []
+        self.bus_reverb_send_calls = []
+        self.output_channels = 8
+        self.master_fx = {
+            "drive_db": 0.0,
+            "compressor_threshold": -18.0,
+            "compressor_ratio": 2.0,
+            "compressor_attack": 10.0,
+            "compressor_release": 80.0,
+            "compressor_makeup": 0.0,
+            "reverb_mix": 0.18,
+            "reverb_size": 0.45,
+            "reverb_damping": 0.35,
+            "reverb_width": 1.0,
+            "limiter_threshold": -0.5,
+            "limiter_release": 60.0,
+        }
 
     def set_drum_master_volume(self, value):
         self.master_volume_calls.append(value)
+        return True
+
+    def set_drum_master_fx(self, parameter, value):
+        self.master_fx[parameter] = value
+        self.master_fx_calls.append((parameter, value))
         return True
 
     def set_drum_transport_playing(self, is_playing):
@@ -103,6 +197,70 @@ class _FakeDrumEngine:
 
     def get_drum_pattern_switch_quantization(self):
         return self.position["switch_quantization_beats"]
+
+    def set_drum_midi_output_enabled(self, enabled):
+        self.midi_output_enabled = enabled
+        self.midi_output_enabled_calls.append(enabled)
+        return True
+
+    def get_drum_midi_output_enabled(self):
+        return self.midi_output_enabled
+
+    def set_drum_midi_clock_output_enabled(self, enabled):
+        self.midi_clock_output_enabled = enabled
+        self.midi_clock_output_enabled_calls.append(enabled)
+        return True
+
+    def get_drum_midi_clock_output_enabled(self):
+        return self.midi_clock_output_enabled
+
+    def set_drum_midi_output_channel(self, channel):
+        self.midi_output_channel = channel
+        self.midi_output_channel_calls.append(channel)
+        return True
+
+    def get_drum_midi_output_channel(self):
+        return self.midi_output_channel
+
+    def set_drum_program_change_enabled(self, enabled):
+        self.program_change_enabled = enabled
+        self.program_change_enabled_calls.append(enabled)
+        return True
+
+    def get_drum_program_change_enabled(self):
+        return self.program_change_enabled
+
+    def set_drum_cc_mapping(self, slot, cc_number, midi_channel, target, target_index, active):
+        self.cc_mappings[slot] = {
+            "slot": slot,
+            "cc_number": cc_number,
+            "midi_channel": midi_channel,
+            "target": target,
+            "target_index": target_index,
+            "active": active,
+        }
+        return True
+
+    def get_drum_cc_mappings(self):
+        return list(self.cc_mappings)
+
+    def start_drum_cc_learn(self, slot, timeout_seconds):
+        self.cc_learn_state = {
+            "active": True,
+            "slot": slot,
+            "last_cc": -1,
+            "last_channel": -1,
+            "timeout_seconds": timeout_seconds,
+        }
+        return True
+
+    def stop_drum_cc_learn(self):
+        self.cc_learn_state["active"] = False
+        self.cc_learn_state["slot"] = -1
+        return True
+
+    def get_drum_cc_learn_state(self):
+        return dict(self.cc_learn_state)
 
     def set_drum_swing(self, swing):
         self.swing_calls.append(swing)
@@ -233,6 +391,103 @@ class _FakeDrumEngine:
     def get_drum_sequencer_position(self):
         return dict(self.position)
 
+    def set_drum_pad_sound_source(self, pad, source):
+        self.pad_sound_sources[pad] = source
+        self.pad_sound_source_calls.append((pad, source))
+        return True
+
+    def get_drum_pad_sound_source(self, pad):
+        return self.pad_sound_sources[pad]
+
+    def set_drum_synth_param(self, pad, name, value):
+        self.pad_synth_params[pad][name] = value
+        return True
+
+    def get_drum_synth_params(self, pad):
+        return dict(self.pad_synth_params[pad])
+
+    def set_drum_pad_filter(self, pad, filter_type, cutoff_hz, resonance, env_amount, env_decay_ms):
+        self.pad_filters[pad] = {
+            "type": filter_type,
+            "cutoff_hz": cutoff_hz,
+            "resonance": resonance,
+            "env_amount": env_amount,
+            "env_decay_ms": env_decay_ms,
+        }
+        self.pad_filter_calls.append((pad, filter_type, cutoff_hz, resonance, env_amount, env_decay_ms))
+        return True
+
+    def get_drum_pad_filter(self, pad):
+        return dict(self.pad_filters[pad])
+
+    def set_drum_cv_gate_config(self, pad, enabled, output_pair, gate_length_ms, note_min, note_max, pitch_min_volts, pitch_max_volts):
+        self.pad_cv_gate_configs[pad] = {
+            "enabled": enabled,
+            "output_pair": output_pair,
+            "gate_length_ms": gate_length_ms,
+            "note_min": note_min,
+            "note_max": note_max,
+            "pitch_min_volts": pitch_min_volts,
+            "pitch_max_volts": pitch_max_volts,
+        }
+        self.pad_cv_gate_calls.append((pad, enabled, output_pair, gate_length_ms, note_min, note_max, pitch_min_volts, pitch_max_volts))
+        return True
+
+    def set_drum_pad_volume(self, pad, volume):
+        self.pad_control_calls.append((pad, "volume", volume))
+        return True
+
+    def set_drum_pad_pan(self, pad, pan):
+        self.pad_control_calls.append((pad, "pan", pan))
+        return True
+
+    def set_drum_pad_tune(self, pad, tune):
+        self.pad_control_calls.append((pad, "tune", tune))
+        return True
+
+    def set_drum_pad_mute(self, pad, mute):
+        self.pad_control_calls.append((pad, "mute", mute))
+        return True
+
+    def set_drum_pad_solo(self, pad, solo):
+        self.pad_control_calls.append((pad, "solo", solo))
+        return True
+
+    def set_drum_pad_bus(self, pad, bus):
+        self.pad_control_calls.append((pad, "bus_assignment", bus))
+        return True
+
+    def set_drum_bus_eq(self, bus, low_gain, mid_gain, mid_freq, high_gain):
+        self.bus_eq_calls.append((bus, low_gain, mid_gain, mid_freq, high_gain))
+        return True
+
+    def set_drum_bus_comp(self, bus, threshold, ratio, attack, release, makeup):
+        self.bus_comp_calls.append((bus, threshold, ratio, attack, release, makeup))
+        return True
+
+    def set_drum_bus_level(self, bus, level):
+        self.bus_level_calls.append((bus, level))
+        return True
+
+    def set_drum_bus_mute(self, bus, mute):
+        self.bus_mute_calls.append((bus, mute))
+        return True
+
+    def set_drum_bus_solo(self, bus, solo):
+        self.bus_solo_calls.append((bus, solo))
+        return True
+
+    def set_drum_bus_output_pair(self, bus, output_pair):
+        self.bus_output_pair_calls.append((bus, output_pair))
+        return True
+
+    def set_drum_bus_reverb_send(self, bus, reverb_send):
+        self.bus_reverb_send_calls.append((bus, reverb_send))
+        return True
+
+    def get_num_output_channels(self):
+        return self.output_channels
+
 
 def _build_service(tmp_path, monkeypatch):
     factory_dir = tmp_path / "factory"
@@ -341,9 +596,82 @@ def test_drum_machine_service_transport_projection(tmp_path, monkeypatch):
         "swing": 22,
         "pending_pattern": -1,
         "switch_quantization_beats": 4,
+        "midi_output_enabled": False,
+        "midi_clock_output_enabled": False,
+        "midi_output_channel": 9,
+        "program_change_enabled": False,
         "track_swing": [0] * 16,
     }
     assert service.get_state()["transport"] is True
+
+
+def test_drum_machine_service_round_trips_midi_output_config(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    payload = service.update_midi_output_config(
+        {
+            "midi_output_enabled": True,
+            "midi_clock_output_enabled": True,
+            "midi_output_channel": 4,
+            "program_change_enabled": True,
+        }
+    )
+
+    assert payload == {
+        "midi_output_enabled": True,
+        "midi_clock_output_enabled": True,
+        "midi_output_channel": 4,
+        "program_change_enabled": True,
+    }
+    transport = service.get_transport()
+    assert transport["midi_output_enabled"] is True
+    assert transport["midi_clock_output_enabled"] is True
+    assert transport["midi_output_channel"] == 4
+    assert transport["program_change_enabled"] is True
+    assert fake_engine.midi_output_enabled_calls[-1] is True
+    assert fake_engine.midi_clock_output_enabled_calls[-1] is True
+    assert fake_engine.midi_output_channel_calls[-1] == 4
+    assert fake_engine.program_change_enabled_calls[-1] is True
+
+
+def test_drum_machine_service_round_trips_cc_mappings_and_learn_state(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    mappings = service.update_cc_mappings(
+        {
+            "mappings": [
+                {
+                    "slot": 0,
+                    "cc_number": 74,
+                    "midi_channel": 2,
+                    "target": "pad_filter_cutoff",
+                    "target_index": 3,
+                    "active": True,
+                },
+                {
+                    "slot": 1,
+                    "cc_number": 1,
+                    "midi_channel": 0,
+                    "target": "tempo",
+                    "target_index": 0,
+                    "active": True,
+                },
+            ]
+        }
+    )
+
+    assert mappings["mappings"][0]["cc_number"] == 74
+    assert mappings["mappings"][1]["target"] == "tempo"
+    assert fake_engine.cc_mappings[0]["target_index"] == 3
+    assert fake_engine.cc_mappings[1]["cc_number"] == 1
+
+    learn = service.start_cc_learn(4, 12)
+    assert learn["active"] is True
+    assert learn["slot"] == 4
+    assert learn["timeout_seconds"] == 12
+
+    stopped = service.stop_cc_learn()
+    assert stopped["active"] is False
 
 
 def test_drum_machine_service_queues_pattern_switch_while_playing(tmp_path, monkeypatch):
@@ -369,6 +697,131 @@ def test_drum_machine_service_sets_per_track_swing(tmp_path, monkeypatch):
     assert payload["swing"] == 67
     assert payload["track_swing"][3] == 67
     assert fake_engine.track_swing_calls[-1] == (3, 67.0)
+
+
+def test_drum_machine_service_round_trips_pad_sound_source_and_synth_params(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    source_payload = service.set_pad_sound_source(2, "hybrid")
+    synth_payload = service.set_pad_synth_params(2, {
+        "oscillator_type": "metallic",
+        "noise_level": 0.64,
+        "body_decay_ms": 610.0,
+    })
+
+    assert source_payload == {"pad": 2, "source": "hybrid"}
+    assert synth_payload["pad"] == 2
+    assert synth_payload["params"]["oscillator_type"] == "metallic"
+    assert synth_payload["params"]["noise_level"] == 0.64
+    assert synth_payload["params"]["body_decay_ms"] == 610.0
+    assert fake_engine.pad_sound_source_calls[-1] == (2, "hybrid")
+    assert fake_engine.pad_synth_params[2]["oscillator_type"] == "metallic"
+    assert fake_engine.pad_synth_params[2]["noise_level"] == 0.64
+
+
+def test_drum_machine_service_round_trips_pad_filter(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    payload = service.set_pad_filter(4, {
+        "type": "bandpass",
+        "cutoff_hz": 1800.0,
+        "resonance": 1.4,
+        "env_amount": 0.55,
+        "env_decay_ms": 320.0,
+    })
+
+    assert payload["pad"] == 4
+    assert payload["filter"]["type"] == "bandpass"
+    assert payload["filter"]["cutoff_hz"] == 1800.0
+    assert fake_engine.pad_filter_calls[-1] == (4, "bandpass", 1800.0, 1.4, 0.55, 320.0)
+
+
+def test_drum_machine_service_round_trips_pad_cv_gate_config(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    payload = service.set_pad_cv_gate_config(2, {
+        "enabled": True,
+        "output_pair": 3,
+        "gate_length_ms": 48.0,
+        "note_min": 24,
+        "note_max": 72,
+        "pitch_min_volts": -1.0,
+        "pitch_max_volts": 4.0,
+    })
+
+    assert payload["pad"] == 2
+    assert payload["config"]["enabled"] is True
+    assert payload["config"]["output_pair"] == 3
+    assert fake_engine.pad_cv_gate_calls[-1] == (2, True, 3, 48.0, 24, 72, -1.0, 4.0)
+
+
+def test_drum_machine_service_round_trips_pad_controls(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    payload = service.set_pad_control(3, {
+        "volume": 64,
+        "pan": -25,
+        "tune": 7,
+        "mute": True,
+        "solo": True,
+        "bus_assignment": 6,
+    })
+
+    assert payload["pad_id"] == 3
+    assert payload["bus_assignment"] == 6
+    assert fake_engine.pad_control_calls[-1] == (3, "bus_assignment", 6)
+    assert (3, "volume", 0.64) in fake_engine.pad_control_calls
+    assert (3, "pan", -0.25) in fake_engine.pad_control_calls
+
+
+def test_drum_machine_service_round_trips_bus_mixers_and_output_pairs(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    payload = service.set_bus_mixer(2, {
+        "level": 78,
+        "mute": True,
+        "solo": True,
+        "output_pair": 3,
+        "eq": {"low_gain": -3, "mid_gain": 2, "mid_freq": 1400, "high_gain": 4},
+        "comp": {"threshold": -24, "ratio": 6, "attack": 12, "release": 90, "makeup": 3},
+    })
+
+    assert payload["bus_id"] == 2
+    assert payload["output_pair"] == 3
+    assert payload["output_channel_count"] == 8
+    assert payload["available_output_pairs"] == [0, 1, 2, 3]
+    assert fake_engine.bus_output_pair_calls[-1] == (2, 3)
+    assert fake_engine.bus_level_calls[-1] == (2, 0.78)
+    assert fake_engine.bus_eq_calls[-1] == (2, -3.0, 2.0, 1400.0, 4.0)
+    assert fake_engine.bus_comp_calls[-1] == (2, -24.0, 6.0, 12.0, 90.0, 3.0)
+
+
+def test_drum_machine_service_master_volume_route_matches_state_scale(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    payload = service.set_master_volume(72)
+
+    assert payload == {"volume": 72}
+    assert fake_engine.master_volume_calls[-1] == pytest.approx(0.72)
+
+
+def test_drum_machine_service_round_trips_master_fx_and_bus_reverb_send(tmp_path, monkeypatch):
+    service, _, _, _, _, fake_engine = _build_service(tmp_path, monkeypatch)
+
+    fx = service.set_master_fx({
+        "drive_db": 9,
+        "compressor_ratio": 4.5,
+        "reverb_mix": 0.4,
+        "limiter_threshold": -2.0,
+    })
+    bus = service.set_bus_reverb_send(2, 37)
+
+    assert fx["drive_db"] == 9.0
+    assert fx["compressor_ratio"] == 4.5
+    assert fx["reverb_mix"] == 0.4
+    assert ("limiter_threshold", -2.0) in fake_engine.master_fx_calls
+    assert bus["reverb_send"] == 37.0
+    assert fake_engine.bus_reverb_send_calls[-1] == (2, 0.37)
 
 
 def test_drum_machine_service_tracks_sequencer_position(tmp_path, monkeypatch):

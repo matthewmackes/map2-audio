@@ -7,6 +7,10 @@ import { DrumsPage } from './DrumsPage'
 
 const mockSetStepMutate = jest.fn()
 const mockSetPadControlMutate = jest.fn()
+const mockSetPadSoundSourceMutate = jest.fn()
+const mockSetPadSynthParamsMutate = jest.fn()
+const mockSetPadFilterMutate = jest.fn()
+const mockSetPadCvGateConfigMutate = jest.fn()
 const mockPatchInstrumentMutate = jest.fn()
 const mockClearPatternMutate = jest.fn()
 const mockCopyPatternMutate = jest.fn()
@@ -18,11 +22,23 @@ const mockRemoveSongEntryMutate = jest.fn()
 const mockSetBusMixerMutate = jest.fn()
 const mockSetMasterVolumeMutate = jest.fn()
 const mockSetMidiMappingMutate = jest.fn()
+const mockSetMidiOutputConfigMutate = jest.fn()
 const mockSetMidiZonesMutate = jest.fn()
 const mockSetVelocityCurveMutate = jest.fn()
 const mockSetTrackSwingMutate = jest.fn()
 const mockSetTrackLengthMutate = jest.fn()
 const mockSetSongMutate = jest.fn()
+const mockSetCcMappingsMutate = jest.fn()
+const mockStartCcLearnMutate = jest.fn()
+const mockStopCcLearnMutate = jest.fn()
+const mockSetMasterFxMutate = jest.fn()
+const mockUploadPadSampleMutate = jest.fn()
+const mockStartPadRecordingMutate = jest.fn()
+const mockStopPadRecordingMutate = jest.fn()
+const mockTrimPadSampleMutate = jest.fn()
+const mockNormalizePadSampleMutate = jest.fn()
+const mockReversePadSampleMutate = jest.fn()
+const mockFadePadSampleMutate = jest.fn()
 const mockStartMidiLearnMutate = jest.fn()
 const mockUpdateStateMutate = jest.fn()
 const mockUpdateTransportMutate = jest.fn()
@@ -36,6 +52,8 @@ const mockUseDrumTransport = jest.fn()
 const mockUseDrumPosition = jest.fn()
 const mockUseDrumActiveKit = jest.fn()
 const mockUseDrumKits = jest.fn()
+const mockUseDrumMasterFx = jest.fn()
+const mockUseDrumSampleEditor = jest.fn()
 const mockUseDrumMidiMapping = jest.fn()
 const mockUseDrumMetering = jest.fn()
 const mockUseDrumSong = jest.fn()
@@ -49,14 +67,22 @@ const mockUseClearDrumPattern = jest.fn()
 const mockUseCopyDrumPattern = jest.fn()
 const mockUseLoadDrumKit = jest.fn()
 const mockUseSetDrumPadControl = jest.fn()
+const mockUseSetDrumPadSoundSource = jest.fn()
+const mockUseSetDrumPadSynthParams = jest.fn()
+const mockUseSetDrumPadFilter = jest.fn()
+const mockUseSetDrumPadCvGateConfig = jest.fn()
 const mockUseSetDrumBusMixer = jest.fn()
 const mockUseSetDrumMasterVolume = jest.fn()
 const mockUseSetDrumMidiMapping = jest.fn()
+const mockUseSetDrumMidiOutputConfig = jest.fn()
 const mockUseSetDrumMidiZones = jest.fn()
 const mockUseSetDrumVelocityCurve = jest.fn()
 const mockUseSetDrumTrackSwing = jest.fn()
 const mockUseSetDrumTrackLength = jest.fn()
+const mockUseSetDrumCcMappings = jest.fn()
+const mockUseSetDrumMasterFx = jest.fn()
 const mockUseSetDrumPattern = jest.fn()
+const mockUseStartDrumCcLearn = jest.fn()
 const mockUseStartDrumMidiLearn = jest.fn()
 const mockUseAddDrumSongEntry = jest.fn()
 const mockUseLoadDrumMidiPreset = jest.fn()
@@ -64,6 +90,8 @@ const mockUsePlayDrumSongTransport = jest.fn()
 const mockUseRemoveDrumSongEntry = jest.fn()
 const mockUseSetDrumSong = jest.fn()
 const mockUseSetDrumStep = jest.fn()
+const mockUseDrumCcMapping = jest.fn()
+const mockUseStopDrumCcLearn = jest.fn()
 const mockUseStopDrumSongTransport = jest.fn()
 const mockUseStopDrumMidiLearn = jest.fn()
 const mockUseTriggerDrumFill = jest.fn()
@@ -176,7 +204,10 @@ jest.mock('@/app/hooks/useDrumMachine', () => ({
   useDrumPosition: () => mockUseDrumPosition(),
   useDrumActiveKit: () => mockUseDrumActiveKit(),
   useDrumKits: () => mockUseDrumKits(),
+  useDrumMasterFx: () => mockUseDrumMasterFx(),
+  useDrumSampleEditor: (padId: number, points?: number) => mockUseDrumSampleEditor(padId, points),
   useDrumMidiMapping: () => mockUseDrumMidiMapping(),
+  useDrumCcMapping: () => mockUseDrumCcMapping(),
   useDrumMetering: () => mockUseDrumMetering(),
   useDrumSong: () => mockUseDrumSong(),
   useDrumSongTransport: () => mockUseDrumSongTransport(),
@@ -189,14 +220,22 @@ jest.mock('@/app/hooks/useDrumMachine', () => ({
   useCopyDrumPattern: () => mockUseCopyDrumPattern(),
   useLoadDrumKit: () => mockUseLoadDrumKit(),
   useSetDrumPadControl: () => mockUseSetDrumPadControl(),
+  useSetDrumPadSoundSource: () => mockUseSetDrumPadSoundSource(),
+  useSetDrumPadSynthParams: () => mockUseSetDrumPadSynthParams(),
+  useSetDrumPadFilter: () => mockUseSetDrumPadFilter(),
+  useSetDrumPadCvGateConfig: () => mockUseSetDrumPadCvGateConfig(),
   useSetDrumBusMixer: () => mockUseSetDrumBusMixer(),
   useSetDrumMasterVolume: () => mockUseSetDrumMasterVolume(),
   useSetDrumMidiMapping: () => mockUseSetDrumMidiMapping(),
+  useSetDrumMidiOutputConfig: () => mockUseSetDrumMidiOutputConfig(),
   useSetDrumMidiZones: () => mockUseSetDrumMidiZones(),
   useSetDrumVelocityCurve: () => mockUseSetDrumVelocityCurve(),
   useSetDrumTrackSwing: () => mockUseSetDrumTrackSwing(),
   useSetDrumTrackLength: () => mockUseSetDrumTrackLength(),
+  useSetDrumCcMappings: () => mockUseSetDrumCcMappings(),
+  useSetDrumMasterFx: () => mockUseSetDrumMasterFx(),
   useSetDrumPattern: () => mockUseSetDrumPattern(),
+  useStartDrumCcLearn: () => mockUseStartDrumCcLearn(),
   useStartDrumMidiLearn: () => mockUseStartDrumMidiLearn(),
   useAddDrumSongEntry: () => mockUseAddDrumSongEntry(),
   useLoadDrumMidiPreset: () => mockUseLoadDrumMidiPreset(),
@@ -204,6 +243,7 @@ jest.mock('@/app/hooks/useDrumMachine', () => ({
   useRemoveDrumSongEntry: () => mockUseRemoveDrumSongEntry(),
   useSetDrumSong: () => mockUseSetDrumSong(),
   useSetDrumStep: () => mockUseSetDrumStep(),
+  useStopDrumCcLearn: () => mockUseStopDrumCcLearn(),
   useStopDrumMidiLearn: () => mockUseStopDrumMidiLearn(),
   useStopDrumSongTransport: () => mockUseStopDrumSongTransport(),
   useTriggerDrumFill: () => mockUseTriggerDrumFill(),
@@ -265,6 +305,38 @@ function primeHooks() {
       practice_change_quantization: 1,
       practice_count_in_bars: 0,
       practice_auto_fill: false,
+      midi_output_enabled: false,
+      midi_clock_output_enabled: false,
+      midi_output_channel: 9,
+      program_change_enabled: false,
+      track_swing: Array(16).fill(0),
+      pad_sound_sources: Array(16).fill('sample'),
+      pad_synth_params: Array.from({ length: 16 }, () => ({
+        oscillator_type: 'sine',
+        pitch_envelope_start_hz: 160,
+        pitch_envelope_end_hz: 50,
+        pitch_envelope_decay_ms: 180,
+        noise_level: 0.2,
+        noise_decay_ms: 120,
+        body_decay_ms: 420,
+        tone_amount: 0.55,
+      })),
+      pad_filters: Array.from({ length: 16 }, () => ({
+        type: 'lowpass',
+        cutoff_hz: 12000,
+        resonance: 0.35,
+        env_amount: 0,
+        env_decay_ms: 180,
+      })),
+      pad_cv_gate_configs: Array.from({ length: 16 }, () => ({
+        enabled: false,
+        output_pair: 0,
+        gate_length_ms: 25,
+        note_min: 36,
+        note_max: 84,
+        pitch_min_volts: 0,
+        pitch_max_volts: 5,
+      })),
     },
     isLoading: false,
   })
@@ -277,6 +349,10 @@ function primeHooks() {
       swing: 12,
       pending_pattern: -1,
       switch_quantization_beats: 4,
+      midi_output_enabled: false,
+      midi_clock_output_enabled: false,
+      midi_output_channel: 9,
+      program_change_enabled: false,
       track_swing: Array(16).fill(0),
     },
   })
@@ -305,6 +381,47 @@ function primeHooks() {
         category: 'Electronic',
       },
     ],
+  })
+  mockUseDrumMasterFx.mockReturnValue({
+    data: {
+      drive_db: 0,
+      compressor_threshold: -18,
+      compressor_ratio: 2,
+      compressor_attack: 10,
+      compressor_release: 80,
+      compressor_makeup: 0,
+      reverb_mix: 0.18,
+      reverb_size: 0.45,
+      reverb_damping: 0.35,
+      reverb_width: 1,
+      limiter_threshold: -0.5,
+      limiter_release: 60,
+    },
+  })
+  mockUseDrumSampleEditor.mockReturnValue({
+    waveform: {
+      data: {
+        pad: 0,
+        kit_id: 'studio',
+        kit_source: 'user',
+        root_path: '/kits/studio',
+        sfz_path: 'pad_1_sample.sfz',
+        sample_path: 'samples/pad_1/kick.wav',
+        sample_rate: 48000,
+        channel_count: 1,
+        sample_count: 960,
+        duration_seconds: 0.02,
+        points: 256,
+        peaks: Array.from({ length: 256 }, (_, index) => (index % 8 === 0 ? 0.8 : 0.25)),
+      },
+    },
+    upload: { mutate: mockUploadPadSampleMutate },
+    startRecording: { mutate: mockStartPadRecordingMutate },
+    stopRecording: { mutate: mockStopPadRecordingMutate },
+    trim: { mutate: mockTrimPadSampleMutate },
+    normalize: { mutate: mockNormalizePadSampleMutate },
+    reverse: { mutate: mockReversePadSampleMutate },
+    fade: { mutate: mockFadePadSampleMutate },
   })
   mockUseDrumMidiMapping.mockReturnValue({
     mapping: {
@@ -337,6 +454,29 @@ function primeHooks() {
           pad: index,
           zones: [{ kind: 0, trigger_note: 36 + index, key_switch_note: -1, velocity_scale: 1, enabled: true }],
         })),
+      },
+    },
+  })
+  mockUseDrumCcMapping.mockReturnValue({
+    mappings: {
+      data: {
+        mappings: Array.from({ length: 32 }, (_, index) => ({
+          slot: index,
+          cc_number: index === 0 ? 21 : 0,
+          midi_channel: index === 0 ? 1 : 0,
+          target: index === 0 ? 'tempo' : 'pad_volume',
+          target_index: 0,
+          active: index === 0,
+        })),
+      },
+    },
+    learn: {
+      data: {
+        active: false,
+        slot: -1,
+        last_cc: 74,
+        last_channel: 2,
+        timeout_seconds: 10,
       },
     },
   })
@@ -395,8 +535,13 @@ function primeHooks() {
         eq: { low_gain: 0, mid_gain: 0, mid_freq: 800, high_gain: 0 },
         comp: { threshold: -18, ratio: 4, attack: 10, release: 80, makeup: 0 },
         level: 75,
+        pan: 0,
         mute: false,
         solo: false,
+        output_pair: Math.min(index, 3),
+        reverb_send: index === 0 ? 12 : 0,
+        output_channel_count: 8,
+        available_output_pairs: [0, 1, 2, 3],
       })),
     },
     master: { data: { volume: 80 } },
@@ -407,14 +552,22 @@ function primeHooks() {
   mockUseCopyDrumPattern.mockReturnValue({ mutate: mockCopyPatternMutate })
   mockUseLoadDrumKit.mockReturnValue({ mutate: mockLoadKitMutate })
   mockUseSetDrumPadControl.mockReturnValue({ mutate: mockSetPadControlMutate })
+  mockUseSetDrumPadSoundSource.mockReturnValue({ mutate: mockSetPadSoundSourceMutate })
+  mockUseSetDrumPadSynthParams.mockReturnValue({ mutate: mockSetPadSynthParamsMutate })
+  mockUseSetDrumPadFilter.mockReturnValue({ mutate: mockSetPadFilterMutate })
+  mockUseSetDrumPadCvGateConfig.mockReturnValue({ mutate: mockSetPadCvGateConfigMutate })
   mockUseSetDrumBusMixer.mockReturnValue({ mutate: mockSetBusMixerMutate })
   mockUseSetDrumMasterVolume.mockReturnValue({ mutate: mockSetMasterVolumeMutate })
   mockUseSetDrumMidiMapping.mockReturnValue({ mutate: mockSetMidiMappingMutate })
+  mockUseSetDrumMidiOutputConfig.mockReturnValue({ mutate: mockSetMidiOutputConfigMutate })
   mockUseSetDrumMidiZones.mockReturnValue({ mutate: mockSetMidiZonesMutate })
   mockUseSetDrumVelocityCurve.mockReturnValue({ mutate: mockSetVelocityCurveMutate })
   mockUseSetDrumTrackSwing.mockReturnValue({ mutate: mockSetTrackSwingMutate })
   mockUseSetDrumTrackLength.mockReturnValue({ mutate: mockSetTrackLengthMutate })
+  mockUseSetDrumCcMappings.mockReturnValue({ mutate: mockSetCcMappingsMutate })
+  mockUseSetDrumMasterFx.mockReturnValue({ mutate: mockSetMasterFxMutate })
   mockUseSetDrumPattern.mockReturnValue({ mutate: mockSetPatternMutate })
+  mockUseStartDrumCcLearn.mockReturnValue({ mutate: mockStartCcLearnMutate })
   mockUseStartDrumMidiLearn.mockReturnValue({ mutate: mockStartMidiLearnMutate })
   mockUseAddDrumSongEntry.mockReturnValue({ mutate: mockAddSongEntryMutate })
   mockUseLoadDrumMidiPreset.mockReturnValue({ mutate: mockLoadMidiPresetMutate })
@@ -422,6 +575,7 @@ function primeHooks() {
   mockUseRemoveDrumSongEntry.mockReturnValue({ mutate: mockRemoveSongEntryMutate })
   mockUseSetDrumSong.mockReturnValue({ mutate: mockSetSongMutate })
   mockUseSetDrumStep.mockReturnValue({ mutate: mockSetStepMutate })
+  mockUseStopDrumCcLearn.mockReturnValue({ mutate: mockStopCcLearnMutate })
   mockUseStopDrumMidiLearn.mockReturnValue({ mutate: mockStopMidiLearnMutate })
   mockUseStopDrumSongTransport.mockReturnValue({ mutate: mockStopSongTransportMutate })
   mockUseTriggerDrumFill.mockReturnValue({ mutate: mockTriggerFillMutate })
@@ -491,7 +645,22 @@ describe('DrumsPage', () => {
     mockSetSongMutate.mockReset()
     mockSetTrackSwingMutate.mockReset()
     mockSetTrackLengthMutate.mockReset()
+    mockSetCcMappingsMutate.mockReset()
+    mockStartCcLearnMutate.mockReset()
+    mockStopCcLearnMutate.mockReset()
+    mockSetMasterFxMutate.mockReset()
+    mockUploadPadSampleMutate.mockReset()
+    mockStartPadRecordingMutate.mockReset()
+    mockStopPadRecordingMutate.mockReset()
+    mockTrimPadSampleMutate.mockReset()
+    mockNormalizePadSampleMutate.mockReset()
+    mockReversePadSampleMutate.mockReset()
+    mockFadePadSampleMutate.mockReset()
     mockSetStepMutate.mockReset()
+    mockSetPadSoundSourceMutate.mockReset()
+    mockSetPadSynthParamsMutate.mockReset()
+    mockSetPadFilterMutate.mockReset()
+    mockSetPadCvGateConfigMutate.mockReset()
     mockStartMidiLearnMutate.mockReset()
     mockStopSongTransportMutate.mockReset()
     mockLoadMidiPresetMutate.mockReset()
@@ -504,7 +673,10 @@ describe('DrumsPage', () => {
     mockUseDrumPosition.mockReset()
     mockUseDrumActiveKit.mockReset()
     mockUseDrumKits.mockReset()
+    mockUseDrumMasterFx.mockReset()
+    mockUseDrumSampleEditor.mockReset()
     mockUseDrumMidiMapping.mockReset()
+    mockUseDrumCcMapping.mockReset()
     mockUseDrumMetering.mockReset()
     mockUseDrumSong.mockReset()
     mockUseDrumSongTransport.mockReset()
@@ -517,14 +689,22 @@ describe('DrumsPage', () => {
     mockUseCopyDrumPattern.mockReset()
     mockUseLoadDrumKit.mockReset()
     mockUseSetDrumPadControl.mockReset()
+    mockUseSetDrumPadSoundSource.mockReset()
+    mockUseSetDrumPadSynthParams.mockReset()
+    mockUseSetDrumPadFilter.mockReset()
+    mockUseSetDrumPadCvGateConfig.mockReset()
     mockUseSetDrumBusMixer.mockReset()
     mockUseSetDrumMasterVolume.mockReset()
     mockUseSetDrumMidiMapping.mockReset()
+    mockUseSetDrumMidiOutputConfig.mockReset()
     mockUseSetDrumMidiZones.mockReset()
     mockUseSetDrumVelocityCurve.mockReset()
     mockUseSetDrumTrackSwing.mockReset()
     mockUseSetDrumTrackLength.mockReset()
+    mockUseSetDrumCcMappings.mockReset()
+    mockUseSetDrumMasterFx.mockReset()
     mockUseSetDrumPattern.mockReset()
+    mockUseStartDrumCcLearn.mockReset()
     mockUseStartDrumMidiLearn.mockReset()
     mockUseAddDrumSongEntry.mockReset()
     mockUseLoadDrumMidiPreset.mockReset()
@@ -532,6 +712,7 @@ describe('DrumsPage', () => {
     mockUseRemoveDrumSongEntry.mockReset()
     mockUseSetDrumSong.mockReset()
     mockUseSetDrumStep.mockReset()
+    mockUseStopDrumCcLearn.mockReset()
     mockUseStopDrumMidiLearn.mockReset()
     mockUseStopDrumSongTransport.mockReset()
     mockUseTriggerDrumFill.mockReset()
@@ -737,29 +918,65 @@ describe('DrumsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Bus 0 mute' }))
     fireEvent.change(screen.getByLabelText('Bus 0 Level'), { target: { value: '64' } })
+    fireEvent.change(screen.getByLabelText('Bus 0 Send'), { target: { value: '45' } })
+    fireEvent.change(screen.getByLabelText('Bus 0 output pair'), { target: { value: '3' } })
     fireEvent.change(screen.getByLabelText('Mixer master volume'), { target: { value: '72' } })
+    fireEvent.change(screen.getByLabelText('Master FX drive'), { target: { value: '9' } })
 
     expect(mockSetBusMixerMutate).toHaveBeenCalledWith({
       busId: 0,
       params: {
         level: undefined,
+        pan: undefined,
         mute: true,
         solo: undefined,
         eq: undefined,
         comp: undefined,
+        output_pair: undefined,
+        reverb_send: undefined,
+      },
+    })
+    expect(mockSetBusMixerMutate).toHaveBeenCalledWith({
+      busId: 0,
+      params: {
+        level: undefined,
+        pan: undefined,
+        mute: undefined,
+        solo: undefined,
+        eq: undefined,
+        comp: undefined,
+        output_pair: undefined,
+        reverb_send: 45,
       },
     })
     expect(mockSetBusMixerMutate).toHaveBeenCalledWith({
       busId: 0,
       params: {
         level: 64,
+        pan: undefined,
         mute: undefined,
         solo: undefined,
         eq: undefined,
         comp: undefined,
+        output_pair: undefined,
+        reverb_send: undefined,
+      },
+    })
+    expect(mockSetBusMixerMutate).toHaveBeenCalledWith({
+      busId: 0,
+      params: {
+        level: undefined,
+        pan: undefined,
+        mute: undefined,
+        solo: undefined,
+        eq: undefined,
+        comp: undefined,
+        output_pair: 3,
+        reverb_send: undefined,
       },
     })
     expect(mockSetMasterVolumeMutate).toHaveBeenCalledWith(72)
+    expect(mockSetMasterFxMutate).toHaveBeenCalledWith(expect.objectContaining({ drive_db: 9 }))
   })
 
   it('switches to practice mode and updates rehearsal controls', () => {
@@ -831,5 +1048,147 @@ describe('DrumsPage', () => {
       }),
     )
     expect(mockStartMidiLearnMutate).toHaveBeenCalledWith(0)
+  })
+
+  it('updates CC mappings and learn controls from the advanced panel', () => {
+    renderPage()
+
+    const ccTable = screen.getByRole('table', { name: 'Drum CC mapping table' })
+    const slotOneRow = screen.getByText('Slot 1').closest('tr') as HTMLElement
+
+    fireEvent.change(screen.getByLabelText('CC slot 1 number'), { target: { value: '74' } })
+    fireEvent.change(screen.getByLabelText('CC slot 1 target'), { target: { value: 'swing' } })
+    fireEvent.click(within(slotOneRow).getByRole('button', { name: 'Learn' }))
+    fireEvent.click(within(slotOneRow).getByRole('button', { name: 'Disable' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Stop CC Learn' }))
+
+    expect(ccTable).toHaveTextContent('Slot 1')
+    expect(mockSetCcMappingsMutate).toHaveBeenCalledWith({
+      mappings: expect.arrayContaining([
+        expect.objectContaining({
+          slot: 0,
+          cc_number: 74,
+          midi_channel: 1,
+          target: 'tempo',
+          target_index: 0,
+          active: true,
+        }),
+      ]),
+    })
+    expect(mockSetCcMappingsMutate).toHaveBeenCalledWith({
+      mappings: expect.arrayContaining([
+        expect.objectContaining({
+          slot: 0,
+          cc_number: 21,
+          midi_channel: 1,
+          target: 'swing',
+          target_index: 0,
+          active: true,
+        }),
+      ]),
+    })
+    expect(mockStartCcLearnMutate).toHaveBeenCalledWith({ slot: 0 })
+    expect(mockSetCcMappingsMutate).toHaveBeenCalledWith({
+      mappings: expect.arrayContaining([
+        expect.objectContaining({
+          slot: 0,
+          active: false,
+        }),
+      ]),
+    })
+    expect(mockStopCcLearnMutate).toHaveBeenCalled()
+  })
+
+  it('updates sequencer MIDI output controls from the transport panel', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByLabelText('Sequencer MIDI note output enabled'))
+    fireEvent.click(screen.getByLabelText('Sequencer MIDI clock output enabled'))
+    fireEvent.click(screen.getByLabelText('Sequencer Program Change input enabled'))
+    fireEvent.change(screen.getByLabelText('Sequencer MIDI output channel'), { target: { value: '5' } })
+
+    expect(mockSetMidiOutputConfigMutate).toHaveBeenCalledWith({
+      midi_output_enabled: true,
+      midi_clock_output_enabled: false,
+      midi_output_channel: 9,
+      program_change_enabled: false,
+    })
+    expect(mockSetMidiOutputConfigMutate).toHaveBeenCalledWith({
+      midi_output_enabled: false,
+      midi_clock_output_enabled: true,
+      midi_output_channel: 9,
+      program_change_enabled: false,
+    })
+    expect(mockSetMidiOutputConfigMutate).toHaveBeenCalledWith({
+      midi_output_enabled: false,
+      midi_clock_output_enabled: false,
+      midi_output_channel: 9,
+      program_change_enabled: true,
+    })
+    expect(mockSetMidiOutputConfigMutate).toHaveBeenCalledWith({
+      midi_output_enabled: false,
+      midi_clock_output_enabled: false,
+      midi_output_channel: 5,
+      program_change_enabled: false,
+    })
+  })
+
+  it('updates pad sound source and synth controls from the inspector', () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Selected pad sound source'), { target: { value: 'hybrid' } })
+    fireEvent.change(screen.getByLabelText('Selected pad synth oscillator'), { target: { value: 'metallic' } })
+    fireEvent.change(screen.getByLabelText('Selected pad filter type'), { target: { value: 'notch' } })
+    fireEvent.change(screen.getByLabelText('Selected pad CV/Gate enabled'), { target: { value: 'on' } })
+    fireEvent.change(screen.getByLabelText('Selected pad CV/Gate output pair'), { target: { value: '2' } })
+
+    expect(mockSetPadSoundSourceMutate).toHaveBeenCalledWith({ padId: 0, source: 'hybrid' })
+    expect(mockSetPadSynthParamsMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padId: 0,
+        params: expect.objectContaining({ oscillator_type: 'metallic' }),
+      }),
+    )
+    expect(mockSetPadFilterMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padId: 0,
+        filter: expect.objectContaining({ type: 'notch' }),
+      }),
+    )
+    expect(mockSetPadCvGateConfigMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padId: 0,
+        config: expect.objectContaining({ enabled: true, output_pair: 0 }),
+      }),
+    )
+    expect(mockSetPadCvGateConfigMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        padId: 0,
+        config: expect.objectContaining({ enabled: false, output_pair: 2 }),
+      }),
+    )
+  })
+
+  it('updates sample editor controls from the inspector', () => {
+    renderPage()
+
+    const upload = screen.getByLabelText('Selected pad sample upload')
+    const file = new File([new Uint8Array([82, 73, 70, 70])], 'kick.wav', { type: 'audio/wav' })
+
+    fireEvent.change(upload, { target: { files: [file] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Record Input' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Normalize' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reverse' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Fade 5ms' }))
+    fireEvent.change(screen.getByLabelText('Selected pad sample trim start'), { target: { value: '120' } })
+    fireEvent.change(screen.getByLabelText('Selected pad sample trim end'), { target: { value: '720' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply Trim' }))
+
+    expect(mockUploadPadSampleMutate).toHaveBeenCalledWith({ padId: 0, file })
+    expect(mockStartPadRecordingMutate).toHaveBeenCalledWith(0)
+    expect(mockNormalizePadSampleMutate).toHaveBeenCalledWith({ padId: 0, targetPeak: 0.99 })
+    expect(mockReversePadSampleMutate).toHaveBeenCalledWith(0)
+    expect(mockFadePadSampleMutate).toHaveBeenCalledWith({ padId: 0, fadeInMs: 5, fadeOutMs: 5 })
+    expect(mockTrimPadSampleMutate).toHaveBeenCalledWith({ padId: 0, startSample: 120, endSample: 720 })
   })
 })

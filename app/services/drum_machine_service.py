@@ -29,7 +29,93 @@ _FACTORY_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_FACTORY_PACKS_DIR", _PROJEC
 _GENERATED_PACKS_DIR = Path(os.environ.get("MAP2_DRUMS_GENERATED_PACKS_DIR", _PROJECT_ROOT / "data" / "drums" / "generated"))
 _POSITION_POLL_INTERVAL_SECONDS = float(os.environ.get("MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS", "0.05"))
 _MIDI_CONFIGS_DIR = Path(os.environ.get("MAP2_DRUMS_MIDI_CONFIGS_DIR", _DEFAULT_DRUMS_ROOT / "midi_configs"))
+_CC_MAPPINGS_PATH = Path(os.environ.get("MAP2_DRUMS_CC_MAPPINGS_PATH", _DEFAULT_DRUMS_ROOT / "cc_mappings.json"))
 _DEFAULT_DRUM_NOTES = [36, 38, 42, 46, 41, 43, 45, 49, 51, 57, 39, 37, 56, 47, 50, 48]
+DrumPadSoundSource = Literal["sample", "synth", "hybrid"]
+
+
+class DrumSynthParamModel(BaseModel):
+    oscillator_type: Literal["sine", "triangle", "saw", "square", "metallic"] = "sine"
+    pitch_envelope_start_hz: float = Field(160.0, ge=20.0, le=4000.0)
+    pitch_envelope_end_hz: float = Field(50.0, ge=20.0, le=4000.0)
+    pitch_envelope_decay_ms: float = Field(180.0, ge=1.0, le=5000.0)
+    noise_level: float = Field(0.2, ge=0.0, le=1.0)
+    noise_decay_ms: float = Field(120.0, ge=1.0, le=5000.0)
+    body_decay_ms: float = Field(420.0, ge=1.0, le=5000.0)
+    tone_amount: float = Field(0.55, ge=0.0, le=1.0)
+
+
+class DrumPadFilterModel(BaseModel):
+    type: Literal["lowpass", "highpass", "bandpass", "notch"] = "lowpass"
+    cutoff_hz: float = Field(12000.0, ge=20.0, le=20000.0)
+    resonance: float = Field(0.35, ge=0.1, le=10.0)
+    env_amount: float = Field(0.0, ge=-1.0, le=1.0)
+    env_decay_ms: float = Field(180.0, ge=1.0, le=5000.0)
+
+
+class DrumCvGateConfigModel(BaseModel):
+    enabled: bool = False
+    output_pair: int = Field(0, ge=0)
+    gate_length_ms: float = Field(25.0, ge=1.0, le=5000.0)
+    note_min: int = Field(36, ge=0, le=126)
+    note_max: int = Field(84, ge=1, le=127)
+    pitch_min_volts: float = Field(0.0, ge=-10.0, le=10.0)
+    pitch_max_volts: float = Field(5.0, ge=-10.0, le=10.0)
+
+
+class DrumPadControlModel(BaseModel):
+    pad_id: int = Field(..., ge=0, le=15)
+    volume: float = Field(100.0, ge=0.0, le=100.0)
+    pan: float = Field(0.0, ge=-100.0, le=100.0)
+    tune: float = Field(0.0, ge=-24.0, le=24.0)
+    mute: bool = False
+    solo: bool = False
+    bus_assignment: int = Field(0, ge=0, le=7)
+
+
+class DrumEqModel(BaseModel):
+    low_gain: float = Field(0.0, ge=-24.0, le=24.0)
+    mid_gain: float = Field(0.0, ge=-24.0, le=24.0)
+    mid_freq: float = Field(1000.0, ge=40.0, le=16000.0)
+    high_gain: float = Field(0.0, ge=-24.0, le=24.0)
+
+
+class DrumCompModel(BaseModel):
+    threshold: float = Field(-18.0, ge=-60.0, le=0.0)
+    ratio: float = Field(2.0, ge=1.0, le=20.0)
+    attack: float = Field(10.0, ge=0.1, le=200.0)
+    release: float = Field(80.0, ge=5.0, le=1000.0)
+    makeup: float = Field(0.0, ge=-24.0, le=24.0)
+
+
+class DrumBusMixerModel(BaseModel):
+    bus_id: int = Field(..., ge=0, le=7)
+    name: str
+    eq: DrumEqModel = Field(default_factory=DrumEqModel)
+    comp: DrumCompModel = Field(default_factory=DrumCompModel)
+    level: float = Field(100.0, ge=0.0, le=100.0)
+    pan: float = Field(0.0, ge=-100.0, le=100.0)
+    mute: bool = False
+    solo: bool = False
+    output_pair: int = Field(0, ge=0)
+    reverb_send: float = Field(0.0, ge=0.0, le=100.0)
+    output_channel_count: int = Field(2, ge=2)
+    available_output_pairs: List[int] = Field(default_factory=lambda: [0])
+
+
+class DrumMasterFxModel(BaseModel):
+    drive_db: float = Field(0.0, ge=0.0, le=24.0)
+    compressor_threshold: float = Field(-18.0, ge=-60.0, le=0.0)
+    compressor_ratio: float = Field(2.0, ge=1.0, le=20.0)
+    compressor_attack: float = Field(10.0, ge=0.1, le=200.0)
+    compressor_release: float = Field(80.0, ge=5.0, le=1000.0)
+    compressor_makeup: float = Field(0.0, ge=-24.0, le=24.0)
+    reverb_mix: float = Field(0.18, ge=0.0, le=1.0)
+    reverb_size: float = Field(0.45, ge=0.0, le=1.0)
+    reverb_damping: float = Field(0.35, ge=0.0, le=1.0)
+    reverb_width: float = Field(1.0, ge=0.0, le=1.0)
+    limiter_threshold: float = Field(-0.5, ge=-12.0, le=0.0)
+    limiter_release: float = Field(60.0, ge=5.0, le=500.0)
 
 
 class DrumMachineStateModel(BaseModel):
@@ -46,7 +132,50 @@ class DrumMachineStateModel(BaseModel):
     practice_change_quantization: int = Field(1, ge=1, le=8)
     practice_count_in_bars: int = Field(1, ge=0, le=4)
     practice_auto_fill: bool = False
+    midi_output_enabled: bool = False
+    midi_clock_output_enabled: bool = False
+    midi_output_channel: int = Field(9, ge=0, le=15)
+    program_change_enabled: bool = False
     track_swing: List[int] = Field(default_factory=lambda: [0] * 16, min_length=16, max_length=16)
+    pad_sound_sources: List[DrumPadSoundSource] = Field(default_factory=lambda: ["sample"] * 16, min_length=16, max_length=16)
+    pad_synth_params: List[DrumSynthParamModel] = Field(
+        default_factory=lambda: [DrumSynthParamModel() for _ in range(16)],
+        min_length=16,
+        max_length=16,
+    )
+    pad_filters: List[DrumPadFilterModel] = Field(
+        default_factory=lambda: [DrumPadFilterModel() for _ in range(16)],
+        min_length=16,
+        max_length=16,
+    )
+    pad_cv_gate_configs: List[DrumCvGateConfigModel] = Field(
+        default_factory=lambda: [DrumCvGateConfigModel() for _ in range(16)],
+        min_length=16,
+        max_length=16,
+    )
+    pad_controls: List[DrumPadControlModel] = Field(
+        default_factory=lambda: [
+            DrumPadControlModel(
+                pad_id=pad,
+                bus_assignment=min(pad // 2, 7),
+            )
+            for pad in range(16)
+        ],
+        min_length=16,
+        max_length=16,
+    )
+    bus_mixers: List[DrumBusMixerModel] = Field(
+        default_factory=lambda: [
+            DrumBusMixerModel(
+                bus_id=bus,
+                name=f"Bus {bus}",
+            )
+            for bus in range(8)
+        ],
+        min_length=8,
+        max_length=8,
+    )
+    master_fx: DrumMasterFxModel = Field(default_factory=DrumMasterFxModel)
 
 
 class DrumMachineStateUpdateModel(BaseModel):
@@ -63,7 +192,15 @@ class DrumMachineStateUpdateModel(BaseModel):
     practice_change_quantization: Optional[int] = Field(None, ge=1, le=8)
     practice_count_in_bars: Optional[int] = Field(None, ge=0, le=4)
     practice_auto_fill: Optional[bool] = None
+    midi_output_enabled: Optional[bool] = None
+    midi_clock_output_enabled: Optional[bool] = None
+    midi_output_channel: Optional[int] = Field(None, ge=0, le=15)
+    program_change_enabled: Optional[bool] = None
     track_swing: Optional[List[int]] = Field(default=None, min_length=16, max_length=16)
+    pad_sound_sources: Optional[List[DrumPadSoundSource]] = Field(default=None, min_length=16, max_length=16)
+    pad_synth_params: Optional[List[DrumSynthParamModel]] = Field(default=None, min_length=16, max_length=16)
+    pad_filters: Optional[List[DrumPadFilterModel]] = Field(default=None, min_length=16, max_length=16)
+    pad_cv_gate_configs: Optional[List[DrumCvGateConfigModel]] = Field(default=None, min_length=16, max_length=16)
 
 
 class DrumTransportStateModel(BaseModel):
@@ -74,6 +211,10 @@ class DrumTransportStateModel(BaseModel):
     swing: int = Field(0, ge=0, le=100)
     pending_pattern: int = Field(-1, ge=-1, le=127)
     switch_quantization_beats: int = Field(4, ge=1, le=16)
+    midi_output_enabled: bool = False
+    midi_clock_output_enabled: bool = False
+    midi_output_channel: int = Field(9, ge=0, le=15)
+    program_change_enabled: bool = False
     track_swing: List[int] = Field(default_factory=lambda: [0] * 16, min_length=16, max_length=16)
 
 
@@ -84,6 +225,17 @@ class DrumTransportUpdateModel(BaseModel):
     variation: Optional[int] = Field(None, ge=0, le=10)
     swing: Optional[int] = Field(None, ge=0, le=100)
     switch_quantization_beats: Optional[int] = Field(None, ge=1, le=16)
+    midi_output_enabled: Optional[bool] = None
+    midi_clock_output_enabled: Optional[bool] = None
+    midi_output_channel: Optional[int] = Field(None, ge=0, le=15)
+    program_change_enabled: Optional[bool] = None
+
+
+class DrumMidiOutputConfigModel(BaseModel):
+    midi_output_enabled: bool = False
+    midi_clock_output_enabled: bool = False
+    midi_output_channel: int = Field(9, ge=0, le=15)
+    program_change_enabled: bool = False
 
 
 class DrumMeteringModel(BaseModel):
@@ -184,6 +336,47 @@ class DrumMidiPresetListModel(BaseModel):
     presets: List[str] = Field(default_factory=list)
 
 
+DrumCcTarget = Literal[
+    "pad_volume",
+    "pad_pan",
+    "pad_tune",
+    "pad_filter_cutoff",
+    "bus_level",
+    "bus_pan",
+    "master_volume",
+    "tempo",
+    "swing",
+    "synth_pitch_start_hz",
+    "synth_pitch_end_hz",
+    "synth_pitch_decay_ms",
+    "synth_noise_level",
+    "synth_noise_decay_ms",
+    "synth_body_decay_ms",
+    "synth_tone_amount",
+]
+
+
+class DrumCcMappingEntryModel(BaseModel):
+    slot: int = Field(..., ge=0, le=31)
+    cc_number: int = Field(0, ge=0, le=127)
+    midi_channel: int = Field(0, ge=0, le=16)
+    target: DrumCcTarget = "pad_volume"
+    target_index: int = Field(0, ge=0)
+    active: bool = False
+
+
+class DrumCcMappingModel(BaseModel):
+    mappings: List[DrumCcMappingEntryModel] = Field(default_factory=list)
+
+
+class DrumCcLearnStateModel(BaseModel):
+    active: bool = False
+    slot: int = Field(-1, ge=-1, le=31)
+    last_cc: int = Field(-1, ge=-1, le=127)
+    last_channel: int = Field(-1, ge=-1, le=16)
+    timeout_seconds: int = Field(10, ge=1, le=60)
+
+
 class DrumMachineService(Singleton):
     def __init__(self) -> None:
         super().__init__()
@@ -191,6 +384,7 @@ class DrumMachineService(Singleton):
         self._factory_packs_dir = _FACTORY_PACKS_DIR
         self._user_content_manager = UserContentManager(_GENERATED_PACKS_DIR)
         self._midi_configs_dir = _MIDI_CONFIGS_DIR
+        self._cc_mappings_path = _CC_MAPPINGS_PATH
         self._metering = DrumMeteringModel()
         self._state = self._load_state()
         self._position = DrumSequencerPositionModel(
@@ -217,7 +411,23 @@ class DrumMachineService(Singleton):
         }
         self._pad_zones = {index: [] for index in range(16)}
         self._midi_learn_state = DrumMidiLearnStateModel()
+        self._cc_mappings = self._load_cc_mappings()
+        self._cc_learn_state = DrumCcLearnStateModel()
         self._sync_static_state_to_engine()
+        self._sync_transport_patch_to_engine(
+            {
+                "bpm": self._state.bpm,
+                "pattern": self._state.pattern,
+                "variation": self._state.variation,
+                "swing": self._state.swing,
+                "is_playing": self._state.transport,
+                "midi_output_enabled": self._state.midi_output_enabled,
+                "midi_clock_output_enabled": self._state.midi_clock_output_enabled,
+                "midi_output_channel": self._state.midi_output_channel,
+                "program_change_enabled": self._state.program_change_enabled,
+            }
+        )
+        self._sync_cc_mappings_to_engine()
 
     def _load_state(self) -> DrumMachineStateModel:
         if not self._state_path.exists():
@@ -234,6 +444,32 @@ class DrumMachineService(Singleton):
         temp_path = self._state_path.with_suffix(".tmp")
         temp_path.write_text(json.dumps(self._state.model_dump(), indent=2, sort_keys=True))
         temp_path.replace(self._state_path)
+
+    def _load_cc_mappings(self) -> DrumCcMappingModel:
+        if not self._cc_mappings_path.exists():
+            return DrumCcMappingModel(
+                mappings=[DrumCcMappingEntryModel(slot=slot) for slot in range(32)]
+            )
+        try:
+            payload = json.loads(self._cc_mappings_path.read_text())
+            model = DrumCcMappingModel.model_validate(payload)
+            slots = {entry.slot for entry in model.mappings}
+            mappings = list(model.mappings)
+            for slot in range(32):
+                if slot not in slots:
+                    mappings.append(DrumCcMappingEntryModel(slot=slot))
+            mappings.sort(key=lambda entry: entry.slot)
+            return DrumCcMappingModel(mappings=mappings)
+        except (OSError, json.JSONDecodeError, ValidationError):
+            return DrumCcMappingModel(
+                mappings=[DrumCcMappingEntryModel(slot=slot) for slot in range(32)]
+            )
+
+    def _persist_cc_mappings(self) -> None:
+        self._cc_mappings_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = self._cc_mappings_path.with_suffix(".tmp")
+        temp_path.write_text(json.dumps(self._cc_mappings.model_dump(), indent=2, sort_keys=True))
+        temp_path.replace(self._cc_mappings_path)
 
     def get_state(self) -> Dict[str, Any]:
         return self._state.model_dump()
@@ -264,6 +500,10 @@ class DrumMachineService(Singleton):
             swing=self._state.swing,
             pending_pattern=self._position.pending_pattern,
             switch_quantization_beats=self._position.switch_quantization_beats,
+            midi_output_enabled=self._state.midi_output_enabled,
+            midi_clock_output_enabled=self._state.midi_clock_output_enabled,
+            midi_output_channel=self._state.midi_output_channel,
+            program_change_enabled=self._state.program_change_enabled,
             track_swing=list(self._state.track_swing),
         ).model_dump()
 
@@ -283,6 +523,10 @@ class DrumMachineService(Singleton):
             ("bpm", "bpm"),
             ("variation", "variation"),
             ("swing", "swing"),
+            ("midi_output_enabled", "midi_output_enabled"),
+            ("midi_clock_output_enabled", "midi_clock_output_enabled"),
+            ("midi_output_channel", "midi_output_channel"),
+            ("program_change_enabled", "program_change_enabled"),
         ):
             if source in patch:
                 payload[target] = patch[source]
@@ -304,6 +548,18 @@ class DrumMachineService(Singleton):
                 pass
             self._persist_state()
         return self.get_transport()
+
+    def get_midi_output_config(self) -> Dict[str, Any]:
+        self._refresh_transport_from_engine()
+        return DrumMidiOutputConfigModel(
+            midi_output_enabled=self._state.midi_output_enabled,
+            midi_clock_output_enabled=self._state.midi_clock_output_enabled,
+            midi_output_channel=self._state.midi_output_channel,
+            program_change_enabled=self._state.program_change_enabled,
+        ).model_dump()
+
+    def update_midi_output_config(self, patch: Dict[str, Any]) -> Dict[str, Any]:
+        return DrumMidiOutputConfigModel.model_validate(self.update_transport(patch)).model_dump()
 
     def get_metering(self) -> Dict[str, Any]:
         self._refresh_metering_from_engine()
@@ -364,6 +620,260 @@ class DrumMachineService(Singleton):
             "swing": next_track_swing[instrument],
             "track_swing": next_track_swing,
         }
+
+    def get_pad_sound_source(self, pad: int) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        return {
+            "pad": pad,
+            "source": self._state.pad_sound_sources[pad],
+        }
+
+    def set_pad_sound_source(self, pad: int, source: str) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        if source not in ("sample", "synth", "hybrid"):
+            raise ValueError("source must be one of: sample, synth, hybrid")
+        next_sources = list(self._state.pad_sound_sources)
+        next_sources[pad] = source
+        self._state = DrumMachineStateModel.model_validate(
+            {
+                **self._state.model_dump(),
+                "pad_sound_sources": next_sources,
+            }
+        )
+        engine = self._engine()
+        setter = getattr(engine, "set_drum_pad_sound_source", None) if engine is not None else None
+        if callable(setter):
+            setter(pad, source)
+        self._persist_state()
+        return self.get_pad_sound_source(pad)
+
+    def get_pad_synth_params(self, pad: int) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        return {
+            "pad": pad,
+            "params": self._state.pad_synth_params[pad].model_dump(),
+        }
+
+    def set_pad_synth_params(self, pad: int, patch: Dict[str, Any]) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        current = self._state.pad_synth_params[pad].model_dump()
+        current.update({key: value for key, value in patch.items() if value is not None})
+        params = DrumSynthParamModel.model_validate(current)
+        next_params = list(self._state.pad_synth_params)
+        next_params[pad] = params
+        self._state = DrumMachineStateModel.model_validate(
+            {
+                **self._state.model_dump(),
+                "pad_synth_params": [item.model_dump() for item in next_params],
+            }
+        )
+        engine = self._engine()
+        setter = getattr(engine, "set_drum_synth_param", None) if engine is not None else None
+        if callable(setter):
+            for key, value in params.model_dump().items():
+                setter(pad, key, value)
+        self._persist_state()
+        return self.get_pad_synth_params(pad)
+
+    def get_pad_filter(self, pad: int) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        return {
+            "pad": pad,
+            "filter": self._state.pad_filters[pad].model_dump(),
+        }
+
+    def set_pad_filter(self, pad: int, patch: Dict[str, Any]) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        current = self._state.pad_filters[pad].model_dump()
+        current.update({key: value for key, value in patch.items() if value is not None})
+        config = DrumPadFilterModel.model_validate(current)
+        next_filters = list(self._state.pad_filters)
+        next_filters[pad] = config
+        self._state = DrumMachineStateModel.model_validate(
+            {
+                **self._state.model_dump(),
+                "pad_filters": [item.model_dump() for item in next_filters],
+            }
+        )
+        engine = self._engine()
+        setter = getattr(engine, "set_drum_pad_filter", None) if engine is not None else None
+        if callable(setter):
+            setter(pad, config.type, config.cutoff_hz, config.resonance, config.env_amount, config.env_decay_ms)
+        self._persist_state()
+        return self.get_pad_filter(pad)
+
+    def get_pad_cv_gate_config(self, pad: int) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        return {
+            "pad": pad,
+            "config": self._state.pad_cv_gate_configs[pad].model_dump(),
+        }
+
+    def set_pad_cv_gate_config(self, pad: int, patch: Dict[str, Any]) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        current = self._state.pad_cv_gate_configs[pad].model_dump()
+        current.update({key: value for key, value in patch.items() if value is not None})
+        if current["note_max"] <= current["note_min"]:
+            current["note_max"] = min(127, current["note_min"] + 1)
+        if current["pitch_max_volts"] < current["pitch_min_volts"]:
+            current["pitch_max_volts"] = current["pitch_min_volts"]
+        config = DrumCvGateConfigModel.model_validate(current)
+        next_configs = list(self._state.pad_cv_gate_configs)
+        next_configs[pad] = config
+        self._state = DrumMachineStateModel.model_validate(
+            {
+                **self._state.model_dump(),
+                "pad_cv_gate_configs": [item.model_dump() for item in next_configs],
+            }
+        )
+        engine = self._engine()
+        setter = getattr(engine, "set_drum_cv_gate_config", None) if engine is not None else None
+        if callable(setter):
+            setter(
+                pad,
+                config.enabled,
+                config.output_pair,
+                config.gate_length_ms,
+                config.note_min,
+                config.note_max,
+                config.pitch_min_volts,
+                config.pitch_max_volts,
+            )
+        self._persist_state()
+        return self.get_pad_cv_gate_config(pad)
+
+    def get_pad_controls(self) -> List[Dict[str, Any]]:
+        return [control.model_dump() for control in self._state.pad_controls]
+
+    def set_pad_control(self, pad: int, patch: Dict[str, Any]) -> Dict[str, Any]:
+        self._validate_pad_index(pad)
+        current = self._state.pad_controls[pad].model_dump()
+        current.update({key: value for key, value in patch.items() if value is not None})
+        control = DrumPadControlModel.model_validate(current)
+        next_controls = list(self._state.pad_controls)
+        next_controls[pad] = control
+        self._state = DrumMachineStateModel.model_validate(
+            {
+                **self._state.model_dump(),
+                "pad_controls": [item.model_dump() for item in next_controls],
+            }
+        )
+        engine = self._engine()
+        if engine is not None:
+            for method_name, value in (
+                ("set_drum_pad_volume", control.volume / 100.0),
+                ("set_drum_pad_pan", control.pan / 100.0),
+                ("set_drum_pad_tune", control.tune),
+                ("set_drum_pad_mute", control.mute),
+                ("set_drum_pad_solo", control.solo),
+                ("set_drum_pad_bus", control.bus_assignment),
+            ):
+                setter = getattr(engine, method_name, None)
+                if callable(setter):
+                    setter(pad, value)
+        self._persist_state()
+        return control.model_dump()
+
+    def _output_channel_count(self) -> int:
+        engine = self._engine()
+        getter = getattr(engine, "get_num_output_channels", None) if engine is not None else None
+        if callable(getter):
+            try:
+                return max(2, int(getter()))
+            except Exception:
+                return 2
+        return 2
+
+    def _available_output_pairs(self) -> List[int]:
+        return list(range(max(1, self._output_channel_count() // 2)))
+
+    def _normalize_bus_mixer(self, mixer: DrumBusMixerModel) -> DrumBusMixerModel:
+        available_output_pairs = self._available_output_pairs()
+        output_channel_count = self._output_channel_count()
+        payload = mixer.model_dump()
+        payload["output_pair"] = min(payload["output_pair"], available_output_pairs[-1])
+        payload["output_channel_count"] = output_channel_count
+        payload["available_output_pairs"] = available_output_pairs
+        return DrumBusMixerModel.model_validate(payload)
+
+    def get_bus_mixers(self) -> List[Dict[str, Any]]:
+        return [self._normalize_bus_mixer(mixer).model_dump() for mixer in self._state.bus_mixers]
+
+    def set_bus_mixer(self, bus: int, patch: Dict[str, Any]) -> Dict[str, Any]:
+        if bus < 0 or bus >= 8:
+            raise ValueError("bus must be between 0 and 7")
+        current = self._state.bus_mixers[bus].model_dump()
+        for key, value in patch.items():
+            if value is None:
+                continue
+            if key in ("eq", "comp") and isinstance(value, dict):
+                nested = dict(current.get(key, {}))
+                nested.update({nested_key: nested_value for nested_key, nested_value in value.items() if nested_value is not None})
+                current[key] = nested
+            else:
+                current[key] = value
+        mixer = self._normalize_bus_mixer(DrumBusMixerModel.model_validate(current))
+        next_mixers = list(self._state.bus_mixers)
+        next_mixers[bus] = mixer
+        self._state = DrumMachineStateModel.model_validate(
+            {
+                **self._state.model_dump(),
+                "bus_mixers": [item.model_dump() for item in next_mixers],
+            }
+        )
+        engine = self._engine()
+        if engine is not None:
+            eq_setter = getattr(engine, "set_drum_bus_eq", None)
+            if callable(eq_setter):
+                eq_setter(bus, mixer.eq.low_gain, mixer.eq.mid_gain, mixer.eq.mid_freq, mixer.eq.high_gain)
+            comp_setter = getattr(engine, "set_drum_bus_comp", None)
+            if callable(comp_setter):
+                comp_setter(bus, mixer.comp.threshold, mixer.comp.ratio, mixer.comp.attack, mixer.comp.release, mixer.comp.makeup)
+            for method_name, value in (
+                ("set_drum_bus_level", mixer.level / 100.0),
+                ("set_drum_bus_mute", mixer.mute),
+                ("set_drum_bus_solo", mixer.solo),
+                ("set_drum_bus_output_pair", mixer.output_pair),
+                ("set_drum_bus_reverb_send", mixer.reverb_send / 100.0),
+            ):
+                setter = getattr(engine, method_name, None)
+                if callable(setter):
+                    setter(bus, value)
+        self._persist_state()
+        return mixer.model_dump()
+
+    def get_master_fx(self) -> Dict[str, Any]:
+        return self._state.master_fx.model_dump()
+
+    def set_master_fx(self, patch: Dict[str, Any]) -> Dict[str, Any]:
+        current = self._state.master_fx.model_dump()
+        current.update({key: value for key, value in patch.items() if value is not None})
+        master_fx = DrumMasterFxModel.model_validate(current)
+        self._state = DrumMachineStateModel.model_validate(
+            {
+                **self._state.model_dump(),
+                "master_fx": master_fx.model_dump(),
+            }
+        )
+        engine = self._engine()
+        if engine is not None:
+            setter = getattr(engine, "set_drum_master_fx", None)
+            if callable(setter):
+                for key, value in master_fx.model_dump().items():
+                    setter(key, value)
+        self._persist_state()
+        return master_fx.model_dump()
+
+    def set_bus_reverb_send(self, bus: int, level: float) -> Dict[str, Any]:
+        return self.set_bus_mixer(bus, {"reverb_send": level})
+
+    def get_master_volume(self) -> Dict[str, Any]:
+        return {"volume": self._state.volume}
+
+    def set_master_volume(self, volume: float) -> Dict[str, Any]:
+        normalized = int(max(0, min(100, round(volume))))
+        self.update_state({"volume": normalized})
+        return self.get_master_volume()
 
     def start_song_playback(self) -> Dict[str, Any]:
         entries = self._get_song_entries()
@@ -776,16 +1286,103 @@ class DrumMachineService(Singleton):
         self.persist_active_kit_midi_config()
         return payload
 
+    def get_cc_mappings(self) -> Dict[str, Any]:
+        engine = self._engine()
+        getter = getattr(engine, "get_drum_cc_mappings", None) if engine is not None else None
+        if callable(getter):
+            try:
+                payload = DrumCcMappingModel.model_validate({"mappings": list(getter())})
+                self._cc_mappings = payload
+            except Exception:
+                pass
+        return self._cc_mappings.model_dump()
+
+    def update_cc_mappings(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        model = DrumCcMappingModel.model_validate(payload)
+        self._cc_mappings = DrumCcMappingModel(
+            mappings=sorted(model.mappings, key=lambda entry: entry.slot)
+        )
+        self._persist_cc_mappings()
+        self._sync_cc_mappings_to_engine()
+        return self.get_cc_mappings()
+
+    def start_cc_learn(self, slot: int, timeout_seconds: int = 10) -> Dict[str, Any]:
+        engine = self._engine()
+        starter = getattr(engine, "start_drum_cc_learn", None) if engine is not None else None
+        started = True
+        if callable(starter):
+            started = bool(starter(slot, timeout_seconds))
+        if not started:
+            raise ValueError("Unable to start drum CC learn mode")
+        self._cc_learn_state = DrumCcLearnStateModel(
+            active=True,
+            slot=slot,
+            timeout_seconds=timeout_seconds,
+        )
+        return self.get_cc_learn_state()
+
+    def stop_cc_learn(self) -> Dict[str, Any]:
+        engine = self._engine()
+        stopper = getattr(engine, "stop_drum_cc_learn", None) if engine is not None else None
+        if callable(stopper):
+            stopper()
+        self._cc_learn_state = DrumCcLearnStateModel()
+        return self.get_cc_learn_state()
+
+    def get_cc_learn_state(self) -> Dict[str, Any]:
+        engine = self._engine()
+        getter = getattr(engine, "get_drum_cc_learn_state", None) if engine is not None else None
+        if callable(getter):
+            try:
+                self._cc_learn_state = DrumCcLearnStateModel.model_validate(dict(getter()))
+            except Exception:
+                pass
+        return self._cc_learn_state.model_dump()
+
+    def _sync_cc_mappings_to_engine(self) -> None:
+        engine = self._engine()
+        if engine is None:
+            return
+        setter = getattr(engine, "set_drum_cc_mapping", None)
+        if not callable(setter):
+            return
+        for mapping in self._cc_mappings.mappings:
+            setter(
+                mapping.slot,
+                mapping.cc_number,
+                mapping.midi_channel,
+                mapping.target,
+                mapping.target_index,
+                mapping.active,
+            )
+
     def _engine(self) -> Any:
         try:
             return get_audio_engine().engine
         except Exception:
             return None
 
+    def _validate_pad_index(self, pad: int) -> None:
+        if pad < 0 or pad >= 16:
+            raise ValueError("pad must be between 0 and 15")
+
     def _sync_static_state_to_engine(self) -> None:
         self._sync_state_patch_to_engine({"volume": self._state.volume})
+        for pad, control in enumerate(self._state.pad_controls):
+            self.set_pad_control(pad, control.model_dump())
         for instrument, swing in enumerate(self._state.track_swing):
             self.set_track_swing(instrument, swing)
+        for pad, source in enumerate(self._state.pad_sound_sources):
+            self.set_pad_sound_source(pad, source)
+        for pad, params in enumerate(self._state.pad_synth_params):
+            self.set_pad_synth_params(pad, params.model_dump())
+        for pad, filter_config in enumerate(self._state.pad_filters):
+            self.set_pad_filter(pad, filter_config.model_dump())
+        for pad, cv_gate_config in enumerate(self._state.pad_cv_gate_configs):
+            self.set_pad_cv_gate_config(pad, cv_gate_config.model_dump())
+        for bus, mixer in enumerate(self._state.bus_mixers):
+            self.set_bus_mixer(bus, mixer.model_dump())
+        self.set_master_fx(self._state.master_fx.model_dump())
         self._refresh_metering_from_engine()
         self._refresh_position_from_engine()
 
@@ -839,6 +1436,26 @@ class DrumMachineService(Singleton):
             setter = getattr(engine, "set_drum_swing", None)
             if callable(setter):
                 setter(float(self._state.swing))
+
+        if "midi_output_enabled" in patch:
+            setter = getattr(engine, "set_drum_midi_output_enabled", None)
+            if callable(setter):
+                setter(bool(self._state.midi_output_enabled))
+
+        if "midi_clock_output_enabled" in patch:
+            setter = getattr(engine, "set_drum_midi_clock_output_enabled", None)
+            if callable(setter):
+                setter(bool(self._state.midi_clock_output_enabled))
+
+        if "midi_output_channel" in patch:
+            setter = getattr(engine, "set_drum_midi_output_channel", None)
+            if callable(setter):
+                setter(int(self._state.midi_output_channel))
+
+        if "program_change_enabled" in patch:
+            setter = getattr(engine, "set_drum_program_change_enabled", None)
+            if callable(setter):
+                setter(bool(self._state.program_change_enabled))
 
         if "is_playing" in patch:
             self._event_loop = self._safe_running_loop()
@@ -945,6 +1562,10 @@ class DrumMachineService(Singleton):
 
         pending_getter = getattr(engine, "get_drum_pending_pattern_switch", None)
         quantization_getter = getattr(engine, "get_drum_pattern_switch_quantization", None)
+        midi_output_getter = getattr(engine, "get_drum_midi_output_enabled", None)
+        midi_clock_getter = getattr(engine, "get_drum_midi_clock_output_enabled", None)
+        midi_channel_getter = getattr(engine, "get_drum_midi_output_channel", None)
+        program_change_getter = getattr(engine, "get_drum_program_change_enabled", None)
         patch: Dict[str, Any] = {}
 
         if callable(pending_getter):
@@ -958,6 +1579,39 @@ class DrumMachineService(Singleton):
                 patch["switch_quantization_beats"] = int(quantization_getter())
             except Exception:
                 pass
+
+        state_patch: Dict[str, Any] = {}
+        if callable(midi_output_getter):
+            try:
+                state_patch["midi_output_enabled"] = bool(midi_output_getter())
+            except Exception:
+                pass
+
+        if callable(midi_clock_getter):
+            try:
+                state_patch["midi_clock_output_enabled"] = bool(midi_clock_getter())
+            except Exception:
+                pass
+
+        if callable(midi_channel_getter):
+            try:
+                state_patch["midi_output_channel"] = int(midi_channel_getter())
+            except Exception:
+                pass
+
+        if callable(program_change_getter):
+            try:
+                state_patch["program_change_enabled"] = bool(program_change_getter())
+            except Exception:
+                pass
+
+        if state_patch:
+            self._state = DrumMachineStateModel.model_validate(
+                {
+                    **self._state.model_dump(),
+                    **state_patch,
+                }
+            )
 
         if patch:
             self.update_position(patch)
