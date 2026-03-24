@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-24 - Completed T391-P DrumsPage GUI expansion and Carbon review closure after T392
+Last updated: 2026-03-24 - Completed T391 Drum Machine Pro epic closure after T391-P
 
 ## Active Blockers Only
 
@@ -3170,7 +3170,7 @@ Last updated: 2026-03-20 17:01 - Codex
 ---
 
 ID: T391
-Status: [>] In Progress
+Status: [✓] Done
 Title: Drum Machine Pro — High-End Feature Expansion (Epic)
 Description:
 - Goal / acceptance criteria: Elevate the drum machine from a capable TR-style sample player to a high-end instrument matching or exceeding the feature sets of Elektron Digitakt, Roland TR-8S, and Arturia DrumBrute Impact across all 20 industry-standard categories. Every feature must be surfaced in the DrumsPage GUI via Carbon Design System components.
@@ -3179,6 +3179,13 @@ Description:
 - Estimated effort: Very High (4 phases, 16 subtasks)
 - Required outputs: C++ engine additions, Python bindings, services, REST endpoints, WebSocket events, DrumsPage UI panels, tests at all layers.
 Subtasks:
+- Completion notes:
+  - Completed the full Phase 1 through Phase 4 feature ladder across `T391-A` through `T391-P`, covering advanced sequencer logic, per-pad synthesis/filtering, multi-output routing, CV/Gate, sequencer MIDI output, assignable CC control, master effects, sample import/record/editing, and the final DrumsPage GUI integration.
+  - Native, backend, and frontend delivery is now represented in the completed subtask records with focused validation evidence at each layer, and the remaining drum-machine-specific blocker `T392` was also resolved before final epic closure.
+  - Final GUI closure in `T391-P` confirmed that the delivered feature set is surfaced in the Carbon-aligned drum workspace with progressive disclosure across transport, sequencer, pad editor, mixer, MIDI, and backing-track modes.
+  - Epic-level validation reference: the final closure path includes passing frontend gates `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/pages/DrumsPage.test.tsx src/app/hooks/useDrumMachine.test.tsx src/map2/drumMachineState.test.ts`, and `npm --prefix web run build`, plus the previously restored native `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` sign-off from `T392`.
+Assigned to: Codex
+Last updated: 2026-03-24 18:42 EDT - Codex
 
 #### Phase 1 — Advanced Sequencer (Features 2, 3, 4, 5, 6, 8, 20)
 
