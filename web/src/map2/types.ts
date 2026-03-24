@@ -1475,6 +1475,8 @@ export interface DrumPatternStep {
   accent: boolean;
   micro_timing?: number;
   probability?: number;
+  ratchet_count?: number;
+  ratchet_decay?: number;
   lock_pitch?: number | null;
   lock_filter_cutoff?: number | null;
   lock_decay?: number | null;

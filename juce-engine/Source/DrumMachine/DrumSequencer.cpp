@@ -57,6 +57,8 @@ bool DrumSequencer::setStep(
     bool accent,
     int8_t microTimingTicks,
     float probability,
+    uint8_t ratchetCount,
+    uint8_t ratchetDecay,
     std::optional<float> lockPitch,
     std::optional<float> lockFilterCutoff,
     std::optional<float> lockDecay,
@@ -73,6 +75,8 @@ bool DrumSequencer::setStep(
     step.accent = accent;
     step.microTimingTicks = static_cast<int8_t>(std::clamp<int>(microTimingTicks, -48, 48));
     step.probability = std::clamp(probability, 0.0f, 1.0f);
+    step.ratchetCount = static_cast<uint8_t>(std::clamp<int>(ratchetCount, 1, 8));
+    step.ratchetDecay = static_cast<uint8_t>(std::clamp<int>(ratchetDecay, 0, 100));
     step.lockPitch = lockPitch;
     step.lockFilterCutoff = lockFilterCutoff;
     step.lockDecay = lockDecay;
@@ -630,7 +634,24 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
         overrides.tuneSemitones = step.lockPitch;
         overrides.filterCutoffHz = step.lockFilterCutoff;
         overrides.decayMs = step.lockDecay;
-        drumMachine_->triggerNote(instrumentIndex, velocity, trackSampleOffset, overrides);
+        const int ratchetCount = std::max(1, static_cast<int>(step.ratchetCount));
+        const double ratchetIntervalSamples = straightStepSamples / static_cast<double>(ratchetCount);
+        const float ratchetDecay = std::clamp(static_cast<float>(step.ratchetDecay) / 100.0f, 0.0f, 1.0f);
+        for (int ratchetIndex = 0; ratchetIndex < ratchetCount; ++ratchetIndex) {
+            const float position = ratchetCount > 1
+                ? static_cast<float>(ratchetIndex) / static_cast<float>(ratchetCount - 1)
+                : 0.0f;
+            const float gain = 1.0f - (ratchetDecay * position);
+            const int ratchetVelocity = std::clamp(
+                static_cast<int>(std::lround(static_cast<float>(velocity) * gain)),
+                1,
+                127);
+            const int ratchetOffset = std::clamp(
+                trackSampleOffset + static_cast<int>(std::llround(ratchetIntervalSamples * static_cast<double>(ratchetIndex))),
+                0,
+                maxOffset);
+            drumMachine_->triggerNote(instrumentIndex, ratchetVelocity, ratchetOffset, overrides);
+        }
     }
 }
 

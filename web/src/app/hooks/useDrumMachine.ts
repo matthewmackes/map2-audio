@@ -246,6 +246,8 @@ export function useSetDrumStep() {
       accent?: boolean
       micro_timing?: number
       probability?: number
+      ratchet_count?: number
+      ratchet_decay?: number
       lock_pitch?: number | null
       lock_filter_cutoff?: number | null
       lock_decay?: number | null
@@ -261,6 +263,8 @@ export function useSetDrumStep() {
         {
           micro_timing: variables.micro_timing,
           probability: variables.probability,
+          ratchet_count: variables.ratchet_count,
+          ratchet_decay: variables.ratchet_decay,
           lock_pitch: variables.lock_pitch,
           lock_filter_cutoff: variables.lock_filter_cutoff,
           lock_decay: variables.lock_decay,

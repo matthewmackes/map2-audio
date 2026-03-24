@@ -650,6 +650,29 @@ describe('DrumsPage', () => {
     }))
   })
 
+  it('updates ratchet controls from the step editor', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('gridcell', { name: 'Kick step 2' }), { shiftKey: true })
+    fireEvent.click(screen.getByRole('button', { name: 'x4' }))
+    fireEvent.change(screen.getByLabelText('Step ratchet decay'), { target: { value: '25' } })
+
+    expect(mockSetStepMutate).toHaveBeenCalledWith(expect.objectContaining({
+      patternId: 7,
+      instrument: 0,
+      step: 1,
+      ratchet_count: 4,
+      velocity: 100,
+    }))
+    expect(mockSetStepMutate).toHaveBeenCalledWith(expect.objectContaining({
+      patternId: 7,
+      instrument: 0,
+      step: 1,
+      ratchet_decay: 25,
+      velocity: 100,
+    }))
+  })
+
   it('commits renamed instrument labels through the kit patch mutation', () => {
     renderPage()
 

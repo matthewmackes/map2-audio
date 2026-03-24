@@ -691,6 +691,8 @@ function buildPatternPayload(patternId: number, pattern: DrumPattern | undefined
           accent: Boolean(step?.accent),
           micro_timing: step?.micro_timing ?? 0,
           probability: step?.probability ?? 1,
+          ratchet_count: step?.ratchet_count ?? 1,
+          ratchet_decay: step?.ratchet_decay ?? 0,
           lock_pitch: step?.lock_pitch ?? null,
           lock_filter_cutoff: step?.lock_filter_cutoff ?? null,
           lock_decay: step?.lock_decay ?? null,
@@ -715,6 +717,8 @@ function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number,
     active: (step?.velocity ?? 0) > 0,
     micro_timing: step?.micro_timing ?? 0,
     probability: step?.probability ?? 1,
+    ratchet_count: step?.ratchet_count ?? 1,
+    ratchet_decay: step?.ratchet_decay ?? 0,
     lock_pitch: step?.lock_pitch ?? null,
     lock_filter_cutoff: step?.lock_filter_cutoff ?? null,
     lock_decay: step?.lock_decay ?? null,
@@ -744,6 +748,8 @@ function stepHasProbabilityOverride(step: ReturnType<typeof resolvedStep>) {
 
 function stepHasDetailEdits(step: ReturnType<typeof resolvedStep>) {
   return step.micro_timing !== 0 || stepHasProbabilityOverride(step) || stepHasLocks(step)
+    || (step.ratchet_count ?? 1) > 1
+    || (step.ratchet_decay ?? 0) > 0
 }
 
 function resolvedPadControl(
@@ -981,7 +987,7 @@ function advancedPanel(
   onUpdateStepLocks: (
     instrumentIndex: number,
     stepIndex: number,
-    locks: Partial<Pick<DrumPattern['steps'][number][number], 'micro_timing' | 'probability' | 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
+    locks: Partial<Pick<DrumPattern['steps'][number][number], 'micro_timing' | 'probability' | 'ratchet_count' | 'ratchet_decay' | 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
   ) => void,
   selectedPatternSlot: number,
   selectedPatternPage: number,
@@ -1252,6 +1258,7 @@ function advancedPanel(
                     const step = resolvedStep(pattern, instrumentIndex, stepIndex)
                     const hasLocks = stepHasLocks(step)
                     const hasProbabilityOverride = stepHasProbabilityOverride(step)
+                    const hasRatchet = (step.ratchet_count ?? 1) > 1
                     const isCurrent = stepIndex === currentStep
                     return (
                       <button
@@ -1326,9 +1333,27 @@ function advancedPanel(
                           transform: isCurrent ? 'translateY(-1px)' : 'none',
                           position: 'relative',
                         }}
-                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}${step.micro_timing ? ` • micro ${step.micro_timing > 0 ? '+' : ''}${step.micro_timing}` : ''}${hasProbabilityOverride ? ` • ${Math.round((step.probability ?? 1) * 100)}%` : ''}${effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1 ? ' • loop point' : ''}`}
+                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}${step.micro_timing ? ` • micro ${step.micro_timing > 0 ? '+' : ''}${step.micro_timing}` : ''}${hasProbabilityOverride ? ` • ${Math.round((step.probability ?? 1) * 100)}%` : ''}${hasRatchet ? ` • ratchet x${step.ratchet_count}` : ''}${effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1 ? ' • loop point' : ''}`}
                       >
                         {step.active ? (step.accent ? 'A' : step.velocity) : hasLocks ? '•' : ''}
+                        {step.active && hasRatchet ? (
+                          <span
+                            aria-hidden
+                            style={{
+                              position: 'absolute',
+                              right: 4,
+                              bottom: 4,
+                              padding: '1px 4px',
+                              borderRadius: 999,
+                              background: 'rgba(0, 0, 0, 0.45)',
+                              color: '#f4f4f4',
+                              fontSize: 10,
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            x{step.ratchet_count}
+                          </span>
+                        ) : null}
                         {step.active && hasProbabilityOverride ? (
                           <span
                             aria-hidden
@@ -1869,6 +1894,43 @@ function advancedPanel(
                     Reset Probability
                   </Button>
                 </label>
+                <div style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Ratchet</span>
+                  <div style={shellStyle.sliderValue}>
+                    <span>Repeats</span>
+                    <strong>x{selectedStepState?.ratchet_count ?? 1}</strong>
+                  </div>
+                  <div style={shellStyle.buttonRow}>
+                    {[1, 2, 3, 4, 6, 8].map((count) => (
+                      <Button
+                        key={`ratchet-${count}`}
+                        size="sm"
+                        kind={(selectedStepState?.ratchet_count ?? 1) === count ? 'primary' : 'secondary'}
+                        onClick={() => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                          ratchet_count: count,
+                        })}
+                      >
+                        x{count}
+                      </Button>
+                    ))}
+                  </div>
+                  <div style={shellStyle.sliderValue}>
+                    <span>Decay</span>
+                    <strong>{selectedStepState?.ratchet_decay ?? 0}%</strong>
+                  </div>
+                  <input
+                    aria-label="Step ratchet decay"
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={selectedStepState?.ratchet_decay ?? 0}
+                    onChange={(event) => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                      ratchet_decay: Number(event.currentTarget.value),
+                    })}
+                    style={shellStyle.compactRange}
+                  />
+                </div>
                 {[
                   { key: 'lock_pitch', label: 'Pitch', min: -24, max: 24, step: 1, value: selectedStepState?.lock_pitch ?? null },
                   { key: 'lock_filter_cutoff', label: 'Filter', min: 20, max: 20000, step: 10, value: selectedStepState?.lock_filter_cutoff ?? null },
@@ -2754,6 +2816,8 @@ export function DrumsPage() {
                 const nextLocks: {
                   micro_timing: number
                   probability: number
+                  ratchet_count: number
+                  ratchet_decay: number
                   lock_pitch: number | null
                   lock_filter_cutoff: number | null
                   lock_decay: number | null
@@ -2762,6 +2826,8 @@ export function DrumsPage() {
                 } = {
                   micro_timing: 'micro_timing' in locks ? (locks.micro_timing ?? 0) : existingStep.micro_timing,
                   probability: 'probability' in locks ? Math.max(0, Math.min(1, locks.probability ?? 1)) : existingStep.probability,
+                  ratchet_count: 'ratchet_count' in locks ? Math.max(1, Math.min(8, locks.ratchet_count ?? 1)) : existingStep.ratchet_count,
+                  ratchet_decay: 'ratchet_decay' in locks ? Math.max(0, Math.min(100, locks.ratchet_decay ?? 0)) : existingStep.ratchet_decay,
                   lock_pitch: 'lock_pitch' in locks ? (locks.lock_pitch ?? null) : existingStep.lock_pitch,
                   lock_filter_cutoff: 'lock_filter_cutoff' in locks ? (locks.lock_filter_cutoff ?? null) : existingStep.lock_filter_cutoff,
                   lock_decay: 'lock_decay' in locks ? (locks.lock_decay ?? null) : existingStep.lock_decay,

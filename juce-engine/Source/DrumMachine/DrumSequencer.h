@@ -23,6 +23,8 @@ public:
         bool accent = false;
         int8_t microTimingTicks = 0;
         float probability = 1.0f;
+        uint8_t ratchetCount = 1;
+        uint8_t ratchetDecay = 0;
         std::optional<float> lockPitch;
         std::optional<float> lockFilterCutoff;
         std::optional<float> lockDecay;
@@ -66,6 +68,8 @@ public:
         bool accent = false,
         int8_t microTimingTicks = 0,
         float probability = 1.0f,
+        uint8_t ratchetCount = 1,
+        uint8_t ratchetDecay = 0,
         std::optional<float> lockPitch = std::nullopt,
         std::optional<float> lockFilterCutoff = std::nullopt,
         std::optional<float> lockDecay = std::nullopt,

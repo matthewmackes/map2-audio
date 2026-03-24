@@ -220,6 +220,8 @@ class _FakeDrumService:
         accent=False,
         micro_timing=0,
         probability=1.0,
+        ratchet_count=1,
+        ratchet_decay=0,
         lock_pitch=None,
         lock_filter_cutoff=None,
         lock_decay=None,
@@ -232,6 +234,8 @@ class _FakeDrumService:
             "accent": accent,
             "micro_timing": micro_timing,
             "probability": probability,
+            "ratchet_count": ratchet_count,
+            "ratchet_decay": ratchet_decay,
             "lock_pitch": lock_pitch,
             "lock_filter_cutoff": lock_filter_cutoff,
             "lock_decay": lock_decay,
@@ -331,7 +335,7 @@ class _FakeDrumService:
             "length": 16,
             "track_lengths": [0] * 16,
             "steps": [
-                [{"velocity": 0, "accent": False, "micro_timing": 0, "probability": 1.0, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
+                [{"velocity": 0, "accent": False, "micro_timing": 0, "probability": 1.0, "ratchet_count": 1, "ratchet_decay": 0, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
                 for _ in range(16)
             ],
         }
@@ -766,6 +770,19 @@ def test_drum_pattern_step_route_accepts_probability(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["steps"][1][2]["probability"] == 0.35
+
+
+def test_drum_pattern_step_route_accepts_ratchet(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/pattern/9/step",
+        json={"instrument": 3, "step": 4, "velocity": 112, "accent": False, "ratchet_count": 4, "ratchet_decay": 25},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["steps"][3][4]["ratchet_count"] == 4
+    assert response.json()["steps"][3][4]["ratchet_decay"] == 25
 
 
 def test_drum_pattern_step_route_rejects_invalid_velocity(monkeypatch):

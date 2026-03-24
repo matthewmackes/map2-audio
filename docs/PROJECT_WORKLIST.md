@@ -3271,7 +3271,7 @@ Last updated: 2026-03-24 11:41 EDT - Codex
   - Validation passed with `pytest tests/test_drum_sequencer_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-E
-Status: [ ] Todo
+Status: [✓] Done
 Title: Ratchet / Sub-division — per-step rapid-fire hits (flams, rolls)
 Description:
 - Goal / acceptance criteria: Add a ratchet count (1–8, default 1) and velocity decay (0–100%) per step. When ratchet > 1, the step's time slot is subdivided into N evenly-spaced triggers with progressively decaying velocity. This enables flams (ratchet=2), rolls (ratchet=4–8), and grace notes.
@@ -3284,7 +3284,13 @@ Description:
 - Estimated effort: Medium
 - Required outputs: Ratchet scheduling logic, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 12:53 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/DrumMachine/DrumSequencer.h`, `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, and `juce-engine/Source/PythonBindings.cpp` with per-step ratchet count/decay storage, repeated in-step trigger scheduling, and updated binding payloads for ratchet fields.
+  - Updated `app/services/drum_sequencer_service.py` and `app/routes/drums.py` so ratchet settings persist through pattern saves, survive inactive-step detail edits, and are accepted by the step update REST contract.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, and `web/src/app/pages/DrumsPage.tsx` so the advanced step editor now exposes ratchet count/decay controls and active steps show ratchet badges directly on the grid.
+  - Validation passed with `pytest tests/test_drum_sequencer_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-F
 Status: [✓] Done

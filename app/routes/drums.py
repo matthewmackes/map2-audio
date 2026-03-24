@@ -65,6 +65,8 @@ class DrumPatternStepUpdateModel(BaseModel):
     accent: bool = False
     micro_timing: int = Field(0, ge=-48, le=48)
     probability: float = Field(1.0, ge=0.0, le=1.0)
+    ratchet_count: int = Field(1, ge=1, le=8)
+    ratchet_decay: int = Field(0, ge=0, le=100)
     lock_pitch: float | None = Field(default=None, ge=-24.0, le=24.0)
     lock_filter_cutoff: float | None = Field(default=None, ge=20.0, le=20000.0)
     lock_decay: float | None = Field(default=None, ge=1.0, le=5000.0)
@@ -229,6 +231,8 @@ def set_drum_pattern_step(pattern_id: int, update: DrumPatternStepUpdateModel) -
             update.accent,
             update.micro_timing,
             update.probability,
+            update.ratchet_count,
+            update.ratchet_decay,
             update.lock_pitch,
             update.lock_filter_cutoff,
             update.lock_decay,

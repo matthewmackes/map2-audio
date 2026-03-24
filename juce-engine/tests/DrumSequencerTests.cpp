@@ -248,6 +248,14 @@ TEST_CASE("DrumSequencer stores per-step probability", "[drums][sequencer]") {
     REQUIRE(sequencer.getStep(2, 1, 7).probability == Catch::Approx(0.35f));
 }
 
+TEST_CASE("DrumSequencer stores per-step ratchet settings", "[drums][sequencer]") {
+    DrumSequencer sequencer;
+
+    REQUIRE(sequencer.setStep(2, 1, 8, 100, false, 0, 1.0f, 4, 30));
+    REQUIRE(sequencer.getStep(2, 1, 8).ratchetCount == 4);
+    REQUIRE(sequencer.getStep(2, 1, 8).ratchetDecay == 30);
+}
+
 TEST_CASE("DrumSequencer uses fill variation on the last beat when a fill is triggered", "[drums][sequencer]") {
     DrumSequencer sequencer;
     sequencer.prepare(48000.0, 16384);
