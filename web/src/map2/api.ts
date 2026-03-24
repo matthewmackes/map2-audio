@@ -5792,11 +5792,11 @@ export const drumsApi = {
     step: number,
     velocity: number,
     accent = false,
-    locks?: Partial<Pick<import('./types').DrumPatternStep, 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
+    details?: Partial<Pick<import('./types').DrumPatternStep, 'micro_timing' | 'lock_pitch' | 'lock_filter_cutoff' | 'lock_decay' | 'lock_pan' | 'lock_volume'>>,
   ) =>
     fetchJson<import('./types').DrumPattern>(`${API_BASE}/engine/drums/pattern/${patternId}/step`, {
       method: 'POST',
-      body: JSON.stringify({ instrument, step, velocity, accent, ...(locks ?? {}) }),
+      body: JSON.stringify({ instrument, step, velocity, accent, ...(details ?? {}) }),
     }),
 
   /** Clear a pattern */

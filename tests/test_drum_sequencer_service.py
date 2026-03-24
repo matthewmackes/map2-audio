@@ -36,6 +36,7 @@ class _FakeSequencerEngine:
         step,
         velocity,
         accent=False,
+        micro_timing=0,
         lock_pitch=None,
         lock_filter_cutoff=None,
         lock_decay=None,
@@ -46,6 +47,7 @@ class _FakeSequencerEngine:
         pattern["steps"][instrument][step] = {
             "velocity": velocity,
             "accent": accent,
+            "micro_timing": micro_timing,
             "lock_pitch": lock_pitch,
             "lock_filter_cutoff": lock_filter_cutoff,
             "lock_decay": lock_decay,
@@ -96,7 +98,7 @@ class _FakeSequencerEngine:
             "length": 16,
             "track_lengths": [0] * 16,
             "steps": [
-                [{"velocity": 0, "accent": False, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
+                [{"velocity": 0, "accent": False, "micro_timing": 0, "lock_pitch": None, "lock_filter_cutoff": None, "lock_decay": None, "lock_pan": None, "lock_volume": None} for _ in range(64)]
                 for _ in range(16)
             ],
             "pattern_id": pattern_id,
@@ -191,6 +193,17 @@ def test_drum_sequencer_service_persists_step_parameter_locks(tmp_path, monkeypa
     persisted = json.loads((patterns_dir / "pattern-003.json").read_text())
     assert persisted["steps"][1][7]["lock_filter_cutoff"] == 4200.0
     assert fake_engine.get_drum_pattern_data(3)["steps"][1][7]["lock_volume"] == 0.72
+
+
+def test_drum_sequencer_service_persists_step_micro_timing(tmp_path, monkeypatch):
+    service, _, fake_engine, patterns_dir, _, _ = _build_service(tmp_path, monkeypatch)
+
+    updated = service.set_step(4, 0, 3, 100, False, micro_timing=-6)
+
+    assert updated["steps"][0][3]["micro_timing"] == -6
+    persisted = json.loads((patterns_dir / "pattern-004.json").read_text())
+    assert persisted["steps"][0][3]["micro_timing"] == -6
+    assert fake_engine.get_drum_pattern_data(4)["steps"][0][3]["micro_timing"] == -6
 
 
 def test_drum_sequencer_service_round_trips_bundle_and_song(tmp_path, monkeypatch):

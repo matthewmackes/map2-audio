@@ -28,6 +28,7 @@ _AUTOSAVE_PATH = Path(os.environ.get("MAP2_DRUMS_AUTOSAVE_PATH", _DEFAULT_DRUMS_
 class DrumSequencerStepModel(BaseModel):
     velocity: int = Field(0, ge=0, le=127)
     accent: bool = False
+    micro_timing: int = Field(0, ge=-48, le=48)
     lock_pitch: float | None = Field(default=None, ge=-24.0, le=24.0)
     lock_filter_cutoff: float | None = Field(default=None, ge=20.0, le=20000.0)
     lock_decay: float | None = Field(default=None, ge=1.0, le=5000.0)
@@ -134,6 +135,7 @@ class DrumSequencerService(Singleton):
                     {
                         "velocity": int(step.get("velocity", 0)),
                         "accent": bool(step.get("accent", False)),
+                        "micro_timing": int(step.get("micro_timing", 0)),
                         "lock_pitch": step.get("lock_pitch"),
                         "lock_filter_cutoff": step.get("lock_filter_cutoff"),
                         "lock_decay": step.get("lock_decay"),
@@ -192,6 +194,7 @@ class DrumSequencerService(Singleton):
                     step_index,
                     step.velocity,
                     step.accent,
+                    step.micro_timing,
                     step.lock_pitch,
                     step.lock_filter_cutoff,
                     step.lock_decay,
@@ -294,6 +297,7 @@ class DrumSequencerService(Singleton):
         step: int,
         velocity: int,
         accent: bool = False,
+        micro_timing: int = 0,
         lock_pitch: float | None = None,
         lock_filter_cutoff: float | None = None,
         lock_decay: float | None = None,
@@ -304,6 +308,7 @@ class DrumSequencerService(Singleton):
         pattern.steps[instrument][step] = DrumSequencerStepModel(
             velocity=velocity,
             accent=accent,
+            micro_timing=micro_timing,
             lock_pitch=lock_pitch,
             lock_filter_cutoff=lock_filter_cutoff,
             lock_decay=lock_decay,

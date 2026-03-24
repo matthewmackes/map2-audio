@@ -218,6 +218,7 @@ class _FakeDrumService:
         step,
         velocity,
         accent=False,
+        micro_timing=0,
         lock_pitch=None,
         lock_filter_cutoff=None,
         lock_decay=None,
@@ -228,6 +229,7 @@ class _FakeDrumService:
         pattern["steps"][instrument][step] = {
             "velocity": velocity,
             "accent": accent,
+            "micro_timing": micro_timing,
             "lock_pitch": lock_pitch,
             "lock_filter_cutoff": lock_filter_cutoff,
             "lock_decay": lock_decay,
@@ -738,6 +740,18 @@ def test_drum_pattern_step_route_accepts_parameter_locks(monkeypatch):
     assert payload["lock_decay"] == 250
     assert payload["lock_pan"] == -0.15
     assert payload["lock_volume"] == 0.68
+
+
+def test_drum_pattern_step_route_accepts_micro_timing(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/api/engine/drums/pattern/9/step",
+        json={"instrument": 1, "step": 2, "velocity": 96, "accent": False, "micro_timing": 6},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["steps"][1][2]["micro_timing"] == 6
 
 
 def test_drum_pattern_step_route_rejects_invalid_velocity(monkeypatch):

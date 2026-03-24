@@ -63,6 +63,7 @@ class DrumPatternStepUpdateModel(BaseModel):
     step: int = Field(..., ge=0, le=63)
     velocity: int = Field(..., ge=0, le=127)
     accent: bool = False
+    micro_timing: int = Field(0, ge=-48, le=48)
     lock_pitch: float | None = Field(default=None, ge=-24.0, le=24.0)
     lock_filter_cutoff: float | None = Field(default=None, ge=20.0, le=20000.0)
     lock_decay: float | None = Field(default=None, ge=1.0, le=5000.0)
@@ -225,6 +226,7 @@ def set_drum_pattern_step(pattern_id: int, update: DrumPatternStepUpdateModel) -
             update.step,
             update.velocity,
             update.accent,
+            update.micro_timing,
             update.lock_pitch,
             update.lock_filter_cutoff,
             update.lock_decay,

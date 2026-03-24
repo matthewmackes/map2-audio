@@ -621,6 +621,20 @@ describe('DrumsPage', () => {
     }))
   })
 
+  it('nudges micro timing from the step editor', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('gridcell', { name: 'Kick step 2' }), { shiftKey: true })
+    fireEvent.click(screen.getByRole('button', { name: '+6' }))
+
+    expect(mockSetStepMutate).toHaveBeenCalledWith(expect.objectContaining({
+      patternId: 7,
+      instrument: 0,
+      step: 1,
+      micro_timing: 6,
+    }))
+  })
+
   it('commits renamed instrument labels through the kit patch mutation', () => {
     renderPage()
 

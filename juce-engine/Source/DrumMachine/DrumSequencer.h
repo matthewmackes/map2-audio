@@ -21,6 +21,7 @@ public:
     struct Step {
         uint8_t velocity = 0;
         bool accent = false;
+        int8_t microTimingTicks = 0;
         std::optional<float> lockPitch;
         std::optional<float> lockFilterCutoff;
         std::optional<float> lockDecay;
@@ -62,6 +63,7 @@ public:
         int stepIndex,
         uint8_t velocity,
         bool accent = false,
+        int8_t microTimingTicks = 0,
         std::optional<float> lockPitch = std::nullopt,
         std::optional<float> lockFilterCutoff = std::nullopt,
         std::optional<float> lockDecay = std::nullopt,

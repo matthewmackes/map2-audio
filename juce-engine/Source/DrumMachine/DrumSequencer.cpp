@@ -55,6 +55,7 @@ bool DrumSequencer::setStep(
     int stepIndex,
     uint8_t velocity,
     bool accent,
+    int8_t microTimingTicks,
     std::optional<float> lockPitch,
     std::optional<float> lockFilterCutoff,
     std::optional<float> lockDecay,
@@ -69,6 +70,7 @@ bool DrumSequencer::setStep(
         [static_cast<size_t>(instrumentIndex)][static_cast<size_t>(stepIndex)];
     step.velocity = velocity;
     step.accent = accent;
+    step.microTimingTicks = static_cast<int8_t>(std::clamp<int>(microTimingTicks, -48, 48));
     step.lockPitch = lockPitch;
     step.lockFilterCutoff = lockFilterCutoff;
     step.lockDecay = lockDecay;
@@ -601,11 +603,18 @@ void DrumSequencer::triggerCurrentStep(int sampleOffset) {
         int trackSampleOffset = sampleOffset;
         const float trackSwing = getTrackSwing(instrumentIndex);
         const float effectiveSwing = trackSwing > 0.0f ? trackSwing : swingPercent_.load(std::memory_order_relaxed);
+        const double tickSamples = quarterNoteSamples() / 96.0;
+        const int microTimingOffset = std::clamp(
+            static_cast<int>(std::llround(tickSamples * static_cast<double>(step.microTimingTicks))),
+            -static_cast<int>(std::llround(straightStepSamples)),
+            static_cast<int>(std::llround(straightStepSamples)));
+        const int maxOffset = std::max(0, samplesPerBlock_.load(std::memory_order_relaxed) - 1);
         if (swungEighthOffbeat && effectiveSwing > 0.0f) {
             const double swingRatio = std::clamp(static_cast<double>(effectiveSwing) / 100.0, 0.0, 1.0) / 3.0;
             const int swingOffset = static_cast<int>(std::llround(straightStepSamples * swingRatio));
-            const int maxOffset = std::max(0, samplesPerBlock_.load(std::memory_order_relaxed) - 1);
-            trackSampleOffset = std::clamp(sampleOffset + swingOffset, 0, maxOffset);
+            trackSampleOffset = std::clamp(sampleOffset + swingOffset + microTimingOffset, 0, maxOffset);
+        } else {
+            trackSampleOffset = std::clamp(sampleOffset + microTimingOffset, 0, maxOffset);
         }
         DrumMachineProcessor::StepLockOverrides overrides;
         overrides.volume = step.lockVolume;

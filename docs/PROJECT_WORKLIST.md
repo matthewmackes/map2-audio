@@ -3205,7 +3205,7 @@ Last updated: 2026-03-24 11:16 EDT - Codex
   - Validation passed with `pytest tests/test_drum_sequencer_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-B
-Status: [ ] Todo
+Status: [✓] Done
 Title: Micro-Timing — per-step timing offset for humanized feel
 Description:
 - Goal / acceptance criteria: Add a signed timing offset field to each step (-48 to +48 ticks at 96ppqn resolution). Offsets shift the trigger point earlier or later relative to the quantized grid position. The UI must show a micro-timing slider or nudge control per step.
@@ -3218,7 +3218,13 @@ Description:
 - Estimated effort: Low
 - Required outputs: Extended step timing, bindings, service, routes, UI, tests.
 Subtasks: None
-Assigned to: Unassigned
+Assigned to: Codex
+Last updated: 2026-03-24 11:24 EDT - Codex
+- Completion notes:
+  - Extended `juce-engine/Source/DrumMachine/DrumSequencer.h`, `juce-engine/Source/DrumMachine/DrumSequencer.cpp`, and `juce-engine/Source/PythonBindings.cpp` with `microTimingTicks` on each step, native binding support, and sample-offset conversion at 96 PPQN with clamping inside the current step window.
+  - Updated `app/services/drum_sequencer_service.py` and `app/routes/drums.py` so `micro_timing` persists inside pattern payloads and round-trips through the existing step-update API.
+  - Updated `web/src/map2/types.ts`, `web/src/map2/api.ts`, `web/src/app/hooks/useDrumMachine.ts`, and `web/src/app/pages/DrumsPage.tsx` so the parameter-lock editor now includes `±1` / `±6` micro-timing nudge controls and the sequencer cell tooltip surfaces the current offset.
+  - Validation passed with `pytest tests/test_drum_sequencer_service.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand src/app/pages/DrumsPage.test.tsx`, and `cmake --build juce-engine/build -j4`.
 
 ID: T391-C
 Status: [✓] Done

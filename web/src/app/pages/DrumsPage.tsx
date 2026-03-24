@@ -689,6 +689,7 @@ function buildPatternPayload(patternId: number, pattern: DrumPattern | undefined
           active: (step?.velocity ?? 0) > 0,
           velocity: step?.velocity ?? 0,
           accent: Boolean(step?.accent),
+          micro_timing: step?.micro_timing ?? 0,
           lock_pitch: step?.lock_pitch ?? null,
           lock_filter_cutoff: step?.lock_filter_cutoff ?? null,
           lock_decay: step?.lock_decay ?? null,
@@ -711,6 +712,7 @@ function resolvedStep(pattern: DrumPattern | undefined, instrumentIndex: number,
     velocity: step?.velocity ?? 0,
     accent: Boolean(step?.accent),
     active: (step?.velocity ?? 0) > 0,
+    micro_timing: step?.micro_timing ?? 0,
     lock_pitch: step?.lock_pitch ?? null,
     lock_filter_cutoff: step?.lock_filter_cutoff ?? null,
     lock_decay: step?.lock_decay ?? null,
@@ -1312,7 +1314,7 @@ function advancedPanel(
                           transform: isCurrent ? 'translateY(-1px)' : 'none',
                           position: 'relative',
                         }}
-                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}${effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1 ? ' • loop point' : ''}`}
+                        title={`${instrument.name} step ${stepIndex + 1}: ${step.active ? `${step.velocity}${step.accent ? ' accent' : ''}` : 'off'}${step.micro_timing ? ` • micro ${step.micro_timing > 0 ? '+' : ''}${step.micro_timing}` : ''}${effectiveTrackLength <= visibleSteps && stepIndex === effectiveTrackLength - 1 ? ' • loop point' : ''}`}
                       >
                         {step.active ? (step.accent ? 'A' : step.velocity) : hasLocks ? '•' : ''}
                         {hasLocks ? (
@@ -1783,6 +1785,34 @@ function advancedPanel(
             </p>
             {selectedStep ? (
               <div style={shellStyle.fieldGrid}>
+                <div style={shellStyle.fieldStack}>
+                  <span style={shellStyle.clusterLabel}>Micro Timing</span>
+                  <div style={shellStyle.sliderValue}>
+                    <span>Offset</span>
+                    <strong>{selectedStepState?.micro_timing ?? 0} ticks</strong>
+                  </div>
+                  <div style={shellStyle.buttonRow}>
+                    {[-6, -1, 1, 6].map((delta) => (
+                      <Button
+                        key={`micro-${delta}`}
+                        size="sm"
+                        kind="secondary"
+                        onClick={() => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, {
+                          micro_timing: Math.max(-48, Math.min(48, (selectedStepState?.micro_timing ?? 0) + delta)),
+                        })}
+                      >
+                        {delta > 0 ? `+${delta}` : delta}
+                      </Button>
+                    ))}
+                    <Button
+                      size="sm"
+                      kind="ghost"
+                      onClick={() => onUpdateStepLocks(selectedStep.instrumentIndex, selectedStep.stepIndex, { micro_timing: 0 })}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                </div>
                 {[
                   { key: 'lock_pitch', label: 'Pitch', min: -24, max: 24, step: 1, value: selectedStepState?.lock_pitch ?? null },
                   { key: 'lock_filter_cutoff', label: 'Filter', min: 20, max: 20000, step: 10, value: selectedStepState?.lock_filter_cutoff ?? null },
@@ -2666,6 +2696,7 @@ export function DrumsPage() {
               (instrumentIndex, stepIndex, locks) => {
                 const existingStep = resolvedStep(pattern, instrumentIndex, stepIndex)
                 const nextLocks = {
+                  micro_timing: 'micro_timing' in locks ? (locks.micro_timing ?? 0) : existingStep.micro_timing,
                   lock_pitch: 'lock_pitch' in locks ? (locks.lock_pitch ?? null) : existingStep.lock_pitch,
                   lock_filter_cutoff: 'lock_filter_cutoff' in locks ? (locks.lock_filter_cutoff ?? null) : existingStep.lock_filter_cutoff,
                   lock_decay: 'lock_decay' in locks ? (locks.lock_decay ?? null) : existingStep.lock_decay,

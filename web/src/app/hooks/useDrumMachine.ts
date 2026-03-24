@@ -244,6 +244,7 @@ export function useSetDrumStep() {
       step: number
       velocity: number
       accent?: boolean
+      micro_timing?: number
       lock_pitch?: number | null
       lock_filter_cutoff?: number | null
       lock_decay?: number | null
@@ -257,6 +258,7 @@ export function useSetDrumStep() {
         variables.velocity,
         variables.accent ?? false,
         {
+          micro_timing: variables.micro_timing,
           lock_pitch: variables.lock_pitch,
           lock_filter_cutoff: variables.lock_filter_cutoff,
           lock_decay: variables.lock_decay,
