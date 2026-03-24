@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-24 - Completed T391 Drum Machine Pro epic closure after T391-P
+Last updated: 2026-03-24 - Started T393 platform version artifact stabilization after repeated rebuild/restart loops
 
 ## Active Blockers Only
 
@@ -3588,6 +3588,21 @@ Description:
   - Validation passed with `./juce-engine/build-synthforge-tests/synthforge_tests "DrumSequencer exposes 128 patterns with 16-step defaults" --reporter compact`, `./juce-engine/build-synthforge-tests/synthforge_tests "[drums][sequencer]"`, and `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure`.
   - Licensing review: touched native/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 Subtasks: None
+
+ID: T393
+Status: [>] In Progress
+Title: Stabilize platform version generation so clean rebuild/restart loops do not dirty tracked artifacts
+Description:
+- Goal / acceptance criteria: Make the required frontend rebuild/restart workflow safe to run repeatedly from a clean checkout without leaving `VERSION` and `version.json` dirty after every successful `npm --prefix web run build`. Runtime version payloads must still expose accurate live `commit`/`dirty` metadata for API/UI consumers, and existing build/version tests must remain green.
+- Why it matters: The user-requested commit/push/rebuild/restart loop currently re-dirties the repository immediately after deployment, which breaks clean handoff expectations and makes repeated release cycles noisy.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated version-generation/runtime helpers, regression tests for clean-rebuild reuse behavior and live runtime metadata, updated worklist/memory notes if needed, and a clean post-build git status from a clean repo.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 18:46 EDT - Codex
+- Progress notes:
+  - Scoped the root cause to `scripts/generate_platform_version.py` and `app/utils/platform_version.py`: the prebuild step always stamps a fresh wall-clock version and persists unstable `commit`/`dirty` metadata into tracked files, guaranteeing a dirty tree after any clean rebuild.
 Assigned to: Codex
 Last updated: 2026-03-24 18:27 EDT - Codex
 

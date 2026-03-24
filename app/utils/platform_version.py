@@ -7,7 +7,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -19,6 +19,7 @@ DEFAULT_VERSION = "0000000000000001"
 DEFAULT_CHANNEL_CODE = "01"
 DEFAULT_API_VERSION = "v1"
 DEFAULT_VERSION_SOURCE = "scripts/generate_platform_version.py"
+TRACKED_VERSION_ARTIFACTS = ("VERSION", "version.json")
 
 
 def digits_only(value: Any) -> str:
@@ -108,6 +109,50 @@ def detect_git_dirty(repo_root: Path = REPO_ROOT) -> bool:
     return bool(result.stdout.strip())
 
 
+def _normalize_ignored_repo_paths(ignore_paths: Iterable[str | Path]) -> set[str]:
+    normalized: set[str] = set()
+    for raw_path in ignore_paths:
+        path = Path(raw_path)
+        if path.is_absolute():
+            try:
+                path = path.relative_to(REPO_ROOT)
+            except ValueError:
+                continue
+        normalized.add(path.as_posix().lstrip("./"))
+    return normalized
+
+
+def detect_git_dirty_ignoring_paths(
+    repo_root: Path = REPO_ROOT,
+    *,
+    ignore_paths: Iterable[str | Path] = (),
+) -> bool:
+    """Best-effort detect whether the repository has meaningful local modifications."""
+
+    ignored = _normalize_ignored_repo_paths(ignore_paths)
+
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "status", "--porcelain"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        return False
+
+    for raw_line in result.stdout.splitlines():
+        line = raw_line.rstrip()
+        if not line:
+            continue
+        path_text = line[3:]
+        if " -> " in path_text:
+            path_text = path_text.split(" -> ", 1)[1]
+        if path_text.lstrip("./") not in ignored:
+            return True
+    return False
+
+
 @dataclass(frozen=True)
 class PlatformVersionInfo:
     product: str
@@ -169,7 +214,7 @@ class PlatformVersionInfo:
             dirty=dirty,
         )
 
-    def to_json(self) -> dict[str, Any]:
+    def to_json(self, *, include_runtime_state: bool = True) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "product": self.product,
             "version": self.version,
@@ -180,10 +225,11 @@ class PlatformVersionInfo:
             "fallback_version": self.fallback_version,
             "version_source": self.version_source,
             "api_version": self.api_version,
-            "dirty": self.dirty,
         }
-        if self.commit:
-            payload["commit"] = self.commit
+        if include_runtime_state:
+            payload["dirty"] = self.dirty
+            if self.commit:
+                payload["commit"] = self.commit
         return payload
 
     def to_public_payload(self) -> dict[str, Any]:
@@ -206,22 +252,47 @@ class PlatformVersionInfo:
 def load_platform_version(
     version_json_path: Path = VERSION_JSON_PATH,
     version_file_path: Path = VERSION_FILE_PATH,
+    *,
+    refresh_runtime_state: bool | None = None,
+    repo_root: Path = REPO_ROOT,
 ) -> PlatformVersionInfo:
     """Load the canonical platform version from repository artifacts."""
 
     data = _read_json(version_json_path)
     version_file_value = _read_version_file(version_file_path)
-    return PlatformVersionInfo.from_mapping(data, version_file_value=version_file_value)
+    info = PlatformVersionInfo.from_mapping(data, version_file_value=version_file_value)
+    if refresh_runtime_state is None:
+        refresh_runtime_state = (
+            version_json_path.resolve() == VERSION_JSON_PATH.resolve()
+            and version_file_path.resolve() == VERSION_FILE_PATH.resolve()
+        )
+    if not refresh_runtime_state:
+        return info
+    return PlatformVersionInfo(
+        product=info.product,
+        version=info.version,
+        build_date=info.build_date,
+        build_time=info.build_time,
+        build_channel=info.build_channel,
+        build_timestamp=info.build_timestamp,
+        fallback_version=info.fallback_version,
+        version_source=info.version_source,
+        api_version=info.api_version,
+        commit=detect_git_commit(repo_root),
+        dirty=detect_git_dirty_ignoring_paths(repo_root, ignore_paths=TRACKED_VERSION_ARTIFACTS),
+    )
 
 
 def write_platform_version(
     info: PlatformVersionInfo,
     version_json_path: Path = VERSION_JSON_PATH,
     version_file_path: Path = VERSION_FILE_PATH,
+    *,
+    include_runtime_state: bool = False,
 ) -> None:
     """Persist the canonical platform version to the tracked repo artifacts."""
 
-    version_json_path.write_text(json.dumps(info.to_json(), indent=2) + "\n")
+    version_json_path.write_text(json.dumps(info.to_json(include_runtime_state=include_runtime_state), indent=2) + "\n")
     version_file_path.write_text(f"{info.version}\n")
 
 

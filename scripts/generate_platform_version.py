@@ -17,6 +17,7 @@ from app.utils.platform_version import (  # noqa: E402
     DEFAULT_CHANNEL_CODE,
     DEFAULT_PRODUCT,
     DEFAULT_VERSION_SOURCE,
+    DEFAULT_VERSION,
     generate_platform_version,
     load_platform_version,
     write_platform_version,
@@ -55,13 +56,29 @@ def main() -> int:
     args = parser.parse_args()
 
     current = load_platform_version()
-    info = generate_platform_version(
-        product=args.product or current.product or DEFAULT_PRODUCT,
-        channel_code=args.channel_code or current.build_channel or DEFAULT_CHANNEL_CODE,
-        api_version=args.api_version or current.api_version or DEFAULT_API_VERSION,
-        version_source=args.version_source or DEFAULT_VERSION_SOURCE,
-    )
-    write_platform_version(info)
+    product = args.product or current.product or DEFAULT_PRODUCT
+    channel_code = args.channel_code or current.build_channel or DEFAULT_CHANNEL_CODE
+    api_version = args.api_version or current.api_version or DEFAULT_API_VERSION
+    version_source = args.version_source or DEFAULT_VERSION_SOURCE
+    normalized_channel_code = channel_code[-2:].zfill(2)
+
+    if (
+        current.version != DEFAULT_VERSION
+        and not current.dirty
+        and current.product == product
+        and current.build_channel == normalized_channel_code
+        and current.api_version == api_version
+        and current.version_source == version_source
+    ):
+        info = current
+    else:
+        info = generate_platform_version(
+            product=product,
+            channel_code=channel_code,
+            api_version=api_version,
+            version_source=version_source,
+        )
+    write_platform_version(info, include_runtime_state=False)
     print(info.version)
     return 0
 

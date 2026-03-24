@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 from app.utils.platform_version import (
+    TRACKED_VERSION_ARTIFACTS,
+    detect_git_dirty_ignoring_paths,
     generate_platform_version,
     load_platform_version,
     write_platform_version,
@@ -42,9 +45,13 @@ def test_write_and_load_platform_version_round_trip(tmp_path: Path) -> None:
 
     assert loaded.version == info.version
     assert loaded.build_channel == "07"
-    assert loaded.commit == "deadbeefcafe"
+    assert loaded.commit is None
+    assert loaded.dirty is False
     assert version_file_path.read_text().strip() == info.version
-    assert json.loads(version_json_path.read_text())["version"] == info.version
+    json_payload = json.loads(version_json_path.read_text())
+    assert json_payload["version"] == info.version
+    assert "commit" not in json_payload
+    assert "dirty" not in json_payload
 
 
 def test_load_platform_version_ignores_legacy_non_numeric_fallbacks(tmp_path: Path) -> None:
@@ -70,3 +77,44 @@ def test_load_platform_version_ignores_legacy_non_numeric_fallbacks(tmp_path: Pa
     assert loaded.build_date == "20260315"
     assert loaded.build_time == "085100"
     assert loaded.build_channel == "01"
+
+
+def test_load_platform_version_refreshes_runtime_git_state_and_ignores_tracked_artifacts(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.name", "Codex"], cwd=repo_root, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.email", "codex@example.com"], cwd=repo_root, check=True, capture_output=True, text=True)
+
+    version_json_path = repo_root / "version.json"
+    version_file_path = repo_root / "VERSION"
+    tracked_file = repo_root / "tracked.txt"
+    tracked_file.write_text("seed\n")
+    subprocess.run(["git", "add", "tracked.txt"], cwd=repo_root, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "commit", "-m", "seed"], cwd=repo_root, check=True, capture_output=True, text=True)
+
+    info = generate_platform_version(
+        now=datetime(2026, 3, 15, 8, 51, 7, tzinfo=timezone.utc),
+        channel_code="01",
+        commit="stalecommit12",
+        dirty=True,
+    )
+    write_platform_version(info, version_json_path, version_file_path, include_runtime_state=False)
+    subprocess.run(["git", "add", "VERSION", "version.json"], cwd=repo_root, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "commit", "-m", "add version artifacts"], cwd=repo_root, check=True, capture_output=True, text=True)
+
+    loaded = load_platform_version(
+        version_json_path,
+        version_file_path,
+        refresh_runtime_state=True,
+        repo_root=repo_root,
+    )
+
+    assert loaded.version == info.version
+    assert loaded.commit
+    assert loaded.commit != "stalecommit12"
+    assert loaded.dirty is False
+    assert detect_git_dirty_ignoring_paths(repo_root, ignore_paths=TRACKED_VERSION_ARTIFACTS) is False
+
+    tracked_file.write_text("changed\n")
+    assert detect_git_dirty_ignoring_paths(repo_root, ignore_paths=TRACKED_VERSION_ARTIFACTS) is True
