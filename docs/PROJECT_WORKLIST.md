@@ -6425,7 +6425,7 @@ Last updated: 2026-03-25 07:49 EDT - Codex
 ### Phase B: Fix Critical Route Prefix Collisions
 
 ID: T394
-Status: [ ] Todo
+Status: [✓] Done
 Title: Resolve NAM route prefix collision — both nam.py and nam_models.py use /api/nam
 Description:
 - Goal / acceptance criteria: Both `app/routes/nam.py:30` and `app/routes/nam_models.py:19` declare `APIRouter(prefix=”/api/nam”)` and both are registered in `main.py:594`. FastAPI registers in list order — overlapping endpoint paths in the second module are silently unreachable. Merge `nam_models.py` into `nam.py`, or change its prefix to `/api/nam/models`. Verify all /api/nam endpoints respond correctly.
@@ -6435,7 +6435,12 @@ Description:
 - Required outputs: No duplicate prefixes, all NAM endpoints verified.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 07:55 EDT - Codex
+- Completion notes:
+  - Resolved the `/api/nam` prefix collision by moving `app/routes/nam_models.py` behind `/api/nam/library`, leaving `app/routes/nam.py` as the sole owner of the frontend-facing `/api/nam` contract.
+  - Normalized the secondary library-maintenance endpoints so they now live at `/api/nam/library/verify` and `/api/nam/library/cleanup` instead of nesting a duplicate `/library` segment.
+  - Added `tests/test_nam_route_prefixes.py` to assert the primary NAM router and the library-management router expose disjoint path sets while preserving `/api/nam/upload` and `/api/nam/models` on the primary router.
+  - Validation passed with `pytest tests/test_nam_route_prefixes.py tests/test_nam_ir_instance_routes.py -q`.
 
 ID: T395
 Status: [ ] Todo

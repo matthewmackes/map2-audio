@@ -16,7 +16,7 @@ from datetime import datetime
 from app.services.nam_processor import get_nam_processor, NAMModel
 from app.services.nam_library import get_nam_library_service
 
-router = APIRouter(prefix="/api/nam", tags=["nam"])
+router = APIRouter(prefix="/api/nam/library", tags=["nam"])
 
 
 class NAMModelResponse(BaseModel):
@@ -311,7 +311,7 @@ async def get_nam_stats():
         raise HTTPException(500, f"Failed to get stats: {e}")
 
 
-@router.post("/library/verify")
+@router.post("/verify")
 async def verify_library():
     """
     Verify library integrity - check if all referenced files exist.
@@ -332,7 +332,7 @@ async def verify_library():
         raise HTTPException(500, f"Verification failed: {e}")
 
 
-@router.post("/library/cleanup")
+@router.post("/cleanup")
 async def cleanup_library():
     """
     Clean up orphaned database records for missing files.
