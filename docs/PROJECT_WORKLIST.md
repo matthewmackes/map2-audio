@@ -6332,7 +6332,7 @@ Full audit report: `.claude/plans/lively-toasting-music.md`
 ### Phase A: Safe Deletions
 
 ID: T388
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Delete PiPedal legacy directory (229 dead files, zero imports)
 Description:
 - Goal / acceptance criteria: Remove `web/src/pipedal/` entirely — 229 files with zero imports from `web/src/app/`. Verify `npm run build` succeeds afterward.
@@ -6342,7 +6342,10 @@ Description:
 - Required outputs: Directory deleted, build passes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:24 EDT - Codex
+- Blocked notes:
+  - The audit assumption is incorrect: `web/src/pipedal/` still has live imports from current code, including `web/src/shared/components/PluginChooser/*` importing `pipedal/Lv2Plugin`, and the directory is also still referenced by `web/CMakeLists.txt`.
+  - This item needs a decomposition/migration plan rather than direct deletion.
 
 ID: T389
 Status: [✓] Done
@@ -6377,7 +6380,7 @@ Last updated: 2026-03-25 07:49 EDT - Codex
   - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q`.
 
 ID: T391
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Delete 7 unregistered route files with no callers
 Description:
 - Goal / acceptance criteria: Delete these route files that are never registered in `app/main.py` and have no frontend callers: `app/routes/base.py`, `app/routes/connection_pool.py`, `app/routes/request_queue.py`, `app/routes/websocket_metrics.py`, `app/routes/prometheus_exporter.py`, `app/routes/prometheus_metrics.py`, `app/routes/chains_ab_mode.py`. Verify server starts without errors.
@@ -6387,7 +6390,10 @@ Description:
 - Required outputs: 7 files deleted, server starts cleanly.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:24 EDT - Codex
+- Blocked notes:
+  - The audit assumption is incorrect for at least part of the set: `app/routes/base.py` is imported by `app/routes/reverb.py`, and `app/routes/chains_ab_mode.py` is exercised by `tests/test_chains_ab_mode_identity.py`.
+  - This item needs per-file caller/ownership review before any deletions are attempted.
 
 ID: T392
 Status: [✓] Done
