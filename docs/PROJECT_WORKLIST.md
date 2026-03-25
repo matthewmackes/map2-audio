@@ -6527,7 +6527,7 @@ Assigned to: Codex
 Last updated: 2026-03-25 - Codex
 
 ID: T400
-Status: [ ] Todo
+Status: [✓] Done
 Title: Clarify preset/snapshot route naming confusion
 Description:
 - Goal / acceptance criteria: `app/routes/presets.py` serves snapshot data at `/api/snapshots` but is named “presets” — confusing when 4 other preset-related routes exist (`plugin_presets.py`, `preset_exchange.py`, `preset_migration.py`, `snapshots.py`). Rename `presets.py` to match its actual purpose or merge into `snapshots.py`.
@@ -6537,7 +6537,12 @@ Description:
 - Required outputs: Clear naming, no broken frontend calls.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:18 EDT - Codex
+- Completion notes:
+  - Renamed `app/routes/presets.py` to `app/routes/snapshot_library.py` so the module name matches its `/api/snapshots` purpose without changing the public endpoint.
+  - Updated `app/main.py` route registration from `presets` to `snapshot_library`.
+  - Added `tests/test_snapshot_library_route_registration.py` to lock the new module name and public route prefix.
+  - Validation passed with `pytest tests/test_snapshot_library_route_registration.py tests/test_phase5_smoke.py -q`.
 
 ### Phase D: Refactor Fragmented Subsystems
 

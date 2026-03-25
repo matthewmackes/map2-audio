@@ -1,5 +1,5 @@
 """
-Snapshot Browser Routes - Enhanced snapshot management
+Snapshot library routes.
 """
 
 import logging
