@@ -19,27 +19,15 @@ export function MidiHubLabPage() {
     >
       <section className="midi-hub-page-band midi-hub-lab-page">
         <div className="midi-hub-lab-page__grid">
-          <MidiHubPanelShell panelId="ai-learn">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>AI Learn Suggestions</h3>
-              <Tag type="warm-gray">Assistive</Tag>
-            </div>
+          <MidiHubPanelShell panelId="ai-learn" actionTag={<Tag type="warm-gray">Assistive</Tag>}>
             <AiLearnPanel />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="mesh">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>Mesh Networking</h3>
-              <Tag type="blue">Peer table</Tag>
-            </div>
+          <MidiHubPanelShell panelId="mesh" actionTag={<Tag type="blue">Peer table</Tag>}>
             <MeshNetworkPanel />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="device-shadow">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>Device Shadow State</h3>
-              <Tag type="cool-gray">Drift log</Tag>
-            </div>
+          <MidiHubPanelShell panelId="device-shadow" actionTag={<Tag type="cool-gray">Drift log</Tag>}>
             <DeviceShadowPanel />
           </MidiHubPanelShell>
         </div>

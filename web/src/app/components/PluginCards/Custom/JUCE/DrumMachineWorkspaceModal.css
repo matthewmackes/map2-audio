@@ -1,0 +1,473 @@
+.drum-machine-workspace-modal .cds--modal-container {
+  inline-size: min(96vw, 1680px);
+  block-size: min(94vh, 1040px);
+  max-block-size: min(94vh, 1040px);
+}
+
+.drum-machine-workspace-modal .cds--modal-content {
+  padding-inline: 0;
+  padding-block-end: 0;
+  overflow: hidden;
+}
+
+.drum-machine-workspace-modal__shell {
+  display: grid;
+  gap: 1rem;
+  block-size: 100%;
+  min-block-size: 0;
+  padding: 0 1rem 1rem;
+  background:
+    linear-gradient(180deg, rgba(22, 22, 22, 0.92), rgba(12, 12, 12, 0.98));
+}
+
+.drum-machine-workspace-modal__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+}
+
+.drum-machine-workspace-modal__hero-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.drum-machine-workspace-modal__hero-copy strong {
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.drum-machine-workspace-modal__hero-copy p {
+  margin: 0;
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.drum-machine-workspace-modal__hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.drum-machine-workspace-modal__workspace {
+  min-block-size: 0;
+  overflow: auto;
+  border-radius: 0.75rem;
+  position: relative;
+}
+
+.drum-machine-workspace-modal__workspace > * {
+  min-block-size: 100%;
+}
+
+.drum-machine-workspace-modal__layout {
+  display: grid;
+  grid-template-columns: minmax(13rem, 15rem) minmax(0, 1fr) minmax(17rem, 20rem);
+  gap: 1rem;
+  min-block-size: 0;
+  block-size: 100%;
+}
+
+.drum-machine-workspace-modal__rail {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  min-block-size: 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+}
+
+.drum-machine-workspace-modal__rail-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.drum-machine-workspace-modal__rail-copy span {
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drum-machine-workspace-modal__rail-copy strong {
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.drum-machine-workspace-modal__rail-links {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.drum-machine-workspace-modal__preset-group {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.drum-machine-workspace-modal__group-label {
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drum-machine-workspace-modal__rail-link {
+  display: block;
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.5rem;
+  color: var(--cds-link-primary, #78a9ff);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+}
+
+.drum-machine-workspace-modal__rail-link:hover,
+.drum-machine-workspace-modal__rail-link:focus-visible {
+  border-color: var(--cds-border-interactive, #0f62fe);
+  background: rgba(15, 98, 254, 0.12);
+  outline: none;
+}
+
+.drum-machine-workspace-modal__preset-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.drum-machine-workspace-modal__layout-save {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.drum-machine-workspace-modal__layout-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.drum-machine-workspace-modal__layout-field-label {
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.75rem;
+}
+
+.drum-machine-workspace-modal__layout-field input {
+  inline-size: 100%;
+  min-block-size: 2.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.drum-machine-workspace-modal__saved-layouts {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.drum-machine-workspace-modal__saved-layout {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.drum-machine-workspace-modal__saved-layout-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.drum-machine-workspace-modal__saved-layout-copy strong {
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: 0.9rem;
+}
+
+.drum-machine-workspace-modal__saved-layout-copy span {
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.8rem;
+}
+
+.drum-machine-workspace-modal__saved-layout-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.drum-machine-workspace-modal__preset-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.875rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: var(--cds-text-primary, #f4f4f4);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  inline-size: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.drum-machine-workspace-modal__preset-card strong {
+  font-size: 0.95rem;
+}
+
+.drum-machine-workspace-modal__preset-card span {
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.drum-machine-workspace-modal__preset-card:hover,
+.drum-machine-workspace-modal__preset-card:focus-visible {
+  border-color: var(--cds-border-interactive, #0f62fe);
+  background: rgba(15, 98, 254, 0.12);
+  outline: none;
+}
+
+.drum-machine-workspace-modal__preset-card[data-active='true'] {
+  border-color: var(--cds-border-interactive, #0f62fe);
+  background: rgba(15, 98, 254, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(120, 169, 255, 0.24);
+}
+
+.drum-machine-workspace-modal__shortcut-list {
+  margin: 0;
+  padding-inline-start: 1rem;
+  color: var(--cds-text-secondary, #c6c6c6);
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+}
+
+.drum-machine-workspace-modal__inspector {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  min-block-size: 0;
+}
+
+.drum-machine-workspace-modal__inspector-tile {
+  display: grid;
+  gap: 1rem;
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+}
+
+.drum-machine-workspace-modal__inspector-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.drum-machine-workspace-modal__inspector-stack {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.drum-machine-workspace-modal__inspector-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.drum-machine-workspace-modal__inspector-facts {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.drum-machine-workspace-modal__inspector-facts div {
+  display: grid;
+  gap: 0.25rem;
+  padding-block-end: 0.75rem;
+  border-block-end: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drum-machine-workspace-modal__inspector-facts div:last-child {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
+.drum-machine-workspace-modal__inspector-facts dt {
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drum-machine-workspace-modal__inspector-facts dd {
+  margin: 0;
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.drum-machine-workspace-modal__inspector-links {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.drum-machine-workspace-modal__inspector-links a {
+  color: var(--cds-link-primary, #78a9ff);
+  text-decoration: none;
+}
+
+.drum-machine-workspace-modal__inspector-links a:hover,
+.drum-machine-workspace-modal__inspector-links a:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+.drum-machine-workspace-modal__inspector-empty {
+  margin: 0;
+  color: var(--cds-text-secondary, #c6c6c6);
+  line-height: 1.5;
+}
+
+.drum-machine-workspace-modal__shortcut-overlay {
+  position: absolute;
+  inset: 1rem;
+  display: grid;
+  align-items: start;
+  padding: 1rem;
+  background: rgba(15, 15, 15, 0.72);
+  backdrop-filter: blur(6px);
+  z-index: 2;
+}
+
+.drum-machine-workspace-modal__shortcut-overlay-tile {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--cds-border-subtle, #393939);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.42);
+}
+
+.drum-machine-workspace-modal__shortcut-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.drum-machine-workspace-modal__shortcut-group {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.drum-machine-workspace-modal__shortcut-map {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.drum-machine-workspace-modal__shortcut-map div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.drum-machine-workspace-modal__shortcut-map dt {
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.drum-machine-workspace-modal__shortcut-map dd {
+  margin: 0;
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.drum-machine-workspace-modal__command-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.drum-machine-workspace-modal__command-button {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--cds-text-primary, #f4f4f4);
+  text-align: left;
+  cursor: pointer;
+}
+
+.drum-machine-workspace-modal__command-button span {
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.8rem;
+}
+
+.drum-machine-workspace-modal__command-button:hover,
+.drum-machine-workspace-modal__command-button:focus-visible {
+  border-color: var(--cds-border-interactive, #0f62fe);
+  background: rgba(15, 98, 254, 0.14);
+  outline: none;
+}
+
+.drum-machine-workspace-modal__command-button[data-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.drum-machine-workspace-modal__shell--preset-performance .drum-machine-workspace-modal__layout {
+  grid-template-columns: minmax(13rem, 15rem) minmax(0, 1fr) minmax(19rem, 22rem);
+}
+
+.drum-machine-workspace-modal__shell--preset-performance .drum-machine-workspace-modal__workspace #drum-advanced-patterns,
+.drum-machine-workspace-modal__shell--preset-performance .drum-machine-workspace-modal__workspace #drum-advanced-song,
+.drum-machine-workspace-modal__shell--preset-performance .drum-machine-workspace-modal__workspace #drum-advanced-kits,
+.drum-machine-workspace-modal__shell--preset-performance .drum-machine-workspace-modal__workspace #drum-advanced-mixer,
+.drum-machine-workspace-modal__shell--preset-performance .drum-machine-workspace-modal__workspace #drum-advanced-inspector,
+.drum-machine-workspace-modal__shell--preset-performance .drum-machine-workspace-modal__workspace #drum-advanced-step-locks,
+.drum-machine-workspace-modal__shell--preset-performance .drum-machine-workspace-modal__workspace #drum-advanced-midi {
+  display: none !important;
+}
+
+.drum-machine-workspace-modal__shell--preset-editing .drum-machine-workspace-modal__workspace #drum-advanced-kits,
+.drum-machine-workspace-modal__shell--preset-editing .drum-machine-workspace-modal__workspace #drum-advanced-mixer,
+.drum-machine-workspace-modal__shell--preset-editing .drum-machine-workspace-modal__workspace #drum-advanced-midi {
+  display: none !important;
+}
+
+.drum-machine-workspace-modal__shell--preset-sound-design .drum-machine-workspace-modal__layout {
+  grid-template-columns: minmax(12rem, 13rem) minmax(0, 1fr) minmax(19rem, 22rem);
+}
+
+.drum-machine-workspace-modal__shell--preset-sound-design .drum-machine-workspace-modal__workspace #drum-advanced-patterns,
+.drum-machine-workspace-modal__shell--preset-sound-design .drum-machine-workspace-modal__workspace #drum-advanced-song {
+  display: none !important;
+}
+
+@media (max-width: 1056px) {
+  .drum-machine-workspace-modal .cds--modal-container {
+    inline-size: min(100vw, 100vw);
+    block-size: min(100vh, 100vh);
+    max-block-size: min(100vh, 100vh);
+  }
+
+  .drum-machine-workspace-modal__hero {
+    flex-direction: column;
+  }
+
+  .drum-machine-workspace-modal__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .drum-machine-workspace-modal__rail {
+    grid-auto-flow: row;
+  }
+
+  .drum-machine-workspace-modal__shortcut-groups {
+    grid-template-columns: 1fr;
+  }
+}

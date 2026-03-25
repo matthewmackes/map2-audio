@@ -84,7 +84,24 @@ jest.mock('./MidiHubAreaLayout', () => ({
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
-  MidiHubPanelShell: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+  MidiHubPanelShell: ({
+    children,
+    title,
+  }: {
+    children: React.ReactNode
+    title?: React.ReactNode
+  }) => (
+    <section>
+      {title ? <h3>{title}</h3> : null}
+      {children}
+    </section>
+  ),
+  MidiHubEmptyState: ({ title, description }: { title: string; description: string }) => (
+    <div>
+      <h4>{title}</h4>
+      <p>{description}</p>
+    </div>
+  ),
 }))
 
 const { MidiHubEventsPage } =

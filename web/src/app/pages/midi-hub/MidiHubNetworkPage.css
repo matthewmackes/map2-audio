@@ -1,26 +1,26 @@
 .midi-hub-network-page {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--cds-spacing-06);
 }
 
 .midi-hub-network-page__grid {
   display: grid;
-  gap: 1.5rem;
+  gap: var(--cds-spacing-06);
   grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
 }
 
 .midi-hub-network-panel {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--cds-spacing-05);
 }
 
 .midi-hub-network-panel__section {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
-  padding: 1rem;
+  gap: var(--cds-spacing-04);
+  padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-01);
 }
@@ -28,13 +28,13 @@
 .midi-hub-network-panel__toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--cds-spacing-03);
   align-items: center;
 }
 
 .midi-hub-network-panel__toggles {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--cds-spacing-04);
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
 
@@ -49,20 +49,20 @@
 .midi-hub-network-namespace {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--cds-spacing-03);
 }
 
 .midi-hub-network-gpio-grid {
   display: grid;
-  gap: 0.875rem;
+  gap: var(--cds-spacing-04);
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
 }
 
 .midi-hub-network-gpio-tile {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: var(--cds-spacing-04);
+  padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-02);
 }
@@ -71,7 +71,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--cds-spacing-04);
 }
 
 .midi-hub-network-gpio-tile__title {
@@ -79,7 +79,7 @@
   font-weight: 600;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1056px) {
   .midi-hub-network-page__grid {
     grid-template-columns: 1fr;
   }

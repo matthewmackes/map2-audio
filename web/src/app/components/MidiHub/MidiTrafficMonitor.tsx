@@ -1,3 +1,4 @@
+import { ConnectionSignal } from '@carbon/icons-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -23,6 +24,7 @@ import {
 } from '@carbon/react'
 import { midiHubApi, type MidiHubTrafficRow } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
+import { MidiHubEmptyState } from './MidiHubHelpPrimitives'
 import { useToasts } from '../Toasts'
 
 type SortKey = 'timestamp' | 'type' | 'source' | 'destination' | 'node'
@@ -76,10 +78,8 @@ function formatTimestampNs(timestampNs: number): string {
 
 export function MidiTrafficMonitor({
   limit = 2000,
-  height = 420,
 }: {
   limit?: number
-  height?: number
 }) {
   const { pushToast } = useToasts()
   const { nodeId, scopeKey } = useMidiHubNodeScope()
@@ -147,8 +147,6 @@ export function MidiTrafficMonitor({
   const messageRate = Number((statsQuery.data as { messages_per_second?: number } | undefined)?.messages_per_second ?? 0)
   const capturedTotal = Number((trafficQuery.data as { captured_total?: number } | undefined)?.captured_total ?? 0)
   const visibleCount = Number((trafficQuery.data as { count?: number } | undefined)?.count ?? 0)
-  const tableScrollClass = height >= 440 ? 'midi-hub-connections-table-scroll--lg' : 'midi-hub-connections-table-scroll--md'
-
   return (
     <>
       <div className="midi-hub-connections-toolbar">
@@ -231,47 +229,55 @@ export function MidiTrafficMonitor({
                 </Button>
               </TableToolbarContent>
             </TableToolbar>
-            <div className={`midi-hub-connections-table-scroll ${tableScrollClass}`}>
-              <Table {...getTableProps()} aria-label="MIDI traffic monitor">
-                <TableHead>
-                  <TableRow>
-                    {headers.map((header) => {
-                      const { key: _key, ...headerProps } = getHeaderProps({ header })
+            <div className="midi-hub-connections-table-scroll midi-hub-traffic-monitor__table-scroll">
+              {rows.length === 0 ? (
+                <MidiHubEmptyState
+                  title="No traffic captured yet"
+                  description="Send MIDI through an active route, then search, pause, or export the live event stream from this workspace."
+                  icon={<ConnectionSignal size={20} />}
+                />
+              ) : (
+                <Table {...getTableProps()} aria-label="MIDI traffic monitor">
+                  <TableHead>
+                    <TableRow>
+                      {headers.map((header) => {
+                        const { key: _key, ...headerProps } = getHeaderProps({ header })
+                        return (
+                          <TableHeader key={header.key} {...headerProps}>
+                            {header.header}
+                          </TableHeader>
+                        )
+                      })}
+                      <TableHeader>Action</TableHeader>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {rows.map((row) => {
+                      const { key: _key, ...rowProps } = getRowProps({ row })
+                      const source = selectedById.get(row.id)
                       return (
-                        <TableHeader key={header.key} {...headerProps}>
-                          {header.header}
-                        </TableHeader>
+                        <TableRow key={row.id} {...rowProps}>
+                          {row.cells.map((cell) => {
+                            if (cell.info.header === 'type' && source) {
+                              return (
+                                <TableCell key={cell.id}>
+                                  <Tag type={tagTypeOf(source)}>{String(cell.value)}</Tag>
+                                </TableCell>
+                              )
+                            }
+                            return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                          })}
+                          <TableCell>
+                            <Button size="sm" kind="ghost" onClick={() => setSelected(source ?? null)} disabled={!source}>
+                              Inspect
+                            </Button>
+                          </TableCell>
+                        </TableRow>
                       )
                     })}
-                    <TableHeader>Action</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => {
-                    const { key: _key, ...rowProps } = getRowProps({ row })
-                    const source = selectedById.get(row.id)
-                    return (
-                      <TableRow key={row.id} {...rowProps}>
-                        {row.cells.map((cell) => {
-                          if (cell.info.header === 'type' && source) {
-                            return (
-                              <TableCell key={cell.id}>
-                                <Tag type={tagTypeOf(source)}>{String(cell.value)}</Tag>
-                              </TableCell>
-                            )
-                          }
-                          return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
-                        })}
-                        <TableCell>
-                          <Button size="sm" kind="ghost" onClick={() => setSelected(source ?? null)} disabled={!source}>
-                            Inspect
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+                  </TableBody>
+                </Table>
+              )}
             </div>
           </TableContainer>
         )}

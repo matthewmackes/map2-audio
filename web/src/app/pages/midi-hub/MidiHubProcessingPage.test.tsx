@@ -24,7 +24,18 @@ jest.mock('./MidiHubAreaLayout', () => ({
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
-  MidiHubPanelShell: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+  MidiHubPanelShell: ({
+    children,
+    title,
+  }: {
+    children: React.ReactNode
+    title?: React.ReactNode
+  }) => (
+    <section>
+      {title ? <h3>{title}</h3> : null}
+      {children}
+    </section>
+  ),
 }))
 
 jest.mock('../../components/MidiHub/MidiHubFilterPlanner', () => {
@@ -119,7 +130,7 @@ describe('MidiHubProcessingPage', () => {
     render(<MidiHubProcessingPage />)
 
     expect(screen.getByRole('heading', { name: 'Message Processing' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Filter Planner' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Save filter route' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Save filter route' }))
     await waitFor(() => expect(mockMidiHubApi.updateRoute).toHaveBeenCalled())

@@ -11,7 +11,18 @@ jest.mock('./MidiHubAreaLayout', () => ({
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
-  MidiHubPanelShell: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+  MidiHubPanelShell: ({
+    children,
+    title,
+  }: {
+    children: React.ReactNode
+    title?: React.ReactNode
+  }) => (
+    <section>
+      {title ? <h3>{title}</h3> : null}
+      {children}
+    </section>
+  ),
 }))
 
 jest.mock('../../components/MidiHub/MidiClockPanel', () => ({
@@ -29,8 +40,6 @@ describe('MidiHubTransportPage', () => {
     render(<MidiHubTransportPage />)
 
     expect(screen.getByRole('heading', { name: 'Transport' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Clock engine' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Recorder' })).toBeTruthy()
     expect(screen.getByText('Clock Panel Mock')).toBeTruthy()
     expect(screen.getByText('Recorder Panel Mock')).toBeTruthy()
   })

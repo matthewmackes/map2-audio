@@ -1,3 +1,4 @@
+import { Music } from '@carbon/icons-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import {
   Button,
@@ -26,6 +27,7 @@ import {
   TextInput,
 } from '@carbon/react'
 import type { MidiHubPresetSummary } from '../../../map2/api'
+import { MidiHubEmptyState } from './MidiHubHelpPrimitives'
 
 type PresetTableProps = {
   presets: MidiHubPresetSummary[]
@@ -143,56 +145,64 @@ export function PresetTable({
                 />
               </TableToolbarContent>
             </TableToolbar>
-            <Table {...getTableProps()} aria-label="MIDI Hub presets">
-              <TableHead>
-                <TableRow>
-                  {headers.map((header) => {
-                    const { key: _key, ...headerProps } = getHeaderProps({ header })
+            {rows.length === 0 ? (
+              <MidiHubEmptyState
+                title="No presets captured yet"
+                description="Save the current hub state to create a recall point, then compare, export, or assign defaults from this table."
+                icon={<Music size={20} />}
+              />
+            ) : (
+              <Table {...getTableProps()} aria-label="MIDI Hub presets">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _key, ...headerProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...headerProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => {
+                    const { key: _key, ...rowProps } = getRowProps({ row })
                     return (
-                      <TableHeader key={header.key} {...headerProps}>
-                        {header.header}
-                      </TableHeader>
+                      <TableRow key={row.id} {...rowProps}>
+                        {row.cells.map((cell) => {
+                          if (cell.info.header === 'defaultState') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type={cell.value === 'Default' ? 'blue' : 'cool-gray'}>{String(cell.value)}</Tag>
+                              </TableCell>
+                            )
+                          }
+                          return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                        })}
+                        <TableCell>
+                          <OverflowMenu
+                            ariaLabel={`Preset actions for ${row.id}`}
+                            flipped
+                            iconDescription={`Preset actions for ${row.id}`}
+                            size="sm"
+                          >
+                            <OverflowMenuItem itemText="Recall" onClick={() => void onRecall(row.id)} />
+                            <OverflowMenuItem itemText="Export" onClick={() => void onExport(row.id)} />
+                            <OverflowMenuItem
+                              itemText={defaultPresetId === row.id ? 'Unset default' : 'Make default'}
+                              onClick={() => void onToggleDefault(row.id)}
+                            />
+                            <OverflowMenuItem isDelete itemText="Delete" onClick={() => void onDelete(row.id)} />
+                          </OverflowMenu>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                  <TableHeader>Actions</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => {
-                  const { key: _key, ...rowProps } = getRowProps({ row })
-                  return (
-                    <TableRow key={row.id} {...rowProps}>
-                      {row.cells.map((cell) => {
-                        if (cell.info.header === 'defaultState') {
-                          return (
-                            <TableCell key={cell.id}>
-                              <Tag type={cell.value === 'Default' ? 'blue' : 'cool-gray'}>{String(cell.value)}</Tag>
-                            </TableCell>
-                          )
-                        }
-                        return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
-                      })}
-                      <TableCell>
-                        <OverflowMenu
-                          ariaLabel={`Preset actions for ${row.id}`}
-                          flipped
-                          iconDescription={`Preset actions for ${row.id}`}
-                          size="sm"
-                        >
-                          <OverflowMenuItem itemText="Recall" onClick={() => void onRecall(row.id)} />
-                          <OverflowMenuItem itemText="Export" onClick={() => void onExport(row.id)} />
-                          <OverflowMenuItem
-                            itemText={defaultPresetId === row.id ? 'Unset default' : 'Make default'}
-                            onClick={() => void onToggleDefault(row.id)}
-                          />
-                          <OverflowMenuItem isDelete itemText="Delete" onClick={() => void onDelete(row.id)} />
-                        </OverflowMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                </TableBody>
+              </Table>
+            )}
           </TableContainer>
         )}
       </DataTable>

@@ -193,3 +193,16 @@ def test_drum_sample_editor_edits_and_records_samples(tmp_path, monkeypatch):
     assert kit_service.get_active_kit()["kit_id"] == "factory_one_editable"
 
     assert imported["kit_id"] == "factory_one_editable"
+
+
+def test_drum_sample_editor_exports_current_pad_wav_bytes(tmp_path, monkeypatch):
+    kit_service, sample_editor, factory_dir, _user_dir, _fake_engine = _build_services(tmp_path, monkeypatch)
+    _write_kit(factory_dir, "factory_one")
+    kit_service.load_kit("factory_one")
+
+    filename, payload = sample_editor.export_sample(0)
+    audio, sample_rate = sf.read(io.BytesIO(payload), dtype="float32", always_2d=False)
+
+    assert filename.endswith(".wav")
+    assert sample_rate == 48000
+    assert int(audio.shape[0]) == 480

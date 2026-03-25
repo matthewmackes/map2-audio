@@ -354,6 +354,20 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   return sanitizeDisplayPayload(data) as T;
 }
 
+async function fetchBlob(url: string, options?: RequestInit): Promise<Blob> {
+  const response = await fetch(url, options)
+  if (!response.ok) {
+    let body: unknown
+    try {
+      body = await response.text()
+    } catch {
+      body = response.statusText
+    }
+    throw new ApiError(response.status, response.statusText, body)
+  }
+  return response.blob()
+}
+
 function appendNodeQuery(url: string, nodeId?: string | null): string {
   if (!nodeId || nodeId === 'all') return url
   const separator = url.includes('?') ? '&' : '?'
@@ -5823,6 +5837,10 @@ export const drumsApi = {
   /** Get waveform analysis for one pad sample */
   getPadSampleWaveform: (padId: number, points = 256) =>
     fetchJson<import('./types').DrumPadSampleWaveform>(`${API_BASE}/engine/drums/pad/${padId}/sample/waveform?points=${points}`),
+
+  /** Export the current WAV asset for one pad sample */
+  getPadSampleFile: (padId: number) =>
+    fetchBlob(`${API_BASE}/engine/drums/pad/${padId}/sample/file`),
 
   /** Upload a new sample into one pad */
   uploadPadSample: async (padId: number, file: File) => {

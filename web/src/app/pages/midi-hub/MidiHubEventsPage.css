@@ -1,12 +1,12 @@
 .midi-hub-events-band,
 .midi-hub-events-stack {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
 }
 
 .midi-hub-events-layout {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
   grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 0.85fr);
 }
 
@@ -56,7 +56,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 672px) {
   .midi-hub-events-form-grid {
     grid-template-columns: 1fr;
   }

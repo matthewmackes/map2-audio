@@ -6,9 +6,11 @@
 
 .midi-hub-shell__frame {
   display: grid;
-  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  grid-template-columns: 17rem minmax(0, 1fr);
+  column-gap: var(--cds-spacing-06);
   align-items: stretch;
   min-height: calc(100vh - 9rem);
+  padding: 0 var(--cds-spacing-06) var(--cds-spacing-07);
 }
 
 .midi-hub-shell__sidebar {
@@ -22,9 +24,9 @@
 .midi-hub-shell__sidenav {
   display: flex;
   flex-direction: column;
-  gap: var(--cds-spacing-03);
+  gap: var(--cds-spacing-04);
   height: 100%;
-  padding: var(--cds-spacing-05) 0 var(--cds-spacing-05);
+  padding: var(--cds-spacing-06) 0 var(--cds-spacing-06);
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-01);
 }
@@ -94,18 +96,18 @@
 
 .midi-hub-shell__sidebar-footer {
   display: grid;
-  gap: var(--cds-spacing-04);
+  gap: var(--cds-spacing-05);
   margin-top: auto;
-  padding: var(--cds-spacing-04) var(--cds-spacing-05) 0;
+  padding: var(--cds-spacing-05) var(--cds-spacing-05) 0;
 }
 
 .midi-hub-shell__status-cards {
   display: grid;
-  gap: var(--cds-spacing-03);
+  gap: var(--cds-spacing-04);
 }
 
 .midi-hub-shell__status-card {
-  padding: var(--cds-spacing-04);
+  padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-02);
 }
@@ -126,8 +128,8 @@
 .midi-hub-shell__warning {
   display: flex;
   align-items: flex-start;
-  gap: var(--cds-spacing-03);
-  padding: var(--cds-spacing-04);
+  gap: var(--cds-spacing-04);
+  padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-02);
 }
@@ -151,6 +153,7 @@
 @media (max-width: 1056px) {
   .midi-hub-shell__frame {
     grid-template-columns: 1fr;
+    row-gap: var(--cds-spacing-06);
     padding-top: var(--cds-spacing-04);
   }
 

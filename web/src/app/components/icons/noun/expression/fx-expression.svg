@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Base plate -->
+  <path d="M6 46l4 2h44l4-2v-4l-2-2H8l-2 2z" />
+  <!-- Rubber feet -->
+  <rect x="12" y="48" width="3" height="3" rx="0.5" fill="currentColor" stroke="none" />
+  <rect x="49" y="48" width="3" height="3" rx="0.5" fill="currentColor" stroke="none" />
+  <!-- Hinge pivot -->
+  <line x1="8" y1="40" x2="54" y2="40" />
+  <!-- Toe plate (angled up from hinge) -->
+  <path d="M8 40l8-22h36l4 6" />
+  <path d="M54 40l2-16" />
+  <!-- Top surface line -->
+  <path d="M18 20h30" />
+</svg>

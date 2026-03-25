@@ -2,12 +2,12 @@
 .midi-hub-presets-manager,
 .midi-hub-presets-section {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
 }
 
 .midi-hub-presets-layout {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
   grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
 }
 
@@ -45,7 +45,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 672px) {
   .midi-hub-presets-form-grid {
     grid-template-columns: 1fr;
   }

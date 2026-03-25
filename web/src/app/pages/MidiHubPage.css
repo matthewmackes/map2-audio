@@ -1,10 +1,10 @@
 .midi-hub-page {
   display: flex;
   flex-direction: column;
-  gap: var(--cds-spacing-08);
+  gap: var(--cds-spacing-09);
   max-width: 110rem;
   margin: 0 auto;
-  padding: var(--cds-spacing-06);
+  padding: var(--cds-spacing-07);
 }
 
 .midi-hub-header-surface,
@@ -14,6 +14,10 @@
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-01);
   animation: midi-hub-enter 220ms ease-out both;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .midi-hub-header-surface::before,
@@ -34,8 +38,8 @@
 .midi-hub-header-surface {
   display: flex;
   flex-direction: column;
-  gap: var(--cds-spacing-05);
-  padding: var(--cds-spacing-06);
+  gap: var(--cds-spacing-06);
+  padding: var(--cds-spacing-07);
 }
 
 .midi-hub-header {
@@ -66,7 +70,7 @@
 .midi-hub-header__copy {
   display: flex;
   flex-direction: column;
-  gap: var(--cds-spacing-03);
+  gap: var(--cds-spacing-04);
   min-width: 0;
 }
 
@@ -92,7 +96,8 @@
 .midi-hub-workbench-card p,
 .midi-hub-mini-surface p,
 .midi-hub-panel-note,
-.midi-hub-empty-state {
+.midi-hub-empty-state,
+.midi-hub-empty-state-card__copy p {
   margin: 0;
   color: var(--cds-text-secondary);
   font-size: var(--cds-body-01-font-size, 0.875rem);
@@ -137,13 +142,13 @@
 .midi-hub-workflow-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
 }
 
 .midi-hub-workflow-tile {
   display: flex;
   flex-direction: column;
-  gap: var(--cds-spacing-03);
+  gap: var(--cds-spacing-04);
   min-height: 11rem;
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-02);
@@ -151,8 +156,16 @@
 }
 
 .midi-hub-workflow-tile:hover,
-.midi-hub-workflow-tile:focus-visible {
+.midi-hub-workflow-tile:focus-visible,
+.midi-hub-panel-shell:hover,
+.midi-hub-panel-shell:focus-within,
+.midi-hub-workbench-card:hover,
+.midi-hub-workbench-card:focus-within,
+.midi-hub-mini-surface:hover,
+.midi-hub-mini-surface:focus-within {
   border-color: var(--cds-border-interactive);
+  box-shadow: 0 0 0 1px var(--cds-border-interactive);
+  transform: translateY(-1px);
 }
 
 .midi-hub-workflow-tile__eyebrow {
@@ -164,13 +177,13 @@
 .midi-hub-page-band {
   display: flex;
   flex-direction: column;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
 }
 
 .midi-hub-page-band__header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
   align-items: end;
 }
 
@@ -226,28 +239,71 @@
 .midi-hub-mini-surface {
   display: flex;
   flex-direction: column;
-  gap: var(--cds-spacing-05);
-  padding: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
+  padding: var(--cds-spacing-06);
 }
 
 .midi-hub-panel-shell__header,
 .midi-hub-workbench-card__header {
   display: flex;
   justify-content: space-between;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
   align-items: start;
 }
 
 .midi-hub-panel-shell__copy {
   display: flex;
   flex-direction: column;
-  gap: var(--cds-spacing-03);
+  gap: var(--cds-spacing-04);
 }
 
 .midi-hub-panel-shell__content {
   display: flex;
   flex-direction: column;
+  gap: var(--cds-spacing-06);
+}
+
+.midi-hub-panel-shell__action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.midi-hub-empty-state-card {
+  display: grid;
+  justify-items: start;
   gap: var(--cds-spacing-05);
+  padding: var(--cds-spacing-06);
+  border: 1px dashed var(--cds-border-subtle-01);
+  background: var(--cds-layer-02);
+}
+
+.midi-hub-empty-state-card__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: var(--cds-layer-03);
+  color: var(--cds-icon-primary);
+}
+
+.midi-hub-empty-state-card__copy {
+  display: grid;
+  gap: var(--cds-spacing-03);
+}
+
+.midi-hub-empty-state-card__copy h4 {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  line-height: var(--cds-heading-03-line-height, 1.4);
+}
+
+.midi-hub-empty-state-card__action {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
 }
 
 .midi-hub-stat-tile {
@@ -257,6 +313,27 @@
   padding: var(--cds-spacing-05);
   border: 1px solid var(--cds-border-subtle-01);
   background: var(--cds-layer-02);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .midi-hub-header-surface,
+  .midi-hub-panel-shell,
+  .midi-hub-workbench-card,
+  .midi-hub-mini-surface {
+    animation: none;
+    transition: none;
+  }
+
+  .midi-hub-workflow-tile:hover,
+  .midi-hub-workflow-tile:focus-visible,
+  .midi-hub-panel-shell:hover,
+  .midi-hub-panel-shell:focus-within,
+  .midi-hub-workbench-card:hover,
+  .midi-hub-workbench-card:focus-within,
+  .midi-hub-mini-surface:hover,
+  .midi-hub-mini-surface:focus-within {
+    transform: none;
+  }
 }
 
 .midi-hub-stat-tile--hero {

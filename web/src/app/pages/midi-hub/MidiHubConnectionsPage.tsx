@@ -40,16 +40,16 @@ export function MidiHubConnectionsPage() {
 
       <section className="midi-hub-connections-band">
         <div className="midi-hub-connections-page">
-          <MidiHubPanelShell panelId="routing">
+          <MidiHubPanelShell
+            panelId="routing"
+            actionTag={<Tag type="blue">{mode === 'matrix' ? 'Port matrix' : 'Patchbay graph'}</Tag>}
+          >
             <div className="midi-hub-connections-page__workspace-header">
-              <div className="midi-hub-connections-page__workspace-copy">
-                <h4>{mode === 'matrix' ? 'Port matrix' : 'Patchbay graph'}</h4>
-                <p>
-                  {mode === 'matrix'
-                    ? 'Use the matrix to create, enable, or inspect source-to-destination routes.'
-                    : 'Use the patchbay to inspect topology, fan-out, and route density at a glance.'}
-                </p>
-              </div>
+              <p className="midi-hub-connections-page__workspace-copy">
+                {mode === 'matrix'
+                  ? 'Use the matrix to create, enable, or inspect source-to-destination routes.'
+                  : 'Use the patchbay to inspect topology, fan-out, and route density at a glance.'}
+              </p>
               <Tabs
                 selectedIndex={mode === 'matrix' ? 0 : 1}
                 onChange={({ selectedIndex }) => setMode(selectedIndex === 1 ? 'patchbay' : 'matrix')}
@@ -65,12 +65,8 @@ export function MidiHubConnectionsPage() {
             <MidiHubQuickRouter />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="traffic">
-            <div className="midi-hub-connections-page__panel-heading">
-              <h3>Traffic monitor</h3>
-              <Tag type="cool-gray">Local only</Tag>
-            </div>
-            <MidiTrafficMonitor limit={500} height={440} />
+          <MidiHubPanelShell panelId="traffic" title="Traffic Monitor" actionTag={<Tag type="cool-gray">Local only</Tag>}>
+            <MidiTrafficMonitor limit={500} />
           </MidiHubPanelShell>
         </div>
       </section>

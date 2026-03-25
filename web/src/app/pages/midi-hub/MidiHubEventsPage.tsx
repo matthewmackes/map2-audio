@@ -24,30 +24,18 @@ export function MidiHubEventsPage() {
     >
       <section className="midi-hub-events-band">
         <div className="midi-hub-events-layout">
-          <MidiHubPanelShell panelId="event-lists">
-            <div className="midi-hub-events-heading">
-              <h3>Event List Manager</h3>
-              <Tag type="green">Live</Tag>
-            </div>
+          <MidiHubPanelShell panelId="event-lists" actionTag={<Tag type="green">Live</Tag>}>
             <EventListManager selectedEventListId={selectedEventListId} onSelectEventList={setSelectedEventListId} />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="event-status">
-            <div className="midi-hub-events-heading">
-              <h3>Event List Status</h3>
-              <Tag type="cool-gray">{selectedEventListId || 'No selection'}</Tag>
-            </div>
+          <MidiHubPanelShell panelId="event-status" actionTag={<Tag type="cool-gray">{selectedEventListId || 'No selection'}</Tag>}>
             <EventListStatus selectedEventListId={selectedEventListId} />
             <LearnModeControl selectedEventListId={selectedEventListId} />
             <MscCommandBuilder />
           </MidiHubPanelShell>
         </div>
 
-        <MidiHubPanelShell panelId="event-editor">
-          <div className="midi-hub-events-heading">
-            <h3>Event Editor</h3>
-            <Tag type="blue">MTC / RTC</Tag>
-          </div>
+        <MidiHubPanelShell panelId="event-editor" actionTag={<Tag type="blue">MTC / RTC</Tag>}>
           <EventEditor selectedEventListId={selectedEventListId} />
         </MidiHubPanelShell>
       </section>

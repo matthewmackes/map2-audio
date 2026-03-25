@@ -33,7 +33,18 @@ jest.mock('./MidiHubAreaLayout', () => ({
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
-  MidiHubPanelShell: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+  MidiHubPanelShell: ({
+    children,
+    title,
+  }: {
+    children: React.ReactNode
+    title?: React.ReactNode
+  }) => (
+    <section>
+      {title ? <h3>{title}</h3> : null}
+      {children}
+    </section>
+  ),
 }))
 
 jest.mock('../../components/MidiHub/AiLearnPanel', () => {
@@ -115,10 +126,6 @@ describe('MidiHubLabPage', () => {
     render(<MidiHubLabPage />)
 
     expect(screen.getByRole('heading', { name: 'Lab' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'AI Learn Suggestions' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Mesh Networking' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Device Shadow State' })).toBeTruthy()
-
     fireEvent.click(screen.getByRole('button', { name: 'Suggest mappings' }))
     await waitFor(() => expect(mockMidiHubApi.getLearnSuggestions).toHaveBeenCalled())
     expect(await screen.findByText('92% confidence')).toBeTruthy()

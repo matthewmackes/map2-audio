@@ -7,6 +7,7 @@
  */
 
 import { useCallback, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Button,
   Tag,
@@ -20,10 +21,15 @@ import {
   Save,
   FolderOpen,
 } from '@carbon/icons-react'
+import { FxExpression } from '../../icons/effectIcons'
 import type { Plugin } from '../../../../map2/types'
 import { getCategoryConfig } from '../types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
 import './carbonCardStyles.css'
+
+function ExpressionPedalIcon({ size = 16 }: { size?: number }) {
+  return <FxExpression width={size} height={size} />
+}
 
 const CARD_WIDTH_SCALE = 2
 const DEFAULT_CARD_WIDTH = 420
@@ -77,6 +83,7 @@ export function CarbonCardShell({
   className = '',
   cardWidth,
 }: CarbonCardShellProps) {
+  const navigate = useNavigate()
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
@@ -146,6 +153,18 @@ export function CarbonCardShell({
                 iconDescription="Save preset"
                 aria-label="Save preset"
                 onClick={onSavePreset}
+              />
+            )}
+
+            {onOpenMidiMappings && (
+              <Button
+                kind="ghost"
+                size="sm"
+                hasIconOnly
+                renderIcon={ExpressionPedalIcon}
+                iconDescription="Expression pedal"
+                aria-label="Expression pedal"
+                onClick={() => navigate('/expression')}
               />
             )}
 

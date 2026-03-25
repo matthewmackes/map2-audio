@@ -1,9 +1,13 @@
 import '@testing-library/jest-dom'
 import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
-import { DrumsPage } from './DrumsPage'
+import { DrumsPage, DrumsWorkspace } from './DrumsPage'
+
+jest.mock('react-router-dom', () => ({
+  useLocation: () => ({ search: '' }),
+}))
 
 const mockSetStepMutate = jest.fn()
 const mockSetPadControlMutate = jest.fn()
@@ -46,6 +50,10 @@ const mockTriggerFillMutate = jest.fn()
 const mockLoadMidiPresetMutate = jest.fn()
 const mockStopMidiLearnMutate = jest.fn()
 const mockStopSongTransportMutate = jest.fn()
+const mockDrumsApiTapTempo = jest.fn().mockResolvedValue(undefined)
+const mockDrumsApiSetPattern = jest.fn().mockResolvedValue(undefined)
+const mockDrumsApiGetPadSampleFile = jest.fn().mockResolvedValue(new Blob([new Uint8Array([82, 73, 70, 70])], { type: 'audio/wav' }))
+const mockDrumsApiUploadPadSample = jest.fn().mockResolvedValue(undefined)
 
 const mockUseDrumMachineState = jest.fn()
 const mockUseDrumTransport = jest.fn()
@@ -190,7 +198,10 @@ jest.mock('@carbon/react', () => {
 
 jest.mock('@/map2/api', () => ({
   drumsApi: {
-    tapTempo: jest.fn().mockResolvedValue(undefined),
+    tapTempo: (...args: unknown[]) => mockDrumsApiTapTempo(...args),
+    setPattern: (...args: unknown[]) => mockDrumsApiSetPattern(...args),
+    getPadSampleFile: (...args: unknown[]) => mockDrumsApiGetPadSampleFile(...args),
+    uploadPadSample: (...args: unknown[]) => mockDrumsApiUploadPadSample(...args),
   },
 }))
 
@@ -600,6 +611,23 @@ function renderPage() {
   )
 }
 
+function renderWorkspace(props: React.ComponentProps<typeof DrumsWorkspace> = {}) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: 0,
+      },
+    },
+  })
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <DrumsWorkspace {...props} />
+    </QueryClientProvider>,
+  )
+}
+
 describe('DrumsPage', () => {
   beforeEach(() => {
     const ResizeObserverMock = class ResizeObserver {
@@ -668,6 +696,14 @@ describe('DrumsPage', () => {
     mockTriggerFillMutate.mockReset()
     mockUpdateStateMutate.mockReset()
     mockUpdateTransportMutate.mockReset()
+    mockDrumsApiTapTempo.mockReset()
+    mockDrumsApiSetPattern.mockReset()
+    mockDrumsApiGetPadSampleFile.mockReset()
+    mockDrumsApiUploadPadSample.mockReset()
+    mockDrumsApiTapTempo.mockResolvedValue(undefined)
+    mockDrumsApiSetPattern.mockResolvedValue(undefined)
+    mockDrumsApiGetPadSampleFile.mockResolvedValue(new Blob([new Uint8Array([82, 73, 70, 70])], { type: 'audio/wav' }))
+    mockDrumsApiUploadPadSample.mockResolvedValue(undefined)
     mockUseDrumMachineState.mockReset()
     mockUseDrumTransport.mockReset()
     mockUseDrumPosition.mockReset()
@@ -784,6 +820,119 @@ describe('DrumsPage', () => {
       patternId: 7,
       instrument: 0,
       length: 9,
+    })
+  })
+
+  it('publishes selected pad and step context for embedded workspace inspectors', () => {
+    const onSelectionChange = jest.fn()
+
+    renderWorkspace({ embedded: true, onSelectionChange })
+
+    fireEvent.click(screen.getByRole('gridcell', { name: 'Kick step 2' }), { shiftKey: true })
+
+    const lastSelection = onSelectionChange.mock.calls.at(-1)?.[0]
+    expect(lastSelection).toMatchObject({
+      mode: 'advanced',
+      pad: {
+        index: 0,
+        name: 'Kick',
+        note: 36,
+        bus: 0,
+        soundSource: 'sample',
+        sampleLoaded: true,
+      },
+      step: {
+        instrumentIndex: 0,
+        stepIndex: 1,
+        active: false,
+        velocity: 0,
+        accent: false,
+        probability: 1,
+        microTiming: 0,
+        ratchetCount: 1,
+        ratchetDecay: 0,
+        hasLocks: false,
+      },
+    })
+  })
+
+  it('publishes command availability and restores pattern history on request', async () => {
+    const onCommandStateChange = jest.fn()
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          gcTime: 0,
+        },
+      },
+    })
+
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <DrumsWorkspace embedded onCommandStateChange={onCommandStateChange} />
+      </QueryClientProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('gridcell', { name: 'Kick step 1' }))
+
+    await waitFor(() => {
+      expect(onCommandStateChange.mock.calls.at(-1)?.[0]).toMatchObject({
+        canUndoPattern: true,
+        canRedoPattern: false,
+        canUndoSample: false,
+        canRedoSample: false,
+        selectedPad: 0,
+      })
+    })
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <DrumsWorkspace embedded onCommandStateChange={onCommandStateChange} commandRequest={{ id: 1, type: 'pattern-undo' }} />
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(mockDrumsApiSetPattern).toHaveBeenCalledWith(7, expect.objectContaining({
+        pattern_id: 7,
+        length: 16,
+      }))
+    })
+  })
+
+  it('restores sample history from an exported pad WAV on request', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          gcTime: 0,
+        },
+      },
+    })
+
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <DrumsWorkspace embedded />
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(mockDrumsApiGetPadSampleFile).toHaveBeenCalledWith(0)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Normalize' }))
+
+    await waitFor(() => {
+      expect(mockNormalizePadSampleMutate).toHaveBeenCalledWith({ padId: 0, targetPeak: 0.99 })
+    })
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <DrumsWorkspace embedded commandRequest={{ id: 2, type: 'sample-undo' }} />
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(mockDrumsApiUploadPadSample).toHaveBeenCalledWith(0, expect.any(File))
     })
   })
 
@@ -1169,7 +1318,7 @@ describe('DrumsPage', () => {
     )
   })
 
-  it('updates sample editor controls from the inspector', () => {
+  it('updates sample editor controls from the inspector', async () => {
     renderPage()
 
     const upload = screen.getByLabelText('Selected pad sample upload')
@@ -1184,11 +1333,13 @@ describe('DrumsPage', () => {
     fireEvent.change(screen.getByLabelText('Selected pad sample trim end'), { target: { value: '720' } })
     fireEvent.click(screen.getByRole('button', { name: 'Apply Trim' }))
 
-    expect(mockUploadPadSampleMutate).toHaveBeenCalledWith({ padId: 0, file })
-    expect(mockStartPadRecordingMutate).toHaveBeenCalledWith(0)
-    expect(mockNormalizePadSampleMutate).toHaveBeenCalledWith({ padId: 0, targetPeak: 0.99 })
-    expect(mockReversePadSampleMutate).toHaveBeenCalledWith(0)
-    expect(mockFadePadSampleMutate).toHaveBeenCalledWith({ padId: 0, fadeInMs: 5, fadeOutMs: 5 })
-    expect(mockTrimPadSampleMutate).toHaveBeenCalledWith({ padId: 0, startSample: 120, endSample: 720 })
+    await waitFor(() => {
+      expect(mockUploadPadSampleMutate).toHaveBeenCalledWith({ padId: 0, file })
+      expect(mockStartPadRecordingMutate).toHaveBeenCalledWith(0)
+      expect(mockNormalizePadSampleMutate).toHaveBeenCalledWith({ padId: 0, targetPeak: 0.99 })
+      expect(mockReversePadSampleMutate).toHaveBeenCalledWith(0)
+      expect(mockFadePadSampleMutate).toHaveBeenCalledWith({ padId: 0, fadeInMs: 5, fadeOutMs: 5 })
+      expect(mockTrimPadSampleMutate).toHaveBeenCalledWith({ padId: 0, startSample: 120, endSample: 720 })
+    })
   })
 })

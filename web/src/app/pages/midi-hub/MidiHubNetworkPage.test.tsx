@@ -3,7 +3,18 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
-  MidiHubPanelShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  MidiHubPanelShell: ({
+    children,
+    title,
+  }: {
+    children: React.ReactNode
+    title?: React.ReactNode
+  }) => (
+    <section>
+      {title ? <h3>{title}</h3> : null}
+      {children}
+    </section>
+  ),
 }))
 
 jest.mock('../../components/MidiHub/MidiHubNodeScope', () => ({
@@ -58,11 +69,6 @@ describe('MidiHubNetworkPage', () => {
     renderPage()
 
     expect(screen.getByRole('heading', { name: 'Network & Protocol' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'RTP-MIDI and OSC bridge' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'MIDI 2.0 and UMP' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Tesira TTP integration' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Virtual GPIO' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'String interface' })).toBeTruthy()
     expect(screen.getByText('Network Panel Mock')).toBeTruthy()
     expect(screen.getByText('MIDI 2 Panel Mock')).toBeTruthy()
     expect(screen.getByText('Tesira Panel Mock')).toBeTruthy()

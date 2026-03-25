@@ -27,6 +27,11 @@ jest.mock('../../withMidiDialog', () => ({
   withMidiDialog: (Component: React.ComponentType<any>) => Component,
 }))
 
+jest.mock('./DrumMachineWorkspaceModal', () => ({
+  DrumMachineWorkspaceModal: ({ open, mode }: { open: boolean; mode: string }) =>
+    open ? <div data-testid="drum-workspace-modal">{mode}</div> : null,
+}))
+
 jest.mock('@/map2/api', () => ({
   drumsApi: {
     getState: () => mockGetState(),
@@ -197,7 +202,7 @@ describe('DrumMachineCard', () => {
     expect(mockTapTempo).toHaveBeenCalled()
   })
 
-  it('routes mode buttons to the full drums page and updates the selected mode', async () => {
+  it('opens the full workspace modal for the selected mode and keeps the standalone page optional', async () => {
     renderCard()
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Open Practice mode' })).toBeInTheDocument())
@@ -205,7 +210,18 @@ describe('DrumMachineCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Practice mode' }))
 
     expect(mockUpdateState).toHaveBeenCalledWith({ ui_mode: 'practice' })
+    expect(screen.getByTestId('drum-workspace-modal')).toHaveTextContent('practice')
+    expect(window.location.pathname).toBe('/')
+  })
+
+  it('still offers a direct route to the standalone drums page', async () => {
+    renderCard()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Open full drums page' })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open full drums page' }))
+
     expect(window.location.pathname).toBe('/drums')
-    expect(window.location.search).toBe('?mode=practice')
+    expect(window.location.search).toBe('?mode=advanced')
   })
 })

@@ -1,11 +1,11 @@
 .midi-hub-connections-band {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
 }
 
 .midi-hub-connections-page {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
   grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 0.9fr);
 }
 
@@ -14,7 +14,6 @@
 }
 
 .midi-hub-connections-page__workspace-header,
-.midi-hub-connections-page__panel-heading,
 .midi-hub-connections-surface__header,
 .midi-hub-connections-toolbar,
 .midi-hub-connections-form-grid,
@@ -26,21 +25,13 @@
 }
 
 .midi-hub-connections-page__workspace-header,
-.midi-hub-connections-page__panel-heading,
 .midi-hub-connections-surface__header {
   align-items: start;
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.midi-hub-connections-page__workspace-copy h4,
-.midi-hub-connections-page__panel-heading h3,
-.midi-hub-connections-surface__header h4 {
-  margin: 0 0 var(--cds-spacing-03);
-}
-
 .midi-hub-connections-page__workspace-copy p,
-.midi-hub-connections-surface__header p,
-.midi-hub-connections-detail-card p {
+.midi-hub-connections-surface__header h4 {
   margin: 0;
   color: var(--cds-text-secondary);
 }
@@ -139,6 +130,10 @@
   max-height: 27.5rem;
 }
 
+.midi-hub-traffic-monitor__table-scroll {
+  max-height: clamp(20rem, 50vh, 40rem);
+}
+
 .midi-hub-connections-detail-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -171,9 +166,8 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 672px) {
   .midi-hub-connections-page__workspace-header,
-  .midi-hub-connections-page__panel-heading,
   .midi-hub-connections-surface__header,
   .midi-hub-connections-form-grid,
   .midi-hub-connections-detail-grid,

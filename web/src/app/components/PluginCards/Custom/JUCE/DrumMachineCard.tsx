@@ -7,11 +7,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Headphones, Music, PlayFilled, SettingsAdjust, StopFilled } from '@carbon/icons-react'
+import { Headphones, Launch, Music, PlayFilled, SettingsAdjust, StopFilled } from '@carbon/icons-react'
 
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { DrumMachineWorkspaceModal } from './DrumMachineWorkspaceModal'
 import { drumsApi } from '@/map2/api'
 import { normalizeDrumMachineState } from '@/map2/drumMachineState'
 import type {
@@ -262,6 +263,10 @@ const CARD_STYLES = {
     fontSize: 11,
     color: '#c6c6c6',
   },
+  workspaceActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
 } as const
 
 function clamp(value: number, min: number, max: number) {
@@ -356,6 +361,8 @@ function DrumMachineCardBase({
 
   const [beatPhase, setBeatPhase] = useState(0)
   const [tapTimes, setTapTimes] = useState<number[]>([])
+  const [workspaceModalMode, setWorkspaceModalMode] = useState<DrumMode>(currentMode)
+  const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false)
   const beatInterval = useRef<number | null>(null)
 
   useEffect(() => {
@@ -391,7 +398,8 @@ function DrumMachineCardBase({
 
   const handleModeNavigate = useCallback((mode: DrumMode) => {
     void drumsApi.updateState({ ui_mode: mode })
-    navigateToDrums(mode)
+    setWorkspaceModalMode(mode)
+    setWorkspaceModalOpen(true)
   }, [])
 
   const activeInstrumentIndex = useMemo(
@@ -545,7 +553,7 @@ function DrumMachineCardBase({
         <section style={CARD_STYLES.section} aria-label="Mode routing">
           <div style={CARD_STYLES.sectionHeader}>
             <h4 style={CARD_STYLES.sectionTitle}>Open Full Workspace</h4>
-            <span style={CARD_STYLES.sectionMeta}>Jump to /drums</span>
+            <span style={CARD_STYLES.sectionMeta}>Modal first, page optional</span>
           </div>
           <div style={CARD_STYLES.modeGrid}>
             {(Object.entries(MODE_META) as [DrumMode, (typeof MODE_META)[DrumMode]][]).map(([mode, meta]) => {
@@ -571,8 +579,24 @@ function DrumMachineCardBase({
               )
             })}
           </div>
+          <div style={CARD_STYLES.workspaceActions}>
+            <button
+              type="button"
+              aria-label="Open full drums page"
+              onClick={() => navigateToDrums(currentMode)}
+              style={CARD_STYLES.secondaryButton}
+            >
+              <Launch size={14} />
+              Open /drums
+            </button>
+          </div>
         </section>
       </div>
+      <DrumMachineWorkspaceModal
+        open={workspaceModalOpen}
+        mode={workspaceModalMode}
+        onClose={() => setWorkspaceModalOpen(false)}
+      />
     </PluginCardShell>
   )
 }

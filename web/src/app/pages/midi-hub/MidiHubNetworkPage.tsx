@@ -22,43 +22,23 @@ export function MidiHubNetworkPage() {
     >
       <section className="midi-hub-page-band midi-hub-network-page">
         <div className="midi-hub-network-page__grid">
-          <MidiHubPanelShell panelId="network">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>RTP-MIDI and OSC bridge</h3>
-              <Tag type="blue">Stage links</Tag>
-            </div>
+          <MidiHubPanelShell panelId="network" actionTag={<Tag type="blue">Stage links</Tag>}>
             <MidiNetworkPanel />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="midi2">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>MIDI 2.0 and UMP</h3>
-              <Tag type="green">Translation</Tag>
-            </div>
+          <MidiHubPanelShell panelId="midi2" title="MIDI 2.0 and UMP" actionTag={<Tag type="green">Translation</Tag>}>
             <Midi2Panel />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="tesira">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>Tesira TTP integration</h3>
-              <Tag type="cool-gray">Bidirectional</Tag>
-            </div>
+          <MidiHubPanelShell panelId="tesira" title="Tesira TTP Integration" actionTag={<Tag type="cool-gray">Bidirectional</Tag>}>
             <TesiraPanel />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="gpio">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>Virtual GPIO</h3>
-              <Tag type="blue">12 in / 12 out</Tag>
-            </div>
+          <MidiHubPanelShell panelId="gpio" actionTag={<Tag type="blue">12 in / 12 out</Tag>}>
             <VirtualGpioPanel />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="string-interface">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>String interface</h3>
-              <Tag type="cool-gray">UDP text</Tag>
-            </div>
+          <MidiHubPanelShell panelId="string-interface" title="String Interface" actionTag={<Tag type="cool-gray">UDP text</Tag>}>
             <StringInterfacePanel />
           </MidiHubPanelShell>
         </div>

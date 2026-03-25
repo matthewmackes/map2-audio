@@ -21,46 +21,26 @@ export function MidiHubProcessingPage() {
     >
       <section className="midi-hub-processing-band">
         <div className="midi-hub-processing-layout">
-          <MidiHubPanelShell panelId="filters">
-            <div className="midi-hub-processing-heading">
-              <h3>Filter Planner</h3>
-              <Tag type="blue">Live preview</Tag>
-            </div>
+          <MidiHubPanelShell panelId="filters" actionTag={<Tag type="blue">Live preview</Tag>}>
             <MidiHubFilterPlanner />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="mapper">
-            <div className="midi-hub-processing-heading">
-              <h3>Message Mapper</h3>
-              <Tag type="cool-gray">Node-backed</Tag>
-            </div>
+          <MidiHubPanelShell panelId="mapper" actionTag={<Tag type="cool-gray">Node-backed</Tag>}>
             <MidiHubMessageMapper />
           </MidiHubPanelShell>
         </div>
 
         <div className="midi-hub-processing-layout">
-          <MidiHubPanelShell panelId="scripts">
-            <div className="midi-hub-processing-heading">
-              <h3>Script Editor</h3>
-              <Tag type="green">Toolbar</Tag>
-            </div>
+          <MidiHubPanelShell panelId="scripts" actionTag={<Tag type="green">Toolbar</Tag>}>
             <MidiScriptEditor />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="macros">
-            <div className="midi-hub-processing-heading">
-              <h3>Macros</h3>
-              <Tag type="blue">Inline trigger</Tag>
-            </div>
+          <MidiHubPanelShell panelId="macros" actionTag={<Tag type="blue">Inline trigger</Tag>}>
             <MidiMacroPanel />
           </MidiHubPanelShell>
         </div>
 
-        <MidiHubPanelShell panelId="scheduler">
-          <div className="midi-hub-processing-heading">
-            <h3>Scheduler</h3>
-            <Tag type="cool-gray">Queue status</Tag>
-          </div>
+        <MidiHubPanelShell panelId="scheduler" actionTag={<Tag type="cool-gray">Queue status</Tag>}>
           <MidiSchedulerPanel />
         </MidiHubPanelShell>
       </section>

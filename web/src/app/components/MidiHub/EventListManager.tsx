@@ -1,3 +1,4 @@
+import { Bullhorn } from '@carbon/icons-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -23,6 +24,7 @@ import {
 } from '@carbon/react'
 import { midiHubApi, type MidiHubEventList } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
+import { MidiHubEmptyState } from './MidiHubHelpPrimitives'
 import { useToasts } from '../Toasts'
 
 type EventListManagerProps = {
@@ -171,62 +173,70 @@ export function EventListManager({ selectedEventListId, onSelectEventList }: Eve
                 <TableToolbarSearch persistent value={searchValue} onChange={(_event, value) => setSearchValue(value ?? '')} />
               </TableToolbarContent>
             </TableToolbar>
-            <Table {...getTableProps()} aria-label="Event lists">
-              <TableHead>
-                <TableRow>
-                  {headers.map((header) => {
-                    const { key: _key, ...headerProps } = getHeaderProps({ header })
+            {rows.length === 0 ? (
+              <MidiHubEmptyState
+                title="No event lists saved"
+                description="Create the first MTC or RTC list above, then open it here to edit cues, learn mode, and MSC actions."
+                icon={<Bullhorn size={20} />}
+              />
+            ) : (
+              <Table {...getTableProps()} aria-label="Event lists">
+                <TableHead>
+                  <TableRow>
+                    {headers.map((header) => {
+                      const { key: _key, ...headerProps } = getHeaderProps({ header })
+                      return (
+                        <TableHeader key={header.key} {...headerProps}>
+                          {header.header}
+                        </TableHeader>
+                      )
+                    })}
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => {
+                    const { key: _key, ...rowProps } = getRowProps({ row })
+                    const source = (eventListsQuery.data?.event_lists ?? []).find((item) => item.event_list_id === row.id)
                     return (
-                      <TableHeader key={header.key} {...headerProps}>
-                        {header.header}
-                      </TableHeader>
+                      <TableRow key={row.id} {...rowProps} aria-selected={selectedEventListId === row.id}>
+                        {row.cells.map((cell) => {
+                          if (cell.info.header === 'status') {
+                            return (
+                              <TableCell key={cell.id}>
+                                <Tag type={String(cell.value) === 'Running' ? 'green' : 'warm-gray'}>{String(cell.value)}</Tag>
+                              </TableCell>
+                            )
+                          }
+                          return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
+                        })}
+                        <TableCell>
+                          <OverflowMenu
+                            ariaLabel={`Event list actions for ${row.id}`}
+                            flipped
+                            iconDescription={`Event list actions for ${row.id}`}
+                            size="sm"
+                          >
+                            <OverflowMenuItem itemText="Open" onClick={() => onSelectEventList(row.id)} />
+                            <OverflowMenuItem itemText="Start" onClick={() => void startMutation.mutate(row.id)} />
+                            <OverflowMenuItem itemText="Stop" onClick={() => void stopMutation.mutate(row.id)} />
+                            <OverflowMenuItem
+                              isDelete
+                              itemText="Delete"
+                              onClick={() => {
+                                if (selectedEventListId === row.id) onSelectEventList('')
+                                void deleteMutation.mutate(row.id)
+                              }}
+                            />
+                          </OverflowMenu>
+                          {source && selectedEventListId === row.id ? <div className="midi-hub-events-selection">Selected source: {source.source_id}</div> : null}
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                  <TableHeader>Actions</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => {
-                  const { key: _key, ...rowProps } = getRowProps({ row })
-                  const source = (eventListsQuery.data?.event_lists ?? []).find((item) => item.event_list_id === row.id)
-                  return (
-                    <TableRow key={row.id} {...rowProps} aria-selected={selectedEventListId === row.id}>
-                      {row.cells.map((cell) => {
-                        if (cell.info.header === 'status') {
-                          return (
-                            <TableCell key={cell.id}>
-                              <Tag type={String(cell.value) === 'Running' ? 'green' : 'warm-gray'}>{String(cell.value)}</Tag>
-                            </TableCell>
-                          )
-                        }
-                        return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
-                      })}
-                      <TableCell>
-                        <OverflowMenu
-                          ariaLabel={`Event list actions for ${row.id}`}
-                          flipped
-                          iconDescription={`Event list actions for ${row.id}`}
-                          size="sm"
-                        >
-                          <OverflowMenuItem itemText="Open" onClick={() => onSelectEventList(row.id)} />
-                          <OverflowMenuItem itemText="Start" onClick={() => void startMutation.mutate(row.id)} />
-                          <OverflowMenuItem itemText="Stop" onClick={() => void stopMutation.mutate(row.id)} />
-                          <OverflowMenuItem
-                            isDelete
-                            itemText="Delete"
-                            onClick={() => {
-                              if (selectedEventListId === row.id) onSelectEventList('')
-                              void deleteMutation.mutate(row.id)
-                            }}
-                          />
-                        </OverflowMenu>
-                        {source && selectedEventListId === row.id ? <div className="midi-hub-events-selection">Selected source: {source.source_id}</div> : null}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                </TableBody>
+              </Table>
+            )}
           </TableContainer>
         )}
       </DataTable>

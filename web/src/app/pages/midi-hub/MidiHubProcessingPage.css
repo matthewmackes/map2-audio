@@ -1,12 +1,12 @@
 .midi-hub-processing-band,
 .midi-hub-processing-stack {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
 }
 
 .midi-hub-processing-layout {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -29,7 +29,7 @@
 
 .midi-hub-processing-choice-section {
   display: grid;
-  gap: var(--cds-spacing-05);
+  gap: var(--cds-spacing-06);
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -74,7 +74,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 672px) {
   .midi-hub-processing-form-grid {
     grid-template-columns: 1fr;
   }

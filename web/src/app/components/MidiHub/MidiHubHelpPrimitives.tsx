@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { WarningAlt } from '@carbon/icons-react'
 import { Layer, Tag } from '@carbon/react'
 
 export type MidiHubPanelId =
@@ -161,9 +162,18 @@ export const MIDI_HUB_PANEL_META: Record<MidiHubPanelId, MidiHubPanelMeta> = {
 interface MidiHubPanelShellProps {
   panelId: MidiHubPanelId
   children: ReactNode
+  title?: ReactNode
+  actionTag?: ReactNode
 }
 
-export function MidiHubPanelShell({ panelId, children }: MidiHubPanelShellProps) {
+type MidiHubEmptyStateProps = {
+  title: string
+  description: string
+  action?: ReactNode
+  icon?: ReactNode
+}
+
+export function MidiHubPanelShell({ panelId, children, title, actionTag }: MidiHubPanelShellProps) {
   const panel = MIDI_HUB_PANEL_META[panelId]
 
   return (
@@ -175,11 +185,32 @@ export function MidiHubPanelShell({ panelId, children }: MidiHubPanelShellProps)
             <Tag type="blue">{panel.shortLabel}</Tag>
             {panel.advanced ? <Tag type="warm-gray">Advanced</Tag> : null}
           </div>
-          <h3>{panel.title}</h3>
+          <h3>{title ?? panel.title}</h3>
         </div>
+        {actionTag ? <div className="midi-hub-panel-shell__action">{actionTag}</div> : null}
       </header>
 
       <div className="midi-hub-panel-shell__content">{children}</div>
+    </Layer>
+  )
+}
+
+export function MidiHubEmptyState({
+  title,
+  description,
+  action,
+  icon = <WarningAlt size={20} />,
+}: MidiHubEmptyStateProps) {
+  return (
+    <Layer className="midi-hub-empty-state-card">
+      <div className="midi-hub-empty-state-card__icon" aria-hidden="true">
+        {icon}
+      </div>
+      <div className="midi-hub-empty-state-card__copy">
+        <h4>{title}</h4>
+        <p>{description}</p>
+      </div>
+      {action ? <div className="midi-hub-empty-state-card__action">{action}</div> : null}
     </Layer>
   )
 }

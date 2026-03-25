@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-24 - Completed T393 platform version artifact stabilization after clean rebuild proof
+Last updated: 2026-03-24 - Completed T400 drum modal history/layout/command expansion
 
 ## Active Blockers Only
 
@@ -2540,6 +2540,74 @@ Last updated: 2026-03-17 22:39 - Codex
 - **External trigger input**: MIDI-only consumer — standard MIDI note-on/off from any e-drum module or trigger interface; MAP2 provides velocity curves, note mapping, and zone assignment per pad
 - **UI standard**: Strict Carbon Design System conformance per `docs/design/CARBON_CONFORMANCE_STANDARD.md`; all new surfaces use `@carbon/react` components, Carbon tokens, IBM Plex typography, 2x grid, 8px spacing
 
+ID: T401
+Status: [✓] Done
+Title: MIDI Hub spacing, usability, and Carbon compliance overhaul
+Description:
+- Goal / acceptance criteria: Fix cramped spacing across all 7 MIDI Hub area pages + shell, achieve 100% Carbon Design token compliance, align responsive breakpoints to Carbon standard, and polish panel interactions — making this the best MIDI gateway interface on the market.
+- Why it matters: The MIDI Hub pages are functionally complete but the tight spacing undermines professional usability for a MIDI gateway appliance. Network and Lab CSS files have hardcoded rem values violating Carbon token mandate. Responsive breakpoints are inconsistent across pages.
+- Dependencies: None (pure frontend, no backend or API changes)
+- Estimated effort: Medium (Phase A is pure CSS, Phase B has 3 component changes)
+- Required outputs: Updated CSS across 10 files, updated TSX in 7 files, new MidiHubEmptyState component, passing typecheck/build/tests, visual verification at 5 breakpoints.
+- Plan reference: `.claude/plans/moonlit-conjuring-cat.md`
+- 10 improvements ranked by impact:
+  1. Content area padding + section gap scale-up (zero horizontal padding, 16px section gaps → 24px page padding, 32px section gaps)
+  2. Hero section decompression (19-28px hero padding → 32px, 8px copy gap → 12px)
+  3. Full Carbon token compliance for Network + Lab CSS (13 hardcoded rem values → `--cds-spacing-*` tokens)
+  4. Two-column panel gap increase (16px → 24px between major side-by-side panels, all 5 page CSS files)
+  5. Responsive traffic monitor height (remove hardcoded 440px, use `clamp(20rem, 50vh, 40rem)`)
+  6. Sidebar width + internal spacing refinement (fixed 272px column, Carbon SideNav gap, status card padding)
+  7. Panel heading deduplication via PanelShell title/actionTag props (eliminate double-stacked h3 headings)
+  8. Illustrated empty states (new `MidiHubEmptyState` component for routing matrix, traffic monitor, event lists, presets)
+  9. Responsive breakpoint alignment to Carbon standard (900px→1056px, 720px→672px, 768px→672px)
+  10. Panel animation stagger + hover polish (nth-child delays, hover border/shadow, prefers-reduced-motion)
+Subtasks:
+ID: T401-subA
+Status: [✓] Done
+Title: Phase A — Pure CSS spacing and compliance pass (Improvements 1-4, 6, 9, 10)
+Description:
+- Goal / acceptance criteria: All spacing, token compliance, breakpoint, and animation changes. Zero component modifications.
+- Estimated effort: Small
+- Files: MidiHubAreaPage.css, MidiHubPage.css, MidiHubShell.css, MidiHubConnectionsPage.css, MidiHubEventsPage.css, MidiHubPresetsPage.css, MidiHubProcessingPage.css, MidiHubNetworkPage.css, MidiHubLabPage.css
+Subtasks: None
+Assigned to: Codex
+ID: T401-subB
+Status: [✓] Done
+Title: Phase B — Traffic monitor responsive height (Improvement 5)
+Description:
+- Goal / acceptance criteria: Remove hardcoded height prop from MidiTrafficMonitor, replace with responsive CSS clamp.
+- Estimated effort: Small
+- Files: MidiTrafficMonitor.tsx, MidiHubConnectionsPage.tsx, MidiHubConnectionsPage.css
+Subtasks: None
+Assigned to: Codex
+ID: T401-subC
+Status: [✓] Done
+Title: Phase B — Panel heading deduplication via PanelShell props (Improvement 7)
+Description:
+- Goal / acceptance criteria: Extend MidiHubPanelShell with title/actionTag props, remove duplicate heading divs from all 7 area pages.
+- Estimated effort: Medium
+- Files: MidiHubHelpPrimitives.tsx, all 7 MidiHub*Page.tsx files, MidiHubAreaPage.css
+Subtasks: None
+Assigned to: Codex
+ID: T401-subD
+Status: [✓] Done
+Title: Phase B — Illustrated empty states (Improvement 8)
+Description:
+- Goal / acceptance criteria: New MidiHubEmptyState component with centered icon, heading, description, optional action. Integrate in MidiRoutingMatrix, MidiTrafficMonitor, EventListManager, PresetTable.
+- Estimated effort: Medium
+- Files: MidiHubHelpPrimitives.tsx, MidiHubPage.css, MidiRoutingMatrix.tsx, MidiTrafficMonitor.tsx, EventListManager.tsx, PresetTable.tsx
+Subtasks: None
+Assigned to: Codex
+Assigned to: Codex
+Last updated: 2026-03-24 22:40 EDT - Codex
+- Completion notes:
+  - Renumbered the duplicate draft `T399` entry to `T401` so the canonical worklist remains schema-valid alongside the completed drum-modal `T399`.
+  - Expanded MIDI Hub shell, page, and area CSS spacing to a looser Carbon token scale, aligned the route/mobile breakpoints around the Carbon 1056px and 672px thresholds, and removed the remaining hardcoded spacing values from the network and lab route CSS.
+  - Extended `MidiHubPanelShell` with shared title/action-tag support, removed the duplicated page-local panel headings across connections, events, processing, transport, network, and lab routes, and added a reusable `MidiHubEmptyState` helper for empty operational panels.
+  - Reworked the routing matrix, traffic monitor, event-list manager, and preset table to use the new empty-state treatment, and moved the traffic monitor to a responsive `clamp(20rem, 50vh, 40rem)` scroll height instead of the old fixed height prop.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/pages/midi-hub/MidiHubConnectionsPage.test.tsx src/app/pages/midi-hub/MidiHubEventsPage.test.tsx src/app/pages/midi-hub/MidiHubPresetsPage.test.tsx src/app/pages/midi-hub/MidiHubProcessingPage.test.tsx src/app/pages/midi-hub/MidiHubNetworkPage.test.tsx src/app/pages/midi-hub/MidiHubLabPage.test.tsx src/app/pages/midi-hub/MidiHubTransportPage.test.tsx`, and `npm --prefix web run build`.
+  - Residual note: the existing Vite warning about `web/src/map2/api.ts` being both dynamically and statically imported remains unchanged and was not introduced by this task.
+
 ---
 
 ID: T211
@@ -3609,6 +3677,137 @@ Last updated: 2026-03-24 19:56 EDT - Codex
   - Licensing review: touched Python/script/test/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
 Assigned to: Codex
 Last updated: 2026-03-24 18:27 EDT - Codex
+
+ID: T394
+Status: [✓] Done
+Title: Embed the full drum sampler/editor workspace inside JUCE Grid from the compact drum card
+Description:
+- Goal / acceptance criteria: Replace the current compact-card-only jump path for `map2://juce/drums` with a Carbon-compliant modal that can open the complete existing drum-machine workspace, including the sampler, editor, sequencer, mixer, MIDI/CC mapping, and backing-track surfaces, while preserving the standalone `/drums` route and avoiding duplicate drum UI implementations.
+- Why it matters: The richer drum machine has already been built, but JUCE Grid currently exposes only a reduced summary surface, which blocks an in-context professional workflow.
+- Dependencies: Existing `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx`, `web/src/app/pages/DrumsPage.tsx`, Carbon modal patterns in JUCE Grid, and focused frontend validation.
+- Estimated effort: Medium
+- Required outputs: Shared reusable drum-workspace component, new JUCE Grid drum workspace modal, updated compact drum card launch behavior, targeted tests, and worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 20:26 EDT - Codex
+- Completion notes:
+  - Extracted the full drum-machine route into a shared `DrumsWorkspace` component in `web/src/app/pages/DrumsPage.tsx`, then kept the routed `/drums` page as a thin wrapper that resolves the optional `?mode=` query and passes it into the shared workspace.
+  - Added `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx` and `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.css` so JUCE Grid can open the complete sampler/editor/sequencer/mixer/MIDI workspace inside a large Carbon modal without duplicating the drum UI.
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx` so the compact card now opens the embedded full workspace modal by mode selection, while preserving an explicit standalone `/drums` launch button for operators who want the dedicated route.
+  - Added focused coverage in `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx` and new `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx`; updated `web/src/app/pages/DrumsPage.test.tsx` for the new router dependency.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/pages/DrumsPage.test.tsx -t "renders the advanced sequencer grid from live drum data"`, and `npm --prefix web run build`.
+
+ID: T395
+Status: [✓] Done
+Title: Add Carbon modal navigation rail and live status chrome to the embedded JUCE Grid drum workspace
+Description:
+- Goal / acceptance criteria: Upgrade the new JUCE Grid drum workspace modal so it includes a Carbon-compliant workspace rail and live status tags for the active mode, transport, kit, pattern, and tempo, improving navigation and operator awareness without forking the underlying drum-machine UI.
+- Why it matters: The full workspace is now available in-context, but the first modal version still behaves like a generic container rather than a polished instrument workstation.
+- Dependencies: T394, `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx`, and the shared `DrumsWorkspace` component.
+- Estimated effort: Low
+- Required outputs: Updated modal header/navigation shell, focused tests, validation evidence, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 20:38 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx` so the modal now queries live drum state/transport/kit data and surfaces Carbon tags for mode, transport state, BPM, pattern variation, and active kit directly in the workspace chrome.
+  - Added a modal workspace rail with anchor navigation for overview, transport, modes, and footer/status, giving the embedded drum workstation clearer in-context structure without changing the underlying drum page logic.
+  - Extended `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.css` to support the new two-column modal shell and responsive rail collapse on narrower layouts.
+  - Expanded `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx` to cover the new live status tags and rail navigation links.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.test.tsx src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx`, and `npm --prefix web run build`.
+
+ID: T396
+Status: [✓] Done
+Title: Add operator focus presets and shortcut guidance to the embedded JUCE Grid drum workspace
+Description:
+- Goal / acceptance criteria: Add workstation-style focus presets and visible shortcut guidance to the JUCE Grid drum modal so operators can jump directly to performance, editing, and sound-design sections of the embedded drum workspace without hunting through the full page content.
+- Why it matters: The modal now exposes the full drum machine, but it still benefits from faster task-oriented navigation and explicit operator cues expected in professional instrument editors.
+- Dependencies: T394, T395, shared `DrumsWorkspace`, and the modal shell.
+- Estimated effort: Low
+- Required outputs: Stable section anchors inside the advanced drum workspace, modal preset controls and shortcut cues, focused validation, and updated worklist notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 20:57 EDT - Codex
+- Completion notes:
+  - Added stable advanced-workspace anchors in `web/src/app/pages/DrumsPage.tsx` for the sequencer, patterns, song, kits, mixer, pad inspector, MIDI editor, and step-lock editor so the embedded modal can jump directly into real workstation sections.
+  - Extended `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx` with task-focused preset cards and explicit shortcut cues covering sequencer navigation, step toggling, p-lock selection, and mode switching.
+  - Expanded `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx` to verify the preset links and shortcut guidance render in the embedded workstation shell.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx src/app/pages/DrumsPage.test.tsx`, and `npm --prefix web run build`.
+
+ID: T397
+Status: [✓] Done
+Title: Add a fixed live inspector rail to the embedded JUCE Grid drum workspace modal
+Description:
+- Goal / acceptance criteria: Upgrade the JUCE Grid drum modal with a persistent Carbon-compliant side inspector that mirrors the currently selected pad and selected step, including key routing/sample/lock context and direct jumps into the full pad and step editors, without duplicating the underlying drum editor logic.
+- Why it matters: The embedded workspace already contains the full editor, but operators still have to hunt inside the page body for the current pad and step context; a fixed side inspector makes the modal behave more like an industry-standard drum workstation.
+- Dependencies: T394, T395, T396, `web/src/app/pages/DrumsPage.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx`, and focused frontend validation.
+- Estimated effort: Low
+- Required outputs: Shared workspace-selection summary wiring, modal-side live inspector UI, focused regression coverage, and updated completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 21:06 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/DrumsPage.tsx` so the shared `DrumsWorkspace` can publish a lightweight selection summary for the currently selected pad and step, including source mode, bus/note routing, sample state, and p-lock detail, while preserving the existing standalone route behavior.
+  - Added a desktop-side inspector column to `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx` and `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.css`, surfacing live pad facts, sample status, step probability/micro-timing/ratchet details, and direct links into the full pad and step editors.
+  - Added `drum-advanced-step-locks` as a stable anchor in `web/src/app/pages/DrumsPage.tsx` so the modal inspector can jump directly into the step-lock editor.
+  - Expanded `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx` and `web/src/app/pages/DrumsPage.test.tsx` to cover the new inspector rail and the embedded selection-summary wiring.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx src/app/pages/DrumsPage.test.tsx`, and `npm --prefix web run build`.
+
+ID: T398
+Status: [✓] Done
+Title: Turn embedded drum modal focus presets into persistent workspace layouts
+Description:
+- Goal / acceptance criteria: Upgrade the current JUCE Grid drum modal presets so they switch the embedded workspace into real task-oriented layouts, with persistent preset selection, visible active state, and section-level reflow or hiding for `Performance`, `Editing`, and `Sound Design` instead of only anchor jumps.
+- Why it matters: The current preset cards help navigation, but they do not yet change the working surface enough to match how professional drum workstations compress or expand context for different tasks.
+- Dependencies: T394, T395, T396, T397, stable drum section IDs in `web/src/app/pages/DrumsPage.tsx`, and focused frontend validation.
+- Estimated effort: Medium
+- Required outputs: Persistent preset state in the modal, real layout classes that alter the embedded workspace presentation, focused tests, and updated completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 21:15 EDT - Codex
+- Completion notes:
+  - Updated `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx` so the modal presets are now persistent task-mode buttons backed by local storage, with visible active state and smooth jump behavior into the relevant anchored section.
+  - Extended `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.css` with real layout classes for `Performance`, `Editing`, and `Sound Design`, including section-level visibility rules and column reflow so the embedded workspace materially changes by task instead of only scrolling.
+  - Expanded `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx` to cover preset active state, persistence, and layout-shell class changes, while keeping `web/src/app/pages/DrumsPage.test.tsx` green against the shared workspace wiring.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx src/app/pages/DrumsPage.test.tsx`, and `npm --prefix web run build`.
+
+ID: T399
+Status: [✓] Done
+Title: Add a keyboard shortcut overlay and quick-command strip to the embedded drum modal
+Description:
+- Goal / acceptance criteria: Add a Carbon-compliant shortcut overlay to the JUCE Grid drum workspace modal that can be opened from the UI and from the keyboard, shows grouped operator commands with hints, and exposes quick actions for presets and core editor destinations.
+- Why it matters: Static cue text is not enough for a professional embedded workstation; operators need an explicit help surface that makes the modal self-documenting and faster to drive under pressure.
+- Dependencies: T394 through T398, `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx`, and focused frontend validation.
+- Estimated effort: Low
+- Required outputs: Modal-side shortcut/help overlay, keyboard toggle handling, focused tests, and updated completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 21:25 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx` with a live shortcut overlay that can be opened from the UI or with `Shift + ?`, closed with `Escape`, and used to trigger quick commands for workspace layouts and key drum-editor destinations.
+  - Extended `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.css` with overlay, shortcut map, and quick-command styling so the help surface sits inside the embedded workstation without leaving JUCE Grid.
+  - Expanded `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx` to verify UI-triggered overlay opening, keyboard toggling, `Escape` close behavior, and quick-command execution; kept `web/src/app/pages/DrumsPage.test.tsx` green against the shared drum workspace.
+  - Validation passed with `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx src/app/pages/DrumsPage.test.tsx`, and `npm --prefix web run build`.
+
+ID: T400
+Status: [✓] Done
+Title: Add embedded drum workspace history, named layouts, and deeper operator commands
+Description:
+- Goal / acceptance criteria: Expand the JUCE Grid drum modal and shared `DrumsWorkspace` so operators get named saveable workspace layouts, real undo/redo for pattern edits and sample edits, and a deeper embedded command surface for transport/history/layout actions. Pattern undo/redo must restore actual sequencer content, sample undo/redo must restore the previous pad sample asset instead of only UI state, and the modal must expose/load/delete named layouts without leaving JUCE Grid.
+- Why it matters: The current modal now embeds the full workspace, but it still lacks production-grade recovery and operator acceleration features expected from a serious drum workstation.
+- Dependencies: T394, T395, T396, T397, T398, T399, frontend drum workspace wiring in `web/src/app/pages/DrumsPage.tsx`, modal shell in `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx`, and backend sample-editor routes in `app/routes/drums.py`.
+- Estimated effort: High
+- Required outputs: Updated worklist notes, backend sample export/restore support, frontend pattern/sample history plumbing, named layout persistence UI, richer quick commands, focused tests, and validation results.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-24 22:02 EDT - Codex
+- Completion notes:
+  - Added real sample export support in `app/services/drum_sample_editor.py`, `app/routes/drums.py`, and `web/src/map2/api.ts` so the frontend can capture the exact active WAV asset for each pad and restore it through the existing upload path during undo/redo.
+  - Extended `web/src/app/pages/DrumsPage.tsx` so the shared `DrumsWorkspace` now tracks restart-safe pattern and sample history, publishes command availability upward to the embedded modal, and executes pattern/sample undo-redo requests coming back down from the modal command surface.
+  - Upgraded `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.tsx` and `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.css` with named saveable layouts, load/delete management, history-status tags, and deeper quick commands for transport, fill, tap-tempo, and pattern/sample undo-redo.
+  - Expanded focused coverage in `tests/test_drum_sample_editor.py`, `tests/test_drum_routes.py`, `web/src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx`, and `web/src/app/pages/DrumsPage.test.tsx` to cover sample export, modal saved layouts, overlay command dispatch, command-state publication, and pattern/sample history restore flows.
+  - Validation passed with `pytest -q tests/test_drum_sample_editor.py tests/test_drum_routes.py`, `npm --prefix web run typecheck`, `CI=1 npm --prefix web test -- --runInBand --detectOpenHandles --forceExit src/app/components/PluginCards/Custom/JUCE/DrumMachineWorkspaceModal.test.tsx src/app/pages/DrumsPage.test.tsx`, and `npm --prefix web run build`.
+  - Residual note: the existing Vite warning about `web/src/map2/api.ts` being both dynamically and statically imported remains unchanged and was not introduced by this task.
 
 ---
 

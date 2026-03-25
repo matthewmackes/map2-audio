@@ -133,6 +133,11 @@ class DrumSampleEditorService(Singleton):
             points=points,
         ).model_dump()
 
+    def export_sample(self, pad: int) -> tuple[str, bytes]:
+        asset = self._resolve_pad_asset(pad)
+        sample_file = asset["sample_file"]
+        return sample_file.name, sample_file.read_bytes()
+
     def trim_sample(self, pad: int, start_sample: int, end_sample: int) -> Dict[str, Any]:
         asset = self._resolve_pad_asset(pad)
         audio, sample_rate = self._read_audio(asset["sample_file"])

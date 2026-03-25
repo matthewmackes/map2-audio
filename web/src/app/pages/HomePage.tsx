@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Package, Music as MusicNotes } from '@carbon/icons-react'
+import { FxDrums } from '../components/icons/effectIcons'
 import { ClickableTile } from '@carbon/react'
 import {
   MAP2_PLATFORM_VERSION,
@@ -107,6 +108,13 @@ const MIDDLE_CARDS: WorkspaceCard[] = [
     icon: MapClusterFabricIcon,
     title: 'Platforms',
     description: 'System setup and node status',
+  },
+  {
+    id: 'drums',
+    to: '/drums',
+    icon: ({ size = 20 }: { size?: number }) => <FxDrums width={size} height={size} />,
+    title: 'Drum Machine',
+    description: 'Patterns, kits, and sequencing',
   },
 ]
 

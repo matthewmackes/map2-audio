@@ -17,19 +17,11 @@ export function MidiHubTransportPage() {
     >
       <section className="midi-hub-page-band">
         <div className="midi-hub-grid-two">
-          <MidiHubPanelShell panelId="clock">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>Clock engine</h3>
-              <Tag type="green">Live</Tag>
-            </div>
+          <MidiHubPanelShell panelId="clock" title="Clock Engine" actionTag={<Tag type="green">Live</Tag>}>
             <MidiClockPanel />
           </MidiHubPanelShell>
 
-          <MidiHubPanelShell panelId="recorder">
-            <div className="midi-hub-area-page__panel-heading">
-              <h3>Recorder</h3>
-              <Tag type="cool-gray">Capture</Tag>
-            </div>
+          <MidiHubPanelShell panelId="recorder" actionTag={<Tag type="cool-gray">Capture</Tag>}>
             <MidiRecorderPanel />
           </MidiHubPanelShell>
         </div>

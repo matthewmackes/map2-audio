@@ -1,3 +1,4 @@
+import { ArrowsHorizontal } from '@carbon/icons-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -5,7 +6,6 @@ import {
   Checkbox,
   ComposedModal,
   DataTable,
-  InlineNotification,
   ModalBody,
   ModalFooter,
   ModalHeader,
@@ -27,6 +27,7 @@ import {
 } from '@carbon/react'
 import { midiHubApi, type MidiHubRoute, type MidiHubRouteRequest } from '../../../map2/api'
 import { useMidiHubNodeScope } from './MidiHubNodeScope'
+import { MidiHubEmptyState } from './MidiHubHelpPrimitives'
 import { useToasts } from '../Toasts'
 import { readPorts } from './portUtils'
 
@@ -243,12 +244,10 @@ export function MidiRoutingMatrix() {
       </div>
 
       {rows.length === 0 ? (
-        <InlineNotification
-          kind="info"
-          lowContrast
-          hideCloseButton
+        <MidiHubEmptyState
           title="No route matrix available"
-          subtitle="Connect at least one input and one output to build source-to-destination routes."
+          description="Connect at least one input and one output to build source-to-destination routes."
+          icon={<ArrowsHorizontal size={20} />}
         />
       ) : (
         <DataTable rows={filteredRows} headers={[...HEADERS]} isSortable useZebraStyles>

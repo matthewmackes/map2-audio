@@ -674,6 +674,7 @@ class _FakeDrumKitService:
 class _FakeDrumSampleEditorService:
     def __init__(self):
         self.recording_pad = None
+        self.exported = []
         self.waveform = {
             "pad": 0,
             "kit_id": "user_kit",
@@ -695,6 +696,10 @@ class _FakeDrumSampleEditorService:
         payload["points"] = points
         payload["peaks"] = [0.25] * points
         return payload
+
+    def export_sample(self, pad):
+        self.exported.append(pad)
+        return f"pad_{pad + 1}.wav", b"RIFFdemoWAVE"
 
     def upload_sample(self, pad, filename, file_bytes):
         payload = self.get_waveform(pad, 256)
@@ -837,6 +842,7 @@ def test_drum_sample_editor_routes_round_trip(monkeypatch):
     client = _client(monkeypatch)
 
     waveform_response = client.get("/api/engine/drums/pad/0/sample/waveform?points=64")
+    file_response = client.get("/api/engine/drums/pad/0/sample/file")
     upload_response = client.post(
         "/api/engine/drums/pad/0/sample/upload",
         files={"file": ("kick.wav", b"RIFFdemoWAVE", "audio/wav")},
@@ -851,6 +857,9 @@ def test_drum_sample_editor_routes_round_trip(monkeypatch):
     assert waveform_response.status_code == 200
     assert waveform_response.json()["points"] == 64
     assert len(waveform_response.json()["peaks"]) == 64
+    assert file_response.status_code == 200
+    assert file_response.headers["content-type"] == "audio/wav"
+    assert file_response.content == b"RIFFdemoWAVE"
 
     assert upload_response.status_code == 200
     assert upload_response.json()["sample_path"] == "samples/pad_1/uploaded.wav"

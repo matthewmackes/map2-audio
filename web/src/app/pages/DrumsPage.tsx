@@ -28,6 +28,7 @@ import {
 
 import { PageHeader } from '@/app/components/PageHeader'
 import { NumberInput } from '@/app/components/Controls/NumberInput'
+import { useLocation } from 'react-router-dom'
 import './DrumsPage.css'
 import {
   useDrumActiveKit,
@@ -176,6 +177,13 @@ const shellStyle: Record<string, React.CSSProperties> = {
     padding: '24px 24px 40px',
     maxWidth: 1480,
     margin: '0 auto',
+    display: 'grid',
+    gap: 24,
+  },
+  embeddedPage: {
+    padding: '0 0 24px',
+    maxWidth: 'none',
+    margin: 0,
     display: 'grid',
     gap: 24,
   },
@@ -1231,7 +1239,7 @@ function advancedPanel(
     <div style={shellStyle.modeShell}>
       <div style={shellStyle.sequencerLayout}>
         <div style={shellStyle.modeColumn}>
-          <Tile style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}`, minHeight: 420 }}>
+          <Tile id="drum-advanced-sequencer" style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}`, minHeight: 420 }}>
             <div style={shellStyle.tileHeader}>
               <h2 style={shellStyle.tileTitle}>Sequencer Workspace</h2>
               <Tag type="green">Primary View</Tag>
@@ -1567,7 +1575,7 @@ function advancedPanel(
             </div>
           </Tile>
           <div style={shellStyle.panelGrid}>
-            <Tile style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}` }}>
+            <Tile id="drum-advanced-patterns" style={{ ...shellStyle.tile, borderTop: `3px solid ${accent}` }}>
               <div style={shellStyle.tileHeader}>
                 <h3 style={shellStyle.tileTitle}>Pattern Management</h3>
                 <Tag type="blue">Slot {selectedPatternSlot}</Tag>
@@ -1677,7 +1685,7 @@ function advancedPanel(
                 Clearing resets the selected slot to a blank 16-step pattern.
               </Modal>
             </Tile>
-            <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #4589ff' }}>
+            <Tile id="drum-advanced-song" style={{ ...shellStyle.tile, borderTop: '3px solid #4589ff' }}>
               <div style={shellStyle.tileHeader}>
                 <h3 style={shellStyle.tileTitle}>Song Arranger</h3>
                 <Tag type={songLoop ? 'blue' : 'gray'}>{songLoop ? 'Looping' : 'One Pass'}</Tag>
@@ -1790,7 +1798,7 @@ function advancedPanel(
             </Tile>
           </div>
           <div style={shellStyle.panelGrid}>
-            <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #08bdba' }}>
+            <Tile id="drum-advanced-kits" style={{ ...shellStyle.tile, borderTop: '3px solid #08bdba' }}>
               <div style={shellStyle.tileHeader}>
                 <h3 style={shellStyle.tileTitle}>Kit Browser</h3>
                 <Tag type="teal">{kits.length} kits</Tag>
@@ -1835,7 +1843,7 @@ function advancedPanel(
                 Loading a kit replaces the current active drum assignment and row metadata.
               </Modal>
             </Tile>
-            <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #d2a106' }}>
+            <Tile id="drum-advanced-mixer" style={{ ...shellStyle.tile, borderTop: '3px solid #d2a106' }}>
               <div style={shellStyle.tileHeader}>
                 <h3 style={shellStyle.tileTitle}>Mixer + Metering</h3>
                 <Tag type="warm-gray">8 buses</Tag>
@@ -2014,7 +2022,7 @@ function advancedPanel(
           </div>
         </div>
         <div style={shellStyle.modeColumn}>
-          <Tile style={{ ...shellStyle.tile, ...shellStyle.inspectorTile }}>
+          <Tile id="drum-advanced-inspector" style={{ ...shellStyle.tile, ...shellStyle.inspectorTile }}>
             <div style={shellStyle.tileHeader}>
               <h3 style={shellStyle.tileTitle}>Instrument Inspector</h3>
               <Tag type="green">Pad {selectedPad + 1}</Tag>
@@ -2397,7 +2405,7 @@ function advancedPanel(
               </div>
             </div>
           </Tile>
-          <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #ff832b' }}>
+          <Tile id="drum-advanced-step-locks" style={{ ...shellStyle.tile, borderTop: '3px solid #ff832b' }}>
             <div style={shellStyle.tileHeader}>
               <h3 style={shellStyle.tileTitle}>Parameter Locks</h3>
               <Tag type="warm-gray">
@@ -2542,7 +2550,7 @@ function advancedPanel(
               </div>
             )}
           </Tile>
-          <Tile style={{ ...shellStyle.tile, borderTop: '3px solid #be95ff' }}>
+          <Tile id="drum-advanced-midi" style={{ ...shellStyle.tile, borderTop: '3px solid #be95ff' }}>
             <div style={shellStyle.tileHeader}>
               <h3 style={shellStyle.tileTitle}>MIDI Configuration</h3>
               <Tag type={midiLearnState?.active ? 'magenta' : 'purple'}>
@@ -2992,7 +3000,83 @@ function backingTracksPanel(
   )
 }
 
-export function DrumsPage() {
+export interface DrumsWorkspaceProps {
+  embedded?: boolean
+  initialMode?: DrumMode | null
+  onSelectionChange?: (selection: DrumWorkspaceSelectionSummary) => void
+  commandRequest?: DrumWorkspaceCommandRequest | null
+  onCommandStateChange?: (state: DrumWorkspaceCommandState) => void
+}
+
+export interface DrumWorkspaceSelectionSummary {
+  mode: DrumMode
+  pad: {
+    index: number
+    name: string
+    note: number
+    bus: number
+    soundSource: DrumPadSoundSource
+    muted: boolean
+    soloed: boolean
+    sampleLoaded: boolean
+    sampleCount: number
+    sampleRate: number
+    sfzPath: string
+  }
+  step: {
+    instrumentIndex: number
+    stepIndex: number
+    active: boolean
+    velocity: number
+    accent: boolean
+    probability: number
+    microTiming: number
+    ratchetCount: number
+    ratchetDecay: number
+    hasLocks: boolean
+  } | null
+}
+
+export interface DrumWorkspaceCommandRequest {
+  id: number
+  type: 'pattern-undo' | 'pattern-redo' | 'sample-undo' | 'sample-redo'
+}
+
+export interface DrumWorkspaceCommandState {
+  canUndoPattern: boolean
+  canRedoPattern: boolean
+  canUndoSample: boolean
+  canRedoSample: boolean
+  selectedPad: number
+  isBusy: boolean
+}
+
+type DrumPatternHistoryState = {
+  undo: DrumPattern[]
+  redo: DrumPattern[]
+}
+
+type DrumSampleSnapshot = {
+  name: string
+  file: File
+}
+
+type DrumSampleHistoryState = {
+  undo: DrumSampleSnapshot[]
+  redo: DrumSampleSnapshot[]
+}
+
+function cloneDrumPattern(pattern: DrumPattern): DrumPattern {
+  return JSON.parse(JSON.stringify(pattern)) as DrumPattern
+}
+
+export function DrumsWorkspace({
+  embedded = false,
+  initialMode = null,
+  onSelectionChange,
+  commandRequest = null,
+  onCommandStateChange,
+}: DrumsWorkspaceProps = {}) {
   const queryClient = useQueryClient()
   const stateQuery = useDrumMachineState()
   const transportQuery = useDrumTransport()
@@ -3058,6 +3142,7 @@ export function DrumsPage() {
   const transport = transportQuery.data
   const activeMode = state?.ui_mode ?? 'practice'
   const activeModeMeta = MODE_META[activeMode]
+  const workspaceShellStyle = embedded ? shellStyle.embeddedPage : shellStyle.page
   const activeKitName = activeKitQuery.data?.name ?? 'No kit loaded'
   const activeKit = activeKitQuery.data
   const kits = kitsQuery.data ?? []
@@ -3100,11 +3185,156 @@ export function DrumsPage() {
   const [sampleScroll, setSampleScroll] = useState(0)
   const [sampleTrimStart, setSampleTrimStart] = useState(0)
   const [sampleTrimEnd, setSampleTrimEnd] = useState(1)
+  const [historyVersion, setHistoryVersion] = useState(0)
+  const [historyBusy, setHistoryBusy] = useState(false)
   const sampleRecordingActive = sampleRecordingPad === selectedPad
   const sequencerRef = useRef<HTMLDivElement | null>(null)
+  const appliedInitialModeRef = useRef<DrumMode | null>(null)
+  const lastSelectionSnapshotRef = useRef('')
+  const lastCommandRequestRef = useRef<number | null>(null)
+  const patternHistoryRef = useRef<Record<number, DrumPatternHistoryState>>({})
+  const latestPatternSnapshotsRef = useRef<Record<number, DrumPattern>>({})
+  const sampleHistoryRef = useRef<Record<number, DrumSampleHistoryState>>({})
+  const latestSampleSnapshotsRef = useRef<Record<number, DrumSampleSnapshot>>({})
   const packLists = {
     factory: packs.factory.data ?? [],
     user: packs.generated.data ?? [],
+  }
+  const selectedInstrument = activeKit?.instruments?.[selectedPad]
+  const selectedPadControl = resolvedPadControl(padControls, selectedPad, selectedInstrument)
+  const selectedPadSoundSource = state?.pad_sound_sources?.[selectedPad] ?? 'sample'
+  const selectedStepState = selectedStep
+    ? resolvedStep(pattern, selectedStep.instrumentIndex, selectedStep.stepIndex)
+    : null
+  const bumpHistoryVersion = () => {
+    setHistoryVersion((current) => current + 1)
+  }
+  const getPatternHistory = (patternId: number): DrumPatternHistoryState => {
+    const existing = patternHistoryRef.current[patternId]
+    if (existing) {
+      return existing
+    }
+    const created: DrumPatternHistoryState = { undo: [], redo: [] }
+    patternHistoryRef.current[patternId] = created
+    return created
+  }
+  const getSampleHistory = (padId: number): DrumSampleHistoryState => {
+    const existing = sampleHistoryRef.current[padId]
+    if (existing) {
+      return existing
+    }
+    const created: DrumSampleHistoryState = { undo: [], redo: [] }
+    sampleHistoryRef.current[padId] = created
+    return created
+  }
+  const invalidateSampleEditorState = (padId: number) => {
+    void queryClient.invalidateQueries({ queryKey: ['drums', 'sample-editor', padId] })
+    void queryClient.invalidateQueries({ queryKey: ['drums', 'kits', 'active'] })
+    void queryClient.invalidateQueries({ queryKey: ['drums', 'kits'] })
+  }
+  const invalidatePatternState = (patternId: number) => {
+    void queryClient.invalidateQueries({ queryKey: ['drums', 'pattern', patternId] })
+    void queryClient.invalidateQueries({ queryKey: ['drums', 'transport'] })
+  }
+  const primeSelectedPadSampleSnapshot = async () => {
+    if (!selectedPadSample) {
+      return
+    }
+    const blob = await drumsApi.getPadSampleFile(selectedPad)
+    const sampleName = selectedPadSample.sample_path.split('/').pop() ?? `pad-${selectedPad + 1}.wav`
+    latestSampleSnapshotsRef.current[selectedPad] = {
+      name: sampleName,
+      file: new File([blob], sampleName, { type: blob.type || 'audio/wav' }),
+    }
+  }
+  const pushPatternUndoSnapshot = (patternId: number) => {
+    const snapshot = latestPatternSnapshotsRef.current[patternId]
+    if (!snapshot) {
+      return
+    }
+    const history = getPatternHistory(patternId)
+    history.undo.push(cloneDrumPattern(snapshot))
+    if (history.undo.length > 32) {
+      history.undo.shift()
+    }
+    history.redo = []
+    bumpHistoryVersion()
+  }
+  const pushSampleUndoSnapshot = async (padId: number) => {
+    if (!latestSampleSnapshotsRef.current[padId]) {
+      await primeSelectedPadSampleSnapshot()
+    }
+    const snapshot = latestSampleSnapshotsRef.current[padId]
+    if (!snapshot) {
+      return
+    }
+    const history = getSampleHistory(padId)
+    history.undo.push({
+      name: snapshot.name,
+      file: new File([snapshot.file], snapshot.name, { type: snapshot.file.type || 'audio/wav' }),
+    })
+    if (history.undo.length > 16) {
+      history.undo.shift()
+    }
+    history.redo = []
+    bumpHistoryVersion()
+  }
+  const applyPatternHistory = async (direction: 'undo' | 'redo') => {
+    if (!transport) {
+      return
+    }
+    const patternId = transport.pattern
+    const history = getPatternHistory(patternId)
+    const sourceStack = direction === 'undo' ? history.undo : history.redo
+    const targetStack = direction === 'undo' ? history.redo : history.undo
+    const nextSnapshot = sourceStack.pop()
+    const currentSnapshot = latestPatternSnapshotsRef.current[patternId]
+    if (!nextSnapshot || !currentSnapshot) {
+      bumpHistoryVersion()
+      return
+    }
+    targetStack.push(cloneDrumPattern(currentSnapshot))
+    setHistoryBusy(true)
+    try {
+      await drumsApi.setPattern(patternId, cloneDrumPattern(nextSnapshot))
+      latestPatternSnapshotsRef.current[patternId] = cloneDrumPattern(nextSnapshot)
+      invalidatePatternState(patternId)
+      announce(`Pattern ${patternId + 1} ${direction === 'undo' ? 'restored from history' : 'reapplied from history'}.`)
+    } finally {
+      setHistoryBusy(false)
+      bumpHistoryVersion()
+    }
+  }
+  const applySampleHistory = async (direction: 'undo' | 'redo') => {
+    const padId = selectedPad
+    const history = getSampleHistory(padId)
+    const sourceStack = direction === 'undo' ? history.undo : history.redo
+    const targetStack = direction === 'undo' ? history.redo : history.undo
+    const nextSnapshot = sourceStack.pop()
+    if (!nextSnapshot) {
+      bumpHistoryVersion()
+      return
+    }
+    const currentSnapshot = latestSampleSnapshotsRef.current[padId]
+    if (currentSnapshot) {
+      targetStack.push({
+        name: currentSnapshot.name,
+        file: new File([currentSnapshot.file], currentSnapshot.name, { type: currentSnapshot.file.type || 'audio/wav' }),
+      })
+    }
+    setHistoryBusy(true)
+    try {
+      await drumsApi.uploadPadSample(padId, nextSnapshot.file)
+      latestSampleSnapshotsRef.current[padId] = {
+        name: nextSnapshot.name,
+        file: new File([nextSnapshot.file], nextSnapshot.name, { type: nextSnapshot.file.type || 'audio/wav' }),
+      }
+      invalidateSampleEditorState(padId)
+      announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} sample ${direction === 'undo' ? 'restored' : 'reapplied'}.`)
+    } finally {
+      setHistoryBusy(false)
+      bumpHistoryVersion()
+    }
   }
 
   useEffect(() => {
@@ -3130,6 +3360,17 @@ export function DrumsPage() {
   }, [midiLearn.presets.data, selectedMidiPreset])
 
   useEffect(() => {
+    if (!initialMode || !state || appliedInitialModeRef.current === initialMode) {
+      return
+    }
+
+    appliedInitialModeRef.current = initialMode
+    if (state.ui_mode !== initialMode) {
+      updateState.mutate({ ui_mode: initialMode })
+    }
+  }, [initialMode, state, updateState])
+
+  useEffect(() => {
     const sampleCount = sampleEditor.waveform.data?.sample_count ?? 1
     setSampleTrimStart(0)
     setSampleTrimEnd(sampleCount)
@@ -3137,9 +3378,119 @@ export function DrumsPage() {
     setSampleZoom(100)
   }, [selectedPad, sampleEditor.waveform.data?.sample_count])
 
+  useEffect(() => {
+    if (!pattern) {
+      return
+    }
+    latestPatternSnapshotsRef.current[pattern.pattern_id] = cloneDrumPattern(pattern)
+  }, [pattern])
+
+  useEffect(() => {
+    if (!selectedPadSample) {
+      return
+    }
+    void primeSelectedPadSampleSnapshot().catch(() => {})
+  }, [selectedPad, selectedPadSample?.sample_path, selectedPadSample?.sample_count])
+
+  useEffect(() => {
+    if (!onCommandStateChange) {
+      return
+    }
+    const patternHistory = transport ? getPatternHistory(transport.pattern) : { undo: [], redo: [] }
+    const sampleHistory = getSampleHistory(selectedPad)
+    onCommandStateChange({
+      canUndoPattern: patternHistory.undo.length > 0,
+      canRedoPattern: patternHistory.redo.length > 0,
+      canUndoSample: sampleHistory.undo.length > 0,
+      canRedoSample: sampleHistory.redo.length > 0,
+      selectedPad,
+      isBusy: historyBusy,
+    })
+  }, [historyBusy, historyVersion, onCommandStateChange, selectedPad, transport])
+
+  useEffect(() => {
+    if (!commandRequest || commandRequest.id === lastCommandRequestRef.current) {
+      return
+    }
+    lastCommandRequestRef.current = commandRequest.id
+    void (async () => {
+      if (commandRequest.type === 'pattern-undo') {
+        await applyPatternHistory('undo')
+        return
+      }
+      if (commandRequest.type === 'pattern-redo') {
+        await applyPatternHistory('redo')
+        return
+      }
+      if (commandRequest.type === 'sample-undo') {
+        await applySampleHistory('undo')
+        return
+      }
+      await applySampleHistory('redo')
+    })()
+  }, [commandRequest, selectedPad, transport?.pattern])
+
+  useEffect(() => {
+    if (!onSelectionChange || !state) {
+      return
+    }
+
+    const nextSelection: DrumWorkspaceSelectionSummary = {
+      mode: state.ui_mode,
+      pad: {
+        index: selectedPad,
+        name: activeKit?.instruments?.[selectedPad]?.name ?? draftNames[selectedPad] ?? `Pad ${selectedPad + 1}`,
+        note: activeKit?.instruments?.[selectedPad]?.default_note ?? (36 + selectedPad),
+        bus: selectedPadControl.bus,
+        soundSource: selectedPadSoundSource,
+        muted: selectedPadControl.mute,
+        soloed: selectedPadControl.solo,
+        sampleLoaded: Boolean(sampleEditor.waveform.data),
+        sampleCount: sampleEditor.waveform.data?.sample_count ?? 0,
+        sampleRate: sampleEditor.waveform.data?.sample_rate ?? 0,
+        sfzPath: activeKit?.instruments?.[selectedPad]?.sfz_path ?? 'Factory assignment',
+      },
+      step: selectedStep
+        ? {
+          instrumentIndex: selectedStep.instrumentIndex,
+          stepIndex: selectedStep.stepIndex,
+          active: Boolean(selectedStepState?.active),
+          velocity: selectedStepState?.velocity ?? 0,
+          accent: Boolean(selectedStepState?.accent),
+          probability: selectedStepState?.probability ?? 1,
+          microTiming: selectedStepState?.micro_timing ?? 0,
+          ratchetCount: selectedStepState?.ratchet_count ?? 1,
+          ratchetDecay: selectedStepState?.ratchet_decay ?? 0,
+          hasLocks: selectedStepState ? stepHasLocks(selectedStepState) : false,
+        }
+        : null,
+    }
+    const nextSnapshot = JSON.stringify(nextSelection)
+    if (nextSnapshot === lastSelectionSnapshotRef.current) {
+      return
+    }
+
+    lastSelectionSnapshotRef.current = nextSnapshot
+    onSelectionChange(nextSelection)
+  }, [
+    activeKit?.instruments,
+    draftNames,
+    onSelectionChange,
+    pattern,
+    sampleEditor.waveform.data,
+    selectedPad,
+    selectedPadControl.bus,
+    selectedPadControl.mute,
+    selectedPadControl.solo,
+    selectedPadSoundSource,
+    selectedStep,
+    selectedStepState,
+    state,
+  ])
+
   if (stateQuery.isLoading && !state) {
     return (
-      <div style={shellStyle.page}>
+      <div style={workspaceShellStyle}>
         <PageHeader
           title="Drum Machine"
           subtitle="Loading drum workspace"
@@ -3154,7 +3505,7 @@ export function DrumsPage() {
 
   if (!state || !transport) {
     return (
-      <div style={shellStyle.page}>
+      <div style={workspaceShellStyle}>
         <PageHeader
           title="Drum Machine"
           subtitle="Unable to resolve the drum machine state"
@@ -3204,7 +3555,7 @@ export function DrumsPage() {
   }
 
   return (
-    <main className="drums-page" style={shellStyle.page}>
+    <main className={embedded ? 'drums-page drums-page--embedded' : 'drums-page'} style={workspaceShellStyle}>
       <nav aria-label="Skip links" style={shellStyle.skipLinks}>
         <a
           href="#drum-transport"
@@ -3580,8 +3931,10 @@ export function DrumsPage() {
                 setPadCvGateConfig.mutate({ padId, config })
               },
               (padId, file) => {
-                sampleEditor.upload.mutate({ padId, file })
-                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} sample upload started.`)
+                void pushSampleUndoSnapshot(padId).finally(() => {
+                  sampleEditor.upload.mutate({ padId, file })
+                  announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} sample upload started.`)
+                })
               },
               (padId) => {
                 setSampleRecordingPad(padId)
@@ -3590,28 +3943,38 @@ export function DrumsPage() {
               },
               (padId) => {
                 setSampleRecordingPad(null)
-                sampleEditor.stopRecording.mutate(padId)
-                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} input recording captured.`)
+                void pushSampleUndoSnapshot(padId).finally(() => {
+                  sampleEditor.stopRecording.mutate(padId)
+                  announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} input recording captured.`)
+                })
               },
               (value) => setSampleZoom(value),
               (value) => setSampleScroll(value),
               (value) => setSampleTrimStart(Math.min(value, Math.max(0, sampleTrimEnd - 1))),
               (value) => setSampleTrimEnd(Math.max(value, sampleTrimStart + 1)),
               (padId, startSample, endSample) => {
-                sampleEditor.trim.mutate({ padId, startSample, endSample })
-                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} trim applied.`)
+                void pushSampleUndoSnapshot(padId).finally(() => {
+                  sampleEditor.trim.mutate({ padId, startSample, endSample })
+                  announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} trim applied.`)
+                })
               },
               (padId) => {
-                sampleEditor.normalize.mutate({ padId, targetPeak: 0.99 })
-                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} normalized.`)
+                void pushSampleUndoSnapshot(padId).finally(() => {
+                  sampleEditor.normalize.mutate({ padId, targetPeak: 0.99 })
+                  announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} normalized.`)
+                })
               },
               (padId) => {
-                sampleEditor.reverse.mutate(padId)
-                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} reversed.`)
+                void pushSampleUndoSnapshot(padId).finally(() => {
+                  sampleEditor.reverse.mutate(padId)
+                  announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} reversed.`)
+                })
               },
               (padId, fadeInMs, fadeOutMs) => {
-                sampleEditor.fade.mutate({ padId, fadeInMs, fadeOutMs })
-                announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} faded.`)
+                void pushSampleUndoSnapshot(padId).finally(() => {
+                  sampleEditor.fade.mutate({ padId, fadeInMs, fadeOutMs })
+                  announce(`${activeKit?.instruments?.[padId]?.name ?? `Pad ${padId + 1}`} faded.`)
+                })
               },
               transport.track_swing ?? [],
               (instrumentIndex, swing) => {
@@ -3627,6 +3990,7 @@ export function DrumsPage() {
                 )
               },
               (instrumentIndex, stepIndex, nextVelocity, accentEnabled) => {
+                pushPatternUndoSnapshot(transport.pattern)
                 setStep.mutate({
                   patternId: transport.pattern,
                   instrument: instrumentIndex,
@@ -3673,6 +4037,7 @@ export function DrumsPage() {
                   })
                     ? 100
                     : 0
+                pushPatternUndoSnapshot(transport.pattern)
                 setStep.mutate({
                   patternId: transport.pattern,
                   instrument: instrumentIndex,
@@ -3725,6 +4090,9 @@ export function DrumsPage() {
               },
               () => setClearModalOpen(true),
               () => {
+                if (selectedPatternSlot === transport.pattern) {
+                  pushPatternUndoSnapshot(transport.pattern)
+                }
                 clearPattern.mutate(selectedPatternSlot)
                 setClearModalOpen(false)
                 updateTransport.mutate({ pattern: selectedPatternSlot, variation: 0 })
@@ -3732,6 +4100,7 @@ export function DrumsPage() {
               },
               () => setClearModalOpen(false),
               (length) => {
+                pushPatternUndoSnapshot(transport.pattern)
                 setPattern.mutate({
                   patternId: transport.pattern,
                   pattern: buildPatternPayload(transport.pattern, pattern, length),
@@ -3977,6 +4346,20 @@ export function DrumsPage() {
       </footer>
     </main>
   )
+}
+
+function resolveInitialDrumMode(search: string): DrumMode | null {
+  const mode = new URLSearchParams(search).get('mode')
+  if (mode === 'practice' || mode === 'advanced' || mode === 'backing_tracks') {
+    return mode
+  }
+  return null
+}
+
+export function DrumsPage() {
+  const location = useLocation()
+
+  return <DrumsWorkspace initialMode={resolveInitialDrumMode(location.search)} />
 }
 
 export default DrumsPage

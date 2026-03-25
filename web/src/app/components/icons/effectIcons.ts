@@ -20,6 +20,7 @@ import FxCompressor from './noun/dynamics/fx-compressor.svg?react'
 import FxDelay from '../HorizontalSignalChain/icons/fx_delay.svg?react'
 import FxDistortion from './noun/distortion/fx-distortion.svg?react'
 import FxDrums from './noun/drums/fx-drums.svg?react'
+import FxExpression from './noun/expression/fx-expression.svg?react'
 import FxEq from '../HorizontalSignalChain/icons/fx_eq.svg?react'
 import FxFilter from '../HorizontalSignalChain/icons/fx_filter.svg?react'
 import FxGate from '../HorizontalSignalChain/icons/fx_gate.svg?react'
@@ -79,6 +80,9 @@ const EFFECT_ICON_MAP: Record<string, EffectIconComponent> = {
   'graillon': FxPitch,
   'drum machine': FxDrums,
   drums: FxDrums,
+  expression: FxExpression,
+  'expression pedal': FxExpression,
+  wah: FxExpression,
   'cabinet ir': FxSimulator,
   'reverb ir': FxReverb,
   'synthforge': FxInstrument,
@@ -224,6 +228,7 @@ const OUTLINE_EFFECT_ICONS = new Set<EffectIconComponent>([
   FxCompressor,
   FxDistortion,
   FxDrums,
+  FxExpression,
   FxLexicon,
   FxModulator,
   FxParametricEq,
@@ -292,6 +297,7 @@ export {
   FxDial,
   FxDistortion,
   FxDrums,
+  FxExpression,
   FxEmpty,
   FxEq,
   FxError,

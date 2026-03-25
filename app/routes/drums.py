@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, File, HTTPException, Path, UploadFile
+from fastapi import APIRouter, File, HTTPException, Path, Response, UploadFile
 from pydantic import BaseModel, Field
 
 from app.services.drum_kit_service import (
@@ -350,6 +350,21 @@ def get_drum_pad_sample_waveform(
 ) -> Dict[str, Any]:
     try:
         return _get_sample_editor_service().get_waveform(pad, points=points)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/engine/drums/pad/{pad}/sample/file")
+def get_drum_pad_sample_file(pad: int = Path(..., ge=0, le=15)) -> Response:
+    try:
+        filename, payload = _get_sample_editor_service().export_sample(pad)
+        return Response(
+            content=payload,
+            media_type="audio/wav",
+            headers={"Content-Disposition": f'inline; filename="{filename}"'},
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except (RuntimeError, ValueError) as exc:
