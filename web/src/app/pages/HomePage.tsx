@@ -30,7 +30,7 @@ function formatSignalChain(plugins: ChainPlugin[]): string {
 
 function useActiveChainSummary() {
   const [chain, setChain] = useState<Chain | null>(null)
-  const { client } = useWebSocketConnection()
+  useWebSocketConnection()
 
   useEffect(() => {
     let cancelled = false
@@ -122,7 +122,7 @@ export function HomePage() {
 
   return (
     <div className="hp2-root">
-      <div className="hp2-layout">
+      <nav className="hp2-layout" aria-label="Workspaces">
         {/* ── Hero: Audio Grid ─────────────────────────────────── */}
         <ClickableTile
           className="hp2-card hp2-card--hero"
@@ -163,7 +163,7 @@ export function HomePage() {
             )
           })}
         </div>
-      </div>
+      </nav>
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="hp2-footer">

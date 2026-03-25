@@ -52,6 +52,10 @@
   gap: 0.5rem;
 }
 
+.hp2-card__body > svg {
+  color: var(--cds-text-secondary);
+}
+
 .hp2-card__title {
   margin: 0;
   font-size: 1.25rem;
@@ -107,6 +111,11 @@
   white-space: nowrap;
   overflow-x: auto;
   max-width: 100%;
+  scrollbar-width: none;
+}
+
+.hp2-card__chain::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Middle tier ────────────────────────────────────────────────────────── */
