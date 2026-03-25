@@ -165,47 +165,6 @@ async def validate_update(request: UpdateRequest):
         raise HTTPException(400, f"Validation failed: {e}")
 
 
-@router.get("/schedule")
-async def get_update_schedule(
-    nodes_per_hour: int = Query(2, ge=1, le=10)
-):
-    """
-    Get recommended update schedule.
-    
-    Query parameters:
-        - nodes_per_hour: How many nodes to update per hour (stagger rate)
-    
-    Returns:
-        Estimated timing and resource requirements
-    """
-    try:
-        registry = get_cluster_registry()
-        nodes = registry.get_nodes_by_role("AUDIO-NODE")
-        
-        if not nodes:
-            raise HTTPException(404, "No audio nodes in cluster")
-        
-        hours_needed = len(nodes) / nodes_per_hour
-        
-        return {
-            "status": "ok",
-            "total_audio_nodes": len(nodes),
-            "nodes_per_hour": nodes_per_hour,
-            "estimated_hours": hours_needed,
-            "estimated_minutes": hours_needed * 60,
-            "recommended_start_time": "Sunday 3:00 AM UTC",
-            "requires_maintenance_window": hours_needed > 2,
-            "maintenance_window_hours": hours_needed + 1,
-            "zero_downtime": True,
-            "can_abort": True,
-        }
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(500, f"Failed to get schedule: {e}")
-
-
 @router.post("/abort")
 async def abort_update():
     """
@@ -307,31 +266,6 @@ async def rollback_to_snapshot(snapshot_id: str):
         raise
     except Exception as e:
         raise HTTPException(500, f"Rollback failed: {e}")
-
-
-@router.get("/history")
-async def get_update_history(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100)
-):
-    """
-    Get update operation history.
-    
-    Lists past update operations with results and timing.
-    """
-    try:
-        # This would query a database of update operations
-        # For now, return empty history
-        return {
-            "status": "ok",
-            "total_operations": 0,
-            "operations": [],
-            "skip": skip,
-            "limit": limit,
-        }
-    
-    except Exception as e:
-        raise HTTPException(500, f"Failed to get history: {e}")
 
 
 @router.get("/manifest")

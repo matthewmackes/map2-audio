@@ -6678,7 +6678,7 @@ Last updated: 2026-03-25 09:54 EDT - Codex
   - Validation passed with `pytest tests/test_engine_snapshot_route_ownership.py tests/test_route_registration_policy.py tests/test_chains_ab_mode_identity.py tests/test_chains_ab_mode_route_registration.py -q`.
 
 ID: T409
-Status: [ ] Todo
+Status: [✓] Done
 Title: Resolve duplicate cluster admin and update route ownership
 Description:
 - Goal / acceptance criteria: Remove the duplicate concrete route registrations for `GET /api/cluster/nodes`, `GET /api/cluster/health`, `GET /api/cluster/health/{node_id}`, `GET /api/cluster/update/schedule`, and `GET /api/cluster/update/history` across `cluster_flows.py`, `cluster_health.py`, `cluster_admin.py`, and `cluster_update.py`. Keep one canonical owner per endpoint and preserve current frontend behavior.
@@ -6688,10 +6688,14 @@ Description:
 - Required outputs: Canonical route ownership for the overlapping cluster paths, updated tests, and removal from the duplicate-route allowlist.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 09:48 EDT - Codex
+Last updated: 2026-03-25 10:06 EDT - Codex
+- Completion notes:
+  - Removed the shadowed duplicate handlers from `app/routes/cluster_admin.py` for `GET /api/cluster/nodes`, `GET /api/cluster/health`, and `GET /api/cluster/health/{node_id}`, leaving `cluster_flows.py` and `cluster_health.py` as the sole owners of those public contracts already exposed in practice.
+  - Removed the shadowed duplicate handlers from `app/routes/cluster_update.py` for `GET /api/cluster/update/schedule` and `GET /api/cluster/update/history`, leaving `cluster_admin.py` as the single owner of those update-planning endpoints.
+  - Validation passed with the strict duplicate-route scan plus `pytest tests/test_route_registration_policy.py tests/test_cluster_flows_api.py tests/test_phase1_integration.py tests/test_cluster_visibility_routes.py tests/test_route_prefix_collisions_phase_a.py -q`.
 
 ID: T410
-Status: [ ] Todo
+Status: [✓] Done
 Title: Resolve duplicate cluster config push and rollback routes
 Description:
 - Goal / acceptance criteria: Remove the duplicate `POST /api/cluster/config/push` and `POST /api/cluster/config/rollback` registrations currently split between `app/routes/cluster_admin.py` and `app/routes/config_api.py`. Preserve current config distribution behavior and node-to-node push flows while leaving one public owner for each endpoint.
@@ -6701,7 +6705,11 @@ Description:
 - Required outputs: Single route owner for the overlapping config endpoints, updated tests, and removal from the duplicate-route allowlist.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 09:48 EDT - Codex
+Last updated: 2026-03-25 10:06 EDT - Codex
+- Completion notes:
+  - Removed the duplicate `POST /api/cluster/config/push` and `POST /api/cluster/config/rollback` handlers from `app/routes/cluster_admin.py`, leaving `app/routes/config_api.py` as the sole write-path owner.
+  - Tightened `tests/test_route_registration_policy.py` from an allowlisted duplicate detector to a fully strict “no duplicate concrete method+path registrations” guard after the final config-route collisions were removed.
+  - Validation passed with an app-wide duplicate-route scan returning `[]` and the same focused cluster route test suite used for `T409`.
 
 ID: T407
 Status: [✓] Done

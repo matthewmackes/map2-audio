@@ -52,13 +52,6 @@ def test_registered_http_routes_have_unique_method_path_pairs():
     seen: dict[tuple[str, str], str] = {}
     duplicates: list[tuple[str, str, str, str]] = []
     allowed_duplicates = {
-        ("GET", "/api/cluster/nodes"),
-        ("GET", "/api/cluster/health"),
-        ("GET", "/api/cluster/health/{node_id}"),
-        ("GET", "/api/cluster/update/schedule"),
-        ("GET", "/api/cluster/update/history"),
-        ("POST", "/api/cluster/config/push"),
-        ("POST", "/api/cluster/config/rollback"),
     }
 
     for route in app.routes:
@@ -74,4 +67,4 @@ def test_registered_http_routes_have_unique_method_path_pairs():
             else:
                 seen[key] = owner
 
-    assert {(method, path) for method, path, _previous, _owner in duplicates} == allowed_duplicates
+    assert duplicates == []

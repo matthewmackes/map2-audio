@@ -260,54 +260,6 @@ async def get_cluster_status() -> Dict:
         )
 
 
-@router.get("/nodes")
-async def list_nodes(role: Optional[str] = None, status_filter: Optional[str] = None) -> Dict:
-    """
-    List all cluster nodes with their status and health.
-
-    Query Parameters:
-        role: Filter by role (AUDIO-NODE, MANAGEMENT-NODE)
-        status_filter: Filter by status (online, offline, degraded, updating)
-
-    Returns:
-        List of node information objects
-    """
-    try:
-        registry = get_cluster_registry()
-        aggregator = get_health_aggregator()
-
-        # Get nodes
-        if role:
-            nodes = registry.get_nodes_by_role(role)
-        elif status_filter:
-            nodes = registry.get_nodes_by_status(status_filter)
-        else:
-            nodes = registry.get_all_nodes()
-
-        # Enhance with health scores
-        for node in nodes:
-            node_id = node["id"]
-            health_score = aggregator.get_node_health(node_id)
-            if health_score is not None:
-                node["health_score"] = health_score
-            node["last_seen"] = _format_timestamp(node.get("last_seen"))
-            node["last_updated"] = _format_timestamp(node.get("last_updated"))
-
-        return {
-            "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
-            "count": len(nodes),
-            "nodes": nodes,
-        }
-
-    except Exception as e:
-        logger.error(f"Failed to list nodes: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve node list",
-        )
-
-
 @router.get("/nodes/{node_id}")
 async def get_node(node_id: str) -> Dict:
     """
@@ -351,75 +303,6 @@ async def get_node(node_id: str) -> Dict:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve node details",
-        )
-
-
-@router.get("/health")
-async def get_health() -> Dict:
-    """
-    Get cluster aggregate health information.
-
-    Returns:
-        Overall health score, online nodes, metrics by node
-    """
-    try:
-        aggregator = get_health_aggregator()
-        health = aggregator.get_cluster_health()
-
-        return {
-            "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
-            **health,
-        }
-
-    except Exception as e:
-        logger.error(f"Failed to get cluster health: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve health information",
-        )
-
-
-@router.get("/health/{node_id}")
-async def get_node_health(node_id: str) -> Dict:
-    """
-    Get health details for a specific node.
-
-    Path Parameters:
-        node_id: Node identifier
-
-    Returns:
-        Node health score and metrics
-    """
-    try:
-        registry = get_cluster_registry()
-        aggregator = get_health_aggregator()
-
-        # Verify node exists
-        node = registry.get_node(node_id)
-        if not node:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Node {node_id} not found",
-            )
-
-        health_score = aggregator.get_node_health(node_id) or 50.0
-
-        return {
-            "status": "ok",
-            "timestamp": datetime.utcnow().isoformat(),
-            "node_id": node_id,
-            "health_score": health_score,
-            "status_info": node.get("status", "unknown"),
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to get node health for {node_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve node health",
         )
 
 
@@ -875,46 +758,6 @@ async def get_update_history(limit: int = 50) -> Dict:
 # ============================================================================
 
 
-@router.post("/config/push")
-async def push_configuration(
-    config_type: str,
-    config_data: Dict,
-    message: str = "Configuration update",
-) -> Dict:
-    """
-    Push configuration to all cluster nodes.
-    
-    Args:
-        config_type: "preset", "midi_mapping", or "audio_chain"
-        config_data: Configuration data to distribute
-        message: Commit message for versioning
-        
-    Returns:
-        - success: Whether push was successful
-        - nodes_updated: Number of nodes that received config
-    """
-    try:
-        config_sync = get_config_sync()
-        success = await config_sync.push_config_to_nodes(
-            config_type, config_data, message
-        )
-        
-        if success:
-            nodes = get_cluster_registry().get_all_nodes()
-            return {
-                "success": True,
-                "nodes_updated": len(nodes),
-                "config_type": config_type,
-                "message": message,
-            }
-        else:
-            raise HTTPException(status_code=500, detail="Push failed")
-            
-    except Exception as e:
-        logger.error(f"Config push failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.get("/config/history")
 async def get_config_history(limit: int = 20) -> Dict:
     """
@@ -971,32 +814,6 @@ async def get_config_diff(version_a: str, version_b: str) -> Dict:
         }
     except Exception as e:
         logger.error(f"Failed to get diff: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/config/rollback")
-async def rollback_configuration(version_hash: str) -> Dict:
-    """
-    Rollback configuration to previous version.
-    
-    Args:
-        version_hash: Git commit hash to restore
-        
-    Returns:
-        - success: Whether rollback was successful
-        - version: Version that was restored
-    """
-    try:
-        config_sync = get_config_sync()
-        success = await config_sync.rollback_config(version_hash)
-        
-        return {
-            "success": success,
-            "version": version_hash,
-            "message": "Configuration rolled back" if success else "Rollback failed",
-        }
-    except Exception as e:
-        logger.error(f"Rollback failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
