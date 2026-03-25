@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**814** Python | **1235** TypeScript | **298** C++/H | **123** Docs | **862** total commits | **2** stars | **0** forks | **0** open issues
+**814** Python | **1235** TypeScript | **298** C++/H | **123** Docs | **864** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2a9b11e4`](https://github.com/matthewmackes/map2-audio/commit/2a9b11e4050f6a5d03181563a3fdcb9822a80e58) | Complete route audit cleanup and health consolidation | Map2 Audio | 2026-03-25 |
+| [`bf234dd9`](https://github.com/matthewmackes/map2-audio/commit/bf234dd9e8038b56f9f34c762f59d6389f6da578) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`a36e6ffa`](https://github.com/matthewmackes/map2-audio/commit/a36e6ffa14a186284e706746f7b7e5cc4c74aeb0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
 | [`b715c834`](https://github.com/matthewmackes/map2-audio/commit/b715c8341702e89d47ece13f539082a7b8edadc6) | Block unregistered route CI task | Map2 Audio | 2026-03-25 |
 | [`6fe343f7`](https://github.com/matthewmackes/map2-audio/commit/6fe343f72026032ccf8395e82b2b109b5b51f626) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`412cf874`](https://github.com/matthewmackes/map2-audio/commit/412cf87434e79fc6eda74f898b8cfe57eaf8e3eb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
 | [`10aadf41`](https://github.com/matthewmackes/map2-audio/commit/10aadf4146937be533f6805402707ff067691bc5) | Block invalid route prefix CI task | Map2 Audio | 2026-03-25 |
 | [`7c713909`](https://github.com/matthewmackes/map2-audio/commit/7c713909c2dd6cde62528a5055adf5a61c70aade) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
-| [`3822dfb9`](https://github.com/matthewmackes/map2-audio/commit/3822dfb9b089ea6db3ea2f84225779bd83dc21db) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-03-25 |
-| [`7f69999a`](https://github.com/matthewmackes/map2-audio/commit/7f69999a7e65ed0dce54007bce33450620ee25ed) | Rename snapshot route module | Map2 Audio | 2026-03-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
