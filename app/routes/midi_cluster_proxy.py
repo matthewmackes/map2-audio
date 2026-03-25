@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.services.midi_hub.midi_discovery import get_midi_discovery_service
 
 
-router = APIRouter(prefix="/api/midi/cluster", tags=["MIDI Cluster"])
+router = APIRouter(prefix="/api/midi/cluster/proxy", tags=["MIDI Cluster"])
 
 
 async def _resolve_node_base_url(node_id: str) -> str:
@@ -50,4 +50,3 @@ async def proxy_midi_hub(request: Request, node_id: str, path: str):
         raise HTTPException(status_code=502, detail=f"Proxy error contacting node {node_id}: {exc}")
 
     return response
-

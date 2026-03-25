@@ -14,7 +14,7 @@ from app.services.cluster.hybrid_update_manager import (
     UpdateEnvironment
 )
 
-router = APIRouter(prefix="/api/cluster/update", tags=["cluster-update"])
+router = APIRouter(prefix="/api/cluster/update/hybrid", tags=["cluster-update"])
 
 
 # ============================================================================

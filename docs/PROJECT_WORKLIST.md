@@ -6443,7 +6443,7 @@ Last updated: 2026-03-25 07:55 EDT - Codex
   - Validation passed with `pytest tests/test_nam_route_prefixes.py tests/test_nam_ir_instance_routes.py -q`.
 
 ID: T395
-Status: [ ] Todo
+Status: [✓] Done
 Title: Resolve cluster update route prefix collision — both cluster_update.py and cluster_update_hybrid.py use /api/cluster/update
 Description:
 - Goal / acceptance criteria: Both `app/routes/cluster_update.py:18` and `app/routes/cluster_update_hybrid.py:17` declare `APIRouter(prefix=”/api/cluster/update”)` and both are registered. Merge or change hybrid prefix to `/api/cluster/update/hybrid`. Verify all cluster update endpoints respond correctly.
@@ -6453,10 +6453,14 @@ Description:
 - Required outputs: No duplicate prefixes, all cluster update endpoints verified.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:05 EDT - Codex
+- Completion notes:
+  - Resolved the cluster update prefix collision by moving `app/routes/cluster_update_hybrid.py` behind `/api/cluster/update/hybrid`, leaving `app/routes/cluster_update.py` as the sole owner of the primary `/api/cluster/update` namespace used by the current frontend.
+  - Added `tests/test_route_prefix_collisions_phase_a.py` to assert the primary and hybrid cluster update routers expose disjoint path sets while preserving `/api/cluster/update/trigger` on the primary router.
+  - Validation passed with `pytest tests/test_route_prefix_collisions_phase_a.py tests/test_midi_cluster_api_routes.py -q`.
 
 ID: T396
-Status: [ ] Todo
+Status: [✓] Done
 Title: Resolve MIDI cluster route prefix collision — both midi_cluster.py and midi_cluster_proxy.py use /api/midi/cluster
 Description:
 - Goal / acceptance criteria: Both `app/routes/midi_cluster.py:19` and `app/routes/midi_cluster_proxy.py:11` declare `APIRouter(prefix=”/api/midi/cluster”)` and both are registered. Move proxy to `/api/midi/cluster/proxy` or merge. Verify all MIDI cluster endpoints respond correctly.
@@ -6466,7 +6470,11 @@ Description:
 - Required outputs: No duplicate prefixes, all MIDI cluster endpoints verified.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:05 EDT - Codex
+- Completion notes:
+  - Resolved the MIDI cluster proxy prefix collision by moving `app/routes/midi_cluster_proxy.py` behind `/api/midi/cluster/proxy`, leaving `app/routes/midi_cluster.py` as the sole owner of the primary `/api/midi/cluster` API contract.
+  - Extended `tests/test_route_prefix_collisions_phase_a.py` to assert the primary MIDI cluster router and proxy router expose disjoint path sets while preserving `/api/midi/cluster/nodes` on the primary router.
+  - Validation passed with `pytest tests/test_route_prefix_collisions_phase_a.py tests/test_midi_cluster_api_routes.py -q`.
 
 ID: T397
 Status: [ ] Todo
