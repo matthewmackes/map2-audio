@@ -1,7 +1,0 @@
-# Incomplete Tasks Inventory
-Generated: 2026-02-14T13:30:43Z
-
-app/services/ir_library/scraper_base.py:201:        raise NotImplementedError("Subclasses must implement discover_irs()")
-app/services/ir_library/scraper_base.py:222:        raise NotImplementedError("Subclasses must implement download_file()")
-app/services/soundfont_library/scraper_base.py:182:        raise NotImplementedError("Subclasses must implement discover_soundfonts()")
-app/services/soundfont_library/scraper_base.py:197:        raise NotImplementedError("Subclasses must implement download_file()")

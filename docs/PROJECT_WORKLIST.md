@@ -6345,7 +6345,7 @@ Assigned to: Codex
 Last updated: 2026-03-25 - Codex
 
 ID: T389
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete dead rate_limiter.py (525 lines, zero imports)
 Description:
 - Goal / acceptance criteria: Delete `app/middleware/rate_limiter.py`. Confirm zero imports via grep. The active rate limiter is `app/middleware/rate_limiting.py` (TokenBucket).
@@ -6355,10 +6355,13 @@ Description:
 - Required outputs: File deleted, `pytest` passes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 07:49 EDT - Codex
+- Completion notes:
+  - Deleted `app/middleware/rate_limiter.py` after confirming there were no remaining imports under `app/` or `tests/`.
+  - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q`.
 
 ID: T390
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete dead configuration_distributor.py (388 lines, zero imports)
 Description:
 - Goal / acceptance criteria: Delete `app/services/cluster/configuration_distributor.py`. The active distributor is `app/services/cluster/config_distributor.py`.
@@ -6368,7 +6371,10 @@ Description:
 - Required outputs: File deleted, `pytest` passes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 07:49 EDT - Codex
+- Completion notes:
+  - Deleted `app/services/cluster/configuration_distributor.py` after confirming the repo no longer imported it and the active implementation remains `app/services/cluster/config_distributor.py`.
+  - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q`.
 
 ID: T391
 Status: [ ] Todo
@@ -6384,7 +6390,7 @@ Assigned to: Codex
 Last updated: 2026-03-25 - Codex
 
 ID: T392
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete abandoned email_notifications route and frontend hook
 Description:
 - Goal / acceptance criteria: Delete `app/routes/email_notifications.py` and `web/src/app/hooks/useEmailNotifications.ts` — both exist but neither is wired in (route not registered in main.py, hook not imported by any component). Alternatively, if email notifications are wanted, register the route and wire the hook.
@@ -6394,10 +6400,14 @@ Description:
 - Required outputs: Both files deleted (or both activated), build + tests pass.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 07:49 EDT - Codex
+- Completion notes:
+  - Deleted the disconnected backend route `app/routes/email_notifications.py` and the unused frontend hook `web/src/app/hooks/useEmailNotifications.ts` after confirming the route was not registered in `app/main.py` and the hook had no import sites.
+  - Pruned the stale email-related entries from `docs/backend-runtime-contract.md` and `docs/backend-runtime-contract.json` so generated contract docs no longer point at removed code.
+  - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q` and `npm --prefix web run typecheck`.
 
 ID: T393
-Status: [ ] Todo
+Status: [✓] Done
 Title: Delete stale worklog docs and duplicate workspace file
 Description:
 - Goal / acceptance criteria: Delete `worklog/incomplete-tasks-inventory.txt` (last updated 2026-02-14), `worklog/incomplete-tasks-plan.md`, and `map2-audio.code-workspace` (duplicate of `MAP2-AUDIO.code-workspace`). Verify and delete `app/tui/dashboard.py` if unused (separate from standalone `tui/` directory).
@@ -6407,7 +6417,10 @@ Description:
 - Required outputs: Files deleted.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 07:49 EDT - Codex
+- Completion notes:
+  - Deleted `worklog/incomplete-tasks-inventory.txt`, `worklog/incomplete-tasks-plan.md`, `map2-audio.code-workspace`, and the unused `app/tui/dashboard.py` module after confirming the TUI codepath uses the standalone `tui/` package instead.
+  - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q` and `npm --prefix web run typecheck`.
 
 ### Phase B: Fix Critical Route Prefix Collisions
 

@@ -22,13 +22,6 @@
       "variable": "DEBUG_RESILIENCE"
     },
     {
-      "default": "'monitoring@map2-audio.local'",
-      "file": "app/routes/email_notifications.py",
-      "kind": "os.getenv",
-      "line": 19,
-      "variable": "EMAIL_SENDER"
-    },
-    {
       "default": "'true'",
       "file": "app/deployment/resilience_config.py",
       "kind": "os.getenv",
@@ -394,34 +387,6 @@
     },
     {
       "default": null,
-      "file": "app/routes/email_notifications.py",
-      "kind": "os.getenv",
-      "line": 23,
-      "variable": "SMTP_PASSWORD"
-    },
-    {
-      "default": "'25'",
-      "file": "app/routes/email_notifications.py",
-      "kind": "os.getenv",
-      "line": 21,
-      "variable": "SMTP_PORT"
-    },
-    {
-      "default": "'localhost'",
-      "file": "app/routes/email_notifications.py",
-      "kind": "os.getenv",
-      "line": 20,
-      "variable": "SMTP_SERVER"
-    },
-    {
-      "default": null,
-      "file": "app/routes/email_notifications.py",
-      "kind": "os.getenv",
-      "line": 22,
-      "variable": "SMTP_USERNAME"
-    },
-    {
-      "default": null,
       "file": "app/routes/auth.py",
       "kind": "os.getenv",
       "line": 19,
@@ -471,18 +436,6 @@
         }
       ],
       "variable": "DEBUG_RESILIENCE"
-    },
-    {
-      "occurrences": [
-        {
-          "default": "'monitoring@map2-audio.local'",
-          "file": "app/routes/email_notifications.py",
-          "kind": "os.getenv",
-          "line": 19,
-          "variable": "EMAIL_SENDER"
-        }
-      ],
-      "variable": "EMAIL_SENDER"
     },
     {
       "occurrences": [
@@ -1019,54 +972,6 @@
         }
       ],
       "variable": "PROMETHEUS_URL"
-    },
-    {
-      "occurrences": [
-        {
-          "default": null,
-          "file": "app/routes/email_notifications.py",
-          "kind": "os.getenv",
-          "line": 23,
-          "variable": "SMTP_PASSWORD"
-        }
-      ],
-      "variable": "SMTP_PASSWORD"
-    },
-    {
-      "occurrences": [
-        {
-          "default": "'25'",
-          "file": "app/routes/email_notifications.py",
-          "kind": "os.getenv",
-          "line": 21,
-          "variable": "SMTP_PORT"
-        }
-      ],
-      "variable": "SMTP_PORT"
-    },
-    {
-      "occurrences": [
-        {
-          "default": "'localhost'",
-          "file": "app/routes/email_notifications.py",
-          "kind": "os.getenv",
-          "line": 20,
-          "variable": "SMTP_SERVER"
-        }
-      ],
-      "variable": "SMTP_SERVER"
-    },
-    {
-      "occurrences": [
-        {
-          "default": null,
-          "file": "app/routes/email_notifications.py",
-          "kind": "os.getenv",
-          "line": 22,
-          "variable": "SMTP_USERNAME"
-        }
-      ],
-      "variable": "SMTP_USERNAME"
     },
     {
       "occurrences": [

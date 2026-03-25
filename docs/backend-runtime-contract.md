@@ -129,7 +129,6 @@ These variables are read directly in code and are not represented in `app/config
 | `CLUSTER_MODE` | `app/routes/special_settings.py:29` | `'disabled'` | 1 |
 | `DEBUG` | `app/routes/www.py:166` | `'false'` | 1 |
 | `DEBUG_RESILIENCE` | `app/deployment/resilience_config.py:98` | `'false'` | 1 |
-| `EMAIL_SENDER` | `app/routes/email_notifications.py:19` | `'monitoring@map2-audio.local'` | 1 |
 | `ENABLE_CIRCUIT_BREAKER` | `app/deployment/resilience_config.py:85` | `'true'` | 1 |
 | `ENABLE_CONNECTION_POOLING` | `app/deployment/resilience_config.py:87` | `'true'` | 1 |
 | `ENABLE_GRACEFUL_DEGRADATION` | `app/deployment/resilience_config.py:89` | `'true'` | 1 |
@@ -170,10 +169,6 @@ These variables are read directly in code and are not represented in `app/config
 | `MPX1_SIMULATOR` | `app/services/mpx1_service.py:53` | `''` | 1 |
 | `NODE_ID` | `app/routes/special_settings.py:139` | `'standalone'` | 1 |
 | `PROMETHEUS_URL` | `app/services/cluster/post_update_health.py:360` | `'http://localhost:9090'` | 1 |
-| `SMTP_PASSWORD` | `app/routes/email_notifications.py:23` | `` | 1 |
-| `SMTP_PORT` | `app/routes/email_notifications.py:21` | `'25'` | 1 |
-| `SMTP_SERVER` | `app/routes/email_notifications.py:20` | `'localhost'` | 1 |
-| `SMTP_USERNAME` | `app/routes/email_notifications.py:22` | `` | 1 |
 | `SPECIAL_MODE_PASSWORD` | `app/routes/auth.py:19` | `` | 1 |
 | `XDG_RUNTIME_DIR` | `app/services/pipewire_service.py:30` | `'/run/user/1000'` | 1 |
 
@@ -183,4 +178,3 @@ These variables are read directly in code and are not represented in `app/config
 - Audio realtime behavior also depends on non-`MAP2_*` systemd environment such as `PIPEWIRE_LATENCY`, `PIPEWIRE_REMOTE`, and `JACK_DEFAULT_SERVER`.
 - `/etc/map2/environment` is the intended host-specific override layer for the shipped backend service.
 - Variables listed under direct-only reads are the highest-priority candidates for migration into `app/config.py` if MAP2 wants one typed configuration source of truth.
-
