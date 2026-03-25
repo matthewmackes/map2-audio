@@ -14,6 +14,9 @@ case "$COMMAND" in
     app|tui|console|"")
         map2_run_console "$@"
         ;;
+    ink|ink-tui|terminal)
+        map2_run_ink_tui "$@"
+        ;;
     info|status|dashboard)
         map2_run_console --route dashboard "$@"
         ;;

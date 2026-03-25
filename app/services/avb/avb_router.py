@@ -258,6 +258,43 @@ class AvbRouter:
         """Return whether startup auto-connect orchestration is enabled."""
         return self._coerce_bool(config_get("avb.auto_connect", True), True)
 
+    async def trigger_auto_connect(self, *, reason: str = "manual") -> Dict[str, Any]:
+        """Run an explicit auto-connect pass outside startup orchestration."""
+        if not self._is_auto_connect_enabled():
+            summary = {
+                "reason": str(reason),
+                "enabled": False,
+                "connected": 0,
+                "failed": 0,
+                "candidate_pairs": 0,
+                "error": "AVB auto-connect disabled",
+            }
+            self._last_auto_connect_summary = summary
+            self._last_auto_connect_error = None
+            return dict(summary)
+
+        attempt = self._auto_connect_runs + 1
+        self._auto_connect_runs += 1
+        try:
+            summary = await self._auto_connect_once(attempt=attempt)
+            summary["reason"] = str(reason)
+            self._last_auto_connect_summary = summary
+            self._last_auto_connect_error = None
+            return dict(summary)
+        except Exception as exc:
+            self._last_auto_connect_error = str(exc)
+            summary = {
+                "reason": str(reason),
+                "enabled": True,
+                "connected": 0,
+                "failed": 1,
+                "candidate_pairs": 0,
+                "error": str(exc),
+            }
+            self._last_auto_connect_summary = summary
+            logger.warning("AVB auto-connect trigger failed (%s): %s", reason, exc)
+            return dict(summary)
+
     # ========================================================================
     # Discovery
     # ========================================================================

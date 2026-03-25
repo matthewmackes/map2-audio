@@ -6,7 +6,138 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-25 - Closed T413 by aligning the Audio Artifacts left rail with the upgraded routed workspace navigation spec
+Last updated: 2026-03-25 - Closed T416 after promoting SynthForge to a standalone routed workspace
+
+ID: T420
+Status: [✓] Done
+Title: Fix Theme page plugin catalog loading failure
+Description:
+- Goal / acceptance criteria: Diagnose and fix the Theme page failure where the plugin catalog remains stuck on loading or errors when browsing plugin appearance/theme overrides. The fix must restore successful plugin list loading in the Theme page without regressing existing plugin appearance behavior, and it must include focused validation or tests.
+- Why it matters: The Theme page is part of the canonical Platforms shell, and operators cannot edit plugin appearance metadata if the catalog never loads.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: root-cause fix in frontend/backend as needed, focused tests or validation evidence, and completion notes
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 17:22 EDT - Codex
+- Completion notes:
+  - Fixed the Theme page plugin inventory race where the category modal's load effect depended on `pluginInventoryLoading`, causing the in-flight discovery promise to be cancelled on the first loading-state transition and leaving the UI stuck on `Loading plugin catalog…`.
+  - Added a bounded discovery helper that falls back from `/api/plugins/discover` to the lightweight `/api/plugins/all` catalog so the Theme page remains usable during plugin inventory warmup or discovery failures.
+  - Added focused Theme page coverage proving the category modal still exposes plugin override controls and the fallback path clears the loading state without surfacing the plugin-catalog error state.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/ThemePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS.
+
+ID: T419
+Status: [✓] Done
+Title: Surface AVB auto-provision status in remediation workflows
+Description:
+- Goal / acceptance criteria: Persist AVB auto-provision results from the post-adoption trigger onto the adopted node record, expose that status through adoption and remediation APIs, and render it in the Platforms remediation workflow so operators can see whether AVB auto-provision is pending, complete, or completed with issues. The implementation must avoid introducing a new workflow family or tile-pill set in this pass.
+- Why it matters: Automatic AVB provisioning after adoption is only useful if operators can inspect the outcome and distinguish a successful adoption from an adoption that still needs AVB follow-up.
+- Dependencies: T418
+- Estimated effort: Medium
+- Required outputs: persisted backend status, API response updates, remediation UI updates, focused tests/validation, and completion notes
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 16:34 EDT - Codex
+- Completion notes:
+  - Persisted post-adoption AVB auto-provision results onto the adoption record metadata and surfaced them through both `/api/adoption/candidates` and `/api/platform-remediation/summary`.
+  - Extended the adoption visibility overlay so remediation surfaces now inherit AVB auto-provision state alongside trust, readiness, and activation state.
+  - Updated the Platforms remediation adoption workflow to show AVB auto-provision tags and warning callouts when a node adopted successfully but AVB provisioning completed with issues or was skipped.
+  - Validation: `pytest -q tests/test_adoption_routes.py` -> PASS; `npm --prefix web run typecheck` -> PASS; Python AST parse validation for touched backend files -> PASS.
+
+ID: T418
+Status: [✓] Done
+Title: Trigger strict SRP + AVDECC AVB auto-provision after MAP2 node adoption
+Description:
+- Goal / acceptance criteria: When a MAP2 platform node is adopted into the cluster, and the cluster AVB profile is effectively `strict_srp_avdecc`, the backend must trigger an immediate AVB auto-provision pass rather than waiting for AVB router startup. The trigger must also run after promotion to active so newly routable nodes can join the AVB fabric promptly. The implementation must fail open for adoption success while logging/reporting auto-provision errors, and it must add focused tests for route-level behavior.
+- Why it matters: Operators choosing strict SRP + AVDECC expect newly adopted MAP2 nodes to become part of the managed AVB fabric automatically. Today the router only auto-connects during startup, so adoption leaves a gap between cluster membership and AVB provisioning.
+- Dependencies: T417; existing adoption routes/service (`app/routes/adoption.py`, `app/services/cluster/adoption.py`), AVB router auto-connect (`app/services/avb/avb_router.py`), AVB profile/config (`app/routes/avb.py`, `app/config.py`)
+- Estimated effort: Medium
+- Required outputs: backend trigger wiring, any AVB router helper needed for manual post-adoption auto-connect, focused tests, validation evidence, and completion notes
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 16:22 EDT - Codex
+- Completion notes:
+  - Added an explicit AVB router `trigger_auto_connect()` entrypoint so the backend can run a deterministic AVB auto-provision pass outside startup orchestration.
+  - Wired the adoption lifecycle so successful `/api/adoption/.../adopt` and `/api/adoption/.../promote` calls now trigger post-adoption AVB auto-provision when the active AVB posture is effectively strict `SRP + AVDECC` (`avb.enabled`, `avb.auto_connect`, `avb.avdecc_enabled`, `avb.srp.enabled`, and `avb.srp.required` all true).
+  - Kept adoption fail-open: AVB auto-provision issues are logged but do not roll back a successful adoption or promotion.
+  - Validation: `pytest -q tests/test_adoption_routes.py` -> PASS; Python AST parse validation for `app/routes/adoption.py`, `app/services/avb/avb_router.py`, and `tests/test_adoption_routes.py` -> PASS.
+
+ID: T417
+Status: [✓] Done
+Title: Add Platforms remediation pills, adoption route, source-of-truth sync modal, and clone recovery workflow
+Description:
+- Goal / acceptance criteria: Extend the Home landing `Platforms` tile so it surfaces multiple state/count pills for unmanaged/adoption states (`candidate`, `claimable`, `adopted`, `ready`, `blocked`), sync/update states (`OUTDATED`, `SYNCING`, `FAILED`, `HELD`, `ROLLBACK AVAILABLE`), and clone states (`CONFIRMED CLONE`, `SUSPECTED CLONE`). Clicking adoption pills must navigate into a dedicated `/platforms/adoption` route that reuses and improves the shipped adoption flow. Clicking sync or clone pills must open a shared Carbon remediation modal that is pre-scoped to the relevant workflow/state/node(s), supports detailed per-node timelines, and can hand off from clone recovery to adoption to sync automatically. The sync workflow must support one-time source-of-truth selection, persistent release hold with rollback, parallel sync, node status, and single-node `FIX`. The clone workflow must support suspected/confirmed detection, parallel headless reset/rejoin, installer-logic hostname generation with automatic collision avoidance, immediate `FIX` fallback, and continuation into adoption/sync when needed.
+- Why it matters: Multi-node rollout and remediation are now split across stale HomePage behavior, cluster admin controls, and low-level APIs. Operators need one visible Platforms entry point that identifies unmanaged, out-of-sync, and cloned nodes and drives them through the correct remediation workflow without memorizing backend details.
+- Dependencies: Existing adoption lifecycle/routes (`app/routes/adoption.py`), clone reset route (`app/routes/cluster_admin.py`), version/update surfaces (`app/routes/health.py`, `app/routes/cluster_update.py`), Platforms shell (`web/src/app/components/Platform/PlatformModal.tsx`), Home landing tile (`web/src/app/pages/HomePage.tsx`), and any new shared frontend state/components required for Carbon-aligned workflows
+- Estimated effort: High
+- Required outputs: Home Platforms-tile pills, dedicated `/platforms/adoption` route/UI, shared Carbon remediation modal, any required backend glue for sync/clone orchestration, focused tests, validation evidence, and completion notes
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 15:58 EDT - Codex
+- Completion notes:
+  - Added `/api/platform-remediation/*` backend routes that summarize adoption/sync/clone status, expose manifest history and source-of-truth capture, run sync/rollback/fix actions, and orchestrate clone recovery through hostname reset plus reset/rejoin fallback handling.
+  - Extended the Home landing `Platforms` tile to render state/count remediation pills for adoption, sync/update, and clone conditions. Adoption pills deep-link into `/platforms/adoption`; sync and clone pills open the shared Carbon remediation modal already scoped to the relevant workflow/state/node set.
+  - Added the dedicated Platforms adoption workspace plus the shared remediation workflow UI for adoption, source-of-truth sync, release hold/rollback, single-node fix, and cloned-node recovery with automatic workflow handoff toward adoption.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand src/app/pages/HomePage.test.tsx src/app/App.platformRoute.test.tsx` -> PASS; `python3 - <<'PY' ... ast.parse(...) ... PY` for `app/main.py` and `app/routes/platform_remediation.py` -> PASS.
+
+ID: T416
+Status: [✓] Done
+Title: Promote SynthForge from plugin card to standalone page with landing page entry
+Description:
+- Goal / acceptance criteria: Create a standalone `/synth-forge` page that surfaces the SynthForgeCard workspace (Sound, Rack, Play, Engine, Advanced tabs) as a first-class routed page — matching the pattern established by DrumsPage at `/drums`. Add a landing page card on HomePage so operators can navigate to SynthForge directly without going through the JUCE Grid plugin modal.
+- Why it matters: SynthForge is a flagship workstation editor currently only accessible as a plugin card inside the JUCE Grid modal. Promoting it to a page gives it equal standing with Drum Machine and makes the sampler/synthesis workspace directly launchable from the home screen.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: New page component, route registration, landing page card, focused tests, validation evidence, and completion notes.
+Subtasks:
+  1. Create `web/src/app/pages/SynthForgePage.tsx` + `SynthForgePage.css` — extract/adapt SynthForgeCard's 5-tab workspace into a standalone page using PageHeader. Must resolve PluginCardProps dependency (source plugin state from active chain or URL param rather than parent modal).
+  2. Add lazy import + `<Route path="/synth-forge" .../>` in `web/src/app/App.tsx`
+  3. Add SynthForge card to `MIDDLE_CARDS` in `web/src/app/pages/HomePage.tsx` (icon, title "SynthForge", description "Sampler, soundfonts, and synthesis", route `/synth-forge`)
+  4. Create `web/src/app/pages/SynthForgePage.test.tsx` — renders without crash, tab switching, API data reflected
+  5. Verify: `npm run typecheck` + `npm run build` pass
+Assigned to: Codex
+Last updated: 2026-03-25 17:42 EDT - Codex
+- Completion notes:
+  - Added the standalone routed SynthForge workspace at `/synth-forge` in `web/src/app/pages/SynthForgePage.tsx`, reusing the existing five-tab SynthForge workstation surface and wrapping it in a first-class page shell with `PageHeader`.
+  - Registered the new route in `web/src/app/App.tsx` and added a new Home landing card in `web/src/app/pages/HomePage.tsx` so operators can launch SynthForge directly without entering the JUCE Grid modal flow.
+  - Added focused coverage for the new standalone page, route registration, and Home landing visibility in `web/src/app/pages/SynthForgePage.test.tsx`, `web/src/app/App.platformRoute.test.tsx`, and `web/src/app/pages/HomePage.test.tsx`.
+  - Validation: `npm --prefix web test -- --runInBand src/app/pages/SynthForgePage.test.tsx src/app/App.platformRoute.test.tsx src/app/pages/HomePage.test.tsx` -> PASS; `npm --prefix web run typecheck` -> PASS; `npm --prefix web run build` -> PASS with the existing dynamic-import warning only.
+
+ID: T415
+Status: [✓] Done
+Title: Add an Ink TUI launcher and wire it into the current MAP2 bash shell experience
+Description:
+- Goal / acceptance criteria: Create a first-class launcher for the new Ink TUI and integrate it into the current bash experience already bootstrapped by `branding/map2-welcome.sh`. The resulting operator flow must expose a direct executable wrapper, a `map2.sh` subcommand, and corrected shell aliases/help text so `map2-tui` launches the Ink TUI instead of the legacy Textual console. Update repo docs for the new shell entrypoint.
+- Why it matters: The new Ink TUI exists, but the shell integration still points `map2-tui` at the legacy console, so operators cannot launch the new TUI from the current bash experience without remembering an npm command.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Launcher script(s), shell integration updates, documentation updates, validation evidence, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 13:07 EDT - Codex
+- Completion notes:
+  - Added the executable wrapper `map2-tui`, added the `map2.sh ink` subcommand, and introduced `map2_run_ink_tui()` in `branding/map2-welcome.sh` so the Ink TUI has a first-class shell launcher path.
+  - Updated the shell integration so `map2-tui` and `map2-ink` aliases now point to the Ink launcher, and refreshed the shell action menu/banner text to advertise the new command instead of silently routing back to the legacy console.
+  - Updated `.map2-aliases`, `README.md`, and `tui/README.md` so both the current bash bootstrap and documented operator entrypoints expose the new launcher.
+  - Validation: `./map2-tui --help` -> PASS; `./map2.sh ink --help` -> PASS; `bash -ic 'type map2-tui; type map2-ink; type map2'` -> PASS.
+
+ID: T414
+Status: [✓] Done
+Title: Move Platforms, MIDI Hub, and Artifacts onto one shared routed left-navigation shell
+Description:
+- Goal / acceptance criteria: Replace the current page-specific left rail implementations in `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/pages/MidiHubShell.tsx`, and `web/src/app/pages/AudioArtifactsPage.tsx` with one shared workspace-side-nav component and shared CSS contract. The three pages must render through the same nav shell structure while preserving their route sets, page-specific badges/actions, and existing routed behavior.
+- Why it matters: The current pages still use three separate sidebar implementations, so they do not present as one unified left navigation system even after the Artifacts rail refresh.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Shared left-nav component/CSS, refactors for all three pages, focused regression updates, validation evidence, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 13:01 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/navigation/UnifiedWorkspaceSideNav.tsx` and `web/src/app/components/navigation/UnifiedWorkspaceSideNav.css` as the shared routed left-rail implementation used across workspace pages.
+  - Refactored `web/src/app/components/Platform/PlatformModal.tsx`, `web/src/app/pages/MidiHubShell.tsx`, and `web/src/app/pages/AudioArtifactsPage.tsx` to render through that shared nav shell while preserving platform pin controls, MIDI Hub badges/status cards, and Artifacts route-state/status cards.
+  - Extended `web/src/app/pages/MidiHubPage.test.tsx` and retained `web/src/app/pages/AudioArtifactsPage.test.tsx` coverage so the shared shell is exercised on both routed page families.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx web/src/app/pages/MidiHubPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning only.
 
 ID: T413
 Status: [✓] Done

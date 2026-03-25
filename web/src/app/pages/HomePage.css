@@ -70,6 +70,25 @@
   line-height: 1.4;
 }
 
+.hp2-card__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.hp2-card__pill {
+  border: none;
+  background: var(--cds-layer-02);
+  color: var(--cds-text-primary);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.hp2-card__pill:hover {
+  background: var(--cds-layer-hover-02);
+}
+
 /* ── Arrow on hover ─────────────────────────────────────────────────────── */
 
 .hp2-card__arrow {

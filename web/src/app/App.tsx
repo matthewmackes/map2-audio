@@ -42,6 +42,7 @@ const CPUPerformancePage    = lazy(() => import('./pages/CPUPerformancePage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
 const LCDPage               = lazy(() => import('./pages/LCDPage').then(m => ({ default: m.LCDPage })))
 const DrumsPage             = lazy(() => import('./pages/DrumsPage').then(m => ({ default: m.DrumsPage })))
+const SynthForgePage        = lazy(() => import('./pages/SynthForgePage').then(m => ({ default: m.SynthForgePage })))
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
 const TesiraPage            = lazy(() => import('./pages/TesiraPage').then(m => ({ default: m.TesiraPage })))
@@ -237,6 +238,7 @@ export function App() {
                                 <Route path="/welcome" element={<WelcomePage />} />
                                 <Route path="/lcd" element={<LCDPage />} />
                                 <Route path="/drums" element={<DrumsPage />} />
+                                <Route path="/synth-forge" element={<SynthForgePage />} />
                                 <Route path="/expression" element={<ExpressionPage />} />
                                 <Route path="/tesira/*" element={<TesiraPage />} />
                                 <Route path="/mpx1/*" element={<MPX1Page />}>

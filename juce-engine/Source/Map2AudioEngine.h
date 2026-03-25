@@ -50,7 +50,9 @@ class AvbAudioIODevice;
 #include "PassionFXProcessor.h"
 #include "DrumMachine/DrumMachineProcessor.h"
 #include "DrumMachine/DrumSequencer.h"
+#include "DrumMachine/DrumMachineGraphAdapter.h"
 #include "SynthForge/SynthForgeProcessor.h"
+#include "SynthForge/SynthForgeGraphAdapter.h"
 #include "LexiconHardwareProcessor.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
@@ -1271,7 +1273,10 @@ public:
     const drummachine::DrumMachineProcessor& getDrumMachine() const { return drumMachine_; }
     drummachine::DrumSequencer& getDrumSequencer() { return drumSequencer_; }
     const drummachine::DrumSequencer& getDrumSequencer() const { return drumSequencer_; }
-    void setDrumMachineEnabled(bool enabled) { drumMachineEnabled_.store(enabled, std::memory_order_relaxed); }
+    void setDrumMachineEnabled(bool enabled) {
+        drumMachineEnabled_.store(enabled, std::memory_order_relaxed);
+        if (drumMachineAdapter_) drumMachineAdapter_->setEnabled(enabled);
+    }
     bool isDrumMachineEnabled() const { return drumMachineEnabled_.load(std::memory_order_relaxed); }
 
     // ========================================
@@ -1356,6 +1361,12 @@ private:
     drummachine::DrumMachineProcessor drumMachine_;
     drummachine::DrumSequencer drumSequencer_;
     synthforge::SynthForgeProcessor synthForge_;
+
+    // Graph adapters — non-owning pointers, lifetime managed by pluginHost_
+    synthforge::SynthForgeGraphAdapter* synthForgeAdapter_ = nullptr;
+    InstanceId synthForgeInstanceId_ = INVALID_INSTANCE_ID;
+    drummachine::DrumMachineGraphAdapter* drumMachineAdapter_ = nullptr;
+    InstanceId drumMachineInstanceId_ = INVALID_INSTANCE_ID;
 
 #ifdef HAS_NAM
     // Neural Amp Modeler (NEW - RT-safe)

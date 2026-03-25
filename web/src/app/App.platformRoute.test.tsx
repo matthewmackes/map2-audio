@@ -56,6 +56,14 @@ jest.mock('./pages/LabsPage', () => ({
   },
 }))
 
+jest.mock('./pages/SynthForgePage', () => ({
+  SynthForgePage: () => {
+    const { useLocation: mockUseLocation } = require('react-router-dom')
+    const location = mockUseLocation()
+    return <div data-testid="synthforge-route">{`${location.pathname}${location.search}`}</div>
+  },
+}))
+
 jest.mock('./pages/AudioArtifactsPage', () => ({
   AudioArtifactsPage: ({ discoverMode }: { discoverMode?: boolean }) => {
     const { useLocation: mockUseLocation } = require('react-router-dom')
@@ -90,11 +98,27 @@ describe('App routing', () => {
     expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/overview')
   })
 
+  it('keeps the dedicated Platforms adoption route on the canonical workspace path', async () => {
+    window.history.pushState({}, '', '/platforms/adoption?state=claimable')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('platform-route')).toHaveTextContent('/platforms/adoption?state=claimable')
+  })
+
   it('keeps Labs as a first-class routed surface', async () => {
     window.history.pushState({}, '', '/labs')
 
     render(<App />)
 
     expect(await screen.findByTestId('labs-route')).toHaveTextContent('/labs')
+  })
+
+  it('keeps SynthForge as a first-class routed surface', async () => {
+    window.history.pushState({}, '', '/synth-forge')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('synthforge-route')).toHaveTextContent('/synth-forge')
   })
 })

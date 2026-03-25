@@ -13,6 +13,15 @@ Start the Ink app:
 npm --prefix tui start
 ```
 
+Shell launchers:
+
+```bash
+./map2-tui
+./map2.sh ink
+map2-tui
+map2 ink
+```
+
 Useful flags:
 
 ```bash

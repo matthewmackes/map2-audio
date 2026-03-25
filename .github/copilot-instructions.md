@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: March 24, 2026 (stable platform version artifacts after rebuild loops)
+> **Last Updated**: March 25, 2026 (Ink TUI shell launcher integrated into MAP2 bash experience)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1021,6 +1021,13 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Persist only the stable build identity in tracked version artifacts, refresh runtime `commit`/`dirty` from git when loading the version payload, and reuse the existing version during clean rebuilds instead of stamping a new timestamp.
 - **Lesson**: Build identity and live repo state are different contracts. Track the stable version in files; compute runtime git state dynamically.
 
+**11. `map2-tui` Must Point To The Ink Launcher, Not The Legacy Console**
+- **Problem**: The new Ink TUI existed under `npm --prefix tui start`, but the bash-integrated `map2-tui` alias still routed to `map2.sh`, which launches the legacy Textual console by default.
+- **Root Cause**: The shell bootstrap in `branding/map2-welcome.sh` predated the Ink app and aliased `map2-tui` to the wrong entrypoint, so the advertised shell command never reached `tui/src/main.tsx`.
+- **Fix**: Add a dedicated `map2-tui` wrapper script, wire `map2.sh ink` to `map2_run_ink_tui()`, and point both `map2-tui` and `map2-ink` aliases at the wrapper from `branding/map2-welcome.sh`.
+- **Verification**: `./map2-tui --help`; `./map2.sh ink --help`; `bash -ic 'type map2-tui; type map2-ink; type map2'`
+- **Lesson**: When adding a new operator-facing surface, update the bash bootstrap and alias layer together with the docs; otherwise the documented shell command path will silently keep launching the old tool.
+
 ### Python Backend Gotchas
 
 **7. SQLAlchemy Session Management**
@@ -1710,5 +1717,5 @@ See `docs/PROJECT_WORKLIST.md` for full details. Build order: all at once. Tesir
 ---
 
 **For Questions**: Consult the documentation files listed in Additional Resources
-**Last Updated**: March 23, 2026
+**Last Updated**: March 25, 2026
 **Maintained by**: GitHub Copilot AI Assistants

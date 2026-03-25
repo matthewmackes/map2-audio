@@ -8,6 +8,7 @@ import { ThemePage } from './ThemePage'
 
 const mockUpdateSpecialSettings = jest.fn()
 const mockDiscover = jest.fn()
+const mockGetAllPlugins = jest.fn()
 const mockListPluginAppearances = jest.fn()
 const mockPutPluginAppearance = jest.fn()
 const mockRemovePluginAppearance = jest.fn()
@@ -16,6 +17,7 @@ const mockUploadPluginAppearance = jest.fn()
 jest.mock('@/map2/api', () => ({
   pluginsApi: {
     discover: (...args: unknown[]) => mockDiscover(...args),
+    getAll: (...args: unknown[]) => mockGetAllPlugins(...args),
   },
   pluginAppearancesApi: {
     list: (...args: unknown[]) => mockListPluginAppearances(...args),
@@ -77,6 +79,7 @@ describe('ThemePage', () => {
     useEffectsSettingsStore.setState({ reducedEffectsEnabled: false })
     mockUpdateSpecialSettings.mockReset()
     mockDiscover.mockReset()
+    mockGetAllPlugins.mockReset()
     mockListPluginAppearances.mockReset()
     mockPutPluginAppearance.mockReset()
     mockRemovePluginAppearance.mockReset()
@@ -116,6 +119,22 @@ describe('ThemePage', () => {
         },
       ],
     })
+    mockGetAllPlugins.mockResolvedValue([
+      {
+        uri: 'map2://juce/nam',
+        name: 'NAM Deluxe',
+        author: 'MAP2',
+        category: 'Amplifier',
+        class_label: 'Amplifier',
+        version: '1.0',
+        license: 'MIT',
+        has_ui: true,
+        in_ports: 2,
+        out_ports: 2,
+        parameters: [],
+        format: 'LV2',
+      },
+    ])
     mockPutPluginAppearance.mockImplementation(async (uri: string, payload: Record<string, unknown>) => ({
       uri,
       ...payload,
@@ -158,9 +177,13 @@ describe('ThemePage', () => {
     expect(screen.getByTestId('special-settings-dialog')).toBeTruthy()
   })
 
-  it('persists category color overrides from the Theme workspace', () => {
+  it('persists category color overrides from the Theme workspace', async () => {
     renderThemePage()
     fireEvent.click(screen.getByRole('button', { name: /open category modal/i }))
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading plugin catalog…')).toBeNull()
+    })
 
     const dynamicsPicker = screen.getByLabelText('Dynamics color') as HTMLInputElement
     fireEvent.change(dynamicsPicker, { target: { value: '#112233' } })
@@ -223,9 +246,29 @@ describe('ThemePage', () => {
 
     await waitFor(() => {
       expect(mockDiscover).toHaveBeenCalled()
+      expect(screen.queryByText('Loading plugin catalog…')).toBeNull()
     })
 
-    expect(screen.getByRole('button', { name: /plugin overrides/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /category accents/i })).toBeTruthy()
+    const modeGroup = screen.getByRole('group', { name: /category editor mode/i })
+    expect(within(modeGroup).getByRole('button', { name: /plugin overrides/i })).toBeTruthy()
+    expect(within(modeGroup).getByRole('button', { name: /category accents/i })).toBeTruthy()
+  })
+
+  it('falls back to the lightweight plugin catalog when discovery fails', async () => {
+    mockDiscover.mockRejectedValueOnce(new Error('Plugin inventory warming'))
+
+    renderThemePage()
+    fireEvent.click(screen.getByRole('button', { name: /open category modal/i }))
+    fireEvent.click(screen.getByRole('button', { name: /plugin overrides/i }))
+
+    await waitFor(() => {
+      expect(mockDiscover).toHaveBeenCalled()
+      expect(mockGetAllPlugins).toHaveBeenCalled()
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading plugin catalog…')).toBeNull()
+    })
+    expect(screen.queryByText('Plugin catalog unavailable.')).toBeNull()
   })
 })

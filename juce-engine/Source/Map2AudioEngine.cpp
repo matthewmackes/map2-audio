@@ -366,7 +366,7 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     peavey5150_.prepare(sampleRate_, bufferSize_, 2);
     tweedBassman_.prepare(sampleRate_, bufferSize_, 2);
     passionFX_.prepare(sampleRate_, bufferSize_, 2);
-    drumMachine_.prepare(sampleRate_, bufferSize_, std::max(2, numOutputChannels_));
+    // Wire up drum machine callbacks before adapter registration
     drumMachine_.setTempoCcCallback([this](float bpm) {
         drumSequencer_.setTempo(bpm);
     });
@@ -377,10 +377,69 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     drumSequencer_.setMidiOutputCallback([this](const drummachine::DrumSequencer::MidiOutputEvent& event) {
         sendDrumSequencerMidiEvent(event);
     });
-    drumSequencer_.prepare(sampleRate_, bufferSize_);
-    synthForge_.prepare(sampleRate_, bufferSize_, 2);
+
+    // Register SynthForge as a graph-manageable instrument plugin
+    {
+        auto adapter = std::make_unique<synthforge::SynthForgeGraphAdapter>(synthForge_);
+        adapter->prepareToPlay(sampleRate_, bufferSize_);
+
+        PluginInfo info;
+        info.uri = synthforge::SynthForgeGraphAdapter::PLUGIN_URI;
+        info.name = synthforge::SynthForgeGraphAdapter::PLUGIN_NAME;
+        info.author = "MAP2 Audio";
+        info.brand = "MAP2";
+        info.category = "Instrument";
+        info.format = PluginFormat::Hardware;
+        info.formatName = "Native";
+        info.audioInputs = 0;
+        info.audioOutputs = 2;
+        info.hasMidiInput = true;
+        info.hasMidiOutput = false;
+        info.latencySamples = 0;
+
+        synthForgeAdapter_ = adapter.get();
+        synthForgeInstanceId_ = pluginHost_.registerHardwarePlugin(
+            std::move(adapter), info);
+
+        if (synthForgeInstanceId_ == INVALID_INSTANCE_ID) {
+            synthForgeAdapter_ = nullptr;
+            std::cerr << "Warning: Failed to register SynthForge graph adapter" << std::endl;
+        }
+    }
+
+    // Register Drum Machine as a graph-manageable instrument plugin
+    {
+        auto adapter = std::make_unique<drummachine::DrumMachineGraphAdapter>(
+            drumMachine_, drumSequencer_);
+        adapter->prepareToPlay(sampleRate_, bufferSize_);
+
+        PluginInfo info;
+        info.uri = drummachine::DrumMachineGraphAdapter::PLUGIN_URI;
+        info.name = drummachine::DrumMachineGraphAdapter::PLUGIN_NAME;
+        info.author = "MAP2 Audio";
+        info.brand = "MAP2";
+        info.category = "Drums";
+        info.format = PluginFormat::Hardware;
+        info.formatName = "Native";
+        info.audioInputs = 0;
+        info.audioOutputs = 2;
+        info.hasMidiInput = true;
+        info.hasMidiOutput = false;
+        info.latencySamples = 0;
+
+        drumMachineAdapter_ = adapter.get();
+        drumMachineInstanceId_ = pluginHost_.registerHardwarePlugin(
+            std::move(adapter), info);
+
+        if (drumMachineInstanceId_ == INVALID_INSTANCE_ID) {
+            drumMachineAdapter_ = nullptr;
+            std::cerr << "Warning: Failed to register DrumMachine graph adapter" << std::endl;
+        }
+    }
+
     std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX" << std::endl;
-    std::cout << "  SynthForge: Phase 1 scaffold initialized (16-part MIDI/voice core)" << std::endl;
+    std::cout << "  SynthForge: Graph-registered instrument (16-part MIDI/voice core)" << std::endl;
+    std::cout << "  Drum Machine: Graph-registered instrument (16-pad sequencer)" << std::endl;
 
     // Set up audio callback
     audioIO_.setProcessCallback([this](const float* const* inputs, int numInputs,
@@ -475,6 +534,10 @@ void Map2AudioEngine::shutdown() {
     // Reset non-owning hardware processor pointers before host teardown.
     lexiconProcessor_ = nullptr;
     lexiconInstanceId_ = INVALID_INSTANCE_ID;
+    synthForgeAdapter_ = nullptr;
+    synthForgeInstanceId_ = INVALID_INSTANCE_ID;
+    drumMachineAdapter_ = nullptr;
+    drumMachineInstanceId_ = INVALID_INSTANCE_ID;
 
     pluginHost_.shutdown();
     audioIO_.shutdown();
@@ -1562,15 +1625,8 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
         pluginHost_.setParameter(update.pluginId, update.paramIndex, update.value);
     });
 
-    // Process the built-in instruments before the plugin graph so they share the
-    // same callback buffer and MIDI drain path.
-    if (drumMachineEnabled_.load(std::memory_order_relaxed)) {
-        drumSequencer_.processBlock(processSamples);
-        drumMachine_.processBlock(buffer, midiBuffer);
-    }
-
-    // Process SynthForge Phase 1 MIDI/voice tracking.
-    synthForge_.processBlock(buffer, midiBuffer);
+    // Instruments (SynthForge, DrumMachine) are now graph-managed via their
+    // GraphAdapter wrappers — processed inside audioGraph_->process() below.
 
     // Pass raw hardware I/O pointers to Lexicon processor so it can
     // access S/PDIF channels during graph processing
@@ -1895,19 +1951,11 @@ void Map2AudioEngine::prepareAllProcessors(double sampleRate, int bufferSize, in
     h3000_.prepare(sampleRate, bufferSize, numChannels);
     bossXS1_.prepare(sampleRate, bufferSize, numChannels);
     lexiLove_.prepare(sampleRate, bufferSize, numChannels);
-    drumMachine_.prepare(sampleRate, bufferSize, numChannels);
-    drumSequencer_.setDrumMachine(&drumMachine_);
-    drumMachine_.setTempoCcCallback([this](float bpm) {
-        drumSequencer_.setTempo(bpm);
-    });
-    drumMachine_.setSwingCcCallback([this](float swing) {
-        drumSequencer_.setSwing(swing);
-    });
-    drumSequencer_.setMidiOutputCallback([this](const drummachine::DrumSequencer::MidiOutputEvent& event) {
-        sendDrumSequencerMidiEvent(event);
-    });
-    drumSequencer_.prepare(sampleRate, bufferSize);
-    synthForge_.prepare(sampleRate, bufferSize, numChannels);
+    // Re-prepare instrument graph adapters (they delegate to inner processors)
+    if (synthForgeAdapter_)
+        synthForgeAdapter_->prepareToPlay(sampleRate, bufferSize);
+    if (drumMachineAdapter_)
+        drumMachineAdapter_->prepareToPlay(sampleRate, bufferSize);
 }
 
 void Map2AudioEngine::setAudioDevice(const std::string& device) {
@@ -1956,9 +2004,17 @@ bool Map2AudioEngine::unloadPlugin(InstanceId instanceId) {
     cpuMonitor_.removePlugin(instanceId);
 
     const bool unloaded = pluginHost_.unloadPlugin(instanceId);
-    if (unloaded && instanceId == lexiconInstanceId_) {
-        lexiconProcessor_ = nullptr;
-        lexiconInstanceId_ = INVALID_INSTANCE_ID;
+    if (unloaded) {
+        if (instanceId == lexiconInstanceId_) {
+            lexiconProcessor_ = nullptr;
+            lexiconInstanceId_ = INVALID_INSTANCE_ID;
+        } else if (instanceId == synthForgeInstanceId_) {
+            synthForgeAdapter_ = nullptr;
+            synthForgeInstanceId_ = INVALID_INSTANCE_ID;
+        } else if (instanceId == drumMachineInstanceId_) {
+            drumMachineAdapter_ = nullptr;
+            drumMachineInstanceId_ = INVALID_INSTANCE_ID;
+        }
     }
 
     return unloaded;

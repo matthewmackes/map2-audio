@@ -93,6 +93,13 @@ map2_run_console() {
     exec "${python}" -m tui.app "$@"
 }
 
+map2_run_ink_tui() {
+    local root
+    root="$(map2_repo_root)"
+    cd "${root}"
+    exec npm --prefix tui start -- "$@"
+}
+
 map2_run_touchscreen() {
     local root python
     root="$(map2_repo_root)"
@@ -138,6 +145,8 @@ map2_shell_actions() {
     map2_shell_title
     cat <<'EOF'
 map2           Launch the unified console
+map2-tui       Launch the Ink terminal UI
+map2 ink       Launch the Ink terminal UI
 map2-info      Open the live Dashboard route
 map2 touchscreen
                Launch the Quad Cortex touchscreen app
@@ -155,7 +164,7 @@ EOF
 map2_shell_welcome() {
     map2_shell_set_terminal_palette
     map2_shell_title
-    printf '%s\n' 'map2 launches the unified console · map2 touchscreen opens Quad UI · Ctrl+G shows shell actions.'
+    printf '%s\n' 'map2 launches the unified console · map2-tui launches the Ink terminal UI · map2 touchscreen opens Quad UI · Ctrl+G shows shell actions.'
 }
 
 map2_shell_mode_display() {
@@ -629,6 +638,7 @@ map2_shell_render_context_line() {
         parts+=("ssh active")
     fi
     parts+=("map2")
+    parts+=("map2-tui")
     parts+=("map2 diag")
     parts+=("map2 touchscreen")
     parts+=("map2 workflow")
@@ -839,12 +849,14 @@ map2_define_aliases() {
     root="$(map2_repo_root)"
     unalias map2 2>/dev/null || true
     unalias map2-tui 2>/dev/null || true
+    unalias map2-ink 2>/dev/null || true
     unalias map2-touchscreen 2>/dev/null || true
     unalias m2 2>/dev/null || true
     unalias map2-info 2>/dev/null || true
     unalias map2-install 2>/dev/null || true
     alias map2="${root}/map2.sh"
-    alias map2-tui="${root}/map2.sh"
+    alias map2-tui="${root}/map2-tui"
+    alias map2-ink="${root}/map2-tui"
     alias map2-touchscreen="${root}/map2.sh touchscreen"
     alias m2="${root}/m2.sh"
     alias map2-info="${root}/map2-info"

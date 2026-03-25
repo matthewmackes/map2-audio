@@ -5,6 +5,7 @@ import {
   Information,
   Network_3,
   PaintBrush,
+  SettingsAdjust,
   Screen,
   Share,
   Terminal,
@@ -13,10 +14,10 @@ import {
 
 import { PLATFORM_LAYER_META, type PlatformLayerId } from '../platform/model'
 
-export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about'
+export type StandalonePanel = 'host-machine' | 'audio-engine' | 'theme' | 'about' | 'adoption'
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
-  return value === 'host-machine' || value === 'audio-engine' || value === 'theme' || value === 'about'
+  return value === 'host-machine' || value === 'audio-engine' || value === 'theme' || value === 'about' || value === 'adoption'
 }
 
 export interface PlatformPinnedNavItem {
@@ -80,6 +81,14 @@ const STANDALONE_PANEL_ITEMS: Array<{
     description: 'Open the platform guide, version context, and operational documentation surface.',
     color: 'var(--cds-support-info)',
     icon: Information,
+  },
+  {
+    id: 'adoption',
+    label: 'Adoption',
+    shortLabel: 'Adopt',
+    description: 'Open the dedicated Platforms adoption workflow for unmanaged, blocked, or standby nodes.',
+    color: 'var(--cds-support-warning)',
+    icon: SettingsAdjust,
   },
 ]
 

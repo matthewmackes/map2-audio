@@ -154,6 +154,8 @@ const COLOR_SLOT_GROUPS: Array<{ label: string; slots: Array<keyof ThemeColors> 
   },
 ]
 
+const THEME_PLUGIN_DISCOVERY_TIMEOUT_MS = 3000
+
 const SLOT_LABELS: Partial<Record<keyof ThemeColors, string>> = {
   bg: 'Background',
   surface: 'Surface 01',
@@ -265,6 +267,21 @@ function sanitizePluginAppearanceDraft(draft: Partial<PluginAppearanceOverride>)
   }
 }
 
+async function loadThemePluginInventory(): Promise<Plugin[]> {
+  try {
+    const discovery = await Promise.race([
+      pluginsApi.discover(false).then((response) => response.plugins),
+      new Promise<Plugin[]>((_, reject) => {
+        window.setTimeout(() => reject(new Error('Plugin discovery timed out')), THEME_PLUGIN_DISCOVERY_TIMEOUT_MS)
+      }),
+    ])
+    return Array.isArray(discovery) ? discovery : []
+  } catch {
+    const fallback = await pluginsApi.getAll()
+    return Array.isArray(fallback) ? fallback : []
+  }
+}
+
 function ThemeWorkspaceLauncher({
   title,
   description,
@@ -373,21 +390,20 @@ export function ThemePage() {
   const pluginOverrideCount = Object.keys(appearances).length
 
   useEffect(() => {
-    if (activeModal !== 'category' || pluginInventoryLoading || pluginInventory.length > 0) {
+    if (activeModal !== 'category' || pluginInventory.length > 0) {
       return
     }
 
     let cancelled = false
     setPluginInventoryLoading(true)
     setPluginInventoryError(null)
-    void pluginsApi
-      .discover(false)
-      .then((response) => {
+    void loadThemePluginInventory()
+      .then((plugins) => {
         if (cancelled) {
           return
         }
-        setPluginInventory(response.plugins)
-        setSelectedPluginUri((current) => current ?? response.plugins[0]?.uri ?? null)
+        setPluginInventory(plugins)
+        setSelectedPluginUri((current) => current ?? plugins[0]?.uri ?? null)
       })
       .catch((error) => {
         if (cancelled) {
@@ -404,7 +420,7 @@ export function ThemePage() {
     return () => {
       cancelled = true
     }
-  }, [activeModal, pluginInventory.length, pluginInventoryLoading])
+  }, [activeModal, pluginInventory.length])
 
   const filteredPlugins = useMemo(() => {
     const query = pluginSearch.trim().toLowerCase()

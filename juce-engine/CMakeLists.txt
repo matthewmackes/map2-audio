@@ -392,7 +392,9 @@ set(HEADERS
     Source/SynthForge/Sampler/SfzLoader.h
     Source/SynthForge/Sound/SynthVoice.h
     Source/SynthForge/Common/Types.h
+    Source/SynthForge/SynthForgeGraphAdapter.h
     Source/DrumMachine/DrumSequencer.h
+    Source/DrumMachine/DrumMachineGraphAdapter.h
 
     # Existing components
     Source/MidiHandler.h

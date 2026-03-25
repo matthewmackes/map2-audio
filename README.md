@@ -134,6 +134,7 @@ sudo bash install_on_new_host.sh --uninstall-avb    # Remove AVB configuration a
 systemctl start map2-backend          # Backend API (port 8080)
 ./scripts/start_web.sh                # Web dashboard (port 3000)
 python -m tui.node_console            # TUI management console
+./map2-tui                            # Ink TUI launcher
 ```
 
 <details>

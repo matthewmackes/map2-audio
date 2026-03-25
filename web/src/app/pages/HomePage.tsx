@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Package, Music as MusicNotes } from '@carbon/icons-react'
+import { ArrowRight, Package, Music as MusicNotes, Waveform } from '@carbon/icons-react'
 import { FxDrums } from '../components/icons/effectIcons'
 import { ClickableTile } from '@carbon/react'
 import {
@@ -16,6 +16,8 @@ import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { useWebSocketConnection, useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { chainsApi } from '../../map2/api'
 import type { Chain, ChainPlugin } from '../../map2/types'
+import { type RemediationWorkflow, usePlatformRemediationSummary } from '../hooks/usePlatformRemediation'
+import { PlatformRemediationWorkflow } from '../components/Platform/PlatformRemediationWorkflow'
 import './HomePage.css'
 
 // ── Signal chain summary ────────────────────────────────────────────────────
@@ -116,6 +118,13 @@ const MIDDLE_CARDS: WorkspaceCard[] = [
     title: 'Drum Machine',
     description: 'Patterns, kits, and sequencing',
   },
+  {
+    id: 'synth-forge',
+    to: '/synth-forge',
+    icon: Waveform,
+    title: 'SynthForge',
+    description: 'Sampler, soundfonts, and synthesis',
+  },
 ]
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -125,8 +134,30 @@ export function HomePage() {
   const { localNode } = useNodePageContext(NODE_PAGE_KEYS.home)
   const chainSummary = useActiveChainSummary()
   const nodeStatusLabel = useNodeStatusLabel()
+  const remediationSummary = usePlatformRemediationSummary()
+  const [activeRemediation, setActiveRemediation] = useState<{
+    mode: RemediationWorkflow
+    state: string | null
+    nodeIds: string[]
+  } | null>(null)
 
   const hostname = localNode?.hostname ?? window.location.hostname ?? 'localhost'
+  const remediationCounts = remediationSummary.data?.counts
+
+  const remediationPills = [
+    { workflow: 'adoption' as const, state: 'candidate', count: remediationCounts?.adoption?.candidate ?? 0, label: 'Needs Adoption' },
+    { workflow: 'adoption' as const, state: 'claimable', count: remediationCounts?.adoption?.claimable ?? 0, label: 'Claimable' },
+    { workflow: 'adoption' as const, state: 'adopted', count: remediationCounts?.adoption?.adopted ?? 0, label: 'Adopted' },
+    { workflow: 'adoption' as const, state: 'ready', count: remediationCounts?.adoption?.ready ?? 0, label: 'Ready' },
+    { workflow: 'adoption' as const, state: 'blocked', count: remediationCounts?.adoption?.blocked ?? 0, label: 'Blocked' },
+    { workflow: 'sync' as const, state: 'outdated', count: remediationCounts?.sync?.outdated ?? 0, label: 'Outdated' },
+    { workflow: 'sync' as const, state: 'syncing', count: remediationCounts?.sync?.syncing ?? 0, label: 'Syncing' },
+    { workflow: 'sync' as const, state: 'failed', count: remediationCounts?.sync?.failed ?? 0, label: 'Failed' },
+    { workflow: 'sync' as const, state: 'held', count: remediationCounts?.sync?.held ?? 0, label: 'Held' },
+    { workflow: 'sync' as const, state: 'rollback_available', count: remediationCounts?.sync?.rollback_available ?? 0, label: 'Rollback' },
+    { workflow: 'clone' as const, state: 'confirmed_clone', count: remediationCounts?.clone?.confirmed_clone ?? 0, label: 'Confirmed Clone' },
+    { workflow: 'clone' as const, state: 'suspected_clone', count: remediationCounts?.clone?.suspected_clone ?? 0, label: 'Suspected Clone' },
+  ].filter((pill) => pill.count > 0)
 
   return (
     <div className="hp2-root">
@@ -164,6 +195,30 @@ export function HomePage() {
                 <div className="hp2-card__body">
                   <card.icon size={20} />
                   <h2 className="hp2-card__title">{card.title}</h2>
+                  {card.id === 'platforms' && remediationPills.length > 0 ? (
+                    <div className="hp2-card__pills" aria-label="Platforms remediation pills">
+                      {remediationPills.map((pill) => (
+                        <button
+                          key={`${pill.workflow}-${pill.state}`}
+                          type="button"
+                          className="hp2-card__pill"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            const nodeIds = (remediationSummary.data?.nodes ?? [])
+                              .filter((node) => node.adoption_state === pill.state || node.sync_states.includes(pill.state) || node.clone_states.includes(pill.state))
+                              .map((node) => node.node_id)
+                            if (pill.workflow === 'adoption') {
+                              navigate(`/platforms/adoption?state=${encodeURIComponent(pill.state)}`)
+                              return
+                            }
+                            setActiveRemediation({ mode: pill.workflow, state: pill.state, nodeIds })
+                          }}
+                        >
+                          {pill.label}: {pill.count}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   <p className="hp2-card__desc">{dynamicDesc}</p>
                 </div>
                 <ArrowRight size={16} className="hp2-card__arrow" />
@@ -177,6 +232,15 @@ export function HomePage() {
       <footer className="hp2-footer">
         {MAP2_PLATFORM_VERSION} · {hostname}
       </footer>
+      {activeRemediation ? (
+        <PlatformRemediationWorkflow
+          mode={activeRemediation.mode}
+          stateFilter={activeRemediation.state}
+          initialNodeIds={activeRemediation.nodeIds}
+          summary={remediationSummary.data}
+          onRequestClose={() => setActiveRemediation(null)}
+        />
+      ) : null}
     </div>
   )
 }

@@ -13,9 +13,6 @@ import {
   Pagination,
   Select,
   SelectItem,
-  SideNav,
-  SideNavItems,
-  SideNavLink,
   SkeletonText,
   Tag,
   Table,
@@ -57,6 +54,7 @@ import { useCluster } from '../contexts/ClusterContext'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { usePluginBrowser } from '../hooks/usePluginBrowser'
 import { getDisplayPluginName } from '../../map2/displayNames'
+import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import './AudioArtifactsPage.css'
 
@@ -83,17 +81,6 @@ interface CategoryMeta {
   statusLabel: (item: ArtifactRow) => string
   statusType: (item: ArtifactRow) => 'green' | 'gray' | 'blue' | 'warm-gray' | 'red'
   columns: Array<{ key: string; header: string }>
-}
-
-interface ArtifactNavItem {
-  key: string
-  label: string
-  description: string
-  to: string
-  icon: CarbonIconType
-  active: boolean
-  onOpen: () => void
-  stateLabel?: string
 }
 
 interface ArtifactRow {
@@ -1008,7 +995,7 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
   const showArtifactsAside = !discoverMode && ((detailOpen && selectedItem !== null) || syncDrawerOpen)
   const discoverInitialTab = DISCOVER_TAB_BY_CATEGORY[activeCategory]
   const selectedNodeLabel = nodes.find((node) => node.nodeId === selectedNodeId)?.hostname ?? 'this node'
-  const sidebarNavItems = useMemo<ArtifactNavItem[]>(() => [
+  const sidebarNavItems = useMemo<UnifiedWorkspaceSideNavItem[]>(() => [
     {
       key: 'discover',
       label: 'Download & Discover',
@@ -1138,52 +1125,15 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
         <div className={`aap__body${showArtifactsAside ? ' aap__body--with-aside' : ''}${discoverMode ? ' aap__body--discover' : ''}`}>
           {/* Left SideNav */}
           <div className={`aap__sidenav${navAnimated ? ' aap__sidenav--visible' : ''}`}>
-            <SideNav isFixedNav expanded aria-label="Artifact categories" className="aap__carbon-sidenav">
-              <div className="aap__sidebar-head">
-                <p className="aap__sidebar-eyebrow">Navigation</p>
-                <h2 className="aap__sidebar-title">Artifacts Library</h2>
-                <p className="aap__sidebar-copy">
-                  Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place.
-                </p>
-              </div>
-
-              <SideNavItems className="aap__sidebar-nav">
-                <div className="aap__sidebar-list" role="list">
-                  {sidebarNavItems.map((item) => {
-                    const Icon = item.icon
-                    return (
-                      <article
-                        key={item.key}
-                        role="listitem"
-                        className={`aap__nav-item${item.active ? ' is-selected' : ''}`}
-                      >
-                        <SideNavLink
-                          href={item.to}
-                          isActive={item.active}
-                          className="aap__nav-item-main"
-                          aria-label={`Open ${item.label}`}
-                          onClick={(event) => {
-                            event.preventDefault()
-                            item.onOpen()
-                          }}
-                          renderIcon={Icon}
-                        >
-                          <span className="aap__nav-item-copy">
-                            <span className="aap__nav-item-row">
-                              <span className="aap__nav-item-label">{item.label}</span>
-                              {item.stateLabel ? (
-                                <span className="aap__nav-item-state">{item.stateLabel}</span>
-                              ) : null}
-                            </span>
-                            <span className="aap__nav-item-desc">{item.description}</span>
-                          </span>
-                        </SideNavLink>
-                      </article>
-                    )
-                  })}
-                </div>
-
-                <div className="aap__sidebar-footer">
+            <UnifiedWorkspaceSideNav
+              ariaLabel="Artifact categories"
+              className="aap__carbon-sidenav"
+              eyebrow="Navigation"
+              title="Artifacts Library"
+              description="Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place."
+              items={sidebarNavItems}
+              footer={(
+                <>
                   <div className="aap__sidebar-stats" aria-label="Artifacts workspace status">
                     <div className="aap__sidebar-stat">
                       <span>Current node</span>
@@ -1202,9 +1152,9 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
                   <div className="aap__sidebar-note">
                     <p>Cluster-aware library, discovery, and inline detail workflows stay in the routed workspace rather than breaking into a separate product shell.</p>
                   </div>
-                </div>
-              </SideNavItems>
-            </SideNav>
+                </>
+              )}
+            />
           </div>
 
           {/* Main content */}

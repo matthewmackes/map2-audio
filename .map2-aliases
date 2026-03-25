@@ -4,3 +4,7 @@ MAP2_ROOT="/home/mm/map2-audio"
 if [[ -f "$MAP2_ROOT/branding/map2-welcome.sh" ]]; then
     source "$MAP2_ROOT/branding/map2-welcome.sh"
 fi
+
+if [[ $- == *i* ]]; then
+    map2_define_aliases
+fi

@@ -1691,6 +1691,7 @@ class AdoptionService:
                     "activation_state": record.activation_state,
                     "readiness_status": record.readiness.status if record.readiness else None,
                     "readiness_summary": record.readiness.summary() if record.readiness else None,
+                    "avb_auto_provision": record.metadata.get("avb_auto_provision"),
                 }
             )
             target.registered = bool(record.registered or target.registered)

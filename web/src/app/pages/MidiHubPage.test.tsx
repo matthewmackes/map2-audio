@@ -247,6 +247,7 @@ describe('MidiHubShell', () => {
     renderShell()
 
     expect(await screen.findByLabelText('MIDI Hub navigation')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'MIDI Hub' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Connections' })).toBeTruthy()
     expect(screen.getByText('Routing Matrix Mock')).toBeTruthy()
     expect(screen.getByText('Traffic Monitor Mock')).toBeTruthy()

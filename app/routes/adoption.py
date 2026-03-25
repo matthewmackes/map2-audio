@@ -4,11 +4,13 @@ Operator-facing adoption APIs for unmanaged MAP2 nodes.
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.config import config_get
 from app.services.cluster.adoption import (
     AdoptionConflictError,
     AdoptionNotFoundError,
@@ -21,6 +23,7 @@ from app.services.cluster.adoption import (
 from app.services.cluster.node_visibility import get_visible_remote_nodes
 
 router = APIRouter(prefix="/api/adoption", tags=["adoption"])
+logger = logging.getLogger(__name__)
 
 
 class AdoptionCheckResponse(BaseModel):
@@ -44,6 +47,16 @@ class ReadinessSummaryResponse(BaseModel):
     computed_at: Optional[str] = None
 
 
+class AvbAutoProvisionResponse(BaseModel):
+    state: str
+    reason: Optional[str] = None
+    connected: int = 0
+    failed: int = 0
+    candidate_pairs: int = 0
+    last_run_at: Optional[str] = None
+    error: Optional[str] = None
+
+
 class AdoptionCandidateResponse(BaseModel):
     candidate_id: str
     remote_node_id: Optional[str] = None
@@ -61,6 +74,7 @@ class AdoptionCandidateResponse(BaseModel):
     visible: bool = True
     routing_ready: bool = False
     readiness: Optional[ReadinessSummaryResponse] = None
+    avb_auto_provision: Optional[AvbAutoProvisionResponse] = None
 
 
 class AdoptionCandidateListResponse(BaseModel):
@@ -164,6 +178,7 @@ def _serialize_candidate(record: AdoptionRecord) -> AdoptionCandidateResponse:
 
     readiness_summary = record.readiness.summary() if record.readiness else None
 
+    avb_payload = record.metadata.get("avb_auto_provision") if isinstance(record.metadata, dict) else None
     return AdoptionCandidateResponse(
         candidate_id=record.candidate_id,
         remote_node_id=record.remote_node_id,
@@ -181,6 +196,7 @@ def _serialize_candidate(record: AdoptionRecord) -> AdoptionCandidateResponse:
         visible=bool(visible.visible if visible is not None else record.visible),
         routing_ready=bool(visible.routing_ready if visible is not None else False),
         readiness=ReadinessSummaryResponse(**readiness_summary) if readiness_summary else None,
+        avb_auto_provision=AvbAutoProvisionResponse(**avb_payload) if isinstance(avb_payload, dict) else None,
     )
 
 
@@ -200,6 +216,70 @@ def _serialize_clone_source(source: Dict[str, Any]) -> CloneSourceResponse:
 
 def _service() -> AdoptionService:
     return get_adoption_service()
+
+
+def _strict_avb_auto_provision_enabled() -> bool:
+    return bool(
+        config_get("avb.enabled", False)
+        and config_get("avb.auto_connect", True)
+        and config_get("avb.avdecc_enabled", False)
+        and config_get("avb.srp.enabled", True)
+        and config_get("avb.srp.required", True)
+    )
+
+
+async def _trigger_post_adoption_avb_auto_provision(
+    service: AdoptionService,
+    record,
+    *,
+    role: Optional[str],
+    reason: str,
+) -> None:
+    node_id = record.node_id
+    normalized_role = str(role or "").strip().upper()
+    if not node_id or normalized_role not in {"AUDIO-NODE", "ALL-IN-ONE", "MANAGEMENT-NODE"}:
+        return
+    if not _strict_avb_auto_provision_enabled():
+        record.metadata["avb_auto_provision"] = {
+            "state": "skipped",
+            "reason": f"{reason}:{node_id}",
+            "connected": 0,
+            "failed": 0,
+            "candidate_pairs": 0,
+            "error": "strict_srp_avdecc_not_enabled",
+        }
+        service.store.upsert_record(record)
+        return
+
+    try:
+        from app.services.avb.avb_router import get_avb_router
+
+        summary = await get_avb_router().trigger_auto_connect(reason=f"{reason}:{node_id}")
+        record.metadata["avb_auto_provision"] = {
+            "state": "completed_with_issues" if int(summary.get("failed", 0) or 0) > 0 or summary.get("error") else "completed",
+            "reason": str(summary.get("reason") or f"{reason}:{node_id}"),
+            "connected": int(summary.get("connected", 0) or 0),
+            "failed": int(summary.get("failed", 0) or 0),
+            "candidate_pairs": int(summary.get("candidate_pairs", 0) or 0),
+            "last_run_at": summary.get("last_run_at"),
+            "error": summary.get("error"),
+        }
+        service.store.upsert_record(record)
+        if int(summary.get("failed", 0) or 0) > 0 or summary.get("error"):
+            logger.warning("Post-adoption AVB auto-provision completed with issues for %s: %s", node_id, summary)
+        else:
+            logger.info("Post-adoption AVB auto-provision completed for %s: %s", node_id, summary)
+    except Exception as exc:
+        record.metadata["avb_auto_provision"] = {
+            "state": "failed",
+            "reason": f"{reason}:{node_id}",
+            "connected": 0,
+            "failed": 1,
+            "candidate_pairs": 0,
+            "error": str(exc),
+        }
+        service.store.upsert_record(record)
+        logger.warning("Post-adoption AVB auto-provision trigger failed for %s: %s", node_id, exc)
 
 
 def _map_service_error(exc: Exception) -> HTTPException:
@@ -275,6 +355,12 @@ async def adopt_candidate(candidate_id: str, request: AdoptCandidateRequest):
         )
     except Exception as exc:  # pragma: no cover - mapped deterministically below
         raise _map_service_error(exc) from exc
+    await _trigger_post_adoption_avb_auto_provision(
+        service,
+        record,
+        role=request.role,
+        reason="adoption",
+    )
     return AdoptionActionResponse(
         status="ok",
         message=f"Candidate {candidate_id} adopted successfully",
@@ -359,6 +445,12 @@ async def promote_node(node_id: str, request: PromoteNodeRequest):
         record = service.promote_node(node_id, request.requested_by)
     except Exception as exc:  # pragma: no cover - mapped deterministically below
         raise _map_service_error(exc) from exc
+    await _trigger_post_adoption_avb_auto_provision(
+        service,
+        record,
+        role=record.metadata.get("requested_role"),
+        reason="promotion",
+    )
     return AdoptionActionResponse(
         status="ok",
         message=f"Node {node_id} promoted successfully",

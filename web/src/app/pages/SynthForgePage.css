@@ -1,0 +1,19 @@
+.synthforge-page {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.synthforge-page__workspace {
+  min-width: 0;
+}
+
+.synthforge-page__workspace > * {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .synthforge-page {
+    padding: 1rem;
+  }
+}

@@ -826,8 +826,17 @@ class ChainService:
             logger.error(f"Error deleting chain {chain_id}: {e}")
             return False
 
+    def _is_instrument_plugin(self, plugin_uri: str) -> bool:
+        """Check if a plugin is an instrument (0 audio inputs, generates audio)."""
+        meta = self._get_plugin_metadata(plugin_uri)
+        return meta.get("in_port_count", 2) == 0
+
     async def add_plugin_to_chain(self, chain_id: int, plugin_uri: str) -> bool:
-        """Add LV2 plugin to chain.
+        """Add plugin to chain.
+
+        Instruments (0 audio inputs) are auto-placed at position 0 (chain head)
+        with existing plugins shifted right. Effects are appended at the end.
+
         Args:
             chain_id: Chain ID
             plugin_uri: Plugin URI
@@ -835,8 +844,7 @@ class ChainService:
             True if added, False otherwise
         """
         try:
-            # LV2 plugin handling
-            logger.debug(f"Adding LV2 plugin {plugin_uri} to chain {chain_id}")
+            logger.debug(f"Adding plugin {plugin_uri} to chain {chain_id}")
             if not self.session:
                 logger.error("No database session available")
                 return False
@@ -851,26 +859,39 @@ class ChainService:
                 logger.warning(f"Chain {chain_id} not found in database")
                 return False
             logger.debug(f"Chain {chain_id} found: {chain.name}")
-            # Get max position
-            pos_result = await self.session.execute(
-                select(ChainPlugin)
-                .filter(ChainPlugin.chain_id == chain_id)
-                .order_by(ChainPlugin.position.desc())
-            )
-            last_plugin = pos_result.scalars().first()
-            next_position = (last_plugin.position + 1) if last_plugin else 0
-            logger.debug(f"Next position for plugin in chain {chain_id}: {next_position}")
-            # Add plugin
+
+            is_instrument = self._is_instrument_plugin(plugin_uri)
+
+            if is_instrument:
+                # Instruments go at position 0 — shift existing plugins right
+                existing = await self.session.execute(
+                    select(ChainPlugin)
+                    .filter(ChainPlugin.chain_id == chain_id)
+                    .order_by(ChainPlugin.position.asc())
+                )
+                for plugin in existing.scalars().all():
+                    plugin.position += 1
+                insert_position = 0
+                logger.debug(f"Instrument detected — inserting at position 0, shifted existing plugins")
+            else:
+                # Effects append at end
+                pos_result = await self.session.execute(
+                    select(ChainPlugin)
+                    .filter(ChainPlugin.chain_id == chain_id)
+                    .order_by(ChainPlugin.position.desc())
+                )
+                last_plugin = pos_result.scalars().first()
+                insert_position = (last_plugin.position + 1) if last_plugin else 0
+
             chain_plugin = ChainPlugin(
                 chain_id=chain_id,
                 plugin_uri=plugin_uri,
-                position=next_position,
+                position=insert_position,
                 bypass=False
             )
             self.session.add(chain_plugin)
             await self.session.flush()
-            # Note: commit is handled by route's get_session context manager
-            logger.info(f"Successfully added plugin {plugin_uri} to chain {chain_id} at position {next_position}")
+            logger.info(f"Successfully added {'instrument' if is_instrument else 'effect'} {plugin_uri} to chain {chain_id} at position {insert_position}")
             return True
         except Exception as e:
             logger.error(f"Error adding plugin {plugin_uri} to chain {chain_id}: {e}", exc_info=True)

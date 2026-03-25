@@ -13,7 +13,6 @@ import {
   PaintBrush,
   Screen,
   Share,
-  SettingsAdjust,
   Terminal,
   type CarbonIconType,
 } from '@carbon/icons-react'
@@ -23,9 +22,6 @@ import {
   InlineLoading,
   InlineNotification,
   Pagination,
-  SideNav,
-  SideNavItems,
-  SideNavLink,
   SkeletonPlaceholder,
   SkeletonText,
   Tag,
@@ -55,6 +51,7 @@ import { platformPinnedItems, type PlatformPinnedNavItem, type StandalonePanel }
 import { useSpecialSettings } from '../../hooks/useSpecialSettings'
 import { MidiClusterNodeCard } from '../MidiCluster/MidiClusterNodeCard'
 import { MidiClusterTopology } from '../MidiCluster/MidiClusterTopology'
+import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
 import { LabsWorkspace } from './LabsWorkspace'
 import {
   useMidiClusterConnections,
@@ -84,6 +81,7 @@ const HostMachinePage = lazy(() => import('../../pages/HostMachinePage').then(m 
 const AudioEnginePage = lazy(() => import('../../pages/AudioEnginePage').then(m => ({ default: m.AudioEnginePage })))
 const ThemePage       = lazy(() => import('../../pages/ThemePage').then(m => ({ default: m.ThemePage })))
 const AboutPage       = lazy(() => import('../../pages/AboutPage').then(m => ({ default: m.AboutPage })))
+const PlatformAdoptionPage = lazy(() => import('../../pages/PlatformAdoptionPage').then(m => ({ default: m.PlatformAdoptionPage })))
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -106,6 +104,7 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'audio-engine': { label: 'Audio Engine',   eyebrow: 'System',   icon: Terminal },
   'theme':        { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
   'about':        { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
+  'adoption':     { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
 }
 
 type PinnableNavTarget = PlatformPinnedNavItem | ShellNavigationItem | HardwareInterfaceMenuItem
@@ -168,108 +167,77 @@ function SidebarNavigation({
   onOpenLabs: () => void
   onTogglePin: (item: PlatformPinnedNavItem, checked: boolean) => void
 }) {
+  const items: UnifiedWorkspaceSideNavItem[] = PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
+    const targetId = item.target.layer ?? item.target.panel ?? null
+    const isSelected = activeId === targetId
+    const isPinned = pinnedRouteSet.has(item.to)
+    const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
+    const pinDisabled = pinningDisabled || limitReached
+
+    return {
+      key: item.to,
+      label: item.label,
+      description: item.description,
+      to: item.to,
+      icon: item.icon,
+      active: isSelected,
+      onOpen: () => {
+        if (item.target.layer) {
+          onOpenLayer(item.target.layer)
+          return
+        }
+        if (item.target.panel) {
+          onOpenStandalone(item.target.panel)
+        }
+      },
+      action: (
+        <button
+          type="button"
+          className={`platform-shell__nav-item-pin${isPinned ? ' is-pinned' : ''}`}
+          onClick={() => onTogglePin(item, !isPinned)}
+          aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
+          title={
+            limitReached
+              ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
+              : isPinned
+                ? 'Unpin from navigation bar'
+                : 'Pin to navigation bar'
+          }
+          aria-pressed={isPinned}
+          disabled={pinDisabled}
+        >
+          {isPinned ? 'PINNED' : 'PIN'}
+        </button>
+      ),
+    }
+  })
+
   return (
-    <SideNav
+    <UnifiedWorkspaceSideNav
       className="platform-shell__sidebar"
-      aria-label="Platforms and Labs navigation"
-      expanded
-      isFixedNav={false}
-      isChildOfHeader={false}
-    >
-      <div className="platform-shell__sidebar-head">
-        <p className="platform-shell__sidebar-eyebrow">Navigation</p>
-        <h2 className="platform-shell__sidebar-title">Platforms and Labs</h2>
-        <p className="platform-shell__sidebar-copy">
-          Move across platform workspaces from one rail, then drop into Labs for the former Advanced launchers.
-        </p>
-      </div>
-
-      <SideNavItems className="platform-shell__sidebar-nav">
-        <div className="platform-shell__sidebar-list" role="list">
-          {PLATFORM_CONTROL_PANEL_ITEMS.map((item) => {
-            const Icon = item.icon
-            const targetId = item.target.layer ?? item.target.panel ?? null
-            const isSelected = activeId === targetId
-            const isPinned = pinnedRouteSet.has(item.to)
-            const limitReached = !isPinned && pinnedRouteSet.size >= MAX_PINNED_NAV_ITEMS
-            const pinDisabled = pinningDisabled || limitReached
-
-            return (
-              <article
-                key={item.to}
-                role="listitem"
-                className={`platform-shell__nav-item${isSelected ? ' is-selected' : ''}`}
-              >
-                <SideNavLink
-                  href={item.to}
-                  isActive={isSelected}
-                  className="platform-shell__nav-item-main"
-                  aria-label={`Open ${item.label} workspace`}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    if (item.target.layer) {
-                      onOpenLayer(item.target.layer)
-                      return
-                    }
-                    if (item.target.panel) {
-                      onOpenStandalone(item.target.panel)
-                    }
-                  }}
-                  renderIcon={Icon}
-                >
-                  <span className="platform-shell__nav-item-copy">
-                    <span className="platform-shell__nav-item-label">{item.label}</span>
-                    <span className="platform-shell__nav-item-desc">{item.description}</span>
-                  </span>
-                </SideNavLink>
-                <button
-                  type="button"
-                  className={`platform-shell__nav-item-pin${isPinned ? ' is-pinned' : ''}`}
-                  onClick={() => onTogglePin(item, !isPinned)}
-                  aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-                  title={
-                    limitReached
-                      ? `Maximum ${MAX_PINNED_NAV_ITEMS} pinned routes`
-                      : isPinned
-                        ? 'Unpin from navigation bar'
-                        : 'Pin to navigation bar'
-                  }
-                  aria-pressed={isPinned}
-                  disabled={pinDisabled}
-                >
-                  {isPinned ? 'PINNED' : 'PIN'}
-                </button>
-              </article>
-            )
-          })}
-        </div>
-
-        <div className="platform-shell__sidebar-footer">
-          <div
-            className={`platform-shell__nav-item platform-shell__nav-item--labs${activeId === 'labs' ? ' is-selected' : ''}`}
-          >
-            <SideNavLink
-              href="/labs"
-              isActive={activeId === 'labs'}
-              className="platform-shell__nav-item-main"
-              aria-label="Open Labs workspace"
-              onClick={(event) => {
-                event.preventDefault()
-                onOpenLabs()
-              }}
-              renderIcon={SettingsAdjust}
-            >
-              <span className="platform-shell__nav-item-copy">
-                <span className="platform-shell__nav-item-chip">Labs</span>
-                <span className="platform-shell__nav-item-desc">
-                  Advanced and experimental launchers formerly grouped under the old Advanced menu.
-                </span>
+      ariaLabel="Platforms and Labs navigation"
+      eyebrow="Navigation"
+      title="Platforms and Labs"
+      description="Move across platform workspaces from one rail, then drop into Labs for the former Advanced launchers."
+      items={items}
+      footer={(
+        <button
+          type="button"
+          className={`platform-shell__nav-item platform-shell__nav-item--labs${activeId === 'labs' ? ' is-selected' : ''}`}
+          onClick={onOpenLabs}
+          aria-label="Open Labs workspace"
+        >
+          <span className="platform-shell__nav-item-main">
+            <span className="platform-shell__nav-item-copy">
+              <span className="platform-shell__nav-item-chip">Labs</span>
+              <span className="platform-shell__nav-item-desc">
+                Advanced and experimental launchers formerly grouped under the old Advanced menu.
               </span>
-            </SideNavLink>
-          </div>
-        </div>
-      </SideNavItems>
-    </SideNav>
+            </span>
+          </span>
+        </button>
+      )}
+    />
   )
 }
 
@@ -505,6 +473,7 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
         {panel === 'audio-engine' && <AudioEnginePage />}
         {panel === 'theme'        && <ThemePage />}
         {panel === 'about'        && <AboutPage />}
+        {panel === 'adoption'     && <PlatformAdoptionPage />}
       </Suspense>
     </motion.section>
   )

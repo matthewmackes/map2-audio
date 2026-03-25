@@ -1428,6 +1428,9 @@ export const pluginsApi = {
       appendNodeQuery(`${API_BASE}/plugins/discover${refresh ? '?refresh=true' : ''}`, nodeId)
     ),
 
+  getAll: (nodeId?: string | null) =>
+    fetchJson<Plugin[]>(appendNodeQuery(`${API_BASE}/plugins/all`, nodeId)),
+
   refresh: async () => {
     const response = await fetchJson<PluginDiscoverResponse>(`${API_BASE}/plugins/refresh`, { method: 'POST' });
     notifyPluginInventoryChanged();

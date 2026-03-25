@@ -170,6 +170,7 @@ def test_claim_adopt_and_promote_candidate(tmp_path, monkeypatch):
         assert adopted["adoption_state"] == "adopted"
         assert adopted["activation_state"] == "standby"
         assert adopted["routing_ready"] is False
+        assert adopted["avb_auto_provision"]["state"] == "skipped"
 
         readiness_response = client.get("/api/adoption/candidates/cand_peer-unmanaged/readiness")
         assert readiness_response.status_code == 200
@@ -190,6 +191,265 @@ def test_claim_adopt_and_promote_candidate(tmp_path, monkeypatch):
     registry_row = registry.get_node("peer-unmanaged")
     assert registry_row is not None
     assert registry_row["hostname"] == "rack-unmanaged"
+
+
+def test_adoption_triggers_strict_srp_avdecc_auto_provision(tmp_path, monkeypatch):
+    db_path = tmp_path / "cluster.db"
+    registry = ClusterRegistry(db_path=db_path)
+    service = AdoptionService(store=AdoptionStore(db_path=db_path), registry=registry)
+    monkeypatch.setattr(
+        service,
+        "_verify_remote_pairing",
+        lambda record, *, pairing_code, bootstrap_token, actor_node_id: {
+            "claim_token": "claim-token-1",
+            "token_expires_at": "2026-03-23T12:00:00+00:00",
+            "remote_fingerprint": "fingerprint-1",
+            "remote_node_id": record.remote_node_id,
+        },
+    )
+    monkeypatch.setattr(service, "_finalize_remote_claim", lambda record, *, actor_node_id: None)
+
+    visible_nodes = {
+        "peer-unmanaged": _make_visible_node(
+            node_id="peer-unmanaged",
+            hostname="rack-unmanaged",
+            host="10.0.0.60",
+            metadata={
+                "software_version": get_platform_version(),
+                "ptp_state": "LOCKED",
+                "avb_enabled": True,
+            },
+            capabilities={"avb": True},
+        )
+    }
+
+    def _fake_get_visible_remote_nodes():
+        snapshot = {node_id: copy.deepcopy(node) for node_id, node in visible_nodes.items()}
+        service.apply_visibility_overlay(snapshot)
+        return "local-node", snapshot
+
+    class _RouterProbe:
+        def __init__(self):
+            self.calls: list[str] = []
+
+        async def trigger_auto_connect(self, *, reason: str = "manual"):
+            self.calls.append(reason)
+            return {"reason": reason, "connected": 1, "failed": 0, "candidate_pairs": 1}
+
+    router_probe = _RouterProbe()
+
+    def _fake_config_get(key, default=None):
+        overrides = {
+            "avb.enabled": True,
+            "avb.auto_connect": True,
+            "avb.avdecc_enabled": True,
+            "avb.srp.enabled": True,
+            "avb.srp.required": True,
+        }
+        return overrides.get(key, default)
+
+    set_adoption_service(service)
+    monkeypatch.setattr("app.services.cluster.node_visibility.get_visible_remote_nodes", _fake_get_visible_remote_nodes)
+    monkeypatch.setattr(adoption, "get_adoption_service", lambda: service)
+    monkeypatch.setattr(adoption, "get_visible_remote_nodes", _fake_get_visible_remote_nodes)
+    monkeypatch.setattr(adoption, "config_get", _fake_config_get)
+    monkeypatch.setattr("app.services.avb.avb_router.get_avb_router", lambda: router_probe)
+
+    app = FastAPI()
+    app.include_router(adoption.router)
+
+    with TestClient(app) as client:
+        claim_response = client.post(
+            "/api/adoption/candidates/cand_peer-unmanaged/claim",
+            json={"pairing_code": "123456", "requested_by": "local-node"},
+        )
+        assert claim_response.status_code == 200
+
+        adopt_response = client.post(
+            "/api/adoption/candidates/cand_peer-unmanaged/adopt",
+            json={
+                "display_name": "Stage Right",
+                "role": "AUDIO-NODE",
+                "activation_mode": "standby",
+            },
+        )
+        assert adopt_response.status_code == 200
+
+        promote_response = client.post(
+            "/api/adoption/nodes/peer-unmanaged/promote",
+            json={"activation_scope": "all", "requested_by": "local-node"},
+        )
+        assert promote_response.status_code == 200
+
+    set_adoption_service(None)
+
+    assert router_probe.calls == ["adoption:peer-unmanaged", "promotion:peer-unmanaged"]
+
+
+def test_adoption_skips_auto_provision_when_strict_profile_not_enabled(tmp_path, monkeypatch):
+    db_path = tmp_path / "cluster.db"
+    registry = ClusterRegistry(db_path=db_path)
+    service = AdoptionService(store=AdoptionStore(db_path=db_path), registry=registry)
+    monkeypatch.setattr(
+        service,
+        "_verify_remote_pairing",
+        lambda record, *, pairing_code, bootstrap_token, actor_node_id: {
+            "claim_token": "claim-token-1",
+            "token_expires_at": "2026-03-23T12:00:00+00:00",
+            "remote_fingerprint": "fingerprint-1",
+            "remote_node_id": record.remote_node_id,
+        },
+    )
+    monkeypatch.setattr(service, "_finalize_remote_claim", lambda record, *, actor_node_id: None)
+
+    visible_nodes = {
+        "peer-unmanaged": _make_visible_node(
+            node_id="peer-unmanaged",
+            hostname="rack-unmanaged",
+            host="10.0.0.60",
+            metadata={"software_version": get_platform_version(), "ptp_state": "LOCKED", "avb_enabled": True},
+            capabilities={"avb": True},
+        )
+    }
+
+    def _fake_get_visible_remote_nodes():
+        snapshot = {node_id: copy.deepcopy(node) for node_id, node in visible_nodes.items()}
+        service.apply_visibility_overlay(snapshot)
+        return "local-node", snapshot
+
+    class _RouterProbe:
+        def __init__(self):
+            self.calls: list[str] = []
+
+        async def trigger_auto_connect(self, *, reason: str = "manual"):
+            self.calls.append(reason)
+            return {"reason": reason, "connected": 1, "failed": 0, "candidate_pairs": 1}
+
+    router_probe = _RouterProbe()
+
+    def _fake_config_get(key, default=None):
+        overrides = {
+            "avb.enabled": True,
+            "avb.auto_connect": True,
+            "avb.avdecc_enabled": False,
+            "avb.srp.enabled": True,
+            "avb.srp.required": True,
+        }
+        return overrides.get(key, default)
+
+    set_adoption_service(service)
+    monkeypatch.setattr("app.services.cluster.node_visibility.get_visible_remote_nodes", _fake_get_visible_remote_nodes)
+    monkeypatch.setattr(adoption, "get_adoption_service", lambda: service)
+    monkeypatch.setattr(adoption, "get_visible_remote_nodes", _fake_get_visible_remote_nodes)
+    monkeypatch.setattr(adoption, "config_get", _fake_config_get)
+    monkeypatch.setattr("app.services.avb.avb_router.get_avb_router", lambda: router_probe)
+
+    app = FastAPI()
+    app.include_router(adoption.router)
+
+    with TestClient(app) as client:
+        claim_response = client.post(
+            "/api/adoption/candidates/cand_peer-unmanaged/claim",
+            json={"pairing_code": "123456", "requested_by": "local-node"},
+        )
+        assert claim_response.status_code == 200
+
+        adopt_response = client.post(
+            "/api/adoption/candidates/cand_peer-unmanaged/adopt",
+            json={
+                "display_name": "Stage Right",
+                "role": "AUDIO-NODE",
+                "activation_mode": "standby",
+            },
+        )
+        assert adopt_response.status_code == 200
+
+    set_adoption_service(None)
+
+    assert router_probe.calls == []
+
+
+def test_adoption_response_includes_avb_auto_provision_summary(tmp_path, monkeypatch):
+    db_path = tmp_path / "cluster.db"
+    registry = ClusterRegistry(db_path=db_path)
+    service = AdoptionService(store=AdoptionStore(db_path=db_path), registry=registry)
+    monkeypatch.setattr(
+        service,
+        "_verify_remote_pairing",
+        lambda record, *, pairing_code, bootstrap_token, actor_node_id: {
+            "claim_token": "claim-token-1",
+            "token_expires_at": "2026-03-23T12:00:00+00:00",
+            "remote_fingerprint": "fingerprint-1",
+            "remote_node_id": record.remote_node_id,
+        },
+    )
+    monkeypatch.setattr(service, "_finalize_remote_claim", lambda record, *, actor_node_id: None)
+
+    visible_nodes = {
+        "peer-unmanaged": _make_visible_node(
+            node_id="peer-unmanaged",
+            hostname="rack-unmanaged",
+            host="10.0.0.60",
+            metadata={"software_version": get_platform_version(), "ptp_state": "LOCKED", "avb_enabled": True},
+            capabilities={"avb": True},
+        )
+    }
+
+    def _fake_get_visible_remote_nodes():
+        snapshot = {node_id: copy.deepcopy(node) for node_id, node in visible_nodes.items()}
+        service.apply_visibility_overlay(snapshot)
+        return "local-node", snapshot
+
+    class _RouterProbe:
+        async def trigger_auto_connect(self, *, reason: str = "manual"):
+            return {
+                "reason": reason,
+                "connected": 2,
+                "failed": 1,
+                "candidate_pairs": 3,
+                "error": "listener mismatch",
+                "last_run_at": "2026-03-25T16:30:00Z",
+            }
+
+    def _fake_config_get(key, default=None):
+        overrides = {
+            "avb.enabled": True,
+            "avb.auto_connect": True,
+            "avb.avdecc_enabled": True,
+            "avb.srp.enabled": True,
+            "avb.srp.required": True,
+        }
+        return overrides.get(key, default)
+
+    set_adoption_service(service)
+    monkeypatch.setattr("app.services.cluster.node_visibility.get_visible_remote_nodes", _fake_get_visible_remote_nodes)
+    monkeypatch.setattr(adoption, "get_adoption_service", lambda: service)
+    monkeypatch.setattr(adoption, "get_visible_remote_nodes", _fake_get_visible_remote_nodes)
+    monkeypatch.setattr(adoption, "config_get", _fake_config_get)
+    monkeypatch.setattr("app.services.avb.avb_router.get_avb_router", lambda: _RouterProbe())
+
+    app = FastAPI()
+    app.include_router(adoption.router)
+
+    with TestClient(app) as client:
+        client.post(
+            "/api/adoption/candidates/cand_peer-unmanaged/claim",
+            json={"pairing_code": "123456", "requested_by": "local-node"},
+        )
+        adopt_response = client.post(
+            "/api/adoption/candidates/cand_peer-unmanaged/adopt",
+            json={"display_name": "Stage Right", "role": "AUDIO-NODE", "activation_mode": "standby"},
+        )
+        list_response = client.get("/api/adoption/candidates")
+
+    set_adoption_service(None)
+
+    adopted = adopt_response.json()["candidate"]
+    listed = list_response.json()["items"][0]
+    assert adopted["avb_auto_provision"]["state"] == "completed_with_issues"
+    assert adopted["avb_auto_provision"]["connected"] == 2
+    assert adopted["avb_auto_provision"]["failed"] == 1
+    assert listed["avb_auto_provision"]["state"] == "completed_with_issues"
 
 
 def test_claim_candidate_accepts_bootstrap_token(tmp_path, monkeypatch):
