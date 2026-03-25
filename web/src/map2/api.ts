@@ -146,14 +146,24 @@ import {
   normalizeReorderPluginsResponse,
   type RawReorderPluginsResponse,
 } from './reorderPluginsCompat';
+import {
+  dispatchRuntimeEvent,
+  getRuntimeApiBaseOverride,
+  getRuntimeEnvApiBase,
+  getRuntimeLocation,
+  getRuntimeStorage,
+} from './runtime';
 
-const RAW_API_BASE = (() => {
-  // Check for explicit environment variable
-  const envBase = import.meta.env.VITE_API_BASE as string | undefined
+function resolveRawApiBase(): string {
+  const runtimeBase = getRuntimeApiBaseOverride()
+  if (runtimeBase) return runtimeBase
+
+  const envBase = getRuntimeEnvApiBase()
   if (envBase) return envBase
 
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  const port = window.location.port
+  const location = getRuntimeLocation()
+  const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+  const port = location.port
 
   // On localhost and on the supported production web port, /api is routed
   // through the same origin and proxied by the production web server on port 3000.
@@ -168,9 +178,19 @@ const RAW_API_BASE = (() => {
   }
 
   // For any other port on a remote host, call the backend on port 8080 directly.
-  return `http://${window.location.hostname}:8080/api`
-})()
-export const API_BASE = RAW_API_BASE.endsWith('/') ? RAW_API_BASE.slice(0, -1) : RAW_API_BASE
+  return `http://${location.hostname}:8080/api`
+}
+
+function resolveApiBase(): string {
+  const rawApiBase = resolveRawApiBase()
+  return rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase
+}
+
+export const API_BASE = {
+  toString: () => resolveApiBase(),
+  valueOf: () => resolveApiBase(),
+  [Symbol.toPrimitive]: () => resolveApiBase(),
+} as unknown as string
 
 /**
  * Get the WebSocket base URL that correctly targets the backend.
@@ -178,13 +198,14 @@ export const API_BASE = RAW_API_BASE.endsWith('/') ? RAW_API_BASE.slice(0, -1) :
  * use the same origin; on any other port target ws://hostname:8080 directly.
  */
 export function getWsBaseUrl(): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const hostname = window.location.hostname
-  const port = window.location.port
+  const location = getRuntimeLocation()
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const hostname = location.hostname
+  const port = location.port
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
 
   if (isLocalhost || port === '3000' || port === '' || port === '80' || port === '8080') {
-    return `${protocol}//${window.location.host}`
+    return `${protocol}//${location.host}`
   }
   // Any non-standard port connects directly to the backend.
   return `${protocol}//${hostname}:8080`
@@ -1369,9 +1390,7 @@ export const pluginAppearancesApi = {
 export const PLUGIN_INVENTORY_CHANGED_EVENT = 'map2:plugins-changed';
 
 function notifyPluginInventoryChanged(): void {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(PLUGIN_INVENTORY_CHANGED_EVENT));
-  }
+  dispatchRuntimeEvent(new CustomEvent(PLUGIN_INVENTORY_CHANGED_EVENT))
 }
 
 export const pluginsApi = {
@@ -6556,7 +6575,7 @@ async function _json<T>(res: Response): Promise<T> {
 
 function readActiveClusterNodeId(): string | null {
   try {
-    const stored = window.localStorage.getItem('map2_active_node')
+    const stored = getRuntimeStorage()?.getItem('map2_active_node')
     if (!stored || stored === 'null' || stored === 'all') {
       return null
     }

@@ -6822,10 +6822,6 @@ Description:
 - Required outputs: New route file `app/routes/plugin_appearances.py`, Pydantic model, service layer, pytest coverage.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-25 10:11 EDT - Codex
-- Completion notes:
-  - Added the backend source of truth, local cache/hook layer, icon picker, color picker, Theme Page editor flow, chooser integration, and focused validation for per-plugin appearance customization.
-  - Per-plugin appearance overrides now persist through `/api/plugin-appearances`, edit inside the Theme workspace, and render through chooser cards plus normalized plugin metadata.
 Last updated: 2026-03-25 09:47 EDT - Codex
 - Completion notes:
   - Added `app/services/plugin_appearance_service.py` as a JSON-backed source of truth at `~/.config/map2/plugin_appearance_overrides.json`, including hex normalization, SVG validation, custom icon identifier generation, and thread-safe CRUD helpers.
@@ -6941,7 +6937,7 @@ Last updated: 2026-03-25
 ## Ink TUI
 
 ID: T412
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MAP2 Ink TUI — Standalone terminal interface (Epic)
 Description:
 - Goal / acceptance criteria: Deliver a first-class, standalone terminal interface for MAP2 built with React + Ink, covering 14 screens with full keyboard navigation, real-time metering, device control, and cluster management.
@@ -6951,7 +6947,7 @@ Description:
 - Required outputs: `tui/` directory with complete Ink application, test suite, documentation. Full plan: `docs/plans/INK_TUI_PRODUCT_PLAN.md`
 Subtasks:
 ID: T412-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: TUI project scaffold and build system
 Description:
 - Goal / acceptance criteria: Create `tui/` directory with package.json, tsconfig.json, Ink + React dependencies, build scripts, and ESLint config with import boundary enforcement (ban web/src/app/ imports).
@@ -6959,8 +6955,14 @@ Description:
 - Dependencies: None
 - Estimated effort: Small
 - Required outputs: Bootable empty Ink app that renders to terminal. npm run build and npm test work.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:12 EDT - Codex
+- Completion notes:
+  - Added the standalone Ink package scaffold under `tui/` with `package.json`, `tsconfig.json`, `jest.config.cjs`, `babel.config.cjs`, and a flat ESLint config that blocks `web/src/app/**` imports from the TUI source tree.
+  - Added `tui/src/main.tsx` and `tui/src/App.tsx`, confirmed `npm run build` and `npm test` pass, and smoke-booted the app with `npm start` against the live backend.
 ID: T412-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Node.js adapters for shared API/WebSocket layer
 Description:
 - Goal / acceptance criteria: Create thin adapter modules so web/src/map2/api.ts and web/src/map2/websocket.ts work in Node.js without browser globals.
@@ -6968,8 +6970,15 @@ Description:
 - Dependencies: T412-subA
 - Estimated effort: Medium
 - Required outputs: Adapter modules providing Node-compatible fetch and WebSocket. Verified with integration test against running backend.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:12 EDT - Codex
+- Completion notes:
+  - Added `web/src/map2/runtime.ts` plus `tui/src/runtime/map2NodeRuntime.ts` so the shared API/WebSocket layer can receive Node fetch, WebSocket, location, and storage shims at runtime.
+  - Updated `web/src/map2/api.ts` and `web/src/map2/websocket.ts` to resolve their runtime dependencies lazily instead of hard-failing on `window`.
+  - Added a live integration check in `tui/src/runtime/map2NodeRuntime.test.ts` that hits `http://localhost:8080/api/health` and opens `/ws/v1`.
 ID: T412-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: AppShell, screen router, and global navigation
 Description:
 - Goal / acceptance criteria: Implement AppShell (header + content + status bar), screen stack router with push/pop, command palette (Ctrl+P), help overlay (?), and global keybindings.
@@ -6977,8 +6986,14 @@ Description:
 - Dependencies: T412-subA
 - Estimated effort: Medium
 - Required outputs: Shell components, navigation system, keybinding infrastructure, terminal size detection.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:12 EDT - Codex
+- Completion notes:
+  - Added the screen stack router, registry, terminal-size/status hooks, shell header/status bar, command palette, help overlay, and global key handling in `tui/src/App.tsx`, `tui/src/navigation/*`, `tui/src/hooks/*`, and `tui/src/shell/*`.
+  - Number-key jumps, `Ctrl+P`, `?`, and `Esc` now work through the shared shell state.
 ID: T412-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Core component library (primitives)
 Description:
 - Goal / acceptance criteria: Build reusable TUI component library: DataTable, FilterableList, FormField, ProgressBar, VuMeter, Sparkline, StatusDot, TabBar, ConfirmDialog, Toast, BoxPanel, KeyHint, LogStream, Badge, Spinner.
@@ -6986,13 +7001,25 @@ Description:
 - Dependencies: T412-subA
 - Estimated effort: Large
 - Required outputs: 15+ component files with unit tests using ink-testing-library.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:12 EDT - Codex
+- Completion notes:
+  - Added the initial primitive set under `tui/src/components/`: `DataTable`, `FilterableList`, `FormField`, `ProgressBar`, `VuMeter`, `Sparkline`, `StatusDot`, `TabBar`, `ConfirmDialog`, `Toast`, `BoxPanel`, `KeyHint`, `LogStream`, `Badge`, and `Spinner`.
+  - Added `tui/src/inkSmoke.tsx` so `npm test` now includes direct Ink render smoke coverage for representative primitives and the shell entry point using `ink-testing-library`.
 ID: T412-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Home Screen
 Description:
 - Goal / acceptance criteria: Implement entry-point Home Screen showing system health summary, active chain, CPU load, connected devices, and navigation cards.
 - Dependencies: T412-subB, T412-subC, T412-subD
 - Estimated effort: Medium
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25 14:12 EDT - Codex
+- Completion notes:
+  - Added `tui/src/screens/HomeScreen.tsx` with live-backed system summary, CPU/RAM progress bars, active-chain detection, connected MIDI endpoint count, and quick-navigation hints.
+  - Verified the rendered home screen in a live `npm start` smoke against `http://localhost:8080`.
 ID: T412-subF
 Status: [ ] Todo
 Title: Metering and CPU screens
@@ -7044,4 +7071,4 @@ Description:
 - Estimated effort: Large
 - Required outputs: Test suite (unit + integration + snapshot), 80×24 verification, --help/--no-color/--verbose support, README, performance benchmarks.
 Assigned to: Unassigned
-Last updated: 2026-03-25
+Last updated: 2026-03-25 13:27 EDT - Codex

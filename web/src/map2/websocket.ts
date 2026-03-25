@@ -3,6 +3,9 @@
  * Real-time event-driven communication with backend
  */
 
+import { getWsBaseUrl } from './api'
+import { getRuntimeWebSocket, type RuntimeWebSocketLike } from './runtime'
+
 export type WebSocketMessage = {
   type: string;
   data?: any;
@@ -81,7 +84,7 @@ export interface WebSocketConfig {
  * - Type-safe event handlers
  */
 export class Map2WebSocket {
-  private ws: WebSocket | null = null;
+  private ws: RuntimeWebSocketLike | null = null;
   private config: Required<WebSocketConfig>;
   private subscriptions = new Map<WebSocketTopic, Set<WebSocketHandler>>();
   private reconnectAttempts = 0;
@@ -107,7 +110,8 @@ export class Map2WebSocket {
    * Connect to WebSocket server
    */
   async connect(): Promise<void> {
-    if (this.ws?.readyState === WebSocket.OPEN) {
+    const WebSocketImpl = getRuntimeWebSocket()
+    if (this.ws?.readyState === WebSocketImpl.OPEN) {
       console.warn('WebSocket already connected');
       return;
     }
@@ -116,7 +120,7 @@ export class Map2WebSocket {
 
     return new Promise((resolve, reject) => {
       try {
-        this.ws = new WebSocket(this.config.url);
+        this.ws = new WebSocketImpl(this.config.url);
 
         this.ws.onopen = () => {
           console.log('MAP2 WebSocket connected');
@@ -292,14 +296,15 @@ export class Map2WebSocket {
    * Check if connected
    */
   isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.ws?.readyState === getRuntimeWebSocket().OPEN;
   }
 
   /**
    * Trigger immediate manual reconnect attempt.
    */
   retryNow(): void {
-    if (this.ws?.readyState === WebSocket.OPEN || this.status === 'connecting') {
+    const WebSocketImpl = getRuntimeWebSocket()
+    if (this.ws?.readyState === WebSocketImpl.OPEN || this.status === 'connecting') {
       return;
     }
 
@@ -378,7 +383,7 @@ export class Map2WebSocket {
    * Send message to server
    */
   private send(data: any): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
+    if (this.ws?.readyState === getRuntimeWebSocket().OPEN) {
       this.ws.send(JSON.stringify(data));
     } else {
       console.warn('Cannot send message: WebSocket not connected');
@@ -465,12 +470,8 @@ export class Map2WebSocket {
  * Create WebSocket client instance
  */
 export function createWebSocketClient(baseUrl?: string): Map2WebSocket {
-  // Determine WebSocket URL from current location
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const isFrontendPort = window.location.port === '3000';
-  const host = baseUrl || (isFrontendPort ? window.location.host : window.location.hostname);
-  const port = (baseUrl || isFrontendPort) ? '' : ':8080'; // Default to backend port
-  const url = `${protocol}//${host}${port}/ws/v1`;
+  const normalizedBaseUrl = (baseUrl || getWsBaseUrl()).replace(/\/$/, '')
+  const url = `${normalizedBaseUrl}/ws/v1`
 
   return new Map2WebSocket({ url });
 }
