@@ -1,7 +1,11 @@
 import { Accessibility, Checkmark, PaintBrush, Reset, Settings } from '@carbon/icons-react'
 import {
   Button,
+  ComposedModal,
   InlineNotification,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   RadioTile,
   Tag,
   TextInput,
@@ -215,6 +219,45 @@ const SUGGESTED_DIRECTIONS: Array<{
   },
 ]
 
+type ThemeWorkspaceModal =
+  | 'library'
+  | 'directions'
+  | 'studio'
+  | 'typography'
+  | 'motion'
+  | 'category'
+
+function ThemeWorkspaceLauncher({
+  title,
+  description,
+  tag,
+  buttonLabel,
+  onOpen,
+}: {
+  title: string
+  description: string
+  tag: string
+  buttonLabel: string
+  onOpen: () => void
+}) {
+  return (
+    <article className="theme-page__launcher-card">
+      <div className="theme-page__launcher-copy">
+        <div className="theme-page__theme-card-head">
+          <strong>{title}</strong>
+          <Tag type="cool-gray" size="sm">
+            {tag}
+          </Tag>
+        </div>
+        <p>{description}</p>
+      </div>
+      <Button kind="primary" size="sm" onClick={onOpen}>
+        {buttonLabel}
+      </Button>
+    </article>
+  )
+}
+
 export function ThemePage() {
   const { theme, themeId, setTheme } = useTheme()
   const { fontPreset, fontPresetId, fontPresets, setFontPreset } = usePlatformFontPreference()
@@ -236,6 +279,7 @@ export function ThemePage() {
   const [draftName, setDraftName] = useState('')
   const [draftOverrides, setDraftOverrides] = useState<Partial<ThemeColors>>({})
   const [activeSlot, setActiveSlot] = useState<keyof ThemeColors | null>(null)
+  const [activeModal, setActiveModal] = useState<ThemeWorkspaceModal | null>(null)
   const [showSpecialSettings, setShowSpecialSettings] = useState(false)
   const categoryOverrideSnapshot = useSyncExternalStore(
     subscribeCategoryColorOverrides,
@@ -317,183 +361,128 @@ export function ThemePage() {
     setShowSpecialSettings(false)
   }
 
-  return (
-    <section className="theme-page">
-      <header className="theme-page__hero">
-        <div className="theme-page__hero-copy">
-          <div className="theme-page__eyebrow">Platform appearance</div>
-          <div className="theme-page__hero-title-row">
-            <PaintBrush size={28} aria-hidden />
+  const modalHeading =
+    activeModal === 'library'
+      ? 'Theme library'
+      : activeModal === 'directions'
+        ? 'Suggested directions'
+        : activeModal === 'studio'
+          ? 'Theme studio'
+          : activeModal === 'typography'
+            ? 'Platform GUI font'
+            : activeModal === 'motion'
+              ? 'Reduce Effects Mode'
+              : activeModal === 'category'
+                ? 'Category color theming'
+                : ''
+
+  const modalBody =
+    activeModal === 'library' ? (
+      <div className="theme-page__modal-stack">
+        <section className="theme-page__panel">
+          <div className="theme-page__section-head">
             <div>
-              <h1 className="theme-page__title">Theme</h1>
-              <p className="theme-page__subtitle">
-                The full MAP2 appearance system lives here now: preset library, custom theme builder, typography,
-                motion, and shared category accents in one surface.
+              <p className="theme-page__card-eyebrow">Library</p>
+              <h2 className="theme-page__section-title">Theme library</h2>
+              <p className="theme-page__section-copy">
+                Apply the standard Carbon shells directly, then keep any locally saved custom palettes beside them.
               </p>
             </div>
-          </div>
-
-          <div className="theme-page__hero-tags">
-            <Tag type="blue" size="sm">
-              {theme.name}
-            </Tag>
             <Tag type="cool-gray" size="sm">
-              {carbonThemeLabel(theme.carbonTheme)}
+              {themeOrder.length} built-in
             </Tag>
-            <Tag type="cyan" size="sm">
-              {fontPreset.name}
-            </Tag>
-            <Tag type={shouldReduceEffects ? 'green' : 'warm-gray'} size="sm">
-              {shouldReduceEffects ? 'Reduced effects' : 'Full effects'}
-            </Tag>
-            {isCustomTheme ? (
-              <Tag type="warm-gray" size="sm">
-                Custom theme active
-              </Tag>
-            ) : null}
           </div>
 
-          <div className="theme-page__stat-grid">
-            <article className="theme-page__stat-card">
-              <span className="theme-page__stat-label">Active shell</span>
-              <strong>{carbonThemeLabel(theme.carbonTheme)}</strong>
-            </article>
-            <article className="theme-page__stat-card">
-              <span className="theme-page__stat-label">Theme library</span>
-              <strong>{totalThemeCount} choices</strong>
-            </article>
-            <article className="theme-page__stat-card">
-              <span className="theme-page__stat-label">Category accents</span>
-              <strong>{overriddenCategoryCount} custom</strong>
-            </article>
-            <article className="theme-page__stat-card">
-              <span className="theme-page__stat-label">Draft overrides</span>
-              <strong>{draftOverrideCount}</strong>
-            </article>
-          </div>
-        </div>
-
-        <div className="theme-page__hero-stage">
-          <ThemeDeckPreview theme={previewTheme} />
-          <div className="theme-page__hero-preview" aria-hidden="true">
-            {PREVIEW_SWATCH_KEYS.map((key) => (
-              <span
-                key={key}
-                className="theme-page__hero-swatch"
-                style={{ background: previewTheme.colors[key] }}
-              />
-            ))}
-          </div>
-        </div>
-      </header>
-
-      <section className="theme-page__panel">
-        <div className="theme-page__section-head">
-          <div>
-            <p className="theme-page__card-eyebrow">Library</p>
-            <h2 className="theme-page__section-title">Theme library</h2>
-            <p className="theme-page__section-copy">
-              Apply the standard Carbon shells directly, then keep any locally saved custom palettes beside them.
-            </p>
-          </div>
-          <Tag type="cool-gray" size="sm">
-            {themeOrder.length} built-in
-          </Tag>
-        </div>
-
-        <div className="theme-page__theme-grid">
-          {themeOrder.map((builtInThemeId) => {
-            const builtInTheme = builtInThemes[builtInThemeId]
-            const builtInPreview = resolvePreviewTheme(builtInThemeId, builtInTheme)
-            const active = themeId === builtInThemeId
-
-            return (
-              <article key={builtInThemeId} className={`theme-page__theme-card ${active ? 'theme-page__theme-card--active' : ''}`}>
-                <div className="theme-page__theme-card-copy">
-                  <div className="theme-page__theme-card-head">
-                    <strong>{builtInTheme.name}</strong>
-                    <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
-                      {active ? 'Active' : carbonThemeLabel(builtInTheme.carbonTheme)}
-                    </Tag>
-                  </div>
-                  <p>{builtInTheme.description}</p>
-                </div>
-                <ThemeDeckPreview theme={builtInPreview} compact />
-                <div className="theme-page__theme-actions">
-                  <Button
-                    kind={active ? 'secondary' : 'primary'}
-                    size="sm"
-                    disabled={active}
-                    onClick={() => setTheme(builtInThemeId)}
-                  >
-                    {active ? 'Applied' : `Apply ${builtInTheme.name}`}
-                  </Button>
-                </div>
-              </article>
-            )
-          })}
-        </div>
-
-        <div className="theme-page__section-head theme-page__section-head--compact">
-          <div>
-            <p className="theme-page__card-eyebrow">Saved</p>
-            <h3 className="theme-page__section-title">Custom themes</h3>
-          </div>
-          <Tag type={customThemeEntries.length > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-            {customThemeEntries.length > 0 ? `${customThemeEntries.length} saved` : 'None yet'}
-          </Tag>
-        </div>
-
-        {customThemeEntries.length === 0 ? (
-          <InlineNotification
-            lowContrast
-            hideCloseButton
-            kind="info"
-            title="No saved custom themes yet."
-            subtitle="Build one in Theme Studio below and it will appear here for fast reuse."
-          />
-        ) : (
           <div className="theme-page__theme-grid">
-            {customThemeEntries.map((customTheme) => {
-              const customPreview = resolvePreviewTheme(customTheme.id, customTheme)
-              const active = themeId === customTheme.id
+            {themeOrder.map((builtInThemeId) => {
+              const builtInTheme = builtInThemes[builtInThemeId]
+              const builtInPreview = resolvePreviewTheme(builtInThemeId, builtInTheme)
+              const active = themeId === builtInThemeId
 
               return (
-                <article key={customTheme.id} className={`theme-page__theme-card ${active ? 'theme-page__theme-card--active' : ''}`}>
+                <article key={builtInThemeId} className={`theme-page__theme-card ${active ? 'theme-page__theme-card--active' : ''}`}>
                   <div className="theme-page__theme-card-copy">
                     <div className="theme-page__theme-card-head">
-                      <strong>{customTheme.name}</strong>
-                      <Tag type={active ? 'blue' : 'warm-gray'} size="sm">
-                        {active ? 'Active' : 'Custom'}
+                      <strong>{builtInTheme.name}</strong>
+                      <Tag type={active ? 'blue' : 'cool-gray'} size="sm">
+                        {active ? 'Active' : carbonThemeLabel(builtInTheme.carbonTheme)}
                       </Tag>
                     </div>
-                    <p>{customTheme.description}</p>
+                    <p>{builtInTheme.description}</p>
                   </div>
-                  <ThemeDeckPreview theme={customPreview} compact />
+                  <ThemeDeckPreview theme={builtInPreview} compact />
                   <div className="theme-page__theme-actions">
                     <Button
                       kind={active ? 'secondary' : 'primary'}
                       size="sm"
                       disabled={active}
-                      onClick={() => setTheme(customTheme.id)}
+                      onClick={() => setTheme(builtInThemeId)}
                     >
-                      {active ? 'Applied' : 'Apply'}
-                    </Button>
-                    <Button
-                      kind="danger--ghost"
-                      size="sm"
-                      onClick={() => handleDeleteCustomTheme(customTheme.id)}
-                    >
-                      Delete
+                      {active ? 'Applied' : `Apply ${builtInTheme.name}`}
                     </Button>
                   </div>
                 </article>
               )
             })}
           </div>
-        )}
-      </section>
 
+          <div className="theme-page__section-head theme-page__section-head--compact">
+            <div>
+              <p className="theme-page__card-eyebrow">Saved</p>
+              <h3 className="theme-page__section-title">Custom themes</h3>
+            </div>
+            <Tag type={customThemeEntries.length > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+              {customThemeEntries.length > 0 ? `${customThemeEntries.length} saved` : 'None yet'}
+            </Tag>
+          </div>
+
+          {customThemeEntries.length === 0 ? (
+            <InlineNotification
+              lowContrast
+              hideCloseButton
+              kind="info"
+              title="No saved custom themes yet."
+              subtitle="Build one in Theme Studio and it will appear here for fast reuse."
+            />
+          ) : (
+            <div className="theme-page__theme-grid">
+              {customThemeEntries.map((customTheme) => {
+                const customPreview = resolvePreviewTheme(customTheme.id, customTheme)
+                const active = themeId === customTheme.id
+
+                return (
+                  <article key={customTheme.id} className={`theme-page__theme-card ${active ? 'theme-page__theme-card--active' : ''}`}>
+                    <div className="theme-page__theme-card-copy">
+                      <div className="theme-page__theme-card-head">
+                        <strong>{customTheme.name}</strong>
+                        <Tag type={active ? 'blue' : 'warm-gray'} size="sm">
+                          {active ? 'Active' : 'Custom'}
+                        </Tag>
+                      </div>
+                      <p>{customTheme.description}</p>
+                    </div>
+                    <ThemeDeckPreview theme={customPreview} compact />
+                    <div className="theme-page__theme-actions">
+                      <Button
+                        kind={active ? 'secondary' : 'primary'}
+                        size="sm"
+                        disabled={active}
+                        onClick={() => setTheme(customTheme.id)}
+                      >
+                        {active ? 'Applied' : 'Apply'}
+                      </Button>
+                      <Button kind="danger--ghost" size="sm" onClick={() => handleDeleteCustomTheme(customTheme.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    ) : activeModal === 'directions' ? (
       <section className="theme-page__panel">
         <div className="theme-page__section-head">
           <div>
@@ -534,7 +523,10 @@ export function ThemePage() {
                   <Button
                     kind="secondary"
                     size="sm"
-                    onClick={() => handleLoadSuggestion(suggestion.familyId, suggestion.base, suggestion.name)}
+                    onClick={() => {
+                      handleLoadSuggestion(suggestion.familyId, suggestion.base, suggestion.name)
+                      setActiveModal('studio')
+                    }}
                   >
                     Load into studio
                   </Button>
@@ -544,15 +536,14 @@ export function ThemePage() {
           })}
         </div>
       </section>
-
+    ) : activeModal === 'studio' ? (
       <section className="theme-page__panel">
         <div className="theme-page__section-head">
           <div>
             <p className="theme-page__card-eyebrow">Composer</p>
             <h2 className="theme-page__section-title">Theme studio</h2>
             <p className="theme-page__section-copy">
-              Build a new theme from Carbon color families, choose the shell base, then tune token-level overrides
-              without leaving the page.
+              Build a new theme from Carbon color families, choose the shell base, then tune token-level overrides.
             </p>
           </div>
           <div className="theme-page__section-tags">
@@ -578,15 +569,6 @@ export function ThemePage() {
                 </Tag>
               </div>
               <ThemeDeckPreview theme={draftTheme} />
-              <div className="theme-page__hero-preview" aria-hidden="true">
-                {PREVIEW_SWATCH_KEYS.map((key) => (
-                  <span
-                    key={key}
-                    className="theme-page__hero-swatch"
-                    style={{ background: draftTheme.colors[key] }}
-                  />
-                ))}
-              </div>
             </article>
 
             <article className="theme-page__studio-card">
@@ -635,9 +617,7 @@ export function ThemePage() {
                     >
                       <span
                         className="theme-page__family-band"
-                        style={{
-                          background: `linear-gradient(to right, ${Object.values(family.shades).join(', ')})`,
-                        }}
+                        style={{ background: `linear-gradient(to right, ${Object.values(family.shades).join(', ')})` }}
                         aria-hidden="true"
                       />
                       <span className="theme-page__family-copy">
@@ -765,147 +745,132 @@ export function ThemePage() {
           </div>
         </div>
       </section>
-
-      <div className="theme-page__lower-grid">
-        <section className="theme-page__panel">
-          <div className="theme-page__section-head">
-            <div>
-              <p className="theme-page__card-eyebrow">Typography</p>
-              <h2 className="theme-page__section-title">Platform GUI font</h2>
-              <p className="theme-page__section-copy">
-                Apply interface typography across the shell immediately. The selected preset persists for this browser.
-              </p>
-            </div>
-            <Tag type="cyan" size="sm">
-              Live
-            </Tag>
+    ) : activeModal === 'typography' ? (
+      <section className="theme-page__panel">
+        <div className="theme-page__section-head">
+          <div>
+            <p className="theme-page__card-eyebrow">Typography</p>
+            <h2 className="theme-page__section-title">Platform GUI font</h2>
+            <p className="theme-page__section-copy">
+              Apply interface typography across the shell immediately. The selected preset persists for this browser.
+            </p>
           </div>
-          <TileGroup
-            className="theme-page__font-grid"
-            legend="Platform GUI font"
-            name="platform-gui-font"
-            valueSelected={fontPresetId}
-            onChange={(value) => {
-              if (typeof value === 'string' && value in fontPresets) {
-                setFontPreset(value as PlatformFontPresetId)
-              }
-            }}
-          >
-            {Object.values(fontPresets).map((preset) => (
-              <RadioTile
-                key={preset.id}
-                id={`platform-font-${preset.id}`}
-                value={preset.id}
-                className="theme-page__font-tile"
-              >
-                <div className="theme-page__font-tile-copy">
-                  <div className="theme-page__font-tile-head">
-                    <strong>{preset.name}</strong>
-                    <span
-                      className="theme-page__font-chip"
-                      style={{ '--theme-page-font-accent': preset.accent } as CSSProperties}
-                    >
-                      {preset.id === fontPresetId ? 'Active' : 'Available'}
-                    </span>
-                  </div>
-                  <p>{preset.description}</p>
-                  <div className="theme-page__font-sample" style={{ fontFamily: preset.family }}>
-                    {preset.sample}
-                  </div>
+          <Tag type="cyan" size="sm">
+            Live
+          </Tag>
+        </div>
+        <TileGroup
+          className="theme-page__font-grid"
+          legend="Platform GUI font"
+          name="platform-gui-font"
+          valueSelected={fontPresetId}
+          onChange={(value) => {
+            if (typeof value === 'string' && value in fontPresets) {
+              setFontPreset(value as PlatformFontPresetId)
+            }
+          }}
+        >
+          {Object.values(fontPresets).map((preset) => (
+            <RadioTile
+              key={preset.id}
+              id={`platform-font-${preset.id}`}
+              value={preset.id}
+              className="theme-page__font-tile"
+            >
+              <div className="theme-page__font-tile-copy">
+                <div className="theme-page__font-tile-head">
+                  <strong>{preset.name}</strong>
+                  <span
+                    className="theme-page__font-chip"
+                    style={{ '--theme-page-font-accent': preset.accent } as CSSProperties}
+                  >
+                    {preset.id === fontPresetId ? 'Active' : 'Available'}
+                  </span>
                 </div>
-              </RadioTile>
-            ))}
-          </TileGroup>
-        </section>
-
-        <section className="theme-page__panel">
-          <div className="theme-page__section-head">
-            <div>
-              <p className="theme-page__card-eyebrow">Motion</p>
-              <h2 className="theme-page__section-title">Reduce Effects Mode</h2>
-              <p className="theme-page__section-copy">
-                Save a lighter transition profile for Home, Audio Artifacts, JUCE Grid, and MIDI Hub while keeping the
-                shell responsive on slower hosts.
-              </p>
-            </div>
-            <Tag type={reducedEffectsEnabled ? 'green' : 'warm-gray'} size="sm">
-              {reducedEffectsEnabled ? 'Saved on' : 'Saved off'}
-            </Tag>
-          </div>
-          <div className="theme-page__motion-strip">
-            <div className="theme-page__motion-card">
-              <div className="theme-page__motion-head">
-                <Accessibility size={20} aria-hidden />
-                <div>
-                  <strong>Operator preference</strong>
-                  <p>Use the saved toggle below to keep movement restrained even when the OS does not require it.</p>
+                <p>{preset.description}</p>
+                <div className="theme-page__font-sample" style={{ fontFamily: preset.family }}>
+                  {preset.sample}
                 </div>
               </div>
-              <Toggle
-                id="theme-page-reduce-effects"
-                labelText="Reduce Effects Mode"
-                labelA="Off"
-                labelB="On"
-                toggled={reducedEffectsEnabled}
-                onToggle={setReducedEffectsEnabled}
-              />
-            </div>
-            <div className="theme-page__motion-card">
-              <div className="theme-page__motion-head">
-                <Settings size={20} aria-hidden />
-                <div>
-                  <strong>Special Settings Menu</strong>
-                  <p>Keep native-plugin visibility controls in the Theme workspace instead of the global header.</p>
-                </div>
+            </RadioTile>
+          ))}
+        </TileGroup>
+      </section>
+    ) : activeModal === 'motion' ? (
+      <section className="theme-page__panel">
+        <div className="theme-page__section-head">
+          <div>
+            <p className="theme-page__card-eyebrow">Motion</p>
+            <h2 className="theme-page__section-title">Reduce Effects Mode</h2>
+            <p className="theme-page__section-copy">
+              Save a lighter transition profile for Home, Audio Artifacts, JUCE Grid, and MIDI Hub while keeping the shell responsive on slower hosts.
+            </p>
+          </div>
+          <Tag type={reducedEffectsEnabled ? 'green' : 'warm-gray'} size="sm">
+            {reducedEffectsEnabled ? 'Saved on' : 'Saved off'}
+          </Tag>
+        </div>
+        <div className="theme-page__motion-strip">
+          <div className="theme-page__motion-card">
+            <div className="theme-page__motion-head">
+              <Accessibility size={20} aria-hidden />
+              <div>
+                <strong>Operator preference</strong>
+                <p>Use the saved toggle below to keep movement restrained even when the OS does not require it.</p>
               </div>
-              <div className="theme-page__motion-actions">
-                <Tag type={hiddenPluginCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
-                  {hiddenPluginCount > 0 ? `${hiddenPluginCount} hidden plugin${hiddenPluginCount === 1 ? '' : 's'}` : 'All native plugins visible'}
+            </div>
+            <Toggle
+              id="theme-page-reduce-effects"
+              labelText="Reduce Effects Mode"
+              labelA="Off"
+              labelB="On"
+              toggled={reducedEffectsEnabled}
+              onToggle={setReducedEffectsEnabled}
+            />
+          </div>
+          <div className="theme-page__motion-card">
+            <div className="theme-page__motion-head">
+              <Settings size={20} aria-hidden />
+              <div>
+                <strong>Special Settings Menu</strong>
+                <p>Keep native-plugin visibility controls in the Theme workspace instead of the global header.</p>
+              </div>
+            </div>
+            <div className="theme-page__motion-actions">
+              <Tag type={hiddenPluginCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                {hiddenPluginCount > 0 ? `${hiddenPluginCount} hidden plugin${hiddenPluginCount === 1 ? '' : 's'}` : 'All native plugins visible'}
+              </Tag>
+              {specialSettingsLoading ? (
+                <Tag type="cyan" size="sm">
+                  Loading
                 </Tag>
-                {specialSettingsLoading ? (
-                  <Tag type="cyan" size="sm">
-                    Loading
-                  </Tag>
-                ) : null}
-                <Button
-                  kind="secondary"
-                  size="sm"
-                  renderIcon={Settings}
-                  onClick={() => setShowSpecialSettings(true)}
-                >
-                  Open Special Settings Menu
-                </Button>
-              </div>
+              ) : null}
+              <Button kind="secondary" size="sm" renderIcon={Settings} onClick={() => setShowSpecialSettings(true)}>
+                Open Special Settings Menu
+              </Button>
             </div>
           </div>
-          {specialSettingsError ? (
-            <InlineNotification
-              lowContrast
-              hideCloseButton
-              kind="error"
-              title="Special settings are unavailable."
-              subtitle={specialSettingsError}
-            />
-          ) : null}
-          {prefersReducedMotion ? (
-            <InlineNotification
-              lowContrast
-              hideCloseButton
-              kind="info"
-              title="System reduced-motion is active."
-              subtitle="OS accessibility settings still force minimal motion even if the saved preference is off."
-            />
-          ) : null}
-        </section>
-      </div>
-
-      <SpecialSettingsDialog
-        isOpen={showSpecialSettings}
-        onClose={() => setShowSpecialSettings(false)}
-        currentHiddenPlugins={specialSettingsHiddenPlugins}
-        onSave={handleSpecialSettingsSave}
-      />
-
+        </div>
+        {specialSettingsError ? (
+          <InlineNotification
+            lowContrast
+            hideCloseButton
+            kind="error"
+            title="Special settings are unavailable."
+            subtitle={specialSettingsError}
+          />
+        ) : null}
+        {prefersReducedMotion ? (
+          <InlineNotification
+            lowContrast
+            hideCloseButton
+            kind="info"
+            title="System reduced-motion is active."
+            subtitle="OS accessibility settings still force minimal motion even if the saved preference is off."
+          />
+        ) : null}
+      </section>
+    ) : activeModal === 'category' ? (
       <section className="theme-page__panel">
         <div className="theme-page__section-head">
           <div>
@@ -919,12 +884,7 @@ export function ThemePage() {
             <Tag type={overriddenCategoryCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
               {overriddenCategoryCount > 0 ? `${overriddenCategoryCount} customized` : 'All default'}
             </Tag>
-            <Button
-              kind="ghost"
-              size="sm"
-              disabled={overriddenCategoryCount === 0}
-              onClick={() => resetAllCategoryColorOverrides()}
-            >
+            <Button kind="ghost" size="sm" disabled={overriddenCategoryCount === 0} onClick={() => resetAllCategoryColorOverrides()}>
               Reset all
             </Button>
           </div>
@@ -967,12 +927,7 @@ export function ThemePage() {
                       setCategoryColorOverride(key, event.target.value)
                     }}
                   />
-                  <Button
-                    kind="ghost"
-                    size="sm"
-                    disabled={!overridden}
-                    onClick={() => resetCategoryColorOverride(key)}
-                  >
+                  <Button kind="ghost" size="sm" disabled={!overridden} onClick={() => resetCategoryColorOverride(key)}>
                     Reset
                   </Button>
                 </div>
@@ -981,6 +936,126 @@ export function ThemePage() {
           })}
         </div>
       </section>
+    ) : null
+
+  return (
+    <section className="theme-page">
+      <header className="theme-page__hero">
+        <div className="theme-page__hero-copy">
+          <div className="theme-page__eyebrow">Platform appearance</div>
+          <div className="theme-page__hero-title-row">
+            <PaintBrush size={28} aria-hidden />
+            <div>
+              <h1 className="theme-page__title">Theme</h1>
+              <p className="theme-page__subtitle">
+                The Theme workspace is now a modal launcher. Open only the area you need instead of scrolling one long page.
+              </p>
+            </div>
+          </div>
+
+          <div className="theme-page__hero-tags">
+            <Tag type="blue" size="sm">{theme.name}</Tag>
+            <Tag type="cool-gray" size="sm">{carbonThemeLabel(theme.carbonTheme)}</Tag>
+            <Tag type="cyan" size="sm">{fontPreset.name}</Tag>
+            <Tag type={shouldReduceEffects ? 'green' : 'warm-gray'} size="sm">
+              {shouldReduceEffects ? 'Reduced effects' : 'Full effects'}
+            </Tag>
+            {isCustomTheme ? <Tag type="warm-gray" size="sm">Custom theme active</Tag> : null}
+          </div>
+
+          <div className="theme-page__stat-grid">
+            <article className="theme-page__stat-card">
+              <span className="theme-page__stat-label">Active shell</span>
+              <strong>{carbonThemeLabel(theme.carbonTheme)}</strong>
+            </article>
+            <article className="theme-page__stat-card">
+              <span className="theme-page__stat-label">Theme library</span>
+              <strong>{totalThemeCount} choices</strong>
+            </article>
+            <article className="theme-page__stat-card">
+              <span className="theme-page__stat-label">Category accents</span>
+              <strong>{overriddenCategoryCount} custom</strong>
+            </article>
+            <article className="theme-page__stat-card">
+              <span className="theme-page__stat-label">Draft overrides</span>
+              <strong>{draftOverrideCount}</strong>
+            </article>
+          </div>
+        </div>
+
+        <div className="theme-page__hero-stage">
+          <ThemeDeckPreview theme={previewTheme} />
+          <div className="theme-page__hero-preview" aria-hidden="true">
+            {PREVIEW_SWATCH_KEYS.map((key) => (
+              <span key={key} className="theme-page__hero-swatch" style={{ background: previewTheme.colors[key] }} />
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <section className="theme-page__launcher-grid">
+        <ThemeWorkspaceLauncher
+          title="Theme library"
+          description="Apply built-in shells and reuse saved custom themes."
+          tag={`${totalThemeCount} choices`}
+          buttonLabel="Open theme library"
+          onOpen={() => setActiveModal('library')}
+        />
+        <ThemeWorkspaceLauncher
+          title="Suggested directions"
+          description="Load curated theme directions before refining them."
+          tag="Curated"
+          buttonLabel="Open directions"
+          onOpen={() => setActiveModal('directions')}
+        />
+        <ThemeWorkspaceLauncher
+          title="Theme studio"
+          description="Build and save new themes through a dedicated editor modal."
+          tag={draftOverrideCount > 0 ? `${draftOverrideCount} overrides` : 'Draft'}
+          buttonLabel="Open theme studio"
+          onOpen={() => setActiveModal('studio')}
+        />
+        <ThemeWorkspaceLauncher
+          title="Platform GUI font"
+          description="Choose the platform font without keeping the rest of the theme tools visible."
+          tag={fontPreset.name}
+          buttonLabel="Open font modal"
+          onOpen={() => setActiveModal('typography')}
+        />
+        <ThemeWorkspaceLauncher
+          title="Reduce Effects Mode"
+          description="Adjust motion and special settings in a focused accessibility modal."
+          tag={reducedEffectsEnabled ? 'Saved on' : 'Saved off'}
+          buttonLabel="Open motion modal"
+          onOpen={() => setActiveModal('motion')}
+        />
+        <ThemeWorkspaceLauncher
+          title="Category color theming"
+          description="Edit shared category accents in their own modal."
+          tag={overriddenCategoryCount > 0 ? `${overriddenCategoryCount} custom` : 'All default'}
+          buttonLabel="Open category modal"
+          onOpen={() => setActiveModal('category')}
+        />
+      </section>
+
+      <SpecialSettingsDialog
+        isOpen={showSpecialSettings}
+        onClose={() => setShowSpecialSettings(false)}
+        currentHiddenPlugins={specialSettingsHiddenPlugins}
+        onSave={handleSpecialSettingsSave}
+      />
+
+      {activeModal ? (
+        <ComposedModal open size="lg" onClose={() => setActiveModal(null)}>
+          <ModalHeader title={modalHeading} label="Theme workspace modal" closeModal={() => setActiveModal(null)} />
+          <ModalBody hasScrollingContent>{modalBody}</ModalBody>
+          <ModalFooter>
+            <Button kind="secondary" onClick={() => setActiveModal(null)}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ComposedModal>
+      ) : null}
     </section>
   )
 }

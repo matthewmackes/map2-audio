@@ -6597,10 +6597,14 @@ Description:
 - Required outputs: Updated theme dialog flow, refreshed styling, focused frontend regression coverage, and validation evidence for the touched MAP2-owned files.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 06:50 EDT - Codex
+Last updated: 2026-03-25 07:38 EDT - Codex
 - Completion notes:
   - Reworked `web/src/app/components/ThemeCreatorDialog.tsx` from a single page-like `Modal` into a staged `ComposedModal` flow with an overview entry screen plus focused presets, legacy-theme, and system-branding steps.
   - Refreshed `web/src/app/components/ThemeCreatorDialog.css` so the new step cards and modal sections use tokenized Carbon layout, hover, and card styling instead of one stacked scrolling page.
   - Expanded `web/src/app/components/ThemeCreatorDialog.test.tsx` with focused coverage for overview-to-preset navigation, legacy-theme modal access, and system-branding toggle actions.
   - Validation passed with `npm --prefix web run typecheck` and `npm --prefix web test -- --runInBand web/src/app/components/ThemeCreatorDialog.test.tsx`.
   - Licensing review: touched frontend/worklist files remain MAP2-owned AGPL-covered repository artifacts; reran `rg -n "license|LICENSE|AGPL|GNU Affero|THIRD_PARTY_NOTICES|SPDX" README.md LICENSE docs .codex/skills/licencing` and `rg --files -g 'LICENSE*' -g '*COPYING*' -g '*NOTICE*'`, and found no new notice or ownership gap requiring follow-up work.
+  - Follow-up: live verification showed the routed `/theme` workspace is rendered by `web/src/app/pages/ThemePage.tsx`, not `ThemeCreatorDialog.tsx`, so the modal-flow reorganization must be completed on the actual page component before closing the task.
+  - Completed the routed `web/src/app/pages/ThemePage.tsx` reorganization by replacing the long inline settings surface with a launcher grid plus focused `ComposedModal` flows for library, directions, theme studio, typography, motion, and category accents.
+  - Added the page-level launcher/modal styling in `web/src/app/pages/ThemePage.css` and updated `web/src/app/pages/ThemePage.test.tsx` so the routed Theme workspace is validated through the new modal entry points.
+  - Validation passed for the final routed-page slice with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/ThemePage.test.tsx`, and `npm --prefix web run build`.

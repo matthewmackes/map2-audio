@@ -28,6 +28,17 @@ jest.mock('../components/SpecialSettingsDialog', () => ({
 }))
 
 describe('ThemePage', () => {
+  beforeAll(() => {
+    class ResizeObserverMock {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+
+    ;(globalThis as { ResizeObserver?: typeof ResizeObserver }).ResizeObserver =
+      ResizeObserverMock as unknown as typeof ResizeObserver
+  })
+
   beforeEach(() => {
     window.localStorage.clear()
     useEffectsSettingsStore.setState({ reducedEffectsEnabled: false })
@@ -48,23 +59,21 @@ describe('ThemePage', () => {
     })
   })
 
-  it('renders the dedicated Theme platform workspace with inline studio controls', () => {
+  it('renders the dedicated Theme platform workspace as modal launchers', () => {
     render(<ThemePage />)
 
     expect(screen.getByRole('heading', { name: 'Theme' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /theme library/i })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /suggested directions/i })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /theme studio/i })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /platform gui font/i })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /category color theming/i })).toBeTruthy()
-    expect(screen.getByRole('radio', { name: /fira sans/i })).toBeTruthy()
-    expect(screen.getByRole('radio', { name: /space grotesk/i })).toBeTruthy()
-    expect(screen.getByRole('radio', { name: /inter/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /open theme library/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /open directions/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /open theme studio/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /open font modal/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /open category modal/i })).toBeTruthy()
   })
 
   it('opens the special settings menu from the motion section', () => {
     render(<ThemePage />)
 
+    fireEvent.click(screen.getByRole('button', { name: /open motion modal/i }))
     expect(screen.getByText('1 hidden plugin')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /open special settings menu/i }))
@@ -74,6 +83,7 @@ describe('ThemePage', () => {
 
   it('persists category color overrides from the Theme workspace', () => {
     render(<ThemePage />)
+    fireEvent.click(screen.getByRole('button', { name: /open category modal/i }))
 
     const dynamicsPicker = screen.getByLabelText('Dynamics color') as HTMLInputElement
     fireEvent.change(dynamicsPicker, { target: { value: '#112233' } })
@@ -85,11 +95,14 @@ describe('ThemePage', () => {
   it('persists reduced-effects mode and GUI font changes', () => {
     render(<ThemePage />)
 
+    fireEvent.click(screen.getByRole('button', { name: /open motion modal/i }))
     const reduceEffectsToggle = screen.getByRole('switch', { name: /reduce effects mode/i })
     fireEvent.click(reduceEffectsToggle)
 
     expect(window.localStorage.getItem(REDUCED_EFFECTS_STORAGE_KEY)).toContain('"reducedEffectsEnabled":true')
 
+    fireEvent.click(screen.getAllByRole('button', { name: /^close$/i }).at(-1) as HTMLButtonElement)
+    fireEvent.click(screen.getByRole('button', { name: /open font modal/i }))
     const interTile = screen.getByRole('radio', { name: /inter/i })
     fireEvent.click(interTile)
 
@@ -99,8 +112,9 @@ describe('ThemePage', () => {
     })
   })
 
-  it('saves and applies a custom theme from the inline studio', async () => {
+  it('saves and applies a custom theme from the theme studio modal', async () => {
     render(<ThemePage />)
+    fireEvent.click(screen.getByRole('button', { name: /open theme studio/i }))
 
     fireEvent.change(screen.getByLabelText(/custom theme name/i), {
       target: { value: 'Ops Deck' },
@@ -115,6 +129,7 @@ describe('ThemePage', () => {
 
   it('exposes radio semantics for the custom token palette picker', () => {
     render(<ThemePage />)
+    fireEvent.click(screen.getByRole('button', { name: /open theme studio/i }))
 
     fireEvent.click(screen.getAllByRole('button', { name: /^Primary\b/i })[0])
 
