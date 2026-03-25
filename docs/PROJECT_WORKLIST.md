@@ -6622,7 +6622,7 @@ Assigned to: Codex
 Last updated: 2026-03-25 - Codex
 
 ID: T406
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Add unregistered-route-file CI check
 Description:
 - Goal / acceptance criteria: Create a test that scans `app/routes/` for all files containing `APIRouter`, then verifies each is either registered in `main.py`'s `route_modules` list or individually registered. This prevents abandoned route files from accumulating (9 were found in this audit).
@@ -6632,7 +6632,11 @@ Description:
 - Required outputs: New test file, runs in CI.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:23 EDT - Codex
+- Blocked notes:
+  - `T391` and `T392` were not enough to make this check pass; an alias-aware scan of `app/main.py` still finds 7 route files with `APIRouter` that are neither in `route_modules` nor individually registered.
+  - Current unregistered inventory: `base`, `chains_ab_mode`, `connection_pool`, `prometheus_exporter`, `prometheus_metrics`, `request_queue`, and `websocket_metrics`.
+  - This task needs an explicit policy for whether these files should be deleted, registered, or exempted before a CI guard can be added without creating a permanent failure.
 
 ID: T407
 Status: [✓] Done
