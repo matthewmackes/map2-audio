@@ -8,6 +8,8 @@
  * Bypassed plugins always render as 'cool-gray' regardless of category.
  */
 
+import type { PluginAppearanceOverride } from '@/map2/types'
+
 export type CarbonTagType =
   | 'blue'
   | 'cyan'
@@ -177,11 +179,15 @@ const FALLBACK: ChipMeta = { label: 'FX', tagType: 'cool-gray' }
 export function getPluginChipMeta(
   category: string | undefined,
   bypassed: boolean,
-): { label: string; tagType: CarbonTagType } {
+  appearanceOverride?: PluginAppearanceOverride | null,
+): { label: string; tagType: CarbonTagType; accentColor?: string; iconIdentifier?: string | null; customSvg?: string | null } {
   const resolved = resolveCategory(category)
   return {
     label: resolved.label,
     tagType: bypassed ? BYPASSED_TYPE : resolved.tagType,
+    accentColor: appearanceOverride?.accent_color ?? undefined,
+    iconIdentifier: appearanceOverride?.icon_identifier ?? null,
+    customSvg: appearanceOverride?.custom_svg ?? null,
   }
 }
 

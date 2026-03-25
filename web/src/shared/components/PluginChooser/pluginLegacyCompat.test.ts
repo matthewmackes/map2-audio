@@ -1,7 +1,12 @@
 import { normalizeUiPlugin } from './utils/pluginBridge'
 import { getPluginGlyph, PluginType, pluginTypeFromCategory, type UiPlugin } from './pluginLegacyCompat'
+import { PLUGIN_APPEARANCE_STORAGE_KEY } from '@/app/utils/pluginAppearanceStore'
 
 describe('pluginLegacyCompat', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
   it('maps common category strings to stable plugin types', () => {
     expect(pluginTypeFromCategory('Dynamics')).toBe(PluginType.CompressorPlugin)
     expect(pluginTypeFromCategory('Amp Sim')).toBe(PluginType.AmplifierPlugin)
@@ -74,6 +79,46 @@ describe('pluginLegacyCompat', () => {
           unit: 's',
         },
       ],
+    })
+  })
+
+  it('merges stored appearance overrides into normalized chooser plugins', () => {
+    window.localStorage.setItem(
+      PLUGIN_APPEARANCE_STORAGE_KEY,
+      JSON.stringify({
+        'urn:test:plugin': {
+          uri: 'urn:test:plugin',
+          accent_color: '#223344',
+          icon_identifier: 'carbon:Activity',
+          description: 'User override',
+        },
+      }),
+    )
+
+    const plugin: UiPlugin = {
+      uri: 'urn:test:plugin',
+      name: 'Test Delay',
+      minorVersion: 0,
+      microVersion: 1,
+      plugin_type: PluginType.DelayPlugin,
+      plugin_display_type: 'Delay',
+      author_name: 'MAP2',
+      audio_inputs: 1,
+      audio_outputs: 1,
+      has_midi_input: 0,
+      has_midi_output: 0,
+      description: 'Base description',
+      is_vst3: false,
+      modGui: {},
+      controls: [],
+    }
+
+    expect(normalizeUiPlugin(plugin)).toMatchObject({
+      description: 'User override',
+      appearanceOverride: {
+        accent_color: '#223344',
+        icon_identifier: 'carbon:Activity',
+      },
     })
   })
 })

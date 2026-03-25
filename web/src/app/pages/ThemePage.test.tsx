@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
 import { CATEGORY_COLOR_OVERRIDE_STORAGE_KEY } from '../data/categoryStyles'
@@ -6,6 +7,23 @@ import { REDUCED_EFFECTS_STORAGE_KEY, useEffectsSettingsStore } from '../stores/
 import { ThemePage } from './ThemePage'
 
 const mockUpdateSpecialSettings = jest.fn()
+const mockDiscover = jest.fn()
+const mockListPluginAppearances = jest.fn()
+const mockPutPluginAppearance = jest.fn()
+const mockRemovePluginAppearance = jest.fn()
+const mockUploadPluginAppearance = jest.fn()
+
+jest.mock('@/map2/api', () => ({
+  pluginsApi: {
+    discover: (...args: unknown[]) => mockDiscover(...args),
+  },
+  pluginAppearancesApi: {
+    list: (...args: unknown[]) => mockListPluginAppearances(...args),
+    put: (...args: unknown[]) => mockPutPluginAppearance(...args),
+    remove: (...args: unknown[]) => mockRemovePluginAppearance(...args),
+    uploadIcon: (...args: unknown[]) => mockUploadPluginAppearance(...args),
+  },
+}))
 
 jest.mock('../hooks/useSpecialSettings', () => ({
   useSpecialSettings: () => ({
@@ -28,6 +46,21 @@ jest.mock('../components/SpecialSettingsDialog', () => ({
 }))
 
 describe('ThemePage', () => {
+  function renderThemePage() {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <ThemePage />
+      </QueryClientProvider>,
+    )
+  }
+
   beforeAll(() => {
     class ResizeObserverMock {
       observe() {}
@@ -43,6 +76,50 @@ describe('ThemePage', () => {
     window.localStorage.clear()
     useEffectsSettingsStore.setState({ reducedEffectsEnabled: false })
     mockUpdateSpecialSettings.mockReset()
+    mockDiscover.mockReset()
+    mockListPluginAppearances.mockReset()
+    mockPutPluginAppearance.mockReset()
+    mockRemovePluginAppearance.mockReset()
+    mockUploadPluginAppearance.mockReset()
+    mockListPluginAppearances.mockResolvedValue({ count: 0, items: [] })
+    mockDiscover.mockResolvedValue({
+      count: 2,
+      plugins: [
+        {
+          uri: 'map2://juce/nam',
+          name: 'NAM Deluxe',
+          author: 'MAP2',
+          category: 'Amplifier',
+          class_label: 'Amplifier',
+          version: '1.0',
+          license: 'MIT',
+          has_ui: true,
+          in_ports: 2,
+          out_ports: 2,
+          parameters: [],
+          format: 'LV2',
+        },
+        {
+          uri: 'hardware://lexicon-mpx1-spdif',
+          name: 'Lexicon MPX-1',
+          author: 'Lexicon',
+          category: 'Hardware',
+          class_label: 'Hardware',
+          version: '1.0',
+          license: 'N/A',
+          has_ui: false,
+          in_ports: 2,
+          out_ports: 2,
+          parameters: [],
+          format: 'Hardware',
+          is_hardware: true,
+        },
+      ],
+    })
+    mockPutPluginAppearance.mockImplementation(async (uri: string, payload: Record<string, unknown>) => ({
+      uri,
+      ...payload,
+    }))
 
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -60,7 +137,7 @@ describe('ThemePage', () => {
   })
 
   it('renders the dedicated Theme platform workspace as modal launchers', () => {
-    render(<ThemePage />)
+    renderThemePage()
 
     expect(screen.getByRole('heading', { name: 'Theme' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /open theme library/i })).toBeTruthy()
@@ -71,7 +148,7 @@ describe('ThemePage', () => {
   })
 
   it('opens the special settings menu from the motion section', () => {
-    render(<ThemePage />)
+    renderThemePage()
 
     fireEvent.click(screen.getByRole('button', { name: /open motion modal/i }))
     expect(screen.getByText('1 hidden plugin')).toBeTruthy()
@@ -82,7 +159,7 @@ describe('ThemePage', () => {
   })
 
   it('persists category color overrides from the Theme workspace', () => {
-    render(<ThemePage />)
+    renderThemePage()
     fireEvent.click(screen.getByRole('button', { name: /open category modal/i }))
 
     const dynamicsPicker = screen.getByLabelText('Dynamics color') as HTMLInputElement
@@ -93,7 +170,7 @@ describe('ThemePage', () => {
   })
 
   it('persists reduced-effects mode and GUI font changes', () => {
-    render(<ThemePage />)
+    renderThemePage()
 
     fireEvent.click(screen.getByRole('button', { name: /open motion modal/i }))
     const reduceEffectsToggle = screen.getByRole('switch', { name: /reduce effects mode/i })
@@ -113,7 +190,7 @@ describe('ThemePage', () => {
   })
 
   it('saves and applies a custom theme from the theme studio modal', async () => {
-    render(<ThemePage />)
+    renderThemePage()
     fireEvent.click(screen.getByRole('button', { name: /open theme studio/i }))
 
     fireEvent.change(screen.getByLabelText(/custom theme name/i), {
@@ -128,7 +205,7 @@ describe('ThemePage', () => {
   })
 
   it('exposes radio semantics for the custom token palette picker', () => {
-    render(<ThemePage />)
+    renderThemePage()
     fireEvent.click(screen.getByRole('button', { name: /open theme studio/i }))
 
     fireEvent.click(screen.getAllByRole('button', { name: /^Primary\b/i })[0])
@@ -138,5 +215,17 @@ describe('ThemePage', () => {
 
     expect(within(familyGroup).getAllByRole('radio').length).toBeGreaterThan(0)
     expect(within(shadeGroup).getAllByRole('radio').length).toBeGreaterThan(0)
+  })
+
+  it('shows plugin override controls inside the category workspace modal', async () => {
+    renderThemePage()
+    fireEvent.click(screen.getByRole('button', { name: /open category modal/i }))
+
+    await waitFor(() => {
+      expect(mockDiscover).toHaveBeenCalled()
+    })
+
+    expect(screen.getByRole('button', { name: /plugin overrides/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /category accents/i })).toBeTruthy()
   })
 })

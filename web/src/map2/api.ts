@@ -13,6 +13,8 @@ import type {
   LoopInsertion,
   ChainTemplate,
   Plugin,
+  PluginAppearanceListResponse,
+  PluginAppearanceOverride,
   PluginOrderRef,
   Snapshot,
   SnapshotCategory,
@@ -1336,6 +1338,32 @@ export interface PluginParameterSchemaResponse {
   cached?: boolean;
   warning?: string;
   error?: string;
+}
+
+export const pluginAppearancesApi = {
+  list: () => fetchJson<PluginAppearanceListResponse>(`${API_BASE}/plugin-appearances`),
+
+  get: (uri: string) => fetchJson<PluginAppearanceOverride>(`${API_BASE}/plugin-appearances/${encodeURIComponent(uri)}`),
+
+  put: (uri: string, payload: Partial<Omit<PluginAppearanceOverride, 'uri'>>) =>
+    fetchJson<PluginAppearanceOverride>(`${API_BASE}/plugin-appearances/${encodeURIComponent(uri)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  remove: (uri: string) =>
+    fetchJson<{ status: string; uri: string; removed: boolean }>(`${API_BASE}/plugin-appearances/${encodeURIComponent(uri)}`, {
+      method: 'DELETE',
+    }),
+
+  uploadIcon: (uri: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return fetchJson<PluginAppearanceOverride>(`${API_BASE}/plugin-appearances/${encodeURIComponent(uri)}/icon-upload`, {
+      method: 'POST',
+      body: formData,
+    })
+  },
 }
 
 export const PLUGIN_INVENTORY_CHANGED_EVENT = 'map2:plugins-changed';
@@ -6454,6 +6482,7 @@ export const map2Api = {
   avb: avbApi,
   chains: chainsApi,
   plugins: pluginsApi,
+  pluginAppearances: pluginAppearancesApi,
   snapshots: snapshotsApi,
   pluginPresets: pluginPresetsApi,
   midi: midiApi,

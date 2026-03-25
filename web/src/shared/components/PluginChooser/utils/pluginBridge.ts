@@ -7,6 +7,7 @@ import { UiPlugin, PluginType, UiControl, pluginTypeFromCategory } from '../plug
 import { Plugin, PluginParameter } from '../../../../map2/types'
 import { UnifiedPlugin, ParameterPreview, PluginFormat } from '../types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
+import { getStoredPluginAppearance } from '@/app/utils/pluginAppearanceStore'
 
 /**
  * Extract top parameters for preview from UiControl array
@@ -125,6 +126,7 @@ export function normalizeUiPlugin(
   stats?: { lastUsed?: number; usageCount?: number; customTags?: string[]; folders?: string[] }
 ): UnifiedPlugin {
   const visibleControls = plugin.controls.filter(c => !c.isHidden?.() && c.is_input)
+  const appearanceOverride = getStoredPluginAppearance(plugin.uri) ?? undefined
 
   return {
     uri: plugin.uri,
@@ -145,10 +147,11 @@ export function normalizeUiPlugin(
     hasModGui: plugin.modGui !== null,
     parameterCount: visibleControls.length,
     topParameters: extractTopParameters(plugin.controls),
-    description: plugin.description || undefined,
+    description: appearanceOverride?.description || plugin.description || undefined,
     version: plugin.minorVersion > 0 || plugin.microVersion > 0
       ? `${plugin.minorVersion}.${plugin.microVersion}`
       : undefined,
+    appearanceOverride,
     isFavorite: favorites[plugin.uri] ?? false,
     lastUsed: stats?.lastUsed,
     usageCount: stats?.usageCount ?? 0,
@@ -167,6 +170,7 @@ export function normalizeMap2Plugin(
 ): UnifiedPlugin {
   const isHw = plugin.is_hardware || plugin.format === 'Hardware';
   const format: PluginFormat = isHw ? 'hardware' : 'lv2';
+  const appearanceOverride = getStoredPluginAppearance(plugin.uri) ?? undefined
   return {
     uri: plugin.uri,
     name: getDisplayPluginName(plugin.name, plugin.uri),
@@ -186,8 +190,10 @@ export function normalizeMap2Plugin(
     hasModGui: false,
     parameterCount: plugin.parameters?.length ?? 0,
     topParameters: extractTopParametersFromMap2(plugin.parameters),
+    description: appearanceOverride?.description || undefined,
     version: plugin.version || undefined,
     license: plugin.license || undefined,
+    appearanceOverride,
     isFavorite: favorites.includes(plugin.uri),
     lastUsed: stats?.lastUsed,
     usageCount: stats?.usageCount ?? 0,

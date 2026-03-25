@@ -3,6 +3,7 @@
 // Unified plugin selection component for MAP2 Audio Platform
 // ============================================================================
 
+import type { PluginAppearanceOverride } from '../../../map2/types'
 import { PluginType } from './pluginLegacyCompat'
 
 /**
@@ -75,6 +76,7 @@ export interface UnifiedPlugin {
   description?: string
   version?: string
   license?: string
+  appearanceOverride?: PluginAppearanceOverride
 
   // User data (persisted locally)
   isFavorite: boolean

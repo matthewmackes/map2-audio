@@ -36,6 +36,7 @@ import { PluginIOBadge } from './PluginIOIndicator'
 import { LegacyPluginIcon } from './LegacyPluginIcon'
 import { getPluginDescription } from '../utils/pluginDescriptions'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
+import { rgbaFromPluginAppearanceColor } from '@/app/utils/pluginAppearanceColors'
 
 interface PluginCardProps {
   plugin: UnifiedPlugin
@@ -61,6 +62,8 @@ export const PluginCard = memo(function PluginCard({
   const [expanded, setExpanded] = useState(false)
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
   const displayAuthor = sanitizeRestrictedDisplayText(plugin.authorName)
+  const accentColor = plugin.appearanceOverride?.accent_color ?? null
+  const categoryDescription = plugin.appearanceOverride?.description ?? getPluginDescription(plugin.name, plugin.displayType, plugin.category).description
 
   const handleClick = (e: MouseEvent) => {
     e.stopPropagation()
@@ -121,9 +124,11 @@ export const PluginCard = memo(function PluginCard({
       sx={{
         cursor: draggable ? 'grab' : 'pointer',
         border: 2,
-        borderColor: selected ? 'primary.main' : isHardware ? 'warning.main' : 'divider',
+        borderColor: selected ? 'primary.main' : accentColor ? accentColor : isHardware ? 'warning.main' : 'divider',
         bgcolor: selected
           ? 'action.selected'
+          : accentColor
+            ? rgbaFromPluginAppearanceColor(accentColor, 0.08)
           : isHardware
             ? (theme) => alpha(theme.palette.warning.main, 0.06)
             : 'background.paper',
@@ -161,7 +166,15 @@ export const PluginCard = memo(function PluginCard({
             {isHardware ? (
               <img src="/img/fx_lexicon.svg" alt="Hardware" width={20} height={20} style={{ display: 'block' }} />
             ) : (
-              <LegacyPluginIcon pluginType={plugin.pluginType} size={20} opacity={0.8} />
+              <LegacyPluginIcon
+                pluginType={plugin.pluginType}
+                iconIdentifier={plugin.appearanceOverride?.icon_identifier}
+                customSvg={plugin.appearanceOverride?.custom_svg}
+                fallbackCategory={plugin.category}
+                size={20}
+                opacity={0.8}
+                color={accentColor ?? undefined}
+              />
             )}
           </Box>
 
@@ -228,13 +241,14 @@ export const PluginCard = memo(function PluginCard({
         <Chip
           label={isHardware ? 'Hardware Effect' : plugin.category}
           size="small"
+          title={categoryDescription ?? undefined}
           sx={{
             height: 18,
             fontSize: '0.6rem',
             mb: 0.75,
-            bgcolor: isHardware ? (theme) => alpha(theme.palette.warning.main, 0.2) : 'action.selected',
-            color: isHardware ? 'warning.main' : undefined,
-            border: isHardware ? (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.4)}` : undefined,
+            bgcolor: accentColor ? rgbaFromPluginAppearanceColor(accentColor, 0.15) : isHardware ? (theme) => alpha(theme.palette.warning.main, 0.2) : 'action.selected',
+            color: accentColor ? accentColor : isHardware ? 'warning.main' : undefined,
+            border: accentColor ? `1px solid ${rgbaFromPluginAppearanceColor(accentColor, 0.35)}` : isHardware ? (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.4)}` : undefined,
             '& .MuiChip-label': { px: 0.75 },
           }}
         />
@@ -364,13 +378,13 @@ export const PluginCard = memo(function PluginCard({
               const info = getPluginDescription(plugin.name, plugin.displayType, plugin.category)
               return (
                 <>
-                  {info.description && (
+                  {(plugin.appearanceOverride?.description || info.description) && (
                     <Box mb={0.75}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
                         Description
                       </Typography>
                       <Typography variant="caption" color="text.primary" sx={{ display: 'block', mt: 0.25 }}>
-                        {info.description}
+                        {plugin.appearanceOverride?.description || info.description}
                       </Typography>
                     </Box>
                   )}
@@ -523,6 +537,7 @@ function CompactPluginCard({
 }: PluginCardProps) {
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
   const displayAuthor = sanitizeRestrictedDisplayText(plugin.authorName)
+  const accentColor = plugin.appearanceOverride?.accent_color ?? null
 
   const handleClick = (e: MouseEvent) => {
     e.stopPropagation()
@@ -551,6 +566,8 @@ function CompactPluginCard({
         cursor: draggable ? 'grab' : 'pointer',
         bgcolor: selected
           ? 'action.selected'
+          : accentColor
+            ? rgbaFromPluginAppearanceColor(accentColor, 0.08)
           : isHardware
             ? (theme) => alpha(theme.palette.warning.main, 0.06)
             : 'transparent',
@@ -572,7 +589,15 @@ function CompactPluginCard({
       {isHardware ? (
         <img src="/img/fx_lexicon.svg" alt="Hardware" width={18} height={18} style={{ display: 'block', flexShrink: 0 }} />
       ) : (
-        <LegacyPluginIcon pluginType={plugin.pluginType} size={18} opacity={0.7} />
+        <LegacyPluginIcon
+          pluginType={plugin.pluginType}
+          iconIdentifier={plugin.appearanceOverride?.icon_identifier}
+          customSvg={plugin.appearanceOverride?.custom_svg}
+          fallbackCategory={plugin.category}
+          size={18}
+          opacity={0.7}
+          color={accentColor ?? undefined}
+        />
       )}
 
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -590,12 +615,13 @@ function CompactPluginCard({
       <Chip
         label={isHardware ? 'Hardware Effect' : plugin.category}
         size="small"
+        title={plugin.appearanceOverride?.description ?? undefined}
         sx={{
           height: 18,
           fontSize: '0.6rem',
-          bgcolor: isHardware ? (theme) => alpha(theme.palette.warning.main, 0.2) : 'action.selected',
-          color: isHardware ? 'warning.main' : undefined,
-          border: isHardware ? (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.4)}` : undefined,
+          bgcolor: accentColor ? rgbaFromPluginAppearanceColor(accentColor, 0.15) : isHardware ? (theme) => alpha(theme.palette.warning.main, 0.2) : 'action.selected',
+          color: accentColor ? accentColor : isHardware ? 'warning.main' : undefined,
+          border: accentColor ? `1px solid ${rgbaFromPluginAppearanceColor(accentColor, 0.35)}` : isHardware ? (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.4)}` : undefined,
           '& .MuiChip-label': { px: 0.5 },
         }}
       />

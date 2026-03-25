@@ -6801,7 +6801,7 @@ Last updated: 2026-03-25 07:38 EDT - Codex
 ## Per-Plugin Appearance Customization (Theme Page)
 
 ID: T411
-Status: [ ] Todo
+Status: [✓] Done
 Title: Per-plugin appearance customization — epic overview
 Description:
 - Goal / acceptance criteria: Allow users to customize Color (accent + optional dark/light variant), Icon (Carbon library + category SVGs + custom SVG upload), and Description for every installed effect plugin (LV2, JUCE native, Hardware, ToobAmp). Customizations are global and persist across sessions. Accessible as a sub-section within the existing Category tab on the Theme Page.
@@ -6812,7 +6812,7 @@ Description:
 Subtasks:
 
 ID: T411-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Backend persistence — plugin appearance overrides API + file storage
 Description:
 - Goal / acceptance criteria: New REST endpoints to CRUD per-plugin appearance overrides (color accent, dark/light variant, icon identifier, custom SVG data, description). Persisted to `~/.config/map2/plugin_appearance_overrides.json`. Endpoints: `GET /api/plugin-appearances`, `GET /api/plugin-appearances/{uri}`, `PUT /api/plugin-appearances/{uri}`, `DELETE /api/plugin-appearances/{uri}`, `POST /api/plugin-appearances/{uri}/icon-upload` (SVG).
@@ -6822,10 +6822,19 @@ Description:
 - Required outputs: New route file `app/routes/plugin_appearances.py`, Pydantic model, service layer, pytest coverage.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-25
+Last updated: 2026-03-25 10:11 EDT - Codex
+- Completion notes:
+  - Added the backend source of truth, local cache/hook layer, icon picker, color picker, Theme Page editor flow, chooser integration, and focused validation for per-plugin appearance customization.
+  - Per-plugin appearance overrides now persist through `/api/plugin-appearances`, edit inside the Theme workspace, and render through chooser cards plus normalized plugin metadata.
+Last updated: 2026-03-25 09:47 EDT - Codex
+- Completion notes:
+  - Added `app/services/plugin_appearance_service.py` as a JSON-backed source of truth at `~/.config/map2/plugin_appearance_overrides.json`, including hex normalization, SVG validation, custom icon identifier generation, and thread-safe CRUD helpers.
+  - Added `app/routes/plugin_appearances.py` with `GET /api/plugin-appearances`, `GET /api/plugin-appearances/{uri}`, `PUT /api/plugin-appearances/{uri}`, `DELETE /api/plugin-appearances/{uri}`, and `POST /api/plugin-appearances/{uri}/icon-upload`.
+  - Registered the new route module in `app/main.py` and added focused coverage in `tests/test_plugin_appearance_routes.py`.
+  - Validation passed with `pytest tests/test_plugin_appearance_routes.py tests/test_route_registration_policy.py -q`.
 
 ID: T411-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Frontend data layer — localStorage cache + sync hook
 Description:
 - Goal / acceptance criteria: `usePluginAppearances()` hook that reads from localStorage cache on mount, syncs from backend API, and writes through to both localStorage and backend on mutation. Cache key: `map2.plugin-appearance-overrides.v1`. Exposes `getPluginAppearance(uri)`, `setPluginAppearance(uri, overrides)`, `resetPluginAppearance(uri)`. Fires `CustomEvent` for cross-component subscription (same pattern as `categoryStyles.tsx`).
@@ -6835,10 +6844,15 @@ Description:
 - Required outputs: Hook file, TypeScript types for `PluginAppearanceOverride`, Jest tests.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-25
+Last updated: 2026-03-25 09:50 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/hooks/usePluginAppearances.ts` with a React Query-backed `usePluginAppearances()` cache layer, localStorage hydration, cross-component sync event dispatch, and optimistic write-through for save/reset/icon upload flows.
+  - Added `PluginAppearanceOverride` API contract support in `web/src/map2/types.ts` and `web/src/map2/api.ts`.
+  - Added focused hook coverage in `web/src/app/hooks/usePluginAppearances.test.tsx`.
+  - Validation passed with `npm --prefix web run typecheck` and `npm --prefix web test -- --runInBand web/src/app/hooks/usePluginAppearances.test.tsx`.
 
 ID: T411-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Icon picker modal — Carbon icons + category SVGs + custom SVG upload
 Description:
 - Goal / acceptance criteria: Reusable `IconPickerModal` (Carbon `ComposedModal`) with three tabs: (1) Category SVG icons (~40 existing fx_* icons in a grid), (2) Carbon Design icons (searchable grid from `@carbon/icons-react`), (3) Custom SVG upload (drag-drop or file input, validates SVG, previews before confirm). Returns selected icon identifier (category: `fx:amplifier`, Carbon: `carbon:Activity`, custom: `custom:{uri-hash}`). Size-constrained SVG uploads (e.g., max 32KB).
@@ -6848,10 +6862,14 @@ Description:
 - Required outputs: `IconPickerModal.tsx`, `IconPickerModal.test.tsx`, icon identifier format spec.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-25
+Last updated: 2026-03-25 10:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/pluginAppearance/IconPickerModal.tsx` with category SVG, Carbon icon, and custom SVG flows plus preview and upload handling.
+  - Added the shared icon registry in `web/src/app/utils/pluginAppearanceIcons.tsx` and reusable `PluginAppearanceIcon.tsx`.
+  - Added coverage in `web/src/app/components/pluginAppearance/IconPickerModal.test.tsx`.
 
 ID: T411-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: Color picker — accent color + optional dark/light variant
 Description:
 - Goal / acceptance criteria: `PluginColorPicker` component with: (1) primary accent color input (hex + visual swatch, same pattern as category color editor), (2) auto-generated dark/light variants shown as preview, (3) optional override toggles for dark and light variants with their own hex inputs. Uses the same color normalization as `categoryStyles.tsx`. Live preview of how the color renders on a plugin chip/card mock.
@@ -6861,10 +6879,14 @@ Description:
 - Required outputs: `PluginColorPicker.tsx`, integrated into T411-subE editor.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-25
+Last updated: 2026-03-25 10:11 EDT - Codex
+- Completion notes:
+  - Added `web/src/app/components/pluginAppearance/PluginColorPicker.tsx` with accent editing, derived variants, optional overrides, and live preview.
+  - Added shared color helpers in `web/src/app/utils/pluginAppearanceColors.ts`.
+  - Added coverage in `web/src/app/components/pluginAppearance/PluginColorPicker.test.tsx`.
 
 ID: T411-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Plugin appearance editor UI — sub-section within Category tab
 Description:
 - Goal / acceptance criteria: New sub-section within the existing Category tab on the Theme Page (below category color editing). Contains: (1) searchable/filterable plugin list (all sources: LV2, JUCE, Hardware, ToobAmp), (2) selecting a plugin opens an inline editor or expand panel with Color (T411-subD), Icon (T411-subC trigger), and Description (text area) fields, (3) Save/Reset per plugin, (4) "Reset All Plugin Overrides" bulk action. Toggle or accordion to switch between category-level and plugin-level editing within the tab.
@@ -6874,10 +6896,13 @@ Description:
 - Required outputs: Updated `ThemePage.tsx` Category tab section, new sub-components, test coverage.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-25
+Last updated: 2026-03-25 10:11 EDT - Codex
+- Completion notes:
+  - Extended `web/src/app/pages/ThemePage.tsx` so the Category workspace now includes per-plugin override controls, plugin search/filtering, icon picker launch, save/reset actions, and bulk reset.
+  - Added Theme Page coverage in `web/src/app/pages/ThemePage.test.tsx`.
 
 ID: T411-subF
-Status: [ ] Todo
+Status: [✓] Done
 Title: Integration — apply overrides across Plugin Chooser, cards, and chips
 Description:
 - Goal / acceptance criteria: Plugin appearance overrides from T411-subB are consumed by: (1) `PluginCard.tsx` — override icon, color, and tooltip/description, (2) `pluginChipMeta.ts` — override chip color/icon, (3) `pluginBridge.ts` — merge overrides into `UnifiedPlugin` during normalization, (4) `LegacyPluginIcon.tsx` — respect icon overrides. Custom SVG icons render inline. Fallback chain: user override → category default → legacy default.
@@ -6887,10 +6912,14 @@ Description:
 - Required outputs: Updated bridge/card/chip files, integration tests verifying fallback chain.
 Subtasks: None
 Assigned to: Unassigned
-Last updated: 2026-03-25
+Last updated: 2026-03-25 10:11 EDT - Codex
+- Completion notes:
+  - Normalized chooser plugins now carry `appearanceOverride` data from local storage in `web/src/shared/components/PluginChooser/utils/pluginBridge.ts`.
+  - Updated `PluginCard.tsx`, `LegacyPluginIcon.tsx`, and `pluginChipMeta.ts` to respect stored icon/color/description overrides with fallback rendering.
+  - Added regression coverage in `web/src/shared/components/PluginChooser/pluginLegacyCompat.test.ts`.
 
 ID: T411-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: End-to-end testing and build verification
 Description:
 - Goal / acceptance criteria: Full test pass: (1) pytest for backend API routes (CRUD, SVG upload, validation), (2) Jest for frontend hook, icon picker, color picker, editor UI, and integration, (3) `npm run typecheck` clean, (4) `npm run build` clean, (5) manual smoke test of override flow in production preview.
@@ -6900,7 +6929,119 @@ Description:
 - Required outputs: All tests passing, build artifacts verified.
 Subtasks: None
 Assigned to: Unassigned
+Last updated: 2026-03-25 10:11 EDT - Codex
+- Completion notes:
+  - Validation passed with `npm --prefix web run typecheck`.
+  - Validation passed with `npm --prefix web test -- --runInBand web/src/shared/components/PluginChooser/pluginLegacyCompat.test.ts web/src/app/hooks/usePluginAppearances.test.tsx web/src/app/components/pluginAppearance/PluginColorPicker.test.tsx web/src/app/components/pluginAppearance/IconPickerModal.test.tsx web/src/app/pages/ThemePage.test.tsx`.
+  - Validation passed with `npm --prefix web run build`.
+
+Assigned to: Unassigned
 Last updated: 2026-03-25
 
+## Ink TUI
+
+ID: T412
+Status: [ ] Todo
+Title: MAP2 Ink TUI — Standalone terminal interface (Epic)
+Description:
+- Goal / acceptance criteria: Deliver a first-class, standalone terminal interface for MAP2 built with React + Ink, covering 14 screens with full keyboard navigation, real-time metering, device control, and cluster management.
+- Why it matters: Enables headless operation, SSH-based workflows, and live performance control without a browser.
+- Dependencies: Existing backend APIs (no backend changes required)
+- Estimated effort: Very High (10 weeks across 5 phases)
+- Required outputs: `tui/` directory with complete Ink application, test suite, documentation. Full plan: `docs/plans/INK_TUI_PRODUCT_PLAN.md`
+Subtasks:
+ID: T412-subA
+Status: [ ] Todo
+Title: TUI project scaffold and build system
+Description:
+- Goal / acceptance criteria: Create `tui/` directory with package.json, tsconfig.json, Ink + React dependencies, build scripts, and ESLint config with import boundary enforcement (ban web/src/app/ imports).
+- Why it matters: Foundation for all subsequent TUI development.
+- Dependencies: None
+- Estimated effort: Small
+- Required outputs: Bootable empty Ink app that renders to terminal. npm run build and npm test work.
+ID: T412-subB
+Status: [ ] Todo
+Title: Node.js adapters for shared API/WebSocket layer
+Description:
+- Goal / acceptance criteria: Create thin adapter modules so web/src/map2/api.ts and web/src/map2/websocket.ts work in Node.js without browser globals.
+- Why it matters: Enables code reuse of the entire API client and WebSocket layer.
+- Dependencies: T412-subA
+- Estimated effort: Medium
+- Required outputs: Adapter modules providing Node-compatible fetch and WebSocket. Verified with integration test against running backend.
+ID: T412-subC
+Status: [ ] Todo
+Title: AppShell, screen router, and global navigation
+Description:
+- Goal / acceptance criteria: Implement AppShell (header + content + status bar), screen stack router with push/pop, command palette (Ctrl+P), help overlay (?), and global keybindings.
+- Why it matters: Core navigation infrastructure that all screens depend on.
+- Dependencies: T412-subA
+- Estimated effort: Medium
+- Required outputs: Shell components, navigation system, keybinding infrastructure, terminal size detection.
+ID: T412-subD
+Status: [ ] Todo
+Title: Core component library (primitives)
+Description:
+- Goal / acceptance criteria: Build reusable TUI component library: DataTable, FilterableList, FormField, ProgressBar, VuMeter, Sparkline, StatusDot, TabBar, ConfirmDialog, Toast, BoxPanel, KeyHint, LogStream, Badge, Spinner.
+- Why it matters: All screens compose from these primitives. Building them first enables parallel screen development.
+- Dependencies: T412-subA
+- Estimated effort: Large
+- Required outputs: 15+ component files with unit tests using ink-testing-library.
+ID: T412-subE
+Status: [ ] Todo
+Title: Home Screen
+Description:
+- Goal / acceptance criteria: Implement entry-point Home Screen showing system health summary, active chain, CPU load, connected devices, and navigation cards.
+- Dependencies: T412-subB, T412-subC, T412-subD
+- Estimated effort: Medium
+ID: T412-subF
+Status: [ ] Todo
+Title: Metering and CPU screens
+Description:
+- Goal / acceptance criteria: Implement real-time Metering Screen (per-channel VU bars, peak hold, clipping) and CPU/Performance Screen (per-core bars, RT thread table, latency).
+- Dependencies: T412-subB, T412-subD
+- Estimated effort: Medium
+ID: T412-subG
+Status: [ ] Todo
+Title: Audio Grid and PipeWire screens
+Description:
+- Goal / acceptance criteria: Implement Audio Grid Screen (text-mode signal chain, plugin list, bypass toggle, parameter editing) and PipeWire Screen.
+- Dependencies: T412-subB, T412-subD
+- Estimated effort: Medium
+ID: T412-subH
+Status: [ ] Todo
+Title: MIDI Hub and Devices screens
+Description:
+- Goal / acceptance criteria: Implement MIDI Hub Screen (5-tab layout) and Devices Screen (USB audio interface status).
+- Dependencies: T412-subB, T412-subD
+- Estimated effort: Large
+ID: T412-subI
+Status: [ ] Todo
+Title: MPX1 Screen
+Description:
+- Goal / acceptance criteria: Implement MPX1 Screen with tabbed views: Panel, Editor, Library, MIDI Map, Diagnostics.
+- Dependencies: T412-subB, T412-subD
+- Estimated effort: Medium
+ID: T412-subJ
+Status: [ ] Todo
+Title: Cluster, AVB, and Tesira screens
+Description:
+- Goal / acceptance criteria: Implement Cluster Screen, AVB Screen (with ASCII routing matrix), and Tesira Screen.
+- Dependencies: T412-subB, T412-subD
+- Estimated effort: Large
+ID: T412-subK
+Status: [ ] Todo
+Title: Artifacts, Settings, and Diagnostics screens
+Description:
+- Goal / acceptance criteria: Implement Artifacts Screen, Settings Screen, and Diagnostics Screen.
+- Dependencies: T412-subD
+- Estimated effort: Medium
+ID: T412-subL
+Status: [ ] Todo
+Title: Polish, testing, documentation, and packaging
+Description:
+- Goal / acceptance criteria: Full test suite, 80×24 audit of all screens, color fallback testing, error state handling, performance profiling, CLI documentation, and npm packaging.
+- Dependencies: T412-subA through T412-subK
+- Estimated effort: Large
+- Required outputs: Test suite (unit + integration + snapshot), 80×24 verification, --help/--no-color/--verbose support, README, performance benchmarks.
 Assigned to: Unassigned
 Last updated: 2026-03-25

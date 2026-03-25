@@ -1,4 +1,4 @@
-import { Accessibility, Checkmark, PaintBrush, Reset, Settings } from '@carbon/icons-react'
+import { Accessibility, Checkmark, PaintBrush, Reset, Search, Settings } from '@carbon/icons-react'
 import {
   Button,
   ComposedModal,
@@ -7,12 +7,17 @@ import {
   ModalFooter,
   ModalHeader,
   RadioTile,
+  Search as CarbonSearch,
   Tag,
   TextInput,
   TileGroup,
   Toggle,
 } from '@carbon/react'
-import { type CSSProperties, useMemo, useState, useSyncExternalStore } from 'react'
+import { type CSSProperties, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+
+import { pluginsApi } from '@/map2/api'
+import type { Plugin, PluginAppearanceOverride } from '@/map2/types'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '@/map2/displayNames'
 
 import {
   getCategoryColorOverrideSnapshot,
@@ -42,6 +47,10 @@ import {
   useTheme,
 } from '../theme'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
+import { IconPickerModal } from '../components/pluginAppearance/IconPickerModal'
+import { PluginAppearanceIcon } from '../components/pluginAppearance/PluginAppearanceIcon'
+import { PluginColorPicker } from '../components/pluginAppearance/PluginColorPicker'
+import { usePluginAppearances } from '../hooks/usePluginAppearances'
 import './ThemePage.css'
 
 function carbonThemeLabel(carbonTheme: Theme['carbonTheme']): string {
@@ -227,6 +236,35 @@ type ThemeWorkspaceModal =
   | 'motion'
   | 'category'
 
+type PluginAppearanceEditorMode = 'categories' | 'plugins'
+type PluginSourceFilter = 'all' | 'lv2' | 'juce' | 'toobamp' | 'hardware'
+
+function inferPluginSource(plugin: Plugin): PluginSourceFilter {
+  if (plugin.is_hardware || plugin.format === 'Hardware') {
+    return 'hardware'
+  }
+
+  const normalizedUri = plugin.uri.toLowerCase()
+  if (normalizedUri.includes('map2://juce')) {
+    return 'juce'
+  }
+  if (normalizedUri.includes('toob')) {
+    return 'toobamp'
+  }
+  return 'lv2'
+}
+
+function sanitizePluginAppearanceDraft(draft: Partial<PluginAppearanceOverride>): Partial<PluginAppearanceOverride> {
+  return {
+    accent_color: draft.accent_color?.trim() || null,
+    dark_variant: draft.dark_variant?.trim() || null,
+    light_variant: draft.light_variant?.trim() || null,
+    icon_identifier: draft.icon_identifier?.trim() || null,
+    custom_svg: draft.custom_svg?.trim() || null,
+    description: draft.description?.trim() || null,
+  }
+}
+
 function ThemeWorkspaceLauncher({
   title,
   description,
@@ -281,11 +319,26 @@ export function ThemePage() {
   const [activeSlot, setActiveSlot] = useState<keyof ThemeColors | null>(null)
   const [activeModal, setActiveModal] = useState<ThemeWorkspaceModal | null>(null)
   const [showSpecialSettings, setShowSpecialSettings] = useState(false)
+  const [categoryEditorMode, setCategoryEditorMode] = useState<PluginAppearanceEditorMode>('categories')
+  const [pluginInventory, setPluginInventory] = useState<Plugin[]>([])
+  const [pluginInventoryLoading, setPluginInventoryLoading] = useState(false)
+  const [pluginInventoryError, setPluginInventoryError] = useState<string | null>(null)
+  const [pluginSearch, setPluginSearch] = useState('')
+  const [pluginSourceFilter, setPluginSourceFilter] = useState<PluginSourceFilter>('all')
+  const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(null)
+  const [pluginAppearanceDrafts, setPluginAppearanceDrafts] = useState<Record<string, Partial<PluginAppearanceOverride>>>({})
+  const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const categoryOverrideSnapshot = useSyncExternalStore(
     subscribeCategoryColorOverrides,
     getCategoryColorOverrideSnapshot,
     getCategoryColorOverrideSnapshot,
   )
+  const {
+    appearances,
+    setPluginAppearance,
+    resetPluginAppearance,
+    uploadPluginAppearanceIcon,
+  } = usePluginAppearances()
 
   const editableCategoryConfigs = useMemo(() => getEditableCategoryConfigs(), [categoryOverrideSnapshot])
   const overriddenCategoryCount = useMemo(
@@ -317,6 +370,131 @@ export function ThemePage() {
   const isCustomTheme = !(themeId in builtInThemes)
   const totalThemeCount = themeOrder.length + customThemeEntries.length
   const draftOverrideCount = Object.keys(draftOverrides).length
+  const pluginOverrideCount = Object.keys(appearances).length
+
+  useEffect(() => {
+    if (activeModal !== 'category' || pluginInventoryLoading || pluginInventory.length > 0) {
+      return
+    }
+
+    let cancelled = false
+    setPluginInventoryLoading(true)
+    setPluginInventoryError(null)
+    void pluginsApi
+      .discover(false)
+      .then((response) => {
+        if (cancelled) {
+          return
+        }
+        setPluginInventory(response.plugins)
+        setSelectedPluginUri((current) => current ?? response.plugins[0]?.uri ?? null)
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return
+        }
+        setPluginInventoryError(error instanceof Error ? error.message : 'Failed to load plugins.')
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setPluginInventoryLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeModal, pluginInventory.length, pluginInventoryLoading])
+
+  const filteredPlugins = useMemo(() => {
+    const query = pluginSearch.trim().toLowerCase()
+
+    return [...pluginInventory]
+      .filter((plugin) => pluginSourceFilter === 'all' || inferPluginSource(plugin) === pluginSourceFilter)
+      .filter((plugin) => {
+        if (!query) {
+          return true
+        }
+
+        return [
+          getDisplayPluginName(plugin.name, plugin.uri),
+          sanitizeRestrictedDisplayText(plugin.author),
+          plugin.category,
+          plugin.class_label,
+          plugin.uri,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(query)
+      })
+      .sort((left, right) =>
+        getDisplayPluginName(left.name, left.uri).localeCompare(getDisplayPluginName(right.name, right.uri)),
+      )
+  }, [pluginInventory, pluginSearch, pluginSourceFilter])
+
+  useEffect(() => {
+    if (!filteredPlugins.length) {
+      setSelectedPluginUri(null)
+      return
+    }
+
+    if (!selectedPluginUri || !filteredPlugins.some((plugin) => plugin.uri === selectedPluginUri)) {
+      setSelectedPluginUri(filteredPlugins[0]?.uri ?? null)
+    }
+  }, [filteredPlugins, selectedPluginUri])
+
+  const selectedPlugin = useMemo(
+    () => pluginInventory.find((plugin) => plugin.uri === selectedPluginUri) ?? null,
+    [pluginInventory, selectedPluginUri],
+  )
+  const selectedPluginAppearance = selectedPluginUri ? appearances[selectedPluginUri] ?? null : null
+  const selectedPluginDraft = selectedPluginUri ? (pluginAppearanceDrafts[selectedPluginUri] ?? selectedPluginAppearance ?? { uri: selectedPluginUri }) : null
+
+  const handlePluginDraftChange = (update: Partial<PluginAppearanceOverride>) => {
+    if (!selectedPluginUri) {
+      return
+    }
+
+    setPluginAppearanceDrafts((current) => ({
+      ...current,
+      [selectedPluginUri]: {
+        ...(current[selectedPluginUri] ?? selectedPluginAppearance ?? { uri: selectedPluginUri }),
+        ...update,
+        uri: selectedPluginUri,
+      },
+    }))
+  }
+
+  const handleSavePluginAppearance = async () => {
+    if (!selectedPluginUri || !selectedPluginDraft) {
+      return
+    }
+
+    await setPluginAppearance(selectedPluginUri, sanitizePluginAppearanceDraft(selectedPluginDraft))
+  }
+
+  const handleResetPluginAppearance = async () => {
+    if (!selectedPluginUri) {
+      return
+    }
+
+    setPluginAppearanceDrafts((current) => {
+      const next = { ...current }
+      delete next[selectedPluginUri]
+      return next
+    })
+    await resetPluginAppearance(selectedPluginUri)
+  }
+
+  const handleResetAllPluginAppearances = async () => {
+    const uris = Object.keys(appearances)
+    if (!uris.length) {
+      return
+    }
+
+    await Promise.all(uris.map((uri) => resetPluginAppearance(uri)))
+    setPluginAppearanceDrafts({})
+  }
 
   const handleLoadSuggestion = (familyId: string, base: BaseShell, name: string) => {
     setDraftFamilyId(familyId)
@@ -890,51 +1068,416 @@ export function ThemePage() {
           </div>
         </div>
 
-        <div className="theme-page__category-grid">
-          {editableCategoryConfigs.map(({ key, label, config, overridden }) => {
-            const Icon = config.icon
+        <div className="theme-page__editor-mode-grid" role="group" aria-label="Category editor mode">
+          <Button
+            kind={categoryEditorMode === 'categories' ? 'primary' : 'tertiary'}
+            onClick={() => setCategoryEditorMode('categories')}
+          >
+            <span className="theme-page__editor-mode-copy">
+              <strong>Category accents</strong>
+              <span>Shared palette used by cards, chips, and browser badges.</span>
+            </span>
+          </Button>
+          <Button
+            kind={categoryEditorMode === 'plugins' ? 'primary' : 'tertiary'}
+            onClick={() => setCategoryEditorMode('plugins')}
+          >
+            <span className="theme-page__editor-mode-copy">
+              <strong>Plugin overrides</strong>
+              <span>Per-plugin icon, accent, and description overrides.</span>
+            </span>
+          </Button>
+        </div>
 
-            return (
-              <div key={key} className="theme-page__category-card">
-                <div className="theme-page__category-top">
-                  <span
-                    className="theme-page__category-icon"
-                    style={{
-                      color: config.color,
-                      background: config.gradient,
-                    }}
-                  >
-                    <Icon size={18} />
-                  </span>
-                  <div className="theme-page__category-copy">
-                    <span className="theme-page__category-label">{label}</span>
-                    <span className="theme-page__category-value">{config.color}</span>
+        {categoryEditorMode === 'categories' ? (
+          <>
+            <div className="theme-page__category-grid">
+              {editableCategoryConfigs.map(({ key, label, config, overridden }) => {
+                const Icon = config.icon
+
+                return (
+                  <div key={key} className="theme-page__category-card">
+                    <div className="theme-page__category-top">
+                      <span
+                        className="theme-page__category-icon"
+                        style={{
+                          color: config.color,
+                          background: config.gradient,
+                        }}
+                      >
+                        <Icon size={18} />
+                      </span>
+                      <div className="theme-page__category-copy">
+                        <span className="theme-page__category-label">{label}</span>
+                        <span className="theme-page__category-value">{config.color}</span>
+                      </div>
+                      {overridden ? (
+                        <Tag type="warm-gray" size="sm">
+                          Custom
+                        </Tag>
+                      ) : null}
+                    </div>
+
+                    <div className="theme-page__category-controls">
+                      <input
+                        aria-label={`${label} color`}
+                        className="theme-page__category-picker"
+                        type="color"
+                        value={config.color}
+                        onChange={(event) => {
+                          setCategoryColorOverride(key, event.target.value)
+                        }}
+                      />
+                      <Button kind="ghost" size="sm" disabled={!overridden} onClick={() => resetCategoryColorOverride(key)}>
+                        Reset
+                      </Button>
+                    </div>
                   </div>
-                  {overridden ? (
-                    <Tag type="warm-gray" size="sm">
-                      Custom
-                    </Tag>
-                  ) : null}
-                </div>
+                )
+              })}
+            </div>
 
-                <div className="theme-page__category-controls">
-                  <input
-                    aria-label={`${label} color`}
-                    className="theme-page__category-picker"
-                    type="color"
-                    value={config.color}
-                    onChange={(event) => {
-                      setCategoryColorOverride(key, event.target.value)
-                    }}
-                  />
-                  <Button kind="ghost" size="sm" disabled={!overridden} onClick={() => resetCategoryColorOverride(key)}>
-                    Reset
-                  </Button>
+            <div className="theme-page__plugin-editor">
+              <div className="theme-page__plugin-toolbar">
+                <CarbonSearch
+                  id="theme-plugin-appearance-search"
+                  labelText="Search plugins"
+                  placeholder="Search plugins, authors, categories"
+                  value={pluginSearch}
+                  onChange={(event) => setPluginSearch(event.currentTarget.value)}
+                />
+                <div className="theme-page__plugin-filter-row">
+                  {(['all', 'lv2', 'juce', 'toobamp', 'hardware'] as PluginSourceFilter[]).map((filter) => (
+                    <Button
+                      key={filter}
+                      kind={pluginSourceFilter === filter ? 'primary' : 'tertiary'}
+                      size="sm"
+                      onClick={() => setPluginSourceFilter(filter)}
+                    >
+                      {filter === 'all' ? 'All sources' : filter}
+                    </Button>
+                  ))}
                 </div>
               </div>
-            )
-          })}
-        </div>
+
+              <div className="theme-page__plugin-grid">
+                <div className="theme-page__plugin-list">
+                  <div className="theme-page__plugin-list-head">
+                    <strong>Plugins</strong>
+                    <Tag type={pluginOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                      {pluginOverrideCount > 0 ? `${pluginOverrideCount} customized` : 'No overrides'}
+                    </Tag>
+                  </div>
+                  {pluginInventoryError ? (
+                    <InlineNotification
+                      lowContrast
+                      hideCloseButton
+                      kind="error"
+                      title="Plugin catalog unavailable."
+                      subtitle={pluginInventoryError}
+                    />
+                  ) : null}
+                  {pluginInventoryLoading ? (
+                    <div className="theme-page__plugin-empty">Loading plugin catalog…</div>
+                  ) : filteredPlugins.length === 0 ? (
+                    <div className="theme-page__plugin-empty">No plugins match the current filter.</div>
+                  ) : (
+                    <div className="theme-page__plugin-list-scroll">
+                      {filteredPlugins.map((plugin) => {
+                        const isSelected = plugin.uri === selectedPluginUri
+                        const override = appearances[plugin.uri]
+                        return (
+                          <button
+                            key={plugin.uri}
+                            type="button"
+                            className={`theme-page__plugin-list-item${isSelected ? ' theme-page__plugin-list-item--selected' : ''}`}
+                            onClick={() => setSelectedPluginUri(plugin.uri)}
+                          >
+                            <span className="theme-page__plugin-list-icon">
+                              <PluginAppearanceIcon
+                                identifier={override?.icon_identifier}
+                                customSvg={override?.custom_svg}
+                                fallbackCategory={plugin.category}
+                                size={22}
+                              />
+                            </span>
+                            <span className="theme-page__plugin-list-copy">
+                              <strong>{getDisplayPluginName(plugin.name, plugin.uri)}</strong>
+                              <span>{plugin.category || plugin.class_label}</span>
+                            </span>
+                            <span className="theme-page__plugin-list-tags">
+                              <Tag type="cool-gray" size="sm">
+                                {inferPluginSource(plugin)}
+                              </Tag>
+                              {override ? (
+                                <Tag type="warm-gray" size="sm">
+                                  Custom
+                                </Tag>
+                              ) : null}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="theme-page__plugin-detail">
+                  {selectedPlugin && selectedPluginDraft ? (
+                    <>
+                      <div className="theme-page__plugin-detail-head">
+                        <div className="theme-page__plugin-detail-title">
+                          <span className="theme-page__plugin-list-icon theme-page__plugin-list-icon--large">
+                            <PluginAppearanceIcon
+                              identifier={selectedPluginDraft.icon_identifier}
+                              customSvg={selectedPluginDraft.custom_svg}
+                              fallbackCategory={selectedPlugin.category}
+                              size={28}
+                            />
+                          </span>
+                          <div>
+                            <h3>{getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}</h3>
+                            <p>{sanitizeRestrictedDisplayText(selectedPlugin.author)} · {selectedPlugin.category || selectedPlugin.class_label}</p>
+                          </div>
+                        </div>
+                        <div className="theme-page__section-tags">
+                          <Tag type="cool-gray" size="sm">
+                            {inferPluginSource(selectedPlugin)}
+                          </Tag>
+                          <Button kind="ghost" size="sm" renderIcon={Search} onClick={() => setIconPickerOpen(true)}>
+                            Pick icon
+                          </Button>
+                        </div>
+                      </div>
+
+                      <PluginColorPicker
+                        accentColor={selectedPluginDraft.accent_color}
+                        darkVariant={selectedPluginDraft.dark_variant}
+                        lightVariant={selectedPluginDraft.light_variant}
+                        onChange={handlePluginDraftChange}
+                      />
+
+                      <TextInput
+                        id="theme-plugin-description"
+                        labelText="Short description override"
+                        value={selectedPluginDraft.description ?? ''}
+                        onChange={(event) => handlePluginDraftChange({ description: event.currentTarget.value })}
+                      />
+
+                      <div className="theme-page__plugin-detail-actions">
+                        <Button kind="secondary" size="sm" onClick={() => void handleSavePluginAppearance()}>
+                          Save plugin override
+                        </Button>
+                        <Button kind="ghost" size="sm" disabled={!selectedPluginAppearance} onClick={() => void handleResetPluginAppearance()}>
+                          Reset this plugin
+                        </Button>
+                        <Button kind="ghost" size="sm" disabled={pluginOverrideCount === 0} onClick={() => void handleResetAllPluginAppearances()}>
+                          Reset all plugin overrides
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="theme-page__plugin-empty">Select a plugin to edit its icon, accent, and description.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="theme-page__plugin-editor">
+              <div className="theme-page__plugin-toolbar">
+                <CarbonSearch
+                  id="theme-plugin-appearance-search"
+                  labelText="Search plugins"
+                  placeholder="Search plugins, authors, categories"
+                  value={pluginSearch}
+                  onChange={(event) => setPluginSearch(event.currentTarget.value)}
+                />
+                <div className="theme-page__plugin-filter-row">
+                  {(['all', 'lv2', 'juce', 'toobamp', 'hardware'] as PluginSourceFilter[]).map((filter) => (
+                    <Button
+                      key={filter}
+                      kind={pluginSourceFilter === filter ? 'primary' : 'tertiary'}
+                      size="sm"
+                      onClick={() => setPluginSourceFilter(filter)}
+                    >
+                      {filter === 'all' ? 'All sources' : filter}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="theme-page__plugin-grid">
+                <div className="theme-page__plugin-list">
+                  <div className="theme-page__plugin-list-head">
+                    <strong>Plugins</strong>
+                    <Tag type={pluginOverrideCount > 0 ? 'warm-gray' : 'cool-gray'} size="sm">
+                      {pluginOverrideCount > 0 ? `${pluginOverrideCount} customized` : 'No overrides'}
+                    </Tag>
+                  </div>
+                  {pluginInventoryError ? (
+                    <InlineNotification
+                      lowContrast
+                      hideCloseButton
+                      kind="error"
+                      title="Plugin catalog unavailable."
+                      subtitle={pluginInventoryError}
+                    />
+                  ) : null}
+                  {pluginInventoryLoading ? (
+                    <div className="theme-page__plugin-empty">Loading plugin catalog…</div>
+                  ) : filteredPlugins.length === 0 ? (
+                    <div className="theme-page__plugin-empty">No plugins match the current filter.</div>
+                  ) : (
+                    <div className="theme-page__plugin-list-scroll">
+                      {filteredPlugins.map((plugin) => {
+                        const isSelected = plugin.uri === selectedPluginUri
+                        const override = appearances[plugin.uri]
+                        return (
+                          <button
+                            key={plugin.uri}
+                            type="button"
+                            className={`theme-page__plugin-list-item${isSelected ? ' theme-page__plugin-list-item--selected' : ''}`}
+                            onClick={() => setSelectedPluginUri(plugin.uri)}
+                          >
+                            <span className="theme-page__plugin-list-icon">
+                              <PluginAppearanceIcon
+                                identifier={override?.icon_identifier}
+                                customSvg={override?.custom_svg}
+                                fallbackCategory={plugin.category}
+                                size={22}
+                              />
+                            </span>
+                            <span className="theme-page__plugin-list-copy">
+                              <strong>{getDisplayPluginName(plugin.name, plugin.uri)}</strong>
+                              <span>{plugin.category || plugin.class_label}</span>
+                            </span>
+                            <span className="theme-page__plugin-list-tags">
+                              <Tag type="cool-gray" size="sm">
+                                {inferPluginSource(plugin)}
+                              </Tag>
+                              {override ? (
+                                <Tag type="warm-gray" size="sm">
+                                  Custom
+                                </Tag>
+                              ) : null}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="theme-page__plugin-detail">
+                  {selectedPlugin && selectedPluginDraft ? (
+                    <>
+                      <div className="theme-page__plugin-detail-head">
+                        <div className="theme-page__plugin-detail-title">
+                          <span className="theme-page__plugin-list-icon theme-page__plugin-list-icon--large">
+                            <PluginAppearanceIcon
+                              identifier={selectedPluginDraft.icon_identifier}
+                              customSvg={selectedPluginDraft.custom_svg}
+                              fallbackCategory={selectedPlugin.category}
+                              size={28}
+                            />
+                          </span>
+                          <div>
+                            <h3>{getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}</h3>
+                            <p>{sanitizeRestrictedDisplayText(selectedPlugin.author)} · {selectedPlugin.category || selectedPlugin.class_label}</p>
+                          </div>
+                        </div>
+                        <div className="theme-page__section-tags">
+                          <Tag type="cool-gray" size="sm">
+                            {inferPluginSource(selectedPlugin)}
+                          </Tag>
+                          <Button kind="ghost" size="sm" renderIcon={Search} onClick={() => setIconPickerOpen(true)}>
+                            Pick icon
+                          </Button>
+                        </div>
+                      </div>
+
+                      <PluginColorPicker
+                        accentColor={selectedPluginDraft.accent_color}
+                        darkVariant={selectedPluginDraft.dark_variant}
+                        lightVariant={selectedPluginDraft.light_variant}
+                        onChange={handlePluginDraftChange}
+                      />
+
+                      <TextInput
+                        id="theme-plugin-description"
+                        labelText="Short description override"
+                        value={selectedPluginDraft.description ?? ''}
+                        onChange={(event) => handlePluginDraftChange({ description: event.currentTarget.value })}
+                      />
+
+                      <div className="theme-page__plugin-detail-actions">
+                        <Button kind="secondary" size="sm" onClick={() => void handleSavePluginAppearance()}>
+                          Save plugin override
+                        </Button>
+                        <Button kind="ghost" size="sm" disabled={!selectedPluginAppearance} onClick={() => void handleResetPluginAppearance()}>
+                          Reset this plugin
+                        </Button>
+                        <Button kind="ghost" size="sm" disabled={pluginOverrideCount === 0} onClick={() => void handleResetAllPluginAppearances()}>
+                          Reset all plugin overrides
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="theme-page__plugin-empty">Select a plugin to edit its icon, accent, and description.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="theme-page__category-grid">
+              {editableCategoryConfigs.map(({ key, label, config, overridden }) => {
+                const Icon = config.icon
+
+                return (
+                  <div key={key} className="theme-page__category-card">
+                    <div className="theme-page__category-top">
+                      <span
+                        className="theme-page__category-icon"
+                        style={{
+                          color: config.color,
+                          background: config.gradient,
+                        }}
+                      >
+                        <Icon size={18} />
+                      </span>
+                      <div className="theme-page__category-copy">
+                        <span className="theme-page__category-label">{label}</span>
+                        <span className="theme-page__category-value">{config.color}</span>
+                      </div>
+                      {overridden ? (
+                        <Tag type="warm-gray" size="sm">
+                          Custom
+                        </Tag>
+                      ) : null}
+                    </div>
+
+                    <div className="theme-page__category-controls">
+                      <input
+                        aria-label={`${label} color`}
+                        className="theme-page__category-picker"
+                        type="color"
+                        value={config.color}
+                        onChange={(event) => {
+                          setCategoryColorOverride(key, event.target.value)
+                        }}
+                      />
+                      <Button kind="ghost" size="sm" disabled={!overridden} onClick={() => resetCategoryColorOverride(key)}>
+                        Reset
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
       </section>
     ) : null
 
@@ -1055,6 +1598,30 @@ export function ThemePage() {
             </Button>
           </ModalFooter>
         </ComposedModal>
+      ) : null}
+
+      {selectedPlugin ? (
+        <IconPickerModal
+          open={iconPickerOpen}
+          pluginName={getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}
+          currentIdentifier={selectedPluginDraft?.icon_identifier}
+          currentCustomSvg={selectedPluginDraft?.custom_svg}
+          fallbackCategory={selectedPlugin.category}
+          onClose={() => setIconPickerOpen(false)}
+          onSelect={(selection) => {
+            handlePluginDraftChange({
+              icon_identifier: selection.identifier,
+              custom_svg: selection.customSvg ?? null,
+            })
+          }}
+          onUploadCustomIcon={async (file) => {
+            const response = await uploadPluginAppearanceIcon({ uri: selectedPlugin.uri, file })
+            return {
+              identifier: response.response.icon_identifier ?? 'custom:uploaded',
+              customSvg: response.response.custom_svg ?? null,
+            }
+          }}
+        />
       ) : null}
     </section>
   )

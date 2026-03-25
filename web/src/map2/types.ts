@@ -248,6 +248,21 @@ export interface Plugin {
   is_hardware?: boolean;
 }
 
+export interface PluginAppearanceOverride {
+  uri: string;
+  accent_color?: string | null;
+  dark_variant?: string | null;
+  light_variant?: string | null;
+  icon_identifier?: string | null;
+  custom_svg?: string | null;
+  description?: string | null;
+}
+
+export interface PluginAppearanceListResponse {
+  items: PluginAppearanceOverride[];
+  count: number;
+}
+
 // ==================== Snapshot Types ====================
 
 export interface Snapshot {
