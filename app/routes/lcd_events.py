@@ -298,7 +298,7 @@ async def health_check():
     return health, status_code
 
 
-@router.get("/status")
+@router.get("/system-status")
 async def system_status():
     """Detailed system status and metrics."""
     if not lcd_manager:

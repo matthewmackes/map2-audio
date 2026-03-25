@@ -720,14 +720,6 @@ try:
         except Exception as e:
             logger.warning(f"Could not refresh plugin loader: {e}")
 
-        # Also refresh the LV2 service if it exists
-        try:
-            from app.services.lv2_enhanced import get_lv2_service
-            lv2_service = get_lv2_service()
-            lv2_service.refresh()
-        except Exception as e:
-            pass  # LV2 enhanced service may not be used
-
         return count
 
     def _transform_plugin(p) -> dict:

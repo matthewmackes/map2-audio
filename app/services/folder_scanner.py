@@ -315,14 +315,14 @@ class FolderScanner(Singleton):
         return stats
     
     async def scan_lv2(self) -> Dict[str, int]:
-        """Scan LV2 plugins folder using LV2 discovery service.
+        """Scan LV2 plugins folder using the unified plugin loader.
 
         Returns:
             Statistics: {'found': int, 'added': int, 'removed': int}
         """
         logger.info("Scanning LV2 plugins...")
 
-        from app.services.lv2_discovery import LV2PluginDiscovery
+        from app.services.plugin_loader_unified import get_plugin_loader
 
         stats = {
             'found': 0,
@@ -332,9 +332,8 @@ class FolderScanner(Singleton):
         }
 
         try:
-            # Use the LV2 discovery service
-            discovery = LV2PluginDiscovery(use_cache=True)
-            plugins = await discovery.discover_plugins(force_refresh=False)
+            loader = get_plugin_loader()
+            plugins = await loader.discover(force_refresh=False)
 
             stats['found'] = len(plugins)
 
@@ -344,7 +343,7 @@ class FolderScanner(Singleton):
                 existing_plugins = session.query(Plugin).all()
                 existing_uris = {p.uri: p for p in existing_plugins}
 
-                discovered_uris = {p['uri'] for p in plugins}
+                discovered_uris = {plugin.uri for plugin in plugins}
                 db_uris = set(existing_uris.keys())
 
                 # Find new plugins
@@ -355,17 +354,17 @@ class FolderScanner(Singleton):
 
                 # Add new plugins to database
                 for plugin_data in plugins:
-                    uri = plugin_data['uri']
+                    uri = plugin_data.uri
                     if uri in new_uris:
                         plugin_entry = Plugin(
                             uri=uri,
-                            name=plugin_data.get('name', 'Unknown'),
-                            category=plugin_data.get('category', 'Utility'),
-                            bundle_path=plugin_data.get('path')
+                            name=plugin_data.name or 'Unknown',
+                            category=plugin_data.category or 'Utility',
+                            bundle_path=None,
                         )
                         session.add(plugin_entry)
                         stats['added'] += 1
-                        logger.info(f"Added LV2 plugin: {plugin_data.get('name', uri)}")
+                        logger.info(f"Added LV2 plugin: {plugin_data.name or uri}")
 
                 # Remove plugins no longer on system
                 for uri in removed_uris:

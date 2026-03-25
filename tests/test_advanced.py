@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from app.services.plugin_manager_v3 import (
+from app.services.plugin_catalog import (
     AdvancedPluginManager,
     LazyPluginMetadataManager,
     PluginMetadataFull,

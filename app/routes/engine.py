@@ -410,21 +410,6 @@ async def set_bypass(request: BypassRequest):
     }
 
 
-# ============================================================================
-# Snapshots
-# ============================================================================
-
-@router.get("/snapshots")
-async def list_snapshots():
-    """List all snapshots"""
-    service = get_engine_service()
-    
-    return {
-        "snapshots": await service.list_snapshots(),
-        "current": await service.get_current_snapshot()
-    }
-
-
 @router.post("/snapshots/load")
 async def load_snapshot(request: SnapshotRequest):
     """Load a snapshot"""

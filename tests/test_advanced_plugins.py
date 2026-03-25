@@ -8,7 +8,7 @@ import tempfile
 import json
 import os
 from pathlib import Path
-from app.services.plugin_manager_v3 import (
+from app.services.plugin_catalog import (
     PluginMetadataLite,
     PluginMetadataFull,
     BinaryPluginCache,

@@ -3,9 +3,9 @@ Deployment Configuration API Routes
 
 Endpoints for:
 - GET /api/deployment/mode - Get current deployment mode
-- POST /api/deployment/mode - Switch deployment mode  
+- POST /api/deployment/mode - Switch deployment mode
 - GET /api/deployment/status - Get service status by mode
-- GET /api/deployment/health - Get mode-specific health checks
+- GET /api/deployment/health/mode - Get mode-specific health checks
 - GET /api/deployment/config - Get full deployment config
 """
 
@@ -501,7 +501,7 @@ async def _check_audio_hardware() -> HealthCheckResult:
         )
 
 
-@router.get("/health", response_model=DeploymentHealthResponse)
+@router.get("/health/mode", response_model=DeploymentHealthResponse)
 async def get_deployment_health():
     """Get mode-specific health checks"""
     config = get_deployment_config()

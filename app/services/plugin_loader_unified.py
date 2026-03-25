@@ -944,18 +944,39 @@ class PluginLoaderV2:
 
     def __init__(self):
         self._loader = UnifiedPluginLoader.get_instance()
+        self._cached_plugins: Optional[List[LV2Plugin]] = None
 
     async def discover_plugins(self, refresh: bool = False) -> List[LV2Plugin]:
-        return await self._loader.discover(force_refresh=refresh)
+        if refresh:
+            self._cached_plugins = None
+
+        if self._cached_plugins is None:
+            self._cached_plugins = await self._loader.discover(force_refresh=refresh)
+        return self._cached_plugins
 
     def discover_plugins_sync(self) -> List[LV2Plugin]:
-        return self._loader.discover_sync()
+        if self._cached_plugins is None:
+            self._cached_plugins = self._loader.discover_sync()
+        return self._cached_plugins
 
     def get_plugin(self, uri: str) -> Optional[LV2Plugin]:
         return self._loader.get_plugin(uri)
 
-    def search_plugins(self, query: str) -> List[LV2Plugin]:
+    async def get_plugin_by_uri(self, uri: str) -> Optional[LV2Plugin]:
+        plugins = await self.discover_plugins()
+        return next((plugin for plugin in plugins if plugin.uri == uri), None)
+
+    async def search_plugins(self, query: str) -> List[LV2Plugin]:
+        await self.discover_plugins()
         return self._loader.search(query)
+
+    async def get_plugins_by_category(self, category: str) -> List[LV2Plugin]:
+        await self.discover_plugins()
+        return self._loader.get_plugins_by_category(category)
+
+    async def get_plugin_categories(self) -> List[str]:
+        await self.discover_plugins()
+        return self._loader.get_categories()
 
 
 # For compatibility with RealLV2Loader
@@ -964,6 +985,7 @@ class RealLV2Loader:
 
     def __init__(self):
         self._loader = UnifiedPluginLoader.get_instance()
+        self.world = getattr(self._loader, "_lilv_world", None)
 
     def discover_plugins(self) -> List[LV2Plugin]:
         return self._loader.discover_sync()

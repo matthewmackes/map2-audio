@@ -2,6 +2,7 @@ import asyncio
 from types import SimpleNamespace
 
 from app.routes import health as health_routes
+from app.services import system_health_summary
 
 
 class _FakeOrchestrator:
@@ -79,10 +80,10 @@ def _patch_psutil(monkeypatch):
         def memory_info(self):
             return SimpleNamespace(rss=256 * 1024 * 1024)
 
-    monkeypatch.setattr(health_routes.os, "getpid", lambda: 1234)
-    monkeypatch.setattr(health_routes.psutil, "Process", lambda pid: _Process())
-    monkeypatch.setattr(health_routes.psutil, "virtual_memory", lambda: SimpleNamespace(percent=45.0))
-    monkeypatch.setattr(health_routes.psutil, "cpu_percent", lambda interval=0.1: 12.5)
+    monkeypatch.setattr(system_health_summary.os, "getpid", lambda: 1234)
+    monkeypatch.setattr(system_health_summary.psutil, "Process", lambda pid: _Process())
+    monkeypatch.setattr(system_health_summary.psutil, "virtual_memory", lambda: SimpleNamespace(percent=45.0))
+    monkeypatch.setattr(system_health_summary.psutil, "cpu_percent", lambda interval=0.1: 12.5)
 
 
 async def _fake_get_metrics_collector():
@@ -118,6 +119,12 @@ def test_health_check_returns_healthy_without_dependency_errors(monkeypatch):
     assert payload["services_total"] == 2
     assert payload["services_running"] == payload["services_total"]
     assert payload["buffer_underruns"] == 0
+    assert payload["subsystems"]["system"]["status"] == "healthy"
+    assert payload["subsystems"]["orchestrator"]["services_total"] == 2
+    assert payload["subsystems"]["performance"]["buffer_underruns"] == 0
+    assert payload["subsystems"]["plugins"]["plugins_loaded"] == 12
+    assert "deployment" in payload["subsystems"]
+    assert "health_monitor" in payload["subsystems"]
 
 
 def test_health_check_uses_juce_engine_service_lookup(monkeypatch):

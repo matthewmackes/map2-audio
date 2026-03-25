@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-25 - Added T407 theme settings modal-flow reorganization
+Last updated: 2026-03-25 - Closed T391/T403/T406 route-audit follow-up and added concrete duplicate-route remediation tasks
 
 ## Active Blockers Only
 
@@ -6380,7 +6380,7 @@ Last updated: 2026-03-25 07:49 EDT - Codex
   - Validation passed with `pytest tests/test_connection_pool.py tests/test_request_queue.py tests/test_health_monitor.py tests/test_chains_ab_mode_identity.py -q`.
 
 ID: T391
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Delete 7 unregistered route files with no callers
 Description:
 - Goal / acceptance criteria: Delete these route files that are never registered in `app/main.py` and have no frontend callers: `app/routes/base.py`, `app/routes/connection_pool.py`, `app/routes/request_queue.py`, `app/routes/websocket_metrics.py`, `app/routes/prometheus_exporter.py`, `app/routes/prometheus_metrics.py`, `app/routes/chains_ab_mode.py`. Verify server starts without errors.
@@ -6390,10 +6390,11 @@ Description:
 - Required outputs: 7 files deleted, server starts cleanly.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 08:24 EDT - Codex
-- Blocked notes:
-  - The audit assumption is incorrect for at least part of the set: `app/routes/base.py` is imported by `app/routes/reverb.py`, and `app/routes/chains_ab_mode.py` is exercised by `tests/test_chains_ab_mode_identity.py`.
-  - This item needs per-file caller/ownership review before any deletions are attempted.
+Last updated: 2026-03-25 09:48 EDT - Codex
+- Completion notes:
+  - Completed the per-file caller review that the original audit skipped: `app/routes/base.py` is a shared utility module and was correctly retained, while `app/routes/chains_ab_mode.py` was confirmed live via current frontend fetch calls and is now registered in `app/main.py`.
+  - Deleted the genuinely dead unregistered route files `app/routes/connection_pool.py`, `app/routes/request_queue.py`, `app/routes/prometheus_exporter.py`, `app/routes/prometheus_metrics.py`, and `app/routes/websocket_metrics.py`.
+  - Added `tests/test_chains_ab_mode_route_registration.py` to lock the live A/B chain endpoints into the route registration graph.
 
 ID: T392
 Status: [✓] Done
@@ -6501,7 +6502,7 @@ Last updated: 2026-03-25 08:20 EDT - Codex
 ### Phase C: Consolidate Duplicates
 
 ID: T398
-Status: [ ] Todo
+Status: [✓] Done
 Title: Complete plugin loader unification — migrate remaining imports to plugin_loader_unified.py
 Description:
 - Goal / acceptance criteria: `app/services/plugin_loader_unified.py` claims to consolidate `plugin_loader_v2.py`, `lv2_discovery.py`, and `lv2_enhanced.py`, but production code in `folder_scanner.py`, `plugins.py`, and `plugin_scanner.py` still imports the legacy loaders directly. Migrate all production imports to the unified loader. Update tests. Then delete `plugin_loader_v2.py` and `plugin_manager_v3.py`. Evaluate whether `lv2_discovery.py`/`lv2_enhanced.py` should be kept as internal modules or deleted.
@@ -6511,10 +6512,15 @@ Description:
 - Required outputs: Single canonical loader, legacy files deleted, all plugin operations work, `pytest` passes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:37 EDT - Codex
+- Completion notes:
+  - Migrated production LV2 discovery in `app/services/folder_scanner.py`, `app/services/plugin_scanner.py`, and `app/routes/plugins.py` onto `plugin_loader_unified.py`.
+  - Added fuller compatibility methods to `PluginLoaderV2`/`RealLV2Loader` inside `plugin_loader_unified.py` so old test/workflow expectations still map onto the unified implementation.
+  - Moved the non-loader metadata/cache helpers out of the legacy file into `app/services/plugin_catalog.py`, then deleted `app/services/plugin_loader_v2.py` and `app/services/plugin_manager_v3.py`.
+  - Validation passed with `pytest tests/test_phase5.py tests/test_plugins.py tests/test_advanced.py tests/test_advanced_plugins.py -q`.
 
 ID: T399
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract shared scraper_base from IR and SoundFont libraries
 Description:
 - Goal / acceptance criteria: `app/services/ir_library/scraper_base.py` (551 lines) and `app/services/soundfont_library/scraper_base.py` (415 lines) have near-identical structure (DownloadState enum, checksum verification, async download pipeline). Extract a shared `app/services/common/scraper_base.py` and have both libraries inherit from it.
@@ -6524,7 +6530,11 @@ Description:
 - Required outputs: Shared base class, both library scraper bases refactored, all scraping tests pass.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:45 EDT - Codex
+- Completion notes:
+  - Extracted shared download/rate-limit/progress/archive infrastructure into `app/services/common/scraper_base.py`.
+  - Rebuilt `app/services/ir_library/scraper_base.py` and `app/services/soundfont_library/scraper_base.py` as thin library-specific subclasses, preserving IR checksum validation and ZIP extraction behavior.
+  - Validation passed with `pytest tests/test_scraper_interface_compliance.py tests/test_improvements.py -q`.
 
 ID: T400
 Status: [✓] Done
@@ -6547,7 +6557,7 @@ Last updated: 2026-03-25 08:18 EDT - Codex
 ### Phase D: Refactor Fragmented Subsystems
 
 ID: T401
-Status: [ ] Todo
+Status: [✓] Done
 Title: Consolidate health monitoring hierarchy (8 services, 5 routes)
 Description:
 - Goal / acceptance criteria: Define a canonical health service hierarchy. Currently fragmented across 8 services (`health_checker.py`, `health_monitor.py`, `audio_health_monitor.py`, `plugin_health.py`, `node_health_service.py`, `deployment_health.py`, `cluster/health_aggregator.py`, `cluster/post_update_health.py`) and 5 routes (`health.py`, `health_monitor.py` NOT registered, `cluster_health.py`, `cluster_health_extended.py`, `deployment_health.py`). Establish clear aggregation hierarchy, consolidate overlapping scopes, expose unified `GET /api/health` returning structured subsystem status.
@@ -6557,7 +6567,11 @@ Description:
 - Required outputs: Clear health service hierarchy documented, redundant services consolidated, unified health endpoint.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 09:14 EDT - Codex
+- Completion notes:
+  - Extracted the `/api/health` aggregation logic from `app/routes/health.py` into the new canonical service `app/services/system_health_summary.py`, so the public health hierarchy now has one reusable assembly point instead of route-local duplication.
+  - Kept the structured `subsystems` payload and all legacy top-level compatibility fields intact while centralizing the orchestrator, performance, audio, node, deployment, health-monitor, and MIDI-cluster summaries behind the new service.
+  - Expanded coverage beyond the single route test file with new health-service tests for the canonical snapshot builder, audio health summary behavior, deployment health aggregation, and cluster visibility health payload details.
 
 ID: T402
 Status: [✓] Done
@@ -6579,7 +6593,7 @@ Last updated: 2026-03-25 08:20 EDT - Codex
 ### Phase E: Strengthen Tests and Verification
 
 ID: T403
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Add route prefix uniqueness CI check
 Description:
 - Goal / acceptance criteria: Create a test that scans all registered route modules, extracts their APIRouter prefixes, and asserts no two registered routers share the same prefix. This is how 3 prefix collisions (T394-T396) went undetected.
@@ -6589,14 +6603,14 @@ Description:
 - Required outputs: New test file, runs in CI, catches duplicate prefixes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 08:21 EDT - Codex
-- Blocked notes:
-  - The current registered router graph intentionally reuses parent prefixes, so a blanket “no two registered routers share the same prefix” assertion would fail on valid topology.
-  - Verified collisions in `app/main.py` registration: blank-prefix routers (`websocket`, `websocket_rt`, `drums`, `expression`), `/api` (`effects_loops`, `health`), and `/api/cluster` (`cluster_flows`, `cluster_health`, `cluster_admin`).
-  - This task needs a narrower invariant, such as disallowing accidental exact-prefix collisions outside an explicit allowlist or checking for duplicate concrete path+method registrations instead of parent prefixes.
+Last updated: 2026-03-25 09:48 EDT - Codex
+- Completion notes:
+  - Replaced the invalid prefix-uniqueness idea with a narrower CI guard in `tests/test_route_registration_policy.py` that inspects the built FastAPI app for duplicate concrete HTTP method+path registrations.
+  - Fixed two concrete duplicate-route collisions while wiring the guard: `app/routes/deployment.py` now exposes its mode-specific check at `/api/deployment/health/mode`, and `app/routes/lcd_events.py` now exposes the event-system summary at `/api/lcd/system-status` instead of shadowing `/api/lcd/status`.
+  - The guard now locks the current known duplicate concrete operations to an explicit set so any new collision fails CI immediately, and the remaining known duplicate families are tracked below as dedicated follow-up tasks.
 
 ID: T404
-Status: [ ] Todo
+Status: [✓] Done
 Title: Update plugin tests to use unified loader instead of legacy loaders
 Description:
 - Goal / acceptance criteria: Tests currently import `plugin_loader_v2` and `plugin_manager_v3` which are deletion candidates in T398. Migrate these test imports to use `plugin_loader_unified` so tests don't break when legacy loaders are deleted.
@@ -6606,10 +6620,14 @@ Description:
 - Required outputs: All plugin tests import from unified loader, `pytest` passes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:37 EDT - Codex
+- Completion notes:
+  - Updated `tests/test_phase5.py` to import the compatibility surface from `plugin_loader_unified.py` instead of `plugin_loader_v2.py`.
+  - Updated `tests/test_advanced.py` and `tests/test_advanced_plugins.py` to import metadata/cache helpers from `app/services/plugin_catalog.py` instead of `plugin_manager_v3.py`.
+  - Validation passed with `pytest tests/test_phase5.py tests/test_plugins.py tests/test_advanced.py tests/test_advanced_plugins.py -q`.
 
 ID: T405
-Status: [ ] Todo
+Status: [✓] Done
 Title: Add health monitoring integration test coverage
 Description:
 - Goal / acceptance criteria: Currently 1 test file for 13 health implementation files. Add integration tests covering the health aggregation hierarchy, audio health monitor, plugin health, and cluster health endpoints.
@@ -6619,10 +6637,14 @@ Description:
 - Required outputs: New test files, meaningful coverage of health service hierarchy.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 09:14 EDT - Codex
+- Completion notes:
+  - Added `tests/test_health_services.py` to cover the canonical health aggregation hierarchy, `AudioHealthMonitor` summary behavior, `DeploymentModeHealthChecker.get_overall_status()`, and cluster-health visibility metadata.
+  - Updated `tests/test_health_routes.py` to keep the public `/api/health` contract pinned after the route-to-service extraction.
+  - Health monitoring now has direct coverage across the route, aggregation service, audio monitor, deployment checker, and cluster health surfaces instead of relying on one route-only file.
 
 ID: T406
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Add unregistered-route-file CI check
 Description:
 - Goal / acceptance criteria: Create a test that scans `app/routes/` for all files containing `APIRouter`, then verifies each is either registered in `main.py`'s `route_modules` list or individually registered. This prevents abandoned route files from accumulating (9 were found in this audit).
@@ -6632,11 +6654,54 @@ Description:
 - Required outputs: New test file, runs in CI.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 08:23 EDT - Codex
-- Blocked notes:
-  - `T391` and `T392` were not enough to make this check pass; an alias-aware scan of `app/main.py` still finds 7 route files with `APIRouter` that are neither in `route_modules` nor individually registered.
-  - Current unregistered inventory: `base`, `chains_ab_mode`, `connection_pool`, `prometheus_exporter`, `prometheus_metrics`, `request_queue`, and `websocket_metrics`.
-  - This task needs an explicit policy for whether these files should be deleted, registered, or exempted before a CI guard can be added without creating a permanent failure.
+Last updated: 2026-03-25 09:48 EDT - Codex
+- Completion notes:
+  - Added `tests/test_route_registration_policy.py` to scan `app/routes/` for files that actually instantiate `APIRouter(...)` and verify that each one is present in `app/main.py`'s registration graph.
+  - Tightened the scan to parse real `APIRouter(...)` calls rather than matching docstring text, which keeps utility modules like `app/routes/base.py` from generating false positives.
+  - The guard passes after registering `chains_ab_mode.py` and deleting the dead unregistered route modules from `T391`.
+
+ID: T408
+Status: [✓] Done
+Title: Resolve duplicate engine snapshot listing route ownership
+Description:
+- Goal / acceptance criteria: Remove the duplicate `GET /api/engine/snapshots` registration currently provided by both `app/routes/engine.py` and `app/routes/snapshots.py`. Choose one canonical owner, preserve the live frontend snapshot bar behavior, and update focused tests accordingly.
+- Why it matters: The new concrete route-collision guard now documents that the snapshot listing endpoint is registered twice, which creates silent shadowing risk and ambiguous maintenance ownership.
+- Dependencies: T403
+- Estimated effort: Medium
+- Required outputs: Single owner for `GET /api/engine/snapshots`, updated tests, and removal from the duplicate-route allowlist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 09:54 EDT - Codex
+- Completion notes:
+  - Removed the duplicate `GET /api/engine/snapshots` handler from `app/routes/engine.py`, leaving `app/routes/snapshots.py` as the sole owner of the snapshot listing endpoint the frontend snapshot bar already uses.
+  - Added `tests/test_engine_snapshot_route_ownership.py` and updated `tests/test_route_registration_policy.py` so the duplicate-route allowlist no longer includes the snapshot listing path.
+  - Validation passed with `pytest tests/test_engine_snapshot_route_ownership.py tests/test_route_registration_policy.py tests/test_chains_ab_mode_identity.py tests/test_chains_ab_mode_route_registration.py -q`.
+
+ID: T409
+Status: [ ] Todo
+Title: Resolve duplicate cluster admin and update route ownership
+Description:
+- Goal / acceptance criteria: Remove the duplicate concrete route registrations for `GET /api/cluster/nodes`, `GET /api/cluster/health`, `GET /api/cluster/health/{node_id}`, `GET /api/cluster/update/schedule`, and `GET /api/cluster/update/history` across `cluster_flows.py`, `cluster_health.py`, `cluster_admin.py`, and `cluster_update.py`. Keep one canonical owner per endpoint and preserve current frontend behavior.
+- Why it matters: These duplicates sit on heavily used cluster-admin paths, so shadowing here is operationally riskier than an unused dead route.
+- Dependencies: T403
+- Estimated effort: High
+- Required outputs: Canonical route ownership for the overlapping cluster paths, updated tests, and removal from the duplicate-route allowlist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 09:48 EDT - Codex
+
+ID: T410
+Status: [ ] Todo
+Title: Resolve duplicate cluster config push and rollback routes
+Description:
+- Goal / acceptance criteria: Remove the duplicate `POST /api/cluster/config/push` and `POST /api/cluster/config/rollback` registrations currently split between `app/routes/cluster_admin.py` and `app/routes/config_api.py`. Preserve current config distribution behavior and node-to-node push flows while leaving one public owner for each endpoint.
+- Why it matters: Cluster config propagation is write-path behavior; duplicate registrations here can silently send callers to the wrong implementation.
+- Dependencies: T403
+- Estimated effort: Medium
+- Required outputs: Single route owner for the overlapping config endpoints, updated tests, and removal from the duplicate-route allowlist.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 09:48 EDT - Codex
 
 ID: T407
 Status: [✓] Done

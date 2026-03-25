@@ -1,8 +1,5 @@
 """
-Plugin Scanner Service - Full LV2 Plugin Discovery with Caching
-
-Provides comprehensive plugin discovery, caching, and search functionality.
-Integrates with lv2_enhanced.py for full LV2 spec compliance.
+Plugin Scanner Service - unified-loader backed discovery and search.
 """
 
 import logging
@@ -14,6 +11,7 @@ from pathlib import Path
 from dataclasses import dataclass, asdict
 from datetime import datetime
 
+from app.services.plugin_loader_unified import get_plugin_loader
 from app.utils.singleton import Singleton
 from app.utils.logging_utils import get_logger
 
@@ -145,49 +143,50 @@ class PluginScanner(Singleton):
         self._plugin_cache.clear()
         scan_time = datetime.now().isoformat()
 
-        # Scan LV2 plugins
         try:
-            from app.services.lv2_enhanced import get_lv2_service
-            lv2_service = get_lv2_service()
-
-            for plugin_info in lv2_service.discover_all_plugins():
-                # Map category
-                category = "Utility"
-                if plugin_info.categories:
-                    cat_name = plugin_info.categories[0].name
-                    category = cat_name.replace("_", " ").title()
-
-                # Count ports
-                control_ports = len([p for p in plugin_info.ports
-                                    if p.port_type.name == "CONTROL"])
-                audio_inputs = len([p for p in plugin_info.ports
-                                   if p.port_type.name == "AUDIO" and p.direction.name == "INPUT"])
-                audio_outputs = len([p for p in plugin_info.ports
-                                    if p.port_type.name == "AUDIO" and p.direction.name == "OUTPUT"])
+            loader = get_plugin_loader()
+            for plugin_info in loader.discover_plugins(force_refresh=force_rescan):
+                control_ports = len(
+                    [
+                        port
+                        for port in plugin_info.ports
+                        if port.port_type.name == "CONTROL"
+                    ]
+                )
+                audio_inputs = len(
+                    [
+                        port
+                        for port in plugin_info.ports
+                        if port.port_type.name == "AUDIO" and port.direction.name == "INPUT"
+                    ]
+                )
+                audio_outputs = len(
+                    [
+                        port
+                        for port in plugin_info.ports
+                        if port.port_type.name == "AUDIO" and port.direction.name == "OUTPUT"
+                    ]
+                )
 
                 self._plugin_cache[plugin_info.uri] = PluginMetadata(
                     uri=plugin_info.uri,
                     name=plugin_info.name,
-                    category=category,
+                    category=plugin_info.category,
                     author=plugin_info.author,
-                    path=plugin_info.bundle_path,
+                    path="",
                     audio_inputs=audio_inputs,
                     audio_outputs=audio_outputs,
                     control_ports=control_ports,
-                    is_rt_safe=plugin_info.has_hard_rt_capable,
-                    has_latency=plugin_info.has_latency,
-                    latency_samples=plugin_info.reported_latency_samples,
-                    features=self._extract_features(plugin_info),
-                    last_scanned=scan_time
+                    is_rt_safe=plugin_info.is_hard_rt_capable,
+                    has_latency=plugin_info.latency_port is not None,
+                    latency_samples=0,
+                    features=sorted(plugin_info.required_features | plugin_info.optional_features),
+                    last_scanned=scan_time,
                 )
-        except ImportError:
-            logger.warning("lv2_enhanced not available, using fallback scanner")
-            self._scan_lv2_fallback(scan_time)
         except Exception as e:
-            logger.error(f"Error using lv2_enhanced: {e}")
+            logger.error(f"Error using unified plugin loader: {e}")
             self._scan_lv2_fallback(scan_time)
 
-        # Update categories
         self._update_categories()
 
         # Save cache
