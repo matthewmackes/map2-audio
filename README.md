@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**818** Python | **1083** TypeScript | **298** C++/H | **123** Docs | **870** total commits | **2** stars | **0** forks | **0** open issues
+**818** Python | **1116** TypeScript | **298** C++/H | **123** Docs | **872** total commits | **2** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e5b2f3db`](https://github.com/matthewmackes/map2-audio/commit/e5b2f3db6d7801cdb798191fc7261a55b8a39261) | Add Ink TUI foundation and home screen | Map2 Audio | 2026-03-25 |
+| [`63dd11b8`](https://github.com/matthewmackes/map2-audio/commit/63dd11b8473462e525c8df6ea992206d36e0c99c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`27a9e2d7`](https://github.com/matthewmackes/map2-audio/commit/27a9e2d762531530aef223ab26cb61773b2576d6) | Add per-plugin appearance customization | Map2 Audio | 2026-03-25 |
 | [`0a370287`](https://github.com/matthewmackes/map2-audio/commit/0a3702875a4ab7f0dbbe8efa2c644dda4bbc951a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`ce88fc8b`](https://github.com/matthewmackes/map2-audio/commit/ce88fc8b1374061dde207f7a070ac7e78f209469) | Delete PiPedal legacy frontend tree | Map2 Audio | 2026-03-25 |
 | [`178d00f1`](https://github.com/matthewmackes/map2-audio/commit/178d00f1471f60210b616f66c3cee44f2f705ca2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 | [`08f47f9a`](https://github.com/matthewmackes/map2-audio/commit/08f47f9a860e298ed493fc6b7284e74edefc6965) | Resolve remaining duplicate cluster routes | Map2 Audio | 2026-03-25 |
 | [`927f4014`](https://github.com/matthewmackes/map2-audio/commit/927f4014da54a2bf291889a92bcca57acbf633e5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
-| [`2a9b11e4`](https://github.com/matthewmackes/map2-audio/commit/2a9b11e4050f6a5d03181563a3fdcb9822a80e58) | Complete route audit cleanup and health consolidation | Map2 Audio | 2026-03-25 |
-| [`bf234dd9`](https://github.com/matthewmackes/map2-audio/commit/bf234dd9e8038b56f9f34c762f59d6389f6da578) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
