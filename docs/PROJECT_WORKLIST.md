@@ -6579,7 +6579,7 @@ Last updated: 2026-03-25 08:20 EDT - Codex
 ### Phase E: Strengthen Tests and Verification
 
 ID: T403
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Add route prefix uniqueness CI check
 Description:
 - Goal / acceptance criteria: Create a test that scans all registered route modules, extracts their APIRouter prefixes, and asserts no two registered routers share the same prefix. This is how 3 prefix collisions (T394-T396) went undetected.
@@ -6589,7 +6589,11 @@ Description:
 - Required outputs: New test file, runs in CI, catches duplicate prefixes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 - Codex
+Last updated: 2026-03-25 08:21 EDT - Codex
+- Blocked notes:
+  - The current registered router graph intentionally reuses parent prefixes, so a blanket “no two registered routers share the same prefix” assertion would fail on valid topology.
+  - Verified collisions in `app/main.py` registration: blank-prefix routers (`websocket`, `websocket_rt`, `drums`, `expression`), `/api` (`effects_loops`, `health`), and `/api/cluster` (`cluster_flows`, `cluster_health`, `cluster_admin`).
+  - This task needs a narrower invariant, such as disallowing accidental exact-prefix collisions outside an explicit allowlist or checking for duplicate concrete path+method registrations instead of parent prefixes.
 
 ID: T404
 Status: [ ] Todo
