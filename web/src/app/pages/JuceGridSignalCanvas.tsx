@@ -49,6 +49,7 @@ export interface JuceGridSignalCanvasProps {
   onDeletePlugin?: (uri: string, position: number) => void
   onReorderPlugins: (pluginOrder: PluginOrderRef[]) => void
   onAddPlugin?: () => void
+  showAddPluginSlot?: boolean
   audioStatus?: JuceGridAudioInterfaceStatus
   audioOutputStatus?: JuceGridAudioInterfaceStatus
   pluginLevels?: Record<string, { in: number; out: number }>
@@ -400,6 +401,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   onDeletePlugin,
   onReorderPlugins,
   onAddPlugin,
+  showAddPluginSlot,
   audioStatus,
   audioOutputStatus,
   showEndpoints = false,
@@ -515,11 +517,11 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   const signalRows = useMemo(
     () => buildSignalGridRows(
       pagedPlugins,
-      tabletMode ? false : Boolean(onAddPlugin),
+      tabletMode ? false : (showAddPluginSlot ?? Boolean(onAddPlugin)),
       tabletMode ? TABLET_BRANCH_ROW_CAPACITY : rowCapacity,
       !tabletMode,
     ),
-    [onAddPlugin, pagedPlugins, rowCapacity, tabletMode],
+    [onAddPlugin, pagedPlugins, rowCapacity, showAddPluginSlot, tabletMode],
   )
 
   const isSelectedPlugin = useCallback((plugin: ChainPlugin | undefined) => {

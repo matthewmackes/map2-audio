@@ -1421,6 +1421,7 @@ export function JuceGridPage() {
     () => flowSlots.find((flow) => flow.id !== routing.activeSlotId)?.id ?? null,
     [flowSlots, routing.activeSlotId],
   )
+  const addEffectFlowId = routing.activeSlotId ?? activeFlow?.id ?? null
   const routingFocusButtons = useMemo(() => (
     flowSlots.map((slot, index) => {
       const flowLabel = SLOT_COLORS[index]?.label || slot.label
@@ -3934,7 +3935,8 @@ export function JuceGridPage() {
           if (!flowChain) return
           reorderMutation.mutate({ chainId: flowChain.id, pluginOrder })
         }}
-        onAddPlugin={handleAddPlugin}
+        onAddPlugin={flow.id === addEffectFlowId ? handleAddPlugin : undefined}
+        showAddPluginSlot={flow.id === addEffectFlowId}
         audioStatus={audioInterfaceStatus}
         audioOutputStatus={audioOutputStatus}
         pluginLevels={pluginLevels}

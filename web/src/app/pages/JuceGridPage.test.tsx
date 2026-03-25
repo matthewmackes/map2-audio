@@ -192,6 +192,8 @@ jest.mock('../../map2/api', () => ({
   metricsApi: mockMetricsApi,
   flowSnapshotsApi: mockFlowSnapshotsApi,
   midiApiV2: mockMidiApiV2,
+  getWsBaseUrl: () => 'ws://localhost:3000',
+  getWsUrl: () => 'ws://localhost:3000/ws',
 }))
 
 jest.mock('../components/Toasts', () => ({
@@ -324,17 +326,19 @@ jest.mock('./JuceGridSignalCanvas', () => ({
     chain,
     onAddPlugin,
     onPluginSelect,
+    showAddPluginSlot,
   }: {
     chain?: { plugins?: Array<{ uri: string; position: number }> } | null
     onAddPlugin?: () => void
     onPluginSelect?: (uri: string, position: number) => void
+    showAddPluginSlot?: boolean
   }) => {
     const targetPlugin = chain?.plugins?.find((plugin) => plugin.uri === 'map2://juce/modulation/chorus')
       ?? chain?.plugins?.[0]
 
     return (
     <div data-testid="juce-grid-signal-canvas">
-      <button type="button" onClick={onAddPlugin}>Add block</button>
+      {showAddPluginSlot && onAddPlugin && <button type="button" onClick={onAddPlugin}>Add block</button>}
       {targetPlugin && (
         <button
           type="button"
@@ -1690,6 +1694,164 @@ describe('JuceGridPage snapshot modal workflow', () => {
       expect(screen.queryByText('Test Chorus')).toBeNull()
     })
     expect(mockSetQueryData).toHaveBeenCalled()
+  })
+
+  it('shows the add block control only on the active flow', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#0f62fe', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 2, label: 'B', color: '#24a148', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_routing_v2', JSON.stringify({
+      mode: 'ab_switch',
+      activeSlotId: 'flow-0',
+      blendPositions: {},
+      morphProgress: 0,
+      morphSourceSlotId: null,
+      morphTargetSlotId: null,
+      seriesOrder: ['flow-0', 'flow-1'],
+    }))
+    localStorage.setItem('map2_juce_grid_active_v2', '0')
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'lead-flow',
+          kind: 'parallel',
+          title: 'Lead flow',
+          flowIds: ['flow-0', 'flow-1'],
+          tone: 'active',
+        },
+      ],
+      flowStates: {
+        'flow-0': {
+          flowId: 'flow-0',
+          activeAudio: true,
+          dimmed: false,
+          placeholder: false,
+          annotation: 'Live branch',
+          secondaryAnnotation: 'Lead chain',
+          sidechainKey: false,
+        },
+        'flow-1': {
+          flowId: 'flow-1',
+          activeAudio: false,
+          dimmed: true,
+          placeholder: false,
+          annotation: 'Inactive branch',
+          secondaryAnnotation: 'Standby chain',
+          sidechainKey: false,
+        },
+      },
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await screen.findByText('Song 1')
+
+    const activeCard = container.querySelector('.juce-grid-page__flow-card.is-active') as HTMLElement | null
+    const inactiveCard = container.querySelector('.juce-grid-page__flow-card:not(.is-active)') as HTMLElement | null
+
+    expect(activeCard).toBeTruthy()
+    expect(inactiveCard).toBeTruthy()
+    expect(within(activeCard as HTMLElement).getByRole('button', { name: 'Add block' })).toBeTruthy()
+    expect(within(inactiveCard as HTMLElement).queryByRole('button', { name: 'Add block' })).toBeNull()
+  })
+
+  it('keeps the add block control on the routing-active branch even when another flow is selected', async () => {
+    localStorage.setItem('map2_juce_grid_flows_v2', JSON.stringify([
+      { id: 'flow-0', chainId: 1, label: 'A', color: '#0f62fe', muted: false, solo: false, dryWetMix: 100 },
+      { id: 'flow-1', chainId: 2, label: 'B', color: '#24a148', muted: false, solo: false, dryWetMix: 100 },
+    ]))
+    localStorage.setItem('map2_juce_grid_routing_v2', JSON.stringify({
+      mode: 'ab_switch',
+      activeSlotId: 'flow-0',
+      blendPositions: {},
+      morphProgress: 0,
+      morphSourceSlotId: null,
+      morphTargetSlotId: null,
+      seriesOrder: ['flow-0', 'flow-1'],
+    }))
+    localStorage.setItem('map2_juce_grid_active_v2', '1')
+    mockLivePathLayout = {
+      status: 'available',
+      activeFlowIds: ['flow-0'],
+      primaryFlowId: 'flow-0',
+      secondaryFlowId: null,
+      mobileSummary: ['Flow A live'],
+      groups: [
+        {
+          id: 'lead-flow',
+          kind: 'parallel',
+          title: 'Lead flow',
+          flowIds: ['flow-0', 'flow-1'],
+          tone: 'active',
+        },
+      ],
+      flowStates: {
+        'flow-0': {
+          flowId: 'flow-0',
+          activeAudio: true,
+          dimmed: false,
+          placeholder: false,
+          annotation: 'Live branch',
+          secondaryAnnotation: 'Lead chain',
+          sidechainKey: false,
+        },
+        'flow-1': {
+          flowId: 'flow-1',
+          activeAudio: false,
+          dimmed: true,
+          placeholder: false,
+          annotation: 'Inactive branch',
+          secondaryAnnotation: 'Standby chain',
+          sidechainKey: false,
+        },
+      },
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <JuceGridPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await screen.findByText('Song 1')
+
+    const routingActiveCard = container.querySelector('.juce-grid-page__flow-card:not(.is-active)') as HTMLElement | null
+    const selectedInactiveCard = container.querySelector('.juce-grid-page__flow-card.is-active') as HTMLElement | null
+
+    expect(routingActiveCard).toBeTruthy()
+    expect(selectedInactiveCard).toBeTruthy()
+    expect(within(routingActiveCard as HTMLElement).getByRole('button', { name: 'Add block' })).toBeTruthy()
+    expect(within(selectedInactiveCard as HTMLElement).queryByRole('button', { name: 'Add block' })).toBeNull()
   })
 
   it('renders canonical MIDI mappings from midiApiV2 in the modal', async () => {
