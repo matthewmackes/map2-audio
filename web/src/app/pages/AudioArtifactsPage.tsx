@@ -16,7 +16,6 @@ import {
   SideNav,
   SideNavItems,
   SideNavLink,
-  SideNavMenu,
   SkeletonText,
   Tag,
   Table,
@@ -84,6 +83,17 @@ interface CategoryMeta {
   statusLabel: (item: ArtifactRow) => string
   statusType: (item: ArtifactRow) => 'green' | 'gray' | 'blue' | 'warm-gray' | 'red'
   columns: Array<{ key: string; header: string }>
+}
+
+interface ArtifactNavItem {
+  key: string
+  label: string
+  description: string
+  to: string
+  icon: CarbonIconType
+  active: boolean
+  onOpen: () => void
+  stateLabel?: string
 }
 
 interface ArtifactRow {
@@ -998,6 +1008,28 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
   const showArtifactsAside = !discoverMode && ((detailOpen && selectedItem !== null) || syncDrawerOpen)
   const discoverInitialTab = DISCOVER_TAB_BY_CATEGORY[activeCategory]
   const selectedNodeLabel = nodes.find((node) => node.nodeId === selectedNodeId)?.hostname ?? 'this node'
+  const sidebarNavItems = useMemo<ArtifactNavItem[]>(() => [
+    {
+      key: 'discover',
+      label: 'Download & Discover',
+      description: 'Open the route-native intake workspace for plugin packs, models, impulse responses, and SoundFonts.',
+      to: '/artifacts/discover',
+      icon: CloudUpload,
+      active: discoverMode,
+      onOpen: openDiscoverRoute,
+      stateLabel: discoverMode ? 'Current route' : 'Intake',
+    },
+    ...CATEGORIES.map((item) => ({
+      key: item.id,
+      label: item.label,
+      description: item.description,
+      to: `/artifacts?category=${item.id}`,
+      icon: item.icon,
+      active: !discoverMode && item.id === activeCategory,
+      onOpen: () => openCategoryRoute(item.id),
+      stateLabel: !discoverMode && item.id === activeCategory ? `${totalItems} items` : item.primaryAction,
+    })),
+  ], [activeCategory, discoverMode, openCategoryRoute, openDiscoverRoute, totalItems])
 
   return (
     <section className="aap">
@@ -1107,34 +1139,70 @@ export function AudioArtifactsPage({ discoverMode = false }: AudioArtifactsPageP
           {/* Left SideNav */}
           <div className={`aap__sidenav${navAnimated ? ' aap__sidenav--visible' : ''}`}>
             <SideNav isFixedNav expanded aria-label="Artifact categories" className="aap__carbon-sidenav">
-              <SideNavItems>
-                <SideNavLink
-                  renderIcon={CloudUpload}
-                  onClick={(e) => { e.preventDefault(); openDiscoverRoute() }}
-                  href="/artifacts/discover"
-                  isActive={discoverMode}
-                  className={`aap__sidenav-link${discoverMode ? ' aap__sidenav-link--active' : ''}`}
-                >
-                  Download &amp; Discover
-                </SideNavLink>
-                <SideNavMenu title="Library categories" defaultExpanded>
-                  {CATEGORIES.map((c) => {
-                    const Icon = c.icon
-                    const isActive = !discoverMode && c.id === activeCategory
+              <div className="aap__sidebar-head">
+                <p className="aap__sidebar-eyebrow">Navigation</p>
+                <h2 className="aap__sidebar-title">Artifacts Library</h2>
+                <p className="aap__sidebar-copy">
+                  Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place.
+                </p>
+              </div>
+
+              <SideNavItems className="aap__sidebar-nav">
+                <div className="aap__sidebar-list" role="list">
+                  {sidebarNavItems.map((item) => {
+                    const Icon = item.icon
                     return (
-                      <SideNavLink
-                        key={c.id}
-                        renderIcon={Icon}
-                        onClick={(e) => { e.preventDefault(); openCategoryRoute(c.id) }}
-                        href={`/artifacts?category=${c.id}`}
-                        isActive={isActive}
-                        className={`aap__sidenav-link${isActive ? ' aap__sidenav-link--active' : ''}`}
+                      <article
+                        key={item.key}
+                        role="listitem"
+                        className={`aap__nav-item${item.active ? ' is-selected' : ''}`}
                       >
-                        {c.label}
-                      </SideNavLink>
+                        <SideNavLink
+                          href={item.to}
+                          isActive={item.active}
+                          className="aap__nav-item-main"
+                          aria-label={`Open ${item.label}`}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            item.onOpen()
+                          }}
+                          renderIcon={Icon}
+                        >
+                          <span className="aap__nav-item-copy">
+                            <span className="aap__nav-item-row">
+                              <span className="aap__nav-item-label">{item.label}</span>
+                              {item.stateLabel ? (
+                                <span className="aap__nav-item-state">{item.stateLabel}</span>
+                              ) : null}
+                            </span>
+                            <span className="aap__nav-item-desc">{item.description}</span>
+                          </span>
+                        </SideNavLink>
+                      </article>
                     )
                   })}
-                </SideNavMenu>
+                </div>
+
+                <div className="aap__sidebar-footer">
+                  <div className="aap__sidebar-stats" aria-label="Artifacts workspace status">
+                    <div className="aap__sidebar-stat">
+                      <span>Current node</span>
+                      <strong>{selectedNodeLabel}</strong>
+                    </div>
+                    <div className="aap__sidebar-stat">
+                      <span>Items in view</span>
+                      <strong>{discoverMode ? 'Discovery' : totalItems}</strong>
+                    </div>
+                    <div className="aap__sidebar-stat">
+                      <span>Sync queue</span>
+                      <strong>{activeSyncCount > 0 ? `${activeSyncCount} active` : 'Idle'}</strong>
+                    </div>
+                  </div>
+
+                  <div className="aap__sidebar-note">
+                    <p>Cluster-aware library, discovery, and inline detail workflows stay in the routed workspace rather than breaking into a separate product shell.</p>
+                  </div>
+                </div>
               </SideNavItems>
             </SideNav>
           </div>

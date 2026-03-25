@@ -199,6 +199,18 @@ describe('AudioArtifactsPage routed workspace', () => {
     }
   })
 
+  it('renders the upgraded left rail with headed workspace navigation and status context', async () => {
+    renderArtifacts('/artifacts?category=lv2-plugins')
+
+    expect(await screen.findByRole('heading', { name: 'Artifacts Library' })).toBeInTheDocument()
+    expect(screen.getByText('Move between intake and node-aware artifact families from one rail while keeping the working table and detail context in place.')).toBeInTheDocument()
+    expect(screen.getByText('Open the route-native intake workspace for plugin packs, models, impulse responses, and SoundFonts.')).toBeInTheDocument()
+    expect(screen.getByText('Current node')).toBeInTheDocument()
+    expect(screen.getAllByText('local-rack').length).toBeGreaterThan(0)
+    expect(screen.getByText('Items in view')).toBeInTheDocument()
+    expect(screen.getAllByText('1 items').length).toBeGreaterThan(0)
+  })
+
   it('renders the library route and opens inline detail and sync panels inside the workspace', async () => {
     renderArtifacts('/artifacts?category=lv2-plugins')
 

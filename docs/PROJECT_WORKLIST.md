@@ -6,7 +6,25 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-25 - Closed T388 by deleting web/src/pipedal after dependency extraction, guardrails, and deleted-tree validation
+Last updated: 2026-03-25 - Closed T413 by aligning the Audio Artifacts left rail with the upgraded routed workspace navigation spec
+
+ID: T413
+Status: [✓] Done
+Title: Align the Audio Artifacts routed left rail with the upgraded workspace navigation spec
+Description:
+- Goal / acceptance criteria: Refactor `web/src/app/pages/AudioArtifactsPage.tsx` and `web/src/app/pages/AudioArtifactsPage.css` so the routed `/artifacts` workspace uses the same upgraded left-hand navigation shell pattern as the newer Platforms and MIDI Hub pages: a headed rail, first-class nav entries, route-native discover entry, and sidebar footer/status context without changing the home page. Preserve existing category switching, discover routing, table/detail behavior, and mobile navigation behavior. Add or update focused regression coverage proving the upgraded rail renders and navigation still works.
+- Why it matters: The Artifacts route still exposes the older nested category sidenav while Platforms and MIDI Hub already have the upgraded routed left-rail treatment, so the web GUI feels inconsistent and does not meet the expected page-level navigation spec.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated Artifacts page/sidebar implementation, focused tests, validation evidence, and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 11:06 EDT - Codex
+- Completion notes:
+  - Reworked `web/src/app/pages/AudioArtifactsPage.tsx` so the routed Artifacts workspace now uses a headed left rail with first-class discover/category entries, route-state labels, and sidebar footer status cards instead of the older nested category menu.
+  - Updated `web/src/app/pages/AudioArtifactsPage.css` to style the new Artifacts rail in the same upgraded routed-shell visual language used by the newer page shells, while preserving existing mobile behavior and content layout.
+  - Extended `web/src/app/pages/AudioArtifactsPage.test.tsx` with a focused regression proving the upgraded left rail renders and the existing routed behaviors still pass.
+  - Validation: `npm --prefix web run typecheck` -> PASS; `npm --prefix web test -- --runInBand web/src/app/pages/AudioArtifactsPage.test.tsx` -> PASS; `npm --prefix web run build` -> PASS with the existing Vite dynamic-import warning only.
 
 ## Active Blockers Only
 
