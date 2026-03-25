@@ -38,7 +38,6 @@
     "src/TestApp.tsx"
   ],
   "exclude": [
-    "src/pipedal/**",
     "src/map2/index.ts",
     "src/map2/components/MAP2Dashboard.tsx",
     "src/map2/components/ChainBuilder.tsx",

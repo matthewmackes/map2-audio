@@ -38,7 +38,7 @@ import { usePluginChooser } from '../PluginChooserContext'
 import { buildCategoryTree } from '../utils/pluginFilters'
 import { CategoryNode, PluginFolder } from '../types'
 import { LegacyPluginIcon } from './LegacyPluginIcon'
-import { PluginType } from '../../../../pipedal/Lv2Plugin'
+import { PluginType, pluginTypeFromCategory } from '../pluginLegacyCompat'
 
 interface CategorySidebarProps {
   onCollapse?: () => void
@@ -103,28 +103,6 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
   const handleDeleteFolder = (folderId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     deleteFolder(folderId)
-  }
-
-  // Get category icon based on name
-  const getCategoryPluginType = (name: string): PluginType => {
-    const nameLower = name.toLowerCase()
-    if (nameLower.includes('compressor')) return PluginType.CompressorPlugin
-    if (nameLower.includes('limiter')) return PluginType.LimiterPlugin
-    if (nameLower.includes('gate')) return PluginType.GatePlugin
-    if (nameLower.includes('delay')) return PluginType.DelayPlugin
-    if (nameLower.includes('reverb')) return PluginType.ReverbPlugin
-    if (nameLower.includes('distortion')) return PluginType.DistortionPlugin
-    if (nameLower.includes('amplifier') || nameLower.includes('amp')) return PluginType.AmplifierPlugin
-    if (nameLower.includes('chorus')) return PluginType.ChorusPlugin
-    if (nameLower.includes('flanger')) return PluginType.FlangerPlugin
-    if (nameLower.includes('phaser')) return PluginType.PhaserPlugin
-    if (nameLower.includes('eq') || nameLower.includes('equalizer')) return PluginType.EQPlugin
-    if (nameLower.includes('filter')) return PluginType.FilterPlugin
-    if (nameLower.includes('modulator')) return PluginType.ModulatorPlugin
-    if (nameLower.includes('simulator')) return PluginType.SimulatorPlugin
-    if (nameLower.includes('dynamics')) return PluginType.CompressorPlugin
-    if (nameLower.includes('utility')) return PluginType.UtilityPlugin
-    return PluginType.Plugin
   }
 
   const isAllSelected = !state.selectedCategory && !state.showFavoritesOnly && !state.showRecentOnly && !state.selectedFolder
@@ -308,7 +286,7 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
           >
             <ListItemIcon sx={{ minWidth: 32 }}>
               <LegacyPluginIcon
-                pluginType={getCategoryPluginType(category.name)}
+                pluginType={pluginTypeFromCategory(category.name)}
                 size={18}
                 opacity={0.7}
               />

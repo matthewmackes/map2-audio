@@ -3,7 +3,7 @@
 // Unified plugin selection component for MAP2 Audio Platform
 // ============================================================================
 
-import { PluginType } from '../../../pipedal/Lv2Plugin'
+import { PluginType } from './pluginLegacyCompat'
 
 /**
  * Unified plugin format type

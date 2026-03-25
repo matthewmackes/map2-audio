@@ -1,9 +1,9 @@
 // ============================================================================
 // PluginChooser - Plugin Bridge Utility
-// Normalizes UiPlugin (pipedal) and Plugin (map2) into UnifiedPlugin format
+// Normalizes legacy PiPedal-shaped UiPlugin payloads and map2 Plugin payloads
 // ============================================================================
 
-import { UiPlugin, PluginType, UiControl } from '../../../../pipedal/Lv2Plugin'
+import { UiPlugin, PluginType, UiControl, pluginTypeFromCategory } from '../pluginLegacyCompat'
 import { Plugin, PluginParameter } from '../../../../map2/types'
 import { UnifiedPlugin, ParameterPreview, PluginFormat } from '../types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
@@ -117,35 +117,6 @@ function generateAutoTagsFromMap2(plugin: Plugin): string[] {
 }
 
 /**
- * Determine PluginType from category string
- */
-function categoryToPluginType(category: string): PluginType {
-  const categoryLower = category.toLowerCase()
-
-  if (categoryLower.includes('compressor')) return PluginType.CompressorPlugin
-  if (categoryLower.includes('limiter')) return PluginType.LimiterPlugin
-  if (categoryLower.includes('gate')) return PluginType.GatePlugin
-  if (categoryLower.includes('delay')) return PluginType.DelayPlugin
-  if (categoryLower.includes('reverb')) return PluginType.ReverbPlugin
-  if (categoryLower.includes('distortion')) return PluginType.DistortionPlugin
-  if (categoryLower.includes('amplifier') || categoryLower.includes('amp')) return PluginType.AmplifierPlugin
-  if (categoryLower.includes('chorus')) return PluginType.ChorusPlugin
-  if (categoryLower.includes('flanger')) return PluginType.FlangerPlugin
-  if (categoryLower.includes('phaser')) return PluginType.PhaserPlugin
-  if (categoryLower.includes('eq') || categoryLower.includes('equalizer')) return PluginType.EQPlugin
-  if (categoryLower.includes('filter')) return PluginType.FilterPlugin
-  if (categoryLower.includes('modulator')) return PluginType.ModulatorPlugin
-  if (categoryLower.includes('simulator')) return PluginType.SimulatorPlugin
-  if (categoryLower.includes('analyser') || categoryLower.includes('analyzer')) return PluginType.AnalyserPlugin
-  if (categoryLower.includes('utility')) return PluginType.UtilityPlugin
-  if (categoryLower.includes('generator')) return PluginType.GeneratorPlugin
-  if (categoryLower.includes('instrument')) return PluginType.InstrumentPlugin
-  if (categoryLower.includes('mixer')) return PluginType.MixerPlugin
-
-  return PluginType.Plugin
-}
-
-/**
  * Normalize a UiPlugin (from pipedal) to UnifiedPlugin format
  */
 export function normalizeUiPlugin(
@@ -204,7 +175,7 @@ export function normalizeMap2Plugin(
     authorHomepage: undefined,
     category: plugin.category || 'Plugin',
     displayType: isHw ? 'Hardware Effect' : (plugin.class_label || plugin.category || 'Plugin'),
-    pluginType: categoryToPluginType(plugin.category || ''),
+    pluginType: pluginTypeFromCategory(plugin.category || ''),
     tags: generateAutoTagsFromMap2(plugin),
     audioInputs: plugin.in_ports,
     audioOutputs: plugin.out_ports,

@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-03-25 - Closed T391/T403/T406 route-audit follow-up and added concrete duplicate-route remediation tasks
+Last updated: 2026-03-25 - Closed T388 by deleting web/src/pipedal after dependency extraction, guardrails, and deleted-tree validation
 
 ## Active Blockers Only
 
@@ -6332,7 +6332,7 @@ Full audit report: `.claude/plans/lively-toasting-music.md`
 ### Phase A: Safe Deletions
 
 ID: T388
-Status: [✗] Blocked
+Status: [✓] Done
 Title: Delete PiPedal legacy directory (229 dead files, zero imports)
 Description:
 - Goal / acceptance criteria: Remove `web/src/pipedal/` entirely — 229 files with zero imports from `web/src/app/`. Verify `npm run build` succeeds afterward.
@@ -6342,10 +6342,74 @@ Description:
 - Required outputs: Directory deleted, build passes.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-25 08:24 EDT - Codex
-- Blocked notes:
-  - The audit assumption is incorrect: `web/src/pipedal/` still has live imports from current code, including `web/src/shared/components/PluginChooser/*` importing `pipedal/Lv2Plugin`, and the directory is also still referenced by `web/CMakeLists.txt`.
-  - This item needs a decomposition/migration plan rather than direct deletion.
+Last updated: 2026-03-25 09:35 EDT - Codex
+Subtasks:
+ID: T388-subA
+Status: [✓] Done
+Title: Move PluginChooser off PiPedal type and icon imports
+Description:
+- Goal / acceptance criteria: Replace the remaining `web/src/shared/components/PluginChooser/*` imports from `web/src/pipedal/Lv2Plugin.tsx` and `web/src/pipedal/PluginIcon.tsx` with a local compatibility surface under active MAP2-owned/shared code, while preserving chooser behavior and icon/category semantics.
+- Why it matters: These are the only live runtime imports from the PiPedal directory in the current app/shared code, so they are the first hard dependency blocking any future directory deletion.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: New shared compatibility module(s), updated chooser imports, focused validation, and updated blocker notes if more PiPedal runtime imports remain.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 09:35 EDT - Codex
+ID: T388-subB
+Status: [✓] Done
+Title: Add a guard against new app/shared/map2 imports from web/src/pipedal
+Description:
+- Goal / acceptance criteria: Add an automated check that fails if active `web/src/app`, `web/src/shared`, or `web/src/map2` code introduces new imports from `web/src/pipedal/`.
+- Why it matters: The deletion effort will regress immediately if new runtime dependencies can quietly reattach to the legacy tree.
+- Dependencies: T388-subA
+- Estimated effort: Low
+- Required outputs: Test or lint-style guard with clear failure messaging.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 09:35 EDT - Codex
+ID: T388-subC
+Status: [✓] Done
+Title: Remove stale web/CMakeLists.txt PiPedal source-manifest dependency on the legacy tree
+Description:
+- Goal / acceptance criteria: Narrow or replace the `web/CMakeLists.txt` dependency list so it no longer enumerates the full `src/pipedal/` tree when the modern web build does not require it.
+- Why it matters: Even after runtime imports are removed, the stale source manifest still marks the entire PiPedal tree as live build input and blocks clean deletion.
+- Dependencies: T388-subA
+- Estimated effort: Medium
+- Required outputs: Updated CMake dependency handling plus validation that the supported web build path is unchanged.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 09:35 EDT - Codex
+ID: T388-subD
+Status: [✓] Done
+Title: Inventory the remaining PiPedal files after dependency removal
+Description:
+- Goal / acceptance criteria: Produce an updated file-level inventory of what remains under `web/src/pipedal/` after runtime and manifest dependencies are cut, grouped into delete-now, extract-first, and retain-for-license/reference buckets.
+- Why it matters: The original audit’s “229 dead files” claim is now known to be inaccurate, so the delete step needs a fresh evidence-backed inventory.
+- Dependencies: T388-subA, T388-subC
+- Estimated effort: Medium
+- Required outputs: Updated inventory notes in the canonical worklist or an adjacent audit artifact with exact counts and next actions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 09:35 EDT - Codex
+ID: T388-subE
+Status: [✓] Done
+Title: Delete the PiPedal legacy directory after migration slices close
+Description:
+- Goal / acceptance criteria: Remove `web/src/pipedal/` once the runtime imports, manifest references, and evidence inventory all confirm it is no longer needed, then keep the frontend build green.
+- Why it matters: This is the original directory-deletion outcome, but it must follow the migration slices instead of assuming dead code.
+- Dependencies: T388-subB, T388-subC, T388-subD
+- Estimated effort: Medium
+- Required outputs: Directory deletion, green validation, and final closure notes on `T388`.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-25 09:35 EDT - Codex
+- Completion notes:
+  - Replaced the last active `web/src/pipedal/*` runtime imports in `web/src/shared/components/PluginChooser/*` with a local compatibility surface in `web/src/shared/components/PluginChooser/pluginLegacyCompat.ts`, including a chooser-owned `PluginType` taxonomy, minimal legacy payload interfaces, shared category mapping, and a MAP2-owned glyph renderer in `LegacyPluginIcon.tsx`.
+  - Added `web/src/shared/components/PluginChooser/pluginLegacyCompat.test.ts` plus `tests/test_frontend_legacy_import_guard.py` so the compatibility layer is covered and active frontend code cannot silently reintroduce imports from `web/src/pipedal/`.
+  - Removed the stale `src/pipedal/**` dependency manifest from `web/CMakeLists.txt`, then deleted `web/src/pipedal/` entirely and cleaned the now-dead frontend config references from `web/eslint.config.js` and `web/tsconfig.app.json`.
+  - Post-migration inventory is now definitive rather than inferred: `web/src/pipedal/` no longer exists, active-code import scans return no runtime references, and the only remaining repo mentions are documentation/history plus the guard test's own failure message.
+  - Validation passed with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/shared/components/PluginChooser/pluginLegacyCompat.test.ts`, `pytest tests/test_frontend_legacy_import_guard.py -q`, and `npm --prefix web run build` from the deleted-tree state.
 
 ID: T389
 Status: [✓] Done
@@ -6733,3 +6797,110 @@ Last updated: 2026-03-25 07:38 EDT - Codex
   - Completed the routed `web/src/app/pages/ThemePage.tsx` reorganization by replacing the long inline settings surface with a launcher grid plus focused `ComposedModal` flows for library, directions, theme studio, typography, motion, and category accents.
   - Added the page-level launcher/modal styling in `web/src/app/pages/ThemePage.css` and updated `web/src/app/pages/ThemePage.test.tsx` so the routed Theme workspace is validated through the new modal entry points.
   - Validation passed for the final routed-page slice with `npm --prefix web run typecheck`, `npm --prefix web test -- --runInBand web/src/app/pages/ThemePage.test.tsx`, and `npm --prefix web run build`.
+
+## Per-Plugin Appearance Customization (Theme Page)
+
+ID: T411
+Status: [ ] Todo
+Title: Per-plugin appearance customization — epic overview
+Description:
+- Goal / acceptance criteria: Allow users to customize Color (accent + optional dark/light variant), Icon (Carbon library + category SVGs + custom SVG upload), and Description for every installed effect plugin (LV2, JUCE native, Hardware, ToobAmp). Customizations are global and persist across sessions. Accessible as a sub-section within the existing Category tab on the Theme Page.
+- Why it matters: Plugins from varied sources have inconsistent visual identity; user customization improves scannability and personal workflow.
+- Dependencies: T407 (Theme Page modal reorganization — Done), existing Category tab, `categoryStyles.tsx`, `pluginLegacyCompat.ts`, plugin API routes
+- Estimated effort: High
+- Required outputs: Backend persistence API, localStorage cache layer, icon picker modal, SVG upload flow, plugin appearance editor UI within Category tab, and full test coverage.
+Subtasks:
+
+ID: T411-subA
+Status: [ ] Todo
+Title: Backend persistence — plugin appearance overrides API + file storage
+Description:
+- Goal / acceptance criteria: New REST endpoints to CRUD per-plugin appearance overrides (color accent, dark/light variant, icon identifier, custom SVG data, description). Persisted to `~/.config/map2/plugin_appearance_overrides.json`. Endpoints: `GET /api/plugin-appearances`, `GET /api/plugin-appearances/{uri}`, `PUT /api/plugin-appearances/{uri}`, `DELETE /api/plugin-appearances/{uri}`, `POST /api/plugin-appearances/{uri}/icon-upload` (SVG).
+- Why it matters: Backend is source of truth (decision C from planning).
+- Dependencies: Existing `app/routes/plugins.py` patterns, `~/.config/map2/` directory convention
+- Estimated effort: Medium
+- Required outputs: New route file `app/routes/plugin_appearances.py`, Pydantic model, service layer, pytest coverage.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25
+
+ID: T411-subB
+Status: [ ] Todo
+Title: Frontend data layer — localStorage cache + sync hook
+Description:
+- Goal / acceptance criteria: `usePluginAppearances()` hook that reads from localStorage cache on mount, syncs from backend API, and writes through to both localStorage and backend on mutation. Cache key: `map2.plugin-appearance-overrides.v1`. Exposes `getPluginAppearance(uri)`, `setPluginAppearance(uri, overrides)`, `resetPluginAppearance(uri)`. Fires `CustomEvent` for cross-component subscription (same pattern as `categoryStyles.tsx`).
+- Why it matters: Fast reads from cache (decision C), backend as source of truth.
+- Dependencies: T411-subA (backend API)
+- Estimated effort: Medium
+- Required outputs: Hook file, TypeScript types for `PluginAppearanceOverride`, Jest tests.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25
+
+ID: T411-subC
+Status: [ ] Todo
+Title: Icon picker modal — Carbon icons + category SVGs + custom SVG upload
+Description:
+- Goal / acceptance criteria: Reusable `IconPickerModal` (Carbon `ComposedModal`) with three tabs: (1) Category SVG icons (~40 existing fx_* icons in a grid), (2) Carbon Design icons (searchable grid from `@carbon/icons-react`), (3) Custom SVG upload (drag-drop or file input, validates SVG, previews before confirm). Returns selected icon identifier (category: `fx:amplifier`, Carbon: `carbon:Activity`, custom: `custom:{uri-hash}`). Size-constrained SVG uploads (e.g., max 32KB).
+- Why it matters: Icon flexibility was chosen (decision B+C from planning).
+- Dependencies: `@carbon/icons-react` (already installed), existing category SVGs
+- Estimated effort: Medium
+- Required outputs: `IconPickerModal.tsx`, `IconPickerModal.test.tsx`, icon identifier format spec.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25
+
+ID: T411-subD
+Status: [ ] Todo
+Title: Color picker — accent color + optional dark/light variant
+Description:
+- Goal / acceptance criteria: `PluginColorPicker` component with: (1) primary accent color input (hex + visual swatch, same pattern as category color editor), (2) auto-generated dark/light variants shown as preview, (3) optional override toggles for dark and light variants with their own hex inputs. Uses the same color normalization as `categoryStyles.tsx`. Live preview of how the color renders on a plugin chip/card mock.
+- Why it matters: Decision C — single accent with optional variant overrides.
+- Dependencies: Existing color utilities in `categoryStyles.tsx`
+- Estimated effort: Small
+- Required outputs: `PluginColorPicker.tsx`, integrated into T411-subE editor.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25
+
+ID: T411-subE
+Status: [ ] Todo
+Title: Plugin appearance editor UI — sub-section within Category tab
+Description:
+- Goal / acceptance criteria: New sub-section within the existing Category tab on the Theme Page (below category color editing). Contains: (1) searchable/filterable plugin list (all sources: LV2, JUCE, Hardware, ToobAmp), (2) selecting a plugin opens an inline editor or expand panel with Color (T411-subD), Icon (T411-subC trigger), and Description (text area) fields, (3) Save/Reset per plugin, (4) "Reset All Plugin Overrides" bulk action. Toggle or accordion to switch between category-level and plugin-level editing within the tab.
+- Why it matters: Decision B — nested within Category tab, not a separate tab.
+- Dependencies: T411-subB (data hook), T411-subC (icon picker), T411-subD (color picker), existing Category tab in ThemePage
+- Estimated effort: Medium
+- Required outputs: Updated `ThemePage.tsx` Category tab section, new sub-components, test coverage.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25
+
+ID: T411-subF
+Status: [ ] Todo
+Title: Integration — apply overrides across Plugin Chooser, cards, and chips
+Description:
+- Goal / acceptance criteria: Plugin appearance overrides from T411-subB are consumed by: (1) `PluginCard.tsx` — override icon, color, and tooltip/description, (2) `pluginChipMeta.ts` — override chip color/icon, (3) `pluginBridge.ts` — merge overrides into `UnifiedPlugin` during normalization, (4) `LegacyPluginIcon.tsx` — respect icon overrides. Custom SVG icons render inline. Fallback chain: user override → category default → legacy default.
+- Why it matters: Overrides must be visible everywhere plugins appear, not just the editor.
+- Dependencies: T411-subB, T411-subE
+- Estimated effort: Medium
+- Required outputs: Updated bridge/card/chip files, integration tests verifying fallback chain.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25
+
+ID: T411-subG
+Status: [ ] Todo
+Title: End-to-end testing and build verification
+Description:
+- Goal / acceptance criteria: Full test pass: (1) pytest for backend API routes (CRUD, SVG upload, validation), (2) Jest for frontend hook, icon picker, color picker, editor UI, and integration, (3) `npm run typecheck` clean, (4) `npm run build` clean, (5) manual smoke test of override flow in production preview.
+- Why it matters: "Done means clean build" rule.
+- Dependencies: T411-subA through T411-subF
+- Estimated effort: Small
+- Required outputs: All tests passing, build artifacts verified.
+Subtasks: None
+Assigned to: Unassigned
+Last updated: 2026-03-25
+
+Assigned to: Unassigned
+Last updated: 2026-03-25

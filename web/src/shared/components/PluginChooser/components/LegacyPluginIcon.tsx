@@ -1,6 +1,5 @@
 import { Layer } from '@carbon/react'
-import PluginIcon from '../../../../pipedal/PluginIcon'
-import type { PluginType } from '../../../../pipedal/Lv2Plugin'
+import { getPluginGlyph, type PluginType } from '../pluginLegacyCompat'
 import './LegacyPluginIcon.css'
 
 interface LegacyPluginIconProps {
@@ -22,14 +21,23 @@ export function LegacyPluginIcon({
   decorative = true,
   label = 'Plugin type icon',
 }: LegacyPluginIconProps) {
+  const glyph = getPluginGlyph(pluginType)
+  const iconColor = pluginMissing ? '#da1e28' : (color ?? glyph.tone)
+  const fontSize = Math.max(9, Math.round(size * (glyph.label.length > 2 ? 0.34 : 0.42)))
   const icon = (
-    <PluginIcon
-      pluginType={pluginType}
-      size={size}
-      opacity={opacity}
-      pluginMissing={pluginMissing}
-      color={color}
-    />
+    <span
+      className="legacy-plugin-icon__glyph"
+      style={{
+        width: size,
+        height: size,
+        opacity,
+        color: iconColor,
+        borderColor: iconColor,
+        fontSize,
+      }}
+    >
+      {glyph.label}
+    </span>
   )
 
   return (

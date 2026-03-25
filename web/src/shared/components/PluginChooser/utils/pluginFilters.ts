@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { UnifiedPlugin, SortBy, CategoryNode } from '../types'
-import { PluginType } from '../../../../pipedal/Lv2Plugin'
+import { PluginType } from '../pluginLegacyCompat'
 
 /**
  * Sort plugins by the specified criteria
